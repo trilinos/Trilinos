@@ -96,11 +96,11 @@
 #include "Thyra_FROSchFactory_def.hpp"
 #include <FROSch_Tools_def.hpp>
 
-typedef unsigned                                    UN;
-typedef Scalar                                      SC;
-typedef LocalOrdinal                                LO;
-typedef GlobalOrdinal                               GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+using UN    = unsigned;
+using SC    = Scalar;
+using LO    = LocalOrdinal;
+using GO    = GlobalOrdinal;
+using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace EpetraExt;
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     MPI_Comm COMM;
     MPI_Comm_split(MPI_COMM_WORLD,color,CommWorld->getRank(),&COMM);
     RCP<Epetra_MpiComm> EpetraComm(new Epetra_MpiComm(COMM));
-    
+
 #ifdef HAVE_EPETRAEXT_HDF5
     if (color==0) {
 
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
 #endif
-    
+
     return(EXIT_SUCCESS);
 
 }

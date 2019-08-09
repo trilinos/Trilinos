@@ -45,7 +45,7 @@
 #include <FROSch_InterfacePartitionOfUnity_decl.hpp>
 
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     InterfacePartitionOfUnity<SC,LO,GO,NO>::InterfacePartitionOfUnity(CommPtr mpiComm,
                                                                       CommPtr serialComm,
@@ -64,31 +64,31 @@ namespace FROSch {
     {
         DDInterface_->resetGlobalDofs(dofsMaps);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     InterfacePartitionOfUnity<SC,LO,GO,NO>::~InterfacePartitionOfUnity()
     {
-        
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getLocalPartitionOfUnity() const
     {
         return LocalPartitionOfUnity_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getPartitionOfUnityMaps() const
     {
         return PartitionOfUnityMaps_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstDDInterfacePtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getDDInterface() const
     {
         return DDInterface_.getConst();
     }
-    
+
 }
 
 #endif

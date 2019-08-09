@@ -45,7 +45,7 @@
 #include <FROSch_SchwarzPreconditioner_decl.hpp>
 
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     SchwarzPreconditioner<SC,LO,GO,NO>::SchwarzPreconditioner(ParameterListPtr parameterList,
                                                               CommPtr comm) :
@@ -56,27 +56,27 @@ namespace FROSch {
     IsComputed_ (false),
     Verbose_ (comm->getRank()==0)
     {
-    
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     SchwarzPreconditioner<SC,LO,GO,NO>::~SchwarzPreconditioner()
     {
-    
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     bool SchwarzPreconditioner<SC,LO,GO,NO>::isInitialized() const
     {
         return IsInitialized_; // TODO: Das hat noch keine Bedeutung
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     bool SchwarzPreconditioner<SC,LO,GO,NO>::isComputed() const
     {
         return IsComputed_; // TODO: Das hat noch keine Bedeutung
     }
-    
+
 }
 
 #endif

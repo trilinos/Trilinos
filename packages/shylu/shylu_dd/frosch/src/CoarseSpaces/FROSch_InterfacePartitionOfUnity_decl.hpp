@@ -47,46 +47,47 @@
 #include <FROSch_DDInterface_def.hpp>
 
 namespace FROSch {
-    
+
     template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
+              class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
     class InterfacePartitionOfUnity {
-        
+
+    protected:
+
+        using CommPtr                       = Teuchos::RCP<const Teuchos::Comm<int> >;
+
+        using Map                           = Xpetra::Map<LO,GO,NO>;
+        using MapPtr                        = Teuchos::RCP<Map>;
+        using MapPtrVecPtr                  = Teuchos::ArrayRCP<MapPtr>;
+
+        using CrsMatrix                     = Xpetra::Matrix<SC,LO,GO,NO>;
+        using CrsMatrixPtr                  = Teuchos::RCP<CrsMatrix>;
+        using ConstCrsMatrixPtr             = Teuchos::RCP<const CrsMatrix>;
+
+        using MultiVector                   = Xpetra::MultiVector<SC,LO,GO,NO>;
+        using ConstMultiVectorPtr           = Teuchos::RCP<const MultiVector>;
+        using MultiVectorPtr                = Teuchos::RCP<MultiVector>;
+        using MultiVectorPtrVecPtr          = Teuchos::ArrayRCP<MultiVectorPtr>;
+        using ConstMultiVectorPtrVecPtr     = Teuchos::ArrayRCP<ConstMultiVectorPtr>;
+
+        using ParameterListPtr              = Teuchos::RCP<Teuchos::ParameterList>;
+
+        using DDInterfacePtr                = Teuchos::RCP<DDInterface<SC,LO,GO,NO> >;
+        using ConstDDInterfacePtr           = Teuchos::RCP<const DDInterface<SC,LO,GO,NO> >;
+
+        using EntitySetPtr                  = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
+
+        using UN                            = unsigned;
+
+        using GOVec                         = Teuchos::Array<GO>;
+        using GOVecView                     = Teuchos::ArrayView<GO>;
+
+        using SCVecPtr                      = Teuchos::ArrayRCP<SC>;
+
     public:
-        
-        typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
 
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
-        
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        typedef Teuchos::RCP<const CrsMatrix> ConstCrsMatrixPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<const MultiVector> ConstMultiVectorPtr;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        typedef Teuchos::ArrayRCP<MultiVectorPtr> MultiVectorPtrVecPtr;
-        typedef Teuchos::ArrayRCP<ConstMultiVectorPtr> ConstMultiVectorPtrVecPtr;
-
-        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
-        
-        typedef Teuchos::RCP<DDInterface<SC,LO,GO,NO> > DDInterfacePtr;
-        typedef Teuchos::RCP<const DDInterface<SC,LO,GO,NO> > ConstDDInterfacePtr;
-        
-        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
-        
-        typedef unsigned UN;
-        
-        typedef Teuchos::Array<GO> GOVec;
-        typedef Teuchos::ArrayView<GO> GOVecView;
-        
-        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-
-        
         InterfacePartitionOfUnity(CommPtr mpiComm,
                                   CommPtr serialComm,
                                   UN dimension,
@@ -94,39 +95,39 @@ namespace FROSch {
                                   MapPtr nodesMap,
                                   MapPtrVecPtr dofsMaps,
                                   ParameterListPtr parameterList);
-        
+
         virtual ~InterfacePartitionOfUnity();
-        
+
         virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs = Teuchos::null,
                                          MultiVectorPtr nodeList = Teuchos::null) = 0;
-        
+
         virtual int sortInterface(ConstCrsMatrixPtr matrix,
                                   MultiVectorPtr nodeList = Teuchos::null) = 0;
-        
+
         virtual int computePartitionOfUnity() = 0;
-        
+
         MultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
-        
+
         MapPtrVecPtr getPartitionOfUnityMaps() const;
-        
+
         ConstDDInterfacePtr getDDInterface() const;
-        
+
     protected:
-        
+
         CommPtr MpiComm_;
         CommPtr SerialComm_;
-        
+
         DDInterfacePtr DDInterface_;
-        
+
         ParameterListPtr ParameterList_;
-        
+
         MultiVectorPtrVecPtr LocalPartitionOfUnity_;
-        
+
         MapPtrVecPtr PartitionOfUnityMaps_;
-        
+
         bool Verbose_;
     };
-    
+
 }
 
 #endif

@@ -60,11 +60,11 @@
 
 #include <FROSch_Tools_decl.hpp>
 
-typedef unsigned                                    UN;
-typedef Scalar                                      SC;
-typedef LocalOrdinal                                LO;
-typedef GlobalOrdinal                               GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+using UN    = unsigned;
+using SC    = Scalar;
+using LO    = LocalOrdinal;
+using GO    = GlobalOrdinal;
+using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace Teuchos;
@@ -246,13 +246,13 @@ int main(int argc, char *argv[])
         } else {
             NumEntitiesGlobal[4] = -1;
         }
-        
+
         for (UN i=0; i<NumEntitiesGlobal.size(); i++) {
             if (NumEntitiesGlobal[i]<0) {
                 NumEntitiesGlobal[i] = 0;
             }
         }
-        
+
         if (Comm->getRank()==0) {
 
             cout << "\n\

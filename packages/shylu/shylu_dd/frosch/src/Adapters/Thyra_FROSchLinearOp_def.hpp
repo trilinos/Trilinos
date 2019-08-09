@@ -47,18 +47,18 @@
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
 
 namespace Thyra {
-    
+
     using namespace std;
 //    using namespace Belos;
     using namespace FROSch;
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     // Constructors/initializers
     template <class SC, class LO, class GO, class NO>
     FROSchLinearOp<SC,LO,GO,NO>::FROSchLinearOp()
     {}
-    
+
     template <class SC, class LO, class GO, class NO>
     void FROSchLinearOp<SC,LO,GO,NO>::initialize(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
                                                  const RCP<const VectorSpaceBase<SC> > &domainSpace,
@@ -68,7 +68,7 @@ namespace Thyra {
     {
         initializeImpl(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
     }
-    
+
     template <class SC, class LO, class GO, class NO>
     void FROSchLinearOp<SC,LO,GO,NO>::constInitialize(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
                                                       const RCP<const VectorSpaceBase<SC> > &domainSpace,
@@ -78,53 +78,53 @@ namespace Thyra {
     {
         initializeImpl(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
     }
-    
+
     template <class SC, class LO, class GO, class NO>
     RCP<Xpetra::Operator<SC,LO,GO,NO> > FROSchLinearOp<SC,LO,GO,NO>::getXpetraOperator()
     {
         return xpetraOperator_.getNonconstObj();
     }
-    
+
     template <class SC, class LO, class GO, class NO>
     RCP<const Xpetra::Operator<SC,LO,GO,NO> > FROSchLinearOp<SC,LO,GO,NO>::getConstXpetraOperator() const
     {
         return xpetraOperator_;
     }
-    
+
     // Public Overridden functions from LinearOpBase
-    
+
     template <class SC, class LO, class GO, class NO>
     RCP<const VectorSpaceBase<SC> > FROSchLinearOp<SC,LO,GO,NO>::range() const
     {
         return rangeSpace_;
     }
-    
+
     template <class SC, class LO, class GO, class NO>
     RCP<const VectorSpaceBase<SC> > FROSchLinearOp<SC,LO,GO,NO>::domain() const
     {
         return domainSpace_;
     }
-    
+
     // Protected Overridden functions from LinearOpBase
-    
+
     template <class SC, class LO, class GO, class NO>
     bool FROSchLinearOp<SC,LO,GO,NO>::opSupportedImpl(EOpTransp M_trans) const
     {
         if (is_null(xpetraOperator_))
         return false;
-        
+
         if (M_trans == NOTRANS)
         return true;
-        
+
         if (M_trans == CONJ) {
             // For non-complex scalars, CONJ is always supported since it is equivalent to NO_TRANS.
             // For complex scalars, Xpetra does not support conjugation without transposition.
             return !ScalarTraits<SC>::isComplex;
         }
-        
+
         return xpetraOperator_->hasTransposeApply();
     }
-    
+
     template <class SC, class LO, class GO, class NO>
     void FROSchLinearOp<SC,LO,GO,NO>::applyImpl(const EOpTransp M_trans,
                                                 const MultiVectorBase<SC> &X_in,
@@ -138,7 +138,7 @@ namespace Thyra {
         RCP< const Comm<int> > comm = getConstXpetraOperator()->getRangeMap()->getComm();
         //Transform to Xpetra MultiVector
         RCP<MultiVector<SC,LO,GO,NO> > xY;
-        
+
         ETransp transp;
         switch (M_trans) {
             case NOTRANS:   transp = Teuchos::NO_TRANS;   break;
@@ -150,23 +150,23 @@ namespace Thyra {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         if(this->bIsEpetra_){
             const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
-            
+
             RCP<const Map<LO,GO,NO> > DomainM = this->xpetraOperator_->getDomainMap();
-        
+
             RCP<const Map<LO,GO,NO> >RangeM = this->xpetraOperator_->getRangeMap();
-        
+
             RCP<const EpetraMapT<GO,NO> > eDomainM = rcp_dynamic_cast<const EpetraMapT<GO,NO> >(DomainM);
-        
+
             const Epetra_Map epetraDomain = eDomainM->getEpetra_Map();
-        
+
             RCP<const EpetraMapT<GO,NO> > eRangeM = rcp_dynamic_cast<const EpetraMapT<GO,NO> >(RangeM);
-        
+
             const Epetra_Map epetraRange = eRangeM->getEpetra_Map();
-            
+
             RCP<const Epetra_MultiVector> X;
-        
+
             RCP<Epetra_MultiVector> Y;
-       
+
             THYRA_FUNC_TIME_MONITOR_DIFF("Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
             // X
             X = get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraDomain: epetraRange, X_in );
@@ -184,25 +184,25 @@ namespace Thyra {
             const RCP<const MultiVector<SC,LO,GO,NO> > xX = ThyraUtils<SC,LO,GO,NO>::toXpetra(rcpFromRef(X_in), comm);
             xY = ThyraUtils<SC,LO,GO,NO>::toXpetra(rcpFromPtr(Y_inout), comm);
             xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
-            
+
         } else {
             FROSCH_ASSERT(false,"There is a problem with the underlying lib in FROSchLinearOp.");
             //std::cout<<"Only Implemented for Epetra and Tpetra\n";
         }
-        
+
         RCP<MultiVectorBase<SC> >thyraX =
         rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xY));
-        
-        typedef SpmdVectorSpaceBase<SC> ThySpmdVecSpaceBase;
+
+        using ThySpmdVecSpaceBase   = SpmdVectorSpaceBase<SC> ;
         RCP<const ThySpmdVecSpaceBase> mpi_vs = rcp_dynamic_cast<const ThySpmdVecSpaceBase>(rcpFromPtr(Y_inout)->range());
-        
+
         TEUCHOS_TEST_FOR_EXCEPTION(mpi_vs == Teuchos::null, std::logic_error, "Failed to cast Thyra::VectorSpaceBase to Thyra::SpmdVectorSpaceBase.");
         const LO localOffset = ( mpi_vs != Teuchos::null ? mpi_vs->localOffset() : 0 );
         const LO localSubDim = ( mpi_vs != Teuchos::null ? mpi_vs->localSubDim() : rcpFromPtr(Y_inout)->range()->dim() );
-        
+
         RCP<DetachedMultiVectorView<SC> > thyData =
         rcp(new DetachedMultiVectorView<SC>(*rcpFromPtr(Y_inout),Range1D(localOffset,localOffset+localSubDim-1)));
-        
+
         for( size_t j = 0; j <xY->getNumVectors(); ++j) {
             Teuchos::ArrayRCP< const SC > xpData = xY->getData(j); // access const data from Xpetra object
             // loop over all local rows
@@ -211,9 +211,9 @@ namespace Thyra {
             }
         }
     }
-    
+
     // private
-    
+
     template <class SC, class LO, class GO, class NO>
     template<class XpetraOperator_t>
     void FROSchLinearOp<SC,LO,GO,NO>::initializeImpl(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
@@ -233,7 +233,7 @@ namespace Thyra {
         bIsEpetra_ = bIsEpetra;
         bIsTpetra_ = bIsTpetra;
     }
-    
+
 } // namespace Thyra
 
 #endif

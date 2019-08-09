@@ -45,51 +45,52 @@
 #include <FROSch_GDSWCoarseOperator_def.hpp>
 
 namespace FROSch {
-    
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
-    class RGDSWCoarseOperator : public GDSWCoarseOperator<SC,LO,GO,NO> {
-        
-        public:
 
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr DDInterfacePtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtrVecPtr EntitySetPtrVecPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtr InterfaceEntityPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
-        
-        
+    template <class SC = Xpetra::Operator<>::scalar_type,
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
+              class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+    class RGDSWCoarseOperator : public GDSWCoarseOperator<SC,LO,GO,NO> {
+
+    protected:
+
+        using CommPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
+
+        using MapPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
+        using MapPtrVecPtr            = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr;
+
+        using CrsMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
+        using ConstCrsMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+
+        using MultiVectorPtr          = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr;
+        using MultiVectorPtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr;
+
+        using ParameterListPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
+
+        using DDInterfacePtr          = typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr;
+
+        using EntitySetPtr            = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr;
+        using EntitySetPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtrVecPtr;
+
+        using InterfaceEntityPtr      = typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtr;
+
+        using UN                      = typename SchwarzOperator<SC,LO,GO,NO>::UN;
+
+        using LOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
+        using LOVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr;
+        using LOVecPtr2D              = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D;
+
+        using GOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
+        using GOVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr;
+        using GOVecPtr2D              = typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D;
+
+        using SCVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
+
+    public:
+
         RGDSWCoarseOperator(ConstCrsMatrixPtr k,
                             ParameterListPtr parameterList);
-        
+
         virtual int resetCoarseSpaceBlock(UN blockId,
                                           UN dimension,
                                           UN dofsPerNode,
@@ -97,24 +98,24 @@ namespace FROSch {
                                           MapPtrVecPtr dofsMaps,
                                           GOVecPtr dirichletBoundaryDofs,
                                           MultiVectorPtr nodeList);
-        
-        
-        protected:
-        
+
+
+    protected:
+
         virtual MultiVectorPtrVecPtr computeTranslations(UN blockId,
                                                          EntitySetPtr coarseNodes,
                                                          EntitySetPtrVecPtr entitySetVector,
                                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
-        
+
         virtual MultiVectorPtrVecPtr computeRotations(UN blockId,
                                                       UN dimension,
                                                       MultiVectorPtr nodeList,
                                                       EntitySetPtr coarseNodes,
                                                       EntitySetPtrVecPtr entitySetVector,
                                                       DistanceFunction distanceFunction = ConstantDistanceFunction);
-        
+
     };
-    
+
 }
 
 #endif

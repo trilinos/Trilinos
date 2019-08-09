@@ -45,7 +45,7 @@
 #include <FROSch_RGDSWPreconditioner_decl.hpp>
 
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     RGDSWPreconditioner<SC,LO,GO,NO>::RGDSWPreconditioner(ConstCrsMatrixPtr k,
                                                           ParameterListPtr parameterList) :
@@ -54,14 +54,14 @@ namespace FROSch {
     {
         this->SumOperator_->addOperator(CoarseLevelOperator_);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(bool useDefaultParameters)
     {
         MapPtr repeatedMap = BuildRepeatedMap(this->K_);
         return initialize(repeatedMap,useDefaultParameters);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(MapPtr repeatedMap,
                                                      bool useDefaultParameters)
@@ -79,11 +79,11 @@ namespace FROSch {
             } else {
                 FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
             }
-            
+
             return initialize(this->ParameterList_->get("Dimension",1),this->ParameterList_->get("DofsPerNode",1),dofOrdering,this->ParameterList_->get("Overlap",1),repeatedMap);
         }
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(GOVecPtr &dirichletBoundaryDofs,
                                                      bool useDefaultParameters)
@@ -91,7 +91,7 @@ namespace FROSch {
         MapPtr repeatedMap = BuildRepeatedMap(this->K_);
         return initialize(repeatedMap,dirichletBoundaryDofs,useDefaultParameters);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(MapPtr repeatedMap,
                                                      GOVecPtr &dirichletBoundaryDofs,
@@ -110,11 +110,11 @@ namespace FROSch {
             } else {
                 FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
             }
-            
+
             return initialize(this->ParameterList_->get("Dimension",1),this->ParameterList_->get("DofsPerNode",1),dofOrdering,this->ParameterList_->get("Overlap",1),repeatedMap,dirichletBoundaryDofs);
         }
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                      int overlap)
@@ -122,7 +122,7 @@ namespace FROSch {
         MapPtr repeatedMap = BuildRepeatedMap(this->K_);
         return initialize(dimension,overlap,repeatedMap);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                      int overlap,
@@ -131,10 +131,10 @@ namespace FROSch {
         int ret = 0;
         if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
         if (0>CoarseLevelOperator_->initialize(dimension,repeatedMap)) ret -= 10;
-        
+
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                      int overlap,
@@ -144,10 +144,10 @@ namespace FROSch {
         int ret = 0;
         if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
         if (0>CoarseLevelOperator_->initialize(dimension,repeatedMap,dirichletBoundaryDofs)) ret -= 10;
-        
+
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                      UN dofsPerNode,
@@ -162,10 +162,10 @@ namespace FROSch {
         MapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
         if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps)) ret -=10;
-        
+
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                      UN dofsPerNode,
@@ -181,10 +181,10 @@ namespace FROSch {
         MapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
         if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs)) ret -=10;
-        
+
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                      UN dofsPerNode,
@@ -200,10 +200,10 @@ namespace FROSch {
         MapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
         if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList)) ret -=10;
-        
+
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                      UN dofsPerNode,
@@ -216,15 +216,15 @@ namespace FROSch {
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
         if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
-        
+
         MapPtr repeatedNodesMap;
         MapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
         if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList)) ret -=10;
-        
+
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::compute()
     {
@@ -233,20 +233,20 @@ namespace FROSch {
         if (0>CoarseLevelOperator_->compute()) ret -= 10;
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void RGDSWPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                     const Teuchos::EVerbosityLevel verbLevel) const
     {
         FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     std::string RGDSWPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "RGDSW Preconditioner";
     }
-    
+
 }
 
 #endif

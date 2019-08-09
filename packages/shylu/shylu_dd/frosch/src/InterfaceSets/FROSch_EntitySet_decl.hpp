@@ -49,133 +49,137 @@
 #include <FROSch_Tools_def.hpp>
 
 namespace FROSch {
-    
-    template <class SC,class LO,class GO,class NO>
+
+    template <class SC,
+              class LO,
+              class GO,
+              class NO>
     class EntitySet {
-        
+
+    protected:
+
+        using Map                         = Xpetra::Map<LO,GO,NO>;
+        using MapPtr                      = Teuchos::RCP<Map>;
+        using ConstMapPtr                 = Teuchos::RCP<const Map>;
+
+        using CrsMatrix                   = Xpetra::Matrix<SC,LO,GO,NO>;
+        using CrsMatrixPtr                = Teuchos::RCP<CrsMatrix>;
+        using ConstCrsMatrixPtr           = Teuchos::RCP<const CrsMatrix>;
+
+        using MultiVector                 = Xpetra::MultiVector<SC,LO,GO,NO>;
+        using MultiVectorPtr              = Teuchos::RCP<MultiVector>;
+
+        using EntitySetPtr                = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
+
+        using InterfaceEntityPtr          = Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> >;
+        using InterfaceEntityPtrVec       = Teuchos::Array<InterfaceEntityPtr>;
+        using InterfaceEntityPtrVecPtr    = Teuchos::ArrayRCP<InterfaceEntityPtr>;
+
+        using UN                          = unsigned;
+
+        using GOVec                       = Teuchos::Array<GO>;
+
+        using SCVec                       = Teuchos::Array<SC>;
+        using SCVecPtr                    = Teuchos::ArrayRCP<SC>;
+
     public:
-        
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::RCP<const Map> ConstMapPtr;
-        
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        typedef Teuchos::RCP<const CrsMatrix> ConstCrsMatrixPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        
-        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
-        
-        typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
-        typedef Teuchos::Array<InterfaceEntityPtr> InterfaceEntityPtrVec;
-        typedef Teuchos::ArrayRCP<InterfaceEntityPtr> InterfaceEntityPtrVecPtr;
-        
-        typedef unsigned UN;
-        
-        typedef Teuchos::Array<GO> GOVec;
-        
-        typedef Teuchos::Array<SC> SCVec;
-        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        
-        
+
         EntitySet(EntityType type);
-        
+
         EntitySet(const EntitySet &entitySet);
-        
+
         ~EntitySet();
-        
+
         int addEntity(InterfaceEntityPtr entity);
-        
+
         int addEntitySet(EntitySetPtr entitySet);
-        
+
         int buildEntityMap(ConstMapPtr localToGlobalNodesMap);
-        
+
         int findAncestorsInSet(EntitySetPtr entitySet);
-        
+
         int clearAncestors();
-        
+
         int clearOffspring();
-        
+
         EntitySetPtr findCoarseNodes();
-        
+
         int clearCoarseNodes();
-        
+
         int computeDistancesToCoarseNodes(UN dimension,
                                           MultiVectorPtr &nodeList = Teuchos::null,
                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
-        
+
         int divideUnconnectedEntities(ConstCrsMatrixPtr matrix,
                                       int pID);
-        
+
         int flagNodes();
-        
+
         int flagShortEntities();
-        
+
         int flagStraightEntities(UN dimension,
                                  MultiVectorPtr &nodeList);
-        
+
         EntitySetPtr sortOutEntities(EntityFlag flag);
-        
+
         int removeEntity(UN iD);
-        
+
         int removeEmptyEntities();
-        
+
         int sortUnique();
-        
+
         bool checkForVertices();
-        
+
         bool checkForShortEdges();
-        
+
         bool checkForStraightEdges(UN dimension,
                                    MultiVectorPtr &nodeList);
-        
+
         bool checkForEmptyEntities();
-        
+
         /////////////////
         // Set Methods //
         /////////////////
-        
+
         int setUniqueIDToFirstGlobalNodeID();
-        
+
         int setCoarseNodeID();
-        
+
         int resetEntityType(EntityType type);
-        
+
         /////////////////
         // Get Methods //
         /////////////////
-        
+
         EntityType getEntityType() const;
-        
+
         UN getNumEntities() const;
-        
+
         const InterfaceEntityPtrVec & getEntityVector() const;
-        
+
         const InterfaceEntityPtr getEntity(UN iD) const;
-        
+
         const MapPtr getEntityMap() const;
-        
+
         const SCVecPtr getDirection(UN dimension,
                                     MultiVectorPtr &nodeList,
                                     UN iD) const;
-        
+
     protected:
-        
+
         ///////////////
         // Variables //
         ///////////////
-        
+
         EntityType Type_;
-        
+
         InterfaceEntityPtrVec EntityVector_;
-        
+
         bool EntityMapIsUpToDate_;
-        
+
         MapPtr EntityMap_;
     };
-    
+
 }
 
 #endif

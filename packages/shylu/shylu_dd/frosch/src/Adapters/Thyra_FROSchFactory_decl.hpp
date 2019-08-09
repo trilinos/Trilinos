@@ -95,63 +95,63 @@
 #include "Kokkos_DefaultNode.hpp"
 
 namespace Thyra {
-    
+
     using namespace FROSch;
     using namespace Teuchos;
-    
+
     template <class SC,class LO,class GO,class NO=KokkosClassic::DefaultNode::DefaultNodeType>
     class FROSchFactory : public Thyra::PreconditionerFactoryBase<SC> {
-        
+
     public:
 
-        typedef Teuchos::ArrayRCP<DofOrdering> DofOrderingVecPtr;
+        using DofOrderingVecPtr     = Teuchos::ArrayRCP<DofOrdering>;
         
-        typedef unsigned UN;
-        
-        typedef Teuchos::ArrayRCP<GO> GOVecPtr;
-        
-        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        
-        typedef Teuchos::ArrayRCP<UN> UNVecPtr;
-        
-        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
-        
+        using UN                    = unsigned;
+
+        using GOVecPtr              = Teuchos::ArrayRCP<GO> ;
+
+        using SCVecPtr              = Teuchos::ArrayRCP<SC>;
+
+        using UNVecPtr              = Teuchos::ArrayRCP<UN>;
+
+        using LOVecPtr              = Teuchos::ArrayRCP<LO>;
+
         // More typedefs!!!
-        
+
         //Constructor
         FROSchFactory();
-        
+
         //Overridden from PreconditionerFactory Base
         bool isCompatible(const LinearOpSourceBase<SC>& fwdOp) const;
-        
+
         Teuchos::RCP<PreconditionerBase<SC> > createPrec() const;
-        
+
         void initializePrec(const RCP<const LinearOpSourceBase<SC> >& fwdOpSrc,
                             PreconditionerBase<SC>* prec,
                             const ESupportSolveUse supportSolveUse) const;
-        
+
         void uninitializePrec(PreconditionerBase<SC>* prec,
                               RCP<const LinearOpSourceBase<SC> >* fwdOp,
                               ESupportSolveUse* supportSolveUse) const;
-        
+
         void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList);
-        
+
         RCP<ParameterList> unsetParameterList();
-        
+
         RCP<ParameterList>getNonconstParameterList();
-        
+
         RCP<const ParameterList> getParameterList() const;
-        
+
         RCP<const ParameterList> getValidParameters() const;
-        
+
         std::string description() const;
         private:
         Teuchos::RCP<ParameterList> paramList_;
-                
+
     };
 }
 
-    
+
 
 #endif
 

@@ -45,7 +45,7 @@
 #include <FROSch_DDInterface_decl.hpp>
 
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     DDInterface<SC,LO,GO,NO>::DDInterface(UN dimension,
                                           UN dofsPerNode,
@@ -68,22 +68,22 @@ namespace FROSch {
     UniqueNodesMap_ ()
     {
         FROSCH_ASSERT(((Dimension_==2)||(Dimension_==3)),"Only dimension 2 and 3 are available");
-        
+
         UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_);
-        
+
         GOVecVecPtr componentsSubdomains;
         GOVecVec componentsSubdomainsUnique;
-        
+
         communicateLocalComponents(componentsSubdomains,componentsSubdomainsUnique);
         identifyLocalComponents(componentsSubdomains,componentsSubdomainsUnique);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     DDInterface<SC,LO,GO,NO>::~DDInterface()
     {
-        
+
     } // Do we need sth here?
-    
+
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::resetGlobalDofs(MapPtrVecPtr dofsMaps)
     {
@@ -102,7 +102,7 @@ namespace FROSch {
                 }
             }
         }
-        
+
         // Interface
         for (UN i=0; i<Interface_->getNumEntities(); i++) {
             for (UN j=0; j<Interface_->getEntity(i)->getNumNodes(); j++) {
@@ -116,7 +116,7 @@ namespace FROSch {
                 Interface_->getEntity(i)->resetGlobalDofs(j,DofsPerNode_,&(dofIDs[0]),&(dofsGlobal[0]));
             }
         }
-        
+
         // Interior
         for (UN i=0; i<Interior_->getNumEntities(); i++) {
             for (UN j=0; j<Interior_->getEntity(i)->getNumNodes(); j++) {
@@ -130,10 +130,10 @@ namespace FROSch {
                 Interior_->getEntity(i)->resetGlobalDofs(j,DofsPerNode_,&(dofIDs[0]),&(dofsGlobal[0]));
             }
         }
-        
+
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs)
     {
@@ -155,15 +155,15 @@ namespace FROSch {
                 }
             }
         }
-        
+
         removeEmptyEntities();
-        
+
         for (UN l=0; l<EntitySetVector_.size(); l++) {
             EntitySetVector_[l]->setUniqueIDToFirstGlobalNodeID();
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::divideUnconnectedEntities(ConstCrsMatrixPtr matrix)
     {
@@ -178,7 +178,7 @@ namespace FROSch {
         matrix = FROSch::ExtractLocalSubdomainMatrix(matrix.getConst(),map.getConst(),Teuchos::ScalarTraits<SC>::one());
         LO numSeparateEdges = Edges_->divideUnconnectedEntities(matrix);
         LO numSeparateFaces = Faces_->divideUnconnectedEntities(matrix);
-        
+
         if (MpiComm_->getRank()==0) {
             std::cout << "\n\
             --------------------------------------------\n\
@@ -188,7 +188,7 @@ namespace FROSch {
         }
 #else
         if (MpiComm_->getRank()==0) std::cout << "WARNING: divideUnconnectedEntities has not been really tested yet...\n";
-        
+
         GOVecPtr indicesGammaDofs(DofsPerNode_*Interface_->getEntity(0)->getNumNodes());
         for (UN k=0; k<DofsPerNode_; k++) {
             for (UN i=0; i<Interface_->getEntity(0)->getNumNodes(); i++) {
@@ -200,15 +200,15 @@ namespace FROSch {
         Edges_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
         Faces_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
 #endif
-        
+
         removeEmptyEntities();
-        
+
         // We need to set the unique ID; otherwise, we cannot sort entities
         Edges_->setUniqueIDToFirstGlobalNodeID();
         Faces_->setUniqueIDToFirstGlobalNodeID();
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::flagEntities(MultiVectorPtr nodeList)
     {
@@ -223,7 +223,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::removeEmptyEntities()
     {
@@ -232,15 +232,15 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::sortVerticesEdgesFaces(MultiVectorPtr nodeList)
     {
         flagEntities(nodeList);
-        
+
         // Make sure that we do not sort any empty entities
         removeEmptyEntities();
-        
+
         for (UN l=0; l<EntitySetVector_.size(); l++) {
             switch (l) {
                 case 0:
@@ -298,11 +298,11 @@ namespace FROSch {
                     }
                     break;
             }
-            
+
         }
         return 0;
-    }    
-    
+    }
+
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::buildEntityHierarchy()
     {
@@ -311,7 +311,7 @@ namespace FROSch {
                 EntitySetVector_[i]->findAncestorsInSet(EntitySetVector_[j]);
             }
         }
-        
+
         for (UN i=0; i<EntitySetVector_.size(); i++) {
             EntitySetPtr tmpCoarseNodes = EntitySetVector_[i]->findCoarseNodes();
             CoarseNodes_->addEntitySet(tmpCoarseNodes);
@@ -320,7 +320,7 @@ namespace FROSch {
         CoarseNodes_->setCoarseNodeID();
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
                                                                 MultiVectorPtr &nodeList,
@@ -331,7 +331,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::identifyConnectivityEntities(UNVecPtr multiplicities,
                                                                EntityFlagVecPtr flags)
@@ -346,7 +346,7 @@ namespace FROSch {
             flags[2] = ShortFlag;
             flags[3] = NodeFlag;
         }
-        
+
         for (UN j=0; j<multiplicities.size(); j++) {
             for (UN i=0; i<EntitySetVector_[multiplicities[j]]->getNumEntities(); i++) {
                 if (std::binary_search(flags.begin(),flags.end(),EntitySetVector_[multiplicities[j]]->getEntity(i)->getEntityFlag())) {
@@ -356,85 +356,85 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::UN DDInterface<SC,LO,GO,NO>::getDimension() const
     {
         return Dimension_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::UN DDInterface<SC,LO,GO,NO>::getDofsPerNode() const
     {
         return DofsPerNode_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     LO DDInterface<SC,LO,GO,NO>::getNumMyNodes() const
     {
         return NumMyNodes_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getVertices() const
     {
         return Vertices_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getShortEdges() const
     {
         return ShortEdges_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getStraightEdges() const
     {
         return StraightEdges_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getEdges() const
     {
         return Edges_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getFaces() const
     {
         return Faces_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getInterface() const
     {
         return Interface_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getInterior() const
     {
         return Interior_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getCoarseNodes() const
     {
         return CoarseNodes_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetPtrConstVecPtr & DDInterface<SC,LO,GO,NO>::getEntitySetVector() const
     {
         return EntitySetVector_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getConnectivityEntities() const
     {
         return ConnectivityEntities_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::ConstMapPtr DDInterface<SC,LO,GO,NO>::getNodesMap() const
     {
@@ -448,7 +448,7 @@ namespace FROSch {
                                                              GOVecVec &componentsSubdomainsUnique,
                                                              UN priorDofsPerNode)
     {
-        
+
         if (UniqueNodesMap_->getMinAllGlobalIndex() > 0 || priorDofsPerNode > 0) {
             GO minGID = UniqueNodesMap_->getMinAllGlobalIndex();
             ConstGOVecView ElementList;
@@ -474,13 +474,7 @@ namespace FROSch {
 
             GraphPtr commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(tmpNodesMap,10);
             GraphPtr commGraphTmp = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(tmpUniqueNodesMap,10);
-#ifdef Tpetra_issue_1752
-            // AH 10/10/2017: Can we get away with using just one importer/exporter after the Tpetra issue is fixed?
-            Teuchos::RCP<Xpetra::Import<LO,GO,NO> > commImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(tmpUniqueNodesMap,tmpNodesMap);
             Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(tmpNodesMap,tmpUniqueNodesMap);
-#else
-            Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(tmpNodesMap,tmpUniqueNodesMap);
-#endif
 
             Teuchos::Array<GO> myPID(1,tmpUniqueNodesMap->getComm()->getRank());
             for (int i=0; i<NumMyNodes_; i++) {
@@ -488,20 +482,17 @@ namespace FROSch {
             }
 
             Teuchos::RCP<Xpetra::Map<LO,GO,NO> > rangeMap = Xpetra::MapFactory<LO,GO,NO>::Build(tmpNodesMap->lib(),-1,myPID(),0,tmpNodesMap->getComm());
-            
+
             commGraph->fillComplete(tmpNodesMap,rangeMap);
-            
+
             commGraphTmp->doExport(*commGraph,*commExporter,Xpetra::INSERT);
-            
+
             commGraphTmp->fillComplete(tmpUniqueNodesMap,rangeMap);
-            
+
             commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(tmpNodesMap,10);
-#ifdef Tpetra_issue_1752
-            commGraph->doImport(*commGraphTmp,*commImporter,Xpetra::INSERT);
-#else
+
             commGraph->doImport(*commGraphTmp,*commExporter,Xpetra::INSERT);
-#endif
-            
+
             componentsSubdomains = GOVecVecPtr(NumMyNodes_);
             componentsSubdomainsUnique = GOVecVec(NumMyNodes_);
             Teuchos::ArrayView<const GO> indices;
@@ -516,42 +507,33 @@ namespace FROSch {
                 sortunique(componentsSubdomains[i]);
                 sortunique(componentsSubdomainsUnique[i]);
             }
-            
+
             sortunique(componentsSubdomainsUnique);
 
         } else {
             GraphPtr commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10);
             GraphPtr commGraphTmp = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(UniqueNodesMap_,10);
-    #ifdef Tpetra_issue_1752
-            // AH 10/10/2017: Can we get away with using just one importer/exporter after the Tpetra issue is fixed?
-            Teuchos::RCP<Xpetra::Import<LO,GO,NO> > commImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(UniqueNodesMap_,NodesMap_);
             Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
-    #else
-            Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
-    #endif
-            
+
             Teuchos::Array<GO> myPID(1,UniqueNodesMap_->getComm()->getRank());
             for (int i=0; i<NumMyNodes_; i++) {
                 commGraph->insertGlobalIndices(NodesMap_->getGlobalElement(i),myPID());
             }
             Teuchos::RCP<Xpetra::Map<LO,GO,NO> > rangeMap = Xpetra::MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
-            
+
             commGraph->fillComplete(NodesMap_,rangeMap);
-            
+
             commGraphTmp->doExport(*commGraph,*commExporter,Xpetra::INSERT);
-            
+
             commGraphTmp->fillComplete(UniqueNodesMap_,rangeMap);
-            
+
             commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10);
-    #ifdef Tpetra_issue_1752
-            commGraph->doImport(*commGraphTmp,*commImporter,Xpetra::INSERT);
-    #else
+
             commGraph->doImport(*commGraphTmp,*commExporter,Xpetra::INSERT);
-    #endif
-            
+
             componentsSubdomains = GOVecVecPtr(NumMyNodes_);
             componentsSubdomainsUnique = GOVecVec(NumMyNodes_);
-            
+
             Teuchos::ArrayView<const GO> indices;
             for (LO i=0; i<NumMyNodes_; i++) {
                 commGraph->getGlobalRowView(NodesMap_->getGlobalElement(i),indices);
@@ -564,7 +546,7 @@ namespace FROSch {
                 sortunique(componentsSubdomains[i]);
                 sortunique(componentsSubdomainsUnique[i]);
             }
-            
+
             sortunique(componentsSubdomainsUnique);
         }
         return 0;
@@ -576,13 +558,7 @@ namespace FROSch {
     {
         GraphPtr commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10); // AH 08/07/2019: Can we put 1 instead of 10 here?
         GraphPtr commGraphTmp = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(UniqueNodesMap_,10); // We assume that any node is part of no more than 10 subdomains
-#ifdef Tpetra_issue_1752
-        // AH 10/10/2017: Can we get away with using just one importer/exporter after the Tpetra issue is fixed?
-        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > commImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(UniqueNodesMap_,NodesMap_);
         Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
-#else
-        Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
-#endif
 
         Teuchos::Array<GO> myPID(1,UniqueNodesMap_->getComm()->getRank());
         for (int i=0; i<NumMyNodes_; i++) {
@@ -590,20 +566,16 @@ namespace FROSch {
         }
         MapPtr rangeMap = Xpetra::MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
 
-        //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); commGraph->describe(*fancy,Teuchos::VERB_EXTREME); //!!!!!!!!!!!!!!!!!!!!
+        // AH 08/08/2019: Can this be done with the two-argument overload of Tpetra::Map::createOneToOne, with a custom TieBreak object that remembers the overlap; see lines 757-834 and 903-926 of tpetra/core/src/Tpetra_DirectoryImpl_def.hpp to see how the TieBreak object is used.
         commGraph->fillComplete(NodesMap_,rangeMap); // AH 08/07/2019: Can we remove some fillComplete?
-        //commGraph->describe(*fancy,Teuchos::VERB_EXTREME); //!!!!!!!!!!!!!!!!!!!!
 
         commGraphTmp->doExport(*commGraph,*commExporter,Xpetra::INSERT);
 
         commGraphTmp->fillComplete(UniqueNodesMap_,rangeMap);
 
         commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10);
-#ifdef Tpetra_issue_1752
-        commGraph->doImport(*commGraphTmp,*commImporter,Xpetra::INSERT);
-#else
+
         commGraph->doImport(*commGraphTmp,*commExporter,Xpetra::INSERT);
-#endif
 
         componentsSubdomains = GOVecVecPtr(NumMyNodes_);
         componentsSubdomainsUnique = GOVecVec(NumMyNodes_);
@@ -620,14 +592,14 @@ namespace FROSch {
             sortunique(componentsSubdomains[i]);
             sortunique(componentsSubdomainsUnique[i]);
         }
-        
+
         sortunique(componentsSubdomainsUnique);
-        
+
         return 0;
     }
 #endif
 
-    
+
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::identifyLocalComponents(GOVecVecPtr &componentsSubdomains,
                                                           GOVecVec &componentsSubdomainsUnique)
@@ -645,14 +617,14 @@ namespace FROSch {
         for (UN i=0; i<maxMultiplicity+1; i++) {
             EntitySetVector_[i].reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
         }
-        
+
         typename GOVecVec::iterator classIterator;
         LOVecPtr localComponentIndices(NumMyNodes_);
         for (int i=0; i<NumMyNodes_; i++) {
             classIterator = std::lower_bound(componentsSubdomainsUnique.begin(),componentsSubdomainsUnique.end(),componentsSubdomains[i]);
             localComponentIndices[i] = classIterator - componentsSubdomainsUnique.begin();
         }
-        
+
         LO tmp1 = 0;
         GO *tmp2 = NULL;
         Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > interior(new InterfaceEntity<SC,LO,GO,NO>(InteriorType,DofsPerNode_,tmp1,tmp2));
@@ -691,7 +663,7 @@ namespace FROSch {
         }
         Interior_->addEntity(interior);
         Interface_->addEntity(interface);
-        
+
         for (UN i=0; i<componentsSubdomainsUnique.size(); i++) {
             Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > tmpEntity(new InterfaceEntity<SC,LO,GO,NO>(VertexType,DofsPerNode_,componentsMultiplicity[i],&(componentsSubdomainsUnique[i][0])));
             LO nodeIDGamma;
@@ -700,9 +672,9 @@ namespace FROSch {
             LOVecPtr dofsGamma(DofsPerNode_);
             LOVecPtr dofsLocal(DofsPerNode_);
             GOVecPtr dofsGlobal(DofsPerNode_);
-            
+
             sortunique(components[i]);
-            
+
             //
             for (UN j=0; j<components[i].size(); j++) {
                 nodeIDGamma = componentsGamma[i][j];
@@ -713,7 +685,7 @@ namespace FROSch {
                     dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
                     dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
                 }
-                
+
                 tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
             }
             tmpEntity->resetEntityType(DefaultType);
@@ -722,14 +694,14 @@ namespace FROSch {
 
         // Remove the empty entity stemming from the interior nodes
         removeEmptyEntities();
-        
+
         // We need to set the unique ID; otherwise, we cannot sort entities
         for (UN i=0; i<EntitySetVector_.size(); i++) {
             EntitySetVector_[i]->setUniqueIDToFirstGlobalNodeID();
         }
         return 0;
     }
-    
+
 }
 
 #endif

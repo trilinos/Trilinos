@@ -45,79 +45,80 @@
 #include <FROSch_SchwarzOperator_def.hpp>
 
 namespace FROSch {
-    
+
     template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
+              class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class OverlappingOperator : public SchwarzOperator<SC,LO,GO,NO> {
-    
+
+    protected:
+
+        using CommPtr               = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
+
+        using MapPtr                = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
+        using ConstMapPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
+
+        using CrsMatrixPtr          = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
+        using ConstCrsMatrixPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+
+        using MultiVector           = typename SchwarzOperator<SC,LO,GO,NO>::MultiVector;
+        using MultiVectorPtr        = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr;
+
+        using ImporterPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ImporterPtr;
+        using ExporterPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ExporterPtr;
+
+        using ParameterListPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
+
+        using SubdomainSolverPtr    = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+
+        using SCVecPtr              = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
+        using ConstSCVecPtr         = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
+
+        using UN                    = typename SchwarzOperator<SC,LO,GO,NO>::UN;
+
     public:
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVector MultiVector;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ImporterPtr ImporterPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ExporterPtr ExporterPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr ConstSCVecPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
-        
 
         OverlappingOperator(ConstCrsMatrixPtr k,
                             ParameterListPtr parameterList);
-        
+
         ~OverlappingOperator();
-        
+
         virtual int initialize() = 0;
-        
+
         virtual int compute() = 0;
-        
+
         virtual void apply(const MultiVector &x,
                           MultiVector &y,
                           bool usePreconditionerOnly,
                           Teuchos::ETransp mode=Teuchos::NO_TRANS,
                           SC alpha=Teuchos::ScalarTraits<SC>::one(),
                           SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
-        
+
     protected:
-        
+
         enum CombinationType {Averaging,Full,Restricted};
-        
+
         virtual int initializeOverlappingOperator();
-        
+
         virtual int computeOverlappingOperator();
-        
+
         ConstCrsMatrixPtr OverlappingMatrix_;
-        
-        ConstMapPtr OverlappingMap_;            
-        
+
+        ConstMapPtr OverlappingMap_;
+
         ImporterPtr Scatter_;
-        
+
         SubdomainSolverPtr SubdomainSolver_;
-        
+
         MultiVectorPtr Multiplicity_;
-        
+
         CombinationType Combine_;
-        
+
         int LevelID_;
-        
+
     };
-    
+
 }
 
 #endif

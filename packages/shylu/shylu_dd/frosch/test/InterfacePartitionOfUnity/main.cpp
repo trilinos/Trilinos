@@ -62,11 +62,11 @@
 
 #include <FROSch_Tools_decl.hpp>
 
-typedef unsigned                                    UN;
-typedef Scalar                                      SC;
-typedef LocalOrdinal                                LO;
-typedef GlobalOrdinal                               GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+using UN    = unsigned;
+using SC    = Scalar;
+using LO    = LocalOrdinal;
+using GO    = GlobalOrdinal;
+using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 int main(int argc, char *argv[])
 {
@@ -170,5 +170,5 @@ int main(int argc, char *argv[])
     }
 
 
-	return(EXIT_SUCCESS);
+  return(EXIT_SUCCESS);
 }

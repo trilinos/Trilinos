@@ -96,66 +96,66 @@
 #endif
 
 namespace Thyra {
-    
+
     using namespace Thyra;
     using namespace Xpetra;
-    
+
     /** \brief Concrete Thyra::LinearOpBase subclass for Xpetra::Operator.**/
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal,
     class Node=KokkosClassic::DefaultNode::DefaultNodeType>
     class FROSchLinearOp : virtual public LinearOpDefaultBase<Scalar>
     {
         public:
-        
+
         /** \name Constructors/initializers. */
         //@{
-        
+
         /** \brief Construct to uninitialized. */
         FROSchLinearOp();
-        
+
         /** \brief Initialize. */
         void initialize(const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                         const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
                         const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
                         bool bIsEpetra,
                         bool bIsTpetra);
-        
+
         /** \brief Initialize. */
         void constInitialize(const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                              const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
                              const RCP<const Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
                              bool bIsEpetra,
                              bool bIsTpetra);
-        
+
         /** \brief Get embedded non-const Xpetra::Operator. */
         RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
         getXpetraOperator();
-        
+
         /** \brief Get embedded const Xpetra::Operator. */
         RCP<const Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
         getConstXpetraOperator() const;
-        
+
         //@}
-        
+
         /** \name Public Overridden functions from LinearOpBase. */
         //@{
-        
+
         /** \brief . */
         RCP<const VectorSpaceBase<Scalar> > range() const;
-        
+
         /** \brief . */
         RCP<const VectorSpaceBase<Scalar> > domain() const;
-        
+
         //@}
-        
+
         protected:
-        
+
         /** \name Protected Overridden functions from LinearOpBase. */
         //@{
-        
+
         /** \brief . */
         bool opSupportedImpl(EOpTransp M_trans) const;
-        
+
         /** \brief . */
         void applyImpl(
                        const EOpTransp M_trans,
@@ -164,23 +164,23 @@ namespace Thyra {
                        const Scalar alpha,
                        const Scalar beta
                        ) const;
-        
+
         //@}
-        
+
         private:
-        
+
         RCP<const VectorSpaceBase<Scalar> >
         rangeSpace_;
-        
+
         RCP<const VectorSpaceBase<Scalar> >
         domainSpace_;
-        
-        
+
+
         bool bIsEpetra_;
         bool bIsTpetra_;
         Teuchos::ConstNonconstObjectContainer<Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
         xpetraOperator_;
-        
+
         template<class XpetraOperator_t>
         void initializeImpl(const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                             const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
@@ -188,8 +188,8 @@ namespace Thyra {
                             bool bIsEpetra,
                             bool bIsTpetra);
     };
-    
-    
+
+
     /** \brief Nonmmeber constructor for XpetraLinearOp.
      *
      * \relates XpetraLinearOp
@@ -207,8 +207,8 @@ namespace Thyra {
         op->initialize(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
         return op;
     }
-    
-    
+
+
     /** \brief Nonmmeber constructor for XpetraLinearOp.
      *
      * \relates XpetraLinearOp
@@ -226,7 +226,7 @@ namespace Thyra {
         op->constInitialize(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
         return op;
     }
-    
+
 }  // namespace Thyra
 
 #endif

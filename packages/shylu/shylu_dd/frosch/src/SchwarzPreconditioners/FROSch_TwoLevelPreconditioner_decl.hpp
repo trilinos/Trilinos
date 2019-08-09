@@ -45,53 +45,54 @@
 #include <FROSch_OneLevelPreconditioner_def.hpp>
 
 namespace FROSch {
-    
+
     template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
+              class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
     class TwoLevelPreconditioner : public OneLevelPreconditioner<SC,LO,GO,NO> {
-        
+
+    protected:
+
+        using MapPtr                              = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr;
+        using MapPtrVecPtr                        = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr;
+
+        using CrsMatrixPtr                        = typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr;
+        using ConstCrsMatrixPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+
+        using MultiVectorPtr                      = typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr;
+
+        using ParameterListPtr                    = typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr;
+
+        using AlgebraicOverlappingOperatorPtr     = typename SchwarzPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingOperatorPtr;
+        using CoarseOperatorPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::CoarseOperatorPtr;
+        using GDSWCoarseOperatorPtr               = typename SchwarzPreconditioner<SC,LO,GO,NO>::GDSWCoarseOperatorPtr;
+        using RGDSWCoarseOperatorPtr              = typename SchwarzPreconditioner<SC,LO,GO,NO>::RGDSWCoarseOperatorPtr;
+        using IPOUHarmonicCoarseOperatorPtr       = typename SchwarzPreconditioner<SC,LO,GO,NO>::IPOUHarmonicCoarseOperatorPtr;
+
+        using UN                                  = typename SchwarzPreconditioner<SC,LO,GO,NO>::UN;
+
+        using GOVecPtr                            = typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr;
+
     public:
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
 
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingOperatorPtr AlgebraicOverlappingOperatorPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CoarseOperatorPtr CoarseOperatorPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GDSWCoarseOperatorPtr GDSWCoarseOperatorPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::RGDSWCoarseOperatorPtr RGDSWCoarseOperatorPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::IPOUHarmonicCoarseOperatorPtr IPOUHarmonicCoarseOperatorPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::UN UN;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
-        
-        
         TwoLevelPreconditioner(ConstCrsMatrixPtr k,
                                ParameterListPtr parameterList);
 
         int initialize(bool useDefaultParameters = true);
-        
+
         int initialize(UN dimension,
                        int overlap,
                        UN dofsPerNode,
                        DofOrdering dofOrdering);
-        
+
         int initialize(UN dimension,
                        int overlap,
                        MapPtr repeatedMap,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        MultiVectorPtr nodeList = Teuchos::null);
-        
+
         int initialize(UN dimension,
                        UN dofsPerNode,
                        int overlap = -1,
@@ -101,22 +102,22 @@ namespace FROSch {
                        MapPtr repeatedMap = Teuchos::null,
                        MapPtrVecPtr dofsMaps = Teuchos::null,
                        GOVecPtr dirichletBoundaryDofs = Teuchos::null);
-        
+
         int compute();
-        
+
         void describe(Teuchos::FancyOStream &out,
                       const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-        
+
         std::string description() const;
 
         int resetMatrix(ConstCrsMatrixPtr &k);
-        
+
     protected:
-        
+
         CoarseOperatorPtr CoarseOperator_;
-        
+
     };
-    
+
 }
 
 #endif

@@ -49,21 +49,21 @@
 #include <Xpetra_ImportFactory_fwd.hpp>
 
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
                                                                                  Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map);
-    
+
     template <class SC,class LO,class GO,class NO>
     Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
                                                                                  Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map,
                                                                                  SC value);
-    
+
     template <class SC,class LO,class GO,class NO>
     int UpdateLocalSubdomainMatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
                                    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &map,
                                    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &localSubdomainMatrix);
-    
+
     template <class SC,class LO,class GO,class NO>
     int BuildSubmatrices(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > k,
                          Teuchos::ArrayView<GO> indI,
@@ -71,12 +71,12 @@ namespace FROSch {
                          Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kIJ,
                          Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kJI,
                          Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kJJ);
-    
+
     template <class SC,class LO,class GO,class NO>
     int BuildSubmatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > k,
                        Teuchos::ArrayView<GO> indI,
                        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kII);
-    
+
 }
 
 #endif

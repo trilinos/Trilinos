@@ -45,7 +45,7 @@
 #include <FROSch_AlgebraicOverlappingPreconditioner_decl.hpp>
 
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingPreconditioner(ConstCrsMatrixPtr k,
                                                                                         ParameterListPtr parameterList) :
@@ -56,26 +56,26 @@ namespace FROSch {
     {
         SumOperator_->addOperator(FirstLevelOperator_);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::initialize(bool useDefaultParameters)
     {
         return initialize(1,Teuchos::null);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
                                                                     MapPtr repeatedMap)
     {
         return FirstLevelOperator_->initialize(overlap,repeatedMap);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::compute()
     {
         return FirstLevelOperator_->compute();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::apply(const MultiVector &x,
                                                                 MultiVector &y,
@@ -85,32 +85,32 @@ namespace FROSch {
     {
         return SumOperator_->apply(x,y,true,mode,alpha,beta);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::ConstMapPtr AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::getDomainMap() const
     {
         return K_->getDomainMap();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::ConstMapPtr AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::getRangeMap() const
     {
         return K_->getRangeMap();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                                    const Teuchos::EVerbosityLevel verbLevel) const
     {
         SumOperator_->describe(out,verbLevel);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     std::string AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "Algebraic Overlapping Preconditioner";
     }
-    
+
 }
 
 #endif

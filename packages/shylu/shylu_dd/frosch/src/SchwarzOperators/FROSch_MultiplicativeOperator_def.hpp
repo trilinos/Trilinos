@@ -45,7 +45,7 @@
 #include <FROSch_MultiplicativeOperator_decl.hpp>
 
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(ConstCrsMatrixPtr k,
                                                                 ParameterListPtr parameterList) :
@@ -53,9 +53,9 @@ namespace FROSch {
     OperatorVector_ (0),
     EnableOperators_ (0)
     {
-        
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(ConstCrsMatrixPtr k,
                                                                 SchwarzOperatorPtrVecPtr operators,
@@ -68,26 +68,26 @@ namespace FROSch {
         for (unsigned i=1; i<operators.size(); i++) {
             FROSCH_ASSERT(operators[i]->OperatorDomainMap().SameAs(OperatorVector_[i]->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
             FROSCH_ASSERT(operators[i]->OperatorRangeMap().SameAs(OperatorVector_[i]->OperatorRangeMap()),"The RangeMaps of the operators are not identical.");
-            
+
             OperatorVector_.push_back(operators[i]);
             EnableOperators_.push_back(true);
         }
     }
-        
+
     template <class SC,class LO,class GO,class NO>
     MultiplicativeOperator<SC,LO,GO,NO>::~MultiplicativeOperator()
     {
-        
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void MultiplicativeOperator<SC,LO,GO,NO>::preApplyCoarse(MultiVector &x, MultiVector &y)
     {
         FROSCH_ASSERT(this->OperatorVector_.size()==2,"Should be a Two-Level Operator.");
         this->OperatorVector_[1]->apply(x,y,true);
-        
+
     }
-    
+
     // Y = alpha * A^mode * X + beta * Y
     template <class SC,class LO,class GO,class NO>
     void MultiplicativeOperator<SC,LO,GO,NO>::apply(const MultiVector &x,
@@ -109,17 +109,17 @@ namespace FROSch {
         *yTmp = y; // for the second apply
 
         this->OperatorVector_[0]->apply(*xTmp,*yTmp,true);
-        
+
         this->K_->apply(*yTmp,*xTmp);
-        
+
         this->OperatorVector_[1]->apply(*xTmp,*xTmp,true);
 
         yTmp->update(Teuchos::ScalarTraits<SC>::one(),*xTmp,-Teuchos::ScalarTraits<SC>::one());
         y.update(alpha,*yTmp,beta);
-        
-        
+
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::initialize()
     {
@@ -128,7 +128,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::initialize(MapPtr repeatedMap)
     {
@@ -137,41 +137,41 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::compute()
-    {        
+    {
         if (this->Verbose_) {
             FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be computed manually.");
         }
         return 0;
     }
-    
-    
+
+
     template <class SC,class LO,class GO,class NO>
     typename MultiplicativeOperator<SC,LO,GO,NO>::ConstMapPtr MultiplicativeOperator<SC,LO,GO,NO>::getDomainMap() const
     {
         return OperatorVector_[0]->getDomainMap();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename MultiplicativeOperator<SC,LO,GO,NO>::ConstMapPtr MultiplicativeOperator<SC,LO,GO,NO>::getRangeMap() const
     {
         return OperatorVector_[0]->getRangeMap();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void MultiplicativeOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                               const Teuchos::EVerbosityLevel verbLevel) const
     {
         FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     std::string MultiplicativeOperator<SC,LO,GO,NO>::description() const
     {
         std::string labelString = "Level operator: ";
-        
+
         for (UN i=0; i<OperatorVector_.size(); i++) {
             labelString += OperatorVector_.at(i)->description();
             if (i<OperatorVector_.size()-1) {
@@ -180,7 +180,7 @@ namespace FROSch {
         }
         return labelString;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)
     {
@@ -201,7 +201,7 @@ namespace FROSch {
         EnableOperators_.push_back(true);
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::addOperators(SchwarzOperatorPtrVecPtr operators)
     {
@@ -211,7 +211,7 @@ namespace FROSch {
         }
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::resetOperator(UN iD,
                                                   SchwarzOperatorPtr op)
@@ -229,7 +229,7 @@ namespace FROSch {
         OperatorVector_[iD] = op;
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::enableOperator(UN iD,
                                                    bool enable)
@@ -237,7 +237,7 @@ namespace FROSch {
         EnableOperators_[iD] = enable;
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename MultiplicativeOperator<SC,LO,GO,NO>::UN MultiplicativeOperator<SC,LO,GO,NO>::getNumOperators()
     {

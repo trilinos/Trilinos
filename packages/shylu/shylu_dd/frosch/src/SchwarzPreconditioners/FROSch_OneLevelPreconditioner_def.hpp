@@ -45,7 +45,7 @@
 #include <FROSch_OneLevelPreconditioner_decl.hpp>
 
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     OneLevelPreconditioner<SC,LO,GO,NO>::OneLevelPreconditioner(ConstCrsMatrixPtr k,
                                                                 ParameterListPtr parameterList) :
@@ -72,7 +72,7 @@ namespace FROSch {
         }
 
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int OneLevelPreconditioner<SC,LO,GO,NO>::initialize(bool useDefaultParameters)
     {
@@ -82,7 +82,7 @@ namespace FROSch {
             return initialize(this->ParameterList_->get("Overlap",1),false);
         }
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int OneLevelPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
                                                         bool buildRepeatedMap)
@@ -93,7 +93,7 @@ namespace FROSch {
         }
         return initialize(overlap,repeatedMap);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int OneLevelPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
                                                         MapPtr repeatedMap)
@@ -110,13 +110,13 @@ namespace FROSch {
         }
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int OneLevelPreconditioner<SC,LO,GO,NO>::compute()
     {
         return OverlappingOperator_->compute();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void OneLevelPreconditioner<SC,LO,GO,NO>::apply(const MultiVector &x,
                                                     MultiVector &y,
@@ -131,19 +131,19 @@ namespace FROSch {
             return SumOperator_->apply(x,y,true,mode,alpha,beta);
         }
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename OneLevelPreconditioner<SC,LO,GO,NO>::ConstMapPtr OneLevelPreconditioner<SC,LO,GO,NO>::getDomainMap() const
     {
         return K_->getDomainMap();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename OneLevelPreconditioner<SC,LO,GO,NO>::ConstMapPtr OneLevelPreconditioner<SC,LO,GO,NO>::getRangeMap() const
     {
         return K_->getRangeMap();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void OneLevelPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                         const Teuchos::EVerbosityLevel verbLevel) const
@@ -156,13 +156,13 @@ namespace FROSch {
         }
 
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     std::string OneLevelPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "One-Level Preconditioner";
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int OneLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstCrsMatrixPtr &k)
     {
@@ -170,7 +170,7 @@ namespace FROSch {
         OverlappingOperator_->resetMatrix(K_);
         return 0;
     }
-    
+
 }
 
 #endif

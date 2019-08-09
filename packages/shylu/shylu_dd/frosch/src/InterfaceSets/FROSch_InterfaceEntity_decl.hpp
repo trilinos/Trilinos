@@ -51,79 +51,80 @@
 
 
 namespace FROSch {
-    
+
     template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
+              class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class EntitySet;
-    
+
     enum EntityType {DefaultType,VertexType,EdgeType,FaceType,InteriorType,InterfaceType};
     enum EntityFlag {DefaultFlag,StraightFlag,ShortFlag,NodeFlag};
     enum DistanceFunction {ConstantDistanceFunction,InverseEuclideanDistanceFunction};
-    
+
     template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type>
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type>
     struct Node {
         LO NodeIDGamma_;
         LO NodeIDLocal_;
         GO NodeIDGlobal_;
-        
+
         Teuchos::ArrayRCP<LO> DofsGamma_;
         Teuchos::ArrayRCP<LO> DofsLocal_;
         Teuchos::ArrayRCP<GO> DofsGlobal_;
-        
+
         bool operator< (const Node &n) const;
-        
+
         bool operator== (const Node &n) const;
     };
-    
+
     template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
+              class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class InterfaceEntity {
-        
+
+    protected:
+
+        using CrsMatrix             = Xpetra::Matrix<SC,LO,GO,NO>;
+        using CrsMatrixPtr          = Teuchos::RCP<CrsMatrix>;
+        using ConstCrsMatrixPtr     = Teuchos::RCP<const CrsMatrix>;
+
+        using Vector                = Xpetra::Vector<SC,LO,GO,NO>;
+        using VectorPtr             = Teuchos::RCP<Vector>;
+
+        using MultiVector           = Xpetra::MultiVector<SC,LO,GO,NO>;
+        using MultiVectorPtr        = Teuchos::RCP<MultiVector>;
+
+        using EntitySetPtr          = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
+
+        using InterfaceEntityPtr    = Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> >;
+
+        using NodeVec               = Teuchos::Array<Node<SC,LO,GO> >;
+        using NodePtr               = Teuchos::RCP<Node<SC,LO,GO> >;
+        using NodePtrVec            = Teuchos::Array<NodePtr>;
+
+        using UN                    = unsigned;
+
+        using LOVecPtr              = Teuchos::ArrayRCP<LO>;
+
+        using GOVec                 = Teuchos::Array<GO>;
+        using GOVecPtr              = Teuchos::ArrayRCP<GO>;
+
+        using SCVecPtr              = Teuchos::ArrayRCP<SC>;
+        using SCVecPtrVec           = Teuchos::Array<SCVecPtr>;
+
     public:
-        
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        typedef Teuchos::RCP<const CrsMatrix> ConstCrsMatrixPtr;
-        
-        typedef Xpetra::Vector<SC,LO,GO,NO> Vector;
-        typedef Teuchos::RCP<Vector> VectorPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        
-        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
-        
-        typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
-        
-        typedef Teuchos::Array<Node<SC,LO,GO> > NodeVec;
-        typedef Teuchos::RCP<Node<SC,LO,GO> > NodePtr;
-        typedef Teuchos::Array<NodePtr> NodePtrVec;
-        
-        typedef unsigned UN;
-        
-        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
-        
-        typedef Teuchos::Array<GO> GOVec;
-        typedef Teuchos::ArrayRCP<GO> GOVecPtr;
-        
-        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::Array<SCVecPtr> SCVecPtrVec;
-        
-        
+
         InterfaceEntity(EntityType type,
                         UN dofsPerNode,
                         UN multiplicity,
                         GO *subdomains,
                         EntityFlag flag = DefaultFlag);
-        
+
         ~InterfaceEntity();
-        
+
         int addNode(LO nodeIDGamma,
                     LO nodeIDLocal,
                     GO nodeIDGlobal,
@@ -131,127 +132,127 @@ namespace FROSch {
                     const LOVecPtr dofsGamma,
                     const LOVecPtr dofsLocal,
                     const GOVecPtr dofsGlobal);
-        
+
         int addNode(const NodePtr &node);
-        
+
         int addNode(const Node<SC,LO,GO> &node);
-        
+
         int resetGlobalDofs(UN iD,
                             UN nDofs,
                             UN *dofIDs,
                             GO *dofsGlobal);
-        
+
         int removeNode(UN iD);
-        
+
         int sortByGlobalID();
-        
+
         int setUniqueID(GO uniqueID);
-        
+
         int setLocalID(LO localID);
-        
+
         int setCoarseNodeID(LO coarseNodeID);
-        
+
         int setUniqueIDToFirstGlobalID();
-        
+
         int resetEntityType(EntityType type);
-        
+
         int resetEntityFlag(EntityFlag flag);
-        
+
         int findAncestorsInSet(EntitySetPtr entitySet);
-        
+
         int clearAncestors();
-        
+
         int addOffspring(InterfaceEntityPtr interfaceEntity);
-        
+
         int clearOffspring();
-        
+
         EntitySetPtr findCoarseNodes();
-        
+
         int clearCoarseNodes();
-        
+
         int computeDistancesToCoarseNodes(UN dimension,
                                           MultiVectorPtr &nodeList = Teuchos::null,
                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
-        
+
         InterfaceEntityPtr divideEntity(ConstCrsMatrixPtr matrix,
                                         int pID);
-        
+
         /////////////////
         // Get Methods //
         /////////////////
-        
+
         EntityType getEntityType() const;
-        
+
         EntityFlag getEntityFlag() const;
-        
+
         UN getDofsPerNode() const;
-        
+
         UN getMultiplicity() const;
-        
+
         GO getUniqueID() const;
-        
+
         LO getLocalID() const;
-        
+
         LO getCoarseNodeID() const;
-        
+
         const Node<SC,LO,GO>& getNode(UN iDNode) const;
-        
+
         LO getGammaNodeID(UN iDNode) const;
-        
+
         LO getLocalNodeID(UN iDNode) const;
-        
+
         GO getGlobalNodeID(UN iDNode) const;
-        
+
         LO getGammaDofID(UN iDNode, UN iDDof) const;
-        
+
         LO getLocalDofID(UN iDNode, UN iDDof) const;
-        
+
         GO getGlobalDofID(UN iDNode, UN iDDof) const;
-        
+
         const GOVec & getSubdomainsVector() const;
-        
+
         UN getNumNodes() const;
-        
+
         const EntitySetPtr getAncestors() const;
-        
+
         const EntitySetPtr getOffspring() const;
-        
+
         const EntitySetPtr getCoarseNodes() const;
-        
+
         SC getDistanceToCoarseNode(UN iDNode,
                                    UN iDCoarseNode) const;
-        
+
     protected:
-        
+
         EntityType Type_;
-        
+
         EntityFlag Flag_;
-        
+
         NodeVec NodeVector_;
-        
+
         GOVec SubdomainsVector_;
-        
+
         EntitySetPtr Ancestors_;
         EntitySetPtr Offspring_;
         EntitySetPtr CoarseNodes_;
-        
-        SCVecPtrVec DistancesVector_;
-        
+
+        SCVecPtrVec DistancesVector_; // AH 08/08/2019 TODO: make a MultiVector out of this
+
         UN DofsPerNode_;
         UN Multiplicity_;
         GO UniqueID_;
         LO LocalID_;
         LO CoarseNodeID_;
     };
-    
+
     template <class SC,class LO,class GO,class NO>
     bool compareInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
                                   Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
-    
+
     template <class SC,class LO,class GO,class NO>
     bool equalInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
                                 Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
-    
+
 }
 
 #endif

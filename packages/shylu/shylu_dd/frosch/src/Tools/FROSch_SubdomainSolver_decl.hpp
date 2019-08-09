@@ -81,64 +81,65 @@ namespace FROSch {
     class OneLevelPreconditioner;
 
     template <class SC = typename Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
+              class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
     class SubdomainSolver : public Xpetra::Operator<SC,LO,GO,NO> {
 
-    public:
+    protected:
 
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::RCP<const Map> ConstMapPtr;
-        typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
+        using Map                         = Xpetra::Map<LO,GO,NO>;
+        using MapPtr                      = Teuchos::RCP<Map>;
+        using ConstMapPtr                 = Teuchos::RCP<const Map>;
+        using MapPtrVecPtr                = Teuchos::ArrayRCP<MapPtr>;
 
-        typedef Teuchos::ArrayRCP<GO> GOVecPtr;
+        using GOVecPtr                    = Teuchos::ArrayRCP<GO>;
 
+        using CrsMatrix                   = Xpetra::Matrix<SC,LO,GO,NO>;
+        using CrsMatrixPtr                = Teuchos::RCP<CrsMatrix>;
+        using ConstCrsMatrixPtr           = Teuchos::RCP<const CrsMatrix>;
 
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        typedef Teuchos::RCP<const CrsMatrix> ConstCrsMatrixPtr;
-        
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        typedef Epetra_CrsMatrix EpetraCrsMatrix;
-        typedef Teuchos::RCP<EpetraCrsMatrix> EpetraCrsMatrixPtr;
-        typedef Teuchos::RCP<const EpetraCrsMatrix> ConstEpetraCrsMatrixPtr;
+        using EpetraCrsMatrix             = Epetra_CrsMatrix;
+        using EpetraCrsMatrixPtr          = Teuchos::RCP<EpetraCrsMatrix>;
+        using ConstEpetraCrsMatrixPtr     = Teuchos::RCP<const EpetraCrsMatrix>;
 #endif
-        typedef Tpetra::CrsMatrix<SC,LO,GO,NO> TpetraCrsMatrix;
-        typedef Teuchos::RCP<TpetraCrsMatrix> TpetraCrsMatrixPtr;
-        typedef Teuchos::RCP<const TpetraCrsMatrix> ConstTpetraCrsMatrixPtr;
+        using TpetraCrsMatrix             = Tpetra::CrsMatrix<SC,LO,GO,NO>;
+        using TpetraCrsMatrixPtr          = Teuchos::RCP<TpetraCrsMatrix>;
+        using ConstTpetraCrsMatrixPtr     = Teuchos::RCP<const TpetraCrsMatrix>;
 
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        typedef Teuchos::RCP<const MultiVector> ConstMultiVectorPtr;
+        using MultiVector                 = Xpetra::MultiVector<SC,LO,GO,NO>;
+        using MultiVectorPtr              = Teuchos::RCP<MultiVector>;
+        using ConstMultiVectorPtr         = Teuchos::RCP<const MultiVector>;
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        typedef Epetra_MultiVector EpetraMultiVector;
-        typedef Teuchos::RCP<EpetraMultiVector> EpetraMultiVectorPtr;
+        using EpetraMultiVector           = Epetra_MultiVector;
+        using EpetraMultiVectorPtr        = Teuchos::RCP<EpetraMultiVector>;
 #endif
-        typedef Tpetra::MultiVector<SC,LO,GO,NO> TpetraMultiVector;
-        typedef Teuchos::RCP<TpetraMultiVector> TpetraMultiVectorPtr;
+        using TpetraMultiVector           = Tpetra::MultiVector<SC,LO,GO,NO>;
+        using TpetraMultiVectorPtr        = Teuchos::RCP<TpetraMultiVector>;
 
-        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
+        using ParameterListPtr            = Teuchos::RCP<Teuchos::ParameterList>;
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        typedef Teuchos::RCP<Epetra_LinearProblem> LinearProblemPtr;
+        using LinearProblemPtr            = Teuchos::RCP<Epetra_LinearProblem>;
 #endif
 
 #ifdef HAVE_SHYLU_DDFROSCH_AMESOS
-        typedef Teuchos::RCP<Amesos_BaseSolver> AmesosSolverPtr;
+        using AmesosSolverPtr             = Teuchos::RCP<Amesos_BaseSolver>;
 #endif
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        typedef Teuchos::RCP<Amesos2::Solver<EpetraCrsMatrix,EpetraMultiVector> > Amesos2SolverEpetraPtr;
+        using Amesos2SolverEpetraPtr      = Teuchos::RCP<Amesos2::Solver<EpetraCrsMatrix,EpetraMultiVector> >;
 #endif
-        typedef Teuchos::RCP<Amesos2::Solver<TpetraCrsMatrix,TpetraMultiVector> > Amesos2SolverTpetraPtr;
+        using Amesos2SolverTpetraPtr      = Teuchos::RCP<Amesos2::Solver<TpetraCrsMatrix,TpetraMultiVector> >;
 
 #ifdef HAVE_SHYLU_DDFROSCH_MUELU
-        typedef Teuchos::RCP<MueLu::HierarchyManager<SC,LO,GO,NO> > MueLuFactoryPtr;
-        typedef Teuchos::RCP<MueLu::Hierarchy<SC,LO,GO,NO> > MueLuHierarchyPtr;
+        using MueLuFactoryPtr             = Teuchos::RCP<MueLu::HierarchyManager<SC,LO,GO,NO> >;
+        using MueLuHierarchyPtr           = Teuchos::RCP<MueLu::Hierarchy<SC,LO,GO,NO> >;
 #endif
 
+    public:
+        
         /*!
         \brief Constructor
 

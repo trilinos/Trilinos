@@ -45,7 +45,7 @@
 #include <FROSch_EntitySet_decl.hpp>
 
 namespace FROSch {
-    
+
     template<class SC,class LO,class GO,class NO>
     EntitySet<SC,LO,GO,NO>::EntitySet(EntityType type):
     Type_ (type),
@@ -53,9 +53,9 @@ namespace FROSch {
     EntityMapIsUpToDate_ (false),
     EntityMap_ ()
     {
-        
+
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     EntitySet<SC,LO,GO,NO>::EntitySet(const EntitySet<SC,LO,GO,NO> &entitySet) :
     Type_ (entitySet.getEntityType()),
@@ -63,15 +63,15 @@ namespace FROSch {
     EntityMapIsUpToDate_ (false),
     EntityMap_ ()
     {
-        
+
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     EntitySet<SC,LO,GO,NO>::~EntitySet()
     {
-        
+
     } // Do we need sth here?
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::addEntity(InterfaceEntityPtr entity)
     {
@@ -80,7 +80,7 @@ namespace FROSch {
         EntityMapIsUpToDate_ = false;
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::addEntitySet(EntitySetPtr entitySet)
     {
@@ -89,7 +89,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::buildEntityMap(ConstMapPtr localToGlobalNodesMap)
     {
@@ -99,27 +99,27 @@ namespace FROSch {
             LO maxLocalNumberEntities = 0;
             reduceAll(*localToGlobalNodesMap->getComm(),Teuchos::REDUCE_SUM,localNumberEntities,Teuchos::ptr(&globalNumberEntities));
             reduceAll(*localToGlobalNodesMap->getComm(),Teuchos::REDUCE_MAX,localNumberEntities,Teuchos::ptr(&maxLocalNumberEntities));
-            
+
             GOVec localToGlobalVector(0);
             if (globalNumberEntities>0) {
                 // Set the Unique iD
                 setUniqueIDToFirstGlobalNodeID();
-                
+
                 GOVec entities(maxLocalNumberEntities);
                 for (UN i=0; i<getNumEntities(); i++) {
                     entities[i] = EntityVector_[i]->getUniqueID()+1;
                     EntityVector_[i]->setLocalID(i);
                 }
                 MapPtr entityMapping = Xpetra::MapFactory<LO,GO,NO>::Build(localToGlobalNodesMap->lib(),-1,entities(),0,localToGlobalNodesMap->getComm());
-                
+
                 GOVec allEntities(maxLocalNumberEntities*localToGlobalNodesMap->getComm()->getSize(),0);
                 //localToGlobalNodesMap->getComm().GatherAll(&(entities->at(0)),&(allEntities->at(0)),maxLocalNumberEntities);
                 gatherAll(*localToGlobalNodesMap->getComm(),maxLocalNumberEntities,entities.getRawPtr(),maxLocalNumberEntities*localToGlobalNodesMap->getComm()->getSize(),allEntities.getRawPtr());
-                
+
                 allEntities.push_back(0); // Um sicherzugehen, dass der erste Eintrag nach sort_unique eine 0 ist.
-                
+
                 sortunique(allEntities);
-                
+
                 localToGlobalVector.resize(localNumberEntities);
                 int LocalID;
                 for (UN i=1; i<allEntities.size(); i++) { // Wir fangen bei 1 an, weil wir am Anfang 1 auf die ID addiert haben
@@ -128,23 +128,23 @@ namespace FROSch {
                         localToGlobalVector[LocalID] = i-1;
                     }
                 }
-                
+
             }
             EntityMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(localToGlobalNodesMap->lib(),-1,localToGlobalVector(),0,localToGlobalNodesMap->getComm());
             EntityMapIsUpToDate_ = true;
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::findAncestorsInSet(EntitySetPtr entitySet)
     {
-        for (UN i=0; i<getNumEntities(); i++) {            
+        for (UN i=0; i<getNumEntities(); i++) {
             getEntity(i)->findAncestorsInSet(entitySet);
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::clearAncestors()
     {
@@ -153,7 +153,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::clearOffspring()
     {
@@ -162,7 +162,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::findCoarseNodes()
     {
@@ -181,7 +181,7 @@ namespace FROSch {
         coarseNodes->sortUnique();
         return coarseNodes;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::clearCoarseNodes()
     {
@@ -190,7 +190,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
                                                               MultiVectorPtr &nodeList,
@@ -201,7 +201,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::divideUnconnectedEntities(ConstCrsMatrixPtr matrix,
                                                           int pID)
@@ -218,7 +218,7 @@ namespace FROSch {
         if (getNumEntities()-before>0) EntityMapIsUpToDate_ = false;
         return getNumEntities()-before;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::flagNodes()
     {
@@ -229,7 +229,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::flagShortEntities()
     {
@@ -240,41 +240,41 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::flagStraightEntities(UN dimension,
                                                      MultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
-        
+
         bool straight;
         LO length,j;
         SCVec pt1(dimension);
         SCVec dir1(dimension);
         SCVec dir2(dimension);
-        
+
         for (UN i=0; i<getNumEntities(); i++) {
             straight = true;
             length = EntityVector_[i]->getNumNodes();
-            
+
             j=2;
-            
+
             if (length>2) {
                 // Anfangssteigung berechnen
                 for (UN k=0; k<dimension; k++) {
                     pt1[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(0)];
                 }
-                
+
                 for (UN k=0; k<dimension; k++) {
                     dir1[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(1)]-pt1[k];
                 }
-                
+
                 while (j<length) {
                     // Steigung zum zweiten Punkt berechnen
                     for (UN k=0; k<dimension; k++) {
                         dir2[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(j)]-pt1[k];
                     }
-                    
+
                     if (!ismultiple<SC,LO>(dir1(),dir2())) {
                         straight = false;
                         break;
@@ -288,7 +288,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::sortOutEntities(EntityFlag flag)
     {
@@ -304,7 +304,7 @@ namespace FROSch {
         if (getNumEntities()-before>0) EntityMapIsUpToDate_ = false;
         return arcp(removedEntities);
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::removeEntity(UN iD)
     {
@@ -313,7 +313,7 @@ namespace FROSch {
         EntityMapIsUpToDate_ = false;
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::removeEmptyEntities()
     {
@@ -327,20 +327,20 @@ namespace FROSch {
         if (getNumEntities()-before>0) EntityMapIsUpToDate_ = false;
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::sortUnique()
     {
         for (UN i=0; i<getNumEntities(); i++) {
             EntityVector_[i]->sortByGlobalID();
         }
-        
+
         std::sort(EntityVector_.begin(),EntityVector_.end(),compareInterfaceEntities<SC,LO,GO,NO>);
         EntityVector_.erase(std::unique(EntityVector_.begin(),EntityVector_.end(),equalInterfaceEntities<SC,LO,GO,NO>),EntityVector_.end());
         EntityMapIsUpToDate_ = false;
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     bool EntitySet<SC,LO,GO,NO>::checkForVertices()
     {
@@ -352,7 +352,7 @@ namespace FROSch {
         }
         return false;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     bool EntitySet<SC,LO,GO,NO>::checkForShortEdges()
     {
@@ -364,19 +364,19 @@ namespace FROSch {
         }
         return false;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     bool EntitySet<SC,LO,GO,NO>::checkForStraightEdges(UN dimension,
                                                        MultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
-        
+
         bool straight;
         LO length,j;
         SCVec pt1(dimension);
         SCVec dir1(dimension);
         SCVec dir2(dimension);
-        
+
         for (UN i=0; i<getNumEntities(); i++) {
             straight = true;
             length = EntityVector_[i]->getNumNodes();
@@ -389,7 +389,7 @@ namespace FROSch {
                 for (UN k=0; k<dimension; k++) {
                     dir1[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(1)]-pt1[k];
                 }
-                
+
                 while (j<length) {
                     for (UN k=0; k<dimension; k++) {
                         dir2[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(j)]-pt1[k];
@@ -408,7 +408,7 @@ namespace FROSch {
         }
         return false;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     bool EntitySet<SC,LO,GO,NO>::checkForEmptyEntities()
     {
@@ -420,11 +420,11 @@ namespace FROSch {
         }
         return false;
     }
-    
+
     /////////////////
     // Set Methods //
     /////////////////
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::setUniqueIDToFirstGlobalNodeID()
     {
@@ -435,7 +435,7 @@ namespace FROSch {
         EntityMapIsUpToDate_ = false;
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::setCoarseNodeID()
     {
@@ -444,7 +444,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::resetEntityType(EntityType type)
     {
@@ -454,63 +454,63 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     /////////////////
     // Get Methods //
     /////////////////
-    
+
     template<class SC,class LO,class GO,class NO>
     EntityType EntitySet<SC,LO,GO,NO>::getEntityType() const
     {
         return Type_;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::UN EntitySet<SC,LO,GO,NO>::getNumEntities() const
     {
         return EntityVector_.size();
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     const typename EntitySet<SC,LO,GO,NO>::InterfaceEntityPtrVec & EntitySet<SC,LO,GO,NO>::getEntityVector() const
     {
         return EntityVector_;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     const typename EntitySet<SC,LO,GO,NO>::InterfaceEntityPtr EntitySet<SC,LO,GO,NO>::getEntity(UN iD) const
     {
         FROSCH_ASSERT(iD<getNumEntities(),"iD>=getNumEntities().");
         return EntityVector_[iD];
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     const typename EntitySet<SC,LO,GO,NO>::MapPtr EntitySet<SC,LO,GO,NO>::getEntityMap() const
     {
         FROSCH_ASSERT(EntityMapIsUpToDate_,"EntitySet: the entity map has not been built or is not up to date.");
         return EntityMap_;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     const typename EntitySet<SC,LO,GO,NO>::SCVecPtr EntitySet<SC,LO,GO,NO>::getDirection(UN dimension,
                                                                                          MultiVectorPtr &nodeList,
                                                                                          UN iD) const
     {
         FROSCH_ASSERT(iD<getNumEntities(),"iD>=getNumEntities().");
-        
+
         if (EntityVector_[iD]->getEntityFlag()==StraightFlag) {
-            
+
             LO length = EntityVector_[iD]->getNumNodes();
             LO j=2;
-            
+
             FROSCH_ASSERT(length>2,"Edge is not a straight edge!");
-            
+
             bool straight=true;
-            
+
             SCVec pt1(dimension);
             SCVec dir2(dimension);
             SCVecPtr dir1(dimension);
-            
+
             // Anfangssteigung berechnen
             for (UN k=0; k<dimension; k++) {
                 pt1[k] = nodeList->getData(k)[EntityVector_[iD]->getLocalNodeID(0)];
@@ -518,32 +518,32 @@ namespace FROSch {
             for (UN k=0; k<dimension; k++) {
                 dir1[k] = nodeList->getData(k)[EntityVector_[iD]->getLocalNodeID(1)]-pt1[k];
             }
-            
+
             while (j<length) {
                 for (UN k=0; k<dimension; k++) {
                     dir2[k] = nodeList->getData(k)[EntityVector_[iD]->getLocalNodeID(j)]-pt1[k];
                 }
-                
+
                 if (!ismultiple<SC,LO>(dir1(),dir2())) {
                     straight = false;
                     break;
                 }
                 j++;
             }
-            
+
             FROSCH_ASSERT(straight,"Edge is not straight!");
-            
+
             return dir1;
-            
+
         } else if (EntityVector_[iD]->getEntityFlag()==ShortFlag) {
-            
+
             int length = EntityVector_[iD]->getNumNodes();
-            
+
             FROSCH_ASSERT(length==2,"Edge is not a short edge!");
-            
+
             SCVec pt1(dimension);
             SCVecPtr dir1(dimension);
-            
+
             // Anfangssteigung berechnen
             for (UN k=0; k<dimension; k++) {
                 pt1[k] = nodeList->getData(k)[EntityVector_[iD]->getLocalNodeID(0)];
@@ -551,9 +551,9 @@ namespace FROSch {
             for (UN k=0; k<dimension; k++) {
                 dir1[k] = nodeList->getData(k)[EntityVector_[iD]->getLocalNodeID(1)]-pt1[k];
             }
-            
+
             return dir1;
-            
+
         } else {
             FROSCH_ASSERT(false,"There is a problem while computing the direction of an edge!");
         }

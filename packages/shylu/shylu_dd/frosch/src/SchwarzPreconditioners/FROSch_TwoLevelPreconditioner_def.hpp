@@ -45,7 +45,7 @@
 #include <FROSch_TwoLevelPreconditioner_decl.hpp>
 
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     TwoLevelPreconditioner<SC,LO,GO,NO>::TwoLevelPreconditioner(ConstCrsMatrixPtr k,
                                                                 ParameterListPtr parameterList) :
@@ -68,7 +68,7 @@ namespace FROSch {
             this->SumOperator_->addOperator(CoarseOperator_);
         }
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int TwoLevelPreconditioner<SC,LO,GO,NO>::initialize(bool useDefaultParameters)
     {
@@ -78,7 +78,7 @@ namespace FROSch {
             return initialize(this->ParameterList_->get("Dimension",1),this->ParameterList_->get("DofsPerNode",1),this->ParameterList_->get("Overlap",1));
         }
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int TwoLevelPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                         int overlap,
@@ -87,7 +87,7 @@ namespace FROSch {
     {
         return initialize(dimension,dofsPerNode,overlap,Teuchos::null,Teuchos::null,dofOrdering,Teuchos::null,Teuchos::null,Teuchos::null);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int TwoLevelPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                         int overlap,
@@ -98,7 +98,7 @@ namespace FROSch {
     {
         return initialize(dimension,dofsPerNode,overlap,Teuchos::null,nodeList,dofOrdering,repeatedMap,Teuchos::null,Teuchos::null);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int TwoLevelPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                         UN dofsPerNode,
@@ -112,7 +112,7 @@ namespace FROSch {
     {
         ////////////
         // Checks //
-        ////////////        
+        ////////////
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise || dofOrdering == Custom,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
 
@@ -135,7 +135,7 @@ namespace FROSch {
                 repeatedNodesMap = dofsMaps[0];
             }
         }
-        
+
         //////////////////////////
         // Communicate nodeList //
         //////////////////////////
@@ -147,14 +147,14 @@ namespace FROSch {
                 nodeList->doImport(*tmpNodeList,*scatter,Xpetra::INSERT);
             }
         }
-        
+
         //////////////////////////////////////////
         // Determine dirichletBoundaryDofs //
         //////////////////////////////////////////
         if (dirichletBoundaryDofs.is_null()) {
-            dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,repeatedMap);            
+            dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,repeatedMap);
         }
-        
+
         ////////////////////////////////////
         // Initialize OverlappingOperator //
         ////////////////////////////////////
@@ -164,7 +164,7 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"OverlappingOperator Type unkown.");
         }
-        
+
         ////////////////////////////////////
         // Initialize OverlappingOperator //
         ////////////////////////////////////
@@ -183,7 +183,7 @@ namespace FROSch {
             if (0>iPOUHarmonicCoarseOperator->initialize(dimension,dofsPerNode,repeatedNodesMap,dofsMaps,nullSpaceBasis,nodeList,dirichletBoundaryDofs)) ret -=10;
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
             GDSWCoarseOperatorPtr gDSWCoarseOperator = Teuchos::rcp_static_cast<GDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
-            if (0>gDSWCoarseOperator->initialize(dimension,dofsPerNode,repeatedNodesMap,dofsMaps,dirichletBoundaryDofs,nodeList)) ret -=10; 
+            if (0>gDSWCoarseOperator->initialize(dimension,dofsPerNode,repeatedNodesMap,dofsMaps,dirichletBoundaryDofs,nodeList)) ret -=10;
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
             RGDSWCoarseOperatorPtr rGDSWCoarseOperator = Teuchos::rcp_static_cast<RGDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
             if (0>rGDSWCoarseOperator->initialize(dimension,dofsPerNode,repeatedNodesMap,dofsMaps,dirichletBoundaryDofs,nodeList)) ret -=10;
@@ -193,7 +193,7 @@ namespace FROSch {
 
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int TwoLevelPreconditioner<SC,LO,GO,NO>::compute()
     {
@@ -202,14 +202,14 @@ namespace FROSch {
         if (0>CoarseOperator_->compute()) ret -= 10;
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void TwoLevelPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                    const Teuchos::EVerbosityLevel verbLevel) const
     {
         FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     std::string TwoLevelPreconditioner<SC,LO,GO,NO>::description() const
     {

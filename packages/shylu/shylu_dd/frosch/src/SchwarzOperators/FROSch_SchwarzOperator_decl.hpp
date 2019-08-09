@@ -66,150 +66,151 @@
 
 
 namespace FROSch {
-    
+
     class Solver;
-    
+
     template <class SC = Xpetra::Operator<>::scalar_type,
               class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
               class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
               class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class SchwarzOperator : public Xpetra::Operator<SC,LO,GO,NO> {
-        
-    public:
-        
-        typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
-        
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::RCP<const Map> ConstMapPtr;
-        typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
-        typedef Teuchos::ArrayRCP<MapPtrVecPtr> MapPtrVecPtr2D;
-        
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        typedef Teuchos::RCP<const CrsMatrix> ConstCrsMatrixPtr;
-        
-        typedef Xpetra::CrsGraph<LO,GO,NO> Graph;
-        typedef Teuchos::RCP<Graph> GraphPtr;
-        typedef Teuchos::RCP<const Graph> ConstGraphPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        typedef Teuchos::ArrayRCP<MultiVectorPtr> MultiVectorPtrVecPtr;
-        
-        typedef Xpetra::Import<LO,GO,NO> Importer;
-        typedef Teuchos::RCP<Importer> ImporterPtr;
-        
-        typedef Xpetra::Export<LO,GO,NO> Exporter;
-        typedef Teuchos::RCP<Exporter> ExporterPtr;
-        typedef Teuchos::ArrayRCP<ExporterPtr> ExporterPtrVecPtr;
 
-        typedef Teuchos::ParameterList ParameterList;
-        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
-        
-        typedef Teuchos::RCP<DDInterface<SC,LO,GO,NO> > DDInterfacePtr;
-        
-        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
-        typedef Teuchos::ArrayRCP<EntitySetPtr> EntitySetPtrVecPtr;
-        typedef const EntitySetPtrVecPtr EntitySetPtrConstVecPtr;
-        
-        typedef Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> > CoarseSpacePtr;
-        typedef Teuchos::ArrayRCP<CoarseSpacePtr>  CoarseSpacePtrVecPtr;
-        
-        typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
-        
-        typedef Teuchos::RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > InterfacePartitionOfUnityPtr;
-        
-        typedef Teuchos::RCP<LocalPartitionOfUnityBasis<SC,LO,GO,NO> > LocalPartitionOfUnityBasisPtr;
-        
-        typedef Teuchos::RCP<SchwarzOperator<SC,LO,GO,NO> > SchwarzOperatorPtr;
-        typedef Teuchos::Array<SchwarzOperatorPtr> SchwarzOperatorPtrVec;
-        typedef Teuchos::ArrayRCP<SchwarzOperatorPtr> SchwarzOperatorPtrVecPtr;
-        
-        typedef Teuchos::RCP<SubdomainSolver<SC,LO,GO,NO> > SubdomainSolverPtr;
-        
-        typedef unsigned UN;
-        typedef Teuchos::Array<UN> UNVec;
-        typedef Teuchos::ArrayRCP<UN> UNVecPtr;
-        
-        typedef Teuchos::Array<LO> LOVec;
-        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
-        typedef Teuchos::ArrayView<LO> LOVecView;
-        typedef Teuchos::ArrayView<const LO> ConstLOVecView;
-        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;        
-        
-        typedef Teuchos::Array<GO> GOVec;
-        typedef Teuchos::ArrayRCP<GO> GOVecPtr;
-        typedef Teuchos::ArrayView<GO> GOVecView;
-        typedef Teuchos::ArrayView<const GO> ConstGOVecView;
-        typedef Teuchos::Array<GOVec> GOVec2D;
-        typedef Teuchos::ArrayRCP<GOVecPtr> GOVecPtr2D;
-        
-        typedef Teuchos::Array<SC> SCVec;
-        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<const SC> ConstSCVecPtr;
-        typedef Teuchos::ArrayView<const SC> ConstSCVecView;
-        
-        typedef Teuchos::Array<bool> BoolVec;
-        typedef Teuchos::ArrayRCP<bool> BoolVecPtr;
-        
-        
+    protected:
+
+        using CommPtr                           = Teuchos::RCP<const Teuchos::Comm<int> >;
+
+        using Map                               = Xpetra::Map<LO,GO,NO>;
+        using MapPtr                            = Teuchos::RCP<Map>;
+        using ConstMapPtr                       = Teuchos::RCP<const Map>;
+        using MapPtrVecPtr                      = Teuchos::ArrayRCP<MapPtr>;
+        using MapPtrVecPtr2D                    = Teuchos::ArrayRCP<MapPtrVecPtr>;
+
+        using CrsMatrix                         = Xpetra::Matrix<SC,LO,GO,NO>;
+        using CrsMatrixPtr                      = Teuchos::RCP<CrsMatrix>;
+        using ConstCrsMatrixPtr                 = Teuchos::RCP<const CrsMatrix>;
+
+        using Graph                             = Xpetra::CrsGraph<LO,GO,NO>;
+        using GraphPtr                          = Teuchos::RCP<Graph>;
+        using ConstGraphPtr                     = Teuchos::RCP<const Graph>;
+
+        using MultiVector                       = Xpetra::MultiVector<SC,LO,GO,NO>;
+        using MultiVectorPtr                    = Teuchos::RCP<MultiVector>;
+        using MultiVectorPtrVecPtr              = Teuchos::ArrayRCP<MultiVectorPtr>;
+
+        using Importer                          = Xpetra::Import<LO,GO,NO>;
+        using ImporterPtr                       = Teuchos::RCP<Importer>;
+
+        using Exporter                          = Xpetra::Export<LO,GO,NO>;
+        using ExporterPtr                       = Teuchos::RCP<Exporter>;
+        using ExporterPtrVecPtr                 = Teuchos::ArrayRCP<ExporterPtr>;
+
+        using ParameterList                     = Teuchos::ParameterList;
+        using ParameterListPtr                  = Teuchos::RCP<Teuchos::ParameterList>;
+
+        using DDInterfacePtr                    = Teuchos::RCP<DDInterface<SC,LO,GO,NO> >;
+
+        using EntitySetPtr                      = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetPtrVecPtr                = Teuchos::ArrayRCP<EntitySetPtr>;
+        using EntitySetPtrConstVecPtr           = const EntitySetPtrVecPtr;
+
+        using CoarseSpacePtr                    = Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> >;
+        using CoarseSpacePtrVecPtr              = Teuchos::ArrayRCP<CoarseSpacePtr>;
+
+        using InterfaceEntityPtr                = Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> >;
+
+        using InterfacePartitionOfUnityPtr      = Teuchos::RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> >;
+
+        using LocalPartitionOfUnityBasisPtr     = Teuchos::RCP<LocalPartitionOfUnityBasis<SC,LO,GO,NO> >;
+
+        using SchwarzOperatorPtr                = Teuchos::RCP<SchwarzOperator<SC,LO,GO,NO> >;
+        using SchwarzOperatorPtrVec             = Teuchos::Array<SchwarzOperatorPtr>;
+        using SchwarzOperatorPtrVecPtr          = Teuchos::ArrayRCP<SchwarzOperatorPtr>;
+
+        using SubdomainSolverPtr                = Teuchos::RCP<SubdomainSolver<SC,LO,GO,NO> >;
+
+        using UN                                = unsigned;
+        using UNVec                             = Teuchos::Array<UN>;
+        using UNVecPtr                          = Teuchos::ArrayRCP<UN>;
+
+        using LOVec                             = Teuchos::Array<LO>;
+        using LOVecPtr                          = Teuchos::ArrayRCP<LO>;
+        using LOVecView                         = Teuchos::ArrayView<LO>;
+        using ConstLOVecView                    = Teuchos::ArrayView<const LO>;
+        using LOVecPtr2D                        = Teuchos::ArrayRCP<LOVecPtr>;
+
+        using GOVec                             = Teuchos::Array<GO>;
+        using GOVecPtr                          = Teuchos::ArrayRCP<GO>;
+        using GOVecView                         = Teuchos::ArrayView<GO>;
+        using ConstGOVecView                    = Teuchos::ArrayView<const GO>;
+        using GOVec2D                           = Teuchos::Array<GOVec>;
+        using GOVecPtr2D                        = Teuchos::ArrayRCP<GOVecPtr>;
+
+        using SCVec                             = Teuchos::Array<SC>;
+        using SCVecPtr                          = Teuchos::ArrayRCP<SC>;
+        using ConstSCVecPtr                     = Teuchos::ArrayRCP<const SC>;
+        using ConstSCVecView                    = Teuchos::ArrayView<const SC>;
+
+        using BoolVec                           = Teuchos::Array<bool>;
+        using BoolVecPtr                        = Teuchos::ArrayRCP<bool>;
+
+    public:
+
         SchwarzOperator(CommPtr comm);
-        
+
         SchwarzOperator(ConstCrsMatrixPtr k,
                         ParameterListPtr parameterList);
-        
+
         virtual ~SchwarzOperator();
-        
+
         virtual int initialize() = 0;
-        
+
         virtual int compute() = 0;
-        
+
         // Y = alpha * A^mode * X + beta * Y
         virtual void apply(const MultiVector &x,
                           MultiVector &y,
                           Teuchos::ETransp mode=Teuchos::NO_TRANS,
                           SC alpha=Teuchos::ScalarTraits<SC>::one(),
                           SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
-        
+
         virtual void apply(const MultiVector &x,
                           MultiVector &y,
                           bool usePreconditionerOnly,
                           Teuchos::ETransp mode=Teuchos::NO_TRANS,
                           SC alpha=Teuchos::ScalarTraits<SC>::one(),
                           SC beta=Teuchos::ScalarTraits<SC>::zero()) const = 0;
-        
+
         virtual ConstMapPtr getDomainMap() const;
-        
+
         virtual ConstMapPtr getRangeMap() const;
-        
+
         virtual void describe(Teuchos::FancyOStream &out,
                               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
-        
+
         virtual std::string description() const = 0;
-        
+
         bool isInitialized() const;
-        
+
         bool isComputed() const;
-        
+
         int resetMatrix(ConstCrsMatrixPtr &k);
-        
+
     protected:
-        
+
         CommPtr MpiComm_;
         CommPtr SerialComm_;
-        
+
         ConstCrsMatrixPtr K_;
-        
+
         ParameterListPtr ParameterList_;
-        
+
         bool Verbose_;
-        
+
         bool IsInitialized_;
         bool IsComputed_;
-        
+
     };
-    
+
 }
 
 #endif

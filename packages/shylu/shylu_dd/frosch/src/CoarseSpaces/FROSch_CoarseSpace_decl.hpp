@@ -50,82 +50,83 @@
 #include <FROSch_Tools_def.hpp>
 
 namespace FROSch {
-    
+
     template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
+              class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
     class CoarseSpace {
-        
+
+    protected:
+
+        using Map                   = Xpetra::Map<LO,GO,NO>;
+        using MapPtr                = Teuchos::RCP<Map>;
+        using ConstMapPtr           = Teuchos::RCP<const Map>;
+        using MapPtrVec             = Teuchos::Array<MapPtr>;
+
+        using CrsMatrix             = Xpetra::Matrix<SC,LO,GO,NO>;
+        using CrsMatrixPtr          = Teuchos::RCP<CrsMatrix>;
+
+        using MultiVector           = Xpetra::MultiVector<SC,LO,GO,NO>;
+        using MultiVectorPtr        = Teuchos::RCP<MultiVector>;
+        using MultiVectorPtrVec     = Teuchos::Array<MultiVectorPtr>;
+
+        using ParameterListPtr      = Teuchos::RCP<Teuchos::ParameterList>;
+
+        using UN                    = unsigned;
+
+        using LOVec                 = Teuchos::Array<LO>;
+        using GOVec                 = Teuchos::Array<GO>;
+        using LOVecPtr              = Teuchos::ArrayRCP<LO>;
+        using LOVecPtr2D            = Teuchos::ArrayRCP<LOVecPtr>;
+
+        using SCVec                 = Teuchos::Array<SC>;
+
     public:
-        
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::RCP<const Map> ConstMapPtr;
-        typedef Teuchos::Array<MapPtr> MapPtrVec;
-        
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        typedef Teuchos::Array<MultiVectorPtr> MultiVectorPtrVec;
-        
-        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
-        
-        typedef unsigned UN;
-        
-        typedef Teuchos::Array<LO> LOVec;
-        typedef Teuchos::Array<GO> GOVec;        
-        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
-        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;
-        
-        typedef Teuchos::Array<SC> SCVec;
-        
-        
+
         CoarseSpace();
-        
+
         int addSubspace(MapPtr subspaceBasisMap,
                         MultiVectorPtr subspaceBasis = Teuchos::null);
-        
+
         int assembleCoarseSpace();
-        
+
         int buildGlobalBasisMatrix(ConstMapPtr rowMap,
                                    ConstMapPtr repeatedMap,
                                    SC treshold);
-        
+
         int clearCoarseSpace();
-        
+
         int checkForLinearDependencies();
-        
+
         bool hasBasisMap() const;
-        
+
         MapPtr getBasisMap() const;
-        
+
         bool hasAssembledBasis() const;
-        
+
         MultiVectorPtr getAssembledBasis() const;
-        
+
         bool hasGlobalBasisMatrix() const;
-        
+
         CrsMatrixPtr getGlobalBasisMatrix() const;
-        
+
     protected:
-        
+
         ConstMapPtr SerialRowMap_;
-        
+
         MapPtrVec UnassembledBasesMaps_;
-        
+
         MultiVectorPtrVec UnassembledSubspaceBases_;
-        
+
         MapPtr AssembledBasisMap_;
-        
+
         MultiVectorPtr AssembledBasis_;
-        
+
         CrsMatrixPtr GlobalBasisMatrix_;
-        
+
     };
-    
+
 }
 
 #endif

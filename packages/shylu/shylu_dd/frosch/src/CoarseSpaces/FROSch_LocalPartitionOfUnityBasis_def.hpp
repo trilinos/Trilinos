@@ -45,7 +45,7 @@
 #include <FROSch_LocalPartitionOfUnityBasis_decl.hpp>
 
 namespace FROSch {
-    
+
     template<class SC,class LO,class GO,class NO>
     LocalPartitionOfUnityBasis<SC,LO,GO,NO>::LocalPartitionOfUnityBasis(CommPtr mpiComm,
                                                                         CommPtr serialComm,
@@ -63,9 +63,9 @@ namespace FROSch {
     NullspaceBasis_ (nullSpaceBasis),
     PartitionOfUnityMaps_ (partitionOfUnityMaps)
     {
-        
+
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addPartitionOfUnity(MultiVectorPtrVecPtr partitionOfUnity,
                                                                      MapPtrVecPtr partitionOfUnityMaps)
@@ -74,23 +74,23 @@ namespace FROSch {
         PartitionOfUnityMaps_ = partitionOfUnityMaps;
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addGlobalBasis(MultiVectorPtr nullSpaceBasis)
     {
         NullspaceBasis_ = nullSpaceBasis;
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::buildLocalPartitionOfUnityBasis()
     {
         FROSCH_ASSERT(!NullspaceBasis_.is_null(),"Nullspace Basis is not set.");
         FROSCH_ASSERT(!PartitionOfUnity_.is_null(),"Partition Of Unity is not set.");
         FROSCH_ASSERT(!PartitionOfUnityMaps_.is_null(),"Partition Of Unity Map is not set.");
-        
+
         LocalPartitionOfUnitySpace_ = CoarseSpacePtr(new CoarseSpace<SC,LO,GO,NO>());
-        
+
         MultiVectorPtrVecPtr2D tmpBasis(PartitionOfUnity_.size());
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
             if (!PartitionOfUnity_[i].is_null()) {
@@ -109,7 +109,7 @@ namespace FROSch {
                 FROSCH_ASSERT(PartitionOfUnityMaps_[i]->getNodeNumElements()==0,"PartitionOfUnityMaps_[i]->getNodeNumElements()!=0");
             }
         }
-        
+
         // Determine Number of Basisfunctions per Entity
         UNVecPtr maxNV(PartitionOfUnity_.size());
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
@@ -123,18 +123,18 @@ namespace FROSch {
                 reduceAll(*MpiComm_,Teuchos::REDUCE_MAX,maxNVLocal,Teuchos::ptr(&maxNV[i]));
             }
         }
-        
+
         if (!ParameterList_->get("Number of Basisfunctions per Entity","MaxAll").compare("MaxAll")) {
             UNVecPtr::iterator max = std::max_element(maxNV.begin(),maxNV.end());
             for (UN i=0; i<maxNV.size(); i++) {
                 maxNV[i] = *max;
             }
         } else if (!ParameterList_->get("Number of Basisfunctions per Entity","MaxAll").compare("MaxEntityType")) {
-            
+
         } else {
             FROSCH_ASSERT(false,"Number of Basisfunctions per Entity type is unknown.");
         } // Testen!!!!!!!!!!!!!!!!!!!!!!!! AUSGABE IMPLEMENTIEREN!!!!!!
-        
+
         // Kann man das schöner machen?
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
             if (!PartitionOfUnityMaps_[i].is_null()) {
@@ -155,26 +155,26 @@ namespace FROSch {
                 }
             }
         }
-        
+
         LocalPartitionOfUnitySpace_->assembleCoarseSpace();
-        
+
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::MultiVectorPtrVecPtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getPartitionOfUnity() const
     {
         FROSCH_ASSERT(!PartitionOfUnity_.is_null(),"Partition Of Unity is not set.");
         return PartitionOfUnity_;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::MultiVectorPtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getNullspaceBasis() const
     {
         FROSCH_ASSERT(!NullspaceBasis_.is_null(),"Nullspace Basis is not set.");
         return NullspaceBasis_;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::CoarseSpacePtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getLocalPartitionOfUnitySpace() const
     {

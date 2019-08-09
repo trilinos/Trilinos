@@ -62,11 +62,11 @@
 
 #include "FROSch_Tools_def.hpp"
 
-typedef unsigned                                    UN;
-typedef Scalar                                      SC;
-typedef LocalOrdinal                                LO;
-typedef GlobalOrdinal                               GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+using UN    = unsigned;
+using SC    = Scalar;
+using LO    = LocalOrdinal;
+using GO    = GlobalOrdinal;
+using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace Teuchos;

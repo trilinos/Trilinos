@@ -54,38 +54,39 @@
 namespace FROSch {
 
     template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
+              class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
     class LocalPartitionOfUnityBasis {
-        
+
+    protected:
+
+        using CommPtr                   = Teuchos::RCP<const Teuchos::Comm<int> > ;
+
+        using Map                       = Xpetra::Map<LO,GO,NO> ;
+        using MapPtr                    = Teuchos::RCP<Map> ;
+        using MapPtrVecPtr              = Teuchos::ArrayRCP<MapPtr> ;
+
+        using MultiVector               = Xpetra::MultiVector<SC,LO,GO,NO> ;
+        using MultiVectorPtr            = Teuchos::RCP<MultiVector> ;
+        using MultiVectorPtrVecPtr      = Teuchos::ArrayRCP<MultiVectorPtr> ;
+        using MultiVectorPtrVecPtr2D    = Teuchos::ArrayRCP<MultiVectorPtrVecPtr> ;
+
+        using ParameterListPtr          = Teuchos::RCP<Teuchos::ParameterList> ;
+
+        using CoarseSpacePtr            = Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> > ;
+
+        using UN                        = unsigned ;
+        using UNVecPtr                  = Teuchos::ArrayRCP<UN> ;
+
+        using LOVecPtr                  = Teuchos::ArrayRCP<LO> ;
+        using LOVecPtr2D                = Teuchos::ArrayRCP<LOVecPtr> ;
+
+        using BoolVecPtr                = Teuchos::ArrayRCP<bool> ;
+        using BoolVecPtr2D              = Teuchos::ArrayRCP<BoolVecPtr> ;
+
     public:
 
-        typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
-        
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        typedef Teuchos::ArrayRCP<MultiVectorPtr> MultiVectorPtrVecPtr;
-        typedef Teuchos::ArrayRCP<MultiVectorPtrVecPtr> MultiVectorPtrVecPtr2D;                
-        
-        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
-        
-        typedef Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> > CoarseSpacePtr;
-        
-        typedef unsigned UN;
-        typedef Teuchos::ArrayRCP<UN> UNVecPtr;
-        
-        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
-        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;
-        
-        typedef Teuchos::ArrayRCP<bool> BoolVecPtr;
-        typedef Teuchos::ArrayRCP<BoolVecPtr> BoolVecPtr2D;
-
-        
         LocalPartitionOfUnityBasis(CommPtr mpiComm,
                                    CommPtr serialComm,
                                    UN dofsPerNode,
@@ -93,40 +94,40 @@ namespace FROSch {
                                    MultiVectorPtr nullSpaceBasis = MultiVectorPtr(),
                                    MultiVectorPtrVecPtr partitionOfUnity = MultiVectorPtrVecPtr(),
                                    MapPtrVecPtr partitionOfUnityMaps = MapPtrVecPtr());
-        
+
 //        virtual ~LocalPartitionOfUnityBasis();
-        
+
         int addPartitionOfUnity(MultiVectorPtrVecPtr partitionOfUnity,
                                 MapPtrVecPtr partitionOfUnityMaps);
-        
+
         int addGlobalBasis(MultiVectorPtr nullSpaceBasis);
-        
+
         int buildLocalPartitionOfUnityBasis();
-        
+
         MultiVectorPtrVecPtr getPartitionOfUnity() const;
-        
+
         MultiVectorPtr getNullspaceBasis() const;
-        
+
         CoarseSpacePtr getLocalPartitionOfUnitySpace() const;
-        
+
     protected:
-        
+
         CommPtr MpiComm_;
         CommPtr SerialComm_;
-        
+
         UN DofsPerNode_;
-        
+
         ParameterListPtr ParameterList_;
-        
+
         CoarseSpacePtr LocalPartitionOfUnitySpace_;
-        
+
         MultiVectorPtrVecPtr PartitionOfUnity_;
         MultiVectorPtr NullspaceBasis_;
-                
+
         MapPtrVecPtr PartitionOfUnityMaps_;
-        
+
     };
-    
+
 }
 
 #endif

@@ -45,64 +45,65 @@
 #include <FROSch_SchwarzPreconditioner_def.hpp>
 
 namespace FROSch {
-    
+
     template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+              class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
+              class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class AlgebraicOverlappingPreconditioner : public SchwarzPreconditioner<SC,LO,GO,NO> {
-        
+
+    protected:
+
+        using MapPtr                              = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr;
+        using ConstMapPtr                         = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr;
+
+        using CrsMatrixPtr                        = typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr;
+        using ConstCrsMatrixPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+
+        using MultiVector                         = typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVector;
+
+        using ParameterListPtr                    = typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr;
+
+        using SumOperatorPtr                      = typename SchwarzPreconditioner<SC,LO,GO,NO>::SumOperatorPtr;
+        using AlgebraicOverlappingOperatorPtr     = typename SchwarzPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingOperatorPtr;
+
     public:
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVector MultiVector;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::SumOperatorPtr SumOperatorPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingOperatorPtr AlgebraicOverlappingOperatorPtr;
-        
-        
+
         AlgebraicOverlappingPreconditioner(ConstCrsMatrixPtr k,
                                            ParameterListPtr parameterList);
-        
+
         virtual int initialize(bool useDefaultParameters = true);
-        
+
         virtual int initialize(int overlap,
                                MapPtr repeatedMap);
-        
+
         virtual int compute();
-        
+
         virtual void apply(const MultiVector &x,
                           MultiVector &y,
                           Teuchos::ETransp mode=Teuchos::NO_TRANS,
                           SC alpha=Teuchos::ScalarTraits<SC>::one(),
                           SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
-        
+
         virtual ConstMapPtr getDomainMap() const;
-        
+
         virtual ConstMapPtr getRangeMap() const;
-        
+
         virtual void describe(Teuchos::FancyOStream &out,
                               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-        
+
         virtual std::string description() const;
-        
-        
+
+
     protected:
-        
+
         ConstCrsMatrixPtr K_;
-        
+
         SumOperatorPtr SumOperator_;
         AlgebraicOverlappingOperatorPtr FirstLevelOperator_;
-        
+
     };
-    
+
 }
 
 #endif

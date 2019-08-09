@@ -45,15 +45,15 @@
 #include <FROSch_AlgebraicOverlappingOperator_decl.hpp>
 
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     AlgebraicOverlappingOperator<SC,LO,GO,NO>::AlgebraicOverlappingOperator(ConstCrsMatrixPtr k,
                                                                             ParameterListPtr parameterList) :
     OverlappingOperator<SC,LO,GO,NO> (k,parameterList)
     {
-        
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize(int overlap, MapPtr repeatedMap)
     {
@@ -62,18 +62,18 @@ namespace FROSch {
         }
         this->buildOverlappingMatrices(overlap,repeatedMap);
         this->initializeOverlappingOperator();
-        
+
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0; // RETURN VALUE!!!
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::compute()
     {
         FROSCH_ASSERT(this->IsInitialized_,"ERROR: AlgebraicOverlappingOperator has to be initialized before calling compute()");
         this->computeOverlappingOperator();
-        
+
         this->IsComputed_ = true;
         return 0; // RETURN VALUE!!!
     }
@@ -84,20 +84,20 @@ namespace FROSch {
     {
         FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     std::string AlgebraicOverlappingOperator<SC,LO,GO,NO>::description() const
     {
         return "Algebraic Overlapping Operator";
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
                                                                             MapPtr repeatedMap)
     {
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
-        
+
         if (this->ParameterList_->get("Only Communicate Graph to Add Layers",false)) {
             ConstGraphPtr overlappingGraph = this->OverlappingMatrix_->getCrsGraph();
             for (int i=0; i<overlap; i++) {
@@ -111,7 +111,7 @@ namespace FROSch {
 
         return 0;
     }
-    
+
 }
 
 #endif

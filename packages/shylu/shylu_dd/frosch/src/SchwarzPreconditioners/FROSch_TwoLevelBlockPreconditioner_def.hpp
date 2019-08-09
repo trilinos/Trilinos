@@ -46,14 +46,14 @@
 #include <FROSch_TwoLevelBlockPreconditioner_decl.hpp>
 using namespace Teuchos;
 namespace FROSch {
-    
+
     template <class SC,class LO,class GO,class NO>
     TwoLevelBlockPreconditioner<SC,LO,GO,NO>::TwoLevelBlockPreconditioner(ConstCrsMatrixPtr k,
                                                                           ParameterListPtr parameterList) :
     OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList),
     CoarseOperator_ ()
     {
-        if (this->ParameterList_->get("TwoLevel",true)) {            
+        if (this->ParameterList_->get("TwoLevel",true)) {
             if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
 //                FROSCH_ASSERT(false,"not implemented for block.");
                 this->ParameterList_->sublist("IPOUHarmonicCoarseOperator").sublist("InterfacePartitionOfUnity").set("Test Unconnected Interface",false);
@@ -75,8 +75,8 @@ namespace FROSch {
             }
         }
     }
-    
-    
+
+
     template <class SC,class LO,class GO,class NO>
     int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                              UNVecPtr dofsPerNodeVec,
@@ -104,9 +104,9 @@ namespace FROSch {
 //            ConstMapPtr tmpMap =  this->K_->getRowMap();
 //            MapPtrVecPtr subMapVec = BuildSubMaps(tmpMap,blockMaxGIDVec);// Todo: Achtung, die UniqueMap könnte unsinnig verteilt sein. Falls es eine repeatedMap gibt, sollte dann die uniqueMap neu gebaut werden können. In diesem Fall, sollte man das aber basierend auf der repeatedNodesMap tun
 //            repeatedMapVec = BuildRepeatedSubMaps(this->K_,subMapVec);
-//        
+//
 //        }
-        
+
         // Build dofsMaps and repeatedNodesMap
         MapPtrVecPtr repeatedNodesMapVec;
         if (dofsMapsVec.is_null()) {
@@ -120,7 +120,7 @@ namespace FROSch {
                 }
             }
         }
-        
+
         //////////////////////////
         // Communicate nodeList //
         //////////////////////////
@@ -160,12 +160,12 @@ namespace FROSch {
                 dirichletBoundaryDofsVec[subNumber][counterSub[subNumber]] = dirichletBoundaryDofs[i];
                 counterSub[subNumber]++;
             }
-            
+
             //dirichletBoundaryDofsVec = GOVecPtr2D(repeatedMapVec.size());
             for (UN i=0; i<dirichletBoundaryDofsVec.size(); i++) {
                 dirichletBoundaryDofsVec[i].resize(counterSub[i]);
             }
-            
+
         }
         ////////////////////////////////////
         // Initialize OverlappingOperator //
@@ -210,7 +210,7 @@ namespace FROSch {
         }
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::compute()
     {
@@ -221,20 +221,20 @@ namespace FROSch {
         }
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void TwoLevelBlockPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                    const Teuchos::EVerbosityLevel verbLevel) const
     {
         FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     std::string TwoLevelBlockPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "GDSW Preconditioner";
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstCrsMatrixPtr &k)
     {
@@ -246,7 +246,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::preApplyCoarse(MultiVectorPtr &x,MultiVectorPtr &y)
     {
@@ -258,7 +258,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
 }
 
 #endif
