@@ -140,7 +140,7 @@ ENDFUNCTION(TPETRA_SC_MACRO_EXPR)
 
 # Function to generate one .cpp file for the given (Scalar,
 # LocalOrdinal, GlobalOrdinal, Node) template parameter combination,
-# for run-time registration of Ifpack2's LinearSolverFactory over
+# for run-time registration of a Tpetra class or function over
 # those template parameters.  This is meant to be called by
 # TPETRA_PROCESS_ALL_SLGN_TEMPLATES.  This function takes the names
 # already mangled, to avoid unnecessary string processing overhead.
@@ -153,36 +153,48 @@ ENDFUNCTION(TPETRA_SC_MACRO_EXPR)
 #   macro expression) gets substituted for the value of this
 #   function's SC_MACRO_EXPR input argument.
 #
-# CLASS_NAME [in] Name of the Tpetra class (without namespace
-#   qualifiers; must live in the Tpetra namespace)
+# CLASS_NAME [in] Name of the Tpetra class (without the Tpetra
+#   namespace qualifier; must live in the Tpetra namespace),
+#   suitably mangled for use in a file name.
 #
-# CLASS_MACRO_NAME [in] Name of the Tpetra class, suitably mangled for
-#   use in a macro name.
+# CLASS_MACRO_NAME [in] Name of the Tpetra class, suitably mangled
+#   for use in a macro name.
 #
 # SC_MANGLED_NAME [in] Name of the Scalar (SC) type, mangled for use
 #   as a macro argument (e.g., spaces and colons removed).  In the
 #   arguments that follow, LO stands for LocalOrdinal, GO for
 #   GlobalOrdinal, and NT for Node.
 #
-# SC_MACRO_EXPR [in] Expression that asks Tpetra whether the given
-#   Scalar (SC) type is supported.
+# SC_MACRO_EXPR [in] Expression that asks Tpetra
+#   whether the given Scalar (SC) type is supported.
 #
-# LO_MACRO_NAME [in] Name of the LocalOrdinal (LO) type, mangled for
-#   use as a macro argument.  In the arguments that follow, LO stands
-#   for LocalOrdinal, GO for GlobalOrdinal, and NT for Node.
+# LO_MACRO_NAME [in] Name of the LocalOrdinal (LO) type,
+#   mangled for use as a macro argument.
 #
-FUNCTION(TPETRA_PROCESS_ONE_SLGN_TEMPLATE OUTPUT_FILE TEMPLATE_FILE CLASS_NAME CLASS_MACRO_NAME SC_MANGLED_NAME LO_MANGLED_NAME GO_MANGLED_NAME NT_MANGLED_NAME SC_MACRO_EXPR LO_MACRO_NAME GO_MACRO_NAME NT_MACRO_NAME)
-  STRING(REPLACE "ETI_SC_LO_GO_NT.tmpl" "${CLASS_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp" OUT_FILE "${TEMPLATE_FILE}")
+# GO_MACRO_NAME [in] Name of the GlobalOrdinal (GO) type,
+#   mangled for use as a macro argument.
+#
+# NT_MACRO_NAME [in] Name of the Node (NT) type,
+#   mangled for use as a macro argument.
+#
+FUNCTION(TPETRA_PROCESS_ONE_SLGN_TEMPLATE OUTPUT_FILE TEMPLATE_FILE
+  CLASS_NAME CLASS_MACRO_NAME SC_MANGLED_NAME LO_MANGLED_NAME
+  GO_MANGLED_NAME NT_MANGLED_NAME SC_MACRO_EXPR LO_MACRO_NAME
+  GO_MACRO_NAME NT_MACRO_NAME)
+
+  STRING(REPLACE "ETI_SC_LO_GO_NT.tmpl"
+    "${CLASS_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp"
+    OUT_FILE "${TEMPLATE_FILE}")
   CONFIGURE_FILE("${TEMPLATE_FILE}" "${OUT_FILE}")
 
   SET(${OUTPUT_FILE} ${OUT_FILE} PARENT_SCOPE)
 ENDFUNCTION(TPETRA_PROCESS_ONE_SLGN_TEMPLATE)
 
-# Function to generate .cpp files for ETI of a Tpetra class, over all
-# enabled Scalar, LocalOrdinal, GlobalOrdinal, and Node template
-# parameters.  We generate one .cpp file for each (Scalar,
-# LocalOrdinal, GlobalOrdinal, Node) type combination over which
-# Tpetra does ETI.
+# Function to generate .cpp files for ETI of a Tpetra class or
+# function, over all enabled Scalar, LocalOrdinal, GlobalOrdinal, and
+# Node template parameters.  We generate one .cpp file for each
+# (Scalar, LocalOrdinal, GlobalOrdinal, Node) type combination over
+# which Tpetra does ETI.
 #
 # OUTPUT_FILES [out] List of the generated .cpp files.
 #
@@ -214,7 +226,10 @@ ENDFUNCTION(TPETRA_PROCESS_ONE_SLGN_TEMPLATE)
 # MUST_HAVE_SCALAR_INT [in] (Boolean) Whether the class must be
 #   instantiated with Scalar = int, even if int is not in the set of
 #   GlobalOrdinal types.
-FUNCTION(TPETRA_PROCESS_ALL_SLGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE CLASS_NAME CLASS_MACRO_NAME SCALAR_TYPES LOCALORDINAL_TYPES GLOBALORDINAL_TYPES NODE_TYPES MUST_HAVE_SCALAR_INT)
+FUNCTION(TPETRA_PROCESS_ALL_SLGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
+  CLASS_NAME CLASS_MACRO_NAME SCALAR_TYPES LOCALORDINAL_TYPES
+  GLOBALORDINAL_TYPES NODE_TYPES MUST_HAVE_SCALAR_INT)
+
   SET(OUT_FILES "")
   FOREACH(NT ${NODE_TYPES})
     TPETRA_MANGLE_TEMPLATE_PARAMETER(NT_MANGLED "${NT}")
@@ -241,7 +256,11 @@ FUNCTION(TPETRA_PROCESS_ALL_SLGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE CLASS_NAME
           STRING(COMPARE EQUAL "${SC}" "int" IS_INT)
 
           IF ((MUST_HAVE_SCALAR_INT AND IS_INT) OR (NOT IS_GO OR IS_CURRENT_GO))
-            TPETRA_PROCESS_ONE_SLGN_TEMPLATE(OUT_FILE "${TEMPLATE_FILE}" "${CLASS_NAME}" "${CLASS_MACRO_NAME}" "${SC_MANGLED}" "${LO_MANGLED}" "${GO_MANGLED}" "${NT_MANGLED}" "${SC_MACRO_EXPR}" "${LO_MACRO_NAME}" "${GO_MACRO_NAME}" "${NT_MACRO_NAME}")
+            TPETRA_PROCESS_ONE_SLGN_TEMPLATE(OUT_FILE "${TEMPLATE_FILE}"
+              "${CLASS_NAME}" "${CLASS_MACRO_NAME}" "${SC_MANGLED}"
+              "${LO_MANGLED}" "${GO_MANGLED}" "${NT_MANGLED}"
+              "${SC_MACRO_EXPR}" "${LO_MACRO_NAME}" "${GO_MACRO_NAME}"
+              "${NT_MACRO_NAME}")
             LIST(APPEND OUT_FILES ${OUT_FILE})
           ENDIF()
         ENDFOREACH() # SC
@@ -254,13 +273,65 @@ FUNCTION(TPETRA_PROCESS_ALL_SLGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE CLASS_NAME
   SET(${OUTPUT_FILES} ${OUT_FILES} PARENT_SCOPE)
 ENDFUNCTION(TPETRA_PROCESS_ALL_SLGN_TEMPLATES)
 
+# Function to generate one .cpp file for the given (LocalOrdinal,
+# GlobalOrdinal, Node) template parameter combination, for run-time
+# registration of a Tpetra class or function over those template
+# parameters.  This is meant to be called by
+# TPETRA_PROCESS_ALL_LGN_TEMPLATES.  This function takes the names
+# already mangled, to avoid unnecessary string processing overhead.
+FUNCTION(TPETRA_PROCESS_ONE_LGN_TEMPLATE OUTPUT_FILE TEMPLATE_FILE
+  CLASS_NAME CLASS_MACRO_NAME
+  LO_MANGLED_NAME GO_MANGLED_NAME NT_MANGLED_NAME
+  LO_MACRO_NAME GO_MACRO_NAME NT_MACRO_NAME)
+
+  STRING(REPLACE "ETI_LO_GO_NT.tmpl"
+    "${CLASS_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp"
+    OUT_FILE "${TEMPLATE_FILE}")
+  CONFIGURE_FILE("${TEMPLATE_FILE}" "${OUT_FILE}")
+
+  SET(${OUTPUT_FILE} ${OUT_FILE} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ONE_LGN_TEMPLATE)
+
+# Function to generate .cpp files for ETI of a Tpetra class or
+# function, over all enabled LocalOrdinal, GlobalOrdinal, and Node
+# template parameters.  We generate one .cpp file for each
+# (LocalOrdinal, GlobalOrdinal, Node) type combination over which
+# Tpetra does ETI.
+FUNCTION(TPETRA_PROCESS_ALL_LGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
+  CLASS_NAME CLASS_MACRO_NAME LOCALORDINAL_TYPES GLOBALORDINAL_TYPES
+  NODE_TYPES)
+
+  SET(OUT_FILES "")
+  FOREACH(NT ${NODE_TYPES})
+    TPETRA_MANGLE_TEMPLATE_PARAMETER(NT_MANGLED "${NT}")
+    TPETRA_NODE_MACRO_NAME(NT_MACRO_NAME "${NT}")
+    FOREACH(GO ${GLOBALORDINAL_TYPES})
+      TPETRA_MANGLE_TEMPLATE_PARAMETER(GO_MANGLED "${GO}")
+      TPETRA_SLG_MACRO_NAME(GO_MACRO_NAME "${GO}")
+      FOREACH(LO ${LOCALORDINAL_TYPES})
+        TPETRA_MANGLE_TEMPLATE_PARAMETER(LO_MANGLED "${LO}")
+        TPETRA_SLG_MACRO_NAME(LO_MACRO_NAME "${LO}")
+        
+        TPETRA_PROCESS_ONE_LGN_TEMPLATE(OUT_FILE "${TEMPLATE_FILE}"
+          "${CLASS_NAME}" "${CLASS_MACRO_NAME}"
+          "${LO_MANGLED}" "${GO_MANGLED}" "${NT_MANGLED}"
+          "${LO_MACRO_NAME}" "${GO_MACRO_NAME}" "${NT_MACRO_NAME}")
+        LIST(APPEND OUT_FILES ${OUT_FILE})
+      ENDFOREACH() # LO
+    ENDFOREACH() # GO
+  ENDFOREACH() # NT
+
+  # This is the standard CMake idiom for setting an output variable so
+  # that the caller can see the result.
+  SET(${OUTPUT_FILES} ${OUT_FILES} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ALL_LGN_TEMPLATES)
 
 # Function to generate one .cpp file for the given (Scalar, Node)
 # template parameter combination, for run-time registration of a
-# Tpetra class over those template parameters.  This is meant to be
-# called by TPETRA_PROCESS_ALL_SN_TEMPLATES.  This function takes the
-# names already mangled, to avoid unnecessary string processing
-# overhead.
+# Tpetra class or function over those template parameters.  This is
+# meant to be called by TPETRA_PROCESS_ALL_SN_TEMPLATES.  This
+# function takes the names already mangled, to avoid unnecessary
+# string processing overhead.
 #
 # OUTPUT_FILE [out] Name of the generated .cpp file.
 #
@@ -285,11 +356,13 @@ ENDFUNCTION(TPETRA_PROCESS_ALL_SLGN_TEMPLATES)
 #   Scalar (SC) type is supported.
 #
 FUNCTION(TPETRA_PROCESS_ONE_SN_TEMPLATE OUTPUT_FILE TEMPLATE_FILE
-  CLASS_NAME CLASS_MACRO_NAME SC_MANGLED_NAME 
+  CLASS_NAME CLASS_MACRO_NAME SC_MANGLED_NAME
   GO_MANGLED_NAME NT_MANGLED_NAME SC_MACRO_EXPR
   GO_MACRO_EXPR GO_MACRO_NAME NT_MACRO_NAME)
 
-  STRING(REPLACE "ETI_SC_NT.tmpl" "${CLASS_NAME}_${SC_MACRO_NAME}_${NT_MACRO_NAME}.cpp" OUT_FILE "${TEMPLATE_FILE}")
+  STRING(REPLACE "ETI_SC_NT.tmpl"
+    "${CLASS_NAME}_${SC_MACRO_NAME}_${NT_MACRO_NAME}.cpp"
+    OUT_FILE "${TEMPLATE_FILE}")
   CONFIGURE_FILE("${TEMPLATE_FILE}" "${OUT_FILE}")
 
   SET(${OUTPUT_FILE} ${OUT_FILE} PARENT_SCOPE)
@@ -327,7 +400,7 @@ ENDFUNCTION(TPETRA_PROCESS_ONE_SN_TEMPLATE)
 # MUST_HAVE_SCALAR_INT [in] (Boolean) Whether the class must be
 #   instantiated with Scalar = int, even if int is not in the set of
 #   GlobalOrdinal types.
-FUNCTION(TPETRA_PROCESS_ALL_SN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE 
+FUNCTION(TPETRA_PROCESS_ALL_SN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
   CLASS_NAME CLASS_MACRO_NAME SCALAR_TYPES GLOBALORDINAL_TYPES
   NODE_TYPES INSTANTIATE_SCALAR_ORDINAL_TYPES MUST_HAVE_SCALAR_INT)
 
@@ -344,7 +417,7 @@ FUNCTION(TPETRA_PROCESS_ALL_SN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
         TPETRA_MANGLE_TEMPLATE_PARAMETER(SC_MANGLED "${SC}")
         TPETRA_SLG_MACRO_NAME(SC_MACRO_NAME "${SC}")
         TPETRA_SC_MACRO_EXPR(SC_MACRO_EXPR "${SC}" "${GO}" "${SC_MACRO_NAME}")
- 
+
         #MESSAGE(STATUS ">> SC = ${SC}, SC_MACRO_EXPR = ${SC_MACRO_EXPR}")
 
         # If SC is NOT a GlobalOrdinal type of some kind (not
@@ -355,7 +428,7 @@ FUNCTION(TPETRA_PROCESS_ALL_SN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
         STRING(COMPARE EQUAL "${SC}" "${GO}" IS_CURRENT_GO)
         STRING(COMPARE EQUAL "${SC}" "int" IS_INT)
 
-        IF ((MUST_HAVE_SCALAR_INT AND IS_INT) OR 
+        IF ((MUST_HAVE_SCALAR_INT AND IS_INT) OR
             (NOT IS_GO OR (IS_CURRENT_GO AND INSTANTIATE_SCALAR_ORDINAL_TYPES)))
 
           IF(IS_CURRENT_GO AND INSTANTIATE_SCALAR_ORDINAL_TYPES)
@@ -370,8 +443,8 @@ FUNCTION(TPETRA_PROCESS_ALL_SN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
           #MESSAGE(STATUS ">> SC = ${SC}, GO = ${GO}, GO_MACRO_EXPR = ${GO_MACRO_EXPR}")
 
           TPETRA_PROCESS_ONE_SN_TEMPLATE(OUT_FILE "${TEMPLATE_FILE}"
-            "${CLASS_NAME}" "${CLASS_MACRO_NAME}" "${SC_MANGLED}" 
-            "${GO_MANGLED}" "${NT_MANGLED}" "${SC_MACRO_EXPR}" 
+            "${CLASS_NAME}" "${CLASS_MACRO_NAME}" "${SC_MANGLED}"
+            "${GO_MANGLED}" "${NT_MANGLED}" "${SC_MACRO_EXPR}"
             "${GO_MACRO_EXPR}" "${GO_MACRO_NAME}" "${NT_MACRO_NAME}")
           LIST(APPEND OUT_FILES ${OUT_FILE})
         ENDIF()
@@ -518,12 +591,60 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "replaceDiagonalCrsMatrix" "REPLACEDIAGONALCRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::Details::localDeepCopy*RowMatrix.
+  # Do so for the same set of Scalar types as CrsMatrix (see above),
+  # because this function is an implementation detail of CrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES
+    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+    "Details_localDeepCopyRowMatrix"
+    "DETAILS_LOCALDEEPCOPYROWMATRIX"
+    "${CrsMatrix_ETI_SCALARS}"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+    TRUE)
+  LIST(APPEND SOURCES ${LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for the RowMatrix -> CrsMatrix overload of
+  # Tpetra::createDeepCopy.  Do this only for non-integer Scalar
+  # types, since we really only need this function for linear solvers.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES
+    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+    "createDeepCopy_CrsMatrix"
+    "CREATEDEEPCOPY_CRSMATRIX"
+    "${TpetraCore_ETI_SCALARS_NO_ORDS}"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+    FALSE)
+  LIST(APPEND SOURCES ${CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES})
+
   # Generate ETI .cpp files for Tpetra::LocalCrsMatrixOperator.
   TPETRA_PROCESS_ALL_SN_TEMPLATES(LOCALCRSMATRIXOPERATOR_OUTPUT_FILES
     "Tpetra_ETI_SC_NT.tmpl" "LocalCrsMatrixOperator"
     "LOCALCRSMATRIXOPERATOR" "${CrsMatrix_ETI_SCALARS}"
     "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE TRUE)
   LIST(APPEND SOURCES ${LOCALCRSMATRIXOPERATOR_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::CrsGraph.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(CRSGRAPH_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "CrsGraph"
+    "CRSGRAPH"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${CRSGRAPH_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Details::localRowOffsets.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(LOCALROWOFFSETS_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "Details_localRowOffsets"
+    "DETAILS_LOCALROWOFFSETS"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${LOCALROWOFFSETS_OUTPUT_FILES})
 
   #MESSAGE(STATUS "SOURCES = ${SOURCES}")
 ENDIF()
