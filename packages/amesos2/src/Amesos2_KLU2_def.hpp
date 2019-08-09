@@ -252,9 +252,9 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
            data_.symbolic_, &(data_.common_)) ;
       } //end single_process_optim_check = false
 
-      if(data_.numeric_ == NULL) {
-          throw std::runtime_error("KLU2 numeric factorization failed.");
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (data_.numeric_ == nullptr, std::runtime_error,
+          "KLU2 numeric factorization failed");
 
       // This is set after numeric factorization complete as pivoting can be used;
       // In this case, a discrepancy between symbolic and numeric nnz total can occur.
