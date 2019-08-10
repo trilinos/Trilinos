@@ -94,7 +94,11 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist.sublist("Status Test").set("Iteration Limit",100);
-    ROL::Algorithm<RealT> algo(stepname,parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::StatusTest<RealT>>(parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     // Iteration vector.
     ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
@@ -182,7 +186,11 @@ int main(int argc, char *argv[]) {
     // Use Newton algorithm with line search.
     stepname = "Line Search";
     parlist.sublist("Step").sublist(stepname).sublist("Descent Method").set("Type", "Newton-Krylov");
-    ROL::Algorithm<RealT> newton_algo(stepname,parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      newton_step = ROL::makePtr<ROL::LineSearchStep<RealT>>(parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      newton_status = ROL::makePtr<ROL::StatusTest<RealT>>(parlist);
+    ROL::Algorithm<RealT> newton_algo(newton_step,newton_status,false);
 
     // Reset initial guess.
     for (int i=0; i<dim; i++) {
@@ -202,7 +210,7 @@ int main(int argc, char *argv[]) {
     }
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

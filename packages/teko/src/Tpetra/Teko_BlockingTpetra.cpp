@@ -236,7 +236,6 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    const RCP<Tpetra::Vector<GO,LO,GO,NT> > plocal2ContigGIDs = getSubBlockColumnGIDs(*A,subMaps[j]);
    Tpetra::Vector<GO,LO,GO,NT> & local2ContigGIDs = *plocal2ContigGIDs;
 
-   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = rcp(new Tpetra::CrsMatrix<ST,LO,GO,NT>(rowMap,0));
 
    // get entry information
    LO numMyRows = rowMap->getNodeNumElements();
@@ -249,6 +248,34 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    // for insertion
    std::vector<GO> colIndices(maxNumEntries);
    std::vector<ST> colValues(maxNumEntries);
+
+   // for counting
+   std::vector<size_t> nEntriesPerRow(numMyRows);
+
+   // insert each row into subblock
+   // Count the number of entries per row in the new matrix
+   for(LO localRow=0;localRow<numMyRows;localRow++) {
+      size_t numEntries = -1;
+      GO globalRow = gRowMap->getGlobalElement(localRow);
+      LO lid = A->getRowMap()->getLocalElement(globalRow);
+      TEUCHOS_ASSERT(lid>-1);
+
+      A->getLocalRowCopy(lid, Teuchos::ArrayView<LO>(indices), Teuchos::ArrayView<ST>(values),numEntries);
+
+      LO numOwnedCols = 0;
+      for(size_t localCol=0;localCol<numEntries;localCol++) {
+         TEUCHOS_ASSERT(indices[localCol]>-1);
+
+         // if global id is not owned by this column
+
+         GO gid = local2ContigGIDs.getData()[indices[localCol]];
+         if(gid==-1) continue; // in contiguous row
+         numOwnedCols++;
+      }
+      nEntriesPerRow[localRow] = numOwnedCols;
+   }
+
+   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = rcp(new Tpetra::CrsMatrix<ST,LO,GO,NT>(rowMap,Teuchos::ArrayView<size_t>(nEntriesPerRow)));
 
    // insert each row into subblock
    // let FillComplete handle column distribution

@@ -67,15 +67,25 @@ endif()
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASExodus)
 ASSERT_DEFINED(BUILD_SHARED_LIBS)
 IF (${PROJECT_NAME}_ENABLE_SEACASExodus)
+   IF (${PythonInterp_FIND_VERSION} VERSION_LESS "3.0")
+      SET( INPUT "${CMAKE_CURRENT_SOURCE_DIR}/exodus-2.py.in" )
+      MESSAGE(STATUS "A Python-2 version of Exodus.py will be installed.")
+   ELSE()
+      SET( INPUT "${CMAKE_CURRENT_SOURCE_DIR}/exodus-3.py.in" )
+      MESSAGE(STATUS "A Python-3 version of Exodus.py will be installed.")
+   ENDIF()
+
    IF (BUILD_SHARED_LIBS)
       CONFIGURE_FILE(
-		${CMAKE_CURRENT_SOURCE_DIR}/exodus.py.in
+		${INPUT}
 		${CMAKE_CURRENT_BINARY_DIR}/exodus.py
 		@ONLY
 		)
       INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus.py DESTINATION lib)
-   else()
+   ELSE()
       MESSAGE(STATUS "Exodus.py NOT installed since shared exodus library is not available.")
-   endif()
+   ENDIF()
+ELSE()
+      MESSAGE(STATUS "Exodus.py NOT installed since Exodus is not enabled.")
 endif()
 

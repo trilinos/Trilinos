@@ -78,6 +78,8 @@
 #include "Xpetra_ThyraUtils.hpp"
 #endif
 
+#include "Xpetra_VectorFactory.hpp"
+
 
 /** \file Xpetra_BlockedCrsMatrix.hpp
 
@@ -625,12 +627,22 @@ namespace Xpetra {
       if (Rows() == 1 && Cols () == 1) {
         return getMatrix(0,0)->getNumEntriesInLocalRow(localRow);
       }
-      else if(is_diagonal_){      
+      else if(is_diagonal_){
 	GlobalOrdinal gid = this->getRowMap()->getGlobalElement(localRow);
 	size_t row = getBlockedRangeMap()->getMapIndexForGID(gid);
-	return getMatrix(row,row)->getNumEntriesInLocalRow(getMatrix(row,row)->getRowMap()->getLocalElement(gid));	
+	return getMatrix(row,row)->getNumEntriesInLocalRow(getMatrix(row,row)->getRowMap()->getLocalElement(gid));
       }
       throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow() not supported by BlockedCrsMatrix");
+    }
+
+    //! Returns the current number of entries in the specified (locally owned) global row.
+    /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNumEntriesInGlobalRow");
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getNumEntriesInGlobalRow(globalRow);
+      }
+      throw Xpetra::Exceptions::RuntimeError("getNumEntriesInGlobalRow not supported by this BlockedCrsMatrix");
     }
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
@@ -1248,15 +1260,15 @@ namespace Xpetra {
 
     //! @name Overridden from Teuchos::LabeledObject
     //@{
-    void setObjectLabel( const std::string &objectLabel ) { 
-      XPETRA_MONITOR("TpetraBlockedCrsMatrix::setObjectLabel"); 
+    void setObjectLabel( const std::string &objectLabel ) {
+      XPETRA_MONITOR("TpetraBlockedCrsMatrix::setObjectLabel");
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c) {
           if(getMatrix(r,c)!=Teuchos::null) {
             std::ostringstream oss; oss<< objectLabel << "(" << r << "," << c << ")";
             getMatrix(r,c)->setObjectLabel(oss.str());
           }
-        }   
+        }
     }
     //@}
 

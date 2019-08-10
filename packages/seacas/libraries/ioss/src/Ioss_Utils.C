@@ -144,6 +144,8 @@ namespace {
   void transfer_fields(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
                        Ioss::Field::RoleType role, const std::string &prefix = "");
 
+  void add_proc_id(Ioss::Region &region, int rank);
+
   template <typename T>
   void transfer_field_data(const std::vector<T *> &entities, Ioss::Region &output_region,
                            DataPool &pool, Ioss::Field::RoleType role,
@@ -1622,10 +1624,29 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
                           Ioss::Field::ATTRIBUTE, options);
     }
 
-    transfer_field_data(region.get_structured_blocks(), output_region, data_pool, Ioss::Field::MESH,
-                        options);
-    transfer_field_data(region.get_structured_blocks(), output_region, data_pool,
-                        Ioss::Field::ATTRIBUTE, options);
+    // Structured Blocks -- Contain a NodeBlock that also needs its field data transferred...
+    const auto &sbs = region.get_structured_blocks();
+    for (const auto &isb : sbs) {
+      const std::string &name = isb->name();
+      if (options.debug && rank == 0) {
+        fmt::print(stderr, "{}, ", name);
+      }
+      // Find matching output structured block
+      Ioss::StructuredBlock *osb = output_region.get_structured_block(name);
+      if (osb != nullptr) {
+        transfer_field_data(isb, osb, data_pool, Ioss::Field::MESH, options);
+        transfer_field_data(isb, osb, data_pool, Ioss::Field::ATTRIBUTE, options);
+
+        auto &inb = isb->get_node_block();
+        auto &onb = osb->get_node_block();
+        if (options.debug && rank == 0) {
+          fmt::print(stderr, "NB: {}, ", inb.name());
+        }
+
+        transfer_field_data(&inb, &onb, data_pool, Ioss::Field::MESH, options);
+        transfer_field_data(&inb, &onb, data_pool, Ioss::Field::ATTRIBUTE, options);
+      }
+    }
 
     transfer_field_data(region.get_edge_blocks(), output_region, data_pool, Ioss::Field::MESH,
                         options);
@@ -1706,6 +1727,12 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     dbi->progress("END STATE_MODEL... ");
     output_region.end_mode(Ioss::STATE_MODEL);
 
+    if (options.add_proc_id) {
+      Ioss::Utils::clear(data_pool.data);
+      add_proc_id(output_region, rank);
+      return;
+    }
+
     if (options.delete_timesteps) {
       Ioss::Utils::clear(data_pool.data);
       return;
@@ -1734,8 +1761,22 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     transfer_fields(region.get_face_blocks(), output_region, Ioss::Field::TRANSIENT, options, rank);
     transfer_fields(region.get_element_blocks(), output_region, Ioss::Field::TRANSIENT, options,
                     rank);
-    transfer_fields(region.get_structured_blocks(), output_region, Ioss::Field::TRANSIENT, options,
-                    rank);
+
+    // Structured Blocks -- Contain a NodeBlock that also needs its fields transferred...
+    const auto &sbs = region.get_structured_blocks();
+    for (const auto &isb : sbs) {
+
+      // Find matching output structured block
+      const std::string &    name = isb->name();
+      Ioss::StructuredBlock *osb  = output_region.get_structured_block(name);
+      if (osb != nullptr) {
+        transfer_fields(isb, osb, Ioss::Field::TRANSIENT);
+
+        auto &inb = isb->get_node_block();
+        auto &onb = osb->get_node_block();
+        transfer_fields(&inb, &onb, Ioss::Field::TRANSIENT);
+      }
+    }
 
     transfer_fields(region.get_nodesets(), output_region, Ioss::Field::TRANSIENT, options, rank);
     transfer_fields(region.get_edgesets(), output_region, Ioss::Field::TRANSIENT, options, rank);
@@ -1821,8 +1862,26 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
                         options);
     transfer_field_data(region.get_element_blocks(), output_region, data_pool,
                         Ioss::Field::TRANSIENT, options);
-    transfer_field_data(region.get_structured_blocks(), output_region, data_pool,
-                        Ioss::Field::TRANSIENT, options);
+
+    {
+      // Structured Blocks -- handle embedded NodeBlock also.
+      const auto &sbs = region.get_structured_blocks();
+      for (const auto &isb : sbs) {
+        const std::string &name = isb->name();
+        if (options.debug && rank == 0) {
+          fmt::print(stderr, "{}, ", name);
+        }
+        // Find matching output structured block
+        Ioss::StructuredBlock *osb = output_region.get_structured_block(name);
+        if (osb != nullptr) {
+          transfer_field_data(isb, osb, data_pool, Ioss::Field::TRANSIENT, options);
+
+          auto &inb = isb->get_node_block();
+          auto &onb = osb->get_node_block();
+          transfer_field_data(&inb, &onb, data_pool, Ioss::Field::TRANSIENT, options);
+        }
+      }
+    }
 
     transfer_field_data(region.get_nodesets(), output_region, data_pool, Ioss::Field::TRANSIENT,
                         options);
@@ -2027,6 +2086,16 @@ namespace {
           transfer_properties(iblock, block);
           transfer_fields(iblock, block, Ioss::Field::MESH);
           transfer_fields(iblock, block, Ioss::Field::ATTRIBUTE);
+
+          // Now do the transfer on the NodeBlock contained in the StructuredBlock
+          auto &inb = iblock->get_node_block();
+          auto &onb = block->get_node_block();
+          if (options.debug && rank == 0) {
+            fmt::print(stderr, "(NB: {}), ", inb.name());
+          }
+          transfer_properties(&inb, &onb);
+          transfer_fields(&inb, &onb, Ioss::Field::MESH);
+          transfer_fields(&inb, &onb, Ioss::Field::ATTRIBUTE);
         }
       }
       else {
@@ -2043,6 +2112,16 @@ namespace {
           transfer_properties(iblock, block);
           transfer_fields(iblock, block, Ioss::Field::MESH);
           transfer_fields(iblock, block, Ioss::Field::ATTRIBUTE);
+
+          // Now do the transfer on the NodeBlock contained in the StructuredBlock
+          auto &inb = iblock->get_node_block();
+          auto &onb = block->get_node_block();
+          if (options.debug && rank == 0) {
+            fmt::print(stderr, "(NB: {}), ", inb.name());
+          }
+          transfer_properties(&inb, &onb);
+          transfer_fields(&inb, &onb, Ioss::Field::MESH);
+          transfer_fields(&inb, &onb, Ioss::Field::ATTRIBUTE);
         }
       }
 
@@ -2587,4 +2666,40 @@ namespace {
       }
     }
   }
+
+  void add_proc_id(Ioss::Region &region, int rank)
+  {
+    region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+    auto &sblocks = region.get_structured_blocks();
+    for (auto &sb : sblocks) {
+      sb->field_add(Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT,
+                                sb->entity_count()));
+    }
+
+    auto &eblocks = region.get_element_blocks();
+    for (auto &eb : eblocks) {
+      eb->field_add(Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT,
+                                eb->entity_count()));
+    }
+    region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+
+    region.begin_mode(Ioss::STATE_TRANSIENT);
+
+    auto step = region.add_state(0.0);
+    region.begin_state(step);
+
+    for (auto &sb : sblocks) {
+      std::vector<double> proc_id(sb->entity_count(), rank);
+      sb->put_field_data("processor_id", proc_id);
+    }
+
+    for (auto &eb : eblocks) {
+      std::vector<double> proc_id(eb->entity_count(), rank);
+      eb->put_field_data("processor_id", proc_id);
+    }
+
+    region.end_state(step);
+    region.end_mode(Ioss::STATE_TRANSIENT);
+  }
+
 } // namespace

@@ -156,16 +156,17 @@ namespace MueLu {
     if(bTransferCoordinates_) {
       //*** Create the coarse coordinates ***
       // First create the coarse map and coarse multivector
-      ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
-      LO                  blkSize      = 1;
-      if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
+      ArrayView<const GO> elementAList   = coarseMap->getNodeElementList();
+      LO                  blkSize        = 1;
+      if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null) {
         blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
-      GO                  indexBase     = coarseMap->getIndexBase();
-      size_t              numNodes      = elementAList.size() / blkSize;
-      Array<GO>           nodeList(numNodes);
-      const int           numDimensions = fineCoords->getNumVectors();
+      }
+      GO                  indexBase      = coarseMap->getIndexBase();
+      LO                  numCoarseNodes = Teuchos::as<LO>(elementAList.size() / blkSize);
+      Array<GO>           nodeList(numCoarseNodes);
+      const int           numDimensions  = fineCoords->getNumVectors();
 
-      for (LO i = 0; i < Teuchos::as<LO>(numNodes); i++) {
+      for (LO i = 0; i < numCoarseNodes; i++) {
         nodeList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
       }
       RCP<const Map> coarseCoordsMap = MapFactory::Build(fineCoords->getMap()->lib(),
@@ -199,9 +200,8 @@ namespace MueLu {
         ArrayRCP<const coordinate_type> fineCoordsData = ghostedCoords->getData(dim);
         ArrayRCP<coordinate_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
 
-        for (LO lnode = 0; lnode < Teuchos::as<LO>(numNodes); lnode++) {
+        for (LO lnode = 0; lnode < Teuchos::as<LO>(vertex2AggID.size()); lnode++) {
           if (procWinner[lnode] == myPID &&
-              lnode < vertex2AggID.size() &&
               lnode < fineCoordsData.size() &&
               vertex2AggID[lnode] < coarseCoordsData.size() &&
               Teuchos::ScalarTraits<coordinate_type>::isnaninf(fineCoordsData[lnode]) == false) {

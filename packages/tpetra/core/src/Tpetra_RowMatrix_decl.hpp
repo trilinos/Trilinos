@@ -50,6 +50,7 @@
 #include "Tpetra_Packable.hpp"
 #include "Tpetra_SrcDistObject.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 namespace Tpetra {
   /// \class RowMatrix
@@ -103,7 +104,7 @@ namespace Tpetra {
     /// This is usually the same as the type of the magnitude
     /// (absolute value) of <tt>Scalar</tt>, but may differ for
     /// certain <tt>Scalar</tt> types.
-    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+    using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
 
     //@}
     //! @name Destructor

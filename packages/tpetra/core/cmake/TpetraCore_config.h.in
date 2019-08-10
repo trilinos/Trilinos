@@ -165,11 +165,6 @@
 
 #cmakedefine HAVE_TPETRA_THREADED_MKL
 
-#cmakedefine HAVE_TPETRACORE_RTI
-#ifdef HAVE_TPETRACORE_RTI
-#  define HAVE_TPETRA_RTI
-#endif // HAVE_TPETRACORE_RTI
-
 #cmakedefine HAVE_TPETRA_BCRS_DO_POINT_IMPORT
 
 /* Define the Fortran name mangling to be used for the BLAS */

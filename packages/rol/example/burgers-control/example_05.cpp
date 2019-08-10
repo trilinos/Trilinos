@@ -149,8 +149,8 @@ int main(int argc, char* argv[]) {
     const bool storage = true;
     RealT eps(1.e-2);
     std::vector<RealT> stat(3,0);
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
-    ROL::Ptr<ROL::OptimizationProblem<RealT> > optProb;
+    ROL::Ptr<ROL::OptimizationProblem<RealT>> optProb;
+    ROL::Ptr<ROL::OptimizationSolver<RealT>>  solver;
     for (int i = 0; i < 3; ++i) {
       *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
       // Build CVaR risk measure
@@ -174,9 +174,10 @@ int main(int argc, char* argv[]) {
       optProb->setStochasticObjective(list,sampler);
       optProb->check(*outStream);
       // Run ROL algorithm
-      algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+      parlist->sublist("Step").set("Type","Trust Region");
+      solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*optProb,*parlist);
       clock_t start = clock();
-      algo->run(*optProb,true,*outStream);
+      solver->solve(*outStream);
       *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
       // Get solution statistic
       stat[i] = optProb->getSolutionStatistic();
@@ -205,9 +206,10 @@ int main(int argc, char* argv[]) {
     // Run ROL algorithm
     parlist->sublist("Status Test").set("Iteration Limit",1000);
     parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-7);
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Bundle",*parlist,false);
+    parlist->sublist("Step").set("Type","Bundle");
+    solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*optProb,*parlist);
     clock_t start = clock();
-    algo->run(*optProb,true,*outStream);
+    solver->solve(*outStream);
     *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* COMPUTE ERROR ******************************************************/
@@ -260,7 +262,7 @@ int main(int argc, char* argv[]) {
     control.close();
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

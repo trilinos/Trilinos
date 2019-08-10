@@ -85,7 +85,7 @@ public:
 
   // Constructor
   TrustRegion( ROL::ParameterList &parlist )
-    : ftol_old_(ROL_OVERFLOW<Real>()), cnt_(0), verbosity_(0) {
+    : pRed_(0), ftol_old_(ROL_OVERFLOW<Real>()), cnt_(0), verbosity_(0) {
     // Trust-Region Parameters
     ROL::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
     TRmodel_ = StringToETrustRegionModel(list.get("Subproblem Model", "Kelley-Sachs"));

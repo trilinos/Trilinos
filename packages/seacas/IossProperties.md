@@ -21,6 +21,7 @@ DECOMPOSITION\_METHOD | {method} | Decompose all input DB using `method`
 PARALLEL\_CONSISTENCY | \[on]/off | On if the client will call Ioss functions consistently on all processors. If off, then the auto-decomp and auto-join cannot be used.
 RETAIN\_FREE\_NODES | \[on]/off | In auto-decomp, will nodes not connected to any elements be retained.
 LOAD\_BALANCE\_THRESHOLD | {real} \[1.4] | CGNS-Structured only -- Load imbalance permitted Load on Proc / Avg Load
+LINE\_DECOMPOSITION | string | a list of comma-separated BC names. Zone with this bc will not be decomposed perpindicular to this surface. If name is `__ordinal_{ijk}` then use {ijk} as ordinal not to decompose.
 
 ### Valid values for Decomposition Method
 
@@ -69,7 +70,7 @@ PARALLEL\_IO\_MODE | netcdf4, hdf5, pnetcdf | mpiio and mpiposix are deprecated 
 ## Properties for the heartbeat output
  Property              | Value  | Description
 -----------------------|--------|-----------------------------------------------------------
-  FLUSH\_INTERVAL       | int   | Minimum time interval between flushing heartbeat data to disk.  Default is 10 seconds
+  FLUSH\_INTERVAL       | int   | For heartbeat, the minimum time interval in seconds between flushing heartbeat data to disk.  Default is 10 seconds
   FLUSH\_INTERVAL       | int   | For non-heartbeat, the number of output steps between flushing data to disk; if 0, then no flush
   TIME\_STAMP\_FORMAT    | \[%H:%M:%S] | Format used to format time stamp.  See strftime man page
   SHOW\_TIME\_STAMP      | on/off | Should the output lines be preceded by the timestamp

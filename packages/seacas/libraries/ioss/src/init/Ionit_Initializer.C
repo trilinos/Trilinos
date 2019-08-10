@@ -106,9 +106,9 @@ namespace Ioss {
       Ioss::StorageInitializer();
       Ioss::Initializer();
       Iotr::Initializer();
-      #ifdef HAVE_SEACASIOSS_ADIOS2
+#ifdef HAVE_SEACASIOSS_ADIOS2
       Ioad::Initializer(); // ADIOS2
-      #endif
+#endif
     }
 
     Initializer::~Initializer()

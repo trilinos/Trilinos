@@ -1,6 +1,5 @@
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/function)
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/vector)
-#INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/src/step/krylov)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_01
@@ -20,12 +19,25 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  AugmentedSystem_test
-  SOURCES AugmentedSystem_test.cpp
-  ARGS PrintItAll
-  COMM mpi
-  NUM_MPI_PROCS 2
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-)
+IF( TPL_ENABLE_MPI )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      PinTConstraint_FD_Test
+      SOURCES PinTConstraint_FD_Test.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 2
+      PASS_REGULAR_EXPRESSION "TEST PASSED"
+      ADD_DIR_TO_NAME
+      )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      AugmentedSystem_test
+      SOURCES AugmentedSystem.cpp
+      ARGS PrintItAll
+      COMM mpi
+      NUM_MPI_PROCS 2
+      PASS_REGULAR_EXPRESSION "TEST PASSED"
+      ADD_DIR_TO_NAME
+      )
+
+ENDIF()

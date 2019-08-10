@@ -54,7 +54,19 @@
 // Define default data types
 typedef double Scalar;
 typedef int LocalOrdinal;
+
+// Choose global ordinal based on enabled underlying libraries
+#ifdef HAVE_XPETRA_TPETRA
+typedef typename Tpetra::Map<>::global_ordinal_type GlobalOrdinal;
+//Have Epetra only; use Epetra's default GlobalOrdinal
+#else
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+typedef long long GlobalOrdinal;
+#else
 typedef int GlobalOrdinal;
+#endif
+#endif
+
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS

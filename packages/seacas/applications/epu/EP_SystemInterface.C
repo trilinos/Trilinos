@@ -45,7 +45,8 @@
 #include <fmt/ostream.h>
 #include <sstream>
 #include <stdexcept>
-#include <string>  // for string, char_traits, etc
+#include <string> // for string, char_traits, etc
+#include <term_width.h>
 #include <utility> // for pair, make_pair
 #include <vector>  // for vector
 
@@ -107,7 +108,7 @@ void Excn::SystemInterface::enroll_options()
                   "subdirectory containing input exodusII files", nullptr);
 
   options_.enroll("width", GetLongOption::MandatoryValue, "Width of output screen, default = 80",
-                  "80");
+                  nullptr);
 
   options_.enroll("add_processor_id", GetLongOption::NoValue,
                   "Add 'processor_id' element variable to the output file", nullptr);
@@ -349,6 +350,9 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("width");
     if (temp != nullptr) {
       screenWidth_ = strtol(temp, nullptr, 10);
+    }
+    else {
+      screenWidth_ = term_width();
     }
   }
 

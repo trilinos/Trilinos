@@ -125,7 +125,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool /*
 
   if(MaxLevels > 0) {
     /* Build the Nullspace */
-    Epetra_MultiVector *nullspace=BuildNullspace();
+    Epetra_MultiVector *nullspace=ML_Epetra::Build_Edge_Nullspace(*D0_Clean_Matrix_,BCedges_,List_,verbose_);
+    dim = nullspace->NumVectors();
+
     if(!nullspace) ML_CHK_ERR(-1);
     if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("nullspace.dat",*nullspace,0,0,false);
 
@@ -168,76 +170,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
 
   return 0;
 }/*end SetupSmoother */
-
-
-
-// ================================================ ====== ==== ==== == =
-// Build the edge nullspace
-Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
-{
-  Epetra_MultiVector *nullspace;
-  double ** d_coords;
-
-  /* Check the List - Do we have a nullspace pre-provided? */
-  std::string nulltype=List_.get("null space: type","default vectors");
-  double* nullvecs=List_.get("null space: vectors",(double*)0);
-  int nulldim=List_.get("null space: dimension",0);
-  if (nulltype=="pre-computed" && nullvecs && (nulldim==2 || nulldim==3)){
-    /* Build a multivector out of it */
-    if(verbose_ && !Comm_->MyPID()) printf("Using pre-computed nullspace\n");
-    int Ne=EdgeDomainMap_->NumMyElements();
-    dim=nulldim;
-    d_coords=new double*[dim];
-    d_coords[0]=nullvecs;
-    d_coords[1]=&nullvecs[Ne];
-    if(dim==3) d_coords[2]=&nullvecs[2*Ne];
-    nullspace=new Epetra_MultiVector(View,*EdgeDomainMap_,d_coords,dim);
-  }
-  else{
-    if(verbose_ && !Comm_->MyPID()) printf("Building nullspace from scratch\n");
-    /* Pull the (nodal) coordinates from Teuchos */
-    double * xcoord=List_.get("x-coordinates",(double*)0);
-    double * ycoord=List_.get("y-coordinates",(double*)0);
-    double * zcoord=List_.get("z-coordinates",(double*)0);
-    dim=(xcoord!=0) + (ycoord!=0) + (zcoord!=0);
-
-    /* Sanity Checks */
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      dim == 0 || ((!xcoord && (ycoord || zcoord)) || (xcoord && !ycoord && zcoord)),
-      "Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner (found "<<dim<<" coordinates).\n"
-      );
-
-    /* Normalize */
-    double d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), xcoord, xcoord, ml_comm_));
-    for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) xcoord[i] /= d1;
-    d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), ycoord, ycoord, ml_comm_));
-    for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) ycoord[i] /= d1;
-    if (dim==3) {
-      d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), zcoord, zcoord, ml_comm_));
-      for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) zcoord[i] /= d1;
-    }
-
-    /* Build the MultiVector */
-    d_coords=new double* [dim];
-    d_coords[0]=xcoord; d_coords[1]=ycoord;
-    if(dim==3) d_coords[2]=zcoord;
-    Epetra_MultiVector n_coords(View,*NodeDomainMap_,d_coords,dim);
-    if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",n_coords,0,0,false);
-
-    /* Build the Nullspace */
-    nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,true);
-    D0_Clean_Matrix_->Multiply(false,n_coords,*nullspace);
-  }
-
-  /* Nuke the BC edges */
-  for(int j=0;j<dim;j++)
-    for(int i=0;i<BCedges_.size();i++)
-      (*nullspace)[j][BCedges_[i]]=0;
-
-  /* Cleanup */
-  delete [] d_coords ;
-  return nullspace;
-}/*end BuildNullspace*/
 
 
 // ================================================ ====== ==== ==== == =

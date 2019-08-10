@@ -550,7 +550,14 @@ HyperGraphModel<Adapter>::HyperGraphModel(
         // TODO KDD 1/17 It would be better to use minimum GID rather than
         // TODO zero in the above Tpetra::Map constructor.  Github #1024
       }
-      secondAdj = rcp(new sparse_matrix_type(oneToOneMap,0));
+      Teuchos::Array<size_t> nPerRow(numLocalVertices_);
+      size_t rowcnt = 0;
+      for (size_t i=0; i<numLocalVertices_;i++) {
+        if (!isOwner_[i])
+          continue;
+        nPerRow[rowcnt++] = offsets[i+1]-offsets[i];
+      }
+      secondAdj = rcp(new sparse_matrix_type(oneToOneMap,nPerRow(0,rowcnt)));
       for (size_t i=0; i<numLocalVertices_;i++) {
         if (!isOwner_[i])
           continue;

@@ -92,7 +92,7 @@ class MPMultiply< KokkosSparse::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                     Kokkos::Cuda,
                                     MatrixMemory,
                                     MatrixSize>,
-                  Kokkos::View< Sacado::MP::Vector<InputStorage>*,
+                  Kokkos::View< const Sacado::MP::Vector<InputStorage>*,
                                 InputP... >,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
                                 OutputP... >,
@@ -117,7 +117,7 @@ public:
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
-  typedef Kokkos::View< InputVectorValue*,
+  typedef Kokkos::View< const InputVectorValue*,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         OutputP... > output_vector_type;
@@ -339,7 +339,7 @@ class MPMultiply< KokkosSparse::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                     Kokkos::Cuda,
                                     MatrixMemory,
                                     MatrixSize>,
-                  Kokkos::View< Sacado::MP::Vector<InputStorage>**,
+                  Kokkos::View< const Sacado::MP::Vector<InputStorage>**,
                                 InputP... >,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>**,
                                 OutputP... >,
@@ -365,7 +365,7 @@ public:
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
-  typedef Kokkos::View< InputVectorValue**,
+  typedef Kokkos::View< const InputVectorValue**,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue**,
                         OutputP... > output_vector_type;

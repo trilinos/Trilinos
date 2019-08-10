@@ -728,9 +728,9 @@ namespace Iopg {
         get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("surface", id));
         get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("sideset", id));
 
-        //	  split_type = SPLIT_BY_ELEMENT_BLOCK;
-        //	  split_type = SPLIT_BY_TOPOLOGIES;
-        //	  split_type = SPLIT_BY_DONT_SPLIT;
+        //        split_type = SPLIT_BY_ELEMENT_BLOCK;
+        //        split_type = SPLIT_BY_TOPOLOGIES;
+        //        split_type = SPLIT_BY_DONT_SPLIT;
 
         // Determine how many side blocks compose this side set.
         error = im_ex_get_side_set_param(get_file_pointer(), id, &number_sides,
@@ -855,8 +855,8 @@ namespace Iopg {
             const Ioss::ElementTopology *side_topo          = (*I).first.second;
             assert(side_topo != nullptr);
 #if 0
-	    if (side_topo->parametric_dimension() == topology_dimension-1 ||
-		split_type == Ioss::SPLIT_BY_DONT_SPLIT ) {
+            if (side_topo->parametric_dimension() == topology_dimension-1 ||
+                split_type == Ioss::SPLIT_BY_DONT_SPLIT ) {
 #else
             if (true) {
 #endif

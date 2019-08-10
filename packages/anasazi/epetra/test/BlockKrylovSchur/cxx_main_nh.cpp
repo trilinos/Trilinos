@@ -53,6 +53,7 @@
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_Assert.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -176,7 +177,7 @@ int main(int argc, char *argv[]) {
       Indices[1] = nx;
       NumEntries = 2;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
     else if (MyGlobalElements[i] == nx*(nx-1))
     {
@@ -184,27 +185,27 @@ int main(int argc, char *argv[]) {
       Indices[1] = nx*(nx-2);
       NumEntries = 2;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
     else if (MyGlobalElements[i] == nx-1)
     {
       Indices[0] = nx-2;
       NumEntries = 1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
       Indices[0] = 2*nx-1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
     else if (MyGlobalElements[i] == NumGlobalElements-1)
     {
       Indices[0] = NumGlobalElements-2;
       NumEntries = 1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
       Indices[0] = nx*(nx-1)-1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
     else if (MyGlobalElements[i] < nx)
     {
@@ -213,7 +214,7 @@ int main(int argc, char *argv[]) {
       Indices[2] = MyGlobalElements[i]+nx;
       NumEntries = 3;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
     else if (MyGlobalElements[i] > nx*(nx-1))
     {
@@ -222,7 +223,7 @@ int main(int argc, char *argv[]) {
       Indices[2] = MyGlobalElements[i]-nx;
       NumEntries = 3;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
     else if (MyGlobalElements[i]%nx == 0)
     {
@@ -231,7 +232,7 @@ int main(int argc, char *argv[]) {
       Indices[2] = MyGlobalElements[i]+nx;
       NumEntries = 3;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
     else if ((MyGlobalElements[i]+1)%nx == 0)
     {
@@ -239,11 +240,11 @@ int main(int argc, char *argv[]) {
       Indices[1] = MyGlobalElements[i]+nx;
       NumEntries = 2;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
       Indices[0] = MyGlobalElements[i]-1;
       NumEntries = 1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
     else
     {
@@ -253,16 +254,16 @@ int main(int argc, char *argv[]) {
       Indices[3] = MyGlobalElements[i]+nx;
       NumEntries = 4;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
     // Put in the diagonal entry
     info = A->InsertGlobalValues(MyGlobalElements[i], 1, &diag, &MyGlobalElements[i]);
-    assert( info==0 );
+    TEUCHOS_ASSERT( info==0 );
   }
 
   // Finish up
   info = A->FillComplete();
-  assert( info==0 );
+  TEUCHOS_ASSERT( info==0 );
   A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
   //************************************

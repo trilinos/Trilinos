@@ -44,10 +44,10 @@
 #ifndef PANZER_DIMENSION_HPP
 #define PANZER_DIMENSION_HPP
 
-#include "Shards_Array.hpp"
+#include "Phalanx_ExtentTraits.hpp"
 
 namespace panzer {
-
+  /*
   //! Spatial Dimension Tag
   SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Dim)
   //! Integration Point Tag
@@ -69,7 +69,26 @@ namespace panzer {
   SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Dummy)
   //! Edge Tag
   SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Edge)  // Suzey: 06/11/201
+  */
 
+  struct Dim{};
+  struct IP{};
+  struct BASIS{};
+  using NODE = BASIS;
+  struct Point{};
+  struct Cell{};
+  struct Face{};
+  struct Edge{};
+  struct Dummy{};
 }
+
+PHX_IS_EXTENT(panzer::Dim)
+PHX_IS_EXTENT(panzer::IP)
+PHX_IS_EXTENT(panzer::BASIS)
+PHX_IS_EXTENT(panzer::Point)
+PHX_IS_EXTENT(panzer::Cell)
+PHX_IS_EXTENT(panzer::Face)
+PHX_IS_EXTENT(panzer::Edge)
+PHX_IS_EXTENT(panzer::Dummy)
 
 #endif

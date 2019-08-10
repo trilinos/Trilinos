@@ -574,7 +574,16 @@ namespace MueLu {
           // Compute the transpose A of the Tpetra matrix tpetraOp.
           RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
           Tpetra::RowMatrixTransposer<SC,LO,GO,NO> transposer(rcpFromRef(tpetraOp),label);
-          A = transposer.createTranspose(params);
+          {
+            using Teuchos::ParameterList;
+            using Teuchos::rcp;
+            RCP<ParameterList> transposeParams = params.is_null () ?
+              rcp (new ParameterList) :
+              rcp (new ParameterList (*params));
+            transposeParams->set ("sort", false);
+            A = transposer.createTranspose(transposeParams);
+          }
+
           RCP<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > AA   = rcp(new Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>(A));
           RCP<CrsMatrix>                             AAA  = rcp_implicit_cast<CrsMatrix>(AA);
           RCP<CrsMatrixWrap>                         AAAA = rcp(new CrsMatrixWrap(AAA));

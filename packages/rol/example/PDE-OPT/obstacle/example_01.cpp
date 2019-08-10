@@ -57,6 +57,8 @@
 #include <algorithm>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_PrimalDualActiveSetStep.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Bundle.hpp"
 
@@ -190,7 +192,11 @@ int main(int argc, char *argv[]) {
 
     du_ptr->putScalar(0.4);
     up->set(*dup);
-    ROL::Algorithm<RealT> algoTR("Trust Region",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>
+      stepTR = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      statusTR = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algoTR(stepTR,statusTR,false);
     std::clock_t timerTR = std::clock();
     algoTR.run(*up,*obj,*bnd,true,*outStream);
     *outStream << "Trust Region Time: "
@@ -198,7 +204,11 @@ int main(int argc, char *argv[]) {
                << " seconds." << std::endl << std::endl;
 
     up->set(*dup);
-    ROL::Algorithm<RealT> algoPDAS("Primal Dual Active Set",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>
+      stepPDAS = ROL::makePtr<ROL::PrimalDualActiveSetStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      statusPDAS = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algoPDAS(stepPDAS,statusPDAS,false);
     std::clock_t timerPDAS = std::clock();
     algoPDAS.run(*up,*obj,*bnd,true,*outStream);
     *outStream << "PD Active Set Time: "
@@ -214,7 +224,7 @@ int main(int argc, char *argv[]) {
     Teuchos::TimeMonitor::summarize();
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

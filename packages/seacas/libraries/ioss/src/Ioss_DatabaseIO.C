@@ -398,39 +398,31 @@ namespace Ioss {
     std::ostringstream errmsg;
 
     if (myProcessor == 0) {
-      Ioss::FileInfo file = Ioss::FileInfo(filename);
-      std::string    path = file.pathname();
+      Ioss::FileInfo file      = Ioss::FileInfo(filename);
+      std::string    path      = file.pathname();
+      std::string    path_root = path[0] == '/' ? "/" : "";
 
-      const int mode = 0777; // Users umask will be applied to this.
+      auto comps = tokenize(path, "/");
+      for (const auto &comp : comps) {
+        path_root += comp;
 
-      auto iter = path.cbegin();
-      while (iter != path.cend() && !error_found) {
-        iter                  = std::find(iter, path.cend(), '/');
-        std::string path_root = std::string(path.cbegin(), iter);
-
-        if (iter != path.cend()) {
-          ++iter; // Skip past the '/'
-        }
-
-        if (path_root.empty()) { // Path started with '/'
-          continue;
-        }
-
-        struct stat st
-        {
-        };
+        struct stat st;
         if (stat(path_root.c_str(), &st) != 0) {
+          const int mode = 0777; // Users umask will be applied to this.
           if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
-            fmt::print(errmsg, "ERROR: Cannot create directory '{}' : {}\n", path_root,
+            fmt::print(errmsg, "ERROR: Cannot create directory '{}': {}\n", path_root,
                        std::strerror(errno));
             error_found = true;
+            break;
           }
         }
         else if (!S_ISDIR(st.st_mode)) {
           errno = ENOTDIR;
           fmt::print(errmsg, "ERROR: Path '{}' is not a directory.\n", path_root);
           error_found = true;
+          break;
         }
+        path_root += "/";
       }
     }
     else {

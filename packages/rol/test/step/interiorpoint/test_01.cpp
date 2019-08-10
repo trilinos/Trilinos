@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
     ipobj.checkHessSym(*x,*d,*v,true,*outStream);     *outStream << std::endl;
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }

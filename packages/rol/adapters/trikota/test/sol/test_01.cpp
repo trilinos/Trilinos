@@ -180,13 +180,14 @@ int main(int argc, char* argv[]) {
     optProb.setStochasticObjective(list,sampler);
     optProb.check(*outStream);
     // Run ROL algorithm
-    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+    parlist->sublist("Step").set("Type","Trust Region");
+    ROL::OptimizationSolver<RealT> solver(optProb,*parlist);
     clock_t start = clock();
     xp->zero();
-    algo.run(optProb,true,*outStream);
+    solver.solve(*outStream);
     *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

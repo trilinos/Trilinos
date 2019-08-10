@@ -266,6 +266,10 @@ public:
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
 
+  //! Returns the current number of entries in the specified global row.
+  /*! Returns OrdinalTraits<size_t>::invalid() if the row is not owned by this process. */
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
+
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   /** Undefined if isFillActive().
    */

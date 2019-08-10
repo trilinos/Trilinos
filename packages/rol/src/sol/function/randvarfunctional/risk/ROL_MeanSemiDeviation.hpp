@@ -256,7 +256,7 @@ public:
                   const Vector<Real>      &x,
                   const std::vector<Real> &xstat,
                   SampleGenerator<Real>   &sampler) {
-    const Real zero(0), one(1);
+    const Real /*zero(0),*/ one(1);
     // Compute expected value
     std::vector<Real> mval = {val_, gv_};
     std::vector<Real> gval(2,0);

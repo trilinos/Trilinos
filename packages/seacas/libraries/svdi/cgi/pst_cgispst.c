@@ -33,7 +33,7 @@
  *
  */
 /* cgispst.c - linker specifiable driver routine for driver Postscript B/W (pst) */
-
+#include "ifdefx.h"
 #include "mdcgi.h"  // for xcact_, xcoon_
 #include "stdtyp.h" // for anything
 

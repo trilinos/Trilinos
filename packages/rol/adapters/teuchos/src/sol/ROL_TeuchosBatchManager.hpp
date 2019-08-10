@@ -95,6 +95,10 @@ public:
       dim, input, output);
   }
 
+  void gatherAll(const Real* send, const int ssize, Real *receive, const int rsize) const {
+    Teuchos::gatherAll<Ordinal,Real>(*comm_,ssize,send,rsize,receive);
+  }
+
   void broadcast(Real* input, int cnt, int root) {
     Teuchos::broadcast<Ordinal,Real>(*comm_,root,cnt,input);
   }

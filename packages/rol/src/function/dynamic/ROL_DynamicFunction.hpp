@@ -46,6 +46,7 @@
 #ifndef ROL_DYNAMICFUNCTION_HPP
 #define ROL_DYNAMICFUNCTION_HPP
 
+#include <initializer_list>
 
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_VectorWorkspace.hpp"
@@ -55,6 +56,10 @@
     \brief Provides update interface, casting and vector management to
            DynamicConstraint and DynamicObjective.
 
+    Allowed strings to indicate terms with zero derivatives:
+    {"uo","un","z","uo_uo","uo_un","uo_z","un_uo","un_un","un_z","z_uo","z_un", "z_z"}
+    Note that is "X_Y" is specified, "Y_X" will be added automatically.
+ 
 */
 namespace ROL {
 template<typename Real> 
@@ -63,6 +68,21 @@ public:
 
   using V  = Vector<Real>;
   using PV = PartitionedVector<Real>;
+
+  DynamicFunction( std::initializer_list<std::string> zero_deriv_terms={} ) :
+    zero_deriv_terms_(zero_deriv_terms) {
+    
+    if( is_zero_derivative("uo") )    add_terms("uo_uo","uo_un","uo_z");  
+    if( is_zero_derivative("un") )    add_terms("un_uo","un_un","un_z");
+    if( is_zero_derivative("z")  )    add_terms("z_uo", "z_un", "z_z" );
+    if( is_zero_derivative("uo_un") ) add_terms("un_uo");  
+    if( is_zero_derivative("uo_z") )  add_terms("z_uo");  
+    if( is_zero_derivative("un_z") )  add_terms("z_un");  
+    if( is_zero_derivative("un_uo") ) add_terms("uo_un");  
+    if( is_zero_derivative("z_uo") )  add_terms("uo_z");  
+    if( is_zero_derivative("z_un") )  add_terms("un_z");  
+
+  }
 
   virtual ~DynamicFunction() {}
 
@@ -74,7 +94,14 @@ public:
 
   // Update control
   virtual void update_z( const V& x ) {}
-  
+
+  bool is_zero_derivative( const std::string& key ) {
+    return std::find( std::begin(zero_deriv_terms_),
+                      std::end(zero_deriv_terms_),
+                      key ) != std::end(zero_deriv_terms_); 
+  }
+
+
 protected:
 
   VectorWorkspace<Real>& getVectorWorkspace() const;
@@ -91,6 +118,20 @@ protected:
 private:
 
   mutable VectorWorkspace<Real> workspace_;
+  std::vector<std::string>      zero_deriv_terms_;
+
+  template<typename First>
+  void add_terms( const First& first ) {
+    if( !is_zero_derivative(first) ) 
+      zero_deriv_terms_.push_back(first);
+  }
+
+  template<typename First, typename...Rest>
+  void add_terms( const First& first, const Rest&... rest ) {
+    if( !is_zero_derivative(first) ) 
+      zero_deriv_terms_.push_back(first);
+    add_terms(rest...);
+  }
 
 };
 

@@ -53,6 +53,9 @@
 #include "ROL_Constraint_DynamicState.hpp"
 #include "ROL_Objective_FSsolver.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_Types.hpp"
 
 /** @ingroup dynamic_group
@@ -112,11 +115,12 @@ public:
   using V  = Vector<Real>;
   using PV = PartitionedVector<Real>;
   using TS = TimeStamp<Real>;
- 
+
   virtual ~DynamicConstraint() {}
 
-  DynamicConstraint(void)
-    : unew_               (                             nullPtr ),
+  DynamicConstraint( std::initializer_list<std::string> zero_deriv_terms={} ):
+      DynamicFunction<Real>(zero_deriv_terms),
+      unew_               (                             nullPtr ),
       jv_                 (                             nullPtr ),
       DEFAULT_atol_       ( 1e-4*std::sqrt(ROL_EPSILON<Real>()) ),
       DEFAULT_rtol_       (                                 1e0 ),
@@ -138,6 +142,8 @@ public:
       solverType_         (                 DEFAULT_solverType_ ),
       firstSolve_         (                                true ) {}
 
+
+  
   virtual void update( const V& uo, const V& un, const V& z, const TS& ts ) {
     update_uo( uo, ts );
     update_un( un, ts );
@@ -216,37 +222,41 @@ public:
       }
     }
     if (solverType_==1 || (solverType_==3 && cnorm > ctol)) {
-      ROL::Ptr<DynamicConstraint<Real>> con_ptr = ROL::makePtrFromRef(*this);
-      ROL::Ptr<const Vector<Real>>       uo_ptr = ROL::makePtrFromRef(uo);
-      ROL::Ptr<const Vector<Real>>        z_ptr = ROL::makePtrFromRef(z);
-      ROL::Ptr<const TimeStamp<Real>>    ts_ptr = ROL::makePtrFromRef(ts);
-      ROL::Ptr<Objective<Real>>         obj_ptr
-        = ROL::makePtr<NonlinearLeastSquaresObjective_Dynamic<Real>>(con_ptr,c,uo_ptr,z_ptr,ts_ptr,true);
-      ROL::ParameterList parlist;
+      Ptr<DynamicConstraint<Real>> con_ptr = makePtrFromRef(*this);
+      Ptr<const Vector<Real>>       uo_ptr = makePtrFromRef(uo);
+      Ptr<const Vector<Real>>        z_ptr = makePtrFromRef(z);
+      Ptr<const TimeStamp<Real>>    ts_ptr = makePtrFromRef(ts);
+      Ptr<Objective<Real>>         obj_ptr
+        = makePtr<NonlinearLeastSquaresObjective_Dynamic<Real>>(con_ptr,c,uo_ptr,z_ptr,ts_ptr,true);
+      ParameterList parlist;
       parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
       parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       parlist.sublist("General").sublist("Krylov").set("Iteration Limit",100);
-      ROL::Ptr<Algorithm<Real>> algo = ROL::makePtr<Algorithm<Real>>("Trust Region",parlist,false);
+      Ptr<Step<Real>>         step = makePtr<TrustRegionStep<Real>>(parlist);
+      Ptr<StatusTest<Real>> status = makePtr<StatusTest<Real>>(parlist);
+      Ptr<Algorithm<Real>>    algo = makePtr<Algorithm<Real>>(step,status,false);
       algo->run(un,*obj_ptr,print_);
       value(c,uo,un,z,ts);
     }
     if (solverType_==2 || (solverType_==4 && cnorm > ctol)) {
-      ROL::Ptr<DynamicConstraint<Real>> con_ptr = ROL::makePtrFromRef(*this);
-      ROL::Ptr<const Vector<Real>>       uo_ptr = ROL::makePtrFromRef(uo);
-      ROL::Ptr<const Vector<Real>>        z_ptr = ROL::makePtrFromRef(z);
-      ROL::Ptr<const TimeStamp<Real>>    ts_ptr = ROL::makePtrFromRef(ts);
-      ROL::Ptr<Constraint<Real>>         cn_ptr
-        = ROL::makePtr<Constraint_DynamicState<Real>>(con_ptr,uo_ptr,z_ptr,ts_ptr);
-      ROL::Ptr<Objective<Real>>         obj_ptr
-        = ROL::makePtr<Objective_FSsolver<Real>>();
-      ROL::ParameterList parlist;
+      Ptr<DynamicConstraint<Real>> con_ptr = makePtrFromRef(*this);
+      Ptr<const Vector<Real>>       uo_ptr = makePtrFromRef(uo);
+      Ptr<const Vector<Real>>        z_ptr = makePtrFromRef(z);
+      Ptr<const TimeStamp<Real>>    ts_ptr = makePtrFromRef(ts);
+      Ptr<Constraint<Real>>         cn_ptr
+        = makePtr<Constraint_DynamicState<Real>>(con_ptr,uo_ptr,z_ptr,ts_ptr);
+      Ptr<Objective<Real>>         obj_ptr
+        = makePtr<Objective_FSsolver<Real>>();
+      ParameterList parlist;
       parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      ROL::Ptr<Algorithm<Real>> algo = ROL::makePtr<Algorithm<Real>>("Composite Step",parlist,false);
-      ROL::Ptr<Vector<Real>> l = c.dual().clone();
+      Ptr<Step<Real>>         step = makePtr<CompositeStep<Real>>(parlist);
+      Ptr<StatusTest<Real>> status = makePtr<ConstraintStatusTest<Real>>(parlist);
+      Ptr<Algorithm<Real>>    algo = makePtr<Algorithm<Real>>(step,status,false);
+      Ptr<Vector<Real>>          l = c.dual().clone();
       algo->run(un,*l,*obj_ptr,*cn_ptr,print_);
       value(c,uo,un,z,ts);
     }
@@ -258,7 +268,7 @@ public:
 
   /** \brief Set solve parameters.
 
-             @param[in]       parlist   ROL::ParameterList containing solve parameters
+             @param[in]       parlist   ParameterList containing solve parameters
 
              For the default implementation, parlist has two sublist ("Dynamic Constraint"
              and "Solve") and the "Solve" sublist has six input parameters.
@@ -276,8 +286,8 @@ public:
 
              ---
   */
-  virtual void setSolveParameters(ROL::ParameterList &parlist) {
-    ROL::ParameterList & list = parlist.sublist("Dynamic Constraint").sublist("Solve");
+  virtual void setSolveParameters(ParameterList &parlist) {
+    ParameterList & list = parlist.sublist("Dynamic Constraint").sublist("Solve");
     atol_       = list.get("Absolute Residual Tolerance",   DEFAULT_atol_);
     rtol_       = list.get("Relative Residual Tolerance",   DEFAULT_rtol_);
     maxit_      = list.get("Iteration Limit",               DEFAULT_maxit_);

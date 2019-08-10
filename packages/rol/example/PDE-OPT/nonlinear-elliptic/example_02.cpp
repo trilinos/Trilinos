@@ -46,7 +46,6 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -56,12 +55,12 @@
 #include <iostream>
 #include <algorithm>
 
+#include "ROL_Stream.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_TpetraMultiVector.hpp"
-#include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_OptimizationProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -193,8 +192,9 @@ int main(int argc, char *argv[]) {
     parlist->sublist("SOL").set("Initial Statistic", static_cast<RealT>(1));
     opt.setStochasticObjective(*parlist,sampler);
 
-    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
-    algo.run(opt,true,*outStream);
+    parlist->sublist("Step").set("Type","Trust Region");
+    ROL::OptimizationSolver<RealT> solver(opt,*parlist);
+    solver.solve(*outStream);
 
     // Output.
     assembler->printMeshData(*outStream);
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

@@ -166,7 +166,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
 
     /*
      * Error check:
-     *	Currently a maximum of one nodal communication map and one
+     *  Currently a maximum of one nodal communication map and one
      * elemental communication map is supported.
      */
     if (globals.Num_N_Comm_Maps[iproc] > 1 || globals.Num_E_Comm_Maps[iproc] > 1) {
@@ -551,16 +551,16 @@ void NemSpread<T, INT>::read_proc_init(int lb_exoid, int proc_info[], int **proc
 /*----------------------------------------------------------------------------
  *  read_proc_init:
  *
- *	This function reads information about the processor configuration
+ *      This function reads information about the processor configuration
  * which the load balance was generated for and makes assignments for each
  * processor.
  *----------------------------------------------------------------------------
  * Variable Glossary (after return):
  *
- *		proc_info[0] = # procs, from load balance file
- *		proc_info[1] = # procs for, from load balance file
- *		proc_info[2] = # procs this processor is responsible for
- *		proc_info[3] = # of extra procs
+ *              proc_info[0] = # procs, from load balance file
+ *              proc_info[1] = # procs for, from load balance file
+ *              proc_info[2] = # procs this processor is responsible for
+ *              proc_info[3] = # of extra procs
  *
  */
 {
@@ -757,7 +757,7 @@ void NemSpread<T, INT>::read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *
 /*
  * read_cmap_params:
  *
- *	This function reads the parameters for the communication maps.
+ *      This function reads the parameters for the communication maps.
  * Processor 0 reads each processors parameters and then a broadcast of
  * this information is performed and each processor extracts it's
  * information.

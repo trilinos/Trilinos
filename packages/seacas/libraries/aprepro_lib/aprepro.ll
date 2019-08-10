@@ -116,7 +116,7 @@ size_t hist_start = 0;
 /* enables the use of start condition stacks */
 %option stack
 
-qstring	\"[^\"\n]*[\"\n]
+qstring \"[^\"\n]*[\"\n]
 mlstring \'[^\']*[\']
 D     [0-9]
 E     [Ee][+-]?{D}+
@@ -140,24 +140,24 @@ integer {D}+({E})?
 <INITIAL>{
   "{VERBATIM(ON)}"   { BEGIN(VERBATIM);  }
   {WS}"{ECHO}" |
-  {WS}"{ECHO(ON)}"	    { echo = true;	}
+  {WS}"{ECHO(ON)}"          { echo = true;      }
   {WS}"{NOECHO}" |
-  {WS}"{ECHO(OFF)}"	    { echo = false;	}
+  {WS}"{ECHO(OFF)}"         { echo = false;     }
 
-  {WS}"{IMMUTABLE(ON)}"	    { aprepro.stateImmutable = true;	}
-  {WS}"{IMMUTABLE(OFF)}"	    { aprepro.stateImmutable = aprepro.ap_options.immutable; }
+  {WS}"{IMMUTABLE(ON)}"     { aprepro.stateImmutable = true;    }
+  {WS}"{IMMUTABLE(OFF)}"            { aprepro.stateImmutable = aprepro.ap_options.immutable; }
 
   {WS}"{"[Ll]"oop"{WS}"(" {
     BEGIN(GET_LOOP_VAR);
     if (aprepro.ap_options.debugging) 
       std::cerr << "DEBUG LOOP - Found loop begin test " << yytext << " in file "
-		<< aprepro.ap_file_list.top().name << "\n";
+                << aprepro.ap_file_list.top().name << "\n";
   }
 }
 
 <GET_LOOP_VAR>{
   {number}")".*"\n" |
-	    {integer}")}".*"\n" {
+            {integer}")}".*"\n" {
     /* Loop control defined by integer */
     char *pt = strchr(yytext, ')');
     *pt = '\0';
@@ -172,9 +172,9 @@ integer {D}+({E})?
       aprepro.ap_file_list.push(new_file);
 
       if (aprepro.ap_options.debugging) 
-	std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
-		  << " in file " << aprepro.ap_file_list.top().name
-		  << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+        std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
+                  << " in file " << aprepro.ap_file_list.top().name
+                  << " at line " << aprepro.ap_file_list.top().lineno << "\n";
 
       tmp_file = new std::fstream(temp_f, std::ios::out);
       loop_lvl++;
@@ -196,21 +196,21 @@ integer {D}+({E})?
       s = aprepro.getsym(yytext);
 
       if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
-	BEGIN(LOOP_SKIP);
+        BEGIN(LOOP_SKIP);
       }
       else { /* Value defined and != 0. */
-	temp_f = get_temp_filename();
-	SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
-	aprepro.ap_file_list.push(new_file);
-				
-	if (aprepro.ap_options.debugging) 
-	  std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
-		    << " in file " << aprepro.ap_file_list.top().name
-		    << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+        temp_f = get_temp_filename();
+        SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
+        aprepro.ap_file_list.push(new_file);
+                                
+        if (aprepro.ap_options.debugging) 
+          std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
+                    << " in file " << aprepro.ap_file_list.top().name
+                    << " at line " << aprepro.ap_file_list.top().lineno << "\n";
 
-	tmp_file = new std::fstream(temp_f, std::ios::out);
-	loop_lvl++;
-	BEGIN(LOOP);
+        tmp_file = new std::fstream(temp_f, std::ios::out);
+        loop_lvl++;
+        BEGIN(LOOP);
       }
     }
     aprepro.ap_file_list.top().lineno++;
@@ -233,7 +233,7 @@ integer {D}+({E})?
         yy_push_state(VERBATIM);
 
       aprepro.isCollectingLoop = false;
-				     
+                                     
       yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
       yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
       curr_index = 0;
@@ -331,12 +331,12 @@ integer {D}+({E})?
     switch_skip_to_endcase = false;
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG SWITCH: 'default' code executing at line %d\n",
-	       aprepro.ap_file_list.top().lineno);
+               aprepro.ap_file_list.top().lineno);
   } 
   else {
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG SWITCH: 'default' not executing since a previous case already ran at line %d\n",
-	       aprepro.ap_file_list.top().lineno);
+               aprepro.ap_file_list.top().lineno);
     
     /* Need to skip all code until end of case */
     BEGIN(END_CASE_SKIP);
@@ -437,7 +437,7 @@ integer {D}+({E})?
   {WS}"{"[Ii]"fdef"{WS}"("  { 
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
-	       aprepro.ap_file_list.top().lineno);
+               aprepro.ap_file_list.top().lineno);
     if_skip_level = 1;
     BEGIN(IF_WHILE_SKIP);
   }
@@ -445,7 +445,7 @@ integer {D}+({E})?
   {WS}"{"[Ii]"f"{WS}"("  {
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
-	       aprepro.ap_file_list.top().lineno);
+               aprepro.ap_file_list.top().lineno);
     if_skip_level = 1;
     BEGIN(IF_WHILE_SKIP);
   }
@@ -453,7 +453,7 @@ integer {D}+({E})?
   {WS}"{"[Ii]"fndef"{WS}"(" {
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifndef'  found while skipping at line %d\n",
-	       aprepro.ap_file_list.top().lineno);
+               aprepro.ap_file_list.top().lineno);
     if_skip_level = 1;
     BEGIN(IF_WHILE_SKIP);
   }
@@ -463,7 +463,7 @@ integer {D}+({E})?
   aprepro.ap_file_list.top().lineno++; 
   if (aprepro.ap_options.debugging) 
     fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
-	     if_lvl, aprepro.ap_file_list.top().lineno);
+             if_lvl, aprepro.ap_file_list.top().lineno);
   if(YY_START == VERBATIM) {
     if(echo) ECHO;
   }
@@ -494,7 +494,7 @@ integer {D}+({E})?
      */
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'elseif'   at level = %d at line %d\n",
-	       if_lvl, aprepro.ap_file_list.top().lineno);
+               if_lvl, aprepro.ap_file_list.top().lineno);
 
     if (if_case_run[if_lvl]) { /* A previous else/elseif has run */
       aprepro.ap_file_list.top().lineno++; 
@@ -528,8 +528,8 @@ integer {D}+({E})?
       if (if_state[if_lvl] == IF_SKIP ||
           if_state[if_lvl] == INITIAL)
             BEGIN(INITIAL);
-			   /* If neither is true, this is a nested 
-			      if that should be skipped */
+                           /* If neither is true, this is a nested 
+                              if that should be skipped */
       if (aprepro.ap_options.debugging)
         printf ("DEBUG IF: 'endif'  at level = %d at line %d\n",
                 if_lvl, aprepro.ap_file_list.top().lineno);
@@ -566,9 +566,9 @@ integer {D}+({E})?
       /* See if this is an aprepro variable referring to a name */
       s = aprepro.getsym(yytext);
       if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
-	pt = yytext;
+        pt = yytext;
       } else {
-	pt = (char*)s->value.svar.c_str();
+        pt = (char*)s->value.svar.c_str();
       }
     } else {
       pt = yytext;
@@ -584,19 +584,19 @@ integer {D}+({E})?
 }
 
 <PARSING>{integer}  |        
-<PARSING>{number}	   { sscanf (yytext, "%lf", &yylval->val);
+<PARSING>{number}          { sscanf (yytext, "%lf", &yylval->val);
                        return(token::NUM); }
 
 <PARSING>{WS}          ; // Empty rule
 
 <PARSING>{id} {
            symrec *s;
-			     s = aprepro.getsym(yytext);
-			     if (s == nullptr)
-			       s = aprepro.putsym (yytext, SEAMS::Aprepro::SYMBOL_TYPE::UNDEFINED_VARIABLE, 0);
-			     yylval->tptr = s;
-			     return((token::yytokentype)s->type);
-			   }
+                             s = aprepro.getsym(yytext);
+                             if (s == nullptr)
+                               s = aprepro.putsym (yytext, SEAMS::Aprepro::SYMBOL_TYPE::UNDEFINED_VARIABLE, 0);
+                             yylval->tptr = s;
+                             return((token::yytokentype)s->type);
+                           }
 <PARSING>"="               return(token::EQUAL);
 <PARSING>"+="              return(token::EQ_PLUS);
 <PARSING>"-="              return(token::EQ_MINUS);
@@ -609,8 +609,8 @@ integer {D}+({E})?
 <PARSING>"+"               return(token::PLU);
 <PARSING>"-"               return(token::SUB);
 <PARSING>"*"               return(token::TIM);
-<PARSING>"~"		   return(token::TIM);		/* ~ is same as multiply */
-<PARSING>"//"		   return(token::CONCAT);	/* String concatenation */
+<PARSING>"~"               return(token::TIM);          /* ~ is same as multiply */
+<PARSING>"//"              return(token::CONCAT);       /* String concatenation */
 <PARSING>"/"               return(token::DIV);
 <PARSING>"%"               return(token::MOD);
 <PARSING>"^"               return(token::POW);
@@ -633,17 +633,17 @@ integer {D}+({E})?
 <PARSING>"!"               return(token::NOT);
 <PARSING>"["               return(token::LBRACK);
 <PARSING>"]"               return(token::RBRACK);
-<PARSING>{qstring}	   {
+<PARSING>{qstring}         {
            char *pt = strrchr(yytext, '"');
-			     *pt = '\0';
+                             *pt = '\0';
                              new_string(yytext+1, &yylval->string);
-			     return token::QSTRING; }
+                             return token::QSTRING; }
 
-<PARSING>{mlstring}	   {
+<PARSING>{mlstring}        {
            char *pt = strrchr(yytext, '\'');
-			     *pt = '\0';
+                             *pt = '\0';
                              new_string(yytext+1, &yylval->string);
-			     return token::QSTRING; }
+                             return token::QSTRING; }
 
 <PARSING>"}" {
   // Add to the history string
@@ -667,7 +667,7 @@ integer {D}+({E})?
             (aprepro.ap_file_list.top().name != "_string_"))
     {
       if (curr_index > (size_t)yyleng) 
-	hist_start = curr_index - yyleng;
+        hist_start = curr_index - yyleng;
       else
         hist_start = 0;
     }
@@ -688,7 +688,7 @@ integer {D}+({E})?
 }
 
 
-\$			   { if (echo) ECHO; }
+\$                         { if (echo) ECHO; }
 
 
 {id} |

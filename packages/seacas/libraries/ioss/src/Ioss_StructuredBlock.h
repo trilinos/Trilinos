@@ -125,6 +125,7 @@ namespace Ioss {
     EntityType  type() const override { return STRUCTUREDBLOCK; }
 
     const Ioss::NodeBlock &get_node_block() const { return m_nodeBlock; }
+    Ioss::NodeBlock &      get_node_block() { return m_nodeBlock; }
 
     /** \brief Does block contain any cells
      */

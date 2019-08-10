@@ -411,7 +411,7 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
 * `cee-rhel6/`: Contains files to drive builds on CEE LAnL RHEL6 machines with
   a SEMS environment.
 
-* `chama/`: Contains files to drive builds on the SRN HPC machine `chama`.
+* `tlcc2/`: Contains files to drive builds on the SRN HPC tlcc2 machines.
 
 * `mutrino/`: Contains files to drive builds on SNL machine mutrino.
 

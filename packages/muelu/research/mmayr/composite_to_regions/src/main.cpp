@@ -265,6 +265,13 @@ int main_(int argc, char *argv[]) {
 
   Comm->barrier();
 
+  // Manually set smoother parameters on level 0
+  Array<RCP<Teuchos::ParameterList> > smootherParams(1);
+  smootherParams[0] = rcp(new Teuchos::ParameterList);
+  smootherParams[0]->set("smoother: type",    "Jacobi");
+  smootherParams[0]->set("smoother: sweeps",  20);
+  smootherParams[0]->set("smoother: damping", 0.67);
+
   // read xml filename from command line
   Teuchos::CommandLineProcessor clp;
   {
@@ -772,7 +779,8 @@ int main_(int argc, char *argv[]) {
                         regProlong,
                         regRowImporters,
                         regInterfaceScalings,
-                        coarseCompOp);
+                        coarseCompOp,
+                        smootherParams);
   Comm->barrier();
 
   // Run V-cycle
@@ -880,9 +888,7 @@ int main_(int argc, char *argv[]) {
 
     // define max iteration counts
     const int maxVCycle = 200;
-    const int maxFineIter = 20;
     const int maxCoarseIter = 100;
-    const double omega = 0.67;
 
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
@@ -929,10 +935,10 @@ int main_(int argc, char *argv[]) {
       /////////////////////////////////////////////////////////////////////////
 
 //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-      vCycle(0, numLevels, maxFineIter, maxCoarseIter, omega, maxRegPerProc, regX, regB,
-             regMatrices,
+      vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
+             regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, coarseCompOp);
+             regInterfaceScalings, smootherParams, coarseCompOp);
     }
 
     ////////////////////////////////////////////////////////////////////////

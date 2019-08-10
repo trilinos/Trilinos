@@ -150,10 +150,10 @@ namespace { // (anonymous)
       const Scalar ONE = ST::one(), ZERO = ST::zero();
       MV mvcol(zero->getColMap(),1);
       MV mvrow(zero->getRowMap(),1);
-      TEST_THROW(zero->template localMultiply<Scalar>(mvcol,mvbad,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad output map
-      TEST_THROW(zero->template localMultiply<Scalar>(mvbad,mvrow,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad input map
-      TEST_THROW(zero->template localMultiply<Scalar>(mvbad,mvcol,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad output map
-      TEST_THROW(zero->template localMultiply<Scalar>(mvrow,mvbad,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad input map
+      TEST_THROW(zero->localApply(mvcol,mvbad,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad output map
+      TEST_THROW(zero->localApply(mvbad,mvrow,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad input map
+      TEST_THROW(zero->localApply(mvbad,mvcol,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad output map
+      TEST_THROW(zero->localApply(mvrow,mvbad,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad input map
 #endif
     }
   }

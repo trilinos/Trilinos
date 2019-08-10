@@ -60,6 +60,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_Assert.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -136,14 +137,14 @@ int main(int argc, char *argv[]) {
         }
       }
       info = A->InsertGlobalValues(MyGlobalRowElements[i], n, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
 
     // Finish up
     info = A->FillComplete(ColMap, RowMap);
-    assert( info==0 );
+    TEUCHOS_ASSERT( info==0 );
     info = A->OptimizeStorage();
-    assert( info==0 );
+    TEUCHOS_ASSERT( info==0 );
     A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
     //************************************

@@ -76,19 +76,22 @@ public:
 
   BranchHelper_PEBBL(const BranchHelper_PEBBL &con) {}
 
-  virtual int getMyIndex(const Vector<Real> &x) const = 0;
+  //virtual int getMyIndex(const Vector<Real> &x) const = 0;
+  virtual int getMyIndex(const Vector<Real> &x, const Vector<Real> &lam,
+                         Objective<Real> &obj, Constraint<Real> &con) const = 0;
   virtual void getMyNumFrac(int &nfrac, Real &integralityMeasure,
                             const Vector<Real> &x) const = 0;
 
-  int getIndex(const Vector<Real> &x) const {
-    Ptr<const Vector<Real>> xp = getVector(x);
-    return getMyIndex(*xp);
+  //int getIndex(const Vector<Real> &x) const {
+  int getIndex(const Vector<Real> &x, const Vector<Real> &lam,
+               Objective<Real> &obj, Constraint<Real> &con) const {
+    return getMyIndex(*getVector(x),lam,obj,con);
+    //return getMyIndex(*xp);
   }
 
   void getNumFrac(int &nfrac, Real &integralityMeasure,
                   const Vector<Real> &x) const {
-    Ptr<const Vector<Real>> xp = getVector(x);
-    getMyNumFrac(nfrac, integralityMeasure, *xp);
+    getMyNumFrac(nfrac, integralityMeasure, *getVector(x));
   }
 
   virtual Ptr<Transform_PEBBL<Real>> createTransform(void) const = 0;

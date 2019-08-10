@@ -52,23 +52,17 @@ namespace ROL {
 template<class Real, class Ordinal>
 class StdTeuchosBatchManager : public TeuchosBatchManager<Real,Ordinal> {
 public:
-  StdTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
+  StdTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal>> &comm)
     : TeuchosBatchManager<Real,Ordinal>(comm) {}
 
   using TeuchosBatchManager<Real,Ordinal>::sumAll;
-
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    ROL::Ptr<std::vector<Real> > input_ptr
-      = dynamic_cast<StdVector<Real>&>(input).getVector();
-    ROL::Ptr<std::vector<Real> > output_ptr
-      = dynamic_cast<StdVector<Real>&>(output).getVector();
-    int dim_i = static_cast<int>(input_ptr->size());
-    int dim_o = static_cast<int>(output_ptr->size());
-    ROL_TEST_FOR_EXCEPTION(dim_i != dim_o, std::invalid_argument,
+    std::vector<Real> &idata = *dynamic_cast<StdVector<Real>&>(input).getVector();
+    std::vector<Real> &odata = *dynamic_cast<StdVector<Real>&>(output).getVector();
+    int size = idata.size();
+    ROL_TEST_FOR_EXCEPTION(size != static_cast<int>(odata.size()), std::invalid_argument,
       ">>> (ROL::StdTeuchosBatchManager::SumAll): Dimension mismatch!");
-    TeuchosBatchManager<Real,Ordinal>::sumAll(&input_ptr->front(),
-                                              &output_ptr->front(),
-                                              dim_i);
+    TeuchosBatchManager<Real,Ordinal>::sumAll(&idata[0],&odata[0],size);
   }
 };
 

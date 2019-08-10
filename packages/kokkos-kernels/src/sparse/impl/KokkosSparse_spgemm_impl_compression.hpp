@@ -959,13 +959,13 @@ bool KokkosSPGEMM
   		if (KOKKOSKERNELS_VERBOSE){
   			std::cout << "\t\tCompressed Max Row Flops:" << compressed_maxNumRoughZeros  << std::endl;
   			std::cout << "\t\tCompressed Overall Row Flops:" << compressedoverall_flops  << std::endl;
-			std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops)) <<  " min_reduction:" << min_reduction  << std::endl;
+			std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops ? OriginaltotalFlops:1)) <<  " min_reduction:" << min_reduction  << std::endl;
   			std::cout << "\t\tCompressed Max Row Flop Calc Time:" << timer1_t.seconds()  << std::endl;
   		}
 
 		this->handle->get_spgemm_handle()->compressed_max_row_flops = compressed_maxNumRoughZeros;
 		this->handle->get_spgemm_handle()->compressed_overall_flops = compressedoverall_flops;
-    	if (compressedoverall_flops / ((double) (OriginaltotalFlops)) > min_reduction) {
+    	if (OriginaltotalFlops && compressedoverall_flops / ((double) (OriginaltotalFlops)) > min_reduction) {
     		return false;
     	}
       }
@@ -1016,7 +1016,7 @@ bool KokkosSPGEMM
 	  if (KOKKOSKERNELS_VERBOSE){
 		  std::cout << "\t\tCompressed Max Row Flops:" << compressed_maxNumRoughZeros  << std::endl;
 		  std::cout << "\t\tCompressed Overall Row Flops:" << compressedoverall_flops  << std::endl;
-		  std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops)) <<  " min_reduction:" << min_reduction  << std::endl;
+		  std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops ? OriginaltotalFlops:1)) <<  " min_reduction:" << min_reduction  << std::endl;
 
 
 		  std::cout << "\t\tCompressed Max Row Flop Calc Time:" << timer1_t.seconds()  << std::endl;
@@ -1024,7 +1024,7 @@ bool KokkosSPGEMM
 
 	  this->handle->get_spgemm_handle()->compressed_max_row_flops = compressed_maxNumRoughZeros;
 	  this->handle->get_spgemm_handle()->compressed_overall_flops = compressedoverall_flops;
-	  if (compressedoverall_flops / ((double) (OriginaltotalFlops)) > min_reduction) {
+	  if (OriginaltotalFlops && compressedoverall_flops / ((double) (OriginaltotalFlops)) > min_reduction) {
 		  return false;
 	  }
   }

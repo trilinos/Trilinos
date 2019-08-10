@@ -1,21 +1,49 @@
 \page nemesis-mapping Mapping of nemesis API functions to Exodus API functions
+The nemesis library was originally an extension to the ExodusII
+library which provided routines required to support use of Exodus
+databases in a parallel setting; typically with a file-per-processor
+usage.
+
+Since the use of Exodus in parallel executions is now very common, the
+Nemesis library routines have been integrated into the Exodus library
+API. In most cases, the exodus API function corresponding to a nemesis
+API function is obtained by replacing the `ne_` prefix with an `ex_`
+prefix.  There are a few routines where this results in a name
+collision or confusion (e.g. ne_put_version() is ex_put_nemesis_version() since
+it would be confusing to call it ex_put_version()).  The partial read/write
+functions which in nemesis are indicated by a `_n_` in the function
+name have been in replaced by `_partial_` (although the corresponding
+`ex_*_n_*` function does exist in the deprecated functions).
+
+The tables below list all Nemesis API functions and the corresponding
+Exodus API function. In many cases, the only change needed is
+replacing `ne_` by `ex_`, but the routines which were made more
+"generic" (e.g. ne_get_n_side_set() and ne_get_n_node_set() directly
+map to ex_get_n_side_set() and ex_get_n_node_set() which are
+deprecated, so the table below shows the recommended
+ex_get_partial_set()) additional arguments are required.
+
+The nemesis library can still be used since it is still built upon
+request and its implementation is simply wrapper routines which
+forward all existing nemesis function calls to the appropriate Exodus
+function call (with needed argument changes).
 
 \section initial Initial Information Routines
 
-Nemesis API           |      Exodus API
-----------------------|------------------------------
-ne_get_init_info      |      ex_get_init_info()
-ne_put_init_info      |      ex_put_init_info()
-ne_get_init_global    |      ex_get_init_global()
-ne_put_init_global    |      ex_put_init_global()
-ne_put_version        |      ex_put_nemesis_version()
+Nemesis API             |      Exodus API
+------------------------|------------------------------
+ne_get_init_info        |     ex_get_init_info()
+ne_put_init_info        |     ex_put_init_info()
+ne_get_init_global      |     ex_get_init_global()
+ne_put_init_global      |     ex_put_init_global()
+ne_put_version          |     ex_put_nemesis_version()
 
 \section lb Loadbalance Parameter Routines
 
-Nemesis API           |      Exodus API
-----------------------|------------------------------
-ne_get_loadbal_param  |       ex_get_loadbal_param()
-ne_put_loadbal_param  |       ex_put_loadbal_param()
+Nemesis API             |      Exodus API
+------------------------|------------------------------
+ne_get_loadbal_param    |     ex_get_loadbal_param()
+ne_put_loadbal_param    |     ex_put_loadbal_param()
 ne_put_loadbal_param_cc |     ex_put_loadbal_param_cc()
 
 \section param Nodeset, Sideset & Element Block Global Parameter Routines
@@ -33,7 +61,7 @@ ne_put_eb_info_global   |     ex_put_eb_info_global()
 
 Nemesis API             |      Exodus API
 ------------------------|------------------------------
-ne_get_n_side_set       |       ex_get_partial_set()
+ne_get_n_side_set       |     ex_get_partial_set()
 ne_put_n_side_set       |     ex_put_partial_set()
 ne_get_n_side_set_df    |     ex_get_partial_set_dist_fact()
 ne_put_n_side_set_df    |     ex_put_partial_set_dist_fact()
@@ -73,9 +101,9 @@ ne_put_elem_map         |     ex_put_processor_elem_maps()
 
 \section comm  Communications Maps Routines
 
-Nemesis API           |      Exodus API
-----------------------|------------------------------
-ne_get_cmap_params     |      ex_get_cmap_params()
+Nemesis API             |      Exodus API
+------------------------|------------------------------
+ne_get_cmap_params      |     ex_get_cmap_params()
 ne_put_cmap_params      |     ex_put_cmap_params()
 ne_put_cmap_params_cc   |     ex_put_cmap_params_cc()
 ne_get_node_cmap        |     ex_get_node_cmap()

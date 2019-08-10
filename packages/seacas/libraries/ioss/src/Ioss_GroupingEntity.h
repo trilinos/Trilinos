@@ -108,6 +108,16 @@ namespace Ioss {
     void         set_database(DatabaseIO *io_database);
     virtual void delete_database();
 
+    /** Return the GroupingEntity pointer of the "object" that this
+     *  entity is contained in.  For example, a SideBlock would
+     *  return the SideSet that "owns" the SideBlock.
+     *  Most GroupingEntities would return the containing Region
+     *  A region would return itself(?)
+     *  A NodeBlock containing the subset of nodes in a StructuredBlock
+     *  would return that StructuredBlock.
+     */
+    virtual const GroupingEntity *contained_in() const;
+
     /** \brief Get name of entity.
      *
      *  This short-circuits the process of getting the name via the property.

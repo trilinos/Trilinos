@@ -10,6 +10,14 @@ if(DEFINED ENV{DO_TPETRA_TESTING})
     TIMEOUT_MINUTES 330
     )
 
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    OPENMPI-1.10.1_RELEASE_TPETRA_PERFORMANCE
+    ctest_linux_experimental_mpi_release_tpetra_performance_rocketman.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
 else()
 
   TRILINOS_DRIVER_ADD_DASHBOARD(

@@ -197,6 +197,12 @@ public:
   }
 };
 
+template<template<typename> class V, typename Real, typename P = Ptr<Vector<Real>>>
+inline typename std::enable_if<std::is_base_of<Vector<Real>,V<Real>>::value,P>::type
+make_Vector_SimOpt( const Ptr<V<Real>>& vsim, const Ptr<V<Real>>& vopt ) {
+  return makePtr<Vector_SimOpt<Real>>(vsim,vopt);
 }
+
+} // namespace ROL
 
 #endif

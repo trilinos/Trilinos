@@ -395,7 +395,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             machine->type = HCUBE;
             max_dim       = 1;
           }
-	  FALL_THROUGH;
+          FALL_THROUGH;
 
         case MESH:
           if (machine->type < 0) {
@@ -404,7 +404,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           }
 
           cptr = value; /* want to set this for both mesh and hcube */
-	  FALL_THROUGH;
+          FALL_THROUGH;
 
         case CLUSTER:
           if (machine->type < 0) /* so, get the number of boxes */

@@ -56,6 +56,14 @@
 
 namespace ROL {
 
+
+template<typename> struct TimeStamp;
+
+// Alias for pointer vector of TimeStamp objects
+template<typename Real>
+using TimeStampsPtr = Ptr<std::vector<TimeStamp<Real>>>;
+
+
 template<typename Real>
 struct TimeStamp {
 
@@ -64,9 +72,18 @@ struct TimeStamp {
   size_type         k;   // Time-step number  
   std::vector<Real> t;   // Time points for this time step
 
-  /** \brief Create a vector of uniform TimeStamp objects for the interval [t_initial,t_final] where each step
-             has local time points based on t_ref defined on the standard interval [0,1] */
-  static ROL::Ptr<std::vector<TimeStamp<Real>>> make_uniform( Real t_initial, Real t_final, const std::vector<Real>& t_ref, size_type num_steps ) {
+  TimeStamp& operator= ( const TimeStamp& ts ) {
+    k = ts.k; t = ts.t;
+    return *this;
+  }
+
+  /** \brief Create a vector of uniform TimeStamp objects for the interval [t_initial,t_final] 
+             where each step has local time points based on t_ref defined on the standard 
+             interval [0,1] */
+  static TimeStampsPtr<Real> make_uniform( Real t_initial, 
+                                           Real t_final, 
+                                           const std::vector<Real>& t_ref, 
+                                           size_type num_steps ) {
 
     auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>(num_steps);
   
@@ -80,9 +97,7 @@ struct TimeStamp {
     }
     return timeStamp;
   }
-
 };
-
 
 } // namespace ROL
 

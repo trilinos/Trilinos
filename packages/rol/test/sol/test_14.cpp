@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
     *outStream << std::endl << "Error: " << err << std::endl << std::endl;
     errorFlag += (err > 1e-2 ? 1 : 0);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

@@ -348,7 +348,7 @@ int Epetra_Util_insert_empty_positions(T*& array, int& usedLength,
     return(-1);
   }
 
-  if ((usedLength+numPositions) < allocatedLength) {
+  if (((unsigned int)usedLength+(unsigned int)numPositions) < (unsigned int)allocatedLength) {
     for(int i=usedLength-1; i>=insertOffset; --i) {
       array[i+numPositions] = array[i];
     }

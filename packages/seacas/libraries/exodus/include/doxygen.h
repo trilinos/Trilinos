@@ -181,7 +181,7 @@ The method uses the 'mode' argument to the ex_open() and
 ex_create() functions.  The mode is a 32-bit integer in which certain
 bits are turned on by or'ing certain predefined constants.
 
-    exoid = ex_create( EX_TEST_FILENAME,
+    exoid = ex_create( "test.exo",
                        EX_CLOBBER|EX_MAPS_INT64_DB|EX_MAPS_INT64_API,
                        &appWordSize, &diskWordSize );
 
@@ -190,19 +190,19 @@ specification are:
 
 |   Constant Name    | Which data are 64-bit
 ---------------------|----------------------
-| EX_MAPS_INT64_DB   | entity map data
-| EX_IDS_INT64_DB    | mesh entity ids
-| EX_BULK_INT64_DB   | bulk data
-| EX_ALL_INT64_DB    | (the above 3 or'd together)
-| EX_MAPS_INT64_API  | entity map data
-| EX_IDS_INT64_API   | mesh entity ids
-| EX_BULK_INT64_API  | bulk data
-| EX_ALL_INT64_API   | (the above 3 or'd together)
-| EX_INQ_INT64_API   | integers passed to/from ex_inquire()
+| #EX_MAPS_INT64_DB   | entity map data
+| #EX_IDS_INT64_DB    | mesh entity ids
+| #EX_BULK_INT64_DB   | bulk data
+| #EX_ALL_INT64_DB    | (the above 3 or'd together)
+| #EX_MAPS_INT64_API  | entity map data
+| #EX_IDS_INT64_API   | mesh entity ids
+| #EX_BULK_INT64_API  | bulk data
+| #EX_INQ_INT64_API   | integers passed to/from ex_inquire()
+| #EX_ALL_INT64_API   | (the above 4 or'd together)
 
 The constants that end with `_DB` specify that that particular integer
 data is stored on the database as 64-bit integers; the constants that
-end with "_API" specify that that particular integer data is passed
+end with `_API` specify that that particular integer data is passed
 to/from API functions as 64-bit integers.
 
 If the range of the data being transmitted is larger than the
@@ -217,20 +217,20 @@ The three types of integer data whose storage can be specified are
    and blocks; and map ids (`EX_IDS_INT64_`)
 
 The function ex_int64_status()(exoid) is used to determine the integer
-storage types being used for the EXODUS database 'exoid'.  It returns
+storage types being used for the EXODUS database `exoid`.  It returns
 an integer which can be and'ed with the above flags to determine
 either the storage type or function parameter type.
 
 For example, if
-`(EX_MAPS_INT64_DB & ex_int64_status(exoid))` is true, then map data is
+`(#EX_MAPS_INT64_DB & ex_int64_status()(exoid))` is true, then map data is
 being stored as 64-bit integers for that database.
 
 It is not possible to determine the integer data size on a database
 without opening the database via an ex_open() call. However, the
 integer size specification for API functions can be changed at any
 time via the ex_set_int64_status()(exoid, mode) function. The mode is
-one or more of `EX_MAPS_INT64_API`, `EX_IDS_INT64_API`, or
-`EX_BULK_INT64_API`, or'd together.  Any exodus function calls after
+one or more of `#EX_MAPS_INT64_API`, `#EX_IDS_INT64_API`, or
+`#EX_BULK_INT64_API`, or'd together.  Any exodus function calls after
 that point will use the specified integer size. Note that a call to
 ex_set_int64_status()(exoid, mode) overrides any previous setting for
 the integer sizes used in the API.  The ex_create() function is the
@@ -242,8 +242,8 @@ The fortran API is uses the same mechanism as was described above for
 the C API. If using the "8-byte real and 8-byte int" fortran mode
 typically used by the SEACAS applications (the compiler automatically
 promotes all integers and reals to 8-byte quantities), then the
-fortran exodus library will automatically enable the *_API
-options; the client still needs to specify the *_DB options.
+fortran exodus library will automatically enable the `EX_*_INT64_API`
+options; the client still needs to specify the `EX_*_INT64_DB` options.
 
 \subsection int64_fortran_imp Fortran Implementation
 
@@ -259,19 +259,19 @@ pass 64-bit integers down to the C API which has removed some code and
 simplified those functions.
 
 
-\section Database Options (Compression, Name Length, File Type)
+\section db_options Database Options (Compression, Name Length, File Type)
 
 The ex_set_option() function call is used to set various options on the
 database.  Valid values for 'option' are:
 
-|   Option Name          | Option Values
--------------------------|---------------
-| EX_OPT_MAX_NAME_LENGTH | Maximum length of names that will be returned/passed via API call.
-| EX_OPT_COMPRESSION_TYPE | Not currently used; default is gzip
-| EX_OPT_COMPRESSION_LEVEL | In the range [0..9]. A value of 0 indicates no compression
-| EX_OPT_COMPRESSION_SHUFFLE | 1 if enabled, 0 if disabled
-| EX_OPT_INTEGER_SIZE_API | 4 or 8 indicating byte size of integers used in API functions.
-| EX_OPT_INTEGER_SIZE_DB  | Query only, returns 4 or 8 indicating byte size of integers stored on the database.
+|   Option Name          | Option Values |
+-------------------------|---------------|
+| #EX_OPT_MAX_NAME_LENGTH | Maximum length of names that will be returned/passed via API call. |
+| #EX_OPT_COMPRESSION_TYPE | Not currently used; default is gzip |
+| #EX_OPT_COMPRESSION_LEVEL | In the range [0..9]. A value of 0 indicates no compression |
+| #EX_OPT_COMPRESSION_SHUFFLE | 1 if enabled, 0 if disabled |
+| #EX_OPT_INTEGER_SIZE_API | 4 or 8 indicating byte size of integers used in API functions. |
+| #EX_OPT_INTEGER_SIZE_DB  | Query only, returns 4 or 8 indicating byte size of integers stored on the database. |
 
 The compression-related options are only available on NetCDF-4 files
 since the underlying hdf5 compression functionality is used for the
@@ -279,6 +279,59 @@ implementation. The compression level indicates how much effort should
 be expended in the compression and the computational expense increases
 with higher levels; in many cases, a compression level of 1 is
 sufficient.
+
+\section names Variable, Attribute, and Entity Block/Set Names
+The length of the Variables, Attributes, and Entity Block/Set names is
+variable.  The default length is 32 characters to provide backward
+compatibility.  This is the default on both read and write, so if
+there is a database with longer names and the reader does not change
+the length of names to be returned, any API call that returns a name
+will truncate the name at 32 characters.
+
+To avoid this, the reading application can all 
+~~~{.c}
+  // Determine maximum length of names stored on database
+  int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+
+  // Tell the library to return names this length
+  ex_set_max_name_length(exodusFilePtr, max_name_length);
+~~~
+
+On write, you can call:
+
+~~~{.c}
+   ex_set_option(exoid, EX_OPT_MAX_NAME_LENGTH, {max_name_length});
+
+   // or equivalently
+   ex_set_max_name_length(exoid, {max_name_length});
+~~~
+
+which tells the database that you will be using names of that length or shorter.
+
+Following this call, you can define (i.e., read/write) names of any
+size; if the names are longer than `{max_name_length}`, then they will be truncated otherwise they will pass through unchanged.
+
+There are three queries that can be made to ex_inquire() or
+ex_inquire_int():
+
+  - #EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH -- returns the value of the
+    maximum size that can be specified for `max_name_length`
+    (netcdf/hdf5 limitation)
+  - #EX_INQ_DB_MAX_USED_NAME_LENGTH -- returns the size of the longest
+    name on the database.
+  - #EX_INQ_MAX_READ_NAME_LENGTH -- returns the maximum name length
+    size that will be passed back to the client. 32 by default,
+    set by the previously mentioned ex_set_option() or
+    ex_set_max_name_length() call.
+
+\note
+  - The length of the QA records (ex_get_qa(), ex_put_qa()) is not affected by this setting and each entry in the QA record is still limited to 32 characters.
+  - The length of the `entity_descrip` type passed and returnen in the
+    ex_get_block() and ex_put_block() calls is still limited to 32 characters.
+  - The length of the title is limited to 80 characters
+    (ex_get_init(), ex_get_init_ext(), ex_put_init(), ex_put_init_ext()).
+  - The length of the info records is limited to 80 characters
+  (ex_put_info(), ex_get_info()).
 
 \defgroup ResultsData Results Data
 @{
@@ -340,10 +393,8 @@ element attributes, node sets, side sets, and object properties.
   @}
 
 @example ../test/CreateEdgeFace.c
-@example ../test/ExoIICTests.cxx
 @example ../test/ReadEdgeFace.c
 @example ../test/create_mesh.c
-@example ../test/testwt-oned.c
 @example ../test/rd_wt_mesh.c
 @example ../test/test-empty.c
 @example ../test/test_nemesis.c
@@ -355,6 +406,7 @@ element attributes, node sets, side sets, and object properties.
 @example ../test/test_ts_partial_nvar_rd.c
 @example ../test/testcp.c
 @example ../test/testcp_nl.c
+@example ../test/testcp_tran.c
 @example ../test/testcpd.c
 @example ../test/testrd-groups.c
 @example ../test/testrd-long-name.c
@@ -369,13 +421,14 @@ element attributes, node sets, side sets, and object properties.
 @example ../test/testrdwt.c
 @example ../test/testwt-compress.c
 @example ../test/testwt-groups.c
-@example ../test/testwt-localization.C
 @example ../test/testwt-long-name.c
 @example ../test/testwt-nface-nside.c
 @example ../test/testwt-nfaced.c
 @example ../test/testwt-nsided.c
 @example ../test/testwt-one-attrib.c
+@example ../test/testwt-oned.c
 @example ../test/testwt-partial.c
+@example ../test/testwt-results.c
 @example ../test/testwt-zeroe.c
 @example ../test/testwt-zeron.c
 @example ../test/testwt.c
@@ -388,6 +441,22 @@ element attributes, node sets, side sets, and object properties.
 @example ../test/testwtd.c
 @example ../test/testwtm.c
 @example ../test/twod.c
+
+@example ../exodus_for/test/test_nem.f
+@example ../exodus_for/test/testcp.f
+@example ../exodus_for/test/testcpd.f
+@example ../exodus_for/test/testcpnl.f
+@example ../exodus_for/test/testrd.f
+@example ../exodus_for/test/testrd1.f
+@example ../exodus_for/test/testrd_nsid.f
+@example ../exodus_for/test/testrdd.f
+@example ../exodus_for/test/testwt.f
+@example ../exodus_for/test/testwt1.f
+@example ../exodus_for/test/testwt2.f
+@example ../exodus_for/test/testwt3.f
+@example ../exodus_for/test/testwt_nsid.f
+@example ../exodus_for/test/testwtd.f
+@example ../exodus_for/test/testwtm.f
 */
 
 /* clang-format on */

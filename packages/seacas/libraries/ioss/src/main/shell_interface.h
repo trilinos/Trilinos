@@ -109,6 +109,7 @@ namespace IOShell {
     bool file_per_state{false};
     // Testing CGNS - defines zones in reverse order from input file.
     bool reverse{false};
+    bool add_processor_id_field{false};
     char fieldSuffixSeparator{'_'};
   };
 } // namespace IOShell

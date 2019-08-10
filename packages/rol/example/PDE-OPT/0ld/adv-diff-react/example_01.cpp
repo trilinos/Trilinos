@@ -183,8 +183,9 @@ int main(int argc, char *argv[]) {
     data->zeroRHS();
 
     /*** Solve optimization problem. ***/
-
-    ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>> step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>> status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo_tr(step,status,false);
     zp->zero(); // set zero initial guess
     algo_tr.run(*zp, *objReduced, true, *outStream);
     con->solve(*cp, *up, *zp, tol);
@@ -203,7 +204,7 @@ int main(int argc, char *argv[]) {
     //data->outputTpetraData();
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
