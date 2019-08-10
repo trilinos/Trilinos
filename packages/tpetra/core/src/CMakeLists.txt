@@ -539,6 +539,13 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "BlockMultiVector" "BLOCKMULTIVECTOR" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${BLOCKMULTIVECTOR_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::BlockVector.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKVECTOR_OUTPUT_FILES
+    "Tpetra_ETI_SC_LO_GO_NT.tmpl" "BlockVector" "BLOCKVECTOR"
+    "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${BLOCKVECTOR_OUTPUT_FILES})
+
   # Generate ETI .cpp files for Tpetra::BlockCrsMatrix helpers.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_HELPER_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl"
   "BlockCrsMatrix_Helpers" "BLOCKCRSMATRIX_HELPERS" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
@@ -635,6 +642,86 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "${TpetraCore_ETI_GORDS}"
     "${TpetraCore_ETI_NODES}")
   LIST(APPEND SOURCES ${CRSGRAPH_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Directory.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(DIRECTORY_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "Directory"
+    "DIRECTORY"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${DIRECTORY_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Directory's implementation classes.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(DIRECTORYIMPL_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "DirectoryImpl"
+    "DIRECTORYIMPL"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${DIRECTORYIMPL_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Export.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(EXPORT_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "Export"
+    "EXPORT"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${EXPORT_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Import.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(IMPORT_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "Import"
+    "IMPORT"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${IMPORT_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::ImportExportData.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(IMPORTEXPORTDATA_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "ImportExportData"
+    "IMPORTEXPORTDATA"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${IMPORTEXPORTDATA_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Details::makeColMap.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(MAKECOLMAP_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "Details_makeColMap"
+    "DETAILS_MAKECOLMAP"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${MAKECOLMAP_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Details::packCrsGraph.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(PACKCRSGRAPH_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "Details_packCrsGraph"
+    "DETAILS_PACKCRSGRAPH"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${PACKCRSGRAPH_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Details::unpackCrsGraphAndCombine.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(UNPACKCRSGRAPHANDCOMBINE_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "Details_unpackCrsGraphAndCombine"
+    "DETAILS_UNPACKCRSGRAPHANDCOMBINE"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${UNPACKCRSGRAPHANDCOMBINE_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::Details::localRowOffsets.
   TPETRA_PROCESS_ALL_LGN_TEMPLATES(LOCALROWOFFSETS_OUTPUT_FILES
