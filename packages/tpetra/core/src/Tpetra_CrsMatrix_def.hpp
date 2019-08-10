@@ -824,32 +824,39 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CrsMatrix(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
-                                                                  const Teuchos::DataAccess copyOrView)
-    :CrsMatrix(source.getCrsGraph(),source.getLocalValuesView())
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+             const Teuchos::DataAccess copyOrView)
+    : CrsMatrix (source.getCrsGraph (), source.getLocalValuesView ())
   {
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const CrsMatrix>&, const Teuchos::DataAccess): ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!source.isFillComplete(),std::invalid_argument,"Source graph must be fillComplete().");
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix("
+      "const CrsMatrix&, const Teuchos::DataAccess): ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! source.isFillComplete (), std::invalid_argument,
+       "Source graph must be fillComplete().");
 
     if (copyOrView == Teuchos::Copy) {
-      typename local_matrix_type::values_type vals = source.getLocalValuesView();
-      typename local_matrix_type::values_type newvals;
-      Kokkos::resize(newvals,vals.extent(0));
-      Kokkos::deep_copy(newvals,vals);
+      using values_type = typename local_matrix_type::values_type;
+      values_type vals = source.getLocalValuesView ();
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
+      values_type newvals (view_alloc ("val", WithoutInitializing),
+                           vals.extent (0));
+      Kokkos::deep_copy (newvals, vals);
       k_values1D_ = newvals;
       if (source.isFillComplete ()) {
-        this->fillComplete(source.getDomainMap(),source.getRangeMap());
+        fillComplete (source.getDomainMap (), source.getRangeMap ());
       }
     }
     else if (copyOrView == Teuchos::View) {
       return;
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-                                            true, std::invalid_argument, "Second argument 'copyOrView' has an "
-                                            "invalid value " << copyOrView << ".  Valid values include "
-                                            "Teuchos::Copy = " << Teuchos::Copy << " and Teuchos::View = "
-                                            << Teuchos::View << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::invalid_argument, "Second argument 'copyOrView' "
+         "has an invalid value " << copyOrView << ".  Valid values "
+         "include Teuchos::Copy = " << Teuchos::Copy << " and "
+         "Teuchos::View = " << Teuchos::View << ".");
     }
   }
 

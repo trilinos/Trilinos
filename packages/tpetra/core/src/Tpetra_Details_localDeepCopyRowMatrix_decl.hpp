@@ -1,4 +1,3 @@
-/*
 // @HEADER
 // ***********************************************************************
 //
@@ -35,25 +34,35 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
-*/
 
-#include "Tpetra_Export.hpp"
+#ifndef TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
+#define TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+/// \file Tpetra_Details_localDeepCopyRowMatrix_decl.hpp
+/// \brief Declaration of function for making a deep copy of a
+///   Tpetra::RowMatrix's local matrix.
 
-#include "TpetraCore_ETIHelperMacros.h"
-#include "Tpetra_Export_def.hpp"
+#include "Tpetra_RowMatrix_fwd.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 namespace Tpetra {
+namespace Details {
 
- TPETRA_ETI_MANGLING_TYPEDEFS()
+//! Deep copy of A's local sparse matrix.
+template <class SC, class LO, class GO, class NT>
+KokkosSparse::CrsMatrix<
+  typename Kokkos::ArithTraits<SC>::val_type,
+    LO,
+    typename NT::execution_space,
+    void>
+localDeepCopyLocallyIndexedRowMatrix
+  (const RowMatrix<SC, LO, GO, NT>& A,
+   const char label[]);
 
- TPETRA_INSTANTIATE_LGN(TPETRA_EXPORT_INSTANT)
-
+} // namespace Details
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP

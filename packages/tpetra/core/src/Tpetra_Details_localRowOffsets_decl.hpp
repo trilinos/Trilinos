@@ -1,4 +1,3 @@
-/*
 // @HEADER
 // ***********************************************************************
 //
@@ -35,43 +34,65 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
-*/
 
-// Including this is the easy way to get access to all the Node types.
-#include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ConfigDefs.hpp"
+#ifndef TPETRA_DETAILS_LOCALROWOFFSETS_DECL_HPP
+#define TPETRA_DETAILS_LOCALROWOFFSETS_DECL_HPP
 
-// Don't bother compiling anything, or even including anything else,
-// unless KokkosOpenMPWrapperNode is enabled.
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_OPENMP)
+/// \file Tpetra_Details_localRowOffsets_decl.hpp
+/// \brief Declaration of function for getting local row offsets from
+///   a Tpetra::RowGraph.
 
-#include "Tpetra_CrsGraph_decl.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
-#include "Tpetra_CrsGraph_def.hpp"
-
-// The first macro instantiates just the graph stuff.  The second
-// instantiates CrsGraph methods templated on Scalar type that
-// CrsMatrix needs.  The two must be handled separately, to avoid link
-// errors resulting from redundant instantiations.
-
-#define TPETRA_CRSGRAPH_GRAPH_INSTANT_OPENMPWRAPPERNODE( LO, GO ) \
-  TPETRA_CRSGRAPH_GRAPH_INSTANT( LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
-
-#define TPETRA_CRSGRAPH_INSTANT_OPENMPWRAPPERNODE( SCALAR, LO, GO ) \
-  TPETRA_CRSGRAPH_INSTANT( SCALAR, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
+#include "Tpetra_CrsGraph_fwd.hpp"
+#include "Tpetra_RowGraph_fwd.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include <utility> // pair
 
 namespace Tpetra {
+namespace Details {
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+//! Result returned by localRowOffsets (see below).
+template <class NT>
+struct LocalRowOffsetsResult {
+private:
+  using local_graph_type =
+    typename KokkosSparse::CrsMatrix<
+      double, int, typename NT::execution_space, void>::
+        staticcrsgraph_type;
+public:
+  using offsets_type =
+    typename local_graph_type::row_map_type::non_const_type;
+  using offset_type = typename offsets_type::non_const_value_type;
 
-  TPETRA_INSTANTIATE_LG(TPETRA_CRSGRAPH_GRAPH_INSTANT_OPENMPWRAPPERNODE)
+  offsets_type ptr; //!< Local row offsets (Kokkos::View)
+  offset_type nnz;  //!< Local number of graph / matrix entries
+  size_t maxNumEnt; //!< Max number of entries over all local rows
+};
 
-  TPETRA_INSTANTIATE_SLG(TPETRA_CRSGRAPH_INSTANT_OPENMPWRAPPERNODE)
+namespace Impl {
 
+template <class LO, class GO, class NT>
+std::pair<typename LocalRowOffsetsResult<NT>::offsets_type, size_t>
+localRowCounts (const RowGraph<LO, GO, NT>& G);
+
+template <class LO, class GO, class NT>
+LocalRowOffsetsResult<NT>
+localRowOffsetsFromRowGraph (const RowGraph<LO, GO, NT>& G);
+
+template <class LO, class GO, class NT>
+LocalRowOffsetsResult<NT>
+localRowOffsetsFromFillCompleteCrsGraph (const CrsGraph<LO, GO, NT>& G);
+
+} // namespace Impl
+
+/// \brief Get local row offsets ("ptr", in compressed sparse row
+///   terms) for the given graph.
+template <class LO, class GO, class NT>
+LocalRowOffsetsResult<NT>
+localRowOffsets (const RowGraph<LO, GO, NT>& G);
+
+} // namespace Details
 } // namespace Tpetra
 
-#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_OPENMP)
+#endif // TPETRA_DETAILS_LOCALROWOFFSETS_DECL_HPP
