@@ -200,6 +200,8 @@ namespace MueLu {
         LO heuristicTargetRowsPerProcess = Get<LO>(level,"repartition: heuristic target rows per process");
         Zoltan2Params.set("mj_premigration_coordinate_count", heuristicTargetRowsPerProcess);
       }
+      const bool writeZoltan2DebuggingFiles = Zoltan2Params.get("mj_debug",false);
+      Zoltan2Params.remove("mj_debug");
 
       std::vector<int>           strides;
       std::vector<const real_type*> weights(1, weightsPerRow.getRawPtr());
@@ -212,6 +214,8 @@ namespace MueLu {
 
       {
         SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
+        if (writeZoltan2DebuggingFiles)
+          adapter.generateFiles("mj_debug", *(rowMap->getComm()));
         problem->solve();
       }
 

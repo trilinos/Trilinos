@@ -545,7 +545,7 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     out << "Testing operator<<()...";
     ostringstream output;
     output << a;
-    TEUCHOS_TEST_FOR_EXCEPTION(output.str() != "MDField(100,4): Tag: density, double, DataLayout: <Cell,Node>(100,4)", std::logic_error, "String match failed!"); 
+    TEST_EQUALITY(output.str(),"MDField(100,4): Tag: density, double, DataLayout: <Cell,Node>(100,4)"); 
     out << "passed!" << endl;
     out << output.str() << endl;
   }
