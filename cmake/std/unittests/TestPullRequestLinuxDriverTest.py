@@ -269,8 +269,6 @@ class Test_setEnviron(unittest.TestCase):
                                                      'WORKSPACE': self.jenkins_workspace,
                                                      'NODE_NAME': 'TEST_NODE_NAME',
                                                      'PATH': '/fake/path',
-                                                     'CC': '/fake/gcc/path/bin/gcc',
-                                                     'FC': '/fake/gcc/path/bin/gfortran',
                                                       },
                                          clear=True)
         self.arguments = Namespace()
@@ -302,11 +300,15 @@ class Test_setEnviron(unittest.TestCase):
         setattr(self.arguments,
                 'job_base_name',
                 PR_name)
+            
         with self.IOredirect, \
              self.m_chdir, \
              self.m_check_out, \
              self.m_environ, \
              mock.patch('PullRequestLinuxDriverTest.module') as m_mod:
+            if PR_name == 'Trilinos_pullrequest_cuda_9.2':
+                os.environ.update({'CC': '/fake/gcc/path/bin/gcc',
+                                   'FC': '/fake/gcc/path/bin/gfortran'})
             PullRequestLinuxDriverTest.setBuildEnviron(self.arguments)
             for key, value in test_ENV.items():
                 if isinstance(value, str):
