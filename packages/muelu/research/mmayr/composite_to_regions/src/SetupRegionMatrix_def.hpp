@@ -163,7 +163,7 @@ void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,
 
 /*! \brief Transform regional vector to composite layout
  *
- *  Starting from a \c Epetra_Vector in regional layout, we
+ *  Starting from a \c Xpetra::Vector in regional layout, we
  *  1. replace the regional map with the quasiRegional map
  *  2. export it into a vector with composite layout using the \c CombineMode \c Add.
  *     Note: on-process values also have to be added to account for region interfaces inside a process.
@@ -201,12 +201,14 @@ void regionalToComposite(const std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdin
       RCP<Vector> partialCompVec = VectorFactory::Build(rowImportPerGrp[0]->getSourceMap(), true);
       TEUCHOS_ASSERT(Teuchos::nonnull(partialCompVec));
       TEUCHOS_ASSERT(partialCompVec->getLocalLength() == compVecLocalLength);
-      // ToDo (mayr.mt) Use input variable 'combineMode'
-      partialCompVec->doExport(*quasiRegVec, *(rowImportPerGrp[grpIdx]), Xpetra::ADD);
+      partialCompVec->doExport(*quasiRegVec, *(rowImportPerGrp[grpIdx]), combineMode);
 
-      Teuchos::ArrayRCP<const SC> partialCompVecData = partialCompVec->getData(0);
-      for(size_t entryIdx = 0; entryIdx < compVecLocalLength; ++entryIdx) {
-        compVec->sumIntoLocalValue(static_cast<LO>(entryIdx), partialCompVecData[entryIdx]);
+      if (combineMode == Xpetra::ADD)
+      {
+        Teuchos::ArrayRCP<const SC> partialCompVecData = partialCompVec->getData(0);
+        for(size_t entryIdx = 0; entryIdx < compVecLocalLength; ++entryIdx) {
+          compVec->sumIntoLocalValue(static_cast<LO>(entryIdx), partialCompVecData[entryIdx]);
+        }
       }
     }
   }
