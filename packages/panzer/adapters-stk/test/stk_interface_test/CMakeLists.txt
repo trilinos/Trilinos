@@ -145,9 +145,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy_pamgen
   EXEDEPS tExodusReaderFactory
   )
 
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  tPamgenMeshFactory
-#  SOURCES tPamgenMeshFactory.cpp ${UNIT_TEST_DRIVER}
-#  NUM_MPI_PROCS 1
-#  COMM serial mpi
-#  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tPamgenMeshFactory
+  SOURCES tPamgenMeshFactory.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  )

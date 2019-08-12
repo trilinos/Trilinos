@@ -80,6 +80,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, periodic_input)
    pbcs.set<int>("Count",1);
    pbcs.set("Periodic Condition 1","x-coord left;right");
 
+   TEST_EQUALITY(STK_PamgenReaderFactory::calculateDimension("pamgen_test.gen",MPI_COMM_WORLD),3);
+
    STK_PamgenReaderFactory pamgenFactory("pamgen_test.gen");
    pamgenFactory.buildMesh(MPI_COMM_WORLD);
 }

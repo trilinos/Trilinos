@@ -103,6 +103,16 @@ public:
    const std::string & getFileName() const
    { return fileName_; }
 
+   /** Calculate the dimension of a pamgen mesh. This uses a quick
+     * read of the meta data only and sholud be fast.
+     *
+     * \param[in] meshStr Filename containing the mesh string, or the mesh string itself.
+     * \param[in] parallelMach Descriptor for machine to build this mesh on.
+     *
+     * \returns Integer indicating the spatial dimension of the mesh.
+     */
+   static int calculateDimension(const std::string & meshStr,stk::ParallelMachine parallelMach);
+
 protected:
 
    void registerElementBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;

@@ -310,6 +310,17 @@ void STK_PamgenReaderFactory::registerNodesets(STK_Interface & mesh) const
    }
 }
 
+int 
+STK_PamgenReaderFactory::
+calculateDimension(const std::string & meshStr,stk::ParallelMachine parallelMach)
+{
+  stk::io::StkMeshIoBroker meshData(parallelMach);
+  meshData.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
+  meshData.add_mesh_database(meshStr, "pamgen", stk::io::READ_MESH);
+  meshData.create_input_mesh();
+  return Teuchos::as<int>(meshData.meta_data_rcp()->spatial_dimension());
+}
+
 }
 
 #endif
