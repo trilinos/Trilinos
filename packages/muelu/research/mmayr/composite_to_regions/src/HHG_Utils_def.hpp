@@ -51,6 +51,7 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MultiVector.hpp>
 
+#include <Teuchos_Array.hpp>
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_RCP.hpp>
 
@@ -100,6 +101,20 @@ struct widget {
 template <class T>
 void printRegionalObject(const std::string objName, ///< string to be used for screen output
     const std::vector<Teuchos::RCP<T> > regObj, ///< regional object to be printed to screen
+    const int myRank, ///< rank of calling proc
+    Teuchos::FancyOStream& outstream ///< output stream
+    )
+{
+  for (int j = 0; j < (int) regObj.size(); j++) {
+    outstream << myRank << ": " << objName << " " << j << std::endl;
+    regObj[j]->describe(outstream, Teuchos::VERB_EXTREME);
+  }
+}
+
+//! Print an object in regional layout to screen
+template <class T>
+void printRegionalObject(const std::string objName, ///< string to be used for screen output
+    const Teuchos::Array<Teuchos::RCP<T> > regObj, ///< regional object to be printed to screen
     const int myRank, ///< rank of calling proc
     Teuchos::FancyOStream& outstream ///< output stream
     )
