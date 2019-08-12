@@ -9,7 +9,7 @@ IF(ShyLU_DDFROSch_ENABLE_Epetra AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Com
 ############################
 TRIBITS_ADD_TEST(
 interfacesets
-NAME test_interfacesets_DIM2_CSCommMatrix_EPETRA
+NAME test_interfacesets_DIM2_CSCommCrsMatrix_EPETRA
 ARGS "--DIM=2 --M=4 --COMMSTRAT=0 --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
@@ -17,7 +17,7 @@ NUM_MPI_PROCS 4
 
 TRIBITS_ADD_TEST(
 interfacesets
-NAME test_interfacesets_DIM3_CSCommMatrix_EPETRA
+NAME test_interfacesets_DIM3_CSCommCrsMatrix_EPETRA
 ARGS "--DIM=3 --M=4 --COMMSTRAT=0 --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -28,7 +28,7 @@ NUM_MPI_PROCS 8
 ############################
 TRIBITS_ADD_TEST(
 interfacesets
-NAME test_interfacesets_DIM2_CSCommGraph_EPETRA
+NAME test_interfacesets_DIM2_CSCommCrsGraph_EPETRA
 ARGS "--DIM=2 --M=4 --COMMSTRAT=1 --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
@@ -36,7 +36,7 @@ NUM_MPI_PROCS 4
 
 TRIBITS_ADD_TEST(
 interfacesets
-NAME test_interfacesets_DIM3_CSCommGraph_EPETRA
+NAME test_interfacesets_DIM3_CSCommCrsGraph_EPETRA
 ARGS "--DIM=3 --M=4 --COMMSTRAT=1 --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -67,7 +67,7 @@ ENDIF()
 ############################
 TRIBITS_ADD_TEST(
 interfacesets
-NAME test_interfacesets_DIM2_CSCommMatrix_TPETRA
+NAME test_interfacesets_DIM2_CSCommCrsMatrix_TPETRA
 ARGS "--DIM=2 --M=4 --COMMSTRAT=0 --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
@@ -75,7 +75,7 @@ NUM_MPI_PROCS 4
 
 TRIBITS_ADD_TEST(
 interfacesets
-NAME test_interfacesets_DIM3_CSCommMatrix_TPETRA
+NAME test_interfacesets_DIM3_CSCommCrsMatrix_TPETRA
 ARGS "--DIM=3 --M=4 --COMMSTRAT=0 --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -86,7 +86,7 @@ NUM_MPI_PROCS 8
 ############################
 TRIBITS_ADD_TEST(
 interfacesets
-NAME test_interfacesets_DIM2_CSCommGraph_TPETRA
+NAME test_interfacesets_DIM2_CSCommCrsGraph_TPETRA
 ARGS "--DIM=2 --M=4 --COMMSTRAT=1 --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
@@ -94,7 +94,7 @@ NUM_MPI_PROCS 4
 
 TRIBITS_ADD_TEST(
 interfacesets
-NAME test_interfacesets_DIM3_CSCommGraph_TPETRA
+NAME test_interfacesets_DIM3_CSCommCrsGraph_TPETRA
 ARGS "--DIM=3 --M=4 --COMMSTRAT=1 --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8

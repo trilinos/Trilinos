@@ -52,11 +52,11 @@ namespace FROSch {
     OverlappingOperator<SC,LO,GO,NO> (k,parameterList),
     AddingLayersStrategy_ ()
     {
-        if (!this->ParameterList_->get("Adding Layers Strategy","Graph").compare("Graph")) {
+        if (!this->ParameterList_->get("Adding Layers Strategy","CrsGraph").compare("CrsGraph")) {
             AddingLayersStrategy_ = LayersFromGraph;
-        } else if (!this->ParameterList_->get("Adding Layers Strategy","Graph").compare("Matrix")) {
+        } else if (!this->ParameterList_->get("Adding Layers Strategy","CrsGraph").compare("CrsMatrix")) {
             AddingLayersStrategy_ = LayersFromMatrix;
-        } else if (!this->ParameterList_->get("Adding Layers Strategy","Graph").compare("Old")) {
+        } else if (!this->ParameterList_->get("Adding Layers Strategy","CrsGraph").compare("Old")) {
             AddingLayersStrategy_ = LayersOld;
         } else {
             FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator : ERROR: Specify a valid strategy for adding layers.");

@@ -23,7 +23,7 @@
             <Parameter name="OverlappingOperator Type"                          type="string"   value="AlgebraicOverlappingOperator"/>
             
             <ParameterList name="AlgebraicOverlappingOperator">
-                <Parameter name="Adding Layers Strategy"                        type="string"   value="Graph"/>
+                <Parameter name="Adding Layers Strategy"                        type="string"   value="CrsGraph"/>
                 <ParameterList name="Solver">
                     <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
                     <Parameter name="Solver"                                    type="string"   value="Klu"/>

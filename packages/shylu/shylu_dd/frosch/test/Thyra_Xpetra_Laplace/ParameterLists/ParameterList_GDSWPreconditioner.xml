@@ -27,7 +27,7 @@
                 </ParameterList>
             </ParameterList>
             
-            <ParameterList name="GDSWOperator">
+            <ParameterList name="CoarseOperator">
                 <ParameterList name="Blocks">
                     <ParameterList name="1">
                         <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>

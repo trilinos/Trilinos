@@ -81,10 +81,10 @@ namespace FROSch {
         Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
         CommunicationStrategy communicationStrategy;
-        if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("Matrix")) {
-            communicationStrategy = CommMatrix;
+        if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsMatrix")) {
+            communicationStrategy = CommCrsMatrix;
         } else if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsGraph")) {
-            communicationStrategy = CommGraph;
+            communicationStrategy = CommCrsGraph;
         } else if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CreateOneToOneMap")) {
             communicationStrategy = CreateOneToOneMap;
         } else {
@@ -187,8 +187,8 @@ namespace FROSch {
     ------------------------------------------------------------------------------\n\
      RGDSW coarse space\n\
     ------------------------------------------------------------------------------\n\
-      coarse nodes: translations                 --- " << true << "\n\
-      coarse nodes: rotations                    --- " << useRotations << "\n\
+      Coarse nodes: translations                 --- " << true << "\n\
+      Coarse nodes: rotations                    --- " << useRotations << "\n\
     ------------------------------------------------------------------------------\n" << std::noboolalpha;
                 }
             }

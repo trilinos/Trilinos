@@ -59,7 +59,7 @@
 
 namespace FROSch {
 
-    enum CommunicationStrategy {CommMatrix,CommGraph,CreateOneToOneMap};
+    enum CommunicationStrategy {CommCrsMatrix,CommCrsGraph,CreateOneToOneMap};
 
     template <class SC = Xpetra::Operator<>::scalar_type,
               class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
@@ -122,7 +122,7 @@ namespace FROSch {
                     UN dofsPerNode,
                     ConstMapPtr localToGlobalMap,
                     Verbosity verbosity = All,
-                    CommunicationStrategy commStrategy = CommGraph);
+                    CommunicationStrategy commStrategy = CommCrsGraph);
 
         ~DDInterface();
 
@@ -197,7 +197,7 @@ namespace FROSch {
 
         int communicateLocalComponents(IntVecVecPtr &componentsSubdomains,
                                        IntVecVec &componentsSubdomainsUnique,
-                                       CommunicationStrategy commStrategy = CommGraph);
+                                       CommunicationStrategy commStrategy = CommCrsGraph);
 
         int identifyLocalComponents(IntVecVecPtr &componentsSubdomains,
                                     IntVecVec &componentsSubdomainsUnique);

@@ -58,11 +58,11 @@ namespace FROSch {
     Combine_(),
     LevelID_(this->ParameterList_->get("Level ID",1))
     {
-        if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Averaging")) {
+        if (!this->ParameterList_->get("Combine Values in Overlap","Restricted").compare("Averaging")) {
             Combine_ = Averaging;
-        } else if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Full")) {
+        } else if (!this->ParameterList_->get("Combine Values in Overlap","Restricted").compare("Full")) {
             Combine_ = Full;
-        } else if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Restricted")) {
+        } else if (!this->ParameterList_->get("Combine Values in Overlap","Restricted").compare("Restricted")) {
             Combine_ = Restricted;
         }
     }

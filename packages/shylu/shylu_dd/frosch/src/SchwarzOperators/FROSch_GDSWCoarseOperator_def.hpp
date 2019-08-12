@@ -294,10 +294,10 @@ namespace FROSch {
         Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
         CommunicationStrategy communicationStrategy;
-        if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("Matrix")) {
-            communicationStrategy = CommMatrix;
+        if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsMatrix")) {
+            communicationStrategy = CommCrsMatrix;
         } else if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsGraph")) {
-            communicationStrategy = CommGraph;
+            communicationStrategy = CommCrsGraph;
         } else if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CreateOneToOneMap")) {
             communicationStrategy = CreateOneToOneMap;
         } else {
@@ -453,15 +453,15 @@ namespace FROSch {
     ------------------------------------------------------------------------------\n\
      GDSW coarse space\n\
     ------------------------------------------------------------------------------\n\
-      vertices: translations                      --- " << useVertexTranslations << "\n\
-      shortEdges: translations                    --- " << useShortEdgeTranslations << "\n\
-      shortEdges: rotations                       --- " << useShortEdgeRotations << "\n\
-      straightEdges: translations                 --- " << useStraightEdgeTranslations << "\n\
-      straightEdges: rotations                    --- " << useStraightEdgeRotations << "\n\
-      edges: translations                         --- " << useEdgeTranslations << "\n\
-      edges: rotations                            --- " << useEdgeRotations << "\n\
-      faces: translations                         --- " << useFaceTranslations << "\n\
-      faces: rotations                            --- " << useFaceRotations << "\n\
+      Vertices: translations                      --- " << useVertexTranslations << "\n\
+      ShortEdges: translations                    --- " << useShortEdgeTranslations << "\n\
+      ShortEdges: rotations                       --- " << useShortEdgeRotations << "\n\
+      StraightEdges: translations                 --- " << useStraightEdgeTranslations << "\n\
+      StraightEdges: rotations                    --- " << useStraightEdgeRotations << "\n\
+      Edges: translations                         --- " << useEdgeTranslations << "\n\
+      Edges: rotations                            --- " << useEdgeRotations << "\n\
+      Faces: translations                         --- " << useFaceTranslations << "\n\
+      Faces: rotations                            --- " << useFaceRotations << "\n\
     ------------------------------------------------------------------------------\n" << std::noboolalpha;
                 }
             }

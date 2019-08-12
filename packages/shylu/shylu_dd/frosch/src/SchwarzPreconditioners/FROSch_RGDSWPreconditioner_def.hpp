@@ -50,7 +50,7 @@ namespace FROSch {
     RGDSWPreconditioner<SC,LO,GO,NO>::RGDSWPreconditioner(ConstCrsMatrixPtr k,
                                                           ParameterListPtr parameterList) :
     AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> (k,parameterList),
-    CoarseLevelOperator_ (new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"RGDSWOperator")))
+    CoarseLevelOperator_ (new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"CoarseOperator")))
     {
         this->SumOperator_->addOperator(CoarseLevelOperator_);
     }

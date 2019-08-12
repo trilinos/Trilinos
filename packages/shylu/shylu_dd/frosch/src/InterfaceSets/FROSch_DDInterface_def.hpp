@@ -454,12 +454,12 @@ namespace FROSch {
     ------------------------------------------------------------------------------\n\
      Interface statistics\n\
     ------------------------------------------------------------------------------\n\
-      vertices:       total / avg / min / max     ---  " << global[0] << " / " << avg[0] << " / " << min[0] << " / " << max[0] << "\n\
-      shortEdges:     total / avg / min / max     ---  " << global[1] << " / " << avg[1] << " / " << min[1] << " / " << max[1] << "\n\
-      straightEdges:  total / avg / min / max     ---  " << global[2] << " / " << avg[2] << " / " << min[2] << " / " << max[2] << "\n\
-      edges:          total / avg / min / max     ---  " << global[3] << " / " << avg[3] << " / " << min[3] << " / " << max[3] << "\n\
-      faces:          total / avg / min / max     ---  " << global[4] << " / " << avg[4] << " / " << min[4] << " / " << max[4] << "\n\
-      coarse nodes:   total / avg / min / max     ---  " << global[5] << " / " << avg[5] << " / " << min[5] << " / " << max[5] << "\n\
+      Vertices:       total / avg / min / max     ---  " << global[0] << " / " << avg[0] << " / " << min[0] << " / " << max[0] << "\n\
+      ShortEdges:     total / avg / min / max     ---  " << global[1] << " / " << avg[1] << " / " << min[1] << " / " << max[1] << "\n\
+      StraightEdges:  total / avg / min / max     ---  " << global[2] << " / " << avg[2] << " / " << min[2] << " / " << max[2] << "\n\
+      Edges:          total / avg / min / max     ---  " << global[3] << " / " << avg[3] << " / " << min[3] << " / " << max[3] << "\n\
+      Faces:          total / avg / min / max     ---  " << global[4] << " / " << avg[4] << " / " << min[4] << " / " << max[4] << "\n\
+      Coarse nodes:   total / avg / min / max     ---  " << global[5] << " / " << avg[5] << " / " << min[5] << " / " << max[5] << "\n\
     ------------------------------------------------------------------------------\n";
             }
         }
@@ -619,13 +619,13 @@ namespace FROSch {
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Communicating nodes" << std::endl;
 
         if (NodesMap_->lib() == Xpetra::UseEpetra && commStrategy == CreateOneToOneMap) {
-            if (Verbose_) std::cout << "FROSch::DDInterface : WARNING: CreateOneToOneMap communication strategy does not work for Epetra => Switching to CommGraph" << std::endl;
-            commStrategy = CommGraph;
+            if (Verbose_) std::cout << "FROSch::DDInterface : WARNING: CreateOneToOneMap communication strategy does not work for Epetra => Switching to CommCrsGraph" << std::endl;
+            commStrategy = CommCrsGraph;
         }
 
         // Different communication strategies
         switch (commStrategy) {
-            case CommMatrix:
+            case CommCrsMatrix:
                 {
                     UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_);
                     Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
@@ -659,7 +659,7 @@ namespace FROSch {
                 }
                 break;
 
-            case CommGraph:
+            case CommCrsGraph:
                 {
                     UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_);
 
@@ -693,16 +693,10 @@ namespace FROSch {
                 break;
 
             case CreateOneToOneMap:
-                {   //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); NodesMap_->describe(*fancy,Teuchos::VERB_EXTREME);
-//                    MpiComm_->barrier(); MpiComm_->barrier(); if (Verbose_) std::cout << "TEST1\n";
+                {
                     Teuchos::RCP<LowerPIDTieBreak<LO,GO,NO> > lowerPIDTieBreak(new LowerPIDTieBreak<LO,GO,NO>(MpiComm_,NodesMap_));
-//                    MpiComm_->barrier(); MpiComm_->barrier(); if (Verbose_) std::cout << "TEST2\n";
-//                    NumMyNodes_,2*(NodesMap_->getGlobalNumElements()/MpiComm_->getSize())));
                     UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_,true,lowerPIDTieBreak);
-//                    MpiComm_->barrier(); MpiComm_->barrier(); if (Verbose_) std::cout << "TEST3\n"; //UniqueNodesMap_->describe(*fancy,Teuchos::VERB_EXTREME);
-                    //GOVecVecPtr componentsSubdomainsLinear = lowerPIDTieBreak->getComponents(); MpiComm_->barrier(); MpiComm_->barrier(); if (Verbose_) std::cout << "TEST4\n";
                     lowerPIDTieBreak->sendDataToOriginalMap();
-//                    MpiComm_->barrier(); MpiComm_->barrier(); if (Verbose_) std::cout << "TEST4\n";
                     componentsSubdomains = lowerPIDTieBreak->getComponents();
                 }
                 break;

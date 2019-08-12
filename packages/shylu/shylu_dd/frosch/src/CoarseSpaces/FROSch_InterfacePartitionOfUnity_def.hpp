@@ -64,10 +64,10 @@ namespace FROSch {
     Verbose_ (MpiComm_->getRank() == 0)
     {
         CommunicationStrategy communicationStrategy;
-        if (!ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("Matrix")) {
-            communicationStrategy = CommMatrix;
+        if (!ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsMatrix")) {
+            communicationStrategy = CommCrsMatrix;
         } else if (!ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsGraph")) {
-            communicationStrategy = CommGraph;
+            communicationStrategy = CommCrsGraph;
         } else if (!ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CreateOneToOneMap")) {
             communicationStrategy = CreateOneToOneMap;
         } else {

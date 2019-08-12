@@ -72,7 +72,7 @@ namespace FROSch {
 
     protected:
 
-        using IntVec         = Teuchos::Array<GO>;
+        using IntVec        = Teuchos::Array<GO>;
 
         using LOVec         = Teuchos::Array<LO>;
 
