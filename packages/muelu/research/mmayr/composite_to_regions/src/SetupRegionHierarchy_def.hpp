@@ -55,6 +55,7 @@
 
 #include <Kokkos_DefaultNode.hpp>
 
+#include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_RCP.hpp>
 
 #include <Xpetra_ConfigDefs.hpp>
@@ -70,6 +71,8 @@
 
 #include "SetupRegionMatrix_def.hpp"
 #include "SetupRegionSmoothers_def.hpp"
+
+#include "HHG_Utils_def.hpp"
 
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
@@ -1203,7 +1206,10 @@ MakeCompositeDirectSolver(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& compOp, const std::string& xmlFileName)
+MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& compOp, const std::string& xmlFileName,
+    RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace,
+    RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > coordinates // ToDo Replace Scalar by coordiante data type.
+    )
 {
 #include "MueLu_UseShortNames.hpp"
 
@@ -1222,9 +1228,9 @@ MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
 
   // Add nullspace information
   {
-    // Compute nullspace
-    RCP<MultiVector> nullspace = MultiVectorFactory::Build(compOp->getRowMap(), 1);
-    nullspace->putScalar(one);
+//    // Compute nullspace
+//    RCP<MultiVector> nullspace = MultiVectorFactory::Build(compOp->getRowMap(), 1);
+//    nullspace->putScalar(one);
 
     // Insert into parameter list
     userParamList.set("Nullspace", nullspace);
@@ -1232,7 +1238,8 @@ MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
 
   // Add coordinate information for rebalancing
   {
-    //ToDo Add coordinate information
+    // Insert into parameter list
+    userParamList.set("Coordinates", coordinates);
   }
 
   // Create an AMG hierarchy based on the composite coarse level operator from the region MG scheme
@@ -1475,8 +1482,37 @@ void createRegionHierarchy(const int maxRegPerProc,
   }
   else
   {
+    // Extract coarse level nullspace from region hierarchy
+    using real_type = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+    using realvaluedmultivector_type = Xpetra::MultiVector<real_type,LocalOrdinal,GlobalOrdinal,Node>;
+    std::vector<RCP<MultiVector> > coarseRegNullspace(maxRegPerProc);
+    std::vector<RCP<realvaluedmultivector_type> > coarseRegCoordinates(maxRegPerProc);
+    for (int j = 0; j < maxRegPerProc; j++) {
+      RCP<Level> coarsestLevel = regGrpHierarchy[j]->GetLevel(regGrpHierarchy[j]->GetNumLevels()-1);
+      coarseRegNullspace[j] = coarsestLevel->Get<RCP<MultiVector> >("Nullspace", MueLu::NoFactory::get());
+      coarseRegCoordinates[j] = coarsestLevel->Get<RCP<realvaluedmultivector_type> >("Coordinates", MueLu::NoFactory::get());
+    }
+
+    {
+      RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      Teuchos::FancyOStream& out = *fancy;
+      printRegionalObject<MultiVector>("coarseRegNullspace", coarseRegNullspace, coarseRegNullspace[0]->getMap()->getComm()->getRank(), out);
+    }
+
+    /* Build the composite counterparts
+     *
+     * Since regionalToComposite() is available for Xpetra::Vector only,
+     * let's loop over multi-vectors and perform the transformation for each vector separately.
+     */
+    RCP<MultiVector> coarseCompNullspace = Teuchos::null;
+    RCP<realvaluedmultivector_type> coarseCompCoordinates = Teuchos::null;
+    {
+      regionalToComposite(coarseRegNullspace, coarseCompNullspace, maxRegPerProc,
+          regRowMaps[numLevels - 1], regRowImporters[numLevels - 1], Xpetra::INSERT);
+    }
+
     std::string amgXmlFileName = coarseSolverData->get<std::string>("amg xml file");
-    RCP<Hierarchy> coarseAMGHierarchy = MakeCompositeAMGHierarchy(coarseCompOp, amgXmlFileName);
+    RCP<Hierarchy> coarseAMGHierarchy = MakeCompositeAMGHierarchy(coarseCompOp, amgXmlFileName, coarseCompNullspace, coarseCompCoordinates);
     coarseSolverData->set<RCP<Hierarchy>>("amg hierarchy object", coarseAMGHierarchy);
   }
 

@@ -89,6 +89,9 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null,
                                                  "Number of nodes per spatial dimension on the coarse grid.");
 
+    validParamList->set<bool>("Keep nullspace", false, "Force to keep the nullspace vectors.");
+    validParamList->set<bool>("Keep coordinates", false, "Force to keep the coordinates vectors.");
+
     return validParamList;
   }
 
@@ -109,6 +112,11 @@ namespace MueLu {
       Input(fineLevel, "coarseCoordinatesFineMap");
       Input(fineLevel, "coarseCoordinatesMap");
     }
+
+    if (pL.get<bool>("Keep nullspace"))
+      bKeepNullspaceAsUserData_ = true;
+    if (pL.get<bool>("Keep coordinates"))
+      bKeepCoordinatesAsUserData_ = true;
 
   }
 
@@ -161,6 +169,9 @@ namespace MueLu {
       coarseCoordinates->replaceMap(coarseCoordsMap);
 
       Set(coarseLevel, "Coordinates", coarseCoordinates);
+
+      if (bKeepCoordinatesAsUserData_)
+        coarseLevel.AddKeepFlag("Coordinates", NoFactory::get(), MueLu::UserData);
     }
 
     *out << "Fine and coarse coordinates have been loaded from the fine level and set on the coarse level." << std::endl;
@@ -194,6 +205,9 @@ namespace MueLu {
       P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(),
                Teuchos::ScalarTraits<SC>::zero());
       Set(coarseLevel, "Nullspace", coarseNullspace);
+
+      if (bKeepNullspaceAsUserData_)
+        coarseLevel.AddKeepFlag("Nullspace", NoFactory::get(), MueLu::UserData);
     }
 
     *out << "The coarse nullspace is constructed and set on the coarse level." << std::endl;

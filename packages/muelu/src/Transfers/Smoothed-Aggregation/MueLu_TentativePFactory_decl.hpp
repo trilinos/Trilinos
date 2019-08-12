@@ -159,7 +159,19 @@ namespace MueLu {
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
     bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
+    //! Flag to enable transfer of coordinates to coarse level
     mutable bool bTransferCoordinates_ = false;
+
+    //! @name Control keep mechanism
+    //! @{
+
+    //! Flag to enforce keeping nullspace as user data
+    mutable bool bKeepNullspaceAsUserData_ = false;
+
+    //! Flag to enforce keeping cooordinates as user data
+    mutable bool bKeepCoordinatesAsUserData_ = false;
+
+    //! @}
 
   }; //class TentativePFactory
 

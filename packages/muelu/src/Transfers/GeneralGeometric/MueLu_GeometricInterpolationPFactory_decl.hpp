@@ -110,6 +110,17 @@ namespace MueLu{
                                    const Teuchos::SerialDenseVector<LO,real_type> parametricCoordinates,
                                    real_type functions[4][8]) const;
 
+    //! @name Control keep mechanism
+    //! @{
+
+    //! Flag to enforce keeping nullspace as user data
+    mutable bool bKeepNullspaceAsUserData_ = false;
+
+    //! Flag to enforce keeping cooordinates as user data
+    mutable bool bKeepCoordinatesAsUserData_ = false;
+
+    //! @}
+
   }; // class GeometricInterpolationPFactory
 
 } // namespace MueLu

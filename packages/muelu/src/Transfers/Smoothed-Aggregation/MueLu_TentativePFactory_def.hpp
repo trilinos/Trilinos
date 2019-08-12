@@ -90,6 +90,9 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
     validParamList->set< RCP<const FactoryBase> >("Node Comm",          Teuchos::null, "Generating factory of the node level communicator");
 
+    validParamList->set<bool>("Keep nullspace", false, "Force to keep the nullspace vectors.");
+    validParamList->set<bool>("Keep coordinates", false, "Force to keep the coordinates vectors.");
+
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
     norecurse.disableRecursiveValidation();
@@ -116,6 +119,11 @@ namespace MueLu {
     } else if (bTransferCoordinates_) {
       Input(fineLevel, "Coordinates");
     }
+
+    if (pL.get<bool>("tentative: keep nullspace"))
+      bKeepNullspaceAsUserData_ = true;
+    if (pL.get<bool>("tentative: keep coordinates"))
+      bKeepCoordinatesAsUserData_ = true;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -237,6 +245,11 @@ namespace MueLu {
     }
     Set(coarseLevel, "Nullspace",   coarseNullspace);
     Set(coarseLevel, "P",           Ptentative);
+
+    if (bKeepNullspaceAsUserData_)
+      coarseLevel.AddKeepFlag("Nullspace", NoFactory::get(), MueLu::UserData);
+    if (bKeepCoordinatesAsUserData_ && bTransferCoordinates_)
+      coarseLevel.AddKeepFlag("Coordinates", NoFactory::get(), MueLu::UserData);
 
     if (IsPrint(Statistics2)) {
       RCP<ParameterList> params = rcp(new ParameterList());
