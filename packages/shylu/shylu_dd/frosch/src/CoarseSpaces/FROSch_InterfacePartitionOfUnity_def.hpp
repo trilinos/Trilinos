@@ -53,15 +53,29 @@ namespace FROSch {
                                                                       UN dofsPerNode,
                                                                       MapPtr nodesMap,
                                                                       MapPtrVecPtr dofsMaps,
-                                                                      ParameterListPtr parameterList) :
+                                                                      ParameterListPtr parameterList,
+                                                                      Verbosity verbosity) :
     MpiComm_ (mpiComm),
     SerialComm_ (serialComm),
-    DDInterface_ (new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap)),
+    DDInterface_ (),
     ParameterList_ (parameterList),
     LocalPartitionOfUnity_ (),
     PartitionOfUnityMaps_ (),
     Verbose_ (MpiComm_->getRank() == 0)
     {
+        CommunicationStrategy communicationStrategy;
+        if (!ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("Matrix")) {
+            communicationStrategy = CommMatrix;
+        } else if (!ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsGraph")) {
+            communicationStrategy = CommGraph;
+        } else if (!ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CreateOneToOneMap")) {
+            communicationStrategy = CreateOneToOneMap;
+        } else {
+            FROSCH_ASSERT(false,"FROSch::InterfacePartitionOfUnity : ERROR: Specify a valid communication strategy for the identification of the interface components.");
+        }
+
+        DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap.getConst(),verbosity,communicationStrategy));
+
         DDInterface_->resetGlobalDofs(dofsMaps);
     }
 

@@ -220,7 +220,7 @@ namespace FROSch {
         bool useRotations = coarseSpaceList->get("Rotations",true);
         if (useRotations && nodeList.is_null()) {
             useRotations = false;
-            if (this->Verbose_) std::cout << "\nWarning: Rotations cannot be used!\n";
+            if (this->Verbose_) std::cout << "FROSch::HarmonicCoarseOperator : WARNING: Rotations cannot be used" << std::endl;
         }
 
         this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getEntity(0)->getNumNodes());

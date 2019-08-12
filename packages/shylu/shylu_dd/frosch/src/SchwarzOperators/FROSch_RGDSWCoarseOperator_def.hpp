@@ -66,11 +66,39 @@ namespace FROSch {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
+        if (this->Verbose_) {
+            std::cout << "\n\
++---------------------+\n\
+| RGDSWCoarseOperator |\n\
+|  Block " << blockId << "            |\n\
++---------------------+\n";
+        }
+        
         // Process the parameter list
         std::stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
         std::string blockIdString = blockIdStringstream.str();
         Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
+
+        CommunicationStrategy communicationStrategy;
+        if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("Matrix")) {
+            communicationStrategy = CommMatrix;
+        } else if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsGraph")) {
+            communicationStrategy = CommGraph;
+        } else if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CreateOneToOneMap")) {
+            communicationStrategy = CreateOneToOneMap;
+        } else {
+            FROSCH_ASSERT(false,"FROSch::RGDSWCoarseOperator : ERROR: Specify a valid communication strategy for the identification of the interface components.");
+        }
+
+        Verbosity verbosity;
+        if (!coarseSpaceList->get("Verbosity","All").compare("None")) {
+            verbosity = None;
+        } else if (!coarseSpaceList->get("Verbosity","All").compare("All")) {
+            verbosity = All;
+        } else {
+            FROSCH_ASSERT(false,"FROSch::RGDSWCoarseOperator : ERROR: Specify a valid verbosity level.");
+        }
 
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",false);
         std::string option = coarseSpaceList->get("Option","1");
@@ -87,7 +115,7 @@ namespace FROSch {
         if (useRotations && nodeList.is_null()) {
             //FROSCH_ASSERT(option==1,"Only option 1 can be constructed without a valid node list.");
             useRotations = false;
-            if (this->Verbose_) std::cout << "\nWarning: Rotations cannot be used!\n";
+            if (this->Verbose_) std::cout << "FROSch::RGDSWCoarseOperator : WARNING: Rotations cannot be used" << std::endl;
         }
 
         this->DofsMaps_[blockId] = dofsMaps;
@@ -96,7 +124,7 @@ namespace FROSch {
         Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
 
-        this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap));
+        this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap.getConst(),verbosity,communicationStrategy));
         this->DDInterface_->resetGlobalDofs(dofsMaps);
         this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs);
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
@@ -104,11 +132,9 @@ namespace FROSch {
         }
 
         EntitySetPtrVecPtr entitySetVector;
-        EntitySetPtr interface,interior,coarseNodes;
-        MapPtr coarseNodesMap;
 
-        interface = this->DDInterface_->getInterface();
-        interior = this->DDInterface_->getInterior();
+        EntitySetPtr interface = this->DDInterface_->getInterface();
+        EntitySetPtr interior = this->DDInterface_->getInterior();
 
         // Check for interface
         if (this->DofsPerNode_[blockId]*interface->getEntity(0)->getNumNodes()==0) {
@@ -136,46 +162,35 @@ namespace FROSch {
                 // Coarse Node Basis Functions //
                 /////////////////////////////////
                 entitySetVector = this->DDInterface_->getEntitySetVector();
-                coarseNodes = this->DDInterface_->getCoarseNodes();
-                coarseNodes->buildEntityMap(nodesMap); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); coarseNodes->getEntityMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+                this->DDInterface_->buildEntityMaps(false,
+                                                    false,
+                                                    false,
+                                                    false,
+                                                    false,
+                                                    true);
 
-                MultiVectorPtrVecPtr translations = this->computeTranslations(blockId,coarseNodes,entitySetVector,distanceFunction);
+                MultiVectorPtrVecPtr translations = this->computeTranslations(blockId,this->DDInterface_->getCoarseNodes(),entitySetVector,distanceFunction);
                 for (UN i=0; i<translations.size(); i++) {
-                    this->InterfaceCoarseSpaces_[blockId]->addSubspace(coarseNodes->getEntityMap(),translations[i]);
+                    this->InterfaceCoarseSpaces_[blockId]->addSubspace(this->DDInterface_->getCoarseNodes()->getEntityMap(),translations[i]);
                 }
 
                 if (useRotations) {
-                    MultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,coarseNodes,entitySetVector,distanceFunction);
-                    for (UN i=0; i<rotations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(coarseNodes->getEntityMap(),rotations[i]);
+                    MultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,this->DDInterface_->getCoarseNodes(),entitySetVector,distanceFunction);
+                    for (UN i=0; i<rotations.size(); i++) {                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(this->DDInterface_->getCoarseNodes()->getEntityMap(),rotations[i]);
                     }
                 }
 
                 this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
 
-                // Count entities
-                GO numCoarseNodesGlobal;
-                numCoarseNodesGlobal = coarseNodes->getEntityMap()->getMaxAllGlobalIndex();
-                if (coarseNodes->getEntityMap()->lib()==Xpetra::UseEpetra || coarseNodes->getEntityMap()->getGlobalNumElements()>0) {
-                    numCoarseNodesGlobal += 1;
-                }
-                if (numCoarseNodesGlobal<0) {
-                    numCoarseNodesGlobal = 0;
-                }
-
                 if (this->MpiComm_->getRank() == 0) {
-                    std::cout << "\n\
-                    --------------------------------------------\n\
-                    # coarse nodes:              --- " << numCoarseNodesGlobal << "\n\
-                    --------------------------------------------\n\
-                    Coarse space:\n\
-                    --------------------------------------------\n\
-                    coarse nodes: translations   --- " << 1 << "\n\
-                    coarse nodes: rotations      --- " << useRotations << "\n\
-                    --------------------------------------------\n";
+                    std::cout << std::boolalpha << "\n\
+    ------------------------------------------------------------------------------\n\
+     RGDSW coarse space\n\
+    ------------------------------------------------------------------------------\n\
+      coarse nodes: translations                 --- " << true << "\n\
+      coarse nodes: rotations                    --- " << useRotations << "\n\
+    ------------------------------------------------------------------------------\n" << std::noboolalpha;
                 }
-
-                this->BlockCoarseDimension_[blockId] = numCoarseNodesGlobal;
             }
         }
         return 0;

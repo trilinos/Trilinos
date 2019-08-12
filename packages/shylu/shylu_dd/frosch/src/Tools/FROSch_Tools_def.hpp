@@ -46,29 +46,187 @@
 
 namespace FROSch {
 
-    template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildUniqueMap(const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map)
+    template <typename LO,typename GO>
+    OverlappingData<LO,GO>::OverlappingData(GO gid,
+                                            int pid,
+                                            LO lid) :
+    GID_ (gid),
+    PIDs_ (1,pid),
+    LIDs_ (1,lid)
     {
-        Teuchos::RCP<Xpetra::Vector<GO,LO,GO,NO> > myIndices = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map);
-        myIndices->putScalar(map->getComm()->getRank()+1);
 
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > linearMap = Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),map->getMaxAllGlobalIndex()+1,0,map->getComm());
-        Teuchos::RCP<Xpetra::Vector<GO,LO,GO,NO> > globalIndices = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(linearMap);
+    }
 
-        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > importer = Xpetra::ImportFactory<LO,GO,NO>::Build(map,linearMap);
-        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > importer2 = Xpetra::ImportFactory<LO,GO,NO>::Build(linearMap,map); // AH 10/16/2017: Ist der notwendig??? Mit Epetra ging es auch ohne einen zweiten Importer und stattdessen mit einem Export
-        globalIndices->doImport(*myIndices,*importer,Xpetra::INSERT);
-        myIndices->putScalar(0);
-        myIndices->doImport(*globalIndices,*importer2,Xpetra::ADD);
+    template <typename LO,typename GO>
+    int OverlappingData<LO,GO>::Merge(const Teuchos::RCP<OverlappingData<LO,GO> > od) const
+    {
+        FROSCH_ASSERT(GID_ == od->GID_,"FROSch::OverlappingData : ERROR: GID_ != od->GID_");
+        for (typename IntVec::iterator it = od->PIDs_.begin(); it != od->PIDs_.end(); it++) {
+            PIDs_.push_back(*it);
+        }
+        for (typename LOVec::iterator it = od->LIDs_.begin(); it != od->LIDs_.end(); it++) {
+            LIDs_.push_back(*it);
+        }
+        return 0;
+    }
 
-        Teuchos::Array<GO> uniqueVector;
-        for (unsigned i=0; i<myIndices->getLocalLength(); i++) {
-            if (myIndices->getData(0)[i] == map->getComm()->getRank()+1) {
-                uniqueVector.push_back(map->getGlobalElement(i));
+    template <typename LO,typename GO>
+    int MergeList(Teuchos::Array<Teuchos::RCP<OverlappingData<LO,GO> > > &odList)
+    {
+        int numPackages = 0;
+        std::sort(odList.begin(),
+                  odList.end(),
+                  [] (const Teuchos::RCP<OverlappingData<LO,GO> >& lhs, const Teuchos::RCP<OverlappingData<LO,GO> >& rhs) {
+                      return lhs->GID_ < rhs->GID_;
+                  }
+                  );
+        odList.erase(std::unique(odList.begin(),
+                                 odList.end(),
+                                 [] (const Teuchos::RCP<OverlappingData<LO,GO> > lhs, const Teuchos::RCP<OverlappingData<LO,GO> > rhs) {
+                                     if (lhs->GID_ == rhs->GID_) {
+                                         lhs->Merge(rhs);
+                                         return true;
+                                     } else {
+                                         return false;
+                                     }
+                                 }
+                                 ),odList.end());
+
+        typename Teuchos::Array<Teuchos::RCP<OverlappingData<LO,GO> > >::iterator tmpODPtrVecIt;
+        for (tmpODPtrVecIt=odList.begin(); tmpODPtrVecIt!=odList.end(); tmpODPtrVecIt++) {
+            numPackages += (*tmpODPtrVecIt)->PIDs_.size()*(*tmpODPtrVecIt)->PIDs_.size();
+        }
+        return numPackages;
+    }
+
+    template <typename LO,typename GO,typename NO>
+    LowerPIDTieBreak<LO,GO,NO>::LowerPIDTieBreak(CommPtr comm,
+                                                 ConstMapPtr originalMap) :
+    MpiComm_ (comm),
+    OriginalMap_ (originalMap),
+    ElementCounter_ (),
+    OverlappingDataList_ (2*(OriginalMap_->getGlobalNumElements()/MpiComm_->getSize())),
+    ComponentsSubdomains_ (OriginalMap_->getNodeNumElements())
+    {
+
+    }
+
+    template <typename LO,typename GO,typename NO>
+    int LowerPIDTieBreak<LO,GO,NO>::sendDataToOriginalMap()
+    {
+        // This is done analogously to  DistributedNoncontiguousDirectory<LO, GO, NT>::DistributedNoncontiguousDirectory(const map_type& map,const tie_break_type& tie_break)
+        typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
+
+        OverlappingDataList_.resize(ElementCounter_);
+
+        int numPackages = MergeList(OverlappingDataList_);
+
+        Tpetra::Distributor distor (MpiComm_);
+
+        const int packetSize = 2;
+        IntVec sendImageIDs(numPackages);
+        GOVec exportEntries(packetSize*numPackages); // data to send out
+        {
+            typename OverlappingDataPtrVec::iterator tmpODPtrVecIt;
+            typename IntVec::iterator tmpIntVecIt;
+            typename IntVec::iterator tmpIntVecIt2;
+            typename LOVec::iterator tmpLOVecIt;
+
+            size_type exportIndex = 0;
+            size_type exportIndex2 = 0;
+            for (tmpODPtrVecIt = OverlappingDataList_.begin(); tmpODPtrVecIt!=OverlappingDataList_.end(); tmpODPtrVecIt++) {
+                tmpLOVecIt = (*tmpODPtrVecIt)->LIDs_.begin();
+                for (tmpIntVecIt = (*tmpODPtrVecIt)->PIDs_.begin(); tmpIntVecIt != (*tmpODPtrVecIt)->PIDs_.end(); tmpIntVecIt++) {
+                    for (tmpIntVecIt2 = (*tmpODPtrVecIt)->PIDs_.begin(); tmpIntVecIt2 != (*tmpODPtrVecIt)->PIDs_.end(); tmpIntVecIt2++) {
+                        exportEntries[exportIndex++] = (*tmpODPtrVecIt)->GID_;
+                        exportEntries[exportIndex++] = Teuchos::as<GO>(*tmpIntVecIt2);
+                        sendImageIDs[exportIndex2++] = *tmpIntVecIt;
+                    }
+                    tmpLOVecIt++;
+                }
             }
         }
-        return Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),-1,uniqueVector(),0,map->getComm()); // We need this setup for maps with offset (with MaxGID+1 not being the number of global elements), or we need an allreduce to determine the number of global elements from uniqueVector
-//        return Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),map->getMaxAllGlobalIndex()+1,uniqueVector(),0,map->getComm());
+        distor.createFromSends(sendImageIDs);
+
+        GOVec importElements(packetSize*distor.getTotalReceiveLength());
+
+        distor.doPostsAndWaits(exportEntries().getConst(),packetSize,importElements());
+
+        LO length = importElements.size()/packetSize;
+        for (LO i=0; i<length; i++) {
+            ComponentsSubdomains_[OriginalMap_->getLocalElement(importElements[2*i])].push_back(importElements[2*i+1]);
+        }
+
+        return 0;
+    }
+
+    template <typename LO,typename GO,typename NO>
+    std::size_t LowerPIDTieBreak<LO,GO,NO>::selectedIndex(GO GID,
+                                                       const std::vector<std::pair<int,LO> > & pid_and_lid) const
+    {
+        // Always choose index of pair with smallest pid
+        const std::size_t numLids = pid_and_lid.size();
+        std::size_t idx = 0;
+        int minpid = pid_and_lid[0].first;
+        std::size_t minidx = 0;
+
+        for (idx = 0; idx < numLids; ++idx) {
+            // Organize the overlapping data to send it back to the original processes
+            OverlappingDataList_[ElementCounter_].reset(new OverlappingData<LO,GO>(GID,
+                                                                                   pid_and_lid[idx].first,
+                                                                                   pid_and_lid[idx].second));
+            ElementCounter_++;
+            if (pid_and_lid[idx].first < minpid) {
+                minpid = pid_and_lid[idx].first;
+                minidx = idx;
+            }
+        }
+        return minidx;
+    }
+
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > BuildUniqueMap(const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map,
+                                                              bool useCreateOneToOneMap,
+                                                              Teuchos::RCP<Tpetra::Details::TieBreak<LO,GO> > tieBreak)
+    {
+        if (useCreateOneToOneMap && map->lib()==Xpetra::UseTpetra) {
+            // Obtain the underlying Tpetra Map
+            const Teuchos::RCP<const Xpetra::TpetraMap<LO,GO,NO> >& xTpetraMap = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraMap<LO,GO,NO> >(map);
+            Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > tpetraMap = xTpetraMap->getTpetra_Map();
+
+            Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > tpetraMapUnique;
+            if (tieBreak.is_null()) {
+                tpetraMapUnique = createOneToOne(tpetraMap);
+            } else {
+                tpetraMapUnique = createOneToOne(tpetraMap,*tieBreak);
+            }
+
+            Teuchos::RCP<const Xpetra::TpetraMap<LO,GO,NO> > xTpetraMapUnique(new const Xpetra::TpetraMap<LO,GO,NO>(tpetraMapUnique));
+            return Teuchos::rcp_dynamic_cast<const Xpetra::Map<LO,GO,NO> >(xTpetraMapUnique);
+        } else { // This is an alternative implementation to createOneToOneMap()
+            if (map->lib()==Xpetra::UseEpetra && map->getComm()->getRank()==0) std::cout << "FROSch::BuildUniqueMap : WARNING: createOneToOneMap() does not exist for Epetra => Using a different implementation" << std::endl;
+
+            Teuchos::RCP<Xpetra::Vector<GO,LO,GO,NO> > myIndices = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map);
+            myIndices->putScalar(map->getComm()->getRank()+1);
+
+            Teuchos::RCP<Xpetra::Map<LO,GO,NO> > linearMap = Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),map->getMaxAllGlobalIndex()+1,0,map->getComm());
+            Teuchos::RCP<Xpetra::Vector<GO,LO,GO,NO> > globalIndices = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(linearMap);
+
+            Teuchos::RCP<Xpetra::Import<LO,GO,NO> > importer = Xpetra::ImportFactory<LO,GO,NO>::Build(map,linearMap);
+            Teuchos::RCP<Xpetra::Import<LO,GO,NO> > importer2 = Xpetra::ImportFactory<LO,GO,NO>::Build(linearMap,map); // AH 10/16/2017: Ist der notwendig??? Mit Epetra ging es auch ohne einen zweiten Importer und stattdessen mit einem Export
+            globalIndices->doImport(*myIndices,*importer,Xpetra::INSERT);
+            myIndices->putScalar(0);
+            myIndices->doImport(*globalIndices,*importer2,Xpetra::ADD);
+
+            Teuchos::Array<GO> uniqueVector;
+            for (unsigned i=0; i<myIndices->getLocalLength(); i++) {
+                if (myIndices->getData(0)[i] == map->getComm()->getRank()+1) {
+                    uniqueVector.push_back(map->getGlobalElement(i));
+                }
+            }
+            return Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),-1,uniqueVector(),0,map->getComm()); // We need this setup for maps with offset (with MaxGID+1 not being the number of global elements), or we need an allreduce to determine the number of global elements from uniqueVector
+            //        return Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),map->getMaxAllGlobalIndex()+1,uniqueVector(),0,map->getComm());
+        }
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -266,33 +424,33 @@ namespace FROSch {
     }
     */
 
-/*
     template <class SC,class LO,class GO,class NO>
-    int ExtendOverlapByOneLayer(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &overlappingMatrix,
-                                Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &overlappingMap)
+    int ExtendOverlapByOneLayer_Old(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > inputMatrix,
+                                    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > inputMap,
+                                    Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &outputMatrix,
+                                    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &outputMap)
     {
-        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > tmpMatrix = overlappingMatrix;
-        overlappingMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,2*tmpMatrix->getGlobalMaxNumRowEntries());
-        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(tmpMatrix->getRowMap(),overlappingMap);
-        overlappingMatrix->doImport(*tmpMatrix,*scatter,Xpetra::ADD);
+        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > tmpMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(inputMap,inputMatrix->getGlobalMaxNumRowEntries());
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(inputMatrix->getRowMap(),inputMap);
+        tmpMatrix->doImport(*inputMatrix,*scatter,Xpetra::ADD);
+        outputMatrix = tmpMatrix.getConst();
 
         Teuchos::Array<GO> indicesOverlappingSubdomain(0);
-        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<inputMap->getNodeNumElements(); i++) {
             Teuchos::ArrayView<const GO> indices;
             Teuchos::ArrayView<const SC> values;
-            overlappingMatrix->getGlobalRowView(overlappingMap->getGlobalElement(i),indices,values);
+            outputMatrix->getGlobalRowView(inputMap->getGlobalElement(i),indices,values);
 
             for (LO j=0; j<indices.size(); j++) {
                 indicesOverlappingSubdomain.push_back(indices[j]);
             }
         }
         sortunique(indicesOverlappingSubdomain);
-        overlappingMap = Xpetra::MapFactory<LO,GO,NO>::Build(overlappingMap->lib(),-1,indicesOverlappingSubdomain(),0,overlappingMap->getComm());
-        overlappingMatrix->fillComplete(tmpMatrix->getDomainMap(),tmpMatrix->getRangeMap());
+        outputMap = Xpetra::MapFactory<LO,GO,NO>::Build(inputMap->lib(),-1,indicesOverlappingSubdomain(),0,inputMap->getComm());
+        tmpMatrix->fillComplete(inputMatrix->getDomainMap(),inputMatrix->getRangeMap());
 
         return 0;
     }
- */
 
     template <class SC,class LO,class GO,class NO>
     int ExtendOverlapByOneLayer(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > inputMatrix,
@@ -307,6 +465,7 @@ namespace FROSch {
 
         outputMatrix = tmpMatrix.getConst();
         outputMap = outputMatrix->getColMap();
+
         return 0;
     }
 
@@ -323,6 +482,7 @@ namespace FROSch {
 
         outputGraph = tmpGraph.getConst();
         outputMap = outputGraph->getColMap();
+
         return 0;
     }
 

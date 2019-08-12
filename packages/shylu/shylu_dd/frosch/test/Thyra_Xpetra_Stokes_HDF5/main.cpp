@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
         ////////////////
         // Unique Map //
         ////////////////
-        RCP<Map<LO,GO,NO> > uniqueMap = BuildUniqueMap<LO,GO,NO>(repeatedMap);
+        RCP<const Map<LO,GO,NO> > uniqueMap = BuildUniqueMap<LO,GO,NO>(repeatedMap);
 
 
         /////////

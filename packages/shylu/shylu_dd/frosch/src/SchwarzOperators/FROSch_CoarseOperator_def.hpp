@@ -58,7 +58,6 @@ namespace FROSch {
     GatheringMaps_ (0),
     CoarseSolveMap_ (),
     CoarseSolveRepeatedMap_ (),
-    BlockCoarseDimension_(),
     CoarseSolver_ (),
     DistributionList_ (sublist(parameterList,"Distribution")),
     CoarseSolveExporters_ (0)
@@ -77,9 +76,8 @@ namespace FROSch {
     {
         FROSCH_ASSERT(this->IsInitialized_,"ERROR: CoarseOperator has to be initialized before calling compute()");
         // This is not optimal yet... Some work could be moved to Initialize
-        if (this->Verbose_) {
-            std::cerr << "WARNING: Some of the operations could be moved from initialize() to Compute().\n";
-        }
+        if (this->Verbose_) std::cout << "FROSch::CoarseOperator : WARNING: Some of the operations could probably be moved from initialize() to Compute().\n";
+
         if (!this->ParameterList_->get("Recycling","none").compare("basis") && this->IsComputed_) {
             this->setUpCoarseOperator();
 
@@ -298,7 +296,7 @@ namespace FROSch {
                 CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,Teuchos::VERB_EXTREME);
 
                 if (!this->ParameterList_->sublist("CoarseSolver").get("SolverType","Amesos").compare("MueLu")) {
-                    CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver"),BlockCoarseDimension_));
+                    CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
                 }
                 else{
                     CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
@@ -407,7 +405,7 @@ namespace FROSch {
 
             //------------------------------------------------------------------------------------------------------------------------
             // Use a separate Communicator for the coarse problem
-            MapPtr tmpCoarseMap = GatheringMaps_[GatheringMaps_.size()-1];
+            ConstMapPtr tmpCoarseMap = GatheringMaps_[GatheringMaps_.size()-1];
 
             if (tmpCoarseMap->getNodeNumElements()>0) {
                 OnCoarseSolveComm_=true;
@@ -439,10 +437,10 @@ namespace FROSch {
 
             k0 = k0Unique;
 
-            GatheringMaps_[0] = Teuchos::rcp_const_cast<Map>(k0->getRowMap());
+            GatheringMaps_[0] = k0->getRowMap();
             CoarseSolveExporters_[0] = Xpetra::ExportFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),GatheringMaps_[0]);
 
-            MapPtr tmpCoarseMap = GatheringMaps_[0];
+            ConstMapPtr tmpCoarseMap = GatheringMaps_[0];
 
             if (tmpCoarseMap->getNodeNumElements()>0) {
                 OnCoarseSolveComm_=true;
@@ -457,10 +455,15 @@ namespace FROSch {
         }
 
         if (this->Verbose_) {
-            std::cout << "### ------------------------------ ###" << std::endl;
-            std::cout << "### - NumProcs CoarseMatrix : " << NumProcsCoarseSolve_ << std::endl;
-            std::cout << "### ------------------------------ ### " << std::endl;
+            std::cout << "\n\
+    ------------------------------------------------------------------------------\n\
+     Coarse problem statistics\n\
+    ------------------------------------------------------------------------------\n\
+      dimension of the coarse problem             --- " << CoarseSpace_->getBasisMap()->getMaxAllGlobalIndex()+1 << "\n\
+      number of processes                         --- " << NumProcsCoarseSolve_ << "\n\
+    ------------------------------------------------------------------------------\n";
         }
+
         return 0;
     }
 

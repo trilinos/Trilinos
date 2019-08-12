@@ -45,7 +45,6 @@
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
 //#define INTERFACE_OUTPUT
-//#define FROSCH_OFFSET_MAPS
 
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
@@ -59,6 +58,8 @@
 
 
 namespace FROSch {
+
+    enum CommunicationStrategy {CommMatrix,CommGraph,CreateOneToOneMap};
 
     template <class SC = Xpetra::Operator<>::scalar_type,
               class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
@@ -98,6 +99,11 @@ namespace FROSch {
         using UN                        = unsigned;
         using UNVecPtr                  = Teuchos::ArrayRCP<UN>;
 
+        using IntVec                    = Teuchos::Array<int>;
+        using IntVecVec                 = Teuchos::Array<IntVec>;
+        using IntVecVecPtr              = Teuchos::ArrayRCP<IntVec>;
+
+        using LOVec                     = Teuchos::Array<LO>;
         using LOVecPtr                  = Teuchos::ArrayRCP<LO>;
 
         using GOVec                     = Teuchos::Array<GO>;
@@ -107,13 +113,16 @@ namespace FROSch {
         using GOVecVec                  = Teuchos::Array<GOVec>;
         using GOVecVecPtr               = Teuchos::ArrayRCP<GOVec>;
 
+        using SCVec                     = Teuchos::Array<SC>;
         using SCVecPtr                  = Teuchos::ArrayRCP<SC>;
 
     public:
 
         DDInterface(UN dimension,
                     UN dofsPerNode,
-                    MapPtr localToGlobalMap);
+                    ConstMapPtr localToGlobalMap,
+                    Verbosity verbosity = All,
+                    CommunicationStrategy commStrategy = CommGraph);
 
         ~DDInterface();
 
@@ -128,6 +137,13 @@ namespace FROSch {
         int removeEmptyEntities();
 
         int sortVerticesEdgesFaces(MultiVectorPtr nodeList = Teuchos::null);
+
+        int buildEntityMaps(bool buildVerticesMap = true,
+                            bool buildShortEdgesMap = true,
+                            bool buildStraightEdgesMap = true,
+                            bool buildEdgesMap = true,
+                            bool buildFacesMap = true,
+                            bool buildCoarseNodesMap = false);
 
         int buildEntityHierarchy();
 
@@ -178,16 +194,13 @@ namespace FROSch {
 
 
     protected:
-#ifdef FROSCH_OFFSET_MAPS
-        int communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
-                                       GOVecVec &componentsSubdomainsUnique,
-                                       UN priorDofsPerNode = 0);
-#else
-        int communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
-                                       GOVecVec &componentsSubdomainsUnique);
-#endif
-        int identifyLocalComponents(GOVecVecPtr &componentsSubdomains,
-                                    GOVecVec &componentsSubdomainsUnique);
+
+        int communicateLocalComponents(IntVecVecPtr &componentsSubdomains,
+                                       IntVecVec &componentsSubdomainsUnique,
+                                       CommunicationStrategy commStrategy = CommGraph);
+
+        int identifyLocalComponents(IntVecVecPtr &componentsSubdomains,
+                                    IntVecVec &componentsSubdomainsUnique);
 
 
         CommPtr MpiComm_;
@@ -207,8 +220,13 @@ namespace FROSch {
         EntitySetPtr ConnectivityEntities_;
         EntitySetPtrVecPtr EntitySetVector_;
 
-        MapPtr NodesMap_;
-        MapPtr UniqueNodesMap_;
+        ConstMapPtr NodesMap_;
+        ConstMapPtr UniqueNodesMap_;
+
+        bool Verbose_;
+
+        Verbosity Verbosity_;
+
     };
 
 }

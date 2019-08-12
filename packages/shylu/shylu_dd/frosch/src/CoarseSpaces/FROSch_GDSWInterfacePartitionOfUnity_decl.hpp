@@ -91,7 +91,8 @@ namespace FROSch {
                                       UN dofsPerNode,
                                       MapPtr nodesMap,
                                       MapPtrVecPtr dofsMaps,
-                                      ParameterListPtr parameterList);
+                                      ParameterListPtr parameterList,
+                                      Verbosity verbosity = All);
 
         virtual ~GDSWInterfacePartitionOfUnity();
 

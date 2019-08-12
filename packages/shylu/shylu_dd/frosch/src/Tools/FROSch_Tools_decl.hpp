@@ -64,8 +64,96 @@ namespace FROSch {
 
     enum NullSpace {LaplaceNullSpace=0,LinearElasticityNullSpace=1};
 
+        enum Verbosity {None=0,All=1};
+
+    template <typename LO,
+              typename GO>
+    class OverlappingData {
+
+    protected:
+
+        using IntVec         = Teuchos::Array<GO>;
+
+        using LOVec         = Teuchos::Array<LO>;
+
+    public:
+
+        OverlappingData(GO gid,
+                        int pid,
+                        LO lid);
+
+        int Merge(const Teuchos::RCP<OverlappingData<LO,GO> > od) const;
+
+        GO GID_;
+
+        mutable IntVec PIDs_;
+
+        mutable LOVec LIDs_;
+
+    };
+
+    template <typename LO,typename GO>
+    int MergeList(Teuchos::Array<Teuchos::RCP<OverlappingData<LO,GO> > > &odList);
+
+    template <typename LO,
+              typename GO,
+              typename NO>
+    class LowerPIDTieBreak : public Tpetra::Details::TieBreak<LO,GO> {
+
+    protected:
+
+        using CommPtr                   = Teuchos::RCP<const Teuchos::Comm<int> >;
+
+        using ConstMapPtr               = Teuchos::RCP<const Xpetra::Map<LO,GO,NO> >;
+
+        using OverlappingDataPtr        = Teuchos::RCP<OverlappingData<LO,GO> >;
+        using OverlappingDataPtrVec     = Teuchos::Array<OverlappingDataPtr>;
+
+        using IntVec                    = Teuchos::Array<int>;
+        using IntVecVecPtr              = Teuchos::ArrayRCP<IntVec>;
+
+        using LOVec                     = Teuchos::Array<LO>;
+
+        using GOVec                     = Teuchos::Array<GO>;
+        using GOVecPtr                  = Teuchos::ArrayRCP<GO>;
+        using GOVecVec                  = Teuchos::Array<GOVec>;
+        using GOVecVecPtr               = Teuchos::ArrayRCP<GOVec>;
+
+    public:
+        LowerPIDTieBreak(CommPtr comm,
+                         ConstMapPtr originalMap); // This is in order to estimate the length of SendImageIDs_ and ExportEntries_ in advance
+
+        virtual bool mayHaveSideEffects() const {
+            return false;
+        }
+
+        IntVecVecPtr& getComponents()
+        {
+            return ComponentsSubdomains_;
+        }
+
+        int sendDataToOriginalMap();
+
+        virtual std::size_t selectedIndex(GO GID,
+                                          const std::vector<std::pair<int,LO> > & pid_and_lid) const;
+
+    protected:
+
+        CommPtr MpiComm_;
+
+        ConstMapPtr OriginalMap_;
+
+        mutable LO ElementCounter_; // This is mutable such that it can be modified in selectedIndex()
+
+        mutable OverlappingDataPtrVec OverlappingDataList_; // This is mutable such that it can be modified in selectedIndex()
+
+        IntVecVecPtr ComponentsSubdomains_; // This is mutable such that it can be modified in selectedIndex()
+    };
+
     template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildUniqueMap(const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map);
+    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > BuildUniqueMap(const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map,
+                                                              bool useCreateOneToOneMap = true,
+                                                              Teuchos::RCP<Tpetra::Details::TieBreak<LO,GO> > tieBreak = Teuchos::null);
 
     template <class SC,class LO,class GO,class NO>
     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > BuildRepeatedSubMaps(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > matrix,
@@ -74,11 +162,11 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix);
 
-    /*
     template <class SC,class LO,class GO,class NO>
-    int ExtendOverlapByOneLayer(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &overlappingMatrix,
-                                Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &overlappingMap);
-     */
+    int ExtendOverlapByOneLayer_Old(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > inputMatrix,
+                                    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > inputMap,
+                                    Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &outputMatrix,
+                                    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &outputMap);
 
     template <class SC,class LO,class GO,class NO>
     int ExtendOverlapByOneLayer(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > inputMatrix,

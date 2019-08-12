@@ -61,7 +61,9 @@ namespace FROSch {
 
         using Map                   = typename SchwarzOperator<SC,LO,GO,NO>::Map;
         using MapPtr                = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
+        using ConstMapPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
         using MapPtrVecPtr          = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr;
+        using ConstMapPtrVecPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtrVecPtr;
 
         using CrsMatrixPtr          = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
         using ConstCrsMatrixPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
@@ -150,10 +152,9 @@ namespace FROSch {
         CrsMatrixPtr Phi_;
         CrsMatrixPtr CoarseMatrix_;
 
-        MapPtrVecPtr GatheringMaps_;
+        ConstMapPtrVecPtr GatheringMaps_;
         MapPtr CoarseSolveMap_;
         MapPtr CoarseSolveRepeatedMap_;
-        GOVecPtr BlockCoarseDimension_;
 
         SubdomainSolverPtr CoarseSolver_;
 

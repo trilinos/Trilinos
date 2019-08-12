@@ -49,14 +49,30 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     AlgebraicOverlappingOperator<SC,LO,GO,NO>::AlgebraicOverlappingOperator(ConstCrsMatrixPtr k,
                                                                             ParameterListPtr parameterList) :
-    OverlappingOperator<SC,LO,GO,NO> (k,parameterList)
+    OverlappingOperator<SC,LO,GO,NO> (k,parameterList),
+    AddingLayersStrategy_ ()
     {
-
+        if (!this->ParameterList_->get("Adding Layers Strategy","Graph").compare("Graph")) {
+            AddingLayersStrategy_ = LayersFromGraph;
+        } else if (!this->ParameterList_->get("Adding Layers Strategy","Graph").compare("Matrix")) {
+            AddingLayersStrategy_ = LayersFromMatrix;
+        } else if (!this->ParameterList_->get("Adding Layers Strategy","Graph").compare("Old")) {
+            AddingLayersStrategy_ = LayersOld;
+        } else {
+            FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator : ERROR: Specify a valid strategy for adding layers.");
+        }
     }
 
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize(int overlap, MapPtr repeatedMap)
     {
+        if (this->Verbose_) {
+            std::cout << "\n\
++------------------------------+\n\
+| AlgebraicOverlappingOperator |\n\
++------------------------------+\n";
+        }
+        
         if (repeatedMap.is_null()) {
             repeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap(),1);
         }
@@ -95,18 +111,74 @@ namespace FROSch {
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
                                                                             MapPtr repeatedMap)
     {
+        // ====================================================================================
+        // AH 08/09/2019: This is just temporary. Implement this properly in all the classes
+        Verbosity verbosity;
+        if (!this->ParameterList_->get("Verbosity","All").compare("None")) {
+            verbosity = None;
+        } else if (!this->ParameterList_->get("Verbosity","All").compare("All")) {
+            verbosity = All;
+        } else {
+            FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator : ERROR: Specify a valid verbosity level.");
+        }
+        // ====================================================================================
+
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
 
-        if (this->ParameterList_->get("Only Communicate Graph to Add Layers",false)) {
-            ConstGraphPtr overlappingGraph = this->OverlappingMatrix_->getCrsGraph();
-            for (int i=0; i<overlap; i++) {
-                ExtendOverlapByOneLayer(overlappingGraph,this->OverlappingMap_,overlappingGraph,this->OverlappingMap_);
+        LO local,sum,min,max;
+        SC avg;
+        if (verbosity==All) {
+            local = (LO) std::max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
+            reduceAll(*this->MpiComm_,Teuchos::REDUCE_SUM,local,Teuchos::ptr(&sum));
+            avg = std::max(sum/double(this->MpiComm_->getSize()),0.0);
+            reduceAll(*this->MpiComm_,Teuchos::REDUCE_MIN,local,Teuchos::ptr(&min));
+            reduceAll(*this->MpiComm_,Teuchos::REDUCE_MAX,local,Teuchos::ptr(&max));
+
+            if (this->Verbose_) {
+            std::cout << "\n\
+    ------------------------------------------------------------------------------\n\
+     Overlapping subdomains statistics\n\
+    ------------------------------------------------------------------------------\n\
+      layer " << 0 << ":        avg / min / max             ---  " << avg << " / " << min << " / " << max << "\n";
             }
-        } else {
-            for (int i=0; i<overlap; i++) {
-                ExtendOverlapByOneLayer(this->OverlappingMatrix_,this->OverlappingMap_,this->OverlappingMatrix_,this->OverlappingMap_);
+        }
+
+        ConstGraphPtr overlappingGraph = this->OverlappingMatrix_->getCrsGraph();
+        for (int i=0; i<overlap; i++) {
+            switch (AddingLayersStrategy_) {
+                case LayersFromGraph:
+                    ExtendOverlapByOneLayer(overlappingGraph,this->OverlappingMap_,overlappingGraph,this->OverlappingMap_);
+                    break;
+
+                case LayersFromMatrix:
+                    ExtendOverlapByOneLayer(this->OverlappingMatrix_,this->OverlappingMap_,this->OverlappingMatrix_,this->OverlappingMap_);
+                    break;
+
+                case LayersOld:
+                    ExtendOverlapByOneLayer_Old(this->OverlappingMatrix_,this->OverlappingMap_,this->OverlappingMatrix_,this->OverlappingMap_);
+                    break;
+
+                default:
+                    FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator : ERROR: Specify a valid strategy for adding layers.");
+                    break;
             }
+            if (verbosity==All) {
+                local = (LO) std::max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
+                reduceAll(*this->MpiComm_,Teuchos::REDUCE_SUM,local,Teuchos::ptr(&sum));
+                avg = std::max(sum/double(this->MpiComm_->getSize()),0.0);
+                reduceAll(*this->MpiComm_,Teuchos::REDUCE_MIN,local,Teuchos::ptr(&min));
+                reduceAll(*this->MpiComm_,Teuchos::REDUCE_MAX,local,Teuchos::ptr(&max));
+
+                if (this->Verbose_) {
+                    std::cout << "\
+      layer " << i+1 << ":        avg / min / max             ---  " << avg << " / " << min << " / " << max << "\n";
+                }
+            }
+        }
+        if (this->Verbose_ && verbosity==All) {
+            std::cout << "\
+    ------------------------------------------------------------------------------\n";
         }
 
         return 0;

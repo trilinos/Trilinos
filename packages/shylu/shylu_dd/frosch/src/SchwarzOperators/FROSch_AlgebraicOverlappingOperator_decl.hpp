@@ -46,6 +46,8 @@
 
 namespace FROSch {
 
+    enum AddingLayersStrategy {LayersFromMatrix=0,LayersFromGraph=1,LayersOld=2};
+
     template <class SC = Xpetra::Operator<>::scalar_type,
               class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
               class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
@@ -92,6 +94,8 @@ namespace FROSch {
 
         int buildOverlappingMatrices(int overlap,
                                      MapPtr repeatedMap);
+
+        AddingLayersStrategy AddingLayersStrategy_;
     };
 
 }
