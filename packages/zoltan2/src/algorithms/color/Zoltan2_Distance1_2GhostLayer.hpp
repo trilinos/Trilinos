@@ -573,9 +573,13 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
           int nborColor = femv_colors(ghost_adjs[j]);
           if(currColor == nborColor){
             if(rand[localIdx] < rand[ghost_adjs[j]]){
-              conflicts_atomic(conflict_count_atomic(0)++) = localIdx;
+              femv_colors(localIdx) = 0;
+              conflict_count_atomic(0)++;
+              //conflicts_atomic(conflict_count_atomic(0)++) = localIdx;
             } else if(ghost_adjs[j] < n_total){
-              conflicts_atomic(conflict_count_atomic(0)++) = ghost_adjs[j];
+              femv_colors(ghost_adjs[j]) = 0;
+              conflict_count_atomic(0)++;
+              //conflicts_atomic(conflict_count_atomic(0)++) = ghost_adjs[j];
             }
           }
         }  
@@ -603,7 +607,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         }
       }*/
 
-      printf("--Rank %d: conflicts found:\n\t",comm->getRank());
+      //printf("--Rank %d: conflicts found:\n\t",comm->getRank());
       //for(int i = 0; i< conflict_count(0); i++){
        // printf("%d ",conflicts(i));
       //}
@@ -612,16 +616,16 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       forbiddenColors.resize(numColors);
       for(int i = 0; i < numColors; i++) forbiddenColors[i] = false;
       
-      bool done = false;
+      bool done = (conflict_count(0) == 0);
       printf("Starting to resolve conflicts\n");
       while(!done){
       //while(resolve.size()){
-        while(conflict_count(0) > 0) {  
+        //while(conflict_count(0) > 0) {  
           //gno_t globalVtx = resolve.top();
           //printf("--Rank %d: recoloring vertex %d\n",comm->getRank(), globalVtx);
           //lno_t currVtx = globalToLocal.at(globalVtx);
           //resolve.pop(); 
-          lno_t currVtx = conflicts(conflict_count(0)-1);
+          /*lno_t currVtx = conflicts(conflict_count(0)-1);
           conflict_count(0) -= 1;
           if(currVtx >= n_local){ // this is a ghost
             for(offset_t nborIdx = ghost_offsets[currVtx-n_local]; nborIdx < ghost_offsets[currVtx+1-n_local]; nborIdx++){
@@ -666,28 +670,34 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
             forbiddenColors[i] = false;
           }
           
-        }//end recolor
+        }*///end recolor
+        this->colorInterior(n_local, host_adjs, host_offsets, femv);
+        conflict_count_atomic(0) = 0;
         printf("recoloring done, communicating changes\n");
-          femv->switchActiveMultiVector();
-          femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
-          femv->switchActiveMultiVector();
-          printf("checking for further conflicts\n");
-          Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-          Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
-          Kokkos::parallel_for(ghost_offsets.size()-1, KOKKOS_LAMBDA (const int& i){
-            lno_t localIdx = i + n_local;
-            for( offset_t j = ghost_offsets[i]; j < ghost_offsets[i+1]; j++){
-              int currColor = femv_colors(localIdx);
-              int nborColor = femv_colors(ghost_adjs[j]);
-              if(currColor == nborColor){
-                if(rand[localIdx] < rand[ghost_adjs[j]]){
-                  conflicts_atomic(conflict_count_atomic(0)++) = localIdx;
-                } else if(ghost_adjs[j] < n_total){
-                  conflicts_atomic(conflict_count_atomic(0)++) = ghost_adjs[j];
-                }
+        femv->switchActiveMultiVector();
+        femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
+        femv->switchActiveMultiVector();
+        printf("checking for further conflicts\n");
+        Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
+        Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
+        Kokkos::parallel_for(ghost_offsets.size()-1, KOKKOS_LAMBDA (const int& i){
+          lno_t localIdx = i + n_local;
+          for( offset_t j = ghost_offsets[i]; j < ghost_offsets[i+1]; j++){
+            int currColor = femv_colors(localIdx);
+            int nborColor = femv_colors(ghost_adjs[j]);
+            if(currColor == nborColor){
+              if(rand[localIdx] < rand[ghost_adjs[j]]){
+                femv_colors(localIdx) = 0;
+                conflict_count_atomic(0)++;
+                //conflicts_atomic(conflict_count_atomic(0)++) = localIdx;
+              } else if(ghost_adjs[j] < n_total){
+                femv_colors(ghost_adjs[j]) = 0;
+                conflict_count_atomic(0)++;
+                //conflicts_atomic(conflict_count_atomic(0)++) = ghost_adjs[j];
               }
-            }  
-          });
+            }
+          }  
+        });
           /*for(int i = n_local; i < n_total; i++){
             offset_t ghost_idx = i - n_local;
             for(offset_t j = ghost_offsets[ghost_idx]; j < ghost_offsets[ghost_idx+1]; j++){
@@ -812,7 +822,7 @@ void AlgDistance1TwoGhostLayer<Adapter>::colorInterior(const size_t nVtx,
   kh.set_suggested_vector_size(-1);
   kh.set_dynamic_scheduling(0);
   kh.set_verbose(0);
-  kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
+  kh.create_graph_coloring_handle(KokkosGraph::COLORING_VB);
   Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
   Kokkos::View<int*, device_type> sv = subview(femvColors, Kokkos::ALL, 0);
   kh.get_graph_coloring_handle()->set_vertex_colors(sv);

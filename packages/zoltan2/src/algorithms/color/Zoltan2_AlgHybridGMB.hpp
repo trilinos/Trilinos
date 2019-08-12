@@ -570,12 +570,34 @@ class AlgHybridGMB : public Algorithm<Adapter>
       if(batch_size < 0) batch_size = nVtx;
       //color boundary vertices using FEMultiVector
       //create a queue of vertices to color
-      std::queue<lno_t> recoloringQueue;
-      std::queue<lno_t> conflictQueue;
-
+      //std::queue<lno_t> recoloringQueue;
+      //std::queue<lno_t> conflictQueue;
+      typedef Tpetra::Map<>::device_type device_type;
+      typedef Tpetra::Map<>::execution_space execution_space;
+      typedef Tpetra::Map<>::memory_space memory_space;
+      //This is the Kokkos version of two queues. These will attempt to be used in parallel.
+      Kokkos::View<lno_t*, device_type> recoloringQueue("recoloringQueue",nVtx);
+      Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA(const int& i){
+        recoloringQueue(i) = -1;
+      });
+      Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > recoloringQueue_atomic=recoloringQueue;
+      Kokkos::View<int[1], device_type> recoloringSize("Recoloring Queue Size");
+      recoloringSize(0) = 0;
+      Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > recoloringSize_atomic = recoloringSize;
+      Kokkos::View<lno_t*, device_type> conflictQueue("conflictQueue",nVtx);
+      Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA(const int& i){
+        conflictQueue(i) = -1;
+      });
+      Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > conflictQueue_atomic = conflictQueue;
+      Kokkos::View<int[1], device_type> conflictSize("Conflict Queue Size");
+      conflictSize(0) = 0;
+      Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > conflictSize_atomic = conflictSize;
      
+      //get a subview of the colors:
+      Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
+      Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
       //bootstrap distributed coloring, add conflicting vertices to the recoloring queue.
-      if(kokkos_only_interior == "false"&&comm->getSize() > 1){
+      if(kokkos_only_interior == "false"||comm->getSize() > 1){
         timeBoundaryComp->stop();
         timeBoundaryComm->start();
         femv->switchActiveMultiVector();
@@ -584,7 +606,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
         timeBoundaryComm->stop();
         timeBoundaryComp->start();
         //printf("Adding conflicts to the recoloring queue\n");
-        for(int i = 0; i < nVtx; i++){
+        /*for(int i = 0; i < nVtx; i++){
           for(int j = offsets[i]; j < offsets[i+1];j++){
             //printf("getting color for vertex %d\n",i);
             int currColor = femv->getData(0)[i];
@@ -595,12 +617,37 @@ class AlgHybridGMB : public Algorithm<Adapter>
               break;
             } 
           }
-        }
+        }*/
+        Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA (const int& i){
+          for(offset_t j = offsets[i]; j < offsets[i+1]; j++){
+            int currColor = femv_colors(i);
+            int nborColor = femv_colors(adjs[j]);
+            if(currColor == nborColor && rand[i] > rand[adjs[j]]){
+              recoloringQueue_atomic(recoloringSize_atomic(0)++) = i;
+              //conflictQueue_atomic(conflictSize_atomic(0)++) = i;
+              break;
+            }
+          }
+        });
         //printf("Finished adding conflicts to the recoloring queue\n");
       }
-
+      
+      int maxDegree = 0;
+      for(int i = 0; i< nVtx; i++){
+        if( offsets[i+1]-offsets[i] > maxDegree){
+          maxDegree = offsets[i+1] - offsets[i];
+        }
+      }
+      int globalMaxDegree = 0;
+      Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX, 1, &maxDegree, &globalMaxDegree);
+      
       Teuchos::ArrayRCP<bool> forbiddenColors;
       forbiddenColors.resize(numColors);
+      Kokkos::View<bool*, device_type> forbidden("Forbidden colors",maxDegree);
+      Kokkos::parallel_for(maxDegree, KOKKOS_LAMBDA(const int& i){
+        forbidden(i) = false;
+      });
+      
       for(int i = 0; i < numColors; i++) forbiddenColors[i] = false;
       //printf("--Rank %d: batch size: %d\n",comm->getRank(),batch_size);
       int vertsPerRound[100];
@@ -609,59 +656,96 @@ class AlgHybridGMB : public Algorithm<Adapter>
       int distributedRounds = 0; //this is the same across all processors
       int i = nInterior; //we only need to worry about boundary vertices here.
       //  while the queue is not empty
-          while(recoloringQueue.size() > 0 || !done){
+          while(recoloringSize(0) > 0 || !done){
             //printf("-- Rank %d: Recoloring %d verts\n",comm->getRank(),recoloringQueue.size());
         //  add next batch to the queue
             if (kokkos_only_interior == "true"){
               for(size_t j = i; j < i+batch_size; j++){
                 if(j < nVtx) {
                   //printf("--Rank %d: pushing %d on the queue\n",comm->getRank(),j);
-                  recoloringQueue.push(j); 
+                  //recoloringQueue.push(j); 
+                  recoloringQueue(recoloringSize(0)++) = j;
                 }
               }
               if(i < nVtx) i+= batch_size;
             }else i = nVtx;
       //    color everything in the recoloring queue, put everything on conflict queue
-            if(distributedRounds < 100) vertsPerRound[distributedRounds] = recoloringQueue.size();
-            while(recoloringQueue.size() > 0) {
+            if(distributedRounds < 100) vertsPerRound[distributedRounds] = recoloringSize(0);
+            //eventually turn this to a Kokkos::parallel_for (could make more conflicts, but eh?
+            /*while(recoloringSize(0) > 0) {
                //printf("--Rank %d: coloring vertex %u\n",comm->getRank(),recoloringQueue.front());
-               lno_t currVtx = recoloringQueue.front();
-               recoloringQueue.pop();
-               conflictQueue.push(currVtx);
+               lno_t currVtx = recoloringQueue(recoloringSize(0)-1);
+               //recoloringQueue.pop();
+               recoloringSize(0)--;
+               conflictQueue(conflictSize(0)++) = currVtx;
                for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
                  
-                 int nborColor = femv->getData(0)[adjs[nborIdx]];
+                 int nborColor = femv_colors(adjs[nborIdx]);
                  if(nborColor > 0){
                    if(nborColor > numColors){
                      forbiddenColors.resize(nborColor);
                      numColors = nborColor;
                    }
-                   forbiddenColors[nborColor-1] = true;
+                   forbidden(nborColor-1) = true;
                  } 
                }
                //pick the color for currVtx based on the forbidden array
                bool colored = false;
-               for(int i = 0; i < numColors; i++){
-                 if(!forbiddenColors[i]) {
+               for(int i = 0; i < maxDegree; i++){
+                 if(!forbidden(i)) {
                    femv->replaceLocalValue(currVtx,0,i+1);
                    colored = true;
                    break;
                  }
                }
-               for(int i = 0; i < numColors; i++){
-                 forbiddenColors[i] = false;
-               }
+               Kokkos::parallel_for(maxDegree,KOKKOS_LAMBDA(const int& i){
+                 forbidden(i) = false;
+               });
                if(!colored){
                  femv->replaceLocalValue(currVtx,0,numColors+1);
                  numColors++;
                  forbiddenColors.resize(numColors);
                }
                //printf("--Rank %d: colored vtx %u color %d\n",comm->getRank(),currVtx, femv->getData(0)[currVtx]);
+            }*/
+            printf("--Rank %d: recoloring\n\t",comm->getRank());
+            for(int i = 0; i< recoloringSize(0); i++){
+              //printf("%d ",recoloringQueue(i));
             }
-            
+            printf("\n");
+            typedef KokkosKernels::Experimental::KokkosKernelsHandle
+                <size_t, lno_t, lno_t, execution_space, memory_space, 
+                 memory_space> KernelHandle;
+            //KernelHandle kh;
+            //kh->create_graph_handle(KokkosGraph::COLORING_VB);
+            /*typename KokkosGraph::Impl::GraphColor_VB<typename KernelHandle::GraphColoringHandleType,
+                                             Kokkos::View<offset_t*,device_type>,
+                                             Kokkos::View<lno_t*, device_type> >
+                       ::functorGreedyColor gc(nVtx,host_offsets,host_adjs,femv_colors,
+                                                     recoloringQueue,recoloringSize(0),0);
+            Kokkos::parallel_for("Recoloring",recoloringSize(0),gc);*/
+            //need to provide means of expanding forbidden array.
+            Kokkos::parallel_for(recoloringSize(0), KOKKOS_LAMBDA(const int& i){
+              bool dev_forbidden[2*globalMaxDegree];
+              for(int j = 0; j < globalMaxDegree; j++) dev_forbidden[j]=false;
+              lno_t currVtx = recoloringQueue(i);
+              conflictQueue_atomic(conflictSize_atomic(0)++) = currVtx;
+              for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
+                int nborColor=femv_colors(adjs[nborIdx]);
+                if(nborColor > 0) dev_forbidden[nborColor-1] = true;
+              }
+              for(int j = 0; j < globalMaxDegree; j++){
+                if(!dev_forbidden[j]){
+                  femv_colors(currVtx) = j+1;
+                  //printf("\t--Rank %d recolored vertex %u color %d\n",comm->getRank(),currVtx,j+1);
+                }
+              }
+            });
+            recoloringSize(0) = 0;
             timeBoundaryComp->stop();
             timeBoundaryComm->start();
       //    communicate
+            printf("--Rank %d: communicating\n",comm->getRank());
             femv->switchActiveMultiVector();
             femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
             femv->switchActiveMultiVector();
@@ -669,7 +753,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
             timeBoundaryComm->stop();
             timeBoundaryComp->start();
       //    check for conflicts with the vertices that were just colored
-            while(conflictQueue.size() > 0){
+            /*while(conflictQueue.size() > 0){
       //      if conflicts were detected put them on the recoloring queue
               lno_t currVtx = conflictQueue.front();
               conflictQueue.pop();
@@ -677,10 +761,10 @@ class AlgHybridGMB : public Algorithm<Adapter>
               int currColor = femv->getData(0)[currVtx];
               for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
                 int nborColor = femv->getData(0)[adjs[nborIdx]];
-                /*if(reorderGIDs[currVtx] == 117961 && reorderGIDs[adjs[nborIdx]] == 150790){
+                if(reorderGIDs[currVtx] == 117961 && reorderGIDs[adjs[nborIdx]] == 150790){
                   printf("--Rank %d: checking 117961 (color %d) against 150790 (color %d)\n",comm->getRank(),
                           femv->getData(0)[currVtx], femv->getData(0)[adjs[nborIdx]]);
-                }*/
+                }
                 if(nborColor == currColor && rand[currVtx] > rand[adjs[nborIdx]]) {
                   //printf("--Rank %d: vtx %u conflicts with vtx %u\n",comm->getRank(),currVtx,adjs[nborIdx]);
                   conflict = true;
@@ -690,16 +774,31 @@ class AlgHybridGMB : public Algorithm<Adapter>
                 recoloringQueue.push(currVtx);
                 //printf("--Rank %d: putting vertex %u on the recoloring queue\n",comm->getRank(),currVtx);
               }
-            }
+            }*/
+            printf("--Rank %d: Detecting conflicts\n",comm->getRank());
+            Kokkos::parallel_for(conflictSize(0),KOKKOS_LAMBDA(const int& i){
+              lno_t currVtx = conflictQueue(i);
+              bool conflict = false;
+              int currColor = femv_colors(currVtx);
+              for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
+                int nborColor = femv_colors(adjs[nborIdx]);
+                if(nborColor == currColor && rand[currVtx] > rand[adjs[nborIdx]]){
+                  conflict = true;
+                  break;
+                }
+              }
+              if(conflict) recoloringQueue_atomic(recoloringSize_atomic(0)++) = currVtx;
+            });
+            conflictSize(0) = 0;
             //do a reduction to determine if we're done
             int globalDone = 0;
             int localDone = 0;
-            if(kokkos_only_interior=="true") localDone= recoloringQueue.size() + (nVtx > i);
-            else localDone = recoloringQueue.size();
-            Teuchos::reduceAll<int, int>(*comm,Teuchos::REDUCE_MAX,1, &localDone, &globalDone);
+            if(kokkos_only_interior=="true") localDone= recoloringSize(0) + (nVtx > i);
+            else localDone = recoloringSize(0);
+            Teuchos::reduceAll<int, int>(*comm,Teuchos::REDUCE_SUM,1, &localDone, &globalDone);
             //We're only allowed to stop once everyone has no work to do.
             //collectives will hang if one process exits. 
-            //printf("globalDone = %d\n",globalDone);
+            printf("globalDone = %d\n",globalDone);
             distributedRounds++;
             done = !globalDone;
           }
