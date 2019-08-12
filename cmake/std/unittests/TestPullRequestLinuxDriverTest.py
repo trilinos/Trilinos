@@ -147,15 +147,9 @@ Parameters:
 - BUILD_NUMBER          : 7777
 
 ==========================================================================================
-Environment:
-
-  pwd = /dev/null/workspace
-
-{environ}
-==========================================================================================
 NOTICE: Source branch IS trilinos/Trilinos::master_merge_20200130_120155
         : This is allowed, proceeding with testing.
-Set CWD = /dev/null/workspace/TFW_testing_single_configure_prototype
+Set CWD = /dev/null/workspace
 """.format(environ=env_string_io.getvalue())
 
         with self.IOredirect as m_output, \
@@ -209,15 +203,9 @@ Parameters:
 - BUILD_NUMBER          : 7777
 
 ==========================================================================================
-Environment:
-
-  pwd = /dev/null/workspace
-
-{environ}
-==========================================================================================
 NOTICE: Destination branch is NOT trilinos/Trilinos::master"
       : PR testing will proceed.
-Set CWD = /dev/null/workspace/TFW_testing_single_configure_prototype
+Set CWD = /dev/null/workspace
 """.format(environ=env_string_io.getvalue())
 
         with self.IOredirect as m_output, \
@@ -323,7 +311,8 @@ class Test_setEnviron(unittest.TestCase):
     def test_buildEnv_passes_with_python2(self):
         """Find the function"""
         PR_name = 'Trilinos_pullrequest_python_2'
-        expected_list = [mock.call('load', 'git/2.10.1'),
+        expected_list = [mock.call('load', 'sems-git/2.10.1'),
+                         mock.call('load', 'sems-gcc/7.2.0'),
                          mock.call('load', 'sierra-python/2.7.15'),
                          mock.call('load', 'sems-cmake/3.10.3'),
                          mock.call('load', 'atdm-env'),
@@ -335,7 +324,8 @@ class Test_setEnviron(unittest.TestCase):
     def test_buildEnv_passes_with_python3(self):
         """Find the function"""
         PR_name = 'Trilinos_pullrequest_python_3'
-        expected_list = [mock.call('load', 'git/2.10.1'),
+        expected_list = [mock.call('load', 'sems-git/2.10.1'),
+                         mock.call('load', 'sems-gcc/7.2.0'),
                          mock.call('load', 'sierra-python/3.6.3'),
                          mock.call('load', 'sems-cmake/3.10.3'),
                          mock.call('load', 'atdm-env'),
@@ -349,7 +339,7 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_gcc_4.8.4'
         expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
                          mock.call('load', 'sems-env'),
-                         mock.call('load', 'git/2.10.1'),
+                         mock.call('load', 'sems-git/2.10.1'),
                          mock.call('load', 'sems-gcc/4.8.4'),
                          mock.call('load', 'sems-openmpi/1.10.1'),
                          mock.call('load', 'sems-python/2.7.9'),
@@ -373,7 +363,7 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_gcc_4.9.3_SERIAL'
         expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
                          mock.call('load', 'sems-env'),
-                         mock.call('load', 'git/2.10.1'),
+                         mock.call('load', 'sems-git/2.10.1'),
                          mock.call('load', 'sems-gcc/4.9.3'),
                          mock.call('load', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-boost/1.63.0/base'),
@@ -395,7 +385,7 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_gcc_7.2.0'
         expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
                          mock.call('load', 'sems-env'),
-                         mock.call('load', 'git/2.10.1'),
+                         mock.call('load', 'sems-git/2.10.1'),
                          mock.call('load', 'sems-gcc/7.2.0'),
                          mock.call('load', 'sems-openmpi/1.10.1'),
                          mock.call('load', 'sems-python/2.7.9'),
@@ -419,9 +409,10 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_intel_17.0.1'
         expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
                          mock.call('load', 'sems-env'),
-                         mock.call('load', 'git/2.10.1'),
+                         mock.call('load', 'sems-git/2.10.1'),
                          mock.call('load', 'sems-gcc/4.9.3'),
                          mock.call('load', 'sems-intel/17.0.1'),
+                         mock.call('load', 'sems-mpich/3.2'),
                          mock.call('load', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-boost/1.63.0/base'),
                          mock.call('load', 'sems-zlib/1.2.8/base'),
@@ -471,7 +462,8 @@ class Test_setEnviron(unittest.TestCase):
                                             'install',
                                             'white-ride',
                                             'ninja-1.8.2',
-                                            'bin')]}
+                                            'bin'),
+                                '/fake/path']}
 
         self.buildEnv_passes(PR_name, expected_list, test_ENV=expected_env)
 

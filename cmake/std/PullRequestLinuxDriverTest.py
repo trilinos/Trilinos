@@ -113,15 +113,6 @@ def print_input_variables(arguments):
     print(
         "\n==========================================================================================",
         file=sys.stdout)
-    print("Environment:\n", file=sys.stdout)
-    print("  pwd = {cwd}".format(cwd=os.getcwd()), file=sys.stdout)
-    print("", file=sys.stdout)
-    for key in os.environ:
-        print(key + ' = ' + os.environ[key],
-              file=sys.stdout)
-    print(
-        "\n==========================================================================================",
-        file=sys.stdout)
 
 
 def confirmGitVersion():
@@ -135,7 +126,7 @@ def confirmGitVersion():
 def setBuildEnviron(arguments):
     moduleMap = {'Trilinos_pullrequest_gcc_4.8.4':
                      ['sems-env',
-                     'git/2.10.1',
+                     'sems-git/2.10.1',
                      'sems-gcc/4.8.4',
                      'sems-openmpi/1.10.1',
                      'sems-python/2.7.9',
@@ -151,7 +142,7 @@ def setBuildEnviron(arguments):
                      'atdm-ninja_fortran/1.7.2'],
                  'Trilinos_pullrequest_gcc_4.9.3_SERIAL':
                      ['sems-env',
-                      'git/2.10.1',
+                      'sems-git/2.10.1',
                       'sems-gcc/4.9.3',
                       'sems-python/2.7.9',
                       'sems-boost/1.63.0/base',
@@ -164,20 +155,22 @@ def setBuildEnviron(arguments):
                       'atdm-env',
                       'atdm-ninja_fortran/1.7.2'],
                  'Trilinos_pullrequest_python_2':
-                     ['git/2.10.1',
+                     ['sems-git/2.10.1',
+                      'sems-gcc/7.2.0',
                       'sierra-python/2.7.15',
                       'sems-cmake/3.10.3',
                       'atdm-env',
                       'atdm-ninja_fortran/1.7.2'],
                 'Trilinos_pullrequest_python_3':
-                     ['git/2.10.1',
+                     ['sems-git/2.10.1',
+                      'sems-gcc/7.2.0',
                       'sierra-python/3.6.3',
                       'sems-cmake/3.10.3',
                       'atdm-env',
                       'atdm-ninja_fortran/1.7.2'],
-                 'Trilinos_pullrequest_gcc_7.2.0':
+                'Trilinos_pullrequest_gcc_7.2.0':
                      ['sems-env',
-                     'git/2.10.1',
+                     'sems-git/2.10.1',
                      'sems-gcc/7.2.0',
                      'sems-openmpi/1.10.1',
                      'sems-python/2.7.9',
@@ -191,11 +184,12 @@ def setBuildEnviron(arguments):
                      'sems-cmake/3.10.3',
                      'atdm-env',
                      'atdm-ninja_fortran/1.7.2'],
-                 'Trilinos_pullrequest_intel_17.0.1':
+                'Trilinos_pullrequest_intel_17.0.1':
                      ['sems-env',
-                     'git/2.10.1',
+                     'sems-git/2.10.1',
                      'sems-gcc/4.9.3',
                      'sems-intel/17.0.1',
+                     'sems-mpich/3.2',
                      'sems-python/2.7.9',
                      'sems-boost/1.63.0/base',
                      'sems-zlib/1.2.8/base',
@@ -207,7 +201,7 @@ def setBuildEnviron(arguments):
                      'sems-cmake/3.10.3',
                      'atdm-env',
                      'atdm-ninja_fortran/1.7.2'],
-                 'Trilinos_pullrequest_cuda_9.2':
+                'Trilinos_pullrequest_cuda_9.2':
                      ['git/2.10.1',
                      'devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88',
                       ('openblas/0.2.20/gcc/7.2.0', 'netlib/3.8.0/gcc/7.2.0')]}
@@ -215,7 +209,7 @@ def setBuildEnviron(arguments):
     environMap = {'Trilinos_pullrequest_gcc_4.8.4':
                       {'OMP_NUM_THREADS': '2'},
                   'Trilinos_pullrequest_gcc_4.9.3_SERIAL':
-                     {'OMP_NUM_THREADS': '2'},
+                      {'OMP_NUM_THREADS': '2'},
                  'Trilinos_pullrequest_python_2': {},
                  'Trilinos_pullrequest_python_3': {},
                  'Trilinos_pullrequest_gcc_7.2.0':
@@ -273,6 +267,15 @@ def setBuildEnviron(arguments):
     os.environ.update(l_environMap)
     confirmGitVersion()
 
+    print ("Environment:\n", file=sys.stdout)
+    print("  pwd = {cwd}".format(cwd=os.getcwd()), file=sys.stdout)
+    print("", file=sys.stdout)
+    for key in os.environ:
+        print(key + ' = ' + os.environ[key],
+              file=sys.stdout)
+    print(
+        "\n==========================================================================================",
+        file=sys.stdout)
     print(module('list'))
 
 
