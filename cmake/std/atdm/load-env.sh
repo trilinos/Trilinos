@@ -38,10 +38,18 @@ if [ "$1" == "" ] ; then
   return
 fi
 
-# Make sure there are no other command-line arguments set
+# Look for optional user-defined configuration settings dir
+unset ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH
 if [ "$2" != "" ] ; then
-  echo "Error, this source script only accepts a single comamnd-line argument!"
-  return
+  ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH=$2
+  if [ ! -d "${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH}" ] ; then
+    echo "Error, '${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH}' must point to a valid directory with a user-defiend configuration!"
+    return
+  elif [ ! -e "${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH}/environment.sh" ] ; then
+    echo "Error, directory '${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH}' exists but the file '${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH}/environment.sh' does not exist!"
+    return
+  fi
+  export ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH
 fi
 
 export ATDM_CONFIG_BUILD_NAME=$1
@@ -55,10 +63,16 @@ export ATDM_CONFIG_JOB_NAME=$ATDM_CONFIG_BUILD_NAME
 
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/unset_atdm_config_vars_system_name.sh
 
-source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_known_system_name.sh
+if [ "${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH}" == "" ] ; then
+  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_known_system_name.sh
+  export ATDM_CONFIG_SYSTEM_DIR=${ATDM_CONFIG_SCRIPT_DIR}/${ATDM_CONFIG_KNOWN_SYSTEM_NAME}
+else
+  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_custom_system_info.sh
+  export ATDM_CONFIG_SYSTEM_DIR=$(readlink -f ${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH})
+fi
 
 if [[ $ATDM_CONFIG_KNOWN_SYSTEM_NAME == "" ]] ; then
-  echo "Error, could not determine known system, aborting env loading"
+  echo "Error, could not determine system, aborting env loading script!"
   return
 fi
 
@@ -106,7 +120,7 @@ fi
 
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/atdm_config_helper_funcs.sh
 
-source ${ATDM_CONFIG_SCRIPT_DIR}/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
+source ${ATDM_CONFIG_SYSTEM_DIR}/environment.sh
 
 if [ "$ATDM_CONFIG_COMPLETED_ENV_SETUP" != "TRUE" ] ; then
   echo
