@@ -58,7 +58,10 @@ namespace MueLu {
    * Example implementation for dropping values smaller then a constant threshold
    *
    */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Scalar = DefaultScalar,
+           class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class PreDropFunctionConstVal :
     public MueLu::PreDropFunctionBaseClass<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_PREDROPFUNCTIONCONSTVAL_SHORT

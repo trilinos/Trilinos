@@ -60,11 +60,9 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal = StridedMap<>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename StridedMap<LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename StridedMap<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class StridedMapFactory {
 #undef XPETRA_STRIDEDMAPFACTORY_SHORT
 #include "Xpetra_UseShortNamesOrdinal.hpp"

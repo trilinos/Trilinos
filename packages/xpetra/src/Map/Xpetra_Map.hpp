@@ -75,29 +75,14 @@ namespace Xpetra {
 # endif
 #endif
 
-  namespace Details
-  {
-    //Check for the default Tpetra GlobalOrdinal (long long)
-    #ifdef HAVE_XPETRA_TPETRA
-    typedef typename Tpetra::Map<>::global_ordinal_type DefaultGlobalOrdinal;
-    //Have Epetra only; use Epetra's default GlobalOrdinal
-    #else
-    #ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
-    typedef long long DefaultGlobalOrdinal;
-    #else
-    typedef int DefaultGlobalOrdinal;
-    #endif
-    #endif
-  }
-
   enum UnderlyingLib {
     UseEpetra,
     UseTpetra,
     NotSpecified
   };
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = Details::DefaultGlobalOrdinal,
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Map
     : public Teuchos::Describable

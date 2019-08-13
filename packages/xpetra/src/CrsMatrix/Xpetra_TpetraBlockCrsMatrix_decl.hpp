@@ -63,7 +63,7 @@
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraBlockCrsMatrix
     : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>//, public TpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {

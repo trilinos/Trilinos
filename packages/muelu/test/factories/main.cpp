@@ -63,7 +63,6 @@
 /**********************************************************************************/
 
 namespace MueLu {
-
   /*!
     @class MiniFactory classes.
     @brief Mini factories for demonstration purposes only
