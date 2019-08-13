@@ -157,14 +157,14 @@ def setBuildEnviron(arguments):
                  'Trilinos_pullrequest_python_2':
                      ['sems-git/2.10.1',
                       'sems-gcc/7.2.0',
-                      'sierra-python/2.7.15',
+                      ('sems-python/2.7.9', 'sierra-python/2.7.15'),
                       'sems-cmake/3.10.3',
                       'atdm-env',
                       'atdm-ninja_fortran/1.7.2'],
                 'Trilinos_pullrequest_python_3':
                      ['sems-git/2.10.1',
                       'sems-gcc/7.2.0',
-                      'sierra-python/3.6.3',
+                      ('sems-python/2.7.9', 'sierra-python/3.6.3'),
                       'sems-cmake/3.10.3',
                       'atdm-env',
                       'atdm-ninja_fortran/1.7.2'],

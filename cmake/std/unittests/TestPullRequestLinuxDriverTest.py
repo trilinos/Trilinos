@@ -313,7 +313,8 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_python_2'
         expected_list = [mock.call('load', 'sems-git/2.10.1'),
                          mock.call('load', 'sems-gcc/7.2.0'),
-                         mock.call('load', 'sierra-python/2.7.15'),
+                         mock.call('swap', 'sems-python/2.7.9',
+                                   'sierra-python/2.7.15'),
                          mock.call('load', 'sems-cmake/3.10.3'),
                          mock.call('load', 'atdm-env'),
                          mock.call('load', 'atdm-ninja_fortran/1.7.2'),
@@ -326,7 +327,8 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_python_3'
         expected_list = [mock.call('load', 'sems-git/2.10.1'),
                          mock.call('load', 'sems-gcc/7.2.0'),
-                         mock.call('load', 'sierra-python/3.6.3'),
+                         mock.call('swap', 'sems-python/2.7.9',
+                                   'sierra-python/3.6.3'),
                          mock.call('load', 'sems-cmake/3.10.3'),
                          mock.call('load', 'atdm-env'),
                          mock.call('load', 'atdm-ninja_fortran/1.7.2'),
