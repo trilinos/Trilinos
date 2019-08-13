@@ -256,8 +256,7 @@ class Test_setEnviron(unittest.TestCase):
                                                      'JOB_NAME': 'TEST_JOB_NAME',
                                                      'WORKSPACE': self.jenkins_workspace,
                                                      'NODE_NAME': 'TEST_NODE_NAME',
-                                                     'PATH': '/fake/path',
-                                                      },
+                                                     'PATH': '/fake/path',},
                                          clear=True)
         self.arguments = Namespace()
         setattr(self.arguments, 'sourceBranch', self.source_branch)
@@ -288,15 +287,17 @@ class Test_setEnviron(unittest.TestCase):
         setattr(self.arguments,
                 'job_base_name',
                 PR_name)
-            
+
+        def add_CC(*args, **kwargs):
+            os.environ['CC'] = '/fake/gcc/path/bin/gcc'
+            os.environ['FC'] = '/fake/gcc/path/bin/gfortran'
+
         with self.IOredirect, \
              self.m_chdir, \
              self.m_check_out, \
              self.m_environ, \
-             mock.patch('PullRequestLinuxDriverTest.module') as m_mod:
-            if PR_name == 'Trilinos_pullrequest_cuda_9.2':
-                os.environ.update({'CC': '/fake/gcc/path/bin/gcc',
-                                   'FC': '/fake/gcc/path/bin/gfortran'})
+             mock.patch('PullRequestLinuxDriverTest.module',
+                        side_effect=add_CC) as m_mod:
             PullRequestLinuxDriverTest.setBuildEnviron(self.arguments)
             for key, value in test_ENV.items():
                 if isinstance(value, str):

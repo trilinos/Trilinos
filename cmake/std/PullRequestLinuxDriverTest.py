@@ -264,6 +264,11 @@ def setBuildEnviron(arguments):
             unl_mod, load_mod = mod
             module('swap', unl_mod, load_mod)
 
+    if 'OMPI_CC' in l_environMap:
+        l_environMap['OMPI_CC'] = os.environ.get('CC', '')
+    if 'OMPI_FC' in l_environMap:
+        l_environMap['OMPI_FC'] = os.environ.get('FC', '')
+
     os.environ.update(l_environMap)
     confirmGitVersion()
 
