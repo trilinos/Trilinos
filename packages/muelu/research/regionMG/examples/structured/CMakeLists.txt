@@ -38,6 +38,22 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
+    NAME "Structured_Region_Star2D_Tpetra_GS"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_1.log --smootherType=Gauss"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Star2D_Tpetra_GS"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_4.log --smootherType=Gauss"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --amg-coarse-solver --coarseAmgXml=amg_1dof.xml"
     COMM serial mpi
