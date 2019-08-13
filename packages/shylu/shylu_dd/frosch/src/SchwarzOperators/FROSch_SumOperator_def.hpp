@@ -88,7 +88,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int SumOperator<SC,LO,GO,NO>::initialize(MapPtr repeatedMap)
+    int SumOperator<SC,LO,GO,NO>::initialize(ConstMapPtr repeatedMap)
     {
         if (this->Verbose_) {
             FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be initialized manually.");

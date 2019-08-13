@@ -57,12 +57,15 @@ namespace FROSch {
         using CommPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
 
         using MapPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
+        using ConstMapPtr             = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
         using MapPtrVecPtr            = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr;
+        using ConstMapPtrVecPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtrVecPtr;
 
         using CrsMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
         using ConstCrsMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
 
         using MultiVectorPtr          = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr;
+        using ConstMultiVectorPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstMultiVectorPtr;
         using MultiVectorPtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr;
 
         using ParameterListPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
@@ -94,10 +97,10 @@ namespace FROSch {
         virtual int resetCoarseSpaceBlock(UN blockId,
                                           UN dimension,
                                           UN dofsPerNode,
-                                          MapPtr nodesMap,
-                                          MapPtrVecPtr dofsMaps,
+                                          ConstMapPtr nodesMap,
+                                          ConstMapPtrVecPtr dofsMaps,
                                           GOVecPtr dirichletBoundaryDofs,
-                                          MultiVectorPtr nodeList);
+                                          ConstMultiVectorPtr nodeList);
 
 
     protected:
@@ -109,7 +112,7 @@ namespace FROSch {
 
         virtual MultiVectorPtrVecPtr computeRotations(UN blockId,
                                                       UN dimension,
-                                                      MultiVectorPtr nodeList,
+                                                      ConstMultiVectorPtr nodeList,
                                                       EntitySetPtr coarseNodes,
                                                       EntitySetPtrVecPtr entitySetVector,
                                                       DistanceFunction distanceFunction = ConstantDistanceFunction);

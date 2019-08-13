@@ -51,8 +51,8 @@ namespace FROSch {
                                                                               CommPtr serialComm,
                                                                               UN dimension,
                                                                               UN dofsPerNode,
-                                                                              MapPtr nodesMap,
-                                                                              MapPtrVecPtr dofsMaps,
+                                                                              ConstMapPtr nodesMap,
+                                                                              ConstMapPtrVecPtr dofsMaps,
                                                                               ParameterListPtr parameterList,
                                                                               Verbosity verbosity) :
     InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList),
@@ -130,7 +130,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs,
-                                                                         MultiVectorPtr nodeList)
+                                                                         ConstMultiVectorPtr nodeList)
     {
         if (!dirichletBoundaryDofs.is_null()) {
             GOVec tmpDirichletBoundaryDofs(dirichletBoundaryDofs());
@@ -143,7 +143,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(ConstCrsMatrixPtr matrix,
-                                                                  MultiVectorPtr nodeList)
+                                                                  ConstMultiVectorPtr nodeList)
     {
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
             this->DDInterface_->divideUnconnectedEntities(matrix);

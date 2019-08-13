@@ -82,10 +82,10 @@ namespace FROSch {
                                                              UNVecPtr dofsPerNodeVec,
                                                              DofOrderingVecPtr dofOrderingVec,
                                                              int overlap,
-                                                             MapPtrVecPtr repeatedMapVec,
-                                                             MultiVectorPtrVecPtr nullSpaceBasisVec,
-                                                             MultiVectorPtrVecPtr nodeListVec,
-                                                             MapPtrVecPtr2D dofsMapsVec,
+                                                             ConstMapPtrVecPtr repeatedMapVec,
+                                                             ConstMultiVectorPtrVecPtr nullSpaceBasisVec,
+                                                             ConstMultiVectorPtrVecPtr nodeListVec,
+                                                             ConstMapPtrVecPtr2D dofsMapsVec,
                                                              GOVecPtr2D dirichletBoundaryDofsVec)
     {
         ////////////
@@ -108,7 +108,7 @@ namespace FROSch {
 //        }
 
         // Build dofsMaps and repeatedNodesMap
-        MapPtrVecPtr repeatedNodesMapVec;
+        ConstMapPtrVecPtr repeatedNodesMapVec;
         if (dofsMapsVec.is_null()) {
             if (0>BuildDofMapsVec(repeatedMapVec,dofsPerNodeVec,dofOrderingVec,repeatedNodesMapVec,dofsMapsVec)) ret -= 100; // Todo: Rückgabewerte
             } else {
@@ -127,10 +127,10 @@ namespace FROSch {
         if (!nodeListVec.is_null()) {
             for (UN i=0; i<nodeListVec.size(); i++) {
                 if (!nodeListVec[i]->getMap()->isSameAs(*repeatedNodesMapVec[i])) {
-                    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpNodeList = nodeListVec[i];
-                    nodeListVec[i] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMapVec[i],tmpNodeList->getNumVectors());
-                    Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(tmpNodeList->getMap(),repeatedNodesMapVec[i]);
-                    nodeListVec[i]->doImport(*tmpNodeList,*scatter,Xpetra::INSERT);
+                    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpNodeList = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMapVec[i],tmpNodeList->getNumVectors());
+                    Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(nodeListVec[i]->getMap(),repeatedNodesMapVec[i]);
+                    tmpNodeList->doImport(*nodeListVec[i],*scatter,Xpetra::INSERT);
+                    nodeListVec[i] = tmpNodeList.getConst();
                 }
             }
         }
@@ -140,14 +140,14 @@ namespace FROSch {
         //////////////////////////////////////////
         // Determine dirichletBoundaryDofs //
         //////////////////////////////////////////
-        MapPtr repeatedMap = MergeMaps(repeatedMapVec);
+        ConstMapPtr repeatedMap = MergeMaps(repeatedMapVec);
         if (dirichletBoundaryDofsVec.is_null()) {
             dirichletBoundaryDofsVec.resize(repeatedMapVec.size());
             LOVecPtr counterSub(repeatedMapVec.size(),0);
             for (UN j=0; j<dirichletBoundaryDofsVec.size(); j++) {
                 dirichletBoundaryDofsVec[j] = GOVecPtr(repeatedMapVec[j]->getNodeNumElements());
             }
-            GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,repeatedMap);
+            GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),repeatedMap);
             for (UN i=0; i<dirichletBoundaryDofs.size(); i++) {
                 LO subNumber = -1;
                 for (UN j = dofsMapsVec.size(); j > 0 ; j--) {
@@ -248,7 +248,8 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::preApplyCoarse(MultiVectorPtr &x,MultiVectorPtr &y)
+    int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::preApplyCoarse(MultiVectorPtr &x,
+                                                                 MultiVectorPtr &y)
     {
         if (this->UseMultiplicative_) {
             this->MultiplicativeOperator_->preApplyCoarse(*x,*y);

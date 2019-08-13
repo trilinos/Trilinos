@@ -58,10 +58,10 @@ namespace FROSch {
     int RGDSWCoarseOperator<SC,LO,GO,NO>::resetCoarseSpaceBlock(UN blockId,
                                                                 UN dimension,
                                                                 UN dofsPerNode,
-                                                                MapPtr nodesMap,
-                                                                MapPtrVecPtr dofsMaps,
+                                                                ConstMapPtr nodesMap,
+                                                                ConstMapPtrVecPtr dofsMaps,
                                                                 GOVecPtr dirichletBoundaryDofs,
-                                                                MultiVectorPtr nodeList)
+                                                                ConstMultiVectorPtr nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
@@ -248,7 +248,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename RGDSWCoarseOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr RGDSWCoarseOperator<SC,LO,GO,NO>::computeRotations(UN blockId,
                                                                                                                        UN dimension,
-                                                                                                                       MultiVectorPtr nodeList,
+                                                                                                                       ConstMultiVectorPtr nodeList,
                                                                                                                        EntitySetPtr coarseNodes,
                                                                                                                        EntitySetPtrVecPtr entitySetVector,
                                                                                                                        DistanceFunction distanceFunction)

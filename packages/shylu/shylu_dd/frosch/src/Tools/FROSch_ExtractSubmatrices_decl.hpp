@@ -67,16 +67,20 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int BuildSubmatrices(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > k,
                          Teuchos::ArrayView<GO> indI,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kII,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kIJ,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kJI,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kJJ);
+                         Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &kII,
+                         Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &kIJ,
+                         Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &kJI,
+                         Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &kJJ);
 
     template <class SC,class LO,class GO,class NO>
-    int BuildSubmatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > k,
+    int BuildSubmatrix(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > k,
                        Teuchos::ArrayView<GO> indI,
-                       Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kII);
+                       Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &kII);
 
+    template <class LO,class GO,class NO>
+    int BuildSubgraph(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > k,
+                      Teuchos::ArrayView<GO> indI,
+                      Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > &kII);
 }
 
 #endif

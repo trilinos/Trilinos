@@ -59,10 +59,10 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
                                                             UN dofsPerNode,
-                                                            MapPtr nodesMap,
-                                                            MapPtrVecPtr dofsMaps,
-                                                            MultiVectorPtr nullSpaceBasis,
-                                                            MultiVectorPtr nodeList,
+                                                            ConstMapPtr nodesMap,
+                                                            ConstMapPtrVecPtr dofsMaps,
+                                                            ConstMultiVectorPtr nullSpaceBasis,
+                                                            ConstMultiVectorPtr nodeList,
                                                             GOVecPtr dirichletBoundaryDofs)
     {
         int ret = buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
@@ -74,10 +74,10 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
                                                             UNVecPtr dofsPerNodeVec,
-                                                            MapPtrVecPtr repeatedNodesMapVec,
-                                                            MapPtrVecPtr2D repeatedDofMapsVec,
-                                                            MultiVectorPtrVecPtr nullSpaceBasisVec,
-                                                            MultiVectorPtrVecPtr nodeListVec,
+                                                            ConstMapPtrVecPtr repeatedNodesMapVec,
+                                                            ConstMapPtrVecPtr2D repeatedDofMapsVec,
+                                                            ConstMultiVectorPtrVecPtr nullSpaceBasisVec,
+                                                            ConstMultiVectorPtrVecPtr nodeListVec,
                                                             GOVecPtr2D dirichletBoundaryDofsVec)
     {
         buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,nullSpaceBasisVec,dirichletBoundaryDofsVec,nodeListVec);
@@ -102,11 +102,11 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int  IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
                                                                    UN dofsPerNode,
-                                                                   MapPtr nodesMap,
-                                                                   MapPtrVecPtr dofsMaps,
-                                                                   MultiVectorPtr nullSpaceBasis,
+                                                                   ConstMapPtr nodesMap,
+                                                                   ConstMapPtrVecPtr dofsMaps,
+                                                                   ConstMultiVectorPtr nullSpaceBasis,
                                                                    GOVecPtr dirichletBoundaryDofs,
-                                                                   MultiVectorPtr nodeList)
+                                                                   ConstMultiVectorPtr nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
 
@@ -125,11 +125,11 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
                                                                   UNVecPtr dofsPerNodeVec,
-                                                                  MapPtrVecPtr repeatedNodesMapVec,
-                                                                  MapPtrVecPtr2D repeatedDofMapsVec,
-                                                                  MultiVectorPtrVecPtr nullSpaceBasisVec,
+                                                                  ConstMapPtrVecPtr repeatedNodesMapVec,
+                                                                  ConstMapPtrVecPtr2D repeatedDofMapsVec,
+                                                                  ConstMultiVectorPtrVecPtr nullSpaceBasisVec,
                                                                   GOVecPtr2D dirichletBoundaryDofsVec,
-                                                                  MultiVectorPtrVecPtr nodeListVec)
+                                                                  ConstMultiVectorPtrVecPtr nodeListVec)
     {
         // Das könnte man noch ändern
         // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
@@ -150,11 +150,11 @@ namespace FROSch {
     int IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::resetCoarseSpaceBlock(UN blockId,
                                                                        UN dimension,
                                                                        UN dofsPerNode,
-                                                                       MapPtr nodesMap,
-                                                                       MapPtrVecPtr dofsMaps,
-                                                                       MultiVectorPtr nullSpaceBasis,
+                                                                       ConstMapPtr nodesMap,
+                                                                       ConstMapPtrVecPtr dofsMaps,
+                                                                       ConstMultiVectorPtr nullSpaceBasis,
                                                                        GOVecPtr dirichletBoundaryDofs,
-                                                                       MultiVectorPtr nodeList)
+                                                                       ConstMultiVectorPtr nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");

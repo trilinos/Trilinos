@@ -144,7 +144,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int  HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(MapPtr dofsMap)
+    int  HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(ConstMapPtr dofsMap)
     {
         // Das könnte man noch ändern
         GammaDofs_->resize(GammaDofs_.size()+1);
@@ -206,8 +206,8 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int HarmonicCoarseOperator<SC,LO,GO,NO>::computeVolumeFunctions(UN blockId,
                                                                     UN dimension,
-                                                                    MapPtr nodesMap,
-                                                                    MultiVectorPtr nodeList,
+                                                                    ConstMapPtr nodesMap,
+                                                                    ConstMultiVectorPtr nodeList,
                                                                     EntitySetPtr interior)
     {
         // Process the parameter list
@@ -297,7 +297,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeRotations(UN blockId,
                                                                                                                              UN dimension,
-                                                                                                                             MultiVectorPtr nodeList,
+                                                                                                                             ConstMultiVectorPtr nodeList,
                                                                                                                              EntitySetPtr entitySet)
     {
         FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");

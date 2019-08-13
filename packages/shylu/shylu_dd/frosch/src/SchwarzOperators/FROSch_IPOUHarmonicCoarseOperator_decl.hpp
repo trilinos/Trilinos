@@ -60,14 +60,19 @@ namespace FROSch {
         using CommPtr                           = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
 
         using MapPtr                            = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
+        using ConstMapPtr                       = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
         using MapPtrVecPtr                      = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr;
+        using ConstMapPtrVecPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtrVecPtr;
         using MapPtrVecPtr2D                    = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr2D;
+        using ConstMapPtrVecPtr2D               = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtrVecPtr2D;
 
         using CrsMatrixPtr                      = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
         using ConstCrsMatrixPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
 
         using MultiVectorPtr                    = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr;
+        using ConstMultiVectorPtr               = typename SchwarzOperator<SC,LO,GO,NO>::ConstMultiVectorPtr;
         using MultiVectorPtrVecPtr              = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr;
+        using ConstMultiVectorPtrVecPtr         = typename SchwarzOperator<SC,LO,GO,NO>::ConstMultiVectorPtrVecPtr;
 
         using ParameterListPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
@@ -115,18 +120,18 @@ namespace FROSch {
 
         int initialize(UN dimension,
                        UN dofsPerNode,
-                       MapPtr nodesMap,
-                       MapPtrVecPtr dofsMaps,
-                       MultiVectorPtr nullSpaceBasis,
-                       MultiVectorPtr nodeList,
+                       ConstMapPtr nodesMap,
+                       ConstMapPtrVecPtr dofsMaps,
+                       ConstMultiVectorPtr nullSpaceBasis,
+                       ConstMultiVectorPtr nodeList,
                        GOVecPtr dirichletBoundaryDofs);
 
         int initialize(UN dimension,
                        UNVecPtr dofsPerNodeVec,
-                       MapPtrVecPtr repeatedNodesMapVec,
-                       MapPtrVecPtr2D repeatedDofMapsVec,
-                       MultiVectorPtrVecPtr nullSpaceBasisVec,
-                       MultiVectorPtrVecPtr nodeListVec,
+                       ConstMapPtrVecPtr repeatedNodesMapVec,
+                       ConstMapPtrVecPtr2D repeatedDofMapsVec,
+                       ConstMultiVectorPtrVecPtr nullSpaceBasisVec,
+                       ConstMultiVectorPtrVecPtr nodeListVec,
                        GOVecPtr2D dirichletBoundaryDofsVec);
 
         void describe(Teuchos::FancyOStream &out,
@@ -138,29 +143,29 @@ namespace FROSch {
 
         int buildCoarseSpace(UN dimension,
                              UN dofsPerNode,
-                             MapPtr nodesMap,
-                             MapPtrVecPtr dofsMaps,
-                             MultiVectorPtr nullSpaceBasis,
+                             ConstMapPtr nodesMap,
+                             ConstMapPtrVecPtr dofsMaps,
+                             ConstMultiVectorPtr nullSpaceBasis,
                              GOVecPtr dirichletBoundaryDofs,
-                             MultiVectorPtr nodeList);
+                             ConstMultiVectorPtr nodeList);
 
 
         int buildCoarseSpace(UN dimension,
                              UNVecPtr dofsPerNodeVec,
-                             MapPtrVecPtr repeatedNodesMapVec,
-                             MapPtrVecPtr2D repeatedDofMapsVec,
-                             MultiVectorPtrVecPtr nullSpaceBasisVec,
+                             ConstMapPtrVecPtr repeatedNodesMapVec,
+                             ConstMapPtrVecPtr2D repeatedDofMapsVec,
+                             ConstMultiVectorPtrVecPtr nullSpaceBasisVec,
                              GOVecPtr2D dirichletBoundaryDofsVec,
-                             MultiVectorPtrVecPtr nodeListVec);
+                             ConstMultiVectorPtrVecPtr nodeListVec);
 
         virtual int resetCoarseSpaceBlock(UN blockId,
                                           UN dimension,
                                           UN dofsPerNode,
-                                          MapPtr nodesMap,
-                                          MapPtrVecPtr dofsMaps,
-                                          MultiVectorPtr nullSpaceBasis,
+                                          ConstMapPtr nodesMap,
+                                          ConstMapPtrVecPtr dofsMaps,
+                                          ConstMultiVectorPtr nullSpaceBasis,
                                           GOVecPtr dirichletBoundaryDofs,
-                                          MultiVectorPtr nodeList);
+                                          ConstMultiVectorPtr nodeList);
 
 
         /*

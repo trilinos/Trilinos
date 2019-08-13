@@ -96,6 +96,7 @@ namespace FROSch {
 
         using MultiVector           = Xpetra::MultiVector<SC,LO,GO,NO>;
         using MultiVectorPtr        = Teuchos::RCP<MultiVector>;
+        using ConstMultiVectorPtr   = Teuchos::RCP<const MultiVector>;
 
         using EntitySetPtr          = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
 
@@ -107,8 +108,10 @@ namespace FROSch {
 
         using UN                    = unsigned;
 
+        using IntVec                 = Teuchos::Array<int>;
+        
         using LOVecPtr              = Teuchos::ArrayRCP<LO>;
-
+        
         using GOVec                 = Teuchos::Array<GO>;
         using GOVecPtr              = Teuchos::ArrayRCP<GO>;
 
@@ -120,7 +123,7 @@ namespace FROSch {
         InterfaceEntity(EntityType type,
                         UN dofsPerNode,
                         UN multiplicity,
-                        GO *subdomains,
+                        int *subdomains,
                         EntityFlag flag = DefaultFlag);
 
         ~InterfaceEntity();
@@ -171,7 +174,7 @@ namespace FROSch {
         int clearCoarseNodes();
 
         int computeDistancesToCoarseNodes(UN dimension,
-                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          ConstMultiVectorPtr &nodeList = Teuchos::null,
                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
 
         InterfaceEntityPtr divideEntity(ConstCrsMatrixPtr matrix,
@@ -209,7 +212,7 @@ namespace FROSch {
 
         GO getGlobalDofID(UN iDNode, UN iDDof) const;
 
-        const GOVec & getSubdomainsVector() const;
+        const IntVec & getSubdomainsVector() const;
 
         UN getNumNodes() const;
 
@@ -230,7 +233,7 @@ namespace FROSch {
 
         NodeVec NodeVector_;
 
-        GOVec SubdomainsVector_;
+        IntVec SubdomainsVector_;
 
         EntitySetPtr Ancestors_;
         EntitySetPtr Offspring_;

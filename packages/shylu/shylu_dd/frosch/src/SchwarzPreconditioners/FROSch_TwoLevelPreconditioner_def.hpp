@@ -91,10 +91,10 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int TwoLevelPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                         int overlap,
-                                                        MapPtr repeatedMap,
+                                                        ConstMapPtr repeatedMap,
                                                         UN dofsPerNode,
                                                         DofOrdering dofOrdering,
-                                                        MultiVectorPtr nodeList)
+                                                        ConstMultiVectorPtr nodeList)
     {
         return initialize(dimension,dofsPerNode,overlap,Teuchos::null,nodeList,dofOrdering,repeatedMap,Teuchos::null,Teuchos::null);
     }
@@ -103,11 +103,11 @@ namespace FROSch {
     int TwoLevelPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                         UN dofsPerNode,
                                                         int overlap,
-                                                        MultiVectorPtr nullSpaceBasis,
-                                                        MultiVectorPtr nodeList,
+                                                        ConstMultiVectorPtr nullSpaceBasis,
+                                                        ConstMultiVectorPtr nodeList,
                                                         DofOrdering dofOrdering,
-                                                        MapPtr repeatedMap,
-                                                        MapPtrVecPtr dofsMaps,
+                                                        ConstMapPtr repeatedMap,
+                                                        ConstMapPtrVecPtr dofsMaps,
                                                         GOVecPtr dirichletBoundaryDofs)
     {
         ////////////
@@ -120,10 +120,10 @@ namespace FROSch {
         // Maps //
         //////////
         if (repeatedMap.is_null()) {
-            repeatedMap = BuildRepeatedMap(this->K_); // Todo: Achtung, die UniqueMap könnte unsinnig verteilt sein. Falls es eine repeatedMap gibt, sollte dann die uniqueMap neu gebaut werden können. In diesem Fall, sollte man das aber basierend auf der repeatedNodesMap tun
+            repeatedMap = BuildRepeatedMap(this->K_->getCrsGraph()); // Todo: Achtung, die UniqueMap könnte unsinnig verteilt sein. Falls es eine repeatedMap gibt, sollte dann die uniqueMap neu gebaut werden können. In diesem Fall, sollte man das aber basierend auf der repeatedNodesMap tun
         }
         // Build dofsMaps and repeatedNodesMap
-        MapPtr repeatedNodesMap;
+        ConstMapPtr repeatedNodesMap;
         if (dofsMaps.is_null()) {
             if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,dofsMaps)) ret -= 100; // Todo: Rückgabewerte
         } else {
@@ -141,10 +141,10 @@ namespace FROSch {
         //////////////////////////
         if (!nodeList.is_null()) {
             if (!nodeList->getMap()->isSameAs(*repeatedNodesMap)) {
-                Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpNodeList = nodeList;
-                nodeList = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMap,tmpNodeList->getNumVectors());
-                Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(tmpNodeList->getMap(),repeatedNodesMap);
-                nodeList->doImport(*tmpNodeList,*scatter,Xpetra::INSERT);
+                Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpNodeList = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMap,tmpNodeList->getNumVectors());
+                Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(nodeList->getMap(),repeatedNodesMap);
+                tmpNodeList->doImport(*nodeList,*scatter,Xpetra::INSERT);
+                nodeList = tmpNodeList.getConst();
             }
         }
 
@@ -152,7 +152,7 @@ namespace FROSch {
         // Determine dirichletBoundaryDofs //
         //////////////////////////////////////////
         if (dirichletBoundaryDofs.is_null()) {
-            dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,repeatedMap);
+            dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),repeatedMap);
         }
 
         ////////////////////////////////////

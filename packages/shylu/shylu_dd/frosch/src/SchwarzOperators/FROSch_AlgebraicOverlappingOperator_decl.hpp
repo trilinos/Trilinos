@@ -59,6 +59,7 @@ namespace FROSch {
         using CommPtr               = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
 
         using MapPtr                = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
+        using ConstMapPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
 
         using CrsMatrixPtr          = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
         using ConstCrsMatrixPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
@@ -79,7 +80,7 @@ namespace FROSch {
         };
 
         int initialize(int overlap,
-                       MapPtr repeatedMap = Teuchos::null);
+                       ConstMapPtr repeatedMap = Teuchos::null);
 
         int compute();
 
@@ -93,7 +94,7 @@ namespace FROSch {
         int setUpAlgebraicOverlappingOperator();
 
         int buildOverlappingMatrices(int overlap,
-                                     MapPtr repeatedMap);
+                                     ConstMapPtr repeatedMap);
 
         AddingLayersStrategy AddingLayersStrategy_;
     };

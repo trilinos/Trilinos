@@ -57,12 +57,15 @@ namespace FROSch {
     protected:
 
         using MapPtr                    = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr;
+        using ConstMapPtr               = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr;
         using MapPtrVecPtr              = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr;
+        using ConstMapPtrVecPtr         = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtrVecPtr;
 
         using CrsMatrixPtr              = typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr;
         using ConstCrsMatrixPtr         = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr;
 
         using MultiVectorPtr            = typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr;
+        using ConstMultiVectorPtr       = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMultiVectorPtr;
 
         using ParameterListPtr          = typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr;
 
@@ -79,13 +82,13 @@ namespace FROSch {
 
         int initialize(bool useDefaultParameters = true);
 
-        int initialize(MapPtr repeatedMap,
+        int initialize(ConstMapPtr repeatedMap,
                        bool useDefaultParameters = true);
 
         int initialize(GOVecPtr &dirichletBoundaryDofs,
                        bool useDefaultParameters = true);
 
-        int initialize(MapPtr repeatedMap,
+        int initialize(ConstMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs,
                        bool useDefaultParameters = true);
 
@@ -94,40 +97,40 @@ namespace FROSch {
 
         int initialize(UN dimension,
                        int overlap,
-                       MapPtr repeatedMap);
+                       ConstMapPtr repeatedMap);
 
         int initialize(UN dimension,
                        int overlap,
-                       MapPtr repeatedMap,
+                       ConstMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs);
 
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       MapPtr repeatedMap);
+                       ConstMapPtr repeatedMap);
 
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       MapPtr repeatedMap,
+                       ConstMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs);
 
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       MapPtr repeatedMap,
-                       MultiVectorPtr &nodeList);
+                       ConstMapPtr repeatedMap,
+                       ConstMultiVectorPtr &nodeList);
 
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       MapPtr repeatedMap,
+                       ConstMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs,
-                       MultiVectorPtr &nodeList);
+                       ConstMultiVectorPtr &nodeList);
 
         int compute();
 

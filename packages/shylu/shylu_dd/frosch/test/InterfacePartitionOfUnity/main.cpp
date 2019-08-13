@@ -151,16 +151,16 @@ int main(int argc, char *argv[])
         }
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Constructing Repeated Map #\n#############\n" << endl;
-        RCP<Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<SC,LO,GO,NO>(K);
+        RCP<const Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<LO,GO,NO>(K->getCrsGraph());
 
-        RCP<Map<LO,GO,NO> > RepeatedNodesMap;
-        ArrayRCP<RCP<Map<LO,GO,NO> > > RepeatedDofMaps;
+        RCP<const Map<LO,GO,NO> > RepeatedNodesMap;
+        ArrayRCP<RCP<const Map<LO,GO,NO> > > RepeatedDofMaps;
         BuildDofMaps(RepeatedMap,1,NodeWise,RepeatedNodesMap,RepeatedDofMaps);
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Constructing Interface Partition of Unity #\n#############\n" << endl;
         RCP<const Teuchos::Comm<int> > SerialComm = createSerialComm<int>();
 
-        RCP<ParameterList> parameterList = getParametersFromXmlFile("ParametersIPOU.xml");;
+        RCP<ParameterList> parameterList = getParametersFromXmlFile("ParametersIPOU.xml");
         RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > IPOU(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(RepeatedMap->getComm(),SerialComm,Dimension,1,RepeatedNodesMap,RepeatedDofMaps,parameterList));
         IPOU->removeDirichletNodes();
         IPOU->sortInterface(K);

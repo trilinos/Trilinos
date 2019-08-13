@@ -51,8 +51,8 @@ namespace FROSch {
                                                                       CommPtr serialComm,
                                                                       UN dimension,
                                                                       UN dofsPerNode,
-                                                                      MapPtr nodesMap,
-                                                                      MapPtrVecPtr dofsMaps,
+                                                                      ConstMapPtr nodesMap,
+                                                                      ConstMapPtrVecPtr dofsMaps,
                                                                       ParameterListPtr parameterList,
                                                                       Verbosity verbosity) :
     MpiComm_ (mpiComm),

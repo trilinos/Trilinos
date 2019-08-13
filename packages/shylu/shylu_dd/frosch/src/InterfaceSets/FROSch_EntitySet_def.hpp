@@ -193,7 +193,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
-                                                              MultiVectorPtr &nodeList,
+                                                              ConstMultiVectorPtr &nodeList,
                                                               DistanceFunction distanceFunction)
     {
         for (UN i=0; i<getNumEntities(); i++) {
@@ -243,7 +243,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::flagStraightEntities(UN dimension,
-                                                     MultiVectorPtr &nodeList)
+                                                     ConstMultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
 
@@ -367,7 +367,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     bool EntitySet<SC,LO,GO,NO>::checkForStraightEdges(UN dimension,
-                                                       MultiVectorPtr &nodeList)
+                                                       ConstMultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
 
@@ -493,7 +493,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     const typename EntitySet<SC,LO,GO,NO>::SCVecPtr EntitySet<SC,LO,GO,NO>::getDirection(UN dimension,
-                                                                                         MultiVectorPtr &nodeList,
+                                                                                         ConstMultiVectorPtr &nodeList,
                                                                                          UN iD) const
     {
         FROSCH_ASSERT(iD<getNumEntities(),"iD>=getNumEntities().");

@@ -72,7 +72,7 @@ namespace FROSch {
 
     protected:
 
-        using IntVec        = Teuchos::Array<GO>;
+        using IntVec        = Teuchos::Array<int>;
 
         using LOVec         = Teuchos::Array<LO>;
 
@@ -156,11 +156,18 @@ namespace FROSch {
                                                               Teuchos::RCP<Tpetra::Details::TieBreak<LO,GO> > tieBreak = Teuchos::null);
 
     template <class SC,class LO,class GO,class NO>
-    Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > BuildRepeatedSubMaps(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > matrix,
-                                                                                  Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > subMaps);
+    Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > BuildRepeatedSubMaps(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix,
+                                                                                  Teuchos::ArrayRCP<const Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > subMaps);
 
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix);
+    Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > BuildRepeatedSubMaps(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > graph,
+                                                                                  Teuchos::ArrayRCP<const Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > subMaps);
+
+    template <class SC,class LO,class GO,class NO>
+    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix);
+
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > graph);
 
     template <class SC,class LO,class GO,class NO>
     int ExtendOverlapByOneLayer_Old(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > inputMatrix,
@@ -185,22 +192,22 @@ namespace FROSch {
                                                       Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &partMappings);
 
     template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > MergeMaps(Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVector);
+    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > MergeMaps(Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > mapVector);
 
     template <class LO,class GO,class NO>
-    int BuildDofMaps(const Teuchos::RCP<Xpetra::Map<LO,GO,NO> > map,
+    int BuildDofMaps(const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map,
                      unsigned dofsPerNode,
                      unsigned dofOrdering,
-                     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &nodesMap,
-                     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &dofMaps,
+                     Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &nodesMap,
+                     Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > &dofMaps,
                      GO offset = 0);
 
     template <class LO,class GO,class NO>
-    int BuildDofMapsVec(const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVec,
+    int BuildDofMapsVec(const Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > mapVec,
                         Teuchos::ArrayRCP<unsigned> dofsPerNodeVec,
                         Teuchos::ArrayRCP<FROSch::DofOrdering> dofOrderingVec,
-                        Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &nodesMapVec,
-                        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > >&dofMapsVec);
+                        Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > &nodesMapVec,
+                        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > >&dofMapsVec);
 
 
     template <class LO,class GO,class NO>
@@ -218,8 +225,8 @@ namespace FROSch {
                                                                           Teuchos::ArrayRCP<GO> maxSubGIDVec);
 
     template <class SC,class LO,class GO,class NO>
-    Teuchos::ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &matrix,
-                                                     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &repeatedMap);
+    Teuchos::ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix,
+                                                     Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > repeatedMap);
 
     template <class SC,class LO>
     bool ismultiple(Teuchos::ArrayView<SC> A,
@@ -233,28 +240,67 @@ namespace FROSch {
                                                                         Teuchos::ArrayView<unsigned> zero = Teuchos::ArrayView<unsigned>());
 
     template <class SC, class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > BuildNullSpace(unsigned dimension,
-                                                                   unsigned nullSpaceType,
-                                                                   Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedMap,
-                                                                   unsigned dofsPerNode,
-                                                                   Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > dofsMaps,
-                                                                   Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nodeList = Teuchos::null);
+    Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > BuildNullSpace(unsigned dimension,
+                                                                         unsigned nullSpaceType,
+                                                                         Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > repeatedMap,
+                                                                         unsigned dofsPerNode,
+                                                                         Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > dofsMaps,
+                                                                         Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > nodeList = Teuchos::null);
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-    template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
-                                                         const Epetra_BlockMap &map,
-                                                         Teuchos::RCP<const Teuchos::Comm<int> > comm);
-
-    template <class SC, class LO, class GO, class NO>
-    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
-                                                               Epetra_CrsMatrix &matrix,
+    template <class SC,class LO,class GO,class NO>
+    struct ConvertToXpetra {
+    
+    public:
+        
+        static Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ConvertMap(Xpetra::UnderlyingLib lib,
+                                                               const Epetra_BlockMap &map,
                                                                Teuchos::RCP<const Teuchos::Comm<int> > comm);
-
-    template <class SC, class LO,class GO, class NO>
-    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
-                                                                    Epetra_MultiVector &vector,
-                                                                    Teuchos::RCP<const Teuchos::Comm<int> > comm);
+        
+        static Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ConvertMatrix(Xpetra::UnderlyingLib lib,
+                                                                        Epetra_CrsMatrix &matrix,
+                                                                        Teuchos::RCP<const Teuchos::Comm<int> > comm);
+        
+        static Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ConvertMultiVector(Xpetra::UnderlyingLib lib,
+                                                                                  Epetra_MultiVector &vector,
+                                                                                  Teuchos::RCP<const Teuchos::Comm<int> > comm);
+    };
+    
+    template <class SC,class LO,class NO>
+    struct ConvertToXpetra<SC,LO,int,NO> {
+        
+    public:
+        
+        static Teuchos::RCP<Xpetra::Map<LO,int,NO> > ConvertMap(Xpetra::UnderlyingLib lib,
+                                                                const Epetra_BlockMap &map,
+                                                                Teuchos::RCP<const Teuchos::Comm<int> > comm);
+        
+        static Teuchos::RCP<Xpetra::Matrix<SC,LO,int,NO> > ConvertMatrix(Xpetra::UnderlyingLib lib,
+                                                                         Epetra_CrsMatrix &matrix,
+                                                                         Teuchos::RCP<const Teuchos::Comm<int> > comm);
+        
+        static Teuchos::RCP<Xpetra::MultiVector<SC,LO,int,NO> > ConvertMultiVector(Xpetra::UnderlyingLib lib,
+                                                                                   Epetra_MultiVector &vector,
+                                                                                   Teuchos::RCP<const Teuchos::Comm<int> > comm);
+    };
+    
+    template <class SC,class LO,class NO>
+    struct ConvertToXpetra<SC,LO,long long,NO> {
+        
+    public:
+        
+        static Teuchos::RCP<Xpetra::Map<LO,long long,NO> > ConvertMap(Xpetra::UnderlyingLib lib,
+                                                                           const Epetra_BlockMap &map,
+                                                                           Teuchos::RCP<const Teuchos::Comm<int> > comm);
+        
+        static Teuchos::RCP<Xpetra::Matrix<SC,LO,long long,NO> > ConvertMatrix(Xpetra::UnderlyingLib lib,
+                                                                               Epetra_CrsMatrix &matrix,
+                                                                               Teuchos::RCP<const Teuchos::Comm<int> > comm);
+        
+        static Teuchos::RCP<Xpetra::MultiVector<SC,LO,long long,NO> > ConvertMultiVector(Xpetra::UnderlyingLib lib,
+                                                                                         Epetra_MultiVector &vector,
+                                                                                         Teuchos::RCP<const Teuchos::Comm<int> > comm);
+    };
 #endif
 
     template <class Type>

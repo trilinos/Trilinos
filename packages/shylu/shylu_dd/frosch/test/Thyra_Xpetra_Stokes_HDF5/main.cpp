@@ -178,12 +178,13 @@ int main(int argc, char *argv[])
         string groupNameRepeatedMapVelo =  "RepeatedMapVelocity";
         Epetra_Map *repeatedMapEpetraVelo;
         hDF5IO->Read(groupNameRepeatedMapVelo,repeatedMapEpetraVelo);
-        RCP<Map<LO,GO,NO> > repeatedMapVelo = ConvertToXpetra<LO,GO,NO>(xpetraLib,*repeatedMapEpetraVelo,Comm);
+        
+        RCP<Map<LO,GO,NO> > repeatedMapVelo = ConvertToXpetra<SC,LO,GO,NO>::ConvertMap(xpetraLib,*repeatedMapEpetraVelo,Comm);
 
         string groupNameRepeatedMapPress =  "RepeatedMapPressure";
         Epetra_Map *repeatedMapEpetraPress;
         hDF5IO->Read(groupNameRepeatedMapPress,repeatedMapEpetraPress);
-        RCP<Map<LO,GO,NO> > repeatedMapPress = ConvertToXpetra<LO,GO,NO>(xpetraLib,*repeatedMapEpetraPress,Comm);
+        RCP<Map<LO,GO,NO> > repeatedMapPress = ConvertToXpetra<SC,LO,GO,NO>::ConvertMap(xpetraLib,*repeatedMapEpetraPress,Comm);
 
 //        GO offsetVelocityMap = repeatedMapVelo->getMaxAllGlobalIndex()+1;
 //        Array<GO> elementList(repeatedMapEpetraPress->NumMyElements());
@@ -192,12 +193,12 @@ int main(int argc, char *argv[])
 //        }
 //        RCP<Map<LO,GO,NO> > repeatedMapPress = Xpetra::MapFactory<LO,GO,NO>::Build(xpetraLib,-1,elementList,0,Comm);
 
-        Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > repeatedMapsVector(2);
+        Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > repeatedMapsVector(2);
 
         repeatedMapsVector[0] = repeatedMapVelo;
         repeatedMapsVector[1] = repeatedMapPress;
 
-        RCP<Map<LO,GO,NO> > repeatedMap = MergeMaps(repeatedMapsVector);
+        RCP<const Map<LO,GO,NO> > repeatedMap = MergeMaps(repeatedMapsVector);
 
 
         ////////////////
@@ -213,7 +214,7 @@ int main(int argc, char *argv[])
         Epetra_MultiVector *rhsEpetra;
         hDF5IO->Read(groupNameRHS,rhsEpetra);
 
-        RCP<MultiVector<SC,LO,GO,NO> > rhsTmp = ConvertToXpetra<SC,LO,GO,NO>(xpetraLib,*rhsEpetra,Comm);
+        RCP<MultiVector<SC,LO,GO,NO> > rhsTmp = ConvertToXpetra<SC,LO,GO,NO>::ConvertMultiVector(xpetraLib,*rhsEpetra,Comm);
         RCP<MultiVector<SC,LO,GO,NO> > rhs = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
         RCP<Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(rhsTmp->getMap(),uniqueMap);
         rhs->doImport(*rhsTmp,*scatter,Xpetra::ADD);
@@ -225,7 +226,7 @@ int main(int argc, char *argv[])
         string groupNameMatrix = "Matrix";
         Epetra_CrsMatrix *matrixEpetra;
         hDF5IO->Read(groupNameMatrix,matrixEpetra);
-        RCP<Matrix<SC,LO,GO,NO> > matrixTmp = ConvertToXpetra<SC,LO,GO,NO>(xpetraLib,*matrixEpetra,Comm);
+        RCP<Matrix<SC,LO,GO,NO> > matrixTmp = ConvertToXpetra<SC,LO,GO,NO>::ConvertMatrix(xpetraLib,*matrixEpetra,Comm);
         RCP<Matrix<SC,LO,GO,NO> > matrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,matrixTmp->getGlobalMaxNumRowEntries());
 
         matrix->doImport(*matrixTmp,*scatter,Xpetra::ADD);

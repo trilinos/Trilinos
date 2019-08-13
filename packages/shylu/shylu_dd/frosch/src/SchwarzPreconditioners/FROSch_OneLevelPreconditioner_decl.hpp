@@ -81,7 +81,7 @@ namespace FROSch {
                                bool buildRepeatedMap = false);
 
         virtual int initialize(int overlap,
-                               MapPtr repeatedMap);
+                               ConstMapPtr repeatedMap);
 
         virtual int compute();
 

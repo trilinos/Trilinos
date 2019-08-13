@@ -102,7 +102,17 @@ namespace Thyra {
     template <class SC,class LO,class GO,class NO=KokkosClassic::DefaultNode::DefaultNodeType>
     class FROSchFactory : public Thyra::PreconditionerFactoryBase<SC> {
 
-    public:
+    protected:
+        
+        using Map                   = Xpetra::Map<LO,GO,NO>;
+        using ConstMap              = const Map;
+        using ConstMapPtr           = Teuchos::RCP<ConstMap>;
+        using ConstMapPtrVecPtr     = Teuchos::ArrayRCP<ConstMapPtr>;
+        
+        using MultiVector           = const Xpetra::MultiVector<SC,LO,GO,NO>;
+        using ConstMultiVector      = const MultiVector;
+        using MultiVectorPtr        = Teuchos::RCP<MultiVector>;
+        using ConstMultiVectorPtr   = Teuchos::RCP<ConstMultiVector>;
 
         using DofOrderingVecPtr     = Teuchos::ArrayRCP<DofOrdering>;
         
@@ -118,6 +128,8 @@ namespace Thyra {
 
         // More typedefs!!!
 
+    public:
+        
         //Constructor
         FROSchFactory();
 

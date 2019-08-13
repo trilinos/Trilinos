@@ -68,6 +68,7 @@ namespace FROSch {
 
         using MultiVector                 = Xpetra::MultiVector<SC,LO,GO,NO>;
         using MultiVectorPtr              = Teuchos::RCP<MultiVector>;
+        using ConstMultiVectorPtr         = Teuchos::RCP<const MultiVector>;
 
         using EntitySetPtr                = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
 
@@ -107,7 +108,7 @@ namespace FROSch {
         int clearCoarseNodes();
 
         int computeDistancesToCoarseNodes(UN dimension,
-                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          ConstMultiVectorPtr &nodeList = Teuchos::null,
                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
 
         int divideUnconnectedEntities(ConstCrsMatrixPtr matrix,
@@ -118,7 +119,7 @@ namespace FROSch {
         int flagShortEntities();
 
         int flagStraightEntities(UN dimension,
-                                 MultiVectorPtr &nodeList);
+                                 ConstMultiVectorPtr &nodeList);
 
         EntitySetPtr sortOutEntities(EntityFlag flag);
 
@@ -133,7 +134,7 @@ namespace FROSch {
         bool checkForShortEdges();
 
         bool checkForStraightEdges(UN dimension,
-                                   MultiVectorPtr &nodeList);
+                                   ConstMultiVectorPtr &nodeList);
 
         bool checkForEmptyEntities();
 
@@ -162,7 +163,7 @@ namespace FROSch {
         const MapPtr getEntityMap() const;
 
         const SCVecPtr getDirection(UN dimension,
-                                    MultiVectorPtr &nodeList,
+                                    ConstMultiVectorPtr &nodeList,
                                     UN iD) const;
 
     protected:

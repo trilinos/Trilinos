@@ -63,7 +63,7 @@ namespace FROSch {
     InterfaceEntity<SC,LO,GO,NO>::InterfaceEntity(EntityType type,
                                                   UN dofsPerNode,
                                                   UN multiplicity,
-                                                  GO *subdomains,
+                                                  int *subdomains,
                                                   EntityFlag flag) :
     Type_ (type),
     Flag_ (flag),
@@ -223,7 +223,7 @@ namespace FROSch {
     int InterfaceEntity<SC,LO,GO,NO>::findAncestorsInSet(EntitySetPtr entitySet)
     {
         EntitySetPtr ancestors(new EntitySet<SC,LO,GO,NO>(*entitySet));
-        GOVec tmpVector;
+        IntVec tmpVector;
         for (UN i=0; i<Multiplicity_; i++) {
             UN length = ancestors->getNumEntities();
             for (UN j=0; j<length; j++) {
@@ -299,7 +299,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int InterfaceEntity<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
-                                                                    MultiVectorPtr &nodeList,
+                                                                    ConstMultiVectorPtr &nodeList,
                                                                     DistanceFunction distanceFunction)
     {
         if (CoarseNodes_->getNumEntities()>0) {
@@ -482,7 +482,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    const typename InterfaceEntity<SC,LO,GO,NO>::GOVec & InterfaceEntity<SC,LO,GO,NO>::getSubdomainsVector() const
+    const typename InterfaceEntity<SC,LO,GO,NO>::IntVec & InterfaceEntity<SC,LO,GO,NO>::getSubdomainsVector() const
     {
         return SubdomainsVector_;
     }

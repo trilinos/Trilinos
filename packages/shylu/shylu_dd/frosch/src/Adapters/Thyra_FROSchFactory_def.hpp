@@ -130,21 +130,21 @@ namespace Thyra {
         FROSCH_ASSERT(paramList_->isParameter("FROSch Preconditioner Type"),"FROSch Preconditioner Type is not defined!");
 
         if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("AlgebraicOverlappingPreconditioner")) {
-            RCP<Map<LO,GO,NO> > repeatedMap = Teuchos::null;
+            ConstMapPtr repeatedMap = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                repeatedMap = ExtractPtrFromParameterList<Map<LO,GO,NO> >(*paramList_,"Repeated Map");
+                repeatedMap = ExtractPtrFromParameterList<ConstMap>(*paramList_,"Repeated Map");
             }
             RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > AOP(new AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>(A,paramList_));
             AOP->initialize(paramList_->get("Overlap",1),repeatedMap);
             SchwarzPreconditioner = AOP;
         } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("GDSWPreconditioner")) {
-            RCP<Map<LO,GO,NO> > repeatedMap = Teuchos::null;
+            ConstMapPtr repeatedMap = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                repeatedMap = ExtractPtrFromParameterList<Map<LO,GO,NO> >(*paramList_,"Repeated Map");
+                repeatedMap = ExtractPtrFromParameterList<ConstMap>(*paramList_,"Repeated Map");
             }
-            RCP<MultiVector<SC,LO,GO,NO> > coordinatesList = Teuchos::null;
+            ConstMultiVectorPtr coordinatesList = Teuchos::null;
             if(paramList_->isParameter("Coordinates List")){
-                coordinatesList = ExtractPtrFromParameterList<MultiVector<SC,LO,GO,NO> >(*paramList_,"Coordinates List");
+                coordinatesList = ExtractPtrFromParameterList<ConstMultiVector>(*paramList_,"Coordinates List");
             }
             DofOrdering dofOrdering;
             if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
@@ -160,21 +160,21 @@ namespace Thyra {
             GP->initialize(paramList_->get("Dimension",3),paramList_->get("DofsPerNode",1),dofOrdering,paramList_->get("Overlap",1),repeatedMap,coordinatesList);
             SchwarzPreconditioner = GP;
         } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("OneLevelPreconditioner")) {
-            RCP<Map<LO,GO,NO> > repeatedMap = Teuchos::null;
+            ConstMapPtr repeatedMap = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                repeatedMap = ExtractPtrFromParameterList<Map<LO,GO,NO> >(*paramList_,"Repeated Map");
+                repeatedMap = ExtractPtrFromParameterList<ConstMap>(*paramList_,"Repeated Map");
             }
             RCP<OneLevelPreconditioner<SC,LO,GO,NO> > OLP(new OneLevelPreconditioner<SC,LO,GO,NO>(A,paramList_));
             OLP->initialize(paramList_->get("Overlap",1),repeatedMap);
             SchwarzPreconditioner = OLP;
         } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("RGDSWPreconditioner")) {
-            RCP<Map<LO,GO,NO> > repeatedMap = Teuchos::null;
+            ConstMapPtr repeatedMap = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                repeatedMap = ExtractPtrFromParameterList<Map<LO,GO,NO> >(*paramList_,"Repeated Map");
+                repeatedMap = ExtractPtrFromParameterList<ConstMap>(*paramList_,"Repeated Map");
             }
-            RCP<MultiVector<SC,LO,GO,NO> > coordinatesList = Teuchos::null;
+            ConstMultiVectorPtr coordinatesList = Teuchos::null;
             if(paramList_->isParameter("Coordinates List")){
-                coordinatesList = ExtractPtrFromParameterList<MultiVector<SC,LO,GO,NO> >(*paramList_,"Coordinates List");
+                coordinatesList = ExtractPtrFromParameterList<ConstMultiVector>(*paramList_,"Coordinates List");
             }
             DofOrdering dofOrdering;
             if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
@@ -190,17 +190,17 @@ namespace Thyra {
             RGP->initialize(paramList_->get("Dimension",3),paramList_->get("DofsPerNode",1),dofOrdering,paramList_->get("Overlap",1),repeatedMap,coordinatesList);
             SchwarzPreconditioner = RGP;
         } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelPreconditioner")) {
-            RCP<Map<LO,GO,NO> > repeatedMap = Teuchos::null;
+            ConstMapPtr repeatedMap = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                repeatedMap = ExtractPtrFromParameterList<Map<LO,GO,NO> >(*paramList_,"Repeated Map");
+                repeatedMap = ExtractPtrFromParameterList<ConstMap>(*paramList_,"Repeated Map");
             }
-            RCP<MultiVector<SC,LO,GO,NO> > nullSpaceBasis = Teuchos::null;
+            ConstMultiVectorPtr nullSpaceBasis = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                nullSpaceBasis = ExtractPtrFromParameterList<MultiVector<SC,LO,GO,NO> >(*paramList_,"Null Space");
+                nullSpaceBasis = ExtractPtrFromParameterList<ConstMultiVector>(*paramList_,"Null Space");
             }
-            RCP<MultiVector<SC,LO,GO,NO> > coordinatesList = Teuchos::null;
+            ConstMultiVectorPtr coordinatesList = Teuchos::null;
             if(paramList_->isParameter("Coordinates List")){
-                coordinatesList = ExtractPtrFromParameterList<MultiVector<SC,LO,GO,NO> >(*paramList_,"Coordinates List");
+                coordinatesList = ExtractPtrFromParameterList<ConstMultiVector>(*paramList_,"Coordinates List");
             }
             DofOrdering dofOrdering;
             if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
@@ -224,14 +224,14 @@ namespace Thyra {
 
             SchwarzPreconditioner = TLP;
         } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
-            ArrayRCP<RCP<Map<LO,GO,NO> > > repeatedMaps = Teuchos::null;
+            ConstMapPtrVecPtr repeatedMaps = Teuchos::null;
             UNVecPtr dofsPerNodeVector;
             DofOrderingVecPtr dofOrderings;
 
             FROSCH_ASSERT(paramList_->isParameter("DofsPerNode Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofsPerNode Vector.");
             FROSCH_ASSERT(paramList_->isParameter("DofOrdering Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofOrdering Vector.");
             if(paramList_->isParameter("Repeated Map Vector")) {
-                repeatedMaps = ExtractVectorFromParameterList<RCP<Map<LO,GO,NO> > >(*paramList_,"Repeated Map Vector");
+                repeatedMaps = ExtractVectorFromParameterList<ConstMapPtr>(*paramList_,"Repeated Map Vector");
                 dofsPerNodeVector = ExtractVectorFromParameterList<UN>(*paramList_,"DofsPerNode Vector");
                 dofOrderings = ExtractVectorFromParameterList<DofOrdering>(*paramList_,"DofOrdering Vector");
             } else {

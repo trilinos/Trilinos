@@ -75,7 +75,7 @@ namespace FROSch {
         virtual int initialize(bool useDefaultParameters = true);
 
         virtual int initialize(int overlap,
-                               MapPtr repeatedMap);
+                               ConstMapPtr repeatedMap);
 
         virtual int compute();
 

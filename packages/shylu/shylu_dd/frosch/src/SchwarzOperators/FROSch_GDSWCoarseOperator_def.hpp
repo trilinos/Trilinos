@@ -57,7 +57,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
-                                                    MapPtr repeatedMap)
+                                                    ConstMapPtr repeatedMap)
     {
         buildCoarseSpace(dimension,repeatedMap);
         this->IsInitialized_ = true;
@@ -67,7 +67,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
-                                                    MapPtr repeatedMap,
+                                                    ConstMapPtr repeatedMap,
                                                     GOVecPtr dirichletBoundaryDofs)
     {
         buildCoarseSpace(dimension,repeatedMap,dirichletBoundaryDofs);
@@ -79,8 +79,8 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
                                                     UN dofsPerNode,
-                                                    MapPtr repeatedNodesMap,
-                                                    MapPtrVecPtr repeatedDofMaps)
+                                                    ConstMapPtr repeatedNodesMap,
+                                                    ConstMapPtrVecPtr repeatedDofMaps)
     {
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps);
         this->IsInitialized_ = true;
@@ -91,8 +91,8 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
                                                     UN dofsPerNode,
-                                                    MapPtr repeatedNodesMap,
-                                                    MapPtrVecPtr repeatedDofMaps,
+                                                    ConstMapPtr repeatedNodesMap,
+                                                    ConstMapPtrVecPtr repeatedDofMaps,
                                                     GOVecPtr dirichletBoundaryDofs)
     {
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs);
@@ -104,9 +104,9 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
                                                     UN dofsPerNode,
-                                                    MapPtr repeatedNodesMap,
-                                                    MapPtrVecPtr repeatedDofMaps,
-                                                    MultiVectorPtr nodeList)
+                                                    ConstMapPtr repeatedNodesMap,
+                                                    ConstMapPtrVecPtr repeatedDofMaps,
+                                                    ConstMultiVectorPtr nodeList)
     {
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList);
         this->IsInitialized_ = true;
@@ -117,10 +117,10 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
                                                     UN dofsPerNode,
-                                                    MapPtr repeatedNodesMap,
-                                                    MapPtrVecPtr repeatedDofMaps,
+                                                    ConstMapPtr repeatedNodesMap,
+                                                    ConstMapPtrVecPtr repeatedDofMaps,
                                                     GOVecPtr dirichletBoundaryDofs,
-                                                    MultiVectorPtr nodeList)
+                                                    ConstMultiVectorPtr nodeList)
     {
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList);
         this->IsInitialized_ = true;
@@ -131,10 +131,10 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
                                                     UNVecPtr dofsPerNodeVec,
-                                                    MapPtrVecPtr repeatedNodesMapVec,
-                                                    MapPtrVecPtr2D repeatedDofMapsVec,
+                                                    ConstMapPtrVecPtr repeatedNodesMapVec,
+                                                    ConstMapPtrVecPtr2D repeatedDofMapsVec,
                                                     GOVecPtr2D dirichletBoundaryDofsVec,
-                                                    MultiVectorPtrVecPtr nodeListVec)
+                                                    ConstMultiVectorPtrVecPtr nodeListVec)
     {
         buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,dirichletBoundaryDofsVec,nodeListVec);
         this->IsInitialized_ = true;
@@ -158,9 +158,9 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
-                                                          MapPtr nodesMap)
+                                                          ConstMapPtr nodesMap)
     {
-        MapPtrVecPtr dofsMaps(1);
+        ConstMapPtrVecPtr dofsMaps(1);
         dofsMaps[0] = nodesMap;
         buildCoarseSpace(dimension,1,nodesMap,dofsMaps);
 
@@ -169,10 +169,10 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
-                                                          MapPtr nodesMap,
+                                                          ConstMapPtr nodesMap,
                                                           GOVecPtr dirichletBoundaryDofs)
     {
-        MapPtrVecPtr dofsMaps(1);
+        ConstMapPtrVecPtr dofsMaps(1);
         dofsMaps[0] = nodesMap;
         buildCoarseSpace(dimension,1,nodesMap,dofsMaps,dirichletBoundaryDofs);
 
@@ -182,10 +182,10 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
                                                           UN dofsPerNode,
-                                                          MapPtr nodesMap,
-                                                          MapPtrVecPtr dofsMaps)
+                                                          ConstMapPtr nodesMap,
+                                                          ConstMapPtrVecPtr dofsMaps)
     {
-        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,nodesMap);
+        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),nodesMap);
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs);
 
         return 0;
@@ -194,11 +194,11 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
                                                           UN dofsPerNode,
-                                                          MapPtr nodesMap,
-                                                          MapPtrVecPtr dofsMaps,
+                                                          ConstMapPtr nodesMap,
+                                                          ConstMapPtrVecPtr dofsMaps,
                                                           GOVecPtr dirichletBoundaryDofs)
     {
-        MultiVectorPtr nodeList;
+        ConstMultiVectorPtr nodeList;
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs,nodeList);
 
         return 0;
@@ -207,11 +207,11 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
                                                           UN dofsPerNode,
-                                                          MapPtr nodesMap,
-                                                          MapPtrVecPtr dofsMaps,
-                                                          MultiVectorPtr nodeList)
+                                                          ConstMapPtr nodesMap,
+                                                          ConstMapPtrVecPtr dofsMaps,
+                                                          ConstMultiVectorPtr nodeList)
     {
-        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,nodesMap);
+        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),nodesMap);
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs,nodeList);
 
         return 0;
@@ -220,10 +220,10 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
                                                           UN dofsPerNode,
-                                                          MapPtr nodesMap,
-                                                          MapPtrVecPtr dofsMaps,
+                                                          ConstMapPtr nodesMap,
+                                                          ConstMapPtrVecPtr dofsMaps,
                                                           GOVecPtr dirichletBoundaryDofs,
-                                                          MultiVectorPtr nodeList)
+                                                          ConstMultiVectorPtr nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
 
@@ -246,10 +246,10 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
                                                           UNVecPtr dofsPerNodeVec,
-                                                          MapPtrVecPtr repeatedNodesMapVec,
-                                                          MapPtrVecPtr2D repeatedDofMapsVec,
+                                                          ConstMapPtrVecPtr repeatedNodesMapVec,
+                                                          ConstMapPtrVecPtr2D repeatedDofMapsVec,
                                                           GOVecPtr2D dirichletBoundaryDofsVec,
-                                                          MultiVectorPtrVecPtr nodeListVec)
+                                                          ConstMultiVectorPtrVecPtr nodeListVec)
     {
         // Das könnte man noch ändern
         // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
@@ -270,10 +270,10 @@ namespace FROSch {
     int GDSWCoarseOperator<SC,LO,GO,NO>::resetCoarseSpaceBlock(UN blockId,
                                                                UN dimension,
                                                                UN dofsPerNode,
-                                                               MapPtr nodesMap,
-                                                               MapPtrVecPtr dofsMaps,
+                                                               ConstMapPtr nodesMap,
+                                                               ConstMapPtrVecPtr dofsMaps,
                                                                GOVecPtr dirichletBoundaryDofs,
-                                                               MultiVectorPtr nodeList)
+                                                               ConstMultiVectorPtr nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");

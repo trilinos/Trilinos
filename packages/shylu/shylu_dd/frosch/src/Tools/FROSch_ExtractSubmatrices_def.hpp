@@ -227,16 +227,15 @@ namespace FROSch {
 
         return 0;
     }
+    
+    
     template <class SC,class LO,class GO,class NO>
     int BuildSubmatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > k,
                        Teuchos::ArrayView<GO> indI,
                        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kII)
     {
-                Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
-
+        //Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapI = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
-
-//        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapILocal = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI.size(),0,k->getRowMap()->getComm());
 
         kII = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapI,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
         GO maxGID = mapI->getMaxAllGlobalIndex();
@@ -246,7 +245,7 @@ namespace FROSch {
             Teuchos::ArrayView<const SC> values;
 
             k->getLocalRowView(i,indices,values);
-            //cout << numEntries << std::endl;
+
             Teuchos::Array<GO> indicesI;
             Teuchos::Array<SC> valuesI;
 
@@ -269,7 +268,41 @@ namespace FROSch {
         return 0;
     }
 
-
+    template <class LO,class GO,class NO>
+    int BuildSubgraph(Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > k,
+                      Teuchos::ArrayView<GO> indI,
+                      Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > &kII)
+    {
+        //Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapI = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
+        
+        kII = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(mapI,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
+        GO maxGID = mapI->getMaxAllGlobalIndex();
+        GO minGID = mapI->getMinAllGlobalIndex();
+        for (unsigned i=0; i<k->getNodeNumRows(); i++) {
+            Teuchos::ArrayView<const LO> indices;
+            
+            k->getLocalRowView(i,indices);
+            
+            Teuchos::Array<GO> indicesI;
+            
+            LO tmp1=mapI->getLocalElement(k->getRowMap()->getGlobalElement(i));
+            GO tmp2=0;
+            if (tmp1>=0) {
+                for (LO j=0; j<indices.size(); j++) {
+                    tmp2 = k->getColMap()->getGlobalElement(indices[j]);
+                    if (minGID<=tmp2 && tmp2<=maxGID) {
+                        indicesI.push_back(tmp2);
+                    }
+                }
+                //cout << k->getRowMap().Comm().getRank() << " " << tmp1 << " numEntries " << numEntries << " indicesI.size() " << indicesI.size() << " indicesJ.size() " << indicesJ.size() << std::endl;
+                kII->insertGlobalValues(mapI->getGlobalElement(tmp1),indicesI());
+            }
+        }
+        kII->fillComplete(mapI,mapI);
+        
+        return 0;
+    }
 }
 
 #endif

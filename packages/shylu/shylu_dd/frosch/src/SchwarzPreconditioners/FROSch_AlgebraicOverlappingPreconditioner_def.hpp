@@ -65,7 +65,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
-                                                                    MapPtr repeatedMap)
+                                                                    ConstMapPtr repeatedMap)
     {
         return FirstLevelOperator_->initialize(overlap,repeatedMap);
     }

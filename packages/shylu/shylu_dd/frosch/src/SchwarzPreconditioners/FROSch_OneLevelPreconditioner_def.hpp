@@ -87,16 +87,16 @@ namespace FROSch {
     int OneLevelPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
                                                         bool buildRepeatedMap)
     {
-        MapPtr repeatedMap;
+        ConstMapPtr repeatedMap;
         if (buildRepeatedMap) {
-            repeatedMap = BuildRepeatedMap(this->K_);
+            repeatedMap = BuildRepeatedMap(this->K_->getCrsGraph());
         }
         return initialize(overlap,repeatedMap);
     }
 
     template <class SC,class LO,class GO,class NO>
     int OneLevelPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
-                                                        MapPtr repeatedMap)
+                                                        ConstMapPtr repeatedMap)
     {
         int ret = 0;
         if (overlap<0) {

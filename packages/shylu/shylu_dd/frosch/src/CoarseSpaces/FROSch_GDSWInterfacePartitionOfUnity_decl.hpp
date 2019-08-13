@@ -60,7 +60,9 @@ namespace FROSch {
 
         using Map                           = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::Map ;
         using MapPtr                        = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtr;
+        using ConstMapPtr                   = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMapPtr;
         using MapPtrVecPtr                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtrVecPtr;
+        using ConstMapPtrVecPtr             = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMapPtrVecPtr;
 
         using CrsMatrix                     = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::CrsMatrix;
         using CrsMatrixPtr                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::CrsMatrixPtr;
@@ -89,18 +91,18 @@ namespace FROSch {
                                       CommPtr serialComm,
                                       UN dimension,
                                       UN dofsPerNode,
-                                      MapPtr nodesMap,
-                                      MapPtrVecPtr dofsMaps,
+                                      ConstMapPtr nodesMap,
+                                      ConstMapPtrVecPtr dofsMaps,
                                       ParameterListPtr parameterList,
                                       Verbosity verbosity = All);
 
         virtual ~GDSWInterfacePartitionOfUnity();
 
         virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs,
-                                         MultiVectorPtr nodeList);
+                                         ConstMultiVectorPtr nodeList);
 
         virtual int sortInterface(ConstCrsMatrixPtr matrix,
-                                  MultiVectorPtr nodeList);
+                                  ConstMultiVectorPtr nodeList);
 
         virtual int computePartitionOfUnity();
 

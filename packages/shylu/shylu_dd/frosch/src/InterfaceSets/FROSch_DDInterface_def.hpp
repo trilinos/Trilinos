@@ -90,7 +90,7 @@ namespace FROSch {
     } // Do we need sth here?
 
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::resetGlobalDofs(MapPtrVecPtr dofsMaps)
+    int DDInterface<SC,LO,GO,NO>::resetGlobalDofs(ConstMapPtrVecPtr dofsMaps)
     {
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Resetting Global IDs" << std::endl;
 
@@ -212,7 +212,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::flagEntities(MultiVectorPtr nodeList)
+    int DDInterface<SC,LO,GO,NO>::flagEntities(ConstMultiVectorPtr nodeList)
     {
         for (UN l=0; l<EntitySetVector_.size(); l++) {
             EntitySetVector_[l]->flagNodes();
@@ -238,7 +238,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::sortVerticesEdgesFaces(MultiVectorPtr nodeList)
+    int DDInterface<SC,LO,GO,NO>::sortVerticesEdgesFaces(ConstMultiVectorPtr nodeList)
     {
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Sorting interface components" << std::endl;
 
@@ -489,7 +489,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
-                                                                MultiVectorPtr &nodeList,
+                                                                ConstMultiVectorPtr &nodeList,
                                                                 DistanceFunction distanceFunction)
     {
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Computing distances to the coarse nodes" << std::endl;
@@ -645,7 +645,7 @@ namespace FROSch {
                     commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
                     commMat->doImport(*commMatTmp,*commExporter,Xpetra::INSERT);
 
-                    componentsSubdomains = GOVecVecPtr(NumMyNodes_);
+                    componentsSubdomains = IntVecVecPtr(NumMyNodes_);
 
                     Teuchos::ArrayView<const GO> indices;
                     Teuchos::ArrayView<const SC> values;
@@ -653,7 +653,7 @@ namespace FROSch {
                         commMat->getGlobalRowView(NodesMap_->getGlobalElement(i),indices,values);
                         componentsSubdomains[i].resize(indices.size());
                         for (LO j=0; j<indices.size(); j++) {
-                            componentsSubdomains[i][j] = indices[j];
+                            componentsSubdomains[i][j] = Teuchos::as<int>(indices[j]);
                         }
                     }
                 }
@@ -679,14 +679,14 @@ namespace FROSch {
                     commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10);
                     commGraph->doImport(*commGraphTmp,*commExporter,Xpetra::INSERT);
 
-                    componentsSubdomains = GOVecVecPtr(NumMyNodes_);
+                    componentsSubdomains = IntVecVecPtr(NumMyNodes_);
 
                     Teuchos::ArrayView<const GO> indices;
                     for (LO i=0; i<NumMyNodes_; i++) {
                         commGraph->getGlobalRowView(NodesMap_->getGlobalElement(i),indices);
                         componentsSubdomains[i].resize(indices.size());
                         for (LO j=0; j<indices.size(); j++) {
-                            componentsSubdomains[i][j] = indices[j];
+                            componentsSubdomains[i][j] = Teuchos::as<int>(indices[j]);
                         }
                     }
                 }
@@ -706,7 +706,7 @@ namespace FROSch {
                 break;
         }
 
-        componentsSubdomainsUnique = GOVecVec(NumMyNodes_);
+        componentsSubdomainsUnique = IntVecVec(NumMyNodes_);
         for (LO i=0; i<NumMyNodes_; i++) {
             sortunique(componentsSubdomains[i]);
             componentsSubdomainsUnique[i] = componentsSubdomains[i];
@@ -745,7 +745,7 @@ namespace FROSch {
         }
 
         LO tmp1 = 0;
-        GO *tmp2 = NULL;
+        int *tmp2 = NULL;
         Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > interior(new InterfaceEntity<SC,LO,GO,NO>(InteriorType,DofsPerNode_,tmp1,tmp2));
         Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > interface(new InterfaceEntity<SC,LO,GO,NO>(InterfaceType,DofsPerNode_,tmp1,tmp2));
         for (LO i=0; i<NumMyNodes_; i++) {

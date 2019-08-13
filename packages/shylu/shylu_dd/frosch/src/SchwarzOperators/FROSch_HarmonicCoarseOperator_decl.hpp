@@ -59,11 +59,13 @@ namespace FROSch {
         using ConstMapPtr             = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
         using MapPtrVecPtr            = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr;
         using MapPtrVecPtr2D          = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr2D;
+        using ConstMapPtrVecPtr2D     = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtrVecPtr2D;
 
         using CrsMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
         using ConstCrsMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
 
         using MultiVectorPtr          = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr;
+        using ConstMultiVectorPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstMultiVectorPtr;
         using MultiVectorPtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr;
 
         using ParameterListPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
@@ -103,12 +105,12 @@ namespace FROSch {
 
         MapPtr assembleSubdomainMap();
 
-        int addZeroCoarseSpaceBlock(MapPtr dofsMap);
+        int addZeroCoarseSpaceBlock(ConstMapPtr dofsMap);
 
         int computeVolumeFunctions(UN blockId,
                                    UN dimension,
-                                   MapPtr nodesMap,
-                                   MultiVectorPtr nodeList,
+                                   ConstMapPtr nodesMap,
+                                   ConstMultiVectorPtr nodeList,
                                    EntitySetPtr interior);
 
         virtual MultiVectorPtrVecPtr computeTranslations(UN blockId,
@@ -116,7 +118,7 @@ namespace FROSch {
 
         virtual MultiVectorPtrVecPtr computeRotations(UN blockId,
                                                       UN dimension,
-                                                      MultiVectorPtr nodeList,
+                                                      ConstMultiVectorPtr nodeList,
                                                       EntitySetPtr entitySet);
 
         virtual MultiVectorPtr computeExtensions(ConstMapPtr localMap,
@@ -137,7 +139,7 @@ namespace FROSch {
         LOVecPtr2D GammaDofs_;
         LOVecPtr2D IDofs_;
 
-        MapPtrVecPtr2D DofsMaps_; // notwendig??
+        ConstMapPtrVecPtr2D DofsMaps_; // notwendig??
 
         UN NumberOfBlocks_;
 

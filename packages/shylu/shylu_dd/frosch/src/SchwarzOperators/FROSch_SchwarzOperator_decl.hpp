@@ -85,6 +85,7 @@ namespace FROSch {
         using MapPtrVecPtr                      = Teuchos::ArrayRCP<MapPtr>;
         using ConstMapPtrVecPtr                 = Teuchos::ArrayRCP<ConstMapPtr>;
         using MapPtrVecPtr2D                    = Teuchos::ArrayRCP<MapPtrVecPtr>;
+        using ConstMapPtrVecPtr2D               = Teuchos::ArrayRCP<ConstMapPtrVecPtr>;
 
         using CrsMatrix                         = Xpetra::Matrix<SC,LO,GO,NO>;
         using CrsMatrixPtr                      = Teuchos::RCP<CrsMatrix>;
@@ -96,7 +97,9 @@ namespace FROSch {
 
         using MultiVector                       = Xpetra::MultiVector<SC,LO,GO,NO>;
         using MultiVectorPtr                    = Teuchos::RCP<MultiVector>;
+        using ConstMultiVectorPtr               = Teuchos::RCP<const MultiVector>;
         using MultiVectorPtrVecPtr              = Teuchos::ArrayRCP<MultiVectorPtr>;
+        using ConstMultiVectorPtrVecPtr         = Teuchos::ArrayRCP<ConstMultiVectorPtr>;
 
         using Importer                          = Xpetra::Import<LO,GO,NO>;
         using ImporterPtr                       = Teuchos::RCP<Importer>;

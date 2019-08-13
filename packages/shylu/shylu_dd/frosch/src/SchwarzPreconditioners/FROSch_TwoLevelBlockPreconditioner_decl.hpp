@@ -57,13 +57,16 @@ namespace FROSch {
         using MapPtr                              = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr;
         using ConstMapPtr                         = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr;
         using MapPtrVecPtr                        = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr;
+        using ConstMapPtrVecPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtrVecPtr;
         using MapPtrVecPtr2D                      = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr2D;
+        using ConstMapPtrVecPtr2D                 = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtrVecPtr2D;
 
         using CrsMatrixPtr                        = typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr;
         using ConstCrsMatrixPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr;
 
         using MultiVectorPtr                      = typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr;
-        using MultiVectorPtrVecPtr                = typename Teuchos::ArrayRCP<MultiVectorPtr>;
+        using MultiVectorPtrVecPtr                = typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtrVecPtr;
+        using ConstMultiVectorPtrVecPtr           = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMultiVectorPtrVecPtr;
 
         using ParameterListPtr                    = typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr;
 
@@ -92,10 +95,10 @@ namespace FROSch {
                        UNVecPtr dofsPerNodeVec,
                        DofOrderingVecPtr dofOrderingVec,
                        int overlap = -1,
-                       MapPtrVecPtr repeatedMapVec = Teuchos::null,
-                       MultiVectorPtrVecPtr nullSpaceBasisVec = Teuchos::null,
-                       MultiVectorPtrVecPtr nodeListVec = Teuchos::null,
-                       MapPtrVecPtr2D dofsMapsVec = Teuchos::null,
+                       ConstMapPtrVecPtr repeatedMapVec = Teuchos::null,
+                       ConstMultiVectorPtrVecPtr nullSpaceBasisVec = Teuchos::null,
+                       ConstMultiVectorPtrVecPtr nodeListVec = Teuchos::null,
+                       ConstMapPtrVecPtr2D dofsMapsVec = Teuchos::null,
                        GOVecPtr2D dirichletBoundaryDofsVec = Teuchos::null);
 
         int compute();

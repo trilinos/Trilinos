@@ -171,10 +171,10 @@ namespace Thyra {
             // X
             X = get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraDomain: epetraRange, X_in );
             RCP<Epetra_MultiVector> X_nonconst = rcp_const_cast<Epetra_MultiVector>(X);
-            RCP<MultiVector<SC,LO,GO,NO> > xX = FROSch::ConvertToXpetra<SC,LO,GO,NO>(UseEpetra,*X_nonconst,comm);
+            RCP<MultiVector<SC,LO,GO,NO> > xX = FROSch::ConvertToXpetra<SC,LO,GO,NO>::ConvertMultiVector(UseEpetra,*X_nonconst,comm);
             // Y
             Y = get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraRange: epetraDomain, *Y_inout );
-            xY = FROSch::ConvertToXpetra<SC,LO,GO,NO>(UseEpetra,*Y,comm);
+            xY = FROSch::ConvertToXpetra<SC,LO,GO,NO>::ConvertMultiVector(UseEpetra,*Y,comm);
             xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
 
         } //Tpetra NodeType

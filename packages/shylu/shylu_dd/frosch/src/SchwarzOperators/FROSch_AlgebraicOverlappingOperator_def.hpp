@@ -64,7 +64,8 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize(int overlap, MapPtr repeatedMap)
+    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize(int overlap,
+                                                              ConstMapPtr repeatedMap)
     {
         if (this->Verbose_) {
             std::cout << "\n\
@@ -109,7 +110,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
-                                                                            MapPtr repeatedMap)
+                                                                            ConstMapPtr repeatedMap)
     {
         // ====================================================================================
         // AH 08/09/2019: This is just temporary. Implement this properly in all the classes

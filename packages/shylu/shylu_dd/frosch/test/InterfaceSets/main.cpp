@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
         }
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Constructing Repeated Map #\n#############\n" << endl;
-        RCP<Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<SC,LO,GO,NO>(K);
+        RCP<const Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<LO,GO,NO>(K->getCrsGraph());
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Identification of Interface Sets #\n#############\n" << endl;
         RCP<EntitySet<SC,LO,GO,NO> > vertices,shortEdges,straightEdges,edges,faces,interface,interior;

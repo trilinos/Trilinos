@@ -60,7 +60,9 @@ namespace FROSch {
 
         using Map                           = Xpetra::Map<LO,GO,NO>;
         using MapPtr                        = Teuchos::RCP<Map>;
+        using ConstMapPtr                   = Teuchos::RCP<const Map>;
         using MapPtrVecPtr                  = Teuchos::ArrayRCP<MapPtr>;
+        using ConstMapPtrVecPtr             = Teuchos::ArrayRCP<ConstMapPtr>;
 
         using CrsMatrix                     = Xpetra::Matrix<SC,LO,GO,NO>;
         using CrsMatrixPtr                  = Teuchos::RCP<CrsMatrix>;
@@ -92,18 +94,18 @@ namespace FROSch {
                                   CommPtr serialComm,
                                   UN dimension,
                                   UN dofsPerNode,
-                                  MapPtr nodesMap,
-                                  MapPtrVecPtr dofsMaps,
+                                  ConstMapPtr nodesMap,
+                                  ConstMapPtrVecPtr dofsMaps,
                                   ParameterListPtr parameterList,
                                   Verbosity verbosity = All);
 
         virtual ~InterfacePartitionOfUnity();
 
         virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs = Teuchos::null,
-                                         MultiVectorPtr nodeList = Teuchos::null) = 0;
+                                         ConstMultiVectorPtr nodeList = Teuchos::null) = 0;
 
         virtual int sortInterface(ConstCrsMatrixPtr matrix,
-                                  MultiVectorPtr nodeList = Teuchos::null) = 0;
+                                  ConstMultiVectorPtr nodeList = Teuchos::null) = 0;
 
         virtual int computePartitionOfUnity() = 0;
 

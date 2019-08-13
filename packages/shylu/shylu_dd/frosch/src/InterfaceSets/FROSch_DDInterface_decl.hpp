@@ -75,6 +75,7 @@ namespace FROSch {
         using MapPtr                    = Teuchos::RCP<Map>;
         using ConstMapPtr               = Teuchos::RCP<const Map>;
         using MapPtrVecPtr              = Teuchos::ArrayRCP<MapPtr>;
+        using ConstMapPtrVecPtr         = Teuchos::ArrayRCP<ConstMapPtr>;
 
         using CrsMatrix                 = Xpetra::Matrix<SC,LO,GO,NO>;
         using CrsMatrixPtr              = Teuchos::RCP<CrsMatrix>;
@@ -85,6 +86,7 @@ namespace FROSch {
 
         using MultiVector               = Xpetra::MultiVector<SC,LO,GO,NO>;
         using MultiVectorPtr            = Teuchos::RCP<MultiVector>;
+        using ConstMultiVectorPtr       = Teuchos::RCP<const MultiVector>;
 
         using EntitySetPtr              = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
         using EntitySetConstPtr         = const EntitySetPtr;
@@ -126,17 +128,17 @@ namespace FROSch {
 
         ~DDInterface();
 
-        int resetGlobalDofs(MapPtrVecPtr dofsMaps);
+        int resetGlobalDofs(ConstMapPtrVecPtr dofsMaps);
 
         int removeDirichletNodes(GOVecView dirichletBoundaryDofs);
 
         int divideUnconnectedEntities(ConstCrsMatrixPtr matrix);
 
-        int flagEntities(MultiVectorPtr nodeList = Teuchos::null);
+        int flagEntities(ConstMultiVectorPtr nodeList = Teuchos::null);
 
         int removeEmptyEntities();
 
-        int sortVerticesEdgesFaces(MultiVectorPtr nodeList = Teuchos::null);
+        int sortVerticesEdgesFaces(ConstMultiVectorPtr nodeList = Teuchos::null);
 
         int buildEntityMaps(bool buildVerticesMap = true,
                             bool buildShortEdgesMap = true,
@@ -148,7 +150,7 @@ namespace FROSch {
         int buildEntityHierarchy();
 
         int computeDistancesToCoarseNodes(UN dimension,
-                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          ConstMultiVectorPtr &nodeList = Teuchos::null,
                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
 
         //! This function extracts those entities which are to be used to build a connectivity graph on the subdomain

@@ -88,7 +88,7 @@ namespace FROSch {
 
         virtual int initialize();
 
-        virtual int initialize(MapPtr repeatedMap);
+        virtual int initialize(ConstMapPtr repeatedMap);
 
         virtual int compute();
 
