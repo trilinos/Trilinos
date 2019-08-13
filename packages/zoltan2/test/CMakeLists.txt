@@ -11,4 +11,5 @@ correctness
 temp
 driver
 directory
+taskmapping
 )
