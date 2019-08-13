@@ -168,16 +168,6 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
       regRes[j]->update(1.0, *regB[j], -1.0);
     }
 
-    // check for convergence
-    {
-      RCP<Vector> compRes = VectorFactory::Build(mapComp, true);
-      regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
-                          rowImportPerGrp, Xpetra::ADD);
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
-
-      if (normRes < 1.0e-12) {return;}
-    }
-
     for (int j = 0; j < maxRegPerProc; j++) {
       // update solution according to Jacobi's method
       regX[j]->elementWiseMultiply(damping, *diag_inv[j], *regRes[j], SC_ONE);
@@ -241,16 +231,6 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
 
     for (int j = 0; j < maxRegPerProc; j++) { // step 3
       regRes[j]->update(1.0, *regB[j], -1.0);
-    }
-
-    // check for convergence
-    {
-      RCP<Vector> compRes = VectorFactory::Build(mapComp, true);
-      regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
-          rowImportPerGrp, Xpetra::ADD);
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
-
-      if (normRes < 1.0e-12) return;
     }
 
     // update the solution and the residual 
