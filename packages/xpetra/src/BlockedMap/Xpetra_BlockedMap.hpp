@@ -52,13 +52,14 @@
 //#include "Xpetra_MapFactory.hpp"
 #include "Xpetra_ImportFactory.hpp"
 //#include "Xpetra_MapUtils.hpp"
+#include "Xpetra_MapFactory.hpp"
 
 namespace Xpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
-  //template<class S, class LO, class GO, class N> class Vector;
-  template<class LO, class GO, class N> class MapFactory;
+  // template<class S, class LO, class GO, class N> class Vector;
+  // template<class LO, class GO, class N> class MapFactory;
 #endif
 
   template <class LocalOrdinal,
