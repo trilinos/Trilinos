@@ -56,16 +56,16 @@
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 #include <Xpetra_DefaultPlatform.hpp>
-#include <Xpetra_UseDefaultTypes.hpp>
 
 #include <FROSch_GDSWInterfacePartitionOfUnity_def.hpp>
 
 #include <FROSch_Tools_decl.hpp>
 
+
 using UN    = unsigned;
-using SC    = Scalar;
-using LO    = LocalOrdinal;
-using GO    = GlobalOrdinal;
+using SC    = double;
+using LO    = int;
+using GO    = FROSch::DefaultGlobalOrdinal;
 using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 int main(int argc, char *argv[])
@@ -128,12 +128,12 @@ int main(int argc, char *argv[])
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
 
         ParameterList GaleriList;
-        GaleriList.set("nx", GlobalOrdinal(N*M));
-        GaleriList.set("ny", GlobalOrdinal(N*M));
-        GaleriList.set("nz", GlobalOrdinal(N*M));
-        GaleriList.set("mx", GlobalOrdinal(N));
-        GaleriList.set("my", GlobalOrdinal(N));
-        GaleriList.set("mz", GlobalOrdinal(N));
+        GaleriList.set("nx", GO(N*M));
+        GaleriList.set("ny", GO(N*M));
+        GaleriList.set("nz", GO(N*M));
+        GaleriList.set("mx", GO(N));
+        GaleriList.set("my", GO(N));
+        GaleriList.set("mz", GO(N));
 
         RCP<const Map<LO,GO,NO> > UniqueMap;
         RCP<MultiVector<SC,LO,GO,NO> > Coordinates;

@@ -133,7 +133,7 @@ namespace Tpetra {
            MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
-           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const
+           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const override
     {
       TEUCHOS_TEST_FOR_EXCEPTION
         (! matrix_->isFillComplete (), std::runtime_error,
@@ -629,17 +629,17 @@ namespace Tpetra {
     ///
     /// This is always true, since it is true for the CrsMatrix that
     /// this object wraps.
-    bool hasTransposeApply() const {
+    bool hasTransposeApply() const override {
       return true;
     }
 
     //! The domain Map of this Operator.
-    Teuchos::RCP<const map_type> getDomainMap () const {
+    Teuchos::RCP<const map_type> getDomainMap () const override {
       return matrix_->getDomainMap ();
     }
 
     //! The range Map of this Operator.
-    Teuchos::RCP<const map_type> getRangeMap () const {
+    Teuchos::RCP<const map_type> getRangeMap () const override {
       return matrix_->getRangeMap ();
     }
 

@@ -44,12 +44,13 @@
 
 #include <FROSch_SchwarzPreconditioner_def.hpp>
 
-namespace FROSch {
 
-    template <class SC = Xpetra::Operator<>::scalar_type,
-              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-              class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-              class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+namespace FROSch {
+    
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class AlgebraicOverlappingPreconditioner : public SchwarzPreconditioner<SC,LO,GO,NO> {
 
     protected:

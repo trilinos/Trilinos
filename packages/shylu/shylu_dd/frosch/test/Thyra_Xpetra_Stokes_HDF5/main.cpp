@@ -89,17 +89,17 @@
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
 #include <Xpetra_Parameters.hpp>
-#include <Xpetra_UseDefaultTypes.hpp>
 
 // FROSCH thyra includes
 #include "Thyra_FROSchLinearOp_def.hpp"
 #include "Thyra_FROSchFactory_def.hpp"
 #include <FROSch_Tools_def.hpp>
 
+
 using UN    = unsigned;
-using SC    = Scalar;
-using LO    = LocalOrdinal;
-using GO    = GlobalOrdinal;
+using SC    = double;
+using LO    = int;
+using GO    = FROSch::DefaultGlobalOrdinal;
 using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;

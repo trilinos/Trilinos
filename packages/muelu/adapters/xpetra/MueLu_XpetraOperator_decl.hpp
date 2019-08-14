@@ -57,10 +57,10 @@ namespace MueLu {
 
 /*!  @brief Wraps an existing MueLu::Hierarchy as a Xpetra::Operator.
 */
-  template <class Scalar = Xpetra::Operator<>::scalar_type,
-            class LocalOrdinal = typename Xpetra::Operator<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class XpetraOperator : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   protected:
     XpetraOperator() { }

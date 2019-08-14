@@ -104,7 +104,10 @@ namespace MueLu {
     The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see AggregationExportFactory::GetValidParameters).<br>
     The * in the @c requested column states that the data is requested as input with all dependencies (see AggregationExportFactory::DeclareInput).
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class AggregationExportFactory : public TwoLevelFactoryBase, public VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

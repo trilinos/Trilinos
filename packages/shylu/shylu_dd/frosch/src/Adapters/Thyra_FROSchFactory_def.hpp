@@ -44,6 +44,7 @@
 
 #include "Thyra_FROSchFactory_decl.hpp"
 
+
 namespace Thyra {
 
     using namespace FROSch;

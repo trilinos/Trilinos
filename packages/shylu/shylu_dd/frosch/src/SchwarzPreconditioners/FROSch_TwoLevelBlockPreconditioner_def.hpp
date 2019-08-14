@@ -44,7 +44,10 @@
 #define _FROSCH_TWOLEVELBLOCKPRECONDITIONER_DEF_HPP
 
 #include <FROSch_TwoLevelBlockPreconditioner_decl.hpp>
+
+
 using namespace Teuchos;
+
 namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>

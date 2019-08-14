@@ -58,7 +58,16 @@
 #include <Zoltan2_PartitioningProblem.hpp>
 #endif
 
+
 namespace FROSch {
+    
+    #if defined HAVE_XPETRA_EPETRA || defined HAVE_TPETRA_INT_INT
+    typedef int DefaultGlobalOrdinal;
+    #elif !defined HAVE_TPETRA_INT_LONG_LONG
+    typedef long DefaultGlobalOrdinal;
+    #else
+    typedef long long DefaultGlobalOrdinal;
+    #endif
 
     enum DofOrdering {NodeWise=0,DimensionWise=1,Custom=2};
 

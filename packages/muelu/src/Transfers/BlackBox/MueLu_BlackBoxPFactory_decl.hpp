@@ -113,7 +113,10 @@ namespace MueLu {
   |                   |                          | coordinates so that on coarser levels coordinates are available in case another factory needs them.              |
 
 */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class BlackBoxPFactory : public PFactory {
 #undef MUELU_BLACKBOXPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

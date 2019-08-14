@@ -301,10 +301,10 @@ namespace PHX {
     constexpr bool is_static() const {return (traits::rank != 0);}
     constexpr bool is_dynamic() const {return (traits::rank == 0);}
 
-    KOKKOS_FORCEINLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     constexpr size_type rank() const {return rank(ViewSpecialization<traits::rank>());}
 
-    KOKKOS_FORCEINLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     constexpr size_t size() const {return m_view.size();}
 
     const PHX::FieldTag& fieldTag() const
@@ -465,8 +465,8 @@ namespace PHX {
     {return get_static_view_as_any(ViewSpecialization<traits::rank>());}
 
   private:
-    template<int R> constexpr size_type rank(ViewSpecialization<R>) const {return traits::rank;}
-    constexpr size_type rank(ViewSpecialization<0>) const {return m_view.rank();}
+    template<int R> KOKKOS_INLINE_FUNCTION constexpr size_type rank(ViewSpecialization<R>) const {return traits::rank;}
+    KOKKOS_INLINE_FUNCTION constexpr size_type rank(ViewSpecialization<0>) const {return m_view.rank();}
 
     template<int R> void setFieldData(ViewSpecialization<R>,const PHX::any& a)
     {

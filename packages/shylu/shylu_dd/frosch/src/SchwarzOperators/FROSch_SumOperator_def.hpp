@@ -44,6 +44,7 @@
 
 #include <FROSch_SumOperator_decl.hpp>
 
+
 namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>

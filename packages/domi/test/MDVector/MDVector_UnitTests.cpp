@@ -214,10 +214,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType> > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, TpetraGOType>();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType> > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, TpetraGOType>();
 #endif
 }
 
@@ -314,8 +314,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType> > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, TpetraGOType>();
 #endif
 }
 
@@ -407,10 +407,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType> > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, TpetraGOType>();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType> > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, TpetraGOType>();
 #endif
 }
 
@@ -485,10 +485,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType> > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, TpetraGOType>();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType> > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, TpetraGOType>();
 #endif
 }
 
@@ -578,10 +578,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType> > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, TpetraGOType>();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType> > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, TpetraGOType>();
 #endif
 }
 
@@ -687,10 +687,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, TpetraGOType >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, TpetraGOType >();
 #endif
 }
 
@@ -797,10 +797,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, TpetraGOType >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, TpetraGOType > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, TpetraGOType >();
 #endif
 }
 
@@ -872,7 +872,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
   TEST_EQUALITY_CONST(emv3c->NumVectors(), 5);
 #endif
 
-#ifdef HAVE_TPETRA
+#if defined HAVE_TPETRA && defined HAVE_TPETRA_INT_INT
   Teuchos::RCP< Tpetra::Vector< Sca >      > tv1  =
     mdv1.template getTpetraVectorView< int >();
   Teuchos::RCP< Tpetra::MultiVector< Sca > > tmv2 =

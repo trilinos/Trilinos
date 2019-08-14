@@ -95,6 +95,7 @@
 #include "Epetra_RowMatrix.h"
 #endif
 
+
 namespace Thyra {
 
     using namespace Thyra;

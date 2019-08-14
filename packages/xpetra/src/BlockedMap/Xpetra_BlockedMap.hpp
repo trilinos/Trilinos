@@ -61,9 +61,9 @@ namespace Xpetra {
   template<class LO, class GO, class N> class MapFactory;
 #endif
 
-  template <class LocalOrdinal = Map<>::local_ordinal_type,
-            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class BlockedMap
     : public Map< LocalOrdinal, GlobalOrdinal, Node >
   {

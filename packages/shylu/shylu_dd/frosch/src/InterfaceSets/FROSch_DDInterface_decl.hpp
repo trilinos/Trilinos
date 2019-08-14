@@ -60,11 +60,11 @@
 namespace FROSch {
 
     enum CommunicationStrategy {CommCrsMatrix,CommCrsGraph,CreateOneToOneMap};
-
-    template <class SC = Xpetra::Operator<>::scalar_type,
-              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-              class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-              class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+    
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class DDInterface {
 
     protected:

@@ -44,6 +44,7 @@
 
 #include <FROSch_Tools_decl.hpp>
 
+
 namespace FROSch {
 
     template <typename LO,typename GO>
@@ -1273,10 +1274,8 @@ namespace FROSch {
         problem->solve();
 
         Teuchos::RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > matrixRepartition;
-        adaptedMatrix.applyPartitioningSolution(*tmpCrsMatrix,matrixRepartition,problem->getSolution());
-//        Teuchos::RCP<Xpetra::CrsMatrix<> > matrixRepartition;
-//        adaptedMatrix.applyPartitioningSolution(*tmpCrsMatrix,matrixRepartition,problem->getSolution());
-
+        adaptedMatrix.applyPartitioningSolution(*tmpCrsMatrix,matrixRepartition,problem->getSolution());        
+        
         Teuchos::RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > tmpCrsWrap2 = Teuchos::rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(matrixRepartition));
         crsMatrix = Teuchos::rcp_dynamic_cast<Xpetra::Matrix<SC,LO,GO,NO> >(tmpCrsWrap2);
         return 0;

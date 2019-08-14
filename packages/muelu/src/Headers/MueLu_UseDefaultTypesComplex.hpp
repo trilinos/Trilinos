@@ -43,9 +43,11 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_USEDEFAULTTYPESCOMPLEX_HPP
-#define MUELU_USEDEFAULTTYPESCOMPLEX_HPP
 
-#include <Xpetra_UseDefaultTypesComplex.hpp>
+#include <MueLu_Details_DefaultTypes.hpp>
 
-#endif
+#include <complex>
+typedef std::complex<double> Scalar;
+typedef MueLu::DefaultLocalOrdinal LocalOrdinal;
+typedef MueLu::DefaultGlobalOrdinal GlobalOrdinal;
+typedef MueLu::DefaultNode Node;

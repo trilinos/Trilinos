@@ -49,14 +49,14 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_UseDefaultTypes.hpp>
 
 #include "FROSch_LocalPartitionOfUnityBasis_def.hpp"
 
+
 using UN    = unsigned;
-using SC    = Scalar;
-using LO    = LocalOrdinal;
-using GO    = GlobalOrdinal;
+using SC    = double;
+using LO    = int;
+using GO    = FROSch::DefaultGlobalOrdinal;
 using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;

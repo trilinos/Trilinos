@@ -94,6 +94,7 @@
 
 #include "Kokkos_DefaultNode.hpp"
 
+
 namespace Thyra {
 
     using namespace FROSch;

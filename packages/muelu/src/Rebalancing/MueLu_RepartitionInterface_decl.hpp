@@ -72,9 +72,9 @@ namespace MueLu {
   */
 
   //FIXME: this class should not be templated
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class RepartitionInterface : public SingleLevelFactoryBase {
 
     typedef double Scalar; // FIXME

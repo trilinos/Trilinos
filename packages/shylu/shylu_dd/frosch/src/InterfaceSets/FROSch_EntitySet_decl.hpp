@@ -48,6 +48,7 @@
 
 #include <FROSch_Tools_def.hpp>
 
+
 namespace FROSch {
 
     template <class SC,

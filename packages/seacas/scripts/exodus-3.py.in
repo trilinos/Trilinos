@@ -288,7 +288,7 @@ def ex_inquiry(inquiry):
         # inquire size of MAX_NAME_LENGTH dimension on database
         'EX_INQ_DB_MAX_USED_NAME_LENGTH': 49,
         # inquire client-specified max size of returned names
-        'EX_INQ_READ_NAME_LENGTH': 50,
+        'EX_INQ_MAX_READ_NAME_LENGTH': 50,
         # inquire size of floating-point values stored on database
         'EX_INQ_DB_FLOAT_SIZE': 51
     }
@@ -5033,7 +5033,7 @@ class exodus:
     def __ex_get_elem_attr_names(self, blkId):
         object_id = c_longlong(blkId)
         num_attr = c_int(self.num_attr(blkId))
-        len_name = self.__ex_inquire_int(ex_inquiry('EX_INQ_READ_NAME_LENGTH'))
+        len_name = self.__ex_inquire_int(ex_inquiry('EX_INQ_MAX_READ_NAME_LENGTH'))
         attr_name_ptrs = (POINTER(c_char * (len_name + 1)) * num_attr.value)()
         for i in range(num_attr.value):
             attr_name_ptrs[i] = pointer(create_string_buffer(len_name + 1))
@@ -5049,7 +5049,7 @@ class exodus:
     def __ex_put_elem_attr_names(self, blkId, varNames):
         object_id = c_int(blkId)
         num_attr = c_int(self.num_attr(blkId))
-        len_name = self.__ex_inquire_int(ex_inquiry('EX_INQ_READ_NAME_LENGTH'))
+        len_name = self.__ex_inquire_int(ex_inquiry('EX_INQ_MAX_READ_NAME_LENGTH'))
         attr_name_ptrs = (POINTER(c_char * (len_name + 1)) * num_attr.value)()
         assert len(varNames) == num_attr.value
         for i in range(num_attr.value):

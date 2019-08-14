@@ -44,8 +44,8 @@
 
 #include "Thyra_FROSchLinearOp_decl.hpp"
 
-#ifdef HAVE_SHYLU_DDFROSCH_THYRA
 
+#ifdef HAVE_SHYLU_DDFROSCH_THYRA
 namespace Thyra {
 
     using namespace std;

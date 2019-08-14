@@ -44,14 +44,15 @@
 
 #include <FROSch_OverlappingOperator_def.hpp>
 
+
 namespace FROSch {
 
     enum AddingLayersStrategy {LayersFromMatrix=0,LayersFromGraph=1,LayersOld=2};
-
-    template <class SC = Xpetra::Operator<>::scalar_type,
-              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-              class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-              class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+    
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class AlgebraicOverlappingOperator : public OverlappingOperator<SC,LO,GO,NO> {
 
     protected:

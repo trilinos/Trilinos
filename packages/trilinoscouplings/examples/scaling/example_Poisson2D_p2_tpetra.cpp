@@ -1613,7 +1613,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> mueluA = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0);
     // Multigrid Hierarchy
     crs_matrix_type * A1;
-    RCP<Xpetra::Matrix <scalar_type> > xA1;
+    RCP<Xpetra::Matrix <scalar_type, local_ordinal_type, global_ordinal_type> > xA1;
     bool userCoarseA = false;
     if (amgList.isParameter("user coarse matrix")) {
       A1=amgList.get<crs_matrix_type*>("user coarse matrix");
