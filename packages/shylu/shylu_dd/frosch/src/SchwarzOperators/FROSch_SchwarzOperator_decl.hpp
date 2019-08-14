@@ -68,7 +68,7 @@
 namespace FROSch {
 
     class Solver;
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,

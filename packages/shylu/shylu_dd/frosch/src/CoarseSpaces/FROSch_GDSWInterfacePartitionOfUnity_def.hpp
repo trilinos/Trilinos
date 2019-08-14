@@ -118,6 +118,8 @@ namespace FROSch {
             UseStraightEdges_ = this->ParameterList_->sublist("Custom").get("Vertices",false);
             UseEdges_ = this->ParameterList_->sublist("Custom").get("Vertices",false);
             UseFaces_ = this->ParameterList_->sublist("Custom").get("Vertices",false);
+        } else {
+            FROSCH_ASSERT(false,"FROSch::GDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
         }
         this->LocalPartitionOfUnity_ = MultiVectorPtrVecPtr(5);
         this->PartitionOfUnityMaps_ = MapPtrVecPtr(5);
@@ -167,7 +169,7 @@ namespace FROSch {
                                             UseEdges_,
                                             UseFaces_,
                                             false);
-        
+
         // Maps
         if (UseVertices_) {
             Vertices_ = this->DDInterface_->getVertices();

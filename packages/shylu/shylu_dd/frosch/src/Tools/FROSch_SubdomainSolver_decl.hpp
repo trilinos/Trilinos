@@ -140,7 +140,7 @@ namespace FROSch {
 #endif
 
     public:
-        
+
         /*!
         \brief Constructor
 

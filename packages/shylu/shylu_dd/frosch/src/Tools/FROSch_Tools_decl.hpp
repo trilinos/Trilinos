@@ -60,7 +60,7 @@
 
 
 namespace FROSch {
-    
+
     #if defined HAVE_XPETRA_EPETRA || defined HAVE_TPETRA_INT_INT
     typedef int DefaultGlobalOrdinal;
     #elif !defined HAVE_TPETRA_INT_LONG_LONG

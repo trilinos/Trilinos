@@ -178,15 +178,6 @@ int main(int argc, char *argv[])
             dofsPerNodeVector[block] = (UN) max(int(DofsPerNode-block),1);
 
             ParameterList GaleriList;
-<<<<<<< HEAD
-            GaleriList.set("nx", GlobalOrdinal(N*(M+block)));
-            GaleriList.set("ny", GlobalOrdinal(N*(M+block)));
-            GaleriList.set("nz", GlobalOrdinal(N*(M+block)));
-            GaleriList.set("mx", GlobalOrdinal(N));
-            GaleriList.set("my", GlobalOrdinal(N));
-            GaleriList.set("mz", GlobalOrdinal(N));
-
-=======
             GaleriList.set("nx", GO(N*(M+block)));
             GaleriList.set("ny", GO(N*(M+block)));
             GaleriList.set("nz", GO(N*(M+block)));
@@ -194,7 +185,6 @@ int main(int argc, char *argv[])
             GaleriList.set("my", GO(N));
             GaleriList.set("mz", GO(N));
             
->>>>>>> 1887c26621eb206c91ea8e057e7b1eb16347de2f
             RCP<const Map<LO,GO,NO> > UniqueMapTmp;
             RCP<MultiVector<SC,LO,GO,NO> > CoordinatesTmp;
             RCP<Matrix<SC,LO,GO,NO> > KTmp;

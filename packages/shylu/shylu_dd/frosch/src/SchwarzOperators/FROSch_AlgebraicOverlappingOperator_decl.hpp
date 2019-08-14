@@ -48,7 +48,7 @@
 namespace FROSch {
 
     enum AddingLayersStrategy {LayersFromMatrix=0,LayersFromGraph=1,LayersOld=2};
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,

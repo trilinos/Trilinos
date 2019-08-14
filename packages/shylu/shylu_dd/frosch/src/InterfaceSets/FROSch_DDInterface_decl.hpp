@@ -60,7 +60,7 @@
 namespace FROSch {
 
     enum CommunicationStrategy {CommCrsMatrix,CommCrsGraph,CreateOneToOneMap};
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,

@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,

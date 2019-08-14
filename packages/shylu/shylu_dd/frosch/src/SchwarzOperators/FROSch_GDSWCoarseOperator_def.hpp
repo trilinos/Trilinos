@@ -286,8 +286,8 @@ namespace FROSch {
 |  Block " << blockId << "           |\n\
 +--------------------+\n";
         }
-        
-        
+
+
         // Process the parameter list
         std::stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
@@ -448,7 +448,7 @@ namespace FROSch {
                 }
 
                 this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
-                
+
                 if (this->Verbose_) {
                     std::cout << std::boolalpha << "\n\
     ------------------------------------------------------------------------------\n\

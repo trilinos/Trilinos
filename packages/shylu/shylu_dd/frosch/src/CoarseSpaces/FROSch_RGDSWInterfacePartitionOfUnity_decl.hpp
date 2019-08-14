@@ -39,12 +39,12 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_GDSWINTERFACEPARTITIONOFUNITY_DECL_HPP
-#define _FROSCH_GDSWINTERFACEPARTITIONOFUNITY_DECL_HPP
+#ifndef _FROSCH_RGDSWINTERFACEPARTITIONOFUNITY_DECL_HPP
+#define _FROSCH_RGDSWINTERFACEPARTITIONOFUNITY_DECL_HPP
 
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
-#include <FROSch_InterfacePartitionOfUnity_def.hpp>
+#include <FROSch_GDSWInterfacePartitionOfUnity_def.hpp>
 
 
 namespace FROSch {
@@ -53,7 +53,7 @@ namespace FROSch {
               class LO = int,
               class GO = DefaultGlobalOrdinal,
               class NO = KokkosClassic::DefaultNode::DefaultNodeType>
-    class GDSWInterfacePartitionOfUnity : public InterfacePartitionOfUnity<SC,LO,GO,NO> {
+    class RGDSWInterfacePartitionOfUnity : public GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> {
 
     protected:
 
@@ -78,8 +78,11 @@ namespace FROSch {
         using ParameterListPtr              = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr;
 
         using DDInterfacePtr                = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr;
-
+        
         using EntitySetPtr                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr;
+        using EntitySetPtrVecPtr            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::EntitySetPtrVecPtr;
+        
+        using InterfaceEntityPtr            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::InterfaceEntityPtr;
 
         using UN                            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::UN;
 
@@ -88,39 +91,28 @@ namespace FROSch {
 
     public:
 
-        GDSWInterfacePartitionOfUnity(CommPtr mpiComm,
-                                      CommPtr serialComm,
-                                      UN dimension,
-                                      UN dofsPerNode,
-                                      ConstMapPtr nodesMap,
-                                      ConstMapPtrVecPtr dofsMaps,
-                                      ParameterListPtr parameterList,
-                                      Verbosity verbosity = All);
-
-        virtual ~GDSWInterfacePartitionOfUnity();
-
-        virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs,
-                                         ConstMultiVectorPtr nodeList);
-
-        virtual int sortInterface(ConstCrsMatrixPtr matrix,
-                                  ConstMultiVectorPtr nodeList);
+        RGDSWInterfacePartitionOfUnity(CommPtr mpiComm,
+                                       CommPtr serialComm,
+                                       UN dimension,
+                                       UN dofsPerNode,
+                                       ConstMapPtr nodesMap,
+                                       ConstMapPtrVecPtr dofsMaps,
+                                       ParameterListPtr parameterList,
+                                       Verbosity verbosity = All);
 
         virtual int computePartitionOfUnity();
 
+        virtual int computePartitionOfUnity(ConstMultiVectorPtr nodeList);
+
     protected:
 
-        bool UseVertices_;
-        bool UseShortEdges_;
-        bool UseStraightEdges_;
-        bool UseEdges_;
-        bool UseFaces_;
+        bool UseCoarseNodes_;
 
-        EntitySetPtr Vertices_;
-        EntitySetPtr ShortEdges_;
-        EntitySetPtr StraightEdges_;
-        EntitySetPtr Edges_;
-        EntitySetPtr Faces_;
+        EntitySetPtr CoarseNodes_;
 
+        EntitySetPtrVecPtr EntitySetVector_;
+
+        DistanceFunction DistanceFunction_;
     };
 
 }

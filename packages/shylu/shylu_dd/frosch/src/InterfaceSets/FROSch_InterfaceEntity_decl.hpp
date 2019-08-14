@@ -51,7 +51,7 @@
 
 
 namespace FROSch {
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -61,7 +61,7 @@ namespace FROSch {
     enum EntityType {DefaultType,VertexType,EdgeType,FaceType,InteriorType,InterfaceType};
     enum EntityFlag {DefaultFlag,StraightFlag,ShortFlag,NodeFlag};
     enum DistanceFunction {ConstantDistanceFunction,InverseEuclideanDistanceFunction};
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal>
@@ -78,7 +78,7 @@ namespace FROSch {
 
         bool operator== (const Node &n) const;
     };
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -109,9 +109,9 @@ namespace FROSch {
         using UN                    = unsigned;
 
         using IntVec                 = Teuchos::Array<int>;
-        
+
         using LOVecPtr              = Teuchos::ArrayRCP<LO>;
-        
+
         using GOVec                 = Teuchos::Array<GO>;
         using GOVecPtr              = Teuchos::ArrayRCP<GO>;
 

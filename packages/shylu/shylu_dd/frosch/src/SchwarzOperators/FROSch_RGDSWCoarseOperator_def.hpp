@@ -74,7 +74,7 @@ namespace FROSch {
 |  Block " << blockId << "            |\n\
 +---------------------+\n";
         }
-        
+
         // Process the parameter list
         std::stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;

@@ -74,7 +74,7 @@ namespace FROSch {
 | AlgebraicOverlappingOperator |\n\
 +------------------------------+\n";
         }
-        
+
         if (repeatedMap.is_null()) {
             repeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap(),1);
         }

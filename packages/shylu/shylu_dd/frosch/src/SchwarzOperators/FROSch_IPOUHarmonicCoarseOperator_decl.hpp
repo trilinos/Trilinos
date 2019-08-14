@@ -43,12 +43,13 @@
 #define _FROSCH_IPOUHARMONICCOARSEOPERATOR_DECL_HPP
 
 #include <FROSch_GDSWInterfacePartitionOfUnity_def.hpp>
+#include <FROSch_RGDSWInterfacePartitionOfUnity_def.hpp>
 
 #include <FROSch_HarmonicCoarseOperator_def.hpp>
 
 
 namespace FROSch {
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,

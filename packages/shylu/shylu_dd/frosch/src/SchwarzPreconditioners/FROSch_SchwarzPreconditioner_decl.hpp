@@ -53,8 +53,8 @@
 #include <FROSch_IPOUHarmonicCoarseOperator_def.hpp>
 
 
-namespace FROSch {        
-    
+namespace FROSch {
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,

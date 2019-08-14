@@ -198,27 +198,29 @@ namespace Thyra {
             //std::cout<<"Only Implemented for Epetra and Tpetra\n";
         }
 
-        RCP<MultiVectorBase<SC> >thyraX =
-        rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xY));
-
-        using ThySpmdVecSpaceBase   = SpmdVectorSpaceBase<SC> ;
-        RCP<const ThySpmdVecSpaceBase> mpi_vs = rcp_dynamic_cast<const ThySpmdVecSpaceBase>(rcpFromPtr(Y_inout)->range());
-
-        TEUCHOS_TEST_FOR_EXCEPTION(mpi_vs == Teuchos::null, std::logic_error, "Failed to cast Thyra::VectorSpaceBase to Thyra::SpmdVectorSpaceBase.");
-        const LO localOffset = ( mpi_vs != Teuchos::null ? mpi_vs->localOffset() : 0 );
-        const LO localSubDim = ( mpi_vs != Teuchos::null ? mpi_vs->localSubDim() : rcpFromPtr(Y_inout)->range()->dim() );
-
-        RCP<DetachedMultiVectorView<SC> > thyData =
-        rcp(new DetachedMultiVectorView<SC>(*rcpFromPtr(Y_inout),Range1D(localOffset,localOffset+localSubDim-1)));
-
-        // AH 08/14/2019 TODO: Is this necessary??
-        for( size_t j = 0; j <xY->getNumVectors(); ++j) {
-            Teuchos::ArrayRCP< const SC > xpData = xY->getData(j); // access const data from Xpetra object
-            // loop over all local rows
-            for( LO i = 0; i < localSubDim; ++i) {
-                (*thyData)(i,j) = xpData[i];
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+        if (this->bIsEpetra_) {
+            RCP<MultiVectorBase<SC> > thyraX = rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xY));
+            
+            using ThySpmdVecSpaceBase = SpmdVectorSpaceBase<SC> ;
+            RCP<const ThySpmdVecSpaceBase> mpi_vs = rcp_dynamic_cast<const ThySpmdVecSpaceBase>(rcpFromPtr(Y_inout)->range());
+            
+            TEUCHOS_TEST_FOR_EXCEPTION(mpi_vs == Teuchos::null, std::logic_error, "Failed to cast Thyra::VectorSpaceBase to Thyra::SpmdVectorSpaceBase.");
+            const LO localOffset = ( mpi_vs != Teuchos::null ? mpi_vs->localOffset() : 0 );
+            const LO localSubDim = ( mpi_vs != Teuchos::null ? mpi_vs->localSubDim() : rcpFromPtr(Y_inout)->range()->dim() );
+            
+            RCP<DetachedMultiVectorView<SC> > thyData = rcp(new DetachedMultiVectorView<SC>(*rcpFromPtr(Y_inout),Range1D(localOffset,localOffset+localSubDim-1)));
+            
+            // AH 08/14/2019 TODO: Is this necessary??
+            for( size_t j = 0; j <xY->getNumVectors(); ++j) {
+                Teuchos::ArrayRCP< const SC > xpData = xY->getData(j); // access const data from Xpetra object
+                // loop over all local rows
+                for( LO i = 0; i < localSubDim; ++i) {
+                    (*thyData)(i,j) = xpData[i];
+                }
             }
         }
+#endif
     }
 
     // private

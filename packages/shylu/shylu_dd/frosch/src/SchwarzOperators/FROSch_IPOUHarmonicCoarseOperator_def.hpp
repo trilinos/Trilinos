@@ -167,7 +167,7 @@ namespace FROSch {
 |  Block " << blockId << "                   |\n\
 +----------------------------+\n";
         }
-        
+
         // Process the parameter list
         std::stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
@@ -194,6 +194,10 @@ namespace FROSch {
 
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("GDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
                 InterfacePartitionOfUnity_ = InterfacePartitionOfUnityPtr(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"GDSW"),verbosity));
+            } else if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("RGDSW")) {
+
+                coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("RGDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
+                InterfacePartitionOfUnity_ = InterfacePartitionOfUnityPtr(new RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"RGDSW"),verbosity));
             } else {
                 FROSCH_ASSERT(false,"InterfacePartitionOfUnity Type is unknown.");
             }

@@ -229,8 +229,8 @@ namespace FROSch {
 
         return 0;
     }
-    
-    
+
+
     template <class SC,class LO,class GO,class NO>
     int BuildSubmatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > k,
                        Teuchos::ArrayView<GO> indI,
@@ -277,17 +277,17 @@ namespace FROSch {
     {
         //Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapI = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
-        
+
         kII = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(mapI,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
         GO maxGID = mapI->getMaxAllGlobalIndex();
         GO minGID = mapI->getMinAllGlobalIndex();
         for (unsigned i=0; i<k->getNodeNumRows(); i++) {
             Teuchos::ArrayView<const LO> indices;
-            
+
             k->getLocalRowView(i,indices);
-            
+
             Teuchos::Array<GO> indicesI;
-            
+
             LO tmp1=mapI->getLocalElement(k->getRowMap()->getGlobalElement(i));
             GO tmp2=0;
             if (tmp1>=0) {
@@ -302,7 +302,7 @@ namespace FROSch {
             }
         }
         kII->fillComplete(mapI,mapI);
-        
+
         return 0;
     }
 }

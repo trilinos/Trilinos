@@ -48,7 +48,7 @@
 
 
 namespace FROSch {
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -81,7 +81,10 @@ namespace FROSch {
         using ConstDDInterfacePtr           = Teuchos::RCP<const DDInterface<SC,LO,GO,NO> >;
 
         using EntitySetPtr                  = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetPtrVecPtr            = Teuchos::ArrayRCP<EntitySetPtr>;
 
+        using InterfaceEntityPtr            = Teuchos::RCP<InterfaceEntity<SC,LO,GO> >;
+        
         using UN                            = unsigned;
 
         using GOVec                         = Teuchos::Array<GO>;
