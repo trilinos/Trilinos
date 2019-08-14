@@ -573,7 +573,7 @@ namespace Ioss {
     }
 
     // Get all properties of input database...
-    region.output_summary(std::cerr, true);
+    region.output_summary(std::cout, true);
 
     if (interface.summary() == 0) {
       info_nodeblock(region, interface);
