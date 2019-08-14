@@ -245,8 +245,7 @@ def setBuildEnviron(arguments):
                                             'install',
                                             'white-ride',
                                             'ninja-1.8.2',
-                                            'bin') + os.pathsep +
-                               os.environ['PATH']} }
+                                            'bin')} }
 
     try:
         moduleList = moduleMap[arguments.job_base_name]
@@ -269,7 +268,12 @@ def setBuildEnviron(arguments):
     if 'OMPI_FC' in l_environMap:
         l_environMap['OMPI_FC'] = os.environ.get('FC', '')
 
-    os.environ.update(l_environMap)
+    for key, value in l_environMap.items():
+        if key in os.environ:
+            # we are assuming these are paths to be prepended
+            os.environ[key] = value + os.pathsep + os.environ[key]
+        else:
+            os.environ[key] = value
     confirmGitVersion()
 
     print ("Environment:\n", file=sys.stdout)
