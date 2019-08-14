@@ -1107,7 +1107,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
       // Handle the MESH fields required for an ExodusII file model.
       // (The 'genesis' portion)
 
-      if (field.get_name() == "connectivity") {
+      if (field.get_name() == "connectivity" || field.get_name() == "connectivity_raw") {
         int element_nodes = eb->get_property("topology_node_count").get_int();
         assert(field.raw_storage()->component_count() == element_nodes);
 
@@ -1119,7 +1119,9 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
             pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
           // Now, map the nodes in the connectivity from local to global ids
-          get_node_map().map_data(data, field, num_to_get * element_nodes);
+	  if (field.get_name() == "connectivity") {
+	    get_node_map().map_data(data, field, num_to_get * element_nodes);
+	  }
         }
       }
       else if (field.get_name() == "ids") {
