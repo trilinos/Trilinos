@@ -8,6 +8,7 @@ if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
     if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
         echo -e "Job is CUDA"
         module load git/2.10.1
+        module load python/2.7.12
     else
         echo -e "ERROR: Unable to find matching environment for CUDA job not on Ride."
         exit -1
