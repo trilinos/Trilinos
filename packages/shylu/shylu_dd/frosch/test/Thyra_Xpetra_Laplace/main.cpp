@@ -168,8 +168,8 @@ int main(int argc, char *argv[])
         RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
 
         ArrayRCP<RCP<Matrix<SC,LO,GO,NO> > > K(NumberOfBlocks);
-        ArrayRCP<RCP<const Map<LO,GO,NO> > > RepeatedMaps(NumberOfBlocks);
-        ArrayRCP<RCP<const MultiVector<SC,LO,GO,NO> > > Coordinates(NumberOfBlocks);
+        ArrayRCP<RCP<Map<LO,GO,NO> > > RepeatedMaps(NumberOfBlocks);
+        ArrayRCP<RCP<MultiVector<SC,LO,GO,NO> > > Coordinates(NumberOfBlocks);
         ArrayRCP<UN> dofsPerNodeVector(NumberOfBlocks);
 
         for (UN block=0; block<(UN) NumberOfBlocks; block++) {
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
                 assert(false);
             }
 
-            RepeatedMaps[block] = FROSch::BuildRepeatedMap<LO,GO,NO>(K[block]->getCrsGraph()); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); RepeatedMaps[block]->describe(*fancy,VERB_EXTREME);
+            RepeatedMaps[block] = BuildRepeatedMapNonConst<LO,GO,NO>(K[block]->getCrsGraph()); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); RepeatedMaps[block]->describe(*fancy,VERB_EXTREME);
         }
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Assembly Monolythic System #\n##############################\n" << endl;

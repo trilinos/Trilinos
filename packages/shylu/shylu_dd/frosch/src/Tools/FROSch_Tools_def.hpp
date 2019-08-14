@@ -231,7 +231,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > BuildRepeatedSubMaps(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix,
-                                                                                  Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > subMaps)
+                                                                                        Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > subMaps)
     {
         Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > repeatedSubMaps(subMaps.size());
         for (unsigned i = 0; i < subMaps.size(); i++) {
@@ -248,23 +248,23 @@ namespace FROSch {
 
     template <class LO,class GO,class NO>
     Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > BuildRepeatedSubMaps(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > graph,
-                                                                                  Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > subMaps)
+                                                                                        Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > subMaps)
     {
         Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > repeatedSubMaps(subMaps.size());
         for (unsigned i = 0; i < subMaps.size(); i++) {
             Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > subGraphII;
             Teuchos::ArrayView<GO> indI = Teuchos::av_const_cast<GO> ( subMaps[i]->getNodeElementList() );
-            
+
             BuildSubgraph(graph,indI,subGraphII);
-            
+
             repeatedSubMaps[i] = BuildRepeatedMap(subGraphII);
         }
-        
+
         return repeatedSubMaps;
     }
 
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix)
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMapNonConst(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix)
     {
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > uniqueMap = Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getRowMap(),1);
         Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > overlappingMap = uniqueMap.getConst();
@@ -353,37 +353,43 @@ namespace FROSch {
         sortunique(repeatedIndices);
         return Xpetra::MapFactory<LO,GO,NO>::Build(tmpMatrix->getRowMap()->lib(),-1,repeatedIndices(),0,matrix->getRowMap()->getComm());
     }
-    
+
+    template <class SC,class LO,class GO,class NO>
+    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix)
+    {
+        return BuildRepeatedMapNonConst(matrix).getConst();
+    }
+
     template <class LO,class GO,class NO>
-    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > graph)
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMapNonConst(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > graph)
     {
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > uniqueMap = Xpetra::MapFactory<LO,GO,NO>::Build(graph->getRowMap(),1);
         Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > overlappingMap = uniqueMap.getConst();
         ExtendOverlapByOneLayer<LO,GO,NO>(graph,overlappingMap,graph,overlappingMap);
-        
+
         Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > tmpGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(overlappingMap,graph->getGlobalMaxNumRowEntries());
-        
+
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter;
         Teuchos::RCP<Xpetra::Export<LO,GO,NO> > gather = Xpetra::ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
-        
+
         if (tmpGraph->getRowMap()->lib()==Xpetra::UseEpetra) {
             scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
             tmpGraph->doImport(*graph,*scatter,Xpetra::ADD);
         } else {
             tmpGraph->doImport(*graph,*gather,Xpetra::ADD);
         }
-        
+
         Teuchos::Array<GO> myPID(1,uniqueMap->getComm()->getRank());
-        
+
         Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(overlappingMap,10);
         Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > commGraphTmp = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(uniqueMap,10);
-        
+
         for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             if (uniqueMap->getLocalElement(globalRow)<0) {
                 Teuchos::ArrayView<const GO> indices;
                 tmpGraph->getGlobalRowView(globalRow,indices);
-                
+
                 LO j=0;
                 while (j<indices.size() && overlappingMap->getLocalElement(indices[j])>=0) {
                     j++;
@@ -395,13 +401,13 @@ namespace FROSch {
         }
         commGraph->fillComplete();
         commGraphTmp->doExport(*commGraph,*gather,Xpetra::INSERT);
-        
+
         Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > commGraphTmp2 = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(uniqueMap,10);
         for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
             GO globalRow = uniqueMap->getGlobalElement(i);
             Teuchos::ArrayView<const GO> indices;
             commGraphTmp->getGlobalRowView(globalRow,indices);
-            
+
             if (indices.size()>0) {
                 for (LO j=0; j<indices.size(); j++) {
                     Teuchos::Array<GO> pID(1,indices[j]);
@@ -414,20 +420,20 @@ namespace FROSch {
         commGraphTmp2->fillComplete();
         commGraphTmp.reset();
         commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(overlappingMap,10);
-        
+
         commGraph->doImport(*commGraphTmp2,*gather,Xpetra::ADD);
-        
+
         Teuchos::ArrayView<const GO> myGlobalElements = uniqueMap->getNodeElementList();
         Teuchos::Array<GO> repeatedIndices(uniqueMap->getNodeNumElements());
         for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
             repeatedIndices.at(i) = myGlobalElements[i];
         }
-        
+
         for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             Teuchos::ArrayView<const GO> indices;
             commGraph->getGlobalRowView(globalRow,indices);
-            
+
             if (indices.size()>0) {
                 for (LO j=0; j<indices.size(); j++) {
                     GO pID = indices[j];
@@ -439,6 +445,12 @@ namespace FROSch {
         }
         sortunique(repeatedIndices);
         return Xpetra::MapFactory<LO,GO,NO>::Build(tmpGraph->getRowMap()->lib(),-1,repeatedIndices(),0,graph->getRowMap()->getComm());
+    }
+
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > graph)
+    {
+        return BuildRepeatedMapNonConst(graph).getConst();
     }
 
     /*
@@ -634,7 +646,8 @@ namespace FROSch {
     }
 
     template <class LO,class GO,class NO>
-    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > MergeMaps(Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > mapVector){
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > MergeMapsNonConst(Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > mapVector)
+    {
         FROSCH_ASSERT(!mapVector.is_null(),"mapVector is null!");
         FROSCH_ASSERT(mapVector.size()>0,"Length of mapVector is == 0!");
 
@@ -652,6 +665,12 @@ namespace FROSch {
             elementList.insert(elementList.end(),subElementList.begin(),subElementList.end());
         }
         return Xpetra::MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),-1,elementList(),0,mapVector[0]->getComm());
+    }
+
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > MergeMaps(Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > mapVector)
+    {
+        return MergeMapsNonConst(mapVector).getConst();
     }
 
     template <class LO,class GO,class NO>
@@ -1018,7 +1037,7 @@ namespace FROSch {
         FROSCH_ASSERT(false,"FROSch::ConvertToXpetra : ERROR: Needs specialization.");
         return Teuchos::null;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ConvertToXpetra<SC,LO,GO,NO>::ConvertMatrix(Xpetra::UnderlyingLib lib,
                                                                                            Epetra_CrsMatrix &matrix,
@@ -1051,7 +1070,7 @@ namespace FROSch {
         Teuchos::ArrayView<int> mapArrayView(map.MyGlobalElements(),map.NumMyElements());
         return Xpetra::MapFactory<LO,int,NO>::Build(lib,-1,mapArrayView,0,comm);
     }
-    
+
     template <class SC,class LO,class NO>
     Teuchos::RCP<Xpetra::Matrix<SC,LO,int,NO> > ConvertToXpetra<SC,LO,int,NO>::ConvertMatrix(Xpetra::UnderlyingLib lib,
                                                                                              Epetra_CrsMatrix &matrix,
@@ -1064,7 +1083,7 @@ namespace FROSch {
             LO* indices;
             SC* values;
             matrix.ExtractMyRowView(i,numEntries,values,indices);
-            
+
             Teuchos::Array<int> indicesArray(numEntries);
             Teuchos::ArrayView<SC> valuesArrayView(values,numEntries);
             for (LO j=0; j<numEntries; j++) {
@@ -1075,7 +1094,7 @@ namespace FROSch {
         xmatrix->fillComplete();
         return xmatrix;
     }
-    
+
     template <class SC,class LO,class NO>
     Teuchos::RCP<Xpetra::MultiVector<SC,LO,int,NO> > ConvertToXpetra<SC,LO,int,NO>::ConvertMultiVector(Xpetra::UnderlyingLib lib,
                                                                                                        Epetra_MultiVector &vector,
@@ -1090,7 +1109,7 @@ namespace FROSch {
         }
         return xMultiVector;
     }
-    
+
     template <class SC,class LO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,long long,NO> > ConvertToXpetra<SC,LO,long long,NO>::ConvertMap(Xpetra::UnderlyingLib lib,
                                                                                                 const Epetra_BlockMap &map,
@@ -1099,7 +1118,7 @@ namespace FROSch {
         Teuchos::ArrayView<long long> mapArrayView(map.MyGlobalElements64(),map.NumMyElements());
         return Xpetra::MapFactory<LO,long long,NO>::Build(lib,-1,mapArrayView,0,comm);
     }
-    
+
     template <class SC,class LO,class NO>
     Teuchos::RCP<Xpetra::Matrix<SC,LO,long long,NO> > ConvertToXpetra<SC,LO,long long,NO>::ConvertMatrix(Xpetra::UnderlyingLib lib,
                                                                                                          Epetra_CrsMatrix &matrix,
@@ -1112,7 +1131,7 @@ namespace FROSch {
             LO* indices;
             SC* values;
             matrix.ExtractMyRowView(i,numEntries,values,indices);
-            
+
             Teuchos::Array<long long> indicesArray(numEntries);
             Teuchos::ArrayView<SC> valuesArrayView(values,numEntries);
             for (LO j=0; j<numEntries; j++) {
@@ -1123,7 +1142,7 @@ namespace FROSch {
         xmatrix->fillComplete();
         return xmatrix;
     }
-    
+
     template <class SC,class LO,class NO>
     Teuchos::RCP<Xpetra::MultiVector<SC,LO,long long,NO> > ConvertToXpetra<SC,LO,long long,NO>::ConvertMultiVector(Xpetra::UnderlyingLib lib,
                                                                                                                    Epetra_MultiVector &vector,
@@ -1151,8 +1170,6 @@ namespace FROSch {
 
         if (paramList.isType<decltype(pointer)>(namePtr)) {
             pointer = paramList.get<decltype(pointer)>(namePtr);
-        } else {
-            std::cerr<<"Wrong Type of Pointer\n";
         }
 
         return pointer;
@@ -1169,8 +1186,6 @@ namespace FROSch {
 
         if (paramList.isType<decltype(vector)>(nameVector)) {
             vector = paramList.get<decltype(vector)>(nameVector);
-        } else {
-            std::cerr<<"Wrong Type of Vector\n";
         }
 
         return vector;

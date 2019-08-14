@@ -103,19 +103,21 @@ namespace Thyra {
     class FROSchFactory : public Thyra::PreconditionerFactoryBase<SC> {
 
     protected:
-        
+
         using Map                   = Xpetra::Map<LO,GO,NO>;
         using ConstMap              = const Map;
+        using MapPtr                = Teuchos::RCP<Map>;
         using ConstMapPtr           = Teuchos::RCP<ConstMap>;
+        using MapPtrVecPtr          = Teuchos::ArrayRCP<MapPtr>;
         using ConstMapPtrVecPtr     = Teuchos::ArrayRCP<ConstMapPtr>;
-        
+
         using MultiVector           = const Xpetra::MultiVector<SC,LO,GO,NO>;
         using ConstMultiVector      = const MultiVector;
         using MultiVectorPtr        = Teuchos::RCP<MultiVector>;
         using ConstMultiVectorPtr   = Teuchos::RCP<ConstMultiVector>;
 
         using DofOrderingVecPtr     = Teuchos::ArrayRCP<DofOrdering>;
-        
+
         using UN                    = unsigned;
 
         using GOVecPtr              = Teuchos::ArrayRCP<GO> ;
@@ -129,7 +131,7 @@ namespace Thyra {
         // More typedefs!!!
 
     public:
-        
+
         //Constructor
         FROSchFactory();
 
@@ -157,7 +159,9 @@ namespace Thyra {
         RCP<const ParameterList> getValidParameters() const;
 
         std::string description() const;
-        private:
+
+    private:
+
         Teuchos::RCP<ParameterList> paramList_;
 
     };

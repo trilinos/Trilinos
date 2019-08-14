@@ -157,8 +157,7 @@ namespace Thyra {
         bool opSupportedImpl(EOpTransp M_trans) const;
 
         /** \brief . */
-        void applyImpl(
-                       const EOpTransp M_trans,
+        void applyImpl(const EOpTransp M_trans,
                        const MultiVectorBase<Scalar> &X_in,
                        const Teuchos::Ptr<MultiVectorBase<Scalar> > &Y_inout,
                        const Scalar alpha,
@@ -204,7 +203,7 @@ namespace Thyra {
     {
         const RCP<FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
         Teuchos::rcp(new FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
-        op->initialize(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
+        op->initialize(rangeSpace,domainSpace,xpetraOperator,bIsEpetra,bIsTpetra);
         return op;
     }
 

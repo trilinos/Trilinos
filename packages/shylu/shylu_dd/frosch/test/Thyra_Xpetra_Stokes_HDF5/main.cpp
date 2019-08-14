@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
         string groupNameRepeatedMapVelo =  "RepeatedMapVelocity";
         Epetra_Map *repeatedMapEpetraVelo;
         hDF5IO->Read(groupNameRepeatedMapVelo,repeatedMapEpetraVelo);
-        
+
         RCP<Map<LO,GO,NO> > repeatedMapVelo = ConvertToXpetra<SC,LO,GO,NO>::ConvertMap(xpetraLib,*repeatedMapEpetraVelo,Comm);
 
         string groupNameRepeatedMapPress =  "RepeatedMapPressure";
@@ -193,18 +193,22 @@ int main(int argc, char *argv[])
 //        }
 //        RCP<Map<LO,GO,NO> > repeatedMapPress = Xpetra::MapFactory<LO,GO,NO>::Build(xpetraLib,-1,elementList,0,Comm);
 
-        Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > repeatedMapsVector(2);
+        ArrayRCP<RCP<const Map<LO,GO,NO> > > repeatedMapsVectorConst(2);
+        ArrayRCP<RCP<Map<LO,GO,NO> > > repeatedMapsVector(2);
+
+        repeatedMapsVectorConst[0] = repeatedMapVelo.getConst();
+        repeatedMapsVectorConst[1] = repeatedMapPress.getConst();
+
+        RCP<Map<LO,GO,NO> > repeatedMap = MergeMapsNonConst(repeatedMapsVectorConst);
 
         repeatedMapsVector[0] = repeatedMapVelo;
         repeatedMapsVector[1] = repeatedMapPress;
-
-        RCP<const Map<LO,GO,NO> > repeatedMap = MergeMaps(repeatedMapsVector);
 
 
         ////////////////
         // Unique Map //
         ////////////////
-        RCP<const Map<LO,GO,NO> > uniqueMap = BuildUniqueMap<LO,GO,NO>(repeatedMap);
+        RCP<Map<LO,GO,NO> > uniqueMap = rcp_const_cast<Map<LO,GO,NO> >(BuildUniqueMap<LO,GO,NO>(repeatedMap));
 
 
         /////////

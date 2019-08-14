@@ -148,23 +148,18 @@ namespace Thyra {
         }
         //Epetra NodeType
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        if(this->bIsEpetra_){
+        if (this->bIsEpetra_) {
             const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
 
             RCP<const Map<LO,GO,NO> > DomainM = this->xpetraOperator_->getDomainMap();
-
-            RCP<const Map<LO,GO,NO> >RangeM = this->xpetraOperator_->getRangeMap();
-
             RCP<const EpetraMapT<GO,NO> > eDomainM = rcp_dynamic_cast<const EpetraMapT<GO,NO> >(DomainM);
-
             const Epetra_Map epetraDomain = eDomainM->getEpetra_Map();
 
+            RCP<const Map<LO,GO,NO> > RangeM = this->xpetraOperator_->getRangeMap();
             RCP<const EpetraMapT<GO,NO> > eRangeM = rcp_dynamic_cast<const EpetraMapT<GO,NO> >(RangeM);
-
             const Epetra_Map epetraRange = eRangeM->getEpetra_Map();
 
             RCP<const Epetra_MultiVector> X;
-
             RCP<Epetra_MultiVector> Y;
 
             THYRA_FUNC_TIME_MONITOR_DIFF("Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
@@ -180,9 +175,22 @@ namespace Thyra {
         } //Tpetra NodeType
         else
 #endif
-        if(bIsTpetra_){
-            const RCP<const MultiVector<SC,LO,GO,NO> > xX = ThyraUtils<SC,LO,GO,NO>::toXpetra(rcpFromRef(X_in), comm);
-            xY = ThyraUtils<SC,LO,GO,NO>::toXpetra(rcpFromPtr(Y_inout), comm);
+        if (bIsTpetra_) {
+            // Convert input vector to Xpetra
+            const RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > xTpMultVec = Thyra::TpetraOperatorVectorExtraction<SC,LO,GO,NO>::getConstTpetraMultiVector(rcpFromRef(X_in));
+            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpMultVec));
+            RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpNonConstMultVec = Teuchos::rcp_const_cast<Tpetra::MultiVector<SC,LO,GO,NO> >(xTpMultVec);
+            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpNonConstMultVec));
+            const RCP<const MultiVector<SC,LO,GO,NO> > xX = rcp(new Xpetra::TpetraMultiVector<SC,LO,GO,NO>(tpNonConstMultVec));
+            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xX));
+
+            // Convert output vector to Xpetra
+            const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > yTpMultVec = Thyra::TpetraOperatorVectorExtraction<SC,LO,GO,NO>::getTpetraMultiVector(rcpFromPtr(Y_inout));
+            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(yTpMultVec));
+            xY = rcp(new Xpetra::TpetraMultiVector<SC,LO,GO,NO>(yTpMultVec));
+            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xY));
+
+            // Apply operator
             xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
 
         } else {
@@ -203,6 +211,7 @@ namespace Thyra {
         RCP<DetachedMultiVectorView<SC> > thyData =
         rcp(new DetachedMultiVectorView<SC>(*rcpFromPtr(Y_inout),Range1D(localOffset,localOffset+localSubDim-1)));
 
+        // AH 08/14/2019 TODO: Is this necessary??
         for( size_t j = 0; j <xY->getNumVectors(); ++j) {
             Teuchos::ArrayRCP< const SC > xpData = xY->getData(j); // access const data from Xpetra object
             // loop over all local rows

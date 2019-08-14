@@ -130,22 +130,77 @@ namespace Thyra {
         FROSCH_ASSERT(paramList_->isParameter("FROSch Preconditioner Type"),"FROSch Preconditioner Type is not defined!");
 
         if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("AlgebraicOverlappingPreconditioner")) {
+            // Extract the repeated map
             ConstMapPtr repeatedMap = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                repeatedMap = ExtractPtrFromParameterList<ConstMap>(*paramList_,"Repeated Map");
+                repeatedMap = ExtractPtrFromParameterList<Map>(*paramList_,"Repeated Map").getConst();
+                if (repeatedMap.is_null()) {
+                    if (A->getMap()->lib()==Xpetra::UseTpetra) { // If coordinatesList.is_null(), we look for Tpetra/Epetra RCPs
+                        Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > repeatedMapTmp = ExtractPtrFromParameterList<const Tpetra::Map<LO,GO,NO> >(*paramList_,"Repeated Map");
+
+                        Teuchos::RCP<const Xpetra::TpetraMap<LO,GO,NO> > xTpetraRepeatedMap(new const Xpetra::TpetraMap<LO,GO,NO>(repeatedMapTmp));
+                        repeatedMap = Teuchos::rcp_dynamic_cast<ConstMap>(xTpetraRepeatedMap);
+                    } else {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                        if (A->getMap()->getComm()->getRank()==0) {
+                            std::cout << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra isntead." << std::endl;
+                        }
+#endif
+                    }
+                }
+                FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMap.is_null()");
             }
+
             RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > AOP(new AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>(A,paramList_));
-            AOP->initialize(paramList_->get("Overlap",1),repeatedMap);
+
+            AOP->initialize(paramList_->get("Overlap",1),
+                            repeatedMap);
+
             SchwarzPreconditioner = AOP;
         } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("GDSWPreconditioner")) {
+            // Extract the repeated map
             ConstMapPtr repeatedMap = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                repeatedMap = ExtractPtrFromParameterList<ConstMap>(*paramList_,"Repeated Map");
+                repeatedMap = ExtractPtrFromParameterList<Map>(*paramList_,"Repeated Map").getConst();
+                if (repeatedMap.is_null()) {
+                    if (A->getMap()->lib()==Xpetra::UseTpetra) { // If coordinatesList.is_null(), we look for Tpetra/Epetra RCPs
+                        Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > repeatedMapTmp = ExtractPtrFromParameterList<const Tpetra::Map<LO,GO,NO> >(*paramList_,"Repeated Map");
+
+                        Teuchos::RCP<const Xpetra::TpetraMap<LO,GO,NO> > xTpetraRepeatedMap(new const Xpetra::TpetraMap<LO,GO,NO>(repeatedMapTmp));
+                        repeatedMap = Teuchos::rcp_dynamic_cast<ConstMap>(xTpetraRepeatedMap);
+                    } else {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                        if (A->getMap()->getComm()->getRank()==0) {
+                            std::cout << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra isntead." << std::endl;
+                        }
+#endif
+                    }
+                }
+                FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMap.is_null()");
             }
+
+            // Extract the coordinate list
             ConstMultiVectorPtr coordinatesList = Teuchos::null;
-            if(paramList_->isParameter("Coordinates List")){
-                coordinatesList = ExtractPtrFromParameterList<ConstMultiVector>(*paramList_,"Coordinates List");
+            if (paramList_->isParameter("Coordinates List")) {
+                coordinatesList = ExtractPtrFromParameterList<MultiVector>(*paramList_,"Coordinates List").getConst();
+                if (coordinatesList.is_null()) {
+                    if (A->getMap()->lib()==Xpetra::UseTpetra) { // If coordinatesList.is_null(), we look for Tpetra/Epetra RCPs
+                        Teuchos::RCP<Tpetra::MultiVector<SC,LO,GO,NO> > coordinatesListTmp = ExtractPtrFromParameterList<Tpetra::MultiVector<SC,LO,GO,NO> >(*paramList_,"Coordinates List");
+
+                        Teuchos::RCP<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> > xTpetraCoordinatesList(new const Xpetra::TpetraMultiVector<SC,LO,GO,NO>(coordinatesListTmp));
+                        coordinatesList = Teuchos::rcp_dynamic_cast<const Xpetra::MultiVector<SC,LO,GO,NO> >(xTpetraCoordinatesList);
+                    } else {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                        if (A->getMap()->getComm()->getRank()==0) {
+                            std::cout << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra isntead." << std::endl;
+                        }
+#endif
+                    }
+                }
+                FROSCH_ASSERT(!coordinatesList.is_null(),"FROSch::FROSchFactory : ERROR: coordinatesList.is_null()");
             }
+
+            // Extract the dof ordering
             DofOrdering dofOrdering;
             if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
                 dofOrdering = NodeWise;
@@ -156,26 +211,89 @@ namespace Thyra {
             } else {
                 FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
             }
+
             RCP<GDSWPreconditioner<SC,LO,GO,NO> > GP(new GDSWPreconditioner<SC,LO,GO,NO>(A,paramList_));
-            GP->initialize(paramList_->get("Dimension",3),paramList_->get("DofsPerNode",1),dofOrdering,paramList_->get("Overlap",1),repeatedMap,coordinatesList);
+
+            GP->initialize(paramList_->get("Dimension",3),
+                           paramList_->get("DofsPerNode",1),
+                           dofOrdering,
+                           paramList_->get("Overlap",1),
+                           repeatedMap,
+                           coordinatesList);
+
             SchwarzPreconditioner = GP;
         } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("OneLevelPreconditioner")) {
+            // Extract the repeated map
             ConstMapPtr repeatedMap = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                repeatedMap = ExtractPtrFromParameterList<ConstMap>(*paramList_,"Repeated Map");
+                repeatedMap = ExtractPtrFromParameterList<Map>(*paramList_,"Repeated Map").getConst();
+                if (repeatedMap.is_null()) {
+                    if (A->getMap()->lib()==Xpetra::UseTpetra) { // If coordinatesList.is_null(), we look for Tpetra/Epetra RCPs
+                        Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > repeatedMapTmp = ExtractPtrFromParameterList<const Tpetra::Map<LO,GO,NO> >(*paramList_,"Repeated Map");
+
+                        Teuchos::RCP<const Xpetra::TpetraMap<LO,GO,NO> > xTpetraRepeatedMap(new const Xpetra::TpetraMap<LO,GO,NO>(repeatedMapTmp));
+                        repeatedMap = Teuchos::rcp_dynamic_cast<ConstMap>(xTpetraRepeatedMap);
+                    } else {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                        if (A->getMap()->getComm()->getRank()==0) {
+                            std::cout << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra isntead." << std::endl;
+                        }
+#endif
+                    }
+                }
+                FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMap.is_null()");
             }
+
             RCP<OneLevelPreconditioner<SC,LO,GO,NO> > OLP(new OneLevelPreconditioner<SC,LO,GO,NO>(A,paramList_));
-            OLP->initialize(paramList_->get("Overlap",1),repeatedMap);
+
+            OLP->initialize(paramList_->get("Overlap",1),
+                            repeatedMap);
+
             SchwarzPreconditioner = OLP;
         } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("RGDSWPreconditioner")) {
+            // Extract the repeated map
             ConstMapPtr repeatedMap = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                repeatedMap = ExtractPtrFromParameterList<ConstMap>(*paramList_,"Repeated Map");
+                repeatedMap = ExtractPtrFromParameterList<Map>(*paramList_,"Repeated Map").getConst();
+                if (repeatedMap.is_null()) {
+                    if (A->getMap()->lib()==Xpetra::UseTpetra) { // If coordinatesList.is_null(), we look for Tpetra/Epetra RCPs
+                        Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > repeatedMapTmp = ExtractPtrFromParameterList<const Tpetra::Map<LO,GO,NO> >(*paramList_,"Repeated Map");
+
+                        Teuchos::RCP<const Xpetra::TpetraMap<LO,GO,NO> > xTpetraRepeatedMap(new const Xpetra::TpetraMap<LO,GO,NO>(repeatedMapTmp));
+                        repeatedMap = Teuchos::rcp_dynamic_cast<ConstMap>(xTpetraRepeatedMap);
+                    } else {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                        if (A->getMap()->getComm()->getRank()==0) {
+                            std::cout << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra isntead." << std::endl;
+                        }
+#endif
+                    }
+                }
+                FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMap.is_null()");
             }
+
+            // Extract the coordinate list
             ConstMultiVectorPtr coordinatesList = Teuchos::null;
-            if(paramList_->isParameter("Coordinates List")){
-                coordinatesList = ExtractPtrFromParameterList<ConstMultiVector>(*paramList_,"Coordinates List");
+            if (paramList_->isParameter("Coordinates List")) {
+                coordinatesList = ExtractPtrFromParameterList<MultiVector>(*paramList_,"Coordinates List").getConst();
+                if (coordinatesList.is_null()) {
+                    if (A->getMap()->lib()==Xpetra::UseTpetra) { // If coordinatesList.is_null(), we look for Tpetra/Epetra RCPs
+                        Teuchos::RCP<Tpetra::MultiVector<SC,LO,GO,NO> > coordinatesListTmp = ExtractPtrFromParameterList<Tpetra::MultiVector<SC,LO,GO,NO> >(*paramList_,"Coordinates List");
+
+                        Teuchos::RCP<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> > xTpetraCoordinatesList(new const Xpetra::TpetraMultiVector<SC,LO,GO,NO>(coordinatesListTmp));
+                        coordinatesList = Teuchos::rcp_dynamic_cast<const Xpetra::MultiVector<SC,LO,GO,NO> >(xTpetraCoordinatesList);
+                    } else {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                        if (A->getMap()->getComm()->getRank()==0) {
+                            std::cout << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra isntead." << std::endl;
+                        }
+#endif
+                    }
+                }
+                FROSCH_ASSERT(!coordinatesList.is_null(),"FROSch::FROSchFactory : ERROR: coordinatesList.is_null()");
             }
+
+            // Extract the dof ordering
             DofOrdering dofOrdering;
             if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
                 dofOrdering = NodeWise;
@@ -186,22 +304,82 @@ namespace Thyra {
             } else {
                 FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
             }
+
             RCP<RGDSWPreconditioner<SC,LO,GO,NO> > RGP(new RGDSWPreconditioner<SC,LO,GO,NO>(A,paramList_));
-            RGP->initialize(paramList_->get("Dimension",3),paramList_->get("DofsPerNode",1),dofOrdering,paramList_->get("Overlap",1),repeatedMap,coordinatesList);
+
+            RGP->initialize(paramList_->get("Dimension",3),
+                            paramList_->get("DofsPerNode",1),
+                            dofOrdering,
+                            paramList_->get("Overlap",1),
+                            repeatedMap,
+                            coordinatesList);
+
             SchwarzPreconditioner = RGP;
         } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelPreconditioner")) {
+            // Extract the repeated map
             ConstMapPtr repeatedMap = Teuchos::null;
             if (paramList_->isParameter("Repeated Map")) {
-                repeatedMap = ExtractPtrFromParameterList<ConstMap>(*paramList_,"Repeated Map");
+                repeatedMap = ExtractPtrFromParameterList<Map>(*paramList_,"Repeated Map").getConst();
+                if (repeatedMap.is_null()) {
+                    if (A->getMap()->lib()==Xpetra::UseTpetra) { // If coordinatesList.is_null(), we look for Tpetra/Epetra RCPs
+                        Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > repeatedMapTmp = ExtractPtrFromParameterList<const Tpetra::Map<LO,GO,NO> >(*paramList_,"Repeated Map");
+
+                        Teuchos::RCP<const Xpetra::TpetraMap<LO,GO,NO> > xTpetraRepeatedMap(new const Xpetra::TpetraMap<LO,GO,NO>(repeatedMapTmp));
+                        repeatedMap = Teuchos::rcp_dynamic_cast<ConstMap>(xTpetraRepeatedMap);
+                    } else {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                        if (A->getMap()->getComm()->getRank()==0) {
+                            std::cout << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra isntead." << std::endl;
+                        }
+#endif
+                    }
+                }
+                FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMap.is_null()");
             }
+
+            // Extract the null space
             ConstMultiVectorPtr nullSpaceBasis = Teuchos::null;
-            if (paramList_->isParameter("Repeated Map")) {
-                nullSpaceBasis = ExtractPtrFromParameterList<ConstMultiVector>(*paramList_,"Null Space");
+            if (paramList_->isParameter("Null Space")) {
+                nullSpaceBasis = ExtractPtrFromParameterList<MultiVector>(*paramList_,"Null Space").getConst();
+                if (nullSpaceBasis.is_null()) {
+                    if (A->getMap()->lib()==Xpetra::UseTpetra) { // If nullSpaceBasis.is_null(), we look for Tpetra/Epetra RCPs
+                        Teuchos::RCP<Tpetra::MultiVector<SC,LO,GO,NO> > nullSpaceBasisTmp = ExtractPtrFromParameterList<Tpetra::MultiVector<SC,LO,GO,NO> >(*paramList_,"Null Space");
+
+                        Teuchos::RCP<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> > xTpetraNullSpaceBasis(new const Xpetra::TpetraMultiVector<SC,LO,GO,NO>(nullSpaceBasisTmp));
+                        nullSpaceBasis = Teuchos::rcp_dynamic_cast<const Xpetra::MultiVector<SC,LO,GO,NO> >(xTpetraNullSpaceBasis);
+                    } else {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                        if (A->getMap()->getComm()->getRank()==0) {
+                            std::cout << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra isntead." << std::endl;
+                        }
+#endif
+                    }
+                }
+                FROSCH_ASSERT(!nullSpaceBasis.is_null(),"FROSch::FROSchFactory : ERROR: nullSpaceBasis.is_null()");
             }
+
+            // Extract the coordinate list
             ConstMultiVectorPtr coordinatesList = Teuchos::null;
-            if(paramList_->isParameter("Coordinates List")){
-                coordinatesList = ExtractPtrFromParameterList<ConstMultiVector>(*paramList_,"Coordinates List");
+            if (paramList_->isParameter("Coordinates List")) {
+                coordinatesList = ExtractPtrFromParameterList<MultiVector>(*paramList_,"Coordinates List").getConst();
+                if (coordinatesList.is_null()) {
+                    if (A->getMap()->lib()==Xpetra::UseTpetra) { // If coordinatesList.is_null(), we look for Tpetra/Epetra RCPs
+                        Teuchos::RCP<Tpetra::MultiVector<SC,LO,GO,NO> > coordinatesListTmp = ExtractPtrFromParameterList<Tpetra::MultiVector<SC,LO,GO,NO> >(*paramList_,"Coordinates List");
+
+                        Teuchos::RCP<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> > xTpetraCoordinatesList(new const Xpetra::TpetraMultiVector<SC,LO,GO,NO>(coordinatesListTmp));
+                        coordinatesList = Teuchos::rcp_dynamic_cast<const Xpetra::MultiVector<SC,LO,GO,NO> >(xTpetraCoordinatesList);
+                    } else {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                        if (A->getMap()->getComm()->getRank()==0) {
+                            std::cout << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra isntead." << std::endl;
+                        }
+#endif
+                    }
+                }
+                FROSCH_ASSERT(!coordinatesList.is_null(),"FROSch::FROSchFactory : ERROR: coordinatesList.is_null()");
             }
+
+            // Extract the dof ordering
             DofOrdering dofOrdering;
             if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
                 dofOrdering = NodeWise;
@@ -212,8 +390,9 @@ namespace Thyra {
             } else {
                 FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
             }
+
             RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TLP(new TwoLevelPreconditioner<SC,LO,GO,NO>(A,paramList_));
-            //TLP->initialize(paramList_->get("Dimension",3),paramList_->get("Overlap",1),repeatedMap,paramList_->get("DofsPerNode",1),dofOrdering,coordinatesList);
+
             TLP->initialize(paramList_->get("Dimension",3),
                             paramList_->get("DofsPerNode",1),
                             paramList_->get("Overlap",1),
@@ -230,8 +409,16 @@ namespace Thyra {
 
             FROSCH_ASSERT(paramList_->isParameter("DofsPerNode Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofsPerNode Vector.");
             FROSCH_ASSERT(paramList_->isParameter("DofOrdering Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofOrdering Vector.");
-            if(paramList_->isParameter("Repeated Map Vector")) {
-                repeatedMaps = ExtractVectorFromParameterList<ConstMapPtr>(*paramList_,"Repeated Map Vector");
+            if (paramList_->isParameter("Repeated Map Vector")) {
+                MapPtrVecPtr repeatedMapsTmp = ExtractVectorFromParameterList<MapPtr>(*paramList_,"Repeated Map Vector");
+                if (!repeatedMapsTmp.is_null()) {
+                    repeatedMaps.resize(repeatedMapsTmp.size());
+                    for (unsigned i=0; i<repeatedMaps.size(); i++) {
+                        repeatedMaps[i] = repeatedMapsTmp[i].getConst();
+                    }
+                }
+                FROSCH_ASSERT(!repeatedMaps.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMaps.is_null()");
+
                 dofsPerNodeVector = ExtractVectorFromParameterList<UN>(*paramList_,"DofsPerNode Vector");
                 dofOrderings = ExtractVectorFromParameterList<DofOrdering>(*paramList_,"DofOrdering Vector");
             } else {
@@ -242,7 +429,13 @@ namespace Thyra {
             FROSCH_ASSERT(repeatedMaps.size()==dofOrderings.size(),"RepeatedMaps.size()!=dofOrderings.size()");
 
             RCP<TwoLevelBlockPreconditioner<SC,LO,GO,NO> > TLBP(new TwoLevelBlockPreconditioner<SC,LO,GO,NO>(A,paramList_));
-            TLBP->initialize(paramList_->get("Dimension",3),dofsPerNodeVector,dofOrderings,paramList_->get("Overlap",1),repeatedMaps);
+
+            TLBP->initialize(paramList_->get("Dimension",3),
+                             dofsPerNodeVector,
+                             dofOrderings,
+                             paramList_->get("Overlap",1),
+                             repeatedMaps);
+
             SchwarzPreconditioner = TLBP;
         } else {
             FROSCH_ASSERT(false,"FROSch Preconditioner Type is unknown.");
@@ -258,7 +451,7 @@ namespace Thyra {
 
         RCP<Xpetra::Operator<SC,LO,GO,NO> > xpOp = rcp_dynamic_cast<Xpetra::Operator<SC,LO,GO,NO> >(SchwarzPreconditioner);
 
-        thyraPrecOp = fROSchLinearOp<SC, LO, GO, NO>(thyraRangeSpace,thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
+        thyraPrecOp = fROSchLinearOp<SC,LO,GO,NO>(thyraRangeSpace,thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
 
         TEUCHOS_TEST_FOR_EXCEPT(is_null(thyraPrecOp));
 

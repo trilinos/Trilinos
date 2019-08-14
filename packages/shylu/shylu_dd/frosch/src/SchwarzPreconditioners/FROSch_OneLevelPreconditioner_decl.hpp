@@ -86,10 +86,10 @@ namespace FROSch {
         virtual int compute();
 
         virtual void apply(const MultiVector &x,
-                          MultiVector &y,
-                          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                          SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                          SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
+                           MultiVector &y,
+                           Teuchos::ETransp mode=Teuchos::NO_TRANS,
+                           SC alpha=Teuchos::ScalarTraits<SC>::one(),
+                           SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
 
         virtual ConstMapPtr getDomainMap() const;
 

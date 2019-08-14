@@ -164,7 +164,13 @@ namespace FROSch {
                                                                                   Teuchos::ArrayRCP<const Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > subMaps);
 
     template <class SC,class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMapNonConst(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix);
+
+    template <class SC,class LO,class GO,class NO>
     Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix);
+
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMapNonConst(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > graph);
 
     template <class LO,class GO,class NO>
     Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > graph);
@@ -190,6 +196,9 @@ namespace FROSch {
     template <class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > AssembleMaps(Teuchos::ArrayView<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVector,
                                                       Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &partMappings);
+
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > MergeMapsNonConst(Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > mapVector);
 
     template <class LO,class GO,class NO>
     Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > MergeMaps(Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > mapVector);
@@ -250,53 +259,53 @@ namespace FROSch {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
     template <class SC,class LO,class GO,class NO>
     struct ConvertToXpetra {
-    
+
     public:
-        
+
         static Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ConvertMap(Xpetra::UnderlyingLib lib,
                                                                const Epetra_BlockMap &map,
                                                                Teuchos::RCP<const Teuchos::Comm<int> > comm);
-        
+
         static Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ConvertMatrix(Xpetra::UnderlyingLib lib,
                                                                         Epetra_CrsMatrix &matrix,
                                                                         Teuchos::RCP<const Teuchos::Comm<int> > comm);
-        
+
         static Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ConvertMultiVector(Xpetra::UnderlyingLib lib,
                                                                                   Epetra_MultiVector &vector,
                                                                                   Teuchos::RCP<const Teuchos::Comm<int> > comm);
     };
-    
+
     template <class SC,class LO,class NO>
     struct ConvertToXpetra<SC,LO,int,NO> {
-        
+
     public:
-        
+
         static Teuchos::RCP<Xpetra::Map<LO,int,NO> > ConvertMap(Xpetra::UnderlyingLib lib,
                                                                 const Epetra_BlockMap &map,
                                                                 Teuchos::RCP<const Teuchos::Comm<int> > comm);
-        
+
         static Teuchos::RCP<Xpetra::Matrix<SC,LO,int,NO> > ConvertMatrix(Xpetra::UnderlyingLib lib,
                                                                          Epetra_CrsMatrix &matrix,
                                                                          Teuchos::RCP<const Teuchos::Comm<int> > comm);
-        
+
         static Teuchos::RCP<Xpetra::MultiVector<SC,LO,int,NO> > ConvertMultiVector(Xpetra::UnderlyingLib lib,
                                                                                    Epetra_MultiVector &vector,
                                                                                    Teuchos::RCP<const Teuchos::Comm<int> > comm);
     };
-    
+
     template <class SC,class LO,class NO>
     struct ConvertToXpetra<SC,LO,long long,NO> {
-        
+
     public:
-        
+
         static Teuchos::RCP<Xpetra::Map<LO,long long,NO> > ConvertMap(Xpetra::UnderlyingLib lib,
                                                                            const Epetra_BlockMap &map,
                                                                            Teuchos::RCP<const Teuchos::Comm<int> > comm);
-        
+
         static Teuchos::RCP<Xpetra::Matrix<SC,LO,long long,NO> > ConvertMatrix(Xpetra::UnderlyingLib lib,
                                                                                Epetra_CrsMatrix &matrix,
                                                                                Teuchos::RCP<const Teuchos::Comm<int> > comm);
-        
+
         static Teuchos::RCP<Xpetra::MultiVector<SC,LO,long long,NO> > ConvertMultiVector(Xpetra::UnderlyingLib lib,
                                                                                          Epetra_MultiVector &vector,
                                                                                          Teuchos::RCP<const Teuchos::Comm<int> > comm);

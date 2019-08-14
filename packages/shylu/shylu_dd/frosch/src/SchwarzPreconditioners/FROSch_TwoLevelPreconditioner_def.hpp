@@ -141,7 +141,7 @@ namespace FROSch {
         //////////////////////////
         if (!nodeList.is_null()) {
             if (!nodeList->getMap()->isSameAs(*repeatedNodesMap)) {
-                Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpNodeList = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMap,tmpNodeList->getNumVectors());
+                Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpNodeList = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMap,nodeList->getNumVectors());
                 Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(nodeList->getMap(),repeatedNodesMap);
                 tmpNodeList->doImport(*nodeList,*scatter,Xpetra::INSERT);
                 nodeList = tmpNodeList.getConst();
@@ -176,6 +176,12 @@ namespace FROSch {
                 nullSpaceBasis = BuildNullSpace(dimension,LinearElasticityNullSpace,repeatedMap,dofsPerNode,dofsMaps,nodeList);
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Input")) {
                 FROSCH_ASSERT(!nullSpaceBasis.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
+                if (!nullSpaceBasis->getMap()->isSameAs(*repeatedMap)) {
+                    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpNullSpaceBasis = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,nullSpaceBasis->getNumVectors());
+                    Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(nullSpaceBasis->getMap(),repeatedMap);
+                    tmpNullSpaceBasis->doImport(*nullSpaceBasis,*scatter,Xpetra::INSERT);
+                    nullSpaceBasis = tmpNullSpaceBasis.getConst();
+                }
             } else {
                 FROSCH_ASSERT(false,"Null Space Type unknown.");
             }

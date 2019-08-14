@@ -49,8 +49,8 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     SumOperator<SC,LO,GO,NO>::SumOperator(CommPtr comm) :
     SchwarzOperator<SC,LO,GO,NO> (comm),
-  OperatorVector_ (0),
-  EnableOperators_ (0)
+    OperatorVector_ (0),
+    EnableOperators_ (0)
     {
 
     }
@@ -58,8 +58,8 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     SumOperator<SC,LO,GO,NO>::SumOperator(SchwarzOperatorPtrVecPtr operators) :
     SchwarzOperator<SC,LO,GO,NO> (operators[0]->getRangeMap()->getComm()),
-  OperatorVector_ (0),
-  EnableOperators_ (0)
+    OperatorVector_ (0),
+    EnableOperators_ (0)
     {
         FROSCH_ASSERT(operators.size()>0,"operators.size()<=0");
         OperatorVector_.push_back(operators[0]);
