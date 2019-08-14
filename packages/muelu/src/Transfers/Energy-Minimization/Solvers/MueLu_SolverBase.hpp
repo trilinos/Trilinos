@@ -60,10 +60,10 @@ namespace MueLu {
     @brief Base class for energy-minimization iterative solvers
     */
 
-  template <class Scalar = double,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class SolverBase : public BaseClass {
 #undef MUELU_SOLVERBASE_SHORT
 #include "MueLu_UseShortNames.hpp"

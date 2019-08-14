@@ -61,9 +61,9 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal/* = Import<>::local_ordinal_type*/,
-            class GlobalOrdinal/* = typename Import<LocalOrdinal>::global_ordinal_type*/,
-            class Node = typename Import<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class ImportFactory {
   private:
     //! Private constructor. This is a static class.

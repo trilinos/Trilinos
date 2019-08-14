@@ -342,6 +342,11 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "<double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
   MESSAGE(STATUS "<complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
 
+  # GO preference: int > long long > long
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG
+    (NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT} AND NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONG_LONG}))
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT})
+
   # If Tpetra is enabled, determine which Nodes are used
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ${Tpetra_INST_SERIAL})
@@ -367,6 +372,16 @@ ELSE()
     # If Epetra only is active, only activate SerialNode by default
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ON)
   ENDIF()
+
+  # With ETI off, can just use int as the default GO
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG OFF)
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG OFF)
+ENDIF()
+
+IF(${${PACKAGE_NAME}_ENABLE_DEFAULT_GO_LONGLONG})
+  MESSAGE(STATUS "Using long long as the default GlobalOrdinal in MueLu.")
+ELSE()
+  MESSAGE(STATUS "Using int as the default GlobalOrdinal in MueLu.")
 ENDIF()
 
 # HAVE_MUELU_COMPLEX=ON iff:

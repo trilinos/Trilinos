@@ -75,9 +75,9 @@ namespace MueLu {
   current processor.  That mapping is used for unamalgamation.
 */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class AmalgamationInfo
     : public BaseClass {
 #undef MUELU_AMALGAMATIONINFO_SHORT

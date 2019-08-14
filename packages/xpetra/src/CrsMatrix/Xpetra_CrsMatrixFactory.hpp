@@ -62,13 +62,10 @@
 
 namespace Xpetra {
 
-  template <class Scalar /*= CrsMatrix<>::scalar_type*/,
-            class LocalOrdinal /*=
-              typename CrsMatrix<Scalar>::local_ordinal_type*/,
-            class GlobalOrdinal /*=
-              typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type*/,
-            class Node /*=
-              typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type*/>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class CrsMatrixFactory {
   private:
     //! Private constructor. This is a static class.

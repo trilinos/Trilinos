@@ -2,6 +2,7 @@
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
+IF(${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
 SET(COMMON_SOURCES
   Rythmos_ConvergenceTestHelpers.cpp
   Rythmos_ConvergenceTest.cpp
@@ -32,4 +33,5 @@ FOREACH(TEST_NAME ${TEST_NAMES})
     )
 
 ENDFOREACH()
+ENDIF()
 
