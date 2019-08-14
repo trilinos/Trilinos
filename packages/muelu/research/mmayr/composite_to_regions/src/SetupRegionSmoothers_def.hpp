@@ -109,10 +109,6 @@ void jacobiSetup(RCP<Teuchos::ParameterList> params,
     // extract inverse of diagonal from matrix
     diagReg[j] = VectorFactory::Build(regionGrpMats[j]->getRowMap(), true);
     regionGrpMats[j]->getLocalDiagCopy(*diagReg[j]);
-
-    // RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    // regionInterfaceScaling[j]->describe(*out, Teuchos::VERB_EXTREME);
-    // diag[j]->describe(*out, Teuchos::VERB_EXTREME);
   }
 
   params->set<Teuchos::Array<RCP<Vector> > >("jacobi: inverse diagonal", diag);
@@ -143,10 +139,6 @@ void jacobiSetup(RCP<Teuchos::ParameterList> params,
     regionGrpMats[j]->getLocalDiagCopy(*diag[j]);
     diag[j]->elementWiseMultiply(SC_ONE, *regionInterfaceScaling[j], *diag[j], SC_ZERO); // ToDo Does it work to pass in diag[j], but also return into the same variable?
     diag[j]->reciprocal(*diag[j]);
-
-    // RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    // regionInterfaceScaling[j]->describe(*out, Teuchos::VERB_EXTREME);
-    // diag[j]->describe(*out, Teuchos::VERB_EXTREME);
   }
 
   sumInterfaceValues(diagReg, mapComp, maxRegPerProc, rowMapPerGrp,
@@ -207,16 +199,6 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
       regRes[j]->update(SC_ONE, *regB[j], -SC_ONE);
     }
 
-    // check for convergence
-    {
-      RCP<Vector> compRes = VectorFactory::Build(mapComp, true);
-      regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
-                          rowImportPerGrp, Xpetra::ADD);
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
-
-      if (normRes < 1.0e-12) {return;}
-    }
-
     for (int j = 0; j < maxRegPerProc; j++) {
       // update solution according to Jacobi's method
       regX[j]->elementWiseMultiply(damping, *diag_inv[j], *regRes[j], SC_ONE);
@@ -264,13 +246,6 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
      * 3. Compute r = B - tmp
      */
     for (int j = 0; j < maxRegPerProc; j++) { // step 1
-
-//      Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-//      regRes[j]->getMap()->describe(*fos, Teuchos::VERB_EXTREME);
-//      regionGrpMats[j]->getRangeMap()->describe(*fos, Teuchos::VERB_EXTREME);
-
-//      TEUCHOS_ASSERT(regionGrpMats[j]->getDomainMap()->isSameAs(*regX[j]->getMap()));
-//      TEUCHOS_ASSERT(regionGrpMats[j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
 
       regionGrpMats[j]->apply(*regX[j], *regRes[j]);
     }
