@@ -233,7 +233,16 @@ namespace Amesos2 {
      *  and the number of vectors in \c this.
      */
     void
-    get1dCopy (const Teuchos::ArrayView<scalar_t>& A,
+    get1dCopy (const Teuchos::ArrayView<scalar_t>& av,
+               size_t lda,
+               Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,
+                                              global_ordinal_t,
+                                              node_t> > distribution_map,
+                                              EDistribution distribution) const;
+
+    template<typename KV>
+    void
+    get1dCopy_kokkos_view (KV& v,
                size_t lda,
                Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,
                                               global_ordinal_t,
@@ -271,6 +280,16 @@ namespace Amesos2 {
                                         global_ordinal_t,
                                         node_t> > source_map,
                                         EDistribution distribution );
+
+    template<class KV>
+    void
+    put1dData_kokkos_view (KV& kokkos_new_data,
+               size_t lda,
+               Teuchos::Ptr< const Tpetra::Map<local_ordinal_t,
+                                        global_ordinal_t,
+                                        node_t> > source_map,
+                                        EDistribution distribution );
+
 
     //! Get a short description of this adapter class
     std::string description () const;

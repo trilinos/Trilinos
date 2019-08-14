@@ -220,6 +220,133 @@ namespace Amesos2 {
   }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
+  template <typename KV> // MDM-TODO Need to discuss this templating design
+  void
+  MultiVecAdapter<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::get1dCopy_kokkos_view(KV& kokkos_view,
+                                   size_t lda,
+                                   Teuchos::Ptr<
+                                     const Tpetra::Map<LocalOrdinal,
+                                                       GlobalOrdinal,
+                                                       Node> > distribution_map,
+                                                       EDistribution distribution) const
+  {
+    using Teuchos::as;
+    using Teuchos::RCP;
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    const size_t num_vecs = getGlobalNumVectors ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      distribution_map.getRawPtr () == NULL, std::invalid_argument,
+      "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: distribution_map argument is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      mv_.is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: mv_ is null.");
+    // Check mv_ before getMap(), because the latter calls mv_->getMap().
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getMap ().is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: this->getMap() returns null.");
+
+#ifdef HAVE_AMESOS2_DEBUG
+    const size_t requested_vector_length = distribution_map->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      lda < requested_vector_length, std::invalid_argument,
+      "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: On process " <<
+      distribution_map->getComm ()->getRank () << " of the distribution Map's "
+      "communicator, the given stride lda = " << lda << " is not large enough "
+      "for the local vector length " << requested_vector_length << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      as<size_t> (kokkos_view.size ()) < as<size_t> ((num_vecs - 1) * lda + requested_vector_length),
+      std::invalid_argument, "Amesos2::MultiVector::get1dCopy: MultiVector "
+      "storage not large enough given leading dimension and number of vectors." );
+#endif // HAVE_AMESOS2_DEBUG
+
+    // Special case when number vectors == 1 and single MPI process
+    if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
+      // MDM-TODO Check and discuss - need to learn more about MV
+      // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test - tested manually by setting numVecs 1 in Solver_Test.cpp. Add param?
+      kokkos_view = mv_->template getLocalView<typename KV::execution_space>();
+    }
+    else {
+
+      // (Re)compute the Export object if necessary.  If not, then we
+      // don't need to clone distribution_map; we can instead just get
+      // the previously cloned target Map from the Export object.
+      RCP<const map_type> distMap;
+      if (exporter_.is_null () ||
+          ! exporter_->getSourceMap ()->isSameAs (* (this->getMap ())) ||
+          ! exporter_->getTargetMap ()->isSameAs (* distribution_map)) {
+        // Since we're caching the Export object, and since the Export
+        // needs to keep the distribution Map, we have to make a copy of
+        // the latter in order to ensure that it will stick around past
+        // the scope of this function call.  (Ptr is not reference
+        // counted.)
+        distMap = rcp(new map_type(*distribution_map));
+        // (Re)create the Export object.
+        exporter_ = rcp (new export_type (this->getMap (), distMap));
+      }
+      else {
+        distMap = exporter_->getTargetMap ();
+      }
+
+      multivec_t redist_mv (distMap, num_vecs);
+
+      // Redistribute the input (multi)vector.
+      redist_mv.doExport (*mv_, *exporter_, Tpetra::REPLACE);
+
+      if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+        // Do this if GIDs contiguous - existing functionality
+
+        // MDM-TODO Check and discuss - need to learn more about MV
+        kokkos_view = redist_mv.template getLocalView<typename KV::execution_space>();
+      }
+      else {
+        // Do this if GIDs not contiguous...
+        // sync is needed for example if mv was updated on device, but will be passed through Amesos2 to solver running on host
+        typedef typename multivec_t::dual_view_type dual_view_type;
+        typedef typename dual_view_type::host_mirror_space host_execution_space;
+        redist_mv.template sync < host_execution_space > ();
+
+        auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
+        if ( redist_mv.isConstantStride() ) {
+          // MDM-TODO - Determine if this is the best way
+          // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
+          auto contig_local_view_2d = redist_mv.template getLocalView<typename KV::execution_space>();
+          Kokkos::parallel_for(
+            Kokkos::RangePolicy<typename KV::execution_space, size_t> (0, num_vecs * lda),
+            KOKKOS_LAMBDA (const size_t & n) {
+            auto i = n % num_vecs;
+            auto j = n / num_vecs;
+            kokkos_view(i,j) = contig_local_view_2d(i,j);
+          });
+        }
+        else {
+          // ... lda should come from Teuchos::Array* allocation,
+          // not the MultiVector, since the MultiVector does NOT
+          // have constant stride in this case.
+          // TODO lda comes from X->getGlobalLength() in solve_impl - should this be changed???
+          const size_t lclNumRows = redist_mv.getLocalLength();
+          for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
+            // MDM-TODO - Hacked this back to ArrayView - need to make host/device handling
+            // Need to determine how this will interact with MV for device/host
+            // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
+            auto av_j = Teuchos::ArrayView<Scalar>(kokkos_view.data(), lda * num_vecs)(lda*j, lclNumRows);
+            auto X_lcl_j_2d = redist_mv.template getLocalView<typename KV::execution_space> ();
+            auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
+
+            using val_type = typename decltype( X_lcl_j_1d )::value_type;
+            Kokkos::View<val_type*, typename KV::execution_space> umavj ( const_cast< val_type* > ( reinterpret_cast<const val_type*> ( av_j.getRawPtr () ) ), av_j.size () );
+            Kokkos::deep_copy (umavj, X_lcl_j_1d);
+          }
+        }
+      }
+    }
+  }
+
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   Teuchos::ArrayRCP<Scalar>
   MultiVecAdapter<
     MultiVector<Scalar,
@@ -393,6 +520,133 @@ namespace Amesos2 {
 
   }
 
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node>
+  template <typename KV> // MDM-TODO Need to discuss this templating design
+  void
+  MultiVecAdapter<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::put1dData_kokkos_view(KV& kokkos_new_data,
+                                   size_t lda,
+                                   Teuchos::Ptr<
+                                     const Tpetra::Map<LocalOrdinal,
+                                                       GlobalOrdinal,
+                                                       Node> > source_map,
+                                                       EDistribution distribution )
+  {
+    using Teuchos::RCP;
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      source_map.getRawPtr () == NULL, std::invalid_argument,
+      "Amesos2::MultiVecAdapter::put1dData_kokkos_view: source_map argument is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      mv_.is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::put1dData_kokkos_view: the internal MultiVector mv_ is null.");
+    // getMap() calls mv_->getMap(), so test first whether mv_ is null.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getMap ().is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::put1dData_kokkos_view: this->getMap() returns null.");
+
+    const size_t num_vecs = getGlobalNumVectors ();
+
+    // Special case when number vectors == 1 and single MPI process
+    if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
+
+      // num_vecs = 1; stride does not matter
+
+      // MDM-TODO Is this the right way to update MV: copying one element at a time?
+      // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test - tested manually by setting numVecs 1 in Solver_Test.cpp. Add param?
+      auto mv_view_to_modify_2d = mv_->template getLocalView<typename KV::execution_space>();
+      Kokkos::parallel_for(
+        Kokkos::RangePolicy<typename KV::execution_space, size_t> (0, kokkos_new_data.size()),
+        KOKKOS_LAMBDA (const size_t & n) {
+        mv_view_to_modify_2d.data()[n] = kokkos_new_data.data()[n];
+      });
+    }
+    else {
+
+      // (Re)compute the Import object if necessary.  If not, then we
+      // don't need to clone source_map; we can instead just get the
+      // previously cloned source Map from the Import object.
+      RCP<const map_type> srcMap;
+      if (importer_.is_null () ||
+          ! importer_->getSourceMap ()->isSameAs (* source_map) ||
+          ! importer_->getTargetMap ()->isSameAs (* (this->getMap ()))) {
+
+        // Since we're caching the Import object, and since the Import
+        // needs to keep the source Map, we have to make a copy of the
+        // latter in order to ensure that it will stick around past the
+        // scope of this function call.  (Ptr is not reference counted.)
+        srcMap = rcp(new map_type(*source_map));
+        importer_ = rcp (new import_type (srcMap, this->getMap ()));
+      }
+      else {
+        srcMap = importer_->getSourceMap ();
+      }
+
+      if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+        // Do this if GIDs contiguous - existing functionality
+        // Redistribute the output (multi)vector.
+
+        // MDM-TODO Resolve this, currently just hacked View to ArrayView
+        // Implement host/device solutions
+        const multivec_t source_mv (srcMap, Teuchos::ArrayView<typename KV::value_type>(kokkos_new_data.data(), kokkos_new_data.size()), lda, num_vecs);
+        mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
+      }
+      else {
+        multivec_t redist_mv (srcMap, num_vecs); // unused for ROOTED case
+        typedef typename multivec_t::dual_view_type dual_view_type;
+        typedef typename dual_view_type::host_mirror_space host_execution_space;
+        redist_mv.template modify< host_execution_space > ();
+
+        if ( redist_mv.isConstantStride() ) {
+          // MDM-TODO - Complete and validate
+          // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
+          auto contig_local_view_2d = redist_mv.template getLocalView<typename KV::execution_space>();
+          Kokkos::parallel_for(
+            Kokkos::RangePolicy<typename KV::execution_space, size_t> (0, num_vecs * lda),
+            KOKKOS_LAMBDA (const size_t & n) {
+            auto i = n % num_vecs;
+            auto j = n / num_vecs;
+            contig_local_view_2d(i,j) = kokkos_new_data(i,j);
+          });
+        }
+        else {
+          // ... lda should come from Teuchos::Array* allocation,
+          // not the MultiVector, since the MultiVector does NOT
+          // have constant stride in this case.
+          // TODO lda comes from X->getGlobalLength() in solve_impl - should this be changed???
+          const size_t lclNumRows = redist_mv.getLocalLength();
+          for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
+
+            // MDM-TODO - Hacked this back to ArrayView - need to make host/device handling
+            // Implement host/device solutions
+            // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
+            auto av_j = Teuchos::ArrayView<typename KV::value_type>(kokkos_new_data.data(), kokkos_new_data.size())(lda*j, lclNumRows);
+
+            // MDM-TODO Set up testing of this code - validate space and how this works
+            auto X_lcl_j_2d = redist_mv.template getLocalView<typename KV::execution_space> ();
+            auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
+
+            using val_type = typename decltype( X_lcl_j_1d )::value_type;
+
+            // MDM-TODO Set up testing of this code - validate space and how this works
+            Kokkos::View<val_type*, typename KV::execution_space>
+              umavj ( const_cast< val_type* > ( reinterpret_cast<const val_type*> ( av_j.getRawPtr () ) ), av_j.size () );
+            Kokkos::deep_copy (umavj, X_lcl_j_1d);
+          }
+        }
+
+        typedef typename multivec_t::node_type::memory_space memory_space;
+        redist_mv.template sync <memory_space> ();
+
+        mv_->doImport (redist_mv, *importer_, Tpetra::REPLACE);
+      }
+    }
+
+  }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   std::string

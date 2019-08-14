@@ -318,6 +318,69 @@ namespace Amesos2 {
       }
     };
 
+    template <class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct same_gs_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         // MDM-TODO Discuss - not sure yet how we should be handling this
+                         Kokkos::View<typename M::scalar_t*, typename KV_S::execution_space> nzvals,
+                         Kokkos::View<typename M::global_ordinal_t*, typename KV_S::execution_space> indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        Op::apply_kokkos_view(mat, nzvals, indices, pointers, nnz, map, distribution, ordering);
+      }
+    };
+
+    template <class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct diff_gs_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         Kokkos::View<typename M::scalar_t*, typename KV_S::execution_space> nzvals,
+                         Kokkos::View<typename M::global_ordinal_t*, typename KV_S::execution_space> indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        typedef typename M::global_size_t mat_gs_t;
+        typename KV_S::size_type i, size = pointers.size();
+        Teuchos::Array<mat_gs_t> pointers_tmp(size);
+        mat_gs_t nnz_tmp = 0;
+
+        Op::apply(mat, nzvals, indices, pointers_tmp, nnz_tmp, map, distribution, ordering);
+
+        for (i = 0; i < size; ++i){
+          pointers[i] = Teuchos::as<typename KV_GS::value_type>(pointers_tmp[i]);
+        }
+        nnz = Teuchos::as<typename KV_GS::value_type>(nnz_tmp);
+
+
+        Kokkos::View<mat_gs_t *, typename KV_S::execution_space> indices_tmp("indices_tmp", size);
+
+        if_then_else<is_same<typename KV_GS::value_type,mat_gs_t>::value,
+          same_gs_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op>,
+          diff_gs_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat, nzvals, indices_tmp,
+                                                       pointers, nnz, map,
+                                                       distribution, ordering);
+        Kokkos::parallel_for(
+          Kokkos::RangePolicy<typename KV_S::execution_space, typename KV_GO::size_type> (0, size),
+          KOKKOS_LAMBDA (const typename KV_GO::size_type & i) {
+          indices(i) = Teuchos::as<typename KV_GO::value_type>(indices_tmp(i));
+        });
+      }
+    };
+
     template <class M, typename S, typename GO, typename GS, class Op>
     struct same_go_helper
     {
@@ -374,6 +437,65 @@ namespace Amesos2 {
       }
     };
 
+    template <class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct same_go_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         // MDM-TODO Discuss - not sure yet how we should be handling this
+                         Kokkos::View<typename M::scalar_t*, typename KV_S::execution_space> nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        typedef typename M::global_size_t mat_gs_t;
+        if_then_else<is_same<typename KV_GS::value_type,mat_gs_t>::value,
+          same_gs_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op>,
+          diff_gs_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat, nzvals, indices,
+                                                       pointers, nnz, map,
+                                                       distribution, ordering);
+      }
+    };
+
+    template <class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct diff_go_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         // MDM-TODO Discuss - not sure yet how we should be handling this
+                         Kokkos::View<typename M::scalar_t*, typename KV_S::execution_space> nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        typedef typename M::global_ordinal_t mat_go_t;
+        typedef typename M::global_size_t mat_gs_t;
+        typename KV_GO::size_type size = indices.size();
+        Kokkos::View<mat_go_t *, typename KV_S::execution_space> indices_tmp("indices_tmp", size);
+
+        if_then_else<is_same<typename KV_GS::value_type,mat_gs_t>::value,
+          same_gs_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op>,
+          diff_gs_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat, nzvals, indices_tmp,
+                                                       pointers, nnz, map,
+                                                       distribution, ordering);
+        Kokkos::parallel_for(
+          Kokkos::RangePolicy<typename KV_S::execution_space, typename KV_GO::size_type> (0, size),
+          KOKKOS_LAMBDA (const typename KV_GO::size_type & i) {
+          indices(i) = Teuchos::as<typename KV_GO::value_type>(indices_tmp(i));
+        });
+      }
+    };
+
     template <class M, typename S, typename GO, typename GS, class Op>
     struct same_scalar_helper
     {
@@ -427,6 +549,63 @@ namespace Amesos2 {
         for (i = 0; i < size; ++i){
           nzvals[i] = Teuchos::as<S>(nzvals_tmp[i]);
         }
+      }
+    };
+
+    template <class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct same_scalar_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        typedef typename M::global_ordinal_t mat_go_t;
+        if_then_else<is_same<typename KV_GO::value_type,mat_go_t>::value,
+          same_go_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op>,
+          diff_go_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat, nzvals, indices,
+                                                       pointers, nnz, map,
+                                                       distribution, ordering);
+      }
+    };
+
+    template <class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct diff_scalar_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        typedef typename M::scalar_t mat_scalar_t;
+        typedef typename M::global_ordinal_t mat_go_t;
+        typename KV_S::size_type size = nzvals.size();
+        Kokkos::View<mat_scalar_t *, typename KV_S::execution_space> nzvals_tmp("nzvals_tmp", size);
+
+        if_then_else<is_same<typename KV_GO::value_type,mat_go_t>::value,
+          same_go_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op>,
+          diff_go_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat, nzvals_tmp, indices,
+                                                       pointers, nnz, map,
+                                                       distribution, ordering);
+        Kokkos::parallel_for(
+          Kokkos::RangePolicy<typename KV_S::execution_space, typename KV_S::size_type> (0, size),
+          KOKKOS_LAMBDA (const typename KV_S::size_type & i) {
+          nzvals(i) = Teuchos::as<typename KV_S::value_type>(nzvals_tmp(i));
+        });
       }
     };
 #endif  // DOXYGEN_SHOULD_SKIP_THIS
@@ -517,6 +696,80 @@ namespace Amesos2 {
       }
     };
 
+    template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct get_cxs_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const Matrix> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering=ARBITRARY,
+                         typename KV_GO::value_type indexBase = 0)
+      {
+        typedef typename Matrix::local_ordinal_t lo_t;
+        typedef typename Matrix::global_ordinal_t go_t;
+        typedef typename Matrix::global_size_t gs_t;
+        typedef typename Matrix::node_t node_t;
+
+          const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
+          = getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
+                                                      Op::get_dimension(mat),
+                                                      mat->getComm(),
+                                                      indexBase,
+                                                      Op::getMapFromMatrix(mat) //getMap must be the map returned, NOT rowmap or colmap
+                                                      );
+
+          do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), distribution, ordering);
+      }
+
+      /**
+       * Basic function overload that uses the matrix's row/col map as
+       * returned by Op::getMap().
+       */
+      static void do_get(const Teuchos::Ptr<const Matrix> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         EDistribution distribution, // Does this one need a distribution argument??
+                         EStorage_Ordering ordering=ARBITRARY)
+      {
+        const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                             typename Matrix::global_ordinal_t,
+                                             typename Matrix::node_t> > map
+          = Op::getMap(mat);
+        do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), distribution, ordering);
+      }
+
+      /**
+       * Function overload that takes an explicit map to use for the
+       * representation's distribution.
+       */
+      static void do_get(const Teuchos::Ptr<const Matrix> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                             typename Matrix::global_ordinal_t,
+                                             typename Matrix::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering=ARBITRARY)
+      {
+        typedef typename Matrix::scalar_t mat_scalar;
+        if_then_else<is_same<mat_scalar,typename KV_S::value_type>::value,
+          same_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op>,
+          diff_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat,
+                                                                nzvals, indices,
+                                                                pointers, nnz,
+                                                                map,
+                                                                distribution, ordering);
+      }
+    };
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     /*
      * These two function-like classes are meant to be used as the \c
@@ -584,6 +837,28 @@ namespace Amesos2 {
       {
         mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering, distribution);
         //mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering);
+      }
+
+      template<typename KV_S, typename KV_GO, typename KV_GS>
+      static void apply_kokkos_view(const Teuchos::Ptr<const Matrix> mat,
+                        KV_S& nzvals,
+                        KV_GO& colind,
+                        KV_GS& rowptr,
+                        typename Matrix::global_size_t& nnz,
+                        const Teuchos::Ptr<
+                          const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                            typename Matrix::global_ordinal_t,
+                                            typename Matrix::node_t> > map,
+                        EDistribution distribution,
+                        EStorage_Ordering ordering)
+      {
+        // MDM-TODO - Did not develop this yet so just passing ArrayView
+        // I think we'll need Kokkos::View calls in Amesos2_MatrixAdapter
+        mat->getCrs(
+          Teuchos::ArrayView<typename KV_S::value_type>(nzvals.data(), nzvals.size()),
+          Teuchos::ArrayView<typename KV_GO::value_type>(colind.data(), colind.size()),
+          Teuchos::ArrayView<typename KV_GS::value_type>(rowptr.data(), rowptr.size()),
+          nnz, map, ordering, distribution);
       }
 
       static
@@ -654,6 +929,10 @@ namespace Amesos2 {
     struct get_ccs_helper : get_cxs_helper<Matrix,S,GO,GS,get_ccs_func<Matrix> >
     {};
 
+    template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS>
+    struct get_ccs_helper_kokkos_view : get_cxs_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,get_crs_func<Matrix> >
+    {};
+
     /**
      * \brief Similar to get_ccs_helper , but used to get a CRS
      * representation of the given matrix.
@@ -665,6 +944,9 @@ namespace Amesos2 {
     struct get_crs_helper : get_cxs_helper<Matrix,S,GO,GS,get_crs_func<Matrix> >
     {};
 
+    template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS>
+    struct get_crs_helper_kokkos_view : get_cxs_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,get_crs_func<Matrix> >
+    {};
     /* End Matrix/MultiVector Utilities */
 
 

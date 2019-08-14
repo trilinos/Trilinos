@@ -44,6 +44,8 @@
 #ifndef AMESOS2_TACHO_DECL_HPP
 #define AMESOS2_TACHO_DECL_HPP
 
+#include <Kokkos_Core.hpp> // so we can check KOKKOS_ENABLE_CUDA
+
 #include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Tacho_FunctionMap.hpp"
@@ -96,10 +98,20 @@ public:
   typedef Tacho::ordinal_type                                  ordinal_type;
   typedef Tacho::size_type                                        size_type;
   typedef Kokkos::DefaultHostExecutionSpace                   HostSpaceType;
-  typedef Kokkos::TaskScheduler<HostSpaceType>                SchedulerType;
-  typedef Kokkos::View<size_type*,HostSpaceType>            size_type_array;
-  typedef Kokkos::View<ordinal_type*,HostSpaceType>      ordinal_type_array;
-  typedef Kokkos::View<tacho_type*, HostSpaceType>         value_type_array;
+
+  // not sure if we want this here or restore the #ifdef macros we originally
+  // had below in this file.
+  typedef Kokkos::DefaultExecutionSpace                     DeviceSpaceType;
+
+  typedef Kokkos::TaskScheduler<DeviceSpaceType>              SchedulerType;
+
+  typedef Kokkos::View<size_type*,HostSpaceType>       host_size_type_array;
+  typedef Kokkos::View<ordinal_type*,HostSpaceType> host_ordinal_type_array;
+  typedef Kokkos::View<tacho_type*, HostSpaceType>    host_value_type_array;
+
+  typedef Kokkos::View<size_type*, DeviceSpaceType>       device_size_type_array;
+  typedef Kokkos::View<ordinal_type*, DeviceSpaceType> device_ordinal_type_array;
+  typedef Kokkos::View<tacho_type*, DeviceSpaceType>     device_value_type_array;
 
   /// \name Constructor/Destructor methods
   //@{
@@ -140,8 +152,9 @@ private:
    *
    * \throw std::runtime_error Tacho is not able to factor the matrix.
    */
+public: // TODO: Changed this just for trying Cuda issues - has parallel_for - need to clean up
   int symbolicFactorization_impl();
-
+private:
 
   /**
    * \brief Tacho specific numeric factorization
@@ -211,25 +224,19 @@ private:
     // int max_num_superblocks;
   } data_;
 
+  typedef typename Tacho::Solver<tacho_type,SchedulerType>::value_type_matrix
+    device_solve_array_t;
+
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for Tacho
-  Teuchos::Array<tacho_type> nzvals_;
+  device_value_type_array nzvals_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<ordinal_type> colind_;
+  device_ordinal_type_array colind_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<size_type> rowptr_;
-
-  // TODO: Decide handling for CUDA - how to fail
-#ifdef KOKKOS_ENABLE_OPENMP
-  typedef Kokkos::OpenMP DeviceSpaceType;
-#else
-  typedef Kokkos::Serial DeviceSpaceType;
-#endif
-  typedef typename Tacho::Solver<tacho_type,SchedulerType>::value_type_matrix
-    solve_array_t;
+  device_size_type_array rowptr_;
 
   // used as an internal workspace - possibly we can store this better in TACHOData
-  mutable solve_array_t workspace_;
+  mutable device_solve_array_t workspace_;
 };                              // End class Tacho
 
 

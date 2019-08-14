@@ -241,6 +241,15 @@ namespace Amesos2 {
                         EDistribution distribution );
     };
 
+    template <typename MV, typename KV>
+    struct same_type_get_copy_kokkos_view {
+      static void apply(const Teuchos::Ptr<const MV>& mv,
+                        KV& kokkos_view,
+                        const size_t ldx,
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                        EDistribution distribution );
+    };
+
     /*
      * In the case where the scalar type of the multi-vector and the
      * corresponding S type are different, then we need to first get a
@@ -251,6 +260,15 @@ namespace Amesos2 {
     struct diff_type_get_copy {
       static void apply(const Teuchos::Ptr<const MV>& mv,
                         const Teuchos::ArrayView<S>& v,
+                        const size_t& ldx,
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                        EDistribution distribution );
+    };
+
+    template <typename MV, typename KV>
+    struct diff_type_get_copy_kokkos_view {
+      static void apply(const Teuchos::Ptr<const MV>& mv,
+                        KV& kokkos_view,
                         const size_t& ldx,
                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                         EDistribution distribution );
@@ -284,6 +302,28 @@ namespace Amesos2 {
               const size_t ldx);
     };
 
+    template <class MV, typename KV>
+    struct get_1d_copy_helper_kokkos_view {
+      static void
+      do_get (const Teuchos::Ptr<const MV>& mv,
+              KV& kokkos_vals,
+              const size_t ldx,
+              Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+              EDistribution distribution = ROOTED);
+
+      static void
+      do_get (const Teuchos::Ptr<const MV>& mv,
+              KV& kokkos_vals,
+              const size_t ldx,
+              EDistribution distribution,
+              typename MV::global_ordinal_t indexBase = 0);
+
+      static void
+      do_get (const Teuchos::Ptr<const MV>& mv,
+              KV& kokkos_vals,
+              const size_t ldx);
+    };
+
     /*
      * If the multivector scalar type and the desired scalar tpye are
      * the same, then we can do a simple straight copy.
@@ -292,6 +332,15 @@ namespace Amesos2 {
     struct same_type_data_put {
       static void apply(const Teuchos::Ptr<MV>& mv,
                         const Teuchos::ArrayView<typename MV::scalar_t>& data,
+                        const size_t ldx,
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                        EDistribution distribution );
+    };
+
+    template <typename MV, typename KV>
+    struct same_type_data_put_kokkos_view {
+      static void apply(const Teuchos::Ptr<MV>& mv,
+                        KV& kokkos_data,
                         const size_t ldx,
                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                         EDistribution distribution );
@@ -307,6 +356,15 @@ namespace Amesos2 {
     struct diff_type_data_put {
       static void apply(const Teuchos::Ptr<MV>& mv,
                         const Teuchos::ArrayView<S>& data,
+                        const size_t& ldx,
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                        EDistribution distribution );
+    };
+
+    template <typename MV, typename KV>
+    struct diff_type_data_put_kokkos_view {
+      static void apply(const Teuchos::Ptr<MV>& mv,
+                        KV& kokkos_data,
                         const size_t& ldx,
                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                         EDistribution distribution );
@@ -333,6 +391,24 @@ namespace Amesos2 {
 
       static void do_put(const Teuchos::Ptr<MV>& mv,
                          const Teuchos::ArrayView<S>& data,
+                         const size_t ldx);
+    };
+
+    template <class MV, typename KV>
+    struct put_1d_data_helper_kokkos_view {
+      static void do_put(const Teuchos::Ptr<MV>& mv,
+                         KV& kokkos_data,
+                         const size_t ldx,
+                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                         EDistribution distribution = ROOTED);
+
+      static void do_put(const Teuchos::Ptr<MV>& mv,
+                         KV& kokkos_data,
+                         const size_t ldx,
+                         EDistribution distribution, typename MV::global_ordinal_t indexBase = 0);
+
+      static void do_put(const Teuchos::Ptr<MV>& mv,
+                         KV& kokkos_data,
                          const size_t ldx);
     };
   }

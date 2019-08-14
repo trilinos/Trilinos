@@ -94,8 +94,8 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 {
   int status = 0;
 
-  size_type_array row_ptr;
-  ordinal_type_array cols;
+  device_size_type_array row_ptr;
+  device_ordinal_type_array cols;
 
   if ( this->root_ ) {
     if(do_optimization()) {
@@ -127,36 +127,53 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
       if(std::is_same<size_type, typename std::remove_pointer<row_ptr_t>::type>::value) {
         // This line is used when types match exactly, but we need compilation when they don't
         // match, hence the cast - not sure if there is a better way to do this.
-        row_ptr = size_type_array((size_type*)sp_rowptr, this->globalNumRows_ + 1);
+        row_ptr = device_size_type_array((size_type*)sp_rowptr, this->globalNumRows_ + 1);
       }
       else {
-        row_ptr = size_type_array("r", this->globalNumRows_ + 1);
-        for(global_size_type n = 0; n < this->globalNumRows_ + 1; ++n) {
+        row_ptr = device_size_type_array("r", this->globalNumRows_ + 1);
+
+        // Keep this on device? We could copy to host first, then loop.
+        // Not sure if symbolic factorization might have a device mode later
+        Kokkos::parallel_for(
+          Kokkos::RangePolicy<DeviceSpaceType, global_size_type>
+              (0, this->globalNumRows_ + 1), KOKKOS_LAMBDA (int n) {
           row_ptr(n) = static_cast<size_type>(sp_rowptr[n]);
-        }
+        });
       }
 
       if(std::is_same<ordinal_type, typename std::remove_pointer<col_ind_t>::type>::value) {
         // cast is so that things compile when this line is not used - same issues as above.
-        cols = ordinal_type_array((ordinal_type*)sp_colind, this->globalNumNonZeros_);
+        cols = device_ordinal_type_array((ordinal_type*)sp_colind, this->globalNumNonZeros_);
       }
       else {
-        cols = ordinal_type_array("c", this->globalNumNonZeros_);
-        for(global_size_type n = 0; n < this->globalNumNonZeros_; ++n) {
+        cols = device_ordinal_type_array("c", this->globalNumNonZeros_);
+
+        // Keep this on device? We could copy to host first, then loop.
+        // Not sure if symbolic factorization might have a device mode later
+        Kokkos::parallel_for(
+          Kokkos::RangePolicy<DeviceSpaceType, global_size_type>
+              (0, this->globalNumNonZeros_), KOKKOS_LAMBDA (int n) {
           cols(n) = static_cast<ordinal_type>(sp_colind[n]);
-        }
+        });
       }
     }
     else
     {
       // Non optimized case used the arrays set up in loadA_impl
-      row_ptr = size_type_array(this->rowptr_.getRawPtr(), this->globalNumRows_ + 1);
-      cols = ordinal_type_array(this->colind_.getRawPtr(), this->globalNumNonZeros_);
+      row_ptr = this->rowptr_;
+      cols = this->colind_;
     }
 
     // TODO: Confirm param options
     // data_.solver.setMaxNumberOfSuperblocks(data_.max_num_superblocks);
-    data_.solver.analyze(this->globalNumCols_, row_ptr, cols);
+
+    // Symbolic factorization currently must be done on host
+    host_size_type_array host_row_ptr("host_row_ptr", this->globalNumRows_ + 1);
+    host_ordinal_type_array host_cols("host_cols", this->globalNumNonZeros_);
+    Kokkos::deep_copy(host_row_ptr, row_ptr);
+    Kokkos::deep_copy(host_cols, cols);
+
+    data_.solver.analyze(this->globalNumCols_, host_row_ptr, host_cols);
   }
 
   return status;
@@ -170,7 +187,7 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
   int status = 0;
 
   if ( this->root_ ) {
-    value_type_array values;
+    device_value_type_array values;
 
     if(do_optimization()) {
       // in the optimized case we read the values directly from the matrix
@@ -179,12 +196,12 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
         std::runtime_error, "Amesos2 Runtime Error: sp_values returned null");
       // this type should always be ok for float/double because Tacho solver
       // is templated to value_type to guarantee a match here.
-      values = value_type_array(sp_values, this->globalNumNonZeros_);
+      values = device_value_type_array(sp_values, this->globalNumNonZeros_);
     }
     else
     {
       // Non optimized case used the arrays set up in loadA_impl
-      values = value_type_array(this->nzvals_.getRawPtr(), this->globalNumNonZeros_);
+      values = this->nzvals_;
     }
 
     data_.solver.factorize(values);
@@ -195,7 +212,7 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
 
 template <class Matrix, class Vector>
 int
-TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
+TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
@@ -203,17 +220,16 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
-  Teuchos::Array<tacho_type> xValues(val_store_size);
-  Teuchos::Array<tacho_type> bValues(val_store_size);
+  device_solve_array_t x("x", this->globalNumRows_, nrhs);
+  device_solve_array_t b("b", this->globalNumRows_, nrhs);
 
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-                             tacho_type>::do_get(B, bValues(),
+    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+                             device_solve_array_t>::do_get(B, b,
                                                as<size_t>(ld_rhs),
                                                ROOTED, this->rowIndexBase_);
   }
@@ -226,11 +242,8 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
 #endif
     // Bump up the workspace size if needed
     if (workspace_.extent(0) < this->globalNumRows_ || workspace_.extent(1) < nrhs) {
-      workspace_ = solve_array_t("t", this->globalNumRows_, nrhs);
+      workspace_ = device_solve_array_t("t", this->globalNumRows_, nrhs);
     }
-
-    solve_array_t x(xValues.getRawPtr(), this->globalNumRows_, nrhs);
-    solve_array_t b(bValues.getRawPtr(), this->globalNumRows_, nrhs);
 
     data_.solver.solve(x, b, workspace_);
 
@@ -252,8 +265,8 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,tacho_type>::do_put(X, xValues(),
+    Util::put_1d_data_helper_kokkos_view<
+      MultiVecAdapter<Vector>,device_solve_array_t>::do_put(X, x,
                                          as<size_t>(ld_rhs),
                                          ROOTED, this->rowIndexBase_);
   }
@@ -323,9 +336,9 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
     // Only the root image needs storage allocated
     if( this->root_ ) {
-      nzvals_.resize(this->globalNumNonZeros_);
-      colind_.resize(this->globalNumNonZeros_);
-      rowptr_.resize(this->globalNumRows_ + 1);
+      nzvals_ = device_value_type_array("nzvals", this->globalNumNonZeros_);
+      colind_ = device_ordinal_type_array("colind", this->globalNumNonZeros_);
+      rowptr_ = device_size_type_array("rowptr", this->globalNumRows_ + 1);
     }
 
     size_type nnz_ret = 0;
@@ -338,11 +351,13 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
                           std::runtime_error,
                           "Row and column maps have different indexbase ");
 
-      Util::get_crs_helper<
-      MatrixAdapter<Matrix>,tacho_type,ordinal_type,size_type>::do_get(
+      Util::get_crs_helper_kokkos_view<
+      MatrixAdapter<Matrix>,device_value_type_array,device_ordinal_type_array,device_size_type_array>::do_get(
                                                       this->matrixA_.ptr(),
-                                                      nzvals_(), colind_(),
-                                                      rowptr_(), nnz_ret,
+                                                      nzvals_,
+                                                      colind_,
+                                                      rowptr_,
+                                                      nnz_ret,
                                                       ROOTED, ARBITRARY,
                                                       this->columnIndexBase_);
     }
