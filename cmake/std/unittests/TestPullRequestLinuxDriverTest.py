@@ -314,13 +314,51 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_python_2'
         expected_list = [mock.call('load', 'sems-git/2.10.1'),
                          mock.call('load', 'sems-gcc/7.2.0'),
-                         mock.call('swap', 'sems-python/2.7.9',
-                                   'sierra-python/2.7.15'),
+                         mock.call('unload', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-cmake/3.10.3'),
                          mock.call('load', 'atdm-env'),
                          mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
-        self.buildEnv_passes(PR_name, expected_list)
+        expected_env = {'PYTHONPATH':
+                            os.path.join(os.path.sep,
+                                         'projects',
+                                         'sierra',
+                                         'linux_rh7',
+                                         'install',
+                                         'Python',
+                                         'extras',
+                                         'lib',
+                                         'python2.7',
+                                         'site-packages'),
+                        'MANPATH':
+                            os.path.join(os.path.sep,
+                                         'projects',
+                                         'sierra',
+                                         'linux_rh7',
+                                         'install',
+                                         'Python',
+                                         '2.7.15',
+                                         'share',
+                                         'man'),
+                        'PATH': [os.path.join(os.path.sep,
+                                              'projects',
+                                              'sierra',
+                                              'linux_rh7',
+                                              'install',
+                                              'Python',
+                                              '2.7.15',
+                                              'bin'),
+                                 os.path.join(os.path.sep,
+                                              'projects',
+                                              'sierra',
+                                              'linux_rh7',
+                                              'install',
+                                              'Python',
+                                              'extras'
+                                              'bin'),
+                                 '/fake/path']}
+
+        self.buildEnv_passes(PR_name, expected_list, expected_env)
 
 
     def test_buildEnv_passes_with_python3(self):
@@ -328,13 +366,51 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_python_3'
         expected_list = [mock.call('load', 'sems-git/2.10.1'),
                          mock.call('load', 'sems-gcc/7.2.0'),
-                         mock.call('swap', 'sems-python/2.7.9',
-                                   'sierra-python/3.6.3'),
+                         mock.call('unload', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-cmake/3.10.3'),
                          mock.call('load', 'atdm-env'),
                          mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
-        self.buildEnv_passes(PR_name, expected_list)
+        expected_env = {'PYTHONPATH':
+                            os.path.join(os.path.sep,
+                                         'projects',
+                                         'sierra',
+                                         'linux_rh7',
+                                         'install',
+                                         'Python',
+                                         'extras',
+                                         'lib',
+                                         'python3.6',
+                                         'site-packages'),
+                        'MANPATH':
+                            os.path.join(os.path.sep,
+                                         'projects',
+                                         'sierra',
+                                         'linux_rh7',
+                                         'install',
+                                         'Python',
+                                         '3.6.3',
+                                         'share',
+                                         'man'),
+                        'PATH': [os.path.join(os.path.sep,
+                                              'projects',
+                                              'sierra',
+                                              'linux_rh7',
+                                              'install',
+                                              'Python',
+                                              '3.6.3',
+                                              'bin'),
+                                 os.path.join(os.path.sep,
+                                              'projects',
+                                              'sierra',
+                                              'linux_rh7',
+                                              'install',
+                                              'Python',
+                                              'extras'
+                                              'bin'),
+                                 '/fake/path']}
+
+        self.buildEnv_passes(PR_name, expected_list, expected_env)
 
 
     def test_buildEnv_passes_with_gcc_484(self):

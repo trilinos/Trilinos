@@ -157,14 +157,14 @@ def setBuildEnviron(arguments):
                  'Trilinos_pullrequest_python_2':
                      ['sems-git/2.10.1',
                       'sems-gcc/7.2.0',
-                      ('sems-python/2.7.9', 'sierra-python/2.7.15'),
+                      ('', 'sems-python/2.7.9'),
                       'sems-cmake/3.10.3',
                       'atdm-env',
                       'atdm-ninja_fortran/1.7.2'],
                 'Trilinos_pullrequest_python_3':
                      ['sems-git/2.10.1',
                       'sems-gcc/7.2.0',
-                      ('sems-python/2.7.9', 'sierra-python/3.6.3'),
+                      ('', 'sems-python/2.7.9'),
                       'sems-cmake/3.10.3',
                       'atdm-env',
                       'atdm-ninja_fortran/1.7.2'],
@@ -210,8 +210,83 @@ def setBuildEnviron(arguments):
                       {'OMP_NUM_THREADS': '2'},
                   'Trilinos_pullrequest_gcc_4.9.3_SERIAL':
                       {'OMP_NUM_THREADS': '2'},
-                 'Trilinos_pullrequest_python_2': {},
-                 'Trilinos_pullrequest_python_3': {},
+                 'Trilinos_pullrequest_python_2':
+                      {'PYTHONPATH':
+                           os.path.join(os.path.sep,
+                                        'projects',
+                                        'sierra',
+                                        'linux_rh7',
+                                        'install',
+                                        'Python',
+                                        'extras',
+                                        'lib',
+                                        'python2.7',
+                                        'site-packages'),
+                       'MANPATH':
+                           os.path.join(os.path.sep,
+                                        'projects',
+                                        'sierra',
+                                        'linux_rh7',
+                                        'install',
+                                        'Python',
+                                        '2.7.15',
+                                        'share',
+                                        'man'),
+                       'PATH': os.path.join(os.path.sep,
+                                            'projects',
+                                            'sierra',
+                                            'linux_rh7',
+                                            'install',
+                                            'Python',
+                                            '2.7.15',
+                                            'bin') + os.pathsep +
+                               os.path.join(os.path.sep,
+                                            'projects',
+                                            'sierra',
+                                            'linux_rh7',
+                                            'install',
+                                            'Python',
+                                            'extras'
+                                            'bin')}
+        ,
+                 'Trilinos_pullrequest_python_3':
+                      {'PYTHONPATH':
+                           os.path.join(os.path.sep,
+                                        'projects',
+                                        'sierra',
+                                        'linux_rh7',
+                                        'install',
+                                        'Python',
+                                        'extras',
+                                        'lib',
+                                        'python3.6',
+                                        'site-packages'),
+                       'MANPATH':
+                           os.path.join(os.path.sep,
+                                        'projects',
+                                        'sierra',
+                                        'linux_rh7',
+                                        'install',
+                                        'Python',
+                                        '3.6.3',
+                                        'share',
+                                        'man'),
+                       'PATH': os.path.join(os.path.sep,
+                                            'projects',
+                                            'sierra',
+                                            'linux_rh7',
+                                            'install',
+                                            'Python',
+                                            '3.6.3',
+                                            'bin') + os.pathsep +
+                               os.path.join(os.path.sep,
+                                            'projects',
+                                            'sierra',
+                                            'linux_rh7',
+                                            'install',
+                                            'Python',
+                                            'extras'
+                                            'bin')},
                  'Trilinos_pullrequest_gcc_7.2.0':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
                        'OMP_NUM_THREADS': '2'},
@@ -261,7 +336,10 @@ def setBuildEnviron(arguments):
             module('load', mod)
         else:
             unl_mod, load_mod = mod
-            module('swap', unl_mod, load_mod)
+            if '' == unl_mod:
+                module('unload', load_mod)
+            else:
+                module('swap', unl_mod, load_mod)
 
     if 'OMPI_CC' in l_environMap:
         l_environMap['OMPI_CC'] = os.environ.get('CC', '')
