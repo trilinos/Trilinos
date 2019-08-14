@@ -62,9 +62,9 @@ namespace Xpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
  const RCP<Map<LocalOrdinal,GlobalOrdinal,Node> > toXpetraNonConst(const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
 
-  template <class LocalOrdinal = Map<>::local_ordinal_type,
-            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraMap
     : public virtual Map<LocalOrdinal,GlobalOrdinal,Node> {
 
@@ -340,11 +340,11 @@ namespace Xpetra {
 
     //! Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
     template <class LocalOrdinal, class GlobalOrdinal>
-    Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal> >
+    Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal, typename Tpetra::Map<>::node_type> >
     createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       XPETRA_MONITOR("useTpetra::createContigMap");
 
-      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createContigMap<LocalOrdinal,GlobalOrdinal>(numElements, localNumElements, comm)));
+      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, typename Tpetra::Map<>::node_type>(Tpetra::createContigMap<LocalOrdinal,GlobalOrdinal, typename Tpetra::Map<>::node_type>(numElements, localNumElements, comm)));
     }
 
     //! Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.

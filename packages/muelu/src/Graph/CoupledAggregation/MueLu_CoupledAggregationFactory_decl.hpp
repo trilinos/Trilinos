@@ -78,9 +78,9 @@ namespace MueLu {
      -
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class CoupledAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"

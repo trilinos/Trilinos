@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//             Xpetra: A linear algebra interface package
+//        MueLu: A package for multigrid based preconditioning
 //                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,20 +43,26 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_USEDEFAULTTYPESCOMPLEX_HPP
-#define XPETRA_USEDEFAULTTYPESCOMPLEX_HPP
 
-#include <Kokkos_DefaultNode.hpp> // Note: we should not need this header for Epetra
-#include "Xpetra_ConfigDefs.hpp"
+#ifndef MUELU_USEDEFAULTTYPES_HPP
+#define MUELU_USEDEFAULTTYPES_HPP
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#include <Kokkos_DefaultNode.hpp>
 
-// Define default data types
-typedef std::complex<double> Scalar;
-typedef int LocalOrdinal;
-typedef int GlobalOrdinal;
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+namespace MueLu
+{
+  typedef double DefaultScalar;
+  typedef int DefaultLocalOrdinal;
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+  #ifdef HAVE_MUELU_DEFAULT_GO_LONG
+  typedef long DefaultGlobalOrdinal;
+  #elif HAVE_MUELU_DEFAULT_GO_LONGLONG
+  typedef long long DefaultGlobalOrdinal;
+  #else
+  typedef int DefaultGlobalOrdinal;
+  #endif
+
+  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNode;
+}
 
 #endif

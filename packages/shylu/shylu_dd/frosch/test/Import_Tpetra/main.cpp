@@ -54,7 +54,6 @@
 #include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
-#include <Xpetra_UseDefaultTypes.hpp>
 
 #ifdef HAVE_XPETRA_EPETRA
 #include <Xpetra_EpetraCrsMatrix.hpp>
@@ -63,9 +62,9 @@
 #include "FROSch_Tools_def.hpp"
 
 typedef unsigned                                    UN;
-typedef Scalar                                      SC;
-typedef LocalOrdinal                                LO;
-typedef GlobalOrdinal                               GO;
+typedef double                                      SC;
+typedef int                                         LO;
+typedef FROSch::DefaultGlobalOrdinal                GO;
 typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 
 using namespace std;

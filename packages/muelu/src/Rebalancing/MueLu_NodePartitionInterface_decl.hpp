@@ -107,9 +107,9 @@ namespace MueLu {
 
   //FIXME: this class should not be templated
   template <class Scalar,
-            class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class NodePartitionInterface : public SingleLevelFactoryBase {
 #undef MUELU_NODEPARTITIONINTERFACE_SHORT
 #include "MueLu_UseShortNames.hpp"

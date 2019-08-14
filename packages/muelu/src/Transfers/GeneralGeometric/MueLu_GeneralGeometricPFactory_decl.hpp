@@ -112,7 +112,10 @@ namespace MueLu {
   | coarseCoordinates | NoFactory                | Coarse coordinates that will be used on the next fine level to compute the coarsening stencils                   |
 
 */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class GeneralGeometricPFactory : public PFactory {
 #undef MUELU_GENERALGEOMETRICPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

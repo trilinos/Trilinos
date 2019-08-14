@@ -100,7 +100,62 @@ TRIBITS_ADD_TEST(
   NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
   ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
   COMM mpi
-  NUM_MPI_PROCS 1-36
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES PERFORMANCE
+)
+
+TRIBITS_ADD_TEST(
+  FEMAssembly
+  NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
+  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES PERFORMANCE
+)
+
+TRIBITS_ADD_TEST(
+  FEMAssembly
+  NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
+  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
+  COMM mpi
+  NUM_MPI_PROCS 9
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES PERFORMANCE
+)
+
+TRIBITS_ADD_TEST(
+  FEMAssembly
+  NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
+  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
+  COMM mpi
+  NUM_MPI_PROCS 16
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES PERFORMANCE
+)
+
+TRIBITS_ADD_TEST(
+  FEMAssembly
+  NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
+  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
+  COMM mpi
+  NUM_MPI_PROCS 25
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES PERFORMANCE
+)
+
+TRIBITS_ADD_TEST(
+  FEMAssembly
+  NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
+  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
+  COMM mpi
+  NUM_MPI_PROCS 36
   STANDARD_PASS_OUTPUT
   RUN_SERIAL
   CATEGORIES PERFORMANCE
