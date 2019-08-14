@@ -610,6 +610,7 @@ namespace Iopg {
         get_region()->add(nodeset);
 
         get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id));
+        get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodeset", id));
       }
     }
   }
@@ -1558,8 +1559,8 @@ const Ioss::Map &DatabaseIO::get_element_map() const
   return elemMap;
 }
 
-void DatabaseIO::compute_block_membership(Ioss::SideBlock *         sideblock,
-                                          std::vector<std::string> &block_membership) const
+void DatabaseIO::compute_block_membership__(Ioss::SideBlock *         sideblock,
+					    std::vector<std::string> &block_membership) const
 {
   Ioss::IntVector block_ids(elementBlockCount);
   if (elementBlockCount == 1) {
