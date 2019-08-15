@@ -143,6 +143,26 @@ ENDIF()
 ENDIF()
 ENDIF()
 
+IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)
+TRIBITS_ADD_ADVANCED_TEST(pamgen_exodus_io_info
+   TEST_0 EXEC io_shell ARGS --in_type pamgen ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i pamgen.e
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS 1
+   TEST_1 EXEC io_info ARGS --db_type exodus --adjacencies pamgen.e
+     OUTPUT_FILE info_exodus.tmp
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS 1
+   TEST_2 EXEC io_info ARGS --db_type pamgen --adjacencies ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i
+     OUTPUT_FILE info_pamgen.tmp
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS 1
+   TEST_3 CMND grep ARGS -v pamgen info_pamgen.tmp OUTPUT_FILE info_pamgen.out
+   TEST_4 CMND grep ARGS -v pamgen info_exodus.tmp OUTPUT_FILE info_exodus.out
+   TEST_5 CMND diff ARGS info_exodus.out info_pamgen.out
+  COMM mpi serial
+  )
+ENDIF()
+
 install_executable(cth_pressure_map)
 IF (TPL_ENABLE_CGNS)
 install_executable(struc_to_unstruc)
@@ -419,17 +439,18 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_single_fpp_single_fields
   COMM mpi
   )
 
-IF (TPL_ENABLE_Pamgen)
+IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)
 TRIBITS_ADD_ADVANCED_TEST(pamgen_to_unstructured_cgns
-   TEST_0 EXEC io_shell ARGS --in_type pamgen ${CMAKE_CURRENT_SOURCE_DIR}/testpamgen.i pamgen.cgns
+   TEST_0 EXEC io_shell ARGS --in_type pamgen ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i pamgen.cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1-4
    TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld pamgen.cgns
-     OUTPUT_FILE pamgen_to_unstructured_cgns.out
-   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen_to_unstructured_cgns.gold pamgen_to_unstructured_cgns.out
+     OUTPUT_FILE pamgen_to_unstructured_cgns.tmp
+   TEST_2 CMND grep ARGS -v Information pamgen_to_unstructured_cgns.tmp OUTPUT_FILE pamgen_to_unstructured_cgns.out
+   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen_to_unstructured_cgns.gold pamgen_to_unstructured_cgns.out
   COMM mpi serial
   )
-ENDIF(TPL_ENABLE_Pamgen)
+ENDIF()
 endif()
 
 ENDIF(TPL_ENABLE_CGNS)
