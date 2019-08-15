@@ -111,36 +111,6 @@ void jacobiSetup(RCP<Teuchos::ParameterList> params,
     regionGrpMats[j]->getLocalDiagCopy(*diagReg[j]);
   }
 
-  params->set<Teuchos::Array<RCP<Vector> > >("jacobi: inverse diagonal", diag);
-}
-
-/*! \brief performs Jacobi setup
- *
- * Computes the inverse of the diagonal in region format and with interface scaling
- */
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void jacobiSetup(RCP<Teuchos::ParameterList> params,
-                 const int maxRegPerProc,
-                 const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
-                 const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
-                 const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionInterfaceScaling) {
-#include "Xpetra_UseShortNames.hpp"
-  const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-  const Scalar SC_ONE = Teuchos::ScalarTraits<Scalar>::one();
-
-  Array<RCP<Vector> > regRes(maxRegPerProc);
-  createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
-
-  // extract diagonal from region matrices, recover true diagonal values, invert diagonal
-  Teuchos::Array<RCP<Vector> > diag(maxRegPerProc);
-  for (int j = 0; j < maxRegPerProc; j++) {
-    // extract inverse of diagonal from matrix
-    diag[j] = VectorFactory::Build(regionGrpMats[j]->getRowMap(), true);
-    regionGrpMats[j]->getLocalDiagCopy(*diag[j]);
-    diag[j]->elementWiseMultiply(SC_ONE, *regionInterfaceScaling[j], *diag[j], SC_ZERO); // ToDo Does it work to pass in diag[j], but also return into the same variable?
-    diag[j]->reciprocal(*diag[j]);
-  }
-
   sumInterfaceValues(diagReg, mapComp, maxRegPerProc, rowMapPerGrp,
                      revisedRowMapPerGrp, rowImportPerGrp);
 
@@ -150,63 +120,6 @@ void jacobiSetup(RCP<Teuchos::ParameterList> params,
 
   params->set<Teuchos::Array<RCP<Vector> > >("jacobi: inverse diagonal", diagReg);
 }
-
-/*! \brief Do Jacobi smoothing
- *
- *  Perform Jacobi smoothing in the region layout using the true diagonal value
- *  recovered from the splitted matrix.
- */
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
-                   Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regX, // left-hand side (or solution)
-                   const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regB, // right-hand side (or residual)
-                   const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats, // matrices in true region layout
-                   const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionInterfaceScaling, // recreate on coarse grid by import Add on region vector of ones
-                   const int maxRegPerProc, ///< max number of regions per proc [in]
-                   const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp, ///< composite map
-                   const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in region layout [in] requires the mapping of GIDs on fine mesh to "filter GIDs"
-                   const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp, ///< revised row maps in region layout [in] (actually extracted from regionGrpMats)
-                   const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in]
-    )
-{
-#include "Xpetra_UseShortNames.hpp"
-  // const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-  const Scalar SC_ONE = Teuchos::ScalarTraits<Scalar>::one();
-
-  const int maxIter    = smootherParams->get<int>   ("smoother: sweeps");
-  const double damping = smootherParams->get<double>("smoother: damping");
-  Array<RCP<Vector> > diag_inv = smootherParams->get<Array<RCP<Vector> > >("jacobi: inverse diagonal");
-
-  Array<RCP<Vector> > regRes(maxRegPerProc);
-  createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
-
-
-  for (int iter = 0; iter < maxIter; ++iter) {
-
-    /* Update the residual vector
-     * 1. Compute tmp = A * regX in each region
-     * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
-     * 3. Compute r = B - tmp
-     */
-    for (int j = 0; j < maxRegPerProc; j++) { // step 1
-      regionGrpMats[j]->apply(*regX[j], *regRes[j]);
-    }
-
-    sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
-                       revisedRowMapPerGrp, rowImportPerGrp); // step 2
-
-    for (int j = 0; j < maxRegPerProc; j++) { // step 3
-      regRes[j]->update(SC_ONE, *regB[j], -SC_ONE);
-    }
-
-    for (int j = 0; j < maxRegPerProc; j++) {
-      // update solution according to Jacobi's method
-      regX[j]->elementWiseMultiply(damping, *diag_inv[j], *regRes[j], SC_ONE);
-    }
-  }
-
-  return;
-} // jacobiIterate
 
 /*! \brief Do Jacobi smoothing
  *
@@ -392,10 +305,10 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
   const std::string type = params->get<std::string>("smoother: type");
 
   std::map<std::string, int> smootherTypes;
-  smootherTypes.insert(std::pair<std::string, int>("None",         0));
-  smootherTypes.insert(std::pair<std::string, int>("Jacobi",       1));
-  smootherTypes.insert(std::pair<std::string, int>("Gauss-Seidel", 2));
-  smootherTypes.insert(std::pair<std::string, int>("Chebyshev",    3));
+  smootherTypes.insert(std::pair<std::string, int>("None",      0));
+  smootherTypes.insert(std::pair<std::string, int>("Jacobi",    1));
+  smootherTypes.insert(std::pair<std::string, int>("Gauss",     2));
+  smootherTypes.insert(std::pair<std::string, int>("Chebyshev", 3));
 
   switch(smootherTypes[type]) {
   case 0:
@@ -403,7 +316,10 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
   case 1:
     jacobiIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
                   mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+    break;
   case 2:
+      GSIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
+                mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
     break;
   case 3:
     break;
