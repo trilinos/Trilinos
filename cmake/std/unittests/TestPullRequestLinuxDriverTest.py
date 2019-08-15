@@ -283,7 +283,8 @@ class Test_setEnviron(unittest.TestCase):
                     PullRequestLinuxDriverTest.setBuildEnviron(self.arguments)
 
 
-    def buildEnv_passes(self, PR_name, expected_list, test_ENV={}):
+    def buildEnv_passes(self, PR_name, expected_list,
+                        test_ENV={'PATH': '/add/CC/path'}):
         setattr(self.arguments,
                 'job_base_name',
                 PR_name)
@@ -291,6 +292,7 @@ class Test_setEnviron(unittest.TestCase):
         def add_CC(*args, **kwargs):
             os.environ['CC'] = '/fake/gcc/path/bin/gcc'
             os.environ['FC'] = '/fake/gcc/path/bin/gfortran'
+            os.environ['PATH'] = '/add/CC/path' + os.environ['PATH']
 
         with self.IOredirect, \
              self.m_chdir, \
