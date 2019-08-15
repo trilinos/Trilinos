@@ -339,7 +339,7 @@ ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh
 This will result in the alternate workspace directory being create as:
 
 ```
-export WORKSPACE=${ATDM_CONFIG_WORKSPACE_BASE}/${ATDM_CONFIG_KNOWN_SYSTEM_NAME}/${JOB_NAME}
+export WORKSPACE=${ATDM_CONFIG_WORKSPACE_BASE}/${ATDM_CONFIG_SYSTEM_NAME}/${JOB_NAME}
 ```
 
 The inner clone of Trilinos and the build of Trilinos will be performed under
@@ -452,7 +452,7 @@ Note that more than one `hostname` machine may map to the same
 `ride`).
 
 The variable `ATDM_HOSTNAME` (set to exported variable
-`ATDM_CONFIG_KNOWN_HOSTNAME`) is used for the CDash site name.  This makes it
+`ATDM_CONFIG_CDASH_HOSTNAME`) is used for the CDash site name.  This makes it
 so that any node `white05`, `white12`, etc. just says `white` on CDash.  This
 is important for the CDash 'next' and 'previous' relationships to work.  (But
 for `CTEST_TEST_TYPE=Experimental` builds, the real `hostname` is used which
@@ -461,7 +461,7 @@ ensures that queries with `cdash/queryTests.php` don't accidentally pick up
 tests from "Experimental" builds.)
 
 The variable `ATDM_SYSTEM_NAME` (set to the exported variable
-`ATDM_CONFIG_KNOWN_SYSTEM_NAME`) must be set to `<new_system_name>` which is
+`ATDM_CONFIG_SYSTEM_NAME`) must be set to `<new_system_name>` which is
 selected for this new system type.
 
 Then, create a new directory for the new system called `<new_system_name>`:

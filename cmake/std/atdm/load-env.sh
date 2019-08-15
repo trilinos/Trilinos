@@ -65,13 +65,13 @@ source ${ATDM_CONFIG_SCRIPT_DIR}/utils/unset_atdm_config_vars_system_name.sh
 
 if [ "${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH}" == "" ] ; then
   source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_known_system_name.sh
-  export ATDM_CONFIG_SYSTEM_DIR=${ATDM_CONFIG_SCRIPT_DIR}/${ATDM_CONFIG_KNOWN_SYSTEM_NAME}
+  export ATDM_CONFIG_SYSTEM_DIR=${ATDM_CONFIG_SCRIPT_DIR}/${ATDM_CONFIG_SYSTEM_NAME}
 else
   source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_custom_system_info.sh
   export ATDM_CONFIG_SYSTEM_DIR=$(readlink -f ${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH})
 fi
 
-if [[ $ATDM_CONFIG_KNOWN_SYSTEM_NAME == "" ]] ; then
+if [[ $ATDM_CONFIG_SYSTEM_NAME == "" ]] ; then
   echo "Error, could not determine system, aborting env loading script!"
   return
 fi

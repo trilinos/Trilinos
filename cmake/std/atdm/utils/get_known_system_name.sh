@@ -7,8 +7,8 @@
 # Clean out vars in case this crashes before finishing
 
 unset ATDM_CONFIG_REAL_HOSTNAME
-unset ATDM_CONFIG_KNOWN_HOSTNAME
-unset ATDM_CONFIG_KNOWN_SYSTEM_NAME
+unset ATDM_CONFIG_CDASH_HOSTNAME
+unset ATDM_CONFIG_SYSTEM_NAME
 
 # Assert this script is sourced, not run!
 called=$_
@@ -139,5 +139,5 @@ else
   echo "Hostname '$ATDM_CONFIG_REAL_HOSTNAME' matches known ATDM host '$ATDM_HOSTNAME' and system '$ATDM_SYSTEM_NAME'"
 fi
 
-export ATDM_CONFIG_KNOWN_HOSTNAME=$ATDM_HOSTNAME
-export ATDM_CONFIG_KNOWN_SYSTEM_NAME=$ATDM_SYSTEM_NAME
+export ATDM_CONFIG_CDASH_HOSTNAME=$ATDM_HOSTNAME
+export ATDM_CONFIG_SYSTEM_NAME=$ATDM_SYSTEM_NAME
