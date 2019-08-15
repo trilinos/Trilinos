@@ -24,6 +24,7 @@ build locally as described below.
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
 * <a href="#disabling-failing-tests">Disabling failing tests</a>
 * <a href="#specific-systems-supported">Specific systems supported</a>
+* <a href="#custom-systems-and-configurations">Custom systems and configurations</a>
 
 
 ## Quick-start
@@ -1341,3 +1342,49 @@ they support are:
   'shiller' and the mirror SON machine 'hansen'.
 
 * `waterman/`: Supports GNU and CUDA builds on the SRN machine 'waterman'.
+
+
+## Custom systems and configurations
+
+In addition to offically defined system configurations described
+[above](#specific-instructions-for-each-system), one can also define a custom
+configuraiton and use that.  To do so, create a new directory with the
+contents:
+
+```
+<some-base-dir>/<custom-env-name>/
+  environment.sh           # Required
+  custom_builds.sh         # Optional
+  all_supported_builds.sh  # Optional
+```
+
+(only the `environment.sh` script is required) and then load the custom env
+with:
+
+```
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh <build-name> \
+  <some-base-dir>/<custom-env-name>
+```
+
+The name of the new custom system name is taken from the last directory name
+`<custom-env-name>` and the files in that directory are read and treated like
+any of the offically defined system configurations.
+
+When Trilinos is installed, the directory `<some-base-dir>/<custom-env-name>`
+is copied to the install tree and the installed
+[`load-matching-env.sh`](#installation-and-usage) script will automatically
+load that custom env according to the custom build configuration script.
+
+A simple example can be seen in:
+
+* [cmake/std/atdm/examples/my_sems_rhel6_config/environment.sh](examples/my_sems_rhel6_config/environment.sh)
+
+which works on any SEMS RHEL6 machine similarly to the offically defined <a
+href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>.
+
+To see how things can be specified look at examples of other `environment.sh`
+scripts in the offically defined configurations under:
+
+* [cmake/std/atdm/examples/my_sems_rhel6_config/<system_name>/](.)
+
+where `<system_name>` is `ride`, `waterman`, `tlcc2`, etc.

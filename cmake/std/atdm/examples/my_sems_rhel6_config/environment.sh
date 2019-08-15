@@ -1,5 +1,5 @@
 # Example of how to set up your own custom ATDM Trilinos configuration on some
-# machine.
+# machine.  This example only works on SEMS RHE6 systems.
 
 echo "Using my custom SEMS RHEL6 env for compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
