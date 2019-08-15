@@ -1432,11 +1432,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<std::vector<RCP<Matrix> > > regMatrices; // regional matrices on each level
   Array<std::vector<RCP<Matrix> > > regProlong; // regional prolongators on each level
   Array<std::vector<RCP<Import> > > regRowImporters; // regional row importers on each level
-  Array<std::vector<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
+  Array<Array<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
   Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
   RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
   coarseSolverData->set<bool>("use direct solver", directCoarseSolver);
   coarseSolverData->set<std::string>("amg xml file", coarseAmgXmlFile);
+  RCP<ParameterList> hierarchyData = rcp(new ParameterList());
 
 
   // Create multigrid hierarchy
@@ -1469,7 +1470,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         maxRegPerGID,
                         compositeToRegionLIDs(),
                         coarseSolverData,
-                        smootherParams);
+                        smootherParams,
+                        hierarchyData);
+
+  hierarchyData->print();
 
 
   comm->barrier();
@@ -1501,19 +1505,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // transform composite vectors to regional layout
-    std::vector<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc);
-    std::vector<Teuchos::RCP<Vector> > regX(maxRegPerProc);
+    Array<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc);
+    Array<Teuchos::RCP<Vector> > regX(maxRegPerProc);
     compositeToRegional(X, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
                         revisedRowMapPerGrp, rowImportPerGrp);
 
-    std::vector<RCP<Vector> > quasiRegB(maxRegPerProc);
-    std::vector<RCP<Vector> > regB(maxRegPerProc);
+    Array<RCP<Vector> > quasiRegB(maxRegPerProc);
+    Array<RCP<Vector> > regB(maxRegPerProc);
     compositeToRegional(B, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
                         revisedRowMapPerGrp, rowImportPerGrp);
 
     //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
 
-    std::vector<RCP<Vector> > regRes(maxRegPerProc);
+    Array<RCP<Vector> > regRes(maxRegPerProc);
     for (int j = 0; j < maxRegPerProc; j++) { // step 1
       regRes[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
     }
@@ -1579,7 +1583,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
              regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData);
+             regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData, hierarchyData);
     }
     std::cout << std::setprecision(old_precision);
     std::cout.unsetf(std::ios::fixed | std::ios::scientific);
