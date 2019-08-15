@@ -64,7 +64,7 @@ export ATDM_CONFIG_JOB_NAME=$ATDM_CONFIG_BUILD_NAME
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/unset_atdm_config_vars_system_name.sh
 
 if [ "${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH}" == "" ] ; then
-  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_known_system_name.sh
+  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_known_system_info.sh
   export ATDM_CONFIG_SYSTEM_DIR=${ATDM_CONFIG_SCRIPT_DIR}/${ATDM_CONFIG_SYSTEM_NAME}
 else
   source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_custom_system_info.sh

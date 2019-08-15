@@ -444,7 +444,7 @@ To add a new system, first add a new `elseif` statement for the new system in
 the file:
 
 ```
-  Trilinos/cmake/std/atdm/utils/get_known_system_name.sh
+  Trilinos/cmake/std/atdm/utils/get_known_system_info.sh
 ```
 
 Note that more than one `hostname` machine may map to the same
