@@ -61,6 +61,20 @@
 
 namespace panzer_stk {
 
+int getMeshDimension(const std::string & meshStr,
+                     stk::ParallelMachine parallelMach,
+                     const bool isExodus)
+{
+  stk::io::StkMeshIoBroker meshData(parallelMach);
+  meshData.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
+  if (isExodus)
+    meshData.add_mesh_database(meshStr, "exodus", stk::io::READ_MESH);
+  else
+    meshData.add_mesh_database(meshStr, "pamgen", stk::io::READ_MESH);
+  meshData.create_input_mesh();
+  return Teuchos::as<int>(meshData.meta_data_rcp()->spatial_dimension());
+}
+
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
   : fileName_(""), restartIndex_(0), isExodus_(true), userMeshScaling_(false), meshScaleFactor_(0.0)
 { }

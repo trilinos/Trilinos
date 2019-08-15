@@ -316,4 +316,9 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, basic)
 
 }
 
+TEUCHOS_UNIT_TEST(tPamgenFactory, getMeshDimension)
+{
+  TEST_EQUALITY(panzer_stk::getMeshDimension("pamgen_test.gen",MPI_COMM_WORLD,false),3);
 }
+
+} // namespace panzer_stk
