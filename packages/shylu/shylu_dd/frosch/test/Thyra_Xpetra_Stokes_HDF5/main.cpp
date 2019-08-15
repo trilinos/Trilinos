@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Comm<int> > CommWorld = DefaultPlatform::getDefaultPlatform().getComm();
 
     CommandLineProcessor My_CLP;
 
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 //        for (unsigned i=0; i<elementList.size(); i++) {
 //            elementList[i] = repeatedMapEpetraPress->GID(i) + offsetVelocityMap;
 //        }
-//        RCP<Map<LO,GO,NO> > repeatedMapPress = Xpetra::MapFactory<LO,GO,NO>::Build(xpetraLib,-1,elementList,0,Comm);
+//        RCP<Map<LO,GO,NO> > repeatedMapPress = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,elementList,0,Comm);
 
         ArrayRCP<RCP<const Map<LO,GO,NO> > > repeatedMapsVectorConst(2);
         ArrayRCP<RCP<Map<LO,GO,NO> > > repeatedMapsVector(2);
@@ -219,9 +219,9 @@ int main(int argc, char *argv[])
         hDF5IO->Read(groupNameRHS,rhsEpetra);
 
         RCP<MultiVector<SC,LO,GO,NO> > rhsTmp = ConvertToXpetra<SC,LO,GO,NO>::ConvertMultiVector(xpetraLib,*rhsEpetra,Comm);
-        RCP<MultiVector<SC,LO,GO,NO> > rhs = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
-        RCP<Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(rhsTmp->getMap(),uniqueMap);
-        rhs->doImport(*rhsTmp,*scatter,Xpetra::ADD);
+        RCP<MultiVector<SC,LO,GO,NO> > rhs = MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(rhsTmp->getMap(),uniqueMap);
+        rhs->doImport(*rhsTmp,*scatter,ADD);
 
 
         ////////////
@@ -231,9 +231,9 @@ int main(int argc, char *argv[])
         Epetra_CrsMatrix *matrixEpetra;
         hDF5IO->Read(groupNameMatrix,matrixEpetra);
         RCP<Matrix<SC,LO,GO,NO> > matrixTmp = ConvertToXpetra<SC,LO,GO,NO>::ConvertMatrix(xpetraLib,*matrixEpetra,Comm);
-        RCP<Matrix<SC,LO,GO,NO> > matrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,matrixTmp->getGlobalMaxNumRowEntries());
+        RCP<Matrix<SC,LO,GO,NO> > matrix = MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,matrixTmp->getGlobalMaxNumRowEntries());
 
-        matrix->doImport(*matrixTmp,*scatter,Xpetra::ADD);
+        matrix->doImport(*matrixTmp,*scatter,ADD);
         matrix->fillComplete();
 
 
@@ -243,16 +243,16 @@ int main(int argc, char *argv[])
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
 
-        xSolution->putScalar(Teuchos::ScalarTraits<SC>::zero());
-        xRightHandSide->putScalar(Teuchos::ScalarTraits<SC>::one());
+        xSolution->putScalar(ScalarTraits<SC>::zero());
+        xRightHandSide->putScalar(ScalarTraits<SC>::one());
 
-        Teuchos::RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > tmpCrsWrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(matrix);
+        RCP<CrsMatrixWrap<SC,LO,GO,NO> > tmpCrsWrap = rcp_dynamic_cast<CrsMatrixWrap<SC,LO,GO,NO> >(matrix);
 
-        RCP<const Thyra::LinearOpBase<SC> > K_thyra = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(tmpCrsWrap->getCrsMatrix());
+        RCP<const Thyra::LinearOpBase<SC> > K_thyra = ThyraUtils<SC,LO,GO,NO>::toThyra(tmpCrsWrap->getCrsMatrix());
 
         RCP<Thyra::MultiVectorBase<SC> >thyraX =
-        Teuchos::rcp_const_cast<Thyra::MultiVectorBase<SC> >(Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
-        RCP<const Thyra::MultiVectorBase<SC> >thyraB = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
+        rcp_const_cast<Thyra::MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
+        RCP<const Thyra::MultiVectorBase<SC> >thyraB = ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
 
 
         ///////////////////
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
         linearSolverBuilder.createLinearSolveStrategy("");
 
         lowsFactory->setOStream(out);
-        lowsFactory->setVerbLevel(Teuchos::VERB_HIGH);
+        lowsFactory->setVerbLevel(VERB_HIGH);
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "###########################\n# Thyra LinearOpWithSolve #\n###########################" << endl;
 

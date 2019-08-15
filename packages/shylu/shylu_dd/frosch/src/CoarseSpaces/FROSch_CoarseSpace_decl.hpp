@@ -51,6 +51,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC = double,
               class LO = int,
@@ -60,40 +63,40 @@ namespace FROSch {
 
     protected:
 
-        using Map                   = Xpetra::Map<LO,GO,NO>;
-        using MapPtr                = Teuchos::RCP<Map>;
-        using ConstMapPtr           = Teuchos::RCP<const Map>;
-        using MapPtrVec             = Teuchos::Array<MapPtr>;
+        using XMap                  = Map<LO,GO,NO>;
+        using XMapPtr               = RCP<XMap>;
+        using ConstXMapPtr          = RCP<const XMap>;
+        using XMapPtrVec            = Array<XMapPtr>;
 
-        using CrsMatrix             = Xpetra::Matrix<SC,LO,GO,NO>;
-        using CrsMatrixPtr          = Teuchos::RCP<CrsMatrix>;
+        using XMatrix               = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr            = RCP<XMatrix>;
 
-        using MultiVector           = Xpetra::MultiVector<SC,LO,GO,NO>;
-        using MultiVectorPtr        = Teuchos::RCP<MultiVector>;
-        using MultiVectorPtrVec     = Teuchos::Array<MultiVectorPtr>;
+        using XMultiVector          = MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr       = RCP<XMultiVector>;
+        using XMultiVectorPtrVec    = Array<XMultiVectorPtr>;
 
-        using ParameterListPtr      = Teuchos::RCP<Teuchos::ParameterList>;
+        using ParameterListPtr      = RCP<ParameterList>;
 
         using UN                    = unsigned;
 
-        using LOVec                 = Teuchos::Array<LO>;
-        using GOVec                 = Teuchos::Array<GO>;
-        using LOVecPtr              = Teuchos::ArrayRCP<LO>;
-        using LOVecPtr2D            = Teuchos::ArrayRCP<LOVecPtr>;
+        using LOVec                 = Array<LO>;
+        using GOVec                 = Array<GO>;
+        using LOVecPtr              = ArrayRCP<LO>;
+        using LOVecPtr2D            = ArrayRCP<LOVecPtr>;
 
-        using SCVec                 = Teuchos::Array<SC>;
+        using SCVec                 = Array<SC>;
 
     public:
 
         CoarseSpace();
 
-        int addSubspace(MapPtr subspaceBasisMap,
-                        MultiVectorPtr subspaceBasis = Teuchos::null);
+        int addSubspace(XMapPtr subspaceBasisMap,
+                        XMultiVectorPtr subspaceBasis = null);
 
         int assembleCoarseSpace();
 
-        int buildGlobalBasisMatrix(ConstMapPtr rowMap,
-                                   ConstMapPtr repeatedMap,
+        int buildGlobalBasisMatrix(ConstXMapPtr rowMap,
+                                   ConstXMapPtr repeatedMap,
                                    SC treshold);
 
         int clearCoarseSpace();
@@ -102,29 +105,29 @@ namespace FROSch {
 
         bool hasBasisMap() const;
 
-        MapPtr getBasisMap() const;
+        XMapPtr getBasisMap() const;
 
         bool hasAssembledBasis() const;
 
-        MultiVectorPtr getAssembledBasis() const;
+        XMultiVectorPtr getAssembledBasis() const;
 
         bool hasGlobalBasisMatrix() const;
 
-        CrsMatrixPtr getGlobalBasisMatrix() const;
+        XMatrixPtr getGlobalBasisMatrix() const;
 
     protected:
 
-        ConstMapPtr SerialRowMap_;
+        ConstXMapPtr SerialRowMap_;
 
-        MapPtrVec UnassembledBasesMaps_;
+        XMapPtrVec UnassembledBasesMaps_;
 
-        MultiVectorPtrVec UnassembledSubspaceBases_;
+        XMultiVectorPtrVec UnassembledSubspaceBases_;
 
-        MapPtr AssembledBasisMap_;
+        XMapPtr AssembledBasisMap_;
 
-        MultiVectorPtr AssembledBasis_;
+        XMultiVectorPtr AssembledBasis_;
 
-        CrsMatrixPtr GlobalBasisMatrix_;
+        XMatrixPtr GlobalBasisMatrix_;
 
     };
 

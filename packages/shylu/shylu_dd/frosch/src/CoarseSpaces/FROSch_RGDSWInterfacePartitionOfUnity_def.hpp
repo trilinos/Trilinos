@@ -46,14 +46,17 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
     RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::RGDSWInterfacePartitionOfUnity(CommPtr mpiComm,
                                                                                 CommPtr serialComm,
                                                                                 UN dimension,
                                                                                 UN dofsPerNode,
-                                                                                ConstMapPtr nodesMap,
-                                                                                ConstMapPtrVecPtr dofsMaps,
+                                                                                ConstXMapPtr nodesMap,
+                                                                                ConstXMapPtrVecPtr dofsMaps,
                                                                                 ParameterListPtr parameterList,
                                                                                 Verbosity verbosity) :
     GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity),
@@ -85,18 +88,18 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: Specify a valid Distance Function.");
         }
-        this->LocalPartitionOfUnity_ = MultiVectorPtrVecPtr(1);
-        this->PartitionOfUnityMaps_ = MapPtrVecPtr(1);
+        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(1);
+        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(1);
     }
 
     template <class SC,class LO,class GO,class NO>
     int RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity()
     {
-        return computePartitionOfUnity(Teuchos::null);
+        return computePartitionOfUnity(null);
     }
 
     template <class SC,class LO,class GO,class NO>
-    int RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstMultiVectorPtr nodeList)
+    int RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstXMultiVectorPtr nodeList)
     {
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();
@@ -131,10 +134,10 @@ namespace FROSch {
         }
 
         // Build Partition Of Unity Vectors
-        MapPtr serialInterfaceMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->DDInterface_->getNodesMap()->lib(),numInterfaceDofs,0,this->SerialComm_);
+        XMapPtr serialInterfaceMap = MapFactory<LO,GO,NO>::Build(this->DDInterface_->getNodesMap()->lib(),numInterfaceDofs,0,this->SerialComm_);
 
         if (UseCoarseNodes_ && CoarseNodes_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,CoarseNodes_->getNumEntities());
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,CoarseNodes_->getNumEntities());
 
             // Loop over EntitySetVector_
             for (UN i=0; i<EntitySetVector_.size(); i++) {
@@ -152,7 +155,7 @@ namespace FROSch {
                             for (UN l=0; l<tmpEntity->getNumNodes(); l++) {
                                 SC value = tmpEntity->getDistanceToCoarseNode(l,m)/tmpEntity->getDistanceToCoarseNode(l,numCoarseNodes);
                                 for (UN k=0; k<dofsPerNode; k++) {
-                                    tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),index,value*Teuchos::ScalarTraits<SC>::one());
+                                    tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),index,value*ScalarTraits<SC>::one());
                                 }
                             }
                         }
@@ -160,7 +163,7 @@ namespace FROSch {
                         // Coarse node: loop over nodes
                         for (UN l=0; l<EntitySetVector_[i]->getEntity(j)->getNumNodes(); l++) {
                             for (UN k=0; k<dofsPerNode; k++) {
-                                tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),coarseNodeID,Teuchos::ScalarTraits<SC>::one());
+                                tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),coarseNodeID,ScalarTraits<SC>::one());
                             }
                         }
                     }

@@ -47,8 +47,11 @@
 
 namespace FROSch {
 
+    using namespace Teuchos;
+    using namespace Xpetra;
+    
     template <class SC,class LO,class GO,class NO>
-    AlgebraicOverlappingOperator<SC,LO,GO,NO>::AlgebraicOverlappingOperator(ConstCrsMatrixPtr k,
+    AlgebraicOverlappingOperator<SC,LO,GO,NO>::AlgebraicOverlappingOperator(ConstXMatrixPtr k,
                                                                             ParameterListPtr parameterList) :
     OverlappingOperator<SC,LO,GO,NO> (k,parameterList),
     AddingLayersStrategy_ ()
@@ -66,7 +69,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize(int overlap,
-                                                              ConstMapPtr repeatedMap)
+                                                              ConstXMapPtr repeatedMap)
     {
         if (this->Verbose_) {
             std::cout << "\n\
@@ -76,7 +79,7 @@ namespace FROSch {
         }
 
         if (repeatedMap.is_null()) {
-            repeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap(),1);
+            repeatedMap = MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap(),1);
         }
         this->buildOverlappingMatrices(overlap,repeatedMap);
         this->initializeOverlappingOperator();
@@ -97,8 +100,8 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    void AlgebraicOverlappingOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
-                                                             const Teuchos::EVerbosityLevel verbLevel) const
+    void AlgebraicOverlappingOperator<SC,LO,GO,NO>::describe(FancyOStream &out,
+                                                             const EVerbosityLevel verbLevel) const
     {
         FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
@@ -111,7 +114,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
-                                                                            ConstMapPtr repeatedMap)
+                                                                            ConstXMapPtr repeatedMap)
     {
         // ====================================================================================
         // AH 08/09/2019: This is just temporary. Implement this properly in all the classes
@@ -132,10 +135,10 @@ namespace FROSch {
         SC avg;
         if (verbosity==All) {
             local = (LO) std::max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
-            reduceAll(*this->MpiComm_,Teuchos::REDUCE_SUM,local,Teuchos::ptr(&sum));
+            reduceAll(*this->MpiComm_,REDUCE_SUM,local,ptr(&sum));
             avg = std::max(sum/double(this->MpiComm_->getSize()),0.0);
-            reduceAll(*this->MpiComm_,Teuchos::REDUCE_MIN,local,Teuchos::ptr(&min));
-            reduceAll(*this->MpiComm_,Teuchos::REDUCE_MAX,local,Teuchos::ptr(&max));
+            reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&min));
+            reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&max));
 
             if (this->Verbose_) {
             std::cout << "\n\
@@ -146,7 +149,7 @@ namespace FROSch {
             }
         }
 
-        ConstGraphPtr overlappingGraph = this->OverlappingMatrix_->getCrsGraph();
+        ConstXCrsGraphPtr overlappingGraph = this->OverlappingMatrix_->getCrsGraph();
         for (int i=0; i<overlap; i++) {
             switch (AddingLayersStrategy_) {
                 case LayersFromGraph:
@@ -167,10 +170,10 @@ namespace FROSch {
             }
             if (verbosity==All) {
                 local = (LO) std::max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,Teuchos::REDUCE_SUM,local,Teuchos::ptr(&sum));
+                reduceAll(*this->MpiComm_,REDUCE_SUM,local,ptr(&sum));
                 avg = std::max(sum/double(this->MpiComm_->getSize()),0.0);
-                reduceAll(*this->MpiComm_,Teuchos::REDUCE_MIN,local,Teuchos::ptr(&min));
-                reduceAll(*this->MpiComm_,Teuchos::REDUCE_MAX,local,Teuchos::ptr(&max));
+                reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&min));
+                reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&max));
 
                 if (this->Verbose_) {
                     std::cout << "\

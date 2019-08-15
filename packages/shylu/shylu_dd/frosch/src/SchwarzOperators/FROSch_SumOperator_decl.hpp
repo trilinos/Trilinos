@@ -46,6 +46,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC = double,
               class LO = int,
@@ -57,11 +60,11 @@ namespace FROSch {
 
         using CommPtr                   = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
 
-        using MapPtr                    = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
-        using ConstMapPtr               = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
+        using XMapPtr                   = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr              = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
 
-        using MultiVector               = typename SchwarzOperator<SC,LO,GO,NO>::MultiVector;
-        using MultiVectorPtr            = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr;
+        using XMultiVector              = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVector;
+        using XMultiVectorPtr           = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
 
         using SchwarzOperatorPtr        = typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtr;
         using SchwarzOperatorPtrVec     = typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtrVec;
@@ -81,23 +84,23 @@ namespace FROSch {
 
         virtual int initialize();
 
-        virtual int initialize(ConstMapPtr repeatedMap);
+        virtual int initialize(ConstXMapPtr repeatedMap);
 
         virtual int compute();
 
-        virtual void apply(const MultiVector &x,
-                           MultiVector &y,
+        virtual void apply(const XMultiVector &x,
+                           XMultiVector &y,
                            bool usePreconditionerOnly,
-                           Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                           SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                           SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
+                           ETransp mode=NO_TRANS,
+                           SC alpha=ScalarTraits<SC>::one(),
+                           SC beta=ScalarTraits<SC>::zero()) const;
 
-        virtual ConstMapPtr getDomainMap() const;
+        virtual ConstXMapPtr getDomainMap() const;
 
-        virtual ConstMapPtr getRangeMap() const;
+        virtual ConstXMapPtr getRangeMap() const;
 
-        virtual void describe(Teuchos::FancyOStream &out,
-                              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+        virtual void describe(FancyOStream &out,
+                              const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
         virtual std::string description() const;
 
@@ -106,10 +109,10 @@ namespace FROSch {
         int addOperators(SchwarzOperatorPtrVecPtr operators);
 
         int resetOperator(UN iD,
-                  SchwarzOperatorPtr op);
+                          SchwarzOperatorPtr op);
 
         int enableOperator(UN iD,
-                   bool enable);
+                           bool enable);
 
         UN getNumOperators();
 

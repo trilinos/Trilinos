@@ -46,14 +46,17 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
     GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::GDSWInterfacePartitionOfUnity(CommPtr mpiComm,
                                                                               CommPtr serialComm,
                                                                               UN dimension,
                                                                               UN dofsPerNode,
-                                                                              ConstMapPtr nodesMap,
-                                                                              ConstMapPtrVecPtr dofsMaps,
+                                                                              ConstXMapPtr nodesMap,
+                                                                              ConstXMapPtrVecPtr dofsMaps,
                                                                               ParameterListPtr parameterList,
                                                                               Verbosity verbosity) :
     InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList),
@@ -121,8 +124,8 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::GDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
         }
-        this->LocalPartitionOfUnity_ = MultiVectorPtrVecPtr(5);
-        this->PartitionOfUnityMaps_ = MapPtrVecPtr(5);
+        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(5);
+        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(5);
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -133,7 +136,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs,
-                                                                         ConstMultiVectorPtr nodeList)
+                                                                         ConstXMultiVectorPtr nodeList)
     {
         if (!dirichletBoundaryDofs.is_null()) {
             GOVec tmpDirichletBoundaryDofs(dirichletBoundaryDofs());
@@ -145,8 +148,8 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(ConstCrsMatrixPtr matrix,
-                                                                  ConstMultiVectorPtr nodeList)
+    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(ConstXMatrixPtr matrix,
+                                                                  ConstXMultiVectorPtr nodeList)
     {
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
             this->DDInterface_->divideUnconnectedEntities(matrix);
@@ -210,15 +213,15 @@ namespace FROSch {
         }
 
         // Build Partition Of Unity Vectors
-        MapPtr serialInterfaceMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->DDInterface_->getNodesMap()->lib(),numInterfaceDofs,0,this->SerialComm_);
+        XMapPtr serialInterfaceMap = MapFactory<LO,GO,NO>::Build(this->DDInterface_->getNodesMap()->lib(),numInterfaceDofs,0,this->SerialComm_);
 
         if (UseVertices_ && Vertices_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Vertices_->getNumEntities());
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Vertices_->getNumEntities());
 
             for (UN i=0; i<Vertices_->getNumEntities(); i++) {
                 for (UN j=0; j<Vertices_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(Vertices_->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
+                        tmpVector->replaceLocalValue(Vertices_->getEntity(i)->getGammaDofID(j,k),i,ScalarTraits<SC>::one());
                     }
                 }
             }
@@ -227,12 +230,12 @@ namespace FROSch {
         }
 
         if (UseShortEdges_ && ShortEdges_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,ShortEdges_->getNumEntities());
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,ShortEdges_->getNumEntities());
 
             for (UN i=0; i<ShortEdges_->getNumEntities(); i++) {
                 for (UN j=0; j<ShortEdges_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(ShortEdges_->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
+                        tmpVector->replaceLocalValue(ShortEdges_->getEntity(i)->getGammaDofID(j,k),i,ScalarTraits<SC>::one());
                     }
                 }
             }
@@ -241,12 +244,12 @@ namespace FROSch {
         }
 
         if (UseStraightEdges_ && StraightEdges_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,StraightEdges_->getNumEntities());
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,StraightEdges_->getNumEntities());
 
             for (UN i=0; i<StraightEdges_->getNumEntities(); i++) {
                 for (UN j=0; j<StraightEdges_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(StraightEdges_->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
+                        tmpVector->replaceLocalValue(StraightEdges_->getEntity(i)->getGammaDofID(j,k),i,ScalarTraits<SC>::one());
                     }
                 }
             }
@@ -254,12 +257,12 @@ namespace FROSch {
         }
 
         if (UseEdges_ && Edges_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Edges_->getNumEntities());
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Edges_->getNumEntities());
 
             for (UN i=0; i<Edges_->getNumEntities(); i++) {
                 for (UN j=0; j<Edges_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(Edges_->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
+                        tmpVector->replaceLocalValue(Edges_->getEntity(i)->getGammaDofID(j,k),i,ScalarTraits<SC>::one());
                     }
                 }
             }
@@ -268,12 +271,12 @@ namespace FROSch {
         }
 
         if (UseFaces_ && Faces_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Faces_->getNumEntities());
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Faces_->getNumEntities());
 
             for (UN i=0; i<Faces_->getNumEntities(); i++) {
                 for (UN j=0; j<Faces_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(Faces_->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
+                        tmpVector->replaceLocalValue(Faces_->getEntity(i)->getGammaDofID(j,k),i,ScalarTraits<SC>::one());
                     }
                 }
             }

@@ -48,6 +48,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC = double,
               class LO = int,
@@ -59,21 +62,21 @@ namespace FROSch {
 
         using CommPtr                       = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::CommPtr;
 
-        using Map                           = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::Map ;
-        using MapPtr                        = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtr;
-        using ConstMapPtr                   = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMapPtr;
-        using MapPtrVecPtr                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtrVecPtr;
-        using ConstMapPtrVecPtr             = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMapPtrVecPtr;
+        using XMap                          = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMap ;
+        using XMapPtr                       = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr                 = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
 
-        using CrsMatrix                     = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::CrsMatrix;
-        using CrsMatrixPtr                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::CrsMatrixPtr;
-        using ConstCrsMatrixPtr             = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+        using XMatrix                       = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMatrix;
+        using XMatrixPtr                    = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr               = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using MultiVector                   = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVector;
-        using ConstMultiVectorPtr           = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMultiVectorPtr;
-        using MultiVectorPtr                = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtr;
-        using MultiVectorPtrVecPtr          = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtrVecPtr;
-        using ConstMultiVectorPtrVecPtr     = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMultiVectorPtrVecPtr;
+        using XMultiVector                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMultiVector;
+        using ConstXMultiVectorPtr          = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using XMultiVectorPtr               = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtr;
+        using XMultiVectorPtrVecPtr         = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+        using ConstXMultiVectorPtrVecPtr    = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
 
         using ParameterListPtr              = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr;
 
@@ -92,18 +95,18 @@ namespace FROSch {
                                       CommPtr serialComm,
                                       UN dimension,
                                       UN dofsPerNode,
-                                      ConstMapPtr nodesMap,
-                                      ConstMapPtrVecPtr dofsMaps,
+                                      ConstXMapPtr nodesMap,
+                                      ConstXMapPtrVecPtr dofsMaps,
                                       ParameterListPtr parameterList,
                                       Verbosity verbosity = All);
 
         virtual ~GDSWInterfacePartitionOfUnity();
 
         virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs,
-                                         ConstMultiVectorPtr nodeList);
+                                         ConstXMultiVectorPtr nodeList);
 
-        virtual int sortInterface(ConstCrsMatrixPtr matrix,
-                                  ConstMultiVectorPtr nodeList);
+        virtual int sortInterface(ConstXMatrixPtr matrix,
+                                  ConstXMultiVectorPtr nodeList);
 
         virtual int computePartitionOfUnity();
 

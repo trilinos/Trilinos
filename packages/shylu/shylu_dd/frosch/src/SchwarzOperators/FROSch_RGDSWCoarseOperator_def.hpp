@@ -46,9 +46,12 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
-    RGDSWCoarseOperator<SC,LO,GO,NO>::RGDSWCoarseOperator(ConstCrsMatrixPtr k,
+    RGDSWCoarseOperator<SC,LO,GO,NO>::RGDSWCoarseOperator(ConstXMatrixPtr k,
                                                           ParameterListPtr parameterList) :
     GDSWCoarseOperator<SC,LO,GO,NO> (k,parameterList)
     {
@@ -59,10 +62,10 @@ namespace FROSch {
     int RGDSWCoarseOperator<SC,LO,GO,NO>::resetCoarseSpaceBlock(UN blockId,
                                                                 UN dimension,
                                                                 UN dofsPerNode,
-                                                                ConstMapPtr nodesMap,
-                                                                ConstMapPtrVecPtr dofsMaps,
+                                                                ConstXMapPtr nodesMap,
+                                                                ConstXMapPtrVecPtr dofsMaps,
                                                                 GOVecPtr dirichletBoundaryDofs,
-                                                                ConstMultiVectorPtr nodeList)
+                                                                ConstXMultiVectorPtr nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
@@ -79,7 +82,7 @@ namespace FROSch {
         std::stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
         std::string blockIdString = blockIdStringstream.str();
-        Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
+        RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
         CommunicationStrategy communicationStrategy;
         if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsMatrix")) {
@@ -122,7 +125,7 @@ namespace FROSch {
         this->DofsMaps_[blockId] = dofsMaps;
         this->DofsPerNode_[blockId] = dofsPerNode;
 
-        Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
+        Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
 
         this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap.getConst(),verbosity,communicationStrategy));
@@ -170,13 +173,13 @@ namespace FROSch {
                                                     false,
                                                     true);
 
-                MultiVectorPtrVecPtr translations = this->computeTranslations(blockId,this->DDInterface_->getCoarseNodes(),entitySetVector,distanceFunction);
+                XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,this->DDInterface_->getCoarseNodes(),entitySetVector,distanceFunction);
                 for (UN i=0; i<translations.size(); i++) {
                     this->InterfaceCoarseSpaces_[blockId]->addSubspace(this->DDInterface_->getCoarseNodes()->getEntityMap(),translations[i]);
                 }
 
                 if (useRotations) {
-                    MultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,this->DDInterface_->getCoarseNodes(),entitySetVector,distanceFunction);
+                    XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,this->DDInterface_->getCoarseNodes(),entitySetVector,distanceFunction);
                     for (UN i=0; i<rotations.size(); i++) {                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(this->DDInterface_->getCoarseNodes()->getEntityMap(),rotations[i]);
                     }
                 }
@@ -198,18 +201,18 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename RGDSWCoarseOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr RGDSWCoarseOperator<SC,LO,GO,NO>::computeTranslations(UN blockId,
-                                                                                                                          EntitySetPtr coarseNodes,
-                                                                                                                          EntitySetPtrVecPtr entitySetVector,
-                                                                                                                          DistanceFunction distanceFunction)
+    typename RGDSWCoarseOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr RGDSWCoarseOperator<SC,LO,GO,NO>::computeTranslations(UN blockId,
+                                                                                                                           EntitySetPtr coarseNodes,
+                                                                                                                           EntitySetPtrVecPtr entitySetVector,
+                                                                                                                           DistanceFunction distanceFunction)
     {
-        MultiVectorPtrVecPtr translations(this->DofsPerNode_[blockId]);
-        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
+        XMultiVectorPtrVecPtr translations(this->DofsPerNode_[blockId]);
+        XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
         for (UN i=0; i<this->DofsPerNode_[blockId]; i++) {
             if (coarseNodes->getNumEntities()>0) {
-                translations[i] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,coarseNodes->getNumEntities());
+                translations[i] = MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,coarseNodes->getNumEntities());
             } else {
-                translations[i] = Teuchos::null;
+                translations[i] = null;
             }
         }
 
@@ -237,7 +240,7 @@ namespace FROSch {
                     } else {
                         // Coarse node: loop over nodes
                         for (UN l=0; l<entitySetVector[i]->getEntity(j)->getNumNodes(); l++) {
-                            translations[k]->replaceLocalValue(tmpEntity->getGammaDofID(l,k),coarseNodeID,Teuchos::ScalarTraits<SC>::one());
+                            translations[k]->replaceLocalValue(tmpEntity->getGammaDofID(l,k),coarseNodeID,ScalarTraits<SC>::one());
                         }
                     }
                 }
@@ -247,12 +250,12 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename RGDSWCoarseOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr RGDSWCoarseOperator<SC,LO,GO,NO>::computeRotations(UN blockId,
-                                                                                                                       UN dimension,
-                                                                                                                       ConstMultiVectorPtr nodeList,
-                                                                                                                       EntitySetPtr coarseNodes,
-                                                                                                                       EntitySetPtrVecPtr entitySetVector,
-                                                                                                                       DistanceFunction distanceFunction)
+    typename RGDSWCoarseOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr RGDSWCoarseOperator<SC,LO,GO,NO>::computeRotations(UN blockId,
+                                                                                                                        UN dimension,
+                                                                                                                        ConstXMultiVectorPtr nodeList,
+                                                                                                                        EntitySetPtr coarseNodes,
+                                                                                                                        EntitySetPtrVecPtr entitySetVector,
+                                                                                                                        DistanceFunction distanceFunction)
     {
         FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
         FROSCH_ASSERT(dimension==this->DofsPerNode_[blockId],"dimension!=this->DofsPerNode_[blockId]");
@@ -260,7 +263,7 @@ namespace FROSch {
         UN rotationsPerEntity = 0;
         switch (dimension) {
             case 1:
-                return Teuchos::null;
+                return null;
                 break;
             case 2:
                 rotationsPerEntity = 1;
@@ -273,13 +276,13 @@ namespace FROSch {
                 break;
         }
 
-        MultiVectorPtrVecPtr rotations(rotationsPerEntity);
-        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
+        XMultiVectorPtrVecPtr rotations(rotationsPerEntity);
+        XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
         for (UN i=0; i<rotationsPerEntity; i++) {
             if (coarseNodes->getNumEntities()>0) {
-                rotations[i] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,coarseNodes->getNumEntities());
+                rotations[i] = MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,coarseNodes->getNumEntities());
             } else {
-                rotations[i] = Teuchos::null;
+                rotations[i] = null;
             }
         }
 

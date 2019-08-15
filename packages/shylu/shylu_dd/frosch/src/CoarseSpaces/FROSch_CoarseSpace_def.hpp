@@ -46,6 +46,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
     CoarseSpace<SC,LO,GO,NO>::CoarseSpace() :
@@ -61,8 +64,8 @@ namespace FROSch {
 
     // Will man Informationen über die Subspaces als strings reingeben?
     template <class SC,class LO,class GO,class NO>
-    int CoarseSpace<SC,LO,GO,NO>::addSubspace(MapPtr subspaceBasisMap,
-                                              MultiVectorPtr localSubspaceBasis)
+    int CoarseSpace<SC,LO,GO,NO>::addSubspace(XMapPtr subspaceBasisMap,
+                                              XMultiVectorPtr localSubspaceBasis)
     {
         FROSCH_ASSERT(!subspaceBasisMap.is_null(),"subspaceBasisMap.is_null()");
         if (!localSubspaceBasis.is_null()) {
@@ -91,7 +94,7 @@ namespace FROSch {
         AssembledBasisMap_ = AssembleMaps(UnassembledBasesMaps_(),partMappings);
         if (!AssembledBasisMap_.is_null()&&!SerialRowMap_.is_null()) {
             if (AssembledBasisMap_->getGlobalNumElements()>0) { // AH 02/12/2019: Is this the right condition? Seems to work for now...
-                AssembledBasis_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO >::Build(SerialRowMap_,AssembledBasisMap_->getNodeNumElements());
+                AssembledBasis_ = MultiVectorFactory<SC,LO,GO,NO >::Build(SerialRowMap_,AssembledBasisMap_->getNodeNumElements());
                 for (UN i=0; i<UnassembledBasesMaps_.size(); i++) {
                     for (UN j=0; j<UnassembledBasesMaps_[i]->getNodeNumElements(); j++) {
                         AssembledBasis_->getDataNonConst(itmp).deepCopy(UnassembledSubspaceBases_[i]->getData(j)()); // Here, we copy data. Do we need to do this?
@@ -111,14 +114,14 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int CoarseSpace<SC,LO,GO,NO>::buildGlobalBasisMatrix(ConstMapPtr rowMap,
-                                                         ConstMapPtr repeatedMap,
+    int CoarseSpace<SC,LO,GO,NO>::buildGlobalBasisMatrix(ConstXMapPtr rowMap,
+                                                         ConstXMapPtr repeatedMap,
                                                          SC treshold)
     {
         FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"AssembledBasisMap_.is_null().");
         FROSCH_ASSERT(!AssembledBasis_.is_null(),"AssembledBasis_.is_null().");
 
-        GlobalBasisMatrix_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+        GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
 
         LO iD;
         SC valueTmp;
@@ -176,7 +179,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename CoarseSpace<SC,LO,GO,NO>::MapPtr CoarseSpace<SC,LO,GO,NO>::getBasisMap() const
+    typename CoarseSpace<SC,LO,GO,NO>::XMapPtr CoarseSpace<SC,LO,GO,NO>::getBasisMap() const
     {
         FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"AssembledBasisMap_.is_null().");
         return AssembledBasisMap_;
@@ -189,7 +192,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename CoarseSpace<SC,LO,GO,NO>::MultiVectorPtr CoarseSpace<SC,LO,GO,NO>::getAssembledBasis() const
+    typename CoarseSpace<SC,LO,GO,NO>::XMultiVectorPtr CoarseSpace<SC,LO,GO,NO>::getAssembledBasis() const
     {
         FROSCH_ASSERT(!AssembledBasis_.is_null(),"AssembledBasis_.is_null().");
         return AssembledBasis_;
@@ -202,7 +205,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename CoarseSpace<SC,LO,GO,NO>::CrsMatrixPtr CoarseSpace<SC,LO,GO,NO>::getGlobalBasisMatrix() const
+    typename CoarseSpace<SC,LO,GO,NO>::XMatrixPtr CoarseSpace<SC,LO,GO,NO>::getGlobalBasisMatrix() const
     {
         FROSCH_ASSERT(!GlobalBasisMatrix_.is_null(),"GlobalBasisMatrix_.is_null().");
         return GlobalBasisMatrix_;

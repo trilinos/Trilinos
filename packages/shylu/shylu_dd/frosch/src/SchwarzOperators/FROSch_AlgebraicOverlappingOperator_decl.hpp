@@ -46,6 +46,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     enum AddingLayersStrategy {LayersFromMatrix=0,LayersFromGraph=1,LayersOld=2};
 
@@ -59,19 +62,19 @@ namespace FROSch {
 
         using CommPtr               = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
 
-        using MapPtr                = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
-        using ConstMapPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
+        using XMapPtr               = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr          = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
 
-        using CrsMatrixPtr          = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
-        using ConstCrsMatrixPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+        using XMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using ConstGraphPtr         = typename SchwarzOperator<SC,LO,GO,NO>::ConstGraphPtr;
+        using ConstXCrsGraphPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstXCrsGraphPtr;
 
         using ParameterListPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
     public:
 
-        AlgebraicOverlappingOperator(ConstCrsMatrixPtr k,
+        AlgebraicOverlappingOperator(ConstXMatrixPtr k,
                                      ParameterListPtr parameterList);
 
         virtual int initialize()
@@ -81,12 +84,12 @@ namespace FROSch {
         };
 
         int initialize(int overlap,
-                       ConstMapPtr repeatedMap = Teuchos::null);
+                       ConstXMapPtr repeatedMap = null);
 
         int compute();
 
-        void describe(Teuchos::FancyOStream &out,
-                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+        void describe(FancyOStream &out,
+                      const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
         std::string description() const;
 
@@ -95,7 +98,7 @@ namespace FROSch {
         int setUpAlgebraicOverlappingOperator();
 
         int buildOverlappingMatrices(int overlap,
-                                     ConstMapPtr repeatedMap);
+                                     ConstXMapPtr repeatedMap);
 
         AddingLayersStrategy AddingLayersStrategy_;
     };

@@ -55,59 +55,64 @@
 
 namespace FROSch {
 
+    using namespace Teuchos;
+    using namespace Xpetra;
+    
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
               class NO = KokkosClassic::DefaultNode::DefaultNodeType>
-    class SchwarzPreconditioner : public Xpetra::Operator<SC,LO,GO,NO> {
+    class SchwarzPreconditioner : public Operator<SC,LO,GO,NO> {
 
     protected:
 
-        using CommPtr                             = Teuchos::RCP<const Teuchos::Comm<int> >;
+        using CommPtr                             = RCP<const Comm<int> >;
 
-        using Map                                 = Xpetra::Map<LO,GO,NO>;
-        using MapPtr                              = Teuchos::RCP<Map>;
-        using ConstMapPtr                         = Teuchos::RCP<const Map>;
-        using MapPtrVecPtr                        = Teuchos::ArrayRCP<MapPtr>;
-        using ConstMapPtrVecPtr                   = Teuchos::ArrayRCP<ConstMapPtr>;
-        using MapPtrVecPtr2D                      = Teuchos::ArrayRCP<MapPtrVecPtr>;
-        using ConstMapPtrVecPtr2D                 = Teuchos::ArrayRCP<ConstMapPtrVecPtr>;
+        using XMap                                = Map<LO,GO,NO>;
+        using XMapPtr                             = RCP<XMap>;
+        using ConstXMapPtr                        = RCP<const XMap>;
+        using XMapPtrVecPtr                       = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr                  = ArrayRCP<ConstXMapPtr>;
+        using XMapPtrVecPtr2D                     = ArrayRCP<XMapPtrVecPtr>;
+        using ConstXMapPtrVecPtr2D                = ArrayRCP<ConstXMapPtrVecPtr>;
 
-        using CrsMatrix                           = Xpetra::Matrix<SC,LO,GO,NO>;
-        using CrsMatrixPtr                        = Teuchos::RCP<CrsMatrix>;
-        using ConstCrsMatrixPtr                   = Teuchos::RCP<const CrsMatrix>;
+        using XMatrix                             = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr                          = RCP<XMatrix>;
+        using ConstXMatrixPtr                     = RCP<const XMatrix>;
 
-        using MultiVector                         = Xpetra::MultiVector<SC,LO,GO,NO>;
-        using MultiVectorPtr                      = Teuchos::RCP<MultiVector>;
-        using ConstMultiVectorPtr                 = Teuchos::RCP<const MultiVector>;
-        using MultiVectorPtrVecPtr                = Teuchos::ArrayRCP<MultiVectorPtr>;
-        using ConstMultiVectorPtrVecPtr           = Teuchos::ArrayRCP<ConstMultiVectorPtr>;
+        using XMultiVector                        = MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr                     = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr                = RCP<const XMultiVector>;
+        using XMultiVectorPtrVecPtr               = ArrayRCP<XMultiVectorPtr>;
+        using ConstXMultiVectorPtrVecPtr          = ArrayRCP<ConstXMultiVectorPtr>;
 
-        using ParameterListPtr                    = Teuchos::RCP<Teuchos::ParameterList>;
+        using ParameterListPtr                    = RCP<ParameterList>;
 
-        using SumOperatorPtr                      = Teuchos::RCP<SumOperator<SC,LO,GO,NO> >;
-        using MultiplicativeOperatorPtr           = Teuchos::RCP<MultiplicativeOperator<SC,LO,GO,NO> >;
-        using OverlappingOperatorPtr              = Teuchos::RCP<OverlappingOperator<SC,LO,GO,NO> >;
-        using AlgebraicOverlappingOperatorPtr     = Teuchos::RCP<AlgebraicOverlappingOperator<SC,LO,GO,NO> >;
-        using CoarseOperatorPtr                   = Teuchos::RCP<CoarseOperator<SC,LO,GO,NO> >;
-        using GDSWCoarseOperatorPtr               = Teuchos::RCP<GDSWCoarseOperator<SC,LO,GO,NO> >;
-        using RGDSWCoarseOperatorPtr              = Teuchos::RCP<RGDSWCoarseOperator<SC,LO,GO,NO> >;
-        using IPOUHarmonicCoarseOperatorPtr       = Teuchos::RCP<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> >;
+        using SumOperatorPtr                      = RCP<SumOperator<SC,LO,GO,NO> >;
+        using MultiplicativeOperatorPtr           = RCP<MultiplicativeOperator<SC,LO,GO,NO> >;
+        using OverlappingOperatorPtr              = RCP<OverlappingOperator<SC,LO,GO,NO> >;
+        using AlgebraicOverlappingOperatorPtr     = RCP<AlgebraicOverlappingOperator<SC,LO,GO,NO> >;
+        using CoarseOperatorPtr                   = RCP<CoarseOperator<SC,LO,GO,NO> >;
+        using GDSWCoarseOperatorPtr               = RCP<GDSWCoarseOperator<SC,LO,GO,NO> >;
+        using RGDSWCoarseOperatorPtr              = RCP<RGDSWCoarseOperator<SC,LO,GO,NO> >;
+        using IPOUHarmonicCoarseOperatorPtr       = RCP<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> >;
 
+        using DofOrderingVecPtr                   = ArrayRCP<DofOrdering>;
+        
         using UN                                  = unsigned;
 
-        using GOVecPtr                            = Teuchos::ArrayRCP<GO>;
+        using GOVecPtr                            = ArrayRCP<GO>;
 
-        using SCVecPtr                            = Teuchos::ArrayRCP<SC>;
+        using SCVecPtr                            = ArrayRCP<SC>;
 
-        using UNVecPtr                            = Teuchos::ArrayRCP<UN>;
+        using UNVecPtr                            = ArrayRCP<UN>;
 
-        using LOVecPtr                            = Teuchos::ArrayRCP<LO>;
+        using LOVecPtr                            = ArrayRCP<LO>;
 
-        using GOVecPtr2D                          = Teuchos::ArrayRCP<GOVecPtr>;
+        using GOVecPtr2D                          = ArrayRCP<GOVecPtr>;
 
-        using GOVec                               = Teuchos::Array<GO>;
-        using GOVec2D                             = Teuchos::Array<GOVec>;
+        using GOVec                               = Array<GO>;
+        using GOVec2D                             = Array<GOVec>;
 
     public:
 
@@ -121,18 +126,18 @@ namespace FROSch {
         virtual int compute() = 0;
 
         // Y = alpha * A^mode * X + beta * Y
-        virtual void apply(const MultiVector &X,
-                           MultiVector &Y,
-                           Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                           SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                           SC beta=Teuchos::ScalarTraits<SC>::zero()) const = 0;
+        virtual void apply(const XMultiVector &X,
+                           XMultiVector &Y,
+                           ETransp mode=NO_TRANS,
+                           SC alpha=ScalarTraits<SC>::one(),
+                           SC beta=ScalarTraits<SC>::zero()) const = 0;
 
-        virtual ConstMapPtr getDomainMap() const = 0;
+        virtual ConstXMapPtr getDomainMap() const = 0;
 
-        virtual ConstMapPtr getRangeMap() const = 0;
+        virtual ConstXMapPtr getRangeMap() const = 0;
 
-        virtual void describe(Teuchos::FancyOStream &out,
-                              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
+        virtual void describe(FancyOStream &out,
+                              const EVerbosityLevel verbLevel=Describable::verbLevel_default) const = 0;
 
         virtual std::string description() const = 0;
 

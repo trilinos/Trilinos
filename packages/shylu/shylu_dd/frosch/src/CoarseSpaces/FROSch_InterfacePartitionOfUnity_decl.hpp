@@ -49,6 +49,9 @@
 
 namespace FROSch {
 
+    using namespace Teuchos;
+    using namespace Xpetra;
+    
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -57,40 +60,40 @@ namespace FROSch {
 
     protected:
 
-        using CommPtr                       = Teuchos::RCP<const Teuchos::Comm<int> >;
+        using CommPtr                       = RCP<const Comm<int> >;
 
-        using Map                           = Xpetra::Map<LO,GO,NO>;
-        using MapPtr                        = Teuchos::RCP<Map>;
-        using ConstMapPtr                   = Teuchos::RCP<const Map>;
-        using MapPtrVecPtr                  = Teuchos::ArrayRCP<MapPtr>;
-        using ConstMapPtrVecPtr             = Teuchos::ArrayRCP<ConstMapPtr>;
+        using XMap                          = Map<LO,GO,NO>;
+        using XMapPtr                       = RCP<XMap>;
+        using ConstXMapPtr                  = RCP<const XMap>;
+        using XMapPtrVecPtr                 = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr            = ArrayRCP<ConstXMapPtr>;
 
-        using CrsMatrix                     = Xpetra::Matrix<SC,LO,GO,NO>;
-        using CrsMatrixPtr                  = Teuchos::RCP<CrsMatrix>;
-        using ConstCrsMatrixPtr             = Teuchos::RCP<const CrsMatrix>;
+        using XMatrix                       = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr                    = RCP<XMatrix>;
+        using ConstXMatrixPtr               = RCP<const XMatrix>;
 
-        using MultiVector                   = Xpetra::MultiVector<SC,LO,GO,NO>;
-        using ConstMultiVectorPtr           = Teuchos::RCP<const MultiVector>;
-        using MultiVectorPtr                = Teuchos::RCP<MultiVector>;
-        using MultiVectorPtrVecPtr          = Teuchos::ArrayRCP<MultiVectorPtr>;
-        using ConstMultiVectorPtrVecPtr     = Teuchos::ArrayRCP<ConstMultiVectorPtr>;
+        using XMultiVector                  = MultiVector<SC,LO,GO,NO>;
+        using ConstXMultiVectorPtr          = RCP<const XMultiVector>;
+        using XMultiVectorPtr               = RCP<XMultiVector>;
+        using XMultiVectorPtrVecPtr         = ArrayRCP<XMultiVectorPtr>;
+        using ConstXMultiVectorPtrVecPtr    = ArrayRCP<ConstXMultiVectorPtr>;
 
-        using ParameterListPtr              = Teuchos::RCP<Teuchos::ParameterList>;
+        using ParameterListPtr              = RCP<ParameterList>;
 
-        using DDInterfacePtr                = Teuchos::RCP<DDInterface<SC,LO,GO,NO> >;
-        using ConstDDInterfacePtr           = Teuchos::RCP<const DDInterface<SC,LO,GO,NO> >;
+        using DDInterfacePtr                = RCP<DDInterface<SC,LO,GO,NO> >;
+        using ConstDDInterfacePtr           = RCP<const DDInterface<SC,LO,GO,NO> >;
 
-        using EntitySetPtr                  = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
-        using EntitySetPtrVecPtr            = Teuchos::ArrayRCP<EntitySetPtr>;
+        using EntitySetPtr                  = RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetPtrVecPtr            = ArrayRCP<EntitySetPtr>;
 
-        using InterfaceEntityPtr            = Teuchos::RCP<InterfaceEntity<SC,LO,GO> >;
+        using InterfaceEntityPtr            = RCP<InterfaceEntity<SC,LO,GO> >;
         
         using UN                            = unsigned;
 
-        using GOVec                         = Teuchos::Array<GO>;
-        using GOVecView                     = Teuchos::ArrayView<GO>;
+        using GOVec                         = Array<GO>;
+        using GOVecView                     = ArrayView<GO>;
 
-        using SCVecPtr                      = Teuchos::ArrayRCP<SC>;
+        using SCVecPtr                      = ArrayRCP<SC>;
 
     public:
 
@@ -98,24 +101,24 @@ namespace FROSch {
                                   CommPtr serialComm,
                                   UN dimension,
                                   UN dofsPerNode,
-                                  ConstMapPtr nodesMap,
-                                  ConstMapPtrVecPtr dofsMaps,
+                                  ConstXMapPtr nodesMap,
+                                  ConstXMapPtrVecPtr dofsMaps,
                                   ParameterListPtr parameterList,
                                   Verbosity verbosity = All);
 
         virtual ~InterfacePartitionOfUnity();
 
-        virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs = Teuchos::null,
-                                         ConstMultiVectorPtr nodeList = Teuchos::null) = 0;
+        virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs = null,
+                                         ConstXMultiVectorPtr nodeList = null) = 0;
 
-        virtual int sortInterface(ConstCrsMatrixPtr matrix,
-                                  ConstMultiVectorPtr nodeList = Teuchos::null) = 0;
+        virtual int sortInterface(ConstXMatrixPtr matrix,
+                                  ConstXMultiVectorPtr nodeList = null) = 0;
 
         virtual int computePartitionOfUnity() = 0;
 
-        MultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
+        XMultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
 
-        MapPtrVecPtr getPartitionOfUnityMaps() const;
+        XMapPtrVecPtr getPartitionOfUnityMaps() const;
 
         ConstDDInterfacePtr getDDInterface() const;
 
@@ -128,9 +131,9 @@ namespace FROSch {
 
         ParameterListPtr ParameterList_;
 
-        MultiVectorPtrVecPtr LocalPartitionOfUnity_;
+        XMultiVectorPtrVecPtr LocalPartitionOfUnity_;
 
-        MapPtrVecPtr PartitionOfUnityMaps_;
+        XMapPtrVecPtr PartitionOfUnityMaps_;
 
         bool Verbose_;
     };

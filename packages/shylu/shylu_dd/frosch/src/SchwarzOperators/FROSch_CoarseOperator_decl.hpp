@@ -48,6 +48,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC = double,
               class LO = int,
@@ -59,21 +62,20 @@ namespace FROSch {
 
         using CommPtr               = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
 
-        using Map                   = typename SchwarzOperator<SC,LO,GO,NO>::Map;
-        using MapPtr                = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
-        using ConstMapPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
-        using MapPtrVecPtr          = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr;
-        using ConstMapPtrVecPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtrVecPtr;
+        using XMap                  = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
+        using XMapPtr               = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr          = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr         = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
 
-        using CrsMatrixPtr          = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
-        using ConstCrsMatrixPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+        using XMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using MultiVector           = typename SchwarzOperator<SC,LO,GO,NO>::MultiVector;
-        using MultiVectorPtr        = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr;
+        using XMultiVector          = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVector;
+        using XMultiVectorPtr       = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
 
-        using ExporterPtrVecPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ExporterPtrVecPtr;
+        using XExportPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::XExportPtrVecPtr;
 
-        using ParameterList         = typename SchwarzOperator<SC,LO,GO,NO>::ParameterList;
         using ParameterListPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
         using CoarseSpacePtr        = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr;
@@ -98,7 +100,7 @@ namespace FROSch {
 
     public:
 
-        CoarseOperator(ConstCrsMatrixPtr k,
+        CoarseOperator(ConstXMatrixPtr k,
                        ParameterListPtr parameterList);
 
         ~CoarseOperator();
@@ -107,38 +109,38 @@ namespace FROSch {
 
         virtual int compute();
 
-        virtual MapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace) = 0;
+        virtual XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace) = 0;
 
         virtual int clearCoarseSpace();
 
-        virtual void apply(const MultiVector &x,
-                          MultiVector &y,
-                          bool usePreconditionerOnly,
-                          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                          SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                          SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
+        virtual void apply(const XMultiVector &x,
+                           XMultiVector &y,
+                           bool usePreconditionerOnly,
+                           ETransp mode=NO_TRANS,
+                           SC alpha=ScalarTraits<SC>::one(),
+                           SC beta=ScalarTraits<SC>::zero()) const;
 
-        virtual void applyPhiT(MultiVector& x,
-                              MultiVector& y) const;
+        virtual void applyPhiT(const XMultiVector& x,
+                               XMultiVector& y) const;
 
-        virtual void applyCoarseSolve(MultiVector& x,
-                                     MultiVector& y,
-                                     Teuchos::ETransp mode=Teuchos::NO_TRANS) const;
+        virtual void applyCoarseSolve(XMultiVector& x,
+                                      XMultiVector& y,
+                                      ETransp mode=NO_TRANS) const;
 
-        virtual void applyPhi(MultiVector& x,
-                             MultiVector& y) const;
+        virtual void applyPhi(const XMultiVector& x,
+                              XMultiVector& y) const;
 
         virtual CoarseSpacePtr getCoarseSpace() const;
 
     protected:
 
-        virtual MapPtr assembleSubdomainMap() = 0;
+        virtual XMapPtr assembleSubdomainMap() = 0;
 
         virtual int setUpCoarseOperator();
 
-        CrsMatrixPtr buildCoarseMatrix();
+        XMatrixPtr buildCoarseMatrix();
 
-        virtual int buildCoarseSolveMap(CrsMatrixPtr &k0);
+        virtual int buildCoarseSolveMap(XMatrixPtr &k0);
 
 
         CommPtr CoarseSolveComm_;
@@ -149,18 +151,18 @@ namespace FROSch {
 
         CoarseSpacePtr CoarseSpace_;
 
-        CrsMatrixPtr Phi_;
-        CrsMatrixPtr CoarseMatrix_;
+        XMatrixPtr Phi_;
+        XMatrixPtr CoarseMatrix_;
 
-        ConstMapPtrVecPtr GatheringMaps_;
-        MapPtr CoarseSolveMap_;
-        MapPtr CoarseSolveRepeatedMap_;
+        ConstXMapPtrVecPtr GatheringMaps_;
+        XMapPtr CoarseSolveMap_;
+        XMapPtr CoarseSolveRepeatedMap_;
 
         SubdomainSolverPtr CoarseSolver_;
 
         ParameterListPtr DistributionList_;
 
-        ExporterPtrVecPtr CoarseSolveExporters_;
+        XExportPtrVecPtr CoarseSolveExporters_;
 
     };
 

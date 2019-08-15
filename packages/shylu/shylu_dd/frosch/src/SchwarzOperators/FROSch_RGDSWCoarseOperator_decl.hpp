@@ -46,6 +46,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC = double,
               class LO = int,
@@ -57,17 +60,17 @@ namespace FROSch {
 
         using CommPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
 
-        using MapPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
-        using ConstMapPtr             = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
-        using MapPtrVecPtr            = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr;
-        using ConstMapPtrVecPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtrVecPtr;
+        using XMapPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr            = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
 
-        using CrsMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
-        using ConstCrsMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+        using XMatrixPtr              = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr         = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using MultiVectorPtr          = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr;
-        using ConstMultiVectorPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstMultiVectorPtr;
-        using MultiVectorPtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr;
+        using XMultiVectorPtr         = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
+        using ConstXMultiVectorPtr    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using XMultiVectorPtrVecPtr   = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
 
         using ParameterListPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
@@ -92,31 +95,31 @@ namespace FROSch {
 
     public:
 
-        RGDSWCoarseOperator(ConstCrsMatrixPtr k,
+        RGDSWCoarseOperator(ConstXMatrixPtr k,
                             ParameterListPtr parameterList);
 
         virtual int resetCoarseSpaceBlock(UN blockId,
                                           UN dimension,
                                           UN dofsPerNode,
-                                          ConstMapPtr nodesMap,
-                                          ConstMapPtrVecPtr dofsMaps,
+                                          ConstXMapPtr nodesMap,
+                                          ConstXMapPtrVecPtr dofsMaps,
                                           GOVecPtr dirichletBoundaryDofs,
-                                          ConstMultiVectorPtr nodeList);
+                                          ConstXMultiVectorPtr nodeList);
 
 
     protected:
 
-        virtual MultiVectorPtrVecPtr computeTranslations(UN blockId,
-                                                         EntitySetPtr coarseNodes,
-                                                         EntitySetPtrVecPtr entitySetVector,
-                                                         DistanceFunction distanceFunction = ConstantDistanceFunction);
+        virtual XMultiVectorPtrVecPtr computeTranslations(UN blockId,
+                                                          EntitySetPtr coarseNodes,
+                                                          EntitySetPtrVecPtr entitySetVector,
+                                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
 
-        virtual MultiVectorPtrVecPtr computeRotations(UN blockId,
-                                                      UN dimension,
-                                                      ConstMultiVectorPtr nodeList,
-                                                      EntitySetPtr coarseNodes,
-                                                      EntitySetPtrVecPtr entitySetVector,
-                                                      DistanceFunction distanceFunction = ConstantDistanceFunction);
+        virtual XMultiVectorPtrVecPtr computeRotations(UN blockId,
+                                                       UN dimension,
+                                                       ConstXMultiVectorPtr nodeList,
+                                                       EntitySetPtr coarseNodes,
+                                                       EntitySetPtrVecPtr entitySetVector,
+                                                       DistanceFunction distanceFunction = ConstantDistanceFunction);
 
     };
 

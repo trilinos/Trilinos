@@ -54,6 +54,9 @@
 
 namespace FROSch {
 
+    using namespace Teuchos;
+    using namespace Xpetra;
+    
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -62,29 +65,29 @@ namespace FROSch {
 
     protected:
 
-        using CommPtr                   = Teuchos::RCP<const Teuchos::Comm<int> > ;
+        using CommPtr                   = RCP<const Comm<int> >;
 
-        using Map                       = Xpetra::Map<LO,GO,NO> ;
-        using MapPtr                    = Teuchos::RCP<Map> ;
-        using MapPtrVecPtr              = Teuchos::ArrayRCP<MapPtr> ;
+        using XMap                      = Map<LO,GO,NO>;
+        using XMapPtr                   = RCP<XMap>;
+        using XMapPtrVecPtr             = ArrayRCP<XMapPtr>;
 
-        using MultiVector               = Xpetra::MultiVector<SC,LO,GO,NO> ;
-        using MultiVectorPtr            = Teuchos::RCP<MultiVector> ;
-        using MultiVectorPtrVecPtr      = Teuchos::ArrayRCP<MultiVectorPtr> ;
-        using MultiVectorPtrVecPtr2D    = Teuchos::ArrayRCP<MultiVectorPtrVecPtr> ;
+        using XMultiVector              = MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr           = RCP<XMultiVector>;
+        using XMultiVectorPtrVecPtr     = ArrayRCP<XMultiVectorPtr>;
+        using XMultiVectorPtrVecPtr2D   = ArrayRCP<XMultiVectorPtrVecPtr>;
 
-        using ParameterListPtr          = Teuchos::RCP<Teuchos::ParameterList> ;
+        using ParameterListPtr          = RCP<ParameterList>;
 
-        using CoarseSpacePtr            = Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> > ;
+        using CoarseSpacePtr            = RCP<CoarseSpace<SC,LO,GO,NO> >;
 
-        using UN                        = unsigned ;
-        using UNVecPtr                  = Teuchos::ArrayRCP<UN> ;
+        using UN                        = unsigned;
+        using UNVecPtr                  = ArrayRCP<UN>;
 
-        using LOVecPtr                  = Teuchos::ArrayRCP<LO> ;
-        using LOVecPtr2D                = Teuchos::ArrayRCP<LOVecPtr> ;
+        using LOVecPtr                  = ArrayRCP<LO>;
+        using LOVecPtr2D                = ArrayRCP<LOVecPtr>;
 
-        using BoolVecPtr                = Teuchos::ArrayRCP<bool> ;
-        using BoolVecPtr2D              = Teuchos::ArrayRCP<BoolVecPtr> ;
+        using BoolVecPtr                = ArrayRCP<bool>;
+        using BoolVecPtr2D              = ArrayRCP<BoolVecPtr>;
 
     public:
 
@@ -92,22 +95,22 @@ namespace FROSch {
                                    CommPtr serialComm,
                                    UN dofsPerNode,
                                    ParameterListPtr parameterList,
-                                   MultiVectorPtr nullSpaceBasis = MultiVectorPtr(),
-                                   MultiVectorPtrVecPtr partitionOfUnity = MultiVectorPtrVecPtr(),
-                                   MapPtrVecPtr partitionOfUnityMaps = MapPtrVecPtr());
+                                   XMultiVectorPtr nullSpaceBasis = XMultiVectorPtr(),
+                                   XMultiVectorPtrVecPtr partitionOfUnity = XMultiVectorPtrVecPtr(),
+                                   XMapPtrVecPtr partitionOfUnityMaps = XMapPtrVecPtr());
 
 //        virtual ~LocalPartitionOfUnityBasis();
 
-        int addPartitionOfUnity(MultiVectorPtrVecPtr partitionOfUnity,
-                                MapPtrVecPtr partitionOfUnityMaps);
+        int addPartitionOfUnity(XMultiVectorPtrVecPtr partitionOfUnity,
+                                XMapPtrVecPtr partitionOfUnityMaps);
 
-        int addGlobalBasis(MultiVectorPtr nullSpaceBasis);
+        int addGlobalBasis(XMultiVectorPtr nullSpaceBasis);
 
         int buildLocalPartitionOfUnityBasis();
 
-        MultiVectorPtrVecPtr getPartitionOfUnity() const;
+        XMultiVectorPtrVecPtr getPartitionOfUnity() const;
 
-        MultiVectorPtr getNullspaceBasis() const;
+        XMultiVectorPtr getNullspaceBasis() const;
 
         CoarseSpacePtr getLocalPartitionOfUnitySpace() const;
 
@@ -122,10 +125,10 @@ namespace FROSch {
 
         CoarseSpacePtr LocalPartitionOfUnitySpace_;
 
-        MultiVectorPtrVecPtr PartitionOfUnity_;
-        MultiVectorPtr NullspaceBasis_;
+        XMultiVectorPtrVecPtr PartitionOfUnity_;
+        XMultiVectorPtr NullspaceBasis_;
 
-        MapPtrVecPtr PartitionOfUnityMaps_;
+        XMapPtrVecPtr PartitionOfUnityMaps_;
 
     };
 

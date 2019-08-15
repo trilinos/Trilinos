@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Comm<int> > CommWorld = DefaultPlatform::getDefaultPlatform().getComm();
 
     CommandLineProcessor My_CLP;
 
@@ -300,8 +300,8 @@ int main(int argc, char *argv[])
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
 
-        xSolution->putScalar(Teuchos::ScalarTraits<SC>::zero());
-        xRightHandSide->putScalar(Teuchos::ScalarTraits<SC>::one());
+        xSolution->putScalar(ScalarTraits<SC>::zero());
+        xRightHandSide->putScalar(ScalarTraits<SC>::one());
 
         CrsMatrixWrap<SC,LO,GO,NO>& crsWrapK = dynamic_cast<CrsMatrixWrap<SC,LO,GO,NO>&>(*KMonolithic);
         RCP<const LinearOpBase<SC> > K_thyra = ThyraUtils<SC,LO,GO,NO>::toThyra(crsWrapK.getCrsMatrix());
@@ -366,7 +366,7 @@ int main(int argc, char *argv[])
         linearSolverBuilder.createLinearSolveStrategy("");
 
         lowsFactory->setOStream(out);
-        lowsFactory->setVerbLevel(Teuchos::VERB_HIGH);
+        lowsFactory->setVerbLevel(VERB_HIGH);
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "###########################\n# Thyra LinearOpWithSolve #\n###########################" << endl;
 

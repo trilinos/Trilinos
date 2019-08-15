@@ -46,9 +46,12 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
-    TwoLevelPreconditioner<SC,LO,GO,NO>::TwoLevelPreconditioner(ConstCrsMatrixPtr k,
+    TwoLevelPreconditioner<SC,LO,GO,NO>::TwoLevelPreconditioner(ConstXMatrixPtr k,
                                                                 ParameterListPtr parameterList) :
     OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList),
     CoarseOperator_ ()
@@ -86,29 +89,29 @@ namespace FROSch {
                                                         UN dofsPerNode,
                                                         DofOrdering dofOrdering)
     {
-        return initialize(dimension,dofsPerNode,overlap,Teuchos::null,Teuchos::null,dofOrdering,Teuchos::null,Teuchos::null,Teuchos::null);
+        return initialize(dimension,dofsPerNode,overlap,null,null,dofOrdering,null,null,null);
     }
 
     template <class SC,class LO,class GO,class NO>
     int TwoLevelPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                         int overlap,
-                                                        ConstMapPtr repeatedMap,
+                                                        ConstXMapPtr repeatedMap,
                                                         UN dofsPerNode,
                                                         DofOrdering dofOrdering,
-                                                        ConstMultiVectorPtr nodeList)
+                                                        ConstXMultiVectorPtr nodeList)
     {
-        return initialize(dimension,dofsPerNode,overlap,Teuchos::null,nodeList,dofOrdering,repeatedMap,Teuchos::null,Teuchos::null);
+        return initialize(dimension,dofsPerNode,overlap,null,nodeList,dofOrdering,repeatedMap,null,null);
     }
 
     template <class SC,class LO,class GO,class NO>
     int TwoLevelPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                         UN dofsPerNode,
                                                         int overlap,
-                                                        ConstMultiVectorPtr nullSpaceBasis,
-                                                        ConstMultiVectorPtr nodeList,
+                                                        ConstXMultiVectorPtr nullSpaceBasis,
+                                                        ConstXMultiVectorPtr nodeList,
                                                         DofOrdering dofOrdering,
-                                                        ConstMapPtr repeatedMap,
-                                                        ConstMapPtrVecPtr dofsMaps,
+                                                        ConstXMapPtr repeatedMap,
+                                                        ConstXMapPtrVecPtr dofsMaps,
                                                         GOVecPtr dirichletBoundaryDofs)
     {
         ////////////
@@ -124,7 +127,7 @@ namespace FROSch {
             repeatedMap = BuildRepeatedMap(this->K_->getCrsGraph()); // Todo: Achtung, die UniqueMap könnte unsinnig verteilt sein. Falls es eine repeatedMap gibt, sollte dann die uniqueMap neu gebaut werden können. In diesem Fall, sollte man das aber basierend auf der repeatedNodesMap tun
         }
         // Build dofsMaps and repeatedNodesMap
-        ConstMapPtr repeatedNodesMap;
+        ConstXMapPtr repeatedNodesMap;
         if (dofsMaps.is_null()) {
             if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,dofsMaps)) ret -= 100; // Todo: Rückgabewerte
         } else {
@@ -142,9 +145,9 @@ namespace FROSch {
         //////////////////////////
         if (!nodeList.is_null()) {
             if (!nodeList->getMap()->isSameAs(*repeatedNodesMap)) {
-                Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpNodeList = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMap,nodeList->getNumVectors());
-                Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(nodeList->getMap(),repeatedNodesMap);
-                tmpNodeList->doImport(*nodeList,*scatter,Xpetra::INSERT);
+                RCP<MultiVector<SC,LO,GO,NO> > tmpNodeList = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMap,nodeList->getNumVectors());
+                RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(nodeList->getMap(),repeatedNodesMap);
+                tmpNodeList->doImport(*nodeList,*scatter,INSERT);
                 nodeList = tmpNodeList.getConst();
             }
         }
@@ -160,7 +163,7 @@ namespace FROSch {
         // Initialize OverlappingOperator //
         ////////////////////////////////////
         if (!this->ParameterList_->get("OverlappingOperator Type","AlgebraicOverlappingOperator").compare("AlgebraicOverlappingOperator")) {
-            AlgebraicOverlappingOperatorPtr algebraicOverlappigOperator = Teuchos::rcp_static_cast<AlgebraicOverlappingOperator<SC,LO,GO,NO> >(this->OverlappingOperator_);
+            AlgebraicOverlappingOperatorPtr algebraicOverlappigOperator = rcp_static_cast<AlgebraicOverlappingOperator<SC,LO,GO,NO> >(this->OverlappingOperator_);
             if (0>algebraicOverlappigOperator->initialize(overlap,repeatedMap)) ret -= 1;
         } else {
             FROSCH_ASSERT(false,"OverlappingOperator Type unkown.");
@@ -178,21 +181,21 @@ namespace FROSch {
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Input")) {
                 FROSCH_ASSERT(!nullSpaceBasis.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
                 if (!nullSpaceBasis->getMap()->isSameAs(*repeatedMap)) {
-                    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpNullSpaceBasis = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,nullSpaceBasis->getNumVectors());
-                    Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(nullSpaceBasis->getMap(),repeatedMap);
-                    tmpNullSpaceBasis->doImport(*nullSpaceBasis,*scatter,Xpetra::INSERT);
+                    RCP<MultiVector<SC,LO,GO,NO> > tmpNullSpaceBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,nullSpaceBasis->getNumVectors());
+                    RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(nullSpaceBasis->getMap(),repeatedMap);
+                    tmpNullSpaceBasis->doImport(*nullSpaceBasis,*scatter,INSERT);
                     nullSpaceBasis = tmpNullSpaceBasis.getConst();
                 }
             } else {
                 FROSCH_ASSERT(false,"Null Space Type unknown.");
             }
-            IPOUHarmonicCoarseOperatorPtr iPOUHarmonicCoarseOperator = Teuchos::rcp_static_cast<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
+            IPOUHarmonicCoarseOperatorPtr iPOUHarmonicCoarseOperator = rcp_static_cast<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
             if (0>iPOUHarmonicCoarseOperator->initialize(dimension,dofsPerNode,repeatedNodesMap,dofsMaps,nullSpaceBasis,nodeList,dirichletBoundaryDofs)) ret -=10;
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
-            GDSWCoarseOperatorPtr gDSWCoarseOperator = Teuchos::rcp_static_cast<GDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
+            GDSWCoarseOperatorPtr gDSWCoarseOperator = rcp_static_cast<GDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
             if (0>gDSWCoarseOperator->initialize(dimension,dofsPerNode,repeatedNodesMap,dofsMaps,dirichletBoundaryDofs,nodeList)) ret -=10;
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
-            RGDSWCoarseOperatorPtr rGDSWCoarseOperator = Teuchos::rcp_static_cast<RGDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
+            RGDSWCoarseOperatorPtr rGDSWCoarseOperator = rcp_static_cast<RGDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
             if (0>rGDSWCoarseOperator->initialize(dimension,dofsPerNode,repeatedNodesMap,dofsMaps,dirichletBoundaryDofs,nodeList)) ret -=10;
         } else {
             FROSCH_ASSERT(false,"CoarseOperator Type unkown.");
@@ -211,8 +214,8 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    void TwoLevelPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
-                                                   const Teuchos::EVerbosityLevel verbLevel) const
+    void TwoLevelPreconditioner<SC,LO,GO,NO>::describe(FancyOStream &out,
+                                                       const EVerbosityLevel verbLevel) const
     {
         FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
@@ -224,7 +227,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int TwoLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstCrsMatrixPtr &k)
+    int TwoLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr &k)
     {
         this->K_ = k;
         this->OverlappingOperator_->resetMatrix(this->K_);

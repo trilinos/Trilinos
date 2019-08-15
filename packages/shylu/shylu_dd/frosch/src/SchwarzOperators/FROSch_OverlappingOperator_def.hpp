@@ -46,9 +46,12 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
-    OverlappingOperator<SC,LO,GO,NO>::OverlappingOperator(ConstCrsMatrixPtr k,
+    OverlappingOperator<SC,LO,GO,NO>::OverlappingOperator(ConstXMatrixPtr k,
                                                           ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k,parameterList),
     OverlappingMatrix_ (),
@@ -76,58 +79,58 @@ namespace FROSch {
 
     // Y = alpha * A^mode * X + beta * Y
     template <class SC,class LO,class GO,class NO>
-    void OverlappingOperator<SC,LO,GO,NO>::apply(const MultiVector &x,
-                                                 MultiVector &y,
+    void OverlappingOperator<SC,LO,GO,NO>::apply(const XMultiVector &x,
+                                                 XMultiVector &y,
                                                  bool usePreconditionerOnly,
-                                                 Teuchos::ETransp mode,
+                                                 ETransp mode,
                                                  SC alpha,
                                                  SC beta) const
     {
         FROSCH_ASSERT(this->IsComputed_,"ERROR: OverlappingOperator has to be computed before calling apply()");
 
-        MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+        XMultiVectorPtr xTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
         *xTmp = x;
 
-        if (!usePreconditionerOnly && mode == Teuchos::NO_TRANS) {
-            this->K_->apply(x,*xTmp,mode,Teuchos::ScalarTraits<SC>::one(),Teuchos::ScalarTraits<SC>::zero());
+        if (!usePreconditionerOnly && mode == NO_TRANS) {
+            this->K_->apply(x,*xTmp,mode,ScalarTraits<SC>::one(),ScalarTraits<SC>::zero());
         }
 
-        MultiVectorPtr xOverlap;
-        MultiVectorPtr xOverlapTmp; // AH 11/28/2018: For Epetra, xOverlap will only have a view to the values of xOverlapTmp. Therefore, xOverlapTmp should not be deleted before xOverlap is used.
-        MultiVectorPtr yOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_->getDomainMap(),x.getNumVectors());
+        XMultiVectorPtr xOverlap;
+        XMultiVectorPtr xOverlapTmp; // AH 11/28/2018: For Epetra, xOverlap will only have a view to the values of xOverlapTmp. Therefore, xOverlapTmp should not be deleted before xOverlap is used.
+        XMultiVectorPtr yOverlap = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_->getDomainMap(),x.getNumVectors());
 
         // AH 11/28/2018: replaceMap does not update the GlobalNumRows. Therefore, we have to create a new MultiVector on the serial Communicator. In Epetra, we can prevent to copy the MultiVector.
         #ifdef HAVE_XPETRA_EPETRA
-        if (xTmp->getMap()->lib() == Xpetra::UseEpetra) {
-            xOverlapTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
+        if (xTmp->getMap()->lib() == UseEpetra) {
+            xOverlapTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
 
-            xOverlapTmp->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
+            xOverlapTmp->doImport(*xTmp,*Scatter_,INSERT);
 
-            const Teuchos::RCP<const Xpetra::EpetraMultiVectorT<GO,NO> > xEpetraMultiVectorXOverlapTmp = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVectorT<GO,NO> >(xOverlapTmp);
-            Teuchos::RCP<Epetra_MultiVector> epetraMultiVectorXOverlapTmp = xEpetraMultiVectorXOverlapTmp->getEpetra_MultiVector();
+            const RCP<const EpetraMultiVectorT<GO,NO> > xEpetraMultiVectorXOverlapTmp = rcp_dynamic_cast<const EpetraMultiVectorT<GO,NO> >(xOverlapTmp);
+            RCP<Epetra_MultiVector> epetraMultiVectorXOverlapTmp = xEpetraMultiVectorXOverlapTmp->getEpetra_MultiVector();
 
-            const Teuchos::RCP<const Xpetra::EpetraMapT<GO,NO> >& xEpetraMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GO,NO> >(OverlappingMatrix_->getRangeMap());
+            const RCP<const EpetraMapT<GO,NO> >& xEpetraMap = rcp_dynamic_cast<const EpetraMapT<GO,NO> >(OverlappingMatrix_->getRangeMap());
             Epetra_BlockMap epetraMap = xEpetraMap->getEpetra_BlockMap();
 
             double *A;
             int MyLDA;
             epetraMultiVectorXOverlapTmp->ExtractView(&A,&MyLDA);
 
-            Teuchos::RCP<Epetra_MultiVector> epetraMultiVectorXOverlap(new Epetra_MultiVector(View,epetraMap,A,MyLDA,x.getNumVectors()));
-            xOverlap = Teuchos::RCP<Xpetra::EpetraMultiVectorT<GO,NO> >(new Xpetra::EpetraMultiVectorT<GO,NO>(epetraMultiVectorXOverlap));
+            RCP<Epetra_MultiVector> epetraMultiVectorXOverlap(new Epetra_MultiVector(::View,epetraMap,A,MyLDA,x.getNumVectors()));
+            xOverlap = RCP<EpetraMultiVectorT<GO,NO> >(new EpetraMultiVectorT<GO,NO>(epetraMultiVectorXOverlap));
         } else
         #endif
         {
-            xOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
+            xOverlap = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
 
-            xOverlap->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
+            xOverlap->doImport(*xTmp,*Scatter_,INSERT);
 
             xOverlap->replaceMap(OverlappingMatrix_->getRangeMap());
         }
-        SubdomainSolver_->apply(*xOverlap,*yOverlap,mode,Teuchos::ScalarTraits<SC>::one(),Teuchos::ScalarTraits<SC>::zero());
+        SubdomainSolver_->apply(*xOverlap,*yOverlap,mode,ScalarTraits<SC>::one(),ScalarTraits<SC>::zero());
         yOverlap->replaceMap(OverlappingMap_);
 
-        xTmp->putScalar(Teuchos::ScalarTraits<SC>::zero());
+        xTmp->putScalar(ScalarTraits<SC>::zero());
         if (Combine_ == Restricted){
             GO globID = 0;
             LO localID = 0;
@@ -139,7 +142,7 @@ namespace FROSch {
                 }
             }
         } else {
-            xTmp->doExport(*yOverlap,*Scatter_,Xpetra::ADD);
+            xTmp->doExport(*yOverlap,*Scatter_,ADD);
         }
         if (Combine_ == Averaging) {
             ConstSCVecPtr scaling = Multiplicity_->getData(0);
@@ -151,8 +154,8 @@ namespace FROSch {
             }
         }
 
-        if (!usePreconditionerOnly && mode != Teuchos::NO_TRANS) {
-            this->K_->apply(*xTmp,*xTmp,mode,Teuchos::ScalarTraits<SC>::one(),Teuchos::ScalarTraits<SC>::zero());
+        if (!usePreconditionerOnly && mode != NO_TRANS) {
+            this->K_->apply(*xTmp,*xTmp,mode,ScalarTraits<SC>::one(),ScalarTraits<SC>::zero());
         }
         y.update(alpha,*xTmp,beta);
     }
@@ -161,14 +164,14 @@ namespace FROSch {
     int OverlappingOperator<SC,LO,GO,NO>::initializeOverlappingOperator()
     {
 
-        Scatter_ = Xpetra::ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),OverlappingMap_);
+        Scatter_ = ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),OverlappingMap_);
         if (Combine_ == Averaging) {
-            Multiplicity_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(this->getRangeMap(),1);
-            MultiVectorPtr multiplicityRepeated;
-            multiplicityRepeated = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,1);
-            multiplicityRepeated->putScalar(Teuchos::ScalarTraits<SC>::one());
-            ExporterPtr multiplicityExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(multiplicityRepeated->getMap(),this->getRangeMap());
-            Multiplicity_->doExport(*multiplicityRepeated,*multiplicityExporter,Xpetra::ADD);
+            Multiplicity_ = MultiVectorFactory<SC,LO,GO,NO>::Build(this->getRangeMap(),1);
+            XMultiVectorPtr multiplicityRepeated;
+            multiplicityRepeated = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,1);
+            multiplicityRepeated->putScalar(ScalarTraits<SC>::one());
+            XExportPtr multiplicityExporter = ExportFactory<LO,GO,NO>::Build(multiplicityRepeated->getMap(),this->getRangeMap());
+            Multiplicity_->doExport(*multiplicityRepeated,*multiplicityExporter,ADD);
         }
 
         return 0; // RETURN VALUE

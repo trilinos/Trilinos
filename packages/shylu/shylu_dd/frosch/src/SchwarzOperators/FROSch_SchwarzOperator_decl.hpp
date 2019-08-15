@@ -66,6 +66,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     class Solver;
 
@@ -73,95 +76,96 @@ namespace FROSch {
               class LO = int,
               class GO = DefaultGlobalOrdinal,
               class NO = KokkosClassic::DefaultNode::DefaultNodeType>
-    class SchwarzOperator : public Xpetra::Operator<SC,LO,GO,NO> {
+    class SchwarzOperator : public Operator<SC,LO,GO,NO> {
 
     protected:
 
-        using CommPtr                           = Teuchos::RCP<const Teuchos::Comm<int> >;
+        using CommPtr                           = RCP<const Comm<int> >;
 
-        using Map                               = Xpetra::Map<LO,GO,NO>;
-        using MapPtr                            = Teuchos::RCP<Map>;
-        using ConstMapPtr                       = Teuchos::RCP<const Map>;
-        using MapPtrVecPtr                      = Teuchos::ArrayRCP<MapPtr>;
-        using ConstMapPtrVecPtr                 = Teuchos::ArrayRCP<ConstMapPtr>;
-        using MapPtrVecPtr2D                    = Teuchos::ArrayRCP<MapPtrVecPtr>;
-        using ConstMapPtrVecPtr2D               = Teuchos::ArrayRCP<ConstMapPtrVecPtr>;
+        using XMap                              = Map<LO,GO,NO>;
+        using XMapPtr                           = RCP<XMap>;
+        using ConstXMapPtr                      = RCP<const XMap>;
+        using XMapPtrVecPtr                     = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr                = ArrayRCP<ConstXMapPtr>;
+        using XMapPtrVecPtr2D                   = ArrayRCP<XMapPtrVecPtr>;
+        using ConstXMapPtrVecPtr2D              = ArrayRCP<ConstXMapPtrVecPtr>;
 
-        using CrsMatrix                         = Xpetra::Matrix<SC,LO,GO,NO>;
-        using CrsMatrixPtr                      = Teuchos::RCP<CrsMatrix>;
-        using ConstCrsMatrixPtr                 = Teuchos::RCP<const CrsMatrix>;
+        using XMatrix                           = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr                        = RCP<XMatrix>;
+        using ConstXMatrixPtr                   = RCP<const XMatrix>;
 
-        using Graph                             = Xpetra::CrsGraph<LO,GO,NO>;
-        using GraphPtr                          = Teuchos::RCP<Graph>;
-        using ConstGraphPtr                     = Teuchos::RCP<const Graph>;
+        using XCrsGraph                         = CrsGraph<LO,GO,NO>;
+        using GraphPtr                          = RCP<XCrsGraph>;
+        using ConstXCrsGraphPtr                 = RCP<const XCrsGraph>;
 
-        using MultiVector                       = Xpetra::MultiVector<SC,LO,GO,NO>;
-        using MultiVectorPtr                    = Teuchos::RCP<MultiVector>;
-        using ConstMultiVectorPtr               = Teuchos::RCP<const MultiVector>;
-        using MultiVectorPtrVecPtr              = Teuchos::ArrayRCP<MultiVectorPtr>;
-        using ConstMultiVectorPtrVecPtr         = Teuchos::ArrayRCP<ConstMultiVectorPtr>;
+        using XMultiVector                      = MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr                   = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr              = RCP<const XMultiVector>;
+        using XMultiVectorPtrVecPtr             = ArrayRCP<XMultiVectorPtr>;
+        using ConstXMultiVectorPtrVecPtr        = ArrayRCP<ConstXMultiVectorPtr>;
 
-        using Importer                          = Xpetra::Import<LO,GO,NO>;
-        using ImporterPtr                       = Teuchos::RCP<Importer>;
+        using XImport                           = Import<LO,GO,NO>;
+        using XImportPtr                        = RCP<XImport>;
 
-        using Exporter                          = Xpetra::Export<LO,GO,NO>;
-        using ExporterPtr                       = Teuchos::RCP<Exporter>;
-        using ExporterPtrVecPtr                 = Teuchos::ArrayRCP<ExporterPtr>;
+        using XExport                           = Export<LO,GO,NO>;
+        using XExportPtr                        = RCP<XExport>;
+        using XExportPtrVecPtr                  = ArrayRCP<XExportPtr>;
 
-        using ParameterList                     = Teuchos::ParameterList;
-        using ParameterListPtr                  = Teuchos::RCP<Teuchos::ParameterList>;
+        using ParameterListPtr                  = RCP<ParameterList>;
 
-        using DDInterfacePtr                    = Teuchos::RCP<DDInterface<SC,LO,GO,NO> >;
+        using DDInterfacePtr                    = RCP<DDInterface<SC,LO,GO,NO> >;
 
-        using EntitySetPtr                      = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
-        using EntitySetPtrVecPtr                = Teuchos::ArrayRCP<EntitySetPtr>;
+        using EntitySetPtr                      = RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetPtrVecPtr                = ArrayRCP<EntitySetPtr>;
         using EntitySetPtrConstVecPtr           = const EntitySetPtrVecPtr;
 
-        using CoarseSpacePtr                    = Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> >;
-        using CoarseSpacePtrVecPtr              = Teuchos::ArrayRCP<CoarseSpacePtr>;
+        using CoarseSpacePtr                    = RCP<CoarseSpace<SC,LO,GO,NO> >;
+        using CoarseSpacePtrVecPtr              = ArrayRCP<CoarseSpacePtr>;
 
-        using InterfaceEntityPtr                = Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> >;
+        using InterfaceEntityPtr                = RCP<InterfaceEntity<SC,LO,GO,NO> >;
 
-        using InterfacePartitionOfUnityPtr      = Teuchos::RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> >;
+        using InterfacePartitionOfUnityPtr      = RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> >;
 
-        using LocalPartitionOfUnityBasisPtr     = Teuchos::RCP<LocalPartitionOfUnityBasis<SC,LO,GO,NO> >;
+        using LocalPartitionOfUnityBasisPtr     = RCP<LocalPartitionOfUnityBasis<SC,LO,GO,NO> >;
 
-        using SchwarzOperatorPtr                = Teuchos::RCP<SchwarzOperator<SC,LO,GO,NO> >;
-        using SchwarzOperatorPtrVec             = Teuchos::Array<SchwarzOperatorPtr>;
-        using SchwarzOperatorPtrVecPtr          = Teuchos::ArrayRCP<SchwarzOperatorPtr>;
+        using SchwarzOperatorPtr                = RCP<SchwarzOperator<SC,LO,GO,NO> >;
+        using SchwarzOperatorPtrVec             = Array<SchwarzOperatorPtr>;
+        using SchwarzOperatorPtrVecPtr          = ArrayRCP<SchwarzOperatorPtr>;
 
-        using SubdomainSolverPtr                = Teuchos::RCP<SubdomainSolver<SC,LO,GO,NO> >;
+        using SubdomainSolverPtr                = RCP<SubdomainSolver<SC,LO,GO,NO> >;
 
+        using DofOrderingVecPtr                 = ArrayRCP<DofOrdering>;
+        
         using UN                                = unsigned;
-        using UNVec                             = Teuchos::Array<UN>;
-        using UNVecPtr                          = Teuchos::ArrayRCP<UN>;
+        using UNVec                             = Array<UN>;
+        using UNVecPtr                          = ArrayRCP<UN>;
 
-        using LOVec                             = Teuchos::Array<LO>;
-        using LOVecPtr                          = Teuchos::ArrayRCP<LO>;
-        using LOVecView                         = Teuchos::ArrayView<LO>;
-        using ConstLOVecView                    = Teuchos::ArrayView<const LO>;
-        using LOVecPtr2D                        = Teuchos::ArrayRCP<LOVecPtr>;
+        using LOVec                             = Array<LO>;
+        using LOVecPtr                          = ArrayRCP<LO>;
+        using LOVecView                         = ArrayView<LO>;
+        using ConstLOVecView                    = ArrayView<const LO>;
+        using LOVecPtr2D                        = ArrayRCP<LOVecPtr>;
 
-        using GOVec                             = Teuchos::Array<GO>;
-        using GOVecPtr                          = Teuchos::ArrayRCP<GO>;
-        using GOVecView                         = Teuchos::ArrayView<GO>;
-        using ConstGOVecView                    = Teuchos::ArrayView<const GO>;
-        using GOVec2D                           = Teuchos::Array<GOVec>;
-        using GOVecPtr2D                        = Teuchos::ArrayRCP<GOVecPtr>;
+        using GOVec                             = Array<GO>;
+        using GOVecPtr                          = ArrayRCP<GO>;
+        using GOVecView                         = ArrayView<GO>;
+        using ConstGOVecView                    = ArrayView<const GO>;
+        using GOVec2D                           = Array<GOVec>;
+        using GOVecPtr2D                        = ArrayRCP<GOVecPtr>;
 
-        using SCVec                             = Teuchos::Array<SC>;
-        using SCVecPtr                          = Teuchos::ArrayRCP<SC>;
-        using ConstSCVecPtr                     = Teuchos::ArrayRCP<const SC>;
-        using ConstSCVecView                    = Teuchos::ArrayView<const SC>;
+        using SCVec                             = Array<SC>;
+        using SCVecPtr                          = ArrayRCP<SC>;
+        using ConstSCVecPtr                     = ArrayRCP<const SC>;
+        using ConstSCVecView                    = ArrayView<const SC>;
 
-        using BoolVec                           = Teuchos::Array<bool>;
-        using BoolVecPtr                        = Teuchos::ArrayRCP<bool>;
+        using BoolVec                           = Array<bool>;
+        using BoolVecPtr                        = ArrayRCP<bool>;
 
     public:
 
         SchwarzOperator(CommPtr comm);
 
-        SchwarzOperator(ConstCrsMatrixPtr k,
+        SchwarzOperator(ConstXMatrixPtr k,
                         ParameterListPtr parameterList);
 
         virtual ~SchwarzOperator();
@@ -171,25 +175,25 @@ namespace FROSch {
         virtual int compute() = 0;
 
         // Y = alpha * A^mode * X + beta * Y
-        virtual void apply(const MultiVector &x,
-                          MultiVector &y,
-                          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                          SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                          SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
+        virtual void apply(const XMultiVector &x,
+                           XMultiVector &y,
+                           ETransp mode=NO_TRANS,
+                           SC alpha=ScalarTraits<SC>::one(),
+                           SC beta=ScalarTraits<SC>::zero()) const;
 
-        virtual void apply(const MultiVector &x,
-                          MultiVector &y,
-                          bool usePreconditionerOnly,
-                          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                          SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                          SC beta=Teuchos::ScalarTraits<SC>::zero()) const = 0;
+        virtual void apply(const XMultiVector &x,
+                           XMultiVector &y,
+                           bool usePreconditionerOnly,
+                           ETransp mode=NO_TRANS,
+                           SC alpha=ScalarTraits<SC>::one(),
+                           SC beta=ScalarTraits<SC>::zero()) const = 0;
 
-        virtual ConstMapPtr getDomainMap() const;
+        virtual ConstXMapPtr getDomainMap() const;
 
-        virtual ConstMapPtr getRangeMap() const;
+        virtual ConstXMapPtr getRangeMap() const;
 
-        virtual void describe(Teuchos::FancyOStream &out,
-                              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
+        virtual void describe(FancyOStream &out,
+                              const EVerbosityLevel verbLevel=Describable::verbLevel_default) const = 0;
 
         virtual std::string description() const = 0;
 
@@ -197,14 +201,14 @@ namespace FROSch {
 
         bool isComputed() const;
 
-        int resetMatrix(ConstCrsMatrixPtr &k);
+        int resetMatrix(ConstXMatrixPtr &k);
 
     protected:
 
         CommPtr MpiComm_;
         CommPtr SerialComm_;
 
-        ConstCrsMatrixPtr K_;
+        ConstXMatrixPtr K_;
 
         ParameterListPtr ParameterList_;
 

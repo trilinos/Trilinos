@@ -47,13 +47,16 @@
 
 namespace FROSch {
 
+    using namespace Teuchos;
+    using namespace Xpetra;
+    
     template <class SC,class LO,class GO,class NO>
     InterfacePartitionOfUnity<SC,LO,GO,NO>::InterfacePartitionOfUnity(CommPtr mpiComm,
                                                                       CommPtr serialComm,
                                                                       UN dimension,
                                                                       UN dofsPerNode,
-                                                                      ConstMapPtr nodesMap,
-                                                                      ConstMapPtrVecPtr dofsMaps,
+                                                                      ConstXMapPtr nodesMap,
+                                                                      ConstXMapPtrVecPtr dofsMaps,
                                                                       ParameterListPtr parameterList,
                                                                       Verbosity verbosity) :
     MpiComm_ (mpiComm),
@@ -87,13 +90,13 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getLocalPartitionOfUnity() const
+    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getLocalPartitionOfUnity() const
     {
         return LocalPartitionOfUnity_;
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getPartitionOfUnityMaps() const
+    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMapPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getPartitionOfUnityMaps() const
     {
         return PartitionOfUnityMaps_;
     }

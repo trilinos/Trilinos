@@ -50,6 +50,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,
               class LO,
@@ -59,30 +62,30 @@ namespace FROSch {
 
     protected:
 
-        using Map                         = Xpetra::Map<LO,GO,NO>;
-        using MapPtr                      = Teuchos::RCP<Map>;
-        using ConstMapPtr                 = Teuchos::RCP<const Map>;
+        using XMap                          = Map<LO,GO,NO>;
+        using XMapPtr                       = RCP<XMap>;
+        using ConstXMapPtr                  = RCP<const XMap>;
 
-        using CrsMatrix                   = Xpetra::Matrix<SC,LO,GO,NO>;
-        using CrsMatrixPtr                = Teuchos::RCP<CrsMatrix>;
-        using ConstCrsMatrixPtr           = Teuchos::RCP<const CrsMatrix>;
+        using XMatrix                       = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr                    = RCP<XMatrix>;
+        using ConstXMatrixPtr               = RCP<const XMatrix>;
 
-        using MultiVector                 = Xpetra::MultiVector<SC,LO,GO,NO>;
-        using MultiVectorPtr              = Teuchos::RCP<MultiVector>;
-        using ConstMultiVectorPtr         = Teuchos::RCP<const MultiVector>;
+        using XMultiVector                  = MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr               = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr          = RCP<const XMultiVector>;
 
-        using EntitySetPtr                = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetPtr                  = RCP<EntitySet<SC,LO,GO,NO> >;
 
-        using InterfaceEntityPtr          = Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> >;
-        using InterfaceEntityPtrVec       = Teuchos::Array<InterfaceEntityPtr>;
-        using InterfaceEntityPtrVecPtr    = Teuchos::ArrayRCP<InterfaceEntityPtr>;
+        using InterfaceEntityPtr            = RCP<InterfaceEntity<SC,LO,GO,NO> >;
+        using InterfaceEntityPtrVec         = Array<InterfaceEntityPtr>;
+        using InterfaceEntityPtrVecPtr      = ArrayRCP<InterfaceEntityPtr>;
 
-        using UN                          = unsigned;
+        using UN                            = unsigned;
 
-        using GOVec                       = Teuchos::Array<GO>;
+        using GOVec                         = Array<GO>;
 
-        using SCVec                       = Teuchos::Array<SC>;
-        using SCVecPtr                    = Teuchos::ArrayRCP<SC>;
+        using SCVec                         = Array<SC>;
+        using SCVecPtr                      = ArrayRCP<SC>;
 
     public:
 
@@ -96,7 +99,7 @@ namespace FROSch {
 
         int addEntitySet(EntitySetPtr entitySet);
 
-        int buildEntityMap(ConstMapPtr localToGlobalNodesMap);
+        int buildEntityMap(ConstXMapPtr localToGlobalNodesMap);
 
         int findAncestorsInSet(EntitySetPtr entitySet);
 
@@ -109,10 +112,10 @@ namespace FROSch {
         int clearCoarseNodes();
 
         int computeDistancesToCoarseNodes(UN dimension,
-                                          ConstMultiVectorPtr &nodeList = Teuchos::null,
+                                          ConstXMultiVectorPtr &nodeList = null,
                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
 
-        int divideUnconnectedEntities(ConstCrsMatrixPtr matrix,
+        int divideUnconnectedEntities(ConstXMatrixPtr matrix,
                                       int pID);
 
         int flagNodes();
@@ -120,7 +123,7 @@ namespace FROSch {
         int flagShortEntities();
 
         int flagStraightEntities(UN dimension,
-                                 ConstMultiVectorPtr &nodeList);
+                                 ConstXMultiVectorPtr &nodeList);
 
         EntitySetPtr sortOutEntities(EntityFlag flag);
 
@@ -135,7 +138,7 @@ namespace FROSch {
         bool checkForShortEdges();
 
         bool checkForStraightEdges(UN dimension,
-                                   ConstMultiVectorPtr &nodeList);
+                                   ConstXMultiVectorPtr &nodeList);
 
         bool checkForEmptyEntities();
 
@@ -161,10 +164,10 @@ namespace FROSch {
 
         const InterfaceEntityPtr getEntity(UN iD) const;
 
-        const MapPtr getEntityMap() const;
+        const XMapPtr getEntityMap() const;
 
         const SCVecPtr getDirection(UN dimension,
-                                    ConstMultiVectorPtr &nodeList,
+                                    ConstXMultiVectorPtr &nodeList,
                                     UN iD) const;
 
     protected:
@@ -179,7 +182,7 @@ namespace FROSch {
 
         bool EntityMapIsUpToDate_;
 
-        MapPtr EntityMap_;
+        XMapPtr EntityMap_;
     };
 
 }

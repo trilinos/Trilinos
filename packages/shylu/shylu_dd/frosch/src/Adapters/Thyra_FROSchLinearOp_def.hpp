@@ -49,7 +49,6 @@
 namespace Thyra {
 
     using namespace std;
-//    using namespace Belos;
     using namespace FROSch;
     using namespace Teuchos;
     using namespace Xpetra;
@@ -62,7 +61,7 @@ namespace Thyra {
     template <class SC, class LO, class GO, class NO>
     void FROSchLinearOp<SC,LO,GO,NO>::initialize(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
                                                  const RCP<const VectorSpaceBase<SC> > &domainSpace,
-                                                 const RCP<Xpetra::Operator<SC,LO,GO,NO> > &xpetraOperator,
+                                                 const RCP<Operator<SC,LO,GO,NO> > &xpetraOperator,
                                                  bool bIsEpetra,
                                                  bool bIsTpetra)
     {
@@ -72,7 +71,7 @@ namespace Thyra {
     template <class SC, class LO, class GO, class NO>
     void FROSchLinearOp<SC,LO,GO,NO>::constInitialize(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
                                                       const RCP<const VectorSpaceBase<SC> > &domainSpace,
-                                                      const RCP<const Xpetra::Operator<SC,LO,GO,NO> > &xpetraOperator,
+                                                      const RCP<const Operator<SC,LO,GO,NO> > &xpetraOperator,
                                                       bool bIsEpetra,
                                                       bool bIsTpetra)
     {
@@ -80,13 +79,13 @@ namespace Thyra {
     }
 
     template <class SC, class LO, class GO, class NO>
-    RCP<Xpetra::Operator<SC,LO,GO,NO> > FROSchLinearOp<SC,LO,GO,NO>::getXpetraOperator()
+    RCP<Operator<SC,LO,GO,NO> > FROSchLinearOp<SC,LO,GO,NO>::getXpetraOperator()
     {
         return xpetraOperator_.getNonconstObj();
     }
 
     template <class SC, class LO, class GO, class NO>
-    RCP<const Xpetra::Operator<SC,LO,GO,NO> > FROSchLinearOp<SC,LO,GO,NO>::getConstXpetraOperator() const
+    RCP<const Operator<SC,LO,GO,NO> > FROSchLinearOp<SC,LO,GO,NO>::getConstXpetraOperator() const
     {
         return xpetraOperator_;
     }
@@ -134,16 +133,16 @@ namespace Thyra {
     {
         const EOpTransp real_M_trans = real_trans(M_trans);
 
-        FROSCH_ASSERT(getConstXpetraOperator()!=Teuchos::null,"XpetraLinearOp::applyImpl: internal Xpetra::Operator is null.");
+        FROSCH_ASSERT(getConstXpetraOperator()!=null,"XpetraLinearOp::applyImpl: internal Operator is null.");
         RCP< const Comm<int> > comm = getConstXpetraOperator()->getRangeMap()->getComm();
         //Transform to Xpetra MultiVector
         RCP<MultiVector<SC,LO,GO,NO> > xY;
 
         ETransp transp;
         switch (M_trans) {
-            case NOTRANS:   transp = Teuchos::NO_TRANS;   break;
-            case TRANS:     transp = Teuchos::TRANS;      break;
-            case CONJTRANS: transp = Teuchos::CONJ_TRANS; break;
+            case NOTRANS:   transp = NO_TRANS;          break;
+            case TRANS:     transp = Teuchos::TRANS;    break;
+            case CONJTRANS: transp = CONJ_TRANS;        break;
             default: FROSCH_ASSERT(false,"Thyra::XpetraLinearOp::apply. Unknown value for M_trans. Only NOTRANS, TRANS and CONJTRANS are supported.");
         }
         //Epetra NodeType
@@ -178,17 +177,17 @@ namespace Thyra {
         if (bIsTpetra_) {
             // Convert input vector to Xpetra
             const RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > xTpMultVec = Thyra::TpetraOperatorVectorExtraction<SC,LO,GO,NO>::getConstTpetraMultiVector(rcpFromRef(X_in));
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpMultVec));
-            RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpNonConstMultVec = Teuchos::rcp_const_cast<Tpetra::MultiVector<SC,LO,GO,NO> >(xTpMultVec);
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpNonConstMultVec));
-            const RCP<const MultiVector<SC,LO,GO,NO> > xX = rcp(new Xpetra::TpetraMultiVector<SC,LO,GO,NO>(tpNonConstMultVec));
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xX));
+            TEUCHOS_TEST_FOR_EXCEPT(is_null(xTpMultVec));
+            RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpNonConstMultVec = rcp_const_cast<Tpetra::MultiVector<SC,LO,GO,NO> >(xTpMultVec);
+            TEUCHOS_TEST_FOR_EXCEPT(is_null(tpNonConstMultVec));
+            const RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > xX = rcp(new Xpetra::TpetraMultiVector<SC,LO,GO,NO>(tpNonConstMultVec));
+            TEUCHOS_TEST_FOR_EXCEPT(is_null(xX));
 
             // Convert output vector to Xpetra
             const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > yTpMultVec = Thyra::TpetraOperatorVectorExtraction<SC,LO,GO,NO>::getTpetraMultiVector(rcpFromPtr(Y_inout));
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(yTpMultVec));
+            TEUCHOS_TEST_FOR_EXCEPT(is_null(yTpMultVec));
             xY = rcp(new Xpetra::TpetraMultiVector<SC,LO,GO,NO>(yTpMultVec));
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xY));
+            TEUCHOS_TEST_FOR_EXCEPT(is_null(xY));
 
             // Apply operator
             xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
@@ -205,15 +204,15 @@ namespace Thyra {
             using ThySpmdVecSpaceBase = SpmdVectorSpaceBase<SC> ;
             RCP<const ThySpmdVecSpaceBase> mpi_vs = rcp_dynamic_cast<const ThySpmdVecSpaceBase>(rcpFromPtr(Y_inout)->range());
             
-            TEUCHOS_TEST_FOR_EXCEPTION(mpi_vs == Teuchos::null, std::logic_error, "Failed to cast Thyra::VectorSpaceBase to Thyra::SpmdVectorSpaceBase.");
-            const LO localOffset = ( mpi_vs != Teuchos::null ? mpi_vs->localOffset() : 0 );
-            const LO localSubDim = ( mpi_vs != Teuchos::null ? mpi_vs->localSubDim() : rcpFromPtr(Y_inout)->range()->dim() );
+            TEUCHOS_TEST_FOR_EXCEPTION(mpi_vs == null, std::logic_error, "Failed to cast Thyra::VectorSpaceBase to Thyra::SpmdVectorSpaceBase.");
+            const LO localOffset = ( mpi_vs != null ? mpi_vs->localOffset() : 0 );
+            const LO localSubDim = ( mpi_vs != null ? mpi_vs->localSubDim() : rcpFromPtr(Y_inout)->range()->dim() );
             
             RCP<DetachedMultiVectorView<SC> > thyData = rcp(new DetachedMultiVectorView<SC>(*rcpFromPtr(Y_inout),Range1D(localOffset,localOffset+localSubDim-1)));
             
             // AH 08/14/2019 TODO: Is this necessary??
             for( size_t j = 0; j <xY->getNumVectors(); ++j) {
-                Teuchos::ArrayRCP< const SC > xpData = xY->getData(j); // access const data from Xpetra object
+                ArrayRCP< const SC > xpData = xY->getData(j); // access const data from Xpetra object
                 // loop over all local rows
                 for( LO i = 0; i < localSubDim; ++i) {
                     (*thyData)(i,j) = xpData[i];

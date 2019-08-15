@@ -46,6 +46,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC = double,
               class LO = int,
@@ -55,19 +58,19 @@ namespace FROSch {
 
     protected:
 
-        using MapPtr                              = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr;
-        using ConstMapPtr                         = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr;
-        using MapPtrVecPtr                        = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr;
-        using ConstMapPtrVecPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtrVecPtr;
-        using MapPtrVecPtr2D                      = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr2D;
-        using ConstMapPtrVecPtr2D                 = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtrVecPtr2D;
+        using XMapPtr                             = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr                        = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr                       = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr                  = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
+        using XMapPtrVecPtr2D                     = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMapPtrVecPtr2D;
+        using ConstXMapPtrVecPtr2D                = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMapPtrVecPtr2D;
 
-        using CrsMatrixPtr                        = typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr;
-        using ConstCrsMatrixPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+        using XMatrixPtr                          = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr                     = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using MultiVectorPtr                      = typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr;
-        using MultiVectorPtrVecPtr                = typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtrVecPtr;
-        using ConstMultiVectorPtrVecPtr           = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMultiVectorPtrVecPtr;
+        using XMultiVectorPtr                     = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMultiVectorPtr;
+        using XMultiVectorPtrVecPtr               = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+        using ConstXMultiVectorPtrVecPtr          = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
 
         using ParameterListPtr                    = typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr;
 
@@ -77,41 +80,44 @@ namespace FROSch {
         using RGDSWCoarseOperatorPtr              = typename SchwarzPreconditioner<SC,LO,GO,NO>::RGDSWCoarseOperatorPtr;
         using IPOUHarmonicCoarseOperatorPtr       = typename SchwarzPreconditioner<SC,LO,GO,NO>::IPOUHarmonicCoarseOperatorPtr;
 
+        using DofOrderingVecPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::DofOrderingVecPtr;
+        
         using UN                                  = typename SchwarzPreconditioner<SC,LO,GO,NO>::UN;
-
+        using UNVecPtr                            = typename SchwarzPreconditioner<SC,LO,GO,NO>::UNVecPtr;
+        
+        using LOVecPtr                            = typename SchwarzPreconditioner<SC,LO,GO,NO>::LOVecPtr;
+        
         using GOVec                               = typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVec;
         using GOVec2D                             = typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVec2D;
         using GOVecPtr                            = typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr;
-        using UNVecPtr                            = typename SchwarzPreconditioner<SC,LO,GO,NO>::UNVecPtr;
-        using LOVecPtr                            = typename SchwarzPreconditioner<SC,LO,GO,NO>::LOVecPtr;
         using GOVecPtr2D                          = typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr2D;
-        using DofOrderingVecPtr                   = typename Teuchos::ArrayRCP<DofOrdering>;
 
     public:
 
-        TwoLevelBlockPreconditioner(ConstCrsMatrixPtr k,
+        TwoLevelBlockPreconditioner(ConstXMatrixPtr k,
                                     ParameterListPtr parameterList);
 
         int initialize(UN dimension,
                        UNVecPtr dofsPerNodeVec,
                        DofOrderingVecPtr dofOrderingVec,
                        int overlap = -1,
-                       ConstMapPtrVecPtr repeatedMapVec = Teuchos::null,
-                       ConstMultiVectorPtrVecPtr nullSpaceBasisVec = Teuchos::null,
-                       ConstMultiVectorPtrVecPtr nodeListVec = Teuchos::null,
-                       ConstMapPtrVecPtr2D dofsMapsVec = Teuchos::null,
-                       GOVecPtr2D dirichletBoundaryDofsVec = Teuchos::null);
+                       ConstXMapPtrVecPtr repeatedMapVec = null,
+                       ConstXMultiVectorPtrVecPtr nullSpaceBasisVec = null,
+                       ConstXMultiVectorPtrVecPtr nodeListVec = null,
+                       ConstXMapPtrVecPtr2D dofsMapsVec = null,
+                       GOVecPtr2D dirichletBoundaryDofsVec = null);
 
         int compute();
 
-        void describe(Teuchos::FancyOStream &out,
-                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+        void describe(FancyOStream &out,
+                      const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
         std::string description() const;
 
-        int resetMatrix(ConstCrsMatrixPtr &k);
+        int resetMatrix(ConstXMatrixPtr &k);
 
-        int preApplyCoarse(MultiVectorPtr &x,MultiVectorPtr &y);
+        int preApplyCoarse(XMultiVectorPtr &x,
+                           XMultiVectorPtr &y);
 
     protected:
 

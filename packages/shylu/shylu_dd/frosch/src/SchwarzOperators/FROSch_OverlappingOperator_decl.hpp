@@ -46,6 +46,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC = double,
               class LO = int,
@@ -57,17 +60,17 @@ namespace FROSch {
 
         using CommPtr               = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
 
-        using MapPtr                = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
-        using ConstMapPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
+        using XMapPtr               = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr          = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
 
-        using CrsMatrixPtr          = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
-        using ConstCrsMatrixPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+        using XMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using MultiVector           = typename SchwarzOperator<SC,LO,GO,NO>::MultiVector;
-        using MultiVectorPtr        = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr;
+        using XMultiVector          = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVector;
+        using XMultiVectorPtr       = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
 
-        using ImporterPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ImporterPtr;
-        using ExporterPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ExporterPtr;
+        using XImportPtr            = typename SchwarzOperator<SC,LO,GO,NO>::XImportPtr;
+        using XExportPtr            = typename SchwarzOperator<SC,LO,GO,NO>::XExportPtr;
 
         using ParameterListPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
@@ -80,7 +83,7 @@ namespace FROSch {
 
     public:
 
-        OverlappingOperator(ConstCrsMatrixPtr k,
+        OverlappingOperator(ConstXMatrixPtr k,
                             ParameterListPtr parameterList);
 
         ~OverlappingOperator();
@@ -89,12 +92,12 @@ namespace FROSch {
 
         virtual int compute() = 0;
 
-        virtual void apply(const MultiVector &x,
-                          MultiVector &y,
-                          bool usePreconditionerOnly,
-                          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                          SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                          SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
+        virtual void apply(const XMultiVector &x,
+                           XMultiVector &y,
+                           bool usePreconditionerOnly,
+                           ETransp mode=NO_TRANS,
+                           SC alpha=ScalarTraits<SC>::one(),
+                           SC beta=ScalarTraits<SC>::zero()) const;
 
     protected:
 
@@ -104,15 +107,15 @@ namespace FROSch {
 
         virtual int computeOverlappingOperator();
 
-        ConstCrsMatrixPtr OverlappingMatrix_;
+        ConstXMatrixPtr OverlappingMatrix_;
 
-        ConstMapPtr OverlappingMap_;
+        ConstXMapPtr OverlappingMap_;
 
-        ImporterPtr Scatter_;
+        XImportPtr Scatter_;
 
         SubdomainSolverPtr SubdomainSolver_;
 
-        MultiVectorPtr Multiplicity_;
+        XMultiVectorPtr Multiplicity_;
 
         CombinationType Combine_;
 

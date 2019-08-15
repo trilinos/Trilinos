@@ -50,6 +50,9 @@
 
 namespace FROSch {
 
+    using namespace Teuchos;
+    using namespace Xpetra;
+    
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -58,16 +61,16 @@ namespace FROSch {
 
     protected:
 
-        using MapPtr                    = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr;
-        using ConstMapPtr               = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr;
-        using MapPtrVecPtr              = typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr;
-        using ConstMapPtrVecPtr         = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtrVecPtr;
+        using XMapPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr              = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr             = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr        = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
 
-        using CrsMatrixPtr              = typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr;
-        using ConstCrsMatrixPtr         = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+        using XMatrixPtr                = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr           = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using MultiVectorPtr            = typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr;
-        using ConstMultiVectorPtr            = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMultiVectorPtr;
+        using XMultiVectorPtr           = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMultiVectorPtr;
+        using ConstXMultiVectorPtr      = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMultiVectorPtr;
 
         using ParameterListPtr          = typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr;
 
@@ -79,18 +82,18 @@ namespace FROSch {
 
     public:
 
-        GDSWPreconditioner(ConstCrsMatrixPtr k,
+        GDSWPreconditioner(ConstXMatrixPtr k,
                            ParameterListPtr parameterList);
 
         int initialize(bool useDefaultParameters = true);
 
-        int initialize(ConstMapPtr repeatedMap,
+        int initialize(ConstXMapPtr repeatedMap,
                        bool useDefaultParameters = true);
 
         int initialize(GOVecPtr &dirichletBoundaryDofs,
                        bool useDefaultParameters = true);
 
-        int initialize(ConstMapPtr repeatedMap,
+        int initialize(ConstXMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs,
                        bool useDefaultParameters = true);
 
@@ -99,45 +102,45 @@ namespace FROSch {
 
         int initialize(UN dimension,
                        int overlap,
-                       ConstMapPtr repeatedMap);
+                       ConstXMapPtr repeatedMap);
 
         int initialize(UN dimension,
                        int overlap,
-                       ConstMapPtr repeatedMap,
+                       ConstXMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs);
 
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       ConstMapPtr repeatedMap);
+                       ConstXMapPtr repeatedMap);
 
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       ConstMapPtr repeatedMap,
+                       ConstXMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs);
 
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       ConstMapPtr repeatedMap,
-                       ConstMultiVectorPtr &nodeList);
+                       ConstXMapPtr repeatedMap,
+                       ConstXMultiVectorPtr &nodeList);
 
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       ConstMapPtr repeatedMap,
+                       ConstXMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs,
-                       ConstMultiVectorPtr &nodeList);
+                       ConstXMultiVectorPtr &nodeList);
 
         int compute();
 
-        void describe(Teuchos::FancyOStream &out,
-                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+        void describe(FancyOStream &out,
+                      const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
         std::string description() const;
 

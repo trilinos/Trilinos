@@ -46,9 +46,12 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
-    OneLevelPreconditioner<SC,LO,GO,NO>::OneLevelPreconditioner(ConstCrsMatrixPtr k,
+    OneLevelPreconditioner<SC,LO,GO,NO>::OneLevelPreconditioner(ConstXMatrixPtr k,
                                                                 ParameterListPtr parameterList) :
     SchwarzPreconditioner<SC,LO,GO,NO> (parameterList,k->getRangeMap()->getComm()),
     K_ (k),
@@ -88,7 +91,7 @@ namespace FROSch {
     int OneLevelPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
                                                         bool buildRepeatedMap)
     {
-        ConstMapPtr repeatedMap;
+        ConstXMapPtr repeatedMap;
         if (buildRepeatedMap) {
             repeatedMap = BuildRepeatedMap(this->K_->getCrsGraph());
         }
@@ -97,14 +100,14 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int OneLevelPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
-                                                        ConstMapPtr repeatedMap)
+                                                        ConstXMapPtr repeatedMap)
     {
         int ret = 0;
         if (overlap<0) {
             overlap = this->ParameterList_->get("Overlap",1);
         }
         if (!this->ParameterList_->get("OverlappingOperator Type","AlgebraicOverlappingOperator").compare("AlgebraicOverlappingOperator")) {
-            AlgebraicOverlappingOperatorPtr algebraicOverlappigOperator = Teuchos::rcp_static_cast<AlgebraicOverlappingOperator<SC,LO,GO,NO> >(OverlappingOperator_);
+            AlgebraicOverlappingOperatorPtr algebraicOverlappigOperator = rcp_static_cast<AlgebraicOverlappingOperator<SC,LO,GO,NO> >(OverlappingOperator_);
             ret = algebraicOverlappigOperator->initialize(overlap,repeatedMap);
         } else {
             FROSCH_ASSERT(false,"OverlappingOperator Type unkown.");
@@ -119,9 +122,9 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    void OneLevelPreconditioner<SC,LO,GO,NO>::apply(const MultiVector &x,
-                                                    MultiVector &y,
-                                                    Teuchos::ETransp mode,
+    void OneLevelPreconditioner<SC,LO,GO,NO>::apply(const XMultiVector &x,
+                                                    XMultiVector &y,
+                                                    ETransp mode,
                                                     SC alpha,
                                                     SC beta) const
     {
@@ -134,20 +137,20 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename OneLevelPreconditioner<SC,LO,GO,NO>::ConstMapPtr OneLevelPreconditioner<SC,LO,GO,NO>::getDomainMap() const
+    typename OneLevelPreconditioner<SC,LO,GO,NO>::ConstXMapPtr OneLevelPreconditioner<SC,LO,GO,NO>::getDomainMap() const
     {
         return K_->getDomainMap();
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename OneLevelPreconditioner<SC,LO,GO,NO>::ConstMapPtr OneLevelPreconditioner<SC,LO,GO,NO>::getRangeMap() const
+    typename OneLevelPreconditioner<SC,LO,GO,NO>::ConstXMapPtr OneLevelPreconditioner<SC,LO,GO,NO>::getRangeMap() const
     {
         return K_->getRangeMap();
     }
 
     template <class SC,class LO,class GO,class NO>
-    void OneLevelPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
-                                                        const Teuchos::EVerbosityLevel verbLevel) const
+    void OneLevelPreconditioner<SC,LO,GO,NO>::describe(FancyOStream &out,
+                                                       const EVerbosityLevel verbLevel) const
     {
         if (UseMultiplicative_) {
             MultiplicativeOperator_->describe(out,verbLevel);
@@ -165,7 +168,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int OneLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstCrsMatrixPtr &k)
+    int OneLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr &k)
     {
         K_ = k;
         OverlappingOperator_->resetMatrix(K_);

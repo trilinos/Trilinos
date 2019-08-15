@@ -46,9 +46,12 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
-    AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingPreconditioner(ConstCrsMatrixPtr k,
+    AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingPreconditioner(ConstXMatrixPtr k,
                                                                                         ParameterListPtr parameterList) :
     SchwarzPreconditioner<SC,LO,GO,NO> (parameterList,k->getRangeMap()->getComm()),
     K_ (k),
@@ -61,12 +64,12 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::initialize(bool useDefaultParameters)
     {
-        return initialize(1,Teuchos::null);
+        return initialize(1,null);
     }
 
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
-                                                                    ConstMapPtr repeatedMap)
+                                                                    ConstXMapPtr repeatedMap)
     {
         return FirstLevelOperator_->initialize(overlap,repeatedMap);
     }
@@ -78,9 +81,9 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    void AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::apply(const MultiVector &x,
-                                                                MultiVector &y,
-                                                                Teuchos::ETransp mode,
+    void AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::apply(const XMultiVector &x,
+                                                                XMultiVector &y,
+                                                                ETransp mode,
                                                                 SC alpha,
                                                                 SC beta) const
     {
@@ -88,20 +91,20 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::ConstMapPtr AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::getDomainMap() const
+    typename AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::ConstXMapPtr AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::getDomainMap() const
     {
         return K_->getDomainMap();
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::ConstMapPtr AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::getRangeMap() const
+    typename AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::ConstXMapPtr AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::getRangeMap() const
     {
         return K_->getRangeMap();
     }
 
     template <class SC,class LO,class GO,class NO>
-    void AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
-                                                                   const Teuchos::EVerbosityLevel verbLevel) const
+    void AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::describe(FancyOStream &out,
+                                                                   const EVerbosityLevel verbLevel) const
     {
         SumOperator_->describe(out,verbLevel);
     }

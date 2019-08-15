@@ -63,7 +63,7 @@ namespace Stratimikos {
     using namespace Teuchos;
     using namespace Thyra;
 
-    template <typename LO = int, typename GO = int, typename NO = KokkosClassic::DefaultNode::DefaultNodeType>
+    template <typename LO = int,typename GO = int,typename NO = KokkosClassic::DefaultNode::DefaultNodeType>
     void enableFROSch (DefaultLinearSolverBuilder& builder,
                        const std::string& stratName = "FROSch")
     {

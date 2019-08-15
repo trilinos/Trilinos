@@ -47,6 +47,9 @@
 
 namespace FROSch {
 
+    using namespace Teuchos;
+    using namespace Xpetra;
+    
     template<class SC,class LO,class GO,class NO>
     EntitySet<SC,LO,GO,NO>::EntitySet(EntityType type):
     Type_ (type),
@@ -92,14 +95,14 @@ namespace FROSch {
     }
 
     template<class SC,class LO,class GO,class NO>
-    int EntitySet<SC,LO,GO,NO>::buildEntityMap(ConstMapPtr localToGlobalNodesMap)
+    int EntitySet<SC,LO,GO,NO>::buildEntityMap(ConstXMapPtr localToGlobalNodesMap)
     {
         if (!EntityMapIsUpToDate_) {
             LO localNumberEntities = getNumEntities();
             LO globalNumberEntities = 0; // AH 10/13/2017: Can we stick with LO here
             LO maxLocalNumberEntities = 0;
-            reduceAll(*localToGlobalNodesMap->getComm(),Teuchos::REDUCE_SUM,localNumberEntities,Teuchos::ptr(&globalNumberEntities));
-            reduceAll(*localToGlobalNodesMap->getComm(),Teuchos::REDUCE_MAX,localNumberEntities,Teuchos::ptr(&maxLocalNumberEntities));
+            reduceAll(*localToGlobalNodesMap->getComm(),REDUCE_SUM,localNumberEntities,ptr(&globalNumberEntities));
+            reduceAll(*localToGlobalNodesMap->getComm(),REDUCE_MAX,localNumberEntities,ptr(&maxLocalNumberEntities));
 
             GOVec localToGlobalVector(0);
             if (globalNumberEntities>0) {
@@ -111,7 +114,7 @@ namespace FROSch {
                     entities[i] = EntityVector_[i]->getUniqueID()+1;
                     EntityVector_[i]->setLocalID(i);
                 }
-                MapPtr entityMapping = Xpetra::MapFactory<LO,GO,NO>::Build(localToGlobalNodesMap->lib(),-1,entities(),0,localToGlobalNodesMap->getComm());
+                XMapPtr entityMapping = MapFactory<LO,GO,NO>::Build(localToGlobalNodesMap->lib(),-1,entities(),0,localToGlobalNodesMap->getComm());
 
                 GOVec allEntities(maxLocalNumberEntities*localToGlobalNodesMap->getComm()->getSize(),0);
                 //localToGlobalNodesMap->getComm().GatherAll(&(entities->at(0)),&(allEntities->at(0)),maxLocalNumberEntities);
@@ -131,7 +134,7 @@ namespace FROSch {
                 }
 
             }
-            EntityMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(localToGlobalNodesMap->lib(),-1,localToGlobalVector(),0,localToGlobalNodesMap->getComm());
+            EntityMap_ = MapFactory<LO,GO,NO>::Build(localToGlobalNodesMap->lib(),-1,localToGlobalVector(),0,localToGlobalNodesMap->getComm());
             EntityMapIsUpToDate_ = true;
         }
         return 0;
@@ -194,7 +197,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
-                                                              ConstMultiVectorPtr &nodeList,
+                                                              ConstXMultiVectorPtr &nodeList,
                                                               DistanceFunction distanceFunction)
     {
         for (UN i=0; i<getNumEntities(); i++) {
@@ -204,7 +207,7 @@ namespace FROSch {
     }
 
     template<class SC,class LO,class GO,class NO>
-    int EntitySet<SC,LO,GO,NO>::divideUnconnectedEntities(ConstCrsMatrixPtr matrix,
+    int EntitySet<SC,LO,GO,NO>::divideUnconnectedEntities(ConstXMatrixPtr matrix,
                                                           int pID)
     {
         UN before = getNumEntities();
@@ -244,7 +247,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::flagStraightEntities(UN dimension,
-                                                     ConstMultiVectorPtr &nodeList)
+                                                     ConstXMultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
 
@@ -368,7 +371,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     bool EntitySet<SC,LO,GO,NO>::checkForStraightEdges(UN dimension,
-                                                       ConstMultiVectorPtr &nodeList)
+                                                       ConstXMultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
 
@@ -486,7 +489,7 @@ namespace FROSch {
     }
 
     template<class SC,class LO,class GO,class NO>
-    const typename EntitySet<SC,LO,GO,NO>::MapPtr EntitySet<SC,LO,GO,NO>::getEntityMap() const
+    const typename EntitySet<SC,LO,GO,NO>::XMapPtr EntitySet<SC,LO,GO,NO>::getEntityMap() const
     {
         FROSCH_ASSERT(EntityMapIsUpToDate_,"EntitySet: the entity map has not been built or is not up to date.");
         return EntityMap_;
@@ -494,7 +497,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     const typename EntitySet<SC,LO,GO,NO>::SCVecPtr EntitySet<SC,LO,GO,NO>::getDirection(UN dimension,
-                                                                                         ConstMultiVectorPtr &nodeList,
+                                                                                         ConstXMultiVectorPtr &nodeList,
                                                                                          UN iD) const
     {
         FROSCH_ASSERT(iD<getNumEntities(),"iD>=getNumEntities().");

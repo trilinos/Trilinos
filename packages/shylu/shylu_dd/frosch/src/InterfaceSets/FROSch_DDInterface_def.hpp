@@ -46,11 +46,14 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
     DDInterface<SC,LO,GO,NO>::DDInterface(UN dimension,
                                           UN dofsPerNode,
-                                          ConstMapPtr localToGlobalMap,
+                                          ConstXMapPtr localToGlobalMap,
                                           Verbosity verbosity,
                                           CommunicationStrategy commStrategy) :
     MpiComm_ (localToGlobalMap->getComm()),
@@ -91,7 +94,7 @@ namespace FROSch {
     } // Do we need sth here?
 
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::resetGlobalDofs(ConstMapPtrVecPtr dofsMaps)
+    int DDInterface<SC,LO,GO,NO>::resetGlobalDofs(ConstXMapPtrVecPtr dofsMaps)
     {
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Resetting Global IDs" << std::endl;
 
@@ -175,7 +178,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::divideUnconnectedEntities(ConstCrsMatrixPtr matrix)
+    int DDInterface<SC,LO,GO,NO>::divideUnconnectedEntities(ConstXMatrixPtr matrix)
     {
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Decomposing unconnected interface components" << std::endl;
 
@@ -185,8 +188,8 @@ namespace FROSch {
                 indicesGammaDofs[Interface_->getEntity(0)->getGammaDofID(i,k)] = Interface_->getEntity(0)->getGlobalDofID(i,k);
             }
         }
-        MapPtr map = Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,indicesGammaDofs(),0,MpiComm_);
-        matrix = FROSch::ExtractLocalSubdomainMatrix(matrix.getConst(),map.getConst(),Teuchos::ScalarTraits<SC>::one());
+        XMapPtr map = MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,indicesGammaDofs(),0,MpiComm_);
+        matrix = FROSch::ExtractLocalSubdomainMatrix(matrix.getConst(),map.getConst(),ScalarTraits<SC>::one());
 
         Edges_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
         Faces_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
@@ -213,7 +216,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::flagEntities(ConstMultiVectorPtr nodeList)
+    int DDInterface<SC,LO,GO,NO>::flagEntities(ConstXMultiVectorPtr nodeList)
     {
         for (UN l=0; l<EntitySetVector_.size(); l++) {
             EntitySetVector_[l]->flagNodes();
@@ -239,7 +242,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::sortVerticesEdgesFaces(ConstMultiVectorPtr nodeList)
+    int DDInterface<SC,LO,GO,NO>::sortVerticesEdgesFaces(ConstXMultiVectorPtr nodeList)
     {
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Sorting interface components" << std::endl;
 
@@ -337,15 +340,15 @@ namespace FROSch {
             LOVec max(6);
             if (buildVerticesMap) {
                 global[0] = Vertices_->getEntityMap()->getMaxAllGlobalIndex();
-                if (NodesMap_->lib()==Xpetra::UseEpetra || Vertices_->getEntityMap()->getGlobalNumElements()>0) {
+                if (NodesMap_->lib()==UseEpetra || Vertices_->getEntityMap()->getGlobalNumElements()>0) {
                     global[0] += 1;
                 }
                 if (global[0]<0) global[0] = 0;
                 local[0] = (LO) std::max((LO) Vertices_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,Teuchos::REDUCE_SUM,local[0],Teuchos::ptr(&sum[0]));
+                reduceAll(*this->MpiComm_,REDUCE_SUM,local[0],ptr(&sum[0]));
                 avg[0] = std::max(sum[0]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MIN,local[0],Teuchos::ptr(&min[0]));
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MAX,local[0],Teuchos::ptr(&max[0]));
+                reduceAll(*MpiComm_,REDUCE_MIN,local[0],ptr(&min[0]));
+                reduceAll(*MpiComm_,REDUCE_MAX,local[0],ptr(&max[0]));
             } else {
                 global[0] = -1;
                 local[0] = -1;
@@ -355,15 +358,15 @@ namespace FROSch {
             }
             if (buildShortEdgesMap) {
                 global[1] = ShortEdges_->getEntityMap()->getMaxAllGlobalIndex();
-                if (NodesMap_->lib()==Xpetra::UseEpetra || ShortEdges_->getEntityMap()->getGlobalNumElements()>0) {
+                if (NodesMap_->lib()==UseEpetra || ShortEdges_->getEntityMap()->getGlobalNumElements()>0) {
                     global[1] += 1;
                 }
                 if (global[1]<0) global[1] = 0;
                 local[1] = (LO) std::max((LO) ShortEdges_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,Teuchos::REDUCE_SUM,local[1],Teuchos::ptr(&sum[1]));
+                reduceAll(*this->MpiComm_,REDUCE_SUM,local[1],ptr(&sum[1]));
                 avg[1] = std::max(sum[1]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MIN,local[1],Teuchos::ptr(&min[1]));
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MAX,local[1],Teuchos::ptr(&max[1]));
+                reduceAll(*MpiComm_,REDUCE_MIN,local[1],ptr(&min[1]));
+                reduceAll(*MpiComm_,REDUCE_MAX,local[1],ptr(&max[1]));
             } else {
                 global[1] = -1;
                 local[1] = -1;
@@ -373,15 +376,15 @@ namespace FROSch {
             }
             if (buildStraightEdgesMap) {
                 global[2] = StraightEdges_->getEntityMap()->getMaxAllGlobalIndex();
-                if (NodesMap_->lib()==Xpetra::UseEpetra || StraightEdges_->getEntityMap()->getGlobalNumElements()>0) {
+                if (NodesMap_->lib()==UseEpetra || StraightEdges_->getEntityMap()->getGlobalNumElements()>0) {
                     global[2] += 1;
                 }
                 if (global[2]<0) global[2] = 0;
                 local[2] = (LO) std::max((LO) StraightEdges_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,Teuchos::REDUCE_SUM,local[2],Teuchos::ptr(&sum[2]));
+                reduceAll(*this->MpiComm_,REDUCE_SUM,local[2],ptr(&sum[2]));
                 avg[2] = std::max(sum[2]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MIN,local[2],Teuchos::ptr(&min[2]));
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MAX,local[2],Teuchos::ptr(&max[2]));
+                reduceAll(*MpiComm_,REDUCE_MIN,local[2],ptr(&min[2]));
+                reduceAll(*MpiComm_,REDUCE_MAX,local[2],ptr(&max[2]));
             } else {
                 global[2] = -1;
                 local[2] = -1;
@@ -391,15 +394,15 @@ namespace FROSch {
             }
             if (buildEdgesMap) {
                 global[3] = (LO) Edges_->getEntityMap()->getMaxAllGlobalIndex();
-                if (NodesMap_->lib()==Xpetra::UseEpetra || Edges_->getEntityMap()->getGlobalNumElements()>0) {
+                if (NodesMap_->lib()==UseEpetra || Edges_->getEntityMap()->getGlobalNumElements()>0) {
                     global[3] += 1;
                 }
                 if (global[3]<0) global[3] = 0;
                 local[3] = std::max((LO) Edges_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,Teuchos::REDUCE_SUM,local[3],Teuchos::ptr(&sum[3]));
+                reduceAll(*this->MpiComm_,REDUCE_SUM,local[3],ptr(&sum[3]));
                 avg[3] = std::max(sum[3]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MIN,local[3],Teuchos::ptr(&min[3]));
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MAX,local[3],Teuchos::ptr(&max[3]));
+                reduceAll(*MpiComm_,REDUCE_MIN,local[3],ptr(&min[3]));
+                reduceAll(*MpiComm_,REDUCE_MAX,local[3],ptr(&max[3]));
             } else {
                 global[3] = -1;
                 local[3] = -1;
@@ -409,15 +412,15 @@ namespace FROSch {
             }
             if (buildFacesMap) {
                 global[4] = (LO) Faces_->getEntityMap()->getMaxAllGlobalIndex();
-                if (NodesMap_->lib()==Xpetra::UseEpetra || Faces_->getEntityMap()->getGlobalNumElements()>0) {
+                if (NodesMap_->lib()==UseEpetra || Faces_->getEntityMap()->getGlobalNumElements()>0) {
                     global[4] += 1;
                 }
                 if (global[4]<0) global[4] = 0;
                 local[4] = std::max((LO) Faces_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,Teuchos::REDUCE_SUM,local[4],Teuchos::ptr(&sum[4]));
+                reduceAll(*this->MpiComm_,REDUCE_SUM,local[4],ptr(&sum[4]));
                 avg[4] = std::max(sum[4]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MIN,local[4],Teuchos::ptr(&min[4]));
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MAX,local[4],Teuchos::ptr(&max[4]));
+                reduceAll(*MpiComm_,REDUCE_MIN,local[4],ptr(&min[4]));
+                reduceAll(*MpiComm_,REDUCE_MAX,local[4],ptr(&max[4]));
             } else {
                 global[4] = -1;
                 local[4] = -1;
@@ -427,15 +430,15 @@ namespace FROSch {
             }
             if (buildCoarseNodesMap) {
                 global[5] = CoarseNodes_->getEntityMap()->getMaxAllGlobalIndex();
-                if (NodesMap_->lib()==Xpetra::UseEpetra || CoarseNodes_->getEntityMap()->getGlobalNumElements()>0) {
+                if (NodesMap_->lib()==UseEpetra || CoarseNodes_->getEntityMap()->getGlobalNumElements()>0) {
                     global[5] += 1;
                 }
                 if (global[5]<0) global[5] = 0;
                 local[5] = (LO) std::max((LO) CoarseNodes_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,Teuchos::REDUCE_SUM,local[5],Teuchos::ptr(&sum[5]));
+                reduceAll(*this->MpiComm_,REDUCE_SUM,local[5],ptr(&sum[5]));
                 avg[5] = std::max(sum[5]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MIN,local[5],Teuchos::ptr(&min[5]));
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MAX,local[5],Teuchos::ptr(&max[5]));
+                reduceAll(*MpiComm_,REDUCE_MIN,local[5],ptr(&min[5]));
+                reduceAll(*MpiComm_,REDUCE_MAX,local[5],ptr(&max[5]));
             } else {
                 global[5] = -1;
                 local[5] = -1;
@@ -490,7 +493,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
-                                                                ConstMultiVectorPtr &nodeList,
+                                                                ConstXMultiVectorPtr &nodeList,
                                                                 DistanceFunction distanceFunction)
     {
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Computing distances to the coarse nodes" << std::endl;
@@ -607,7 +610,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::ConstMapPtr DDInterface<SC,LO,GO,NO>::getNodesMap() const
+    typename DDInterface<SC,LO,GO,NO>::ConstXMapPtr DDInterface<SC,LO,GO,NO>::getNodesMap() const
     {
         return NodesMap_.getConst();
     }
@@ -619,7 +622,7 @@ namespace FROSch {
     {
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Communicating nodes" << std::endl;
 
-        if (NodesMap_->lib() == Xpetra::UseEpetra && commStrategy == CreateOneToOneMap) {
+        if (NodesMap_->lib() == UseEpetra && commStrategy == CreateOneToOneMap) {
             if (Verbose_) std::cout << "FROSch::DDInterface : WARNING: CreateOneToOneMap communication strategy does not work for Epetra => Switching to CommCrsGraph" << std::endl;
             commStrategy = CommCrsGraph;
         }
@@ -629,32 +632,32 @@ namespace FROSch {
             case CommCrsMatrix:
                 {
                     UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_);
-                    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
-                    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMatTmp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(UniqueNodesMap_,10);
-                    Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
+                    RCP<Matrix<SC,LO,GO,NO> > commMat = MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
+                    RCP<Matrix<SC,LO,GO,NO> > commMatTmp = MatrixFactory<SC,LO,GO,NO>::Build(UniqueNodesMap_,10);
+                    XExportPtr commExporter = ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
 
-                    Teuchos::Array<SC> one(1,Teuchos::ScalarTraits<SC>::one());
-                    Teuchos::Array<GO> myPID(1,MpiComm_->getRank());
+                    Array<SC> one(1,ScalarTraits<SC>::one());
+                    Array<GO> myPID(1,MpiComm_->getRank());
                     for (int i=0; i<NumMyNodes_; i++) {
                         commMat->insertGlobalValues(NodesMap_->getGlobalElement(i),myPID(),one());
                     }
-                    MapPtr rangeMap = Xpetra::MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
+                    XMapPtr rangeMap = MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
 
                     commMat->fillComplete(NodesMap_,rangeMap);
-                    commMatTmp->doExport(*commMat,*commExporter,Xpetra::INSERT);
+                    commMatTmp->doExport(*commMat,*commExporter,INSERT);
                     commMatTmp->fillComplete(UniqueNodesMap_,rangeMap);
-                    commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
-                    commMat->doImport(*commMatTmp,*commExporter,Xpetra::INSERT);
+                    commMat = MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
+                    commMat->doImport(*commMatTmp,*commExporter,INSERT);
 
                     componentsSubdomains = IntVecVecPtr(NumMyNodes_);
 
-                    Teuchos::ArrayView<const GO> indices;
-                    Teuchos::ArrayView<const SC> values;
+                    ArrayView<const GO> indices;
+                    ArrayView<const SC> values;
                     for (LO i=0; i<NumMyNodes_; i++) {
                         commMat->getGlobalRowView(NodesMap_->getGlobalElement(i),indices,values);
                         componentsSubdomains[i].resize(indices.size());
                         for (LO j=0; j<indices.size(); j++) {
-                            componentsSubdomains[i][j] = Teuchos::as<int>(indices[j]);
+                            componentsSubdomains[i][j] = as<int>(indices[j]);
                         }
                     }
                 }
@@ -664,30 +667,30 @@ namespace FROSch {
                 {
                     UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_);
 
-                    GraphPtr commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10); // AH 08/07/2019: Can we put 1 instead of 10 here?
-                    GraphPtr commGraphTmp = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(UniqueNodesMap_,10); // We assume that any node is part of no more than 10 subdomains
-                    Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
+                    XCrsGraphPtr commGraph = CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10); // AH 08/07/2019: Can we put 1 instead of 10 here?
+                    XCrsGraphPtr commGraphTmp = CrsGraphFactory<LO,GO,NO>::Build(UniqueNodesMap_,10); // We assume that any node is part of no more than 10 subdomains
+                    XExportPtr commExporter = ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
 
-                    Teuchos::Array<GO> myPID(1,MpiComm_->getRank());
+                    Array<GO> myPID(1,MpiComm_->getRank());
                     for (int i=0; i<NumMyNodes_; i++) {
                         commGraph->insertGlobalIndices(NodesMap_->getGlobalElement(i),myPID());
                     }
-                    MapPtr rangeMap = Xpetra::MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
+                    XMapPtr rangeMap = MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
 
                     commGraph->fillComplete(NodesMap_,rangeMap); // AH 08/07/2019: Can we remove some fillComplete?
-                    commGraphTmp->doExport(*commGraph,*commExporter,Xpetra::INSERT);
+                    commGraphTmp->doExport(*commGraph,*commExporter,INSERT);
                     commGraphTmp->fillComplete(UniqueNodesMap_,rangeMap);
-                    commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10);
-                    commGraph->doImport(*commGraphTmp,*commExporter,Xpetra::INSERT);
+                    commGraph = CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10);
+                    commGraph->doImport(*commGraphTmp,*commExporter,INSERT);
 
                     componentsSubdomains = IntVecVecPtr(NumMyNodes_);
 
-                    Teuchos::ArrayView<const GO> indices;
+                    ArrayView<const GO> indices;
                     for (LO i=0; i<NumMyNodes_; i++) {
                         commGraph->getGlobalRowView(NodesMap_->getGlobalElement(i),indices);
                         componentsSubdomains[i].resize(indices.size());
                         for (LO j=0; j<indices.size(); j++) {
-                            componentsSubdomains[i][j] = Teuchos::as<int>(indices[j]);
+                            componentsSubdomains[i][j] = as<int>(indices[j]);
                         }
                     }
                 }
@@ -695,7 +698,7 @@ namespace FROSch {
 
             case CreateOneToOneMap:
                 {
-                    Teuchos::RCP<LowerPIDTieBreak<LO,GO,NO> > lowerPIDTieBreak(new LowerPIDTieBreak<LO,GO,NO>(MpiComm_,NodesMap_));
+                    RCP<LowerPIDTieBreak<LO,GO,NO> > lowerPIDTieBreak(new LowerPIDTieBreak<LO,GO,NO>(MpiComm_,NodesMap_));
                     UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_,true,lowerPIDTieBreak);
                     lowerPIDTieBreak->sendDataToOriginalMap();
                     componentsSubdomains = lowerPIDTieBreak->getComponents();
@@ -747,8 +750,8 @@ namespace FROSch {
 
         LO tmp1 = 0;
         int *tmp2 = NULL;
-        Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > interior(new InterfaceEntity<SC,LO,GO,NO>(InteriorType,DofsPerNode_,tmp1,tmp2));
-        Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > interface(new InterfaceEntity<SC,LO,GO,NO>(InterfaceType,DofsPerNode_,tmp1,tmp2));
+        RCP<InterfaceEntity<SC,LO,GO,NO> > interior(new InterfaceEntity<SC,LO,GO,NO>(InteriorType,DofsPerNode_,tmp1,tmp2));
+        RCP<InterfaceEntity<SC,LO,GO,NO> > interface(new InterfaceEntity<SC,LO,GO,NO>(InterfaceType,DofsPerNode_,tmp1,tmp2));
         for (LO i=0; i<NumMyNodes_; i++) {
             if (componentsMultiplicity[localComponentIndices[i]] == 1) {
                 LO nodeIDI = interior->getNumNodes();
@@ -785,7 +788,7 @@ namespace FROSch {
         Interface_->addEntity(interface);
 
         for (UN i=0; i<componentsSubdomainsUnique.size(); i++) {
-            Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > tmpEntity(new InterfaceEntity<SC,LO,GO,NO>(VertexType,DofsPerNode_,componentsMultiplicity[i],&(componentsSubdomainsUnique[i][0])));
+            RCP<InterfaceEntity<SC,LO,GO,NO> > tmpEntity(new InterfaceEntity<SC,LO,GO,NO>(VertexType,DofsPerNode_,componentsMultiplicity[i],&(componentsSubdomainsUnique[i][0])));
             LO nodeIDGamma;
             LO nodeIDLocal;
             GO nodeIDGlobal;

@@ -51,6 +51,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC = double,
               class LO = int,
@@ -70,9 +73,9 @@ namespace FROSch {
         LO NodeIDLocal_;
         GO NodeIDGlobal_;
 
-        Teuchos::ArrayRCP<LO> DofsGamma_;
-        Teuchos::ArrayRCP<LO> DofsLocal_;
-        Teuchos::ArrayRCP<GO> DofsGlobal_;
+        ArrayRCP<LO> DofsGamma_;
+        ArrayRCP<LO> DofsLocal_;
+        ArrayRCP<GO> DofsGlobal_;
 
         bool operator< (const Node &n) const;
 
@@ -87,36 +90,36 @@ namespace FROSch {
 
     protected:
 
-        using CrsMatrix             = Xpetra::Matrix<SC,LO,GO,NO>;
-        using CrsMatrixPtr          = Teuchos::RCP<CrsMatrix>;
-        using ConstCrsMatrixPtr     = Teuchos::RCP<const CrsMatrix>;
+        using XMatrix               = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr            = RCP<XMatrix>;
+        using ConstXMatrixPtr       = RCP<const XMatrix>;
 
-        using Vector                = Xpetra::Vector<SC,LO,GO,NO>;
-        using VectorPtr             = Teuchos::RCP<Vector>;
+        using XVector               = Vector<SC,LO,GO,NO>;
+        using XVectorPtr            = RCP<XVector>;
 
-        using MultiVector           = Xpetra::MultiVector<SC,LO,GO,NO>;
-        using MultiVectorPtr        = Teuchos::RCP<MultiVector>;
-        using ConstMultiVectorPtr   = Teuchos::RCP<const MultiVector>;
+        using XMultiVector          = MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr       = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr  = RCP<const XMultiVector>;
 
-        using EntitySetPtr          = Teuchos::RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetPtr          = RCP<EntitySet<SC,LO,GO,NO> >;
 
-        using InterfaceEntityPtr    = Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> >;
+        using InterfaceEntityPtr    = RCP<InterfaceEntity<SC,LO,GO,NO> >;
 
-        using NodeVec               = Teuchos::Array<Node<SC,LO,GO> >;
-        using NodePtr               = Teuchos::RCP<Node<SC,LO,GO> >;
-        using NodePtrVec            = Teuchos::Array<NodePtr>;
+        using NodeVec               = Array<Node<SC,LO,GO> >;
+        using NodePtr               = RCP<Node<SC,LO,GO> >;
+        using NodePtrVec            = Array<NodePtr>;
 
         using UN                    = unsigned;
 
-        using IntVec                 = Teuchos::Array<int>;
+        using IntVec                = Array<int>;
 
-        using LOVecPtr              = Teuchos::ArrayRCP<LO>;
+        using LOVecPtr              = ArrayRCP<LO>;
 
-        using GOVec                 = Teuchos::Array<GO>;
-        using GOVecPtr              = Teuchos::ArrayRCP<GO>;
+        using GOVec                 = Array<GO>;
+        using GOVecPtr              = ArrayRCP<GO>;
 
-        using SCVecPtr              = Teuchos::ArrayRCP<SC>;
-        using SCVecPtrVec           = Teuchos::Array<SCVecPtr>;
+        using SCVecPtr              = ArrayRCP<SC>;
+        using SCVecPtrVec           = Array<SCVecPtr>;
 
     public:
 
@@ -174,10 +177,10 @@ namespace FROSch {
         int clearCoarseNodes();
 
         int computeDistancesToCoarseNodes(UN dimension,
-                                          ConstMultiVectorPtr &nodeList = Teuchos::null,
+                                          ConstXMultiVectorPtr &nodeList = null,
                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
 
-        InterfaceEntityPtr divideEntity(ConstCrsMatrixPtr matrix,
+        InterfaceEntityPtr divideEntity(ConstXMatrixPtr matrix,
                                         int pID);
 
         /////////////////
@@ -249,12 +252,12 @@ namespace FROSch {
     };
 
     template <class SC,class LO,class GO,class NO>
-    bool compareInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
-                                  Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
+    bool compareInterfaceEntities(RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
+                                  RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
 
     template <class SC,class LO,class GO,class NO>
-    bool equalInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
-                                Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
+    bool equalInterfaceEntities(RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
+                                RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
 
 }
 

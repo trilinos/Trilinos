@@ -46,6 +46,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC = double,
               class LO = int,
@@ -55,18 +58,18 @@ namespace FROSch {
 
     protected:
 
-        using MapPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::MapPtr;
-        using ConstMapPtr             = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr;
-        using MapPtrVecPtr            = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr;
-        using MapPtrVecPtr2D          = typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr2D;
-        using ConstMapPtrVecPtr2D     = typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtrVecPtr2D;
+        using XMapPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr            = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using XMapPtrVecPtr2D         = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr2D;
+        using ConstXMapPtrVecPtr2D    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr2D;
 
-        using CrsMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr;
-        using ConstCrsMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr;
+        using XMatrixPtr              = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr         = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using MultiVectorPtr          = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr;
-        using ConstMultiVectorPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstMultiVectorPtr;
-        using MultiVectorPtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr;
+        using XMultiVectorPtr         = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
+        using ConstXMultiVectorPtr    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using XMultiVectorPtrVecPtr   = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
 
         using ParameterListPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
@@ -92,41 +95,41 @@ namespace FROSch {
 
     public:
 
-        HarmonicCoarseOperator(ConstCrsMatrixPtr k,
+        HarmonicCoarseOperator(ConstXMatrixPtr k,
                                ParameterListPtr parameterList);
 
         virtual int initialize() = 0;
 
-        MapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
+        XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
 
     protected:
 
-        MapPtr assembleCoarseMap();
+        XMapPtr assembleCoarseMap();
 
-        MapPtr assembleSubdomainMap();
+        XMapPtr assembleSubdomainMap();
 
-        int addZeroCoarseSpaceBlock(ConstMapPtr dofsMap);
+        int addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap);
 
         int computeVolumeFunctions(UN blockId,
                                    UN dimension,
-                                   ConstMapPtr nodesMap,
-                                   ConstMultiVectorPtr nodeList,
+                                   ConstXMapPtr nodesMap,
+                                   ConstXMultiVectorPtr nodeList,
                                    EntitySetPtr interior);
 
-        virtual MultiVectorPtrVecPtr computeTranslations(UN blockId,
-                                                         EntitySetPtr entitySet);
+        virtual XMultiVectorPtrVecPtr computeTranslations(UN blockId,
+                                                          EntitySetPtr entitySet);
 
-        virtual MultiVectorPtrVecPtr computeRotations(UN blockId,
-                                                      UN dimension,
-                                                      ConstMultiVectorPtr nodeList,
-                                                      EntitySetPtr entitySet);
+        virtual XMultiVectorPtrVecPtr computeRotations(UN blockId,
+                                                       UN dimension,
+                                                       ConstXMultiVectorPtr nodeList,
+                                                       EntitySetPtr entitySet);
 
-        virtual MultiVectorPtr computeExtensions(ConstMapPtr localMap,
-                                                 ConstMapPtr coarseMap,
-                                                 GOVecView indicesGammaDofsAll,
-                                                 GOVecView indicesIDofsAll,
-                                                 CrsMatrixPtr kII,
-                                                 CrsMatrixPtr kIGamma);
+        virtual XMultiVectorPtr computeExtensions(ConstXMapPtr localMap,
+                                                  ConstXMapPtr coarseMap,
+                                                  GOVecView indicesGammaDofsAll,
+                                                  GOVecView indicesIDofsAll,
+                                                  XMatrixPtr kII,
+                                                  XMatrixPtr kIGamma);
 
 
         SubdomainSolverPtr ExtensionSolver_;
@@ -139,7 +142,7 @@ namespace FROSch {
         LOVecPtr2D GammaDofs_;
         LOVecPtr2D IDofs_;
 
-        ConstMapPtrVecPtr2D DofsMaps_; // notwendig??
+        ConstXMapPtrVecPtr2D DofsMaps_; // notwendig??
 
         UN NumberOfBlocks_;
 

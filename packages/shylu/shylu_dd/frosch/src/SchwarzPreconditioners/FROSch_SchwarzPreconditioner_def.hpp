@@ -46,6 +46,9 @@
 
 
 namespace FROSch {
+    
+    using namespace Teuchos;
+    using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
     SchwarzPreconditioner<SC,LO,GO,NO>::SchwarzPreconditioner(ParameterListPtr parameterList,

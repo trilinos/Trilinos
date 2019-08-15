@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Comm<int> > CommWorld = DefaultPlatform::getDefaultPlatform().getComm();
 
     CommandLineProcessor My_CLP;
 
