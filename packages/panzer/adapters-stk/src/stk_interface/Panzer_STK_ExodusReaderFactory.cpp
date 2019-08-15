@@ -68,7 +68,7 @@ int getMeshDimension(const std::string & meshStr,
   stk::io::StkMeshIoBroker meshData(parallelMach);
   meshData.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
   if (isExodus)
-    meshData.add_mesh_database(meshStr, "exodus", stk::io::READ_MESH);
+    meshData.add_mesh_database(meshStr, "exodusII", stk::io::READ_MESH);
   else
     meshData.add_mesh_database(meshStr, "pamgen", stk::io::READ_MESH);
   meshData.create_input_mesh();
@@ -273,7 +273,7 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
 
    {
      const auto fileType = paramList->get<std::string>("File Type");
-     isExodus_ = fileType == "Exodus" ? true : false;
+     isExodus_ = fileType == "Exodus";
    }
 
    // get any mesh scale factor
