@@ -1494,7 +1494,8 @@ void createRegionHierarchy(const int maxRegPerProc,
 
   for(int levelIdx = 0; levelIdx < numLevels; ++levelIdx) {
     smootherSetup(smootherParams[levelIdx], maxRegPerProc, regRowMaps[levelIdx],
-                  regMatrices[levelIdx], regInterfaceScalings[levelIdx]);
+                  regMatrices[levelIdx], regInterfaceScalings[levelIdx],
+                  compRowMaps[levelIdx], regRowMaps[levelIdx], regRowImporters[levelIdx]);
   }
 
 } // createRegionHierarchy
