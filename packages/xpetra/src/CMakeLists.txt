@@ -89,6 +89,7 @@ APPEND_GLOB(SOURCES
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   APPEND_GLOB(SOURCES
     Map/Xpetra_EpetraMap.cpp
+    Map/Xpetra_EpetraMapFactory.cpp
     Import/Xpetra_EpetraImport.cpp
     Export/Xpetra_EpetraExport.cpp
     MultiVector/Xpetra_EpetraMultiVector.cpp
