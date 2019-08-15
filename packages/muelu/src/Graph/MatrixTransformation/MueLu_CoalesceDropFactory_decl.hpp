@@ -128,10 +128,10 @@ namespace MueLu {
     However, there are also some situations (e.g. when doing rebalancing based on HyperGraph partitioning without coordinate information) where one has not access to a "Graph" or "Coordinates" variable.
   */
 
-  template <class Scalar = double,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Scalar = DefaultScalar,
+           class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class CoalesceDropFactory : public SingleLevelFactoryBase {
 #undef MUELU_COALESCEDROPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

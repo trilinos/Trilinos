@@ -217,7 +217,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   //
   typedef Tpetra::Map<LO, GO, Node>         map_type;
   typedef Tpetra::Export<LO, GO, Node>      export_type;
-  //typedef Tpetra::Import<LO, GO, Node>      import_type; // unused
+  //typedef Tpetra::Import<LO, GO, Node>    import_type; // unused
   typedef Tpetra::CrsGraph<LO, GO, Node>    sparse_graph_type;
 
   // Number of independent variables fixed at 3
@@ -546,7 +546,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Building Maps" << endl;
 
-  Array<int> ownedGIDs;
+  Array<GO> ownedGIDs;
   RCP<const map_type> globalMapG;
   Teuchos::Array<ST> coordXArray;
   Teuchos::Array<ST> coordYArray;
@@ -708,9 +708,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           // relative to the cell DoF numbering
           for (int cellCol = 0; cellCol < numFieldsG; ++cellCol) {
             int localCol  = elemToNode (cell, cellCol);
-            int globalCol = as<int> (globalNodeIds[localCol]);
+            GO globalCol = globalNodeIds[localCol];
             //create ArrayView globalCol object for Tpetra
-            ArrayView<int> globalColAV = arrayView (&globalCol, 1);
+            ArrayView<const GO> globalColAV = arrayView (&globalCol, 1);
 
             //Update Tpetra overlap Graph
             overlappedGraph->insertGlobalIndices (globalRowT, globalColAV);

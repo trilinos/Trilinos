@@ -168,16 +168,6 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
       regRes[j]->update(1.0, *regB[j], -1.0);
     }
 
-    // check for convergence
-    {
-      RCP<Vector> compRes = VectorFactory::Build(mapComp, true);
-      regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
-                          rowImportPerGrp, Xpetra::ADD);
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
-
-      if (normRes < 1.0e-12) {return;}
-    }
-
     for (int j = 0; j < maxRegPerProc; j++) {
       // update solution according to Jacobi's method
       regX[j]->elementWiseMultiply(damping, *diag_inv[j], *regRes[j], SC_ONE);
@@ -186,6 +176,91 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
 
   return;
 } // jacobiIterate
+
+/*! \brief Do Gauss-Seidel smoothing
+ *
+ *  Perform Gauss-Seidel smoothing in the region layout using the true diagonal value
+ *  recovered from the splitted matrix.
+ */
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
+                   std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regX, // left-hand side (or solution)
+                   const std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regB, // right-hand side (or residual)
+                   const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats, // matrices in true region layout
+                   const std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionInterfaceScaling, // recreate on coarse grid by import Add on region vector of ones
+                   const int maxRegPerProc, ///< max number of regions per proc [in]
+                   const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp, ///< composite map
+                   const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in region layout [in] requires the mapping of GIDs on fine mesh to "filter GIDs"
+                   const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp, ///< revised row maps in region layout [in] (actually extracted from regionGrpMats)
+                   const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in]
+    )
+{
+#include "Xpetra_UseShortNames.hpp"
+  const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar SC_ONE = Teuchos::ScalarTraits<Scalar>::one();
+  const int maxIter    = smootherParams->get<int>   ("smoother: sweeps");
+  const double damping = smootherParams->get<double>("smoother: damping");
+
+
+  std::vector<RCP<Vector> > regRes(maxRegPerProc);
+  createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
+
+  // extract diagonal from region matrices, recover true diagonal values, invert diagonal
+  std::vector<RCP<Vector> > diag(maxRegPerProc);
+  for (int j = 0; j < maxRegPerProc; j++) {
+    // extract inverse of diagonal from matrix
+    diag[j] = VectorFactory::Build(regionGrpMats[j]->getRowMap(), true);
+    regionGrpMats[j]->getLocalDiagCopy(*diag[j]);
+    diag[j]->elementWiseMultiply(SC_ONE, *diag[j], *regionInterfaceScaling[j], SC_ZERO); // ToDo Does it work to pass in diag[j], but also return into the same variable?
+    diag[j]->reciprocal(*diag[j]);
+  }
+
+  for (int iter = 0; iter < maxIter; ++iter) {
+
+    /* Update the residual vector
+     * 1. Compute tmp = A * regX in each region
+     * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
+     * 3. Compute r = B - tmp
+     */
+    for (int j = 0; j < maxRegPerProc; j++) { // step 1
+      regionGrpMats[j]->apply(*regX[j], *regRes[j]);
+    }
+
+    sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
+        revisedRowMapPerGrp, rowImportPerGrp);
+
+    for (int j = 0; j < maxRegPerProc; j++) { // step 3
+      regRes[j]->update(1.0, *regB[j], -1.0);
+    }
+
+    // update the solution and the residual 
+    
+    using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+    RCP<Vector>  delta;
+    delta = VectorFactory::Build(regionGrpMats[0]->getRowMap(), true);
+    Teuchos::ArrayRCP<SC> ldelta= delta->getDataNonConst(0);
+    Teuchos::ArrayRCP<SC> OneregX= regX[0]->getDataNonConst(0);
+    Teuchos::ArrayRCP<SC> OneregRes= regRes[0]->getDataNonConst(0);
+    Teuchos::ArrayRCP<SC> Onediag = diag[0]->getDataNonConst(0);
+
+    for (size_t k = 0; k < regionGrpMats[0]->getNodeNumRows(); k++) ldelta[k] = 0.;
+    for (size_t k = 0; k < regionGrpMats[0]->getNodeNumRows(); k++) { 
+      ArrayView<const LO> AAcols;
+      ArrayView<const SC> AAvals;
+      regionGrpMats[0]->getLocalRowView(k, AAcols, AAvals);
+      const int *Acols    = AAcols.getRawPtr();
+      const SC  *Avals = AAvals.getRawPtr();
+      LO RowLeng = AAvals.size();
+      for (LO kk = 0; kk < RowLeng; kk++) {
+          OneregRes[k] = OneregRes[k] - Avals[kk]*ldelta[Acols[kk]];
+      }
+      ldelta[k] = damping*Onediag[k]*OneregRes[k];
+      OneregX[k] = OneregX[k] + ldelta[k];
+    }
+  }
+
+  return;
+} // GS
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void smootherSetup(RCP<Teuchos::ParameterList> params,
@@ -208,7 +283,7 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
     jacobiSetup(params, maxRegPerProc, revisedRowMapPerGrp, regionGrpMats, regionInterfaceScaling);
     break;
   case 2:
-    std::cout << "Gauss-Seidel smoother not implemented yet no smoother is applied" << std::endl;
+    jacobiSetup(params, maxRegPerProc, revisedRowMapPerGrp, regionGrpMats, regionInterfaceScaling);
     break;
   case 3:
     std::cout << "Chebyshev smoother not implemented yet no smoother is applied" << std::endl;
@@ -235,7 +310,7 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
   std::map<std::string, int> smootherTypes;
   smootherTypes.insert(std::pair<std::string, int>("None",         0));
   smootherTypes.insert(std::pair<std::string, int>("Jacobi",       1));
-  smootherTypes.insert(std::pair<std::string, int>("Gauss-Seidel", 2));
+  smootherTypes.insert(std::pair<std::string, int>("Gauss", 2));
   smootherTypes.insert(std::pair<std::string, int>("Chebyshev",    3));
 
   switch(smootherTypes[type]) {
@@ -244,7 +319,10 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
   case 1:
     jacobiIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
                   mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+    break;
   case 2:
+    GSIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
+                  mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
     break;
   case 3:
     break;

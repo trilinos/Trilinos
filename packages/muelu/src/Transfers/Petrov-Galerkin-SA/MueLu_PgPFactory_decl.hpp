@@ -77,7 +77,10 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+          class LocalOrdinal = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node = DefaultNode>
   class PgPFactory : public PFactory {
 #undef MUELU_PGPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

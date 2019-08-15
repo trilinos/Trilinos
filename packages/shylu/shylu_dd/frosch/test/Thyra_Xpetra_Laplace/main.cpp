@@ -84,7 +84,6 @@
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
 #include <Xpetra_Parameters.hpp>
-#include <Xpetra_UseDefaultTypes.hpp>
 
 // FROSCH thyra includes
 #include "Thyra_FROSchLinearOp_def.hpp"
@@ -92,10 +91,11 @@
 #include <FROSch_Tools_def.hpp>
 
 typedef unsigned                                    UN;
-typedef Scalar                                      SC;
-typedef LocalOrdinal                                LO;
-typedef GlobalOrdinal                               GO;
+typedef double                                      SC;
+typedef int                                         LO;
+typedef FROSch::DefaultGlobalOrdinal                GO;
 typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+
 
 using namespace std;
 using namespace Teuchos;
@@ -178,12 +178,12 @@ int main(int argc, char *argv[])
             dofsPerNodeVector[block] = (UN) max(int(DofsPerNode-block),1);
             
             ParameterList GaleriList;
-            GaleriList.set("nx", GlobalOrdinal(N*(M+block)));
-            GaleriList.set("ny", GlobalOrdinal(N*(M+block)));
-            GaleriList.set("nz", GlobalOrdinal(N*(M+block)));
-            GaleriList.set("mx", GlobalOrdinal(N));
-            GaleriList.set("my", GlobalOrdinal(N));
-            GaleriList.set("mz", GlobalOrdinal(N));
+            GaleriList.set("nx", GO(N*(M+block)));
+            GaleriList.set("ny", GO(N*(M+block)));
+            GaleriList.set("nz", GO(N*(M+block)));
+            GaleriList.set("mx", GO(N));
+            GaleriList.set("my", GO(N));
+            GaleriList.set("mz", GO(N));
             
             RCP<const Map<LO,GO,NO> > UniqueMapTmp;
             RCP<MultiVector<SC,LO,GO,NO> > CoordinatesTmp;

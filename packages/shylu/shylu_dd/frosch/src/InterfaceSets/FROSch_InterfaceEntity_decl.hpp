@@ -52,19 +52,19 @@
 
 namespace FROSch {
     
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class EntitySet;
     
     enum EntityType {DefaultType,VertexType,EdgeType,FaceType,InteriorType,InterfaceType};
     enum EntityFlag {DefaultFlag,StraightFlag,ShortFlag,NodeFlag};
     enum DistanceFunction {ConstantDistanceFunction,InverseEuclideanDistanceFunction};
     
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type>
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal>
     struct Node {
         LO NodeIDGamma_;
         LO NodeIDLocal_;
@@ -79,10 +79,10 @@ namespace FROSch {
         bool operator== (const Node &n) const;
     };
     
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class InterfaceEntity {
         
     public:

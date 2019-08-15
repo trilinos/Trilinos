@@ -115,10 +115,10 @@ namespace MueLu {
     | Nullspace | TentativePFactory | Coarse near null space vectors. Please also check the documentation of the NullspaceFactory for the special dependency tree of the "Nullspace" variable throughout all multigrid levels.
   */
 
-  template <class Scalar = double,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template <class Scalar = DefaultScalar,
+          class LocalOrdinal = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node = DefaultNode>
   class TentativePFactory : public PFactory {
 #undef MUELU_TENTATIVEPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

@@ -151,9 +151,9 @@ namespace MueLu {
     go away, while others should be moved to Xpetra.
     */
   template <class Scalar,
-  class LocalOrdinal  = int,
-  class GlobalOrdinal = LocalOrdinal,
-  class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class Utilities : public UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_UTILITIES_SHORT
     //#include "MueLu_UseShortNames.hpp"
