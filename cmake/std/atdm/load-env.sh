@@ -70,6 +70,8 @@ else
   source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_custom_system_info.sh
   export ATDM_CONFIG_SYSTEM_DIR=$(readlink -f ${ATDM_CONFIG_CUSTOM_CONFIG_DIR_PATH})
 fi
+export ATDM_CONFIG_KNOWN_HOSTNAME=${ATDM_CONFIG_CDASH_HOSTNAME}  # Deprecated!
+export ATDM_CONFIG_KNOWN_SYSTEM_NAME=${ATDM_CONFIG_SYSTEM_NAME}  # Deprecated!
 
 if [[ $ATDM_CONFIG_SYSTEM_NAME == "" ]] ; then
   echo "Error, could not determine system, aborting env loading script!"
