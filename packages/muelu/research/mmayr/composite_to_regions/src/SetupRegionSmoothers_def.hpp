@@ -159,6 +159,7 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
      * 3. Compute r = B - tmp
      */
     for (int j = 0; j < maxRegPerProc; j++) { // step 1
+
       regionGrpMats[j]->apply(*regX[j], *regRes[j]);
     }
 
@@ -304,10 +305,10 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
   const std::string type = params->get<std::string>("smoother: type");
 
   std::map<std::string, int> smootherTypes;
-  smootherTypes.insert(std::pair<std::string, int>("None",         0));
-  smootherTypes.insert(std::pair<std::string, int>("Jacobi",       1));
-  smootherTypes.insert(std::pair<std::string, int>("Gauss-Seidel", 2));
-  smootherTypes.insert(std::pair<std::string, int>("Chebyshev",    3));
+  smootherTypes.insert(std::pair<std::string, int>("None",      0));
+  smootherTypes.insert(std::pair<std::string, int>("Jacobi",    1));
+  smootherTypes.insert(std::pair<std::string, int>("Gauss",     2));
+  smootherTypes.insert(std::pair<std::string, int>("Chebyshev", 3));
 
   switch(smootherTypes[type]) {
   case 0:
@@ -315,7 +316,10 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
   case 1:
     jacobiIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
                   mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+    break;
   case 2:
+      GSIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
+                mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
     break;
   case 3:
     break;
