@@ -55,7 +55,6 @@
 #include "Teuchos_AbstractFactoryStd.hpp"
 
 #include <string>
-#include "Kokkos_DefaultNode.hpp"
 
 
 namespace Stratimikos {

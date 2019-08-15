@@ -92,8 +92,6 @@
 #include <Thyra_FROSchLinearOp_def.hpp>
 #include <FROSch_Tools_def.hpp>
 
-#include "Kokkos_DefaultNode.hpp"
-
 
 namespace Thyra {
 
