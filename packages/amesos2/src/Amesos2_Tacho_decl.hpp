@@ -105,10 +105,6 @@ public:
 
   typedef Kokkos::TaskScheduler<DeviceSpaceType>              SchedulerType;
 
-  typedef Kokkos::View<size_type*,HostSpaceType>       host_size_type_array;
-  typedef Kokkos::View<ordinal_type*,HostSpaceType> host_ordinal_type_array;
-  typedef Kokkos::View<tacho_type*, HostSpaceType>    host_value_type_array;
-
   typedef Kokkos::View<size_type*, DeviceSpaceType>       device_size_type_array;
   typedef Kokkos::View<ordinal_type*, DeviceSpaceType> device_ordinal_type_array;
   typedef Kokkos::View<tacho_type*, DeviceSpaceType>     device_value_type_array;

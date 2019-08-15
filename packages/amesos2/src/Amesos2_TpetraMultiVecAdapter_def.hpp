@@ -315,13 +315,7 @@ namespace Amesos2 {
           // MDM-TODO - Determine if this is the best way
           // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
           auto contig_local_view_2d = redist_mv.template getLocalView<typename KV::execution_space>();
-          Kokkos::parallel_for(
-            Kokkos::RangePolicy<typename KV::execution_space, size_t> (0, num_vecs * lda),
-            KOKKOS_LAMBDA (const size_t & n) {
-            auto i = n % num_vecs;
-            auto j = n / num_vecs;
-            kokkos_view(i,j) = contig_local_view_2d(i,j);
-          });
+          Kokkos::deep_copy(kokkos_view, contig_local_view_2d);
         }
         else {
           // ... lda should come from Teuchos::Array* allocation,
@@ -559,11 +553,7 @@ namespace Amesos2 {
       // MDM-TODO Is this the right way to update MV: copying one element at a time?
       // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test - tested manually by setting numVecs 1 in Solver_Test.cpp. Add param?
       auto mv_view_to_modify_2d = mv_->template getLocalView<typename KV::execution_space>();
-      Kokkos::parallel_for(
-        Kokkos::RangePolicy<typename KV::execution_space, size_t> (0, kokkos_new_data.size()),
-        KOKKOS_LAMBDA (const size_t & n) {
-        mv_view_to_modify_2d.data()[n] = kokkos_new_data.data()[n];
-      });
+      Kokkos::deep_copy(mv_view_to_modify_2d, kokkos_new_data);
     }
     else {
 
@@ -605,13 +595,7 @@ namespace Amesos2 {
           // MDM-TODO - Complete and validate
           // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
           auto contig_local_view_2d = redist_mv.template getLocalView<typename KV::execution_space>();
-          Kokkos::parallel_for(
-            Kokkos::RangePolicy<typename KV::execution_space, size_t> (0, num_vecs * lda),
-            KOKKOS_LAMBDA (const size_t & n) {
-            auto i = n % num_vecs;
-            auto j = n / num_vecs;
-            contig_local_view_2d(i,j) = kokkos_new_data(i,j);
-          });
+          Kokkos::deep_copy(contig_local_view_2d, kokkos_new_data);
         }
         else {
           // ... lda should come from Teuchos::Array* allocation,

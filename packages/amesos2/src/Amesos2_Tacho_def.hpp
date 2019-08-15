@@ -130,10 +130,12 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
         row_ptr = device_size_type_array((size_type*)sp_rowptr, this->globalNumRows_ + 1);
       }
       else {
-        row_ptr = device_size_type_array("r", this->globalNumRows_ + 1);
+        row_ptr = device_size_type_array(
+          Kokkos::ViewAllocateWithoutInitializing("r"), this->globalNumRows_ + 1);
 
         // Keep this on device? We could copy to host first, then loop.
         // Not sure if symbolic factorization might have a device mode later
+        // MDM-TODO need to learn about this sp_rowptr device/host state
         Kokkos::parallel_for(
           Kokkos::RangePolicy<DeviceSpaceType, global_size_type>
               (0, this->globalNumRows_ + 1), KOKKOS_LAMBDA (int n) {
@@ -146,10 +148,12 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
         cols = device_ordinal_type_array((ordinal_type*)sp_colind, this->globalNumNonZeros_);
       }
       else {
-        cols = device_ordinal_type_array("c", this->globalNumNonZeros_);
+        cols = device_ordinal_type_array(
+          Kokkos::ViewAllocateWithoutInitializing("c"), this->globalNumNonZeros_);
 
         // Keep this on device? We could copy to host first, then loop.
         // Not sure if symbolic factorization might have a device mode later
+        // MDM-TODO need to learn about this sp_rowptr device/host state
         Kokkos::parallel_for(
           Kokkos::RangePolicy<DeviceSpaceType, global_size_type>
               (0, this->globalNumNonZeros_), KOKKOS_LAMBDA (int n) {
@@ -168,8 +172,10 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
     // data_.solver.setMaxNumberOfSuperblocks(data_.max_num_superblocks);
 
     // Symbolic factorization currently must be done on host
-    host_size_type_array host_row_ptr("host_row_ptr", this->globalNumRows_ + 1);
-    host_ordinal_type_array host_cols("host_cols", this->globalNumNonZeros_);
+    Kokkos::View<size_type*,HostSpaceType> host_row_ptr(
+      Kokkos::ViewAllocateWithoutInitializing("host_row_ptr"), this->globalNumRows_ + 1);
+    Kokkos::View<ordinal_type*,HostSpaceType> host_cols(
+      Kokkos::ViewAllocateWithoutInitializing("host_cols"), this->globalNumNonZeros_);
     Kokkos::deep_copy(host_row_ptr, row_ptr);
     Kokkos::deep_copy(host_cols, cols);
 
@@ -220,8 +226,10 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  device_solve_array_t x("x", this->globalNumRows_, nrhs);
-  device_solve_array_t b("b", this->globalNumRows_, nrhs);
+  device_solve_array_t x(
+    Kokkos::ViewAllocateWithoutInitializing("x"), this->globalNumRows_, nrhs);
+  device_solve_array_t b(
+    Kokkos::ViewAllocateWithoutInitializing("b"), this->globalNumRows_, nrhs);
 
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
@@ -242,7 +250,8 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
 #endif
     // Bump up the workspace size if needed
     if (workspace_.extent(0) < this->globalNumRows_ || workspace_.extent(1) < nrhs) {
-      workspace_ = device_solve_array_t("t", this->globalNumRows_, nrhs);
+      workspace_ = device_solve_array_t(
+        Kokkos::ViewAllocateWithoutInitializing("t"), this->globalNumRows_, nrhs);
     }
 
     data_.solver.solve(x, b, workspace_);
@@ -336,9 +345,12 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
     // Only the root image needs storage allocated
     if( this->root_ ) {
-      nzvals_ = device_value_type_array("nzvals", this->globalNumNonZeros_);
-      colind_ = device_ordinal_type_array("colind", this->globalNumNonZeros_);
-      rowptr_ = device_size_type_array("rowptr", this->globalNumRows_ + 1);
+      nzvals_ = device_value_type_array(
+        Kokkos::ViewAllocateWithoutInitializing("nzvals"), this->globalNumNonZeros_);
+      colind_ = device_ordinal_type_array(
+        Kokkos::ViewAllocateWithoutInitializing("colind"), this->globalNumNonZeros_);
+      rowptr_ = device_size_type_array(
+        Kokkos::ViewAllocateWithoutInitializing("rowptr"), this->globalNumRows_ + 1);
     }
 
     size_type nnz_ret = 0;

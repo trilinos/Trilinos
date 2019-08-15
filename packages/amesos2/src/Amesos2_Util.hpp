@@ -366,13 +366,15 @@ namespace Amesos2 {
         nnz = Teuchos::as<typename KV_GS::value_type>(nnz_tmp);
 
 
-        Kokkos::View<mat_gs_t *, typename KV_S::execution_space> indices_tmp("indices_tmp", size);
+        Kokkos::View<mat_gs_t *, typename KV_S::execution_space> indices_tmp(
+          Kokkos::ViewAllocateWithoutInitializing("indices_tmp"), size);
 
         if_then_else<is_same<typename KV_GS::value_type,mat_gs_t>::value,
           same_gs_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op>,
           diff_gs_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat, nzvals, indices_tmp,
                                                        pointers, nnz, map,
                                                        distribution, ordering);
+        // MDM-TODO can we do deep_copy and skip Teuchos::as?
         Kokkos::parallel_for(
           Kokkos::RangePolicy<typename KV_S::execution_space, typename KV_GO::size_type> (0, size),
           KOKKOS_LAMBDA (const typename KV_GO::size_type & i) {
@@ -481,13 +483,15 @@ namespace Amesos2 {
         typedef typename M::global_ordinal_t mat_go_t;
         typedef typename M::global_size_t mat_gs_t;
         typename KV_GO::size_type size = indices.size();
-        Kokkos::View<mat_go_t *, typename KV_S::execution_space> indices_tmp("indices_tmp", size);
+        Kokkos::View<mat_go_t *, typename KV_S::execution_space> indices_tmp(
+          Kokkos::ViewAllocateWithoutInitializing("indices_tmp"), size);
 
         if_then_else<is_same<typename KV_GS::value_type,mat_gs_t>::value,
           same_gs_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op>,
           diff_gs_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat, nzvals, indices_tmp,
                                                        pointers, nnz, map,
                                                        distribution, ordering);
+        // MDM-TODO can we do deep_copy and skip Teuchos::as?
         Kokkos::parallel_for(
           Kokkos::RangePolicy<typename KV_S::execution_space, typename KV_GO::size_type> (0, size),
           KOKKOS_LAMBDA (const typename KV_GO::size_type & i) {
@@ -594,13 +598,15 @@ namespace Amesos2 {
         typedef typename M::scalar_t mat_scalar_t;
         typedef typename M::global_ordinal_t mat_go_t;
         typename KV_S::size_type size = nzvals.size();
-        Kokkos::View<mat_scalar_t *, typename KV_S::execution_space> nzvals_tmp("nzvals_tmp", size);
+        Kokkos::View<mat_scalar_t *, typename KV_S::execution_space> nzvals_tmp(
+          Kokkos::ViewAllocateWithoutInitializing("nzvals_tmp"), size);
 
         if_then_else<is_same<typename KV_GO::value_type,mat_go_t>::value,
           same_go_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op>,
           diff_go_helper_kokkos_view<M,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat, nzvals_tmp, indices,
                                                        pointers, nnz, map,
                                                        distribution, ordering);
+        // MDM-TODO can we do deep_copy and skip Teuchos::as?
         Kokkos::parallel_for(
           Kokkos::RangePolicy<typename KV_S::execution_space, typename KV_S::size_type> (0, size),
           KOKKOS_LAMBDA (const typename KV_S::size_type & i) {
