@@ -148,7 +148,7 @@ namespace Thyra {
             ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
 
             // Extract the dof ordering
-            DofOrdering dofOrdering;
+            DofOrdering dofOrdering = NodeWise;
             if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
                 dofOrdering = NodeWise;
             } else if (!paramList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
@@ -187,7 +187,7 @@ namespace Thyra {
             ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
 
             // Extract the dof ordering
-            DofOrdering dofOrdering;
+            DofOrdering dofOrdering = NodeWise;
             if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
                 dofOrdering = NodeWise;
             } else if (!paramList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
@@ -219,7 +219,7 @@ namespace Thyra {
             ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
 
             // Extract the dof ordering
-            DofOrdering dofOrdering;
+            DofOrdering dofOrdering = NodeWise;
             if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
                 dofOrdering = NodeWise;
             } else if (!paramList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {

@@ -42,7 +42,7 @@
 #ifndef _FROSCH_TOOLS_DECL_HPP
 #define _FROSCH_TOOLS_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
+#define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
 
 #include <ShyLU_DDFROSch_config.h>
 

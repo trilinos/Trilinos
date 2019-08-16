@@ -99,7 +99,10 @@ namespace Thyra {
     using namespace Teuchos;
     using namespace Xpetra;
 
-    template <class SC,class LO,class GO,class NO=KokkosClassic::DefaultNode::DefaultNodeType>
+    template <class SC,
+              class LO,
+              class GO,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class FROSchFactory : public Thyra::PreconditionerFactoryBase<SC> {
 
     protected:

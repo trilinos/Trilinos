@@ -67,7 +67,7 @@ namespace FROSch {
     PartitionOfUnityMaps_ (),
     Verbose_ (MpiComm_->getRank() == 0)
     {
-        CommunicationStrategy communicationStrategy;
+        CommunicationStrategy communicationStrategy = CreateOneToOneMap;
         if (!ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsMatrix")) {
             communicationStrategy = CommCrsMatrix;
         } else if (!ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsGraph")) {

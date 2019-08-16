@@ -118,7 +118,7 @@ namespace FROSch {
     {
         // ====================================================================================
         // AH 08/09/2019: This is just temporary. Implement this properly in all the classes
-        Verbosity verbosity;
+        Verbosity verbosity = All;
         if (!this->ParameterList_->get("Verbosity","All").compare("None")) {
             verbosity = None;
         } else if (!this->ParameterList_->get("Verbosity","All").compare("All")) {

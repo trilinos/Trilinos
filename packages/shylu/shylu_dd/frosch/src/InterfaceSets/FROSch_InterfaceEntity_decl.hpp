@@ -42,8 +42,6 @@
 #ifndef _FROSCH_INTERFACEENTITY_DECL_HPP
 #define _FROSCH_INTERFACEENTITY_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 #include <Xpetra_VectorFactory_fwd.hpp>
 
 #include <FROSch_ExtractSubmatrices_def.hpp>

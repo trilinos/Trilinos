@@ -42,8 +42,6 @@
 #ifndef _FROSCH_ENTITYSET_DECL_HPP
 #define _FROSCH_ENTITYSET_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 #include <FROSch_InterfaceEntity_def.hpp>
 
 #include <FROSch_Tools_def.hpp>

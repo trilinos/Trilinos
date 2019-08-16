@@ -177,7 +177,7 @@ namespace FROSch {
         std::string blockIdString = blockIdStringstream.str();
         RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
-        Verbosity verbosity;
+        Verbosity verbosity = All;
         if (!coarseSpaceList->get("Verbosity","All").compare("None")) {
             verbosity = None;
         } else if (!coarseSpaceList->get("Verbosity","All").compare("All")) {

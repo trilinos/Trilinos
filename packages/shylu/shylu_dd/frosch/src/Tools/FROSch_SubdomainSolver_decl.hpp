@@ -42,7 +42,7 @@
 #ifndef _FROSCH_SUBDOMAINSOLVER_DECL_hpp
 #define _FROSCH_SUBDOMAINSOLVER_DECL_hpp
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
+#define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
 
 #include <ShyLU_DDFROSch_config.h>
 
@@ -70,6 +70,10 @@
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <MueLu_Utilities.hpp>
+#endif
+
+#ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
+#include <Ifpack2_Details_OneLevelFactory_decl.hpp>
 #endif
 
 
@@ -103,12 +107,16 @@ namespace FROSch {
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         using ECrsMatrix                  = Epetra_CrsMatrix;
-        using EXMatrixPtr               = RCP<ECrsMatrix>;
-        using ConstEXMatrixPtr          = RCP<const ECrsMatrix>;
+        using ECrsMatrixPtr               = RCP<ECrsMatrix>;
+        using ConstECrsMatrixPtr          = RCP<const ECrsMatrix>;
 #endif
         using TCrsMatrix                  = Tpetra::CrsMatrix<SC,LO,GO,NO>;
-        using TXMatrixPtr               = RCP<TCrsMatrix>;
-        using ConstTXMatrixPtr          = RCP<const TCrsMatrix>;
+        using TCrsMatrixPtr               = RCP<TCrsMatrix>;
+        using ConstTCrsMatrixPtr          = RCP<const TCrsMatrix>;
+        
+        using TRowMatrix                  = Tpetra::RowMatrix<SC,LO,GO,NO>;
+        using TRowMatrixPtr               = RCP<TRowMatrix>;
+        using ConstTRowMatrixPtr          = RCP<const TRowMatrix>;
 
         using XMultiVector                = MultiVector<SC,LO,GO,NO>;
         using XMultiVectorPtr             = RCP<XMultiVector>;
@@ -127,7 +135,7 @@ namespace FROSch {
         using ParameterListPtr            = RCP<ParameterList>;
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        using ELinearProblem                = Epetra_LinearProblem;
+        using ELinearProblem               = Epetra_LinearProblem;
         using ELinearProblemPtr            = RCP<Epetra_LinearProblem>;
 #endif
 
@@ -270,7 +278,11 @@ namespace FROSch {
         RCP<Belos::LinearProblem<SC,MultiVector<SC,LO,GO,NO>,Belos::OperatorT<MultiVector<SC,LO,GO,NO> > > >  BelosLinearProblem_;
         RCP<Belos::SolverManager<SC,MultiVector<SC,LO,GO,NO>,Belos::OperatorT<MultiVector<SC,LO,GO,NO> > > > BelosSolverManager_;
 #endif
-
+        
+#ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
+        RCP<Ifpack2::Preconditioner<SC,LO,GO,NO> > Ifpack2Preconditioner_;
+#endif
+        
         bool IsInitialized_;
 
         //! Flag to indicated whether this subdomain solver has been setup/computed

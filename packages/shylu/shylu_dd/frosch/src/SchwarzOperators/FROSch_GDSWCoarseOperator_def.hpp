@@ -297,7 +297,7 @@ namespace FROSch {
         std::string blockIdString = blockIdStringstream.str();
         RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
-        CommunicationStrategy communicationStrategy;
+        CommunicationStrategy communicationStrategy = CreateOneToOneMap;
         if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsMatrix")) {
             communicationStrategy = CommCrsMatrix;
         } else if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsGraph")) {
@@ -308,7 +308,7 @@ namespace FROSch {
             FROSCH_ASSERT(false,"FROSch::GDSWCoarseOperator : ERROR: Specify a valid communication strategy for the identification of the interface components.");
         }
 
-        Verbosity verbosity;
+        Verbosity verbosity = All;
         if (!coarseSpaceList->get("Verbosity","All").compare("None")) {
             verbosity = None;
         } else if (!coarseSpaceList->get("Verbosity","All").compare("All")) {

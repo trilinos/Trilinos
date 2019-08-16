@@ -42,8 +42,6 @@
 #ifndef _FROSCH_PARTITIONOFUNITYBASIS_DECL_hpp
 #define _FROSCH_PARTITIONOFUNITYBASIS_DECL_hpp
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 

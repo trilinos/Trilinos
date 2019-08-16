@@ -138,7 +138,7 @@ namespace Thyra {
         //Transform to Xpetra MultiVector
         RCP<MultiVector<SC,LO,GO,NO> > xY;
 
-        ETransp transp;
+        ETransp transp = NO_TRANS;
         switch (M_trans) {
             case NOTRANS:   transp = NO_TRANS;          break;
             case TRANS:     transp = Teuchos::TRANS;    break;

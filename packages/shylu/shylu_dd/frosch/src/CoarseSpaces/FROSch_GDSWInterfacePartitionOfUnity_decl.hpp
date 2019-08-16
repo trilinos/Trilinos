@@ -42,8 +42,6 @@
 #ifndef _FROSCH_GDSWINTERFACEPARTITIONOFUNITY_DECL_HPP
 #define _FROSCH_GDSWINTERFACEPARTITIONOFUNITY_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 #include <FROSch_InterfacePartitionOfUnity_def.hpp>
 
 

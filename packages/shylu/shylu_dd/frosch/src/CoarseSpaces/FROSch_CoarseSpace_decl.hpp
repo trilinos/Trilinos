@@ -42,8 +42,6 @@
 #ifndef _FROSCH_COARSESPACE_DECL_HPP
 #define _FROSCH_COARSESPACE_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 //#include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 

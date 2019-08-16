@@ -42,8 +42,6 @@
 #ifndef _FROSCH_SCHWARZOPERATOR_DECL_HPP
 #define _FROSCH_SCHWARZOPERATOR_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_TripleMatrixMultiply.hpp>
 #include <Xpetra_Export.hpp>

@@ -73,7 +73,7 @@ namespace FROSch {
         if (useDefaultParameters) {
             return initialize(3,1,repeatedMap);
         } else {
-            DofOrdering dofOrdering;
+            DofOrdering dofOrdering = NodeWise;
             if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
                 dofOrdering = NodeWise;
             } else if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
@@ -104,7 +104,7 @@ namespace FROSch {
         if (useDefaultParameters) {
             return initialize(3,1,repeatedMap,dirichletBoundaryDofs);
         } else {
-            DofOrdering dofOrdering;
+            DofOrdering dofOrdering = NodeWise;
             if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
                 dofOrdering = NodeWise;
             } else if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
