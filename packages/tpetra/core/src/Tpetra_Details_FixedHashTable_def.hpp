@@ -51,6 +51,7 @@
 #endif // TPETRA_USE_MURMUR_HASH
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include <type_traits>
 
 namespace Tpetra {
@@ -210,6 +211,44 @@ public:
 
     const hash_value_type hashVal = hash_type::hashFunc (keys_[i], size_);
     Kokkos::atomic_increment (&counts_[hashVal]);
+  }
+
+  using value_type = Kokkos::pair<int, key_type>;
+
+  /// \brief Debug reduce version of above operator().
+  ///
+  /// Set dst to 1 on error (out-of-bounds hash value).
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const size_type& i, value_type& dst) const
+  {
+    using hash_value_type = typename hash_type::result_type;
+
+    const key_type keyVal = keys_[i];
+    const hash_value_type hashVal = hash_type::hashFunc (keyVal, size_);
+    if (hashVal < hash_value_type (0) ||
+        hashVal >= hash_value_type (counts_.extent (0))) {
+      dst.first = 1;
+      dst.second = keyVal;
+    }
+    else {
+      Kokkos::atomic_increment (&counts_[hashVal]);
+    }
+  }
+
+  //! Set the initial value of the reduction result.
+  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
+  {
+    dst.first = 0;
+    dst.second = key_type (0);
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& dst,
+        const volatile value_type& src) const
+  {
+    const bool good = dst.first == 0 || src.first == 0;
+    dst.first = good ? 0 : dst.first;
+    // leave dst.second as it is, to get the "first" key
   }
 
 private:
@@ -1034,6 +1073,7 @@ init (const keys_type& keys,
 
   const bool buildInParallel =
     FHT::worthBuildingFixedHashTableInParallel<execution_space> ();
+  const bool debug = ::Tpetra::Details::Behavior::debug ();
 
   // NOTE (mfh 14 May 2015) This method currently assumes UVM.  We
   // could change that by setting up ptr and val as Kokkos::DualView
@@ -1127,10 +1167,22 @@ init (const keys_type& keys,
   // incur overhead then.
   if (buildInParallel) {
     FHT::CountBuckets<counts_type, keys_type> functor (counts, theKeys, size);
-
-    typedef typename counts_type::execution_space execution_space;
-    typedef Kokkos::RangePolicy<execution_space, offset_type> range_type;
-    Kokkos::parallel_for (range_type (0, theNumKeys), functor);
+    using execution_space = typename counts_type::execution_space;
+    using range_type = Kokkos::RangePolicy<execution_space, offset_type>;
+    const char kernelLabel[] = "Tpetra::Details::FixedHashTable CountBuckets";
+    if (debug) {
+      using key_type = typename keys_type::non_const_value_type;
+      Kokkos::pair<int, key_type> err;
+      Kokkos::parallel_reduce (kernelLabel, range_type (0, theNumKeys),
+                               functor, err);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (err.first != 0, std::logic_error, "Tpetra::Details::FixedHashTable "
+         "constructor: CountBuckets found a key " << err.second << " that "
+         "results in an out-of-bounds hash value.");
+    }
+    else {
+      Kokkos::parallel_for (kernelLabel, range_type (0, theNumKeys), functor);
+    }
   }
   else {
     // Access to counts is not necessarily contiguous, but is
