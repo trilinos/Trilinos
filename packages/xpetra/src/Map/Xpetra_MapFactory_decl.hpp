@@ -65,9 +65,9 @@ namespace Xpetra {
 ///
 /// Users must specify the exact class of the object that they want
 /// to create (either an Xpetra::TpetraMap or an Xpetra::EpetraMap).
-template<class LocalOrdinal  = Map<>::local_ordinal_type,
-         class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-         class Node          = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+template<class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
 class MapFactory
 {
 
