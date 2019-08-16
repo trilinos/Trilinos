@@ -446,8 +446,6 @@ namespace Ioss {
    */
   void Region::output_summary(std::ostream &strm, bool /* do_transient */)
   {
-    IOSS_FUNC_ENTER(m_);
-
     int64_t total_cells       = get_entity_count(get_structured_blocks());
     int64_t total_fs_faces    = get_entity_count(get_facesets());
     int64_t total_ns_nodes    = get_entity_count(get_nodesets());

@@ -55,7 +55,9 @@
 #include "MiniEM_AddFieldsToMesh.hpp"
 #include "MiniEM_OperatorRequestCallback.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory.hpp"
+#include "MiniEM_FullMaxwellPreconditionerFactory_Augmentation.hpp"
 #include "MiniEM_DiscreteGradient.hpp"
+#include "MiniEM_DiscreteCurl.hpp"
 
 #include <string>
 #include <iostream>
@@ -327,9 +329,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           updateParams("solverCG.xml", lin_solver_pl, comm, out);
         else
           return EXIT_FAILURE;
-      else if (solver == ML_REFMAXWELL)
+      else if (solver == ML_REFMAXWELL) {
         updateParams("solverMLRefMaxwell.xml", lin_solver_pl, comm, out);
-      else if (solver == MUELU_REFMAXWELL) {
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
+      } else if (solver == MUELU_REFMAXWELL) {
         if (linAlgebra == linAlgTpetra) {
           updateParams("solverMueLuRefMaxwell.xml", lin_solver_pl, comm, out);
 
@@ -359,6 +362,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           if (dim == 2)
             updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
         }
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
       }
     } else
       updateParams(xml, lin_solver_pl, comm, out);
@@ -485,6 +489,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     RCP<Teko::Cloneable> clone = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory>());
     Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner",clone);
 
+    RCP<Teko::Cloneable> cloneAug = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory_Augmentation>());
+    Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner: Augmentation",cloneAug);
+
     // add callbacks to request handler. these are for requesting auxiliary operators and for providing
     // coordinate information to MueLu
     Teuchos::RCP<Teko::RequestHandler> req_handler = Teuchos::rcp(new Teko::RequestHandler());
@@ -499,6 +506,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     {
       Teuchos::TimeMonitor tMdiscGrad(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient")));
       addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
+    }
+
+    // add discrete curl
+    {
+      Teuchos::TimeMonitor tMdiscCurl(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete curl")));
+      addDiscreteCurlToRequestHandler(linObjFactory,req_handler);
     }
 
     // build linear solver

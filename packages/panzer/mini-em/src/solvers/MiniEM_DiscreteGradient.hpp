@@ -150,8 +150,9 @@ void addDiscreteGradientToRequestHandler(
     }//end element block loop
     grad_matrix->fillComplete(domainmap,rangemap);
 
-    RCP<Thyra::LinearOpBase<double> > thyra_gradient = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(domainmap),
-                                                                                                                                           Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(rangemap),grad_matrix);
+    RCP<Thyra::LinearOpBase<double> > thyra_gradient = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(rangemap),
+                                                                                                                                           Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(domainmap),
+                                                                                                                                           grad_matrix);
 
     // add gradient callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new GradientRequestCallback(thyra_gradient)));
