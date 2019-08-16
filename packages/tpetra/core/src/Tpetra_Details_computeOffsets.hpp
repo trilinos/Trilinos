@@ -324,17 +324,19 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
       // "device" copy of counts in offsets' memory space.
 
 // Workaround to issue #5179, discovered by jhu.
-// Workaround allows application progress while root cause of issue is 
+// Workaround allows application progress while root cause of issue is
 // investigated.  KDD 8/17/19
 #define Tpetra_Workaround5179
 #ifndef Tpetra_Workaround5179
 
       using memory_space = typename device_type::memory_space;
       // The first template parameter needs to be a memory space.
-      
+
       constexpr bool countsAccessibleFromOffsetsExecSpace =
         Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<memory_space,
         typename CVT::memory_space>::value;
+//#define JHUHACK
+#ifndef JHUHACK
       if (countsAccessibleFromOffsetsExecSpace) {
 #ifdef KOKKOS_ENABLE_CUDA
         // If 'counts' is a UVM allocation, then conservatively fence
@@ -351,7 +353,7 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
         Kokkos::parallel_scan (range, functor, total, funcName);
       }
       else { // make tmp copy of counts accessible from offsets' space
-#endif // Tpetra_Workaround5179
+#endif //JHUHACK
         using dev_counts_type = Kokkos::View<count_type*,
           typename CVT::array_layout, device_type>;
         dev_counts_type counts_d ("counts_d", numCounts);
@@ -361,9 +363,9 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
           ComputeOffsetsFromCounts<OVT, dev_counts_type, SizeType>;
         functor_type functor (ptr, counts_d);
         Kokkos::parallel_scan (range, functor, total, funcName);
-#ifndef Tpetra_Workaround5179
+#ifndef JHUHACK
       }
-#endif // Tpetra_Workaround5179
+#endif //JHUHACK
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION
