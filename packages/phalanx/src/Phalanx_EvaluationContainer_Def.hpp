@@ -51,7 +51,7 @@
 #include "Phalanx_Evaluator_AliasField.hpp"
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_KokkosViewFactoryFunctor.hpp"
-#include "Phalanx_MemoryPool.hpp"
+#include "Phalanx_MemoryManager.hpp"
 #include <sstream>
 #include <stdexcept>
 
@@ -61,7 +61,7 @@ PHX::EvaluationContainer<EvalT, Traits>::EvaluationContainer() :
   post_registration_setup_called_(false),
   build_device_dag_(false),
   minimize_dag_memory_use_(false),
-  memory_pool_(nullptr)
+  memory_manager_(nullptr)
 {
   this->dag_manager_.setEvaluationTypeName( PHX::typeAsString<EvalT>() );
 }
@@ -125,17 +125,17 @@ postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm,
                       const bool& buildDeviceDAG,
                       const bool& minimizeDAGMemoryUse,
-                      const PHX::MemoryPool* const memoryPool)
+                      const PHX::MemoryManager* const memoryManager)
 {
   // Save input
   build_device_dag_ = buildDeviceDAG;
   minimize_dag_memory_use_ = minimizeDAGMemoryUse;
-  if (memoryPool != nullptr) {
+  if (memoryManager != nullptr) {
     // Clone memory pool to share memory allocated from other FieldManager/DAGs
-    memory_pool_ = memoryPool->clone();
+    memory_manager_ = memoryManager->clone();
   }
   else
-    memory_pool_ = std::make_shared<PHX::MemoryPool>();
+    memory_manager_ = std::make_shared<PHX::MemoryManager>();
 
   // Figure out all evaluator dependencies
   if ( !(this->dag_manager_.sortingCalled()) )
