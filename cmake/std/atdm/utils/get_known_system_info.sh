@@ -7,8 +7,9 @@
 # Clean out vars in case this crashes before finishing
 
 unset ATDM_CONFIG_REAL_HOSTNAME
-unset ATDM_CONFIG_KNOWN_HOSTNAME
-unset ATDM_CONFIG_KNOWN_SYSTEM_NAME
+unset ATDM_CONFIG_CDASH_HOSTNAME
+unset ATDM_CONFIG_SYSTEM_NAME
+unset ATDM_CONFIG_SYSTEM_DIR
 
 # Assert this script is sourced, not run!
 called=$_
@@ -129,15 +130,9 @@ elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
   fi
 fi
 
-if [[ $ATDM_SYSTEM_NAME == "" ]] ; then
-  echo
-  echo "***"
-  echo "*** Error, hostname = '$ATDM_CONFIG_REAL_HOSTNAME' not recognized as a known ATDM system name!"
-  echo "***"
-  return
-else
+if [[ $ATDM_SYSTEM_NAME != "" ]] ; then
   echo "Hostname '$ATDM_CONFIG_REAL_HOSTNAME' matches known ATDM host '$ATDM_HOSTNAME' and system '$ATDM_SYSTEM_NAME'"
+  export ATDM_CONFIG_CDASH_HOSTNAME=$ATDM_HOSTNAME
+  export ATDM_CONFIG_SYSTEM_NAME=$ATDM_SYSTEM_NAME
+  export ATDM_CONFIG_SYSTEM_DIR=${ATDM_CONFIG_SCRIPT_DIR}/${ATDM_CONFIG_SYSTEM_NAME}
 fi
-
-export ATDM_CONFIG_KNOWN_HOSTNAME=$ATDM_HOSTNAME
-export ATDM_CONFIG_KNOWN_SYSTEM_NAME=$ATDM_SYSTEM_NAME
