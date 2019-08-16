@@ -82,8 +82,9 @@ bool worthBuildingFixedHashTableInParallel () {
 //  KDD 8/19:  reproducible of the errors.  We'll reverse this as we debug
 //  KDD 8/19:  the problem, but this temporary fix may allow users to make
 //  KDD 8/19:  progress toward their milestones.
-  return ExecSpace::concurrency() > 1;
-//    return false;
+std::cout << "KDDKDD WorthIt " << (ExecSpace::concurrency() > 1) << std::endl;
+    return ExecSpace::concurrency() > 1;
+//  return false;
 //  KDD 8/19
 }
 
@@ -1230,21 +1231,44 @@ init (const keys_type& keys,
   // with actual parallel execution spaces, it does require multiple
   // passes over the data.  Thus, it still makes sense to have a
   // sequential fall-back.
+#define KDDHACK
+#ifndef KDDHACK
   if (buildInParallel) {
+#endif
     ::Tpetra::Details::computeOffsetsFromCounts (ptr, counts);
+
+#ifndef KDDHACK
   }
   else {
     // mfh 28 Mar 2016: We could use UVM here, but it's pretty easy to
     // use a host mirror too, so I'll just do that.
     typename decltype (ptr)::HostMirror ptrHost = Kokkos::create_mirror_view (ptr);
+#else
+    typename ptr_type::non_const_type ptrHost ("FixedHashTable::ptrKDD", size+1);
+#endif
 
     ptrHost[0] = 0;
     for (offset_type i = 0; i < size; ++i) {
       //ptrHost[i+1] += ptrHost[i];
       ptrHost[i+1] = ptrHost[i] + counts[i];
     }
+#ifdef KDDHACK
+    std::cout << "KDD Comparing... " << std::endl;
+    bool gross = false;
+    for (offset_type i = 0; i <= size; i++)
+      if (ptr[i] != ptrHost[i]) {
+        std::cout << "KDD index " << i << " ptr " << ptr[i] << " ptrHost " << ptrHost[i] << std::endl;
+        gross = true;
+      }
+    if (gross) {
+      for (offset_type i = 0; i < size; i++)
+        std::cout << " KDD COUNTS[" << i << "] = " << counts[i] << std::endl;
+    }
+#endif
+#ifndef KDDHACK
     Kokkos::deep_copy (ptr, ptrHost);
   }
+#endif
 
   if (debug) {
     Kokkos::HostSpace space;
