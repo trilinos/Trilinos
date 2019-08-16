@@ -26,6 +26,8 @@ unset ATDM_CONFIG_CDASH_HOSTNAME
 unset ATDM_CONFIG_SYSTEM_NAME
 unset ATDM_CONFIG_SYSTEM_DIR
 
+unset ATDM_CONFIG_GET_CUSTOM_SYSTEM_INFO_COMPLETED
+
 # Assert this script is sourced, not run!
 called=$_
 if [ "$called" == "$0" ] ; then
@@ -43,8 +45,10 @@ fi
 unset ATDM_CUSTOM_CONFIG_DIR
 if [[ "${ATDM_CONFIG_CUSTOM_CONFIG_DIR_ARG}" != "" ]] ; then
   ATDM_CUSTOM_CONFIG_DIR=${ATDM_CONFIG_CUSTOM_CONFIG_DIR_ARG}
+  ATDM_CUSTOM_CONFIG_DIR_SOURCE="second argument"
 elif [[ "${ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR}" != "" ]]; then
   ATDM_CUSTOM_CONFIG_DIR=${ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR}
+  ATDM_CUSTOM_CONFIG_DIR_SOURCE="ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR"
 fi
 #echo "ATDM_CUSTOM_CONFIG_DIR = '${ATDM_CUSTOM_CONFIG_DIR}'"
 
@@ -53,10 +57,10 @@ fi
 unset custom_system_name
 if [[ "${ATDM_CUSTOM_CONFIG_DIR}" != "" ]]; then
   if [ ! -d "${ATDM_CUSTOM_CONFIG_DIR}" ] ; then
-    echo "Error, '${ATDM_CUSTOM_CONFIG_DIR}' must point to a valid directory with a user-defiend configuration!"
+    echo "Error, '${ATDM_CUSTOM_CONFIG_DIR}' from ${ATDM_CUSTOM_CONFIG_DIR_SOURCE} must point to a valid directory with a user-defiend configuration!"
     return
   elif [ ! -e "${ATDM_CUSTOM_CONFIG_DIR}/environment.sh" ] ; then
-    echo "Error, directory '${ATDM_CUSTOM_CONFIG_DIR}' exists but the file '${ATDM_CUSTOM_CONFIG_DIR}/environment.sh' does not exist!"
+    echo "Error, directory '${ATDM_CUSTOM_CONFIG_DIR}' from ${ATDM_CUSTOM_CONFIG_DIR_SOURCE} exists but the file '${ATDM_CUSTOM_CONFIG_DIR}/environment.sh' does not exist!"
     return
   fi
   custom_system_name=$(basename ${ATDM_CUSTOM_CONFIG_DIR})
@@ -88,6 +92,6 @@ if [[ "${select_custom_system_config}" == "1" ]] ; then
   export ATDM_CONFIG_CDASH_HOSTNAME=$ATDM_CONFIG_REAL_HOSTNAME
   export ATDM_CONFIG_SYSTEM_NAME=$custom_system_name
   export ATDM_CONFIG_SYSTEM_DIR=$(readlink -f ${ATDM_CUSTOM_CONFIG_DIR})
-  export ATDM_CONFIG_KNOWN_HOSTNAME=${ATDM_CONFIG_CDASH_HOSTNAME}  # Deprecated!
-  export ATDM_CONFIG_KNOWN_SYSTEM_NAME=${ATDM_CONFIG_SYSTEM_NAME}  # Deprecated!
 fi
+
+export ATDM_CONFIG_GET_CUSTOM_SYSTEM_INFO_COMPLETED=1

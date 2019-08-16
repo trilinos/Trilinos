@@ -52,15 +52,7 @@ fi
 # B) Get the host name, system name, and system configuration diecrory
 #
 
-source ${ATDM_CONFIG_SCRIPT_DIR}/utils/unset_atdm_config_vars_system_info.sh
-
-# First, look for a custom system configuration
-source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_custom_system_info.sh
-
-# Second, try to match known system configuration
-if [[ $ATDM_CONFIG_SYSTEM_NAME == "" ]] ; then
-  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_known_system_info.sh
-fi
+source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
 
 if [[ $ATDM_CONFIG_SYSTEM_NAME == "" ]] ; then
   echo "Error, could not determine a system confiuration, aborting env loading script!"
