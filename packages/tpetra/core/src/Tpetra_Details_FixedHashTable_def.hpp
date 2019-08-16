@@ -1194,8 +1194,18 @@ init (const keys_type& keys,
     Kokkos::deep_copy (countsHost, static_cast<offset_type> (0));
 
     for (offset_type k = 0; k < theNumKeys; ++k) {
-      typedef typename hash_type::result_type hash_value_type;
-      const hash_value_type hashVal = hash_type::hashFunc (theKeys[k], size);
+      using key_type = typename keys_type::non_const_value_type;
+      const key_type key = theKeys[k];
+
+      using hash_value_type = typename hash_type::result_type;
+      const hash_value_type hashVal = hash_type::hashFunc (key, size);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (hashVal < hash_value_type (0) ||
+         hashVal >= hash_value_type (countsHost.extent (0)),
+         std::logic_error, "Tpetra::Details::FixedHashTable "
+         "constructor: Sequential CountBuckets found a key " << key
+         << " that results in an out-of-bounds hash value.");
+
       ++countsHost[hashVal];
     }
     Kokkos::deep_copy (counts, countsHost);
