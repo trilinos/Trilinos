@@ -1246,6 +1246,23 @@ init (const keys_type& keys,
     Kokkos::deep_copy (ptr, ptrHost);
   }
 
+  if (debug) {
+    Kokkos::HostSpace space;
+    auto counts_h = Kokkos::create_mirror_view (space, counts);
+    auto ptr_h = Kokkos::create_mirror_view (space, ptr);
+
+    bool bad = false;
+    for (offset_type i = 0; i < size; ++i) {
+      if (ptr_h[i+1] != ptr_h[i] + counts_h[i]) {
+        bad = true;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (bad, std::logic_error, "Tpetra::Details::FixedHashTable "
+       "constructor: computeOffsetsFromCounts gave an incorrect "
+       "result.");
+  }
+
   // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
   // CUDA when val is filled.
   execution_space().fence ();
