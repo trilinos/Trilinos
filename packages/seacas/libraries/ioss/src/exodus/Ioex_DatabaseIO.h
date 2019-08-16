@@ -217,7 +217,7 @@ namespace Ioex {
       closeDW();
     }
 
-    virtual int get_file_pointer() const = 0; // Open file and set exodusFilePtr.
+    virtual int get_file_pointer() const override = 0; // Open file and set exodusFilePtr.
 
     virtual int free_file_pointer() const; // Close file and set exodusFilePtr.
 

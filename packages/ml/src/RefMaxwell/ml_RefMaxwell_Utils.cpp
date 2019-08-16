@@ -500,4 +500,79 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   return 0;
 }
 
+// ================================================ ====== ==== ==== == =
+// Build the edge nullspace
+Epetra_MultiVector* ML_Epetra::Build_Edge_Nullspace(const Epetra_CrsMatrix & D0_Clean_Matrix,  const Teuchos::ArrayRCP<int> BCedges, Teuchos::ParameterList & List_,bool verbose_)
+{
+  Epetra_MultiVector *nullspace;
+  double ** d_coords;
+  const Epetra_Map & NodeMap = D0_Clean_Matrix.DomainMap();
+  const Epetra_Map & EdgeMap = D0_Clean_Matrix.RangeMap();
+  const Epetra_Comm & Comm   = D0_Clean_Matrix.Comm();
+
+  /* Check the List - Do we have a nullspace pre-provided? */
+  std::string nulltype=List_.get("null space: type","default vectors");
+  double* nullvecs=List_.get("null space: vectors",(double*)0);
+  int dim=List_.get("null space: dimension",0);
+  if (nulltype=="pre-computed" && nullvecs && (dim==2 || dim==3)){
+    /* Build a multivector out of it */
+    if(verbose_ && !Comm.MyPID()) printf("Using pre-computed nullspace\n");
+    int Ne=EdgeMap.NumMyElements();
+    d_coords=new double*[dim];
+    d_coords[0]=nullvecs;
+    d_coords[1]=&nullvecs[Ne];
+    if(dim==3) d_coords[2]=&nullvecs[2*Ne];
+    nullspace=new Epetra_MultiVector(View,EdgeMap,d_coords,dim);
+  }
+  else{
+    if(verbose_ && !Comm.MyPID()) printf("Building nullspace from scratch\n");
+    /* Pull the (nodal) coordinates from Teuchos */
+    double * xcoord=List_.get("x-coordinates",(double*)0);
+    double * ycoord=List_.get("y-coordinates",(double*)0);
+    double * zcoord=List_.get("z-coordinates",(double*)0);
+    dim=(xcoord!=0) + (ycoord!=0) + (zcoord!=0);
+
+    /* Sanity Checks */
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      dim == 0 || ((!xcoord && (ycoord || zcoord)) || (xcoord && !ycoord && zcoord)),
+      "Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner (found "<<dim<<" coordinates).\n"
+      );
+
+#ifdef OLD
+    /* Normalize */
+    double d1 = sqrt(ML_gdot(NodeMap.NumMyElements(), xcoord, xcoord, ml_comm_));
+    for (int i = 0; i < NodeMap.NumMyElements(); i++) xcoord[i] /= d1;
+    d1 = sqrt(ML_gdot(NodeMap.NumMyElements(), ycoord, ycoord, ml_comm_));
+    for (int i = 0; i < NodeMap.NumMyElements(); i++) ycoord[i] /= d1;
+    if (dim==3) {
+      d1 = sqrt(ML_gdot(NodeMap.NumMyElements(), zcoord, zcoord, ml_comm_));
+      for (int i = 0; i < NodeMap.NumMyElements(); i++) zcoord[i] /= d1;
+    }
+#endif
+
+    /* Build the MultiVector */
+    d_coords=new double* [dim];
+    d_coords[0]=xcoord; d_coords[1]=ycoord;
+    if(dim==3) d_coords[2]=zcoord;
+    Epetra_MultiVector n_coords(View,NodeMap,d_coords,dim);
+
+    // CMS: We're removing the normalization here.
+
+    /* Build the Nullspace */
+    nullspace=new Epetra_MultiVector(EdgeMap,dim,true);
+    D0_Clean_Matrix.Multiply(false,n_coords,*nullspace);
+  }
+
+  /* Nuke the BC edges */
+  for(int j=0;j<dim;j++)
+    for(int i=0;i<BCedges.size();i++)
+      (*nullspace)[j][BCedges[i]]=0;
+
+  /* Cleanup */
+  delete [] d_coords ;
+  return nullspace;
+}/*end BuildNullspace*/
+
+
+
 #endif

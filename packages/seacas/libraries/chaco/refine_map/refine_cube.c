@@ -76,7 +76,8 @@ int refine_cube(struct vtx_data **comm_graph, /* graph for communication require
   double                find_maxdeg();
   double                compute_cube_edata();
 
-  void compute_cube_vdata(), init_cube_edata(), mergesort();
+  void ch_mergesort(double *vals, int nvals, int *indices, int *space);
+  void compute_cube_vdata(), init_cube_edata();
   void update_cube_vdata(), update_cube_edata();
 
   nsets_tot = 1 << ndims_tot;
@@ -147,7 +148,7 @@ int refine_cube(struct vtx_data **comm_graph, /* graph for communication require
     goto skip;
   }
 
-  mergesort(desires, nwires_tot, indices, space);
+  ch_mergesort(desires, nwires_tot, indices, space);
 
   sfree(space);
   sfree(desires);

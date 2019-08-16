@@ -93,6 +93,14 @@ void Ioss::GroupingEntity::really_delete_database()
   database_ = nullptr;
 }
 
+const Ioss::GroupingEntity *Ioss::GroupingEntity::contained_in() const
+{
+  if (database_ == nullptr) {
+    return nullptr;
+  }
+  return database_->get_region();
+}
+
 std::string Ioss::GroupingEntity::generic_name() const
 {
   int64_t id = 0;

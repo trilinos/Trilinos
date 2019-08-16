@@ -65,6 +65,8 @@ void StepperBDF2<Scalar>::setStartUpStepper(std::string startupStepperName)
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
   startUpStepper_ =
     sf->createStepper(startupStepperPL, this->wrapperModel_->getAppModel());
+
+  this->isInitialized_ = false;
 }
 
 
@@ -124,6 +126,7 @@ void StepperBDF2<Scalar>::setStartUpStepper(
     startUpStepper_ =
       sf->createStepper(startupStepperPL, this->wrapperModel_->getAppModel());
   }
+  this->isInitialized_ = false;
 }
 
 
@@ -145,6 +148,7 @@ void StepperBDF2<Scalar>::setObserver(
     stepperBDF2Observer_ =
       Teuchos::rcp_dynamic_cast<StepperBDF2Observer<Scalar> >(this->stepperObserver_);
   }
+  this->isInitialized_ = false;
 }
 
 
@@ -159,10 +163,18 @@ void StepperBDF2<Scalar>::initialize()
   this->setParameterList(this->stepperPL_);
   this->setSolver();
   this->setStartUpStepper();
+  this->startUpStepper_->initialize();
   this->setObserver();
   order_ = Scalar(2.0);
+
+  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
+template<class Scalar>
+bool StepperBDF2<Scalar>::isInitialized()
+{
+  return (this->isInitialized_ && startUpStepper_->isInitialized());
+}
 
 template<class Scalar>
 void StepperBDF2<Scalar>::setInitialConditions(
@@ -186,6 +198,7 @@ void StepperBDF2<Scalar>::setInitialConditions(
          << "however useFSAL=true will also work but have no affect "
          << "(i.e., no-op).\n" << std::endl;
   }
+  this->isInitialized_ = false;
 }
 
 
@@ -193,6 +206,9 @@ template<class Scalar>
 void StepperBDF2<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
+    "Error - " << this->description() << " is not initialized!");
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBDF2::takeStep()");
@@ -337,6 +353,7 @@ void StepperBDF2<Scalar>::setParameterList(
     << "  Stepper Type = "<<stepperPL->get<std::string>("Stepper Type")<<"\n");
 
   this->stepperPL_ = stepperPL;
+  this->isInitialized_ = false;
 }
 
 

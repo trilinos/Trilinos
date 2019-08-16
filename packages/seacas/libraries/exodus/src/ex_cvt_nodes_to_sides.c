@@ -55,7 +55,7 @@ static void put_side(void_int *side_list, size_t index, size_t value, size_t int
 }
 
 /*!
-
+\ingroup Utilities
 The function ex_cvt_nodes_to_sides() is used to convert a side set
 node list to a side set side list. This routine is provided for
 application programs that utilize side sets defined by nodes (as was

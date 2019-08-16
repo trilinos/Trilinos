@@ -22,6 +22,8 @@ void StepperExplicit<Scalar>::setModel(
 
   inArgs_  = appModel_->getNominalValues();
   outArgs_ = appModel_->createOutArgs();
+
+  this->isInitialized_ = false;
 }
 
 
@@ -224,6 +226,8 @@ void StepperExplicit<Scalar>::setInitialConditions(
       }
     }
   }
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -233,7 +237,8 @@ void StepperExplicit<Scalar>::setSolver(std::string /* solverName */)
   Teuchos::OSTab ostab(out,1,"StepperExplicit::setSolver()");
   *out << "Warning -- No solver to set for StepperExplicit "
        << "(i.e., explicit method).\n" << std::endl;
-  return;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -244,7 +249,8 @@ void StepperExplicit<Scalar>::setSolver(
   Teuchos::OSTab ostab(out,1,"StepperExplicit::setSolver()");
   *out << "Warning -- No solver to set for StepperExplicit "
        << "(i.e., explicit method).\n" << std::endl;
-  return;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -255,7 +261,8 @@ void StepperExplicit<Scalar>::setSolver(
   Teuchos::OSTab ostab(out,1,"StepperExplicit::setSolver()");
   *out << "Warning -- No solver to set for StepperExplicit "
        << "(i.e., explicit method).\n" << std::endl;
-  return;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>

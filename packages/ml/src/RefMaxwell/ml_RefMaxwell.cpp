@@ -376,10 +376,42 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
   std::string solver11=List_.get("refmaxwell: 11solver","edge matrix free");
   Teuchos::ParameterList List11=List_.get("refmaxwell: 11list",dummy);
   if (List11.name() == "ANONYMOUS") List11.setName("refmaxwell: 11list");
-  if(solver11=="edge matrix free")
+  if(solver11=="edge matrix free") {
+    if(verbose_ && !Comm_->MyPID()) printf("Using EMFP for edge coarse problem\n");
     //    EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Agg_Matrix_,BCrows,numBCrows,List11,true);
     EdgePC=new EdgeMatrixFreePreconditioner(Operator11_,rcp(Diagonal_,false),rcp(D0_Matrix_,false),rcp(D0_Clean_Matrix_,false),rcp(TMT_Agg_Matrix_,false),BCedges_arcp,List11,true);
+  }
+  else if(solver11=="sa") {
+    // If we're doing SA on the edge problem, we need to not smooth on level 0 and set the nullspace
+    if(verbose_ && !Comm_->MyPID()) printf("Using SA for edge coarse problem\n");
+    List11.set("smoother: sweeps (level 0)",0);
+    List11.set("smoother: type (level 0)","do-nothing");
+    List11.remove("edge matrix free: coarse");
 
+    std::string nulltype=List11.get("null space: type","default vectors");
+    double* nullvecs=List11.get("null space: vectors",(double*)0);
+    int nulldim=List11.get("null space: dimension",0);
+    if (nulltype=="pre-computed" && nullvecs && (nulldim==2 || nulldim==3)) {
+      // No-op - We already have a good nullspace
+    }
+    else {
+      // Build the nullspace from the coordinates
+      Epetra_MultiVector *epetra_nullspace = Build_Edge_Nullspace(*D0_Clean_Matrix_,BCedges_arcp,List11,verbose_);
+      int nlocal = epetra_nullspace->MyLength();
+      int dim    = epetra_nullspace->NumVectors();
+      List11.set("null space: type","pre-computed");
+      List11.set("null space: dimension",dim);
+
+      edge_nullspace = Teuchos::arcp(new double[nlocal*dim],0,nlocal*dim);
+      for(int i=0; i<dim; i++) 
+        for(int j=0; j<nlocal; j++)
+          edge_nullspace[i*nlocal+j] = (*epetra_nullspace)[i][j];
+      List11.set("null space: vectors",edge_nullspace.getRawPtr());
+      delete epetra_nullspace;
+    }
+    EdgePC_sa = rcp(new MultiLevelPreconditioner(*SM_Matrix_,List11));
+
+  }
   else {printf("RefMaxwellPreconditioner: ERROR - Illegal (1,1) block preconditioner\n");return -1;}
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[5]));
@@ -455,6 +487,7 @@ void ML_Epetra::RefMaxwellPreconditioner::Complexities(double &complexity, doubl
   complexity=1.0; fineNnz=SM_Matrix_->NumGlobalNonzeros();
 
   if(EdgePC) EdgePC->Complexities(e_cplex,e_nnz);
+  if(!EdgePC_sa.is_null()) EdgePC_sa->Complexities(e_cplex,e_nnz);
   if(NodePC) NodePC->Complexities(n_cplex,n_nnz);
 
   complexity= 1.0 + (e_cplex*e_nnz + n_cplex * n_nnz) / fineNnz;
@@ -474,6 +507,7 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
 
   ML_Set_PrintLevel(output_level);
   if(EdgePC) {delete EdgePC; EdgePC=0;}
+  if(!EdgePC_sa.is_null()) {EdgePC_sa = Teuchos::null;}
   if(NodePC) {delete NodePC; NodePC=0;}
   ML_Set_PrintLevel(printl);
   if(D0_Matrix_) {delete D0_Matrix_; D0_Matrix_=0;}
@@ -663,9 +697,9 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_212(const Epetra_
   ML_CHK_ERR(edge_rhs.Update(1.0,B,-1.0));
 
   /* Precondition (1,1) Block */
-  //  _CHK_ERR(PreEdgeSmoother->ApplyInverse(B,X));
-  ML_CHK_ERR(EdgePC->ApplyInverse(edge_rhs,edge_sol));
-
+  if(EdgePC) {ML_CHK_ERR(EdgePC->ApplyInverse(edge_rhs,edge_sol));}
+  else {ML_CHK_ERR(EdgePC_sa->ApplyInverse(edge_rhs,edge_sol));}
+  
   /* Build Nodal RHS */
   ML_CHK_ERR(edge_temp1.Update(1.0,edge_rhs,-1.0));
   ML_CHK_ERR(D0_Matrix_->Multiply(true,edge_temp1,node_rhs));
@@ -724,7 +758,8 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
   }
 
   /* Precondition (1,1) block (additive)*/
-  ML_CHK_ERR(EdgePC->ApplyInverse(Resid,TempE2));
+  if(EdgePC) {ML_CHK_ERR(EdgePC->ApplyInverse(Resid,TempE2));}
+  else {ML_CHK_ERR(EdgePC_sa->ApplyInverse(Resid,TempE2));}
 
   /* Precondition (2,2) block (additive)*/
   if(!HasOnlyDirichletNodes){
@@ -836,7 +871,8 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_121(const Epetra
   ML_CHK_ERR(PreEdgeSmoother->ApplyInverse(B,X));
 
   /* Precondition (1,1) Block */
-  ML_CHK_ERR(EdgePC->ApplyInverse(Resid,TempE2));
+  if(EdgePC) {ML_CHK_ERR(EdgePC->ApplyInverse(Resid,TempE2));}
+  else {ML_CHK_ERR(EdgePC_sa->ApplyInverse(Resid,TempE2));}
   ML_CHK_ERR(X.Update(1.0,TempE2,1.0));;
 
   /* Build Residual */
@@ -859,7 +895,9 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_121(const Epetra
 
   /* Precondition (1,1) Block */
   TempE2.PutScalar(0.0);
-  ML_CHK_ERR(EdgePC->ApplyInverse(Resid,TempE2));
+  if(EdgePC) {ML_CHK_ERR(EdgePC->ApplyInverse(Resid,TempE2));}
+  else {ML_CHK_ERR(EdgePC_sa->ApplyInverse(Resid,TempE2));}
+
   ML_CHK_ERR(X.Update(1.0,TempE2,1.0));;
 
   /* Post-Smoothing */
@@ -922,7 +960,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   SetDefaults("maxwell",ListRF,0,0,false);
   ListRF.set("smoother: type","Chebyshev");
   ListRF.set("smoother: sweeps",2);
-  ListRF.set("refmaxwell: 11solver","edge matrix free");
+  ListRF.set("refmaxwell: 11solver","edge matrix free");// either "edge matrix free" or "sa"
   ListRF.set("refmaxwell: 11list",List11);
   ListRF.set("refmaxwell: 22solver","multilevel");
   ListRF.set("refmaxwell: 22list",List22);

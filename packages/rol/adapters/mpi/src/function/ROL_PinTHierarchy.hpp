@@ -250,7 +250,7 @@ private:
     std::unordered_map<int,DefaultInt> procToIndex;
 
     // loop over all vectors you need to recieve, and recieve them
-    for(int i=0;i<commMap.sendToProc_.size();i++) {
+    for(size_t i=0;i<commMap.sendToProc_.size();i++) {
       int proc = commMap.sendToProc_[i];
  
       if(proc==myRank) continue;
@@ -286,7 +286,7 @@ private:
     std::unordered_map<int,DefaultInt> procToIndex;
 
     // loop over all vectors you need to recieve, and recieve them
-    for(int i=0;i<commMap.recvFromProc_.size();i++) {
+    for(size_t i=0;i<commMap.recvFromProc_.size();i++) {
       int proc = commMap.recvFromProc_[i];
  
       if(proc==myRank) continue;
@@ -536,7 +536,7 @@ public:
        // rebalance the coarse stamps
        ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> coarseStamps 
          = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>();
-       bool value = ROL::PinT::exportToCoarseDistribution_TimeStamps(*stamps_[level],*coarseStamps,*comm,0);
+       ROL::PinT::exportToCoarseDistribution_TimeStamps(*stamps_[level],*coarseStamps,*comm,0);
 
        stamps_[level] = coarseStamps;
      }
@@ -564,7 +564,7 @@ public:
          MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,level,mpiComm,MPI_STATUS_IGNORE);
          MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,level,mpiComm,MPI_STATUS_IGNORE);
 
-         TEUCHOS_ASSERT(sizeA+sizeB==stamps_[level]->size());
+         TEUCHOS_ASSERT(static_cast<long long>(sizeA) + static_cast<long long>(sizeB) == static_cast<long long>(stamps_[level]->size()));
 
          for(int i=0;i<sizeA;i++) 
            commMap.recvFromProc_[i      ] = 2*rank;
@@ -603,7 +603,7 @@ public:
          MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,level,mpiComm,MPI_STATUS_IGNORE);
          MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,level,mpiComm,MPI_STATUS_IGNORE);
 
-         TEUCHOS_ASSERT(sizeA+sizeB==2*stamps_[level]->size());
+         TEUCHOS_ASSERT(static_cast<long long>(sizeA) + static_cast<long long>(sizeB) == 2 * static_cast<long long>(stamps_[level]->size()));
 
          for(int i=0;i<sizeA;i++) 
            commMap.recvFromProc_[i      ] = 2*rank;
@@ -935,8 +935,6 @@ public:
      if(levelIsActiveOnMyRank(inputLevel)) {
        int timeRank = pint_output->communicators().getTimeRank();
 
-       int fineSteps = pint_output->numOwnedSteps();
-
        // communicate points on the left of this interval
        pint_input->boundaryExchangeLeftToRight();
        auto u_fineStart = pint_input->getRemoteBufferPtr(0)->clone();
@@ -956,7 +954,6 @@ public:
 
        // for(int fne_i=0;fne_i<fineSteps;fne_i++) {
        int fne_i = 0;
-       std::pair<int,int> fneRange = pint_output->ownedStepRange();
        std::pair<int,int> crsRange = pint_input->ownedStepRange();
        for(int crs_i=0;crs_i<pint_input->numOwnedSteps();crs_i++) {
          int crsIndex = crs_i+crsRange.first;
@@ -973,7 +970,6 @@ public:
            int v_crs_index = -1; 
 
            int coarse_si_0 = crs_i-1;     // coarse step index
-           int coarse_si_1 = coarse_si_0+1;
 
            u_crs_index = 2*coarse_si_0;
            v_crs_index = 2*coarse_si_0+1;
@@ -1037,8 +1033,6 @@ public:
 
      // if the fine level is inactive on this proccessor skip the recieve step
      if(levelIsActiveOnMyRank(inputLevel-1)) {
-       int timeRank = pint_output->communicators().getTimeRank();
-
        recvAllFromProcs(*pint_output,
                          pint_output->communicators(),          
                          *pint_output->vectorCommunicationPtr(),
@@ -1098,7 +1092,6 @@ public:
    {
      // nothing to do in this case
      if(levelIsActiveOnMyRank(inputLevel)) {
-       int timeRank = pint_output->communicators().getTimeRank();
        int fineRank = pint_output->communicators().getTimeRank();
 
        // communicate points on the right of this interval
@@ -1107,10 +1100,7 @@ public:
        rightStart->set(*pint_input->getRemoteBufferPtr(0));
        auto scratch = rightStart->clone();
 
-       int offset = 0;
        std::pair<int,int> crsRange = pint_input->ownedStepRange();
-       std::pair<int,int> fneRange = pint_output->ownedStepRange();
-
 
        // handle interior
        int fineLocal = 0;
@@ -1165,7 +1155,6 @@ public:
 
      // if the fine level is inactive on this proccessor skip the recieve step
      if(levelIsActiveOnMyRank(inputLevel-1)) {
-       int timeRank = pint_output->communicators().getTimeRank();
        recvAllFromProcs(*pint_output,
                          pint_output->communicators(),          
                          *pint_output->vectorCommunicationPtr(),

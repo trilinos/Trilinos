@@ -17,9 +17,8 @@
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
-      <!--
-      <Parameter name="aggregation: drop tol"               type="double" value="0.1"/>
-      -->
+      <!-- for aggregation dropping -->
+      <!-- <Parameter name="aggregation: drop tol"               type="double" value="0.1"/> -->
     </ParameterList>
 
     <ParameterList name="CoupledAggregationFact">
@@ -55,21 +54,26 @@
       <!-- <Parameter name="sa: damping factor"                  type="double" value="1.333"/> -->
     </ParameterList>
 
+    <ParameterList name="myTentativeRFact"> <!-- for projecting coordinates -->
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
+    </ParameterList>
+
     <ParameterList name="myRestrictorFact">
       <Parameter name="factory"                             type="string" value="TransPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
     </ParameterList>
 
-    <!-- <ParameterList name="myTransferCoordinatesFact">
+    <ParameterList name="myTransferCoordinatesFact">
       <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
-    </ParameterList> -->
+    </ParameterList>
 
     <ParameterList name="myRAPFact">
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
       <ParameterList name="TransferFactories">
-	<!-- <Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/> -->
+	<Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/>
         <!-- <Parameter name="Visualization"                     type="string" value="myAggExportFact"/> -->
       </ParameterList>
     </ParameterList>
@@ -78,7 +82,7 @@
 <!-- Repartitioning -->
 <!-- -->
 
-	<!-- amalgamation of coarse level matrix -->
+    <!-- amalgamation of coarse level matrix -->
     <ParameterList name="myRebAmalgFact">
       <Parameter name="factory"                             type="string" value="AmalgamationFactory"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
@@ -119,6 +123,7 @@
       <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"                                type="string" value="Interpolation"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <Parameter name="Coordinates"                         type="string" value="myTransferCoordinatesFact"/>
       <Parameter name="Nullspace"                           type="string" value="myTentativePFact"/>
     </ParameterList>
 

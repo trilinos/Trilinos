@@ -55,12 +55,15 @@
 #include "Phalanx_any.hpp"
 #include <unordered_map>
 #include <string>
+#include <memory>
 
 namespace PHX {
 
+  class MemoryPool;
+
   /*! \brief Container that holds all data associated with an evaluation type.
 
-
+    Handles allocation and binding of all field memory.
   */
   template <typename EvalT, typename Traits>
   class EvaluationContainer : public PHX::EvaluationContainerBase<Traits> {
@@ -90,7 +93,9 @@ namespace PHX {
 
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& fm,
-                               const bool& buildDeviceDAG);
+                               const bool& buildDeviceDAG,
+                               const bool& minimizeDAGMemoryUse,
+                               const PHX::MemoryPool* const memoryPool);
 
     void evaluateFields(typename Traits::EvalData d);
 
@@ -167,6 +172,10 @@ namespace PHX {
     std::vector<PHX::index_size_type> kokkos_extended_data_type_dimensions_;
 
     bool build_device_dag_;
+
+    bool minimize_dag_memory_use_;
+
+    std::shared_ptr<PHX::MemoryPool> memory_pool_;
   };
   
 } 

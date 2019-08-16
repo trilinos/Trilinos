@@ -46,8 +46,10 @@
 #include <cstdio>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <unistd.h>
 
+// Teuchos
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -124,6 +126,8 @@
 // Region MG headers
 #include "SetupRegionHierarchy_def.hpp"
 
+#include "Driver_Structured_Interface.hpp"
+
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
@@ -138,7 +142,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // MPI initialization using Teuchos
   // =========================================================================
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  const int numRanks = comm->getSize();
+  // const int numRanks = comm->getSize();
   const int myRank   = comm->getRank();
 
   // =========================================================================
@@ -158,7 +162,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   std::string xmlFileName        = "";                  clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
   std::string yamlFileName       = "";                  clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
-  std::string convergenceLog     = "residual_norm.txt"; clp.setOption("convergence-log",     &convergenceLog,    "file in which the convergence history of the linear solver is stored");
+  std::string convergenceLog     = "residual_norm.txt"; clp.setOption("convergence-log",       &convergenceLog,    "file in which the convergence history of the linear solver is stored");
   int         maxIts             = 200;                 clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   std::string smootherType       = "Jacobi";            clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
   int         smootherIts        =  20;                 clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
@@ -166,9 +170,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
-  bool        useUnstructured    = false;               clp.setOption("use-unstructured","no-use-unstructured", &useUnstructured, "Treat the last rank as unstructured");
   bool        directCoarseSolver = true;                clp.setOption("direct-coarse-solver", "amg-coarse-solver", &directCoarseSolver, "Type of solver for composite coarse level operator");
-  std::string coarseAmgXmlFile   = "";                  clp.setOption("coarseAmgXml", &coarseAmgXmlFile, "Read parameters for AMG as coarse level solve from this xml file.");
+  std::string unstructured       = "{}";                clp.setOption("unstructured",          &unstructured,   "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
+  std::string coarseAmgXmlFile   = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,  "Read parameters for AMG as coarse level solve from this xml file.");
 #ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                      clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
@@ -212,6 +216,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   smootherParams[0]->set("smoother: type",    smootherType);
   smootherParams[0]->set("smoother: sweeps",  smootherIts);
   smootherParams[0]->set("smoother: damping", smootherDamp);
+
+  bool useUnstructured = false;
+  Array<LO> unstructuredRanks = Teuchos::fromStringToArray<LO>(unstructured);
+  for(int idx = 0; idx < unstructuredRanks.size(); ++idx) {
+    if(unstructuredRanks[idx] == myRank) {useUnstructured = true;}
+  }
 
   // Retrieve matrix parameters (they may have been changed on the command line)
   // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
@@ -353,6 +363,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - Compute region data")));
 
+  // Set aggregation type for each region
+  Array<std::string> aggregationRegionType(1);
+  RCP<ParameterList> interfaceParams = rcp(new ParameterList());
+  if(useUnstructured) {
+    aggregationRegionType[0] = "uncoupled";
+  } else {
+    aggregationRegionType[0] = "structured";
+  }
+
   // Loading geometric info from galeri
   if(numDimensions == 1) {
     gNodesPerDim[0] = galeriList.get<GO>("nx");
@@ -431,12 +450,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   const int maxRegPerProc = 1;
   int maxRegPerGID = 0;
   LO numReceive = 0, numSend = 0;
-  Teuchos::Array<GO>  receiveGIDs;
-  Teuchos::Array<int> receivePIDs;
-  Teuchos::Array<LO>  receiveLIDs;
-  Teuchos::Array<GO>  sendGIDs;
-  Teuchos::Array<int> sendPIDs;
-  Teuchos::Array<LO>  sendLIDs;
+  Array<GO>  receiveGIDs;
+  Array<int> receivePIDs;
+  Array<LO>  receiveLIDs;
+  Array<GO>  sendGIDs;
+  Array<int> sendPIDs;
+  Array<LO>  sendLIDs;
+  Array<LO>  interfaceLIDs;
+  Array<LO>  nodesPerDimensions;
+  int numInterfaces = 0;
   if(numDimensions == 1) {
     maxRegPerGID = 2;
     if(leftBC == 0) {
@@ -484,6 +506,22 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         receivePIDs[countIDs] = myRank - 1;
         ++countIDs;
       }
+
+      if(useUnstructured) { // Set parameters for interface aggregation
+        numInterfaces = 2;
+        nodesPerDimensions.resize(numInterfaces*3, 1);
+        nodesPerDimensions[0] = lNodesPerDim[0] + 1;
+        nodesPerDimensions[4] = lNodesPerDim[1] + 1;
+
+        interfaceLIDs.resize((lNodesPerDim[0] + 1) + (lNodesPerDim[1] + 1));
+        for(LO nodeIdx = 0; nodeIdx < lNodesPerDim[0] + 1; ++nodeIdx) {
+          interfaceLIDs[nodeIdx] = nodeIdx;
+        }
+        for(LO nodeIdx = 0; nodeIdx < lNodesPerDim[1] + 1; ++nodeIdx) {
+          interfaceLIDs[lNodesPerDim[0] + 1 + nodeIdx] = nodeIdx*(lNodesPerDim[1] + 1);
+        }
+      }
+
     } else if(frontBC == 0) {
       numReceive = lNodesPerDim[0];
       receiveGIDs.resize(numReceive);
@@ -497,6 +535,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         receivePIDs[countIDs] = myRank - procsPerDim[0];
         ++countIDs;
       }
+
+      if(useUnstructured) { // Set parameters for interface aggregation
+        numInterfaces = 1;
+        nodesPerDimensions.resize(numInterfaces*3, 1);
+        nodesPerDimensions[0] = lNodesPerDim[0] + 1;
+
+        interfaceLIDs.resize(lNodesPerDim[0] + 1);
+        for(LO nodeIdx = 0; nodeIdx < lNodesPerDim[0] + 1; ++nodeIdx) {
+          interfaceLIDs[nodeIdx] = nodeIdx;
+        }
+      }
+
     } else if(leftBC == 0) {
       numReceive = lNodesPerDim[1];
       receiveGIDs.resize(numReceive);
@@ -510,6 +560,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         receivePIDs[countIDs] = myRank - 1;
         ++countIDs;
       }
+
+      if(useUnstructured) { // Set parameters for interface aggregation
+        numInterfaces = 1;
+        nodesPerDimensions.resize(numInterfaces*3, 1);
+        nodesPerDimensions[1] = lNodesPerDim[1] + 1;
+
+        interfaceLIDs.resize(lNodesPerDim[1] + 1);
+        for(LO nodeIdx = 0; nodeIdx < lNodesPerDim[1] + 1; ++nodeIdx) {
+          interfaceLIDs[nodeIdx] = nodeIdx*(lNodesPerDim[1] + 1);
+        }
+      }
+
     }
 
     // Sent nodes
@@ -635,6 +697,45 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
       }
 
+      if(useUnstructured) { // Set parameters for interface aggregation
+        numInterfaces = 3;
+        nodesPerDimensions.resize(numInterfaces*3, 1);
+        nodesPerDimensions[0] = lNodesPerDim[0] + 1;
+        nodesPerDimensions[1] = lNodesPerDim[1] + 1;
+        nodesPerDimensions[3] = lNodesPerDim[0] + 1;
+        nodesPerDimensions[5] = lNodesPerDim[2] + 1;
+        nodesPerDimensions[7] = lNodesPerDim[1] + 1;
+        nodesPerDimensions[8] = lNodesPerDim[2] + 1;
+
+        interfaceLIDs.resize((lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1)
+                             + (lNodesPerDim[0] + 1)*(lNodesPerDim[2] + 1)
+                             + (lNodesPerDim[1] + 1)*(lNodesPerDim[2] + 1));
+
+        LO nodeOffset = 0, nodeIdx, nodeLID;
+        // Bottom face
+        for(nodeIdx = 0; nodeIdx < (lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1); ++nodeIdx) {
+          interfaceLIDs[nodeIdx] = nodeIdx;
+        }
+        // Front face
+        nodeOffset += (lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1);
+        for(LO k = 0; k < lNodesPerDim[2] + 1; ++k) {
+          for(LO i = 0; i < lNodesPerDim[0] + 1; ++i) {
+            nodeIdx = k*(lNodesPerDim[0] + 1) + i + nodeOffset;
+            nodeLID = k*(lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1) + i;
+            interfaceLIDs[nodeIdx] = nodeLID;
+          }
+        }
+        // Left face
+        nodeOffset += (lNodesPerDim[0] + 1)*(lNodesPerDim[2] + 1);
+        for(LO k = 0; k < lNodesPerDim[2] + 1; ++k) {
+          for(LO j = 0; j < lNodesPerDim[1] + 1; ++j) {
+            nodeIdx = k*(lNodesPerDim[1] + 1) + j + nodeOffset;
+            nodeLID = k*(lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1) + j*(lNodesPerDim[0] + 1);
+            interfaceLIDs[nodeIdx] = nodeLID;
+          }
+        }
+      }
+
     // Two faces received
     } else if( (bottomBC == 0) && (frontBC == 0) ) {
       numReceive = lNodesPerDim[0]*(lNodesPerDim[1] + lNodesPerDim[2] + 1);
@@ -670,6 +771,33 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
       }
 
+      if(useUnstructured) { // Set parameters for interface aggregation
+        numInterfaces = 2;
+        nodesPerDimensions.resize(numInterfaces*3, 1);
+        nodesPerDimensions[0] = lNodesPerDim[0];
+        nodesPerDimensions[1] = lNodesPerDim[1] + 1;
+        nodesPerDimensions[3] = lNodesPerDim[0];
+        nodesPerDimensions[5] = lNodesPerDim[2] + 1;
+
+        interfaceLIDs.resize(lNodesPerDim[0]*(lNodesPerDim[1] + 1)
+                             + lNodesPerDim[0]*(lNodesPerDim[2] + 1));
+
+        LO nodeOffset = 0, nodeIdx, nodeLID;
+        // Bottom face
+        for(nodeIdx = 0; nodeIdx < lNodesPerDim[0]*(lNodesPerDim[1] + 1); ++nodeIdx) {
+          interfaceLIDs[nodeIdx] = nodeIdx;
+        }
+        // Front face
+        nodeOffset += lNodesPerDim[0]*(lNodesPerDim[1] + 1);
+        for(LO k = 0; k < lNodesPerDim[2] + 1; ++k) {
+          for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+            nodeIdx = k*lNodesPerDim[0] + i + nodeOffset;
+            nodeLID = k*lNodesPerDim[0]*(lNodesPerDim[1] + 1) + i;
+            interfaceLIDs[nodeIdx] = nodeLID;
+          }
+        }
+      }
+
     } else if( (bottomBC == 0) && (leftBC == 0) ) {
       numReceive = lNodesPerDim[1]*(lNodesPerDim[0] + lNodesPerDim[2] + 1);
       receiveGIDs.resize(numReceive);
@@ -701,6 +829,33 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
       }
 
+      if(useUnstructured) { // Set parameters for interface aggregation
+        numInterfaces = 2;
+        nodesPerDimensions.resize(numInterfaces*3, 1);
+        nodesPerDimensions[0] = lNodesPerDim[0] + 1;
+        nodesPerDimensions[1] = lNodesPerDim[1];
+        nodesPerDimensions[4] = lNodesPerDim[1];
+        nodesPerDimensions[5] = lNodesPerDim[2] + 1;
+
+        interfaceLIDs.resize((lNodesPerDim[0] + 1)*lNodesPerDim[1]
+                             + lNodesPerDim[1]*(lNodesPerDim[2] + 1));
+
+        LO nodeOffset = 0, nodeIdx, nodeLID;
+        // Bottom face
+        for(nodeIdx = 0; nodeIdx < (lNodesPerDim[0] + 1)*lNodesPerDim[1]; ++nodeIdx) {
+          interfaceLIDs[nodeIdx] = nodeIdx;
+        }
+        // Left face
+        nodeOffset += (lNodesPerDim[0] + 1)*lNodesPerDim[1];
+        for(LO k = 0; k < lNodesPerDim[2] + 1; ++k) {
+          for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+            nodeIdx = k*lNodesPerDim[1] + j + nodeOffset;
+            nodeLID = k*(lNodesPerDim[0] + 1)*lNodesPerDim[1] + j*(lNodesPerDim[0] + 1);
+            interfaceLIDs[nodeIdx] = nodeLID;
+          }
+        }
+      }
+
     } else if( (frontBC == 0) && (leftBC == 0) ) {
       numReceive = lNodesPerDim[2]*(lNodesPerDim[0] + lNodesPerDim[1] + 1);
       receiveGIDs.resize(numReceive);
@@ -727,6 +882,37 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             + startGID - 1;
           receivePIDs[countIDs] = myRank - 1;
           ++countIDs;
+        }
+      }
+
+      if(useUnstructured) { // Set parameters for interface aggregation
+        numInterfaces = 2;
+        nodesPerDimensions.resize(numInterfaces*3, 1);
+        nodesPerDimensions[0] = lNodesPerDim[0] + 1;
+        nodesPerDimensions[2] = lNodesPerDim[2];
+        nodesPerDimensions[4] = lNodesPerDim[1] + 1;
+        nodesPerDimensions[5] = lNodesPerDim[2];
+
+        interfaceLIDs.resize((lNodesPerDim[0] + 1)*lNodesPerDim[2]
+                             + (lNodesPerDim[1] + 1)*lNodesPerDim[2]);
+
+        LO nodeOffset = 0, nodeIdx, nodeLID;
+        // Front face
+        for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+          for(LO i = 0; i < lNodesPerDim[0] + 1; ++i) {
+            nodeIdx = k*(lNodesPerDim[0] + 1) + i;
+            nodeLID = k*(lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1) + i;
+            interfaceLIDs[nodeIdx] = nodeLID;
+          }
+        }
+        // Left face
+        nodeOffset += (lNodesPerDim[0] + 1)*lNodesPerDim[2];
+        for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+          for(LO j = 0; j < lNodesPerDim[1] + 1; ++j) {
+            nodeIdx = k*(lNodesPerDim[1] + 1) + j + nodeOffset;
+            nodeLID = k*(lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1) + j*(lNodesPerDim[0] + 1);
+            interfaceLIDs[nodeIdx] = nodeLID;
+          }
         }
       }
 
@@ -1013,15 +1199,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
   }
 
-  // Second we actually fill the send and receive arrays with appropriate data
-  // which will allow us to compute the region and composite maps.
-
   // std::cout << "p=" << myRank << " | numReceive=" << numReceive
   //           << ", numSend=" << numSend << std::endl;
   // std::cout << "p=" << myRank << " | receiveGIDs: " << receiveGIDs << std::endl;
   // std::cout << "p=" << myRank << " | receivePIDs: " << receivePIDs << std::endl;
   // std::cout << "p=" << myRank << " | sendGIDs: " << sendGIDs << std::endl;
   // std::cout << "p=" << myRank << " | sendPIDs: " << sendPIDs << std::endl;
+
+  // Second we actually fill the send and receive arrays with appropriate data
+  // which will allow us to compute the region and composite maps.
 
   // Now we can construct a list of GIDs that corresponds to rowMapPerGrp
   const LO numLocalRegionNodes = numLocalCompositeNodes + numReceive;
@@ -1036,8 +1222,23 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   if(frontBC  == 0) {rNodesPerDim[1] += 1;}
   if(bottomBC == 0) {rNodesPerDim[2] += 1;}
 
+  Array<int> boundaryConditions({leftBC, rightBC, frontBC, backBC, bottomBC, topBC});
+  Array<LO>  interfacesDimensions, interfacesLIDs;
+  if(useUnstructured) {
+    findInterface(numDimensions, rNodesPerDim, boundaryConditions,
+                  interfacesDimensions, interfacesLIDs);
+  }
+
+  interfaceParams->set<int>       ("interfaces: number",               numInterfaces);
+  interfaceParams->set<Array<LO> >("interfaces: nodes per dimensions", interfacesDimensions); // nodesPerDimensions);
+  interfaceParams->set<Array<LO> >("interfaces: interface nodes",      interfacesLIDs); // interfaceLIDs);
+
   // std::cout << "p=" << myRank << " | numLocalRegionNodes=" << numLocalRegionNodes
   //           << ", rNodesPerDim: " << rNodesPerDim << std::endl;
+  // std::cout << "p=" << myRank << " | boundaryConditions: " << boundaryConditions << std::endl
+  //           << "p=" << myRank << " | rNodesPerDim: " << rNodesPerDim << std::endl
+  //           << "p=" << myRank << " | interfacesDimensions: " << interfacesDimensions << std::endl
+  //           << "p=" << myRank << " | interfacesLIDs: " << interfacesLIDs << std::endl;
 
   Array<LO> compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
 
@@ -1079,6 +1280,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // std::cout << "p=" << myRank << " | sendLIDs: " << sendLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
+  // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
 
   // In our very particular case we know that a node is at most shared by 4 regions.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
@@ -1190,19 +1392,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Setting up parameters before hierarchy construction
   // These need to stay in the driver as they would be provide by an app
   Array<Array<int> > regionNodesPerDim(maxRegPerProc);
-  Array<std::string> aggregationRegionType(maxRegPerProc);
   Array<RCP<MultiVector> > regionNullspace(maxRegPerProc);
   Array<RCP<RealValuedMultiVector> > regionCoordinates(maxRegPerProc);
 
   // Set mesh structure data
   regionNodesPerDim[0] = rNodesPerDim;
-
-  // Set aggregation type for each region
-  if(useUnstructured && (myRank == numRanks - 1)) {
-    aggregationRegionType[0] = "uncoupled";
-  } else {
-    aggregationRegionType[0] = "structured";
-  }
 
   // create nullspace vector
   regionNullspace[0] = MultiVectorFactory::Build(rowMapPerGrp[0], nullspace->getNumVectors());
@@ -1248,6 +1442,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         numDimensions,
                         regionNodesPerDim,
                         aggregationRegionType,
+                        interfaceParams,
                         xmlFileName,
                         regionNullspace,
                         regionCoordinates,

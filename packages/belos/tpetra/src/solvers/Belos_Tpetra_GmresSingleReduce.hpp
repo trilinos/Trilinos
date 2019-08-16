@@ -8,8 +8,8 @@ namespace BelosTpetra {
 namespace Impl {
 
 template<class SC = Tpetra::Operator<>::scalar_type,
-	 class MV = Tpetra::MultiVector<SC>,
-	 class OP = Tpetra::Operator<SC>>
+         class MV = Tpetra::MultiVector<SC>,
+         class OP = Tpetra::Operator<SC>>
 class GmresSingleReduce : public Gmres<SC, MV, OP> {
 private:
   using base_type = Gmres<SC, MV, OP>;
@@ -44,10 +44,7 @@ public:
   setParameters (Teuchos::ParameterList& params) {
     Gmres<SC, MV, OP>::setParameters (params);
 
-    int stepSize = stepSize_;
-    if (params.isParameter ("Step Size")) {
-      stepSize = params.get<int> ("Step Size");
-    }
+    int stepSize = params.get<int> ("Step Size", stepSize_);
     stepSize_ = stepSize;
   }
 
@@ -65,10 +62,10 @@ private:
   //! Apply the orthogonalization using a single all-reduce
   int
   projectAndNormalizeSingleReduce (int n,
-				   const SolverInput<SC>& input, 
-				   MV& Q,
-				   dense_matrix_type& H,
-				   dense_matrix_type& WORK) const
+                                   const SolverInput<SC>& input, 
+                                   MV& Q,
+                                   dense_matrix_type& H,
+                                   dense_matrix_type& WORK) const
   {
     Teuchos::BLAS<LO, SC> blas;
     const SC one = STS::one ();
@@ -156,9 +153,11 @@ private:
     mag_type b_norm;  // initial residual norm
     mag_type b0_norm; // initial residual norm, not left-preconditioned
     mag_type r_norm;
+    mag_type r_norm_imp;
     MV Q (B.getMap (), restart+1);
     vec_type P = * (Q.getVectorNonConst (0));
     vec_type R (B.getMap ());
+    vec_type Y (B.getMap ());
     vec_type MP (B.getMap ());
 
     Teuchos::BLAS<LO ,SC> blas;
@@ -201,7 +200,7 @@ private:
 
       Tpetra::deep_copy (R, B);
       output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
-					       input_gmres);
+                                               input_gmres);
       if (output.converged) {
         return output; // standard GMRES converged
       }
@@ -224,31 +223,38 @@ private:
     y[0] = SC {r_norm};
     const int s = getStepSize ();
     // main loop
+    int iter = 0;
     while (output.numIters < input.maxNumIters && ! output.converged) {
-      int iter = 0;
       if (input.maxNumIters < output.numIters+restart) {
         restart = input.maxNumIters-output.numIters;
       }
       // restart cycle
-      for (iter = 0; iter < restart && metric > input.tol; ++iter) {
+      for (; iter < restart && metric > input.tol; ++iter) {
+        if (outPtr != nullptr) {
+          *outPtr << "Current iteration: iter=" << iter
+                  << ", restart=" << restart
+                  << ", metric=" << metric << endl;
+          Indent indent3 (outPtr);
+        }
+
         // AP = A*P
         vec_type P  = * (Q.getVectorNonConst (iter));
         vec_type AP = * (Q.getVectorNonConst (iter+1));
         if (input.precoSide == "none") { // no preconditioner
           A.apply (P, AP);
         }
-	else if (input.precoSide == "right") {
+        else if (input.precoSide == "right") {
           M.apply (P, MP);
           A.apply (MP, AP);
         }
-	else {
+        else {
           A.apply (P, MP);
           M.apply (MP, AP);
         }
         // Shift for Newton basis
         if (computeRitzValues) {
           //AP.update (-output.ritzValues[iter],  P, one);
-	  const complex_type theta = output.ritzValues[iter % s];
+          const complex_type theta = output.ritzValues[iter % s];
           UpdateNewton<SC, MV>::updateNewtonV (iter, Q, theta);
         }
         output.numIters++; 
@@ -258,9 +264,9 @@ private:
         // Shift back for Newton basis
         if (computeRitzValues) {
           // H(iter, iter) += output.ritzValues[iter];
-	  const complex_type theta = output.ritzValues[iter % s];
+          const complex_type theta = output.ritzValues[iter % s];
           UpdateNewton<SC, MV>::updateNewtonH (iter, H, theta);
-	}
+        }
 
         // Convergence check
         if (H(iter+1, iter) != zero) {
@@ -268,18 +274,24 @@ private:
           this->reduceHessenburgToTriangular (iter, H, cs, sn, y.values ());
           // Convergence check
           metric = this->getConvergenceMetric (STS::magnitude (y[iter+1]),
-					       b_norm, input);
+                                               b_norm, input);
         }
-	else {
+        else {
           H(iter+1, iter) = zero;
           metric = STM::zero ();
         }
       } // end of restart cycle 
+      if (iter < restart) {
+        // save the old solution, just in case explicit residual norm failed the convergence test
+        Tpetra::deep_copy (Y, X);
+        blas.COPY (1+iter, y.values(), 1, h.values(), 1);
+      }
+      r_norm_imp = STS::magnitude (y (iter)); // save implicit residual norm
       if (iter > 0) {
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-		   Teuchos::NON_UNIT_DIAG, iter, 1, one,
-		   H.values(), H.stride(), y.values (), y.stride ());
+                   Teuchos::NON_UNIT_DIAG, iter, 1, one,
+                   H.values(), H.stride(), y.values (), y.stride ());
         Teuchos::Range1D cols(0, iter-1);
         Teuchos::RCP<const MV> Qj = Q.subView(cols);
         y.resize (iter);
@@ -288,39 +300,58 @@ private:
           M.apply (R, MP);
           X.update (one, MP, one);
         }
-	else {
+        else {
           MVT::MvTimesMatAddMv (one, *Qj, y, one, X);
         }
         y.resize (restart+1);
       }
 
       // Compute explicit residual vector in preparation for restart.
-      P = * (Q.getVectorNonConst (0));
-      A.apply (X, P);
-      P.update (one, B, -one);
-      r_norm = P.norm2 (); // residual norm
+      A.apply (X, R);
+      R.update (one, B, -one);
+      r_norm = R.norm2 (); // residual norm
       output.absResid = r_norm;
       output.relResid = r_norm / b0_norm;
+      if (outPtr != nullptr) {
+        *outPtr << "Implicit and explicit residual norms at restart: " << r_norm_imp << ", " << r_norm << endl;
+      }
 
       metric = this->getConvergenceMetric (r_norm, b0_norm, input);
       if (metric <= input.tol) {
         output.converged = true;
-	return output;
+        return output;
       }
       else if (output.numIters < input.maxNumIters) {
-        // Initialize starting vector for restart
-        if (input.precoSide == "left") {
-          Tpetra::deep_copy (R, P);
-          M.apply (R, P);
-	  // FIXME (mfh 14 Aug 2018) Didn't we already compute this above?
-          r_norm = P.norm2 ();
+        // Restart, only if max inner-iteration was reached.
+        // Otherwise continue the inner-iteration.
+        if (iter >= restart) {
+          // Initialize starting vector for restart
+          iter = 0;
+          P = * (Q.getVectorNonConst (0));
+          if (input.precoSide == "left") {
+            M.apply (R, P);
+            // FIXME (mfh 14 Aug 2018) Didn't we already compute this above?
+            r_norm = P.norm2 ();
+          }
+          else {
+            // set the starting vector
+            Tpetra::deep_copy (P, R);
+          }
+          P.scale (one / r_norm);
+          y[0] = SC {r_norm};
+          for (int i=1; i < restart+1; i++) {
+            y[i] = zero;
+          }
+          output.numRests++; // restart
         }
-        P.scale (one / r_norm);
-        y[0] = SC {r_norm};
-        for (int i=1; i < restart+1; i++) {
-	  y[i] = zero;
-	}
-        output.numRests++; // restart
+        else {
+          // reset to the old solution
+          if (outPtr != nullptr) {
+            *outPtr << " > not-restart with iter=" << iter << endl;
+          }
+          Tpetra::deep_copy (X, Y);
+          blas.COPY (1+iter, h.values(), 1, y.values(), 1);
+        }
       }
     }
 
@@ -331,7 +362,7 @@ private:
 };
 
 template<class SC, class MV, class OP,
-	 template<class, class, class> class KrylovSubclassType>
+         template<class, class, class> class KrylovSubclassType>
 class SolverManager;
 
 // This is the Belos::SolverManager subclass that gets registered with

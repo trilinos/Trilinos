@@ -76,6 +76,7 @@ static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimensi
 }
 
 /*!
+\ingroup Utilities
  * reads the initialization parameters from an opened EXODUS file
  * \param exoid exodus file id
  * \param[out] info #ex_init_params structure containing metadata for mesh.

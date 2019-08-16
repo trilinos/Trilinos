@@ -126,6 +126,8 @@ void StepperDIRK<Scalar>::setTableau(
     std::logic_error,
        "Error - StepperDIRK do not received a DIRK Butcher Tableau!\n" <<
        "        Tableau = " << DIRK_ButcherTableau_->description() << "\n");
+
+  this->isInitialized_ = false;
 }
 
 
@@ -147,6 +149,8 @@ void StepperDIRK<Scalar>::setObserver(
     stepperDIRKObserver_ =
       Teuchos::rcp_dynamic_cast<StepperDIRKObserver<Scalar> >(this->stepperObserver_);
   }
+
+  this->isInitialized_ = false;
 }
 
 
@@ -180,6 +184,8 @@ void StepperDIRK<Scalar>::initialize()
      abs_u  = Thyra::createMember(this->wrapperModel_->get_f_space());
      sc     = Thyra::createMember(this->wrapperModel_->get_f_space());
   }
+
+  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 
@@ -196,6 +202,8 @@ void StepperDIRK<Scalar>::setInitialConditions (
     this->setStepperXDot(stageXDot_.back());
 
   StepperImplicit<Scalar>::setInitialConditions(solutionHistory);
+
+  this->isInitialized_ = false;
 }
 
 
@@ -203,6 +211,9 @@ template<class Scalar>
 void StepperDIRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
+    "Error - " << this->description() << " is not initialized!");
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperDIRK::takeStep()");
@@ -404,6 +415,8 @@ void StepperDIRK<Scalar>::setParameterList(
   }
   // Can not validate because of optional Parameters.
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+
+  this->isInitialized_ = false;
 }
 
 

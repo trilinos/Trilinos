@@ -35,9 +35,9 @@
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Functions contained in this file:
- *	generate_graph()
- *	find_surnd_elems()
- *	find_adjacency()
+ *      generate_graph()
+ *      find_surnd_elems()
+ *      find_adjacency()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 #include "copy_string_cpp.h"
 #include "elb.h"      // for Problem_Description, etc
@@ -360,8 +360,8 @@ namespace {
                   /* If tmp_element[entry] != ecnt, then entry is not in list... */
                   if ((size_t)tmp_element[entry] != ecnt) {
 #if 0
-		    assert(in_list(entry, (graph->nadj)-(graph->start[cnt]),
-				   (graph->adj)+(graph->start[cnt])) < 0);
+                    assert(in_list(entry, (graph->nadj)-(graph->start[cnt]),
+                                   (graph->adj)+(graph->start[cnt])) < 0);
 #endif
                     tmp_element[entry] = ecnt;
                     (graph->nadj)++;
@@ -436,14 +436,14 @@ namespace {
                 /* copy the first array into temp storage */
 
 #if 0
-		/* nhold is the number of elements touching node 0 on
-		   the side of this element */
-		size_t nhold = graph->sur_elem[side_nodes[0]].size();
+                /* nhold is the number of elements touching node 0 on
+                   the side of this element */
+                size_t nhold = graph->sur_elem[side_nodes[0]].size();
 
-		/* Now that we have the number of elements touching
-		   side 0, get their element ids and store them in hold_elem */
-		for (size_t ncnt = 0; ncnt < nhold; ncnt++)
-		  hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
+                /* Now that we have the number of elements touching
+                   side 0, get their element ids and store them in hold_elem */
+                for (size_t ncnt = 0; ncnt < nhold; ncnt++)
+                  hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
 #endif
                 /*
                  * need to handle hex's differently because of

@@ -310,7 +310,9 @@ void ex_conv_exit(int exoid)
 
 nc_type nc_flt_code(int exoid)
 {
-  /* nc_flt_code() returns either NC_FLOAT or NC_DOUBLE, based on the parameters
+  /*!
+   * \ingroup Utilities
+   * nc_flt_code() returns either NC_FLOAT or NC_DOUBLE, based on the parameters
    * with which ex_conv_ini() was called.  nc_flt_code() is used as the nc_type
    * parameter on ncvardef() calls that define floating point variables.
    *
@@ -330,7 +332,9 @@ nc_type nc_flt_code(int exoid)
 
 int ex_int64_status(int exoid)
 {
-  /* ex_int64_status() returns an int that can be tested
+  /*!
+   * \ingroup Utilities
+     ex_int64_status() returns an int that can be tested
      against the defines listed below to determine which, if any,
      'types' in the database are to be stored as int64 types and which, if any,
      types are passed/returned as int64 types in the API
@@ -361,7 +365,9 @@ int ex_int64_status(int exoid)
 
 int ex_set_int64_status(int exoid, int mode)
 {
-  /* ex_set_int64_status() sets the value of the INT64_API flags
+  /*!
+    \ingroup Utilities
+    ex_set_int64_status() sets the value of the INT64_API flags
      which specify how integer types are passed/returned as int64 types in the
      API
 
@@ -395,6 +401,10 @@ int ex_set_int64_status(int exoid, int mode)
   EX_FUNC_LEAVE(file->int64_status);
 }
 
+/*!
+  \ingroup Utilities
+  \undoc
+*/
 int ex_set_option(int exoid, ex_option_type option, int option_value)
 {
   EX_FUNC_ENTER();
@@ -443,6 +453,7 @@ int ex_set_option(int exoid, ex_option_type option, int option_value)
 }
 
 /*!
+ * \ingroup Utilities
  * ex_comp_ws() returns 4 (i.e. sizeof(float)) or 8 (i.e. sizeof(double)),
  * depending on the value of floating point word size used to initialize
  * the conversion facility for this file id (exoid).
@@ -462,7 +473,9 @@ int ex_comp_ws(int exoid)
   return ((file->user_compute_wordsize + 1) * 4);
 }
 
-/*! ex_is_parallel() returns 1 (true) or 0 (false) depending on whether
+/*!
+ * \ingroup Utilities
+ * ex_is_parallel() returns 1 (true) or 0 (false) depending on whether
  * the file was opened in parallel or serial/file-per-processor mode.
  * Note that in this case parallel assumes the output of a single file,
  * not a parallel run using file-per-processor.
@@ -483,7 +496,9 @@ int ex_is_parallel(int exoid)
   EX_FUNC_LEAVE(file->is_parallel);
 }
 
-/*! ex_set_parallel() sets the parallel setting for a file.
+/*!
+ * \ingroup Utilities
+ * ex_set_parallel() sets the parallel setting for a file.
  * returns 1 (true) or 0 (false) depending on the current setting.
  * Do not use this unless you know what you are doing and why you
  * are doing it.  One use is if calling ex_get_partial_set() in a

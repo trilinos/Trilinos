@@ -68,8 +68,9 @@ namespace MueLu {
   void AMGXOperator<double,int,int,Node>::apply(const Tpetra::MultiVector<double,int,int,Node>& X,
                                                 Tpetra::MultiVector<double,int,int,Node>&       Y,
                                                 Teuchos::ETransp mode, double alpha, double beta) const {
-    RCP<const Teuchos::Comm<int> > comm = Y.getMap()->getComm();
 
+    RCP<const Teuchos::Comm<int> > comm = Y.getMap()->getComm();
+    
     ArrayRCP<const double> mueluXdata, amgxXdata;
     ArrayRCP<double>       mueluYdata, amgxYdata;
 
@@ -104,8 +105,12 @@ namespace MueLu {
           vectorTimer1_->stop();
           vectorTimer1_->incrementNumCalls();
         }
-
+       
+        // Solve the system and time. 
+        solverTimer_->start();
         AMGX_solver_solve(Solver_, X_, Y_);
+        solverTimer_->stop();
+        solverTimer_->incrementNumCalls();
 
         {
           vectorTimer2_->start();

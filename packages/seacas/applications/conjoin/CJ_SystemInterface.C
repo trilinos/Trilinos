@@ -8,6 +8,7 @@
 #include <cstddef> // for size_t
 #include <cstdlib> // for exit, strtol, EXIT_SUCCESS, etc
 #include <fmt/format.h>
+#include <term_width.h>
 #include <utility> // for pair, make_pair
 #include <vector>  // for vector
 
@@ -117,7 +118,7 @@ void Excn::SystemInterface::enroll_options()
                   "0");
 
   options_.enroll("width", GetLongOption::MandatoryValue, "Width of output screen, default = 80",
-                  "80");
+                  nullptr);
 
   options_.enroll("copyright", GetLongOption::NoValue, "Show copyright and license data.", nullptr);
 }
@@ -208,6 +209,9 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("width");
     if (temp != nullptr) {
       screenWidth_ = strtol(temp, nullptr, 10);
+    }
+    else {
+      screenWidth_ = term_width();
     }
   }
 

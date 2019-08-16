@@ -214,7 +214,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
     start[1] = 0;
     count[1] = strlen(text) + 1;
 
-    for (i = 0; i < num_attr_per_entry; i++) {
+    for (i = 0; i < (size_t)num_attr_per_entry; i++) {
       start[0] = i;
       nc_put_vara_text(exoid, att_name_varid, start, count, text);
     }

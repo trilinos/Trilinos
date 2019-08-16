@@ -134,7 +134,7 @@ namespace panzer {
     // ***********************
     {
       PHX::MDField<panzer::Traits::RealType,Cell,BASIS> a("rho",dl);
-      a.setFieldData(PHX::KokkosViewFactory<panzer::Traits::RealType,PHX::Device>::buildView(a.fieldTag()));
+      a.setFieldData(PHX::KokkosViewFactory<panzer::Traits::RealType,typename PHX::DevLayout<panzer::Traits::RealType>::type,PHX::Device>::buildView(a.fieldTag()));
       
       // initialize
       for (int cell = 0; cell < a.extent_int(0); ++cell) {
@@ -160,7 +160,7 @@ namespace panzer {
       PHX::MDField<panzer::Traits::FadType,Cell,BASIS> a("rho",dl);
       std::vector<size_type> derivative_dimension;
       derivative_dimension.push_back(2);
-      a.setFieldData(PHX::KokkosViewFactory<panzer::Traits::FadType,PHX::Device>::buildView(a.fieldTag(),derivative_dimension));
+      a.setFieldData(PHX::KokkosViewFactory<panzer::Traits::FadType,typename PHX::DevLayout<panzer::Traits::FadType>::type,PHX::Device>::buildView(a.fieldTag(),derivative_dimension));
       
       // initialize
       for (int cell = 0; cell < a.extent_int(0); ++cell) {

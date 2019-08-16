@@ -211,6 +211,8 @@ namespace Excn {
           nodesBorder(0), nodesExternal(0), elementsInternal(0), elementsBorder(0)
     {
     }
+    CommunicationMetaData(const CommunicationMetaData &) = delete;
+    CommunicationMetaData &operator=(const CommunicationMetaData &other) = delete;
 
     std::vector<CommunicationMap> nodeMap;
     std::vector<CommunicationMap> elementMap;
@@ -224,9 +226,6 @@ namespace Excn {
     int64_t nodesExternal;
     int64_t elementsInternal;
     int64_t elementsBorder;
-
-  private:
-    CommunicationMetaData(const CommunicationMetaData &);
   };
 } // namespace Excn
 #endif /* SEACAS_ExodusEntity_H */

@@ -36,6 +36,11 @@
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL
 
+/*!
+  \ingroup Utilities
+  \undoc
+*/
+
 int ex_create_group(int parent_id, const char *group_name)
 {
   char errmsg[MAX_ERR_LENGTH];

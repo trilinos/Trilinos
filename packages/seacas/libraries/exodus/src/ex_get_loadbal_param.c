@@ -57,6 +57,10 @@
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_BOR_ELEMS, etc
 
+/*!
+ * \ingroup ModelDescription
+ * \undoc
+ */
 int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_nodes,
                          void_int *num_ext_nodes, void_int *num_int_elems, void_int *num_bor_elems,
                          void_int *num_node_cmaps, void_int *num_elem_cmaps, int processor)

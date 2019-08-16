@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -95,6 +95,9 @@ namespace PHX{
 
   public:
 
+    /// Defines the kokkos layout to use. Default uses the recommended layout from the default device execution space.
+    enum class KokkosLayoutType {Left,Right,Default};
+
     // typedef long unsigned int size_type;
     typedef PHX::Device::size_type size_type;
 
@@ -102,27 +105,29 @@ namespace PHX{
 
     virtual ~DataLayout() = default;
 
-    virtual PHX::Device::size_type rank() const = 0; 
+    virtual PHX::Device::size_type rank() const = 0;
 
-    virtual PHX::Device::size_type dimension(size_type ordinal) const = 0; 
+    virtual PHX::Device::size_type dimension(size_type ordinal) const = 0;
 
-    virtual PHX::Device::size_type extent(size_type ordinal) const = 0; 
+    virtual PHX::Device::size_type extent(size_type ordinal) const = 0;
 
-    virtual int extent_int(size_type ordinal) const = 0; 
+    virtual int extent_int(size_type ordinal) const = 0;
 
-    virtual void 
-    dimensions(std::vector<PHX::Device::size_type>& dim) const = 0; 
+    virtual void
+    dimensions(std::vector<PHX::Device::size_type>& dim) const = 0;
 
     virtual PHX::Device::size_type size() const = 0;
 
     virtual std::string name(size_type ordinal) const = 0;
 
-    virtual void names(std::vector<std::string>& names) const = 0; 
+    virtual void names(std::vector<std::string>& names) const = 0;
 
     virtual bool operator==(const DataLayout& left) const = 0;
 
     virtual bool operator!=(const DataLayout& left) const
     { return !(*this == left); }
+
+    virtual PHX::DataLayout::KokkosLayoutType kokkosLayout() const = 0;
 
     //! Unique name identifier that can be used for strict weak ordering in stl std::map keys.
     virtual std::string identifier() const = 0;
@@ -149,7 +154,7 @@ namespace PHX{
   };
 
   std::ostream& operator<<(std::ostream& os, const PHX::DataLayout& t);
-  
+
 }
 
 #endif

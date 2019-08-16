@@ -72,7 +72,8 @@ public:
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}
+      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */)
+    {this->isInitialized_ = false;}
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(

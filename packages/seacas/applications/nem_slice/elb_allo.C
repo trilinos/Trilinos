@@ -49,10 +49,10 @@ static void *smalloc(size_t n);
  *
  * Example Usage:
  *
- *     typedef	struct
- *       {	int	bus1;
- *              int	bus2;
- *              int	dest;
+ *     typedef  struct
+ *       {      int     bus1;
+ *              int     bus2;
+ *              int     dest;
  *      }       POINT;
  *
  *      POINT    **points, corner;
@@ -80,17 +80,17 @@ void *array_alloc(int numdim, ...)
 {
   struct dim
   {
-    size_t index; /* Number of elements in the dimension	*/
-    size_t total; /* Total number of elements 		*/
-    size_t size;  /* Size of a single element in bytes	*/
-    size_t off;   /* offset from beginning of array	*/
-  } dim[3];       /* Info about each dimension 		*/
-  size_t  total;  /* Total size of the array		*/
-  void *  dfield; /* ptr to avoid lint complaints		*/
-  char *  field;  /* The multi-dimensional array		*/
-  char ** ptr;    /* Pointer offset			*/
-  char *  data;   /* Data offset				*/
-  va_list va;     /* Current pointer in the argument list	*/
+    size_t index; /* Number of elements in the dimension        */
+    size_t total; /* Total number of elements           */
+    size_t size;  /* Size of a single element in bytes  */
+    size_t off;   /* offset from beginning of array     */
+  } dim[3];       /* Info about each dimension          */
+  size_t  total;  /* Total size of the array            */
+  void *  dfield; /* ptr to avoid lint complaints               */
+  char *  field;  /* The multi-dimensional array                */
+  char ** ptr;    /* Pointer offset                     */
+  char *  data;   /* Data offset                                */
+  va_list va;     /* Current pointer in the argument list       */
 
   va_start(va, numdim);
 

@@ -85,7 +85,7 @@ typedef double Real;
   }
 
 #define ROL_TEST_FLOAT_EQUALITY(a,b,tol,print) { \
-    if(not std::fabs(a-b)<=tol) {\
+    if(not (std::fabs(a-b)<=tol)) {\
       std::stringstream ss;\
       ss << "\nFAILURE: ******************************************************" << std::endl;\
       ss <<   "FAILURE: * Test (" << #a << " != " << #b << ") failed: line " << __LINE__ << std::endl;\
@@ -210,7 +210,7 @@ void testHiearchyCoarseTimeStamps(MPI_Comm comm, const ROL::Ptr<std::ostream> & 
   // build time stamps
   auto timeStamps_ptr = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>(localNt);
   auto & timeStamps = *timeStamps_ptr;
-  for(size_t k=0; k<localNt; ++k ) {
+  for(int k=0; k<localNt; ++k ) {
     timeStamps[k].t.resize(2);
     timeStamps[k].t.at(0) = k*dt + timeOffset;
     timeStamps[k].t.at(1) = (k+1)*dt + timeOffset;
@@ -251,9 +251,9 @@ void testHiearchyCoarseTimeStamps(MPI_Comm comm, const ROL::Ptr<std::ostream> & 
 
     Real tol = 1e-14;
 
-    ROL_TEST_EQUALITY(stamps_0->size(),localNt,false);     
-    ROL_TEST_EQUALITY(stamps_1->size(),localNt,false);     
-    ROL_TEST_EQUALITY(stamps_2->size(),localNt,false);     
+    ROL_TEST_EQUALITY(static_cast<long long>(stamps_0->size()),localNt,false);
+    ROL_TEST_EQUALITY(static_cast<long long>(stamps_1->size()),localNt,false);
+    ROL_TEST_EQUALITY(static_cast<long long>(stamps_2->size()),localNt,false);
 
     ROL_TEST_FLOAT_EQUALITY(stamps_0->at(0).t[0],stamps_1->at(0).t[0],tol,false);
     ROL_TEST_FLOAT_EQUALITY(stamps_0->at(0).t[0],stamps_2->at(0).t[0],tol,false);

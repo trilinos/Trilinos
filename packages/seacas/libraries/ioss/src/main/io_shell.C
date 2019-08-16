@@ -286,6 +286,7 @@ namespace {
       options.data_storage_type = interface.data_storage_type;
       options.delay             = interface.timestep_delay;
       options.reverse           = interface.reverse;
+      options.add_proc_id       = interface.add_processor_id_field;
 
       size_t ts_count = 0;
       if (region.property_exists("state_count") &&

@@ -286,7 +286,8 @@ public:
 
     virtual void setModelPair(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel,
+      int numExplicitOnlyBlocks, int parameterIndex);
 
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);

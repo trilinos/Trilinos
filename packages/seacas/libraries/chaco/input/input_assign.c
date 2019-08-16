@@ -56,10 +56,10 @@ int input_assign(FILE *finassign, char *inassignname, int nvtxs, int *assignment
 
 static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, int *assignment)
 /*
-  FILE     *finassign;		input assignment file
-  char     *inassignname;		name of input assignment file
-  int       nvtxs;		number of vertices to output
-  int    *assignment;		values to be printed
+  FILE     *finassign;          input assignment file
+  char     *inassignname;               name of input assignment file
+  int       nvtxs;              number of vertices to output
+  int    *assignment;           values to be printed
 */
 
 {

@@ -37,6 +37,7 @@
 #include "exodusII_int.h"
 
 /*!
+\ingroup Utilities
 
 The function ex_put_init() writes the initialization parameters to the
 exodus file. This function must be called once (and only once) before

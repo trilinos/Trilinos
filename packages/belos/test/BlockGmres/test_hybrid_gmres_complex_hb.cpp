@@ -112,6 +112,7 @@ int main(int argc, char *argv[]) {
     int maxrestarts = 15;      // number of restarts allowed
     std::string outersolver("Block Gmres");
     std::string filename("mhd1280b.cua");
+    std::string polyType("Arnoldi");
     MT tol = 1.0e-5;           // relative residual tolerance
     MT polytol = tol/10;       // relative residual tolerance for polynomial construction
 
@@ -123,6 +124,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("outersolver",&outersolver,"Name of outer solver to be used with GMRES poly");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
     cmdp.setOption("poly-tol",&polytol,"Relative residual tolerance used to construct the GMRES polynomial.");
+    cmdp.setOption("poly-type",&polyType,"Polynomial type (Roots, Arnoldi, or Gmres).");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
@@ -217,6 +219,7 @@ int main(int argc, char *argv[]) {
     ParameterList polyList;
     polyList.set( "Maximum Degree", maxdegree );          // Maximum degree of the GMRES polynomial
     polyList.set( "Polynomial Tolerance", polytol );      // Polynomial convergence tolerance requested
+    polyList.set( "Polynomial Type", polyType );          // Type of polynomial to construct
     polyList.set( "Verbosity", verbosity );               // Verbosity for polynomial construction
     polyList.set( "Random RHS", userandomrhs );           // Use RHS from linear system or random vector
     if ( outersolver != "" ) {

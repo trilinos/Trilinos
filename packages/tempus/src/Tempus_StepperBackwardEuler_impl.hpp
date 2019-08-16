@@ -63,6 +63,8 @@ void StepperBackwardEuler<Scalar>::setPredictor(std::string predictorName)
   this->stepperPL_->set("Predictor Name", predictorName);
   if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
+
+  this->isInitialized_ = false;
 }
 
 
@@ -104,6 +106,8 @@ void StepperBackwardEuler<Scalar>::setPredictor(
     predictorStepper_ =
       sf->createStepper(predPL, this->wrapperModel_->getAppModel());
   }
+
+  this->isInitialized_ = false;
 }
 
 
@@ -125,6 +129,8 @@ void StepperBackwardEuler<Scalar>::setObserver(
       Teuchos::rcp_dynamic_cast<StepperBackwardEulerObserver<Scalar> >
         (this->stepperObserver_);
   }
+
+  this->isInitialized_ = false;
 }
 
 
@@ -139,7 +145,23 @@ void StepperBackwardEuler<Scalar>::initialize()
   this->setParameterList(this->stepperPL_);
   this->setSolver();
   this->setPredictor();
+  if (predictorStepper_ != Teuchos::null) predictorStepper_->initialize();
   this->setObserver();
+
+  this->isInitialized_ = true;   // Only place where it should be set to true.
+}
+
+
+template<class Scalar>
+bool StepperBackwardEuler<Scalar>::isInitialized()
+{
+  bool isInitialized = false;
+  if (predictorStepper_ != Teuchos::null)
+    isInitialized = this->isInitialized_ && predictorStepper_->isInitialized();
+  else
+    isInitialized = this->isInitialized_;
+
+  return isInitialized;
 }
 
 
@@ -165,6 +187,8 @@ void StepperBackwardEuler<Scalar>::setInitialConditions(
          << "however useFSAL=true will also work but have no affect "
          << "(i.e., no-op).\n" << std::endl;
   }
+
+  this->isInitialized_ = false;
 }
 
 
@@ -172,6 +196,9 @@ template<class Scalar>
 void StepperBackwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
+    "Error - " << this->description() << " is not initialized!");
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackwardEuler::takeStep()");
@@ -310,6 +337,7 @@ void StepperBackwardEuler<Scalar>::setParameterList(
     << "  Stepper Type = "<<stepperPL->get<std::string>("Stepper Type")<<"\n");
 
   this->stepperPL_ = stepperPL;
+  this->isInitialized_ = false;
 }
 
 

@@ -46,19 +46,14 @@
 #include <Teuchos_TimeMonitor.hpp>
 
 #include "Panzer_Dimension.hpp"
-#include "Shards_Array.hpp"
+#include "Phalanx_MDField.hpp"
 
 namespace panzer {
 
-  using shards::Array;
-  using shards::NaturalOrder;
-
   TEUCHOS_UNIT_TEST(dimension, default)
   {
-
-    Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy,Edge> a;
-    Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy,Edge> b;
-    
+    PHX::MDField<double,Dim,IP,BASIS,NODE,Point,Cell,Edge,PHX::Device> a;
+    PHX::MDField<double,Dim,IP,BASIS,NODE,Point,Cell,Edge,PHX::Device> b;
     a = b;
   }
 

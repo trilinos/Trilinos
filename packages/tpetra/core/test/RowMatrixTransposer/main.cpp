@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -48,7 +46,7 @@
 #include <Teuchos_FancyOStream.hpp>
 #include <cmath>
 
-template<class CrsMatrix_t> 
+template<class CrsMatrix_t>
 typename CrsMatrix_t::scalar_type getNorm(CrsMatrix_t& matrix){
   typedef typename CrsMatrix_t::local_ordinal_type LO;
   typedef typename CrsMatrix_t::scalar_type Scalar;

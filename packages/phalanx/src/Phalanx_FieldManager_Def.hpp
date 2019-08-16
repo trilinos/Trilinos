@@ -76,13 +76,10 @@ PHX::FieldManager<Traits>::~FieldManager()
 
 // **************************************************************
 template<typename Traits>
-template<typename EvalT, typename DataT,
-	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename EvalT, typename DataT, typename...Props>
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
-	     Tag5,Tag6,Tag7>& f)
+getFieldData(PHX::MDField<DataT,Props...>& f)
 {
   PHX::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
@@ -92,13 +89,10 @@ getFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
 
 // **************************************************************
 template<typename Traits>
-template<typename EvalT, typename DataT,
-	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename EvalT, typename DataT, typename...Props>
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
-	     Tag5,Tag6,Tag7>& f)
+getFieldData(PHX::MDField<const DataT,Props...>& f)
 {
   PHX::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
@@ -108,10 +102,10 @@ getFieldData(PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
 
 // **************************************************************
 template<typename Traits>
-template<typename EvalT, typename DataT, int Rank>
+template<typename EvalT, typename DataT, int Rank, typename Layout>
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(PHX::Field<DataT,Rank>& f)
+getFieldData(PHX::Field<DataT,Rank,Layout>& f)
 {
   PHX::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
@@ -121,10 +115,10 @@ getFieldData(PHX::Field<DataT,Rank>& f)
 
 // **************************************************************
 template<typename Traits>
-template<typename EvalT, typename DataT, int Rank>
+template<typename EvalT, typename DataT, int Rank, typename Layout>
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(PHX::Field<const DataT,Rank>& f)
+getFieldData(PHX::Field<const DataT,Rank,Layout>& f)
 {
   PHX::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
@@ -134,10 +128,10 @@ getFieldData(PHX::Field<const DataT,Rank>& f)
 
 // **************************************************************
 template<typename Traits>
-template<typename EvalT, typename DataT>
+template<typename EvalT, typename DataT, typename Layout>
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(const PHX::FieldTag& ft, PHX::View<DataT>& f)
+getFieldData(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device>& f)
 {
   PHX::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(ft);
@@ -146,7 +140,7 @@ getFieldData(const PHX::FieldTag& ft, PHX::View<DataT>& f)
   // correctly cast the any object to the Kokkos::View, need to
   // pull the const off the scalar type if this MDField has a
   // const scalar type.
-  typedef PHX::View<typename PHX::View<DataT>::non_const_data_type> non_const_view;
+  typedef PHX::View<typename Kokkos::View<DataT,Layout,PHX::Device>::non_const_data_type> non_const_view;
   try {
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
     f = tmp;
@@ -162,13 +156,20 @@ getFieldData(const PHX::FieldTag& ft, PHX::View<DataT>& f)
 
 // **************************************************************
 template<typename Traits>
-template<typename EvalT, typename DataT,
-         typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-         typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename EvalT, typename DataT, typename...Props>
 inline
 void PHX::FieldManager<Traits>::
-setUnmanagedField(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
-                  Tag5,Tag6,Tag7>& f)
+setUnmanagedField(PHX::MDField<DataT,Props...>& f)
+{
+  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),f.get_static_view_as_any());
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT, typename DataT, int Rank, typename Layout>
+inline
+void PHX::FieldManager<Traits>::
+setUnmanagedField(PHX::Field<DataT,Rank,Layout>& f)
 {
   PHX::any any_f(f.get_static_view());
   m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),any_f);
@@ -176,38 +177,16 @@ setUnmanagedField(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
 
 // **************************************************************
 template<typename Traits>
-template<typename EvalT, typename DataT>
+template<typename EvalT, typename DataT, typename Layout>
 inline
 void PHX::FieldManager<Traits>::
-setUnmanagedField(PHX::MDField<DataT>& f)
-{
-  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),f.get_static_any_view());
-}
-
-// **************************************************************
-template<typename Traits>
-template<typename EvalT, typename DataT, int Rank>
-inline
-void PHX::FieldManager<Traits>::
-setUnmanagedField(PHX::Field<DataT,Rank>& f)
-{
-  PHX::any any_f(f.get_static_view());
-  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),any_f);
-}
-
-// **************************************************************
-template<typename Traits>
-template<typename EvalT, typename DataT>
-inline
-void PHX::FieldManager<Traits>::
-setUnmanagedField(const PHX::FieldTag& ft,
-                  PHX::View<DataT>& f)
+setUnmanagedField(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device>& f)
 {
   // Make sure field data type is not const. We always store static
   // non-const views so that we know how to cast back from an any
   // object.
-  typedef typename PHX::View<DataT>::value_type value_type;
-  typedef typename PHX::View<DataT>::non_const_value_type non_const_value_type;
+  typedef typename Kokkos::View<DataT,Layout,PHX::Device>::value_type value_type;
+  typedef typename Kokkos::View<DataT,Layout,PHX::Device>::non_const_value_type non_const_value_type;
   static_assert(std::is_same<value_type,non_const_value_type>::value, "FieldManager::setUnmanagedField(FieldTag, View) - DataT must be non-const!");
 
   PHX::any any_f(f);
@@ -294,21 +273,31 @@ template<typename Traits>
 template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
-postRegistrationSetupForType(typename Traits::SetupData d, const bool& buildDeviceDAG)
+postRegistrationSetupForType(typename Traits::SetupData d,
+                             const bool& buildDeviceDAG,
+                             const bool& minimizeDAGMemoryUse,
+                             const PHX::MemoryPool* const memoryPool)
 {
   m_eval_containers.template getAsObject<EvalT>()->
-    postRegistrationSetup(d, *this, buildDeviceDAG);
+    postRegistrationSetup(d, *this, buildDeviceDAG,
+                          minimizeDAGMemoryUse,
+                          memoryPool);
 }
 
 // **************************************************************
 template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
-postRegistrationSetup(typename Traits::SetupData d, const bool& buildDeviceDAG)
+postRegistrationSetup(typename Traits::SetupData d,
+                      const bool& buildDeviceDAG,
+                      const bool& minimizeDAGMemoryUse,
+                      const PHX::MemoryPool* const memoryPool)
 {
   typename SCTM::iterator it = m_eval_containers.begin();
   for (std::size_t i = 0; it != m_eval_containers.end(); ++it, ++i)
-    it->postRegistrationSetup(d, *this, buildDeviceDAG);
+    it->postRegistrationSetup(d, *this, buildDeviceDAG,
+                              minimizeDAGMemoryUse,
+                              memoryPool);
 }
 
 // **************************************************************
