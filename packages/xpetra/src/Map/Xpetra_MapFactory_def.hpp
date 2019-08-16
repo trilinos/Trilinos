@@ -260,7 +260,7 @@ createLocalMap(UnderlyingLib                                 lib,
 #ifdef HAVE_XPETRA_TPETRA
     if(lib == UseTpetra)
     {
-        return rcp(new Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(Tpetra::createLocalMap<LocalOrdinal, GlobalOrdinal>(numElements, comm)));
+        return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(Tpetra::createLocalMap<LocalOrdinal, GlobalOrdinal>(numElements, comm)));
     }
 #endif      // HAVE_XPETRA_TPETRA
 

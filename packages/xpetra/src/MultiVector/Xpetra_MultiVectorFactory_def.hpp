@@ -60,13 +60,13 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
-      size_t                                                                    NumVectors,
-      bool                                                                      zeroOut)
+      size_t                                                            NumVectors,
+      bool                                                              zeroOut)
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-    RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap =
-        Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
+    RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap =
+        Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
 
     if(!bmap.is_null())
     {
