@@ -44,7 +44,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 #include <Phalanx_any.hpp>
 #include <unordered_map>
 #include <map>
@@ -863,13 +863,13 @@ namespace phalanx_test {
     static_assert(std::is_same<scalar_view_layout,DefaultDevLayout>::value,"ERROR: Layout Inconsistency!");
     static_assert(std::is_same<fad_view_layout,DefaultFadLayout>::value,"ERROR: Layout Inconsistency!");
 
-    std::cout << "\n\nscalar_view_layout = " << PHX::typeAsString<scalar_view_layout>() << std::endl;
-    std::cout << "scalar_dev_layout  = " << PHX::typeAsString<scalar_dev_layout>() << std::endl;
-    std::cout << "DefaultDevLayout   = " << PHX::typeAsString<DefaultDevLayout>() << "\n" << std::endl;
+    std::cout << "\n\nscalar_view_layout = " << PHX::print<scalar_view_layout>() << std::endl;
+    std::cout << "scalar_dev_layout  = " << PHX::print<scalar_dev_layout>() << std::endl;
+    std::cout << "DefaultDevLayout   = " << PHX::print<DefaultDevLayout>() << "\n" << std::endl;
 
-    std::cout << "fad_view_layout    = " << PHX::typeAsString<fad_view_layout>() << std::endl;
-    std::cout << "fad_dev_layout     = " << PHX::typeAsString<fad_dev_layout>() << std::endl;
-    std::cout << "DefaultFadLayout   = " << PHX::typeAsString<DefaultFadLayout>() << "\n" << std::endl;
+    std::cout << "fad_view_layout    = " << PHX::print<fad_view_layout>() << std::endl;
+    std::cout << "fad_dev_layout     = " << PHX::print<fad_dev_layout>() << std::endl;
+    std::cout << "DefaultFadLayout   = " << PHX::print<DefaultFadLayout>() << "\n" << std::endl;
 
     // Tests for assignments from static View to DynRankView
     Kokkos::View<FadType**,typename PHX::DevLayout<FadType>::type,PHX::Device> static_a("static_a",100,8,64);

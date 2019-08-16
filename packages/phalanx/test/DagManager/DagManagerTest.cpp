@@ -46,7 +46,7 @@
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_DAG_Manager.hpp"
 #include "Phalanx_Evaluator_AliasField.hpp"
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"

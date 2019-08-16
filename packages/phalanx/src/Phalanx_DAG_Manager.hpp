@@ -57,7 +57,7 @@
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 #include "Phalanx_Evaluator.hpp"
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 #include "Phalanx_DAG_Node.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Kokkos_View.hpp"
