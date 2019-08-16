@@ -1401,7 +1401,7 @@ configuration script.
 
 A simple example can be seen in:
 
-* [cmake/std/atdm/examples/my_sems_rhel6_config/environment.sh](examples/my_sems_rhel6_config/environment.sh)
+* [cmake/std/atdm/examples/my-sems-rhel6-config/environment.sh](examples/my-sems-rhel6-config/environment.sh)
 
 which works on any SEMS RHEL6 machine similarly to the offically defined <a
 href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>.
@@ -1409,6 +1409,6 @@ href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>.
 To see how things can be specified look at examples of other `environment.sh`
 scripts in the offically defined configurations under:
 
-* [cmake/std/atdm/examples/my_sems_rhel6_config/<system_name>/](.)
+* [cmake/std/atdm/<system_name>/](.)
 
 where `<system_name>` is `ride`, `waterman`, `tlcc2`, etc.
