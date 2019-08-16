@@ -86,7 +86,7 @@ namespace FROSch {
         using EntitySetPtr                  = RCP<EntitySet<SC,LO,GO,NO> >;
         using EntitySetPtrVecPtr            = ArrayRCP<EntitySetPtr>;
 
-        using InterfaceEntityPtr            = RCP<InterfaceEntity<SC,LO,GO> >;
+        using InterfaceEntityPtr            = RCP<InterfaceEntity<SC,LO,GO,NO> >;
         
         using UN                            = unsigned;
 
