@@ -139,15 +139,19 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy
   EXEDEPS tExodusReaderFactory
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy_pamgen
-  SOURCE_FILES pamgen_test.gen
-  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
-  EXEDEPS tExodusReaderFactory
-  )
+IF(${PACKAGE_NAME}_ENABLE_Pamgen)
 
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  tPamgenMeshFactory
-#  SOURCES tPamgenMeshFactory.cpp ${UNIT_TEST_DRIVER}
-#  NUM_MPI_PROCS 1
-#  COMM serial mpi
-#  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tPamgenMeshFactory
+    SOURCES tPamgenMeshFactory.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy_pamgen
+    SOURCE_FILES pamgen_test.gen
+    DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+    EXEDEPS tPamgenMeshFactory
+    )
+
+ENDIF()

@@ -75,30 +75,42 @@ using Teuchos::Array;
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::Array<int> findCommonRegions(const GlobalOrdinal nodeA, ///< GID of first node
                                       const GlobalOrdinal nodeB, ///< GID of second node
-                                      const Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& nodesToRegions ///< mapping of nodes to regions
+                                      const Array<ArrayRCP<const LocalOrdinal> > nodesToRegions, ///< mapping of nodes to regions
+                                      RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > nodesToRegionsMap
                                       )
 {
 #include "Xpetra_UseShortNamesOrdinal.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("findCommonRegions: 1 - Extract regions")));
 
   // extract node-to-regions mapping for both nodes A and B
-  Array<int> regionsA;
-  Array<int> regionsB;
+  Array<int> regionsA, regionsB;
   {
-    RCP<const Map> map = nodesToRegions.getMap();
-    for (std::size_t i = 0; i < nodesToRegions.getNumVectors(); ++i) {
-      regionsA.push_back(nodesToRegions.getData(i)[map->getLocalElement(nodeA)]);
-      regionsB.push_back(nodesToRegions.getData(i)[map->getLocalElement(nodeB)]);
+    LO nodeALID = nodesToRegionsMap->getLocalElement(nodeA);
+    LO nodeBLID = nodesToRegionsMap->getLocalElement(nodeA);
+    for (int i = 0; i < nodesToRegions.size(); ++i) {
+      regionsA.push_back(nodesToRegions[i][nodeALID]);
+      regionsB.push_back(nodesToRegions[i][nodeBLID]);
     }
   }
 
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("findCommonRegions: 2 - Sort regions")));
+
   // identify common regions
-  std::vector<int> commonRegions(nodesToRegions.getNumVectors());
+  std::vector<int> commonRegions(nodesToRegions.size());
   std::sort(regionsA.begin(), regionsA.end());
   std::sort(regionsB.begin(), regionsB.end());
+
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("findCommonRegions: 3 - Find commons")));
 
   std::vector<int>::iterator it = std::set_intersection(regionsA.begin(),
       regionsA.end(), regionsB.begin(), regionsB.end(), commonRegions.begin());
   commonRegions.resize(it - commonRegions.begin());
+
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("findCommonRegions: 4 - Clean-up output")));
 
   // remove '-1' entries
   Teuchos::Array<int> finalCommonRegions;
@@ -106,6 +118,8 @@ Teuchos::Array<int> findCommonRegions(const GlobalOrdinal nodeA, ///< GID of fir
     if (commonRegions[i] != -1)
       finalCommonRegions.push_back(commonRegions[i]);
   }
+
+  tm = Teuchos::null;
 
   return finalCommonRegions;
 }
@@ -216,9 +230,10 @@ void regionalToComposite(const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, Gl
       tm = Teuchos::null;
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("regionalToComposite: 4 - compVec->sumIntoLocalValue")));
 
-      Teuchos::ArrayRCP<const SC> partialCompVecData = partialCompVec->getData(0);
+      ArrayRCP<const SC> partialCompVecData = partialCompVec->getData(0);
+      ArrayRCP<SC>       compVecData        = compVec->getDataNonConst(0);
       for(size_t entryIdx = 0; entryIdx < compVecLocalLength; ++entryIdx) {
-        compVec->sumIntoLocalValue(static_cast<LO>(entryIdx), partialCompVecData[entryIdx]);
+        compVecData[entryIdx] += partialCompVecData[entryIdx];
       }
 
       tm = Teuchos::null;
@@ -414,11 +429,14 @@ void MakeGroupExtendedMaps(const int myRank,
   // is responsible for.
 
   RCP<Vector> firstNewGID = VectorFactory::Build(mapComp, true);
+  ArrayRCP<Scalar> firstNewGIDData = firstNewGID->getDataNonConst(0);
   for (int k = 0; k < nLocal-1; k++) {
-    firstNewGID->replaceLocalValue(k + 1, (firstNewGID->getData(0))[k]-1);
+    firstNewGIDData[k + 1] = firstNewGIDData[k] - 1;
+    // firstNewGID->replaceLocalValue(k + 1, (firstNewGID->getData(0))[k]-1);
     for (int j = 0; j < appData.maxRegPerGID; j++) {
       Teuchos::ArrayRCP<const LocalOrdinal> jthRegions = appData.regionsPerGIDWithGhosts->getData(j);
-      if (jthRegions[k] != -1) firstNewGID->sumIntoLocalValue(k+1, SC_ONE);
+      if (jthRegions[k] != -1) firstNewGIDData[k+1] = SC_ONE;
+      // if (jthRegions[k] != -1) firstNewGID->sumIntoLocalValue(k+1, SC_ONE);
     }
   }
   // So firstNewGID[nLocal-1] is number of NewGIDs up to nLocal-2
@@ -426,7 +444,6 @@ void MakeGroupExtendedMaps(const int myRank,
   // use an upper bound (to avoid the little loop above).
   // By adding maxRegPerGID-1 we account for the maximum
   // number of possible newGIDs due to last composite id
-  Teuchos::ArrayRCP<const Scalar> firstNewGIDData = firstNewGID->getData(0);
   GlobalOrdinal upperBndNumNewGIDs = Teuchos::as<GlobalOrdinal>(firstNewGIDData[nLocal-1]) + appData.maxRegPerGID-1;
   GlobalOrdinal upperBndNumNewGIDsAllProcs;
   Teuchos::reduceAll<GlobalOrdinal,GlobalOrdinal>(*(AComp->getMap()->getComm()),
@@ -440,11 +457,9 @@ void MakeGroupExtendedMaps(const int myRank,
   // NewGIDs over all procs, we sweep through firstNewGID again
   // to assign ids to the first NewGID associated with each row of
   // regionsPerGIDWithGhosts (by adding an offset)
-  ArrayRCP<Scalar> firstNewGIDDataNonConst = firstNewGID->getDataNonConst(0);
   for (LocalOrdinal k = 0; k < nLocal; k++) {
-    //      const GlobalOrdinal tmpGID = firstNewGIDDataNonConst[k];
-    //      firstNewGIDDataNonConst[k] = tmpGID + upperBndNumNewGIDsAllProcs*myRank+nTotal;
-    firstNewGID->sumIntoLocalValue(k, upperBndNumNewGIDsAllProcs*myRank+nTotal);
+    firstNewGIDData[k] += upperBndNumNewGIDsAllProcs*myRank+nTotal;
+    // firstNewGID->sumIntoLocalValue(k, upperBndNumNewGIDsAllProcs*myRank+nTotal);
   }
 
   RCP<Import> Importer = ImportFactory::Build(mapComp, AComp->getColMap());
@@ -546,8 +561,14 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
                              std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& quasiRegionGrpMats) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::RCP;
+  using Teuchos::TimeMonitor;
 
   std::cout << AComp->getMap()->getComm()->getRank() << " | Forming quasiRegion matrices ..." << std::endl;
+
+  Array<ArrayRCP<const LO> > regionPerGIDWithGhostsData(regionsPerGIDWithGhosts->getNumVectors());
+  for(size_t vecIdx = 0; vecIdx < regionsPerGIDWithGhosts->getNumVectors(); ++vecIdx) {
+    regionPerGIDWithGhostsData[vecIdx] = regionsPerGIDWithGhosts->getData(vecIdx);
+  }
 
   /* We use the edge-based splitting, i.e. we first modify off-diagonal
    * entries in the composite matrix, then decompose it into region matrices
@@ -555,49 +576,37 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
    * preservation constraint.
    */
 
-
-  // // copy and modify the composite matrix
-  // RCP<Matrix> ACompSplit = MatrixFactory::BuildCopy(AComp);
-  // ACompSplit->resumeFill();
-
-  // for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(ACompSplit->getNodeNumRows()); row++) { // loop over local rows of composite matrix
-  //   GlobalOrdinal rowGID = ACompSplit->getRowMap()->getGlobalElement(row);
-  //   std::size_t numEntries = ACompSplit->getNumEntriesInLocalRow(row); // number of entries in this row
-  //   Teuchos::Array<Scalar> vals(numEntries); // non-zeros in this row
-  //   Teuchos::Array<LocalOrdinal> inds(numEntries); // local column indices
-  //   ACompSplit->getLocalRowCopy(row, inds, vals, numEntries);
-
-  //   for (std::size_t c = 0; c < Teuchos::as<std::size_t>(inds.size()); ++c) { // loop over all entries in this row
-  //     LocalOrdinal col = inds[c];
-  //     GlobalOrdinal colGID = ACompSplit->getColMap()->getGlobalElement(col);
-  //     Array<int> commonRegions;
-  //     if (rowGID != colGID) { // Skip the diagonal entry. It will be processed later.
-  //       commonRegions = findCommonRegions(rowGID, colGID, *regionsPerGIDWithGhosts);
-  //     }
-
-  //     if (commonRegions.size() > 1) {
-  //       vals[c] *= (1.0 / static_cast<double>(commonRegions.size()));
-  //     }
-  //   }
-
-  //   ACompSplit->replaceLocalValues(row, inds, vals);
-  // }
-  // ACompSplit->fillComplete(AComp->getDomainMap(), AComp->getRangeMap());
-
-  // Import data from ACompSplit into the quasiRegion matrices
+  // Import data from AComp into the quasiRegion matrices
   // Since the stencil size does not grow between composite and region format
-  // use ACompSplit->getCrsGraph()->getNodeMaxNumRowEntries() to get an upper
+  // use AComp->getCrsGraph()->getNodeMaxNumRowEntries() to get an upper
   // bound of the number of nonzeros per row in quasiRegionMat
   for (int j = 0; j < maxRegPerProc; j++) {
+    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 1 - Create Matrix")));
+
     quasiRegionGrpMats[j] = MatrixFactory::Build(rowMapPerGrp[j],
                                                  colMapPerGrp[j],
                                                  AComp->getCrsGraph()->getNodeMaxNumRowEntries(),
                                                  Xpetra::DynamicProfile);
+
+    tm = Teuchos::null;
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 2 - Import data")));
+
     quasiRegionGrpMats[j]->doImport(*AComp,
                                     *(rowImportPerGrp[j]),
                                     Xpetra::INSERT);
 
-    for (LO row = 0; row < Teuchos::as<LO>(quasiRegionGrpMats[j]->getNodeNumRows()); ++row) { // loop over local rows of composite matrix
+    tm = Teuchos::null;
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 3 - Scale interface entries")));
+
+    RCP<CrsMatrixWrap> quasiRegionCrsWrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionGrpMats[j]);
+    RCP<CrsMatrix> quasiRegionCrs = quasiRegionCrsWrap->getCrsMatrix();
+    const LO numRows = Teuchos::as<LO>(quasiRegionCrs->getNodeNumRows());
+    // const size_t numNNZ  = quasiRegionGrpMats[j]->getNodeNumEntries();
+    ArrayRCP<const size_t> rowPtr;
+    ArrayRCP<const LO>     colInd;
+    ArrayRCP<const Scalar> values;
+    quasiRegionCrs->getAllValues(rowPtr, colInd, values);
+    for (LO row = 0; row < numRows; ++row) { // loop over local rows of composite matrix
       GO rowGID = rowMapPerGrp[j]->getGlobalElement(row);
       std::size_t numEntries = quasiRegionGrpMats[j]->getNumEntriesInLocalRow(row); // number of entries in this row
       Teuchos::Array<SC> vals(numEntries); // non-zeros in this row
@@ -609,7 +618,8 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
         GlobalOrdinal colGID = colMapPerGrp[j]->getGlobalElement(col);
         Array<int> commonRegions;
         if (rowGID != colGID) { // Skip the diagonal entry. It will be processed later.
-          commonRegions = findCommonRegions(rowGID, colGID, *regionsPerGIDWithGhosts);
+          // commonRegions = findCommonRegions(rowGID, colGID, *regionsPerGIDWithGhosts);
+          commonRegions = findCommonRegions(rowGID, colGID, regionPerGIDWithGhostsData, regionsPerGIDWithGhosts->getMap());
         }
 
         if (commonRegions.size() > 1) {
@@ -619,6 +629,8 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
 
       quasiRegionGrpMats[j]->replaceLocalValues(row, inds, vals);
     }
+
+    tm = Teuchos::null;
 
     quasiRegionGrpMats[j]->fillComplete();
   }

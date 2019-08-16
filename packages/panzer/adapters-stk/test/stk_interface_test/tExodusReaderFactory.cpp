@@ -172,6 +172,11 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
    }
 }
 
+TEUCHOS_UNIT_TEST(tExodusReaderFactory, getMeshDimension)
+{
+   TEST_EQUALITY(panzer_stk::getMeshDimension("meshes/basic.gen",MPI_COMM_WORLD,true),2);
+}
+
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, exo_scaling)
 {
   {
