@@ -275,6 +275,14 @@ createLocalMap(UnderlyingLib                                 lib,
         #if __GNUC__ >= 5
             return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
         #else
+            // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI - 2019-08-17
+            // - Maybe use the Tpetra::createLocalMapWithNode variant here instead of throwing?
+            //   Since I'm not sure on the intent here, but it's clear that mixing-and-matching
+            //   Node types is bad so we can't do that.  I'm also open to a preprocessor-level
+            //   check on node types (if possible) but that the 4.8.4 compiler is even trying 
+            //   distubing.  Possible CMake fail? Tpetra deprecations getting this? Maybe
+            //   hing never *actually* compiled the way we thought it did in the pre-ETI
+            //   uration?   
             throw std::runtime_error("Xpetra::TpetraMap::createLocalMap() fails with GCC 4.x compilers and earlier."); 
         #endif
     }
