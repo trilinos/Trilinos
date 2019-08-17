@@ -332,12 +332,18 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
       using memory_space = typename device_type::memory_space;
       // The first template parameter needs to be a memory space.
 
+//#define KDDHACK2
+#ifdef KDDHACK2
+      constexpr bool countsAccessibleFromOffsetsExecSpace = false;
+#else
       constexpr bool countsAccessibleFromOffsetsExecSpace =
         Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<memory_space,
         typename CVT::memory_space>::value;
+#endif
 //#define JHUHACK
 #ifndef JHUHACK
       if (countsAccessibleFromOffsetsExecSpace) {
+std::cout << "KDD If branch" << std::endl;
 #ifdef KOKKOS_ENABLE_CUDA
         // If 'counts' is a UVM allocation, then conservatively fence
         // first, in case it was last accessed on host.  We're about
@@ -345,6 +351,7 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
         using CMS = typename CVT::memory_space;
         if (std::is_same<CMS, Kokkos::CudaUVMSpace>::value) {
           using counts_exec_space = typename CMS::execution_space;
+std::cout << "KDD Yo fence" << std::endl;
           counts_exec_space ().fence (); // for UVM's sake.
         }
 #endif // KOKKOS_ENABLE_CUDA
@@ -354,6 +361,7 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
       }
       else { // make tmp copy of counts accessible from offsets' space
 #endif //JHUHACK
+std::cout << "KDD Else branch" << std::endl;
         using dev_counts_type = Kokkos::View<count_type*,
           typename CVT::array_layout, device_type>;
         dev_counts_type counts_d ("counts_d", numCounts);
