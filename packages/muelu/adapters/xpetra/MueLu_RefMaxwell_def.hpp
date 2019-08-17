@@ -927,6 +927,15 @@ namespace MueLu {
       D0x_      = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), 1);
     residual_  = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(), 1);
 
+    if (!ImporterH_.is_null() && parameterList_.isSublist("refmaxwell: ImporterH params")){
+      RCP<ParameterList> importerParams = rcpFromRef(parameterList_.sublist("refmaxwell: ImporterH params"));
+      ImporterH_->setDistributorParameters(importerParams);
+    }
+    if (!Importer22_.is_null() && parameterList_.isSublist("refmaxwell: Importer22 params")){
+      RCP<ParameterList> importerParams = rcpFromRef(parameterList_.sublist("refmaxwell: Importer22 params"));
+      Importer22_->setDistributorParameters(importerParams);
+    }
+
 #ifdef HAVE_MUELU_CUDA
     if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStop();
 #endif
