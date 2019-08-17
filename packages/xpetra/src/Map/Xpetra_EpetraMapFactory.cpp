@@ -43,7 +43,7 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "Xpetra_MapFactory_decl.hpp"
+#include "Xpetra_MapFactory.hpp"
 
 #include "Xpetra_BlockedMap.hpp"
 

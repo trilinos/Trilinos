@@ -48,6 +48,13 @@
 
 #include "Xpetra_MapFactory_decl.hpp"
 
+#ifdef HAVE_XPETRA_TPETRA
+#    include "Xpetra_TpetraMap.hpp"
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+#    include "Xpetra_EpetraMap.hpp"
+#endif
+
 #include "Xpetra_BlockedMap.hpp"
 
 namespace Xpetra {
@@ -260,7 +267,16 @@ createLocalMap(UnderlyingLib                                 lib,
 #ifdef HAVE_XPETRA_TPETRA
     if(lib == UseTpetra)
     {
-        return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(Tpetra::createLocalMap<LocalOrdinal, GlobalOrdinal>(numElements, comm)));
+        //if(std::is_same<Node, KokkosClassic::DefaultNode::DefaultNodeType>::value) 
+        //    return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
+        //else
+        //    throw std::runtime_error("Type mismatch error in Xpetra::MapFactory::createLocalMap() - Non-member c'tor Tpetra::createLocalMap uses the default Kokkos Node type."); 
+        // WCMCLEN - SCAFFOLDING
+        #if __GNUC__ >= 5
+            return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
+        #else
+            throw std::runtime_error("Xpetra::TpetraMap::createLocalMap() fails with GCC 4.x compilers and earlier."); 
+        #endif
     }
 #endif      // HAVE_XPETRA_TPETRA
 
@@ -297,8 +313,7 @@ createLocalMapWithNode(UnderlyingLib                                 lib,
 #ifdef HAVE_XPETRA_TPETRA
     if(lib == UseTpetra)
     {
-        return rcp(
-          new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(Tpetra::createLocalMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(numElements, comm)));
+        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm)));
     }
 #endif      // HAVE_XPETRA_TPETRA
 
