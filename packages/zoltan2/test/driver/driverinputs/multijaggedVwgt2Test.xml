@@ -61,7 +61,7 @@
         <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.18"/>
+        <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>
     </ParameterList> 
   </ParameterList>
