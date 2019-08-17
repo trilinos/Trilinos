@@ -149,7 +149,7 @@ fi
 
 if [[ "$ATDM_BUILD_NAME_KEYS_LIST" == "all" ]] ; then
   export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=
-  source $STD_ATDM_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/all_supported_builds.sh
+  source $STD_ATDM_DIR/$ATDM_CONFIG_SYSTEM_NAME/all_supported_builds.sh
   ATDM_BUILD_NAME_KEYS_LIST="${ATDM_CONFIG_ALL_SUPPORTED_BUILDS[@]}"
 fi
 
