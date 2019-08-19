@@ -123,7 +123,7 @@ namespace Intrepid2 {
       // for unknown reasons, the CUDA compilers seem to have trouble with this gcc feature
       // we therefore disable typedef deprecation warnings on CUDA
       #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
-      #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg) __attribute__((deprecated(msg)))
+      #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
     #endif
   #endif
 #else
