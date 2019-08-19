@@ -565,7 +565,7 @@ example, skip configure, skip the build, skip running tests, etc.
 
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
-* <a href="#chamaserrano">chama/serrano/eclipse/ghost</a>
+* <a href="#tlcc-2-and-cts-1">TLCC-2 and CTS-1</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
@@ -665,15 +665,15 @@ $ srun ./checkin-test-atdm.sh intel-opt-openmp \
 ```
 
 
-### chama/serrano
+### TLCC-2 and CTS-1
 
-Once logged on to the TLCC-2 machine 'chama' or the CTS-1 'serrano', 'eclipse'
-or 'ghost' machines, one can directly configure and build on the login node
-(being careful not to overload the node) using the `chama` and `serrano` envs,
-respectively.  But to run the tests, one must run on the compute nodes using
-the `srun` command.  For example, to configure, build and run the tests for
-say `MueLu` on 'serrano', (after cloning Trilinos on the `develop` branch) one
-would do:
+Once logged on to any TLCC2 machine (e.g. 'chama', 'skybridge') or the CTS-1
+machine 'serrano', 'eclipse' or 'ghost' machines, one can directly configure
+and build on the login node (being careful not to overload the node) using the
+`chama` and `serrano` envs, respectively.  But to run the tests, one must run
+on the compute nodes using the `srun` command.  For example, to configure,
+build and run the tests for say `MueLu` on 'serrano', (after cloning Trilinos
+on the `develop` branch) one would do:
 
 
 ```
@@ -697,8 +697,9 @@ computing.sandia.gov
 
 **NOTE:** Unlike some of the other machines, one must load the environment,
 configure and build on the login node and then run the test suite on a compute
-node on this system.  This is what the CTest -S driver on 'chama' and
-'serrano' does in order to drive jobs and submit to CDash.
+node on this system.  This is what the CTest -S driver does on TLCC-2 and
+CTS-1 systems like 'chama' and 'serrano' in order to drive jobs and submit to
+CDash.
 
 To use the checkin-test-atdm.sh script, you must split running the tests from
 the configure and build as with:
@@ -1322,8 +1323,6 @@ they support are:
 
 * `cee-rhel6/`: CEE LANL RHEL6 systems with a CEE environment
 
-* `chama/`: Supports SNL HPC TLCC-2 machine 'chama'.
-
 * `mutrino/`: Supports SNL HPC machine 'mutrino'.
 
 * `ride/`: Supports GNU and CUDA builds on both the SRN machine 'ride' and the
@@ -1340,6 +1339,8 @@ they support are:
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   'shiller' and the mirror SON machine 'hansen'.
+
+* `tlcc2/`: Supports SNL HPC TLCC-2 machines 'chama', 'skybridge', etc..
 
 * `waterman/`: Supports GNU and CUDA builds on the SRN machine 'waterman'.
 

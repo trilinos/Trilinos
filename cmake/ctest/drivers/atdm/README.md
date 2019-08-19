@@ -411,8 +411,6 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
 * `cee-rhel6/`: Contains files to drive builds on CEE LAnL RHEL6 machines with
   a SEMS environment.
 
-* `tlcc2/`: Contains files to drive builds on the SRN HPC tlcc2 machines.
-
 * `mutrino/`: Contains files to drive builds on SNL machine mutrino.
 
 * `ride/`: Contains the files to drive builds on the SRN test bed machine
@@ -431,6 +429,9 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
 
 * `shiller/`: Contains the files to drive builds on the SRN test bed machine
   `shiller` which also can be run on the SON machine `hansen`.
+
+* `tlcc2/`: Contains files to drive builds on the SRN HPC TLCC-2 machines
+  (e.g. 'chama', 'skybridge', etc.).
 
 * `waterman/`: Contains files to drive builds on the SRN Test Bed machine
   `waterman`.

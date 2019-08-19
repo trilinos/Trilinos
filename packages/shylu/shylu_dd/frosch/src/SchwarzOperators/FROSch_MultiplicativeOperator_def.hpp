@@ -44,19 +44,26 @@
 
 #include <FROSch_MultiplicativeOperator_decl.hpp>
 
+
 namespace FROSch {
     
+    using namespace Teuchos;
+    using namespace Xpetra;
+
     template <class SC,class LO,class GO,class NO>
-    MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(CrsMatrixPtr k, ParameterListPtr parameterList) :
+    MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(ConstXMatrixPtr k,
+                                                                ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k, parameterList),
     OperatorVector_ (0),
     EnableOperators_ (0)
     {
-        
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(CrsMatrixPtr k, SchwarzOperatorPtrVecPtr operators, ParameterListPtr parameterList) :
+    MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(ConstXMatrixPtr k,
+                                                                SchwarzOperatorPtrVecPtr operators,
+                                                                ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k, parameterList),
     OperatorVector_ (0),
     EnableOperators_ (0)
@@ -65,58 +72,59 @@ namespace FROSch {
         for (unsigned i=1; i<operators.size(); i++) {
             FROSCH_ASSERT(operators[i]->OperatorDomainMap().SameAs(OperatorVector_[i]->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
             FROSCH_ASSERT(operators[i]->OperatorRangeMap().SameAs(OperatorVector_[i]->OperatorRangeMap()),"The RangeMaps of the operators are not identical.");
-            
+
             OperatorVector_.push_back(operators[i]);
             EnableOperators_.push_back(true);
         }
     }
-        
+
     template <class SC,class LO,class GO,class NO>
     MultiplicativeOperator<SC,LO,GO,NO>::~MultiplicativeOperator()
     {
-        
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    void MultiplicativeOperator<SC,LO,GO,NO>::preApplyCoarse(MultiVector &x, MultiVector &y)
+    void MultiplicativeOperator<SC,LO,GO,NO>::preApplyCoarse(XMultiVector &x,
+                                                             XMultiVector &y)
     {
         FROSCH_ASSERT(this->OperatorVector_.size()==2,"Should be a Two-Level Operator.");
         this->OperatorVector_[1]->apply(x,y,true);
-        
+
     }
-    
+
     // Y = alpha * A^mode * X + beta * Y
     template <class SC,class LO,class GO,class NO>
-    void MultiplicativeOperator<SC,LO,GO,NO>::apply(const MultiVector &x,
-                                         MultiVector &y,
-                                         bool usePreconditionerOnly,
-                                         Teuchos::ETransp mode,
-                                         SC alpha,
-                                         SC beta) const
+    void MultiplicativeOperator<SC,LO,GO,NO>::apply(const XMultiVector &x,
+                                                    XMultiVector &y,
+                                                    bool usePreconditionerOnly,
+                                                    ETransp mode,
+                                                    SC alpha,
+                                                    SC beta) const
     {
 
         FROSCH_ASSERT(usePreconditionerOnly,"MultiplicativeOperator can only be used as a preconditioner.");
         FROSCH_ASSERT(this->OperatorVector_.size()==2,"Should be a Two-Level Operator.");
 
 
-        MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+        XMultiVectorPtr xTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
         *xTmp = x; // Need this for the case when x aliases y
 
-        MultiVectorPtr yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),y.getNumVectors());
+        XMultiVectorPtr yTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),y.getNumVectors());
         *yTmp = y; // for the second apply
 
         this->OperatorVector_[0]->apply(*xTmp,*yTmp,true);
-        
+
         this->K_->apply(*yTmp,*xTmp);
-        
+
         this->OperatorVector_[1]->apply(*xTmp,*xTmp,true);
 
-        yTmp->update(1.0,*xTmp,-1.0);
+        yTmp->update(ScalarTraits<SC>::one(),*xTmp,-ScalarTraits<SC>::one());
         y.update(alpha,*yTmp,beta);
-        
-        
+
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::initialize()
     {
@@ -125,50 +133,50 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    int MultiplicativeOperator<SC,LO,GO,NO>::initialize(MapPtr repeatedMap)
+    int MultiplicativeOperator<SC,LO,GO,NO>::initialize(ConstXMapPtr repeatedMap)
     {
         if (this->Verbose_) {
             FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be initialized manually.");
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::compute()
-    {        
+    {
         if (this->Verbose_) {
             FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be computed manually.");
         }
         return 0;
     }
-    
-    
+
+
     template <class SC,class LO,class GO,class NO>
-    typename MultiplicativeOperator<SC,LO,GO,NO>::ConstMapPtr MultiplicativeOperator<SC,LO,GO,NO>::getDomainMap() const
+    typename MultiplicativeOperator<SC,LO,GO,NO>::ConstXMapPtr MultiplicativeOperator<SC,LO,GO,NO>::getDomainMap() const
     {
         return OperatorVector_[0]->getDomainMap();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    typename MultiplicativeOperator<SC,LO,GO,NO>::ConstMapPtr MultiplicativeOperator<SC,LO,GO,NO>::getRangeMap() const
+    typename MultiplicativeOperator<SC,LO,GO,NO>::ConstXMapPtr MultiplicativeOperator<SC,LO,GO,NO>::getRangeMap() const
     {
         return OperatorVector_[0]->getRangeMap();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    void MultiplicativeOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
-                                              const Teuchos::EVerbosityLevel verbLevel) const
+    void MultiplicativeOperator<SC,LO,GO,NO>::describe(FancyOStream &out,
+                                                       const EVerbosityLevel verbLevel) const
     {
         FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     std::string MultiplicativeOperator<SC,LO,GO,NO>::description() const
     {
         std::string labelString = "Level operator: ";
-        
+
         for (UN i=0; i<OperatorVector_.size(); i++) {
             labelString += OperatorVector_.at(i)->description();
             if (i<OperatorVector_.size()-1) {
@@ -177,7 +185,7 @@ namespace FROSch {
         }
         return labelString;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)
     {
@@ -198,7 +206,7 @@ namespace FROSch {
         EnableOperators_.push_back(true);
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::addOperators(SchwarzOperatorPtrVecPtr operators)
     {
@@ -208,10 +216,10 @@ namespace FROSch {
         }
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::resetOperator(UN iD,
-                                                  SchwarzOperatorPtr op)
+                                                           SchwarzOperatorPtr op)
     {
         FROSCH_ASSERT(iD<OperatorVector_.size(),"iD exceeds the length of the OperatorVector_");
         int ret = 0;
@@ -226,15 +234,15 @@ namespace FROSch {
         OperatorVector_[iD] = op;
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::enableOperator(UN iD,
-                                                   bool enable)
+                                                            bool enable)
     {
         EnableOperators_[iD] = enable;
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename MultiplicativeOperator<SC,LO,GO,NO>::UN MultiplicativeOperator<SC,LO,GO,NO>::getNumOperators()
     {

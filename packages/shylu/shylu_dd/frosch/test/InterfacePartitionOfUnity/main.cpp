@@ -61,11 +61,12 @@
 
 #include <FROSch_Tools_decl.hpp>
 
-typedef unsigned                                    UN;
-typedef double                                      SC;
-typedef int                                         LO;
-typedef FROSch::DefaultGlobalOrdinal                GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+
+using UN    = unsigned;
+using SC    = double;
+using LO    = int;
+using GO    = FROSch::DefaultGlobalOrdinal;
+using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 int main(int argc, char *argv[])
 {
@@ -77,7 +78,7 @@ int main(int argc, char *argv[])
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Comm<int> > CommWorld = DefaultPlatform::getDefaultPlatform().getComm();
 
     CommandLineProcessor My_CLP;
 
@@ -97,7 +98,7 @@ int main(int argc, char *argv[])
         return(EXIT_SUCCESS);
     }
 
-    int N;
+    int N=4;
     int color=1;
     if (Dimension == 2) {
         N = (int) (pow(CommWorld->getSize(),1/2.) + 100*numeric_limits<double>::epsilon()); // 1/H
@@ -120,11 +121,11 @@ int main(int argc, char *argv[])
         xpetraLib = UseTpetra;
     }
 
-    RCP<const Comm<int> > Comm = CommWorld->split(color,CommWorld->getRank());
+    RCP<const Comm<int> > comm = CommWorld->split(color,CommWorld->getRank());
 
     if (color==0) {
 
-        Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
+        comm->barrier(); if (comm->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
 
         ParameterList GaleriList;
         GaleriList.set("nx", GO(N*M));
@@ -138,36 +139,36 @@ int main(int argc, char *argv[])
         RCP<MultiVector<SC,LO,GO,NO> > Coordinates;
         RCP<Matrix<SC,LO,GO,NO> > K;
         if (Dimension==2) {
-            UniqueMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian2D",Comm,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
+            UniqueMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian2D",comm,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
             Coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map<LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("2D",UniqueMap,GaleriList);
             RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace2D",UniqueMap,GaleriList);
             K = Problem->BuildMatrix();
         } else if (Dimension==3) {
-            UniqueMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian3D",Comm,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
+            UniqueMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian3D",comm,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
             Coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map<LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("3D",UniqueMap,GaleriList);
             RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace3D",UniqueMap,GaleriList);
             K = Problem->BuildMatrix();
         }
 
-        Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Constructing Repeated Map #\n#############\n" << endl;
-        RCP<Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<SC,LO,GO,NO>(K);
+        comm->barrier(); if (comm->getRank()==0) cout << "#############\n# Constructing Repeated Map #\n#############\n" << endl;
+        RCP<const Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<LO,GO,NO>(K->getCrsGraph());
 
-        RCP<Map<LO,GO,NO> > RepeatedNodesMap;
-        ArrayRCP<RCP<Map<LO,GO,NO> > > RepeatedDofMaps;
+        RCP<const Map<LO,GO,NO> > RepeatedNodesMap;
+        ArrayRCP<RCP<const Map<LO,GO,NO> > > RepeatedDofMaps;
         BuildDofMaps(RepeatedMap,1,NodeWise,RepeatedNodesMap,RepeatedDofMaps);
 
-        Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Constructing Interface Partition of Unity #\n#############\n" << endl;
-        RCP<const Teuchos::Comm<int> > SerialComm = createSerialComm<int>();
+        comm->barrier(); if (comm->getRank()==0) cout << "#############\n# Constructing Interface Partition of Unity #\n#############\n" << endl;
+        RCP<const Comm<int> > SerialComm = createSerialComm<int>();
 
-        RCP<ParameterList> parameterList = getParametersFromXmlFile("ParametersIPOU.xml");;
+        RCP<ParameterList> parameterList = getParametersFromXmlFile("ParametersIPOU.xml");
         RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > IPOU(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(RepeatedMap->getComm(),SerialComm,Dimension,1,RepeatedNodesMap,RepeatedDofMaps,parameterList));
         IPOU->removeDirichletNodes();
         IPOU->sortInterface(K);
         IPOU->computePartitionOfUnity();
 
-        Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
+        comm->barrier(); if (comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
 
 
-	return(EXIT_SUCCESS);
+  return(EXIT_SUCCESS);
 }

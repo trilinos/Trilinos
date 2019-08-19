@@ -76,14 +76,7 @@ namespace FHT {
 // we would need experiments to find out.
 template<class ExecSpace>
 bool worthBuildingFixedHashTableInParallel () {
-//  KDD 8/19:  A temporary fix for #5179.  It appears some errors come from
-//  KDD 8/19:  computeOffsetsFromCounts; this temporary patch avoids the most
-//  KDD 8/19:  reproducible of the errors.  We'll reverse this as we debug
-//  KDD 8/19:  the problem, but this temporary fix may allow users to make 
-//  KDD 8/19:  progress toward their milestones.
-//  return ExecSpace::concurrency() > 1;
-    return false;
-//  KDD 8/19
+  return ExecSpace::concurrency() > 1;
 }
 
 // If the input kokkos::View<const KeyType*, ArrayLayout,
