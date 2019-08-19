@@ -40,8 +40,8 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef PHX_MEMORY_POOL_HPP
-#define PHX_MEMORY_POOL_HPP
+#ifndef PHX_ALLOCATION_TRACKER_HPP
+#define PHX_ALLOCATION_TRACKER_HPP
 
 #include "Phalanx_config.hpp"
 #include <forward_list>
@@ -49,44 +49,68 @@
 
 namespace PHX {
 
-  class MemoryPool {
+  /** \brief This object is siimilar to a memory pool in that allows
+   *  for reuse of view allocations across the DAG and in other
+   *  DataContainers and FieldManagers.
+   *
+   *  A field may only be used in a small section of the DAG. After
+   *  topological sorting, we can find the span of evaluators in the
+   *  sorted list that the field must exist over. Outside of this
+   *  range, the view memory can be reused by other views that don't
+   *  overlap within the same DAG.
+   *
+   *  An additional feature is that since only one evaluation type of
+   *  one FieldManager is run at a time, phalanx can also reuse view
+   *  allocations for different evaluation types in the same
+   *  FieldManager and over all evaluation types in other
+   *  FieldManagers. A special clone method exists that creates a new
+   *  MemoryManager, pointing to the same allocations, but resetting the
+   *  tracker objects for a new FieldManager or DataContainer.
+   */
+   class  MemoryManager {
 
-    struct Tracker {
-      bool is_used_;
+    struct Allocation {
+      /// Size of the allocation.
+      std::size_t size_;
+      /// Evaluator range where this allocation is being used.
+      std::vector<std::pair<int,int>> use_ranges_;
+      /// A reference counted memory allocation for a view.
       Kokkos::Impl::SharedAllocationTracker tracker_;
     };
 
-    std::forward_list<PHX::MemoryPool::Tracker> trackers_;
+    std::forward_list<PHX::MemoryManager::Allocation> allocations_;
 
-    /// Tracks cloned memory pools so that all clones can get access to newly allocated fields from any individual memory pool.
-    std::shared_ptr<std::forward_list<PHX::MemoryPool*>> shared_memory_pools_;
+    /// Tracks cloned MemoryManagers so that all clones can get
+    /// access to newly allocated fields from any individual memory
+    /// pool.
+    std::shared_ptr<std::forward_list<PHX::MemoryManager*>> trackers_;
 
     void findMemoryAllocation() {}
 
   public:
-    MemoryPool()
+    MemoryManager()
     {
-      shared_memory_pools_ = std::make_shared<std::forward_list<PHX::MemoryPool*>>();
-      shared_memory_pools_->push_front(this);
+      trackers_ = std::make_shared<std::forward_list<PHX::MemoryManager*>>();
+      trackers_->push_front(this);
     }
 
-    ~MemoryPool()
+    ~MemoryManager()
     {
       // remove self from list of memory pools
-      shared_memory_pools_->remove(this);
+      trackers_->remove(this);
     }
 
-    /// Allocate a new memory pool re-using trackers from shared memory pools.
-    MemoryPool(const MemoryPool& mp)
+    /// Allocate a new memory pool re-using allocations from other linked MemoryManagers.
+    MemoryManager(const MemoryManager& mp)
     {
-      shared_memory_pools_ = mp.shared_memory_pools_;
       trackers_ = mp.trackers_;
-      shared_memory_pools_->push_front(this);
+      trackers_ = mp.trackers_;
+      trackers_->push_front(this);
     }
 
-    /** \brief Clones MemoryPool to reuse tracker allocations with a separate FieldManager. */
-    std::shared_ptr<PHX::MemoryPool> clone() const
-    {return std::make_shared<PHX::MemoryPool>(*this);}
+    /** \brief Clones MemoryManager to reuse tracker allocations with a separate FieldManager. */
+    std::shared_ptr<PHX::MemoryManager> clone() const
+    {return std::make_shared<PHX::MemoryManager>(*this);}
 
     /// Assigns memory to a view, allocates new memory if needed.
     template<class View>

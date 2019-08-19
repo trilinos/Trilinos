@@ -86,7 +86,7 @@ public:
   void postRegistrationSetup(typename TRAITS::SetupData /* d */, PHX::FieldManager<TRAITS>& /* vm */)
    { }
   void evaluateFields(typename TRAITS::EvalData /* d */)
-   { std::cout << "unspecialized version of \"ScatterResidual_BlockedTpetra::evaluateFields\" on \""+PHX::typeAsString<EvalT>()+"\" should not be used!" << std::endl;
+   { std::cout << "unspecialized version of \"ScatterResidual_BlockedTpetra::evaluateFields\" on \""+PHX::print<EvalT>()+"\" should not be used!" << std::endl;
      TEUCHOS_ASSERT(false); }
 };
 

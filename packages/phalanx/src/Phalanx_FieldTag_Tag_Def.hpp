@@ -47,7 +47,7 @@
 
 #include <sstream>
 #include <type_traits>
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 #include "Teuchos_Assert.hpp"
 
 //**********************************************************************
@@ -143,7 +143,7 @@ const std::string PHX::Tag<DataT>::identifier() const
 template<typename DataT>
 void PHX::Tag<DataT>::print(std::ostream& os) const
 {
-  os << "Tag: " << m_name << ", " << PHX::typeAsString<DataT>()
+  os << "Tag: " << m_name << ", " << PHX::print<DataT>()
      << ", DataLayout: " << *m_data_layout;
 }
 

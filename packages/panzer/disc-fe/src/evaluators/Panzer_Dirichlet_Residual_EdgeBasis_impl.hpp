@@ -51,7 +51,7 @@
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Kokkos_ViewFactory.hpp"

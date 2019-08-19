@@ -89,7 +89,7 @@ GatherSolution_Epetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::string;
   using std::vector;
@@ -123,7 +123,7 @@ GatherSolution_Epetra(
     firstName = names[0];
   if (not firstSensitivitiesAvailable_)
     n += ", No First Sensitivities";
-  n += "):  " + firstName + " (" + typeAsString<EvalT>() + ") ";
+  n += "):  " + firstName + " (" + print<EvalT>() + ") ";
   this->setName(n);
 } // end of Initializing Constructor (Hessian Specialization)
 
