@@ -303,8 +303,10 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
     break;
   }
   default:
-    std::cout << "Unknow smoother: " << type << "!" << std::endl;
+  {
+    std::cout << "Unknown smoother: " << type << "!" << std::endl;
     throw;
+  }
   }
 }
 
@@ -325,17 +327,30 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
 
   switch(smootherTypes[type]) {
   case 0:
+  {
     break;
+  }
   case 1:
+  {
     jacobiIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
                   mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
     break;
+  }
   case 2:
-      GSIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
+  {
+    GSIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
                 mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
     break;
+  }
   case 3:
+  {
     break;
+  }
+  default:
+  {
+    std::cout << "Unknown smoother: " << type << "!" << std::endl;
+    throw;
+  }
   }
 
 } // smootherApply
