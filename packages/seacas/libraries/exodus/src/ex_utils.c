@@ -121,15 +121,15 @@ void ex_print_config(void)
   }
 #endif
 #if NC_HAS_PARALLEL
-  fprintf(stderr, "\t\tparallel IO enabled via HDF5 and/or PnetCDF\n");
+  fprintf(stderr, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
 #endif
 #if NC_HAS_PARALLEL4
-  fprintf(stderr, "\t\tparallel IO enabled via HDF5\n");
+  fprintf(stderr, "\t\tParallel IO enabled via HDF5\n");
 #endif
 #if NC_HAS_PNETCDF
   {
     char *libver = ncmpi_inq_libvers();
-    fprintf(stderr, "\t\tparallel IO enabled via PnetCDF (%s)\n", libver);
+    fprintf(stderr, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
   }
 #endif
 #if NC_HAS_ERANGE_FILL
@@ -942,18 +942,18 @@ int ex__id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
     stat_vals = tmp_stats->stat_vals;
   }
 
+  if (!(tmp_stats->valid_ids)) {
+    free(id_vals);
+  }
+
   if (stat_vals[i] == 0) /* is this object null? */ {
     ex_err_fn(exoid, __func__, "", EX_NULLENTITY);
     if (!(tmp_stats->valid_stat)) {
       free(stat_vals);
     }
-    if (!(tmp_stats->valid_ids)) {
-      free(id_vals);
-    }
     return (-((int)i + 1)); /* return index into id array (1-based) */
   }
-  if (!(tmp_stats->valid_ids)) {
-    free(id_vals);
+  if (!(tmp_stats->valid_stat)) {
     free(stat_vals);
   }
   return (i + 1); /* return index into id array (1-based) */

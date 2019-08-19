@@ -65,7 +65,6 @@ namespace Ioss {
     }
     IOSS_FUNC_ENTER(m_);
 
-    m_activeFallThru               = s_owner != -1;
     const Ioss::ParallelUtils util = m_databaseIO->util();
     if (s_rank == -1) {
       s_rank = util.parallel_rank();
@@ -76,18 +75,19 @@ namespace Ioss {
       }
     }
 
-    if (m_activeFallThru) {
-    }
-    else if (s_groupFactor > 0) {
+    m_activeFallThru = s_owner != -1;
+    if (!m_activeFallThru) {
+      if (s_groupFactor > 0) {
 #ifdef SEACAS_HAVE_MPI
-      do {
-        MPI_Barrier(util.communicator());
-      } while (++s_owner != s_groupRank);
+        do {
+          MPI_Barrier(util.communicator());
+        } while (++s_owner != s_groupRank);
 #endif
-      m_databaseIO->openDatabase();
-    }
-    else {
-      s_owner = s_groupRank;
+        m_databaseIO->openDatabase__();
+      }
+      else {
+        s_owner = s_groupRank;
+      }
     }
   }
 
@@ -98,22 +98,21 @@ namespace Ioss {
     }
     try {
       IOSS_FUNC_ENTER(m_);
-      if (m_activeFallThru) {
-        ;
-      }
-      else if (s_groupFactor > 0) {
-        m_databaseIO->closeDatabase();
+      if (!m_activeFallThru) {
+        if (s_groupFactor > 0) {
+          m_databaseIO->closeDatabase__();
 #ifdef SEACAS_HAVE_MPI
-        s_owner                        = s_groupRank;
-        const Ioss::ParallelUtils util = m_databaseIO->util();
-        do {
-          MPI_Barrier(util.communicator());
-        } while (++s_owner != s_groupSize);
+          s_owner                        = s_groupRank;
+          const Ioss::ParallelUtils util = m_databaseIO->util();
+          do {
+            MPI_Barrier(util.communicator());
+          } while (++s_owner != s_groupSize);
 #endif
-        s_owner = -1;
-      }
-      else {
-        s_owner = -1;
+          s_owner = -1;
+        }
+        else {
+          s_owner = -1;
+        }
       }
     }
     catch (...) {
