@@ -42,41 +42,49 @@
 #ifndef _FROSCH_EXTRACTSUBMATRICES_DECL_HPP
 #define _FROSCH_EXTRACTSUBMATRICES_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
+#define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
 
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
 
+
 namespace FROSch {
     
+    using namespace Teuchos;
+    using namespace Xpetra;
+
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
-                                                          Teuchos::RCP<Xpetra::Map<LO,GO,NO> > map);
-    
+    RCP<const Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
+                                                                RCP<const Map<LO,GO,NO> > map);
+
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
-                                                      Teuchos::RCP<Xpetra::Map<LO,GO,NO> > map,
-                                                      SC value);
-    
+    RCP<const Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
+                                                                RCP<const Map<LO,GO,NO> > map,
+                                                                SC value);
+
     template <class SC,class LO,class GO,class NO>
-    int UpdateLocalSubdomainMatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
-                                   Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &map,
-                                   Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &localSubdomainMatrix);
-    
+    int UpdateLocalSubdomainMatrix(RCP<Matrix<SC,LO,GO,NO> > globalMatrix,
+                                   RCP<Map<LO,GO,NO> > &map,
+                                   RCP<Matrix<SC,LO,GO,NO> > &localSubdomainMatrix);
+
     template <class SC,class LO,class GO,class NO>
-    int BuildSubmatrices(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > k,
-                         Teuchos::ArrayView<GO> indI,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kII,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kIJ,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kJI,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kJJ);
-    
+    int BuildSubmatrices(RCP<const Matrix<SC,LO,GO,NO> > k,
+                         ArrayView<GO> indI,
+                         RCP<const Matrix<SC,LO,GO,NO> > &kII,
+                         RCP<const Matrix<SC,LO,GO,NO> > &kIJ,
+                         RCP<const Matrix<SC,LO,GO,NO> > &kJI,
+                         RCP<const Matrix<SC,LO,GO,NO> > &kJJ);
+
     template <class SC,class LO,class GO,class NO>
-    int BuildSubmatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > k,
-                       Teuchos::ArrayView<GO> indI,
-                       Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kII);
-    
+    int BuildSubmatrix(RCP<const Matrix<SC,LO,GO,NO> > k,
+                       ArrayView<GO> indI,
+                       RCP<const Matrix<SC,LO,GO,NO> > &kII);
+
+    template <class LO,class GO,class NO>
+    int BuildSubgraph(RCP<const CrsGraph<LO,GO,NO> > k,
+                      ArrayView<GO> indI,
+                      RCP<const CrsGraph<LO,GO,NO> > &kII);
 }
 
 #endif

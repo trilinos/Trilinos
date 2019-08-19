@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
             GaleriList.set("mx", GO(N));
             GaleriList.set("my", GO(N));
             GaleriList.set("mz", GO(N));
-            
+
             RCP<const Map<LO,GO,NO> > UniqueMapTmp;
             RCP<MultiVector<SC,LO,GO,NO> > CoordinatesTmp;
             RCP<Matrix<SC,LO,GO,NO> > KTmp;
