@@ -82,12 +82,12 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::ParameterList;
 
-/*! \brief performs Jacobi setup
+/*! \brief Perform setup for point-relaxation smoothers
  *
  * Computes the inverse of the diagonal in region format and with interface scaling
  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void jacobiSetup(RCP<Teuchos::ParameterList> params,
+void relaxationSmootherSetup(RCP<Teuchos::ParameterList> params,
                  const int maxRegPerProc,
                  const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
                  const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
@@ -118,7 +118,7 @@ void jacobiSetup(RCP<Teuchos::ParameterList> params,
     diagReg[j]->reciprocal(*diagReg[j]);
   }
 
-  params->set<Teuchos::Array<RCP<Vector> > >("jacobi: inverse diagonal", diagReg);
+  params->set<Teuchos::Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal", diagReg);
 }
 
 /*! \brief Do Jacobi smoothing
@@ -145,7 +145,7 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
 
   const int maxIter    = smootherParams->get<int>   ("smoother: sweeps");
   const double damping = smootherParams->get<double>("smoother: damping");
-  Array<RCP<Vector> > diag_inv = smootherParams->get<Array<RCP<Vector> > >("jacobi: inverse diagonal");
+  Array<RCP<Vector> > diag_inv = smootherParams->get<Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal");
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
@@ -200,7 +200,7 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
 #include "Xpetra_UseShortNames.hpp"
   const int maxIter    = smootherParams->get<int>   ("smoother: sweeps");
   const double damping = smootherParams->get<double>("smoother: damping");
-  Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("jacobi: inverse diagonal");
+  Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal");
 
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
@@ -273,18 +273,21 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
 
   switch(smootherTypes[type]) {
   case 0:
+  {
     break;
+  }
   case 1:
-    jacobiSetup(params, maxRegPerProc, revisedRowMapPerGrp, regionGrpMats, regionInterfaceScaling,
-                mapComp, rowMapPerGrp, rowImportPerGrp);
-    break;
   case 2:
-    jacobiSetup(params, maxRegPerProc, revisedRowMapPerGrp, regionGrpMats, regionInterfaceScaling,
+  {
+    relaxationSmootherSetup(params, maxRegPerProc, revisedRowMapPerGrp, regionGrpMats, regionInterfaceScaling,
                 mapComp, rowMapPerGrp, rowImportPerGrp);
     break;
+  }
   case 3:
-    std::cout << "Chebyshev smoother not implemented yet no smoother is applied" << std::endl;
+  {
+    std::cout << "Chebyshev smoother not implemented yet. No smoother is applied" << std::endl;
     break;
+  }
   default:
     std::cout << "Unknow smoother: " << type << "!" << std::endl;
     throw;
