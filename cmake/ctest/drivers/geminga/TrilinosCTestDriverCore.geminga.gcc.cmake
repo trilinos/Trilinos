@@ -104,7 +104,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Options for valgrind, if needed
   SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
-      "--leak-check=full--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+      "--leak-check=full --gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
 
 
   # Ensure that MPI is on for all parallel builds that might be run.
