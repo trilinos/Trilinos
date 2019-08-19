@@ -1016,6 +1016,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
   graph->fillComplete();
   RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph));
+  std::cout << "HERE I AM A.0\n";
 
   // Set values in matrix
   Array<Scalar> vals(2);
@@ -1035,6 +1036,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     matrix->replaceGlobalValues(row, columnIndices(0,num_col), vals(0,num_col));
   }
   matrix->fillComplete();
+  std::cout << "HERE I AM A.1\n";
 
   // Fill vector
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
@@ -1050,6 +1052,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Multiply
   RCP<Tpetra_Vector> y = Tpetra::createVector<Scalar>(map);
   matrix->apply(*x, *y);
+  std::cout << "HERE I AM A.2\n";
 
   /*
   graph->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
@@ -1071,8 +1074,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_y_map,
                                    cijk_graph, pce_size);
+  std::cout << "HERE I AM A.3\n";
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
+  std::cout << "HERE I AM A.4\n";
 
   // Multiply with flattened matix
   RCP<Tpetra_Vector> y2 = Tpetra::createVector<Scalar>(map);
