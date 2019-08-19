@@ -61,11 +61,12 @@
 
 #include "FROSch_Tools_def.hpp"
 
-typedef unsigned                                    UN;
-typedef double                                      SC;
-typedef int                                         LO;
-typedef FROSch::DefaultGlobalOrdinal                GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+
+using UN    = unsigned;
+using SC    = double;
+using LO    = int;
+using GO    = FROSch::DefaultGlobalOrdinal;
+using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace Teuchos;
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Comm<int> > CommWorld = DefaultPlatform::getDefaultPlatform().getComm();
 
     CommandLineProcessor My_CLP;
 
@@ -117,11 +118,11 @@ int main(int argc, char *argv[])
     RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace3D",uniqueMap,GaleriList);
     RCP<Matrix<SC,LO,GO,NO> > K = Problem->BuildMatrix();
 
-    RCP<Map<LO,GO,NO> > overlappingMap = MapFactory<LO,GO,NO>::Build(uniqueMap,1);
-    FROSch::ExtendOverlapByOneLayer<SC,LO,GO,NO>(K,overlappingMap);
+    RCP<const Matrix<SC,LO,GO,NO> > tmpMatrix;
+    RCP<const Map<LO,GO,NO> > overlappingMap = MapFactory<LO,GO,NO>::Build(uniqueMap,1);
+    FROSch::ExtendOverlapByOneLayer<SC,LO,GO,NO>(K.getConst(),overlappingMap,tmpMatrix,overlappingMap);
 
-    RCP<Matrix<SC,LO,GO,NO> > tmpMatrix = K;
-    K = MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,2*tmpMatrix->getGlobalMaxNumRowEntries());
+    K = MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,tmpMatrix->getGlobalMaxNumRowEntries());
 
     CommWorld->barrier(); if (CommWorld->getRank()==0) cout << "#############\n# Performing Import #\n#############\n" << endl;
     RCP<Export<LO,GO,NO> > gather = ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
