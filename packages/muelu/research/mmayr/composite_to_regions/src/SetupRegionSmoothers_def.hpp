@@ -82,6 +82,24 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::ParameterList;
 
+/*! \brief Create list of valid smoother types
+ *
+ * Create this list here in a routine, such that everyone can use exactly the same list.
+ * This avoids copy-and-paste errors.
+ *
+ * ToDo: replace this list by an enum when we migrate to actual code.
+ */
+std::map<std::string, int> getListOfValidSmootherTypes()
+{
+  std::map<std::string, int> smootherTypes;
+  smootherTypes.insert(std::pair<std::string, int>("None",      0));
+  smootherTypes.insert(std::pair<std::string, int>("Jacobi",    1));
+  smootherTypes.insert(std::pair<std::string, int>("Gauss",     2));
+  smootherTypes.insert(std::pair<std::string, int>("Chebyshev", 3));
+
+  return smootherTypes;
+}
+
 /*! \brief Perform setup for point-relaxation smoothers
  *
  * Computes the inverse of the diagonal in region format and with interface scaling
@@ -265,11 +283,7 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
 {
   const std::string type = params->get<std::string>("smoother: type");
 
-  std::map<std::string, int> smootherTypes;
-  smootherTypes.insert(std::pair<std::string, int>("None",      0));
-  smootherTypes.insert(std::pair<std::string, int>("Jacobi",    1));
-  smootherTypes.insert(std::pair<std::string, int>("Gauss",     2));
-  smootherTypes.insert(std::pair<std::string, int>("Chebyshev", 3));
+  std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
 
   switch(smootherTypes[type]) {
   case 0:
@@ -307,11 +321,7 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
                    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) {
   const std::string type = params->get<std::string>("smoother: type");
 
-  std::map<std::string, int> smootherTypes;
-  smootherTypes.insert(std::pair<std::string, int>("None",      0));
-  smootherTypes.insert(std::pair<std::string, int>("Jacobi",    1));
-  smootherTypes.insert(std::pair<std::string, int>("Gauss",     2));
-  smootherTypes.insert(std::pair<std::string, int>("Chebyshev", 3));
+  std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
 
   switch(smootherTypes[type]) {
   case 0:
