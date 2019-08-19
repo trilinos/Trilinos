@@ -267,24 +267,13 @@ createLocalMap(UnderlyingLib                                 lib,
 #ifdef HAVE_XPETRA_TPETRA
     if(lib == UseTpetra)
     {
-        //if(std::is_same<Node, KokkosClassic::DefaultNode::DefaultNodeType>::value) 
-        //    return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
-        //else
-        //    throw std::runtime_error("Type mismatch error in Xpetra::MapFactory::createLocalMap() - Non-member c'tor Tpetra::createLocalMap uses the default Kokkos Node type."); 
-        // WCMCLEN - SCAFFOLDING
-        #if __GNUC__ >= 5
-            return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
-        #else
-            // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI - 2019-08-17
-            // - Maybe use the Tpetra::createLocalMapWithNode variant here instead of throwing?
-            //   Since I'm not sure on the intent here, but it's clear that mixing-and-matching
-            //   Node types is bad so we can't do that.  I'm also open to a preprocessor-level
-            //   check on node types (if possible) but that the 4.8.4 compiler is even trying 
-            //   distubing.  Possible CMake fail? Tpetra deprecations getting this? Maybe
-            //   hing never *actually* compiled the way we thought it did in the pre-ETI
-            //   uration?   
-            throw std::runtime_error("Xpetra::TpetraMap::createLocalMap() fails with GCC 4.x compilers and earlier."); 
-        #endif
+        // Pre-ETI code called Tpetra::createLocalMap() but this can result in compile erros 
+        // when Trilinos is built with multiple node-types, specifically the GCC 4.8.4 PR 
+        // build generates an error because it would try to match Tpetra::Map objects where
+        // Node is Serial in one and OpenMP in the other. See Issue #5672 / PR #5723 for more
+        // information.
+        //return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm))); // (old version)
+        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm)));
     }
 #endif      // HAVE_XPETRA_TPETRA
 
