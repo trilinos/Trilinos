@@ -438,7 +438,8 @@ readCrsMatrixFromFile (const std::string& matrixFilename,
         std::end(counts),
         [] (pair_type const& p1, pair_type const& p2){ return p1.second < p2.second; }
     );
-    A = Teuchos::rcp(new MAT(rowMap, pr->second));
+    size_t maxCount = (counts.empty()) ? size_t(0) : pr->second;
+    A = Teuchos::rcp(new MAT(rowMap, maxCount));
     for (typename Teuchos::Array<GO>::size_type i=0; i<gblRowInds.size(); i++) {
       A->insertGlobalValues (gblRowInds[i], gblColInds(i,1), vals(i,1));
     }
