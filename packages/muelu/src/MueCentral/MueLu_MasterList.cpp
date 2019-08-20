@@ -168,6 +168,7 @@ namespace MueLu {
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
   "<Parameter name=\"hierarchy label\" type=\"string\" value=\"\"/>"
+  "<ParameterList name=\"matvec params\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
   "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
   "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"RELAXATION\"/>"
@@ -500,6 +501,8 @@ namespace MueLu {
          ("parameterlist: syntax","parameterlist: syntax")
       
          ("hierarchy label","hierarchy label")
+      
+         ("matvec params","matvec params")
       
          ("smoother: pre or post","smoother: pre or post")
       
