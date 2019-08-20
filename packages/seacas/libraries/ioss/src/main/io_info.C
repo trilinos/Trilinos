@@ -392,16 +392,20 @@ namespace {
       if (interface.adjacencies()) {
         std::vector<std::string> blocks;
         fs->block_membership(blocks);
-        fmt::print("\n\tTouches {} element block(s):\t", blocks.size());
+        fmt::print("\n\t\tTouches {} element block(s):\t", blocks.size());
         for (const auto &block : blocks) {
           fmt::print("{}  ", block);
         }
-        fmt::print("\n");
       }
       const Ioss::SideBlockContainer &fbs = fs->get_side_blocks();
       for (auto fb : fbs) {
-        fmt::print("\n\t{}", name(fb));
-        info_fields(fb, Ioss::Field::TRANSIENT, "\n\t\tTransient: ");
+        int64_t count      = fb->entity_count();
+        int64_t num_attrib = fb->get_property("attribute_count").get_int();
+        int64_t num_dist   = fb->get_property("distribution_factor_count").get_int();
+        fmt::print("\n\t{}, {:8n} sides, {:3d} attributes, {:8n} distribution factors.\n", name(fb),
+                   count, num_attrib, num_dist);
+        info_df(fb, "\t\t");
+        info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ");
       }
     }
   }

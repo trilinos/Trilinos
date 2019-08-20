@@ -44,7 +44,11 @@
 #include <cassert>
 #include <cgns/Iocgns_DatabaseIO.h>
 #include <cgns/Iocgns_Utils.h>
+#ifdef SEACAS_HAVE_MPI
+#include <pcgnslib.h>
+#else
 #include <cgnslib.h>
+#endif
 #include <cstddef>
 #include <ctime>
 #include <fmt/ostream.h>
@@ -89,10 +93,6 @@
 #include "Ioss_VariableType.h"
 
 extern char hdf5_access[64];
-
-#ifdef SEACAS_HAVE_MPI
-extern int pcg_mpi_initialized;
-#endif
 
 namespace {
 
@@ -513,10 +513,12 @@ namespace Iocgns {
       }
 
 #ifdef SEACAS_HAVE_MPI
-      // Kluge to get fpp and dof CGNS working at same time.
-      pcg_mpi_initialized = 0;
-#endif
+      cgp_mpi_comm(MPI_COMM_SELF);
+      int ierr = cgp_open(decoded_filename().c_str(), mode, &m_cgnsFilePtr);
+      cgp_mpi_comm(util().communicator());
+#else
       int ierr = cg_open(decoded_filename().c_str(), mode, &m_cgnsFilePtr);
+#endif
       // Will not return if error...
       check_valid_file_open(ierr);
       if ((is_input() && properties.exists("MEMORY_READ")) ||
@@ -1726,7 +1728,7 @@ namespace Iocgns {
       int solution_index =
           Utils::find_solution_index(get_file_pointer(), base, zone, step, CG_Vertex);
 
-      double * rdata                  = static_cast<double *>(data);
+      double *rdata = static_cast<double *>(data);
       assert(num_to_get == sb->get_property("node_count").get_int());
       cgsize_t rmin[3] = {0, 0, 0};
       cgsize_t rmax[3] = {0, 0, 0};
@@ -1739,19 +1741,17 @@ namespace Iocgns {
         rmax[1] = rmin[1] + sb->get_property("nj").get_int();
         rmax[2] = rmin[2] + sb->get_property("nk").get_int();
 
-	assert(num_to_get ==
-	       (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
+        assert(num_to_get ==
+               (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
       }
 
-
-      auto     var_type               = field.transformed_storage();
-      int      comp_count             = var_type->component_count();
-      char     field_suffix_separator = get_field_separator();
+      auto var_type               = field.transformed_storage();
+      int  comp_count             = var_type->component_count();
+      char field_suffix_separator = get_field_separator();
 
       if (comp_count == 1) {
         CGCHECKM(cg_field_read(get_file_pointer(), base, zone, solution_index,
-                               field.get_name().c_str(), CG_RealDouble, rmin, rmax,
-                               rdata));
+                               field.get_name().c_str(), CG_RealDouble, rmin, rmax, rdata));
       }
       else {
         std::vector<double> cgns_data(num_to_get);
