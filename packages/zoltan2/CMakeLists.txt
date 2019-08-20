@@ -49,8 +49,9 @@ ENDFOREACH()
 # B) Set up package-specific options
 #
 IF (${PROJECT_NAME}_ENABLE_Epetra)
-  IF (DEFINED Zoltan2_ENABLE_Epetra)
-    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ${Zoltan2_ENABLE_Epetra})
+  IF("${${PACKAGE_NAME}_ENABLE_Epetra}" NOT STREQUAL "" AND NOT ${PACKAGE_NAME}_ENABLE_Epetra)
+    # Zoltan2_ENABLE_Epetra explicitly set off
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA OFF)
   ELSE()
    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ON)
   ENDIF ()
