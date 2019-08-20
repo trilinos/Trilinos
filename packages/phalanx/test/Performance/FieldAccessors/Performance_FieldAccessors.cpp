@@ -152,14 +152,14 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
   using namespace PHX;
   
   RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
-  RCP<Time> phx_ct_time = TimeMonitor::getNewTimer("MDField Compiletime Rank (no parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> phx_ct_time_pf = TimeMonitor::getNewTimer("MDField Compiletime Rank (with parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> phx_rt_time = TimeMonitor::getNewTimer("MDField Runtime Rank (no parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> phx_rt_time_pf = TimeMonitor::getNewTimer("MDField Runtime Rank (with parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> k_time = TimeMonitor::getNewTimer("KokkosView<double***>(no parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> k_time_pf = TimeMonitor::getNewTimer("KokkosView<double***>(with parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> k_time_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(no parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> k_time_pf_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(with parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
+  RCP<Time> phx_ct_time = TimeMonitor::getNewTimer("MDField Compiletime Rank (no parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> phx_ct_time_pf = TimeMonitor::getNewTimer("MDField Compiletime Rank (with parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> phx_rt_time = TimeMonitor::getNewTimer("MDField Runtime Rank (no parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> phx_rt_time_pf = TimeMonitor::getNewTimer("MDField Runtime Rank (with parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> k_time = TimeMonitor::getNewTimer("KokkosView<double***>(no parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> k_time_pf = TimeMonitor::getNewTimer("KokkosView<double***>(with parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> k_time_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(no parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> k_time_pf_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(with parallel_for,device="+PHX::print<PHX::Device>()+")");
   RCP<Time> s_time = TimeMonitor::getNewTimer("Shards Array Compiletime Rank (no parallel_for)");
   RCP<Time> raw_ptr_time = TimeMonitor::getNewTimer("double* Time");
   
@@ -168,11 +168,11 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
 
     std::cout << std::endl << std::endl
 	      << "PHX::Device::size_type = " 
-	      << PHX::typeAsString<PHX::Device::size_type>() 
+	      << PHX::print<PHX::Device::size_type>()
 	      << std::endl;
 
     std::cout << "PHX::index_size_type = " 
-	      << PHX::typeAsString<PHX::index_size_type>() 
+	      << PHX::print<PHX::index_size_type>()
 	      << std::endl;
     
     // For performance testing, build in RELEASE mode and use the

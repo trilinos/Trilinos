@@ -83,7 +83,7 @@ GatherSolution_Epetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::vector;
   using std::string;
@@ -133,7 +133,7 @@ GatherSolution_Epetra(
   if (numFields > 0)
     firstName = names[0];
   string n("GatherSolution (Epetra): " + firstName + " (" +
-    typeAsString<EvalT>() + ")");
+    print<EvalT>() + ")");
   this->setName(n);
 } // end of Initializing Constructor (Residual Specialization)
 
@@ -324,7 +324,7 @@ GatherSolution_Epetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::string;
   using std::vector;
@@ -374,7 +374,7 @@ GatherSolution_Epetra(
   if (numFields > 0)
     firstName = names[0];
   string n("GatherSolution (Epetra): " + firstName + " (" +
-    typeAsString<EvalT>() + ")");
+    print<EvalT>() + ")");
   this->setName(n);
 } // end of Initializing Constructor (Tangent Specialization)
 
@@ -592,7 +592,7 @@ GatherSolution_Epetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::string;
   using std::vector;
@@ -624,7 +624,7 @@ GatherSolution_Epetra(
     firstName = names[0];
   if (disableSensitivities_)
     n += ", No Sensitivities";
-  n += "): " + firstName + " (" + typeAsString<EvalT>() + ")";
+  n += "): " + firstName + " (" + print<EvalT>() + ")";
   this->setName(n);
 } // end of Initializing Constructor (Jacobian Specialization)
 

@@ -21,7 +21,8 @@ if [ "${WORKSPACE}" == ""  ] ; then
 fi
 
 export ATDM_CONFIG_BUILD_NAME=$JOB_NAME
-source $WORKSPACE/Trilinos/cmake/std/atdm/utils/get_system_info.sh
+export ATDM_CONFIG_SCRIPT_DIR=$WORKSPACE/Trilinos/cmake/std/atdm
+source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
 
 echo
 echo "Running: $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/$ATDM_CONFIG_SYSTEM_NAME/drivers/$JOB_NAME.sh ..."

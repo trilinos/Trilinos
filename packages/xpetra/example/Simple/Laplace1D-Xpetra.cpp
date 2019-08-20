@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     GlobalOrdinal numGlobalElements = 256; // problem size
+
     Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
 
     RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::createUniformContigMap(lib, numGlobalElements, comm);
