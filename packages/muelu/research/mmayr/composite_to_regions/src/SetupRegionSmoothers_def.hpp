@@ -82,12 +82,30 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::ParameterList;
 
-/*! \brief performs Jacobi setup
+/*! \brief Create list of valid smoother types
+ *
+ * Create this list here in a routine, such that everyone can use exactly the same list.
+ * This avoids copy-and-paste errors.
+ *
+ * ToDo: replace this list by an enum when we migrate to actual code.
+ */
+std::map<std::string, int> getListOfValidSmootherTypes()
+{
+  std::map<std::string, int> smootherTypes;
+  smootherTypes.insert(std::pair<std::string, int>("None",      0));
+  smootherTypes.insert(std::pair<std::string, int>("Jacobi",    1));
+  smootherTypes.insert(std::pair<std::string, int>("Gauss",     2));
+  smootherTypes.insert(std::pair<std::string, int>("Chebyshev", 3));
+
+  return smootherTypes;
+}
+
+/*! \brief Perform setup for point-relaxation smoothers
  *
  * Computes the inverse of the diagonal in region format and with interface scaling
  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void jacobiSetup(RCP<Teuchos::ParameterList> params,
+void relaxationSmootherSetup(RCP<Teuchos::ParameterList> params,
                  const int maxRegPerProc,
                  const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
                  const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
@@ -118,7 +136,7 @@ void jacobiSetup(RCP<Teuchos::ParameterList> params,
     diagReg[j]->reciprocal(*diagReg[j]);
   }
 
-  params->set<Teuchos::Array<RCP<Vector> > >("jacobi: inverse diagonal", diagReg);
+  params->set<Teuchos::Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal", diagReg);
 }
 
 /*! \brief Do Jacobi smoothing
@@ -145,7 +163,7 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
 
   const int maxIter    = smootherParams->get<int>   ("smoother: sweeps");
   const double damping = smootherParams->get<double>("smoother: damping");
-  Array<RCP<Vector> > diag_inv = smootherParams->get<Array<RCP<Vector> > >("jacobi: inverse diagonal");
+  Array<RCP<Vector> > diag_inv = smootherParams->get<Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal");
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
@@ -200,7 +218,7 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
 #include "Xpetra_UseShortNames.hpp"
   const int maxIter    = smootherParams->get<int>   ("smoother: sweeps");
   const double damping = smootherParams->get<double>("smoother: damping");
-  Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("jacobi: inverse diagonal");
+  Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal");
 
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
@@ -265,29 +283,30 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
 {
   const std::string type = params->get<std::string>("smoother: type");
 
-  std::map<std::string, int> smootherTypes;
-  smootherTypes.insert(std::pair<std::string, int>("None",      0));
-  smootherTypes.insert(std::pair<std::string, int>("Jacobi",    1));
-  smootherTypes.insert(std::pair<std::string, int>("Gauss",     2));
-  smootherTypes.insert(std::pair<std::string, int>("Chebyshev", 3));
+  std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
 
   switch(smootherTypes[type]) {
   case 0:
+  {
     break;
+  }
   case 1:
-    jacobiSetup(params, maxRegPerProc, revisedRowMapPerGrp, regionGrpMats, regionInterfaceScaling,
-                mapComp, rowMapPerGrp, rowImportPerGrp);
-    break;
   case 2:
-    jacobiSetup(params, maxRegPerProc, revisedRowMapPerGrp, regionGrpMats, regionInterfaceScaling,
+  {
+    relaxationSmootherSetup(params, maxRegPerProc, revisedRowMapPerGrp, regionGrpMats, regionInterfaceScaling,
                 mapComp, rowMapPerGrp, rowImportPerGrp);
     break;
+  }
   case 3:
-    std::cout << "Chebyshev smoother not implemented yet no smoother is applied" << std::endl;
+  {
+    std::cout << "Chebyshev smoother not implemented yet. No smoother is applied" << std::endl;
     break;
+  }
   default:
-    std::cout << "Unknow smoother: " << type << "!" << std::endl;
+  {
+    std::cout << "Unknown smoother: " << type << "!" << std::endl;
     throw;
+  }
   }
 }
 
@@ -304,25 +323,34 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
                    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) {
   const std::string type = params->get<std::string>("smoother: type");
 
-  std::map<std::string, int> smootherTypes;
-  smootherTypes.insert(std::pair<std::string, int>("None",      0));
-  smootherTypes.insert(std::pair<std::string, int>("Jacobi",    1));
-  smootherTypes.insert(std::pair<std::string, int>("Gauss",     2));
-  smootherTypes.insert(std::pair<std::string, int>("Chebyshev", 3));
+  std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
 
   switch(smootherTypes[type]) {
   case 0:
+  {
     break;
+  }
   case 1:
+  {
     jacobiIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
                   mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
     break;
+  }
   case 2:
-      GSIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
+  {
+    GSIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
                 mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
     break;
+  }
   case 3:
+  {
     break;
+  }
+  default:
+  {
+    std::cout << "Unknown smoother: " << type << "!" << std::endl;
+    throw;
+  }
   }
 
 } // smootherApply
