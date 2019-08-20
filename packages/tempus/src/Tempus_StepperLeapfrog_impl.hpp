@@ -56,8 +56,6 @@ void StepperLeapfrog<Scalar>::setObserver(
       Teuchos::rcp_dynamic_cast<StepperLeapfrogObserver<Scalar> >
         (this->stepperObserver_);
   }
-
-  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -70,8 +68,6 @@ void StepperLeapfrog<Scalar>::initialize()
 
   this->setParameterList(this->stepperPL_);
   this->setObserver();
-
-  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 template<class Scalar>
@@ -97,17 +93,12 @@ void StepperLeapfrog<Scalar>::setInitialConditions(
          << "however useFSAL=true will also work but have no affect "
          << "(i.e., no-op).\n" << std::endl;
   }
-
-  this->isInitialized_ = false;
 }
 
 template<class Scalar>
 void StepperLeapfrog<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-    "Error - " << this->description() << " is not initialized!");
-
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperLeapfrog::takeStep()");
@@ -226,8 +217,6 @@ void StepperLeapfrog<Scalar>::setParameterList(
     std::logic_error,
        "Error - Stepper Type is not 'Leapfrog'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
-
-  this->isInitialized_ = false;
 }
 
 

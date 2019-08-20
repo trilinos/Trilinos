@@ -46,7 +46,7 @@
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_DAG_Manager.hpp"
 #include "Phalanx_Evaluator_AliasField.hpp"
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -746,5 +746,85 @@ TEUCHOS_UNIT_TEST(dag, alias_field)
     // C
     TEST_EQUALITY(nodes[1].adjacencies().size(),0);
   }
+}
 
+// *************************************************
+// Test for aliasing a field
+// *************************************************
+TEUCHOS_UNIT_TEST(dag, use_range)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+
+  // Since topological sort is not unique for a DAGs, we need to make
+  // sure the dag construction enforces unique topological ordering
+  // via dependencies.
+
+  // A: eval:f1
+  // B: eval:f2,dep:f1
+  // C: eval:f3,dep:f2
+  // D: contrib:f3
+  // E: eval:f4,depf3
+
+  DagManager<MyTraits> dag("use_range");
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("a");
+    e->evaluates("f1");
+    dag.registerEvaluator(e);
+  }
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("c");
+    e->evaluates("f3");
+    e->requires("f2");
+    dag.registerEvaluator(e);
+  }
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("e");
+    e->evaluates("f4");
+    e->requires("f3");
+    dag.registerEvaluator(e);
+  }
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("d");
+    e->contributes("f3");
+    dag.registerEvaluator(e);
+  }
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("b");
+    e->evaluates("f2");
+    e->requires("f1");
+    dag.registerEvaluator(e);
+  }
+
+  {
+    RCP<MDALayout<CELL,BASIS>> dl = 
+      rcp(new MDALayout<CELL,BASIS>("H-Grad",100,4));
+    Tag<MyTraits::Residual::ScalarT> tag_f4("f4",dl);
+    dag.requireField(tag_f4);
+  }
+
+  dag.sortAndOrderEvaluators();
+
+  dag.print(std::cout);
+  
+  const auto& use_range = dag.getFieldUseRange();
+
+  TEST_EQUALITY(use_range.at("f1:double:H-Grad<CELL,BASIS>(100,4)").first,0);
+  TEST_EQUALITY(use_range.at("f1:double:H-Grad<CELL,BASIS>(100,4)").second,1);
+
+  TEST_EQUALITY(use_range.at("f2:double:H-Grad<CELL,BASIS>(100,4)").first,1);
+  TEST_EQUALITY(use_range.at("f2:double:H-Grad<CELL,BASIS>(100,4)").second,2);
+
+  TEST_EQUALITY(use_range.at("f3:double:H-Grad<CELL,BASIS>(100,4)").first,2);
+  TEST_EQUALITY(use_range.at("f3:double:H-Grad<CELL,BASIS>(100,4)").second,4);
+
+  TEST_EQUALITY(use_range.at("f4:double:H-Grad<CELL,BASIS>(100,4)").first,4);
+  TEST_EQUALITY(use_range.at("f4:double:H-Grad<CELL,BASIS>(100,4)").second,4);  
 }

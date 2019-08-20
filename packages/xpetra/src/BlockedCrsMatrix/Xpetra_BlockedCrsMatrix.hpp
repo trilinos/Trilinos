@@ -92,7 +92,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class BlockedCrsMatrix :
     public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:

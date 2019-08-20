@@ -207,25 +207,25 @@ namespace PHX {
        @param[in] d User defined setup data.
        @param[in] buildDeviceDAG (optional) If set to true, the dag is built on device.
        @param[in] minimizeDAGMemoryUse (optional) If set to true, field memory will be reused in a DAG by binding the same kokkos allocation trackers to non-overlapping fields when possible.
-       @param[in] memoryPool (optional) If non-null, field memory allocations will use the memoryPool. This can allow multiple DAGs within a FieldManager and multiple FieldManagers to share/reuse field memory.
+       @param[in] memoryManager (optional) If non-null, field memory allocations will use the memoryManager. This can allow multiple DAGs within a FieldManager and multiple FieldManagers to share/reuse field memory.
      */
     template<typename EvalT>
     void postRegistrationSetupForType(typename Traits::SetupData d,
                                       const bool& buildDeviceDAG = false,
                                       const bool& minimizeDAGMemoryUse = false,
-                                      const PHX::MemoryPool* const memoryPool = nullptr);
+                                      const PHX::MemoryManager* const memoryManager = nullptr);
 
     /*! \brief Builds DAG (if not already built) and allocates memory for all evaluation types
 
        @param[in] d User defined setup data.
        @param[in] buildDeviceDAG (optional) If set to true, the dag is built on device.
        @param[in] minimizeDAGMemoryUse (optional) If set to true, field memory will be reused in a DAG by binding the same kokkos allocation trackers to non-overlapping fields when possible.
-       @param[in] memoryPool (optional) If non-null, field memory allocations will use the memoryPool. This can allow multiple DAGs within a FieldManager and multiple FieldManagers to share/reuse field memory.
+       @param[in] memoryManager (optional) If non-null, field memory allocations will use the memoryManager. This can allow multiple DAGs within a FieldManager and multiple FieldManagers to share/reuse field memory.
      */
     void postRegistrationSetup(typename Traits::SetupData d,
                                const bool& buildDeviceDAG = false,
                                const bool& minimizeDAGMemoryUse = false,
-                               const PHX::MemoryPool* const memoryPool = nullptr);
+                               const PHX::MemoryManager* const memoryManager = nullptr);
 
     //! Evalaute fields with a separate parallel_for for each node in the DAG.
     template<typename EvalT>

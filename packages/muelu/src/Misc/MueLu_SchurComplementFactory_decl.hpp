@@ -84,7 +84,10 @@ namespace MueLu {
         S = A_11 - 1/\omega A_10 \hat{A_00}^{-1} A_01,
     where \omega is some scaling factor and \hat{A_00} an approximation of A_00 (just the diagonal of A_00)
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class SchurComplementFactory : public SingleLevelFactoryBase {
 #undef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"

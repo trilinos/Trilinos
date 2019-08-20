@@ -47,6 +47,7 @@
 /// Declaration and definition of Tpetra::CrsMatrixMultiplyOp and its
 /// nonmember constructor Tpetra::createCrsMatrixMultiplyOp.
 
+#include "Tpetra_CrsMatrixMultiplyOp_fwd.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Details_Behavior.hpp"
@@ -87,11 +88,15 @@ namespace Tpetra {
   ///
   /// \tparam Node The fourth template parameter of CrsMatrix and
   ///   Operator.
+  ///
+  /// If you encounter link errors when Scalar != MatScalar, try
+  /// including <tt>Tpetra_LocalCrsMatrixOperator_def.hpp</tt> after
+  /// including this header file.
   template <class Scalar,
-            class MatScalar = Scalar,
-            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+            class MatScalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class CrsMatrixMultiplyOp :
     public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
@@ -133,7 +138,7 @@ namespace Tpetra {
            MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
-           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const
+           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const override
     {
       TEUCHOS_TEST_FOR_EXCEPTION
         (! matrix_->isFillComplete (), std::runtime_error,
@@ -629,17 +634,17 @@ namespace Tpetra {
     ///
     /// This is always true, since it is true for the CrsMatrix that
     /// this object wraps.
-    bool hasTransposeApply() const {
+    bool hasTransposeApply() const override {
       return true;
     }
 
     //! The domain Map of this Operator.
-    Teuchos::RCP<const map_type> getDomainMap () const {
+    Teuchos::RCP<const map_type> getDomainMap () const override {
       return matrix_->getDomainMap ();
     }
 
     //! The range Map of this Operator.
-    Teuchos::RCP<const map_type> getRangeMap () const {
+    Teuchos::RCP<const map_type> getRangeMap () const override {
       return matrix_->getRangeMap ();
     }
 

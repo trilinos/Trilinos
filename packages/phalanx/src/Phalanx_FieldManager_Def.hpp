@@ -276,12 +276,12 @@ void PHX::FieldManager<Traits>::
 postRegistrationSetupForType(typename Traits::SetupData d,
                              const bool& buildDeviceDAG,
                              const bool& minimizeDAGMemoryUse,
-                             const PHX::MemoryPool* const memoryPool)
+                             const PHX::MemoryManager* const memoryManager)
 {
   m_eval_containers.template getAsObject<EvalT>()->
     postRegistrationSetup(d, *this, buildDeviceDAG,
                           minimizeDAGMemoryUse,
-                          memoryPool);
+                          memoryManager);
 }
 
 // **************************************************************
@@ -291,13 +291,13 @@ void PHX::FieldManager<Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
                       const bool& buildDeviceDAG,
                       const bool& minimizeDAGMemoryUse,
-                      const PHX::MemoryPool* const memoryPool)
+                      const PHX::MemoryManager* const memoryManager)
 {
   typename SCTM::iterator it = m_eval_containers.begin();
   for (std::size_t i = 0; it != m_eval_containers.end(); ++it, ++i)
     it->postRegistrationSetup(d, *this, buildDeviceDAG,
                               minimizeDAGMemoryUse,
-                              memoryPool);
+                              memoryManager);
 }
 
 // **************************************************************

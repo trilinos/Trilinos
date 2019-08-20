@@ -881,6 +881,51 @@ PHX::DagManager<Traits>::getEvaluatorsBindingField(const PHX::FieldTag& ft)
 
 //=======================================================================
 template<typename Traits>
+const std::unordered_map<std::string,std::pair<int,int>>&
+PHX::DagManager<Traits>::getFieldUseRange()
+{
+  // Initialize the fields just outside valid range for debugging
+  for (const auto& f : fields_)
+    field_use_range_[f->identifier()] = std::make_pair(topoSortEvalIndex.size(),-1);
+  
+  for (int idx=0; idx < static_cast<int>(topoSortEvalIndex.size()); ++idx) {
+    const auto& evaluator = nodes_[topoSortEvalIndex[idx]].getNonConst();
+
+    // Evaluated fields
+    for (const auto& f : evaluator->evaluatedFields()) {
+      auto& range = field_use_range_[f->identifier()];
+      range.first = std::min(range.first,idx);
+      range.second = std::max(range.first,idx);
+    }
+    // Contributed fields
+    for (const auto& f : evaluator->contributedFields()) {
+      auto& range = field_use_range_[f->identifier()];
+      range.first = std::min(range.first,idx);
+      range.second = std::max(range.first,idx);
+    }
+    // Dependent fields
+    for (const auto& f : evaluator->dependentFields()) {
+      auto& range = field_use_range_[f->identifier()];
+      range.first = std::min(range.first,idx);
+      range.second = std::max(range.first,idx);
+    }
+  }
+
+#ifdef PHX_DEBUG
+  for (std::size_t f=0; f < fields_.size(); ++f) {
+    TEUCHOS_TEST_FOR_EXCEPTION(f.first > f.second,
+                               std::logic_error,
+                               "ERROR - PHX::DagManager::getFieldUseRange() - the field "
+                               << f << " has an invalid use range of [" << f.first << ","
+                               << f.second << "].");
+  }
+#endif
+
+  return field_use_range_;
+}
+
+//=======================================================================
+template<typename Traits>
 void
 PHX::DagManager<Traits>::
 printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)

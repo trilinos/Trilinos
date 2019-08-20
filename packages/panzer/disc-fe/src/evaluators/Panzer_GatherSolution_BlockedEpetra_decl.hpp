@@ -164,11 +164,11 @@ namespace panzer
       evaluateFields(
         typename TRAITS::EvalData d)
       {
-        using PHX::typeAsString;
+        using PHX::print;
         using std::cout;
         using std::endl;
         cout << "Unspecialized version of \"GatherSolution_BlockedEpetra::"   \
-          "evaluateFields\" on " + typeAsString<EvalT>() + "\" should not "   \
+          "evaluateFields\" on " + print<EvalT>() + "\" should not "   \
           "be used!" << endl;
         TEUCHOS_ASSERT(false);
       } // end of evaluateFields()

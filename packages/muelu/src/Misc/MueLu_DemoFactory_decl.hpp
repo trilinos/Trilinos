@@ -57,7 +57,10 @@ namespace MueLu {
     @brief empty factory for demonstration
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class DemoFactory : public SingleLevelFactoryBase {
 #undef MUELU_DEMOFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

@@ -64,12 +64,10 @@
 
 namespace Xpetra {
 
-  template <class Scalar = double,
-            class LocalOrdinal = CrsGraph<>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename CrsGraph<LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class CrsMatrix
     : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
       public DistObject<char, LocalOrdinal,GlobalOrdinal,Node>

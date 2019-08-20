@@ -79,7 +79,7 @@ int ne_put_init_global(int     neid,            /* NemesisI file ID */
                             num_side_sets_g);
 }
 
-int ne_put_version(int neid) { return ex_put_nemesis_version(neid); }
+int ne_put_version(int neid) { return ex__put_nemesis_version(neid); }
 
 /*=============================================================================
  *     Loadbalance Parameter Routines

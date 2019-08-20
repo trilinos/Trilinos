@@ -441,7 +441,7 @@ GatherSolution_BlockedTpetra(
     this->setName(n);
   }
   else {
-    std::string n = "GatherSolution (BlockedTpetra): "+firstName+" ("+PHX::typeAsString<EvalT>()+") ";
+    std::string n = "GatherSolution (BlockedTpetra): "+firstName+" ("+PHX::print<EvalT>()+") ";
     this->setName(n);
   }
 }

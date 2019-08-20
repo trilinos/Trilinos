@@ -55,30 +55,29 @@
 #include "Teuchos_AbstractFactoryStd.hpp"
 
 #include <string>
-#include "Kokkos_DefaultNode.hpp"
 
 
 namespace Stratimikos {
-    
+
     using namespace Teuchos;
     using namespace Thyra;
-    
-    template <typename LO = int, typename GO = int, typename NO = KokkosClassic::DefaultNode::DefaultNodeType>
+
+    template <typename LO = int,typename GO = int,typename NO = KokkosClassic::DefaultNode::DefaultNodeType>
     void enableFROSch (DefaultLinearSolverBuilder& builder,
                        const std::string& stratName = "FROSch")
     {
         const RCP<const ParameterList> precValidParams = sublist(builder.getValidParameters(), "Preconditioner Types");
-        
+
         TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
                                    "Stratimikos::enableFROSch cannot add \"" + stratName +"\" because it is already included in builder!");
-        
-        typedef PreconditionerFactoryBase<double>  Base;
+
+        using Base  = PreconditionerFactoryBase<double>;
         if (!stratName.compare("FROSch")) {
-            typedef FROSchFactory<double, LO, GO, NO> Impl;
+            using Impl  = FROSchFactory<double, LO, GO, NO> ;
             builder.setPreconditioningStrategyFactory(abstractFactoryStd<Base, Impl>(), stratName);
         }
     }
-    
+
 } // namespace Stratimikos
 
 #endif

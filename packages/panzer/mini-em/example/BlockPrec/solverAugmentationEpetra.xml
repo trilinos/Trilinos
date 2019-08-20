@@ -29,7 +29,7 @@
       <Parameter name="Inverse Type" type="string" value="Maxwell"/>
       <ParameterList name="Inverse Factory Library">
         <ParameterList name="Maxwell">
-          <Parameter name="Type" type="string" value="Full Maxwell Preconditioner"/>
+          <Parameter name="Type" type="string" value="Full Maxwell Preconditioner: Augmentation"/>
           <Parameter name="Use refMaxwell" type="bool" value="false"/>
           <Parameter name="Debug" type="bool" value="false"/>
           <Parameter name="Dump" type="bool" value="false"/>

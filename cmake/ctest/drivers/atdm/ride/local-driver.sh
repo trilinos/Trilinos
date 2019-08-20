@@ -9,7 +9,7 @@ if [ "${Trilinos_CTEST_DO_ALL_AT_ONCE}" == "" ] ; then
 fi
 
 if [ "${EXCLUDE_NODES_FROM_BSUB}" == "" ] ; then
-  if [ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "white" ] ; then
+  if [ "${ATDM_CONFIG_CDASH_HOSTNAME}" == "white" ] ; then
     EXCLUDE_NODES_FROM_BSUB="-R hname!=white26&&hname!=white27"
   fi
 fi

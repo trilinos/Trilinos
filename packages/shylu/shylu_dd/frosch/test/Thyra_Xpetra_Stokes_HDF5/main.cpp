@@ -89,18 +89,18 @@
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
 #include <Xpetra_Parameters.hpp>
-#include <Xpetra_UseDefaultTypes.hpp>
 
 // FROSCH thyra includes
 #include "Thyra_FROSchLinearOp_def.hpp"
 #include "Thyra_FROSchFactory_def.hpp"
 #include <FROSch_Tools_def.hpp>
 
-typedef unsigned                                    UN;
-typedef Scalar                                      SC;
-typedef LocalOrdinal                                LO;
-typedef GlobalOrdinal                               GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+
+using UN    = unsigned;
+using SC    = double;
+using LO    = int;
+using GO    = FROSch::DefaultGlobalOrdinal;
+using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace EpetraExt;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Comm<int> > CommWorld = DefaultPlatform::getDefaultPlatform().getComm();
 
     CommandLineProcessor My_CLP;
 
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     MPI_Comm COMM;
     MPI_Comm_split(MPI_COMM_WORLD,color,CommWorld->getRank(),&COMM);
     RCP<Epetra_MpiComm> EpetraComm(new Epetra_MpiComm(COMM));
-    
+
 #ifdef HAVE_EPETRAEXT_HDF5
     if (color==0) {
 
@@ -178,32 +178,37 @@ int main(int argc, char *argv[])
         string groupNameRepeatedMapVelo =  "RepeatedMapVelocity";
         Epetra_Map *repeatedMapEpetraVelo;
         hDF5IO->Read(groupNameRepeatedMapVelo,repeatedMapEpetraVelo);
-        RCP<Map<LO,GO,NO> > repeatedMapVelo = ConvertToXpetra<LO,GO,NO>(xpetraLib,*repeatedMapEpetraVelo,Comm);
+
+        RCP<Map<LO,GO,NO> > repeatedMapVelo = ConvertToXpetra<SC,LO,GO,NO>::ConvertMap(xpetraLib,*repeatedMapEpetraVelo,Comm);
 
         string groupNameRepeatedMapPress =  "RepeatedMapPressure";
         Epetra_Map *repeatedMapEpetraPress;
         hDF5IO->Read(groupNameRepeatedMapPress,repeatedMapEpetraPress);
-        RCP<Map<LO,GO,NO> > repeatedMapPress = ConvertToXpetra<LO,GO,NO>(xpetraLib,*repeatedMapEpetraPress,Comm);
+        RCP<Map<LO,GO,NO> > repeatedMapPress = ConvertToXpetra<SC,LO,GO,NO>::ConvertMap(xpetraLib,*repeatedMapEpetraPress,Comm);
 
 //        GO offsetVelocityMap = repeatedMapVelo->getMaxAllGlobalIndex()+1;
 //        Array<GO> elementList(repeatedMapEpetraPress->NumMyElements());
 //        for (unsigned i=0; i<elementList.size(); i++) {
 //            elementList[i] = repeatedMapEpetraPress->GID(i) + offsetVelocityMap;
 //        }
-//        RCP<Map<LO,GO,NO> > repeatedMapPress = Xpetra::MapFactory<LO,GO,NO>::Build(xpetraLib,-1,elementList,0,Comm);
+//        RCP<Map<LO,GO,NO> > repeatedMapPress = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,elementList,0,Comm);
 
-        Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > repeatedMapsVector(2);
+        ArrayRCP<RCP<const Map<LO,GO,NO> > > repeatedMapsVectorConst(2);
+        ArrayRCP<RCP<Map<LO,GO,NO> > > repeatedMapsVector(2);
+
+        repeatedMapsVectorConst[0] = repeatedMapVelo.getConst();
+        repeatedMapsVectorConst[1] = repeatedMapPress.getConst();
+
+        RCP<Map<LO,GO,NO> > repeatedMap = MergeMapsNonConst(repeatedMapsVectorConst);
 
         repeatedMapsVector[0] = repeatedMapVelo;
         repeatedMapsVector[1] = repeatedMapPress;
-
-        RCP<Map<LO,GO,NO> > repeatedMap = MergeMaps(repeatedMapsVector);
 
 
         ////////////////
         // Unique Map //
         ////////////////
-        RCP<Map<LO,GO,NO> > uniqueMap = BuildUniqueMap<LO,GO,NO>(repeatedMap);
+        RCP<Map<LO,GO,NO> > uniqueMap = rcp_const_cast<Map<LO,GO,NO> >(BuildUniqueMap<LO,GO,NO>(repeatedMap));
 
 
         /////////
@@ -213,10 +218,10 @@ int main(int argc, char *argv[])
         Epetra_MultiVector *rhsEpetra;
         hDF5IO->Read(groupNameRHS,rhsEpetra);
 
-        RCP<MultiVector<SC,LO,GO,NO> > rhsTmp = ConvertToXpetra<SC,LO,GO,NO>(xpetraLib,*rhsEpetra,Comm);
-        RCP<MultiVector<SC,LO,GO,NO> > rhs = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
-        RCP<Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(rhsTmp->getMap(),uniqueMap);
-        rhs->doImport(*rhsTmp,*scatter,Xpetra::ADD);
+        RCP<MultiVector<SC,LO,GO,NO> > rhsTmp = ConvertToXpetra<SC,LO,GO,NO>::ConvertMultiVector(xpetraLib,*rhsEpetra,Comm);
+        RCP<MultiVector<SC,LO,GO,NO> > rhs = MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(rhsTmp->getMap(),uniqueMap);
+        rhs->doImport(*rhsTmp,*scatter,ADD);
 
 
         ////////////
@@ -225,10 +230,10 @@ int main(int argc, char *argv[])
         string groupNameMatrix = "Matrix";
         Epetra_CrsMatrix *matrixEpetra;
         hDF5IO->Read(groupNameMatrix,matrixEpetra);
-        RCP<Matrix<SC,LO,GO,NO> > matrixTmp = ConvertToXpetra<SC,LO,GO,NO>(xpetraLib,*matrixEpetra,Comm);
-        RCP<Matrix<SC,LO,GO,NO> > matrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,matrixTmp->getGlobalMaxNumRowEntries());
+        RCP<Matrix<SC,LO,GO,NO> > matrixTmp = ConvertToXpetra<SC,LO,GO,NO>::ConvertMatrix(xpetraLib,*matrixEpetra,Comm);
+        RCP<Matrix<SC,LO,GO,NO> > matrix = MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,matrixTmp->getGlobalMaxNumRowEntries());
 
-        matrix->doImport(*matrixTmp,*scatter,Xpetra::ADD);
+        matrix->doImport(*matrixTmp,*scatter,ADD);
         matrix->fillComplete();
 
 
@@ -238,16 +243,16 @@ int main(int argc, char *argv[])
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
 
-        xSolution->putScalar(0.0);
-        xRightHandSide->putScalar(1.0);
+        xSolution->putScalar(ScalarTraits<SC>::zero());
+        xRightHandSide->putScalar(ScalarTraits<SC>::one());
 
-        Teuchos::RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > tmpCrsWrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(matrix);
+        RCP<CrsMatrixWrap<SC,LO,GO,NO> > tmpCrsWrap = rcp_dynamic_cast<CrsMatrixWrap<SC,LO,GO,NO> >(matrix);
 
-        RCP<const Thyra::LinearOpBase<SC> > K_thyra = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(tmpCrsWrap->getCrsMatrix());
+        RCP<const Thyra::LinearOpBase<SC> > K_thyra = ThyraUtils<SC,LO,GO,NO>::toThyra(tmpCrsWrap->getCrsMatrix());
 
         RCP<Thyra::MultiVectorBase<SC> >thyraX =
-        Teuchos::rcp_const_cast<Thyra::MultiVectorBase<SC> >(Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
-        RCP<const Thyra::MultiVectorBase<SC> >thyraB = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
+        rcp_const_cast<Thyra::MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
+        RCP<const Thyra::MultiVectorBase<SC> >thyraB = ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
 
 
         ///////////////////
@@ -286,7 +291,7 @@ int main(int argc, char *argv[])
         linearSolverBuilder.createLinearSolveStrategy("");
 
         lowsFactory->setOStream(out);
-        lowsFactory->setVerbLevel(Teuchos::VERB_HIGH);
+        lowsFactory->setVerbLevel(VERB_HIGH);
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "###########################\n# Thyra LinearOpWithSolve #\n###########################" << endl;
 
@@ -300,7 +305,7 @@ int main(int argc, char *argv[])
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
 #endif
-    
+
     return(EXIT_SUCCESS);
 
 }

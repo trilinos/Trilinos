@@ -476,14 +476,14 @@ namespace {
 
   size_t get_num_entities(int file_id, EXOTYPE exo_type)
   {
-    int inquiry = 0;
+    ex_inquiry inquiry = EX_INQ_INVALID;
     switch (exo_type) {
     case EX_ELEM_BLOCK: inquiry = EX_INQ_ELEM_BLK; break;
     case EX_NODE_SET: inquiry = EX_INQ_NODE_SETS; break;
     case EX_SIDE_SET: inquiry = EX_INQ_SIDE_SETS; break;
     default: Error("Invalid entity type in get_num_entities\n"); exit(1);
     }
-    SMART_ASSERT(inquiry > 0);
+    SMART_ASSERT(inquiry != EX_INQ_INVALID);
     return ex_inquire_int(file_id, inquiry);
   }
 

@@ -82,6 +82,8 @@ namespace Ioss {
   class DatabaseIO
   {
   public:
+    friend class SerializeIO;
+
     /** \brief Check to see if database state is OK.
      *
      *  \param[in] write_message If true, then output a warning message indicating the problem.
@@ -457,7 +459,6 @@ namespace Ioss {
     void get_block_adjacencies(const Ioss::ElementBlock *eb,
                                std::vector<std::string> &block_adjacency) const
     {
-      IOSS_FUNC_ENTER(m_);
       return get_block_adjacencies__(eb, block_adjacency);
     }
     void compute_block_membership(Ioss::SideBlock *         efblock,

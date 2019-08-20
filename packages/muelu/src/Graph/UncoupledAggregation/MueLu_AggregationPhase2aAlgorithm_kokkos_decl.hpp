@@ -81,9 +81,9 @@ namespace MueLu {
 
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class AggregationPhase2aAlgorithm_kokkos :
     public MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AGGREGATIONPHASE2AALGORITHM_KOKKOS_SHORT

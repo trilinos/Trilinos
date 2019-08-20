@@ -241,9 +241,8 @@ namespace panzer
        *                  have; either 0, 1, or something else.
        *  \param[in] cell The cell in the `Workset` over which to integrate.
        */
-      void
-      operator()(
-        const std::size_t&                  cell) const;
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const std::size_t& cell) const;
 
     private:
 
