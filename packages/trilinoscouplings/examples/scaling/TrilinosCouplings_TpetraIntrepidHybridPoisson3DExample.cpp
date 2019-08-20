@@ -617,7 +617,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     int oidx = 0;
     for (int i = 0; i < numNodes; ++i) {
       if (nodeIsOwned[i]) {
-        ownedGIDs[oidx] = as<int> (globalNodeIds[i]);
+        ownedGIDs[oidx] = as<GO> (globalNodeIds[i]);
 
         coordXArray[oidx] = nodeCoord(i,0);
         coordYArray[oidx] = nodeCoord(i,1);
@@ -710,7 +710,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           // relative to the cell DoF numbering
           for (int cellCol = 0; cellCol < numFieldsG; ++cellCol) {
             int localCol  = elemToNode (cell, cellCol);
-            GO globalCol = globalNodeIds[localCol];
+            GO globalCol = as<GO> (globalNodeIds[localCol]);
             //create ArrayView globalCol object for Tpetra
             ArrayView<GO> globalColAV = arrayView (&globalCol, 1);
 

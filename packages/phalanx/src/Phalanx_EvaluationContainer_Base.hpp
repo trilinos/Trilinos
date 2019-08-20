@@ -53,7 +53,7 @@
 namespace PHX {
 
   template<typename Traits> class FieldManager;
-  class MemoryPool;
+  class MemoryManager;
 
   template<typename Traits>
   class EvaluationContainerBase {
@@ -76,7 +76,7 @@ namespace PHX {
 				       PHX::FieldManager<Traits>& vm,
                                        const bool& buildDeviceDAG,
                                        const bool& minimizeDAGMemoryUse,
-                                       const PHX::MemoryPool* const memoryPool) = 0;
+                                       const PHX::MemoryManager* const memoryManager) = 0;
 
     virtual void evaluateFields(typename Traits::EvalData d) = 0;
 

@@ -45,7 +45,7 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldManager.hpp"
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 #include "Phalanx_Evaluator_UnmanagedFieldDummy.hpp"
 #include "Phalanx_Evaluator_UnitTester.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"

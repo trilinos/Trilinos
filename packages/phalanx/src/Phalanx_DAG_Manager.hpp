@@ -51,12 +51,13 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <tuple>
+#include <utility> // for std::pair
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 #include "Phalanx_Evaluator.hpp"
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 #include "Phalanx_DAG_Node.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Kokkos_View.hpp"
@@ -70,7 +71,10 @@ namespace PHX {
   
   template<typename Traits> class FieldManager;
 
-  /*! @brief Class to generate the directed acyclic graph (DAG) for evaluation.  Determined which Evaluators should be called and the order in which to call them such that all dependencies are met with consistency.
+  /*! @brief Class to generate the directed acyclic graph (DAG) for
+      evaluation.  Determined which Evaluators should be called and
+      the order in which to call them such that all dependencies are
+      met with consistency.
    */
   template<typename Traits>
   class DagManager {
@@ -109,17 +113,25 @@ namespace PHX {
 			       PHX::FieldManager<Traits>& vm,
                                const bool& buildDeviceDAG);
     
-    //! Evaluate the required fields using data parallel evaluation on topological sort of tasks. Calls parallel_for for each node in DAG.
+    //! Evaluate the required fields using data parallel evaluation on
+    //! topological sort of tasks. Calls parallel_for for each node in
+    //! DAG.
     void evaluateFields(typename Traits::EvalData d);
 
-    //! Evaluate the required fields using data parallel evaluation on topological sort of tasks. Uses Device DAG support, calling a single parallel_for for the entire DAG. This could be faster than the call to evaluateFields, but all nodes in the DAG are restricted to the same work_size. This is intended for CUDA builds where kernel launch overhead can be significant.
+    //! Evaluate the required fields using data parallel evaluation on
+    //! topological sort of tasks. Uses Device DAG support, calling a
+    //! single parallel_for for the entire DAG. This could be faster
+    //! than the call to evaluateFields, but all nodes in the DAG are
+    //! restricted to the same work_size. This is intended for CUDA
+    //! builds where kernel launch overhead can be significant.
     void evaluateFieldsDeviceDag(const int& work_size,
 				 const int& team_size,
 				 const int& vector_size,
 				 typename Traits::EvalData d);
     
 #ifdef PHX_ENABLE_KOKKOS_AMT
-    /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
+    /*! \brief Evaluate the fields using hybrid functional
+        (asynchronous multi-tasking) and data parallelism.
 
       @param work_Size The number of items to divide the parallel work over.
       @param d User defined data.
@@ -199,6 +211,24 @@ namespace PHX {
      */
     std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& 
     getEvaluatorsBindingField(const PHX::FieldTag& ft);
+
+    /** \brief Returns the evaluator range that the field needs to exist over.
+        
+        Once a topological sort of evalautors is performed, we have N
+        evalautors in a specific order to traverse for the
+        evaluation. Each field is used over a subset of the range of
+        evaluators. We can reuse field memory if the use range between
+        two fields does not overlap. This function returns the range
+        over which each field needs to exist. The MemoryManager will
+        use this information when binding fields.
+
+        Function is non-const due to lazy evalaution to construct.
+
+        \returns a map where the key is the field identifier and the
+        value is a pair of integers representing the inclusive use
+        range [0,N-1] over which the field requires memory.
+    */
+    const std::unordered_map<std::string,std::pair<int,int>>& getFieldUseRange();
 
     /** \brief Print to user specified ostream when each evaluator
         starts and stops. Useful for debugging. Enabled only in debug
@@ -286,6 +316,9 @@ namespace PHX {
 
     //! If non-null, in debug builds, the DAG manager will print when an evaluator starts and stops.
     Teuchos::RCP<std::ostream> start_stop_debug_ostream_;
+
+    //! Field use range for topologically sorted evalautors. Key is field identifier, value is inclusive start/stop range.
+    std::unordered_map<std::string,std::pair<int,int>> field_use_range_;
   };
   
   template<typename Traits>

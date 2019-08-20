@@ -51,14 +51,16 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 
 
-typedef Tpetra::Map<int,int>  Tpetra_Map;
-typedef Tpetra::Vector<double,int,int>  Tpetra_Vector;
-typedef Tpetra::MultiVector<double,int,int>  Tpetra_MultiVector;
-typedef Tpetra::Operator<double,int,int>  Tpetra_Operator;
-typedef Tpetra::CrsGraph<int,int>  Tpetra_CrsGraph;
-typedef Tpetra::CrsMatrix<double,int,int>  Tpetra_CrsMatrix;
+using LO = Tpetra::Map<>::local_ordinal_type;
+using GO = Tpetra::Map<>::global_ordinal_type;
+typedef Tpetra::Map<LO,GO>  Tpetra_Map;
+typedef Tpetra::Vector<double,LO,GO>  Tpetra_Vector;
+typedef Tpetra::MultiVector<double,LO,GO>  Tpetra_MultiVector;
+typedef Tpetra::Operator<double,LO,GO>  Tpetra_Operator;
+typedef Tpetra::CrsGraph<LO,GO>  Tpetra_CrsGraph;
+typedef Tpetra::CrsMatrix<double,LO,GO>  Tpetra_CrsMatrix;
 typedef Thyra::TpetraOperatorVectorExtraction<
-    double, int, int> ConverterT;
+    double, LO, GO> ConverterT;
 
 /** \brief Concrete Tpetra-based Model Evaluator
  *

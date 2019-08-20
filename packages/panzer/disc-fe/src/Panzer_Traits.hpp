@@ -66,7 +66,7 @@
 //#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Debugging information
-//#include "Phalanx_TypeStrings.hpp"
+//#include "Phalanx_Print.hpp"
 
 // forward declaration
 namespace Intrepid2 {

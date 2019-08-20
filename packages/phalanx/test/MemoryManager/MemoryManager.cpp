@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -41,19 +41,26 @@
 // ************************************************************************
 // @HEADER
 
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_FieldTag.hpp"
+#include "Phalanx_MemoryManager.hpp"
 
-#ifndef PHX_TYPE_STRINGS_HPP
-#define PHX_TYPE_STRINGS_HPP
+#include "Sacado.hpp"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_View_Fad.hpp"
+#include "Kokkos_DynRankView.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
 
-#include "Teuchos_TypeNameTraits.hpp"
-#include <string>
+namespace phalanx_test {
 
-namespace PHX {
+  TEUCHOS_UNIT_TEST(Kokkos_AllocationTracker, MemoryManager)
+  {
+    PHX::MemoryManager pool1;
 
-  template<typename ObjectT>
-  std::string typeAsString() 
-  { return Teuchos::TypeNameTraits<ObjectT>::name(); }
+    auto pool2 = pool1.clone();
+  }
 
 }
-   
-#endif

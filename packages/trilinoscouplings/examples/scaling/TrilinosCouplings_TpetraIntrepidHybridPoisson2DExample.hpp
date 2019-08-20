@@ -81,9 +81,9 @@ namespace TpetraIntrepidPoissonExample {
 // besides the default.
 //
 typedef double ST;
-typedef int    LO;
-typedef Tpetra::Map<>::global_ordinal_type GO;
-typedef Tpetra::Map<>::node_type           Node;
+typedef Tpetra::Map<>::local_ordinal_type   LO;
+typedef Tpetra::Map<>::global_ordinal_type  GO;
+typedef Tpetra::Map<>::node_type Node;
 
 //
 // mfh 19 Apr 2012: If you want to change the template parameters of
