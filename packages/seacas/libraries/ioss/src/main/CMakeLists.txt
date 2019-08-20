@@ -80,6 +80,7 @@ if (TPL_ENABLE_MPI)
     set(JOIN_ARG   "--compose=mpiio")
     set(PJOIN_ARG   "--compose=pnetcdf")
     set(NPROCS "1")
+    set(SERIALIZE_ARG "--serialize_io_size=2")
   else()
     set(NPROCS "1")
   endif()
@@ -95,16 +96,18 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
   )
 
 if (TPL_ENABLE_MPI)
+  IF (TPL_Netcdf_PARALLEL)
   TRIBITS_ADD_ADVANCED_TEST(exodus_fpp_serialize
-     TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --serialize_io_size 2 ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
+     TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${SERIALIZE_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
         NOEXEPREFIX NOEXESUFFIX
-        NUM_MPI_PROCS 4
-     TEST_1 EXEC io_shell ARGS ${JOIN_ARG} --serialize_io_size 2 8-block32.g 8-block-32j.g
+        NUM_MPI_PROCS ${NPROCS}
+     TEST_1 EXEC io_shell ARGS ${JOIN_ARG} ${SERIALIZE_ARG} 8-block32.g 8-block-32j.g
         NOEXEPREFIX NOEXESUFFIX
         NUM_MPI_PROCS ${NPROCS}
      TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32j.g
   COMM mpi
   )
+endif()
 endif()
 
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus64
