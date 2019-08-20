@@ -79,10 +79,10 @@ namespace TpetraIntrepidPoissonExample {
 // double and LO,GO = int, but it probably works for other Node types
 // besides the default.
 //
-typedef double                             ST;
-typedef int                                LO;
-typedef Tpetra::Map<>::global_ordinal_type GO;
-typedef Tpetra::Map<>::node_type           Node;
+typedef double ST;
+typedef Tpetra::Map<>::local_ordinal_type    LO;
+typedef Tpetra::Map<>::global_ordinal_type    GO;
+typedef Tpetra::Map<>::node_type  Node;
 typedef Teuchos::ScalarTraits<ST> STS;
 typedef STS::magnitudeType MT;
 
