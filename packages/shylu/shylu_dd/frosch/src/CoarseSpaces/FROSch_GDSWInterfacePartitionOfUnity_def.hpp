@@ -160,7 +160,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity()
+    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstXMultiVectorPtr nodeList)
     {
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();

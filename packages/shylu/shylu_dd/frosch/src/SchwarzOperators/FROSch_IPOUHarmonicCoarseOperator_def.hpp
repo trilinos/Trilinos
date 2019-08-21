@@ -206,7 +206,7 @@ namespace FROSch {
             }
             InterfacePartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
             InterfacePartitionOfUnity_->sortInterface(this->K_,nodeList);
-            InterfacePartitionOfUnity_->computePartitionOfUnity();
+            InterfacePartitionOfUnity_->computePartitionOfUnity(nodeList);
 
             InterfaceEntityPtr interface = InterfacePartitionOfUnity_->getDDInterface()->getInterface()->getEntity(0);
             InterfaceEntityPtr interior = InterfacePartitionOfUnity_->getDDInterface()->getInterior()->getEntity(0);

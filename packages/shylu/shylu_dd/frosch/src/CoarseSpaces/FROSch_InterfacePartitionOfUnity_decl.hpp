@@ -112,7 +112,7 @@ namespace FROSch {
         virtual int sortInterface(ConstXMatrixPtr matrix,
                                   ConstXMultiVectorPtr nodeList = null) = 0;
 
-        virtual int computePartitionOfUnity() = 0;
+        virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null)  = 0;
 
         XMultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
 

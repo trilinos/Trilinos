@@ -106,7 +106,7 @@ namespace FROSch {
         virtual int sortInterface(ConstXMatrixPtr matrix,
                                   ConstXMultiVectorPtr nodeList);
 
-        virtual int computePartitionOfUnity();
+        virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null);        
 
     protected:
 

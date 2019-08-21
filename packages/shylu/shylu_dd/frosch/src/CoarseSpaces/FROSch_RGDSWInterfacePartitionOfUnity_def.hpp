@@ -63,7 +63,7 @@ namespace FROSch {
     UseCoarseNodes_ (false),
     CoarseNodes_ (),
     EntitySetVector_ (),
-    DistanceFunction_ ()
+    DistanceFunction_ (ConstantDistanceFunction)
     {
         this->UseVertices_ = false;
         this->UseShortEdges_ = false;
@@ -90,12 +90,6 @@ namespace FROSch {
         }
         this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(1);
         this->PartitionOfUnityMaps_ = XMapPtrVecPtr(1);
-    }
-
-    template <class SC,class LO,class GO,class NO>
-    int RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity()
-    {
-        return computePartitionOfUnity(null);
     }
 
     template <class SC,class LO,class GO,class NO>

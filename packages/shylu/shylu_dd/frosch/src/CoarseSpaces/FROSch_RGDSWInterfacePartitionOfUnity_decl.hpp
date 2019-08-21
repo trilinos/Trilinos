@@ -101,8 +101,6 @@ namespace FROSch {
                                        ParameterListPtr parameterList,
                                        Verbosity verbosity = All);
 
-        virtual int computePartitionOfUnity();
-
         virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList);
 
     protected:
