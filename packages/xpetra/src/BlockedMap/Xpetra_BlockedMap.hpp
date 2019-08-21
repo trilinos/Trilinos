@@ -49,10 +49,10 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Map.hpp"
-//#include "Xpetra_MapFactory.hpp"
 #include "Xpetra_ImportFactory.hpp"
 //#include "Xpetra_MapUtils.hpp"
-#include "Xpetra_MapFactory.hpp"
+
+#include "Xpetra_MapFactory_decl.hpp"
 
 namespace Xpetra {
 
