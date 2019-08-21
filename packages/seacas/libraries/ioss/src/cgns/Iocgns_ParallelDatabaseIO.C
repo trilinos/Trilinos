@@ -56,14 +56,6 @@
 #include <cgnsconfig.h>
 #include <pcgnslib.h>
 
-#if 0
-// GDS: Temporarily disabled so SPARC can build inside Trilinos...
-#if !defined(CGNS_SANDIA_PARALLEL_MODS)
-#error                                                                                             \
-    "At this time, CGNS must be patched using CGNS-sandia.patch; contact gdsjaar@sandia.gov for info"
-#endif
-#endif
-
 #if !defined(CGNSLIB_H)
 #error "Could not include cgnslib.h"
 #endif
@@ -89,7 +81,6 @@
 #include "Ioss_VariableType.h"
 
 using GL_IdVector = std::vector<std::pair<int, int>>;
-extern int pcg_mpi_initialized;
 
 namespace {
   MPI_Datatype cgns_mpi_type()
@@ -180,19 +171,6 @@ namespace Iocgns {
   {
     usingParallelIO = true;
     dbState         = Ioss::STATE_UNKNOWN;
-
-#if !defined(CGNS_SANDIA_PARALLEL_MODS)
-    fmt::print(
-        "WARNING: The CGNS library being used in this executable does *NOT* have the "
-        "CGNS-sandia.patch applied.\n"
-        "         This can result in hangs in parallel exeuctions or, with older versions,\n"
-        "         very slow execution at large processor counts and can possibly create\n"
-        "         CGNS files which are not readable by applications linked with older HDF5 "
-        "libraries.\n"
-        "         Note that in some cases, an older version of the patch has been applied\n"
-        "         which does not define the symbol currently being used to detect the patch.\n"
-        "         Contact gdsjaar@sandia.gov for additional info.\n");
-#endif
 
 #if IOSS_DEBUG_OUTPUT
     if (myProcessor == 0) {
@@ -1202,8 +1180,9 @@ namespace Iocgns {
     return num_to_get;
   }
 
-  int64_t ParallelDatabaseIO::get_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
-                                                void *data, size_t data_size) const
+  int64_t ParallelDatabaseIO::get_field_internal_sub_nb(const Ioss::NodeBlock *nb,
+                                                        const Ioss::Field &field, void *data,
+                                                        size_t data_size) const
   {
     // Reads field data on a NodeBlock which is a "sub" NodeBlock -- contains the nodes for a
     // StructuredBlock instead of for the entire model.
@@ -1225,7 +1204,7 @@ namespace Iocgns {
       int solution_index =
           Utils::find_solution_index(get_file_pointer(), base, zone, step, CG_Vertex);
 
-      double * rdata                  = static_cast<double *>(data);
+      double *rdata = static_cast<double *>(data);
       assert(num_to_get == sb->get_property("node_count").get_int());
       cgsize_t rmin[3] = {0, 0, 0};
       cgsize_t rmax[3] = {0, 0, 0};
@@ -1238,19 +1217,17 @@ namespace Iocgns {
         rmax[1] = rmin[1] + sb->get_property("nj").get_int();
         rmax[2] = rmin[2] + sb->get_property("nk").get_int();
 
-	assert(num_to_get ==
-	       (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
+        assert(num_to_get ==
+               (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
       }
 
-
-      auto     var_type               = field.transformed_storage();
-      int      comp_count             = var_type->component_count();
-      char     field_suffix_separator = get_field_separator();
+      auto var_type               = field.transformed_storage();
+      int  comp_count             = var_type->component_count();
+      char field_suffix_separator = get_field_separator();
 
       if (comp_count == 1) {
         CGCHECKM(cg_field_read(get_file_pointer(), base, zone, solution_index,
-                               field.get_name().c_str(), CG_RealDouble, rmin, rmax,
-                               rdata));
+                               field.get_name().c_str(), CG_RealDouble, rmin, rmax, rdata));
       }
       else {
         std::vector<double> cgns_data(num_to_get);
@@ -1865,8 +1842,9 @@ namespace Iocgns {
     return num_to_get;
   }
 
-  int64_t ParallelDatabaseIO::put_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
-                                                void *data, size_t data_size) const
+  int64_t ParallelDatabaseIO::put_field_internal_sub_nb(const Ioss::NodeBlock *nb,
+                                                        const Ioss::Field &field, void *data,
+                                                        size_t data_size) const
   {
     // Outputs field data on a NodeBlock which is a "sub" NodeBlock -- contains the nodes for a
     // StructuredBlock instead of for the entire model.
@@ -1903,11 +1881,11 @@ namespace Iocgns {
 
       if (comp_count == 1) {
         CGCHECKM(cgp_field_write(get_file_pointer(), base, zone, m_currentVertexSolutionIndex,
-				 CG_RealDouble, field.get_name().c_str(), &cgns_field));
+                                 CG_RealDouble, field.get_name().c_str(), &cgns_field));
         Utils::set_field_index(field, cgns_field, CG_Vertex);
 
         CGCHECKM(cgp_field_write_data(get_file_pointer(), base, zone, m_currentVertexSolutionIndex,
-				      cgns_field, rmin, rmax, rdata));
+                                      cgns_field, rmin, rmax, rdata));
       }
       else {
         std::vector<double> cgns_data(num_to_get);
@@ -1919,13 +1897,14 @@ namespace Iocgns {
               var_type->label_name(field.get_name(), i + 1, field_suffix_separator);
 
           CGCHECKM(cgp_field_write(get_file_pointer(), base, zone, m_currentVertexSolutionIndex,
-				   CG_RealDouble, var_name.c_str(), &cgns_field));
+                                   CG_RealDouble, var_name.c_str(), &cgns_field));
           if (i == 0) {
             Utils::set_field_index(field, cgns_field, CG_Vertex);
           }
 
-          CGCHECKM(cgp_field_write_data(get_file_pointer(), base, zone, m_currentVertexSolutionIndex,
-					cgns_field, rmin, rmax, cgns_data.data()));
+          CGCHECKM(cgp_field_write_data(get_file_pointer(), base, zone,
+                                        m_currentVertexSolutionIndex, cgns_field, rmin, rmax,
+                                        cgns_data.data()));
         }
       }
     }

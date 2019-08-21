@@ -82,6 +82,8 @@ namespace Ioss {
   class DatabaseIO
   {
   public:
+    friend class SerializeIO;
+
     /** \brief Check to see if database state is OK.
      *
      *  \param[in] write_message If true, then output a warning message indicating the problem.

@@ -111,6 +111,9 @@ namespace Xpetra {
     //! The target Map used to construct this Export.
     virtual Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const = 0;
 
+    //! Set parameters on the underlying object
+    virtual void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const = 0;
+
     //@}
 
     //! @name I/O Methods

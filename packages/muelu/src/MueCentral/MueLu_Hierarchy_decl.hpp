@@ -196,6 +196,8 @@ namespace MueLu {
     //! Helper function
     void CheckLevel(Level& level, int levelID);
 
+    void SetMatvecParams(RCP<ParameterList> matvecParams);
+
     //! Multi-level setup phase: build a new level of the hierarchy.
     /*!  This method is aimed to be used in a loop building the hierarchy level by level. See Hierarchy::Setup(manager, startLevel, numDesiredLevels) for an example of usage.
      *
