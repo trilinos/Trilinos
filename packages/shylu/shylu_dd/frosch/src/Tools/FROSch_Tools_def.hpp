@@ -1284,21 +1284,6 @@ namespace FROSch {
         return 0;
     }
 #endif
-
-    void ThrowErrorMissingPackage(const std::string& froschObj,
-                                  const std::string& packageName)
-    {
-      // Create the error message
-      std::stringstream errMsg;
-      errMsg << froschObj << " is asking for the Trilinos packate '"<< packageName << "', "
-          "but this package is not included in your build configuration. "
-          "Please enable '" << packageName << "' in your build configuration to be used with ShyLU_DDFROSch.";
-
-      // Throw the error
-      FROSCH_ASSERT(false, errMsg.str());
-
-      return;
-    }
 } // namespace FROSch
 
 #endif

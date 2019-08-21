@@ -42,7 +42,9 @@
 #ifndef _FROSCH_TOOLS_DECL_HPP
 #define _FROSCH_TOOLS_DECL_HPP
 
+#ifndef FROSCH_ASSERT
 #define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
+#endif
 
 #include <ShyLU_DDFROSch_config.h>
 
@@ -366,8 +368,20 @@ namespace FROSch {
     \param[in] forschObj FROSch object that is asking for the missing package
     \param[in] packageName Name of the missing package
     */
-    void ThrowErrorMissingPackage(const std::string& froschObj,
-                                  const std::string& packageName);
+    inline void ThrowErrorMissingPackage(const std::string& froschObj,
+                                         const std::string& packageName)
+    {
+        // Create the error message
+        std::stringstream errMsg;
+        errMsg << froschObj << " is asking for the Trilinos packate '"<< packageName << "', "
+        "but this package is not included in your build configuration. "
+        "Please enable '" << packageName << "' in your build configuration to be used with ShyLU_DDFROSch.";
+        
+        // Throw the error
+        FROSCH_ASSERT(false, errMsg.str());
+        
+        return;
+    }
 }
 
 #endif

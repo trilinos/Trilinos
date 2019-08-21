@@ -42,9 +42,12 @@
 #ifndef _FROSCH_SUBDOMAINSOLVER_DECL_hpp
 #define _FROSCH_SUBDOMAINSOLVER_DECL_hpp
 
+#ifndef FROSCH_ASSERT
 #define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
+#endif
 
 #include <ShyLU_DDFROSch_config.h>
+#include <FROSch_Tools_decl.hpp>
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
 #include "Epetra_LinearProblem.h"

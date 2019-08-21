@@ -42,7 +42,9 @@
 #ifndef _FROSCH_EXTRACTSUBMATRICES_DECL_HPP
 #define _FROSCH_EXTRACTSUBMATRICES_DECL_HPP
 
+#ifndef FROSCH_ASSERT
 #define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
+#endif
 
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
