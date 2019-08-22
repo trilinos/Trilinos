@@ -100,7 +100,8 @@ public:
     }
 
     /*! \brief getNumUniqueGroups function
-     *  return the number of unique Dragonfly network groups in provided allocation.
+     *  return the number of unique Dragonfly network groups in provided 
+     *  allocation.
      *
      *  Equals the length of group_count member data, if available
      */
@@ -109,10 +110,18 @@ public:
     }
 
     /*! \brief getGroupCount function
-     *  set counter for the number of ranks in first dim (a.k.a. groups)
+     *  return the number of ranks in each group (RCA X-dim, e.g. first dim)
      *
-     *  Ex, 4 ranks with coord (3, 1, 1) will return grp_count = [0, 0, 0, 4, 0, ...] 
-     *  (Currently only for DragonflyRCA, and used for MultiJagged's first cut in MappingProblem)
+     *  Ex, 4 ranks with coord (3, 1, 1) and 8 ranks with coord (5, 2, 4), 
+     *  will produce
+     *  grp_count = [0, 0, 0, 4, 0, 8, 0, ...] 
+     *  which is trimmed and returned as
+     *  grp_count = [4, 8]
+     *
+     *
+     *  (Currently only for Zoltan2_MachineDragonflyRCA, and used for 
+     *  MultiJagged's first cut in "algorithms/partition/Zoltan2_TaskMapper.hpp"
+     *  thru "problems/Zoltan2_MappingProblem.hpp".
      *  return true if group_count is available
      */
     virtual bool getGroupCount(part_t *grp_count) const {

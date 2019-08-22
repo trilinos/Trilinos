@@ -13,17 +13,13 @@ extern "C"{
 
 namespace Zoltan2{
 
-/*! \brief A Dragonfly (e.g. Cori & Trinity) Machine Class for 
+/*! \brief A Dragonfly (e.g. Cori, Trinity, & Theta) Machine Class for 
  *  task mapping
  *
- *  Requires RCA library to run and $ZOLTAN2_MACHINE_DRAGONFLY = TRUE. 
- */
-
-/*! \brief A Dragonfly (e.g. Cori & Trinity) RCA Machine Class
+ *  Requires RCA library to run and -D ZOLTAN2_MACHINE_DRAGONFLY:BOOL=ON. 
  *
- *  NOTE: REQUIRES RCA library to run
- *
- *  Nodes in Cori are divided into groups(RCA x_dim) of 384 nodes
+ *  Nodes in Cori, for example, are divided into groups(RCA x_dim) of 
+ *  384 nodes (16 switch cols * 6 switch rows * 4 nodes/switch)
  *  and all groups are connected with an all-to-all connection.
  *  Within a group, clusters of 4 nodes are arranged into 6 
  *  rows (RCA y_dim) and 16 columns (RCA z_dim).
@@ -59,14 +55,14 @@ namespace Zoltan2{
  *  dimensions. If RCA coords are (3, 2, 14), we first transform 
  *  the X by 
  *
- *  X_new = 2 * X * N_Y * N_Z;
+ *  X_new = 3 * X * N_Y * N_Z;
  *
  *  Then transformed coords are (576, 2, 14) and in high-dim
  *  space:
  *
- *  (3, 2, 14) -> (576, 2, 14) -> 
+ *  (3, 2, 14) -> (864, 2, 14) -> 
  *
- *  (576,| 0, 0, 1, 0, 0, 0,| 0, ..., 0, 1, 0)
+ *  (864,| 0, 0, 1, 0, 0, 0,| 0, ..., 0, 1, 0)
  *  
  *  Now Coordinates are distance sqrt(2) apart if 1 hop, and
  *  distance 2 apart if 2 hops.  
@@ -101,10 +97,8 @@ public:
     actual_machine_extent = new int[actual_networkDim];
     this->getActualMachineExtent(this->actual_machine_extent);
   
-    // Number of ranks in each Dragonfly network group (i.e. RCA's X coord == Grp g)
-    group_count = new part_t[actual_machine_extent[0]];
-
-    // Number of parts in each Group (i.e. RCA's X coord == Grp g)
+    // Number of ranks in each Dragonfly network group 
+    // (i.e. RCA's X coord == Grp g)
     group_count = new part_t[actual_machine_extent[0]];
 
     memset(group_count, 0, sizeof(part_t) * actual_machine_extent[0]);
@@ -112,7 +106,7 @@ public:
     // Transformed dims = 1 + N_y + N_z
     transformed_networkDim = 1 + actual_machine_extent[1] + 
       actual_machine_extent[2];
-    actual_machine_extent = new int[transformed_networkDim];
+    transformed_machine_extent = new int[transformed_networkDim];
 
     // Allocate memory for processor coords
     actual_procCoords = new pcoord_t *[actual_networkDim];
@@ -130,7 +124,8 @@ public:
       actual_procCoords[i][this->myRank] = xyz[i];
     delete [] xyz;
 
-    // Gather number of ranks in each Dragonfly network group from across all ranks
+    // Gather number of ranks in each Dragonfly network group from 
+    // across all ranks
     part_t * tmp_vec = new part_t[actual_machine_extent[0]];
     memset(tmp_vec, 0, sizeof(part_t) * actual_machine_extent[0]);
 
@@ -178,7 +173,7 @@ public:
    *  machine description;
    *
    *  Does coord transformation if parameter list has a "Machine 
-   *  Optimization Level" parameter set. 
+   *  Optimization Level > 0" parameter set. 
    *  
    *  \param comm Communication object.
    *  \param pl   Parameter List
@@ -205,8 +200,6 @@ public:
    
     memset(group_count, 0, sizeof(part_t) * actual_machine_extent[0]);
 
-    std::cout << "\nMAKE DRAGONFLY MACHINE\n";
-
     // Allocate memory for processor coords
     actual_procCoords = new pcoord_t *[actual_networkDim];
     transformed_procCoords = new pcoord_t *[transformed_networkDim];
@@ -214,12 +207,8 @@ public:
     pcoord_t *xyz = new pcoord_t[actual_networkDim];
     getMyActualMachineCoordinate(xyz);
 
-    for (int i = 0; i < actual_machine_extent[0]; ++i)
-      std::cout << "\nRank: " << this->myRank << " 1group_count[" << i << "]: " << group_count[i] << "\n";
-
-    std::cout << "\nRank: " << this->myRank << " Comm size: " << comm.getSize() << "\n";
-
-    // Gather number of ranks in each Dragonfly network group from across all ranks
+    // Gather number of ranks in each Dragonfly network group 
+    // from across all ranks
     part_t * tmp_vec = new part_t[actual_machine_extent[0]];
     memset(tmp_vec, 0, sizeof(part_t) * actual_machine_extent[0]);
 
@@ -228,13 +217,7 @@ public:
                                     group_count,
                                     tmp_vec);
 
-    for (int i = 0; i < actual_machine_extent[0]; ++i)
-      std::cout << "\nRank: " << this->myRank << " 2group_count[" << i << "]: " << group_count[i] << "\n";
-
-    for (int i = 0; i < actual_machine_extent[0]; ++i)
-      std::cout << "\nRank: " << this->myRank << " 2tmp_vec[" << i << "]: " << tmp_vec[i] << "\n";
-
-    // remove zero entries from reduced array
+    // Remove zero entries from reduced array
     num_unique_groups = 0;
 
     for (int i = 0; i < actual_machine_extent[0]; ++i) {
@@ -254,13 +237,7 @@ public:
         ++pos;
       }
     }
-
     delete[] tmp_vec;
-
-
-    for (int i = 0; i < actual_machine_extent[0]; ++i)
-      std::cout << "\nRank: " << this->myRank << " 3group_count[" << i << "]: " << group_count[i] << "\n";
-
 
     const Teuchos::ParameterEntry *pe2 = 
       this->pl->getEntryPtr("Machine_Optimization_Level");
@@ -272,9 +249,6 @@ public:
 
       if (optimization_level > 0) {
         is_transformed = true;
-
-        if (this->myRank == 0) 
-          std::cout << "Transforming the coordinates" << std::endl;
        
         // Transformed dims = 1 + N_y + N_z
         transformed_networkDim = 1 + actual_machine_extent[1] + 
@@ -314,8 +288,11 @@ public:
         if (pe_z)
           z_stretch = pe_z->getValue<int>(&z_stretch);
 
-        transformed_procCoords[0][this->myRank] = x_stretch * xyz[0] * ny * nz;
+        // Transform X coords
+        transformed_procCoords[0][this->myRank] = 
+          x_stretch * xyz[0] * ny * nz;
 
+        // Transform Y coords
         for (int i = 1; i < 1 + ny; ++i) {
           // Shift y-coord given a group, xyz[0];
           transformed_procCoords[i][this->myRank] = 0;
@@ -323,6 +300,7 @@ public:
           if (xyz[1] == i - 1)
             transformed_procCoords[i][this->myRank] = y_stretch;
         }
+        // Transform Z coords
         for (int i = 1 + ny; i < transformed_networkDim; ++i) {
           // Shift z-coord given a group, xyz[0];
           transformed_procCoords[i][this->myRank] = 0;
@@ -333,7 +311,7 @@ public:
 
         this->transformed_machine_extent = new int[transformed_networkDim];
         
-        // Max shifted high dim coordinate system
+        // Maximum extents in shifted high dim coordinate system
         this->transformed_machine_extent[0] = x_stretch * (nx - 1) * ny * nz;
         for (int i = 1; i < 1 + ny; ++i) {
           this->transformed_machine_extent[i] = y_stretch;
@@ -370,6 +348,7 @@ public:
     delete [] xyz;
   }
 
+  // Destructor
   virtual ~MachineDragonflyRCA() {
     if (is_transformed) {
       is_transformed = false;
@@ -397,6 +376,7 @@ public:
 
   bool hasMachineCoordinates() const { return true; }
 
+  // Return dimensions of coords, transformed or actual
   int getMachineDim() const {
     if (is_transformed) 
       return this->transformed_networkDim;
@@ -404,6 +384,7 @@ public:
       return this->actual_networkDim;
   }
 
+  // Return the transformed maximum machine extents
   bool getTransformedMachineExtent(int *nxyz) const {
     if (is_transformed) {
       for (int dim = 0; dim < transformed_networkDim; ++dim)
@@ -415,13 +396,13 @@ public:
       return false;
   }
 
-  // Return RCA machine extents
+  // Return the actual RCA maximum machine extents
   bool getActualMachineExtent(int *nxyz) const {
 #if defined (HAVE_ZOLTAN2_RCALIB)
     mesh_coord_t mxyz;
     rca_get_max_dimension(&mxyz);
 
-    int dim = 0;
+    int dim = 0;                   // Example extents on Cori
     nxyz[dim++] = mxyz.mesh_x + 1; // X - group [0, ~100]
     nxyz[dim++] = mxyz.mesh_y + 1; // Y - row within group [0, 5]
     nxyz[dim++] = mxyz.mesh_z + 1; // Z - col within row [0, 15]
@@ -431,6 +412,7 @@ public:
 #endif
   }
 
+  // Return machine extents, transformed or actual
   bool getMachineExtent(int *nxyz) const {
     if (is_transformed) 
       this->getTransformedMachineExtent(nxyz);
@@ -440,10 +422,12 @@ public:
     return true;
   }
 
+  // Return number of groups (RCA X-dim) with allocated nodes
   part_t getNumUniqueGroups() const override{
     return this->num_unique_groups;
   }
 
+  // Return number of ranks in each group (RCA X-dim) in an allocation
   bool getGroupCount(part_t *grp_count) const override {
    
     if (group_count != NULL) {
@@ -457,6 +441,7 @@ public:
       return false;
   }
 
+  // Print allocation coords and extents on rank 0, transformed or actual
   void printAllocation() {
     if (this->myRank == 0) {
       // Print transformed coordinates and extents
@@ -494,6 +479,7 @@ public:
     }
   }
 
+  // Return transformed coord for this rank
   bool getMyTransformedMachineCoordinate(pcoord_t *xyz) {
     if (is_transformed) {
       for (int i = 0; i < this->transformed_networkDim; ++i) {
@@ -506,6 +492,7 @@ public:
       return false;
   }
 
+  // Return actual RCA coord for this rank
   bool getMyActualMachineCoordinate(pcoord_t *xyz) {
 #if defined (HAVE_ZOLTAN2_RCALIB)
     // Cray node info for current node
@@ -529,8 +516,6 @@ public:
     xyz[1] = y;
     xyz[2] = z;
 
-    std::cout << "\nGROUP: " << xyz[0] << "\n";
-
     group_count[x]++;
 
     return true;
@@ -539,6 +524,7 @@ public:
 #endif
   }
 
+  // Return machine coordinate for this rank, transformed or actual
   bool getMyMachineCoordinate(pcoord_t *xyz) {
     if (is_transformed) 
       this->getMyTransformedMachineCoordinate(xyz);
@@ -548,6 +534,7 @@ public:
     return true;
   }
 
+  // Return machine coord of given rank, transformed or actual
   inline bool getMachineCoordinate(const int rank,
                                    pcoord_t *xyz) const {
     if (is_transformed) {
@@ -568,6 +555,7 @@ public:
     return false;  // cannot yet return from nodename
   }
  
+  // Return view of all machine coords, transformed or actual
   bool getAllMachineCoordinatesView(pcoord_t **&allCoords) const {
     if (is_transformed) {
       allCoords = transformed_procCoords; 
@@ -631,27 +619,29 @@ public:
 
 private:
 
+  // # of dimensions in the stored coordinates, transformed or actual
   int transformed_networkDim;
   int actual_networkDim;
 
+  // Machine Coordinates
   pcoord_t **transformed_procCoords;
   pcoord_t **actual_procCoords;
 
+  // Maximum extents for each dimension, transformed or actual
   part_t *transformed_machine_extent;
   part_t *actual_machine_extent;
+
+  // Number of groups (RCA X-dim) with nonzero nodes allocated
   part_t num_unique_groups;
+  // Distribution of nodes in each group (zero node groups have been trimmed)
   part_t *group_count;
+  
+  // Are our coordinates transformed?
   bool is_transformed;
 
   const Teuchos::ParameterList *pl;
-//  bool delete_tranformed_coords;
 
-/*
-  bool delete_transformed_coords;
-  int transformed_network_dim;
-  pcoord_t **transformed_coordinates;
-*/
-
+  // reduceAll the machine coordinates
   void gatherMachineCoordinates(pcoord_t **&coords, int netDim, 
       const Teuchos::Comm<int> &comm) {
     // Reduces and stores all machine coordinates.

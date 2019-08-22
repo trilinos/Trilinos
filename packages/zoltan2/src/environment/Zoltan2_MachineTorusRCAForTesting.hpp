@@ -56,6 +56,7 @@ public:
   virtual bool getMachineExtentWrapArounds(bool *wrap_around) const {
     int dim = 0;
     int transformed_network_dim = networkDim;
+
     if (dim < transformed_network_dim)
       wrap_around[dim++] = true;
     if (dim < transformed_network_dim)
