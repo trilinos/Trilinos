@@ -213,25 +213,30 @@ void getSolutionCenterCoordinates(
   for (lno_t i = 0; i < numLocalCoords; i++) {
     part_t p = parts[i];
   
-//    std::cout << "\nRank: " << comm->getRank() << " i: " << i << " part: " << p << std::endl;
+//    std::cout << "\nRank: " << comm->getRank() 
+//    << " i: " << i << " part: " << p << std::endl;
 
     //add up all coordinates in each part.
     for (int j = 0; j < coordDim; ++j) {
 
-//      std::cout << "\nRank: " << comm->getRank() << " i: " << i << " j: " << j << " part: " << p << std::endl;
+//      std::cout << "\nRank: " << comm->getRank() 
+//      << " i: " << i << " j: " << j << " part: " << p << std::endl;
       scalar_t c = multiJagged_coordinates[j][i];
 
 
 
-//      std::cout << "\nRank: " << comm->getRank() << " i: " << i << " j: " << j 
+//      std::cout << "\nRank: " << comm->getRank() 
+//      << " i: " << i << " j: " << j 
 //        << " part: " << p << " coord: " << c << std::endl;
 
 
       partCenters[j][p] += c;
 
 
-//      std::cout << "\nRank: " << comm->getRank() << " i: " << i << " j: " << j
-//        << " part: " << p << " coord: " << c << " centers: " << partCenters[j][p] << std::endl;
+//      std::cout << "\nRank: " << comm->getRank() 
+//      << " i: " << i << " j: " << j
+//        << " part: " << p << " coord: " << c 
+//        << " centers: " << partCenters[j][p] << std::endl;
     }
     ++point_counts[p];
   }
@@ -242,7 +247,8 @@ void getSolutionCenterCoordinates(
 
   for (int j = 0; j < coordDim; ++j) {
     for (part_t i = 0; i < ntasks; ++i) {
-      partCenters[j][i] /= global_point_counts[i];
+      if (global_point_counts[i] > 0)
+        partCenters[j][i] /= global_point_counts[i];
     }
   }
 
@@ -1049,47 +1055,23 @@ public:
     part_t commCount = 0;
     for (part_t task = 0; task < this->no_tasks; ++task) {
       int assigned_proc = task_to_proc[task];
-//      std::cout << "task:" << task << endl;
 
       part_t task_adj_begin = task_communication_xadj[task];
       part_t task_adj_end = task_communication_xadj[task + 1];
 
       commCount += task_adj_end - task_adj_begin;
-//      std::cout << "task:" << task << " proc:" << assigned_proc << endl;
+
       for (part_t task2 = task_adj_begin; task2 < task_adj_end; ++task2) {
 
-//        std::cout << "task2:" << task2 << endl;
         part_t neighborTask = task_communication_adj[task2];
-//        std::cout << "neighborTask :" << neighborTask  << endl;
-
         int neighborProc = task_to_proc[neighborTask];
-
-//        std::cout << "\nASSIGNED_PROC: " << assigned_proc 
-//          << " NeighborProc: " << neighborProc << std::endl;
-
         double distance = getProcDistance(assigned_proc, neighborProc);
-
-
-//        std::cout << "\nDA DISTANCE In TASK_MAPPING: " << distance << std::endl;
-
 
         if (task_communication_edge_weight == NULL) {
           totalCost += distance ;
         }
         else {
           totalCost += distance * task_communication_edge_weight[task2];
-
-/*
-          std::cout <<  "\ttask: " << task 
-            << " assigned_proc: " << assigned_proc
-            << " task2: " << task 
-            << " neighborProc: " << neighborProc 
-            << " d: " << distance 
-            << " task_communication_edge_weight[task2]:" 
-            << task_communication_edge_weight[task2] 
-            << " wh:" << distance * task_communication_edge_weight[task2] 
-            << std::endl;
-*/
         }
       }
     }
@@ -1576,29 +1558,17 @@ public:
     // Optimization for Dragonfly Networks, First Cut is imbalanced to ensure
     // procs are divided by first RCA coord (a.k.a. group).
     part_t num_group_count = 0;
-  
-    num_group_count = machine->getNumUniqueGroups();
+    part_t *group_count = NULL;
 
-    std::cout << "\nNum_group_count: " << num_group_count << "\n";
-
-
-    part_t *group_count = new part_t[num_group_count];
-    
-    memset(group_count, 0, sizeof(part_t) * num_group_count);
-      
-    if (num_group_count > 0 && machine->getGroupCount(group_count)) {
-
-      std::cout << "\nGroup_Count_Dist: ";
-      for (int i = 0; i < num_group_count; ++i) {
-        std::cout << " " << group_count[i]; 
-      }
-      std::cout << std::endl;
+    if (machine != NULL)
+      num_group_count = machine->getNumUniqueGroups();
+ 
+    if (num_group_count > 0) {
+      group_count = new part_t[num_group_count];    
+      memset(group_count, 0, sizeof(part_t) * num_group_count);
+ 
+      machine->getGroupCount(group_count);
     }
-
-
-    std::cout << "\nAbout to proc partition\n";
-
-
 
     // Do the partitioning and renumber the parts.
     env->timerStart(MACRO_TIMERS, "Mapping - Proc Partitioning");
@@ -1644,10 +1614,6 @@ public:
       tcoords[i] = this->task_coords[permutation[i]];
     }
 
-
-    std::cout << "\nAbout to task partition\n";
-
-
     env->timerStart(MACRO_TIMERS, "Mapping - Task Partitioning");
     // Partitioning of Tasks
     mj_partitioner.sequential_task_partitioning(
@@ -1676,9 +1642,6 @@ public:
 //    comm_->barrier();
 //    std::cout << "mj_partitioner.sequential_task_partitioning over" 
 //      << std::endl;
-
-
-    std::cout << "\nPartitioning complete!!" << std::endl;
 
     freeArray<pcoord_t *>(tcoords);
     freeArray<int>(permutation);
@@ -1783,8 +1746,6 @@ public:
       gnuPlotCode.close();
     }
 */
-
-    std::cout << "\nEND OF COORD TASK MAPPER" << std::endl;
 
     freeArray<part_t>(proc_to_task_xadj_work);
     freeArray<part_t>(task_xadj);
@@ -2363,18 +2324,15 @@ public:
     for (int i = 0; i < procDim; ++i)
       machine_extent_wrap_around[i] = false;
 
-    //    machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
+    bool haveWrapArounds = machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
 
     // KDDKDD ASK MEHMET:  SHOULD WE GET AND USE machine_dimension HERE IF IT
     // KDDKDD ASK MEHMET:  IS PROVIDED BY THE MACHINE REPRESENTATION?
     // KDDKDD ASK MEHMET:  IF NOT HERE, THEN WHERE?
     // MD: Yes, I ADDED BELOW:
     if (machine_->getMachineExtent(machine_extent) &&
-        machine_->getMachineExtentWrapArounds(machine_extent_wrap_around)) {
-      
-      std::cout << "\nmachine_extent[3]: " << machine_extent[3] << "\n";
-      
-      
+        haveWrapArounds) {
+            
       procCoordinates =
           this->shiftMachineCoordinates(
               procDim,
@@ -2383,19 +2341,6 @@ public:
               this->nprocs,
               procCoordinates);
     }
-
-/*
-    for (int i = 0; i < this->nprocs; ++i)
-    {
-      std::cout << "\nMyRank: " << comm_->getRank() << " nprocs: " << nprocs << " Coords: ";
-      for (int j = 0; j < procDim; ++j)
-      {
-        std::cout << procCoordinates[j][i] << " ";
-      }
-      
-    }
-    std::cout << "\n";
-*/
 
     //get the tasks information, such as coordinate dimension,
     //number of parts.
@@ -2548,7 +2493,7 @@ public:
     delete [] machine_extent_wrap_around;
    
     if (machine_->getMachineExtent(machine_extent) &&
-        machine_->getMachineExtentWrapArounds(machine_extent_wrap_around)) {
+        haveWrapArounds) {
       for (int i = 0; i < procDim; ++i) {
         delete [] procCoordinates[i];
       }
@@ -2664,14 +2609,14 @@ public:
 //    std::vector<bool> machine_extent_wrap_around_vec(procDim, 0);
     int *machine_extent = &(machine_extent_vec[0]);
     bool *machine_extent_wrap_around = new bool[procDim];
-//    machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
+    bool haveWrapArounds = machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
 
     // KDDKDD ASK MEHMET:  SHOULD WE GET AND USE machine_dimension HERE IF IT
     // KDDKDD ASK MEHMET:  IS PROVIDED BY THE MACHINE REPRESENTATION?
     // KDDKDD ASK MEHMET:  IF NOT HERE, THEN WHERE?
     // MD: Yes, I ADDED BELOW:
     if (machine_->getMachineExtent(machine_extent) &&
-        machine_->getMachineExtentWrapArounds(machine_extent_wrap_around)) {
+        haveWrapArounds) {
       procCoordinates =
           this->shiftMachineCoordinates(
               procDim,
@@ -2843,7 +2788,7 @@ public:
     delete [] machine_extent_wrap_around;
    
     if (machine_->getMachineExtent(machine_extent) &&
-        machine_->getMachineExtentWrapArounds(machine_extent_wrap_around)) {
+        haveWrapArounds) {
       for (int i = 0; i < procDim; ++i) {
         delete [] procCoordinates[i];
       }
@@ -3084,10 +3029,8 @@ public:
       int *filledCoordinates = new int[numMachinesAlongDim];
 
       pcoord_t *coords = mCoords[i];
+
       for (part_t j = 0; j < numProcs; ++j) {
-
-        std::cout << "\ni, j: " << i << " " << j << "\n";
-
         part_t mc = (part_t) coords[j];
         ++machineCounts[mc];
       }
