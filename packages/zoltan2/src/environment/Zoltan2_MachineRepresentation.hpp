@@ -35,12 +35,11 @@ public:
   #else 
     typedef MachineForTesting<pcoord_t, part_t> machine_t;
   #endif
-
 */
 #if defined(HAVE_ZOLTAN2_RCALIB) 
   #if defined(ZOLTAN2_MACHINE_TORUS)
     typedef MachineTorusRCA<pcoord_t, part_t> machine_t;
-  #elif TRUE || defined(ZOLTAN2_MACHINE_DRAGONFLY)  
+  #elif defined(ZOLTAN2_MACHINE_DRAGONFLY)  
     typedef MachineDragonflyRCA<pcoord_t, part_t> machine_t;
   #else
     typedef MachineForTesting<pcoord_t, part_t> machine_t;
@@ -66,9 +65,9 @@ public:
   #elif defined(ZOLTAN2_MACHINE_DRAGONFLY)
     typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
   #else 
-//    typedef MachineForTesting<pcoord_t, part_t> machine_t;
+    typedef MachineForTesting<pcoord_t, part_t> machine_t;
 //    typedef MachineTorusRCAForTesting<pcoord_t, part_t> machine_t;
-    typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
+//    typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
   #endif
 #endif
 
@@ -165,21 +164,29 @@ public:
     }
 
     /*! \brief getNumUniqueGroups function
-     *  return the number of unique Dragonfly network groups in provided allocation.
+     *  return the number of unique Dragonfly network groups in provided 
+     *  allocation.
      *
-     *  Equals the length of group_count member data, if available
+     *  Equals the length of group_count member data (see accessor 
+     *  right below), if available
      */
     inline part_t getNumUniqueGroups() const {
       return machine->getNumUniqueGroups();
     }
 
-    /*! \brief return counter for the number of ranks in first dim (a.k.a. groups) 
+    /*! \brief return the number of ranks in each group (RCA X-dim, 
+     *  e.g. first dim)
      *
-     *  Ex, 4 ranks with coord (3, 1, 1), will return 
-     *  grp_count = [0, 0, 0, 4, 0, ...]
+     *  Ex, 4 ranks with coord (3, 1, 1) and 8 ranks with coord (5, 2, 4), will 
+     *  produce
+     *  grp_count = [0, 0, 0, 4, 0, 8, 0, ...] 
+     *  which is trimmed and returned as
+     *  grp_count = [4, 8]
      *  
-     *  (Currently only for DragonflyRCA, and used for MultiJagged's 
-     *  first cut in MappingProblem) 
+     *  (Currently only for Zoltan2_MachineDragonflyRCA, and used for 
+     *  MultiJagged's first cut in "algorithms/partition/Zoltan2_TaskMapper.hpp" 
+     *  thru
+     *  "problems/Zoltan2_MappingProblem.hpp". 
      */ 
     inline bool getGroupCount(part_t *grp_count) const {
       return machine->getGroupCount(grp_count);
@@ -204,12 +211,13 @@ public:
              file_not_required_validator);
     }
 
-
     // KDD TODO: Add Graph interface and methods supporting full LDMS 
     // interface.
 
 private:
     machine_t *machine;
 };
-}
+
+} // namespace Zoltan2
+
 #endif
