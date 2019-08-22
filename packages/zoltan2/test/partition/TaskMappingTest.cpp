@@ -48,7 +48,7 @@ int main(int narg, char *arg[]) {
   }
 
   try{
-
+    
     int rank = tcomm->getRank();
     part_t numProcs = tcomm->getSize();
 
@@ -113,7 +113,6 @@ int main(int narg, char *arg[]) {
       rcp(new map_t (numGlobalTasks, myTasks, 0, tcomm));
 
     RCP<tcrsGraph_t> TpetraCrsGraph(new tcrsGraph_t (map, 0));
-
 
     for (zlno_t lclRow = 0; lclRow < myTasks; ++lclRow) {
       const zgno_t gblRow = map->getGlobalElement (lclRow);
@@ -221,7 +220,6 @@ int main(int narg, char *arg[]) {
     // Below is to calculate the result hops. this uses the global graph
     // also this is used for debug, as the hops are also calculated in mapper.
     {
-
       zlno_t prevNCount_tmp = 0;
       zgno_t *task_communication_adj_tmp  = new zgno_t [numGlobalTasks * 6];
       zlno_t *task_communication_xadj_tmp = new zlno_t [numGlobalTasks + 1];
@@ -252,7 +250,7 @@ int main(int narg, char *arg[]) {
         }
         task_communication_xadj_tmp[i + 1] = prevNCount_tmp;
       }
-
+      
       int mach_coord_dim = mach.getMachineDim();
       std::vector <int> mach_extent(mach_coord_dim);
       mach.getMachineExtent(&(mach_extent[0]));
@@ -279,7 +277,7 @@ int main(int narg, char *arg[]) {
           &(copy[0]),
           &(all_parts[0])
       );
-
+      
       zscalar_t **proc_coords;
       mach.getAllMachineCoordinatesView(proc_coords);
       part_t hops=0;
@@ -289,7 +287,7 @@ int main(int narg, char *arg[]) {
 
       mach.getMachineExtent(machine_extent);
       mach.getMachineExtentWrapArounds(machine_extent_wrap_around);
-
+     
       for (zlno_t i = 0; i < numGlobalTasks; ++i) {
         zlno_t b = task_communication_xadj_tmp[i];
         zlno_t e = task_communication_xadj_tmp[i + 1];

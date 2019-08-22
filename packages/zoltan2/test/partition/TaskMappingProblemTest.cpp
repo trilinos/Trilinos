@@ -239,9 +239,10 @@ void test_distributed_input_adapter(
       ia.getRawPtr(), &distributed_problemParams, global_tcomm);
   
   partitioning_problem.solve();
+
   Zoltan2::PartitioningSolution<mytest_adapter_t> partition_solution = 
     partitioning_problem.getSolution();
-
+  
   // For the second case, we do not need a solution.
 
   // For the third case we create our own solution and set unique parts to 
@@ -258,21 +259,20 @@ void test_distributed_input_adapter(
   }
   single_phase_mapping_solution.setParts(initial_part_ids);
 
-
   env->timerStart(Zoltan2::MACRO_TIMERS, "Problem Create");
   // Create mapping problem for the first case, provide the partition 
   // solution by MJ.
   Zoltan2::MappingProblem<mytest_adapter_t> distributed_map_problem_1(
       ia.getRawPtr(), &distributed_problemParams, 
       global_tcomm, &partition_solution);
-
+  
   // Create mapping problem for the second case. We don't provide a 
   // solution in this case.
   // Mapping assumes that the elements in the current processor is attached 
   // together and are in the same part.
   Zoltan2::MappingProblem<mytest_adapter_t> distributed_map_problem_2(
       ia.getRawPtr(), &distributed_problemParams, global_tcomm);
-
+  
   // Create a mapping problem for the third case. We provide a solution in 
   // which all elements belong to unique part.
   Zoltan2::MappingProblem<mytest_adapter_t> distributed_map_problem_3(
@@ -282,16 +282,23 @@ void test_distributed_input_adapter(
   env->timerStop(Zoltan2::MACRO_TIMERS, "Problem Create");
   //solve mapping problem.
   env->timerStart(Zoltan2::MACRO_TIMERS, "Problem Solve");
+
   distributed_map_problem_1.solve(true);
+
   distributed_map_problem_2.solve(true);
+
   distributed_map_problem_3.solve(true);
+  
   env->timerStop(Zoltan2::MACRO_TIMERS, "Problem Solve");
 
   //get the solution.
+  
   Zoltan2::MappingSolution<mytest_adapter_t> *msoln1 = 
     distributed_map_problem_1.getSolution();
+
   Zoltan2::MappingSolution<mytest_adapter_t> *msoln2 = 
     distributed_map_problem_2.getSolution();
+
   Zoltan2::MappingSolution<mytest_adapter_t> *msoln3 = 
     distributed_map_problem_3.getSolution();
 
@@ -300,16 +307,18 @@ void test_distributed_input_adapter(
   //typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
   //typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
   typedef Zoltan2::EvaluateMapping<mytest_adapter_t> quality_t;
-
+  
   RCP<quality_t> metricObject_1 = 
     rcp(new quality_t(ia.getRawPtr(), &distributed_problemParams, 
                       global_tcomm, msoln1, 
                       distributed_map_problem_1.getMachine().getRawPtr()));
   //metricObject_1->evaluate();
+  
   RCP<quality_t> metricObject_2 = 
     rcp(new quality_t(ia.getRawPtr(), &distributed_problemParams, 
                       global_tcomm, msoln2, 
                       distributed_map_problem_2.getMachine().getRawPtr()));
+    
   //metricObject_2->evaluate();
   RCP<quality_t> metricObject_3 = 
     rcp(new quality_t(ia.getRawPtr(), &distributed_problemParams, 
@@ -330,7 +339,8 @@ void test_distributed_input_adapter(
     metricObject_3->printMetrics(std::cout);
   }
 
-  for (int i = 0; i < 3; i++) delete [] partCenters[i];
+  for (int i = 0; i < 3; i++) 
+    delete [] partCenters[i];
   delete [] partCenters;
 }
 
@@ -354,7 +364,7 @@ void test_serial_input_adapter(
   serial_problemParams.set("distributed_input_adapter", false);
   serial_problemParams.set("algorithm", "multijagged");
   serial_problemParams.set("num_global_parts", numProcs); 
- 
+   
   RCP<Zoltan2::Environment> env(
       new Zoltan2::Environment(serial_problemParams, global_tcomm));
   RCP<Zoltan2::TimerManager> timer(
@@ -420,19 +430,20 @@ void test_serial_input_adapter(
   }
   single_phase_mapping_solution.setParts(initial_part_ids);
 
-
   env->timerStart(Zoltan2::MACRO_TIMERS, "Problem Create");
   // Create a mapping problem for the third case. We provide a solution in 
   // which all elements belong to unique part.
   // Even the input is not distributed, we still provide the global_tcomm 
   // because processors will calculate different mappings and the best one 
   // will be chosen.
+  
   Zoltan2::MappingProblem<mytest_adapter_t> serial_map_problem(
       ia.getRawPtr(), &serial_problemParams, 
       global_tcomm, &single_phase_mapping_solution);
 
   env->timerStop(Zoltan2::MACRO_TIMERS, "Problem Create");
   // Solve mapping problem.
+  
   env->timerStart(Zoltan2::MACRO_TIMERS, "Problem Solve");
   serial_map_problem.solve(true);
   env->timerStop(Zoltan2::MACRO_TIMERS, "Problem Solve");
@@ -445,7 +456,6 @@ void test_serial_input_adapter(
 
 //  typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
   typedef Zoltan2::EvaluateMapping<mytest_adapter_t> quality_t;
-
 
   // Input is not distributed in this case.
   // Metric object should be given the serial comm so that it can calculate 
