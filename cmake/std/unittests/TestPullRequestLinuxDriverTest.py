@@ -82,6 +82,48 @@ class Test_run(unittest.TestCase):
         m_check_out.assert_called_once_with(['git', '--version'])
 
 
+    def test_verifyGit_passes_with_2_10(self):
+        """Check to see that git is in path"""
+        with self.m_check_out as m_check_out:
+            m_check_out.return_value='git version 2.10.1'
+
+            if sys.version_info.major is not 3:
+                with self.IOredirect:
+                    PullRequestLinuxDriverTest.confirmGitVersion()
+            else:
+                with self.IOredirect:
+                    PullRequestLinuxDriverTest.confirmGitVersion()
+        m_check_out.assert_called_once_with(['git', '--version'])
+
+
+    def test_verifyGit_passes_with_2_12(self):
+        """Check to see that git is in path"""
+        with self.m_check_out as m_check_out:
+            m_check_out.return_value='git version 2.12.4'
+
+            if sys.version_info.major is not 3:
+                with self.IOredirect:
+                    PullRequestLinuxDriverTest.confirmGitVersion()
+            else:
+                with self.IOredirect:
+                    PullRequestLinuxDriverTest.confirmGitVersion()
+        m_check_out.assert_called_once_with(['git', '--version'])
+
+
+    def test_verifyGit_passes_with_3_x(self):
+        """Check to see that git is in path"""
+        with self.m_check_out as m_check_out:
+            m_check_out.return_value='git version 3.6.1'
+
+            if sys.version_info.major is not 3:
+                with self.IOredirect:
+                    PullRequestLinuxDriverTest.confirmGitVersion()
+            else:
+                with self.IOredirect:
+                    PullRequestLinuxDriverTest.confirmGitVersion()
+        m_check_out.assert_called_once_with(['git', '--version'])
+
+
     def test_verifyTargetBranch_fails_with_master_target_non_mm_source(self):
         """Check to see that git is in path"""
         l_argv = mock.patch.object(sys, 'argv', ['programName',
