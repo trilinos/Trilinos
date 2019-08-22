@@ -310,8 +310,6 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
       pe_input_adapter = pl.getEntryPtr("reduce_best_mapping");
       if (pe_input_adapter) 
         reduce_best_mapping = pe_input_adapter->getValue<bool>(&reduce_best_mapping);
-
-      std::cout << "\nABOUT TO MAKE TASKMAPPER" << std::endl;
       
       this->algorithm_ = 
             rcp(new CoordinateTaskMapper<Adapter,part_t>(this->comm_,
@@ -324,18 +322,9 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
                                                          divide_prime_first, 
                                                          reduce_best_mapping));
 
-      std::cout << "\nMADE TASKMAPPER" << std::endl;
-
-
       this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
 
-
-      std::cout << "\nGOT TASKMAPPER SOLN" << std::endl;
-
       this->algorithm_->map(this->soln);
-
-
-      std::cout << "\nMAPPED SOLN TASKMAPPER" << std::endl;
     }
     else {
       // Add other mapping methods here
@@ -414,9 +403,9 @@ MappingProblem(
 }
 
 
-In general, the applyPartitioningSolution method should take an 
-optional MappingSolution.
+// In general, the applyPartitioningSolution method should take an 
+// optional MappingSolution.
 
-Should MappingSolution provide a re-numbered communicator reflecting the new mapping?
+// Should MappingSolution provide a re-numbered communicator reflecting the new mapping?
 
 #endif
