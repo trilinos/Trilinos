@@ -47,6 +47,7 @@
 /// Declaration and definition of Tpetra::CrsMatrixMultiplyOp and its
 /// nonmember constructor Tpetra::createCrsMatrixMultiplyOp.
 
+#include "Tpetra_CrsMatrixMultiplyOp_fwd.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Details_Behavior.hpp"
@@ -87,11 +88,15 @@ namespace Tpetra {
   ///
   /// \tparam Node The fourth template parameter of CrsMatrix and
   ///   Operator.
+  ///
+  /// If you encounter link errors when Scalar != MatScalar, try
+  /// including <tt>Tpetra_LocalCrsMatrixOperator_def.hpp</tt> after
+  /// including this header file.
   template <class Scalar,
-            class MatScalar = Scalar,
-            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+            class MatScalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class CrsMatrixMultiplyOp :
     public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {

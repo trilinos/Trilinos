@@ -93,6 +93,14 @@ namespace {
       method = properties.get("DECOMPOSITION_METHOD").get_string();
       method = Ioss::Utils::uppercase(method);
     }
+    else if (properties.exists("RESTART_DECOMPOSITION_METHOD")) {
+      method = properties.get("RESTART_DECOMPOSITION_METHOD").get_string();
+      method = Ioss::Utils::uppercase(method);
+    }
+    else if (properties.exists("MODEL_DECOMPOSITION_METHOD")) {
+      method = properties.get("MODEL_DECOMPOSITION_METHOD").get_string();
+      method = Ioss::Utils::uppercase(method);
+    }
 
     if (method != "LINEAR"
 #if !defined(NO_ZOLTAN_SUPPORT)

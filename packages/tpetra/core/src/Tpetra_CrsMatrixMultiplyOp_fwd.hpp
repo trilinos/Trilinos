@@ -1,11 +1,11 @@
 // @HEADER
-// ************************************************************************
+// ***********************************************************************
 //
-//               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,38 +34,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
-#ifndef ROLSTDTEUCHOSBATCHMANAGER_HPP
-#define ROLSTDTEUCHOSBATCHMANAGER_HPP
+#ifndef TPETRA_CRSMATRIXMULTIPLYOP_FWD_HPP
+#define TPETRA_CRSMATRIXMULTIPLYOP_FWD_HPP
 
-#include "ROL_TeuchosBatchManager.hpp"
-#include "ROL_StdVector.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
-namespace ROL {
+/// \file Tpetra_CrsMatrixMultiplyOp_fwd.hpp
+/// \brief Forward declaration of Tpetra::CrsMatrixMultiplyOp
 
-template<class Real, class Ordinal>
-class StdTeuchosBatchManager : public TeuchosBatchManager<Real,Ordinal> {
-public:
-  StdTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<int>> &comm)
-    : TeuchosBatchManager<Real,Ordinal>(comm) {}
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Tpetra {
+template<class Scalar,
+         class MatScalar = Scalar,
+         class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+         class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+class CrsMatrixMultiplyOp;
+} // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  using TeuchosBatchManager<Real,Ordinal>::sumAll;
-  void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    std::vector<Real> &idata = *dynamic_cast<StdVector<Real>&>(input).getVector();
-    std::vector<Real> &odata = *dynamic_cast<StdVector<Real>&>(output).getVector();
-    int size = idata.size();
-    ROL_TEST_FOR_EXCEPTION(size != static_cast<int>(odata.size()), std::invalid_argument,
-      ">>> (ROL::StdTeuchosBatchManager::SumAll): Dimension mismatch!");
-    TeuchosBatchManager<Real,Ordinal>::sumAll(&idata[0],&odata[0],size);
-  }
-};
-
-}
-
-#endif
+#endif // TPETRA_CRSMATRIXMULTIPLYOP_FWD_HPP
