@@ -771,6 +771,8 @@ private:
      * for the parts that will be obtained at the end of this coordinate partitioning.
      * \param concurrent_current_part is the index of the part in the future_num_part_in_parts vector.
      * \param obtained_part_index holds the amount of shift in the next_future_num_parts_in_parts for the output parts.
+     * \param num_first_cut is the number of parts after the first level of partitioning (may be nonuniform)
+     * \param first_cut_dist is an array containing the distribution of elements in each part after the first cut (used for nonuniform first cuts)
      */
     void mj_get_initial_cut_coords_target_weights(
         mj_scalar_t min_coord,
@@ -1278,6 +1280,8 @@ public:
      *                          the result partids corresponding to the coordinates given in result_mj_gnos.
      *  \param result_mj_gnos: Output - 1D pointer, should be provided as null.
      *                          the result coordinate global id's corresponding to the part_ids array.
+     *  \param num_first_cut_parts_: the number of parts after the first level of partitioning (may be nonuniform)
+     *  \param first_cut_distribution_: an array containing the distribution of elements in each part after the first cut (used for nonuniform first cuts)
      *
      */
     void multi_jagged_part(
@@ -1358,6 +1362,9 @@ public:
      *
      *  \param rd: recursion depth
      *  \param part_no_array_: possibly null part_no_array, specifying how many parts each should be divided during partitioning.
+     *  
+     *  \param num_first_cut_parts_: the number of parts after the first level of partitioning (may be nonuniform)
+     *  \param first_cut_distribution_: an array containing the distribution of elements in each part after the first cut (used for nonuniform first cuts)
      */
     void sequential_task_partitioning(
         const RCP<const Environment> &env,
@@ -1401,6 +1408,9 @@ public:
  *
  *  \param rd: recursion depth
  *  \param part_no_array_: possibly null part_no_array, specifying how many parts each should be divided during partitioning.
+ *    
+ * \param num_first_cut_parts_: the number of parts after the first level of partitioning (may be nonuniform)
+ * \param first_cut_distribution_: an array containing the distribution of elements in each part after the first cut (used for nonuniform first cuts)
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -1444,7 +1454,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
     this->part_no_array = (mj_part_t *)part_no_array_;
     this->recursion_depth = rd;
 
-    // If nonuniform first cut, num of parts and the distribution
+    // If nonuniform first cut, num of parts and the distribution of 
+    // elements for each part
     this->num_first_cut_parts = num_first_cut_parts_;
     this->first_cut_distribution = (mj_part_t *)first_cut_distribution_;
 
@@ -1599,12 +1610,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                 mj_lno_t coordinate_begin_index = current_work_part_in_concurrent_parts == 0 ?
                   0 : this->part_xadj[current_work_part_in_concurrent_parts - 1];
 
-                
+/*            
                 std::cout << "\n\ni:" << i << " j:" << current_work_part + kk
                                 << " coordinate_begin_index:" << coordinate_begin_index
                                 << " coordinate_end_index:" << coordinate_end_index
                                 << " total:" << coordinate_end_index - coordinate_begin_index << "\n\n";
-                                
+*/   
 
 
                 if (partition_along_longest_dim) {
@@ -1722,8 +1733,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                         // Nonuniform partitioning on the first cut
                         if (i == 0 && first_cut_distribution != NULL) {
 
-                          std::cout << "\nNONUNIFORM FIRST CUTTING" << std::endl;
-
                           // Get the target part weights given a desired distribution 
                           this->mj_get_initial_cut_coords_target_weights(
                               min_coordinate,
@@ -1741,9 +1750,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                         }
                         // Uniform partitioning
                         else {
-                          
-                          std::cout << "\nU N I F O R M CUTTING" << std::endl;
-                          
+                                                    
                           //get the target weights of the parts.
                           this->mj_get_initial_cut_coords_target_weights(
                               min_coordinate,
@@ -2043,19 +2050,20 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_part_specifications(
         else {
                 mj_part_t future_num_parts = this->num_global_parts;
 
+                // Initial value max_num_part_along_dim == num_first_cut_parts 
+                // if using nonuniform first cut partitioning.
                 if (this->num_first_cut_parts > 0 &&
                     this->first_cut_distribution != NULL) {
                   this->max_num_part_along_dim = this->num_first_cut_parts;
                 }
 
-
-                //we need to calculate the part numbers now, to determine the maximum along the dimensions.
+                // We need to calculate the part numbers now, to determine the maximum along the dimensions.
                 for (int rd = 0; rd < this->recursion_depth; ++rd){
 
                         mj_part_t maxNoPartAlongI = 0;
                         mj_part_t nfutureNumParts = 0;
 
-                        // If nonuniform first cut
+                        // Nonuniform first cut partitioning
                         if (rd == 0 &&
                             this->num_first_cut_parts > 0 &&
                             this->first_cut_distribution != NULL) {
@@ -2066,6 +2074,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_part_specifications(
                           mj_part_t sum_first_cut_dist = 0;
                           mj_part_t max_part = 0; 
 
+                          // Cumulative sum of distribution of parts and size of largest part 
                           for (int i = 0; i < this->num_first_cut_parts; ++i) {
                            
                             sum_first_cut_dist += this->first_cut_distribution[i];
@@ -2204,6 +2213,7 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
         if (p == 1){
             return current_num_parts;
         }
+        // If using part_no_array, ensure compatibility with num_first_cut_parts.
         if (this->first_cut_distribution != NULL && 
             current_iteration == 0 && 
             p != this->num_first_cut_parts)
@@ -2218,7 +2228,8 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
         for (mj_part_t ii = 0; ii < current_num_parts; ++ii){
             num_partitioning_in_current_dim.push_back(p);
         }
-        
+ 
+/*       
         std::cout << "\n\nme: " << this->myRank << " current_iteration: " << current_iteration 
           << " current_num_parts: " << current_num_parts << "\n\n";
         
@@ -2229,7 +2240,7 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
         std::cout << "\n\nfuture_num_parts: " << future_num_parts
           << " num_partitioning_in_current_dim[0]: " << num_partitioning_in_current_dim[0]
           << " " << future_num_parts / num_partitioning_in_current_dim[0] << "\n\n";
-        
+*/
 
         future_num_parts /= num_partitioning_in_current_dim[0];
         output_num_parts = current_num_parts * num_partitioning_in_current_dim[0];
@@ -2287,7 +2298,7 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
 
 //            mj_part_t largest_prime_factor = num_partitions_in_current_dim;
               
-            // Nonuniform partitioning on the first cut
+            // Update part num arrays when nonuniformly partitioning on the first cut
             if (this->first_cut_distribution != NULL && current_iteration == 0) {
 
               // Only 1 current part and the results number of parts will be the
@@ -2300,13 +2311,10 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
               // Remaining parts left to partition
               future_num_parts /= this->num_first_cut_parts;
 
-
-//              std::cout << "\nNonuniformin future_num_parts: " << future_num_parts 
-//                << " output_num_parts: " << output_num_parts << "\n";
-
               mj_part_t max_part = 0;
               mj_part_t sum_first_cut_dist = 0;
-              
+             
+              // Cumulative sum of distribution of parts and size of largest part 
               for (int i = 0; i < this->num_first_cut_parts; ++i) {
                 sum_first_cut_dist += this->first_cut_distribution[i];
 
@@ -2316,31 +2324,14 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
 
               // Remaining parts left to partition
               future_num_parts = this->num_global_parts * max_part / sum_first_cut_dist;
-         
-
-              std::cout << "\nNonuniformin future_num_parts: " << future_num_parts 
-                << " output_num_parts: " << output_num_parts << "\n";
-
-     
+              
               // Number of parts remaining left to partition for each future_part
               // The sum must exactly equal global_num_parts 
               for (int i = 0; i < this->num_first_cut_parts; ++i) {
 
-             //   mj_part_t next_future_num_parts_i = this->first_cut_distribution[i] * 
-             //       this->num_global_parts / sum_first_cut_dist;
-
-             //   if (this->first_cut_distribution[i] * this->num_global_parts % sum_first_cut_dist < )
-
                 next_future_num_parts_in_parts->push_back(this->first_cut_distribution[i] * 
                     this->num_global_parts / sum_first_cut_dist);
-                
-                
-//                std::cout << "\nNext_FUTURE_num_parts_in_part[" << i << "]: " << (double)next_future_num_parts_in_parts[i] << "\n";
-              }
-
-              std::cout << "\nThis should be equal to 1 = " << current_num_parts << "\n"; 
-              std::cout << "\nThis should be equal to global_num_parts = " << future_num_parts_of_part_ii << "\n";
-              
+              }              
             }
             else if (this->divide_to_prime_first) {
 
@@ -2375,10 +2366,12 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
               //if num_partitions_in_current_dim = 2, largest prime = 5 then ideal weight is 2x
               mj_part_t ideal_prime_scale = largest_prime_factor / num_partitions_in_current_dim;
 
+/*
               std::cout << "\ncurrent num part: " << ii 
                 << " largest_prime_factor: " << largest_prime_factor 
                 << " To Partition: " << future_num_parts_of_part_ii << "\n\n";
-              
+*/
+
               for (mj_part_t iii = 0; iii < num_partitions_in_current_dim; ++iii) {
                 //if num_partitions_in_current_dim = 2, largest prime = 5 then ideal weight is 2x
                 mj_part_t my_ideal_primescale = ideal_prime_scale;
@@ -2397,10 +2390,6 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
                 }
 
                 next_future_num_parts_in_parts->push_back(num_future_parts_for_part_iii * atomic_part_count);
-
-                std::cout << "\nNext_future_num_parts_in_parts at " << iii << ": " 
-                  << num_future_parts_for_part_iii << " * " << atomic_part_count << "\n";
-
 
                 //if part boxes are stored, initialize the box of the parts as the ancestor.
                 if (this->mj_keep_part_boxes) {
@@ -2439,10 +2428,6 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
                 }
 
                 next_future_num_parts_in_parts->push_back(num_future_parts_for_part_iii * atomic_part_count);
-
-                std::cout << "\nNext_future_num_parts_in_parts at " << iii << ": " 
-                  << num_future_parts_for_part_iii << " * " << atomic_part_count << "\n";
-
 
                 //if part boxes are stored, initialize the box of the parts as the ancestor.
                 if (this->mj_keep_part_boxes){
@@ -2856,6 +2841,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_global_min_max_co
  * for the parts that will be obtained at the end of this coordinate partitioning.
  * \param concurrent_current_part is the index of the part in the future_num_part_in_parts vector.
  * \param obtained_part_index holds the amount of shift in the next_future_num_parts_in_parts for the output parts.
+ * \param num_first_cut is the number of parts after the first level of partitioning (may be nonuniform)
+ * \param first_cut_dist is an array containing the distribution of elements in each part after the first cut (used for nonuniform first cuts)
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -2876,6 +2863,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_initial_cut_coord
 
     mj_scalar_t coord_range = max_coord - min_coord;
 
+    // Uniform target weights
     if (first_cut_dist == NULL && this->mj_uniform_parts[0]) {
       {
         mj_part_t cumulative = 0;
@@ -2883,42 +2871,20 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_initial_cut_coord
         // How many total future parts the part will be partitioned into.
         mj_scalar_t total_future_part_count_in_part = mj_scalar_t((*future_num_part_in_parts)[concurrent_current_part]);
 
-
         // How much each part should weigh in ideal case.
         mj_scalar_t unit_part_weight = global_weight / total_future_part_count_in_part;
-           
-        std::cout << "\nURANK: " << this->comm->getRank() << " UNIFORM\n"; 
-        std::cout << "\n\ntUotal_future_part_count_in_part: " << total_future_part_count_in_part << std::endl;
-        std::cout << "Uglobal_weight: " << global_weight << std::endl;
-        std::cout << "Uunit_part_weight: " << unit_part_weight << std::endl;
-            
-        std::cout << "\n\nUcut: ---" << " obtained_part_index: " << obtained_part_index 
-                    << " (*next_future_num_parts_in_parts)[0 + obtained_part_index]: " 
-                    << (*next_future_num_parts_in_parts)[0 + obtained_part_index] 
-                    << " num_cuts: " << num_cuts
-                    << " cumulative: " << cumulative << std::endl;
-        
 
         for (mj_part_t i = 0; i < num_cuts; ++i) {
           cumulative += (*next_future_num_parts_in_parts)[i + obtained_part_index];
-
-          std::cout << "\n\nUcut: " << i << " obtained_part_index: " << obtained_part_index 
-                    << " (*next_future_num_parts_in_parts)[i + obtained_part_index]: " 
-                    << (*next_future_num_parts_in_parts)[i + obtained_part_index] 
-                    << " cumulative: " << cumulative << std::endl;
                 
           // Set target part weight.
           current_target_part_weights[i] = cumulative * unit_part_weight;
 
-          std::cout <<"\n\nUcut: " << i << " current_target_part_weights: " << current_target_part_weights[i] << std::endl;
-          
           // Set initial cut coordinate.
           initial_cut_coords[i] = min_coord + (coord_range * cumulative) / total_future_part_count_in_part;
         }
             
-        current_target_part_weights[num_cuts] = global_weight; // Change from 1 to global_weight? Yes
-        
-        std::cout << "\nUfinal CUT and weight: " << global_weight << "\n"; 
+        current_target_part_weights[num_cuts] = global_weight;
       }
 
       // Round the target part weights.
@@ -2928,13 +2894,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_initial_cut_coord
         }
       }
     }
+    // Nonuniform target weights for first cut
     else if(first_cut_dist != NULL) {
       {
         // Running sum of the total weight
         mj_part_t cumulative = 0.0;
-
-        // Total future parts the part will be partitioned into.
-        mj_scalar_t total_future_part_count_in_part = mj_scalar_t((*future_num_part_in_parts)[concurrent_current_part]);
 
         // Sum of entries in the first_partition vector
         mj_scalar_t sum_first_cut_dist = 0.0;
@@ -2943,36 +2907,17 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_initial_cut_coord
           sum_first_cut_dist += first_cut_dist[i];
         }
         
-        std::cout << "\nNRANK: " << this->comm->getRank() << " NONUNIFORM\n"; 
-        std::cout << "\n\nNtotal_future_part_count_in_part:" << total_future_part_count_in_part << std::endl;
-        std::cout << "\nNglobal_weight:" << global_weight << std::endl;
-        std::cout << "\nNsum_first_cut_dist: " << sum_first_cut_dist << std::endl;
-        
         for (mj_part_t i = 0; i < num_cuts; ++i) {
-
-//          cumulative += (*next_future_num_parts_in_parts)[i + obtained_part_index];
-
-            
-          std::cout << "\n\nNobtained_part_index:" << obtained_part_index 
-                    << " (*next_future_num_parts_in_parts)[i + obtained_part_index]:" 
-                    << (*next_future_num_parts_in_parts)[i + obtained_part_index] 
-                    << " cumulative:" << cumulative << std::endl;
-          
           cumulative += global_weight * first_cut_dist[i] / sum_first_cut_dist;
 
           // Set target part weight.
           current_target_part_weights[i] = cumulative; 
-          
-          std::cout << "\n\nNcut: " << i << " current_target_part_weights:" 
-                    << current_target_part_weights[i] << std::endl;
-          
+
           // Set initial cut coordinate.
           initial_cut_coords[i] = min_coord + (coord_range * cumulative) / global_weight;
         }
 
         current_target_part_weights[num_cuts] = global_weight;
-
-        std::cout << "\nNfinal CUT and weight: " << global_weight << "\n"; 
       }
 
       //round the target part weights.
