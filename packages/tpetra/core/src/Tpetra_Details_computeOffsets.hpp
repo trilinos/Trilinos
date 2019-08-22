@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -45,10 +43,11 @@
 #define TPETRA_DETAILS_COMPUTEOFFSETS_HPP
 
 /// \file Tpetra_Details_computeOffsets.hpp
-/// \brief Declare and define the function
-///   Tpetra::Details::computeOffsetsFromCounts, an implementation
-///   detail of Tpetra (in particular, of FixedHashTable, CrsGraph,
-///   and CrsMatrix).
+/// \brief Declare and define the functions
+///   Tpetra::Details::computeOffsetsFromCounts and
+///   Tpetra::computeOffsetsFromConstantCount.  These functions are
+///   implementation details of Tpetra (in particular, of
+///   FixedHashTable, CrsGraph, and CrsMatrix).
 
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_getEntryOnHost.hpp"
@@ -70,28 +69,20 @@ namespace { // (anonymous)
 ///   the computeOffsetsFromCounts function (see below), which you
 ///   should call instead.
 ///
-/// \tparam OffsetsViewType Type of the Kokkos::View specialization
-///   used to store the offsets; the output array of this functor.
-/// \tparam CountsViewType Type of the Kokkos::View specialization
-///   used to store the counts; the input array of this functor.
-/// \tparam SizeType The parallel loop index type; a built-in integer
-///   type.  Defaults to the type of the input View's dimension.  You
-///   may use a shorter type to improve performance.
-///
-/// The type of each entry of the \c ptr array must be able to store
-/// the sum of all the entries of \c counts.  This functor makes no
-/// attempt to check for overflow in this sum.
+/// OffsetType must be able to store the sum of all the entries of the
+/// \c counts input array.  This functor makes no attempt to check for
+/// overflow in this sum.
 template<class OffsetType,
          class CountType,
          class SizeType>
 class ComputeOffsetsFromCounts {
 public:
   static_assert (std::is_integral<OffsetType>::value,
-                 "The entries of ptr must be built-in integers.");
+                 "OffsetType must be a built-in integer.");
   static_assert (std::is_integral<CountType>::value,
-                 "The entries of counts must be built-in integers.");
+                 "CountType must be a built-in integer.");
   static_assert (std::is_integral<SizeType>::value,
-                 "SizeType must be a built-in integer type.");
+                 "SizeType must be a built-in integer.");
 
   using offsets_view_type =
     Kokkos::View<OffsetType*, Kokkos::AnonymousSpace>;
@@ -149,46 +140,29 @@ private:
   SizeType size_;
 };
 
-/// \brief Parallel scan functor for computing offsets from a constant count.
+/// \brief Parallel scan functor for computing offsets from a constant
+///   count.
 ///
 /// \warning This is NOT for users.  It is an implementation detail of
 ///   the computeOffsetsFromConstantCount function (see below), which
 ///   you should call instead.
 ///
-/// \tparam OffsetsViewType Type of the Kokkos::View specialization
-///   used to store the offsets; the output array of this functor.
-/// \tparam CountType Type of the count; must be a built-in integer
-///   type.
-/// \tparam SizeType The parallel loop index type; a built-in integer
-///   type.  Defaults to the type of the input View's dimension.  You
-///   may use a shorter type to improve performance.
-///
-/// The type of each entry of the \c ptr array must be able to store
-/// <tt>ptr.extent (0) * count</tt>.  This functor makes no
-/// attempt to check for overflow in this sum.
-template<class OffsetsViewType,
+/// OffsetType must be able to store <tt>ptr.extent(0) * count</tt>.
+/// This functor makes no attempt to check for overflow in this sum.
+template<class OffsetType,
          class CountType,
-         class SizeType = typename OffsetsViewType::size_type>
+         class SizeType>
 class ComputeOffsetsFromConstantCount {
 public:
-  static_assert (Kokkos::Impl::is_view<OffsetsViewType>::value,
-                 "OffsetsViewType (the type of ptr) must be a Kokkos::View.");
-  static_assert (std::is_same<typename OffsetsViewType::value_type,
-                   typename OffsetsViewType::non_const_value_type>::value,
-                 "OffsetsViewType (the type of ptr) must be a nonconst Kokkos::View.");
-  static_assert (static_cast<int> (OffsetsViewType::rank) == 1,
-                 "OffsetsViewType (the type of ptr) must be a rank-1 Kokkos::View.");
-  static_assert (std::is_integral<typename OffsetsViewType::non_const_value_type>::value,
-                 "The entries of ptr must be built-in integers.");
+  static_assert (std::is_integral<OffsetType>::value,
+                 "OffsetType must be a built-in integer.");
   static_assert (std::is_integral<CountType>::value,
-                 "CountType must be a built-in integer type.");
+                 "CountType must be a built-in integer.");
   static_assert (std::is_integral<SizeType>::value,
-                 "SizeType must be a built-in integer type.");
+                 "SizeType must be a built-in integer.");
 
-  using offsets_view_type = OffsetsViewType;
-  using count_type = CountType;
-  using size_type = SizeType;
-  using value_type = typename offsets_view_type::non_const_value_type;
+  using offsets_view_type =
+    Kokkos::View<OffsetType*, Kokkos::AnonymousSpace>;
 
   /// \brief Constructor
   ///
@@ -196,33 +170,20 @@ public:
   ///   than \c counts
   /// \param count [in] The constant count
   ComputeOffsetsFromConstantCount (const offsets_view_type& offsets,
-                                   const count_type count) :
+                                   const CountType count) :
     offsets_ (offsets),
     count_ (count),
     size_ (offsets_.extent (0) == 0 ?
-           size_type (0) :
-           size_type (offsets_.extent (0) - 1))
+           SizeType (0) :
+           SizeType (offsets_.extent (0) - 1))
   {}
-
-  //! Set the initial value of the reduction result.
-  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
-  {
-    dst = 0;
-  }
-
-  //! Combine intermedate reduction results across threads.
-  KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst,
-        const volatile value_type& src) const
-  {
-    dst += src;
-  }
 
   //! Reduction operator.
   KOKKOS_INLINE_FUNCTION void
-  operator () (const size_type i, value_type& update, const bool final) const
+  operator () (const SizeType i, OffsetType& update,
+               const bool finalPass) const
   {
-    if (final) {
+    if (finalPass) {
       offsets_[i] = update;
     }
     if (i < size_) {
@@ -230,13 +191,32 @@ public:
     }
   }
 
+  template<class ExecutionSpace>
+  static OffsetType
+  run (const ExecutionSpace& execSpace,
+       const offsets_view_type& offsets,
+       const CountType count)
+  {
+    const SizeType numOffsets (offsets.extent (0));
+    using range_type = Kokkos::RangePolicy<ExecutionSpace, SizeType>;
+    range_type range (execSpace, 0, numOffsets);
+    using functor_type =
+      ComputeOffsetsFromConstantCount<OffsetType, CountType, SizeType>;
+    functor_type functor (offsets, count);
+    OffsetType total (0);
+    const char funcName[] =
+      "Tpetra::Details::computeOffsetsFromConstantCount";
+    Kokkos::parallel_scan (range, functor, total, funcName);
+    return total;
+  }
+
 private:
   //! Offsets (output argument)
   offsets_view_type offsets_;
   //! "Count" input argument
-  count_type count_;
+  CountType count_;
   //! Number of entries in offsets_, minus 1.
-  size_type size_;
+  SizeType size_;
 };
 
 } // namespace (anonymous)
@@ -374,51 +354,32 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
                                  const CountType count)
 {
   static_assert (Kokkos::Impl::is_view<OffsetsViewType>::value,
-                 "OffsetsViewType (the type of ptr) must be a Kokkos::View.");
+                 "ptr must be a Kokkos::View.");
   static_assert (std::is_same<typename OffsetsViewType::value_type,
                    typename OffsetsViewType::non_const_value_type>::value,
-                 "OffsetsViewType (the type of ptr) must be a nonconst Kokkos::View.");
+                 "ptr must be a nonconst Kokkos::View.");
   static_assert (static_cast<int> (OffsetsViewType::rank) == 1,
-                 "OffsetsViewType (the type of ptr) must be a rank-1 Kokkos::View.");
-  static_assert (std::is_integral<typename OffsetsViewType::non_const_value_type>::value,
-                 "The entries of ptr must be built-in integers.");
-  static_assert (std::is_integral<CountType>::value,
-                 "CountType must be a built-in integer type.");
-  static_assert (std::is_integral<SizeType>::value,
-                 "SizeType must be a built-in integer type.");
+                 "ptr must be a rank-1 Kokkos::View.");
 
   using offset_type = typename OffsetsViewType::non_const_value_type;
+  static_assert (std::is_integral<offset_type>::value,
+                 "The type of each entry of ptr must be a "
+                 "built-in integer.");
+  static_assert (std::is_integral<CountType>::value,
+                 "CountType must be a built-in integer.");
+  static_assert (std::is_integral<SizeType>::value,
+                 "SizeType must be a built-in integer.");
+
   using device_type = typename OffsetsViewType::device_type;
-  const char funcName[] = "Tpetra::Details::computeOffsetsFromConstantCount";
+  using execution_space = typename device_type::execution_space;
 
-  const auto numOffsets = ptr.size ();
   offset_type total (0);
-
-  if (numOffsets != 0) {
-    using CT = typename std::decay<CountType>::type;
-    using OVT = OffsetsViewType;
+  if (ptr.extent (0) != 0) {
+    using CT = CountType;
     using functor_type =
-      ComputeOffsetsFromConstantCount<OVT, CT, SizeType>;
-    functor_type functor (ptr, count);
-
-    using execution_space = typename device_type::execution_space;
-    using range_type = Kokkos::RangePolicy<execution_space, SizeType>;
-    range_type range (0, numOffsets);
-    try {
-      Kokkos::parallel_scan (range, functor, total, funcName);
-    }
-    catch (std::exception& e) {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::runtime_error, funcName << ": Kokkos::parallel_scan "
-         "(with device_type " << typeid (device_type).name () <<
-         ">) threw an exception: " << e.what ());
-    }
-    catch (...) {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::runtime_error, funcName << ": Kokkos::parallel_scan "
-         "(with device_type " << typeid (device_type).name () <<
-         ">) threw an exception not a subclass of std::exception");
-    }
+      ComputeOffsetsFromConstantCount<offset_type, CT, SizeType>;
+    execution_space execSpace;
+    functor_type::run (execSpace, ptr, count);
   }
   return total;
 }
