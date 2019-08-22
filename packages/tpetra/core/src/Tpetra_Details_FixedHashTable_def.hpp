@@ -82,7 +82,7 @@ bool worthBuildingFixedHashTableInParallel () {
 //  KDD 8/19:  reproducible of the errors.  We'll reverse this as we debug
 //  KDD 8/19:  the problem, but this temporary fix may allow users to make
 //  KDD 8/19:  progress toward their milestones.
-std::cout << "KDDKDD WorthIt " << (ExecSpace::concurrency() > 1) << std::endl;
+//std::cout << "KDDKDD WorthIt " << (ExecSpace::concurrency() > 1) << std::endl;
     return ExecSpace::concurrency() > 1;
 //  return false;
 //  KDD 8/19
@@ -1231,12 +1231,11 @@ init (const keys_type& keys,
   // with actual parallel execution spaces, it does require multiple
   // passes over the data.  Thus, it still makes sense to have a
   // sequential fall-back.
-#define KDDHACK
+  //#define KDDHACK
 #ifndef KDDHACK
   if (buildInParallel) {
 #endif
     ::Tpetra::Details::computeOffsetsFromCounts (ptr, counts);
-
 #ifndef KDDHACK
   }
   else {
