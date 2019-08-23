@@ -44,6 +44,7 @@
 
 #include <FROSch_Tools_decl.hpp>
 
+#include <Tpetra_Distributor.hpp>
 
 namespace FROSch {
     
