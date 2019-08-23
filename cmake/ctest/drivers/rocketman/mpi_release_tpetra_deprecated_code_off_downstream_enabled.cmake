@@ -74,7 +74,7 @@ SET(Trilinos_TRACK  Experimental)  # Set the CDash track to Nightly
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
 
-SET(Trilinos_PACKAGES Tpetra Kokkos KokkosCore KokkosLinAlg KokkosContainers KokkosAlgorithms )
+SET(Trilinos_PACKAGES Tpetra)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_ENABLE_DEPRECATED_CODE=OFF"
