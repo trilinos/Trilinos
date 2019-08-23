@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -58,19 +58,21 @@ namespace FROSch {
                                                                                 ConstXMapPtr nodesMap,
                                                                                 ConstXMapPtrVecPtr dofsMaps,
                                                                                 ParameterListPtr parameterList,
-                                                                                Verbosity verbosity) :
-    GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity),
+                                                                                Verbosity verbosity,
+                                                                                UN levelID) :
+    GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
     UseCoarseNodes_ (false),
     CoarseNodes_ (),
     EntitySetVector_ (),
     DistanceFunction_ (ConstantDistanceFunction)
     {
+        FROSCH_TIMER_START_LEVELID(rGDSWInterfacePartitionOfUnityTime,"RGDSWInterfacePartitionOfUnity::RGDSWInterfacePartitionOfUnity");
         this->UseVertices_ = false;
         this->UseShortEdges_ = false;
         this->UseStraightEdges_ = false;
         this->UseEdges_ = false;
         this->UseFaces_ = false;
-        
+
         if (!this->ParameterList_->get("Type","Full").compare("Full")) {
             UseCoarseNodes_ = true;
         } else if (!this->ParameterList_->get("Type","Full").compare("CoarseNodes")) {
@@ -80,7 +82,7 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
         }
-        
+
         if (!this->ParameterList_->get("Distance Function","Constant").compare("Constant")) {
             DistanceFunction_ = ConstantDistanceFunction;
         } else if (!this->ParameterList_->get("Distance Function","Constant").compare("Inverse Euclidean")) {
@@ -95,6 +97,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(computePartitionOfUnityTime,"RGDSWInterfacePartitionOfUnity::computePartitionOfUnity");
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();
         UN numInterfaceDofs = dofsPerNode*this->DDInterface_->getInterface()->getEntity(0)->getNumNodes();

@@ -46,6 +46,18 @@
 #define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
 #endif
 
+#ifndef FROSCH_TIMER_START
+#define FROSCH_TIMER_START(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(S)));
+#endif
+
+#ifndef FROSCH_TIMER_START_LEVELID
+#define FROSCH_TIMER_START_LEVELID(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
+#endif
+
+#ifndef FROSCH_TIMER_STOP
+#define FROSCH_TIMER_STOP(A) A.reset();
+#endif
+
 #include <ShyLU_DDFROSch_config.h>
 #include <FROSch_Tools_decl.hpp>
 
@@ -81,7 +93,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -116,7 +128,7 @@ namespace FROSch {
         using TCrsMatrix                  = Tpetra::CrsMatrix<SC,LO,GO,NO>;
         using TCrsMatrixPtr               = RCP<TCrsMatrix>;
         using ConstTCrsMatrixPtr          = RCP<const TCrsMatrix>;
-        
+
         using TRowMatrix                  = Tpetra::RowMatrix<SC,LO,GO,NO>;
         using TRowMatrixPtr               = RCP<TRowMatrix>;
         using ConstTRowMatrixPtr          = RCP<const TRowMatrix>;
@@ -124,17 +136,17 @@ namespace FROSch {
         using XMultiVector                = MultiVector<SC,LO,GO,NO>;
         using XMultiVectorPtr             = RCP<XMultiVector>;
         using ConstXMultiVectorPtr        = RCP<const XMultiVector>;
-        
+
         using TMultiVector                = Tpetra::MultiVector<SC,LO,GO,NO>;
         using TMultiVectorPtr             = RCP<TMultiVector>;
-        
+
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         using EMultiVector                = Epetra_MultiVector;
         using EMultiVectorPtr             = RCP<EMultiVector>;
 #endif
 
         using XMultiVectorFactory         = MultiVectorFactory<SC,LO,GO,NO>;
-        
+
         using ParameterListPtr            = RCP<ParameterList>;
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
@@ -157,7 +169,7 @@ namespace FROSch {
 #endif
 
         using GOVecPtr                    = ArrayRCP<GO>;
-        
+
     public:
 
         /*!
@@ -256,6 +268,8 @@ namespace FROSch {
         //! Paremter list
         ParameterListPtr ParameterList_;
 
+        mutable XMultiVectorPtr YTmp_;
+
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         ELinearProblemPtr EpetraLinearProblem_;
 #endif
@@ -281,11 +295,11 @@ namespace FROSch {
         RCP<Belos::LinearProblem<SC,MultiVector<SC,LO,GO,NO>,Belos::OperatorT<MultiVector<SC,LO,GO,NO> > > >  BelosLinearProblem_;
         RCP<Belos::SolverManager<SC,MultiVector<SC,LO,GO,NO>,Belos::OperatorT<MultiVector<SC,LO,GO,NO> > > > BelosSolverManager_;
 #endif
-        
+
 #ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
         RCP<Ifpack2::Preconditioner<SC,LO,GO,NO> > Ifpack2Preconditioner_;
 #endif
-        
+
         bool IsInitialized_;
 
         //! Flag to indicated whether this subdomain solver has been setup/computed

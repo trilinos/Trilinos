@@ -46,13 +46,25 @@
 #define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
 #endif
 
+#ifndef FROSCH_TIMER_START
+#define FROSCH_TIMER_START(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(S)));
+#endif
+
+#ifndef FROSCH_TIMER_START_LEVELID
+#define FROSCH_TIMER_START_LEVELID(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
+#endif
+
+#ifndef FROSCH_TIMER_STOP
+#define FROSCH_TIMER_STOP(A) A.reset();
+#endif
+
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 

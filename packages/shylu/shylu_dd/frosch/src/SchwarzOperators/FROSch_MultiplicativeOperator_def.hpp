@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -55,9 +55,11 @@ namespace FROSch {
                                                                 ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k, parameterList),
     OperatorVector_ (0),
+    XTmp_ (),
+    YTmp_ (),
     EnableOperators_ (0)
     {
-
+        FROSCH_TIMER_START_LEVELID(multiplicativeOperatorTime,"MultiplicativeOperator::MultiplicativeOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -66,8 +68,11 @@ namespace FROSch {
                                                                 ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k, parameterList),
     OperatorVector_ (0),
+    XTmp_ (),
+    YTmp_ (),
     EnableOperators_ (0)
     {
+        FROSCH_TIMER_START_LEVELID(multiplicativeOperatorTime,"MultiplicativeOperator::MultiplicativeOperator");
         OperatorVector_.push_back(operators.at(0));
         for (unsigned i=1; i<operators.size(); i++) {
             FROSCH_ASSERT(operators[i]->OperatorDomainMap().SameAs(OperatorVector_[i]->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
@@ -88,9 +93,9 @@ namespace FROSch {
     void MultiplicativeOperator<SC,LO,GO,NO>::preApplyCoarse(XMultiVector &x,
                                                              XMultiVector &y)
     {
+        FROSCH_TIMER_START_LEVELID(preApplyCoarseTime,"MultiplicativeOperator::preApplyCoarse");
         FROSCH_ASSERT(this->OperatorVector_.size()==2,"Should be a Two-Level Operator.");
         this->OperatorVector_[1]->apply(x,y,true);
-
     }
 
     // Y = alpha * A^mode * X + beta * Y
@@ -102,27 +107,25 @@ namespace FROSch {
                                                     SC alpha,
                                                     SC beta) const
     {
-
+        FROSCH_TIMER_START_LEVELID(applyTime,"MultiplicativeOperator::apply");
         FROSCH_ASSERT(usePreconditionerOnly,"MultiplicativeOperator can only be used as a preconditioner.");
         FROSCH_ASSERT(this->OperatorVector_.size()==2,"Should be a Two-Level Operator.");
 
 
-        XMultiVectorPtr xTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
-        *xTmp = x; // Need this for the case when x aliases y
+        if (XTmp_.is_null()) XTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+        *XTmp_ = x; // Need this for the case when x aliases y
 
-        XMultiVectorPtr yTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),y.getNumVectors());
-        *yTmp = y; // for the second apply
+        if (YTmp_.is_null()) XMultiVectorPtr YTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),y.getNumVectors());
+        *YTmp_ = y; // for the second apply
 
-        this->OperatorVector_[0]->apply(*xTmp,*yTmp,true);
+        this->OperatorVector_[0]->apply(*XTmp_,*YTmp_,true);
 
-        this->K_->apply(*yTmp,*xTmp);
+        this->K_->apply(*YTmp_,*XTmp_);
 
-        this->OperatorVector_[1]->apply(*xTmp,*xTmp,true);
+        this->OperatorVector_[1]->apply(*XTmp_,*XTmp_,true);
 
-        yTmp->update(ScalarTraits<SC>::one(),*xTmp,-ScalarTraits<SC>::one());
-        y.update(alpha,*yTmp,beta);
-
-
+        YTmp_->update(ScalarTraits<SC>::one(),*XTmp_,-ScalarTraits<SC>::one());
+        y.update(alpha,*YTmp_,beta);
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -189,6 +192,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)
     {
+        FROSCH_TIMER_START_LEVELID(addOperatorTime,"MultiplicativeOperator::addOperator");
         int ret = 0;
         if (OperatorVector_.size()>0) {
             if (!op->getDomainMap()->isSameAs(*OperatorVector_[0]->getDomainMap())) {
@@ -210,6 +214,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::addOperators(SchwarzOperatorPtrVecPtr operators)
     {
+        FROSCH_TIMER_START_LEVELID(addOperatorsTime,"MultiplicativeOperator::addOperators");
         int ret = 0;
         for (UN i=1; i<operators.size(); i++) {
             if (0>addOperator(operators[i])) ret -= pow(10,i);
@@ -221,6 +226,7 @@ namespace FROSch {
     int MultiplicativeOperator<SC,LO,GO,NO>::resetOperator(UN iD,
                                                            SchwarzOperatorPtr op)
     {
+        FROSCH_TIMER_START_LEVELID(resetOperatorTime,"MultiplicativeOperator::resetOperator");
         FROSCH_ASSERT(iD<OperatorVector_.size(),"iD exceeds the length of the OperatorVector_");
         int ret = 0;
         if (!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())) {
@@ -239,6 +245,7 @@ namespace FROSch {
     int MultiplicativeOperator<SC,LO,GO,NO>::enableOperator(UN iD,
                                                             bool enable)
     {
+        FROSCH_TIMER_START_LEVELID(enableOperatorTime,"MultiplicativeOperator::enableOperator");
         EnableOperators_[iD] = enable;
         return 0;
     }

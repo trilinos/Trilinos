@@ -46,6 +46,18 @@
 #define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
 #endif
 
+#ifndef FROSCH_TIMER_START
+#define FROSCH_TIMER_START(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(S)));
+#endif
+
+#ifndef FROSCH_TIMER_START_LEVELID
+#define FROSCH_TIMER_START_LEVELID(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
+#endif
+
+#ifndef FROSCH_TIMER_STOP
+#define FROSCH_TIMER_STOP(A) A.reset();
+#endif
+
 #include <ShyLU_DDFROSch_config.h>
 
 #include <Xpetra_MatrixFactory.hpp>
@@ -62,7 +74,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -123,6 +135,8 @@ namespace FROSch {
         using OverlappingDataPtr        = RCP<OverlappingData<LO,GO> >;
         using OverlappingDataPtrVec     = Array<OverlappingDataPtr>;
 
+        using UN                        = unsigned;
+
         using IntVec                    = Array<int>;
         using IntVecVecPtr              = ArrayRCP<IntVec>;
 
@@ -135,7 +149,8 @@ namespace FROSch {
 
     public:
         LowerPIDTieBreak(CommPtr comm,
-                         ConstXMapPtr originalMap); // This is in order to estimate the length of SendImageIDs_ and ExportEntries_ in advance
+                         ConstXMapPtr originalMap,
+                         UN levelID = 1); // This is in order to estimate the length of SendImageIDs_ and ExportEntries_ in advance
 
         virtual bool mayHaveSideEffects() const {
             return false;
@@ -162,6 +177,8 @@ namespace FROSch {
         mutable OverlappingDataPtrVec OverlappingDataList_; // This is mutable such that it can be modified in selectedIndex()
 
         IntVecVecPtr ComponentsSubdomains_; // This is mutable such that it can be modified in selectedIndex()
+
+        UN LevelID_ = 1;
     };
 
     template <class LO,class GO,class NO>
@@ -376,10 +393,10 @@ namespace FROSch {
         errMsg << froschObj << " is asking for the Trilinos packate '"<< packageName << "', "
         "but this package is not included in your build configuration. "
         "Please enable '" << packageName << "' in your build configuration to be used with ShyLU_DDFROSch.";
-        
+
         // Throw the error
         FROSCH_ASSERT(false, errMsg.str());
-        
+
         return;
     }
 }

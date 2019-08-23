@@ -57,7 +57,7 @@ namespace FROSch {
 
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -98,21 +98,18 @@ namespace FROSch {
         using IPOUHarmonicCoarseOperatorPtr       = RCP<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> >;
 
         using DofOrderingVecPtr                   = ArrayRCP<DofOrdering>;
-        
+
         using UN                                  = unsigned;
-
-        using GOVecPtr                            = ArrayRCP<GO>;
-
-        using SCVecPtr                            = ArrayRCP<SC>;
-
         using UNVecPtr                            = ArrayRCP<UN>;
 
         using LOVecPtr                            = ArrayRCP<LO>;
 
-        using GOVecPtr2D                          = ArrayRCP<GOVecPtr>;
-
         using GOVec                               = Array<GO>;
         using GOVec2D                             = Array<GOVec>;
+        using GOVecPtr                            = ArrayRCP<GO>;
+        using GOVecPtr2D                          = ArrayRCP<GOVecPtr>;
+
+        using SCVecPtr                            = ArrayRCP<SC>;
 
     public:
 
@@ -157,6 +154,7 @@ namespace FROSch {
         bool IsComputed_;
         bool Verbose_;
 
+        UN LevelID_;
     };
 
 }

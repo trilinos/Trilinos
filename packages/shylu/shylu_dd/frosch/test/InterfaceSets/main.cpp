@@ -48,6 +48,7 @@
 #include "Galeri_XpetraMaps.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
+#include <Teuchos_StackedTimer.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
 
@@ -103,6 +104,10 @@ int main(int argc, char *argv[])
         return(EXIT_SUCCESS);
     }
 
+    CommWorld->barrier();
+    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("InterfaceSets Test"));
+    TimeMonitor::setStackedTimer(stackedTimer);
+
     int N = 0;
     int color=1;
     if (Dimension == 2) {
@@ -131,6 +136,8 @@ int main(int argc, char *argv[])
     if (color==0) {
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
+        //stackedTimer->start("Assembly Time");
+        FROSCH_TIMER_START(assemblyTimer,"Assembly");
 
         ParameterList GaleriList;
         GaleriList.set("nx", GO(N*M));
@@ -155,17 +162,22 @@ int main(int argc, char *argv[])
             K = Problem->BuildMatrix();
         }
 
+        FROSCH_TIMER_STOP(assemblyTimer);
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Constructing Repeated Map #\n#############\n" << endl;
+        FROSCH_TIMER_START(repMapTimer,"Construct RepeatedMap");
+
         RCP<const Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<LO,GO,NO>(K->getCrsGraph());
 
+        FROSCH_TIMER_STOP(repMapTimer);
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Identification of Interface Sets #\n#############\n" << endl;
+        FROSCH_TIMER_START(intSetsTimer,"Identification of Interface Sets");
         RCP<EntitySet<SC,LO,GO,NO> > vertices,shortEdges,straightEdges,edges,faces,interface,interior;
         //RCP<Map<LO,GO,NO> > verticesMap,shortEdgesMap,straightEdgesMap,edgesMap,facesMap;
 
         DDInterface<SC,LO,GO,NO> dDInterface(Dimension,1,RepeatedMap,All,(CommunicationStrategy) communicationStrategy);
         dDInterface.divideUnconnectedEntities(K);
         dDInterface.sortVerticesEdgesFaces();
-        
+
         dDInterface.buildEntityHierarchy();
 
         dDInterface.buildEntityMaps(true,
@@ -175,7 +187,15 @@ int main(int argc, char *argv[])
                                     true,
                                     true);
 
+        FROSCH_TIMER_STOP(intSetsTimer);
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
+
+    CommWorld->barrier();
+    stackedTimer->stop("InterfaceSets Test");
+    StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stackedTimer->report(*out,CommWorld,options);
+
     return(EXIT_SUCCESS);
 }

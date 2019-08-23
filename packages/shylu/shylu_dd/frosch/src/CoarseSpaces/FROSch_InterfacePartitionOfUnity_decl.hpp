@@ -49,7 +49,7 @@ namespace FROSch {
 
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -85,7 +85,7 @@ namespace FROSch {
         using EntitySetPtrVecPtr            = ArrayRCP<EntitySetPtr>;
 
         using InterfaceEntityPtr            = RCP<InterfaceEntity<SC,LO,GO,NO> >;
-        
+
         using UN                            = unsigned;
 
         using GOVec                         = Array<GO>;
@@ -102,7 +102,8 @@ namespace FROSch {
                                   ConstXMapPtr nodesMap,
                                   ConstXMapPtrVecPtr dofsMaps,
                                   ParameterListPtr parameterList,
-                                  Verbosity verbosity = All);
+                                  Verbosity verbosity = All,
+                                  UN levelID = 1);
 
         virtual ~InterfacePartitionOfUnity();
 
@@ -134,6 +135,8 @@ namespace FROSch {
         XMapPtrVecPtr PartitionOfUnityMaps_;
 
         bool Verbose_;
+
+        UN LevelID_;
     };
 
 }

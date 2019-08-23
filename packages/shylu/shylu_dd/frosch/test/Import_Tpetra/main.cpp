@@ -49,6 +49,7 @@
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
@@ -95,6 +96,10 @@ int main(int argc, char *argv[])
         return(EXIT_SUCCESS);
     }
 
+    CommWorld->barrier();
+    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("Import Tpetra Test"));
+    TimeMonitor::setStackedTimer(stackedTimer);
+
     UnderlyingLib xpetraLib = UseTpetra;
     if (useepetra) {
         xpetraLib = UseEpetra;
@@ -129,6 +134,12 @@ int main(int argc, char *argv[])
     K->doImport(*tmpMatrix,*gather,ADD);
 
     CommWorld->barrier(); if (CommWorld->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
+
+    CommWorld->barrier();
+    stackedTimer->stop("Import Tpetra Test");
+    StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stackedTimer->report(*out,CommWorld,options);
 
     return(EXIT_SUCCESS);
 }

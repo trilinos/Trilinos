@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -120,7 +120,6 @@ namespace FROSch {
                                                        EntitySetPtr coarseNodes,
                                                        EntitySetPtrVecPtr entitySetVector,
                                                        DistanceFunction distanceFunction = ConstantDistanceFunction);
-
     };
 
 }
