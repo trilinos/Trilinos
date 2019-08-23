@@ -91,6 +91,9 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Domi:BOOL=OFF"
   "-DTrilinos_ENABLE_GlobiPack:BOOL=OFF"
   "-DTrilinos_ENABLE_OptiPack:BOOL=OFF"
+  "-DKokkos_ENABLE_TESTS:BOOL=OFF"
+  "-DTeuchos_ENABLE_TESTS:BOOL=OFF"
+  "-DKokkosKernels_ENABLE_TESTS:BOOL=OFF"
 )
 
 #
