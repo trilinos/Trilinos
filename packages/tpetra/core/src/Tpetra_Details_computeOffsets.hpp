@@ -233,6 +233,8 @@ private:
 ///
 /// \return Sum of all counts; last entry of \c ptr.
 ///
+/// \tparam ExecutionSpace Kokkos execution space instance on which to
+///   run.
 /// \tparam OffsetsViewType Type of the Kokkos::View specialization
 ///   used to store the offsets; the output array of this function.
 /// \tparam CountsViewType Type of the Kokkos::View specialization
@@ -244,13 +246,17 @@ private:
 /// The type of each entry of the \c ptr array must be able to store
 /// the sum of all the entries of \c counts.  This functor makes no
 /// attempt to check for overflow in this sum.
-template<class OffsetsViewType,
+template<class ExecutionSpace,
+         class OffsetsViewType,
          class CountsViewType,
          class SizeType = typename OffsetsViewType::size_type>
 typename OffsetsViewType::non_const_value_type
-computeOffsetsFromCounts (const OffsetsViewType& ptr,
+computeOffsetsFromCounts (const ExecutionSpace& execSpace,
+                          const OffsetsViewType& ptr,
                           const CountsViewType& counts)
 {
+  static_assert (Kokkos::is_execution_space<ExecutionSpace>::value,
+                 "ExecutionSpace must be a Kokkos execution space.");
   static_assert (Kokkos::Impl::is_view<OffsetsViewType>::value,
                  "OffsetsViewType (the type of ptr) must be a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<CountsViewType>::value,
@@ -322,6 +328,18 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
   }
 
   return total;
+}
+
+//! Overload that uses OffsetsViewType's execution space.
+template<class OffsetsViewType,
+         class CountsViewType,
+         class SizeType = typename OffsetsViewType::size_type>
+typename OffsetsViewType::non_const_value_type
+computeOffsetsFromCounts (const OffsetsViewType& ptr,
+                          const CountsViewType& counts)
+{
+  using execution_space = typename OffsetsViewType::execution_space;
+  return computeOffsetsFromCounts (execution_space (), ptr, counts);
 }
 
 /// \brief Compute offsets from a constant count
