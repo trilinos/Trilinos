@@ -60,6 +60,8 @@
 
 #include <ShyLU_DDFROSch_config.h>
 
+#include <Tpetra_Distributor.hpp>
+
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>

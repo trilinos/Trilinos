@@ -106,11 +106,13 @@ protected:
   RCP<MultiVectorBase<Scalar> >
   createMembers(int numMembers) const;
 
+public:
+
   RCP<MultiVectorBase<Scalar> >
-  createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const;
+  createCachedMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const;
 
   RCP<const MultiVectorBase<Scalar> >
-  createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const;
+  createCachedMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const;
 
   //@}
 

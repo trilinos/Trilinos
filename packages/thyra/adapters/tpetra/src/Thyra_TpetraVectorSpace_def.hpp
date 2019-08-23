@@ -146,7 +146,7 @@ private:
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP< MultiVectorBase<Scalar> >
-TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createMembersView(
+TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createCachedMembersView(
   const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -203,7 +203,7 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createMembersView(
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const MultiVectorBase<Scalar> >
-TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createMembersView(
+TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createCachedMembersView(
   const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const
 {
 #ifdef TEUCHOS_DEBUG
