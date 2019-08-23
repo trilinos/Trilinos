@@ -1231,59 +1231,39 @@ init (const keys_type& keys,
   // with actual parallel execution spaces, it does require multiple
   // passes over the data.  Thus, it still makes sense to have a
   // sequential fall-back.
-  //#define KDDHACK
-#ifndef KDDHACK
+
+  using ::Tpetra::Details::computeOffsetsFromCounts;
   if (buildInParallel) {
-#endif
-    ::Tpetra::Details::computeOffsetsFromCounts (ptr, counts);
-#ifndef KDDHACK
+    computeOffsetsFromCounts (ptr, counts);
   }
-  else {
-    // mfh 28 Mar 2016: We could use UVM here, but it's pretty easy to
-    // use a host mirror too, so I'll just do that.
-    typename decltype (ptr)::HostMirror ptrHost = Kokkos::create_mirror_view (ptr);
+
+  if (! buildInParallel || debug) {
+    Kokkos::HostSpace hostMemSpace;
+    auto counts_h = Kokkos::create_mirror_view (hostMemSpace, counts);
+    Kokkos::deep_copy (counts_h, counts);
+    auto ptr_h = Kokkos::create_mirror_view (hostMemSpace, ptr);
+
+#ifdef KOKKOS_ENABLE_SERIAL
+    Kokkos::Serial hostExecSpace;
 #else
-    typename ptr_type::non_const_type ptrHost ("FixedHashTable::ptrKDD", size+1);
-#endif
+    Kokkos::DefaultHostExecutionSpace hostExecSpace;
+#endif // KOKKOS_ENABLE_SERIAL
 
-    ptrHost[0] = 0;
-    for (offset_type i = 0; i < size; ++i) {
-      //ptrHost[i+1] += ptrHost[i];
-      ptrHost[i+1] = ptrHost[i] + counts[i];
-    }
-#ifdef KDDHACK
-    std::cout << "KDD Comparing... " << std::endl;
-    bool gross = false;
-    for (offset_type i = 0; i <= size; i++)
-      if (ptr[i] != ptrHost[i]) {
-        std::cout << "KDD index " << i << " ptr " << ptr[i] << " ptrHost " << ptrHost[i] << std::endl;
-        gross = true;
+    computeOffsetsFromCounts (hostExecSpace, ptr_h, counts_h);
+    Kokkos::deep_copy (ptr, ptr_h);
+
+    if (debug) {
+      bool bad = false;
+      for (offset_type i = 0; i < size; ++i) {
+        if (ptr_h[i+1] != ptr_h[i] + counts_h[i]) {
+          bad = true;
+        }
       }
-    if (gross) {
-      for (offset_type i = 0; i < size; i++)
-        std::cout << " KDD COUNTS[" << i << "] = " << counts[i] << std::endl;
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (bad, std::logic_error, "Tpetra::Details::FixedHashTable "
+         "constructor: computeOffsetsFromCounts gave an incorrect "
+         "result.");
     }
-#endif
-#ifndef KDDHACK
-    Kokkos::deep_copy (ptr, ptrHost);
-  }
-#endif
-
-  if (debug) {
-    Kokkos::HostSpace space;
-    auto counts_h = Kokkos::create_mirror_view (space, counts);
-    auto ptr_h = Kokkos::create_mirror_view (space, ptr);
-
-    bool bad = false;
-    for (offset_type i = 0; i < size; ++i) {
-      if (ptr_h[i+1] != ptr_h[i] + counts_h[i]) {
-        bad = true;
-      }
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (bad, std::logic_error, "Tpetra::Details::FixedHashTable "
-       "constructor: computeOffsetsFromCounts gave an incorrect "
-       "result.");
   }
 
   // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
