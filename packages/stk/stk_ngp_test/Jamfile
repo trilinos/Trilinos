@@ -161,7 +161,7 @@ lib stk_ngp_test
         [ glob $(stk_ngp_test-root)/stk_ngp_test/*.cpp ]
     ]
     /tpl/gtest//gtest
-    /tpl/trilinos-kokkoscore//kokkoscore
+    /tpl/trilinos//kokkoscore
     /mpi//mpi
   :
     [ ifuserbuild
@@ -173,6 +173,7 @@ lib stk_ngp_test
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
     <toolset>nvidia,<gpu-arch>pascal:<cflags>--maxrregcount=96
+    <toolset>nvidia,<gpu-arch>volta:<cflags>--maxrregcount=160
     <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
   ;
@@ -185,7 +186,7 @@ lib stk_ngp_test_main
         [ glob $(stk_ngp_test-root)/stk_ngp_test/main/main.cpp ]
     ]
     /tpl/gtest//gtest
-    /tpl/trilinos-kokkoscore//kokkoscore
+    /tpl/trilinos//kokkoscore
     /mpi//mpi
   :
     [ ifuserbuild

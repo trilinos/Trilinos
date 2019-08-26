@@ -159,7 +159,7 @@ exe stk_simd_unit
   :
     [ glob $(stk_simd-root)/../stk_unit_tests/stk_simd/*.cpp ]
     /sierra/stk_math//stk_math_headers
-    /tpl/trilinos-kokkoscore//kokkoscore
+    /tpl/trilinos//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
     <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
@@ -183,7 +183,7 @@ exe stk_simd_docs_tests
   :
     [ glob $(stk_simd-root)/../stk_doc_tests/stk_simd/*.cpp ]
     /sierra/stk_math//stk_math_headers
-    /tpl/trilinos-kokkoscore//kokkoscore
+    /tpl/trilinos//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_simd-root)/../stk_doc_tests/stk_simd

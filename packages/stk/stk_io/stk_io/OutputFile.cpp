@@ -157,6 +157,7 @@ void OutputFile::setup_output_params(OutputParams &params) const
     params.set_has_adaptivity(m_hasAdaptivity);
     params.set_is_skin_mesh(m_isSkinMesh);
     params.set_additional_attribute_fields(m_additionalAttributeFields);
+    params.set_is_restart(m_dbPurpose == stk::io::WRITE_RESTART);
 }
 
 void OutputFile::set_input_region(const Ioss::Region *input_region)

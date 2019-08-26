@@ -27,9 +27,10 @@ exit
 #         update_copyright --search COPYRIGHT `find . -type f` 2>&1 |\
 #             egrep -v ' (CVS|RST) metadata|not a text file'
 #
-# Copyright(C) 2006 Sandia Corporation.  Under the terms of Contract
-# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-# certain rights in this software
+# Copyright(C) 2006 National Technology Sandia Corporation Engineering Solutions
+# of Sandia, LLC.  Under the terms of Contract DE-NA0003525 with National
+# Technology Sandia Corporation Engineering Solutions of Sandia, LLC, the U.S.
+# Government retains certain rights in this software
 # 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -43,9 +44,10 @@ exit
 #       disclaimer in the documentation and/or other materials provided
 #       with the distribution.
 # 
-#     * Neither the name of Sandia Corporation nor the names of its
-#       contributors may be used to endorse or promote products derived
-#       from this software without specific prior written permission.
+#     * Neither the name of National Technology Sandia Corporation Engineering
+#       Solutions of Sandia, LLC nor the names of its contributors may be used to
+#       endorse or promote products derived from this software without specific
+#       prior written permission.
 # 
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT

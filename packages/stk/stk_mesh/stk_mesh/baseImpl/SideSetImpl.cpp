@@ -59,7 +59,7 @@ SideSet& SideSetImpl<KEY>::create_sideset(KEY sideset_key, bool fromInput)
 {
     ThrowRequire(m_sideSetData.find(sideset_key) == m_sideSetData.end());
     m_sideSetSyncCount = m_bulk.synchronized_count();
-    m_sideSetData.emplace(sideset_key, stk::mesh::SideSet(fromInput));
+    m_sideSetData.emplace(sideset_key, stk::mesh::SideSet(m_bulk, fromInput));
    auto iter = m_sideSetData.find(sideset_key);
    ThrowRequire(iter != m_sideSetData.end());
    return iter->second;
@@ -69,7 +69,7 @@ template<typename KEY>
 SideSet& SideSetImpl<KEY>::create_sideset(const stk::mesh::Part &part, bool fromInput)
 {
     SideSet& ss = create_sideset(m_keyGenerator.generate_key(part), fromInput);
-    ss.set_name(part.name());
+    ss.set_part(&part);
     return ss;
 }
 
@@ -147,7 +147,17 @@ std::vector<SideSet *> SideSetImpl<KEY>::get_sidesets()
         sidesets.push_back(&keyAndSideSet.second);
 
     return sidesets;
+}
 
+template<typename KEY>
+std::vector<const SideSet *> SideSetImpl<KEY>::get_sidesets() const
+{
+    std::vector<const SideSet *> sidesets;
+    sidesets.reserve(m_sideSetData.size());
+    for(auto & keyAndSideSet : m_sideSetData)
+        sidesets.push_back(&keyAndSideSet.second);
+
+    return sidesets;
 }
 
 template<typename KEY>
@@ -162,6 +172,7 @@ void SideSetImpl<KEY>::set_sideset_sync_count(unsigned syncCount)
     m_sideSetSyncCount = syncCount;
 }
 
+template class SideSetImpl<unsigned>;
 template class SideSetImpl<int64_t>;
 template class SideSetImpl<std::string>;
 

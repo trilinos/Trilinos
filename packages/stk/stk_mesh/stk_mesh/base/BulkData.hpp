@@ -604,6 +604,7 @@ public:
   bool in_receive_custom_ghost( EntityKey key ) const;
   bool in_send_ghost( EntityKey key) const;         // CLEANUP: only used for testing
   bool in_send_ghost( EntityKey key , int proc ) const;         // CLEANUP: only used for testing
+  bool in_send_ghost( const Ghosting & ghosting, EntityKey key, int proc) const;
   bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;     // CLEANUP: used only by modification_end_for_entity_creation
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;     // CLEANUP: can be moved protected
   void shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const; // CLEANUP: only used by aero
@@ -822,6 +823,7 @@ public:
   void clear_sidesets();
   void clear_sideset(const stk::mesh::Part &part);
   std::vector<SideSet *> get_sidesets();
+  std::vector<const SideSet *> get_sidesets() const;
   void synchronize_sideset_sync_count();
 
   void clone_solo_side_id_generator(const stk::mesh::BulkData &oldBulk);
@@ -874,7 +876,6 @@ protected: //functions
 
   void internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs); // Mod Mark
 
-  bool in_send_ghost( const Ghosting & ghosting, EntityKey key, int proc) const;
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
   void conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghosting &ghosting,
@@ -1512,7 +1513,7 @@ private: // data
   std::shared_ptr<stk::mesh::MeshDiagnosticObserver> m_meshDiagnosticObserver;
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
   std::shared_ptr<stk::mesh::ElemElemGraphUpdater> m_elemElemGraphUpdater;
-  stk::mesh::impl::SideSetImpl<std::string> m_sideSetData;
+  stk::mesh::impl::SideSetImpl<unsigned> m_sideSetData;
 
 protected:
   stk::mesh::impl::SoloSideIdGenerator m_soloSideIdGenerator;
