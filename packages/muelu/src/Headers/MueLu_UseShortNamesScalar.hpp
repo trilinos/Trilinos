@@ -119,6 +119,9 @@ typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRF
 #ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_SHORT
 typedef MueLu::GeometricInterpolationPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricInterpolationPFactory;
 #endif
+#ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_SHORT
+typedef MueLu::GeometricInterpolationPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricInterpolationPFactory_kokkos;
+#endif
 #ifdef MUELU_GMRESSOLVER_SHORT
 typedef MueLu::GMRESSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> GMRESSolver;
 #endif

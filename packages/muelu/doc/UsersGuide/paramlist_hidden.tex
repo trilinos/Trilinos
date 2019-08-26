@@ -11,6 +11,8 @@
         
 \cbb{coarse grid correction scaling factor}{double}{1.0}{Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.}
         
+\cbb{fuse prolongation and update}{bool}{false}{Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.}
+        
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
         
 \cbb{xml parameter file}{string}{""}{An XML file from which to read additional
@@ -21,6 +23,8 @@
 \cbb{parameterlist: syntax}{string}{muelu}{Syntax of ParameterList to use.  This should either be "muelu" or "ml." }
         
 \cbb{hierarchy label}{string}{""}{Label for the hierarchy. Is applied to timer labels.}
+        
+\cba{matvec params}{\parameterlist}{Pass parameters to the underlying linear algebra}
         
 \cbb{smoother: pre or post}{string}{"both"}{Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).}
         
@@ -245,6 +249,8 @@
         
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
         
+\cbb{rap: relative diagonal floor}{Array(double)}{{}}{Will boost diagonals on A matrices to the given floor.}
+        
 \cbb{rap: fix zero diagonals}{bool}{false}{Set zero diagonals on coarse grids to one.}
         
 \cbb{rap: fix zero diagonals threshold}{double}{0.}{Threshold at which diagonal entry is considered zero.}
@@ -255,6 +261,10 @@
       vector (representing the matrix diagonal)}
         
 \cbb{rap: shift low storage}{bool}{false}{Use the low-storage version of the rap: shift}
+        
+\cbb{rap: shift array}{Array(double)}{{}}{Effective shift at each level to use in the RAPShiftFactory (the string must be interpretable as an array by Teuchos).}
+        
+\cbb{rap: cfl array}{Array(double)}{{}}{Effective CFl at each level to use in the RAPShiftFactory (the string must be interpretable as an array by Teuchos).  }
         
 \cbb{rap: algorithm}{string}{galerkin}{Whether to use the Galerkin RAP or the Shift version}
         
@@ -274,4 +284,20 @@ optimized neighbor discovery for Importer construction.}
 \cba{amgx:params}{\parameterlist}{Sublist for listing AMGX configuration parameters}
         
 \cbb{debug: graph level}{int}{-1}{Output dependency graph.}
+        
+\cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"}
+        
+\cbb{refmaxwell: disable addon}{bool}{true}{Specifing whether the addon should be built for stabilization}
+        
+\cba{refmaxwell: 11list}{\parameterlist}{Specifies the multigrid solver for the 11 block}
+        
+\cba{refmaxwell: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
+        
+\cbb{refmaxwell: use as preconditioner}{bool}{false}{Assume zero initial guess}
+        
+\cbb{refmaxwell: dump matrices}{bool}{false}{Dump matrices to disk.}
+        
+\cbb{refmaxwell: subsolves on subcommunicators}{bool}{false}{Redistribute the two subsolves to disjoint sub-communicators (so that the additive solve can occur in parallel).}
+        
+\cbb{refmaxwell: ratio AH / A22 subcommunicators}{double}{1.0}{Ratio for the split into sub-communicators.}
         

@@ -1163,18 +1163,16 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 {
   using Tpetra::Details::castAwayConstDualView;
   using Kokkos::View;
-  typedef typename NT::device_type device_type;
-  typedef CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
-  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
-  typedef DistObject<char, LO, GO, NT> dist_object_type;
-  typedef typename dist_object_type::buffer_device_type buffer_device_type;
-  typedef typename buffer_device_type::memory_space BMS;
-  typedef typename device_type::memory_space MS;
+  using crs_matrix_type = CrsMatrix<ST, LO, GO, NT>;
+  using dist_object_type = DistObject<char, LO, GO, NT>;
+  using device_type = typename crs_matrix_type::device_type;
+  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+  using buffer_device_type = typename dist_object_type::buffer_device_type;
 
-  static_assert (std::is_same<device_type,
-                   typename local_matrix_type::device_type>::value,
-                 "NT::device_type and LocalMatrix::device_type must be "
-                 "the same.");
+  static_assert
+    (std::is_same<device_type, typename local_matrix_type::device_type>::value,
+     "crs_matrix_type::device_type and local_matrix_type::device_type "
+     "must be the same.");
 
   {
     auto numPacketsPerLID_nc = castAwayConstDualView (numPacketsPerLID);

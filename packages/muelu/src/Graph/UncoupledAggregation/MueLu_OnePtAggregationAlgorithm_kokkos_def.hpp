@@ -63,12 +63,12 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::OnePtAggregationAlgorithm_kokkos(RCP<const FactoryBase> const &graphFact)
+  OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::OnePtAggregationAlgorithm_kokkos(RCP<const FactoryBase> const &/* graphFact */)
   {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const & params, LWGraph_kokkos const & graph, Aggregates_kokkos & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  void OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const & /* params */, LWGraph_kokkos const & graph, Aggregates_kokkos & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
     const LocalOrdinal nRows = graph.GetNodeNumVertices();

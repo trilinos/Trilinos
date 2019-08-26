@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $# -nq 1 ]; then
+if [ $# -ne 1 ]; then
     echo "syntax: rebase.sh $TRILINOS_SRC/packages/muelu/test/interface"
     exit -1;
 fi

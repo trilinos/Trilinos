@@ -34,9 +34,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
     echo "***"
     echo "*** ERROR: GNU COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only GNU compilers supported on this system are:"
-    echo "***   gnu (defaults to gnu-6.1.0)"
-    echo "***   gnu-6.1.0 (default)"
-    echo "***   gnu-7.2.0"
+    echo "***   gnu (defaults to gnu-7.2.0)"
+    echo "***   gnu-6.1.0"
+    echo "***   gnu-7.2.0 (default)"
     echo "***"
     return
   fi
@@ -104,6 +104,8 @@ module load sems-ninja_fortran/1.8.2
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
   export OMP_NUM_THREADS=2
+  export OMP_PROC_BIND=false
+  unset OMP_PLACES
   # NOTE: With hyper-threading enabled, you can run as many threads as there
   # are cores and with 2 OpenMP threads per MPI process, the means you can run
   # as many MPI processes as there are cores on the machine with 2 OpenMP
@@ -111,14 +113,15 @@ if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   # many to be safe and avoid time-outs.
 else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
+  export OMP_NUM_THREADS=1
+  export OMP_PROC_BIND=false
+  unset OMP_PLACES
   # NOTE: NOTE: When running in serial, the second hyperthread can't seem to
   # run a sperate MPI process and if you try to run with as many they you get
   # a bunch of failures that say "libgomp: Thread creation failed: Resource
   # temporarily unavailable".  So we can only run with as many MPI processes
   # as there are cores on the machine.  But we want to be conservative and
   # instead run with half that many to be safe and avoid time-outs.
-  export OMP_PROC_BIND=FALSE
-  export OMP_NUM_THREADS=1
 fi
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-3.9.0" ]] ; then
@@ -127,6 +130,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-3.9.0" ]] ; then
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
   export LAPACK_ROOT=/usr/lib64/atlas
+  export BLAS_ROOT=/usr/lib64/atlas
   export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-6.1.0" ]] ; then
@@ -135,6 +139,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-6.1.0" ]] ; then
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
   export LAPACK_ROOT=/usr/lib64/atlas
+  export BLAS_ROOT=/usr/lib64/atlas
   export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
@@ -143,10 +148,12 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
   export LAPACK_ROOT=/usr/lib64/atlas
+  export BLAS_ROOT=/usr/lib64/atlas
   export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
   module load sems-intel/17.0.1
+  module swap sems-gcc/4.8.4 sems-gcc/4.9.3
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
@@ -166,6 +173,7 @@ module load sems-netcdf/4.4.1/exo_parallel
 module load sems-hdf5/1.8.12/parallel
 module load sems-zlib/1.2.8/base
 module load sems-boost/1.59.0/base
+module unload sems-python/2.7.9 
 module load sems-superlu/4.3/base
 
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
@@ -177,15 +185,16 @@ fi
 export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=-lhwloc
 
+export ZLIB_ROOT=${SEMS_ZLIB_ROOT}
 export BOOST_ROOT=${SEMS_BOOST_ROOT}
 export HDF5_ROOT=${SEMS_HDF5_ROOT}
 export NETCDF_ROOT=${SEMS_NETCDF_ROOT}
 
-export ATDM_CONFIG_HDF5_LIBS="-L${SEMS_HDF5_ROOT}/lib;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${SEMS_BOOST_ROOT}/lib;-L${SEMS_NETCDF_ROOT}/lib;-L${SEMS_NETCDF_ROOT}/lib;-L${SEMS_PNETCDF_ROOT}/lib;-L${SEMS_HDF5_ROOT}/lib;${SEMS_BOOST_ROOT}/lib/libboost_program_options.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_BOOST_ROOT}/lib/libboost_system.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_NETCDF_ROOT}/lib/libnetcdf.a;${SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+export ATDM_CONFIG_HDF5_LIBS="${SEMS_HDF5_ROOT}/lib/libhdf5_hl.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_HDF5_ROOT}/lib/libhdf5.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_ZLIB_ROOT}/lib/libz.${ATDM_CONFIG_TPL_LIB_EXT};-ldl"
+export ATDM_CONFIG_NETCDF_LIBS="${SEMS_BOOST_ROOT}/lib/libboost_program_options.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_BOOST_ROOT}/lib/libboost_system.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_NETCDF_ROOT}/lib/libnetcdf.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_HDF5_ROOT}/lib/libhdf5.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_ZLIB_ROOT}/lib/libz.${ATDM_CONFIG_TPL_LIB_EXT};-ldl;-lcurl"
 
-# NOTE: SEMS does not provide the correct *.so files for NetCDF so we can't
-# use them in a shared lib build :-(
+# NOTE: SEMS does not provide a *.a files for PNetCDF so we can't use them in
+# a shared lib build :-(
 
 # Set MPI wrappers
 export MPICC=`which mpicc`
@@ -193,5 +202,17 @@ export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
 export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
+ 
+#
+# Set up default install-related stuff
+#
+
+export ATDM_CONFIG_WORKSPACE_BASE_DEFAULT=/home/atdm-devops-admin/jenkins
+export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/home/atdm-devops-admin/trilinos_installs
+export ATDM_CONFIG_INSTALL_PBP_RUNNER_DEFAULT=/home/atdm-devops-admin/tools/run-as-atdm-devops-admin
+
+#
+# Done!
+#
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

@@ -49,21 +49,22 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Map.hpp"
-//#include "Xpetra_MapFactory.hpp"
 #include "Xpetra_ImportFactory.hpp"
 //#include "Xpetra_MapUtils.hpp"
+
+#include "Xpetra_MapFactory_decl.hpp"
 
 namespace Xpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
-//  template<class S, class LO, class GO, class N> class Vector;
-  template<class LO, class GO, class N> class MapFactory;
+  // template<class S, class LO, class GO, class N> class Vector;
+  // template<class LO, class GO, class N> class MapFactory;
 #endif
 
-  template <class LocalOrdinal = Map<>::local_ordinal_type,
-            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class BlockedMap
     : public Map< LocalOrdinal, GlobalOrdinal, Node >
   {
@@ -83,7 +84,8 @@ namespace Xpetra {
     //! Constructor
     /*!
      */
-    BlockedMap() {
+    BlockedMap()
+    {
       bThyraMode_ = false;
     }
 
@@ -99,7 +101,8 @@ namespace Xpetra {
     //!
     //! In Xpetra mode, the fullmap has to be the same as the union of the GIDs stored in the submaps in maps. The intersection of the GIDs of the sub-
     //! maps in maps must be empty.
-    BlockedMap(const RCP<const Map>& fullmap, const std::vector<RCP<const Map> >& maps, bool bThyraMode = false) {
+    BlockedMap(const RCP<const Map>& fullmap, const std::vector<RCP<const Map> >& maps, bool bThyraMode = false)
+    {
       bThyraMode_ = bThyraMode;
 
       if(bThyraMode == false) {
@@ -186,7 +189,8 @@ namespace Xpetra {
     }
 
     //! Expert constructor for Thyra maps
-    BlockedMap(const std::vector<RCP<const Map> >& maps, const std::vector<RCP<const Map> >& thyramaps) {
+    BlockedMap(const std::vector<RCP<const Map> >& maps, const std::vector<RCP<const Map> >& thyramaps)
+    {
       bThyraMode_ = true;
 
       // plausibility check
@@ -222,7 +226,8 @@ namespace Xpetra {
     }
 
     //! copy constructor
-    BlockedMap(const BlockedMap& input) {
+    BlockedMap(const BlockedMap& input)
+    {
       bThyraMode_ = input.getThyraMode();
       fullmap_ = Teuchos::null;
       maps_.resize(input.getNumMaps(), Teuchos::null);
@@ -231,8 +236,8 @@ namespace Xpetra {
     }
 
     //! Destructor.
-    virtual ~BlockedMap() {
-
+    virtual ~BlockedMap()
+    {
       // make sure all RCP's are freed
       for(size_t v = 0; v < maps_.size(); ++v) {
         maps_[v] = Teuchos::null;
@@ -281,13 +286,13 @@ namespace Xpetra {
     virtual GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const { return fullmap_->getGlobalElement(localIndex); };
 
     //! Return the process ranks and corresponding local indices for the given global indices.
-    virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const {
+    virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &/* GIDList */, const Teuchos::ArrayView< int > &/* nodeIDList */, const Teuchos::ArrayView< LocalOrdinal > &/* LIDList */) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMap::getRemoteIndexList: routine not implemented.");
       TEUCHOS_UNREACHABLE_RETURN(IDNotPresent);
     };
 
     //! Return the process ranks for the given global indices.
-    virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const {
+    virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &/* GIDList */, const Teuchos::ArrayView< int > &/* nodeIDList */) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMap::getRemoteIndexList: routine not implemented.");
       TEUCHOS_UNREACHABLE_RETURN(IDNotPresent);
     };
@@ -365,8 +370,10 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     virtual Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { return fullmap_->getComm(); } ;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     virtual Teuchos::RCP< Node > getNode() const { return fullmap_->getNode();};
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -415,7 +422,7 @@ namespace Xpetra {
 
 
     //! Replace this Map's communicator with a subset communicator.
-    virtual RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const {
+    virtual RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &/* newComm */) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMap::replaceCommWithSubset: routine not implemented.");
     }
 

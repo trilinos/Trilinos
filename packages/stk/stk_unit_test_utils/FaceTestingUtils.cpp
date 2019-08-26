@@ -1,6 +1,7 @@
-// Copyright (c) 2015, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -57,7 +58,11 @@ unsigned count_sides_in_mesh(const stk::mesh::BulkData& mesh)
 unsigned read_file_create_faces_count_sides(std::string filename)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::fill_mesh(filename, mesh);
     stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
     return count_sides_in_mesh(mesh);
@@ -66,7 +71,11 @@ unsigned read_file_create_faces_count_sides(std::string filename)
 unsigned read_file_count_sides(std::string filename)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::fill_mesh(filename, mesh);
     return count_sides_in_mesh(mesh);
 }
@@ -94,7 +103,11 @@ bool fully_connected_elements_to_faces(const stk::mesh::BulkData& bulk)
 unsigned read_file_create_faces_fully_connected_stk(std::string filename)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::fill_mesh(filename, mesh);
     stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
     return fully_connected_elements_to_faces(mesh);
@@ -103,7 +116,11 @@ unsigned read_file_create_faces_fully_connected_stk(std::string filename)
 unsigned read_file_fully_connected_stk(std::string filename)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::fill_mesh(filename, mesh);
     return fully_connected_elements_to_faces(mesh);
 }
@@ -134,7 +151,11 @@ unsigned count_shared_faces_between_different_elements(const stk::mesh::BulkData
 unsigned read_file_create_faces_shared_faces_different_elements_stk(std::string filename)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::fill_mesh(filename, mesh);
     stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
     return count_shared_faces_between_different_elements(mesh);
@@ -143,7 +164,11 @@ unsigned read_file_create_faces_shared_faces_different_elements_stk(std::string 
 unsigned read_file_shared_faces_different_elements_stk(std::string filename)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::fill_mesh(filename, mesh);
     return count_shared_faces_between_different_elements(mesh);
 }
@@ -176,7 +201,11 @@ unsigned count_shared_faces_between_same_element(const stk::mesh::BulkData& bulk
 unsigned read_file_create_faces_shared_faces_same_elements_stk(std::string filename)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::fill_mesh(filename, mesh);
     stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
     return count_shared_faces_between_same_element(mesh);
@@ -185,7 +214,11 @@ unsigned read_file_create_faces_shared_faces_same_elements_stk(std::string filen
 unsigned read_file_shared_faces_same_elements_stk(std::string filename)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::fill_mesh(filename, mesh);
     return count_shared_faces_between_same_element(mesh);
 }
@@ -245,7 +278,11 @@ bool check_face_elem_connectivity(const stk::mesh::BulkData& mesh, const std::se
 bool read_file_create_faces_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::fill_mesh(filename, mesh);
     stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
     return check_face_elem_connectivity(mesh, counts);
@@ -255,7 +292,11 @@ bool read_file_create_faces_check_face_elem_connectivity_stk(std::string filenam
 bool read_file_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::fill_mesh(filename, mesh);
     return check_face_elem_connectivity(mesh, counts);
 
@@ -282,7 +323,7 @@ stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh, 
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
             get_ordinal_and_permutation(mesh, elem, stk::topology::EDGE_RANK, sub_topology_nodes);
 
-    if((ordinalAndPermutation.first == stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL) || (ordinalAndPermutation.second
+    if((ordinalAndPermutation.first == stk::mesh::INVALID_CONNECTIVITY_ORDINAL) || (ordinalAndPermutation.second
             == stk::mesh::Permutation::INVALID_PERMUTATION))
     {
         stk::mesh::Entity invalid;

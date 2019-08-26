@@ -7,10 +7,7 @@ export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
   gnu-7.2.0-openmp-debug
   gnu-7.2.0-openmp-release
   gnu-7.2.0-openmp-release-debug
-  #cuda-10.0-gnu-7.4.0-debug
-  #cuda-10.0-gnu-7.4.0-release
-  #cuda-10.0-gnu-7.4.0-release-debug
-  #gnu-7.4.0-openmp-debug
-  #gnu-7.4.0-openmp-release
-  #gnu-7.4.0-openmp-release-debug
+  cuda-10.1-gnu-7.2.0-debug
+  cuda-10.1-gnu-7.2.0-release
+  cuda-10.1-gnu-7.2.0-release-debug
   )

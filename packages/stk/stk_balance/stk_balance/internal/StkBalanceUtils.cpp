@@ -122,7 +122,9 @@ void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const Balanc
 
 StkSearchResults getSearchResultsForFacesParticles(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings, const stk::mesh::Selector& searchSelector)
 {
-    bool useLocalIds = balanceSettings.getGraphOption() == BalanceSettings::COLORING;
+    bool useLocalIds = balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH ||
+                       balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_BY_TOPOLOGY ||
+                       balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_AND_OUTPUT_COLOR_FIELDS;
     ThrowRequireWithSierraHelpMsg(useLocalIds != true);
 
     const stk::mesh::FieldBase* coord = get_coordinate_field(stkMeshBulkData.mesh_meta_data(), balanceSettings.getCoordinateFieldName());

@@ -34,9 +34,9 @@
  */
 
 #include "exodusII.h" // for ex_get_var, etc
-#include <stdint.h>   // for int64_t
 
 /*!
+\ingroup ResultsData
 \deprecated Use ex_get_var()(exoid, time_step, EX_NODAL, nodal_var_index, 1, num_nodes,
 nodal_var_vals)
 The function ex_get_nodal_var() reads the values of a single nodal

@@ -69,7 +69,7 @@ namespace MueLu {
   // calling AddNewLevel as appropriate.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& paramList) {
-    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,
+    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,
                                          LocalOrdinal, GlobalOrdinal, Node> realvaluedmultivector_type;
 
     for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
@@ -230,6 +230,8 @@ namespace MueLu {
               level->Set(varName, Teuchos::getValue<RCP<Matrix> >(it2->second), NoFactory::get());
             else if(typeName == "multivector")
               level->Set(varName, Teuchos::getValue<RCP<MultiVector> >(it2->second), NoFactory::get());
+            else if(typeName == "vector")
+              level->Set(varName, Teuchos::getValue<RCP<Vector> >(it2->second), NoFactory::get());
             else if(typeName == "map")
               level->Set(varName, Teuchos::getValue<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
             else if(typeName == "ordinalvector")

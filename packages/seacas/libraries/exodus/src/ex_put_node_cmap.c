@@ -56,9 +56,6 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, DIM_NCNT_CMAP, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
 
 int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_int *proc_ids,
                      int processor)
@@ -72,7 +69,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* get the index for the comm map information variables */
   if (ex_get_idx(exoid, VAR_N_COMM_INFO_IDX, varidx, processor) == -1) {
@@ -84,7 +81,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   }
 
   /* Get the index for this map_id */
-  if ((map_idx = ne_id_lkup(exoid, VAR_N_COMM_IDS, varidx, map_id)) == -1) {
+  if ((map_idx = ne__id_lkup(exoid, VAR_N_COMM_IDS, varidx, map_id)) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find index for variable \"%s\" in file ID %d", VAR_N_COMM_IDS,
              exoid);
@@ -163,7 +160,6 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
     status = nc_put_vara_int(exoid, varid, start, count, node_ids);
   }
   if (status != NC_NOERR) {
-    fprintf(stderr, "Start, Count = %" ST_ZU "\t%" ST_ZU "\n", start[0], count[0]);
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output vector \"%s\" in file ID %d",
              VAR_N_COMM_NIDS, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

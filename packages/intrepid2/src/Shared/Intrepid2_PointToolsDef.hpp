@@ -534,7 +534,7 @@ PointTools::
 warpShiftFace3D( Kokkos::DynRankView<pointValueType,pointProperties...>  dxy,
                  const ordinal_type order ,
                  const pointValueType pval ,
-                 const Kokkos::DynRankView<pointValueType,pointProperties...>  L1,
+                 const Kokkos::DynRankView<pointValueType,pointProperties...>  /* L1 */,
                  const Kokkos::DynRankView<pointValueType,pointProperties...>  L2,
                  const Kokkos::DynRankView<pointValueType,pointProperties...>  L3,
                  const Kokkos::DynRankView<pointValueType,pointProperties...> L4

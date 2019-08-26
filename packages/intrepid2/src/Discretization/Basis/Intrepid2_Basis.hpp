@@ -322,9 +322,9 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getValues(       outputViewType outputValues,
-               const pointViewType  inputPoints,
-               const EOperator operatorType = OPERATOR_VALUE ) const {
+    getValues(       outputViewType /* outputValues */,
+               const pointViewType  /* inputPoints */,
+               const EOperator /* operatorType */ = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be over-riden accordingly by derived classes.");
     }
@@ -350,10 +350,10 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getValues(        outputViewType outputValues,
-                const pointViewType  inputPoints,
-                const pointViewType  cellVertices,
-                const EOperator operatorType = OPERATOR_VALUE ) const {
+    getValues(        outputViewType /* outputValues */,
+                const pointViewType  /* inputPoints */,
+                const pointViewType  /* cellVertices */,
+                const EOperator /* operatorType */ = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getValues): this method (FVM) is not supported or should be over-riden accordingly by derived classes.");
     }
@@ -364,7 +364,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoords( scalarViewType dofCoords ) const {
+    getDofCoords( scalarViewType /* dofCoords */ ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
     }
@@ -379,7 +379,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoeffs( scalarViewType dofCoeffs ) const {
+    getDofCoeffs( scalarViewType /* dofCoeffs */ ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getDofCoeffs): this method is not supported or should be over-riden accordingly by derived classes.");
     }

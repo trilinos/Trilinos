@@ -50,9 +50,10 @@
 /// for you).  If you only want the declaration of Tpetra::CrsMatrix,
 /// include "Tpetra_CrsMatrix_decl.hpp".
 
-#include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_LocalCrsMatrixOperator.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
+#include "Tpetra_RowMatrix.hpp"
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
@@ -70,9 +71,12 @@
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
 #include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
+#include "Tpetra_Details_crsUtils.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
+
 #include <memory>
 #include <sstream>
 #include <typeinfo>
@@ -84,17 +88,6 @@ using Teuchos::rcpFromRef;
 namespace Tpetra {
 
 namespace { // (anonymous)
-
-  std::shared_ptr< ::Tpetra::Details::CommRequest>
-  iallreduceIntRaw (const int& localValue,
-                    int& globalValue,
-                    const ::Teuchos::EReductionType op,
-                    const Teuchos::Comm<int>& comm)
-  {
-    Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > localView (&localValue,1);
-    Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > globalView (&globalValue, 1);
-    return ::Tpetra::Details::iallreduce (localView, globalView, op, comm);
-  }
 
   template<class T, class BinaryFunction>
   T atomic_binary_function_update (volatile T* const dest,
@@ -151,7 +144,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              size_t maxNumEntriesPerRow,
-             ProfileType pftype,
+             const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
@@ -185,8 +178,44 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-             const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-             ProfileType pftype,
+             const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
+             const ProfileType pftype,
+             const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap),
+    storageStatus_ (pftype == StaticProfile ?
+                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
+                    ::Tpetra::Details::STORAGE_2D),
+    fillComplete_ (false),
+    frobNorm_ (-STM::one ())
+  {
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
+      "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]): ";
+    Teuchos::RCP<crs_graph_type> graph;
+    try {
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, numEntPerRowToAlloc,
+                                                pftype, params));
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]) threw "
+         "an exception: " << e.what ());
+    }
+    // myGraph_ not null means that the matrix owns the graph.  That's
+    // different than the const CrsGraph constructor, where the matrix
+    // does _not_ own the graph.
+    myGraph_ = graph;
+    staticGraph_ = graph;
+    resumeFill (params);
+    checkInternalState ();
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+             const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
+             const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
@@ -199,13 +228,13 @@ namespace Tpetra {
       "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
-      graph = Teuchos::rcp (new crs_graph_type (rowMap, NumEntriesPerRowToAlloc,
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, numEntPerRowToAlloc (),
                                                 pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
-         "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]) threw "
+         "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]) threw "
          "an exception: " << e.what ());
     }
     // myGraph_ not null means that the matrix owns the graph.  That's
@@ -216,13 +245,14 @@ namespace Tpetra {
     resumeFill (params);
     checkInternalState ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             size_t maxNumEntriesPerRow,
-             ProfileType pftype,
+             const size_t maxNumEntPerRow,
+             const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
@@ -249,7 +279,7 @@ namespace Tpetra {
     Teuchos::RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
-                                                maxNumEntriesPerRow,
+                                                maxNumEntPerRow,
                                                 pftype, params));
     }
     catch (std::exception &e) {
@@ -271,8 +301,46 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-             ProfileType pftype,
+             const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
+             const ProfileType pftype,
+             const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap),
+    storageStatus_ (pftype == StaticProfile ?
+                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
+                    ::Tpetra::Details::STORAGE_2D),
+    fillComplete_ (false),
+    frobNorm_ (-STM::one ())
+  {
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
+      "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]): ";
+    Teuchos::RCP<crs_graph_type> graph;
+    try {
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
+                                                numEntPerRowToAlloc,
+                                                pftype, params));
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "RCP<const Map>, ArrayView<const size_t>, ProfileType[, "
+         "RCP<ParameterList>]) threw an exception: " << e.what ());
+    }
+    // myGraph_ not null means that the matrix owns the graph.  That's
+    // different than the const CrsGraph constructor, where the matrix
+    // does _not_ own the graph.
+    myGraph_ = graph;
+    staticGraph_ = graph;
+    resumeFill (params);
+    checkInternalState ();
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+             const Teuchos::RCP<const map_type>& colMap,
+             const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
+             const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
@@ -285,13 +353,14 @@ namespace Tpetra {
       "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
-      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap, numEntPerRow,
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
+                                                numEntPerRowToAlloc (),
                                                 pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
-         "RCP<const Map>, ArrayRCP<const size_t>, ProfileType[, "
+         "RCP<const Map>, ArrayView<const size_t>, ProfileType[, "
          "RCP<ParameterList>]) threw an exception: " << e.what ());
     }
     // myGraph_ not null means that the matrix owns the graph.  That's
@@ -302,6 +371,7 @@ namespace Tpetra {
     resumeFill (params);
     checkInternalState ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -337,12 +407,14 @@ namespace Tpetra {
     const size_t numEnt = lclGraph.entries.extent (0);
     values_type val ("Tpetra::CrsMatrix::val", numEnt);
 
-    this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                          numCols, val, lclGraph);
+    auto lclMat = std::make_shared<local_matrix_type>
+      ("Tpetra::CrsMatrix::lclMatrix_", numCols, val, lclGraph);
+    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = this->lclMatrix_.values;
+    k_values1D_ = lclMat->values;
 
     checkInternalState ();
   }
@@ -378,12 +450,15 @@ namespace Tpetra {
 
     const size_t numCols = graph->getColMap ()->getNodeNumElements ();
     auto lclGraph = graph->getLocalGraph ();
-    this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                          numCols, values, lclGraph);
+
+    auto lclMat = std::make_shared<local_matrix_type>
+      ("Tpetra::CrsMatrix::lclMatrix_", numCols, values, lclGraph);
+    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = this->lclMatrix_.values;
+    k_values1D_ = lclMat->values;
 
     checkInternalState ();
   }
@@ -475,19 +550,23 @@ namespace Tpetra {
     // column Map, not the domain Map.
 
     const size_t numCols = graph->getColMap ()->getNodeNumElements ();
-    lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                    numCols, values, lclGraph);
+
+    auto lclMat = std::make_shared<local_matrix_type>
+      ("Tpetra::CrsMatrix::lclMatrix_", numCols, values, lclGraph);
+    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+
+    auto newValues = lclMat->values;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (lclMatrix_.values.extent (0) != values.extent (0),
-       std::logic_error, "Local matrix's constructor did not set the values "
-       "correctly.  lclMatrix_.values.extent(0) = " <<
-       lclMatrix_.values.extent (0) << " != values.extent(0) = " <<
+      (newValues.extent (0) != values.extent (0),
+       std::logic_error, "Local matrix's constructor did not set the "
+       "values correctly.  newValues.extent(0) = " <<
+       newValues.extent (0) << " != values.extent(0) = " <<
        values.extent (0) << suffix);
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = this->lclMatrix_.values;
+    this->k_values1D_ = newValues;
 
     checkInternalState ();
   }
@@ -543,20 +622,25 @@ namespace Tpetra {
     // That's how we tell whether the CrsGraph has a local graph.
     auto lclGraph = staticGraph_->getLocalGraph ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (static_cast<size_t> (lclGraph.row_map.extent (0)) != static_cast<size_t> (ptr.size ()) ||
-       static_cast<size_t> (lclGraph.entries.extent (0)) != static_cast<size_t> (ind.size ()),
-       std::logic_error, "CrsGraph's constructor (rowMap, colMap, ptr, "
-       "ind[, params]) did not set the local graph correctly.  Please "
-       "report this bug to the Tpetra developers.");
+      (size_t (lclGraph.row_map.extent (0)) != size_t (ptr.size ()) ||
+       size_t (lclGraph.entries.extent (0)) != size_t (ind.size ()),
+       std::logic_error, "CrsGraph's constructor (rowMap, colMap, "
+       "ptr, ind[, params]) did not set the local graph correctly.  "
+       "Please report this bug to the Tpetra developers.");
 
-    const size_t numCols = staticGraph_->getColMap ()->getNodeNumElements ();
-    values_type valIn = getKokkosViewDeepCopy<device_type> (av_reinterpret_cast<IST> (val ()));
-    this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                          numCols, valIn, lclGraph);
+    const size_t numCols =
+      staticGraph_->getColMap ()->getNodeNumElements ();
+    values_type valIn =
+      getKokkosViewDeepCopy<device_type> (av_reinterpret_cast<IST> (val ()));
+
+    auto lclMat = std::make_shared<local_matrix_type>
+      ("Tpetra::CrsMatrix::lclMatrix_", numCols, valIn, lclGraph);
+    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = this->lclMatrix_.values;
+    this->k_values1D_ = lclMat->values;
 
     checkInternalState ();
   }
@@ -568,7 +652,8 @@ namespace Tpetra {
              const local_matrix_type& lclMatrix,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
-    lclMatrix_ (lclMatrix),
+    lclMatrix_ (std::make_shared<local_multiply_op_type>
+                (std::make_shared<local_matrix_type> (lclMatrix))),
     k_values1D_ (lclMatrix.values),
     storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
     fillComplete_ (true),
@@ -625,7 +710,8 @@ namespace Tpetra {
              const Teuchos::RCP<const map_type>& rangeMap,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
-    lclMatrix_ (lclMatrix),
+    lclMatrix_ (std::make_shared<local_multiply_op_type>
+                (std::make_shared<local_matrix_type> (lclMatrix))),
     k_values1D_ (lclMatrix.values),
     storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
     fillComplete_ (true),
@@ -674,10 +760,107 @@ namespace Tpetra {
     checkInternalState ();
   }
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  ~CrsMatrix ()
-  {}
+  CrsMatrix (const local_matrix_type& lclMatrix,
+             const Teuchos::RCP<const map_type>& rowMap,
+             const Teuchos::RCP<const map_type>& colMap,
+             const Teuchos::RCP<const map_type>& domainMap,
+             const Teuchos::RCP<const map_type>& rangeMap,
+             const Teuchos::RCP<const import_type>& importer,
+             const Teuchos::RCP<const export_type>& exporter,
+             const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap),
+    lclMatrix_ (std::make_shared<local_multiply_op_type>
+                (std::make_shared<local_matrix_type> (lclMatrix))),
+    k_values1D_ (lclMatrix.values),
+    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
+    fillComplete_ (true),
+    frobNorm_ (-STM::one ())
+  {
+    using Teuchos::rcp;
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix"
+      "(lclMat,Map,Map,Map,Map,Import,Export,params): ";
+
+    Teuchos::RCP<crs_graph_type> graph;
+    try {
+      graph = rcp (new crs_graph_type (lclMatrix.graph, rowMap, colMap,
+                                       domainMap, rangeMap, importer,
+                                       exporter, params));
+    }
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor "
+         "(local_graph_type, Map, Map, Map, Map, Import, Export, "
+         "params) threw: " << e.what ());
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (!graph->isFillComplete (), std::logic_error, "CrsGraph "
+       "constructor (local_graph_type, Map, Map, Map, Map, Import, "
+       "Export, params) did not produce a fill-complete graph.  "
+       "Please report this bug to the Tpetra developers.");
+    // myGraph_ not null means that the matrix owns the graph.  This
+    // is true because the column indices come in as nonconst through
+    // the matrix, implying shared ownership.
+    myGraph_ = graph;
+    staticGraph_ = graph;
+
+    const bool callComputeGlobalConstants = params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    if (callComputeGlobalConstants) {
+      this->computeGlobalConstants ();
+    }
+
+    // Sanity checks at the end.
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive (), std::logic_error,
+      "We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillComplete (), std::logic_error,
+      "We're at the end of fillComplete(), but isFillComplete() is false.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+    checkInternalState ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+             const Teuchos::DataAccess copyOrView)
+    : CrsMatrix (source.getCrsGraph (), source.getLocalValuesView ())
+  {
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix("
+      "const CrsMatrix&, const Teuchos::DataAccess): ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! source.isFillComplete (), std::invalid_argument,
+       "Source graph must be fillComplete().");
+
+    if (copyOrView == Teuchos::Copy) {
+      using values_type = typename local_matrix_type::values_type;
+      values_type vals = source.getLocalValuesView ();
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
+      values_type newvals (view_alloc ("val", WithoutInitializing),
+                           vals.extent (0));
+      Kokkos::deep_copy (newvals, vals);
+      k_values1D_ = newvals;
+      if (source.isFillComplete ()) {
+        fillComplete (source.getDomainMap (), source.getRangeMap ());
+      }
+    }
+    else if (copyOrView == Teuchos::View) {
+      return;
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::invalid_argument, "Second argument 'copyOrView' "
+         "has an invalid value " << copyOrView << ".  Valid values "
+         "include Teuchos::Copy = " << Teuchos::Copy << " and "
+         "Teuchos::View = " << Teuchos::View << ".");
+    }
+  }
+
+
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -705,12 +888,15 @@ namespace Tpetra {
     return getCrsGraphRef ().getComm ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::RCP<Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const {
-    return getCrsGraphRef ().getNode ();
+    return Teuchos::null;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   ProfileType
@@ -803,6 +989,21 @@ namespace Tpetra {
     return getCrsGraphRef ().getNodeNumCols ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t TPETRA_DEPRECATED
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getGlobalNumDiags () const {
+    return this->getGlobalNumDiagsImpl ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t TPETRA_DEPRECATED
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getNodeNumDiags () const {
+    return this->getNodeNumDiagsImpl ();
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -813,13 +1014,6 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  global_size_t
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getGlobalNumDiags () const {
-    return this->getGlobalNumDiagsImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNodeNumDiagsImpl () const {
@@ -827,13 +1021,7 @@ namespace Tpetra {
     using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (G).getNodeNumDiagsImpl ();
   }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getNodeNumDiags () const {
-    return this->getNodeNumDiagsImpl ();
-  }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
@@ -938,6 +1126,31 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalMatrix () const
+  {
+    return lclMatrix_.get () == nullptr ?
+      local_matrix_type () :
+      lclMatrix_->getLocalMatrix ();
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool TPETRA_DEPRECATED
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  isLowerTriangular () const {
+    return this->isLowerTriangularImpl ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool TPETRA_DEPRECATED
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  isUpperTriangular () const {
+    return this->isUpperTriangularImpl ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   isLowerTriangularImpl () const {
@@ -949,25 +1162,12 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isLowerTriangular () const {
-    return this->isLowerTriangularImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   isUpperTriangularImpl () const {
     const crs_graph_type& G = this->getCrsGraphRef ();
     using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (G).isUpperTriangularImpl ();
   }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isUpperTriangular () const {
-    return this->isUpperTriangularImpl ();
-  }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -1007,7 +1207,7 @@ namespace Tpetra {
       (! graph.indicesAreAllocated (), std::runtime_error,
        "Graph indices must be allocated before values.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (graph.getProfileType () != DynamicProfile, std::runtime_error,
+      (graph.getProfileType () == StaticProfile, std::runtime_error,
        "Graph indices must be allocated in a dynamic profile.");
 
     const LO lclNumRows = graph.getNodeNumRows ();
@@ -1228,7 +1428,7 @@ namespace Tpetra {
 
     typedef decltype (myGraph_->k_numRowEntries_) row_entries_type;
 
-    if (getProfileType () == DynamicProfile) {
+    if (getProfileType () != StaticProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
       //
       // DynamicProfile means that the matrix's column indices and
@@ -1609,9 +1809,10 @@ namespace Tpetra {
       typename Graph::local_graph_type (k_inds, k_ptrs_const);
 
     // Make the local matrix, using the local graph and vals array.
-    lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                    getNodeNumCols (), k_vals,
-                                    myGraph_->lclGraph_);
+    auto lclMat = std::make_shared<local_matrix_type>
+      ("Tpetra::CrsMatrix::lclMatrix_", getNodeNumCols (),
+       k_vals, myGraph_->lclGraph_);
+    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1636,8 +1837,6 @@ namespace Tpetra {
     ProfilingRegion regionFLM ("Tpetra::CrsMatrix::fillLocalMatrix");
 
     const size_t lclNumRows = getNodeNumRows();
-    const map_type& rowMap = * (getRowMap ());
-    RCP<node_type> node = rowMap.getNode ();
 
     // The goals of this routine are first, to allocate and fill
     // packed 1-D storage (see below for an explanation) in the vals
@@ -1682,7 +1881,7 @@ namespace Tpetra {
 
     typedef decltype (staticGraph_->k_numRowEntries_) row_entries_type;
 
-    if (getProfileType() == DynamicProfile) {
+    if (getProfileType() != StaticProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
       //
       // DynamicProfile means that the matrix's values are currently
@@ -1839,10 +2038,11 @@ namespace Tpetra {
     // matrix certainly has a column Map.  Remember that the local
     // matrix's number of columns comes from the column Map, not the
     // domain Map.
-    lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                    getColMap ()->getNodeNumElements (),
-                                    k_vals,
-                                    staticGraph_->getLocalGraph ());
+    auto lclMat = std::make_shared<local_matrix_type>
+      ("Tpetra::CrsMatrix::lclMatrix_",
+       getColMap ()->getNodeNumElements (),
+       k_vals, staticGraph_->getLocalGraph ());
+    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1943,37 +2143,47 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     RowInfo rowInfo = graph.getRowInfo (lclRow);
-    const size_t curNumEnt = rowInfo.numEntries;
-    const size_t newNumEnt = curNumEnt + numEntriesToAdd;
-    if (newNumEnt > rowInfo.allocSize) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->getProfileType () == StaticProfile, std::runtime_error,
-         "New indices exceed statically allocated graph structure.");
-      // This must be a nonconst reference, since we'll reallocate.
-      Teuchos::Array<IST>& curVals = this->values2D_[lclRow];
-      // Make space for the new matrix entries.
-      // Teuchos::ArrayRCP::resize automatically copies over values on
-      // reallocation.
-      graph.lclInds2D_[rowInfo.localRow].resize (newNumEnt);
-      curVals.resize (newNumEnt);
-      rowInfo.allocSize = newNumEnt; // give rowInfo updated allocSize
-    }
-    typename crs_graph_type::SLocalGlobalViews indsView;
-    indsView.linds = indices;
 
-    Teuchos::ArrayView<IST> valsView = this->getViewNonConst (rowInfo);
-    Teuchos::ArrayView<const IST> valsIn =
-      Teuchos::av_reinterpret_cast<const IST> (values);
-    this->insertIndicesAndValues (graph, rowInfo, indsView, valsView,
-                                  valsIn, LocalIndices, LocalIndices);
+    if (this->getProfileType() == StaticProfile)
+    {
+      Teuchos::ArrayView<IST> valsView = this->getViewNonConst(rowInfo);
+      auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
+                   valsView[offset] += values[k]; };
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+      graph.insertLocalIndicesImpl(lclRow, indices, cb);
+    }
+    else
+    {
+      // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) Remove with DynamicProfile
+      const size_t curNumEnt = rowInfo.numEntries;
+      const size_t newNumEnt = curNumEnt + numEntriesToAdd;
+      if (newNumEnt > rowInfo.allocSize) {
+        // This must be a nonconst reference, since we'll reallocate.
+        Teuchos::Array<IST>& curVals = this->values2D_[lclRow];
+        // Make space for the new matrix entries.
+        // Teuchos::ArrayRCP::resize automatically copies over values on
+        // reallocation.
+        graph.lclInds2D_[rowInfo.localRow].resize (newNumEnt);
+        curVals.resize (newNumEnt);
+        rowInfo.allocSize = newNumEnt; // give rowInfo updated allocSize
+      }
+      typename crs_graph_type::SLocalGlobalViews indsView;
+      indsView.linds = indices;
+
+      Teuchos::ArrayView<IST> valsView = this->getViewNonConst (rowInfo);
+      Teuchos::ArrayView<const IST> valsIn =
+        Teuchos::av_reinterpret_cast<const IST> (values);
+      this->insertIndicesAndValues (graph, rowInfo, indsView, valsView,
+                                    valsIn, LocalIndices, LocalIndices);
 #ifdef HAVE_TPETRA_DEBUG
-    const size_t chkNewNumEnt = graph.getNumEntriesInLocalRow (lclRow);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (chkNewNumEnt != newNumEnt, std::logic_error,
-      "The row should have " << newNumEnt << " entries after insert, but "
-      "instead has " << chkNewNumEnt << ".  Please report this bug to "
-      "the Tpetra developers.");
+      const size_t chkNewNumEnt = graph.getNumEntriesInLocalRow (lclRow);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (chkNewNumEnt != newNumEnt, std::logic_error,
+        "The row should have " << newNumEnt << " entries after insert, but "
+        "instead has " << chkNewNumEnt << ".  Please report this bug to "
+        "the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2000,11 +2210,13 @@ namespace Tpetra {
   {
     typedef impl_scalar_type IST;
     typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "insertGlobalValuesImpl: ";
-
 #ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "insertGlobalValuesImpl: ";
     const size_t origNumEnt = graph.getNumEntriesInLocalRow (rowInfo.localRow);
 #endif // HAVE_TPETRA_DEBUG
+
+    size_t newNumEnt = 0;
+    const size_t curNumEnt = rowInfo.numEntries;
 
     if (! graph.indicesAreAllocated ()) {
       this->allocateValues (GlobalIndices, GraphNotYetAllocated);
@@ -2015,42 +2227,48 @@ namespace Tpetra {
       rowInfo = graph.getRowInfo (rowInfo.localRow);
     }
 
-    const size_t curNumEnt = rowInfo.numEntries;
-    const size_t newNumEnt = curNumEnt + numInputEnt;
-    if (newNumEnt > rowInfo.allocSize) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->getProfileType () == StaticProfile &&
-         newNumEnt > rowInfo.allocSize, std::runtime_error,
-         "New indices exceed statically allocated graph structure.  "
-         "curNumEnt (" << curNumEnt << ") + numInputEnt ("
-         << numInputEnt << ") > allocSize (" << rowInfo.allocSize
-         << ").");
-      // This needs to be a nonconst reference, in case we want to
-      // reallocate it.
-      Teuchos::Array<IST>& curVals = this->values2D_[rowInfo.localRow];
-      // Teuchos::ArrayRCP::resize automatically copies over values on
-      // reallocation.
-      graph.gblInds2D_[rowInfo.localRow].resize (newNumEnt);
-      curVals.resize (newNumEnt);
-      rowInfo.allocSize = newNumEnt; // reassign for updated allocSize
+    if (this->getProfileType () == StaticProfile) {
+      Teuchos::ArrayView<IST> valsView = this->getViewNonConst(rowInfo);
+      auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
+                   valsView[offset] += vals[k];
+                   };
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+      auto numInserted =
+        graph.insertGlobalIndicesImpl(rowInfo, gblColInds, numInputEnt, cb);
+      newNumEnt = curNumEnt + numInserted;
+    }
+    else {
+      // NOTE (DYNAMICPROFILE_REMOVAL) remove this block
+      newNumEnt = curNumEnt + numInputEnt;
+      if (newNumEnt > rowInfo.allocSize) {
+        // This needs to be a nonconst reference, in case we want to
+        // reallocate it.
+        Teuchos::Array<IST>& curVals = this->values2D_[rowInfo.localRow];
+        // Teuchos::ArrayRCP::resize automatically copies over values on
+        // reallocation.
+        graph.gblInds2D_[rowInfo.localRow].resize (newNumEnt);
+        curVals.resize (newNumEnt);
+        rowInfo.allocSize = newNumEnt; // reassign for updated allocSize
+      }
+
+      using Teuchos::ArrayView;
+      typename crs_graph_type::SLocalGlobalViews inputIndsAV;
+      inputIndsAV.ginds = ArrayView<const GO> (gblColInds, numInputEnt);
+      ArrayView<IST> curValsAV = this->getViewNonConst (rowInfo);
+      ArrayView<const IST> inputValsAV (vals, numInputEnt);
+
+      const ELocalGlobal curIndexingStatus =
+        this->isGloballyIndexed () ? GlobalIndices : LocalIndices;
+      // curIndexingStatus == GlobalIndices means the method calls
+      // getGlobalViewNonConst() and does direct copying, which should
+      // be reasonably fast.  LocalIndices means the method calls the
+      // Map's getLocalElement() method once per entry to insert.  This
+      // may be slow.
+      this->insertIndicesAndValues (graph, rowInfo, inputIndsAV, curValsAV,
+                                    inputValsAV, GlobalIndices,
+                                    curIndexingStatus);
     }
 
-    using Teuchos::ArrayView;
-    typename crs_graph_type::SLocalGlobalViews inputIndsAV;
-    inputIndsAV.ginds = ArrayView<const GO> (gblColInds, numInputEnt);
-    ArrayView<IST> curValsAV = this->getViewNonConst (rowInfo);
-    ArrayView<const IST> inputValsAV (vals, numInputEnt);
-
-    const ELocalGlobal curIndexingStatus =
-      this->isGloballyIndexed () ? GlobalIndices : LocalIndices;
-    // curIndexingStatus == GlobalIndices means the method calls
-    // getGlobalViewNonConst() and does direct copying, which should
-    // be reasonably fast.  LocalIndices means the method calls the
-    // Map's getLocalElement() method once per entry to insert.  This
-    // may be slow.
-    this->insertIndicesAndValues (graph, rowInfo, inputIndsAV, curValsAV,
-                                  inputValsAV, GlobalIndices,
-                                  curIndexingStatus);
 #ifdef HAVE_TPETRA_DEBUG
     const size_t chkNewNumEnt =
       graph.getNumEntriesInLocalRow (rowInfo.localRow);
@@ -2270,7 +2488,6 @@ namespace Tpetra {
     // reference count.  getCrsGraphRef() is thread safe.
     const map_type& rowMap = * (this->getCrsGraphRef ().rowMap_);
     const LO lclRow = rowMap.getLocalElement (gblRow);
-
     if (lclRow == OTLO::invalid ()) {
       // Input row is _not_ owned by the calling process.
       //
@@ -2301,7 +2518,50 @@ namespace Tpetra {
       const size_t numInputEnt = indices.size ();
       RowInfo rowInfo = graph.getRowInfo (lclRow);
 
-      if (! graph.colMap_.is_null ()) { // We have a column Map.
+      if (!graph.colMap_.is_null() &&
+           graph.isLocallyIndexed() &&
+           this->getProfileType() == StaticProfile) {
+        // This branch is similar in function to the following branch, but for
+        // the special case that the target graph is locally indexed (and the
+        // profile type is StaticProfile). In this case, we cannot simply filter
+        // out global indices that don't exist on the receiving process and
+        // insert the remaining (global) indices, but we must convert them (the
+        // remaining global indices) to local and call `insertLocalValues`.
+        const map_type& colMap = * (graph.colMap_);
+        size_t curOffset = 0;
+        while (curOffset < numInputEnt) {
+          // Find a sequence of input indices that are in the column Map on the
+          // calling process. Doing a sequence at a time, instead of one at a
+          // time, amortizes some overhead.
+          Teuchos::Array<LO> lclIndices;
+          size_t endOffset = curOffset;
+          for ( ; endOffset < numInputEnt; ++endOffset) {
+            auto lclIndex = colMap.getLocalElement(inputGblColInds[endOffset]);
+            if (lclIndex != OTLO::invalid())
+              lclIndices.push_back(lclIndex);
+            else
+              break;
+          }
+          // curOffset, endOffset: half-exclusive range of indices in the column
+          // Map on the calling process. If endOffset == curOffset, the range is
+          // empty.
+          const LO numIndInSeq = (endOffset - curOffset);
+          if (numIndInSeq != 0) {
+            this->insertLocalValues(lclRow, lclIndices(), values(curOffset, numIndInSeq));
+          }
+          // Invariant before the increment line: Either endOffset ==
+          // numInputEnt, or inputGblColInds[endOffset] is not in the column Map
+          // on the calling process.
+#ifdef HAVE_TPETRA_DEBUG
+          const bool invariant = endOffset == numInputEnt ||
+            colMap.getLocalElement (inputGblColInds[endOffset]) == OTLO::invalid ();
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (! invariant, std::logic_error, std::endl << "Invariant failed!");
+#endif // HAVE_TPETRA_DEBUG
+          curOffset = endOffset + 1;
+        }
+      }
+      else if (! graph.colMap_.is_null ()) { // We have a column Map.
         const map_type& colMap = * (graph.colMap_);
         size_t curOffset = 0;
         while (curOffset < numInputEnt) {
@@ -2318,6 +2578,7 @@ namespace Tpetra {
           // curOffset, the range is empty.
           const LO numIndInSeq = (endOffset - curOffset);
           if (numIndInSeq != 0) {
+            rowInfo = graph.getRowInfo(lclRow);  // KDD 5/19 Need fresh RowInfo in each loop iteration
             this->insertGlobalValuesImpl (graph, rowInfo,
                                           inputGblColInds + curOffset,
                                           inputVals + curOffset,
@@ -2354,7 +2615,6 @@ namespace Tpetra {
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-
     const bool sorted = graph.isSorted ();
 
     size_t hint = 0; // Guess for the current index k into rowVals
@@ -2475,6 +2735,19 @@ namespace Tpetra {
                            const impl_scalar_type newVals[],
                            const LocalOrdinal numElts) const
   {
+    if (graph.getProfileType() == StaticProfile)
+    {
+      Teuchos::ArrayView<const GlobalOrdinal> indsT(inds, numElts);
+      auto fun =
+        [&](size_t const k, size_t const /*start*/, size_t const offset) {
+          rowVals[offset] = newVals[k];
+        };
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+      return graph.findGlobalIndices(rowInfo, indsT, cb);
+    }
+
+    // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
+    // yanked once DynamicProfile is removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
@@ -3760,17 +4033,19 @@ namespace Tpetra {
       // do nothing
     }
     else {
+      auto lclMat = this->getLocalMatrix ();
+
       if (staticGraph_->getProfileType () == StaticProfile) {
-        const LO lclNumRows = lclMatrix_.numRows ();
+        const LO lclNumRows = lclMat.numRows ();
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          auto row_i = lclMatrix_.row (lclRow);
+          auto row_i = lclMat.row (lclRow);
           for (LO k = 0; k < row_i.length; ++k) {
             // FIXME (mfh 02 Jan 2015) This assumes CUDA UVM.
             row_i.value (k) *= theAlpha;
           }
         }
       }
-      else if (staticGraph_->getProfileType () == DynamicProfile) {
+      else if (staticGraph_->getProfileType () != StaticProfile) {
         for (size_t row = 0; row < nlrs; ++row) {
           const size_type numEnt = getNumEntriesInLocalRow (row);
           Teuchos::ArrayView<impl_scalar_type> rowVals = values2D_[row] ();
@@ -3811,7 +4086,7 @@ namespace Tpetra {
         // modified.
         Kokkos::deep_copy (k_values1D_, theAlpha);
       }
-      else if (profType == DynamicProfile) {
+      else if (profType != StaticProfile) {
         for (size_t row = 0; row < nlrs; ++row) {
           std::fill (values2D_[row].begin (), values2D_[row].end (), theAlpha);
         }
@@ -3855,12 +4130,15 @@ namespace Tpetra {
        "local graph.  Please report this bug to the Tpetra developers.");
 
     const size_t numCols = myGraph_->getColMap ()->getNodeNumElements ();
-    this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                          numCols, values, lclGraph);
+
+    auto lclMat = std::make_shared<local_matrix_type>
+      ("Tpetra::CrsMatrix::lclMatrix_", numCols, values, lclGraph);
+    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = this->lclMatrix_.values;
+    k_values1D_ = lclMat->values;
 
     // Storage MUST be packed, since the interface doesn't give any
     // way to indicate any extra space at the end of each row.
@@ -3999,10 +4277,10 @@ namespace Tpetra {
 
       const auto lclRowMap = rowMap.getLocalMap ();
       const auto lclColMap = colMap.getLocalMap ();
-      const auto lclMatrix = this->lclMatrix_;
       using ::Tpetra::Details::getDiagCopyWithoutOffsets;
       (void) getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap,
-                                        lclColMap, lclMatrix);
+                                        lclColMap,
+                                        lclMatrix_->getLocalMatrix ());
     }
     else {
       using ::Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete;
@@ -4044,7 +4322,8 @@ namespace Tpetra {
     auto D_lcl_1d =
       Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
 
-    KokkosSparse::getDiagCopy (D_lcl_1d, offsets, this->lclMatrix_);
+    KokkosSparse::getDiagCopy (D_lcl_1d, offsets,
+                               lclMatrix_->getLocalMatrix ());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4053,11 +4332,9 @@ namespace Tpetra {
   getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const
   {
-    typedef LocalOrdinal LO;
-    typedef impl_scalar_type IST;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
-    typedef typename vec_type::dual_view_type dual_view_type;
-    typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
+    using LO = LocalOrdinal;
+    using host_execution_space = Kokkos::DefaultHostExecutionSpace;
+    using IST = impl_scalar_type;
 
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getLocalDiagCopy: ";
@@ -4073,33 +4350,37 @@ namespace Tpetra {
     // See #1510.  In case diag has already been marked modified on
     // device, we need to clear that flag, since the code below works
     // on host.
-    auto diag_dv = diag.getDualView ();
-    diag_dv.clear_sync_state();
+    diag.clear_sync_state ();
 
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
     // device.
-    diag.modify_host();
-    auto lclVecHost = diag.template getLocalView<host_execution_space> ();
+    diag.modify_host ();
+    auto lclVecHost = diag.getLocalViewHost ();
     // 1-D subview of the first (and only) column of lclVecHost.
     auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
-    Kokkos::View<const size_t*, Kokkos::HostSpace,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      h_offsets (offsets.getRawPtr (), offsets.size ());
+    using host_offsets_view_type =
+      Kokkos::View<const size_t*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+    host_offsets_view_type h_offsets (offsets.getRawPtr (), offsets.size ());
     // Find the diagonal entries and put them in lclVecHost1d.
+    using range_type = Kokkos::RangePolicy<host_execution_space, LO>;
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
-    typedef Kokkos::RangePolicy<host_execution_space, LO> policy_type;
     const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
 
-    Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LO& lclRow) {
-      lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
-      if (h_offsets[lclRow] != INV) {
-        auto curRow = lclMatrix_.rowConst (lclRow);
-        lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(h_offsets[lclRow]));
-      }
-    });
-    diag.template sync<execution_space> (); // sync changes back to device
+    local_matrix_type lclMat = lclMatrix_->getLocalMatrix ();
+    Kokkos::parallel_for
+      ("Tpetra::CrsMatrix::getLocalDiagCopy",
+       range_type (0, myNumRows),
+       [&] (const LO lclRow) {
+        lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
+        if (h_offsets[lclRow] != INV) {
+          auto curRow = lclMat.rowConst (lclRow);
+          lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(h_offsets[lclRow]));
+        }
+      });
+    diag.sync_device ();
   }
 
 
@@ -4116,7 +4397,7 @@ namespace Tpetra {
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
     using LO = local_ordinal_type;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
+    using vec_type = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "leftScale: ";
 
     ProfilingRegion region ("Tpetra::CrsMatrix::leftScale");
@@ -4151,7 +4432,8 @@ namespace Tpetra {
     // constructed.
     const LO lclNumRows =
       static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
-    const bool validLocalMatrix = this->lclMatrix_.numRows () == lclNumRows;
+    const bool validLocalMatrix = lclMatrix_.get () != nullptr &&
+      lclMatrix_->getLocalMatrix ().numRows () == lclNumRows;
 
     if (validLocalMatrix) {
       using dev_memory_space = typename device_type::memory_space;
@@ -4161,10 +4443,12 @@ namespace Tpetra {
       }
       auto x_lcl = xp->template getLocalView<dev_memory_space> ();
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
-      ::Tpetra::Details::leftScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
+      using ::Tpetra::Details::leftScaleLocalCrsMatrix;
+      leftScaleLocalCrsMatrix (lclMatrix_->getLocalMatrix (),
+                               x_lcl_1d, false, false);
     }
     else {
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
 
       ArrayRCP<const Scalar> vectorVals = xp->getData (0);
       ArrayView<impl_scalar_type> rowValues = Teuchos::null;
@@ -4176,7 +4460,7 @@ namespace Tpetra {
           rowValues[j] *= scaleValue;
         }
       }
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
     }
   }
 
@@ -4227,7 +4511,8 @@ namespace Tpetra {
     // constructed.
     const LO lclNumRows =
       static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
-    const bool validLocalMatrix = this->lclMatrix_.numRows () == lclNumRows;
+    const bool validLocalMatrix = lclMatrix_.get () != nullptr &&
+      lclMatrix_->getLocalMatrix ().numRows () == lclNumRows;
 
     if (validLocalMatrix) {
       using dev_memory_space = typename device_type::memory_space;
@@ -4237,10 +4522,12 @@ namespace Tpetra {
       }
       auto x_lcl = xp->template getLocalView<dev_memory_space> ();
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
-      ::Tpetra::Details::rightScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
+      using ::Tpetra::Details::rightScaleLocalCrsMatrix;
+      rightScaleLocalCrsMatrix (lclMatrix_->getLocalMatrix (),
+                                x_lcl_1d, false, false);
     }
     else {
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
 
       ArrayRCP<const Scalar> vectorVals = xp->getData (0);
       ArrayView<impl_scalar_type> rowValues = null;
@@ -4253,7 +4540,7 @@ namespace Tpetra {
           rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
         }
       }
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
     }
   }
 
@@ -4469,7 +4756,7 @@ namespace Tpetra {
 
     RCP<const map_type> nonlocalRowMap;
     // Keep this for CrsGraph's constructor, so we can use StaticProfile.
-    Teuchos::ArrayRCP<size_t> numEntPerNonlocalRow (myNumNonlocalRows);
+    Teuchos::Array<size_t> numEntPerNonlocalRow (myNumNonlocalRows);
     {
       Teuchos::Array<GO> myNonlocalGblRows (myNumNonlocalRows);
       size_type curPos = 0;
@@ -4527,7 +4814,7 @@ namespace Tpetra {
     //    exact counts of the number of entries in each nonlocal row.
 
     RCP<crs_matrix_type> nonlocalMatrix =
-      rcp (new crs_matrix_type (nonlocalRowMap, numEntPerNonlocalRow,
+      rcp (new crs_matrix_type (nonlocalRowMap, numEntPerNonlocalRow (),
                                 StaticProfile));
     {
       size_type curPos = 0;
@@ -5120,7 +5407,7 @@ namespace Tpetra {
 
     // Temporary MV for Import operation.  After the block of code
     // below, this will be an (Imported if necessary) column Map MV
-    // ready to give to localMultiply().
+    // ready to give to localApply(...).
     RCP<const MV> X_colMap;
     if (importer.is_null ()) {
       if (! X_in.isConstantStride ()) {
@@ -5320,8 +5607,8 @@ namespace Tpetra {
       // FIXME (mfh 18 Apr 2015) Temporary fix suggested by Clark
       // Dohrmann on Fri 17 Apr 2015.  At some point, we need to go
       // back and figure out why this helps.  importMV_ SHOULD be
-      // completely overwritten in the localMultiply() call below,
-      // because beta == ZERO there.
+      // completely overwritten in the localApply(...) call
+      // below, because beta == ZERO there.
       importMV_->putScalar (ZERO);
       // Do the local computation.
       this->localApply (*X, *importMV_, mode, alpha, ZERO);
@@ -5363,14 +5650,77 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   localApply (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
-              MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&Y,
+              MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
               const Teuchos::ETransp mode,
               const Scalar& alpha,
               const Scalar& beta) const
   {
     using Tpetra::Details::ProfilingRegion;
+    using Teuchos::NO_TRANS;
     ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localApply");
-    this->template localMultiply<Scalar, Scalar> (X, Y, mode, alpha, beta);
+
+    auto X_lcl = X.getLocalViewDevice ();
+    auto Y_lcl = Y.getLocalViewDevice ();
+    // TODO (24 Jul 2019) uncomment later; this line of code wasn't
+    // here before, so we need to test it separately before pushing.
+    //
+    // Y.modify_device ();
+
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      const char tfecfFuncName[] = "localApply: ";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (lclMatrix_.get () == nullptr, std::logic_error,
+         "lclMatrix_ not created yet.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
+         "X.getNumVectors() = " << X.getNumVectors () << " != "
+         "Y.getNumVectors() = " << Y.getNumVectors () << ".");
+      const bool transpose = (mode != Teuchos::NO_TRANS);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! transpose && X.getLocalLength () !=
+         getColMap ()->getNodeNumElements (), std::runtime_error,
+         "NO_TRANS case: X has the wrong number of local rows.  "
+         "X.getLocalLength() = " << X.getLocalLength () << " != "
+         "getColMap()->getNodeNumElements() = " <<
+         getColMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! transpose && Y.getLocalLength () !=
+         getRowMap ()->getNodeNumElements (), std::runtime_error,
+         "NO_TRANS case: Y has the wrong number of local rows.  "
+         "Y.getLocalLength() = " << Y.getLocalLength () << " != "
+         "getRowMap()->getNodeNumElements() = " <<
+         getRowMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (transpose && X.getLocalLength () !=
+         getRowMap ()->getNodeNumElements (), std::runtime_error,
+         "TRANS or CONJ_TRANS case: X has the wrong number of local "
+         "rows.  X.getLocalLength() = " << X.getLocalLength ()
+         << " != getRowMap()->getNodeNumElements() = "
+         << getRowMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (transpose && Y.getLocalLength () !=
+         getColMap ()->getNodeNumElements (), std::runtime_error,
+         "TRANS or CONJ_TRANS case: X has the wrong number of local "
+         "rows.  Y.getLocalLength() = " << Y.getLocalLength ()
+         << " != getColMap()->getNodeNumElements() = "
+         << getColMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! isFillComplete (), std::runtime_error, "The matrix is not "
+         "fill complete.  You must call fillComplete() (possibly with "
+         "domain and range Map arguments) without an intervening "
+         "resumeFill() call before you may call this method.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! X.isConstantStride () || ! Y.isConstantStride (),
+         std::runtime_error, "X and Y must be constant stride.");
+      // If the two pointers are NULL, then they don't alias one
+      // another, even though they are equal.
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (X_lcl.data () == Y_lcl.data () && X_lcl.data () != nullptr,
+         std::runtime_error, "X and Y may not alias one another.");
+    }
+
+    lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5866,17 +6216,8 @@ namespace Tpetra {
       X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
 #ifdef HAVE_TPETRA_DEBUG
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      auto X_colMap_host_view =
-        X_colMap->template getLocalView<Kokkos::HostSpace> ();
-      auto X_domainMap_host_view =
-        X_domainMap->template getLocalView<Kokkos::HostSpace> ();
-#else
-      auto X_colMap_host_view =
-        X_colMap->getLocalViewHost ();
-      auto X_domainMap_host_view =
-        X_domainMap->getLocalViewHost ();
-#endif
+      auto X_colMap_host_view = X_colMap->getLocalViewHost ();
+      auto X_domainMap_host_view = X_domainMap->getLocalViewHost ();
 
       if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -6048,8 +6389,9 @@ namespace Tpetra {
       (new output_matrix_type (this->getCrsGraph ()));
     // Copy old values into new values.  impl_scalar_type and T may
     // differ, so we can't use Kokkos::deep_copy.
-    ::Tpetra::Details::copyConvert (newMatrix->lclMatrix_.values,
-                                    this->lclMatrix_.values);
+    using ::Tpetra::Details::copyConvert;
+    copyConvert (newMatrix->lclMatrix_->getLocalMatrix ().values,
+                 this->lclMatrix_->getLocalMatrix ().values);
     // Since newmat has a static (const) graph, the graph already has
     // a column Map, and Import and Export objects already exist (if
     // applicable).  Thus, calling fillComplete is cheap.
@@ -6095,7 +6437,7 @@ namespace Tpetra {
       std::logic_error, err);
     // if matrix/graph are dynamic profile, then 1D allocation should not be present
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      getProfileType() == DynamicProfile && k_values1D_.extent (0) > 0,
+      getProfileType() != StaticProfile && k_values1D_.extent (0) > 0,
       std::logic_error, err);
     // if values are allocated and they are non-zero in number, then
     // one of the allocations should be present
@@ -6396,12 +6738,96 @@ namespace Tpetra {
     return (srcRowMat != NULL);
   }
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  useNewInterface ()
+  applyCrsPadding(const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding)
   {
-    return true;
+    //    const char tfecfFuncName[] = "applyCrsPadding";
+    using execution_space = typename device_type::execution_space;
+    using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
+    using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LocalOrdinal>>;
+    using Tpetra::Details::padCrsArrays;
+
+    const char tfecfFuncName[] = "applyCrsPadding: ";
+
+    if (! myGraph_->indicesAreAllocated ()) {
+      this->allocateValues (GlobalIndices, GraphNotYetAllocated);
+    }
+
+    if (padding.size() == 0)
+      return;
+
+    // Making copies here because k_rowPtrs_ has a const type. Otherwise, we
+    // would use it directly.
+
+    row_ptrs_type row_ptr_beg("row_ptr_beg", myGraph_->k_rowPtrs_.extent(0));
+    Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
+
+    const size_t N = (row_ptr_beg.extent(0) == 0 ? 0 : row_ptr_beg.extent(0) - 1);
+    row_ptrs_type row_ptr_end("row_ptr_end", N);
+
+    bool refill_num_row_entries = false;
+    if (myGraph_->k_numRowEntries_.extent(0) > 0) {
+      // Case 1: Unpacked storage
+      refill_num_row_entries = true;
+      auto num_row_entries = myGraph_->k_numRowEntries_;
+      Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
+                           KOKKOS_LAMBDA(const size_t i){
+                             row_ptr_end(i) = row_ptr_beg(i) + num_row_entries(i);
+                           }
+                           );
+
+    } else {
+      // mfh If packed storage, don't need row_ptr_end to be separate allocation;
+      // could just have it alias row_ptr_beg+1.
+      // Case 2: Packed storage
+      Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
+                           KOKKOS_LAMBDA(const size_t i){
+                             row_ptr_end(i) = row_ptr_beg(i+1);
+                           }
+                           );
+    }
+
+    using values_type = typename local_matrix_type::values_type;
+    values_type values("values", k_values1D_.size());
+    Kokkos::deep_copy(values, k_values1D_);
+
+    if(myGraph_->isGloballyIndexed()) {
+      using indices_type = typename crs_graph_type::t_GlobalOrdinal_1D;
+      indices_type indices("indices", myGraph_->k_gblInds1D_.extent(0));
+      Kokkos::deep_copy(indices, myGraph_->k_gblInds1D_);
+      using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
+      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg, row_ptr_end, indices, values, padding);
+      myGraph_->k_gblInds1D_ = indices;
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          values.size() != indices.size(),
+          std::logic_error,
+          "After padding, values and indices should be same size");
+    }
+    else {
+      using indices_type = typename local_graph_type::entries_type::non_const_type;
+      indices_type indices("indices", myGraph_->k_lclInds1D_.extent(0));
+      Kokkos::deep_copy(indices, myGraph_->k_lclInds1D_);
+      using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
+      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg, row_ptr_end, indices, values, padding);
+      myGraph_->k_lclInds1D_ = indices;
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          values.size() != indices.size(),
+          std::logic_error,
+          "After padding, values and indices should be same size");
+    }
+
+    if (refill_num_row_entries) {
+      auto num_row_entries = myGraph_->k_numRowEntries_;
+      Kokkos::parallel_for("Fill num entries", range_policy(0, N),
+                           KOKKOS_LAMBDA(const size_t i){
+                             num_row_entries(i) = row_ptr_end(i) - row_ptr_beg(i);
+                           }
+                           );
+    }
+    myGraph_->k_rowPtrs_ = row_ptr_beg;
+    k_values1D_ = values;
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -6553,19 +6979,23 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  copyAndPermuteNew (const SrcDistObject& srcObj,
-                     const size_t numSameIDs,
-                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& srcObj,
+   const size_t numSameIDs,
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
   {
     using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
     using std::endl;
-    typedef typename device_type::memory_space dev_mem_space;
 
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
-    const char tfecfFuncName[] = "copyAndPermuteNew: ";
-    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteNew");
+    const char tfecfFuncName[] = "copyAndPermute: ";
+    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermute");
 
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
@@ -6580,7 +7010,7 @@ namespace Tpetra {
       }
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::copyAndPermuteNew: ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::copyAndPermute: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
       std::ostringstream os;
@@ -6609,6 +7039,14 @@ namespace Tpetra {
     using RMT = ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const RMT& srcMat = dynamic_cast<const RMT&> (srcObj);
 
+    if (!this->isStaticGraph () && this->getProfileType () == StaticProfile) {
+      auto padding =
+        this->myGraph_->computeCrsPadding(*srcMat.getGraph(), numSameIDs, permuteToLIDs, permuteFromLIDs);
+      if (padding.size() > 0)
+        this->applyCrsPadding(padding);
+    }
+
+
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Call copyAndPermuteImpl" << endl;
@@ -6621,12 +7059,17 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  packAndPrepareNew (const SrcDistObject& source,
-                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                     Kokkos::DualView<char*, buffer_device_type>& exports,
-                     Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
-                     size_t& constantNumPackets,
-                     Distributor& distor)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& source,
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+   Kokkos::DualView<char*, buffer_device_type>& exports,
+   Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+   size_t& constantNumPackets,
+   Distributor& distor)
   {
     using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
@@ -6636,8 +7079,8 @@ namespace Tpetra {
     using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "packAndPrepareNew: ";
-    ProfilingRegion regionPAP ("Tpetra::CrsMatrix::packAndPrepareNew");
+    const char tfecfFuncName[] = "packAndPrepare: ";
+    ProfilingRegion regionPAP ("Tpetra::CrsMatrix::packAndPrepare");
 
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
@@ -6654,7 +7097,7 @@ namespace Tpetra {
     if (verbose) {
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::packAndPrepareNew: ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::packAndPrepare: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
       std::ostringstream os;
@@ -6817,7 +7260,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "packAndPrepareNew: Done!" << endl
+      os << *prefix << "packAndPrepare: Done!" << endl
          << *prefix << "  "
          << dualViewStatusToString (exportLIDs, "exportLIDs")
          << endl
@@ -7117,7 +7560,7 @@ namespace Tpetra {
            size_t& constantNumPackets,
            Distributor& dist) const
   {
-    // The call to packNew in packAndPrepareNew catches and handles any exceptions.
+    // The call to packNew in packAndPrepare catches and handles any exceptions.
     if (this->isStaticGraph ()) {
       using ::Tpetra::Details::packCrsMatrixNew;
       packCrsMatrixNew (*this, exports, numPacketsPerLID, exportLIDs,
@@ -7424,18 +7867,23 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       Kokkos::DualView<char*, buffer_device_type> imports,
-                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
-                       const size_t constantNumPackets,
-                       Distributor& distor,
-                       const CombineMode combineMode)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
+   Kokkos::DualView<char*, buffer_device_type> imports,
+   Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+   const size_t constantNumPackets,
+   Distributor& distor,
+   const CombineMode combineMode)
   {
     using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
     using std::endl;
-    const char tfecfFuncName[] = "unpackAndCombineNew: ";
-    ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombineNew");
+    const char tfecfFuncName[] = "unpackAndCombine: ";
+    ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombine");
 
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
@@ -7457,7 +7905,7 @@ namespace Tpetra {
       }
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::unpackAndCombineNew: ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::unpackAndCombine: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
       std::ostringstream os;
@@ -7499,13 +7947,19 @@ namespace Tpetra {
       return; // nothing to do
     }
 
+    if (!this->isStaticGraph() && this->getProfileType() == StaticProfile) {
+      auto padding = myGraph_->computeCrsPadding(importLIDs, numPacketsPerLID);
+      if (padding.size() > 0)
+        this->applyCrsPadding(padding);
+    }
+
     if (debug) {
       using Teuchos::reduceAll;
       std::unique_ptr<std::ostringstream> msg (new std::ostringstream ());
       int lclBad = 0;
       try {
-        this->unpackAndCombineNewImpl (importLIDs, imports, numPacketsPerLID,
-                                       constantNumPackets, distor, combineMode);
+        this->unpackAndCombineImpl (importLIDs, imports, numPacketsPerLID,
+                                    constantNumPackets, distor, combineMode);
       } catch (std::exception& e) {
         lclBad = 1;
         *msg << e.what ();
@@ -7524,14 +7978,14 @@ namespace Tpetra {
         msg = std::unique_ptr<std::ostringstream> (new std::ostringstream ());
         ::Tpetra::Details::gathervPrint (*msg, os.str (), comm);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::logic_error, std::endl << "unpackAndCombineNewImpl() "
+          (true, std::logic_error, std::endl << "unpackAndCombineImpl "
            "threw an exception on one or more participating processes: "
            << endl << msg->str ());
       }
     }
     else {
-      this->unpackAndCombineNewImpl (importLIDs, imports, numPacketsPerLID,
-                                     constantNumPackets, distor, combineMode);
+      this->unpackAndCombineImpl (importLIDs, imports, numPacketsPerLID,
+                                  constantNumPackets, distor, combineMode);
     }
 
     if (verbose) {
@@ -7553,16 +8007,16 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNewImpl (const Kokkos::DualView<const local_ordinal_type*,
-                             buffer_device_type>& importLIDs,
-                           const Kokkos::DualView<const char*,
-                             buffer_device_type>& imports,
-                           const Kokkos::DualView<const size_t*,
-                             buffer_device_type>& numPacketsPerLID,
-                           const size_t constantNumPackets,
-                           Distributor & distor,
-                           const CombineMode combineMode,
-                           const bool atomic)
+  unpackAndCombineImpl (const Kokkos::DualView<const local_ordinal_type*,
+                          buffer_device_type>& importLIDs,
+                        const Kokkos::DualView<const char*,
+                          buffer_device_type>& imports,
+                        const Kokkos::DualView<const size_t*,
+                          buffer_device_type>& numPacketsPerLID,
+                        const size_t constantNumPackets,
+                        Distributor & distor,
+                        const CombineMode combineMode,
+                        const bool atomic)
   {
     // Exception are caught and handled upstream, so we just call the
     // implementations directly.
@@ -7573,25 +8027,25 @@ namespace Tpetra {
                                     distor, combineMode, atomic);
     }
     else {
-      this->unpackAndCombineNewImplNonStatic (importLIDs, imports,
-                                              numPacketsPerLID,
-                                              constantNumPackets,
-                                              distor, combineMode);
+      this->unpackAndCombineImplNonStatic (importLIDs, imports,
+                                           numPacketsPerLID,
+                                           constantNumPackets,
+                                           distor, combineMode);
     }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const local_ordinal_type*,
-                                      buffer_device_type>& importLIDs,
-                                    const Kokkos::DualView<const char*,
-                                      buffer_device_type>& imports,
-                                    const Kokkos::DualView<const size_t*,
-                                      buffer_device_type>& numPacketsPerLID,
-                                    const size_t /* constantNumPackets */,
-                                    Distributor& /* distor */,
-                                    const CombineMode combineMode)
+  unpackAndCombineImplNonStatic (const Kokkos::DualView<const local_ordinal_type*,
+                                   buffer_device_type>& importLIDs,
+                                 const Kokkos::DualView<const char*,
+                                   buffer_device_type>& imports,
+                                 const Kokkos::DualView<const size_t*,
+                                   buffer_device_type>& numPacketsPerLID,
+                                 const size_t /* constantNumPackets */,
+                                 Distributor& /* distor */,
+                                 const CombineMode combineMode)
   {
     using Kokkos::View;
     using Kokkos::subview;
@@ -7609,7 +8063,7 @@ namespace Tpetra {
                       typename View<int*, HES>::size_type> pair_type;
     typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
     typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
-    const char tfecfFuncName[] = "unpackAndCombineNewImplNonStatic: ";
+    const char tfecfFuncName[] = "unpackAndCombineImplNonStatic: ";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
@@ -7629,7 +8083,7 @@ namespace Tpetra {
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
         pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::"
-        "unpackAndCombineNewImplNonStatic: ";
+        "unpackAndCombineImplNonStatic: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
 
@@ -7928,7 +8382,6 @@ namespace Tpetra {
        const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
     using Teuchos::Array;
-    using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
@@ -8050,7 +8503,7 @@ namespace Tpetra {
     // the actual per-row upper bound, we can use static profile.
     if (A_rowMap->isSameAs (*B_rowMap)) {
       const LO localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
-      ArrayRCP<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
+      Array<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
 
       // Get the number of entries in each row of A.
       if (alpha != ZERO) {
@@ -8068,10 +8521,10 @@ namespace Tpetra {
       }
       // Construct the result matrix C.
       if (constructorSublist.is_null ()) {
-        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow,
+        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow (),
                                       StaticProfile));
       } else {
-        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow,
+        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow (),
                                       StaticProfile, constructorSublist));
       }
       // Since A and B have the same row Maps, we could add them
@@ -8082,12 +8535,22 @@ namespace Tpetra {
     }
     else { // the row Maps of A and B are not the same
       // Construct the result matrix C.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       if (constructorSublist.is_null ()) {
-        C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile));
+        C = rcp (new crs_matrix_type (C_rowMap, 0, ProfileType(StaticProfile+1) /*DynamicProfile*/));
       } else {
-        C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile,
+        C = rcp (new crs_matrix_type (C_rowMap, 0, ProfileType(StaticProfile+1) /*DynamicProfile*/,
                                       constructorSublist));
       }
+#else
+      // true: !A_rowMap->isSameAs (*B_rowMap)
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
+                                 std::invalid_argument,
+                                 "Tpetra::CrsMatrix::add: The row maps must be the same for statically "
+                                 "allocated matrices in order to be sure that there is sufficient space "
+                                 "to do the addition");
+
+#endif
     }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -8231,8 +8694,9 @@ namespace Tpetra {
      const bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 ||
                                  rowTransfer.getRemoteLIDs ().size() == 0);
      mismatch = (source_vals != target_vals) ? 1 : 0;
-     iallreduceRequest = iallreduceIntRaw (mismatch, reduced_mismatch,
-                                           Teuchos::REDUCE_MAX, * (getComm ()));
+     iallreduceRequest =
+       ::Tpetra::Details::iallreduce (mismatch, reduced_mismatch,
+                                      Teuchos::REDUCE_MAX, * (getComm ()));
    }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -9427,6 +9891,7 @@ namespace Tpetra {
   {
     transferAndFillComplete (destMatrix, rowExporter, Teuchos::rcpFromRef(domainExporter), domainMap, rangeMap, params);
   }
+
 
 } // namespace Tpetra
 

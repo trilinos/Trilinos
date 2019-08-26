@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,17 +35,16 @@
 #define _STK_NGP_MESH_HPP_
 
 #include <stk_util/stk_config.h>
-#include <Kokkos_Core.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-
+#include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_topology/topology.hpp"
+#include <Kokkos_Core.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/ModificationObserver.hpp>
 #include <string>
-
-#include "stk_mesh/base/Bucket.hpp"
-#include "stk_mesh/base/Field.hpp"
+#include <memory>
 
 #include <stk_ngp/NgpSpaces.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
@@ -184,6 +184,8 @@ struct StkMeshAdapterIndex
     size_t bucketOrd;
 };
 
+class StkMeshAdapterUpdater;
+
 class StkMeshAdapter
 {
 public:
@@ -196,13 +198,23 @@ public:
     typedef Entities<const stk::mesh::ConnectivityOrdinal> ConnectedOrdinals;
     typedef Entities<const stk::mesh::Permutation> Permutations;
 
+    void register_observer();
+    void unregister_observer();
+
     StkMeshAdapter() : bulk(nullptr), modificationCount(0)
     {
+
     }
 
     StkMeshAdapter(const stk::mesh::BulkData& b) : bulk(&b), modificationCount(0)
     {
+        register_observer();
         update_buckets();
+    }
+
+    ~StkMeshAdapter()
+    {
+        unregister_observer();
     }
 
     void update_buckets() const
@@ -346,7 +358,6 @@ public:
     const BucketType & get_bucket(stk::mesh::EntityRank rank, unsigned i) const
     {
         update_buckets();
-
 #ifndef NDEBUG
         stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
         NGP_ThrowAssert(rank < numRanks);
@@ -360,12 +371,45 @@ private:
     typedef std::vector<StkBucketAdapter> StkBucketAdapterVector;
     mutable std::vector<StkBucketAdapterVector> bucketAdapters;
     mutable size_t modificationCount;
+    std::shared_ptr<StkMeshAdapterUpdater> updater;
 };
+
+
+class StkMeshAdapterUpdater : public stk::mesh::ModificationObserver
+{
+public:
+
+    StkMeshAdapterUpdater(StkMeshAdapter* adapter)
+    : m_adapter(adapter)
+    {
+    }
+
+    void finished_modification_end_notification() override {
+        m_adapter->update_buckets();
+    }
+
+private:
+    StkMeshAdapter* m_adapter;
+};
+
+inline void StkMeshAdapter::register_observer()
+{
+    updater = std::make_shared<StkMeshAdapterUpdater>(this);
+    bulk->register_observer(updater);
+}
+
+inline void StkMeshAdapter::unregister_observer()
+{
+    if(nullptr != updater.get()) {
+        bulk->unregister_observer(updater);
+    }
+}
 
 typedef Kokkos::View<stk::mesh::EntityKey*, MemSpace> EntityKeyViewType;
 typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
 typedef Kokkos::View<stk::mesh::Entity**, MemSpace> BucketConnectivityType;
 typedef Kokkos::View<unsigned*, MemSpace> UnsignedViewType;
+typedef Kokkos::View<bool*, MemSpace> BoolViewType;
 typedef Kokkos::View<stk::mesh::ConnectivityOrdinal*, MemSpace> OrdinalViewType;
 typedef Kokkos::View<stk::mesh::PartOrdinal*, MemSpace> PartOrdinalViewType;
 typedef Kokkos::View<stk::mesh::Permutation*, MemSpace> PermutationViewType;
@@ -395,7 +439,7 @@ struct StaticBucket {
         hostEntities = Kokkos::create_mirror_view(entities);
         nodeConnectivity = BucketConnectivityType(Kokkos::ViewAllocateWithoutInitializing("BucketConnectivity"+bktIdStr), bucketSize, numNodesPerEntity);
         hostNodeConnectivity = Kokkos::create_mirror_view(nodeConnectivity);
-        nodeOrdinals = OrdinalViewType(Kokkos::ViewAllocateWithoutInitializing("NodeOrdinals"+bktIdStr), numNodesPerEntity);
+        nodeOrdinals = OrdinalViewType(Kokkos::ViewAllocateWithoutInitializing("NodeOrdinals"+bktIdStr), static_cast<size_t>(numNodesPerEntity));
         hostNodeOrdinals = Kokkos::create_mirror_view(nodeOrdinals);
         for(unsigned i=0; i<numNodesPerEntity; ++i)
         {
@@ -535,6 +579,15 @@ public:
             fill_mesh_indices(*bulk, rank);
         }
         copy_mesh_indices_to_device();
+    }
+
+    void update_buckets() const
+    {
+       //Should this be a throw or a no-op? StaticMesh certainly can't update buckets,
+       //but an app might call this in code that is written for ngp::Mesh (i.e., can
+       //work for either StkMeshAdapter or StaticMesh.
+       //
+       //ThrowRequireMsg(false,"ERROR, update_buckets not supported for ngp::StaticMesh");
     }
 
     STK_FUNCTION
@@ -773,7 +826,7 @@ private:
 
     void set_bucket_entity_offsets(const stk::mesh::BulkData& bulk_in)
     {
-        stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
+        const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
         for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
         {
             const stk::mesh::BucketVector& stkBuckets = bulk_in.buckets(rank);
@@ -939,7 +992,7 @@ private:
     void copy_bucket_entity_offsets_to_device()
     {
         stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
-        for(stk::mesh::EntityRank rank=stk::topology::EDGE_RANK; rank<endRank; rank++)
+        for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
         {
             Kokkos::deep_copy(bucketEntityOffsets[rank], hostBucketEntityOffsets[rank]);
         }

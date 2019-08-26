@@ -161,7 +161,7 @@ void F2C(negii)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int *ierr, 
   if (ftypelen != 1) {
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     char errmsg[MAX_ERR_LENGTH];
-    sprintf(errmsg, "Warning: file type string length is %d in file id %d\n", ftypelen, *idne);
+    sprintf(errmsg, "Warning: file type string length is %lu in file id %d\n", ftypelen, *idne);
     ex_err(__func__, errmsg, EX_MSG);
 #endif
     slen = ftypelen;
@@ -198,7 +198,7 @@ void F2C(nepii)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int *ierr, 
   if (ftypelen != 1) {
     slen = ftypelen;
 #if defined(EXODUS_STRING_LENGTH_WARNING)
-    sprintf(errmsg, "Warning: file type string length is %d in file id %d\n", ftypelen, *idne);
+    sprintf(errmsg, "Warning: file type string length is %lu in file id %d\n", ftypelen, *idne);
     ex_err(__func__, errmsg, EX_MSG);
 #endif
   }
@@ -740,7 +740,7 @@ void F2C(negelt)(int *idne, entity_id *elem_blk_id, char *elem_type, int *ierr, 
   if (elem_typelen != MAX_STR_LENGTH) {
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     char errmsg[MAX_ERR_LENGTH];
-    sprintf(errmsg, "Warning: element type string length is %d in file id %d\n", elem_typelen,
+    sprintf(errmsg, "Warning: element type string length is %lu in file id %d\n", elem_typelen,
             *idne);
     ex_err(__func__, errmsg, EX_MSG);
 #endif

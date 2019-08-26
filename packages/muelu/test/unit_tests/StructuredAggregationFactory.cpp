@@ -70,11 +70,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -157,13 +158,12 @@ namespace MueLuTests {
     coarseLevel.Release("Nullspace",TentativePFact.get());
 
     // check normalization and orthogonality of prolongator columns
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Ptent,true,*Ptent,false,out);
-    Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
+    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,Node> > PtentTPtent = Xpetra::MatrixMatrix<SC,LO,GO,Node>::Multiply(*Ptent,true,*Ptent,false,out);
+    Teuchos::RCP<Xpetra::Vector<SC,LO,GO,Node> > diagVec = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative1D
@@ -174,11 +174,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -264,9 +265,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative2D
@@ -277,11 +277,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -367,9 +368,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative3D
@@ -380,11 +380,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -472,9 +473,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative1D
@@ -485,11 +485,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -577,9 +578,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative2D
@@ -590,11 +590,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -683,9 +684,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative3D
@@ -696,11 +696,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -796,9 +797,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // UncoupledLocalLexiTentative1D
@@ -809,11 +809,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -909,9 +910,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // UncoupledLocalLexiTentative2D
@@ -922,11 +922,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -1023,9 +1024,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // UncoupledLocalLexiTentative3D
@@ -1037,10 +1037,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+    using magnitude_type        = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+    using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType ;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -1217,6 +1216,346 @@ namespace MueLuTests {
 
   } // UncoupledMultilevelScalar
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, ProlongatorGraphUncoupled, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, Node>;
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    for(int interpolationOrder = 0; interpolationOrder < 2; ++interpolationOrder) {
+      out << "Tesing 7x7 grid with piece-wise "
+          << (interpolationOrder == 0 ? "constant" : "linear") << " interpolation" << std::endl;
+      Level fineLevel;
+      test_factory::createSingleLevelHierarchy(fineLevel);
+      fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+
+      // Set global geometric data
+      const std::string meshLayout = "Local Lexicographic";
+      const std::string coupling = "uncoupled";
+      LO numDimensions = 2;
+      Array<GO> meshData;
+      Array<LO> lNodesPerDir(3);
+      Array<GO> gNodesPerDir = {{7, 7, 1}};
+
+      RCP<RealValuedMultiVector> Coordinates =
+        TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
+                                                                   lNodesPerDir, meshData,
+                                                                   meshLayout);
+
+      // Since we are doing uncoupled aggregation we fill meshData with -1
+      for(size_t idx = 0; idx < (size_t) meshData.size(); ++idx) {
+        meshData[idx] = -1;
+      }
+
+      Teuchos::ParameterList matrixList;
+      matrixList.set("nx", gNodesPerDir[0]);
+      matrixList.set("ny", gNodesPerDir[1]);
+      matrixList.set("matrixType", "Laplace2D");
+      RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
+        BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", Coordinates->getMap(),
+                                                             matrixList);
+      RCP<Matrix> A = Pr->BuildMatrix();
+      fineLevel.Request("A");
+      fineLevel.Set("A", A);
+      fineLevel.Set("Coordinates",   Coordinates);
+      fineLevel.Set("numDimensions", numDimensions);
+      fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+      fineLevel.Set("lNodesPerDim",  lNodesPerDir);
+      fineLevel.Set("aggregation: mesh data", meshData);
+
+
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+      StructuredAggFact->SetFactory("Graph", dropFact);
+      StructuredAggFact->SetFactory("DofsPerNode", dropFact);
+      StructuredAggFact->SetParameter("aggregation: mesh layout",
+                                      Teuchos::ParameterEntry(meshLayout));
+      StructuredAggFact->SetParameter("aggregation: mode",
+                                      Teuchos::ParameterEntry(coupling));
+      StructuredAggFact->SetParameter("aggregation: output type",
+                                      Teuchos::ParameterEntry(std::string("Graph")));
+      StructuredAggFact->SetParameter("aggregation: coarsening order",
+                                      Teuchos::ParameterEntry(interpolationOrder));
+      StructuredAggFact->SetParameter("aggregation: coarsening rate",
+                                      Teuchos::ParameterEntry(std::string("{3}")));
+
+      fineLevel.Request("prolongatorGraph", StructuredAggFact.get());
+      fineLevel.Request(*StructuredAggFact);
+      StructuredAggFact->Build(fineLevel);
+
+      RCP<CrsGraph> prolongatorGraph;
+      fineLevel.Get("prolongatorGraph", prolongatorGraph, StructuredAggFact.get());
+
+      TEST_EQUALITY(prolongatorGraph != Teuchos::null, true);
+
+      int numErrors = 0;
+      const int numRanks = Coordinates->getMap()->getComm()->getSize();
+      TEST_EQUALITY(prolongatorGraph->getGlobalNumRows()    == 49, true);
+      if(interpolationOrder == 0) {
+        TEST_EQUALITY(prolongatorGraph->getGlobalNumEntries() == 49, true);
+      } else {
+        TEST_EQUALITY(prolongatorGraph->getGlobalNumEntries() == (numRanks == 1 ? 169 : 148), true);
+      }
+      if(numRanks == 1) {
+        TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  ==  9, true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == 49, true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    ==  9, true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() == (interpolationOrder == 1 ? 169 : 49), true);
+
+        ArrayView<const LO> rowIndices;
+        const LO indicesConstant[49] = {0, 0, 1, 1, 1, 2, 2,
+                                        0, 0, 1, 1, 1, 2, 2,
+                                        3, 3, 4, 4, 4, 5, 5,
+                                        3, 3, 4, 4, 4, 5, 5,
+                                        3, 3, 4, 4, 4, 5, 5,
+                                        6, 6, 7, 7, 7, 8, 8,
+                                        6, 6, 7, 7, 7, 8, 8};
+        const LO indicesLinear[169]  = {0, 0, 1, 3, 4, 0, 1, 3, 4, 1, 1, 2, 4, 5, 1, 2, 4, 5, 2,
+                                        0, 1, 3, 4, 0, 1, 3, 4, 0, 1, 3, 4, 1, 2, 4, 5, 1, 2, 4, 5, 1, 2, 4, 5, 1, 2, 4, 5,
+                                        0, 1, 3, 4, 0, 1, 3, 4, 0, 1, 3, 4, 1, 2, 4, 5, 1, 2, 4, 5, 1, 2, 4, 5, 1, 2, 4, 5,
+                                        3, 3, 4, 6, 7, 3, 4, 6, 7, 4, 4, 5, 7, 8, 4, 5, 7, 8, 5,
+                                        3, 4, 6, 7, 3, 4, 6, 7, 3, 4, 6, 7, 4, 5 ,7, 8, 4, 5 ,7, 8, 4, 5 ,7, 8, 4, 5 ,7, 8,
+                                        3, 4, 6, 7, 3, 4, 6, 7, 3, 4, 6, 7, 4, 5 ,7, 8, 4, 5 ,7, 8, 4, 5 ,7, 8, 4, 5 ,7, 8,
+                                        6, 3, 4, 6, 7, 3, 4, 6, 7, 7, 4, 5, 7, 8, 4, 5, 7, 8, 8};
+        const LO rowOffset[50]       = {0, 1,  5,   9,  10,  14,  18,  19,
+                                        23,   27,  31,  35,  39,  43,  47,
+                                        51,   55,  59,  63,  67,  71,  75,
+                                        76,   80,  84,  85,  89,  93,  94,
+                                        98,  102, 106, 110, 114, 118, 122,
+                                        126, 130, 134, 138, 142, 146, 150,
+                                        151, 155, 159, 160, 164, 168, 169};
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+          prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
+
+          if(interpolationOrder == 0) {
+            if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
+          } else {
+            for(size_t entryIdx = 0; entryIdx < prolongatorGraph->getNumEntriesInLocalRow(rowIdx); ++entryIdx) {
+              if(rowIndices[entryIdx] != indicesLinear[rowOffset[rowIdx] + entryIdx]) {++numErrors;}
+            }
+          }
+        }
+      } else if(numRanks == 4) {
+        const int myRank = Coordinates->getMap()->getComm()->getRank();
+        Array<size_t> nodeNumRows    = {{16, 12, 12,  9}};
+        Array<int>    rankOffsets    = {{ 0, 16, 28, 40}};
+        Array<size_t> nodeNumEntries = {{52, 36, 36, 24}};
+
+        TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  == 16, true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == nodeNumRows[myRank], true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    == 4, true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() ==
+                      ((interpolationOrder == 0) ? nodeNumRows[myRank] : nodeNumEntries[myRank]), true);
+
+        ArrayView<const LO> rowIndices;
+        const LO indicesConstant[49] = {0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3, 2, 2, 3, 3,
+                                        0, 0, 1, 0, 0, 1, 2, 2, 3, 2, 2, 3,
+                                        0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3,
+                                        0, 0, 1, 0, 0, 1, 2, 2, 3};
+        const LO indicesLinear[148]  = {0, 0, 1, 2, 3, 0, 1, 2, 3, 1,
+                                        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+                                        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+                                        2, 0, 1, 2, 3, 0, 1, 2, 3, 3,
+                                        0, 0, 1, 2, 3, 1,
+                                        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+                                        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+                                        2, 0, 1, 2, 3, 3,
+                                        0, 0, 1, 2, 3, 0, 1, 2, 3, 1,
+                                        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+                                        2, 0, 1, 2, 3, 0, 1, 2, 3, 3,
+                                        0, 0, 1, 2, 3, 1,
+                                        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+                                        2, 0, 1, 2, 3, 3};
+        const LO rowOffset[50]       = {0, 1, 5, 9, 10, 14, 18, 22, 26, 30, 34, 38, 42, 43, 47, 51 ,52,
+                                        53, 57, 58, 62, 66, 70, 74, 78, 82, 83, 87, 88,
+                                        89, 93, 97, 98, 102, 106, 110, 114, 115, 119, 123, 124,
+                                        125, 129, 130, 134, 138, 142, 143, 147, 148};
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+          prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
+
+          if(interpolationOrder == 0) {
+            if(rowIndices[0] != indicesConstant[rankOffsets[myRank] + rowIdx]) {++numErrors;}
+          } else {
+            for(size_t entryIdx = 0; entryIdx < prolongatorGraph->getNumEntriesInLocalRow(rowIdx); ++entryIdx) {
+              if(rowIndices[entryIdx] != indicesLinear[rowOffset[rankOffsets[myRank] + rowIdx] + entryIdx]) {++numErrors;}
+            }
+          }
+        }
+      }
+      TEST_EQUALITY(numErrors == 0, true);
+    } // Loop over interpolationOrder
+
+    for(int interpolationOrder = 0; interpolationOrder < 2; ++interpolationOrder) {
+      out << "Tesing 7x6 grid with piece-wise "
+          << (interpolationOrder == 0 ? "constant" : "linear") << " interpolation" << std::endl;
+      Level fineLevel;
+      test_factory::createSingleLevelHierarchy(fineLevel);
+      fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+
+      // Set global geometric data
+      const std::string meshLayout = "Local Lexicographic";
+      const std::string coupling = "uncoupled";
+      LO numDimensions = 2;
+      Array<GO> meshData;
+      Array<LO> lNodesPerDir(3);
+      Array<GO> gNodesPerDir = {{7, 6, 1}};
+
+      RCP<RealValuedMultiVector> Coordinates =
+        TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
+                                                                   lNodesPerDir, meshData,
+                                                                   meshLayout);
+
+      // Since we are doing uncoupled aggregation we fill meshData with -1
+      for(size_t idx = 0; idx < (size_t) meshData.size(); ++idx) {
+        meshData[idx] = -1;
+      }
+
+      Teuchos::ParameterList matrixList;
+      matrixList.set("nx", gNodesPerDir[0]);
+      matrixList.set("ny", gNodesPerDir[1]);
+      matrixList.set("matrixType", "Laplace2D");
+      RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
+        BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", Coordinates->getMap(),
+                                                             matrixList);
+      RCP<Matrix> A = Pr->BuildMatrix();
+      fineLevel.Request("A");
+      fineLevel.Set("A", A);
+      fineLevel.Set("Coordinates",   Coordinates);
+      fineLevel.Set("numDimensions", numDimensions);
+      fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+      fineLevel.Set("lNodesPerDim",  lNodesPerDir);
+      fineLevel.Set("aggregation: mesh data", meshData);
+
+
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+      StructuredAggFact->SetFactory("Graph", dropFact);
+      StructuredAggFact->SetFactory("DofsPerNode", dropFact);
+      StructuredAggFact->SetParameter("aggregation: mesh layout",
+                                      Teuchos::ParameterEntry(meshLayout));
+      StructuredAggFact->SetParameter("aggregation: mode",
+                                      Teuchos::ParameterEntry(coupling));
+      StructuredAggFact->SetParameter("aggregation: output type",
+                                      Teuchos::ParameterEntry(std::string("Graph")));
+      StructuredAggFact->SetParameter("aggregation: coarsening order",
+                                      Teuchos::ParameterEntry(interpolationOrder));
+      StructuredAggFact->SetParameter("aggregation: coarsening rate",
+                                      Teuchos::ParameterEntry(std::string("{3}")));
+
+      fineLevel.Request("prolongatorGraph", StructuredAggFact.get());
+      fineLevel.Request(*StructuredAggFact);
+      StructuredAggFact->Build(fineLevel);
+
+      RCP<CrsGraph> prolongatorGraph;
+      fineLevel.Get("prolongatorGraph", prolongatorGraph, StructuredAggFact.get());
+
+      TEST_EQUALITY(prolongatorGraph != Teuchos::null, true);
+
+      int numErrors = 0;
+      const int numRanks = Coordinates->getMap()->getComm()->getSize();
+      TEST_EQUALITY(prolongatorGraph->getGlobalNumRows()    == 42, true);
+      if(interpolationOrder == 0) {
+        TEST_EQUALITY(prolongatorGraph->getGlobalNumEntries() == 42, true);
+      } else {
+        TEST_EQUALITY(prolongatorGraph->getGlobalNumEntries() == (numRanks == 1 ? 141 : 120), true);
+      }
+      if(numRanks == 1) {
+        TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  ==  9, true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == 42, true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    ==  9, true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() == (interpolationOrder == 1 ? 141 : 42), true);
+
+        ArrayView<const LO> rowIndices;
+        const LO indicesConstant[42] = {0, 0, 1, 1, 1, 2, 2,
+                                        0, 0, 1, 1, 1, 2, 2,
+                                        3, 3, 4, 4, 4, 5, 5,
+                                        3, 3, 4, 4, 4, 5, 5,
+                                        3, 3, 4, 4, 4, 5, 5,
+                                        6, 6, 7, 7, 7, 8, 8};
+        const LO indicesLinear[141]  = {0, 0, 1, 3, 4, 0, 1, 3, 4, 1, 1, 2, 4, 5, 1, 2, 4, 5, 2,
+                                        0, 1, 3, 4, 0, 1, 3, 4, 0, 1, 3, 4, 1, 2, 4, 5, 1, 2, 4, 5, 1, 2, 4, 5, 1, 2, 4, 5,
+                                        0, 1, 3, 4, 0, 1, 3, 4, 0, 1, 3, 4, 1, 2, 4, 5, 1, 2, 4, 5, 1, 2, 4, 5, 1, 2, 4, 5,
+                                        3, 3, 4, 6, 7, 3, 4, 6, 7, 4, 4, 5, 7, 8, 4, 5, 7, 8, 5,
+                                        3, 4, 6, 7, 3, 4, 6, 7, 3, 4, 6, 7, 4, 5 ,7, 8, 4, 5 ,7, 8, 4, 5 ,7, 8, 4, 5 ,7, 8,
+                                        6, 3, 4, 6, 7, 3, 4, 6, 7, 7, 4, 5, 7, 8, 4, 5, 7, 8, 8};
+        const LO rowOffset[43]       = {0, 1,  5,   9,  10,  14,  18,  19,
+                                        23,   27,  31,  35,  39,  43,  47,
+                                        51,   55,  59,  63,  67,  71,  75,
+                                        76,   80,  84,  85,  89,  93,  94,
+                                        98,  102, 106, 110, 114, 118, 122,
+                                        123, 127, 131, 132, 136, 140, 141};
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+          prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
+
+          if(interpolationOrder == 0) {
+            if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
+          } else {
+            for(size_t entryIdx = 0; entryIdx < prolongatorGraph->getNumEntriesInLocalRow(rowIdx); ++entryIdx) {
+              if(rowIndices[entryIdx] != indicesLinear[rowOffset[rowIdx] + entryIdx]) {++numErrors;}
+            }
+          }
+        }
+      } else if(numRanks == 4) {
+        const int myRank = Coordinates->getMap()->getComm()->getRank();
+        Array<size_t> nodeNumRows    = {{12,  9, 12,  9}};
+        Array<int>    rankOffsets    = {{ 0, 12, 21, 33}};
+        Array<size_t> nodeNumEntries = {{36, 24, 36, 24}};
+
+        TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  == 16, true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == nodeNumRows[myRank], true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    == 4, true);
+        TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() ==
+                      ((interpolationOrder == 0) ? nodeNumRows[myRank] : nodeNumEntries[myRank]), true);
+
+        ArrayView<const LO> rowIndices;
+        const LO indicesConstant[42] = {0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3,
+                                        0, 0, 1, 0, 0, 1, 2, 2, 3,
+                                        0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3,
+                                        0, 0, 1, 0, 0, 1, 2, 2, 3};
+        const LO indicesLinear[120]  = {0, 0, 1, 2, 3, 0, 1, 2, 3, 1,
+                                        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+                                        2, 0, 1, 2, 3, 0, 1, 2, 3, 3,
+                                        0, 0, 1, 2, 3, 1,
+                                        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+                                        2, 0, 1, 2, 3, 3,
+                                        0, 0, 1, 2, 3, 0, 1, 2, 3, 1,
+                                        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+                                        2, 0, 1, 2, 3, 0, 1, 2, 3, 3,
+                                        0, 0, 1, 2, 3, 1,
+                                        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+                                        2, 0, 1, 2, 3, 3};
+        const LO rowOffset[43]       = {0, 1, 5, 9, 10, 14, 18, 22, 26, 27, 31, 35, 36,
+                                        37, 41, 42, 46, 50, 54, 55, 59, 60,
+                                        61, 65, 69, 70, 74, 78, 82, 86, 87, 91, 95, 96,
+                                        97, 101, 102, 106, 110, 114, 115, 119, 120};
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+          prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
+
+          if(interpolationOrder == 0) {
+            if(rowIndices[0] != indicesConstant[rankOffsets[myRank] + rowIdx]) {++numErrors;}
+          } else {
+            for(size_t entryIdx = 0; entryIdx < prolongatorGraph->getNumEntriesInLocalRow(rowIdx); ++entryIdx) {
+              if(rowIndices[entryIdx] != indicesLinear[rowOffset[rankOffsets[myRank] + rowIdx] + entryIdx]) {++numErrors;}
+            }
+          }
+        }
+      }
+      TEST_EQUALITY(numErrors == 0, true);
+    } // Loop over interpolationOrder
+
+  } // ProlongatorGraphUncoupled
+
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,GlobalLexiTentative1D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,GlobalLexiTentative2D,Scalar,LO,GO,Node) \
@@ -1227,7 +1566,8 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,UncoupledLocalLexiTentative1D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,UncoupledLocalLexiTentative2D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,UncoupledLocalLexiTentative3D,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,UncoupledMultilevelScalar,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,UncoupledMultilevelScalar,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,ProlongatorGraphUncoupled,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

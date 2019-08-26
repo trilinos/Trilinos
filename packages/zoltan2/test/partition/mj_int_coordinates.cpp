@@ -88,7 +88,7 @@ int main(int narg, char *arg[])
 
   srand(rank);
   for (size_t i=0; i < localCount*dim; i++)
-    coords[i] = int_scalar_t(rand() / (double)RAND_MAX) % 10;
+    coords[i] = int_scalar_t(rand() % 10);
 
   // Create global ids for the coordinates.
   globalId_t *globalIds = new globalId_t [localCount];

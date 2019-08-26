@@ -17,6 +17,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
+#include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
 
@@ -4668,6 +4669,59 @@ int get_side_from_element1_to_element2(const impl::ElementGraph &elem_graph,
     return side;
 }
 //EndDocExample1
+
+void add_elem3_on_proc_1(stk::mesh::BulkData& bulk)
+{
+  stk::mesh::Part& block1 = *bulk.mesh_meta_data().get_part("block_1");
+  stk::mesh::PartVector parts = {&block1};
+
+  bulk.modification_begin();
+ 
+  if (bulk.parallel_rank() == 1)
+  {
+    stk::mesh::EntityId elemId = 3;
+
+    stk::mesh::EntityIdVector nodeIds = {6, 13, 14, 8, 10, 15, 16, 12};
+    stk::mesh::declare_element(bulk, parts, elemId, nodeIds);
+  }
+
+  bulk.modification_end();
+}
+
+TEST(ElemGraph, get_all_sides_sideset_including_ghosts)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm)==2)
+    {
+      {
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData bulk(meta, comm, stk::mesh::BulkData::AUTO_AURA);
+        stk::io::fill_mesh("generated:1x1x2", bulk);
+        add_elem3_on_proc_1(bulk);
+ stk::io::write_mesh("gen1x1x2.g", bulk);
+
+        bool includeAuraElementSides = true;
+        std::vector<stk::mesh::SideSetEntry> sides = stk::mesh::SkinMeshUtil::get_all_sides_sideset(bulk, meta.universal_part(), includeAuraElementSides);
+        EXPECT_EQ(16u, sides.size());
+      }
+      {
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData bulk(meta, comm, stk::mesh::BulkData::AUTO_AURA);
+        stk::io::fill_mesh("generated:1x2x2", bulk);
+        bool includeAuraElementSides = true;
+        std::vector<stk::mesh::SideSetEntry> sides = stk::mesh::SkinMeshUtil::get_all_sides_sideset(bulk, meta.universal_part(), includeAuraElementSides);
+        EXPECT_EQ(20u, sides.size());
+      }
+      {
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData bulk(meta, comm, stk::mesh::BulkData::AUTO_AURA);
+        stk::io::fill_mesh("generated:2x2x2", bulk);
+        bool includeAuraElementSides = true;
+        std::vector<stk::mesh::SideSetEntry> sides = stk::mesh::SkinMeshUtil::get_all_sides_sideset(bulk, meta.universal_part(), includeAuraElementSides);
+        EXPECT_EQ(36u, sides.size());
+      }
+    }
+}
 
 TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
 {

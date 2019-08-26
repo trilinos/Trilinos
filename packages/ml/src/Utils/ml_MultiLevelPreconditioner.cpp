@@ -4860,7 +4860,7 @@ int MLvariableDofAmalg(int nCols, const MLVec<int>& rowPtr,
                      int nNodes, int maxDofPerNode, const MLVec<int>& map,
                      const MLVec<double>& diag, double tol,
                      MLVec<int>& amalgRowPtr, MLVec<int>& amalgCols,
-                     struct wrappedCommStruct &framework,
+                     struct wrappedCommStruct &/* framework */,
                      MLVec<int>& myLocalNodeIds)
 {
 /******************************************************************************
@@ -5161,7 +5161,7 @@ int MLunamalgP(const MLVec<int>& amalgRowPtr, const MLVec<int>& amalgCols, const
    return(rowCount);
 }
 
-int MLfindEmptyRows(const MLVec<int>& rowPtr, const MLVec<int>& cols, const MLVec<double>& vals, MLVec<bool>& rowEmpty)
+int MLfindEmptyRows(const MLVec<int>& rowPtr, const MLVec<int>& /* cols */, const MLVec<double>& vals, MLVec<bool>& rowEmpty)
 {
 /******************************************************************************
   Find rows that have no nonzero entries.
@@ -5317,7 +5317,7 @@ int MLsortCols(const MLVec<int>& ARowPtr, MLVec<int>& ACols, MLVec<double>& AVal
  * the comments to buildCompressedA().
  */
 /****************************************************************************/
-int MergeShared(MLVec<int>& cols, MLVec<int>& rowZeros, MLVec<int>& colZeros,
+int MergeShared(MLVec<int>& /* cols */, MLVec<int>& rowZeros, MLVec<int>& colZeros,
                 MLVec<int>& groupHead, MLVec<int>& groupNext)
 {
    int vertOne, vertTwo, vertOneHead;

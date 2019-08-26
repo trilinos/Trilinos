@@ -125,7 +125,7 @@ namespace MueLu {
 
     //! @name Implements FactoryBase interface
     //@{
-    virtual void CallBuild(Level & requestedLevel) const {
+    virtual void CallBuild(Level & /* requestedLevel */) const {
       TEUCHOS_TEST_FOR_EXCEPT(true);
     }
 

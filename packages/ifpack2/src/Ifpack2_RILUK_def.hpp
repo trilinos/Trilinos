@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ***********************************************************************
 //@HEADER
 */
@@ -46,6 +44,7 @@
 #include "Ifpack2_LocalFilter.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
+#include "Ifpack2_Details_getParamTryingTypes.hpp"
 
 namespace Ifpack2 {
 
@@ -191,7 +190,7 @@ size_t RILUK<MatrixType>::getNodeSmootherComplexity() const {
   // RILUK methods cost roughly one apply + the nnz in the upper+lower triangles
   if(!L_.is_null() && !U_.is_null())
     return A_->getNodeNumEntries() + L_->getNodeNumEntries() + U_->getNodeNumEntries();
-  else 
+  else
     return 0;
 }
 
@@ -269,9 +268,8 @@ void
 RILUK<MatrixType>::
 setParameters (const Teuchos::ParameterList& params)
 {
-  using Teuchos::as;
-  using Teuchos::Exceptions::InvalidParameterName;
-  using Teuchos::Exceptions::InvalidParameterType;
+  using Details::getParamTryingTypes;
+  const char prefix[] = "Ifpack2::RILUK: ";
 
   // Default values of the various parameters.
   int fillLevel = 0;
@@ -279,117 +277,35 @@ setParameters (const Teuchos::ParameterList& params)
   magnitude_type relThresh = STM::one ();
   magnitude_type relaxValue = STM::zero ();
 
-  //
   // "fact: iluk level-of-fill" parsing is more complicated, because
   // we want to allow as many types as make sense.  int is the native
-  // type, but we also want to accept magnitude_type (for
-  // compatibility with ILUT) and double (for backwards compatibilty
-  // with ILUT).
-  //
-
-  bool gotFillLevel = false;
-  try {
-    fillLevel = params.get<int> ("fact: iluk level-of-fill");
-    gotFillLevel = true;
+  // type, but we also want to accept double (for backwards
+  // compatibilty with ILUT).  You can't cast arbitrary magnitude_type
+  // (e.g., Sacado::MP::Vector) to int, so we use float instead, to
+  // get coverage of the most common magnitude_type cases.  Weirdly,
+  // there's an Ifpack2 test that sets the fill level as a
+  // global_ordinal_type.
+  {
+    const std::string paramName ("fact: iluk level-of-fill");
+    getParamTryingTypes<int, int, global_ordinal_type, double, float>
+      (fillLevel, params, paramName, prefix);
   }
-  catch (InvalidParameterType&) {
-    // Throwing again in the catch block would just unwind the stack.
-    // Instead, we do nothing here, and check the Boolean outside to
-    // see if we got the value.
-  }
-  catch (InvalidParameterName&) {
-    gotFillLevel = true; // Accept the default value.
-  }
-
-  if (! gotFillLevel) {
-    try {
-      // Try global_ordinal_type.  The cast to int must succeed.
-      fillLevel = as<int> (params.get<global_ordinal_type> ("fact: iluk level-of-fill"));
-      gotFillLevel = true;
-    }
-    catch (InvalidParameterType&) {
-      // Try the next type.
-    }
-    // Don't catch InvalidParameterName here; we've already done that above.
-  }
-
-  if (! gotFillLevel) {
-    try {
-      // Try magnitude_type, for compatibility with ILUT.
-      // The cast from magnitude_type to int must succeed.
-      fillLevel = as<int> (params.get<magnitude_type> ("fact: iluk level-of-fill"));
-      gotFillLevel = true;
-    }
-    catch (InvalidParameterType&) {
-      // Try the next type.
-    }
-    // Don't catch InvalidParameterName here; we've already done that above.
-  }
-
-  if (! gotFillLevel) {
-    try {
-      // Try double, for compatibility with ILUT.
-      // The cast from double to int must succeed.
-      fillLevel = as<int> (params.get<double> ("fact: iluk level-of-fill"));
-      gotFillLevel = true;
-    }
-    catch (InvalidParameterType& e) {
-      // We're out of options.  The user gave us the parameter, but it
-      // doesn't have the right type.  The best thing for us to do in
-      // that case is to throw, telling the user to use the right
-      // type.
-      throw e;
-    }
-    // Don't catch InvalidParameterName here; we've already done that above.
-  }
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! gotFillLevel,
-    std::logic_error,
-    "Ifpack2::RILUK::setParameters: We should never get here!  "
-    "The method should either have read the \"fact: iluk level-of-fill\"  "
-    "parameter by this point, or have thrown an exception.  "
-    "Please let the Ifpack2 developers know about this bug.");
-
-  //
   // For the other parameters, we prefer magnitude_type, but allow
   // double for backwards compatibility.
-  //
-
-  try {
-    absThresh = params.get<magnitude_type> ("fact: absolute threshold");
+  {
+    const std::string paramName ("fact: absolute threshold");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (absThresh, params, paramName, prefix);
   }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    absThresh = as<magnitude_type> (params.get<double> ("fact: absolute threshold"));
+  {
+    const std::string paramName ("fact: relative threshold");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (relThresh, params, paramName, prefix);
   }
-  catch (InvalidParameterName&) {
-    // Accept the default value.
-  }
-
-  try {
-    relThresh = params.get<magnitude_type> ("fact: relative threshold");
-  }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    relThresh = as<magnitude_type> (params.get<double> ("fact: relative threshold"));
-  }
-  catch (InvalidParameterName&) {
-    // Accept the default value.
-  }
-
-  try {
-    relaxValue = params.get<magnitude_type> ("fact: relax value");
-  }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    relaxValue = as<magnitude_type> (params.get<double> ("fact: relax value"));
-  }
-  catch (InvalidParameterName&) {
-    // Accept the default value.
+  {
+    const std::string paramName ("fact: relax value");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (relaxValue, params, paramName, prefix);
   }
 
   // Forward to trisolvers.
@@ -475,6 +391,8 @@ void RILUK<MatrixType>::initialize ()
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcp_implicit_cast;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
   typedef Tpetra::CrsGraph<local_ordinal_type,
                            global_ordinal_type,
                            node_type> crs_graph_type;
@@ -521,23 +439,27 @@ void RILUK<MatrixType>::initialize ()
       RCP<const crs_matrix_type> A_local_crs =
         rcp_dynamic_cast<const crs_matrix_type> (A_local_);
       if (A_local_crs.is_null ()) {
-        // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
-        // number of elements in each row of A_local, so that we can
-        // create A_local_crs_nc using static profile.  The code below is
-        // correct but potentially slow.
+        local_ordinal_type numRows = A_local_->getNodeNumRows();
+        Array<size_t> entriesPerRow(numRows);
+        for(local_ordinal_type i = 0; i < numRows; i++)
+        {
+          entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
+        }
         RCP<crs_matrix_type> A_local_crs_nc =
           rcp (new crs_matrix_type (A_local_->getRowMap (),
-                                    A_local_->getColMap (), 0));
-        // FIXME (mfh 24 Jan 2014) This Import approach will only work
-        // if A_ has a one-to-one row Map.  This is generally the case
-        // with matrices given to Ifpack2.
-        //
-        // Source and destination Maps are the same in this case.
-        // That way, the Import just implements a copy.
-        typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
-          node_type> import_type;
-        import_type import (A_local_->getRowMap (), A_local_->getRowMap ());
-        A_local_crs_nc->doImport (*A_local_, import, Tpetra::REPLACE);
+                                    A_local_->getColMap (),
+                                    entriesPerRow()));
+        // copy entries into A_local_crs
+        Teuchos::Array<local_ordinal_type> indices(A_local_->getNodeMaxNumRowEntries());
+        Teuchos::Array<scalar_type> values(A_local_->getNodeMaxNumRowEntries());
+        for(local_ordinal_type i = 0; i < numRows; i++)
+        {
+          size_t numEntries = 0;
+          A_local_->getLocalRowCopy(i, indices(), values(), numEntries);
+          ArrayView<const local_ordinal_type> indicesInsert(indices.data(), numEntries);
+          ArrayView<const scalar_type> valuesInsert(values.data(), numEntries);
+          A_local_crs_nc->insertLocalValues(i, indicesInsert, valuesInsert);
+        }
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
@@ -586,7 +508,7 @@ checkOrderingConsistency (const row_matrix_type& A)
                              "The ordering of the local GIDs in the row and column maps is not the same"
                              << std::endl << "at index " << indexOfInconsistentGID
                              << ".  Consistency is required, as all calculations are done with"
-                             << std::endl << "local indexing.");  
+                             << std::endl << "local indexing.");
 }
 
 template<class MatrixType>

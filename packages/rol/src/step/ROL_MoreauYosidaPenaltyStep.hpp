@@ -49,7 +49,12 @@
 #include "ROL_AugmentedLagrangianStep.hpp"
 #include "ROL_CompositeStep.hpp"
 #include "ROL_FletcherStep.hpp"
+#include "ROL_BundleStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_BundleStatusTest.hpp"
 #include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
@@ -116,14 +121,19 @@
 
 namespace ROL {
 
+template<class Real>
+class AugmentedLagrangianStep;
+
 template <class Real>
 class MoreauYosidaPenaltyStep : public Step<Real> {
 private:
-  ROL::Ptr<Algorithm<Real> >       algo_;
-  ROL::Ptr<Vector<Real> >          x_; 
-  ROL::Ptr<Vector<Real> >          g_; 
-  ROL::Ptr<Vector<Real> >          l_; 
-  ROL::Ptr<BoundConstraint<Real> > bnd_;
+  ROL::Ptr<StatusTest<Real>>      status_;
+  ROL::Ptr<Step<Real>>            step_;
+  ROL::Ptr<Algorithm<Real>>       algo_;
+  ROL::Ptr<Vector<Real>>          x_; 
+  ROL::Ptr<Vector<Real>>          g_; 
+  ROL::Ptr<Vector<Real>>          l_; 
+  ROL::Ptr<BoundConstraint<Real>> bnd_;
 
   Real compViolation_;
   Real gLnorm_;
@@ -290,19 +300,23 @@ public:
       Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
       Ptr<StepState<Real>>  state   = Step<Real>::getState();
       penObj = makePtr<AugmentedLagrangian<Real>>(raw_obj,raw_con,l,one,x,*(state->constraintVec),parlist_);
+      step_  = makePtr<AugmentedLagrangianStep<Real>>(parlist_);
     }
     else if (stepType_ == STEP_FLETCHER) {
       Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
       Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
       Ptr<StepState<Real>>  state   = Step<Real>::getState();
       penObj = makePtr<Fletcher<Real>>(raw_obj,raw_con,x,*(state->constraintVec),parlist_);
+      step_  = makePtr<FletcherStep<Real>>(parlist_);
     }
     else {
-      penObj = makePtrFromRef(obj);
+      penObj    = makePtrFromRef(obj);
       stepname_ = "Composite Step";
       stepType_ = STEP_COMPOSITESTEP;
+      step_     = makePtr<CompositeStep<Real>>(parlist_);
     }
-    algo_ = ROL::makePtr<Algorithm<Real>>(stepname_,parlist_,false);
+    status_ = makePtr<ConstraintStatusTest<Real>>(parlist_);
+    algo_   = ROL::makePtr<Algorithm<Real>>(step_,status_,false);
     x_->set(x); l_->set(l);
     algo_->run(*x_,*l_,*penObj,con,print_);
     s.set(*x_); s.axpy(-one,x);
@@ -317,7 +331,19 @@ public:
     Real one(1);
     MoreauYosidaPenalty<Real> &myPen
       = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
-    algo_ = ROL::makePtr<Algorithm<Real>>("Trust Region",parlist_,false);
+    if (stepType_ == STEP_BUNDLE) {
+      status_ = makePtr<BundleStatusTest<Real>>(parlist_);
+      step_   = makePtr<BundleStep<Real>>(parlist_);
+    }
+    else if (stepType_ == STEP_LINESEARCH) {
+      status_ = makePtr<StatusTest<Real>>(parlist_);
+      step_   = makePtr<LineSearchStep<Real>>(parlist_);
+    }
+    else {
+      status_ = makePtr<StatusTest<Real>>(parlist_);
+      step_   = makePtr<TrustRegionStep<Real>>(parlist_);
+    }
+    algo_ = ROL::makePtr<Algorithm<Real>>(step_,status_,false);
     x_->set(x);
     algo_->run(*x_,myPen,*bnd_,print_);
     s.set(*x_); s.axpy(-one,x);

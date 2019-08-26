@@ -112,9 +112,9 @@ public:
   virtual int Multiply(bool TransA, const Epetra_MultiVector& X, 
 		       Epetra_MultiVector& Y) const;
 
-  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-		    const Epetra_MultiVector& X,
-		    Epetra_MultiVector& Y) const
+  virtual int Solve(bool /* Upper */, bool /* Trans */, bool /* UnitDiagonal */, 
+		    const Epetra_MultiVector& /* X */,
+		    Epetra_MultiVector& /* Y */) const
   {
     IFPACK_CHK_ERR(-1);
   }
@@ -126,13 +126,13 @@ public:
     IFPACK_RETURN(ierr);
   }
 
-  virtual int ApplyInverse(const Epetra_MultiVector& X,
-			   Epetra_MultiVector& Y) const
+  virtual int ApplyInverse(const Epetra_MultiVector& /* X */,
+			   Epetra_MultiVector& /* Y */) const
   {
     IFPACK_CHK_ERR(-1);
   }
 
-  virtual int InvRowSums(Epetra_Vector& x) const
+  virtual int InvRowSums(Epetra_Vector& /* x */) const
   {
     IFPACK_CHK_ERR(-1);
   }
@@ -142,7 +142,7 @@ public:
     return(A_->LeftScale(x));
   }
 
-  virtual int InvColSums(Epetra_Vector& x) const
+  virtual int InvColSums(Epetra_Vector& /* x */) const
   {
     IFPACK_CHK_ERR(-1);;
   }

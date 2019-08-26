@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
     }
     *outStream0 << "Scalar Parameter: " << problem.getSolutionStatistic() << "\n\n";
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

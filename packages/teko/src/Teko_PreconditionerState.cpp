@@ -77,7 +77,7 @@ RCP<Teuchos::ParameterList> PreconditionerState::unsetParameterList()
 }
 
 //! Merge internal storage of another PreconditionerState object into this one
-void PreconditionerState::merge(const PreconditionerState & ps,int position)
+void PreconditionerState::merge(const PreconditionerState & ps,int /* position */)
 {
    // merge the two linearOps lists
    linearOps_.insert(ps.linearOps_.begin(),ps.linearOps_.end());

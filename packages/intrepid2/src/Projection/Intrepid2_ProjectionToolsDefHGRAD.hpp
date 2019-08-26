@@ -187,8 +187,6 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
   const ordinal_type edgeDim = 1;
   const ordinal_type faceDim = 2;
 
-  const std::string& name = cellBasis->getName();
-
   ordinal_type numVertices = (cellBasis->getDofCount(0, 0) > 0) ? cellTopo.getVertexCount() : 0;
   ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
   ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;

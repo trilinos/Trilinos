@@ -230,7 +230,7 @@ private:
 
 ////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void OrderingProblem<Adapter>::solve(bool updateInputData)
+void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
 {
   HELLO;
 

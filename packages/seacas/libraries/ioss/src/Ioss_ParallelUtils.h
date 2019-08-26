@@ -271,6 +271,8 @@ namespace Ioss {
   template <typename T>
   void ParallelUtils::global_array_minmax(std::vector<T> &local_minmax, MinMax which) const
   {
+    PAR_UNUSED(local_minmax);
+    PAR_UNUSED(which);
 #ifdef SEACAS_HAVE_MPI
     if (parallel_size() > 1 && !local_minmax.empty()) {
       if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {

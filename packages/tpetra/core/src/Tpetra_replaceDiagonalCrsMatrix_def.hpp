@@ -90,7 +90,7 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
         "Row map of matrix and map of input vector do not match.");
   }
 
-  crs_matrix_type::execution_space::fence(); // for UVM's sake
+  typename crs_matrix_type::execution_space().fence(); // for UVM's sake
 
   if (isFillCompleteOnInput)
     matrix.resumeFill();

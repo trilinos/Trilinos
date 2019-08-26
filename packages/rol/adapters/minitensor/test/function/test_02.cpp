@@ -105,8 +105,12 @@ TEST(MiniTensor_ROL, Paraboloid)
   params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Define algorithm.
+  ROL::Ptr<ROL::Step<Real>>
+  step = ROL::makePtr<ROL::LineSearchStep<Real>>(params);
+  ROL::Ptr<ROL::StatusTest<Real>>
+  status = ROL::makePtr<ROL::StatusTest<Real>>(params);
   ROL::Algorithm<Real>
-  algo("Line Search", params);
+  algo(step,status,false);
 
   // Set Initial Guess
   minitensor::Vector<Real, DIM>
@@ -172,8 +176,12 @@ TEST(MiniTensor_ROL, Rosenbrock)
   params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Define algorithm.
+  ROL::Ptr<ROL::Step<Real>>
+  step = ROL::makePtr<ROL::LineSearchStep<Real>>(params);
+  ROL::Ptr<ROL::StatusTest<Real>>
+  status = ROL::makePtr<ROL::StatusTest<Real>>(params);
   ROL::Algorithm<Real>
-  algo("Line Search", params);
+  algo(step,status,false);
 
   // Set Initial Guess
   minitensor::Vector<Real, DIM>
@@ -287,8 +295,12 @@ TEST(MiniTensor_ROL, NLLS01)
   params.sublist("Status Test").set("Step Tolerance", 1.0e-18);
   params.sublist("Status Test").set("Iteration Limit", 128);
 
+  ROL::Ptr<ROL::Step<Real>>
+  step = ROL::makePtr<ROL::LineSearchStep<Real>>(params);
+  ROL::Ptr<ROL::StatusTest<Real>>
+  status = ROL::makePtr<ROL::StatusTest<Real>>(params);
   ROL::Algorithm<Real>
-  algo(step, params);
+  algo(step,status,false);
 
   ROL::NonlinearLeastSquaresObjective<Real>
   nlls(pconstr, x, c, false);

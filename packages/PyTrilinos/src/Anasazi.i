@@ -49,7 +49,7 @@
 PyTrilinos.Anasazi is the python interface to the Trilinos eigensolver
 package Anasazi:
 
-    http://trilinos.sandia.gov/packages/anasazi
+    https://trilinos.org/docs/dev/packages/anasazi/doc/html/index.html
 
 Anasazi is a collection of eigensolver technologies.  The C++ version
 makes liberal use of templates to abstract out the scalar type,

@@ -26,8 +26,11 @@ namespace Tempus {
  *  <b> Algorithm </b>
  *  The single-timestep algorithm for Backward Euler is simply,
  *   - Solve \f$f(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0\f$ for \f$x_n\f$
- *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n\f$ [Optional]
- *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
+ *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n\f$
+ *
+ *  The First-Step-As-Last (FSAL) principle is not needed with Backward Euler.
+ *  The default is to set useFSAL=false, however useFSAL=true will also work
+ *  but have no affect (i.e., no-op).
  */
 template<class Scalar>
 class StepperBackwardEuler :
@@ -35,6 +38,15 @@ class StepperBackwardEuler :
     virtual public Tempus::StepperOptimizationInterface<Scalar>
 {
 public:
+
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperBackwardEuler();
 
   /// Constructor
   StepperBackwardEuler(
@@ -53,13 +65,13 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
-    /// Pass initial guess to Newton solver 
-    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
@@ -73,15 +85,18 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
+
+    /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const { return Scalar(1.0)/dt; }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
   /// Compute predictor given the supplied stepper
   virtual void computePredictor(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
-  /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
-  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x) const;
 
   /// \name ParameterList methods
   //@{
@@ -131,9 +146,6 @@ public:
 
 private:
 
-  /// Default Constructor -- not allowed
-  StepperBackwardEuler();
-
   /// Implementation of computeStep*() methods
   void computeStepResidDerivImpl(
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
@@ -146,11 +158,8 @@ private:
 private:
 
   Teuchos::RCP<Stepper<Scalar> >                      predictorStepper_;
-  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
 
-  mutable Teuchos::RCP<Thyra::VectorBase<Scalar> >    xDotTemp_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;  
 };
 
 /** \brief Time-derivative interface for Backward Euler.

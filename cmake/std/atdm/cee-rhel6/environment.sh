@@ -47,13 +47,9 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 
 module purge
 
-if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
-  export OMP_NUM_THREADS=2
-else
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
-fi
-# NOTE: Above, we use 1/2 as many executors as
+module load sparc-dev
+# NOTE: Above was reported needed by jhu on some CEE RHEL6 machine in order to
+# get NetCDF to load (#4662).
 
 # Warning options requested by Gemma team (which should hopefully also take
 # care of warnings required by the other ATDM APPs as well).  See #3178 and
@@ -80,6 +76,9 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
   module load sparc-dev/gcc-7.2.0_openmpi-1.10.2
+  unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
+  unset OMP_PROC_BIND
+  unset OMP_PLACES
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
@@ -92,8 +91,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
-  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core"
-  # NOTE: Above is waht What SPARC uses?
+  export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3_OPENMPI-1.10.2" ]] ; then
   module load sparc-dev/gcc-4.9.3_openmpi-1.10.2
   export OMPI_CXX=`which g++`
@@ -112,6 +110,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3_OPENMPI-1.10.2" ]] ; then
   export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   module load sparc-dev/intel-18.0.2_mpich2-3.2
+  export OMP_NUM_THREADS=3 # Because Si H. requested this
+  export OMP_PROC_BIND=false
+  unset OMP_PLACES
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
@@ -136,7 +137,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   #
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
-  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core" # Critical to perforamnce!
+  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
@@ -168,6 +169,17 @@ fi
 # ToDo: Update above to only load the compiler and MPI moudles and then
 # directly set <TPL_NAME>_ROOT to point to the right TPLs.  This is needed to
 # avoid having people depend on the SPARC modules.
+
+# Set parallel test level based on OpenMP or not
+if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
+  #export OMP_NUM_THREADS=2
+else
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
+fi
+# NOTE: Above, we use 1/2 as many parallel processes as cores on the machine
+# to be safe.  Also, we need to set OMP_* env vars here because the SPARC
+# modules change them!
 
 # Use updated Ninja and CMake
 module load atdm-env

@@ -50,7 +50,6 @@
 #include "Panzer_GatherTangent_Tpetra_decl.hpp"
 #include "Panzer_GatherTangent_Tpetra_impl.hpp"
 
-// PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherTangent_Tpetra,int,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherTangent_Tpetra,int,panzer::Ordinal64)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherTangent_Tpetra,int,panzer::GlobalOrdinal)
 
 #endif

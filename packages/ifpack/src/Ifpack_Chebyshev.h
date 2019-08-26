@@ -342,11 +342,11 @@ private:
   virtual void SetLabel();
 
   //! Copy constructor (PRIVATE, should not be used)
-  Ifpack_Chebyshev(const Ifpack_Chebyshev& rhs)
+  Ifpack_Chebyshev(const Ifpack_Chebyshev& /* rhs */)
   {}
 
   //! operator = (PRIVATE, should not be used)
-  Ifpack_Chebyshev& operator=(const Ifpack_Chebyshev& rhs)
+  Ifpack_Chebyshev& operator=(const Ifpack_Chebyshev& /* rhs */)
   {
     return(*this);
   }

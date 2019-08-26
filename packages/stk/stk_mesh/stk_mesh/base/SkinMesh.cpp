@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -136,7 +137,7 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
         stk::topology side_topology = element_topology.side_topology(k);
         // get the side nodes
         EntityVector side_nodes(side_topology.num_nodes());
-        element_topology.side_nodes(elem_nodes,k, side_nodes.begin());
+        element_topology.side_nodes(elem_nodes,k, side_nodes.data());
 
         // find elements that also use the side nodes
         EntityVector common_elements;
@@ -162,19 +163,16 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
             if (side_topology != potential_side_topology) continue;
 
             EntityVector potential_side_nodes(potential_side_topology.num_nodes());
-            potential_element_topology.side_nodes(potential_elem_nodes, m, potential_side_nodes.begin());
+            potential_element_topology.side_nodes(potential_elem_nodes, m, potential_side_nodes.data());
 
-            bool equivalent = false;
-            unsigned permutation_id = 0;
-
-            std::tie(equivalent,permutation_id) = stk::mesh::side_equivalent(mesh, elem, k, potential_side_nodes.data());
+            stk::EquivalentPermutation result = stk::mesh::side_equivalent(mesh, elem, k, potential_side_nodes.data());
 
             // the sides are not a match
-            if (equivalent == false) continue;
+            if (result.is_equivalent == false) continue;
             // if the permutation_id is to a positive permutation
             // the sides are not opposing, i.e. the elements are superimposed on each other
 
-            if ( permutation_id < side_topology.num_positive_permutations() )
+            if ( result.permutation_number < side_topology.num_positive_permutations() )
             {
                 stk::mesh::PartVector user_parts_elem1;
                 stk::mesh::PartVector user_parts_elem2;
@@ -283,12 +281,12 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
       Entity const * const elem_nodes = mesh.begin_nodes(elem);
 
       EntityVector side_nodes(side_topology.num_nodes());
-      element_topology.side_nodes(elem_nodes, side_ordinal, side_nodes.begin());
+      element_topology.side_nodes(elem_nodes, side_ordinal, side_nodes.data());
 
-      unsigned lexmin_perm_id = side_topology.lexicographical_smallest_permutation(side_nodes, consider_negative_permutations);
+      unsigned lexmin_perm_id = side_topology.lexicographical_smallest_permutation(side_nodes.data(), consider_negative_permutations);
 
       EntityVector ordered_side_nodes(side_nodes.size());
-      side_topology.permutation_nodes(side_nodes, lexmin_perm_id, ordered_side_nodes.begin());
+      side_topology.permutation_nodes(side_nodes.data(), lexmin_perm_id, ordered_side_nodes.data());
 
       // attach nodes to side
       for (size_t i=0, ie=ordered_side_nodes.size(); i<ie; ++i) {
@@ -315,7 +313,7 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
         if (only_owner_can_change_parts)
         {
           PartVector add_parts(skin_parts);
-          add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( side_topology )));
+          add_parts.push_back( & mesh.mesh_meta_data().get_topology_root_part(side_topology) );
           mesh.change_entity_parts(side,add_parts);
         }
     }

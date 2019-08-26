@@ -112,7 +112,6 @@ C   --   Uses IS3DIM, NUMNPF of /D3NUMS/
       INTEGER IXNNPS(*)
       INTEGER LTNNPS(*)
 
-      LOGICAL GRABRT
       LOGICAL PLTGTT, PLTSTT, LDUM
       logical logt
 

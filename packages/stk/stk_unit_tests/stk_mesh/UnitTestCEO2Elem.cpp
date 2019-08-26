@@ -23,7 +23,7 @@ void fillMeshfor2Elem2ProcMoveAndTest(stk::unit_test_util::BulkDataTester& bulk,
     };
 
     stk::mesh::Part * elem_part = &meta.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
     meta.commit();
 
 // Start with all entities on proc 0
@@ -165,7 +165,7 @@ void checkStatesAfterCEO_2Elem2ProcMove(stk::unit_test_util::BulkDataTester &bul
 
     stk::mesh::MetaData & meta = bulk.mesh_meta_data();
     stk::mesh::Part * elem_part = meta.get_part("elem_part");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -302,7 +302,7 @@ void checkStatesAfterCEOME_2Elem2ProcMove(stk::unit_test_util::BulkDataTester &b
 
     stk::mesh::MetaData & meta = bulk.mesh_meta_data();
     stk::mesh::Part * elem_part = meta.get_part("elem_part");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -462,7 +462,7 @@ void fillMeshfor2Elem2ProcFlipAndTest(stk::unit_test_util::BulkDataTester& mesh,
     };
 
     stk::mesh::Part * elem_part = &meta.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
     meta.commit();
 
 // Start with all entities on proc 0
@@ -632,7 +632,7 @@ void checkStatesAfterCEOME_2Elem2ProcFlip(stk::unit_test_util::BulkDataTester& m
 
     stk::mesh::MetaData & meta = mesh.mesh_meta_data();
     stk::mesh::Part * elem_part = meta.get_part("elem_part");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -783,7 +783,7 @@ void checkStatesAfterCEO_2Elem2ProcFlip(stk::unit_test_util::BulkDataTester& mes
 
     stk::mesh::MetaData & meta = mesh.mesh_meta_data();
     stk::mesh::Part * elem_part = meta.get_part("elem_part");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -941,7 +941,7 @@ void checkStatesAfterCEOME_2Elem2ProcMove_no_ghost(stk::unit_test_util::BulkData
 
     stk::mesh::MetaData & meta = bulk.mesh_meta_data();
     stk::mesh::Part * elem_part = meta.get_part("elem_part");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -1099,7 +1099,7 @@ void fillMeshfor2Elem2ProcFlipAndTest_no_ghost(stk::unit_test_util::BulkDataTest
     };
 
     stk::mesh::Part * elem_part = &meta.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
     meta.commit();
 
 // Start with all entities on proc 0
@@ -1269,7 +1269,7 @@ void checkStatesAfterCEOME_2Elem2ProcFlip_no_ghost(stk::unit_test_util::BulkData
 
     stk::mesh::MetaData & meta = mesh.mesh_meta_data();
     stk::mesh::Part * elem_part = meta.get_part("elem_part");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();

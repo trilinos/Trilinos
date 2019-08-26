@@ -50,7 +50,7 @@
 #include "Teuchos_Assert.hpp"
 
 #include "Panzer_STK_Interface.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 
 #include "Panzer_STK_Utilities.hpp"
@@ -65,7 +65,7 @@ namespace user_app {
   public:
     
     RythmosObserver_Epetra(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			   const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
+			   const RCP<panzer::GlobalIndexer>& dof_manager,
 			   const Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >& lof) :
       m_mesh(mesh),
       m_dof_manager(dof_manager),
@@ -85,7 +85,7 @@ namespace user_app {
 				  const Rythmos::StepControlInfo<double>& /* stepCtrlInfo */,
 				  const int /* timeStepIter */)
     { 
-      std::cout << "*************************ROGER in Time************************************"  << std::endl;
+      std::cout << "************************* Time Step ************************************"  << std::endl;
       std::cout << "time = " << stepper.getStepStatus().time << std::endl;
       std::cout << *(stepper.getStepStatus().solution);
       Teuchos::RCP<const Thyra::VectorBase<double> > solution = stepper.getStepStatus().solution;
@@ -105,7 +105,7 @@ namespace user_app {
   protected:
 
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
-    Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > m_dof_manager;
+    Teuchos::RCP<panzer::GlobalIndexer> m_dof_manager;
     Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > m_lof;
 
   };

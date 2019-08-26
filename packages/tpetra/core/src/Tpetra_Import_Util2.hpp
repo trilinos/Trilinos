@@ -927,7 +927,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   // Make column Map
   const GST minus_one = Teuchos::OrdinalTraits<GST>::invalid ();
   colMap = rcp (new map_type (minus_one, ColIndices, domainMap.getIndexBase (),
-                              domainMap.getComm (), domainMap.getNode ()));
+                              domainMap.getComm ()));
 
   // Low-cost reindex of the matrix
   for (size_t i = 0; i < numMyRows; ++i) {

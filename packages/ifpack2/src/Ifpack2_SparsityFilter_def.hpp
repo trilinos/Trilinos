@@ -115,12 +115,15 @@ Teuchos::RCP<const Teuchos::Comm<int> > SparsityFilter<MatrixType>::getComm() co
   return A_->getComm();
 }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 //==========================================================================
 template<class MatrixType>
+TPETRA_DEPRECATED
 Teuchos::RCP <typename MatrixType::node_type> SparsityFilter<MatrixType>::getNode() const
 {
-  return A_->getNode();
+  return Teuchos::null;
 }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 //==========================================================================
 template<class MatrixType>

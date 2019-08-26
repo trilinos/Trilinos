@@ -45,23 +45,23 @@ public:
 
   /// Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Stepper<Scalar> & stepper){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Stepper<Scalar> & /* stepper */){}
 
   /// Observe Stepper before nonlinear solve.
   virtual void observeBeforeSolve(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperTrapezoidal<Scalar> & stepperTrap){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    StepperTrapezoidal<Scalar> & /* stepperTrap */){}
 
   /// Observe Stepper after nonlinear solve.
   virtual void observeAfterSolve(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperTrapezoidal<Scalar> & stepperTrap){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    StepperTrapezoidal<Scalar> & /* stepperTrap */){}
 
   /// Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Stepper<Scalar> & stepper){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Stepper<Scalar> & /* stepper */){}
 };
 } // namespace Tempus
 #endif // Tempus_StepperTrapezoidalObserver_hpp

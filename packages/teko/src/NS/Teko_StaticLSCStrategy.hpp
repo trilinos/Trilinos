@@ -76,7 +76,7 @@ public:
      * \param[in] state State object for storying reusable information about
      *                  the operator A.
      */
-   virtual void buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const {}
+   virtual void buildState(BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const {}
 
    /** Get the inverse of the \f$F\f$ block.
      *
@@ -86,7 +86,7 @@ public:
      *
      * \returns An (approximate) inverse of \f$F\f$.
      */
-   virtual LinearOp getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getInvF(const BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return invF_; }
 
    /** Get the inverse of \f$B Q_u^{-1} B^T\f$. 
@@ -97,7 +97,7 @@ public:
      *
      * \returns An (approximate) inverse of \f$B Q_u^{-1} B^T\f$.
      */
-   virtual LinearOp getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getInvBQBt(const BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return invBQBtmC_; }
 
    /** Get the inverse of \f$B H B^T - \gamma C\f$. 
@@ -108,7 +108,7 @@ public:
      *
      * \returns An (approximate) inverse of \f$B H B^T - \gamma C\f$.
      */
-   virtual LinearOp getInvBHBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getInvBHBt(const BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return invBQBtmC_; }
 
    /** Get the inverse for stabilizing the whole Schur complement approximation.
@@ -119,10 +119,10 @@ public:
      *
      * \returns The operator to stabilize the whole Schur complement (\f$\alpha D^{-1} \f$).
      */
-   virtual LinearOp getOuterStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getOuterStabilization(const BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return invD_; }
 
-   virtual LinearOp getInnerStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getInnerStabilization(const BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return Teuchos::null; }
 
    /** Get the inverse mass matrix.
@@ -133,7 +133,7 @@ public:
      *
      * \returns The inverse of the mass matrix \f$Q_u\f$.
      */
-   virtual LinearOp getInvMass(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getInvMass(const BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return invMass_; }
 
    /** Get the \f$H\f$ scaling matrix.
@@ -144,7 +144,7 @@ public:
      *
      * \returns The \f$H\f$ scaling matrix.
      */
-   virtual LinearOp getHScaling(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getHScaling(const BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return invMass_; }
 
    /** Should the approximation of the inverse use a full LDU decomposition, or
@@ -160,7 +160,7 @@ public:
      *
      * \param[in] isSymmetric Is this operator symmetric?
      */
-   virtual void setSymmetric(bool isSymmetric) { }
+   virtual void setSymmetric(bool /* isSymmetric */) { }
 
 protected:
    // protected memebers

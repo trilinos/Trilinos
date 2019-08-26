@@ -40,14 +40,16 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "INTEL" ]] ; then
-    export ATDM_CONFIG_COMPILER=INTEL-17.0.1
-  elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-17.0.1" ]] ; then
+    export ATDM_CONFIG_COMPILER=INTEL-18.0.5
+  elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-17.0.1" ]] \
+    && [[ "$ATDM_CONFIG_COMPILER" != "INTEL-18.0.5" ]]; then
     echo
     echo "***"
     echo "*** ERROR: INTEL COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only INTEL compilers supported on this system are:"
-    echo "***   intel (defaults to intel-17.0.1)"
+    echo "***   intel (defaults to intel-18.0.5)"
     echo "***   intel-17.0.1"
+    echo "***   intel-18.0.5"
     echo "***"
     return
   fi
@@ -106,7 +108,12 @@ module load sems-git/2.10.1
 module load sems-cmake/3.12.2
 module load sems-ninja_fortran/1.8.2
 
-if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
+if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
+  # We just need to be super conservative by default when using a GPU.  If
+  # users want to use more MPI processes, then can override this with
+  # ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE.
+elif [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
   export OMP_NUM_THREADS=2
   # NOTE: With hyper-threading enabled, you can run as many threads as there
@@ -131,23 +138,37 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-3.9.0" ]] ; then
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
-  export LAPACK_ROOT=/usr/lib64/atlas
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
+  export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
+  export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
   module load sems-gcc/7.2.0
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
-  export LAPACK_ROOT=/usr/lib64/atlas
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
+  export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
+  export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
   module load sems-intel/17.0.1
+  module load atdm-env
+  module load atdm-mkl/18.0.5
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SEMS_INTEL_ROOT/mkl/lib/intel64/
+  export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+  export ATDM_CONFIG_BLAS_LIBS="-mkl"
+  export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
+  if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
+    export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
+  fi
+elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5" ]] ; then
+  module load sems-gcc/7.2.0
+  module load sems-intel/18.0.5
+  module load atdm-env
+  module load atdm-mkl/18.0.5
+  export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+  export OMPI_CXX=`which icpc`
+  export OMPI_CC=`which icc`
+  export OMPI_FC=`which ifort`
   export ATDM_CONFIG_LAPACK_LIBS="-mkl"
   export ATDM_CONFIG_BLAS_LIBS="-mkl"
   export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
@@ -164,12 +185,12 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
   fi
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
-  export LAPACK_ROOT=/usr/lib64/atlas
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
-  # Needed for some Tpetra UVM stuff
+  export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
+  export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
+  # some Trilinos tests require this to run correctly
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+  export KOKKOS_NUM_DEVICES=2
 else
   echo
   echo "***"
@@ -183,6 +204,7 @@ module load sems-netcdf/4.4.1/exo_parallel
 module load sems-hdf5/1.8.12/parallel
 module load sems-zlib/1.2.8/base
 module load sems-boost/1.59.0/base
+module unload sems-python/2.7.9 
 module load sems-superlu/4.3/base
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \

@@ -112,14 +112,11 @@ namespace {
     const int myImageID = comm->getRank();
     RCP<const crs_matrix_type> readMatrix, testMatrix;
 
-    // readHBMatrix wants a Node instance, so we need to save it.
-    RCP<map_type::node_type> node;
     {
       // this is what the file looks like: 1 3 4 9
       RCP<const map_type> rng = Tpetra::createUniformContigMap<LO, GO>(1,comm);
-      node = rng->getNode (); // save the Node instance for readHBMatrix
       RCP<const map_type> dom = Tpetra::createUniformContigMap<LO, GO>(4,comm);
-      RCP<crs_matrix_type> A = Tpetra::createCrsMatrix<SC, LO, GO>(rng);
+      RCP<crs_matrix_type> A = Tpetra::createCrsMatrix<SC, LO, GO>(rng, 4);
       if (myImageID == 0) {
         A->insertGlobalValues( 0, Teuchos::tuple<GO>(0,1,2,3), Teuchos::tuple<SC>(1.0,3.0,4.0,9.0) );
       }
@@ -128,7 +125,7 @@ namespace {
     }
     {
       RCP<crs_matrix_type> A;
-      Tpetra::Utils::readHBMatrix("addA2.hb", comm, node, A);
+      Tpetra::Utils::readHBMatrix("addA2.hb", comm, A);
       readMatrix = A;
     }
     // test that *readMatrix == *testMatrix
@@ -165,7 +162,7 @@ namespace {
   //   RCP<const Comm<int> > comm = getDefaultComm();
   //   const global_size_t numGlobal = comm->getSize();
   //   RCP<const Map<LO,GO> > map = rcp(new Map<LO,GO>(numGlobal,0,comm) );
-  //   RCP<const CrsGraph<LO,GO> > graph = rcp(new CrsGraph<LO,GO>(map,0,Tpetra::DynamicProfile) );
+  //   RCP<const CrsGraph<LO,GO> > graph = rcp(new CrsGraph<LO,GO>(map,0,Tpetra::StaticProfile) );
   //   TEST_EQUALITY_CONST( graph != null, true );
   //   // All procs fail if any proc fails
   //   int globalSuccess_int = -1;

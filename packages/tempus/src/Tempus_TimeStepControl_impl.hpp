@@ -55,16 +55,19 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   TEMPUS_FUNC_TIME_MONITOR("Tempus::TimeStepControl::getNextTimeStep()");
   {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+    Teuchos::OSTab ostab(out,0,"getNextTimeStep");
     bool printChanges = solutionHistory->getVerbLevel() !=
                         Teuchos::as<int>(Teuchos::VERB_NONE);
 
-    auto changeDT = [] (Scalar dt_old, Scalar dt_new, std::string reason) {
+    auto changeDT = [] (int istep, Scalar dt_old, Scalar dt_new,
+                        std::string reason)
+    {
       std::stringstream message;
-      message <<
-    "     (dt = "<<std::scientific<<std::setw(9)<<std::setprecision(3)<<dt_old
-    << ", new = "<<std::scientific<<std::setw(9)<<std::setprecision(3)<<dt_new
-    << ")  " << reason << std::endl;
+      message << std::scientific
+                       <<std::setw(6)<<std::setprecision(3)<<istep
+        << " *  (dt = "<<std::setw(9)<<std::setprecision(3)<<dt_old
+        <<   ", new = "<<std::setw(9)<<std::setprecision(3)<<dt_new
+        << ")  " << reason << std::endl;
       return message.str();
     };
 
@@ -74,16 +77,14 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     const int iStep = metaData->getIStep();
     int order = metaData->getOrder();
     Scalar dt = metaData->getDt();
-    bool output = metaData->getOutput();
+    bool output = false;
 
     RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
-
-    output = false;
 
     if (getStepType() == "Variable") {
       // If last time step was adjusted for output, reinstate previous dt.
       if (outputAdjustedDt_ == true) {
-        if (printChanges) *out << changeDT(dt, dtAfterOutput_,
+        if (printChanges) *out << changeDT(iStep, dt, dtAfterOutput_,
           "Reset dt after output.");
         dt = dtAfterOutput_;
         outputAdjustedDt_ = false;
@@ -91,13 +92,13 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       }
 
       if (dt <= 0.0) {
-        if (printChanges) *out << changeDT(dt, getInitTimeStep(),
+        if (printChanges) *out << changeDT(iStep, dt, getInitTimeStep(),
           "Reset dt to initial dt.");
         dt = getInitTimeStep();
       }
 
       if (dt < getMinTimeStep()) {
-        if (printChanges) *out << changeDT(dt, getMinTimeStep(),
+        if (printChanges) *out << changeDT(iStep, dt, getMinTimeStep(),
           "Reset dt to minimum dt.");
         dt = getMinTimeStep();
       }
@@ -116,12 +117,12 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
     if (getStepType() == "Variable") {
       if (dt < getMinTimeStep()) { // decreased below minimum dt
-        if (printChanges) *out << changeDT(dt, getMinTimeStep(),
+        if (printChanges) *out << changeDT(iStep, dt, getMinTimeStep(),
           "dt is too small.  Resetting to minimum dt.");
         dt = getMinTimeStep();
       }
       if (dt > getMaxTimeStep()) { // increased above maximum dt
-        if (printChanges) *out << changeDT(dt, getMaxTimeStep(),
+        if (printChanges) *out << changeDT(iStep, dt, getMaxTimeStep(),
           "dt is too large.  Resetting to maximum dt.");
         dt = getMaxTimeStep();
       }
@@ -133,47 +134,73 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       std::find(outputIndices_.begin(), outputIndices_.end(), iStep);
     if (it != outputIndices_.end()) output = true;
 
-    // Adjust time step to hit output times (if Variable timestep).
+    const int iInterval = tscPL_->get<int>("Output Index Interval");
+    if ( (iStep - getInitIndex()) % iInterval == 0) output = true;
+
+    // Check if we need to output in the next timestep based on
+    // outputTimes_ or "Output Time Interval".
     Scalar reltol = 1.0e-6;
+    const Scalar endTime = lastTime+dt+getMinTimeStep();
+    bool checkOutput = false;
+    Scalar oTime = getInitTime();
     for (size_t i=0; i < outputTimes_.size(); ++i) {
-      const Scalar oTime = outputTimes_[i];
-      if (lastTime < oTime && oTime <= lastTime+dt+getMinTimeStep()) {
+      oTime = outputTimes_[i];
+      if (lastTime < oTime && oTime <= endTime) {
+        checkOutput = true;
+        break;
+      }
+    }
+    const Scalar tInterval = tscPL_->get<double>("Output Time Interval");
+    Scalar oTime2 =  ceil((lastTime-getInitTime())/tInterval)*tInterval
+                   + getInitTime();
+    if (lastTime < oTime2 && oTime2 <= endTime) {
+      if (checkOutput == true) {
+        if (oTime2 < oTime) oTime = oTime2;  // Use the first output time.
+      } else {
+        checkOutput = true;
+        oTime = oTime2;
+      }
+    }
+
+    if (checkOutput == true) {
+      const bool outputExactly =
+        tscPL_->get<bool>("Output Exactly On Output Times");
+      if (getStepType() == "Variable" && outputExactly == true) {
+        // Adjust time step to hit output times.
         if (std::abs((lastTime+dt-oTime)/(lastTime+dt)) < reltol) {
           output = true;
-          if (getStepType() == "Variable") {
-            if (printChanges) *out << changeDT(dt, oTime - lastTime,
-              "Adjusting dt for numerical roundoff to hit the next output time.");
-            // Next output time IS VERY near next time (<reltol away from it),
-            // e.g., adjust for numerical roundoff.
-            outputAdjustedDt_ = true;
-            dtAfterOutput_ = dt;
-            dt = oTime - lastTime;
-          }
+          if (printChanges) *out << changeDT(iStep, dt, oTime - lastTime,
+            "Adjusting dt for numerical roundoff to hit the next output time.");
+          // Next output time IS VERY near next time (<reltol away from it),
+          // e.g., adjust for numerical roundoff.
+          outputAdjustedDt_ = true;
+          dtAfterOutput_ = dt;
+          dt = oTime - lastTime;
         } else if (lastTime*(1.0+reltol) < oTime &&
                    oTime < (lastTime+dt-getMinTimeStep())*(1.0+reltol)) {
           output = true;
-          if (getStepType() == "Variable") {
-            if (printChanges) *out << changeDT(dt, oTime - lastTime,
-              "Adjusting dt to hit the next output time.");
-            // Next output time is not near next time
-            // (>getMinTimeStep() away from it).
-            // Take time step to hit output time.
-            outputAdjustedDt_ = true;
-            dtAfterOutput_ = dt;
-            dt = oTime - lastTime;
-          }
+          if (printChanges) *out << changeDT(iStep, dt, oTime - lastTime,
+            "Adjusting dt to hit the next output time.");
+          // Next output time is not near next time
+          // (>getMinTimeStep() away from it).
+          // Take time step to hit output time.
+          outputAdjustedDt_ = true;
+          dtAfterOutput_ = dt;
+          dt = oTime - lastTime;
         } else {
-          if (getStepType() == "Variable") {
-            if (printChanges) *out << changeDT(dt, (oTime - lastTime)/2.0,
-              "The next output time is within the minimum dt of the next time. "
-              "Adjusting dt to take two steps.");
-            // Next output time IS near next time
-            // (<getMinTimeStep() away from it).
-            // Take two time steps to get to next output time.
-            dt = (oTime - lastTime)/2.0;
-          }
+          if (printChanges) *out << changeDT(iStep, dt, (oTime - lastTime)/2.0,
+            "The next output time is within the minimum dt of the next time. "
+            "Adjusting dt to take two steps.");
+          // Next output time IS near next time
+          // (<getMinTimeStep() away from it).
+          // Take two time steps to get to next output time.
+          dt = (oTime - lastTime)/2.0;
         }
-        break;
+      } else {
+        // Stepping over output time and want this time step for output,
+        // but do not want to change dt. Either because of 'Constant' time
+        // step or user specification, "Output Exactly On Output Times"=false.
+        output = true;
       }
     }
 
@@ -181,10 +208,14 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     // numerical differences.
     if ((lastTime + dt > getFinalTime() ) ||
         (std::abs((lastTime+dt-getFinalTime())/(lastTime+dt)) < reltol)) {
-      if (printChanges) *out << changeDT(dt, getFinalTime() - lastTime,
+      if (printChanges) *out << changeDT(iStep, dt, getFinalTime() - lastTime,
         "Adjusting dt to hit the final time.");
       dt = getFinalTime() - lastTime;
     }
+
+    // Check for negative time step.
+    TEUCHOS_TEST_FOR_EXCEPTION( dt <= Scalar(0.0), std::out_of_range,
+      "Error - Time step is not positive.  dt = " << dt <<"\n");
 
     // Time step always needs to keep time within range.
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -395,15 +426,11 @@ void TimeStepControl<Scalar>::setParameterList(
       pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
     }
 
-    Scalar outputTimeInterval = tscPL_->get<double>("Output Time Interval");
-    Scalar output_t = getInitTime();
-    while (output_t <= getFinalTime()) {
-      outputTimes_.push_back(output_t);
-      output_t += outputTimeInterval;
-    }
-
     // order output times
     std::sort(outputTimes_.begin(),outputTimes_.end());
+    outputTimes_.erase(std::unique(outputTimes_.begin(),
+                                   outputTimes_.end()   ),
+                                   outputTimes_.end()     );
   }
 
   // Parse output indices
@@ -537,6 +564,12 @@ TimeStepControl<Scalar>::getValidParameters() const
     "the time step to be modified.\n"
     "  'Constant' - Integrator will take constant time step sizes.\n"
     "  'Variable' - Integrator will allow changes to the time step size.\n");
+
+  pl->set<bool>("Output Exactly On Output Times", true,
+    "This determines if the timestep size will be adjusted to exactly land\n"
+    "on the output times for 'Variable' timestepping (default=true).\n"
+    "When set to 'false' or for 'Constant' time stepping, the timestep\n"
+    "following the output time will be flagged for output.\n");
 
   pl->set<std::string>("Output Time List", "",
     "Comma deliminated list of output times");

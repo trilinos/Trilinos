@@ -30,41 +30,6 @@ C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C
-
-C $Id: pmesh.F,v 1.4 2007/07/24 13:10:18 gdsjaar Exp $
-C $Log: pmesh.F,v $
-C Revision 1.4  2007/07/24 13:10:18  gdsjaar
-C Fix problem with boundary condition memory overwrite.
-C
-C Remove old ls5 and r25 terminal tests
-C
-C Revision 1.3  2000/11/13 15:39:05  gdsjaar
-C Cleaned up unused variables and labels.
-C
-C Removed some real to int conversion warnings.
-C
-C Revision 1.2  1998/07/14 18:19:41  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1  1998/04/10 04:30:20  gdsjaar
-C Added the ifdef needsdoubleescape to the graphics symbol
-C plotting. Required moving some .f to .F files and specifying in Imakefile
-C
-C Revision 1.1.1.1  1990/11/30 11:13:48  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:13:46  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]PMESH.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE PMESH (NPNODE, NPELEM, MXNFLG, MXSFLG, NPNBC, NPSBC,
      &   MAXKXN, NNN, KKK, NNXK, NBCNOD, NBCSID, NNLIST, NVLIST, NODES,
      &   NSIDEN, NNFLG, NNPTR, NSFLG, NVPTR, NVLEN, XN, YN, NXK, MAT,
@@ -97,7 +62,7 @@ C
       DIMENSION XDUM(2), YDUM(2)
 C
       LOGICAL LABE, LABN, LABNB, LABSB, LABO, ADD, AXIS, LABM, EIGHT
-      LOGICAL NINE, NEW, LABW, TEST, CPUIFC, AREACG
+      LOGICAL NINE, NEW, LABW, CPUIFC, AREACG
 C
       CHARACTER*72 DUMMY, TITLE
       CHARACTER DEV1*3, CDUMMY*4, DATE*8, TIME*8, VERSN*9
@@ -131,12 +96,6 @@ C
 C
 C  SET UP SCALING EXTREMES FOR AXIS
 C
-      IF (TEST) THEN
-         WRITE(12, 10000) 'IN;SP6;;IP-5710, -10060, 15710, 10060;'
-         WRITE(12, 10010)
-     &      'SC', IFIX(XX1*1000), ', ', IFIX(YY1*1000), ', ',
-     &      IFIX(XX2*1000), ', ', IFIX(YY2*1000), ';'
-      END IF
       IF (AXIS) THEN
          XDUM(1) = XX1 - (XDIMR*.05)
          XDUM(2) = XX2 + (XDIMR*.05)
@@ -405,11 +364,6 @@ C
          IF (NXK(1, I) .GT. 0) THEN
             COLOR = FLOAT(MOD(MAT(I) + 1, 6) + 1)
             CALL PLTSTD (1, COLOR)
-            IF (TEST) ICOLOR = INT(COLOR)
-            IF (TEST .AND. (ICOLOR .NE. JCOLOR)) THEN
-               WRITE(12, 10020) 'SP', ICOLOR, ';'
-               JCOLOR = ICOLOR
-            END IF
             IF (NXK(3, I) .EQ. 0) THEN
                JEND = 1
             ELSE IF (NXK(4, I) .EQ. 0) THEN
@@ -457,11 +411,6 @@ C
                IHOLD = LOOKUP
   290          CONTINUE
                IF ((JEND .EQ. 1) .OR. (ILOOK(LOOKUP) .EQ. 0)) THEN
-                  IF (TEST) WRITE(12, 10030)
-     &               'PU;PA', IFIX(XN(INUM1)*1000.), ', ',
-     &               IFIX(YN(INUM1)*1000.), ';PD;PA',
-     &               IFIX(XN(INUM2)*1000.), ', ',
-     &               IFIX(YN(INUM2)*1000.), ';'
                   CALL MPD2VC (1, XN(INUM1), YN(INUM1), XN(INUM2),
      &               YN(INUM2))
                   LOOKUP = IHOLD
@@ -542,9 +491,5 @@ C
 C
       RETURN
 C
-10000 FORMAT (A)
-10010 FORMAT (A2, I10, A1, I10, A1, I10, A1, I10, A1)
-10020 FORMAT (A2, I1, A1)
-10030 FORMAT (A5, I10, A1, I10, A6, I10, A1, I10, A1)
 10040 FORMAT (A, ': ', G11.4)
       END

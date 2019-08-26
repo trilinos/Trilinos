@@ -113,62 +113,62 @@ namespace tsl {
      */
     robin_set() : robin_set(ht::DEFAULT_INIT_BUCKETS_SIZE) {}
 
-    explicit robin_set(size_type bucket_count_, const Hash &hash = Hash(),
+    explicit robin_set(size_type my_bucket_count, const Hash &hash = Hash(),
                        const KeyEqual &equal = KeyEqual(), const Allocator &alloc = Allocator())
-        : m_ht(bucket_count_, hash, equal, alloc, ht::DEFAULT_MAX_LOAD_FACTOR)
+        : m_ht(my_bucket_count, hash, equal, alloc)
     {
     }
 
-    robin_set(size_type bucket_count_, const Allocator &alloc)
-        : robin_set(bucket_count_, Hash(), KeyEqual(), alloc)
+    robin_set(size_type my_bucket_count, const Allocator &alloc)
+        : robin_set(my_bucket_count, Hash(), KeyEqual(), alloc)
     {
     }
 
-    robin_set(size_type bucket_count_, const Hash &hash, const Allocator &alloc)
-        : robin_set(bucket_count_, hash, KeyEqual(), alloc)
+    robin_set(size_type my_bucket_count, const Hash &hash, const Allocator &alloc)
+        : robin_set(my_bucket_count, hash, KeyEqual(), alloc)
     {
     }
 
     explicit robin_set(const Allocator &alloc) : robin_set(ht::DEFAULT_INIT_BUCKETS_SIZE, alloc) {}
 
     template <class InputIt>
-    robin_set(InputIt first, InputIt last, size_type bucket_count_ = ht::DEFAULT_INIT_BUCKETS_SIZE,
-              const Hash &hash = Hash(), const KeyEqual &equal = KeyEqual(),
-              const Allocator &alloc = Allocator())
-        : robin_set(bucket_count_, hash, equal, alloc)
+    robin_set(InputIt first, InputIt last,
+              size_type my_bucket_count = ht::DEFAULT_INIT_BUCKETS_SIZE, const Hash &hash = Hash(),
+              const KeyEqual &equal = KeyEqual(), const Allocator &alloc = Allocator())
+        : robin_set(my_bucket_count, hash, equal, alloc)
     {
       insert(first, last);
     }
 
     template <class InputIt>
-    robin_set(InputIt first, InputIt last, size_type bucket_count_, const Allocator &alloc)
-        : robin_set(first, last, bucket_count_, Hash(), KeyEqual(), alloc)
+    robin_set(InputIt first, InputIt last, size_type my_bucket_count, const Allocator &alloc)
+        : robin_set(first, last, my_bucket_count, Hash(), KeyEqual(), alloc)
     {
     }
 
     template <class InputIt>
-    robin_set(InputIt first, InputIt last, size_type bucket_count_, const Hash &hash,
+    robin_set(InputIt first, InputIt last, size_type my_bucket_count, const Hash &hash,
               const Allocator &alloc)
-        : robin_set(first, last, bucket_count_, hash, KeyEqual(), alloc)
+        : robin_set(first, last, my_bucket_count, hash, KeyEqual(), alloc)
     {
     }
 
     robin_set(std::initializer_list<value_type> init,
-              size_type bucket_count_ = ht::DEFAULT_INIT_BUCKETS_SIZE, const Hash &hash = Hash(),
+              size_type my_bucket_count = ht::DEFAULT_INIT_BUCKETS_SIZE, const Hash &hash = Hash(),
               const KeyEqual &equal = KeyEqual(), const Allocator &alloc = Allocator())
-        : robin_set(init.begin(), init.end(), bucket_count_, hash, equal, alloc)
+        : robin_set(init.begin(), init.end(), my_bucket_count, hash, equal, alloc)
     {
     }
 
-    robin_set(std::initializer_list<value_type> init, size_type bucket_count_,
+    robin_set(std::initializer_list<value_type> init, size_type my_bucket_count,
               const Allocator &alloc)
-        : robin_set(init.begin(), init.end(), bucket_count_, Hash(), KeyEqual(), alloc)
+        : robin_set(init.begin(), init.end(), my_bucket_count, Hash(), KeyEqual(), alloc)
     {
     }
 
-    robin_set(std::initializer_list<value_type> init, size_type bucket_count_, const Hash &hash,
+    robin_set(std::initializer_list<value_type> init, size_type my_bucket_count, const Hash &hash,
               const Allocator &alloc)
-        : robin_set(init.begin(), init.end(), bucket_count_, hash, KeyEqual(), alloc)
+        : robin_set(init.begin(), init.end(), my_bucket_count, hash, KeyEqual(), alloc)
     {
     }
 
@@ -213,12 +213,12 @@ namespace tsl {
 
     iterator insert(const_iterator hint, const value_type &value)
     {
-      return m_ht.insert(hint, value);
+      return m_ht.insert_hint(hint, value);
     }
 
     iterator insert(const_iterator hint, value_type &&value)
     {
-      return m_ht.insert(hint, std::move(value));
+      return m_ht.insert_hint(hint, std::move(value));
     }
 
     template <class InputIt> void insert(InputIt first, InputIt last) { m_ht.insert(first, last); }
@@ -485,11 +485,23 @@ namespace tsl {
      *  Hash policy
      */
     float load_factor() const { return m_ht.load_factor(); }
-    float max_load_factor() const { return m_ht.max_load_factor(); }
-    void  max_load_factor(float ml) { m_ht.max_load_factor(ml); }
 
-    void rehash(size_type count_) { m_ht.rehash(count_); }
-    void reserve(size_type count_) { m_ht.reserve(count_); }
+    float min_load_factor() const { return m_ht.min_load_factor(); }
+    float max_load_factor() const { return m_ht.max_load_factor(); }
+
+    /**
+     * Set the `min_load_factor` to `ml`. When the `load_factor` of the set goes
+     * below `min_load_factor` after some erase operations, the set will be
+     * shrunk when an insertion occurs. The erase method itself never shrinks
+     * the set.
+     *
+     * The default value of `min_load_factor` is 0.0f, the set never shrinks by default.
+     */
+    void min_load_factor(float ml) { m_ht.min_load_factor(ml); }
+    void max_load_factor(float ml) { m_ht.max_load_factor(ml); }
+
+    void rehash(size_type my_count) { m_ht.rehash(my_count); }
+    void reserve(size_type my_count) { m_ht.reserve(my_count); }
 
     /*
      * Observers

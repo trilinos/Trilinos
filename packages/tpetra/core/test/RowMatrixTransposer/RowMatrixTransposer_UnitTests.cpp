@@ -54,7 +54,6 @@ namespace {
   using Teuchos::ScalarTraits;
 
   using Tpetra::CrsMatrix;
-  using Tpetra::createCrsMatrix;
   using Tpetra::createUniformContigMapWithNode;
   using Tpetra::MatrixMarket::Reader;
   using Tpetra::MatrixMatrix::Add;

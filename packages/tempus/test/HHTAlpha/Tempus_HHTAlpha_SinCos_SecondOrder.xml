@@ -41,6 +41,7 @@
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="HHT-Alpha"/>
+      <Parameter name="Use FSAL"       type="bool" value="true"/>
       <ParameterList name="HHT-Alpha Parameters">
         <Parameter name="Scheme Name"    type="string" value="Newmark Beta Average Acceleration"/>
       </ParameterList>

@@ -293,16 +293,12 @@ namespace {
     testIallreduce<short, device_type> (success, out, "short", deviceTypeName, lclNumPackets, comm);
     testIallreduce<int, device_type> (success, out, "int", deviceTypeName, lclNumPackets, comm);
     testIallreduce<long, device_type> (success, out, "long", deviceTypeName, lclNumPackets, comm);
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
     testIallreduce<long long, device_type> (success, out, "long long", deviceTypeName, lclNumPackets, comm);
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
     testIallreduce<unsigned short, device_type> (success, out, "unsigned short", deviceTypeName, lclNumPackets, comm);
     testIallreduce<unsigned int, device_type> (success, out, "unsigned int", deviceTypeName, lclNumPackets, comm);
     testIallreduce<unsigned long, device_type> (success, out, "unsigned long", deviceTypeName, lclNumPackets, comm);
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
     testIallreduce<unsigned long long, device_type> (success, out, "unsigned long long", deviceTypeName, lclNumPackets, comm);
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
     testIallreduce<float, device_type> (success, out, "float", deviceTypeName, lclNumPackets, comm);
     testIallreduce<double, device_type> (success, out, "double", deviceTypeName, lclNumPackets, comm);

@@ -257,9 +257,9 @@ template <typename Adapter>
 template <typename AdapterWithCoords>
 void CoordinateModel<Adapter>::sharedConstructor(
     const AdapterWithCoords *ia,
-    const RCP<const Environment> &env,
+    const RCP<const Environment> &/* env */,
     const RCP<const Comm<int> > &comm,
-    modelFlag_t &flags)
+    modelFlag_t &/* flags */)
 {
   size_t nLocalIds = ia->getLocalNumIDs();
 

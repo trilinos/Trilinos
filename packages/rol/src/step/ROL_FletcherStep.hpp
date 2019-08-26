@@ -50,7 +50,6 @@
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_ParameterList.hpp"
-
 /** @ingroup step_group
     \class ROL::FletcherStep
     \brief Provides the interface to compute Fletcher steps.

@@ -155,13 +155,13 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 /// \param exportLIDs [in] Local indices of the rows to pack.
 ///
 /// \param constantNumPackets [out] Same as the constantNumPackets
-///   output argument of Tpetra::DistObject::packAndPrepareNew (which
+///   output argument of Tpetra::DistObject::packAndPrepare (which
 ///   see).
 ///
 /// \param distor [in] (Not used.)
 ///
 /// This method implements CrsMatrix::packNew, and thus
-/// CrsMatrix::packAndPrepareNew, for the case where the matrix to
+/// CrsMatrix::packAndPrepare, for the case where the matrix to
 /// pack has a valid KokkosSparse::CrsMatrix.
 template<typename ST, typename LO, typename GO, typename NT>
 void

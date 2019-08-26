@@ -113,7 +113,7 @@ STK_Interface::STK_Interface(unsigned dim)
    entity_rank_names.push_back("FAMILY_TREE");
 
    metaData_ = rcp(new stk::mesh::MetaData(dimension_,entity_rank_names));
-
+   
    initializeFromMetaData();
 }
 
@@ -145,7 +145,6 @@ void STK_Interface::addNodeset(const std::string & name)
 
 void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId)
 {
-   TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
                       "Unknown element block \"" << blockId << "\"");
    std::pair<std::string,std::string> key = std::make_pair(fieldName,blockId);
@@ -155,13 +154,17 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
       SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::NODE_RANK, fieldName);
       if(field==0)
          field = &metaData_->declare_field<SolutionFieldType>(stk::topology::NODE_RANK, fieldName);
+      if ( initialized_ )  {
+        metaData_->enable_late_fields();
+        stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol ); 
+      }
       fieldNameToSolution_[key] = field;
    }
 }
 
 void STK_Interface::addCellField(const std::string & fieldName,const std::string & blockId)
 {
-   TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
                       "Unknown element block \"" << blockId << "\"");
    std::pair<std::string,std::string> key = std::make_pair(fieldName,blockId);
@@ -171,6 +174,12 @@ void STK_Interface::addCellField(const std::string & fieldName,const std::string
       SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, fieldName);
       if(field==0)
          field = &metaData_->declare_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, fieldName);
+
+      if ( initialized_ )  {
+        metaData_->enable_late_fields();
+        stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol ); 
+      }
       fieldNameToCellField_[key] = field;
    }
 }
@@ -897,7 +906,7 @@ void STK_Interface::buildMaxEntityIds()
 {
    // developed to mirror "comm_mesh_counts" in stk_mesh/base/Comm.cpp
 
-   const unsigned entityRankCount =  metaData_->entity_rank_count();
+   const auto entityRankCount =  metaData_->entity_rank_count();
    const size_t   commCount        = 10; // entityRankCount
 
    TEUCHOS_ASSERT(entityRankCount<10);
@@ -909,7 +918,8 @@ void STK_Interface::buildMaxEntityIds()
 
    // determine maximum ID for this processor for each entity type
    stk::mesh::Selector ownedPart = metaData_->locally_owned_part();
-   for(stk::mesh::EntityRank i=stk::topology::NODE_RANK; i<entityRankCount; ++i) {
+   for(stk::mesh::EntityRank i=stk::topology::NODE_RANK;
+       i < static_cast<stk::mesh::EntityRank>(entityRankCount); ++i) {
       std::vector<stk::mesh::Entity> entities;
 
       stk::mesh::get_selected_entities(ownedPart,bulkData_->buckets(i),entities);
@@ -1222,7 +1232,7 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
 
    stk::mesh::Part * block = metaData_->get_part(name);
    if(block==0) {
-     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(shards::CellTopology(ctData)));
+     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
    }
 
    // construct cell topology object for this block

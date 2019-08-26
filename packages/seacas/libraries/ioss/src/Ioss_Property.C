@@ -33,6 +33,7 @@
 #include <Ioss_Property.h>
 #include <Ioss_Utils.h>
 #include <cstddef>
+#include <fmt/ostream.h>
 #include <ostream>
 #include <string>
 
@@ -52,9 +53,10 @@ namespace {
   void error_message(const Ioss::Property &property, const std::string &requested_type)
   {
     std::ostringstream errmsg;
-    errmsg << "ERROR: For property named '" << property.get_name()
-           << "', code requested value of type '" << requested_type << "', but property type is '"
-           << type_string(property.get_type()) << "'. Types must match\n";
+    fmt::print(errmsg,
+               "ERROR: For property named '{}', code requested value of type '{}', but property "
+               "type is '{}'. Types must match\n",
+               property.get_name(), requested_type, type_string(property.get_type()));
     IOSS_ERROR(errmsg);
   }
 } // namespace
@@ -153,10 +155,8 @@ Ioss::Property::Property(const Ioss::GroupingEntity *ge, std::string name, const
  *  \param[in] from The Ioss::Property to copy
  */
 Ioss::Property::Property(const Ioss::Property &from)
+    : name_(from.name_), type_(from.type_), isImplicit_(from.isImplicit_)
 {
-  name_       = from.name_;
-  type_       = from.type_;
-  isImplicit_ = from.isImplicit_;
   if (!isImplicit_ && type_ == STRING) {
     data_.sval = new std::string(*(from.data_.sval));
   }

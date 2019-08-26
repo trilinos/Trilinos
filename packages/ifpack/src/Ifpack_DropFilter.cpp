@@ -184,8 +184,8 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
 //==============================================================================
 int Ifpack_DropFilter::
-Solve(bool Upper, bool Trans, bool UnitDiagonal,
-      const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+Solve(bool /* Upper */, bool /* Trans */, bool /* UnitDiagonal */,
+      const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   IFPACK_CHK_ERR(-99);
 }
@@ -200,19 +200,19 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
 //==============================================================================
 int Ifpack_DropFilter::
-ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+ApplyInverse(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   IFPACK_CHK_ERR(-99);
 }
 
 //==============================================================================
-int Ifpack_DropFilter::InvRowSums(Epetra_Vector& x) const
+int Ifpack_DropFilter::InvRowSums(Epetra_Vector& /* x */) const
 {
   IFPACK_CHK_ERR(-1);
 }
 
 //==============================================================================
-int Ifpack_DropFilter::InvColSums(Epetra_Vector& x) const
+int Ifpack_DropFilter::InvColSums(Epetra_Vector& /* x */) const
 {
   IFPACK_CHK_ERR(-1);
 }

@@ -1,6 +1,10 @@
 #include "mpi.h"
 #include <iosfwd>
 #include <vector>
+#include <stk_util/stk_config.h>
+
+#if defined(STK_HAVE_BOOSTLIB)
+
 #include <stk_tools/block_extractor/ParseCsv.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
@@ -29,4 +33,14 @@ int main(int argc, const char**argv)
     return 0;
 }
 
+#else
+
+int main(int argc, const char**argv)
+{
+  std::cerr<<"ERROR, stk_block_extractor requires that Trilinos was configured with -DTPL_ENABLE_BoostLib:BOOL=ON"
+           << std::endl;
+  return -1;
+}
+
+#endif
 

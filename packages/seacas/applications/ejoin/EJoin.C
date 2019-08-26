@@ -29,30 +29,29 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <exception>
-#include <iomanip>
-#include <iostream>
-#include <iterator>
-#include <map>
-#include <numeric>
-#include <set>
-#include <string>
-#include <vector>
-
+#include <cctype>
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <limits>
-#include <unistd.h>
-
-#include <cctype>
 #include <cstring>
 #include <ctime>
+#include <exception>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <map>
+#include <numeric>
+#include <set>
+#include <string>
 #include <sys/times.h>
 #include <sys/utsname.h>
+#include <unistd.h>
+#include <vector>
 
 #include "add_to_log.h"
+#include "fmt/ostream.h"
 
 #include <exodusII.h>
 
@@ -124,7 +123,7 @@ namespace {
   template <typename T> bool approx_equal(T v1, T v2, T offset)
   {
 #if 1
-    static const T tolerance = 100.0 * std::numeric_limits<float>::epsilon();
+    static const T tolerance = 100.0f * std::numeric_limits<float>::epsilon();
     double         d1        = std::fabs(v1 - v2);
     double         d2        = std::fabs((v1 - offset) + (v2 - offset)) * tolerance;
     return d1 <= d2;
@@ -189,9 +188,6 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
 
-  std::cout.imbue(std::locale(std::locale(), new my_numpunct));
-  std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
-
   try {
     SystemInterface::show_version();
     Ioss::Init::Initializer io;
@@ -200,7 +196,7 @@ int main(int argc, char *argv[])
     bool            ok = interface.parse_options(argc, argv);
 
     if (!ok) {
-      std::cerr << "\nERROR: Problems parsing command line arguments.\n\n";
+      fmt::print(stderr, "\nERROR: Problems parsing command line arguments.\n\n");
       exit(EXIT_FAILURE);
     }
 
@@ -252,7 +248,8 @@ int main(int argc, char *argv[])
       }
 
       // Generate a name for the region based on the part number...
-      std::string name = "p" + std::to_string(p + 1);
+      std::string prefix = interface.block_prefix();
+      std::string name   = prefix + std::to_string(p + 1);
       // NOTE: region owns database pointer at this time...
       part_mesh[p] = new Ioss::Region(dbi[p], name);
 
@@ -301,7 +298,7 @@ int main(int argc, char *argv[])
     return (error);
   }
   catch (std::exception &e) {
-    std::cerr << "ERROR: Standard exception: " << e.what() << '\n';
+    fmt::print(stderr, "ERROR: Standard exception: {}\n", e.what());
   }
 }
 
@@ -345,7 +342,7 @@ double ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh,
   output_region.property_add(Ioss::Property("code_version", qainfo[2]));
 
   if (debug_level & 1) {
-    std::cerr << time_stamp(tsFormat);
+    fmt::print(stderr, "{}", time_stamp(tsFormat));
   }
 
   INT node_offset    = 0;
@@ -385,13 +382,14 @@ double ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh,
   }
   else {
     // Eliminate all nodes that were only connected to the omitted element blocks (if any).
-    eliminate_omitted_nodes(part_mesh, global_node_map, local_node_map);
+    bool fill_global = true;
+    eliminate_omitted_nodes(part_mesh, global_node_map, local_node_map, fill_global);
   }
 
   node_count    = global_node_map.size();
   size_t merged = local_node_map.size() - global_node_map.size();
   if (merged > 0) {
-    std::cout << "*** " << merged << " Nodes were merged/omitted.\n";
+    fmt::print("*** {:n} Nodes were merged/omitted.\n", merged);
   }
 
 // Verify nodemap...
@@ -473,7 +471,7 @@ double ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh,
   // 9. Get Variable Information and names
 
   if (debug_level & 1) {
-    std::cerr << time_stamp(tsFormat);
+    fmt::print(stderr, "{}", time_stamp(tsFormat));
   }
 
   output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
@@ -513,16 +511,18 @@ double ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh,
       }
       else {
         if (global_times.size() != times.size()) {
-          std::cerr << "ERROR: Time step sizes must match.";
+          fmt::print(stderr, "ERROR: Time step sizes must match.");
           SMART_ASSERT(global_times.size() == times.size())(global_times.size())(times.size())(p);
           exit(EXIT_FAILURE);
         }
 
         for (size_t i = 0; i < global_times.size(); i++) {
           if (!approx_equal(global_times[i], times[i], global_times[0])) {
-            std::cerr << "ERROR: Time step " << i + 1 << " in part " << p + 1
-                      << " does not match time steps in previous part(s): previous: "
-                      << global_times[i] << ", current: " << times[i] << "\n";
+            fmt::print(stderr,
+                       "ERROR: Time step {} in part {} does not match time steps in previous "
+                       "part(s): previous: "
+                       "{}, current: {}\n",
+                       i + 1, p + 1, global_times[i], times[i]);
             exit(EXIT_FAILURE);
           }
         }
@@ -531,7 +531,7 @@ double ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh,
   }
 
   output_region.begin_mode(Ioss::STATE_TRANSIENT);
-  std::cout << "\n";
+  fmt::print("\n");
   int ts_min    = interface.step_min();
   int ts_max    = interface.step_max();
   int ts_step   = interface.step_interval();
@@ -543,36 +543,32 @@ double ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh,
   }
   ts_max = ts_max < num_steps ? ts_max : num_steps;
 
-  std::ios::fmtflags f(std::cout.flags());
-  double             ts_begin = Ioss::Utils::timer();
-  int                steps    = 0;
-  int                nsteps   = (ts_max - ts_min + 1) / ts_step;
+  double ts_begin = Ioss::Utils::timer();
+  int    steps    = 0;
+  int    nsteps   = (ts_max - ts_min + 1) / ts_step;
   for (int step = ts_min - 1; step < ts_max; step += ts_step) {
     int ostep = output_region.add_state(global_times[step]);
     output_region.begin_state(ostep);
     output_transient_state(output_region, part_mesh, global_times[step], local_node_map, interface);
-    std::cout << "\rWrote step " << std::setw(4) << step + 1 << "/" << nsteps << ", time "
-              << std::scientific << std::setprecision(4) << global_times[step];
+    fmt::print("\rWrote step {:4}/{:4}, time {}", step + 1, nsteps, global_times[step]);
     output_region.end_state(ostep);
     steps++;
   }
   double end = Ioss::Utils::timer();
-  std::cout << "\n";
-  std::cout.flags(f);
+  fmt::print("\n");
   output_region.end_mode(Ioss::STATE_TRANSIENT);
 
   /*************************************************************************/
   // EXIT program
   if (debug_level & 1) {
-    std::cerr << time_stamp(tsFormat);
+    fmt::print(stderr, "{}", time_stamp(tsFormat));
   }
   output_region.output_summary(std::cout);
-  std::cout << "******* END *******\n";
-  std::cerr << "\nTotal Execution time     = " << end - begin << " seconds.\n";
+  fmt::print("******* END *******\n");
+  fmt::print(stderr, "\nTotal Execution time     = {} seconds.\n", end - begin);
   if (steps > 0) {
-    std::cerr << "\tMesh = " << (ts_begin - begin)
-              << " seconds; Timesteps = " << (end - ts_begin) / (double)(steps)
-              << " seconds / step.\n\n";
+    fmt::print(stderr, "\tMesh = {} seconds; Timesteps = {} seconds / step.\n\n",
+               (ts_begin - begin), (end - ts_begin) / (double)(steps));
   }
   return (end - begin);
 }
@@ -600,12 +596,12 @@ namespace {
         if (output_region.get_element_block(name) != nullptr) {
           name = prefix + "_" + eb->name();
           if (output_region.get_element_block(name) != nullptr) {
-            std::cerr << "ERROR: Duplicate element blocks named '" << name << "'\n";
+            fmt::print(stderr, "ERROR: Duplicate element blocks named '{}'\n", name);
             exit(EXIT_FAILURE);
           }
         }
         if (debug) {
-          std::cerr << name << ", ";
+          fmt::print(stderr, "{}, ", name);
         }
         std::string type     = eb->get_property("topology_type").get_string();
         size_t      num_elem = eb->entity_count();
@@ -642,12 +638,12 @@ namespace {
         if (output_region.get_sideset(name) != nullptr) {
           name = prefix + "_" + fs->name();
           if (output_region.get_sideset(name) != nullptr) {
-            std::cerr << "ERROR: Duplicate side sets named '" << name << "'\n";
+            fmt::print(stderr, "ERROR: Duplicate side sets named '{}'\n", name);
             exit(EXIT_FAILURE);
           }
         }
         if (debug) {
-          std::cerr << name << ", ";
+          fmt::print(stderr, "{}, ", name);
         }
         auto surf = new Ioss::SideSet(output_region.get_database(), name);
         set_id(fs, surf);
@@ -656,7 +652,7 @@ namespace {
         for (auto &fb : fbs) {
           const std::string &fbname = prefix + "_" + fb->name();
           if (debug) {
-            std::cerr << fbname << ", ";
+            fmt::print(stderr, "{}, ", fbname);
           }
           std::string fbtype   = fb->get_property("topology_type").get_string();
           std::string partype  = fb->get_property("parent_topology_type").get_string();
@@ -680,11 +676,11 @@ namespace {
 
     std::string name = prefix + "_nodes";
     if (output_region.get_nodeset(name) != nullptr) {
-      std::cerr << "ERROR: Duplicate node sets named '" << name << "'\n";
+      fmt::print(stderr, "ERROR: Duplicate node sets named '{}'\n", name);
       exit(EXIT_FAILURE);
     }
     if (debug) {
-      std::cerr << name << ", ";
+      fmt::print(stderr, "{}, ", name);
     }
     size_t count = region.get_property("node_count").get_int();
     auto   ns    = new Ioss::NodeSet(output_region.get_database(), name, count);
@@ -770,12 +766,12 @@ namespace {
         if (output_region.get_nodeset(name) != nullptr) {
           name = prefix + "_" + ns->name();
           if (output_region.get_nodeset(name) != nullptr) {
-            std::cerr << "ERROR: Duplicate node sets named '" << name << "'\n";
+            fmt::print(stderr, "ERROR: Duplicate node sets named '{}'\n", name);
             exit(EXIT_FAILURE);
           }
         }
         if (debug) {
-          std::cerr << name << ", ";
+          fmt::print(stderr, "{}, ", name);
         }
         size_t count    = ns->entity_count();
         auto   node_set = new Ioss::NodeSet(output_region.get_database(), name, count);
@@ -1030,8 +1026,7 @@ namespace {
     }
   }
 
-  void output_globals(Ioss::Region &output_region, RegionVector &part_mesh, double time,
-                      const IntVector &steps)
+  void output_globals(Ioss::Region &output_region, RegionVector &part_mesh)
   {
     for (const auto &pm : part_mesh) {
       Ioss::NameList fields;
@@ -1117,8 +1112,7 @@ namespace {
     }
   }
 
-  void output_element(Ioss::Region &output_region, RegionVector &part_mesh, double time,
-                      const IntVector &steps)
+  void output_element(Ioss::Region &output_region, RegionVector &part_mesh)
   {
     for (const auto &pm : part_mesh) {
       const Ioss::ElementBlockContainer &iebs = pm->get_element_blocks();
@@ -1144,8 +1138,7 @@ namespace {
     }
   }
 
-  void output_nset(Ioss::Region &output_region, RegionVector &part_mesh, double time,
-                   const IntVector &steps)
+  void output_nset(Ioss::Region &output_region, RegionVector &part_mesh)
   {
     if (output_region.get_nodesets().empty()) {
       return;
@@ -1175,8 +1168,7 @@ namespace {
     }
   }
 
-  void output_sset(Ioss::Region &output_region, RegionVector &part_mesh, double time,
-                   const IntVector &steps)
+  void output_sset(Ioss::Region &output_region, RegionVector &part_mesh)
   {
     const Ioss::SideSetContainer &os = output_region.get_sidesets();
     if (os.empty()) {
@@ -1249,15 +1241,15 @@ namespace {
       }
     }
 
-    output_globals(output_region, part_mesh, time, steps);
+    output_globals(output_region, part_mesh);
     output_nodal(output_region, part_mesh, local_node_map, interface);
-    output_element(output_region, part_mesh, time, steps);
+    output_element(output_region, part_mesh);
     output_nodal_nodeset_fields(output_region, part_mesh, interface);
     if (!interface.omit_nodesets()) {
-      output_nset(output_region, part_mesh, time, steps);
+      output_nset(output_region, part_mesh);
     }
     if (!interface.omit_sidesets()) {
-      output_sset(output_region, part_mesh, time, steps);
+      output_sset(output_region, part_mesh);
     }
 
     for (size_t p = 0; p < part_mesh.size(); p++) {
@@ -1298,9 +1290,8 @@ namespace {
         continue;
       }
 
-      if (field_name != "ids" &&
-          (prefix.length() == 0 ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+      if (field_name != "ids" && (prefix.empty() || std::strncmp(prefix.c_str(), field_name.c_str(),
+                                                                 prefix.length()) == 0)) {
         if (oge->field_exists(field_name)) {
           transfer_field_data_internal(ige, oge, field_name);
         }
@@ -1486,7 +1477,7 @@ namespace {
     // whose names begin with the prefix
     for (const auto &field_name : fields) {
       if (field_name != "ids" && !oge->field_exists(field_name) &&
-          (prefix.length() == 0 ||
+          (prefix.empty() ||
            std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
         // If the field does not already exist, add it to the output node block
         Ioss::Field field = ige->get_field(field_name);

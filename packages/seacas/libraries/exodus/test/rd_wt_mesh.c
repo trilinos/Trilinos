@@ -37,10 +37,6 @@
 #define _LARGEFILE_SOURCE
 #define _LARGE_FILES 1
 
-#if defined(__LIBCATAMOUNT__)
-#include <catamount/dclock.h>
-#endif
-
 #ifdef PARALLEL_AWARE_EXODUS
 #include <mpi.h>
 #else
@@ -72,7 +68,7 @@
 #define EBLK_ID 100000
 
 /*
- *	Prototypes
+ *      Prototypes
  */
 
 typedef double realtyp;
@@ -98,17 +94,11 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
 
 double my_timer()
 {
-  double t1 = 0.0;
-
-#if !defined(__LIBCATAMOUNT__)
 #ifdef PARALLEL_AWARE_EXODUS
-  t1 = MPI_Wtime();
+  double t1 = MPI_Wtime();
 #else
-  clock_t ctime = clock();
-  t1            = ctime / (double)CLOCKS_PER_SEC;
-#endif
-#else
-  return dclock();
+  clock_t ctime     = clock();
+  double  t1        = ctime / (double)CLOCKS_PER_SEC;
 #endif
   return t1;
 }
@@ -127,15 +117,14 @@ int main(int argc, char **argv)
   int *loc_connect = NULL;
 
 #ifdef PARALLEL_AWARE_EXODUS
-  MPI_Info mpi_info_object = MPI_INFO_NULL; /* Copy of MPI Info object.		*/
+  MPI_Info mpi_info_object = MPI_INFO_NULL; /* Copy of MPI Info object.         */
 #endif
-  int *elem_map    = NULL;
-  int  exodus      = EX_TRUE; /* EX_TRUE, perform EXODUS benchmark; EX_FALSE don't */
-  int  close_files = EX_FALSE;
-  char file_name[MAX_STRING_LEN] =
-      DEFAULT_FILE_NAME; /* Input file name.				*/
-  /* object, EX_FALSE otherwise. Should always be	*/
-  /* EX_TRUE in the current implementation.		*/
+  int *elem_map                  = NULL;
+  int  exodus                    = EX_TRUE; /* EX_TRUE, perform EXODUS benchmark; EX_FALSE don't */
+  int  close_files               = EX_FALSE;
+  char file_name[MAX_STRING_LEN] = DEFAULT_FILE_NAME; /* Input file name. */
+  /* object, EX_FALSE otherwise. Should always be       */
+  /* EX_TRUE in the current implementation.             */
   int num_nodal_fields   = DEFAULT_NUM_FIELDS;
   int num_global_fields  = DEFAULT_NUM_FIELDS;
   int num_element_fields = DEFAULT_NUM_FIELDS;
@@ -144,28 +133,28 @@ int main(int argc, char **argv)
   int files_per_domain   = 1;
   int num_iterations     = DEFAULT_NUM_ITERATIONS;
 #ifdef PARALLEL_AWARE_EXODUS
-  static const char *hints[] = {
-      /* List of MPI Info hints that if defined in	*/
-      "cb_buffer_size",     /* the environment process 0, will be used to	*/
-      "cb_nodes",           /* set key/value pairs in the MPI	*/
-      "ind_rd_buffer_size", /* Info object.					*/
-      "ind_wr_buffer_size", "cb_config_list", "romio_cb_read",    "romio_cb_write",
-      "romio_ds_read",      "romio_ds_write", "romio_no_indep_rw"};
-  char      key_name[MAX_STRING_LEN]; /* MPI Info object key name.			*/
-  int       key;                      /* MPI Info object key index.			*/
-  int       key_exists;               /* EX_TRUE, if the key exists in the MPI Info	*/
-  const int nhints = 10;              /* Number of items in hints list.		*/
-  int       nkeys;                    /* Number of keys in a MPI Info object.		*/
-  char      value[MAX_STRING_LEN];    /* Value of a key/value pair in a MPI Info	*/
+  static const char *hints[] = {/* List of MPI Info hints that if defined in      */
+                                "cb_buffer_size", /* the environment process 0, will be used to */
+                                "cb_nodes",       /* set key/value pairs in the MPI   */
+                                "ind_rd_buffer_size", /* Info object. */
+                                "ind_wr_buffer_size", "cb_config_list", "romio_cb_read",
+                                "romio_cb_write",     "romio_ds_read",  "romio_ds_write",
+                                "romio_no_indep_rw"};
+  char               key_name[MAX_STRING_LEN]; /* MPI Info object key name.                      */
+  int                key;                      /* MPI Info object key index.                     */
+  int                key_exists;               /* EX_TRUE, if the key exists in the MPI Info     */
+  const int          nhints = 10;              /* Number of items in hints list.         */
+  int                nkeys;                    /* Number of keys in a MPI Info object.           */
+  char               value[MAX_STRING_LEN];    /* Value of a key/value pair in a MPI Info        */
 #endif
-  /* object.					*/
+  /* object.                                    */
   realtyp *x_coords = NULL;
   realtyp *y_coords = NULL;
   realtyp *z_coords = NULL;
   int      ndim;
 
   /*
-   *	Initialize Stuff
+   *    Initialize Stuff
    */
 
   ex_opts(EX_VERBOSE | EX_ABORT);
@@ -183,7 +172,7 @@ int main(int argc, char **argv)
   num_domains       = 1;
 #endif
   /*
-   *	Processor 0: parse the command line arguments.
+   *    Processor 0: parse the command line arguments.
    */
 
   if (rank == 0) {
@@ -193,7 +182,7 @@ int main(int argc, char **argv)
   }
 
   /*
-   *	Broadcast Input
+   *    Broadcast Input
    */
 
 #ifdef PARALLEL_AWARE_EXODUS
@@ -233,7 +222,7 @@ int main(int argc, char **argv)
       if (rank == 0) {
         env = getenv(hints[hint]);
         if (env != NULL)
-          strcpy(hint_value, env);
+          ex_copy_string(hint_value, env, MAX_STRING_LEN);
         else
           hint_value[0] = 0;
       }
@@ -308,7 +297,7 @@ int parse_input(int argc, char *argv[], int *exodus, int *close_files, char *fil
                 int *num_nodal_fields, int *num_global_fields, int *num_element_fields,
                 int *files_per_domain, int *num_iterations, int *sleep_time)
 {
-  int arg = 0; /* Argument index.	*/
+  int arg = 0; /* Argument index.       */
 
   while (++arg < argc) {
     if (strcmp("-c", argv[arg]) == 0) {
@@ -333,7 +322,7 @@ int parse_input(int argc, char *argv[], int *exodus, int *close_files, char *fil
     }
     else if (strcmp("-f", argv[arg]) == 0) {
       if (++arg < argc) {
-        strcpy(file_name, argv[arg]);
+        ex_copy_string(file_name, argv[arg], MAX_STRING_LEN);
       }
     }
     else if (strcmp("-M", argv[arg]) == 0) {
@@ -525,13 +514,13 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     /* read element and node maps */
     t_tmp1 = my_timer();
 
-    err    = ex_get_id_map(exoid, EX_NODE_MAP, *node_map);
+    ex_get_id_map(exoid, EX_NODE_MAP, *node_map);
     t_tmp2 = my_timer();
     raw_data_vol += sizeof(int) * (*num_nodes);
     raw_read_time += t_tmp2 - t_tmp1;
 
     t_tmp1 = my_timer();
-    err    = ex_get_id_map(exoid, EX_ELEM_MAP, *elem_map);
+    ex_get_id_map(exoid, EX_ELEM_MAP, *elem_map);
     t_tmp2 = my_timer();
     raw_data_vol += sizeof(int) * (*num_elems);
     raw_read_time += t_tmp2 - t_tmp1;
@@ -547,7 +536,6 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     *num_nodal_fields = num_vars;
 
     err = ex_get_variable_param(exoid, EX_GLOBAL, &num_vars);
-
     if (err) {
       printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
@@ -560,10 +548,11 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     }
 
     err = ex_get_variable_param(exoid, EX_ELEM_BLOCK, &num_vars);
-
     if (err) {
       printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
+      if (globals)
+        free(globals);
       return (1);
     }
     *num_element_fields = num_vars;
@@ -679,10 +668,10 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
   glob_raw_data_vol = raw_data_vol;
 #endif
   /*
-   *	Get File Sizes
+   *    Get File Sizes
    *
-   *	Note: On ASCI Red, a specialized "stat", named "estat", was added to
-   *	accommodate file sizes up to 16GB.                          3/27/2002
+   *    Note: On ASCI Red, a specialized "stat", named "estat", was added to
+   *    accommodate file sizes up to 16GB.                          3/27/2002
    */
 
   if (stat(tmp_name, &file_status)) {
@@ -777,10 +766,8 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
   char **nvar_name = NULL;
   char **evar_name = NULL;
 
-  int *exoid = NULL;
-  exoid      = malloc(files_per_domain * sizeof(int));
+  int *exoid = malloc(files_per_domain * sizeof(int));
 
-  raw_open_close_time = 0.0;
   for (iter = 0; iter < num_iterations; iter++) {
     if (!close_files) {
       t_tmp1 = my_timer();
@@ -836,17 +823,17 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
 
 #if 0
       {
-	int ids[1] = {EBLK_ID};
-	int num_elem_per_block[1];
-	char *names[1] = {"hex"};
-	int num_node_per_elem[1];
-	int num_attr_per_block[1];
-	int write_map = num_domains > 1 ? EX_TRUE : EX_FALSE;
-	num_elem_per_block[0] = num_elems;
-	num_node_per_elem[0]  = NUM_NODES_PER_ELEM;
-	num_attr_per_block[0] = 0;
-	err = ex_put_concat_elem_block (exoid[npd], ids, names, num_elem_per_block,
-					num_node_per_elem, num_attr_per_block, write_map);
+        int ids[1] = {EBLK_ID};
+        int num_elem_per_block[1];
+        char *names[1] = {"hex"};
+        int num_node_per_elem[1];
+        int num_attr_per_block[1];
+        int write_map = num_domains > 1 ? EX_TRUE : EX_FALSE;
+        num_elem_per_block[0] = num_elems;
+        num_node_per_elem[0]  = NUM_NODES_PER_ELEM;
+        num_attr_per_block[0] = 0;
+        err = ex_put_concat_elem_block (exoid[npd], ids, names, num_elem_per_block,
+                                        num_node_per_elem, num_attr_per_block, write_map);
       }
 #else
       err = ex_put_block(exoid[npd], EX_ELEM_BLOCK, EBLK_ID, "hex", num_elems, NUM_NODES_PER_ELEM,
@@ -1161,10 +1148,10 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
   glob_raw_data_vol = raw_data_vol;
 #endif
   /*
-   *	Get File Sizes
+   *    Get File Sizes
    *
-   *	Note: On ASCI Red, a specialized "stat", named "estat", was added to
-   *	accommodate file sizes up to 16GB.                          3/27/2002
+   *    Note: On ASCI Red, a specialized "stat", named "estat", was added to
+   *    accommodate file sizes up to 16GB.                          3/27/2002
    */
 
   if (stat(tmp_name, &file_status)) {
@@ -1232,7 +1219,7 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
   char cTemp[128];
 
   output[0] = '\0';
-  strcpy(output, base);
+  ex_copy_string(output, base, MAX_STRING_LEN);
   strcat(output, ".");
   strcat(output, ext);
   if (other != NULL) {

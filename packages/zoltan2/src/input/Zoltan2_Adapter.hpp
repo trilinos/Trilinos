@@ -131,7 +131,7 @@ public:
       \param ids will on return point to the list of the global Ids for 
         this process.
    */
-  virtual void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const {
+  virtual void getIDsKokkosView(Kokkos::View<gno_t *> &/* ids */) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -159,8 +159,8 @@ public:
   // *   getNumWeightsPerID > 0.
   // *   This function should not be called if getNumWeightsPerID is zero.
   // */ 
-  virtual void getWeightsKokkosView(Kokkos::View<scalar_t *> &wgt, 
-                              int idx = 0) const {
+  virtual void getWeightsKokkosView(Kokkos::View<scalar_t *> &/* wgt */, 
+                              int /* idx */ = 0) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 

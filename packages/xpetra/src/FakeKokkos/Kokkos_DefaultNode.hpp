@@ -67,8 +67,10 @@ namespace Compat {
 namespace KokkosClassic {
 
   namespace Details {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class NodeType>
     Teuchos::RCP<NodeType> getNode() { return Teuchos::null; }
+#endif
   } //namespace Details
 
   class DefaultNode {

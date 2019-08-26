@@ -39,14 +39,12 @@ namespace tsl {
    * backward shift deletion.
    *
    * For operations modifying the hash map (insert, erase, rehash, ...), the strong exception
-   * guarantee is only guaranteed when the expression
-   * `std::is_nothrow_swappable<std::pair<Key,T>>\:\:value &&
-   * std::is_nothrow_move_constructible<std::pair<Key, T>>\:\:value`
-   * is true, otherwise if an
-   * exception is thrown during the swap or the move, the hash map may end up in a undefined state.
-   * Per the standard a `Key` or `T` with a noexcept copy constructor and no move constructor also
-   * satisfies the `std::is_nothrow_move_constructible<std::pair<Key, T>>\:\:value` criterion (and
-   * will thus guarantee the strong exception for the map).
+   * guarantee is only guaranteed when the expression `std::is_nothrow_swappable<std::pair<Key,
+   * T>>\:\:value && std::is_nothrow_move_constructible<std::pair<Key, T>>\:\:value` is true,
+   * otherwise if an exception is thrown during the swap or the move, the hash map may end up in a
+   * undefined state. Per the standard a `Key` or `T` with a noexcept copy constructor and no move
+   * constructor also satisfies the `std::is_nothrow_move_constructible<std::pair<Key, T>>\:\:value`
+   * criterion (and will thus guarantee the strong exception for the map).
    *
    * When `StoreHash` is true, 32 bits of the hash are stored alongside the values. It can improve
    * the performance during lookups if the `KeyEqual` function takes time (if it engenders a
@@ -135,7 +133,7 @@ namespace tsl {
 
     explicit robin_map(size_type bucket_count, const Hash &hash = Hash(),
                        const KeyEqual &equal = KeyEqual(), const Allocator &alloc = Allocator())
-        : m_ht(bucket_count, hash, equal, alloc, ht::DEFAULT_MAX_LOAD_FACTOR)
+        : m_ht(bucket_count, hash, equal, alloc)
     {
     }
 
@@ -240,7 +238,7 @@ namespace tsl {
 
     iterator insert(const_iterator hint, const value_type &value)
     {
-      return m_ht.insert(hint, value);
+      return m_ht.insert_hint(hint, value);
     }
 
     template <class P, typename std::enable_if<std::is_constructible<value_type, P &&>::value>::type
@@ -252,7 +250,7 @@ namespace tsl {
 
     iterator insert(const_iterator hint, value_type &&value)
     {
-      return m_ht.insert(hint, std::move(value));
+      return m_ht.insert_hint(hint, std::move(value));
     }
 
     template <class InputIt> void insert(InputIt first, InputIt last) { m_ht.insert(first, last); }
@@ -318,13 +316,13 @@ namespace tsl {
     template <class... Args>
     iterator try_emplace(const_iterator hint, const key_type &k, Args &&... args)
     {
-      return m_ht.try_emplace(hint, k, std::forward<Args>(args)...);
+      return m_ht.try_emplace_hint(hint, k, std::forward<Args>(args)...);
     }
 
     template <class... Args>
     iterator try_emplace(const_iterator hint, key_type &&k, Args &&... args)
     {
-      return m_ht.try_emplace(hint, std::move(k), std::forward<Args>(args)...);
+      return m_ht.try_emplace_hint(hint, std::move(k), std::forward<Args>(args)...);
     }
 
     iterator  erase(iterator pos) { return m_ht.erase(pos); }
@@ -632,11 +630,23 @@ namespace tsl {
      *  Hash policy
      */
     float load_factor() const { return m_ht.load_factor(); }
-    float max_load_factor() const { return m_ht.max_load_factor(); }
-    void  max_load_factor(float ml) { m_ht.max_load_factor(ml); }
 
-    void rehash(size_type count_) { m_ht.rehash(count_); }
-    void reserve(size_type count_) { m_ht.reserve(count_); }
+    float min_load_factor() const { return m_ht.min_load_factor(); }
+    float max_load_factor() const { return m_ht.max_load_factor(); }
+
+    /**
+     * Set the `min_load_factor` to `ml`. When the `load_factor` of the map goes
+     * below `min_load_factor` after some erase operations, the map will be
+     * shrunk when an insertion occurs. The erase method itself never shrinks
+     * the map.
+     *
+     * The default value of `min_load_factor` is 0.0f, the map never shrinks by default.
+     */
+    void min_load_factor(float ml) { m_ht.min_load_factor(ml); }
+    void max_load_factor(float ml) { m_ht.max_load_factor(ml); }
+
+    void rehash(size_type count) { m_ht.rehash(count); }
+    void reserve(size_type count) { m_ht.reserve(count); }
 
     /*
      * Observers

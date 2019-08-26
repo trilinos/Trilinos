@@ -64,7 +64,6 @@ namespace {
     return determineLocalTriangularStructure (G_lcl, lclRowMap, lclColMap, true);
   }
 
-  using Tpetra::DynamicProfile;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Teuchos::arcp;
@@ -165,7 +164,7 @@ namespace {
     // has the wrong length, as it does in this case.
     ArrayRCP<size_t> hints = arcp<size_t> (numLocal + 1);
     std::fill (hints.begin (), hints.end (), static_cast<size_t> (1));
-    TEST_THROW( badgraph = rcp (new graph_type (map, hints.persistingView (0, numLocal+1))),
+    TEST_THROW( badgraph = rcp (new graph_type (map, hints (0, numLocal+1))),
                 std::invalid_argument ); // too many entries
 
     // Make sure that the test passed on all processes.
@@ -176,7 +175,7 @@ namespace {
 
     // CrsGraph's constructor should throw if input allocation hint
     // has the wrong length, as it does in this case.
-    TEST_THROW( badgraph = rcp (new graph_type (map, hints.persistingView (0, numLocal-1))),
+    TEST_THROW( badgraph = rcp (new graph_type (map, hints (0, numLocal-1))),
                 std::invalid_argument ); // too few entries
 
     // Make sure that the test passed on all processes.
@@ -190,7 +189,7 @@ namespace {
     // build, but not for a release build.
 
     // hints[0] = Teuchos::OrdinalTraits<size_t>::invalid ();
-    // TEST_THROW( badgraph = rcp (new graph_type (map, hints.persistingView (0, numLocal))),
+    // TEST_THROW( badgraph = rcp (new graph_type (map, hints (0, numLocal))),
     //             std::invalid_argument ); // invalid value
 
     // // Make sure that the test passed on all processes.
@@ -288,6 +287,7 @@ namespace {
       TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
     }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     // Test (GitHub Issue) #2565 fix, while we're at it.
     //
     // clts == 0: Don't set "compute local triangular constants"
@@ -304,7 +304,7 @@ namespace {
       }
 
       // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph (map, 3, DynamicProfile);
+      GRPH graph (map, 3, Tpetra::DynamicProfile);
       for (GO i = map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
         graph.insertGlobalIndices (i, tuple<GO> (i));
       }
@@ -322,7 +322,7 @@ namespace {
       TEST_EQUALITY_CONST(graph.getProfileType(), StaticProfile);
       TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
     }
-
+#endif
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -443,7 +443,12 @@ namespace {
       }
 
       for (int T=0; T<4; ++T) {
-        ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+        ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : Tpetra::DynamicProfile;
+#else
+        if ( (T & 1) != 1 ) continue;
+        ProfileType pftype = StaticProfile;
+#endif
         params->set("Optimize Storage",((T & 2) == 2));
         GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
         Array<GO> GCopy(4); Array<LO> LCopy(4);
@@ -573,8 +578,8 @@ namespace {
 
         RCP<row_graph_type> test_row;
         {
-          // allocate with no space
-          RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 0));
+          // allocate 
+          RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 1));
           // invalid, because none are allocated yet
           TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV );
           if (myRank != 1) {
@@ -837,7 +842,12 @@ namespace {
     GO mymiddle = map->getGlobalElement(1);  // get my middle row
 
     for (int T=0; T<4; ++T) {
-      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : Tpetra::DynamicProfile;
+#else
+      if ( (T & 1) != 1 ) continue;
+      ProfileType pftype = StaticProfile;
+#endif
       RCP<ParameterList> params = parameterList ();
       params->set("Optimize Storage",((T & 2) == 2));
 
@@ -855,7 +865,7 @@ namespace {
         }
         // create a diagonal graph, but where only my middle row has an entry
         ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
-        GRAPH ddgraph(map,toalloc,pftype);
+        GRAPH ddgraph(map, toalloc (), pftype);
         ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
         // before globalAssemble(), there should be one local entry on middle, none on the others
         ArrayView<const GO> myrow_gbl;
@@ -937,10 +947,18 @@ namespace {
       }
       Teuchos::OSTab tab1 (out);
 
-      for (ProfileType pftype : {StaticProfile, DynamicProfile}) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      const Tpetra::ProfileType profileTypes[2] =
+        {Tpetra::DynamicProfile, Tpetra::StaticProfile};
+#else
+      const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
+#endif
+      for (ProfileType pftype : profileTypes) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
         out << "ProfileType: "
             << (pftype == StaticProfile ? "StaticProfile" : "DynamicProfile")
             << endl;
+#endif
         Teuchos::OSTab tab2 (out);
         for (bool optimizeStorage : {false, true}) {
           out << "Optimize Storage: " << (optimizeStorage ? "true" : "false")
@@ -1042,13 +1060,17 @@ namespace {
             // entry on parallel runs, three on serial runs
             ArrayView<const GO> myrow_gbl;
             ngraph.getGlobalRowView (myrowind, myrow_gbl);
-            TEST_EQUALITY_CONST( myrow_gbl.size(), (numProcs == 1 ? 3 : 1) );
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+            TEST_EQUALITY_CONST( myrow_gbl.size(),
+              ( numProcs == 1 && pftype == Tpetra::DynamicProfile ? 3 : 1 ));
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
             // after globalAssemble(), storage should be maxed out
             out << "Calling globalAssemble()" << endl;
             ngraph.globalAssemble();
             TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0),
-                           ngraph.getNumAllocatedEntriesInLocalRow(0) );
+                          ( numProcs == 1 && pftype == StaticProfile ? 1 :
+                            ngraph.getNumAllocatedEntriesInLocalRow(0) ));
             out << "Calling fillComplete(params)" << endl;
             ngraph.fillComplete (params);
 
@@ -1111,157 +1133,6 @@ namespace {
   }
 
 
-  ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, NodeConversion, LO, GO, N2 )
-  {
-    using std::cerr;
-    using std::endl;
-    using Teuchos::REDUCE_MIN;
-    using N1 = Tpetra::Map<>::node_type; // default Tpetra Node type
-    using Map1 = Tpetra::Map<LO, GO, N1>;
-    using Graph1 = Tpetra::CrsGraph<LO, GO, N1>;
-    using Graph2 = Tpetra::CrsGraph<LO, GO, N2>;
-
-    out << "Tpetra test: CrsGraph, NodeConversion" << endl;
-    Teuchos::OSTab tab0 (out);
-
-    // create a comm
-    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-    const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
-    out << "Number of processes: " << numProcs << endl;
-
-    const size_t numLocal = 10;
-    const GST numGlobal = numProcs*numLocal;
-
-    // create a contiguous uniform distributed map with numLocal entries per node
-    out << "Creating Map" << endl;
-    RCP<const Map1> map1 = rcp (new Map1 (numGlobal,0,comm));
-    out << "Creating CrsGraph" << endl;
-    RCP<Graph1>       A1 = createCrsGraph(map1,3);
-    RCP<N2> n2; // this can be null; we keep it to help type deduction
-
-    // empty source, not filled
-
-    {
-      out << "Testing clone (1)" << endl;
-
-      RCP<ParameterList> plClone = parameterList();
-      // default: plClone->set("fillComplete clone",true);
-      RCP<Graph2> A2;
-      try {
-        A2 = A1->template clone<N2> (n2, plClone);
-      } catch (std::exception& e) {
-        std::ostringstream err;
-        err << "Process " << myRank << ": clone raised exception: "
-            << e.what () << endl;
-        cerr << err.str ();
-      }
-
-      int lclSuccess = (success && ! A2.is_null ()) ? 1 : 0;
-      int gblSuccess = 1;
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-
-      if (gblSuccess == 1) {
-        out << "Clone succeeded on all processes!" << endl;
-      } else {
-        out << "Clone FAILED on at least one process!" << endl;
-      }
-      TEST_EQUALITY_CONST( gblSuccess , 1)
-
-      if (gblSuccess == 1 && ! A2.is_null ()) {
-        out << "Testing status of newly created graph" << endl;
-        TEST_EQUALITY_CONST( A2->isFillComplete(), true );
-        TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
-        TEST_EQUALITY_CONST( A2->getNodeNumEntries(), (size_t)0 );
-        TEST_EQUALITY_CONST( A2->getNodeAllocationSize(), (size_t)0 );
-      }
-    }
-
-    out << "Filling graph" << endl;
-    // one entry per row
-    for (GO grow =map1->getMinGlobalIndex();
-            grow<=map1->getMaxGlobalIndex();
-            ++grow)
-    {
-      if (grow == map1->getMinGlobalIndex())      A1->insertGlobalIndices(grow, tuple<GO>(grow,grow+1));
-      else if (grow == map1->getMaxGlobalIndex()) A1->insertGlobalIndices(grow, tuple<GO>(grow-1,grow));
-      else                                        A1->insertGlobalIndices(grow, tuple<GO>(grow-1,grow,grow+1));
-    }
-    // source has global indices, not filled, dynamic profile
-    out << "Testing clone (2)" << endl;
-    {
-      RCP<ParameterList> plClone = parameterList();
-      plClone->set("fillComplete clone",false);
-      plClone->set("Static profile clone",false);
-      // default: plClone->set("Locally indexed clone",false);
-      RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
-      TEST_EQUALITY_CONST( A2->hasColMap(), false );
-      TEST_EQUALITY_CONST( A2->isFillComplete(), false );
-      TEST_EQUALITY_CONST( A2->isGloballyIndexed(), true );
-      TEST_EQUALITY_CONST( A2->getNodeAllocationSize(), (size_t)(numLocal*3-2) );
-      TEST_EQUALITY( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
-      TEST_NOTHROW( A2->insertGlobalIndices( map1->getMaxGlobalIndex(), tuple<GO>(map1->getMinGlobalIndex()) ) );
-      TEST_NOTHROW( A2->insertGlobalIndices( map1->getMinGlobalIndex(), tuple<GO>(map1->getMaxGlobalIndex()) ) );
-      TEST_NOTHROW( A2->fillComplete() );
-      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+2 );
-    }
-
-    // source has local indices
-    out << "Calling fillComplete on original" << endl;
-    A1->fillComplete();
-
-    out << "Testing clone (3)" << endl;
-    {
-      RCP<ParameterList> plClone = parameterList();
-      plClone->set("Static profile clone", false);
-      RCP<ParameterList> plCloneFill = sublist(plClone,"fillComplete");
-      plCloneFill->set("Optimize Storage",false);
-      RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
-
-      out << "Finished clone; testing result" << endl;
-      TEST_EQUALITY_CONST( A2->isFillComplete(), true );
-      TEST_EQUALITY_CONST( A2->isStorageOptimized(), false );
-      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
-
-      out << "Calling resumeFill on result of clone" << endl;
-      A2->resumeFill();
-
-      out << "Filling result of clone" << endl;
-      for (LO lrow = map1->getMinLocalIndex();
-              lrow < map1->getMaxLocalIndex()-1;
-              ++lrow)
-      {
-        TEST_NOTHROW( A2->insertLocalIndices(lrow, tuple<LO>(lrow+2)) );
-      }
-      out << "Calling fillComplete on result of clone" << endl;
-      A2->fillComplete();
-
-      // Call computeGlobal constants multiple times to make sure nothing crashes
-      A2->computeGlobalConstants();
-      A2->computeGlobalConstants();
-      A2->computeGlobalConstants();
-
-
-      out << "Testing result of clone" << endl;
-      TEST_EQUALITY_CONST( A2->isFillComplete(), true );
-      TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
-      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+numLocal-2 );
-    }
-
-    {
-      int lclSuccess = success ? 1 : 0;
-      int gblSuccess = 1;
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY_CONST( gblSuccess , 1)
-      if (gblSuccess == 1) {
-        out << "Test succeeded on all processes!" << endl;
-      } else {
-        out << "Test FAILED on at least one process!" << endl;
-      }
-    }
-  }
-
 //
 // INSTANTIATIONS
 //
@@ -1279,12 +1150,6 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag,        LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews,    LO, GO, NODE )
-
-// Test(s) for "Node conversion" (i.e., the clone() template method of
-// CrsGraph).  We will instantiate them over all enabled Kokkos Node
-// (N2) types.
-#define NC_TESTS(N2)
-  //    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )
 
 // mfh 05 Apr 2013: CrsGraph only tests for bad nonowned GIDs in a
 // debug build.  The BadGIDs test fails in a release build.
@@ -1306,7 +1171,4 @@ namespace {
 
     TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DEBUG_ONLY )
 
-    TPETRA_INSTANTIATE_N(NC_TESTS)
 }
-
-

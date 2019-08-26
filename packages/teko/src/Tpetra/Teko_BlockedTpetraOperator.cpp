@@ -177,7 +177,6 @@ void BlockedTpetraOperator::WriteBlocks(const std::string & prefix) const
    }
 }
 
-#ifndef Teko_DEBUG_OFF
 bool BlockedTpetraOperator::testAgainstFullOperator(int count,ST tol) const
 {
    Tpetra::Vector<ST,LO,GO,NT> xf(getRangeMap());
@@ -207,7 +206,6 @@ bool BlockedTpetraOperator::testAgainstFullOperator(int count,ST tol) const
 
    return result;
 }
-#endif
 
 } // end namespace TpetraHelpers
 } // end namespace Teko

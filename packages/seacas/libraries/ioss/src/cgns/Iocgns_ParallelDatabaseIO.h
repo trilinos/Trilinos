@@ -95,8 +95,7 @@ namespace Iocgns {
 
     void release_memory__() override;
 
-    int get_file_pointer() const;
-    int get_serial_file_pointer() const;
+    int get_file_pointer() const override;
 
     bool node_major() const override { return false; }
 
@@ -114,8 +113,6 @@ namespace Iocgns {
   private:
     void openDatabase__() const override;
     void closeDatabase__() const override;
-    void openSerialDatabase__() const;
-    void closeSerialDatabase__() const;
 
     bool begin__(Ioss::State state) override;
     bool end__(Ioss::State state) override;
@@ -159,6 +156,9 @@ namespace Iocgns {
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
 
+    int64_t get_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                      void *data, size_t data_size) const;
+
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
@@ -186,6 +186,9 @@ namespace Iocgns {
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
 
+    int64_t put_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                      void *data, size_t data_size) const;
+
     // ID Mapping functions.
     const Ioss::Map &get_map(entity_type type) const;
     const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, int64_t file_offset,
@@ -201,7 +204,6 @@ namespace Iocgns {
     std::vector<int64_t> get_processor_zone_node_offset() const;
 
     mutable int    m_cgnsFilePtr{-1};
-    mutable int    m_cgnsSerFilePtr{-1};
     Ioss::MeshType m_meshType{Ioss::MeshType::UNKNOWN};
 
     mutable std::unique_ptr<DecompositionDataBase> decomp;

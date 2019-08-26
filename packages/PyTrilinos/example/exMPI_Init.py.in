@@ -79,7 +79,7 @@ from testutil import fromPyTrilinosImport
 Epetra  = fromPyTrilinosImport('Epetra',  options.testharness)
 Teuchos = fromPyTrilinosImport('Teuchos', options.testharness)
 
-# Main routine, which checks the Teuchos and Epetra MPII finalization functions,
+# Main routine, which checks the Teuchos and Epetra MPI finalization functions,
 # which should be registered with the atexit module under normal conditions.
 # Here, however, because we imported from mpi4py, the PyTrilinos modules should
 # recognize that another module is responsible for finalization, and not
@@ -101,16 +101,21 @@ def main():
     import atexit
     fails = 0
     if ${TPL_ENABLE_MPI}:
-        for handler in atexit._exithandlers:
-            if handler[0] is Epetra.Epetra_MPI_Finalize:   fails += 1
-            if handler[0] is Teuchos.Teuchos_MPI_Finalize: fails += 1
+        if hasattr(atexit, '_exithandlers'):
+            for handler in atexit._exithandlers:
+                if handler[0] is Epetra.Epetra_MPI_Finalize:   fails += 1
+                if handler[0] is Teuchos.Teuchos_MPI_Finalize: fails += 1
+        if hasattr(atexit, '_ncallbacks'):
+            fails += atexit._ncallbacks() - 1
 
     # Output the results
-    totalFails = comm.reduce(fails)
+    totalCallbacks = comm.reduce(fails)
     if iAmRoot:
         print("End Result: TEST", end=" ")
-        if totalFails > 0:
-            print("FAILED")
+        if totalCallbacks > 0:
+            print("FAILED\n")
+            print("This often indicates that PyTrilinos and mpi4py are")
+            print("compiled against different versions or flavors of MPI.")
         else:
             print("PASSED")
 

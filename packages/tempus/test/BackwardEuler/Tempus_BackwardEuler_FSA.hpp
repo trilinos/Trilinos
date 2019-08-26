@@ -103,7 +103,7 @@ void test_sincos_fsa(const bool use_combined_method,
     for (int i=0; i<num_param; ++i)
       Thyra::assign(DxDp0->col(i).ptr(),
                     *(model->getExactSensSolution(i, t0).get_x()));
-    integrator->setInitialState(t0, x0, Teuchos::null, Teuchos::null,
+    integrator->initializeSolutionHistory(t0, x0, Teuchos::null, Teuchos::null,
                                 DxDp0, Teuchos::null, Teuchos::null);
 
     // Integrate to timeMax

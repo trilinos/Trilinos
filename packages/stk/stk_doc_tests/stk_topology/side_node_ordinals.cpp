@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -61,28 +62,6 @@ TEST(side_node_ordinals, hex8)
   EXPECT_EQ(expected_side1_node_ordinals[1], side1_node_ordinals[1]);
   EXPECT_EQ(expected_side1_node_ordinals[2], side1_node_ordinals[2]);
   EXPECT_EQ(expected_side1_node_ordinals[3], side1_node_ordinals[3]);
-
-  //stk::topology::HEX_8 (and other topologies) define tables of edge and face node ordinals using
-  //boost::mpl::vector objects, which are compile-time meta-programming constructs. What this means
-  //is that they are typedefs, not instance data. i.e., there is not an actual table of numbers sitting
-  //in memory somewhere.
-  //
-  //The above hex8.side_node_ordinals method uses meta-programming (meta-functions, etc) to translate
-  //the contents of the typedefs into values that are put into the user-supplied array.
-  //
-  //Below is a sample of what that nicely-hidden meta-programming looks like.
-  //We will use boost::mpl 'random access iterators' to repeat the same EXPECT_EQ tests that
-  //were performed above for the node-ordinals of side 1.
-  //
-  typedef stk::topology::topology_type<stk::topology::HEX_8>::face_node_ordinals_vector face_node_ordinals_vector;
-
-  typedef boost::mpl::at_c<face_node_ordinals_vector, side1_ordinal>::type side1_node_ordinals_iterator;
-
-
-  EXPECT_EQ( expected_side1_node_ordinals[0], (boost::mpl::at< side1_node_ordinals_iterator, boost::mpl::int_<0> >::type::value) );
-  EXPECT_EQ( expected_side1_node_ordinals[1], (boost::mpl::at< side1_node_ordinals_iterator, boost::mpl::int_<1> >::type::value) );
-  EXPECT_EQ( expected_side1_node_ordinals[2], (boost::mpl::at< side1_node_ordinals_iterator, boost::mpl::int_<2> >::type::value) );
-  EXPECT_EQ( expected_side1_node_ordinals[3], (boost::mpl::at< side1_node_ordinals_iterator, boost::mpl::int_<3> >::type::value) );
 }
 
 }

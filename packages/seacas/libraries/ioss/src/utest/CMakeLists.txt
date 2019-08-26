@@ -33,9 +33,12 @@ TRIBITS_ADD_TEST(
 )
 
 IF (TPL_ENABLE_CGNS)
+SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp.C PROPERTIES COMPILE_FLAGS -O0)
+SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp_rocket.C PROPERTIES COMPILE_FLAGS -O0)
+SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp_herron.C PROPERTIES COMPILE_FLAGS -O0)
 TRIBITS_ADD_EXECUTABLE(
  Utst_structured_decomp
- SOURCES Utst_structured_decomp.C
+ SOURCES Utst_structured_decomp.C Utst_structured_decomp_herron.C Utst_structured_decomp_rocket.C
 )
 
 TRIBITS_ADD_TEST(

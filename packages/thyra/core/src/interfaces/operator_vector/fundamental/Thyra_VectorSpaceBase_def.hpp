@@ -73,8 +73,8 @@ bool VectorSpaceBase<Scalar>::isEuclidean() const
 
 
 template<class Scalar>
-bool VectorSpaceBase<Scalar>::hasInCoreView(const Range1D& rng,
-  const EViewType viewType, const EStrideType strideType) const
+bool VectorSpaceBase<Scalar>::hasInCoreView(const Range1D& /* rng */,
+  const EViewType /* viewType */, const EStrideType /* strideType */) const
 {
   return false;
 }

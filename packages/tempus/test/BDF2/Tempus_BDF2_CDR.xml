@@ -45,6 +45,10 @@
     <ParameterList name="Demo Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="BDF2"/>
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
+
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Start Up Stepper Name" type="string" value="Demo Start Up Stepper"/>
@@ -101,6 +105,9 @@
 
       <ParameterList name="Demo Start Up Stepper">
         <Parameter name="Stepper Type" type="string" value="Backward Euler"/>
+        <Parameter name="Use FSAL"       type="bool" value="false"/>
+        <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+        <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
         <Parameter name="Zero Initial Guess" type="bool" value="0"/>
         <Parameter name="Solver Name"    type="string" value="Start Up Solver"/>
         <ParameterList name="Start Up Solver">

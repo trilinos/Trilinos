@@ -14,6 +14,8 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
 ENDIF()
 
+ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
+ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
 ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
 ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
@@ -29,6 +31,12 @@ if (${PACKAGE_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
   ASSERT_DEFINED(Tpetra_INST_FLOAT)
   ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
+ENDIF()
+
+# You can only get Avatar one way
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
+IF( TPL_ENABLE_AVATAR AND ${PACKAGE_NAME}_ENABLE_AvatarT)
+  MESSAGE(FATAL_ERROR "MueLu does not support Avatar being built both as a TPL and as an external package.")
 ENDIF()
 
 # JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
@@ -57,9 +65,50 @@ ENDIF()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE
+  HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE
+  "Whether MueLu enables deprecated code (that is, anything marked with the MUELU_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled).  If OFF, then deprecated code does not exist."
+  YES
+)
+IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE)
+  MESSAGE(STATUS "MueLu: Enabling deprecated code")
+ELSE ()
+  MESSAGE(STATUS "MueLu: Disabling deprecated code")
+ENDIF ()
+
+IF (NOT ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE AND ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS)
+  MESSAGE(FATAL_ERROR "MueLu: You cannot enable deprecated tests when deprecated codes is disabled!")
+ENDIF ()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS
+  HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS
+  "Whether MueLu compiles and run tests (or areas of a test) that contain deprecated code (that is, anything marked with the MUELU_DEPRECATED macro).  Default is OFF (deprecated tests disabled).  If ON, then deprecated tests are compiled and tested."
+  NO
+)
+
+IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS)
+  MESSAGE(STATUS "MueLu: Enabling deprecated tests")
+ENDIF ()
+
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
   MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
 ENDIF()
+
+
+# If you want MueLu Epetra, you need Xpetra Epetra
+ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
+IF (NOT Xpetra_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
+  MESSAGE(FATAL_ERROR "MueLu Epetra support requires Xpetra Epetra support")
+ENDIF()
+
+# If you want MueLu Epetra, you need Xpetra Tpetra
+ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
+IF (NOT Xpetra_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "MueLu Tpetra support requires Xpetra Tpetra support")
+ENDIF()
+
 
 # Disable Ifpack2 if Tpetra is off
 IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -293,6 +342,11 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "<double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
   MESSAGE(STATUS "<complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
 
+  # GO preference: int > long long > long
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG
+    (NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT} AND NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONG_LONG}))
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT})
+
   # If Tpetra is enabled, determine which Nodes are used
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ${Tpetra_INST_SERIAL})
@@ -318,6 +372,16 @@ ELSE()
     # If Epetra only is active, only activate SerialNode by default
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ON)
   ENDIF()
+
+  # With ETI off, can just use int as the default GO
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG OFF)
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG OFF)
+ENDIF()
+
+IF(${${PACKAGE_NAME}_ENABLE_DEFAULT_GO_LONGLONG})
+  MESSAGE(STATUS "Using long long as the default GlobalOrdinal in MueLu.")
+ELSE()
+  MESSAGE(STATUS "Using int as the default GlobalOrdinal in MueLu.")
 ENDIF()
 
 # HAVE_MUELU_COMPLEX=ON iff:
@@ -388,6 +452,11 @@ if(TPL_ENABLE_MATLAB)
   IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra OR NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
       MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PACKAGE_NAME}_ENABLE_Epetra:BOOL=ON\" and \"-D${PACKAGE_NAME}_ENABLE_Tpetra:BOOL=ON\".")
   ENDIF()
+
+  IF(NOT Tpetra_INST_INT_INT OR  Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
+    MESSAGE(FATAL_ERROR "Muemex interfaces require that Tpetra only be instantiated with Tpetra_INST_INT_INT, not Tpetra_INST_INT_LONG or Tpetra_INST_INT_LONG_LONG")
+  ENDIF()
+
 ENDIF()
 
 if(TPL_ENABLE_MATLAB)

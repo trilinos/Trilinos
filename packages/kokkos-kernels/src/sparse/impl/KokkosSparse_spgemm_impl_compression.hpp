@@ -800,7 +800,7 @@ bool KokkosSPGEMM
     set_begins_ = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_begins_"), nnz);
     Kokkos::deep_copy (set_begins_, -1);
   }
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 #endif
 
   if (KOKKOSKERNELS_VERBOSE){
@@ -843,7 +843,7 @@ bool KokkosSPGEMM
 #ifndef KOKKOSKERNELSMOREMEM
     size_type max_row_nnz = 0;
     KokkosKernels::Impl::view_reduce_maxsizerow<in_row_view_t, MyExecSpace>(n, in_row_map, max_row_nnz);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
 
     nnz_lno_t min_hash_size = 1;
@@ -890,7 +890,7 @@ bool KokkosSPGEMM
     }
     nnz_lno_t pool_init_val = -1;
     pool_memory_space m_space(num_chunks, chunksize, pool_init_val,  my_pool_type);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     sszm_compressMatrix.memory_space = m_space;
 #endif
     Kokkos::parallel_for("KokkosSparse::SingleStepZipMatrix::GPUEXEC",  gpu_team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
@@ -903,7 +903,7 @@ bool KokkosSPGEMM
       {
         size_type max_row_nnz = 0;
         KokkosKernels::Impl::view_reduce_maxsizerow<in_row_view_t, MyExecSpace>(n, in_row_map, max_row_nnz);
-        MyExecSpace::fence();
+        MyExecSpace().fence();
         KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
 
         nnz_lno_t min_hash_size = 1;
@@ -929,7 +929,7 @@ bool KokkosSPGEMM
         }
         nnz_lno_t pool_init_val = -1;
         pool_memory_space m_space(num_chunks, chunksize, pool_init_val,  my_pool_type);
-        MyExecSpace::fence();
+        MyExecSpace().fence();
         sszm_compressMatrix.memory_space = m_space;
       }
 
@@ -939,7 +939,7 @@ bool KokkosSPGEMM
       else
         Kokkos::parallel_for( "KokkosSparse::TwoStepZipMatrix::use_ordered_compress", team_count_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
 
-      MyExecSpace::fence();
+      MyExecSpace().fence();
       if (KOKKOSKERNELS_VERBOSE){
         std::cout << "\t\tCompression Count Kernel:" <<  timer_count.seconds() << std::endl;
       }
@@ -959,13 +959,13 @@ bool KokkosSPGEMM
   		if (KOKKOSKERNELS_VERBOSE){
   			std::cout << "\t\tCompressed Max Row Flops:" << compressed_maxNumRoughZeros  << std::endl;
   			std::cout << "\t\tCompressed Overall Row Flops:" << compressedoverall_flops  << std::endl;
-			std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops)) <<  " min_reduction:" << min_reduction  << std::endl;
+			std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops ? OriginaltotalFlops:1)) <<  " min_reduction:" << min_reduction  << std::endl;
   			std::cout << "\t\tCompressed Max Row Flop Calc Time:" << timer1_t.seconds()  << std::endl;
   		}
 
 		this->handle->get_spgemm_handle()->compressed_max_row_flops = compressed_maxNumRoughZeros;
 		this->handle->get_spgemm_handle()->compressed_overall_flops = compressedoverall_flops;
-    	if (compressedoverall_flops / ((double) (OriginaltotalFlops)) > min_reduction) {
+    	if (OriginaltotalFlops && compressedoverall_flops / ((double) (OriginaltotalFlops)) > min_reduction) {
     		return false;
     	}
       }
@@ -999,7 +999,7 @@ bool KokkosSPGEMM
 
     }
   }
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\t\tCompression Kernel time:" <<  timer1.seconds() << std::endl;
   }
@@ -1016,7 +1016,7 @@ bool KokkosSPGEMM
 	  if (KOKKOSKERNELS_VERBOSE){
 		  std::cout << "\t\tCompressed Max Row Flops:" << compressed_maxNumRoughZeros  << std::endl;
 		  std::cout << "\t\tCompressed Overall Row Flops:" << compressedoverall_flops  << std::endl;
-		  std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops)) <<  " min_reduction:" << min_reduction  << std::endl;
+		  std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops ? OriginaltotalFlops:1)) <<  " min_reduction:" << min_reduction  << std::endl;
 
 
 		  std::cout << "\t\tCompressed Max Row Flop Calc Time:" << timer1_t.seconds()  << std::endl;
@@ -1024,7 +1024,7 @@ bool KokkosSPGEMM
 
 	  this->handle->get_spgemm_handle()->compressed_max_row_flops = compressed_maxNumRoughZeros;
 	  this->handle->get_spgemm_handle()->compressed_overall_flops = compressedoverall_flops;
-	  if (compressedoverall_flops / ((double) (OriginaltotalFlops)) > min_reduction) {
+	  if (OriginaltotalFlops && compressedoverall_flops / ((double) (OriginaltotalFlops)) > min_reduction) {
 		  return false;
 	  }
   }

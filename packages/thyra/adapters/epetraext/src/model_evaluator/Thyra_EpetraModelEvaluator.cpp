@@ -532,7 +532,7 @@ void EpetraModelEvaluator::reportFinalPoint(
 
 
 RCP<LinearOpBase<double> >
-EpetraModelEvaluator::create_DfDp_op_impl(int l) const
+EpetraModelEvaluator::create_DfDp_op_impl(int /* l */) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
@@ -540,7 +540,7 @@ EpetraModelEvaluator::create_DfDp_op_impl(int l) const
 
 
 RCP<LinearOpBase<double> >
-EpetraModelEvaluator::create_DgDx_dot_op_impl(int j) const
+EpetraModelEvaluator::create_DgDx_dot_op_impl(int /* j */) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
@@ -548,7 +548,7 @@ EpetraModelEvaluator::create_DgDx_dot_op_impl(int j) const
 
 
 RCP<LinearOpBase<double> >
-EpetraModelEvaluator::create_DgDx_op_impl(int j) const
+EpetraModelEvaluator::create_DgDx_op_impl(int /* j */) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
@@ -556,7 +556,7 @@ EpetraModelEvaluator::create_DgDx_op_impl(int j) const
 
 
 RCP<LinearOpBase<double> >
-EpetraModelEvaluator::create_DgDp_op_impl( int j, int l ) const
+EpetraModelEvaluator::create_DgDp_op_impl( int /* j */, int /* l */ ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
@@ -1272,11 +1272,11 @@ void EpetraModelEvaluator::postEvalScalingSetup(
 
 
 void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
-  const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs,
+  const EpetraExt::ModelEvaluator::OutArgs &/* epetraOutArgs */,
   RCP<LinearOpBase<double> > &W_op,
   RCP<EpetraLinearOp> &efwdW,
-  RCP<Epetra_Operator> &eW,
-  const ModelEvaluatorBase::OutArgs<double> &outArgs
+  RCP<Epetra_Operator> &/* eW */,
+  const ModelEvaluatorBase::OutArgs<double> &/* outArgs */
   ) const
 {
 
@@ -1650,8 +1650,8 @@ Thyra::convert(
 EpetraExt::ModelEvaluator::MPDerivative
 Thyra::convert(
   const ModelEvaluatorBase::MPDerivative &derivative,
-  const RCP<const Epetra_Map> &fnc_map,
-  const RCP<const Epetra_Map> &var_map
+  const RCP<const Epetra_Map> &/* fnc_map */,
+  const RCP<const Epetra_Map> &/* var_map */
   )
 {
   //typedef ModelEvaluatorBase MEB; // unused

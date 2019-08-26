@@ -80,7 +80,8 @@ namespace MueLu {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
     try {
       sTpetra_ = rcp(new Amesos2Smoother(type_, paramList));
-      TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos2 direct solver");
+      if (sTpetra_.is_null())
+        errorTpetra_ = "Unable to construct Amesos2 direct solver";
     } catch (Exceptions::RuntimeError& e) {
       errorTpetra_ = e.what();
     } catch (Exceptions::BadCast& e) {
@@ -92,7 +93,8 @@ namespace MueLu {
     try {
       // GetAmesosSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
       sEpetra_ = GetAmesosSmoother<SC,LO,GO,NO>(type_, paramList);
-      TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos direct solver");
+      if (sEpetra_.is_null())
+        errorEpetra_ = "Unable to construct Amesos direct solver";
     } catch (Exceptions::RuntimeError& e) {
       // AmesosSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
       errorEpetra_ = e.what();

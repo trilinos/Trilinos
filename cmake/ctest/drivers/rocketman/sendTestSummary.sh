@@ -3,11 +3,19 @@
 # Parse command line options.
 DEBUGMODE=0
 USAGE="sendTestSummary.sh [-d] <logfile>"
-while getopts d OPT; do
+while getopts dp:r: OPT; do
     case "$OPT" in
         d)
             # debug mode, send email summary to me only
             DEBUGMODE=1
+            ;;
+        p)
+            # pattern
+            PATTERN=$OPTARG
+            ;;
+        r)
+            # recipients
+            RECIPIENTS=$OPTARG
             ;;
         \?)
             # getopts issues an error message
@@ -38,7 +46,9 @@ TESTLOCATION="/home/nightlyTesting"
 LOGBACKUPDIRECTORY="/home/nightlyTesting/logs"
 
 #packages to be summarized
-PATTERN="(Xpetra|MueLu)"
+if [[ -z $PATTERN ]]; then
+  PATTERN="(Xpetra|MueLu)"
+fi
 
 #variables to be passed to the perl script
 MACHINENAME=`hostname -s`
@@ -50,9 +60,11 @@ if [[ $DEBUGMODE == 1 ]]; then
     "${USER}@sandia.gov"
   )
 else
-  RECIPIENTS=(
-    "muelu-regression@software.sandia.gov"
-  )
+  if [[ -z $RECIPIENTS ]]; then
+    RECIPIENTS=(
+      "muelu-regression@software.sandia.gov"
+    )
+  fi
 fi
 #suffix for all the log files
 timeStamp="$(date +%F_%R)"

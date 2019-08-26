@@ -301,7 +301,6 @@ void sfree(void *ptr)
   if (ptr != NULL) {
     nfree++;
     free(ptr);
-    ptr = NULL;
   }
 }
 

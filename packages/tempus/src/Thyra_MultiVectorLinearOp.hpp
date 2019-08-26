@@ -246,6 +246,10 @@ private:
       THYRA_ASSERT_VEC_SPACES(
         "MultiVectorLinearOp<Scalar>::initialize(op,multiVecRange,multiVecDomain)",
         *op->domain(), *multiVecDomain->getBlock(0) );
+#else
+    (void)op;
+    (void)multiVecRange;
+    (void)multiVecDomain;
 #endif
 }
 

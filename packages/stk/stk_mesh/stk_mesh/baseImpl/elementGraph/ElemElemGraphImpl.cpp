@@ -83,7 +83,7 @@ void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, 
 
     localElemSideNodes.resize(num_nodes_this_side);
 
-    localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.begin());
+    localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.data());
 }
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
@@ -327,7 +327,7 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
     stk::mesh::EntityVector side_nodes;
     fill_element_side_nodes_from_topology(bulkData, element, side_ordinal, side_nodes);
     stk::mesh::EntityVector permuted_side_nodes(side_top.num_nodes());
-    side_top.permutation_nodes(side_nodes, side_permutation, permuted_side_nodes.begin());
+    side_top.permutation_nodes(side_nodes.data(), side_permutation, permuted_side_nodes.data());
     for(size_t i=0;i<permuted_side_nodes.size();++i)
     {
         bulkData.declare_relation(side, permuted_side_nodes[i], i);

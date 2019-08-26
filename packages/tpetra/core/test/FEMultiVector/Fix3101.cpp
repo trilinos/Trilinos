@@ -1,4 +1,4 @@
-// Test for github issue #3101 -- test Tpetra::FEMultiVector::doSourceToTarget
+// Test for github issue #3101 -- test Tpetra::FEMultiVector::doOwnedToOwnedPlusShared
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_FEMultiVector.hpp"
@@ -130,15 +130,15 @@ int FEMultiVectorTest::intTest()
 
   // Update copied vertices from their owners
   try {
-    femv->doSourceToTarget(Tpetra::REPLACE);
+    femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
   }
   catch (std::exception &e) {
-    std::cout << "FAIL:  Exception thrown in doSourceToTarget:  "
+    std::cout << "FAIL:  Exception thrown in doOwnedToOwnedPlusShared:  "
               << e.what() << std::endl;
     throw e;
   }
 
-  printFEMV("After doSourceToTarget ");
+  printFEMV("After doOwnedToOwnedPlusShared ");
 
   // Check results:  after ADD in endFill,
   // -  overlapping entries of vec 0 should be 2 * gid

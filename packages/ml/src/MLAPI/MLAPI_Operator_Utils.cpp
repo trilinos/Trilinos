@@ -74,7 +74,7 @@ Operator GetTranspose(const Operator& A, const bool byrow = true)
 }
 
 // ======================================================================
-Operator GetIdentity(const Space& DomainSpace, const Space& RangeSpace)
+Operator GetIdentity(const Space& DomainSpace, const Space& /* RangeSpace */)
 {
   ML_Operator* ML_eye = ML_Operator_Create(GetML_Comm());
   int size = DomainSpace.GetNumMyElements();
@@ -170,7 +170,7 @@ MultiVector GetDiagonal(const Operator& A, const int offset)
 // - the destructor deletes the double vector
 // ======================================================================
 
-static int diag_matvec(ML_Operator *Amat_in, int ilen, double p[],
+static int diag_matvec(ML_Operator *Amat_in, int /* ilen */, double p[],
                 int olen, double ap[])
 {
   double* D = (double*)Amat_in->data;
@@ -284,7 +284,7 @@ Operator GetJacobiIterationOperator(const Operator& Amat, double Damping)
 }
 
 // ======================================================================
-static int Ptent1D_matvec(ML_Operator *Amat_in, int ilen, double p[],
+static int Ptent1D_matvec(ML_Operator *Amat_in, int /* ilen */, double p[],
                 int olen, double ap[])
 {
   double* D = (double*)Amat_in->data;
@@ -321,7 +321,7 @@ static void Ptent1D_destroy(void* data)
 }
 
 // ======================================================================
-Operator GetPtent1D(const MultiVector& D, const int offset = 0)
+Operator GetPtent1D(const MultiVector& D, const int /* offset */ = 0)
 {
   if (D.GetNumVectors() != 1)
     ML_THROW("D.GetNumVectors() != 1", -1);

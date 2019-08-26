@@ -65,6 +65,7 @@ namespace Ioss {
 
     static int  describe(NameList *names);
     static void clean();
+    static void show_configuration();
 
   protected:
     explicit IOFactory(const std::string &type);
@@ -72,6 +73,8 @@ namespace Ioss {
     virtual DatabaseIO *make_IO(const std::string &filename, DatabaseUsage db_usage,
                                 MPI_Comm                     communicator,
                                 const Ioss::PropertyManager &properties) const = 0;
+
+    virtual void show_config() const { return; }
 
     static void alias(const std::string &base, const std::string &syn);
 

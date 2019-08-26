@@ -56,7 +56,10 @@
 namespace MueLu {
 
   //!
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class HierarchyFactory : public BaseClass {
 #undef MUELU_HIERARCHYFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

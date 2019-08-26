@@ -41,99 +41,92 @@
 // @HEADER
 
 #include "PanzerDiscFE_config.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_IntrepidOrientation.hpp"
 
 namespace panzer {
 
-  Teuchos::RCP<std::vector<Intrepid2::Orientation> >
-  buildIntrepidOrientation(const Teuchos::RCP<const UniqueGlobalIndexerBase> globalIndexer)
+  void buildIntrepidOrientation(std::vector<Intrepid2::Orientation> & orientation,
+                                panzer::ConnManager & connMgr)
   {
     using Teuchos::rcp_dynamic_cast;
     using Teuchos::RCP;
     using Teuchos::rcp;
-  
+
+    orientation.clear();
+
+    // Retrive element blocks and its meta data
+    const int numElementBlocks = connMgr.numElementBlocks();
+
+    std::vector<std::string> elementBlockIds;
+    std::vector<shards::CellTopology> elementBlockTopologies;
+
+    connMgr.getElementBlockIds(elementBlockIds);
+    connMgr.getElementBlockTopologies(elementBlockTopologies);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(numElementBlocks <= 0 &&
+                               numElementBlocks != static_cast<int>(elementBlockIds.size()) &&
+                               numElementBlocks != static_cast<int>(elementBlockTopologies.size()),
+                               std::logic_error,
+                               "panzer::buildIntrepidOrientation: Number of element blocks does not match to element block meta data");
+
+    // Currently panzer support only one type of elements for whole mesh (use the first cell topology)
+    const auto cellTopo = elementBlockTopologies.at(0);
+    const int numVertexPerCell = cellTopo.getVertexCount();
+
+    const auto fp = NodalFieldPattern(cellTopo);
+    connMgr.buildConnectivity(fp);
+
+    // Count and pre-alloc orientations
+    int total_elems = 0;
+    for (int i=0;i<numElementBlocks;++i) {
+      total_elems += connMgr.getElementBlock(elementBlockIds.at(i)).size();
+    }
+
+    orientation.resize(total_elems);
+    // Loop over element blocks
+    for (int i=0;i<numElementBlocks;++i) {
+      // get elements in a block
+      const auto &elementBlock = connMgr.getElementBlock(elementBlockIds.at(i));
+
+      const int numElementsPerBlock = elementBlock.size();
+
+      // construct orientation information
+      for (int c=0;c<numElementsPerBlock;++c) {
+        const int localCellId = elementBlock.at(c);
+        Kokkos::View<const panzer::GlobalOrdinal*, Kokkos::DefaultHostExecutionSpace>
+          nodes(connMgr.getConnectivity(localCellId), numVertexPerCell);
+        orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, nodes));
+      }
+    }
+  }
+
+  Teuchos::RCP<std::vector<Intrepid2::Orientation> >
+  buildIntrepidOrientation(const Teuchos::RCP<const GlobalIndexer> globalIndexer)
+  {
+    using Teuchos::rcp_dynamic_cast;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
     auto orientation = rcp(new std::vector<Intrepid2::Orientation>);
 
-    // int, int 
     {
-      typedef int LO;
-      typedef int GO;
-
-      RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
-        = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
+      RCP<const GlobalIndexer> ugi
+        = rcp_dynamic_cast<const GlobalIndexer>(globalIndexer);
 
       if (ugi!=Teuchos::null) {
-        const auto connMgrBase = ugi->getConnManagerBase();
-        const auto connMgr = rcp_dynamic_cast<ConnManager<LO,GO> >(connMgrBase->noConnectivityClone());
-        
-        TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
-                                   "panzer::buildIntrepidOrientation: Could not cast ConnManagerBase");
-        
-        buildIntrepidOrientation(*orientation, *connMgr);
-        return orientation;
-      }
-    }
+        const auto connMgr = ugi->getConnManager()->noConnectivityClone();
 
-    // int, Ordinal64
-    {
-      typedef int LO;
-      typedef Ordinal64 GO;
-      
-      RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
-        = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
-      if (ugi!=Teuchos::null) {
-        const auto connMgrBase = ugi->getConnManagerBase();
-        const auto connMgr = rcp_dynamic_cast<ConnManager<LO,GO> >(connMgrBase->noConnectivityClone());
-        
         TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
-                                   "panzer::buildIntrepidOrientation: Could not cast ConnManagerBase");
+                                   "panzer::buildIntrepidOrientation: ConnManager is null!");
 
         buildIntrepidOrientation(*orientation, *connMgr);
         return orientation;
       }
     }
 
-    // int, pair<int,int>
-    {
-      typedef int LO;
-      typedef std::pair<int,int> GO;
-
-      RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
-        = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
-      if(ugi!=Teuchos::null) {
-        const auto connMgrBase = ugi->getConnManagerBase();
-        const auto connMgr = rcp_dynamic_cast<ConnManager<LO,int> >(connMgrBase->noConnectivityClone());
-        
-        TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
-                                   "panzer::buildIntrepidOrientation: Could not cast ConnManagerBase");
-
-        buildIntrepidOrientation(*orientation, *connMgr);
-        return orientation;
-      }
-    }
-
-    // int, pair<int,Ordinal64>
-    {
-      typedef int LO;
-      typedef std::pair<int,Ordinal64> GO;
-
-      RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
-        = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
-      if(ugi!=Teuchos::null) {
-        const auto connMgrBase = ugi->getConnManagerBase();
-        const auto connMgr = rcp_dynamic_cast<ConnManager<LO,Ordinal64> >(connMgrBase->noConnectivityClone());
-        
-        TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
-                                   "panzer::buildIntrepidOrientation: Could not cast ConnManagerBase");
-
-        buildIntrepidOrientation(*orientation, *connMgr);
-        return orientation;
-      }
-    }
-    
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                               "panzer::buildIntrepidOrientation: Could not cast UniqueGlobalIndexerBase");    
+                               "panzer::buildIntrepidOrientation: Could not cast GlobalIndexer");
   }
 
 } // end namespace panzer

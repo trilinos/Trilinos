@@ -99,10 +99,11 @@ C
       END IF
 C
 C
-      DO 10 I = 1, NODESA
-         DO 10 J = 1, NVAREL
+      DO I = 1, NODESA
+         DO J = 1, NVAREL
             SOLENA(I,J) = 0.
- 10      CONTINUE
+         end do
+      end do
 C
 C     load up CNTRA array - coordinates of mesh-A element centroids
 C
@@ -211,14 +212,15 @@ c
 c     get second node that is shared by both elements. That is the
 c     node on the other end of the shared element side.
 c
-                  DO 150 I = 1, NNODES
-                     DO 150 J = 1, NNODES
+                  DO I = 1, NNODES
+                     DO J = 1, NNODES
                         IF(ICONA(I,INVCN(1,IGLND)) .NE. IGLND .AND.
      &                       ICONA(I,INVCN(1,IGLND)) .EQ.
      $                       ICONA(J,INVCN(2,IGLND))) THEN
                            NXGLND = ICONA(I,INVCN(1,IGLND))
                         END IF
- 150                 CONTINUE
+                     end do
+                  end do
 c
 c     If this second node has more than 2 elements, extrapolate. Otherwise
 c     average. (at original node)

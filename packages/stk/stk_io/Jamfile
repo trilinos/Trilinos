@@ -1,10 +1,11 @@
-#---------------------------------------------------------------
-#    Copyright 2006 - 2009 Sandia Corporation.
-#    Under the terms of Contract DE-AC04-94AL85000, there is a
-#    non-exclusive license for use of this work by or on behalf
-#    of the U.S. Government.  Export of this program may require
-#    a license from the United States Government.
-#---------------------------------------------------------------
+#--------------------------------------------------------------------
+#    Copyright 2002 - 2008, 2010, 2011 National Technology &         
+#    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   
+#    of Contract DE-NA0003525 with NTESS, there is a                 
+#    non-exclusive license for use of this work by or on behalf      
+#    of the U.S. Government.  Export of this program may require     
+#    a license from the United States Government.                    
+#--------------------------------------------------------------------
 
 #
 # The signature for Boost.build rules is described here:
@@ -47,9 +48,11 @@ project votd
   : requirements
     $(sierra-warnings)
     <define>STK_BUILT_IN_SIERRA
+    <define>STK_HIDE_DEPRECATED_CODE
     <include>$(stk_io-root-inc)
   : usage-requirements
     <include>$(stk_io-root-inc)
+    <define>STK_HIDE_DEPRECATED_CODE
   : build-dir $(stk_io-builddir)
   ;
 
@@ -157,7 +160,7 @@ lib stk_io
     /sierra/seacas//ioss
     /sierra/seacas//ioinit
     /tpl/trilinos//shards
-    /tpl/trilinos//teuchos
+    /tpl/trilinos//teuchoscore
   : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -183,7 +186,7 @@ lib stk_io_util
     /sierra/stk_util//stk_util_parallel
     /sierra/seacas//ioss
     /tpl/trilinos//shards
-    /tpl/trilinos//teuchos
+    /tpl/trilinos//teuchoscore
   : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

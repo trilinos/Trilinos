@@ -1,3 +1,4 @@
+#ifdef Intrepid_ENABLE_DEPRECATED_KOKKOS_CODE
 
 #ifndef INTREPID_FIELDCONTAINER_KOKKOS_HPP
 #define INTREPID_FIELDCONTAINER_KOKKOS_HPP
@@ -359,4 +360,6 @@ struct Return_Type<const Intrepid::FieldContainer_Kokkos<FadType, Layout, Device
 #include "Intrepid_FieldContainer_Kokkos_PThreads_Right.hpp"
 #include "Intrepid_FieldContainer_Kokkos_Serial_Left.hpp"
 #include "Intrepid_FieldContainer_Kokkos_Serial_Right.hpp"
+#endif
+
 #endif

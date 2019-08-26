@@ -108,6 +108,16 @@ namespace Ioss {
     void         set_database(DatabaseIO *io_database);
     virtual void delete_database();
 
+    /** Return the GroupingEntity pointer of the "object" that this
+     *  entity is contained in.  For example, a SideBlock would
+     *  return the SideSet that "owns" the SideBlock.
+     *  Most GroupingEntities would return the containing Region
+     *  A region would return itself(?)
+     *  A NodeBlock containing the subset of nodes in a StructuredBlock
+     *  would return that StructuredBlock.
+     */
+    virtual const GroupingEntity *contained_in() const;
+
     /** \brief Get name of entity.
      *
      *  This short-circuits the process of getting the name via the property.
@@ -138,15 +148,13 @@ namespace Ioss {
 
     /** \brief Get list of blocks that the entities in this GroupingEntity "touch".
      *
-     *  \param[out] block_members The blocks that the entities touch.
-     *
      * For a SideSet, returns a list of the element blocks that the
      * elements in the set belong to.
      * For others, it returns an empty vector.
      * Entries are pushed onto the "block_members" vector, so it will be
      * appended to if it is not empty at entry to the function.
      */
-    virtual void block_membership(std::vector<std::string> &block_members) {}
+    virtual void block_membership(std::vector<std::string> & /* block_members */) {}
 
     std::string get_filename() const;
 

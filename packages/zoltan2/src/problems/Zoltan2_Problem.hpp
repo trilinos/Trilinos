@@ -235,7 +235,7 @@ private:
 };
 
 template <typename Adapter>
-  void Problem<Adapter>::setupProblemEnvironment(ParameterList *params)
+  void Problem<Adapter>::setupProblemEnvironment(ParameterList * /* params */)
 {
   ParameterList &processedParameters = env_->getParametersNonConst();
   params_ = rcp<ParameterList>(&processedParameters, false);

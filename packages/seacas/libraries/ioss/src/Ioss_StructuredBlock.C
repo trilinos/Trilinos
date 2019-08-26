@@ -39,6 +39,7 @@
 #include <Ioss_Region.h>
 #include <Ioss_SmartAssert.h>
 #include <Ioss_StructuredBlock.h>
+#include <fmt/ostream.h>
 
 #include <cstddef> // for size_t
 #include <numeric>
@@ -88,7 +89,7 @@ namespace Ioss {
                                    int index_dim, int ni, int nj, int nk, int off_i, int off_j,
                                    int off_k, int glo_ni, int glo_nj, int glo_nk)
       : EntityBlock(io_database, my_name, Ioss::Hex8::name,
-                    ni * (nj > 0 ? nj : 1) * (nk > 0 ? nk : 1)),
+                    static_cast<int64_t>(ni) * (nj > 0 ? nj : 1) * (nk > 0 ? nk : 1)),
         m_ni(ni), m_nj(nj), m_nk(nk), m_offsetI(off_i), m_offsetJ(off_j), m_offsetK(off_k),
         m_niGlobal(glo_ni == 0 ? m_ni : glo_ni), m_njGlobal(glo_nj == 0 ? m_nj : glo_nj),
         m_nkGlobal(glo_nk == 0 ? m_nk : glo_nk),
@@ -132,6 +133,8 @@ namespace Ioss {
     SMART_ASSERT(m_niGlobal >= m_ni)(m_niGlobal)(m_ni);
     SMART_ASSERT(m_njGlobal >= m_nj)(m_njGlobal)(m_nj);
     SMART_ASSERT(m_nkGlobal >= m_nk)(m_nkGlobal)(m_nk);
+
+    m_nodeBlock.property_add(Property("IOSS_INTERNAL_CONTAINED_IN", this, false));
 
     properties.add(Property("component_degree", index_dim));
     properties.add(Property("node_count", node_count));
@@ -281,10 +284,9 @@ namespace Ioss {
 
   std::ostream &operator<<(std::ostream &os, const BoundaryCondition &bc)
   {
-    os << "\t\tBC Name '" << bc.m_bcName << "' owns " << bc.get_face_count() << " faces."
-       << "\n\t\t\t\tRange: [" << bc.m_rangeBeg[0] << ".." << bc.m_rangeEnd[0] << ", "
-       << bc.m_rangeBeg[1] << ".." << bc.m_rangeEnd[1] << ", " << bc.m_rangeBeg[2] << ".."
-       << bc.m_rangeEnd[2] << "]";
+    fmt::print(os, "\t\tBC Name '{}' owns {:10n} faces.\tRange: [{}..{}, {}..{}, {}..{}]",
+               bc.m_bcName, bc.get_face_count(), bc.m_rangeBeg[0], bc.m_rangeEnd[0],
+               bc.m_rangeBeg[1], bc.m_rangeEnd[1], bc.m_rangeBeg[2], bc.m_rangeEnd[2]);
     return os;
   }
 

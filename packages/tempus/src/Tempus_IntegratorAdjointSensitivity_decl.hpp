@@ -117,7 +117,7 @@ public:
   //@}
 
   /// Set the initial state from Thyra::VectorBase(s)
-  virtual void setInitialState(
+  virtual void initializeSolutionHistory(
     Scalar t0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,

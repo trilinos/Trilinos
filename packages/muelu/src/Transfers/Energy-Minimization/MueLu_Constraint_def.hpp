@@ -67,7 +67,7 @@
 namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const MultiVector& B, const MultiVector& Bc, RCP<const CrsGraph> Ppattern) {
+  void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const MultiVector& /* B */, const MultiVector& Bc, RCP<const CrsGraph> Ppattern) {
     const size_t NSDim = Bc.getNumVectors();
 
     Ppattern_ = Ppattern;

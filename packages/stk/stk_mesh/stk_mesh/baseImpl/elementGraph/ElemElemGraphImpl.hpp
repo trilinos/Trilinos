@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -166,7 +167,7 @@ public:
     void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { m_sideNodes = nodes; }
     void set_permutation(stk::mesh::Permutation perm) { m_perm = perm; }
 
-    stk::mesh::EntityVector::iterator side_nodes_begin() { return m_sideNodes.begin(); }
+    stk::mesh::Entity * side_nodes_begin() { return m_sideNodes.data(); }
 
 private:
     LocalId m_elementLocalId;
@@ -202,7 +203,7 @@ struct ParallelElementData
     void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { serialElementData.set_element_side_nodes(nodes); }
     void set_permutation(stk::mesh::Permutation perm) { serialElementData.set_permutation(perm); }
 
-    stk::mesh::EntityVector::iterator side_nodes_begin() { return serialElementData.side_nodes_begin(); }
+    stk::mesh::Entity * side_nodes_begin() { return serialElementData.side_nodes_begin(); }
 
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 

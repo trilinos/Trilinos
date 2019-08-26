@@ -47,7 +47,7 @@
 PyTrilinos.Amesos is the python interface to the Trilinos direct
 linear solver package Amesos:
 
-    http://trilinos.sandia.gov/packages/amesos
+    https://trilinos.org/docs/dev/packages/amesos/doc/html/index.html
 
 The purpose of Amesos is to provide a common interface to a variety of
 third-party direct solvers, made compatible with PyTrilinos.Epetra.

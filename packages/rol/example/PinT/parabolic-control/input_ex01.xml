@@ -12,7 +12,7 @@
   <!--================================================================================--> 
   <!-- Time Discretization                                                            --> 
   <Parameter name="End Time"                type="double"   value="1.0"   />
-  <Parameter name="Temporal Discretization" type="int"      value="128"   />
+  <Parameter name="Temporal Discretization" type="int"      value="33"   />
   <Parameter name="Integration Factor"      type="double"   value="0.5"   />
   <!--================================================================================-->
   <!-- Objective Function                                                             --> 

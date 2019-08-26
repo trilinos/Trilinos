@@ -47,23 +47,23 @@
 PyTrilinos.Isorropia.Epetra is the python interface to namespace Epetra for
 the Trilinos package Isorropia:
 
-    http://trilinos.sandia.gov/packages/isorropia
+    https://trilinos.org/docs/dev/packages/isorropia/doc/html/index.html
 
 The purpose of Isorropia.Epetra is to ....
 "
 %enddef
 
-%define %isorropia_epetra_import_code
+%define %isorropia_epetra_importcode
 "
-from . import _IsorropiaEpetra
+from . import _Epetra
 "
 %enddef
 
 %module(package      = "PyTrilinos.Isorropia",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %isorropia_epetra_import_code,
-	docstring    = %isorropia_epetra_docstring) IsorropiaEpetra
+        moduleimport = %isorropia_epetra_importcode,
+	docstring    = %isorropia_epetra_docstring) Epetra
 
 %{
 // Configuration
@@ -124,7 +124,7 @@ from . import _IsorropiaEpetra
   }
 }
 
-// Include Isorropia documentation (same as for Isorropia.__init__.i)
+// Include Isorropia documentation (same as for Isorropia.i)
 %include "Isorropia_dox.i"
 
 // General ignore directives
@@ -146,22 +146,33 @@ from . import _IsorropiaEpetra
 // Epetra interface import
 %import "Epetra.i"
 
+// The %import directives that follow generate an 'import Base' python
+// command that does not work in python 3.  Add the current directory
+// to the search path so that it does work.
+%pythoncode
+%{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir in sys.path: sys.path.append(thisDir)
+del sys, op
+%}
+
 // Isorropia import (let SWIG know about the base classes that will be
 // needed for the derived classes below)
 %teuchos_rcp(Isorropia::Operator)
-%import(module="__init__") "Isorropia_Operator.hpp"
+%import(module="Base") "Isorropia_Operator.hpp"
 %teuchos_rcp(Isorropia::Colorer)
-%import(module="__init__") "Isorropia_Colorer.hpp"
+%import(module="Base") "Isorropia_Colorer.hpp"
 %teuchos_rcp(Isorropia::Partitioner)
-%import(module="__init__") "Isorropia_Partitioner.hpp"
+%import(module="Base") "Isorropia_Partitioner.hpp"
 %teuchos_rcp(Isorropia::Redistributor)
-%import(module="__init__") "Isorropia_Redistributor.hpp"
+%import(module="Base") "Isorropia_Redistributor.hpp"
 %teuchos_rcp(Isorropia::CostDescriber)
-%import(module="__init__") "Isorropia_CostDescriber.hpp"
+%import(module="Base") "Isorropia_CostDescriber.hpp"
 %teuchos_rcp(Isorropia::Orderer)
-%import(module="__init__") "Isorropia_Orderer.hpp"
+%import(module="Base") "Isorropia_Orderer.hpp"
 %teuchos_rcp(Isorropia::LevelScheduler)
-%import(module="__init__") "Isorropia_LevelScheduler.hpp"
+%import(module="Base") "Isorropia_LevelScheduler.hpp"
 
 /////////////////////////////////////////
 // Isorropia::Epetra::Operator support //

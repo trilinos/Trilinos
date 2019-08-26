@@ -97,7 +97,7 @@ namespace MueLu {
     AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > &InA, Teuchos::ParameterList &paramListIn) { }
 
     //! Destructor.
-    virtual ~AMGXOperator() { }
+    virtual ~AMGXOperator() {}
 
     //@}
 
@@ -150,6 +150,7 @@ namespace MueLu {
     typedef Tpetra::Map<LO,GO,NO>            Map;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> MultiVector;
 
+   
     void printMaps(Teuchos::RCP<const Teuchos::Comm<int> >& comm, const std::vector<std::vector<int> >& vec, const std::vector<int>& perm,
                    const int* nbrs, const Map& map, const std::string& label) {
       for (int p = 0; p < comm->getSize(); p++) {
@@ -178,13 +179,15 @@ namespace MueLu {
       RCP<const Teuchos::Comm<int> > comm = inA->getRowMap()->getComm();
       int numProcs = comm->getSize();
       int myRank   = comm->getRank();
+     
 
       RCP<Teuchos::Time> amgxTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: initialize");
       amgxTimer->start();
       // Initialize
-      AMGX_SAFE_CALL(AMGX_initialize());
-      AMGX_SAFE_CALL(AMGX_initialize_plugins());
-
+      //AMGX_SAFE_CALL(AMGX_initialize());
+      //AMGX_SAFE_CALL(AMGX_initialize_plugins());
+    
+                
       /*system*/
       //AMGX_SAFE_CALL(AMGX_register_print_callback(&print_callback));
       AMGX_SAFE_CALL(AMGX_install_signal_handler());
@@ -211,6 +214,8 @@ namespace MueLu {
 
       // TODO: we probably need to add "exception_handling=1" to the parameter list
       // to switch on internal error handling (with no need for AMGX_SAFE_CALL)
+
+      //AMGX_SAFE_CALL(AMGX_config_add_parameters(&Config_, "exception_handling=1"))
 
 #define NEW_COMM
 #ifdef NEW_COMM
@@ -436,7 +441,7 @@ namespace MueLu {
       domainMap_ = inA->getDomainMap();
       rangeMap_  = inA->getRangeMap();
 
-      RCP<Teuchos::Time> realSetupTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: real setup");
+      RCP<Teuchos::Time> realSetupTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: setup (total)");
       realSetupTimer->start();
       AMGX_solver_setup(Solver_, A_);
       realSetupTimer->stop();
@@ -444,11 +449,22 @@ namespace MueLu {
 
       vectorTimer1_ = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer vectors CPU->GPU");
       vectorTimer2_ = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer vector  GPU->CPU");
+      solverTimer_  = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: Solve (total)"); 
     }
 
     //! Destructor.
-    virtual ~AMGXOperator() { }
+    virtual ~AMGXOperator()
+    {
+      // Comment this out if you need rebuild to work. This causes AMGX_solver_destroy memory issues.
+      AMGX_SAFE_CALL(AMGX_solver_destroy(Solver_));
+      AMGX_SAFE_CALL(AMGX_vector_destroy(X_));
+      AMGX_SAFE_CALL(AMGX_vector_destroy(Y_));
+      AMGX_SAFE_CALL(AMGX_matrix_destroy(A_));
+      AMGX_SAFE_CALL(AMGX_resources_destroy(Resources_));
+      AMGX_SAFE_CALL(AMGX_config_destroy(Config_));
+    }
 
+   
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const Map> getDomainMap() const;
 
@@ -509,6 +525,7 @@ namespace MueLu {
 
     RCP<Teuchos::Time>      vectorTimer1_;
     RCP<Teuchos::Time>      vectorTimer2_;
+    RCP<Teuchos::Time>      solverTimer_;
   };
 
 } // namespace

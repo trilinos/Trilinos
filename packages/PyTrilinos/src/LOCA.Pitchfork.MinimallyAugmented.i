@@ -48,7 +48,7 @@ PyTrilinos.LOCA.Pitchfork.MinimallyAugmented is the python interface
 to namespace Pitchfork::MinimallyAugmented of the Trilinos
 continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Pitchfork.MinimallyAugmented is to provide ***.
 The python version of LOCA.Pitchfork.MinimallyAugmented supports the
@@ -59,9 +59,22 @@ following classes:
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.Pitchfork",
-        directors = "1",
-        docstring = %loca_pitchfork_minimallyaugmented_docstring) MinimallyAugmented
+%define %loca_pitchfork_minimallyaugmented_importcode
+"
+from . import _MinimallyAugmented
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import MultiContinuation
+from PyTrilinos.LOCA import TurningPoint
+from . import MooreSpence
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA.Pitchfork",
+        directors    = "1",
+        moduleimport = %loca_pitchfork_minimallyaugmented_importcode,
+        docstring    = %loca_pitchfork_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
 // PyTrilinos include files
@@ -105,13 +118,6 @@ following classes:
 %teuchos_rcp(LOCA::Pitchfork::MinimallyAugmented::AbstractGroup)
 
 // Base class support
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 %import "NOX.Abstract.i"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
 %import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"

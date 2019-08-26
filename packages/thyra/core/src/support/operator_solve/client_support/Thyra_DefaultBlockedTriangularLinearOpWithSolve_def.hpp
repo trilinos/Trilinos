@@ -152,6 +152,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
   using Teuchos::null;
 #ifdef THYRA_DEBUG
   TEUCHOS_ASSERT_EQUALITY(numRowBlocks, numColBlocks);
+#else
+  (void)numColBlocks;
 #endif
   assertBlockFillIsActive(false);
   numDiagBlocks_ = numRowBlocks;
@@ -202,8 +204,8 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::acceptsBlock(
 
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstBlock(
-  const int i, const int j,
-  const Teuchos::RCP<LinearOpBase<Scalar> > &block
+  const int /* i */, const int /* j */,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &/* block */
   )
 {
   assertBlockFillIsActive(true);
@@ -213,8 +215,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstBlock(
 
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setBlock(
-  const int i, const int j,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &block
+  const int /* i */, const int /* j */,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &/* block */
   )
 {
   assertBlockFillIsActive(true);
@@ -608,6 +610,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertBlockFillIsActive(
 {
 #ifdef THYRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(!(blockFillIsActive_==blockFillIsActive_in));
+#else
+  (void)blockFillIsActive_in;
 #endif
 }
 
@@ -626,6 +630,9 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertBlockRowCol(
     !( 0 <= j && j < numDiagBlocks_ ), std::logic_error,
     "Error, j="<<j<<" does not fall in the range [0,"<<numDiagBlocks_-1<<"]!"
       );
+#else
+  (void)i;
+  (void)j;
 #endif
 }
 
@@ -648,6 +655,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setLOWSBlockImpl(
     "Error, this DefaultBlockedTriangularLinearOpWithSolve does not accept\n"
     "LOWSB objects for the block i="<<i<<", j="<<j<<"!"
     );
+#else
+  (void)j;
 #endif
   diagonalBlocks_[i] = block;
 }
@@ -669,6 +678,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructu
     );
   // ToDo: Make sure that all of the blocks are above or below the diagonal
   // but not both!
+#else
+  (void)blocks;
 #endif
   // ToDo: Set if this is an upper or lower triangular block operator.
 }

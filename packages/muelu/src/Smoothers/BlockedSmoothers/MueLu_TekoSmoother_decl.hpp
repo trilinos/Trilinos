@@ -278,7 +278,7 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero This option has no effect.
     */
-    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const {
+    void Apply(MultiVector& X, const MultiVector& B, bool /* InitialGuessIsZero */ = false) const {
       TEUCHOS_TEST_FOR_EXCEPTION(this->IsSetup() == false, Exceptions::RuntimeError,
                                  "MueLu::TekoSmoother::Apply(): Setup() has not been called");
 

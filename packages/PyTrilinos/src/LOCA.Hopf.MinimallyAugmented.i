@@ -48,7 +48,7 @@ PyTrilinos.LOCA.Hopf.MinimallyAugmented is the python interface to
 namespace Hopf::MinimallyAugmented of the Trilinos continuation
 algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Hopf.MinimallyAugmented is to provide groups and
 vectors for locating Hopf bifurcations using the minimally augmented
@@ -72,9 +72,25 @@ supports the following classes:
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.Hopf",
-        directors = "1",
-        docstring = %loca_hopf_minimallyaugmented_docstring) MinimallyAugmented
+%define %loca_hopf_minimallyaugmented_importcode
+"
+from . import _MinimallyAugmented
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import BorderedSystem
+from PyTrilinos.LOCA import Extended
+from PyTrilinos.LOCA import MultiContinuation
+from PyTrilinos.LOCA import TimeDependent
+from PyTrilinos.LOCA import TurningPoint
+from . import MooreSpence
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA.Hopf",
+        directors    = "1",
+        moduleimport = %loca_hopf_minimallyaugmented_importcode,
+        docstring    = %loca_hopf_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
 // PyTrilinos include files
@@ -155,13 +171,6 @@ supports the following classes:
 %teuchos_rcp(LOCA::Hopf::MooreSpence::FiniteDifferenceGroup)
 
 // Base class support
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 %import "NOX.Abstract.i"
 %import(module="BorderedSystem") "LOCA_BorderedSystem_AbstractGroup.H"
 %warnfilter(473) LOCA::MultiContinuation::AbstractGroup;

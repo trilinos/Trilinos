@@ -253,7 +253,6 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     Array<global_ordinal_type> elementList (numEltsPerProc);
 
     const int numProcs = comm->getSize ();
-    const int myRank = comm->getRank ();
     for (Array<global_ordinal_type>::size_type k = 0; k < numEltsPerProc; ++k) {
       elementList[k] = myRank + k*numProcs;
     }

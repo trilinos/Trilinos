@@ -174,8 +174,8 @@ checkConstantPCEView(const ViewType& v,
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
-      scalar_type val = h_v(i).fastAccessCoeff(j);
-      scalar_type val_expected = v_expected.fastAccessCoeff(j);
+      scalar_type val = h_v(i).coeff(j);
+      scalar_type val_expected = v_expected.coeff(j);
       TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
     }
   }
@@ -598,6 +598,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeviceAtomic, Storage, Layou
   success = checkConstantPCEView(v, val, out);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, AssignData, Storage, Layout )
+{
+  typedef typename Storage::execution_space Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::UQ::PCE<Storage> PCE;
+  typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  //typedef size_t size_type;
+  typedef typename PCE::cijk_type Cijk;
+
+  // Build Cijk tensor
+  const int stoch_dim = 2;
+  const int poly_ord = 3;
+  Cijk cijk = build_cijk<Cijk>(stoch_dim, poly_ord);
+
+  const size_type num_rows = 11;
+  const size_type num_cols = cijk.dimension();
+  ViewType v1 = Kokkos::make_view<ViewType>("view1", cijk, num_rows, num_cols);
+  ViewType v2 = Kokkos::make_view<ViewType>("view2", cijk, num_rows, num_cols);
+  Scalar val1 = 1.234;
+  Scalar val2 = 5.678;
+  Kokkos::deep_copy(v1, val1);
+  Kokkos::deep_copy(v2, val2);
+
+  auto s1 = Kokkos::subview(v1, std::make_pair(0, 1));
+  auto s2 = Kokkos::subview(v2, std::make_pair(0, 1));
+
+  s1.assign_data(s2.data());
+
+  success = checkConstantPCEView(s1, val2, out);
+}
+
 /*
 */
 
@@ -615,7 +647,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeviceAtomic, Storage, Layou
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_PCE, DeepCopy_ConstantPCE2, STORAGE, LAYOUT )           \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
-    Kokkos_View_PCE, Unmanaged, STORAGE, LAYOUT )
+    Kokkos_View_PCE, Unmanaged, STORAGE, LAYOUT )                       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_PCE, AssignData, STORAGE, LAYOUT )
 
 // Some tests the fail, or fail to compile
 

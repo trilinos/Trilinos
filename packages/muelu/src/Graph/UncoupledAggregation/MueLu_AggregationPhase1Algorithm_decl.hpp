@@ -79,9 +79,9 @@ namespace MueLu {
     Only nodes with state READY are changed to AGGREGATED. Nodes with other states are not touched.
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class AggregationPhase1Algorithm :
     public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AGGREGATIONPHASE1ALGORITHM_SHORT
@@ -92,7 +92,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationPhase1Algorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    AggregationPhase1Algorithm(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~AggregationPhase1Algorithm() { }

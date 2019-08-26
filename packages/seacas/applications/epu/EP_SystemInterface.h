@@ -48,7 +48,7 @@ namespace Excn {
   class SystemInterface
   {
   public:
-    SystemInterface(int rank = 0);
+    explicit SystemInterface(int rank = 0);
     ~SystemInterface();
 
     bool parse_options(int argc, char **argv);

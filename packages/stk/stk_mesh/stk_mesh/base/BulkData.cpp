@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -31,29 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stddef.h>                     // for size_t, NULL
-#include <string.h>                     // for memcpy, strcmp
-#include <algorithm>                    // for sort, lower_bound, unique, etc
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <sstream>
-#include <fstream>
-#include <iterator>                     // for back_insert_iterator, etc
-#include <set>                          // for set, set<>::iterator, etc
-#include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
-#include <stk_mesh/base/FaceCreator.hpp>
-#include <stk_mesh/baseImpl/check_comm_list.hpp>
-#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, print_entity_key, etc
-#include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
-#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg, etc
-#include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
-#include <stk_util/util/StaticAssert.hpp>  // for StaticAssert, etc
-#include <stk_util/util/string_case_compare.hpp>
-#include <string>                       // for char_traits, string, etc
-#include <utility>                      // for pair, make_pair, swap
-#include <vector>                       // for vector, etc
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<, etc
 #include "stk_mesh/base/EntityCommDatabase.hpp"  // for pack_entity_info, etc
@@ -69,18 +47,42 @@
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
 #include "stk_util/util/NamedPair.hpp"
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
 #include "stk_util/util/SortAndUnique.hpp"
-#include "stk_util/diag/StringUtil.hpp"
-#include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
+#include <algorithm>                    // for sort, lower_bound, unique, etc
+#include <fstream>
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <iterator>                     // for back_insert_iterator, etc
+#include <set>                          // for set, set<>::iterator, etc
+#include <sstream>
+#include <stddef.h>                     // for size_t, NULL
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FaceCreator.hpp>
+#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, print_entity_key, etc
+#include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_mesh/baseImpl/ElementTopologyDeletions.hpp>
+#include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
+#include <stk_mesh/baseImpl/check_comm_list.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
 #include <stk_mesh/baseImpl/elementGraph/SideSharingUsingGraph.hpp>
-#include <stk_mesh/baseImpl/ElementTopologyDeletions.hpp>
+#include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
+#include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg, etc
+#include <stk_util/util/StaticAssert.hpp>  // for StaticAssert, etc
+#include <stk_util/util/string_case_compare.hpp>
+#include <string.h>                     // for memcpy, strcmp
+#include <string>                       // for char_traits, string, etc
+#include <utility>                      // for pair, make_pair, swap
+#include <vector>                       // for vector, etc
 
 namespace stk {
 namespace mesh {
@@ -458,7 +460,6 @@ BulkData::BulkData( MetaData & mesh_meta_data
 #ifdef SIERRA_MIGRATION
                     , bool add_fmwk_data
 #endif
-                    , ConnectivityMap const* /*arg_connectivity_map*/
                     , FieldDataManager *field_data_manager
                     , unsigned bucket_capacity
                     )
@@ -1765,12 +1766,21 @@ void BulkData::allocate_field_data()
   }
 }
 
-void BulkData::register_observer(std::shared_ptr<ModificationObserver> observer)
+void BulkData::reallocate_field_data(stk::mesh::FieldBase & field)
+{
+  const std::vector<FieldBase *> & field_set = mesh_meta_data().get_fields();
+  for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
+    const std::vector<Bucket*>& buckets = this->buckets(rank);
+    m_field_data_manager->reallocate_field_data(rank, buckets, field, field_set);
+  }
+}
+
+void BulkData::register_observer(std::shared_ptr<ModificationObserver> observer) const
 {
     notifier.register_observer(observer);
 }
 
-void BulkData::unregister_observer(std::shared_ptr<ModificationObserver> observer)
+void BulkData::unregister_observer(std::shared_ptr<ModificationObserver> observer) const
 {
     notifier.unregister_observer(observer);
 }
@@ -2074,7 +2084,8 @@ void print_entity_connectivity(const BulkData& mesh, const MeshIndex& meshIndex,
         const int num_conn         = bucket->num_connectivity(b_ord, r);
         for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
             Entity target_entity = entities[c_itr];
-            out << "          [" << ordinals[c_itr] << "]  " << mesh.entity_key(target_entity) << "  ";
+            uint32_t ord = ordinals[c_itr];
+            out << "          [" << ord << "]  " << mesh.entity_key(target_entity) << "  ";
             if (r != stk::topology::NODE_RANK) {
                 out << mesh.bucket(target_entity).topology();
                 if (b_rank != stk::topology::NODE_RANK) {
@@ -2284,7 +2295,7 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
 
   const MeshIndex& idx = mesh_index(e_from);
 
-  ThrowAssertMsg(local_id <= INVALID_CONNECTIVITY_ORDINAL, "local_id = " << local_id << ", max = " << INVALID_CONNECTIVITY_ORDINAL);
+  ThrowAssertMsg(local_id <= INVALID_CONNECTIVITY_ORDINAL, "local_id = " << local_id << ", max = " << (uint32_t)INVALID_CONNECTIVITY_ORDINAL);
   bool modified = idx.bucket->declare_relation(idx.bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id), permut);
 
   if (modified)
@@ -2371,19 +2382,6 @@ void BulkData::declare_relation( Entity e_from ,
   OrdinalVector ordinal_scratch, scratch2, scratch3;
   internal_declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, scratch2, scratch3);
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED void BulkData::declare_relation( Entity e_from ,
-                                 Entity e_to ,
-                                 const RelationIdentifier local_id ,
-                                 Permutation permut,
-                                 OrdinalVector& ordinal_scratch,
-                                 PartVector& part_scratch)
-{
-    OrdinalVector scratch2, scratch3;
-    internal_declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, scratch2, scratch3);
-}
-#endif
 
 void BulkData::declare_relation( Entity e_from ,
                                  Entity e_to ,
@@ -2525,7 +2523,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
 
         for (int j = 0; j < num_rels; ++j) {
           ThrowAssertMsg(is_valid(rel_entities[j]), "Error, entity " << e_to.local_offset() << " with key " << entity_key(e_to) << " has invalid back-relation for ordinal: "
-                         << rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
+                         << (uint32_t)rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
           if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
           {
             impl::get_part_ordinals_to_induce_on_lower_ranks(*this, rel_entities[j], e_to_entity_rank, keep);
@@ -2610,7 +2608,8 @@ void BulkData::get_entities_that_have_sharing(std::vector<stk::mesh::Entity> &en
     if(parallel_size() > 1)
     {
         // this communicates states of the entities to all procs so that entity states are consistent
-        internal_resolve_shared_modify_delete();
+        stk::mesh::EntityVector entitiesNoLongerShared;
+        internal_resolve_shared_modify_delete(entitiesNoLongerShared);
     }
 
     int myProcId = this->parallel_rank();
@@ -3004,6 +3003,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
       Entity entity = i->first;
       pack_entity_info(*this, buffer , entity );
       pack_field_values(*this, buffer , entity );
+      pack_sideset_info(*this, buffer , entity );
 
       if (unique_list_of_send_closure.empty() || entity_key(unique_list_of_send_closure.back()) != entity_key(entity)) {
         unique_list_of_send_closure.push_back(entity);
@@ -3018,9 +3018,16 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
       Entity entity = i->first;
       pack_entity_info(*this, buffer , entity );
       pack_field_values(*this, buffer , entity );
+      pack_sideset_info(*this, buffer , entity );
     }
 
     comm.communicate();
+
+    for ( std::set<EntityProc,EntityLess>::iterator
+          i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
+      Entity entity = i->first;
+      remove_element_entries_from_sidesets(*this, entity);
+    }
 
     OrdinalVector partOrdinals;
     OrdinalVector scratchOrdinalVec, scratchSpace;
@@ -3072,6 +3079,8 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
         if ( ! unpack_field_values(*this, buf , entity , error_msg ) ) {
           ++error_count ;
         }
+
+        unpack_sideset_info( buf, *this, entity);
       }
     }
 
@@ -3146,6 +3155,12 @@ Ghosting & BulkData::internal_create_ghosting( const std::string & name )
     ThrowErrorMsgIf( error, "Parallel name inconsistency");
   }
 #endif
+
+  for(Ghosting* ghosting : ghostings()) {
+    if (ghosting->name() == name) {
+      return *ghosting;
+    }
+  }
 
   Ghosting * const g =
     new Ghosting( *this , name , m_ghosting.size() , m_meshModification.synchronized_count() );
@@ -4022,9 +4037,9 @@ void BulkData::update_side_elem_permutations(Entity side)
     const stk::mesh::ConnectivityOrdinal* side_elem_ords = begin_element_ordinals(side);
     const stk::mesh::Permutation* side_elem_perms = begin_element_permutations(side);
     for(unsigned i=0; i<numElems; ++i) {
-        std::pair<bool,unsigned> equiv = stk::mesh::side_equivalent(*this, elems[i], side_elem_ords[i], sideNodes);
-        ThrowRequireMsg(equiv.first,"ERROR, side not equivalent to element-side");
-        stk::mesh::Permutation correctPerm = static_cast<stk::mesh::Permutation>(equiv.second);
+        stk::EquivalentPermutation equiv = stk::mesh::side_equivalent(*this, elems[i], side_elem_ords[i], sideNodes);
+        ThrowRequireMsg(equiv.is_equivalent,"ERROR, side not equivalent to element-side");
+        stk::mesh::Permutation correctPerm = static_cast<stk::mesh::Permutation>(equiv.permutation_number);
         internal_declare_relation(elems[i], side, side_elem_ords[i], correctPerm);
         ThrowRequireMsg(side_elem_perms[i] == correctPerm, "ERROR, failed to set permutation");
     }
@@ -4641,7 +4656,8 @@ bool BulkData::internal_modification_end_for_change_parts()
     stk::all_reduce_max(parallel(), &local_shared_modified, &global_shared_modified, 1);
 
     if (this->parallel_size() > 1 && global_shared_modified > 0 /*stk::mesh::impl::shared_entities_modified_on_any_proc(*this, this->parallel())*/) {
-      internal_resolve_shared_membership();
+      stk::mesh::EntityVector entitiesNoLongerShared;
+      internal_resolve_shared_membership(entitiesNoLongerShared);
 
       // check_mesh_consistency();
     }
@@ -4948,7 +4964,8 @@ bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, 
           find_and_delete_internal_faces(entity_rank, only_consider_second_element_from_this_selector);
       }
 
-      this->internal_resolve_shared_membership();
+      stk::mesh::EntityVector entitiesNoLongerShared;
+      this->internal_resolve_shared_membership(entitiesNoLongerShared);
 
       if(is_automatic_aura_on())
       {
@@ -4985,7 +5002,8 @@ bool BulkData::internal_modification_end_for_entity_creation( const std::vector<
 
   if (parallel_size() > 1) {
       internal_resolve_parallel_create(entity_rank_vector);
-      internal_resolve_shared_membership();
+      stk::mesh::EntityVector entitiesNoLongerShared;
+      internal_resolve_shared_membership(entitiesNoLongerShared);
 
       if (is_automatic_aura_on()) {
           bool connectFacesToPreexistingGhosts = true;
@@ -5260,7 +5278,7 @@ void BulkData::remove_unneeded_induced_parts(stk::mesh::Entity entity, const Ent
     internal_change_entity_parts(entity, part_storage.induced_part_ordinals, part_storage.removeParts, scratch, scratch2);
 }
 
-void BulkData::internal_resolve_shared_membership()
+void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector & entitiesNoLongerShared)
 {
     ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
@@ -5288,13 +5306,22 @@ void BulkData::internal_resolve_shared_membership()
 #ifndef NDEBUG
     }
     catch(...) { allOk = false; }
+
     int numericAllOk = allOk;
     int minAllOk = 0;
-
     stk::all_reduce_min(this->parallel(), &numericAllOk, &minAllOk, 1);
     allOk = minAllOk == 1;
     ThrowRequireWithSierraHelpMsg(allOk);
 #endif
+
+    OrdinalVector scratch, scratch2;
+    for (stk::mesh::Entity entity : entitiesNoLongerShared) {
+      part_storage.induced_part_ordinals.clear();
+      part_storage.removeParts.clear();
+      induced_part_membership(*this, entity, part_storage.induced_part_ordinals);
+      filter_out_unneeded_induced_parts(*this, entity, part_storage.induced_part_ordinals, part_storage.removeParts);
+      internal_change_entity_parts(entity, part_storage.induced_part_ordinals, part_storage.removeParts, scratch, scratch2);
+    }
 
     std::vector<EntityProc> send_list;
     fill_entity_procs_for_owned_modified_or_created(send_list);
@@ -6932,13 +6959,15 @@ void BulkData::delete_shared_entities_which_are_no_longer_in_owned_closure(Entit
   }
 }
 
-void BulkData::remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing)
+void BulkData::remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing, stk::mesh::EntityVector & entitiesNoLongerShared)
 {
+  entitiesNoLongerShared.clear();
   OrdinalVector scratchOrdinalVec, scratchSpace;
   for(const EntityProc& entityAndProc : entitiesToRemoveFromSharing) {
       EntityKey key = this->entity_key(entityAndProc.first);
       this->entity_comm_map_erase(key,EntityCommInfo(BulkData::SHARED, entityAndProc.second));
       if (!this->in_shared(key)) {
+          entitiesNoLongerShared.push_back(entityAndProc.first);
           this->internal_change_entity_parts(entityAndProc.first,{},{this->mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal()}, scratchOrdinalVec, scratchSpace);
           this->internal_mark_entity(entityAndProc.first, NOT_SHARED);
       }
@@ -7108,7 +7137,8 @@ void BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
 
 void BulkData::internal_resolve_sharing_and_ghosting_for_sides(bool connectFacesToPreexistingGhosts)
 {
-    internal_resolve_shared_modify_delete();
+    stk::mesh::EntityVector entitiesNoLongerShared;
+    internal_resolve_shared_modify_delete(entitiesNoLongerShared);
     internal_resolve_shared_part_membership_for_element_death();
     if(is_automatic_aura_on())
         resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(),
@@ -7489,6 +7519,11 @@ bool BulkData::was_mesh_modified_since_sideset_creation()
     return m_sideSetData.was_mesh_modified_since_sideset_creation();
 }
 
+void BulkData::synchronize_sideset_sync_count()
+{
+    m_sideSetData.set_sideset_sync_count(this->synchronized_count());
+}
+
 void BulkData::clear_sidesets()
 {
     m_sideSetData.clear_sidesets();
@@ -7500,6 +7535,11 @@ void BulkData::clear_sideset(const stk::mesh::Part &part)
 }
 
 std::vector<SideSet *> BulkData::get_sidesets()
+{
+    return m_sideSetData.get_sidesets();
+}
+
+std::vector<const SideSet *> BulkData::get_sidesets() const
 {
     return m_sideSetData.get_sidesets();
 }

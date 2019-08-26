@@ -10,9 +10,9 @@ echo
 
 echo "Loading env and running ctest -S comamnd to update, configure and build ..."
 
-source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/create-src-and-build-dir.sh
-
 source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/setup_env.sh
+
+source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/create-src-and-build-dir.sh
 
 CTEST_S_CMND=env CTEST_DO_TEST=OFF ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 

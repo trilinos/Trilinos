@@ -188,7 +188,7 @@ namespace Intrepid2 {
       */
       template<typename outPointViewType,
                typename refPointViewType>
-      inline
+      KOKKOS_INLINE_FUNCTION
       static void
       mapToModifiedReference(outPointViewType outPoints,
                              const refPointViewType refPoints,
@@ -247,7 +247,7 @@ namespace Intrepid2 {
           \param  cellOrt         [in]  - cell orientation number (zero is aligned with shards default configuration
       */
       template<typename JacobianViewType>
-      inline
+      KOKKOS_INLINE_FUNCTION
       static void
       getJacobianOfOrientationMap(JacobianViewType jacobian,
                              const unsigned cellTopoKey,

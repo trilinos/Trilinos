@@ -1735,75 +1735,76 @@ C
       RETURN
       END
       SUBROUTINE WCPSIC(NUM,INDEX,CLRARY,CLRMOD)
-C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
-C VDIQCO           -Inquire Color Table.
-C
-C R.W.Simons       -08APR81
-C H. S. LAUSON      29MAY86 - changed for current HLS interpretation
-C
-C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C                   All Black and White Devices. (LXY, HC1, ALP)
-C
-C ENTRY CONDITIONS -NUM = integer number of color indexes to inquire.
-C                   Range 1-256.
-C                   INDEX = integer array of indexes to inquire.  Range
-C                   0-255.
-C                   CLRMOD = integer color model to be used.  Range 0,1.
-C
-C CALLS            -VBERRH
-C
-C EXIT CONDITIONS  -CLRARY = real array of 3 by NUM elements returning
-C                   the values of the components of the indexes inquired.
-C                   Range for RGB: red 0.0-1.0
-C                                  green 0.0-1.0
-C                                  blue 0.0-1.0
-C                   Range for HLS: hue 0.0-360.0
-C                                  lightness 0.0-1.0
-C                                  saturation 0.0-1.0
-C
-C NARRATIVE        -Inquire one or more color table entries.  NUM and
-C                   INDEX specify how many and which indexes are being
-C                   inquired.  CLRMOD specifies which color model
-C                   (0=RGB, 1=HLS) should be used in constructing values
-C                   to return in CLRARY.  A device which does not
-C                   support a color table index specified will
-C                   return -1.0 in the first element of the CLRARY value
-C                   for that index.
-C
-C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C     
+C     VDIQCO           -Inquire Color Table.
+C     
+C     R.W.Simons       -08APR81
+C     H. S. LAUSON      29MAY86 - changed for current HLS interpretation
+C     
+C     ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
+C     All Black and White Devices. (LXY, HC1, ALP)
+C     
+C     ENTRY CONDITIONS -NUM = integer number of color indexes to inquire.
+C     Range 1-256.
+C     INDEX = integer array of indexes to inquire.  Range
+C     0-255.
+C     CLRMOD = integer color model to be used.  Range 0,1.
+C     
+C     CALLS            -VBERRH
+C     
+C     EXIT CONDITIONS  -CLRARY = real array of 3 by NUM elements returning
+C     the values of the components of the indexes inquired.
+C     Range for RGB: red 0.0-1.0
+C     green 0.0-1.0
+C     blue 0.0-1.0
+C     Range for HLS: hue 0.0-360.0
+C     lightness 0.0-1.0
+C     saturation 0.0-1.0
+C     
+C     NARRATIVE        -Inquire one or more color table entries.  NUM and
+C     INDEX specify how many and which indexes are being
+C     inquired.  CLRMOD specifies which color model
+C     (0=RGB, 1=HLS) should be used in constructing values
+C     to return in CLRARY.  A device which does not
+C     support a color table index specified will
+C     return -1.0 in the first element of the CLRARY value
+C     for that index.
+C     
+C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C     
       INTEGER NUM,INDEX(NUM),CLRMOD
       REAL CLRARY(3,NUM)
-C
+C     
       COMMON /PCOLST/ PCOLS(3,256)
-C
-C CHECK FOR VALID NUM.
+C     
+C     CHECK FOR VALID NUM.
       IF(NUM.LT.1.OR.NUM.GT.256) THEN
          CALL VBERRH(723,5)
          GOTO 999
       END IF
-C
-C CHECK FOR VALID CLRMOD.
+C     
+C     CHECK FOR VALID CLRMOD.
       IF(CLRMOD.NE.0.AND.CLRMOD.NE.1) THEN
          CALL VBERRH(725,5)
          GOTO 999
       END IF
-C
+C     
       IF(CLRMOD.NE.0) STOP 'HLS COLORS NOT SUPPORTED'
-C
-C CHECK FOR VALID INDEXES.
-         DO 100 I=1,NUM
+C     
+C     CHECK FOR VALID INDEXES.
+      DO 100 I=1,NUM
          INDEXN=INDEX(I)
          IF(INDEXN.LT.0.OR.INDEXN.GT.255) THEN
             CALL VBERRH(724,5)
             GOTO 100
          END IF
-           DO 200 IC=1,3
-  200      CLRARY(IC,I)=PCOLS(IC,INDEXN)
-  100    CONTINUE
-C
-  999 RETURN
+         CLRARY(1,I)=PCOLS(1,INDEXN)
+         CLRARY(2,I)=PCOLS(2,INDEXN)
+         CLRARY(3,I)=PCOLS(3,INDEXN)
+ 100  CONTINUE
+C     
+ 999  RETURN
       END
       SUBROUTINE WCPSCP(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
@@ -1893,161 +1894,162 @@ C
   999 RETURN
       END
       SUBROUTINE WCPSCO(INDEX,CLRARY,CLRMOD)
-C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
-C VDSTCO           -Set Color Table.
-C
-C R.W.SIMONS       -02DEC80
-C
-C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C                   All Black and White Devices. (LXY, HC1, ALP)
-C
-C ENTRY CONDITIONS -NUM = integer number of color indexes to be set.
-C                   Range 1-256.
-C                   INDEX = integer array of indexes to be set.  Range
-C                   0-255.
-C                   CLRARY = real array of 3 by NUM elements specifying
-C                   the values of the components of the index to be
-C                   set.
-C                   Range for RGB: red 0.0-1.0
-C                                  green 0.0-1.0
-C                                  blue 0.0-1.0
-C                   Range for HLS: hue 0.0-360.0
-C                                  lightness 0.0-1.0
-C                                  saturation 0.0-1.0
-C                   Default:
-C                   Index  Color  RGB Values
-C                     0    black   0.,0.,0.
-C                     1    red     1.,0.,0.
-C                     2    green   0.,1.,0.
-C                     3    yellow  1.,1.,0.
-C                     4    blue    0.,0.,1.
-C                     5    magenta 1.,0.,1.
-C                     6    cyan    0.,1.,1.
-C                     7    white   1.,1.,1.
-C                   CLRMOD = integer color model being used.  Range 0,1.
-C                   Default: 0 (RGB).
-C
-C CALLS            -VBERRH
-C
-C EXIT CONDITIONS  -
-C
-C NARRATIVE        -Set one or more color table entries.  This is a
-C                   dynamic setting, if the device will support it.
-C                   "Dynamic" neans that primitives which have already
-C                   been drawn will change their appearance when a
-C                   dynamic setting is changed.  INDEX is the
-C                   position (or array of positions) in the table
-C                   (0-255).  CLRARY is a three-element vector (or 3 by
-C                   NUM array) with the fractions (0.-1.) of RGB or
-C                   values (0.0-360.0, 0.0-1.0, 0.0-1.0) of HLS.
-C                   A translator for HLS to RGB will be used from
-C                   GSPC79.  CLRMOD specifies which color model is being
-C                   used (0=RGB, 1=HLS).
-C                   All devices must support at least a single device
-C                   dependent value for each of red, green, and blue and
-C                   the corresponding values for hue, lightness, and
-C                   saturation.  If unsupported values are specified,
-C                   set to the closest supported values.
-C                   All devices must support both RGB and HLS color
-C                   models.
-C                   All devices must support at least a single device
-C                   dependent INDEX value in the range 0-7.  If an
-C                   unsupported value is specified, it should be ignored.
-C
-C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C     
+C     VDSTCO           -Set Color Table.
+C     
+C     R.W.SIMONS       -02DEC80
+C     
+C     ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
+C     All Black and White Devices. (LXY, HC1, ALP)
+C     
+C     ENTRY CONDITIONS -NUM = integer number of color indexes to be set.
+C     Range 1-256.
+C     INDEX = integer array of indexes to be set.  Range
+C     0-255.
+C     CLRARY = real array of 3 by NUM elements specifying
+C     the values of the components of the index to be
+C     set.
+C     Range for RGB: red 0.0-1.0
+C     green 0.0-1.0
+C     blue 0.0-1.0
+C     Range for HLS: hue 0.0-360.0
+C     lightness 0.0-1.0
+C     saturation 0.0-1.0
+C     Default:
+C     Index  Color  RGB Values
+C     0    black   0.,0.,0.
+C     1    red     1.,0.,0.
+C     2    green   0.,1.,0.
+C     3    yellow  1.,1.,0.
+C     4    blue    0.,0.,1.
+C     5    magenta 1.,0.,1.
+C     6    cyan    0.,1.,1.
+C     7    white   1.,1.,1.
+C     CLRMOD = integer color model being used.  Range 0,1.
+C     Default: 0 (RGB).
+C     
+C     CALLS            -VBERRH
+C     
+C     EXIT CONDITIONS  -
+C     
+C     NARRATIVE        -Set one or more color table entries.  This is a
+C     dynamic setting, if the device will support it.
+C     "Dynamic" neans that primitives which have already
+C     been drawn will change their appearance when a
+C     dynamic setting is changed.  INDEX is the
+C     position (or array of positions) in the table
+C     (0-255).  CLRARY is a three-element vector (or 3 by
+C     NUM array) with the fractions (0.-1.) of RGB or
+C     values (0.0-360.0, 0.0-1.0, 0.0-1.0) of HLS.
+C     A translator for HLS to RGB will be used from
+C     GSPC79.  CLRMOD specifies which color model is being
+C     used (0=RGB, 1=HLS).
+C     All devices must support at least a single device
+C     dependent value for each of red, green, and blue and
+C     the corresponding values for hue, lightness, and
+C     saturation.  If unsupported values are specified,
+C     set to the closest supported values.
+C     All devices must support both RGB and HLS color
+C     models.
+C     All devices must support at least a single device
+C     dependent INDEX value in the range 0-7.  If an
+C     unsupported value is specified, it should be ignored.
+C     
+C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C     
       INTEGER INDEX,CLRMOD
       REAL CLRARY(3)
       CHARACTER*6 KOLIND
       CHARACTER*20 KOLCOM
       COMMON /VCVEC1/ IVECT
       INTEGER IVECT
-C
+C     
 C     ARRAY TO CONTAIN COMPLETE COLOR TABLE
-C
+C     
       COMMON /PCOLST/ PCOLS(3,256)
-C
+C     
 C     mopoly controls polygon fill =0, on ;  =1, off
 C     mocolr controls color =0, on ;  =1, off
       COMMON /VCPSTB/ MOPOLY, MOCOLR
-C
-C
-C CHECK FOR VALID CLRMOD.
+C     
+C     
+C     CHECK FOR VALID CLRMOD.
       IF(CLRMOD.NE.0.AND.CLRMOD.NE.1) THEN
-        CALL VBERRH(725,5)
-        GOTO 999
+         CALL VBERRH(725,5)
+         GOTO 999
       END IF
-C
-C CHECK FOR VALID INDEXES.
+C     
+C     CHECK FOR VALID INDEXES.
       IF(INDEX.LT.0.OR.INDEX.GT.255) THEN
-        CALL VBERRH(724,5)
-        GOTO 100
+         CALL VBERRH(724,5)
+         GOTO 100
       END IF
-C CHECK FOR VALID CLRARY.
+C     CHECK FOR VALID CLRARY.
       CLRAR1=CLRARY(1)
       CLRAR2=CLRARY(2)
       CLRAR3=CLRARY(3)
       IF(CLRMOD.EQ.0) THEN
-        IF(CLRAR1.LT.0..OR.CLRAR1.GT.1.
-     X    .OR.CLRAR2.LT.0..OR.CLRAR2.GT.1.
-     X    .OR.CLRAR3.LT.0..OR.CLRAR3.GT.1.) THEN
-          CALL VBERRH(727,5)
-          GOTO 100
-        END IF
-C
-C 256 INDEXES ARE SUPPORTED:
-        DO 200 IC=1,3
- 200      PCOLS(IC,INDEX+1)=CLRARY(IC)
-C
-C           define symbol for color reference
-C
-          IF(MOCOLR.NE.0) GO TO 390
-C
-C           if a set of vectors was in process, issue stroke command
-C           to draw them - then start a new path.
-C
-          IF(IVECT.NE.0) THEN
-            CALL PSTBUF(2,'s ')
-            IVECT=0
-          END IF
-          CALL PSTBUF(0,' ')
-          CALL PSTBUF(2,'r ')
-          KOLIND='/c'
-          IF(INDEX.LE.9) THEN
-            WRITE(KOLIND(3:3),'(I1)',ERR=310) INDEX
-            NNN=4
-          ELSEIF(INDEX.LE.99) THEN
-            WRITE(KOLIND(3:4),'(I2)',ERR=310) INDEX
-            NNN=5
-          ELSE
-            WRITE(KOLIND(3:5),'(I3)',ERR=310) INDEX
-            NNN=6
-          END IF
-          WRITE(KOLCOM,300,ERR=310) (PCOLS(IC,INDEX+1),IC=1,3)
- 300      FORMAT(F5.3,2F6.3,' q}')
-          CALL PSTBUF(NNN+26,KOLIND(1:NNN)//'{'//KOLCOM//' def ')
- 310      CONTINUE
-C           save and restore can not be in same line - why?
-          CALL PSTBUF(0,' ')
-          CALL PSTBUF(1,'v')
-          CALL PSTBUF(0,' ')
- 390      CONTINUE
-        ELSE
-          IF(CLRAR1.LT.0..OR.CLRAR1.GT.360.
-     X      .OR.CLRAR2.LT.0..OR.CLRAR2.GT.1.
-     X      .OR.CLRAR3.LT.0..OR.CLRAR3.GT.1.) THEN
+         IF(CLRAR1.LT.0..OR.CLRAR1.GT.1.
+     X        .OR.CLRAR2.LT.0..OR.CLRAR2.GT.1.
+     X        .OR.CLRAR3.LT.0..OR.CLRAR3.GT.1.) THEN
             CALL VBERRH(727,5)
             GOTO 100
-          END IF
-C
-C 256 INDEXES ARE SUPPORTED:
-          STOP 'HLS COLORS NOT AVAILABLE'
-        END IF
- 100    CONTINUE
-C
- 999    RETURN
-        END
+         END IF
+C     
+C     256 INDEXES ARE SUPPORTED:
+         PCOLS(1,INDEX+1)=CLRARY(1)
+         PCOLS(2,INDEX+1)=CLRARY(2)
+         PCOLS(3,INDEX+1)=CLRARY(3)
+C     
+C     define symbol for color reference
+C     
+         IF(MOCOLR.NE.0) GO TO 390
+C     
+C     if a set of vectors was in process, issue stroke command
+C     to draw them - then start a new path.
+C     
+         IF(IVECT.NE.0) THEN
+            CALL PSTBUF(2,'s ')
+            IVECT=0
+         END IF
+         CALL PSTBUF(0,' ')
+         CALL PSTBUF(2,'r ')
+         KOLIND='/c'
+         IF(INDEX.LE.9) THEN
+            WRITE(KOLIND(3:3),'(I1)',ERR=310) INDEX
+            NNN=4
+         ELSEIF(INDEX.LE.99) THEN
+            WRITE(KOLIND(3:4),'(I2)',ERR=310) INDEX
+            NNN=5
+         ELSE
+            WRITE(KOLIND(3:5),'(I3)',ERR=310) INDEX
+            NNN=6
+         END IF
+         WRITE(KOLCOM,300,ERR=310) (PCOLS(IC,INDEX+1),IC=1,3)
+ 300     FORMAT(F5.3,2F6.3,' q}')
+         CALL PSTBUF(NNN+26,KOLIND(1:NNN)//'{'//KOLCOM//' def ')
+ 310     CONTINUE
+C     save and restore can not be in same line - why?
+         CALL PSTBUF(0,' ')
+         CALL PSTBUF(1,'v')
+         CALL PSTBUF(0,' ')
+ 390     CONTINUE
+      ELSE
+         IF(CLRAR1.LT.0..OR.CLRAR1.GT.360.
+     X        .OR.CLRAR2.LT.0..OR.CLRAR2.GT.1.
+     X        .OR.CLRAR3.LT.0..OR.CLRAR3.GT.1.) THEN
+            CALL VBERRH(727,5)
+            GOTO 100
+         END IF
+C     
+C     256 INDEXES ARE SUPPORTED:
+         STOP 'HLS COLORS NOT AVAILABLE'
+      END IF
+ 100  CONTINUE
+C     
+ 999  RETURN
+      END
       SUBROUTINE WCPSFC(COLOR)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
@@ -2567,7 +2569,7 @@ C
 c      CALL VDSTCS(VECTOR(6))
       CALL WCPSFC(NINT(VECTOR(1)))
       CALL PSTBUF(0,' ')
-  380 KEMPTY=0
+      KEMPTY=0
 C
       RETURN
       END
@@ -3449,12 +3451,13 @@ C check input parameters
       NDIG1=MAX(1,MIN(LENGTH,NDIGIT))
       ISTR='00000000000000000000000000000000000000000'
       ND=LENGTH
-        DO 10 I=1,NDIG1
+      DO I=1,NDIG1
         J=INT1/10
         K=INT1-10*J
         ISTR(ND:ND)=KA(K+1)
         ND=ND-1
-   10   INT1=J
+        INT1=J
+      end do
       RETURN
       END
       SUBROUTINE PSTBBG
@@ -3612,7 +3615,6 @@ C GET THE TIME AND DATE
       KJDATE(2)=0
       KJDATE(3)=0
 C
-999   RETURN
       END
       SUBROUTINE PSTSEL(KARG)
 C
@@ -3664,7 +3666,7 @@ C
         KPSTBG=0
         KPSTCI=0
         IONCE=1
-   20   IF(ARG.EQ.' ' .and. bltans .eq. ' ') THEN
+        IF(ARG.EQ.' ' .and. bltans .eq. ' ') THEN
           WRITE(*,10)
    10     FORMAT(/,' This VDI PostScript driver has seven options.',/,
      &     '     1. black & white, no polygon fill',/,

@@ -331,7 +331,6 @@ C           nodsid is only for the current sideset.
      &  I12, ' nodes/df', 1X, A, ' name = "',A,'"')
 10040 FORMAT ((1X, 8I12))
 10045 FORMAT ((1X, 8(I12,'.',I1)))
-10050 FORMAT ((1X, 6 (1X, 1pE11.4)))
 10055 FORMAT ('(10x, ''All distribution factors are equal to ''', A,')')
 10060 FORMAT (10x, 'Distribution factors not stored in file.')
 10070 FORMAT ((2x,4(2X, A)))

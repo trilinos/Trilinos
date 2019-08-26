@@ -1,6 +1,7 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009 Sandia Corporation.                              */
-/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    Copyright 2002 - 2008, 2010, 2011 National Technology &         */
+/*    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   */
+/*    of Contract DE-NA0003525 with NTESS, there is a                 */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
@@ -21,8 +22,6 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/FaceCreationTestUtils.hpp>
-
-#include <stk_io/StkMeshIoBroker.hpp>
 
 namespace
 {
@@ -205,7 +204,7 @@ class StkMeshIoBrokerTester : public stk::io::StkMeshIoBroker
 public:
 
     StkMeshIoBrokerTester(stk::ParallelMachine comm) :
-        stk::io::StkMeshIoBroker(comm, nullptr)
+        stk::io::StkMeshIoBroker(comm)
     {
         this->set_sideset_face_creation_behavior_for_testing(STK_IO_SIDE_CREATION_USING_GRAPH_TEST);
     }

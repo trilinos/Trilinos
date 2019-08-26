@@ -202,6 +202,10 @@ private:
     TEUCHOS_TEST_FOR_EXCEPT(is_null(multiVecRange));
     TEUCHOS_TEST_FOR_EXCEPT(is_null(multiVecDomain));
     TEUCHOS_TEST_FOR_EXCEPT( multiVecRange->numBlocks() != multiVecDomain->numBlocks() );
+#else
+    (void)prec_fac;
+    (void)multiVecRange;
+    (void)multiVecDomain;
 #endif
   }
 

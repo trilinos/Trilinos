@@ -52,7 +52,7 @@
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 
 // include some intrepid basis functions
 // 2D basis 
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
    TEST_EQUALITY(topEdgeIndices[1].first,1); TEST_EQUALITY(topEdgeIndices[1].second,2);
    TEST_EQUALITY(topEdgeIndices[2].first,2); TEST_EQUALITY(topEdgeIndices[2].second,0);
 
-   std::vector<std::vector<long> > connectivity(4);
+   std::vector<std::vector<panzer::GlobalOrdinal>> connectivity(4);
    connectivity[0].resize(patternA->numberIds());
    connectivity[1].resize(patternA->numberIds());
    connectivity[2].resize(patternA->numberIds());
@@ -227,7 +227,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
    TEST_EQUALITY(topEdgeIndices[2].first,2); TEST_EQUALITY(topEdgeIndices[2].second,3);
    TEST_EQUALITY(topEdgeIndices[3].first,3); TEST_EQUALITY(topEdgeIndices[3].second,0);
 
-   std::vector<std::vector<long> > connectivity(4);
+   std::vector<std::vector<panzer::GlobalOrdinal>> connectivity(4);
    connectivity[0].resize(patternA->numberIds());
    connectivity[1].resize(patternA->numberIds());
    connectivity[2].resize(patternA->numberIds());
@@ -344,7 +344,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
    TEST_EQUALITY(topFaceIndices[1].first,1); TEST_EQUALITY(topFaceIndices[1].second,2);
    TEST_EQUALITY(topFaceIndices[2].first,2); TEST_EQUALITY(topFaceIndices[2].second,0);
 
-   std::vector<std::vector<long> > connectivity(4);
+   std::vector<std::vector<panzer::GlobalOrdinal>> connectivity(4);
    connectivity[0].resize(patternA->numberIds());
    connectivity[1].resize(patternA->numberIds());
    connectivity[2].resize(patternA->numberIds());
@@ -454,7 +454,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
    TEST_EQUALITY(topFaceIndices[2].first,2); TEST_EQUALITY(topFaceIndices[2].second,3);
    TEST_EQUALITY(topFaceIndices[3].first,3); TEST_EQUALITY(topFaceIndices[3].second,0);
 
-   std::vector<std::vector<long> > connectivity(4);
+   std::vector<std::vector<panzer::GlobalOrdinal>> connectivity(4);
    connectivity[0].resize(patternA->numberIds());
    connectivity[1].resize(patternA->numberIds());
    connectivity[2].resize(patternA->numberIds());
@@ -628,7 +628,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tet)
    // node numbering and the local ordering
 
    // The local ordering is defined by the following connectivity
-   std::vector<std::vector<long> > connectivity(1);
+   std::vector<std::vector<panzer::GlobalOrdinal> > connectivity(1);
    connectivity[0].resize(patternA->numberIds());
 
    connectivity[0][0] = 6; connectivity[0][1] = 2; connectivity[0][2] = 9; connectivity[0][3] = 7; 
@@ -697,7 +697,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_hex)
    // node numbering and the local ordering
 
    // The local ordering is defined by the following connectivity
-   std::vector<std::vector<long> > connectivity(1);
+   std::vector<std::vector<panzer::GlobalOrdinal>> connectivity(1);
    connectivity[0].resize(patternA->numberIds());
 
    connectivity[0][0] = 5; connectivity[0][1] = 2; connectivity[0][2] = 6; connectivity[0][3] = 7; 

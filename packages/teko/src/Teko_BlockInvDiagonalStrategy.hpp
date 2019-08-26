@@ -107,7 +107,7 @@ public:
    /** returns an (approximate) inverse of the diagonal blocks of A
      * where A is closely related to the original source for invD0 and invD1
      */
-   virtual void getInvD(const BlockedLinearOp & A, BlockPreconditionerState & state,
+   virtual void getInvD(const BlockedLinearOp & /* A */, BlockPreconditionerState & /* state */,
                         std::vector<LinearOp> & invDiag) const
    { invDiag.clear(); invDiag = invDiag_; }
 

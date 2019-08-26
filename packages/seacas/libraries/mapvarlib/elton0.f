@@ -91,26 +91,27 @@ C
       END IF
 C
 C
-      DO 10 I = 1, NODESA
-        NELTN(I) = 0
-      DO 10 J = 1, NVAREL
-        SOLENA(I,J) = 0.
-   10 CONTINUE
+      DO I = 1, NODESA
+         NELTN(I) = 0
+         DO J = 1, NVAREL
+            SOLENA(I,J) = 0.
+         end do
+      end do
 C
 C      NNODES = NNELM(ITYPE)
       NNODES = NELNDA
       IF (ITYPE .EQ. 6) NNODES = 4
-      DO 20 NEL = 1, NUMEBA
-        DO 30 I = 1, NNODES
+      DO NEL = 1, NUMEBA
+        DO I = 1, NNODES
 C
 C  number of elements associated with each node - used for
 C    computing an average later on
 C
           NELTN(ICONA(I,NEL)) = NELTN(ICONA(I,NEL)) + 1
-   30   CONTINUE
-   20 CONTINUE
+       end do
+      end do
 C
-      DO 40 IVAR = 1, NVAREL
+      DO IVAR = 1, NVAREL
         IF (ITT(IVAR,iblk) .EQ. 0)GO TO 40
         CALL EXGEV(NTP2EX,ISTP,IVAR,IDBLK,NUMEBA,SOLEA(1,IVAR),IERR)
 C
@@ -118,8 +119,8 @@ C
 C
 C replace element mass with nodal density for interpolation
 C
-          DO 50 IEL = 1, NUMEBA
-            DO 60 I = 1, NNODES
+          DO IEL = 1, NUMEBA
+            DO I = 1, NNODES
               XX(I) = XA(ICONA(I,IEL))
               YY(I) = YA(ICONA(I,IEL))
               IF (NDIMA .EQ. 3)THEN
@@ -127,29 +128,30 @@ C
               ELSE
                 ZZ(I) = 0.
               END IF
-   60       CONTINUE
+           end do
             CALL VOL(ITYPE,XX,YY,ZZ,VOLUME)
             SOLEA(IEL,IVAR) = SOLEA(IEL,IVAR) / VOLUME
-   50     CONTINUE
+         end do
         END IF
 C
 C  accumulate element variables to nodes
 C
-        DO 70 NEL = 1, NUMEBA
-          DO 80 I = 1, NNODES
+        DO NEL = 1, NUMEBA
+          DO I = 1, NNODES
             SOLENA(ICONA(I,NEL),IVAR) =
      &      SOLENA(ICONA(I,NEL),IVAR) + SOLEA(NEL,IVAR)
-   80     CONTINUE
-   70   CONTINUE
+         end do
+      end do
 C
 C  divide by number of elements contributing to each node (average)
 C
-        DO 90 I = 1, NODESA
+        DO I = 1, NODESA
           IF(NELTN(I) .NE. 0)THEN
             SOLENA(I,IVAR) = SOLENA(I,IVAR) / float(NELTN(I))
           END IF
-   90   CONTINUE
+       end do
    40 CONTINUE
+      end do
       RETURN
       END
 

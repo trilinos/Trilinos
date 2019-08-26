@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     num_elem_blk  = 1;
     num_node_sets = 0;
 
-    strcpy(par.title, title);
+    ex_copy_string(par.title, title, MAX_LINE_LENGTH + 1);
     par.num_dim       = num_dim;
     par.num_nodes     = num_nodes;
     par.num_edge      = 0;

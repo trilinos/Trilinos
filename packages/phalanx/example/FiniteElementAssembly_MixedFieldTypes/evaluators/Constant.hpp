@@ -57,7 +57,8 @@ class Constant : public PHX::EvaluatorWithBaseImpl<Traits>,
 
   using ScalarT = typename EvalT::ScalarT;
   ScalarT value;
-  PHX::MDField<ScalarT,CELL,POINT> constant;
+  // Non-optimal layout to test user maually picking layout (see README.txt for this example)
+  PHX::Field<ScalarT,2,Kokkos::LayoutLeft> constant;
   
 public:
   Constant(const std::string& field_name,

@@ -31,7 +31,7 @@ public:
 						      params)
   {}
 
-  virtual ~SolverManager () {}
+  virtual ~SolverManager () = default;
 
   virtual Teuchos::RCP<Belos::SolverManager<SC, MV, OP> >
   clone () const override

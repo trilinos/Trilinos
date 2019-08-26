@@ -380,7 +380,7 @@ void DefaultProductMultiVector<Scalar>::assertInitialized() const
 
 template<class Scalar>
 inline
-void DefaultProductMultiVector<Scalar>::validateColIndex(const int j) const
+void DefaultProductMultiVector<Scalar>::validateColIndex(const int /* j */) const
 {}
 
 

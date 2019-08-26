@@ -65,9 +65,9 @@ template <typename Adapter>
 class AlgParMETIS : public Algorithm<Adapter>
 {
 public:
-  AlgParMETIS(const RCP<const Environment> &env,
-              const RCP<const Comm<int> > &problemComm,
-              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
+  AlgParMETIS(const RCP<const Environment> &/* env */,
+              const RCP<const Comm<int> > &/* problemComm */,
+              const RCP<GraphModel<typename Adapter::base_adapter_t> > &/* model */
   )
   {
     throw std::runtime_error(

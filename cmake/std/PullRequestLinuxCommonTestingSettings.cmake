@@ -20,8 +20,6 @@ set (Trilinos_ENABLE_TESTS ON CACHE BOOL "Set by default for PR testing")
 set (Trilinos_TEST_CATEGORIES BASIC CACHE STRING "Set by default for PR testing")
 set (Trilinos_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "Set by default for PR testing")
 set (Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON CACHE BOOL "Set by default for PR testing")
-set (Trilinos_CTEST_USE_NEW_AAO_FEATURES ON CACHE BOOL "Set by default for PR testing")
-
 
 # Options from cmake/std/MpiReleaseDebugSharedPtSettings.cmake
 
@@ -58,6 +56,9 @@ set (Zoltan2_orderingTestDriverExample_MPI_1_DISABLE ON CACHE BOOL "Set by defau
 
 # Disable long-failing Piro test until it can be fixed (#826)
 set (Piro_EpetraSolver_MPI_4_DISABLE ON CACHE BOOL "Set by default for PR testing")
+
+# Disable tests that timeout in PR testing until it can be fixed (#4614)
+set (PanzerAdaptersSTK_PoissonInterfaceExample_2d_diffsideids_MPI_1_DISABLE ON CACHE BOOL "Set by default for PR testing")
 
 # Options from SEMSDevEnv.cmake
 

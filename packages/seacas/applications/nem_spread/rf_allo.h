@@ -35,6 +35,6 @@
 
 /* function declarations for dynamic array allocation */
 
-extern double *array_alloc(const char *file, int lineno, int numdim, ...);
+extern void *array_alloc(const char *file, int lineno, int numdim, ...);
 
 extern void safe_free(void **ptr);

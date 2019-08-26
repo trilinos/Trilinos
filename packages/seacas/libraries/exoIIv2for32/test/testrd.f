@@ -67,7 +67,7 @@ c
       real*4 time_value, time_values(100), var_values(100)
       real*4 x(100), y(100), z(100)
       real*4 attrib(100), dist_fact(100)
-      real*4 vers, fdum
+      real*4 vers
 
       character*(MXSTLN) coord_names(3), qa_record(4,2), var_names(3)
       character*(MXSTLN) name
@@ -75,7 +75,7 @@ c
       character*(MXSTLN) nset_names(2)
       character*(MXSTLN) sset_names(5)
       character*(MXLNLN) inform(3), titl
-      character typ*(MXSTLN), cdum*1
+      character typ*(MXSTLN)
       character*(MXSTLN) prop_names(3)
       character*(MXSTLN) attrib_names(100)
 
@@ -199,8 +199,8 @@ c     read element block properties */
 
       num_props = exinqi (exoid, EXNEBP)
       write (iout,
-     1	'(/"There are ",i2," properties for each element block")')
-     2	num_props
+     1  '(/"There are ",i2," properties for each element block")')
+     2  num_props
 
 
       call exgpn(exoid, EXEBLK, prop_names, ierr)
@@ -211,10 +211,10 @@ c     read element block properties */
           call exgp(exoid, EXEBLK,ids(j),prop_names(i),prop_value,ierr)
           if (ierr .eq. 0) then
             write( iout,
-     1	      '("elem block ",i2," property(",i2,"): ",a," = ",i5)' )
-     2	      j, i, prop_names(i), prop_value
+     1        '("elem block ",i2," property(",i2,"): ",a," = ",i5)' )
+     2        j, i, prop_names(i), prop_value
           else
-	    write (iout, '(/"after exgp, error = ", i3)' ) ierr
+            write (iout, '(/"after exgp, error = ", i3)' ) ierr
           endif
  45     continue
  47   continue
@@ -327,8 +327,8 @@ c     read node set properties
 
       num_props = exinqi (exoid, EXNNSP)
       write (iout,
-     1	'(/"There are ",i2," properties for each node set")')
-     2	num_props
+     1  '(/"There are ",i2," properties for each node set")')
+     2  num_props
 
 
       call exgpn(exoid, EXNSET, prop_names, ierr)
@@ -339,10 +339,10 @@ c     read node set properties
           call exgp(exoid,EXNSET,ids(j),prop_names(i),prop_value,ierr)
           if (ierr .eq. 0) then
             write( iout,
-     1	      '("node set ",i2," property(",i2,"): ",a," = ",i5)' )
-     2	      j, i, prop_names(i), prop_value
+     1        '("node set ",i2," property(",i2,"): ",a," = ",i5)' )
+     2        j, i, prop_names(i), prop_value
           else
-	    write (iout, '(/"after exgp, error = ", i3)' ) ierr
+            write (iout, '(/"after exgp, error = ", i3)' ) ierr
           endif
  105    continue
  107  continue
@@ -476,8 +476,8 @@ c     read side set properties
 
       num_props = exinqi (exoid, EXNSSP)
       write (iout,
-     1	'(/"There are ",i2," properties for each side set")')
-     2	num_props
+     1  '(/"There are ",i2," properties for each side set")')
+     2  num_props
 
 
       call exgpn(exoid, EXSSET, prop_names, ierr)
@@ -488,10 +488,10 @@ c     read side set properties
           call exgp(exoid, EXSSET,ids(j),prop_names(i),prop_value,ierr)
           if (ierr .eq. 0) then
             write( iout,
-     1	      '("side set ",i2," property(",i2,"): ",a," = ",i5)' )
-     2	      j, i, prop_names(i), prop_value
+     1        '("side set ",i2," property(",i2,"): ",a," = ",i5)' )
+     2        j, i, prop_names(i), prop_value
           else
-	    write (iout, '(/"after exgp, error = ", i3)' ) ierr
+            write (iout, '(/"after exgp, error = ", i3)' ) ierr
           endif
  195    continue
  197  continue

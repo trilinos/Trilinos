@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -57,7 +58,7 @@ inline int does_entity_exist_in_list(const std::vector<stk::mesh::shared_entity_
         size_t num_nodes1 = shared_entities_this_proc[i].nodes.size();
         if (topo1 == topo2 && num_nodes1 == num_nodes2)
         {
-            bool sameType = topo1.equivalent(shared_entities_this_proc[i].nodes.data(), shared_entity_from_other_proc.nodes.data()).first;
+            bool sameType = topo1.is_equivalent(shared_entities_this_proc[i].nodes.data(), shared_entity_from_other_proc.nodes.data()).is_equivalent;
             if (sameType)
             {
                 matching_index = i;
@@ -73,28 +74,44 @@ class BulkDataTester : public stk::mesh::BulkData
 public:
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-            stk::mesh::BulkData(mesh_meta_data, comm)
+            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr)
     {
     }
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option) :
-            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option)
+            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr)
     {
     }
 
-    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, stk::mesh::ConnectivityMap const &conn_map) :
-            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA, false, &conn_map)
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, stk::mesh::ConnectivityMap const &/*conn_map*/) :
+            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr)
     {
     }
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data,
                    MPI_Comm comm,
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option,
-                   bool add_fmwk_data,
-                   stk::mesh::ConnectivityMap const* arg_connectivity_map,
+                   bool _add_fmwk_data,
+                   stk::mesh::ConnectivityMap const* /*arg_connectivity_map*/,
                    stk::mesh::FieldDataManager *field_data_manager,
                    unsigned bucket_capacity) :
-            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option, add_fmwk_data, arg_connectivity_map, field_data_manager, bucket_capacity)
+            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
+#ifdef SIERRA_MIGRATION
+, _add_fmwk_data
+#endif
+  , field_data_manager, bucket_capacity)
     {
     }
 
@@ -233,7 +250,8 @@ public:
 
     void my_internal_resolve_shared_modify_delete()
     {
-        this->internal_resolve_shared_modify_delete();
+        stk::mesh::EntityVector entitiesNoLongerShared;
+        this->internal_resolve_shared_modify_delete(entitiesNoLongerShared);
     }
 
     void my_internal_resolve_ghosted_modify_delete()
@@ -274,7 +292,8 @@ public:
 
     void my_internal_resolve_shared_membership()
     {
-        this->internal_resolve_shared_membership();
+        stk::mesh::EntityVector entitiesNoLongerShared;
+        this->internal_resolve_shared_membership(entitiesNoLongerShared);
     }
 
     void my_internal_regenerate_aura()

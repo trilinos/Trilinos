@@ -181,7 +181,7 @@ namespace {
       // map needs to be a nonconst RCP to const MapType, because
       // readDense would set map to a computed Map on output if if
       // were null on input.
-      return reader_type::readDense (in, map->getComm (), map->getNode (), map);
+      return reader_type::readDense (in, map->getComm (), map);
     }
 
     // Ensure that X and Y have the same dimensions, and that the

@@ -47,6 +47,9 @@
 
 TRIBITS_PACKAGE_DECL( Trios ENABLE_SHADOWING_WARNINGS )
 
+# Trios package is deprecated April 2019; to be removed May 2019
+MESSAGE(WARNING "***** WARNING:  Package Trios is deprecated in April 2019; it will be removed in May 2019 *****")
+
 TRIBITS_ADD_DEBUG_OPTION()
 
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()

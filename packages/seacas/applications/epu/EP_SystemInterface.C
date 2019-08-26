@@ -38,13 +38,15 @@
 #include "SL_tokenize.h" // for tokenize
 #include <algorithm>     // for sort, transform
 #include <cctype>        // for tolower
-#include <cstddef>       // for size_t
-#include <cstdlib>       // for strtol, abs, exit, strtoul, etc
-#include <cstring>       // for strchr, strlen
-#include <iostream>      // for operator<<, basic_ostream, etc
+#include <copyright.h>
+#include <cstddef> // for size_t
+#include <cstdlib> // for strtol, abs, exit, strtoul, etc
+#include <cstring> // for strchr, strlen
+#include <fmt/ostream.h>
 #include <sstream>
 #include <stdexcept>
-#include <string>  // for string, char_traits, etc
+#include <string> // for string, char_traits, etc
+#include <term_width.h>
 #include <utility> // for pair, make_pair
 #include <vector>  // for vector
 
@@ -106,7 +108,7 @@ void Excn::SystemInterface::enroll_options()
                   "subdirectory containing input exodusII files", nullptr);
 
   options_.enroll("width", GetLongOption::MandatoryValue, "Width of output screen, default = 80",
-                  "80");
+                  nullptr);
 
   options_.enroll("add_processor_id", GetLongOption::NoValue,
                   "Add 'processor_id' element variable to the output file", nullptr);
@@ -230,9 +232,10 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   char *options = getenv("EPU_OPTIONS");
   if (options != nullptr) {
     if (myRank_ == 0) {
-      std::cout
-          << "\nThe following options were specified via the EPU_OPTIONS environment variable:\n"
-          << "\t" << options << "\n\n";
+      fmt::print(
+          "\nThe following options were specified via the EPU_OPTIONS environment variable:\n"
+          "\t{}\n\n",
+          options);
     }
     options_.parse(options, options_.basename(*argv));
   }
@@ -245,11 +248,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve("help") != nullptr) {
     if (myRank_ == 0) {
       options_.usage();
-      std::cout << "\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
-                << "\tWrites: current_directory/basename.suf\n"
-                << "\tReads:  root#o/sub/basename.suf.#p.0 to\n"
-                << "\t\troot(#o+#p)%#r/sub/basename.suf.#p.#p\n";
-      std::cout << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
+      fmt::print("\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
+                 "\tWrites: current_directory/basename.suf\n"
+                 "\tReads:  root#o/sub/basename.suf.#p.0 to\n"
+                 "\t\troot(#o+#p)%#r/sub/basename.suf.#p.#p\n"
+                 "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n");
     }
     return false;
   }
@@ -348,6 +351,9 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     if (temp != nullptr) {
       screenWidth_ = strtol(temp, nullptr, 10);
     }
+    else {
+      screenWidth_ = term_width();
+    }
   }
 
   {
@@ -391,7 +397,8 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("large_model") != nullptr) {
     useNetcdf4_ = true;
-    std::cerr << "\nWARNING: the -large_model option is deprecated; please use -netcdf4 instead.\n";
+    fmt::print(stderr,
+               "\nWARNING: the -large_model option is deprecated; please use -netcdf4 instead.\n");
   }
 
   if (options_.retrieve("netcdf4") != nullptr) {
@@ -471,39 +478,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     if (myRank_ == 0) {
-      std::cout << "\n"
-                << "Copyright(C) 2010-2017 National Technology & Engineering Solutions of Sandia, "
-                   "LLC (NTESS).\n"
-                << "Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government\n"
-                << "retains certain rights in this software\n."
-                << "\n"
-                << "Redistribution and use in source and binary forms, with or without\n"
-                << "modification, are permitted provided that the following conditions are\n"
-                << "met:\n"
-                << "\n"
-                << "    * Redistributions of source code must retain the above copyright\n"
-                << "      notice, this list of conditions and the following disclaimer.\n"
-                << "\n"
-                << "    * Redistributions in binary form must reproduce the above\n"
-                << "      copyright notice, this list of conditions and the following\n"
-                << "      disclaimer in the documentation and/or other materials provided\n"
-                << "      with the distribution.\n"
-                << "\n"
-                << "    * Neither the name of NTESS nor the names of its\n"
-                << "      contributors may be used to endorse or promote products derived\n"
-                << "      from this software without specific prior written permission.\n"
-                << "\n"
-                << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-                << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-                << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-                << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-                << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-                << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-                << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-                << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-                << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-                << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-                << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
+      fmt::print("{}", copyright("2010-2019"));
     }
     return false;
   }
@@ -519,9 +494,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
       bool success = decompose_filename(basename_);
       if (!success) {
         std::ostringstream errmsg;
-        errmsg << "\nERROR: (EPU) If the '-auto' option is specified, the basename must specify an "
-                  "existing filename.\n"
-               << "       The entered basename does not contain an extension or processor count.\n";
+        fmt::print(
+            errmsg,
+            "\nERROR: (EPU) If the '-auto' option is specified, the basename must specify an "
+            "existing filename.\n"
+            "       The entered basename does not contain an extension or processor count.\n");
         throw std::runtime_error(errmsg.str());
       }
       auto_ = true;
@@ -540,17 +517,17 @@ std::string Excn::SystemInterface::output_suffix() const
   if (outExtension_ == "") {
     return inExtension_;
   }
-
   return outExtension_;
 }
 
 void Excn::SystemInterface::show_version(int rank)
 {
   if (rank == 0) {
-    std::cout << qainfo[0] << "\n"
-              << "\t(Out of Many One -- see http://www.greatseal.com/mottoes/unum.html)\n"
-              << "\tExodusII Parallel Unification Program\n"
-              << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
+    fmt::print("{}\n"
+               "\t(Out of Many One -- see http://www.greatseal.com/mottoes/unum.html)\n"
+               "\tExodusII Parallel Unification Program\n"
+               "\t(Version: {}) Modified: {}\n",
+               qainfo[0], qainfo[1], qainfo[2]);
   }
 }
 
@@ -642,8 +619,10 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   std::string tmp = s.substr(ind + 1); // Skip the '.'
   processorCount_ = std::stoi(tmp);
   if (processorCount_ <= 0) {
-    std::cerr << "\nERROR: (EPU) Invalid processor count specified: '" << processorCount_
-              << "'. Must be greater than zero.\n";
+    fmt::print(
+        stderr,
+        "\nERROR: (EPU) Invalid processor count specified: '{}'. Must be greater than zero.\n",
+        processorCount_);
     return false;
   }
   s.erase(ind);
@@ -672,11 +651,12 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   }
 
   if (myRank_ == 0) {
-    std::cout << "\nThe following options were determined automatically:\n"
-              << "\t basename = '" << basename_ << "'\n"
-              << "\t-processor_count " << processorCount_ << "\n"
-              << "\t-extension " << inExtension_ << "\n"
-              << "\t-Root_directory " << rootDirectory_ << "\n\n";
+    fmt::print("\nThe following options were determined automatically:\n"
+               "\t basename = '{}'\n"
+               "\t-processor_count {}\n"
+               "\t-extension {}\n"
+               "\t-Root_directory {}\n\n",
+               basename_, processorCount_, inExtension_, rootDirectory_);
   }
   return true;
 }

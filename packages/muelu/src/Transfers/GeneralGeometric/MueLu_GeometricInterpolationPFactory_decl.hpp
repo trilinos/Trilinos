@@ -67,7 +67,7 @@ namespace MueLu{
   public:
 
     // Declare useful types
-    using real_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+    using real_type = typename Teuchos::ScalarTraits<SC>::coordinateType;
     using realvaluedmultivector_type = Xpetra::MultiVector<real_type,LO,GO,Node>;
 
     //! @name Constructors/Destructors.

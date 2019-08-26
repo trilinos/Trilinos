@@ -48,7 +48,7 @@
 #define USE_HESSVEC 1
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_LineSearchStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_StdVector.hpp"
@@ -87,7 +87,11 @@ int main(int argc, char *argv[]) {
     auto parlist = ROL::getParametersFromXmlFile( paramfile );
 
    // Define algorithm.
-    ROL::Algorithm<RealT> algo("Trust-Region",*parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     // Iteration vector.
     ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);
@@ -154,7 +158,7 @@ int main(int argc, char *argv[]) {
       errorFlag += 1;
     }
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

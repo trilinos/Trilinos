@@ -28,7 +28,6 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
@@ -72,9 +71,9 @@ namespace MueLu {
 */
 
   //FIXME: this class should not be templated
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class IsorropiaInterface : public SingleLevelFactoryBase {
 
     typedef double Scalar; // FIXME This class only works with the Epetra stack, i.e., Scalar = double

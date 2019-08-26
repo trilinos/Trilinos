@@ -121,7 +121,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseSolver, LapackComparison, ScalarType, Loc
 
   // The matrix will be block diagonal, so we can use the row Map as
   // the column Map.
-  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, colMap, (size_t) 0));
+  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, colMap, 3));
 
   Array<scalar_type> val (3);
   Array<local_ordinal_type> ind (3);

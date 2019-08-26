@@ -53,6 +53,7 @@
 
 #include "Stokhos_OrthogPolyExpansion.hpp"
 #include "Stokhos_QuadOrthogPolyExpansion.hpp"
+#include "Stokhos_ConstantOrthogPolyExpansion.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 
 #include "Sacado_mpl_apply.hpp"
@@ -364,6 +365,11 @@ namespace Sacado {
       Sacado::Handle< Stokhos::OrthogPolyApprox<int,value_type,Storage> > th_;
 
     }; // class OrthogPolyImpl
+
+    template <typename T, typename Storage>
+    Teuchos::RCP<typename OrthogPolyImpl<T, Storage>::expansion_type>
+    OrthogPolyImpl<T,Storage>::const_expansion_ =
+      Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
 
     //! OrthogPolyImpl expression template specialization
     /*!

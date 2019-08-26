@@ -134,7 +134,7 @@ double TpetraOperatorWrapper::NormInf() const
   return 1.0;
 }
 
-void TpetraOperatorWrapper::apply(const Tpetra::MultiVector<ST,LO,GO,NT>& X, Tpetra::MultiVector<ST,LO,GO,NT>& Y,Teuchos::ETransp mode,ST alpha, ST beta) const
+void TpetraOperatorWrapper::apply(const Tpetra::MultiVector<ST,LO,GO,NT>& X, Tpetra::MultiVector<ST,LO,GO,NT>& Y,Teuchos::ETransp /* mode */,ST alpha, ST beta) const
 {
    if (!useTranspose_)
    {
@@ -165,8 +165,8 @@ void TpetraOperatorWrapper::apply(const Tpetra::MultiVector<ST,LO,GO,NT>& X, Tpe
 }
 
 
-void TpetraOperatorWrapper::applyInverse(const Tpetra::MultiVector<ST,LO,GO,NT>& X, 
-                                      Tpetra::MultiVector<ST,LO,GO,NT>& Y, Teuchos::ETransp mode, ST alpha, ST beta) const
+void TpetraOperatorWrapper::applyInverse(const Tpetra::MultiVector<ST,LO,GO,NT>& /* X */, 
+                                      Tpetra::MultiVector<ST,LO,GO,NT>& /* Y */, Teuchos::ETransp /* mode */, ST /* alpha */, ST /* beta */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
                      "TpetraOperatorWrapper::applyInverse not implemented");

@@ -2949,7 +2949,7 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_initial_coordinate_parts(
     mj_scalar_t &max_coordinate,
     mj_scalar_t &min_coordinate,
-    mj_part_t &concurrent_current_part_index,
+    mj_part_t &/* concurrent_current_part_index */,
     mj_lno_t coordinate_begin_index,
     mj_lno_t coordinate_end_index,
     mj_lno_t *mj_current_coordinate_permutations,
@@ -3295,7 +3295,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part_get_thread_pa
     mj_lno_t coordinate_end_index,
     mj_scalar_t *mj_current_dim_coords,
     mj_scalar_t *temp_current_cut_coords,
-    bool *current_cut_status,
+    bool * /* current_cut_status */,
     double *my_current_part_weights,
     mj_scalar_t *my_current_left_closest,
     mj_scalar_t *my_current_right_closest){
@@ -3666,7 +3666,7 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions(
     mj_part_t num_parts,
-    mj_scalar_t *mj_current_dim_coords,
+    mj_scalar_t * /* mj_current_dim_coords */,
     mj_scalar_t *current_concurrent_cut_coordinate,
     mj_lno_t coordinate_begin,
     mj_lno_t coordinate_end,
@@ -3726,7 +3726,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions
                                         if(ZOLTAN2_ABS(current_concurrent_cut_coordinate[i] - current_concurrent_cut_coordinate[i -1]) < this->sEpsilon){
                                                 my_local_thread_cut_weights_to_put_left[i] -= my_local_thread_cut_weights_to_put_left[i - 1] ;
                                         }
-                                        my_local_thread_cut_weights_to_put_left[i] = int ((my_local_thread_cut_weights_to_put_left[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL)
+                                        my_local_thread_cut_weights_to_put_left[i] = static_cast<long long>((my_local_thread_cut_weights_to_put_left[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL)
                                                                 / mj_scalar_t(SIGNIFICANCE_MUL);
                                 }
                         }
@@ -3896,7 +3896,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinates(
-                const size_t &num_total_part,
+                const size_t &/* num_total_part */,
                 const mj_part_t &num_cuts,
                 const mj_scalar_t &max_coordinate,
                 const mj_scalar_t &min_coordinate,
@@ -5603,7 +5603,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::create_consistent_chunks
                                 if(ZOLTAN2_ABS(current_concurrent_cut_coordinate[i] - current_concurrent_cut_coordinate[i -1]) < this->sEpsilon){
                                         my_local_thread_cut_weights_to_put_left[i] -= my_local_thread_cut_weights_to_put_left[i - 1] ;
                                 }
-                                my_local_thread_cut_weights_to_put_left[i] = int ((my_local_thread_cut_weights_to_put_left[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL)
+                                my_local_thread_cut_weights_to_put_left[i] = static_cast<long long>((my_local_thread_cut_weights_to_put_left[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL)
                                                                                                 / mj_scalar_t(SIGNIFICANCE_MUL);
                         }
                 }
@@ -6633,7 +6633,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
                                                 next_future_num_parts_in_parts, //output
                                                 output_part_begin_index,
                                                 migration_reduce_all_population,
-                                                this->num_local_coords / (future_num_parts * current_num_parts),
+                                                this->num_global_coords / (future_num_parts * current_num_parts),
                                                 istring,
                                                 input_part_boxes, output_part_boxes) ) {
                         is_migrated_in_current_dimension = true;
@@ -6937,12 +6937,12 @@ public:
 
 template <typename Adapter>
 bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset( int used_num_ranks, 
-				 int migration_selection_option,
+				 int /* migration_selection_option */,
 				 RCP<const Environment> mj_env_,
                                  RCP<const Comm<int> > mj_problemComm_,
                                  int coord_dim_,
                                  mj_lno_t num_local_coords_,
-                                 mj_gno_t num_global_coords_, size_t num_global_parts_,
+                                 mj_gno_t /* num_global_coords_ */, size_t /* num_global_parts_ */,
                                  const mj_gno_t *initial_mj_gnos_,
                                  mj_scalar_t **mj_coordinates_,
                                  int num_weights_per_coord_,
@@ -7711,7 +7711,7 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
 
 template <typename Adapter>
 void Zoltan2_AlgMJ<Adapter>::getCommunicationGraph(
-  const PartitioningSolution<Adapter> *solution,
+  const PartitioningSolution<Adapter> * /* solution */,
   ArrayRCP<typename Zoltan2_AlgMJ<Adapter>::mj_part_t> &comXAdj,
   ArrayRCP<typename Zoltan2_AlgMJ<Adapter>::mj_part_t> &comAdj)
 {

@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -49,62 +50,7 @@ namespace stk { namespace mesh { class FieldBase; } }
 // Testing this!
 #define PARTITION_HOLD_EMPTY_BUCKET_OPTIMIZATION
 
-namespace stk {
-namespace mesh {
-namespace impl {
-
-std::ostream &operator<<(std::ostream &os, const stk::mesh::impl::Partition &bf)
-{
-  return bf.streamit(os);
-}
-
-} // impl
-} // mesh
-} // stk
-
 using namespace stk::mesh::impl;
-
-std::ostream &Partition::streamit(std::ostream &os) const
-{
-  const MetaData & mesh_meta_data = m_mesh.mesh_meta_data();
-
-  os << "{Partition m_rank = " << m_rank << ", m_size = " << m_size;
-
-  os << "  legacy partition id : {";
-  const std::vector<unsigned> &family_key = get_legacy_partition_id();
-  for (size_t i = 0; i < family_key.size(); ++i)
-  {
-    os << " " << family_key[i];
-    if ((i > 0) && (i < family_key.size() - 1))
-    {
-      const Part & part = mesh_meta_data.get_part( family_key[i] );
-      os << " " << part.name();
-    }
-  }
-  os << " }}";
-
-  return os;
-}
-
-std::ostream &Partition::dumpit(std::ostream &os) const
-{
-  os << "{ Partition (rank = " << m_rank << ")  \n";
-  for (BucketVector::const_iterator b_i = begin(); b_i != end(); ++b_i)
-  {
-    Bucket &b = **b_i;
-    print(os, "  ", b );
-  }
-  os << "}\n";
-  return os;
-}
-
-std::string Partition::dumpit() const
-{
-  std::ostringstream output;
-  dumpit(output);
-
-  return output.str();
-}
 
 Partition::Partition(BulkData& mesh, BucketRepository *repo, EntityRank rank,
                      const std::vector<PartOrdinal> &key)

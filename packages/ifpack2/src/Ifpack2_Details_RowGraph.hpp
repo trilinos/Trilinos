@@ -45,7 +45,9 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Tpetra_RowGraph.hpp"
-#include "Ifpack2_Details_throwBecauseDeprecated.hpp"
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+#  include "Ifpack2_Details_throwBecauseDeprecated.hpp"
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 namespace Ifpack2 {
 namespace Details {
@@ -77,12 +79,16 @@ public:
   //@{
 
   //! Destructor (virtual for memory safety of derived classes)
-  virtual ~RowGraph () {}
+  virtual ~RowGraph () = default;
 
   //@}
-  //! @name Work-around implementations of deprecated virtual methods
+  /// \name Work-around implementations of deprecated virtual methods
+  ///
+  /// These methods exist to smooth the path for fixing GitHub Issue
+  /// #2630.  This is why their existence depends on a Tpetra macro.
   //@{
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief The global number of diagonal entries.
   ///
   /// \warning This method is DEPRECATED and will be removed soon!
@@ -109,7 +115,7 @@ public:
   bool IFPACK2_DEPRECATED
   isLowerTriangular () const final
   {
-    throwBecauseDeprecated ("isLowerTriangular");    
+    throwBecauseDeprecated ("isLowerTriangular");
     return false;
   }
 
@@ -118,9 +124,10 @@ public:
   /// \warning This method is DEPRECATED and will be removed soon!
   bool IFPACK2_DEPRECATED isUpperTriangular() const final
   {
-    throwBecauseDeprecated ("isUpperTriangular");    
-    return false;    
+    throwBecauseDeprecated ("isUpperTriangular");
+    return false;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 };
 
 } // namespace Details

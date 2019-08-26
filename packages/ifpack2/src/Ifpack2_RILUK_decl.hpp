@@ -640,10 +640,9 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   RCP<ParameterList> plClone = Teuchos::parameterList ();
   plClone = detail::setLocalSolveParams<NewMatrixType, new_node_type>::setParams (plClone);
 
-  RCP<new_node_type> new_node = A_newnode->getNode ();
-  new_riluk->L_ = L_->clone (new_node, plClone);
-  new_riluk->U_ = U_->clone (new_node, plClone);
-  new_riluk->D_ = D_->clone (new_node);
+  new_riluk->L_ = rcp(new crs_matrix_type(L_, Teuchos::Copy));
+  new_riluk->U_ = rcp(new crs_matrix_type(U_, Teuchos::Copy));
+  new_riluk->D_ = rcp(new crs_matrix_type(D_, Teuchos::Copy));
 
   new_riluk->LevelOfFill_ = LevelOfFill_;
 

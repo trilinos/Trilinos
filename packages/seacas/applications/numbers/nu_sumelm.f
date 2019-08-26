@@ -53,9 +53,7 @@ C=======================================================================
       integer nsel(*)
 
       CHARACTER*32 STRA
-      CHARACTER*132 STRTMP, STRB
-      CHARACTER*16  ENGNOT, ENG1, ENG2, ENG3, ENG4
-
+      CHARACTER*132 STRB
       include 'nu_io.blk'
       include 'nu_ptim.blk'
       include 'nu_ndisp.blk'
@@ -188,11 +186,6 @@ C
  120  CONTINUE
       RETURN
 
- 140  FORMAT ('Minimum = ',A16,' at time ',A16,', Maximum = ',A16,
-     *     ' at time ',A16,'.')
- 150  FORMAT (/,1X,A)
-
- 160  CONTINUE
       CALL PRTERR ('PROGRAM',
      *     'Internal code error, contact sponsor')
       STOP 'SUMIT'

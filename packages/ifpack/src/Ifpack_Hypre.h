@@ -140,36 +140,47 @@ class FunctionParameter{
       double_star_func_(funct_name),
       double_star_param_(param1) {}
 
+    //! Integer pointer to list of integer pointers
+    FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, int**), int ** param1):
+      chooser_(chooser),
+      option_(6),
+	  int_star_star_func_(funct_name),
+	  int_star_star_param_(param1) {}
+
     //! Only method of this class. Calls the function pointer with the passed in HYPRE_Solver
     int CallFunction(HYPRE_Solver solver, HYPRE_Solver precond){
       if(chooser_ == Solver){
-        if(option_ == 0){
-          return int_func_(solver, int_param1_);
-        } else if(option_ == 1){
-          return double_func_(solver, double_param1_);
-        } else if(option_ == 2){
-          return double_int_func_(solver, double_param1_, int_param1_);
-        } else if (option_ == 3){
-          return int_int_func_(solver, int_param1_, int_param2_);
-        } else if (option_ == 4){
-          return int_star_func_(solver, int_star_param_);
+          if(option_ == 0){
+            return int_func_(solver, int_param1_);
+          } else if(option_ == 1){
+            return double_func_(solver, double_param1_);
+          } else if(option_ == 2){
+            return double_int_func_(solver, double_param1_, int_param1_);
+          } else if (option_ == 3){
+            return int_int_func_(solver, int_param1_, int_param2_);
+          } else if (option_ == 4){
+            return int_star_func_(solver, int_star_param_);
+          } else if (option_ == 5){
+            return double_star_func_(solver, double_star_param_);
+          } else {
+            return int_star_star_func_(solver,int_star_star_param_);
+          }
         } else {
-          return double_star_func_(solver, double_star_param_);
-        }
-      } else {
-        if(option_ == 0){
-          return int_func_(precond, int_param1_);
-        } else if(option_ == 1){
-          return double_func_(precond, double_param1_);
-        } else if(option_ == 2){
-          return double_int_func_(precond, double_param1_, int_param1_);
-        } else if(option_ == 3) {
-          return int_int_func_(precond, int_param1_, int_param2_);
-        } else if(option_ == 4) {
-          return int_star_func_(precond, int_star_param_);
-        } else {
-          return double_star_func_(precond, double_star_param_);
-        }
+          if(option_ == 0){
+            return int_func_(precond, int_param1_);
+          } else if(option_ == 1){
+            return double_func_(precond, double_param1_);
+          } else if(option_ == 2){
+            return double_int_func_(precond, double_param1_, int_param1_);
+          } else if(option_ == 3) {
+            return int_int_func_(precond, int_param1_, int_param2_);
+          } else if(option_ == 4) {
+            return int_star_func_(precond, int_star_param_);
+          } else if (option_ == 5){
+            return double_star_func_(precond, double_star_param_);
+          } else {
+            return int_star_star_func_(precond,int_star_star_param_);
+          }
       }
     }
 
@@ -182,11 +193,13 @@ class FunctionParameter{
     int (*int_int_func_)(HYPRE_Solver, int, int);
     int (*int_star_func_)(HYPRE_Solver, int*);
     int (*double_star_func_)(HYPRE_Solver, double*);
+    int (*int_star_star_func_)(HYPRE_Solver, int **);
     int int_param1_;
     int int_param2_;
     double double_param1_;
     int *int_star_param_;
     double *double_star_param_;
+    int ** int_star_star_param_;
 };
 
 namespace Teuchos {
@@ -325,6 +338,18 @@ public:
     \return Integer error code, set to 0 if successful.
    */
     int SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int*), int* parameter);
+
+    //! Set a parameter that takes an int**.
+    /*!
+    \param chooser (In) -A Hypre_Chooser enumerated type set to Solver or Preconditioner, whatever the parameter is setting for.
+    \param *pt2Func (In) -The function that sets the parameter. It must set parameters for the type of solver or preconditioner that was created.
+      An example is if the solver is BoomerAMG, the function to set the order in which the points are relaxed would be
+      &HYPRE_BoomerAMGSetGridRelaxPoints used primarily for AIR AMG.
+    \param parameter (In) -The int** parameter being set.
+
+    \return Integer error code, set to 0 if successful.
+   */
+    int SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int**), int** parameter);
 
     //! Sets the solver that is used by the Solve() and ApplyInverse() methods. Until this is called, the default solver is PCG.
     /*!

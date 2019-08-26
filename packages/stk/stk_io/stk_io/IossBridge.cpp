@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -57,6 +58,7 @@
 #include <stk_util/diag/StringUtil.hpp>              // for make_lower, etc
 #include <stk_util/util/SortAndUnique.hpp>           // for sort_and_unique
 #include <stk_util/util/tokenize.hpp>                // for tokenize
+#include <stk_util/environment/RuntimeWarning.hpp>
 #include "Ioss_CodeTypes.h"                          // for NameList
 #include "Ioss_CommSet.h"                            // for CommSet
 #include "Ioss_DBUsage.h"
@@ -542,6 +544,18 @@ namespace {
               stk::io::field_data_to_ioss(params.bulk_data(), stkField, entities, ioBlock, dbName, Ioss::Field::ATTRIBUTE);
           }
       }
+  }
+
+  bool contain(const stk::mesh::BulkData& stkmesh, stk::mesh::Entity elem, const stk::mesh::Part* parent_block)
+  {
+    const stk::mesh::PartVector& parts = stkmesh.bucket(elem).supersets();
+
+    unsigned int part_id = parent_block->mesh_meta_data_ordinal();
+    auto i = parts.begin();
+    for(; i != parts.end() && (*i)->mesh_meta_data_ordinal() != part_id; ++i)
+      ;
+
+    return (i != parts.end());
   }
 
 }//namespace <empty>
@@ -1943,7 +1957,21 @@ namespace stk {
         mesh::Selector selector = meta.locally_owned_part() & part;
         if (params.get_subset_selector()) selector &= *params.get_subset_selector();
 
-        const size_t num_elems = count_selected_entities( selector, bulk.buckets(stk::topology::ELEMENT_RANK));
+        stk::mesh::EntityRank rank = params.get_is_skin_mesh() ? meta.side_rank() : stk::topology::ELEMENT_RANK;
+        std::string topologyName = map_stk_topology_to_ioss(topo);
+
+        if( params.get_is_skin_mesh() ) {
+          // FIX THIS...Assumes homogenous faces... <- From Frio (tookusa)
+          topologyName = map_stk_topology_to_ioss(topo.face_topology(0));
+
+          if (meta.get_topology(part) == stk::topology::PARTICLE){
+            stk::RuntimeWarning() << "When using the skin output option, element topologies of type PARTICLE are not supported."
+                                  << "Blocks that use this topology will not be output.";
+            return;
+          }
+        }
+
+        const size_t num_elems = count_selected_entities( selector, bulk.buckets(rank));
 
         // Defer the counting of attributes until after we define the
         // element block so we can count them as we add them as fields to
@@ -1954,7 +1982,7 @@ namespace stk {
         {
             eb = new Ioss::ElementBlock(io_region.get_database() ,
                                         name,
-                                        map_stk_topology_to_ioss(part.topology()),
+                                        topologyName,
                                         num_elems);
             io_region.add(eb);
 
@@ -1964,7 +1992,7 @@ namespace stk {
             }
 
             bool use_original_topology = has_original_topology_type(part);
-            if(use_original_topology) {
+            if(use_original_topology && !params.get_is_skin_mesh()) {
                 add_original_topology_property(eb, part);
             }
         }
@@ -2051,7 +2079,7 @@ namespace stk {
       {
         const stk::mesh::EntityRank si_rank = mesh::MetaData::get(part).side_rank();
 
-        bool create_sideset = true;
+        bool create_sideset = ! params.get_is_skin_mesh();
         if (part.subsets().empty()) {
           // Only define a sideset for this part if its superset part is
           // not a side-containing part..  (i.e., this part is not a subset part
@@ -2312,6 +2340,87 @@ namespace stk {
         }
       }
 
+      std::pair<stk::mesh::Entity, unsigned>
+      get_parent_element(stk::io::OutputParams &params, stk::mesh::Entity obj, const stk::mesh::Part* parent_block = nullptr)
+      {
+        std::pair<stk::mesh::Entity, unsigned> parent(stk::mesh::Entity(), 0U);
+
+        const stk::mesh::BulkData& stkmesh = params.bulk_data();
+        const stk::topology obj_topology = stkmesh.bucket(obj).topology();
+        const stk::mesh::Entity* elems = stkmesh.begin_elements(obj);
+        const stk::mesh::ConnectivityOrdinal* elem_ordinals = stkmesh.begin_element_ordinals(obj);
+        const stk::mesh::Permutation* elem_permutations = stkmesh.begin_element_permutations(obj);
+
+        const stk::mesh::Selector* subsetSelector = params.get_subset_selector();
+        bool activeOnly = subsetSelector != nullptr;
+
+        for(unsigned ielem = 0, e = stkmesh.num_elements(obj); ielem < e; ++ielem) {
+          stk::mesh::Entity elem = elems[ielem];
+          unsigned elem_side_ordinal = elem_ordinals[ielem];
+
+          stk::mesh::Bucket &elemBucket = stkmesh.bucket(elem);
+
+          if(stkmesh.bucket(elem).owned() && (!activeOnly || (activeOnly && (*subsetSelector)(elemBucket)))) {
+            if((parent_block == nullptr && obj_topology.is_positive_polarity(elem_permutations[ielem])) ||
+               (parent_block != nullptr && contain(stkmesh, elem, parent_block))) {
+              if(params.has_output_selector(stk::topology::ELEMENT_RANK) && !params.get_is_restart()) {
+                // See if elem is a member of any of the includedMeshBlocks.
+                const stk::mesh::Selector* outputSelector = params.get_output_selector(stk::topology::ELEMENT_RANK);
+                if((*outputSelector)(elemBucket)) {
+                  parent.first = elem;
+                  parent.second = elem_side_ordinal;
+                  return parent;
+                }
+                return parent;
+              }
+              else {
+                parent.first = elem;
+                parent.second = elem_side_ordinal;
+              }
+              return parent;
+            }
+          }
+        }
+        return parent;
+      }
+
+      template <typename INT>
+      void output_element_block_skin_map(stk::io::OutputParams &params, Ioss::ElementBlock *block,
+                                         const std::vector<mesh::Entity>& meshObjects)
+      {
+        const stk::mesh::BulkData& stkmesh = params.bulk_data();
+        bool skin_mesh = params.get_is_skin_mesh();
+        if(!skin_mesh) return; // This map only supported for skinning the mesh.
+
+        size_t entitySize = block->get_property("entity_count").get_int();
+        if(!block->field_exists("skin")) {
+          block->field_add(Ioss::Field("skin", Ioss::Field::INTEGER, "Real[2]", Ioss::Field::MESH, entitySize));
+        }
+
+        size_t count = block->get_field("skin").raw_count();
+        int map_size = block->get_field("skin").get_size();
+        std::vector<INT> elem_face(map_size);
+
+        if(count > 0) {
+          // global element id + local face of that element.
+
+          size_t i = 0;
+          size_t face_count = meshObjects.size();
+          assert(face_count == count);
+          for(size_t j = 0; j < face_count; j++) {
+            stk::mesh::Entity face = meshObjects[j];
+            std::pair<stk::mesh::Entity, unsigned> elem_face_pair = get_parent_element(params, face);
+            if(stkmesh.is_valid(elem_face_pair.first)) {
+              elem_face[i++] = stkmesh.identifier(elem_face_pair.first);
+              elem_face[i++] = elem_face_pair.second + 1;
+            }
+          }
+
+          assert(i == 2 * count);
+        }
+        block->put_field_data("skin", elem_face.data(), map_size);
+      }
+
       template <typename INT>
       void output_element_block(stk::io::OutputParams &params, Ioss::ElementBlock *block)
       {
@@ -2319,11 +2428,7 @@ namespace stk {
         const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
         const std::string& name = block->name();
         mesh::Part* part = getPart( meta_data, name);
-
         assert(part != nullptr);
-        std::vector<mesh::Entity> elements;
-        stk::mesh::EntityRank type = part_primary_entity_rank(*part);
-        size_t num_elems = get_entities(params, *part, type, elements, false);
 
         stk::topology topo = part->topology();
         if (topo == stk::topology::INVALID_TOPOLOGY) {
@@ -2331,7 +2436,20 @@ namespace stk {
           msg << " INTERNAL_ERROR: Part " << part->name() << " returned INVALID from get_topology()";
           throw std::runtime_error( msg.str() );
         }
-        size_t nodes_per_elem = topo.num_nodes();
+
+        if (params.get_is_skin_mesh() && topo == stk::topology::PARTICLE) {
+          return;
+        }
+
+        std::vector<mesh::Entity> elements;
+        stk::mesh::EntityRank type = part_primary_entity_rank(*part);
+        if (params.get_is_skin_mesh()) {
+          type = meta_data.side_rank();
+        }
+        size_t num_elems = get_entities(params, *part, type, elements, false);
+
+//        size_t nodes_per_elem = topo.num_nodes();
+        size_t nodes_per_elem = block->get_property("topology_node_count").get_int();
 
         std::vector<INT> elem_ids; elem_ids.reserve(num_elems);
         std::vector<INT> connectivity; connectivity.reserve(num_elems*nodes_per_elem);
@@ -2374,6 +2492,8 @@ namespace stk {
         }
 
         process_element_attributes_for_output(params, *part);
+
+        output_element_block_skin_map<INT>(params, block, elements);
       }
 
       template<typename INT>
@@ -2997,6 +3117,22 @@ namespace stk {
         write_file_for_subdomain(out_region, bulkData, nodeSharingInfo, numSteps, timeStep);
     }
 
+
+    const stk::mesh::Part* get_parent_element_block_by_adjacency(const stk::mesh::BulkData& bulk,
+                                                                 const std::string& name,
+                                                                 const stk::mesh::Part* parent_element_block)
+    {
+      const stk::mesh::Part* part = bulk.mesh_meta_data().get_part(name);
+      if (part != nullptr) {
+        std::vector<const stk::mesh::Part*> touching_parts = bulk.mesh_meta_data().get_blocks_touching_surface(part);
+        if (touching_parts.size() == 1) {
+          parent_element_block = touching_parts[0];
+        }
+      }
+      return parent_element_block;
+    }
+
+
     const stk::mesh::Part* get_parent_element_block(const stk::mesh::BulkData &bulk,
                                                     const Ioss::Region &ioRegion,
                                                     const std::string& name)
@@ -3035,17 +3171,11 @@ namespace stk {
                             parent_element_block = elementBlock;
                     }
                 } else {
-                    const stk::mesh::Part* part = bulk.mesh_meta_data().get_part(name);
-
-                    if(part != nullptr) {
-                        std::vector<const stk::mesh::Part*> touching_parts =
-                                bulk.mesh_meta_data().get_blocks_touching_surface(part);
-
-                        if(touching_parts.size() == 1) {
-                            parent_element_block = touching_parts[0];
-                        }
-                    }
+                    parent_element_block = get_parent_element_block_by_adjacency(bulk, name, parent_element_block);
                 }
+            }
+            else {
+                parent_element_block = get_parent_element_block_by_adjacency(bulk, name, parent_element_block);
             }
         }
         return parent_element_block;

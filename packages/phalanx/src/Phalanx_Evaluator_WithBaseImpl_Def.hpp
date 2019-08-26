@@ -79,12 +79,12 @@ namespace PHX {
       // correctly cast the any object to the Kokkos::View, need to
       // pull the const off the scalar type if this MDField has a
       // const scalar type.
-      typedef PHX::View<typename FieldType::non_const_data_type> non_const_view;
+      using non_const_view = Kokkos::View<typename FieldType::non_const_data_type,typename FieldType::array_layout,PHX::Device>;
       try {
         non_const_view tmp = PHX::any_cast<non_const_view>(f);
         *ptr_ = tmp;
       }
-      catch (std::exception& e) {
+      catch (std::exception& ) {
         std::cout << "\n\nError in MemoryBinder using PHX::any_cast. Tried to cast a field "
                   << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
                   << "\" from a PHX::any object containing a type of \""
@@ -142,29 +142,26 @@ addEvaluatedField(const PHX::FieldTag& ft)
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT,
-	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-		  Tag4,Tag5,Tag6,Tag7>& f)
+addEvaluatedField(const PHX::MDField<DataT,Props...>& f)
 { 
   this->addEvaluatedField(f.fieldTag());
 
-  using NCF = PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  using NCF = PHX::MDField<DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT,int Rank>
+template<typename DataT,int Rank,typename Layout>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addEvaluatedField(const PHX::Field<DataT,Rank>& f)
+addEvaluatedField(const PHX::Field<DataT,Rank,Layout>& f)
 { 
   this->addEvaluatedField(f.fieldTag());
 
-  using NCF = PHX::Field<DataT,Rank>;
+  using NCF = PHX::Field<DataT,Rank,Layout>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
@@ -200,29 +197,26 @@ addContributedField(const PHX::FieldTag& ft)
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT,
-	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addContributedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-                    Tag4,Tag5,Tag6,Tag7>& f)
+addContributedField(const PHX::MDField<DataT,Props...>& f)
 { 
   this->addContributedField(f.fieldTag());
 
-  using NCF = PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  using NCF = PHX::MDField<DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT,int Rank>
+template<typename DataT,int Rank,typename Layout>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addContributedField(const PHX::Field<DataT,Rank>& f)
+addContributedField(const PHX::Field<DataT,Rank,Layout>& f)
 { 
   this->addContributedField(f.fieldTag());
 
-  using NCF = PHX::Field<DataT,Rank>;
+  using NCF = PHX::Field<DataT,Rank,Layout>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
@@ -259,45 +253,39 @@ addDependentField(const PHX::FieldTag& ft)
 //**********************************************************************
 // DEPRECATED!!!!
 template<typename Traits>
-template<typename DataT,
-	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-		  Tag4,Tag5,Tag6,Tag7>& f)
+addDependentField(const PHX::MDField<DataT,Props...>& f)
 {
   this->addDependentField(f.fieldTag());
 
-  using NCF = PHX::MDField<typename std::remove_const<DataT>::type,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  using NCF = PHX::MDField<typename std::remove_const<DataT>::type,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT,
-	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,
-		  Tag4,Tag5,Tag6,Tag7>& f)
+addDependentField(const PHX::MDField<const DataT,Props...>& f)
 {
   this->addDependentField(f.fieldTag());
 
-  using NCF = PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  using NCF = PHX::MDField<const DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT,int Rank>
+template<typename DataT,int Rank,typename Layout>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::Field<const DataT,Rank>& f)
+addDependentField(const PHX::Field<const DataT,Rank,Layout>& f)
 {
   this->addDependentField(f.fieldTag());
 
-  using NCF = PHX::Field<const DataT,Rank>;
+  using NCF = PHX::Field<const DataT,Rank,Layout>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
@@ -374,7 +362,7 @@ createTask(Kokkos::TaskScheduler<PHX::exec_space>& ,
 	   typename Traits::EvalData )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-			     "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createTask() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the createTask() method in this Evalautor.");
+			     "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for createTask() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the createTask() method in this Evaluator.");
 }
 #endif
 //**********************************************************************
@@ -385,7 +373,7 @@ PHX::EvaluatorWithBaseImpl<Traits>::
 taskSize() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-			     "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for taskSize() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the taskSize() method in this Evalautor.");
+			     "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for taskSize() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the taskSize() method in this Evaluator.");
 }
 #endif
 
@@ -423,7 +411,7 @@ PHX::DeviceEvaluator<Traits>* PHX::EvaluatorWithBaseImpl<Traits>::
 createDeviceEvaluator() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                             "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createDeviceEvalautor() that is required when using Device DAG support.  Please implement the createDeviceEvaluator() method in this Evalautor.");
+                             "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for createDeviceEvaluator() that is required when using Device DAG support.  Please implement the createDeviceEvaluator() method in this Evaluator.");
   // Suppress cuda warning for unreachable code
 #ifndef KOKKOS_ENABLE_CUDA
   return nullptr;
@@ -436,7 +424,7 @@ void
 PHX::EvaluatorWithBaseImpl<Traits>::rebuildDeviceEvaluator(PHX::DeviceEvaluator<Traits>* /* e */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                             "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for rebuildDeviceEvalautor() that is required when using Device DAG support.  Please implement the rebuildDeviceEvaluator() method in this Evalautor.");
+                             "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for rebuildDeviceEvaluator() that is required when using Device DAG support.  Please implement the rebuildDeviceEvaluator() method in this Evaluator.");
 }
 
 //**********************************************************************
@@ -445,7 +433,7 @@ void
 PHX::EvaluatorWithBaseImpl<Traits>::deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* /* e */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                             "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for deleteDeviceEvalautor() that is required when using Device DAG support.  Please implement the deleteDeviceEvaluator() method in this Evalautor.");
+                             "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for deleteDeviceEvaluator() that is required when using Device DAG support.  Please implement the deleteDeviceEvaluator() method in this Evaluator.");
 }
 
 //**********************************************************************

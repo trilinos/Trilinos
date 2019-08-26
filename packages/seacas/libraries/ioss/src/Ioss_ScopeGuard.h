@@ -60,7 +60,7 @@ protected:
   {
     other.Dismiss();
   }
-  template <typename J> static void SafeExecute(J &j) 
+  template <typename J> static void SafeExecute(J &j)
   {
     if (!j.dismissed_) {
       try {

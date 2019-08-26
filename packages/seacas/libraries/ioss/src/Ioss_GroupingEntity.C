@@ -38,6 +38,7 @@
 #include <Ioss_VariableType.h>
 #include <cassert>
 #include <cstddef>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -88,9 +89,16 @@ void Ioss::GroupingEntity::delete_database() {}
 
 void Ioss::GroupingEntity::really_delete_database()
 {
-  Ioss::DatabaseIO *new_db = const_cast<Ioss::DatabaseIO *>(database_);
-  delete new_db;
-  new_db = nullptr;
+  delete database_;
+  database_ = nullptr;
+}
+
+const Ioss::GroupingEntity *Ioss::GroupingEntity::contained_in() const
+{
+  if (database_ == nullptr) {
+    return nullptr;
+  }
+  return database_->get_region();
 }
 
 std::string Ioss::GroupingEntity::generic_name() const
@@ -174,8 +182,8 @@ Ioss::Property Ioss::GroupingEntity::get_implicit_property(const std::string &my
 
   // End of the line. No property of this name exists.
   std::ostringstream errmsg;
-  errmsg << "\nERROR: Property '" << my_name << "' does not exist on " << type_string() << " "
-         << name() << "\n\n";
+  fmt::print(errmsg, "\nERROR: Property '{}' does not exist on {} {}\n\n", my_name, type_string(),
+             name());
   IOSS_ERROR(errmsg);
 }
 
@@ -193,12 +201,11 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
   if (entity_size != field_size && type() != REGION) {
     std::string        filename = get_database()->get_filename();
     std::ostringstream errmsg;
-    errmsg << "IO System error: The " << type_string() << " '" << name() << "' has a size of "
-           << entity_size << ",\nbut the field '" << new_field.get_name()
-           << "' which is being output on that entity has a size of " << field_size
-           << "\non database '" << filename
-           << "'.\nThe sizes must match.  This is an application error that "
-              "should be reported.";
+    fmt::print(errmsg,
+               "IO System error: The {} '{}' has a size of {},\nbut the field '{}' which is being "
+               "output on that entity has a size of {}\non database '{}'.\nThe sizes must match.  "
+               "This is an application error that should be reported.",
+               type_string(), name(), entity_size, new_field.get_name(), field_size, filename);
     IOSS_ERROR(errmsg);
   }
   fields.add(new_field);
@@ -289,9 +296,8 @@ void Ioss::GroupingEntity::verify_field_exists(const std::string &field_name,
   if (!field_exists(field_name)) {
     std::string        filename = get_database()->get_filename();
     std::ostringstream errmsg;
-    errmsg << "\nERROR: On database '" << filename << "', Field '" << field_name
-           << "' does not exist for " << inout << " on " << type_string() << " " << name()
-           << "\n\n";
+    fmt::print(errmsg, "\nERROR: On database '{}', Field '{}' does not exist for {} on {} {}\n\n",
+               filename, field_name, inout, type_string(), name());
     IOSS_ERROR(errmsg);
   }
 }

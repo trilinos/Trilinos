@@ -41,6 +41,7 @@
 
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
+#include "Stokhos_Ensemble_Sizes.hpp"
 
 // Teuchos
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
@@ -115,12 +116,7 @@ scalar generate_multi_vector_coefficient( const ordinal nFEM,
 // Tests
 //
 
-// Vector size used in tests -- Needs to be what is instantiated for CPU/MIC/GPU
-#if defined(__CUDACC__)
-const int VectorSize = 16;
-#else
-const int VectorSize = 16;
-#endif
+const int VectorSize = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 
 //
 // Test vector addition
@@ -1989,11 +1985,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 #define CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)                              \
   typedef Stokhos::DeviceForNode<N>::type Device;              \
   typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device::execution_space> SFS; \
-  CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, int, int, N)
+  using default_global_ordinal_type = ::Tpetra::Map<>::global_ordinal_type; \
+  using default_local_ordinal_type = ::Tpetra::Map<>::local_ordinal_type; \
+  CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, default_local_ordinal_type, default_global_ordinal_type, N)
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N(N)                                  \
   CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)
 
 // Disabling testing of dynamic storage -- we don't really need it
   // typedef Stokhos::DynamicStorage<int,double,Device> DS;
-  // CRSMATRIX_MP_VECTOR_TESTS_SLGN(DS, int, int, N)
+  // using default_global_ordinal_type = ::Tpetra::Map<>::global_ordinal_type;
+  // using default_local_ordinal_type = ::Tpetra::Map<>::local_ordinal_type;
+  // CRSMATRIX_MP_VECTOR_TESTS_SLGN(DS, default_global_ordinal_type, default_local_ordinal_type, N)

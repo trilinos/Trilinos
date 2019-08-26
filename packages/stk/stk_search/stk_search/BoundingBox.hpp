@@ -1,8 +1,9 @@
 
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -15,10 +16,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -243,19 +244,19 @@ inline bool intersects(Box<T1> const& a, Box<T2> const& b)
 }
 
 template <typename T, typename U>
-inline void scale_by(Sphere<T> &s, U const& c)
+inline void scale_by(Sphere<T> &s, U const& mult_fact, U const& add_fact = 0)
 {
-  s.set_radius(s.radius()*c);
+  s.set_radius(s.radius()*mult_fact + add_fact);
 }
 
 template <typename T, typename U>
-inline void scale_by(Box<T> &b, U const& c)
+inline void scale_by(Box<T> &b, U const& mult_fact, U const& add_fact = 0)
 {
   Point<T> & min_corner = b.min_corner();
   Point<T> & max_corner = b.max_corner();
-  const U factor = (c-1)/2;
+  const U factor = (mult_fact-1)/2;
   for (int i=0; i<3; ++i) {
-    const T d = factor*(max_corner[i] - min_corner[i]);
+    const T d = factor*(max_corner[i] - min_corner[i]) + add_fact;
     min_corner[i] -= d;
     max_corner[i] += d;
   }

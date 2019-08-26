@@ -80,7 +80,10 @@ namespace MueLu {
     It's meant to be used with PermutingSmoother.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class PermutationFactory : public SingleLevelFactoryBase {
 #undef MUELU_PERMUTATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

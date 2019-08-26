@@ -361,12 +361,11 @@ namespace Tpetra {
       // type.  TSQR currently forbids MultiVector input with
       // nonconstant stride, so we need not worry about that here.
 
-      view_type pce_mv = A.getDualView();
-      flat_array_type flat_mv = pce_mv.d_view;
+      flat_array_type flat_mv = A.getLocalViewDevice();
 
       numRows = static_cast<ordinal_type> (flat_mv.extent(0));
       numCols = static_cast<ordinal_type> (flat_mv.extent(1));
-      A_ptr = flat_mv.ptr_on_device ();
+      A_ptr = flat_mv.data ();
 
       ordinal_type strides[2];
       flat_mv.stride (strides);

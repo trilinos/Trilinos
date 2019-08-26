@@ -323,10 +323,10 @@ namespace {
     //B->describe(out, Teuchos::VERB_EXTREME);
 
 
-    const int numSolvers = 10;
-    const char* solverNames[10] = {"shylubasker", "basker", "klu2", "superlu_dist",
-                                  "superlu_mt", "superlu", "pardiso_mkl",
-                                  "lapack", "mumps", "amesos2_cholmod"};
+    const int numSolvers = 11;
+    const char* solverNames[numSolvers] = {"shylubasker", "basker", "klu2", "superlu_dist",
+                                           "superlu_mt", "superlu", "pardiso_mkl",
+                                           "lapack", "mumps", "amesos2_cholmod", "umfpack"};
     // The number of solvers that Amesos2::create actually supports,
     // for the current MV and MAT types.  If it doesn't support _any_
     // of the solvers, we consider this test to have failed.

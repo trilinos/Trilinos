@@ -38,6 +38,7 @@
 
 // ========================================================================
 namespace Ioss {
+  const char *Unknown::name = "unknown";
   class St_Unknown : public ElementVariableType
   {
   public:

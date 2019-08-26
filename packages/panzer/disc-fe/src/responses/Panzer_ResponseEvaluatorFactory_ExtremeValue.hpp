@@ -69,7 +69,7 @@ public:
                                bool useMax=true,
                                const std::string & quadPointField="",
                                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linearObjFactory=Teuchos::null,
-                               const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer=Teuchos::null,
+                               const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer=Teuchos::null,
                                bool applyDirichletToDerivative=false,
                                std::string in_prefix="")
      : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellExtreme_(requiresCellReduction), useMax_(useMax)
@@ -134,7 +134,7 @@ private:
    bool useMax_;
    std::string quadPointField_;
    Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory_;
-   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+   Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer_;
    bool applyDirichletToDerivative_;
    std::string prefix_;
 };
@@ -155,7 +155,7 @@ struct ExtremeValueResponse_Builder : public ResponseMESupportBuilderBase {
   virtual ~ExtremeValueResponse_Builder() {}
 
   void setDerivativeInformation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
-                                const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & in_globalIndexer)
+                                const Teuchos::RCP<const panzer::GlobalIndexer> & in_globalIndexer)
   {
     linearObjFactory = in_linearObjFactory;
     globalIndexer = in_globalIndexer;
@@ -169,7 +169,7 @@ struct ExtremeValueResponse_Builder : public ResponseMESupportBuilderBase {
     using Teuchos::rcp_dynamic_cast;
 
     setDerivativeInformation(in_linearObjFactory,
-                             rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<LO,GO> >(in_linearObjFactory->getDomainGlobalIndexer(),true));
+                             rcp_dynamic_cast<const panzer::GlobalIndexer>(in_linearObjFactory->getDomainGlobalIndexer(),true));
   }
 
   template <typename T>
@@ -196,7 +196,7 @@ struct ExtremeValueResponse_Builder : public ResponseMESupportBuilderBase {
   
 private:
   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer;
+  Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer;
 };
 
 

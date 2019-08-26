@@ -183,8 +183,8 @@ public:
   }
 
   //! Returns result of a local-only solve using a triangular Epetra_RowMatrix with Epetra_MultiVectors X and Y (NOT IMPLEMENTED).
-  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,
-                    Epetra_MultiVector& Y) const
+  virtual int Solve(bool /* Upper */, bool /* Trans */, bool /* UnitDiagonal */, const Epetra_MultiVector& /* X */,
+                    Epetra_MultiVector& /* Y */) const
   {
     IFPACK_RETURN(-1); // not implemented
   }
@@ -195,26 +195,26 @@ public:
   virtual int ApplyInverse(const Epetra_MultiVector& X,
                            Epetra_MultiVector& Y) const;
   //! Computes the sum of absolute values of the rows of the Epetra_RowMatrix, results returned in x (NOT IMPLEMENTED).
-  virtual int InvRowSums(Epetra_Vector& x) const
+  virtual int InvRowSums(Epetra_Vector& /* x */) const
   {
     IFPACK_RETURN(-1); // not implemented
   }
 
   //! Scales the Epetra_RowMatrix on the left with a Epetra_Vector x (NOT IMPLEMENTED).
-  virtual int LeftScale(const Epetra_Vector& x)
+  virtual int LeftScale(const Epetra_Vector& /* x */)
   {
     IFPACK_RETURN(-1); // not implemented
   }
 
   //! Computes the sum of absolute values of the columns of the Epetra_RowMatrix, results returned in x (NOT IMPLEMENTED).
-  virtual int InvColSums(Epetra_Vector& x) const
+  virtual int InvColSums(Epetra_Vector& /* x */) const
   {
     IFPACK_RETURN(-1); // not implemented
   }
 
 
   //! Scales the Epetra_RowMatrix on the right with a Epetra_Vector x (NOT IMPLEMENTED).
-  virtual int RightScale(const Epetra_Vector& x)
+  virtual int RightScale(const Epetra_Vector& /* x */)
   {
     IFPACK_RETURN(-1); // not implemented
   }
@@ -355,7 +355,7 @@ public:
   // following functions are required to derive Epetra_RowMatrix objects.
 
   //! Sets ownership.
-  int SetOwnership(bool ownership)
+  int SetOwnership(bool /* ownership */)
   {
     IFPACK_RETURN(-1);
   }

@@ -83,7 +83,7 @@ class AlgRCM : public Algorithm<Adapter>
   {
   }
 
-  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution)
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &/* solution */)
   {
     throw std::logic_error("AlgRCM does not yet support global ordering.");
   }

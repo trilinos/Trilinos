@@ -67,9 +67,9 @@ class AlgPuLP : public Algorithm<Adapter>
 {
 public:
   typedef typename Adapter::base_adapter_t base_adapter_t;
-  AlgPuLP(const RCP<const Environment> &env,
-          const RCP<const Comm<int> > &problemComm,
-          const RCP<const base_adapter_t> &adapter
+  AlgPuLP(const RCP<const Environment> &/* env */,
+          const RCP<const Comm<int> > &/* problemComm */,
+          const RCP<const base_adapter_t> &/* adapter */
   )
   {
     throw std::runtime_error(
@@ -79,7 +79,7 @@ public:
 
   /*! \brief Set up validators specific to this algorithm
   */
-  static void getValidParameters(ParameterList & pl)
+  static void getValidParameters(ParameterList & /* pl */)
   {
     // No parameters needed in this error-handling version of AlgPuLP
   }

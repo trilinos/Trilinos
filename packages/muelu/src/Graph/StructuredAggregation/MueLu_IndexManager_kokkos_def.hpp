@@ -216,40 +216,6 @@ namespace MueLu {
   }
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  void IndexManager_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  getCoarseNodesData(const RCP<const Map> fineCoordinatesMap,
-                     Array<GO>& coarseNodeCoarseGIDs,
-                     Array<GO>& coarseNodeFineGIDs) const {
-
-    // Allocate sufficient amount of storage in output arrays
-    coarseNodeCoarseGIDs.resize(numCoarseNodes);
-    coarseNodeFineGIDs.resize(numCoarseNodes);
-
-    // Load all the GIDs on the fine mesh
-    ArrayView<const GO> fineNodeGIDs = fineCoordinatesMap->getNodeElementList();
-
-    // Extract the fine LIDs of the coarse nodes and store the corresponding GIDs
-    LO fineLID;
-    LO nodeCoarseTuple[3] = {0, 0, 0};
-    LO nodeFineTuple[3]   = {0, 0, 0};
-    for(LO coarseLID = 0; coarseLID < numCoarseNodes; ++coarseLID) {
-      getCoarseLID2CoarseTuple(coarseLID, nodeCoarseTuple);
-      for(int dim = 0; dim < 3; ++dim) {
-        if(nodeCoarseTuple[dim] == coarseNodesPerDir[dim] - 1) {
-          nodeFineTuple[dim] = lFineNodesPerDir[dim] - 1;
-        } else {
-          nodeFineTuple[dim] = nodeCoarseTuple[dim]*coarseRate[dim];
-        }
-      }
-
-      fineLID = nodeFineTuple[2]*lNumFineNodes10
-        + nodeFineTuple[1]*lFineNodesPerDir[0]
-        + nodeFineTuple[0];
-      coarseNodeFineGIDs[coarseLID] = fineNodeGIDs[fineLID];
-    }
-  } // getCoarseNodesData
-
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Array<LocalOrdinal> IndexManager_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   getCoarseNodesPerDirArray() const {
     typename LOTupleView::HostMirror coarseNodesPerDir_h = Kokkos::create_mirror_view(coarseNodesPerDir);

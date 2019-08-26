@@ -183,7 +183,7 @@ MultiVector LoadBalanceInverseOperator::operator()(const MultiVector& LHS,
   return(RHS2);
 }
 
-std::ostream& LoadBalanceInverseOperator::Print(std::ostream& os, const bool verbose) const
+std::ostream& LoadBalanceInverseOperator::Print(std::ostream& os, const bool /* verbose */) const
 {
 
   StackPush();

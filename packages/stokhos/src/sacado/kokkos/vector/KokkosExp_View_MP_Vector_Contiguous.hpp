@@ -1047,6 +1047,11 @@ public:
                     m_impl_offset.span(), m_sacado_size.value );
     }
 
+  /**\brief  Assign data */
+  KOKKOS_INLINE_FUNCTION
+  void assign_data( pointer_type arg_ptr )
+  { m_impl_handle.set( arg_ptr, m_impl_offset.span(), m_sacado_size.value ); }
+
   //----------------------------------------
   /*  Allocate and construct mapped array.
    *  Allocate via shared allocation record and
@@ -1152,6 +1157,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -1238,6 +1244,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -1349,6 +1356,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -1592,6 +1600,7 @@ class ViewMapping<
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef ViewTraits<DataType,P...> src_traits;
   typedef ViewMapping< src_traits , typename src_traits::specialize >  src_type ;
@@ -1731,7 +1740,7 @@ struct StokhosViewFill< OutputView ,
       Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
       parallel_for( config, Kernel<vector_length>(output, input) );
-      execution_space::fence();
+      execution_space().fence();
     }
   }
 
@@ -1776,6 +1785,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;

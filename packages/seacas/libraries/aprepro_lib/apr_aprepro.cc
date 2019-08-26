@@ -35,26 +35,26 @@
 #include "apr_stats.h"      // for Stats
 #include "aprepro.h"        // for Aprepro, symrec, file_rec, etc
 #include "aprepro_parser.h" // for Parser, Parser::token, etc
-#include <climits>          // for INT_MAX
-#include <cstddef>          // for size_t
-#include <cstdlib>          // for exit, EXIT_SUCCESS, etc
-#include <cstring>          // for memset, strcmp
-#include <fstream>          // for operator<<, basic_ostream, etc
-#include <iomanip>          // for operator<<, setw, etc
-#include <iostream>         // for left, cerr, cout, streampos
-#include <stack>            // for stack
+#include "terminal_color.h"
+#include <climits>  // for INT_MAX
+#include <cstddef>  // for size_t
+#include <cstdlib>  // for exit, EXIT_SUCCESS, etc
+#include <cstring>  // for memset, strcmp
+#include <fstream>  // for operator<<, basic_ostream, etc
+#include <iomanip>  // for operator<<, setw, etc
+#include <iostream> // for left, cerr, cout, streampos
+#include <stack>    // for stack
 #include <stdexcept>
 #include <string> // for string, operator==, etc
+#include <unistd.h>
 #include <vector> // for allocator, vector
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.10 (2019/02/07)";
+  const char *       version_string = "5.11 (2019/02/27)";
 
   void output_copyright();
-} // namespace
 
-namespace SEAMS {
   unsigned hash_symbol(const char *symbol)
   {
     unsigned hashval;
@@ -63,9 +63,11 @@ namespace SEAMS {
     }
     return (hashval % HASHSIZE);
   }
+} // namespace
 
-  Aprepro *aprepro; // A global for use in the library.  Clean this up...
-  bool     echo = true;
+namespace SEAMS {
+  Aprepro *aprepro = nullptr; // A global for use in the library.  Clean this up...
+  bool     echo    = true;
 
   Aprepro::Aprepro()
   {
@@ -181,12 +183,19 @@ namespace SEAMS {
 
   void Aprepro::error(const std::string &msg, bool line_info, bool prefix) const
   {
+    bool              colorize = (errorStream == &std::cerr) && isatty(fileno(stderr));
     std::stringstream ss;
     if (prefix) {
+      if (colorize) {
+        (*errorStream) << trmclr::red;
+      }
       (*errorStream) << "Aprepro: ERROR: ";
     }
 
     ss << msg;
+    if (prefix && colorize) {
+      ss << trmclr::normal;
+    }
 
     if (line_info) {
       ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
@@ -204,12 +213,20 @@ namespace SEAMS {
       return;
     }
 
+    bool              colorize = (warningStream == &std::cerr) && isatty(fileno(stderr));
     std::stringstream ss;
     if (prefix) {
+      if (colorize) {
+        (*warningStream) << trmclr::yellow;
+      }
       (*warningStream) << "Aprepro: WARNING: ";
     }
 
     ss << msg;
+
+    if (prefix && colorize) {
+      ss << trmclr::normal;
+    }
 
     if (line_info) {
       ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
@@ -226,11 +243,19 @@ namespace SEAMS {
       return;
     }
 
+    bool              colorize = (infoStream == &std::cerr) && isatty(fileno(stderr));
     std::stringstream ss;
     if (prefix) {
+      if (colorize) {
+        (*infoStream) << trmclr::blue;
+      }
       (*infoStream) << "Aprepro: INFO: ";
     }
     ss << msg;
+
+    if (prefix && colorize) {
+      ss << trmclr::normal;
+    }
 
     if (line_info) {
       ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
@@ -670,6 +695,7 @@ namespace SEAMS {
   {
     std::string comment = getsym("_C_")->value.svar;
     int         width   = 10; // controls spacing/padding for the variable names
+    int         fwidth  = 20; // controls spacing/padding for the function names
     std::string spre;
 
     if (pre) {
@@ -727,37 +753,38 @@ namespace SEAMS {
     }
     else if (type == Parser::token::FNCT || type == Parser::token::SFNCT ||
              type == Parser::token::AFNCT) {
-      (*infoStream) << "\nFunctions returning double:" << '\n';
+      (*infoStream) << trmclr::blue << "\nFunctions returning double:" << trmclr::normal << '\n';
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
         for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
           if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
             if (ptr->type == Parser::token::FNCT) {
-              (*infoStream) << std::left << std::setw(2 * width) << ptr->syntax << ":  "
-                            << ptr->info << '\n';
+              (*infoStream) << std::left << trmclr::green << std::setw(fwidth) << ptr->syntax
+                            << trmclr::normal << ":  " << ptr->info << '\n';
             }
           }
         }
       }
 
-      (*infoStream) << "\nFunctions returning string:" << '\n';
+      (*infoStream) << trmclr::blue << trmclr::blue
+                    << "\nFunctions returning string:" << trmclr::normal << '\n';
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
         for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
           if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
             if (ptr->type == Parser::token::SFNCT) {
-              (*infoStream) << std::left << std::setw(2 * width) << ptr->syntax << ":  "
-                            << ptr->info << '\n';
+              (*infoStream) << std::left << trmclr::green << std::setw(fwidth) << ptr->syntax
+                            << trmclr::normal << ":  " << ptr->info << '\n';
             }
           }
         }
       }
 
-      (*infoStream) << "\nFunctions returning array:" << '\n';
+      (*infoStream) << trmclr::blue << "\nFunctions returning array:" << trmclr::normal << '\n';
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
         for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
           if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
             if (ptr->type == Parser::token::AFNCT) {
-              (*infoStream) << std::left << std::setw(2 * width) << ptr->syntax << ":  "
-                            << ptr->info << '\n';
+              (*infoStream) << std::left << trmclr::green << std::setw(fwidth) << ptr->syntax
+                            << trmclr::normal << ":  " << ptr->info << '\n';
             }
           }
         }
@@ -781,8 +808,7 @@ namespace SEAMS {
     int      maxlen  = 0;
     int      minlen  = INT_MAX;
     int      lengths[MAXLEN];
-    int      longer     = 0;
-    double   hash_ratio = 0.0;
+    int      longer = 0;
 
     Stats stats;
 
@@ -794,7 +820,6 @@ namespace SEAMS {
         chain_len++;
       }
 
-      hash_ratio += chain_len * (chain_len + 1.0);
       entries += chain_len;
       if (chain_len >= MAXLEN) {
         ++longer;
@@ -811,11 +836,8 @@ namespace SEAMS {
       }
     }
 
-    hash_ratio = hash_ratio / (static_cast<float>(entries) / HASHSIZE *
-                               static_cast<float>(entries + 2.0 * HASHSIZE - 1.0));
     (*output) << entries << " entries in " << HASHSIZE << " element hash table, " << lengths[0]
               << " (" << (static_cast<double>(lengths[0]) / HASHSIZE) * 100.0 << "%) empty.\n"
-              << "Hash ratio = " << hash_ratio << "\n"
               << "Mean (nonempty) chain length = " << stats.mean() << ", max = " << maxlen
               << ", min = " << minlen << ", deviation = " << stats.deviation() << "\n";
 

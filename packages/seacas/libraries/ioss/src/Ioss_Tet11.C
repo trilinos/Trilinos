@@ -39,6 +39,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Tet11::name = "tetra11";
   class St_Tet11 : public ElementVariableType
   {
   public:

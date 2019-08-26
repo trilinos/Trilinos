@@ -138,9 +138,12 @@ namespace MueLu {
     friend class TrilinosSmoother;
 #endif
 
-    template<typename Node2>
-    RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const;
-
+#ifdef HAVE_MUELU_DEPRECATED_CODE
+    template<typename Node2>    
+    RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
+    MUELU_DEPRECATED
+    clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const;
+#endif
 
     //! Convert an Ifpack2 preconditioner name to Ifpack
     // As a temporary solution.
@@ -204,8 +207,10 @@ namespace MueLu {
 
   }; // class TrilinosSmoother
 
+#ifdef HAVE_MUELU_DEPRECATED_CODE
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template<typename Node2>
+  MUELU_DEPRECATED
   Teuchos::RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
   TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const {
 #if defined(HAVE_MUELU_IFPACK2)
@@ -234,7 +239,7 @@ namespace MueLu {
       "clone() only available with IFPACK2 enabled.");
 #endif
   }
-
+#endif
 
 } // namespace MueLu
 

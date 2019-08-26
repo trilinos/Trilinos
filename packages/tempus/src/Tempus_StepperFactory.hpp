@@ -46,8 +46,9 @@ public:
 
   /// Create default stepper from stepper type (e.g., "Forward Euler").
   Teuchos::RCP<Stepper<Scalar> > createStepper(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-    std::string stepperType = "Forward Euler")
+    std::string stepperType = "Forward Euler",
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >&
+      model = Teuchos::null)
   {
     if (stepperType == "") stepperType = "Forward Euler";
     return this->createStepper(model, stepperType, Teuchos::null);
@@ -55,8 +56,9 @@ public:
 
   /// Create stepper from ParameterList with its details.
   Teuchos::RCP<Stepper<Scalar> > createStepper(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >&
+      model = Teuchos::null)
   {
     std::string stepperType = "Forward Euler";
     if (stepperPL != Teuchos::null)
@@ -66,8 +68,9 @@ public:
 
   /// Create stepper from ParameterList with its details.
   Teuchos::RCP<Stepper<Scalar> > createStepper(
-    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models,
-    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL,
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > >
+      models = Teuchos::null)
   {
     std::string stepperType = stepperPL->get<std::string>("Stepper Type");
     return this->createStepper(models, stepperType, stepperPL);

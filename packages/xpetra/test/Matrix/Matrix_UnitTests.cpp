@@ -86,6 +86,7 @@ namespace {
     return Teuchos::rcp(new Teuchos::SerialComm<int>());
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   // Get an instance of the given Kokkos Node type.
   //
   // \warning This function is NOT reentrant, and therefore NOT thread safe.
@@ -102,6 +103,7 @@ namespace {
     Teuchos::ParameterList pl;
     return Teuchos::rcp (new Node (pl));
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //
   // UNIT TESTS

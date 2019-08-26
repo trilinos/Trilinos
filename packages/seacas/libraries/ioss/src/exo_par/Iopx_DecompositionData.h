@@ -263,6 +263,10 @@ namespace Iopx {
 
     void generate_adjacency_list(int filePtr, Ioss::Decomposition<INT> &decomposition);
 
+    void get_common_set_data(int filePtr, ex_entity_type set_type,
+                             std::vector<Ioss::SetDecompositionData> &sets,
+                             const std::string &                      set_type_name);
+
     void get_nodeset_data(int filePtr, size_t set_count);
 
     void get_sideset_data(int filePtr, size_t set_count);

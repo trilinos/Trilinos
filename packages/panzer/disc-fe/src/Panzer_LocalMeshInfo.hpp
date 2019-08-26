@@ -44,113 +44,83 @@
 #define PANZER_LOCAL_MESH_INFO_HPP
 
 #include "Kokkos_View.hpp"
-#include "Kokkos_DynRankView.hpp"
-
+#include "PanzerCore_config.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-
 #include "Shards_CellTopology.hpp"
-
 #include "Teuchos_RCP.hpp"
-
 #include <string>
 
 namespace panzer
 {
 
-/** Base class for LocalMeshInfo structures
- *
- * TODO: Replace with Connectivity manager
- */
-template <typename LO, typename GO>
-struct LocalMeshInfoBase
-{
+  /** Base class for LocalMeshInfo structures */
+  struct LocalMeshInfoBase
+  {
+    panzer::LocalOrdinal num_owned_cells;
+    panzer::LocalOrdinal num_ghstd_cells;
+    panzer::LocalOrdinal num_virtual_cells;
 
-  LO num_owned_cells;
-  LO num_ghstd_cells;
-  LO num_virtual_cells;
+    // Global cell indexes -> [owned] then [ghosted] then [virtual]
+    Kokkos::View<panzer::GlobalOrdinal*> global_cells;
 
-  // Global cell indexes -> [owned] then [ghosted] then [virtual]
-  Kokkos::View<GO*> global_cells;
+    // These are the cell indexes in the LocalMeshInfo class
+    Kokkos::View<panzer::LocalOrdinal*> local_cells;
 
-  // These are the cell indexes in the LocalMeshInfo class
-  Kokkos::View<LO*> local_cells;
+    // Vertices
+    Kokkos::View<double***,PHX::Device> cell_vertices;
 
-  // Vertices
-  Kokkos::View<double***,PHX::Device> cell_vertices;
+    // Face to neighbors
+    Kokkos::View<panzer::LocalOrdinal*[2]> face_to_cells;
+    Kokkos::View<panzer::LocalOrdinal*[2]> face_to_lidx;
+    Kokkos::View<panzer::LocalOrdinal**> cell_to_faces;
+  };
 
-  // Face to neighbors
-  Kokkos::View<LO*[2]> face_to_cells;
-  Kokkos::View<LO*[2]> face_to_lidx;
-  Kokkos::View<LO**> cell_to_faces;
+  /** Partition of LocalMeshInfo, used for generating worksets */
+  struct LocalMeshPartition : public LocalMeshInfoBase
+  {
+    std::string element_block_name;
+    Teuchos::RCP<const shards::CellTopology> cell_topology;
 
-};
+    // In case this is a sideset
+    std::string sideset_name;
+  };
 
-/** Partition of LocalMeshInfo
- *
- * Used for generating worksets
- *
- */
-template <typename LO, typename GO>
-struct LocalMeshPartition:
-    public LocalMeshInfoBase<LO,GO>
-{
+  /** Portion of LocalMeshInfo associated with sidesets
+   *
+   * Used to represent a sideset found on the local process
+   *
+   */
+  struct LocalMeshSidesetInfo : public LocalMeshInfoBase
+  {
+    std::string sideset_name;
 
-  std::string element_block_name;
-  Teuchos::RCP<const shards::CellTopology> cell_topology;
+    std::string element_block_name;
 
-  // In case this is a sideset
-  std::string sideset_name;
+    // Cell topology associated with element_block_name
+    Teuchos::RCP<const shards::CellTopology> cell_topology;
+  };
 
-};
+  /** Portion of LocalMeshInfo associated with element block
+   *
+   * Used to represent an element block found on the local process
+   *
+   */
+  struct LocalMeshBlockInfo : public LocalMeshInfoBase
+  {
+    std::string element_block_name;
 
-/** Portion of LocalMeshInfo associated with sidesets
- *
- * Used to represent a sideset found on the local process
- *
- */
-template <typename LO, typename GO>
-struct LocalMeshSidesetInfo:
-    public LocalMeshInfoBase<LO,GO>
-{
-  std::string sideset_name;
+    Teuchos::RCP<const shards::CellTopology> cell_topology;
+  };
 
-  std::string element_block_name;
+  /** Entire mesh found on a local process */
+  struct LocalMeshInfo : public LocalMeshInfoBase
+  {
+    // Element block -> block info
+    std::map<std::string, LocalMeshBlockInfo> element_blocks;
 
-  // Cell topology associated with element_block_name
-  Teuchos::RCP<const shards::CellTopology> cell_topology;
-
-};
-
-/** Portion of LocalMeshInfo associated with element block
- *
- * Used to represent an element block found on the local process
- *
- */
-template <typename LO, typename GO>
-struct LocalMeshBlockInfo:
-    public LocalMeshInfoBase<LO,GO>
-{
-  std::string element_block_name;
-
-  Teuchos::RCP<const shards::CellTopology> cell_topology;
-
-};
-
-/** Entire mesh found on a local process
- *
- */
-template <typename LO, typename GO>
-struct LocalMeshInfo:
-    public LocalMeshInfoBase<LO,GO>
-{
-
-  // Element block -> block info
-  std::map<std::string, LocalMeshBlockInfo<LO,GO> > element_blocks;
-
-  // Element block, sideset -> sideset info
-  std::map<std::string, std::map<std::string, LocalMeshSidesetInfo<LO,GO> > > sidesets;
-
-};
+    // Element block, sideset -> sideset info
+    std::map<std::string, std::map<std::string,LocalMeshSidesetInfo>> sidesets;
+  };
 
 }
 

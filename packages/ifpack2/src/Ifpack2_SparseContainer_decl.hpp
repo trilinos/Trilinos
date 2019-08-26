@@ -131,8 +131,11 @@ namespace Ifpack2 {
 /// between local row and column indices, instead of just assuming
 /// that they are the same.
 template<typename MatrixType, typename InverseType>
-class SparseContainer : public Container<MatrixType> {
-  //! @name Internal typedefs (private)
+class SparseContainer
+: public ContainerImpl<MatrixType, typename InverseType::scalar_type>
+{
+
+  //! @name Internal type aliases (private)
   //@{
 private:
   /// \brief The first template parameter of this class.
@@ -141,39 +144,38 @@ private:
   /// Tpetra::CrsMatrix specialization.  It may have entirely
   /// different template parameters (e.g., \c scalar_type) than
   /// <tt>InverseType</tt>.
-  typedef MatrixType matrix_type;
+  using matrix_type = MatrixType;
   /// \brief The second template parameter of this class.
   ///
   /// This must be a specialization of Ifpack2::Preconditioner or one
   /// of its subclasses.  It may have entirely different template
   /// parameters (e.g., \c scalar_type) than \c MatrixType.
-  typedef InverseType inverse_type;
+  using inverse_type = InverseType;
 
-  typedef typename Container<MatrixType>::scalar_type scalar_type;
-  typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
-  typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
-  typedef typename Container<MatrixType>::node_type node_type;
+  using typename Container<MatrixType>::SC;
+  using typename Container<MatrixType>::LO;
+  using typename Container<MatrixType>::GO;
+  using typename Container<MatrixType>::NO;
 
-  typedef typename Container<MatrixType>::mv_type mv_type;
-  typedef typename Container<MatrixType>::map_type map_type;
-  typedef typename Container<MatrixType>::vector_type vector_type;
-  typedef typename Container<MatrixType>::partitioner_type partitioner_type;
-  typedef typename Container<MatrixType>::import_type import_type;
+  using typename Container<MatrixType>::mv_type;
+  using typename Container<MatrixType>::map_type;
+  using typename Container<MatrixType>::vector_type;
+  using typename Container<MatrixType>::import_type;
 
-  typedef typename InverseType::scalar_type InverseScalar;
-  typedef typename InverseType::local_ordinal_type InverseLocalOrdinal;
-  typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
-  typedef typename InverseType::node_type InverseNode;
+  using InverseScalar = typename InverseType::scalar_type;
+  using InverseLocalOrdinal = typename InverseType::local_ordinal_type;
+  using InverseGlobalOrdinal = typename InverseType::global_ordinal_type;
+  using InverseNode = typename InverseType::node_type;
 
-  typedef typename Tpetra::MultiVector<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode> inverse_mv_type;
-  typedef typename Tpetra::CrsMatrix<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode> InverseCrs;
-  typedef typename Tpetra::Map<InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode> InverseMap;
+  using inverse_mv_type = Tpetra::MultiVector<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
+  using InverseCrs = Tpetra::CrsMatrix<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
+  using InverseMap = typename Tpetra::Map<InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
 
-  typedef typename Container<MatrixType>::HostView HostView;
-  typedef typename inverse_mv_type::dual_view_type::t_host HostViewInverse;
+  using typename Container<MatrixType>::HostView;
+  using HostViewInverse = typename inverse_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,
-                  Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>::value, "Ifpack2::SparseContainer: Please use MatrixType = Tpetra::RowMatrix.");
+                  Tpetra::RowMatrix<SC, LO, GO, NO>>::value, "Ifpack2::SparseContainer: Please use MatrixType = Tpetra::RowMatrix.");
 
   /// \brief The (base class) type of the input matrix.
   ///
@@ -181,9 +183,9 @@ private:
   /// Tpetra::RowMatrix specialization or a Tpetra::CrsMatrix
   /// specialization.  However, we want to make the constructor as
   /// general as possible, so we always accept the matrix as a
-  /// Tpetra::RowMatrix.  This typedef is the appropriate
+  /// Tpetra::RowMatrix.  This type is the appropriate
   /// specialization of Tpetra::RowMatrix.
-  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
+  using typename Container<MatrixType>::row_matrix_type;
   //@}
 
 public:
@@ -192,19 +194,18 @@ public:
 
   /// \brief Constructor.
   ///
-  /// \brief matrix [in] The original input matrix.  This Container
-  ///   will construct a local diagonal block from the rows given by
-  ///   <tt>localRows</tt>.
-  ///
-  /// \brief partitioner [in] The BlockRelaxation partitioner.
+  /// \param matrix [in] The original input matrix.  This Container
+  ///   will construct local diagonal blocks from its rows according to
+  ///   <tt>partitions</tt>.
+  /// \param partitioner [in] The Partitioner object that assigns
+  ///   local rows of the input matrix to blocks.
+  /// \param pointIndexed [in] If the input matrix is a \c Tpetra::BlockCrsMatrix,
+  ///    whether elements of \c partitions[k] identify rows within blocks (true) or
+  ///    whole blocks (false).
   SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                   const Teuchos::Array<Teuchos::Array<LO> >& partitions,
                    const Teuchos::RCP<const import_type>& importer,
-                   int OverlapLevel,
-                   scalar_type DampingFactor);
-
-  SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::Array<local_ordinal_type>& localRows);
+                   bool pointIndexed);
 
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~SparseContainer();
@@ -212,12 +213,6 @@ public:
   //@}
   //! \name Get and set methods
   //@{
-
-  //! Whether the container has been successfully initialized.
-  virtual bool isInitialized() const;
-
-  //! Whether the container has been successfully computed.
-  virtual bool isComputed() const;
 
   //! Set all necessary parameters.
   virtual void setParameters(const Teuchos::ParameterList& List);
@@ -239,24 +234,22 @@ public:
 
   //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   virtual void
-  apply (HostView& X,
-         HostView& Y,
+  apply (HostView X,
+         HostView Y,
          int blockIndex,
-         int stride,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+         SC alpha = Teuchos::ScalarTraits<SC>::one(),
+         SC beta = Teuchos::ScalarTraits<SC>::zero()) const;
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
-  weightedApply (HostView& X,
-                 HostView& Y,
-                 HostView& W,
+  weightedApply (HostView X,
+                 HostView Y,
+                 HostView W,
                  int blockIndex,
-                 int stride,
                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+                 SC alpha = Teuchos::ScalarTraits<SC>::one(),
+                 SC beta = Teuchos::ScalarTraits<SC>::zero()) const;
 
   //@}
   //! \name Miscellaneous methods
@@ -304,20 +297,19 @@ private:
   /// \param Y [in] Subset permutation of the input/output Y of apply(),
   ///   suitable for the second argument of Inverse_->apply().
   void
-  applyImpl (inverse_mv_type& X,
-             inverse_mv_type& Y,
-             int blockIndex,
-             int stride,
-             Teuchos::ETransp mode,
-             InverseScalar alpha,
-             InverseScalar beta) const;
+  solveBlockMV(inverse_mv_type& X,
+               inverse_mv_type& Y,
+               int blockIndex,
+               Teuchos::ETransp mode,
+               InverseScalar alpha,
+               InverseScalar beta) const;
 
   //! The local diagonal block, which compute() extracts.
   std::vector<Teuchos::RCP<InverseCrs>> diagBlocks_;
 
-  //! Scratch copy of X, used in applyImpl, # of rows is size of corresponding block
+  //! Scratch copy of X, used in solveBlock, # of rows is size of corresponding block
   mutable std::vector<inverse_mv_type> invX;
-  //! Scratch copy of Y, used in applyImpl, # of rows is size of corresponding block
+  //! Scratch copy of Y, used in solveBlock, # of rows is size of corresponding block
   mutable std::vector<inverse_mv_type> invY;
 
   /// \brief Local operators.
@@ -327,12 +319,7 @@ private:
   /// of \c diagBlocks_ above.  Its apply() method defines the action
   /// of the inverse of the local matrix.  See the class documentation
   /// for more details.
-  mutable std::vector<Teuchos::Ptr<InverseType>> Inverses_;
-  mutable std::vector<map_type> localMaps_;
-  //! If \c true, the container has been successfully initialized.
-  bool IsInitialized_;
-  //! If \c true, the container has been successfully computed.
-  bool IsComputed_;
+  mutable Teuchos::Array<Teuchos::RCP<InverseType>> Inverses_;
   //! Serial communicator (containing only MPI_COMM_SELF if MPI is used).
   Teuchos::RCP<Teuchos::Comm<int>> localComm_;
 

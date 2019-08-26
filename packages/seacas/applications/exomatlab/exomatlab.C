@@ -53,13 +53,11 @@
 #include <Ioss_Utils.h>
 
 #include "add_to_log.h"
+#include "fmt/ostream.h"
 
 #ifdef SEACAS_HAVE_MPI
 #include <mpi.h>
 #endif
-
-#define OUTPUT std::cerr
-#define FOUTPUT std::cout
 
 // ========================================================================
 namespace {
@@ -69,12 +67,12 @@ namespace {
   void output_names(const std::string &type, const Ioss::NameList &fields,
                     Ioss::GroupingEntity *entity)
   {
-    OUTPUT << "\n" << type << " variables on exodus data base:\n";
+    fmt::print("\n{} variables on exodus data base:\n", type);
     Ioss::NameList::const_iterator IF;
     for (IF = fields.begin(); IF != fields.end(); ++IF) {
       std::string               field_name = *IF;
       const Ioss::VariableType *var_type   = entity->get_field(field_name).raw_storage();
-      OUTPUT << "\t" << field_name << "\t" << var_type->name() << '\n';
+      fmt::print("\t{}\t{}\n", field_name, var_type->name());
     }
   }
 } // namespace
@@ -82,7 +80,7 @@ namespace {
 
 namespace {
   std::string codename;
-  std::string version = "1.0";
+  std::string version = "1.1";
 } // namespace
 
 int main(int argc, char *argv[])
@@ -111,16 +109,16 @@ int main(int argc, char *argv[])
       std::string in_file     = interface.input_file();
       std::string output_file = interface.output_file();
 
-      OUTPUT << "Input:    '" << in_file << "', Type: " << in_type << '\n';
-      OUTPUT << "Output:   '" << output_file << "', Type: matlab script\n\n";
+      fmt::print("Input:    '{}', Type: {}\n", in_file, in_type);
+      fmt::print("Output:   '{}', Type: matlab script\n\n", output_file);
 
       ok = file_info(in_file, in_type, interface);
     }
     std::string success = ok ? "successful" : "unsuccessful";
-    OUTPUT << "\n" << codename << " execution " << success << ".\n";
+    fmt::print("\n{} execution {}.\n", codename, success);
   }
   catch (std::exception &e) {
-    std::cerr << "ERROR: (EXOMATLAB) Standard exception: " << e.what() << '\n';
+    fmt::print("ERROR: (EXOMATLAB) Standard exception: {}\n", e.what());
   }
   time_t end_time = time(nullptr);
   add_to_log(codename.c_str(), (int)(end_time - begin_time));
@@ -186,8 +184,9 @@ namespace {
             fields.push_back(field_name);
           }
           else {
-            OUTPUT << "WARNING: Global variable named '" << field_name
-                   << "' does not exist; it will be skipped.\n";
+            fmt::print("WARNING: Global variable named '{}' does not exist; it will be skipped.\n",
+                       field_name);
+            ;
           }
         }
       }
@@ -197,7 +196,7 @@ namespace {
     }
 
     if (fields.empty()) {
-      OUTPUT << "No variables selected; no output will be written\n";
+      fmt::print("No variables selected; no output will be written\n");
       return false;
     }
 
@@ -207,7 +206,7 @@ namespace {
     out_stream.setf(std::ios::scientific);
     out_stream.setf(std::ios::showpoint);
 
-    out_stream << "% number of curves\nnvars = " << fields.size() + 1 << "\n";
+    fmt::print(out_stream, "% number of curves\nnvars = {}\n", fields.size() + 1);
 
     size_t                         namelen = 4; // length of 'time'
     Ioss::NameList::const_iterator IF;
@@ -218,15 +217,13 @@ namespace {
       }
     }
 
-    out_stream << "names= [\n";
-    out_stream << "'" << std::left << std::setw(namelen) << "TIME"
-               << "';" << '\n';
+    fmt::print(out_stream, "names= [\n'{:<{}}';\n", "TIME", namelen);
 
     for (IF = fields.begin(); IF != fields.end(); ++IF) {
       std::string field_name = *IF;
-      out_stream << "'" << std::left << std::setw(namelen) << field_name << "';" << '\n';
+      fmt::print(out_stream, "'{:<{}}';\n", field_name, namelen);
     }
-    out_stream << "];\n";
+    fmt::print(out_stream, "];\n");
 
     // Get number of timesteps...
     int num_steps = 0;
@@ -234,7 +231,7 @@ namespace {
       num_steps = region.get_property("state_count").get_int();
     }
     else {
-      out_stream << "GENESIS file -- no time steps written\n";
+      fmt::print(out_stream, "GENESIS file -- no time steps written\n");
       return false;
     }
 
@@ -269,13 +266,13 @@ namespace {
     // ========================================================================
     // Output time values...
 
-    out_stream << "TIME = zeros(1, " << num_steps << ");\n";
-    out_stream << "TIME= [\n";
+    fmt::print(out_stream, "TIME = zeros(1, {});\n", num_steps);
+    fmt::print(out_stream, "TIME= [\n");
     for (int i = st_min; i <= st_max; i++) {
       double time = region.get_state_time(i);
-      out_stream << " " << time << "\n";
+      fmt::print(out_stream, " {:13.6e}\n", time);
     }
-    out_stream << "];\n";
+    fmt::print(out_stream, "];\n");
 
     // ========================================================================
     // Output field values...
@@ -284,21 +281,21 @@ namespace {
     for (IF = fields.begin(); IF != fields.end(); ++IF) {
       std::string field_name = *IF;
       int         comp_count = region.get_field(field_name).raw_storage()->component_count();
-      out_stream << field_name << " = zeros(" << comp_count << ", " << num_steps << ");\n";
-      out_stream << field_name << "= [\n";
+      fmt::print(out_stream, "{} = zeros({}, {});\n", field_name, comp_count, num_steps);
+      fmt::print(out_stream, "{} = [\n", field_name);
       for (int istep = st_min; istep <= st_max; istep++) {
         region.begin_state(istep);
         region.get_field_data(field_name, data);
         for (int i = 0; i < comp_count; i++) {
-          out_stream << " " << data[i];
+          fmt::print(out_stream, " {:13.6e}", data[i]);
         }
-        out_stream << ";\n";
+        fmt::print(out_stream, ";\n");
         region.end_state(istep);
       }
-      out_stream << "];\n";
+      fmt::print(out_stream, "];\n");
     }
-    OUTPUT << "Wrote data for " << fields.size() << " variables at " << st_max - st_min + 1
-           << " timesteps.\n";
+    fmt::print("Wrote data for {} variables at {} timesteps.\n", fields.size(),
+               st_max - st_min + 1);
     return true;
   }
 } // namespace

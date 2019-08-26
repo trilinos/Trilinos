@@ -59,7 +59,7 @@ template <typename INT> struct NODE_COMM_MAP
 };
 
 /*---------------------------------------------------------------------------*/
-/*	GLOBAL QUANTITITES THAT ARE THE SAME ON ALL PROCESSORS		     */
+/*      GLOBAL QUANTITITES THAT ARE THE SAME ON ALL PROCESSORS               */
 /*---------------------------------------------------------------------------*/
 template <typename T, typename INT> class Globals
 {
@@ -71,9 +71,9 @@ public:
                       * - this is a global quantity                 */
   int Num_Elem_Blk;  /* Total number of element blocks              */
   int Num_Node_Set;  /* Total number of node sets defined in the    *
-                      * mesh exoII file			     */
+                      * mesh exoII file                      */
   int Num_Side_Set;  /* Total number of side sets defined in the    *
-                      * mesh exoII file			     */
+                      * mesh exoII file                      */
   int Max_NP_Elem;   /* Maximum number of nodes in any element      *
                       *  - this is a global quantity                */
   int Num_QA_Recs;   /* Number of QA records in original file       */
@@ -83,7 +83,7 @@ public:
 
   /*---------------------------------------------------------------------------*/
   /*    VARIABLES THAT DEAL WITH SPECIFICATION OF LOAD BALANCE PROPERTIES      */
-  /*		THAT ARE THE DIFFERENT ON EACH PROCESSOR		     */
+  /*            THAT ARE THE DIFFERENT ON EACH PROCESSOR                     */
   /*---------------------------------------------------------------------------*/
 
   INT *Num_Internal_Nodes; /* Number of internal nodes on the current proc*/
@@ -108,27 +108,27 @@ public:
                  * monotonically within each category          *
                  *  Type: int vector of length                 *
                  *       (Num_Internal_Nodes + Num_Border_Nodes*
-                 Num_External_Nodes) 		     */
+                 Num_External_Nodes)                 */
 
   INT **GElems; /* Data structure which contains the internal  *
                  * elements on each processor.  It is a map    *
                  * from the local element number to the global *
-                 * element number.  			     *
+                 * element number.                           *
                  *  Type: int vector of length                 *
                  *        Num_Internal_Elems                   */
 
   INT **Proc_Global_Node_Id_Map; /* Data structure which contains the internal  *
                                   * nodes on each processor.  It is a map       *
                                   * from the local node number to the global    *
-                                  * node id (as found in node_num_map)	     *
+                                  * node id (as found in node_num_map)       *
                                   *  Type: int vector of length                 *
                                   *       (Num_Internal_Nodes + Num_Border_Nodes*
-                                  *        Num_External_Nodes) 		     */
+                                  *        Num_External_Nodes)               */
 
   INT **Proc_Global_Elem_Id_Map; /* Data structure which contains the internal  *
                                   * elements on each processor.  It is a map    *
                                   * from the local element number to the global *
-                                  * element id (as found in elem_num_map)	     *
+                                  * element id (as found in elem_num_map)            *
                                   *  Type: int vector of length                 *
                                   *        Num_Internal_Elems                   */
 
@@ -153,21 +153,21 @@ public:
                      *        Proc_Num_Side_Sets                   */
 
   /*---------------------------------------------------------------------------*/
-  /*    VARIABLES THAT DEAL WITH SPECIFICATION OF NODAL PROPERTIES   	     */
-  /*		THAT ARE THE DIFFERENT ON EACH PROCESSOR		     */
+  /*    VARIABLES THAT DEAL WITH SPECIFICATION OF NODAL PROPERTIES           */
+  /*            THAT ARE THE DIFFERENT ON EACH PROCESSOR                     */
   /*---------------------------------------------------------------------------*/
 
   T ***Coor; /* 2d dynamically allocated array containing   *
               * the physical space coordinates for each     *
               * node, defined on the local processor.       *
               *  Type: double/float vector of length        *
-              *        Num_Dim   by			     *
+              *        Num_Dim   by                          *
               *       (Num_Internal_Nodes + Num_Border_Nodes*
-              *        Num_External_Nodes) 		     */
+              *        Num_External_Nodes)                   */
 
   /*---------------------------------------------------------------------------*/
-  /*    VARIABLES THAT DEAL WITH SPECIFICATION OF ELEMENT PROPERTIES   	     */
-  /*		THAT ARE THE DIFFERENT ON EACH PROCESSOR		     */
+  /*    VARIABLES THAT DEAL WITH SPECIFICATION OF ELEMENT PROPERTIES         */
+  /*            THAT ARE THE DIFFERENT ON EACH PROCESSOR                     */
   /*---------------------------------------------------------------------------*/
 
   INT **Proc_Connect_Ptr; /* Vector of pointers to the start of each     *
@@ -190,7 +190,7 @@ public:
 
   /*---------------------------------------------------------------------------*/
   /*    VARIABLES THAT DEAL WITH SPECIFICATION OF ELEMENT BLOCK PROPERTIES     */
-  /*		THAT ARE THE DIFFERENT ON EACH PROCESSOR		     */
+  /*            THAT ARE THE DIFFERENT ON EACH PROCESSOR                     */
   /*---------------------------------------------------------------------------*/
 
   int *Proc_Num_Elem_Blk; /* Number of element blocks on this processor  */
@@ -226,13 +226,13 @@ public:
 
   INT *Elem_Blk_2_Matls;
   /* Mapping of element block NUMBERS to material*
-   * IDs  	                	             *
+   * IDs                                             *
    *  Type: int vector of length                 *
    *        Proc_Num_Elem_Blk                    */
 
   /*---------------------------------------------------------------------------*/
-  /*	VARIABLES THAT DEAL WITH SPECIFICATION OF NODE SETS		     */
-  /*		THAT ARE THE DIFFERENT ON EACH PROCESSOR		     */
+  /*    VARIABLES THAT DEAL WITH SPECIFICATION OF NODE SETS                  */
+  /*            THAT ARE THE DIFFERENT ON EACH PROCESSOR                     */
   /*---------------------------------------------------------------------------*/
 
   int *Proc_Num_Node_Sets; /* Number of node sets on the current proc   */
@@ -278,8 +278,8 @@ public:
    *        Proc_NS_List_Length             */
 
   /*---------------------------------------------------------------------------*/
-  /*	VARIABLES THAT DEAL WITH SPECIFICATION OF SIDE SETS		     */
-  /*		THAT ARE THE DIFFERENT ON EACH PROCESSOR		     */
+  /*    VARIABLES THAT DEAL WITH SPECIFICATION OF SIDE SETS                  */
+  /*            THAT ARE THE DIFFERENT ON EACH PROCESSOR                     */
   /*---------------------------------------------------------------------------*/
 
   int *Proc_Num_Side_Sets; /* Number of side sets on the current proc  */
@@ -357,8 +357,8 @@ public:
    *        Proc_SS_Elem_List_Length             */
 
   /*---------------------------------------------------------------------------*/
-  /*		VARIABLES THAT DEAL WITH GENERAL INFORMATION THAT IS         */
-  /*			THE SAME ON EVERY PROCESSOR                          */
+  /*            VARIABLES THAT DEAL WITH GENERAL INFORMATION THAT IS         */
+  /*                    THE SAME ON EVERY PROCESSOR                          */
   /*---------------------------------------------------------------------------*/
 
   char **QA_Record; /* The QA Records from the original file     */

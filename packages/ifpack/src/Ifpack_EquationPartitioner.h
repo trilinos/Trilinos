@@ -81,7 +81,7 @@ public:
   virtual ~Ifpack_EquationPartitioner() {};
 
   //! Sets all the parameters for the partitioner.
-  int SetPartitionParameters(Teuchos::ParameterList& List)
+  int SetPartitionParameters(Teuchos::ParameterList& /* List */)
   {
     return(0);
   }

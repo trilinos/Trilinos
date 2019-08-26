@@ -1043,6 +1043,11 @@ namespace Sacado {
     PCE<Storage>
     fabs(const PCE<Storage>& a);
 
+    template <typename Storage>
+    KOKKOS_INLINE_FUNCTION
+    PCE<Storage>
+    ceil(const PCE<Storage>& a);
+
     // template <typename Storage>
     // KOKKOS_INLINE_FUNCTION
     // PCE<Storage>

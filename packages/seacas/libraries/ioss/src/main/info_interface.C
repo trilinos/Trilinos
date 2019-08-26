@@ -34,6 +34,7 @@
 #include "Ioss_CodeTypes.h"
 #include "Ioss_FileInfo.h"
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
+#include "fmt/ostream.h"
 #include "info_interface.h"
 #include <cstddef>  // for nullptr
 #include <cstdlib>  // for exit, EXIT_SUCCESS, getenv
@@ -122,6 +123,9 @@ void Info::Interface::enroll_options()
   options_.enroll("summary", Ioss::GetLongOption::NoValue,
                   "Only output counts of nodes, elements, and entities", nullptr);
 
+  options_.enroll("configuration", Ioss::GetLongOption::NoValue,
+                  "Show configuration of IOSS library (TPL versions)", nullptr);
+
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogenous blocks\n"
                   "\t\tOptions are: TOPOLOGY, BLOCK, NOSPLIT",
@@ -187,9 +191,11 @@ bool Info::Interface::parse_options(int argc, char **argv)
   // Get options from environment variable also...
   char *options = getenv("IO_INFO_OPTIONS");
   if (options != nullptr) {
-    std::cerr
-        << "\nThe following options were specified via the IO_INFO_OPTIONS environment variable:\n"
-        << "\t" << options << "\n\n";
+    fmt::print(
+        stderr,
+        "\nThe following options were specified via the IO_INFO_OPTIONS environment variable:\n"
+        "\t{}\n\n",
+        options);
     options_.parse(options, options_.basename(*argv));
   }
 
@@ -200,8 +206,8 @@ bool Info::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help") != nullptr) {
     options_.usage(std::cerr);
-    std::cerr << "\n\tCan also set options via IO_INFO_OPTIONS environment variable.\n\n";
-    std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
+    fmt::print(stderr, "\n\tCan also set options via IO_INFO_OPTIONS environment variable.\n\n");
+    fmt::print(stderr, "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -239,7 +245,11 @@ bool Info::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("summary") != nullptr) {
-    summary_ = 1;
+    summary_ = true;
+  }
+
+  if (options_.retrieve("configuration") != nullptr) {
+    showConfig_ = true;
   }
 
   {
@@ -313,47 +323,49 @@ bool Info::Interface::parse_options(int argc, char **argv)
 #endif
 
   if (options_.retrieve("copyright") != nullptr) {
-    std::cerr << "\n"
-              << "Copyright(C) 1999-2017 National Technology & Engineering Solutions\n"
-              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-              << "NTESS, the U.S. Government retains certain rights in this software.\n\n"
-              << "Redistribution and use in source and binary forms, with or without\n"
-              << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n\n "
-              << "    * Redistributions of source code must retain the above copyright\n"
-              << "      notice, this list of conditions and the following disclaimer.\n\n"
-              << "    * Redistributions in binary form must reproduce the above\n"
-              << "      copyright notice, this list of conditions and the following\n"
-              << "      disclaimer in the documentation and/or other materials provided\n"
-              << "      with the distribution.\n\n"
-              << "    * Neither the name of NTESS nor the names of its\n"
-              << "      contributors may be used to endorse or promote products derived\n"
-              << "      from this software without specific prior written permission.\n\n"
-              << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-              << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-              << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-              << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-              << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-              << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-              << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-              << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-              << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
+    fmt::print(stderr, "\n"
+                       "Copyright(C) 1999-2017 National Technology & Engineering Solutions\n"
+                       "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
+                       "NTESS, the U.S. Government retains certain rights in this software.\n\n"
+                       "Redistribution and use in source and binary forms, with or without\n"
+                       "modification, are permitted provided that the following conditions are\n"
+                       "met:\n\n "
+                       "    * Redistributions of source code must retain the above copyright\n"
+                       "      notice, this list of conditions and the following disclaimer.\n\n"
+                       "    * Redistributions in binary form must reproduce the above\n"
+                       "      copyright notice, this list of conditions and the following\n"
+                       "      disclaimer in the documentation and/or other materials provided\n"
+                       "      with the distribution.\n\n"
+                       "    * Neither the name of NTESS nor the names of its\n"
+                       "      contributors may be used to endorse or promote products derived\n"
+                       "      from this software without specific prior written permission.\n\n"
+                       "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+                       "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+                       "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+                       "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
+                       "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
+                       "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
+                       "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+                       "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+                       "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+                       "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+                       "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n");
     exit(EXIT_SUCCESS);
   }
 
   // Parse remaining options as directory paths.
-  if (option_index < argc) {
-    filename_ = argv[option_index];
-  }
-  else {
-    std::cerr << "\nERROR: filename not specified\n\n";
-    return false;
-  }
+  if (!show_config()) {
+    if (option_index < argc) {
+      filename_ = argv[option_index];
+    }
+    else {
+      fmt::print(stderr, "\nERROR: filename not specified\n\n");
+      return false;
+    }
 
-  if (filetype_ == "unknown") {
-    filetype_ = get_type_from_file(filename_);
+    if (filetype_ == "unknown") {
+      filetype_ = get_type_from_file(filename_);
+    }
   }
 
   return true;

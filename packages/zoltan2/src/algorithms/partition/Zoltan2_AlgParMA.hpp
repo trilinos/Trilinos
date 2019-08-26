@@ -82,9 +82,9 @@ class AlgParMA : public Algorithm<Adapter>
 public:
   typedef typename Adapter::user_t user_t;
 
-  AlgParMA(const RCP<const Environment> &env,
-           const RCP<const Comm<int> > &problemComm,
-           const RCP<const BaseAdapter<user_t> > &adapter)
+  AlgParMA(const RCP<const Environment> &/* env */,
+           const RCP<const Comm<int> > &/* problemComm */,
+           const RCP<const BaseAdapter<user_t> > &/* adapter */)
   {
     throw std::runtime_error(
           "BUILD ERROR:  ParMA requested but not compiled into Zoltan2.\n"

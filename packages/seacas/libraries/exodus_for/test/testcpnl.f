@@ -59,7 +59,7 @@ c conversion routines
 
       exoid = exopen ("test.exo", EXREAD, cpu_ws, io_ws, vers, ierr)
       write (iout, '(/"after exopen, error = ",i3)')
-     1			ierr
+     1                  ierr
 
       write (iout, '("test.exo is an EXODUSII file; version ",
      1                f4.2)') vers

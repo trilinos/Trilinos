@@ -197,6 +197,7 @@ namespace MueLu {
       if (varName == "K")                               return GetFactory("A");
       if (varName == "M")                               return GetFactory("A");
       if (varName == "Mdiag")                           return GetFactory("A");
+      if (varName == "cfl-based shift array")           return GetFactory("A");
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")                     return GetFactory("Smoother");

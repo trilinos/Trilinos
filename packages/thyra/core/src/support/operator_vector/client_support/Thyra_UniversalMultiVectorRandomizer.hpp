@@ -100,7 +100,7 @@ universalMultiVectorRandomizer()
 
 
 template<class Scalar>
-bool UniversalMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Scalar> &space ) const
+bool UniversalMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Scalar> &/* space */ ) const
 {
   return true;
 }

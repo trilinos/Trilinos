@@ -39,6 +39,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *TriShell3::name = "trishell3";
   class St_TriShell3 : public ElementVariableType
   {
   public:

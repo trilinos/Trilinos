@@ -74,7 +74,7 @@ C   --   Uses ISZOOM, ZMLIM of /ZOOM/
       INTEGER IXELEM(*)
       INTEGER NODIX(*)
 
-      LOGICAL NODEIN, NODEOUT
+      LOGICAL NODEIN
 
 C     If (Output Element Blocks < Element Blocks)
       IF (NUMEQL (.TRUE., NELBLK, VISELB) .LT. NELBLK) THEN

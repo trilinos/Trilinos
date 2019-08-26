@@ -131,7 +131,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       ARGS "--linAlgebra=Epetra --xml=scaling-with-rerun.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
-      )    
+      )
 
     TRIBITS_ADD_TEST(
       Driver
@@ -259,6 +259,14 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
       TRIBITS_ADD_TEST(
         Driver
+        NAME "DriverTpetraSingleReduceCG"
+        ARGS "--linAlgebra=Tpetra --xml=scaling.xml --belosType=\"TPETRA CG SINGLE REDUCE\""
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+        )
+
+      TRIBITS_ADD_TEST(
+        Driver
         NAME "DriverTpetraYaml"
         ARGS "--linAlgebra=Tpetra --yaml=scaling.yaml"
         NUM_MPI_PROCS 4
@@ -272,6 +280,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         )
+
     ENDIF()
 
     TRIBITS_ADD_TEST(
@@ -375,7 +384,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES MMKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       MMKernelDriver
@@ -390,7 +399,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES JacobiKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       JacobiKernelDriver
@@ -405,7 +414,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES TwoMatrixMMKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       TwoMatrixMMKernelDriver
@@ -415,22 +424,17 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       COMM serial mpi
       )
 
-    TRIBITS_ADD_EXECUTABLE(
-      MatvecKernelDriver
-      SOURCES MatvecKernelDriver.cpp
-      COMM serial mpi
-      )
-  
-
-    TRIBITS_ADD_TEST(
-      MatvecKernelDriver
-      NAME "MatvecKernelDriver"
-      ARGS "--linAlgebra=Tpetra"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-      )
   ENDIF()
 ENDIF()
 
+
+# remove this from Experimental it requires Galeri + Tpetra
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    MatvecKernelDriver
+    SOURCES MatvecKernelDriver.cpp
+    COMM serial mpi
+    )
+ENDIF()
 
 ENDIF() # Galeri

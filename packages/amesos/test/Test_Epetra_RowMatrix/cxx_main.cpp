@@ -124,9 +124,9 @@ void driver(Epetra_Comm& Comm, const bool IsSymmetric, const bool UseTranspose,
   Amesos_TestRowMatrix A(Matrix);
 
   Amesos Factory;  
-  
+#ifndef NDEBUG
   bool res;
-
+#endif
   // If a given test fails, than the code stops, bue to the assert()
   // statement.
   for (unsigned int i = 0 ; i < SolverType.size() ; ++i) 
@@ -138,13 +138,19 @@ void driver(Epetra_Comm& Comm, const bool IsSymmetric, const bool UseTranspose,
       // solve with matrix
       Teuchos::ParameterList AmesosList;
       AmesosList.set("Redistribute",true);
-      res = TestAmesos((char*)Solver.c_str(), AmesosList, false, 
+#ifndef NDEBUG
+      res =
+#endif
+      TestAmesos((char*)Solver.c_str(), AmesosList, false,
                        &A, &LHS, &RHS);
       assert (res == true);
       if (UseTranspose) {
         // solve transpose with matrix
         Teuchos::ParameterList AmesosList;
-        res  = TestAmesos((char*)Solver.c_str(), AmesosList, true, 
+#ifndef NDEBUG
+        res  = 
+#endif
+        TestAmesos((char*)Solver.c_str(), AmesosList, true,
                           &A, &LHS, &RHS);
         assert (res == true);
       }

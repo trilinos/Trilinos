@@ -58,64 +58,21 @@ namespace Ifpack2 {
 template<class MatrixType, class InverseType>
 SparseContainer<MatrixType,InverseType>::
 SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                 const Teuchos::RCP<const import_type>& importer,
-                 int OverlapLevel,
-                 scalar_type DampingFactor) :
-  Container<MatrixType> (matrix, partitions, importer, OverlapLevel,
-                         DampingFactor),
-  IsInitialized_ (false),
-  IsComputed_ (false),
+                 const Teuchos::Array<Teuchos::Array<LO> >& partitions,
+                 const Teuchos::RCP<const import_type>&,
+                 bool pointIndexed) :
+  ContainerImpl<MatrixType, InverseScalar> (matrix, partitions, pointIndexed),
 #ifdef HAVE_MPI
   localComm_ (Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF)))
 #else
   localComm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ()))
 #endif // HAVE_MPI
-{
-  global_ordinal_type indexBase = 0;
-  for(int i = 0; i < this->numBlocks_; i++)
-    localMaps_.emplace_back(this->blockRows_[i], indexBase, localComm_);
-}
+{}
 
 //==============================================================================
 template<class MatrixType, class InverseType>
 SparseContainer<MatrixType, InverseType>::
-SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 const Teuchos::Array<local_ordinal_type>& localRows) :
-  Container<MatrixType> (matrix, localRows),
-  IsInitialized_(false),
-  IsComputed_(false),
-#ifdef HAVE_MPI
-  localComm_ (Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_SELF)))
-#else
-  localComm_ (Teuchos::rcp(new Teuchos::SerialComm<int>()))
-#endif // HAVE_MPI
-{
-  global_ordinal_type indexBase = 0;
-  localMaps_.emplace_back(this->blockRows_[0], indexBase, localComm_);
-}
-
-//==============================================================================
-template<class MatrixType,class InverseType>
-SparseContainer<MatrixType,InverseType>::~SparseContainer()
-{
-  for(auto inv : Inverses_)
-    delete inv.get();
-}
-
-//==============================================================================
-template<class MatrixType, class InverseType>
-bool SparseContainer<MatrixType,InverseType>::isInitialized() const
-{
-  return IsInitialized_;
-}
-
-//==============================================================================
-template<class MatrixType, class InverseType>
-bool SparseContainer<MatrixType,InverseType>::isComputed() const
-{
-  return IsComputed_;
-}
+~SparseContainer() {}
 
 //==============================================================================
 template<class MatrixType, class InverseType>
@@ -128,54 +85,44 @@ void SparseContainer<MatrixType,InverseType>::setParameters(const Teuchos::Param
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::initialize ()
 {
-  using Teuchos::RCP;
   // We assume that if you called this method, you intend to recompute
   // everything.  Thus, we release references to all the internal
   // objects.  We do this first to save memory.  (In an RCP
   // assignment, the right-hand side and left-hand side coexist before
   // the left-hand side's reference count gets updated.)
-  IsInitialized_ = false;
-  IsComputed_ = false;
 
-  // (Re)create the CrsMatrices that will contain the
-  // local matrices to use for solves.
-  diagBlocks_.reserve(this->numBlocks_);
-  Inverses_.reserve(this->numBlocks_);
-  for(int i = 0; i < this->numBlocks_; i++)
-  {
-    // Create a local map for the block, with same size as block has rows.
-    // Note: this map isn't needed elsewhere in SparseContainer, but the
-    // diagBlocks_[...] will keep it alive
-    RCP<InverseMap> tempMap(new InverseMap(this->blockRows_[i], 0, localComm_));
-    diagBlocks_.emplace_back(new InverseCrs(tempMap, 0));
-    // Create the inverse operator using the local matrix.  We give it
-    // the matrix here, but don't call its initialize() or compute()
-    // methods yet, since we haven't initialized the matrix yet.
-    Inverses_.push_back(ptr(new InverseType(diagBlocks_[i])));
-  }
-  IsInitialized_ = true;
+  //Will create the diagonal blocks and their inverses
+  //in extract()
+  diagBlocks_.assign(this->numBlocks_, Teuchos::null);
+  Inverses_.assign(this->numBlocks_, Teuchos::null);
+
+  this->IsInitialized_ = true;
+  this->IsComputed_ = false;
 }
 
 //==============================================================================
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::compute ()
 {
-  IsComputed_ = false;
-  if (! this->isInitialized ()) {
+  this->IsComputed_ = false;
+  if (!this->isInitialized ()) {
     this->initialize ();
   }
 
-  // Extract the submatrix.
-  this->extract ();
+  // Extract the submatrices.
+  this->extract();
 
   // The inverse operator already has a pointer to the submatrix.  Now
   // that the submatrix is filled in, we can initialize and compute
   // the inverse operator.
   for(int i = 0; i < this->numBlocks_; i++)
+  {
+    Inverses_[i]->setParameters(List_);
     Inverses_[i]->initialize ();
+  }
   for(int i = 0; i < this->numBlocks_; i++)
     Inverses_[i]->compute ();
-  IsComputed_ = true;
+  this->IsComputed_ = true;
 }
 
 //==============================================================================
@@ -186,19 +133,18 @@ void SparseContainer<MatrixType, InverseType>::clearBlocks ()
     delete inv.get();
   Inverses_.clear();
   diagBlocks_.clear();
-  Container<MatrixType>::clearBlocks();
+  ContainerImpl<MatrixType, InverseScalar>::clearBlocks();
 }
 
 //==============================================================================
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::
-applyImpl (inverse_mv_type& X,
-           inverse_mv_type& Y,
-           int blockIndex,
-           int /* stride */,
-           Teuchos::ETransp mode,
-           InverseScalar alpha,
-           InverseScalar beta) const
+solveBlockMV(inverse_mv_type& X,
+             inverse_mv_type& Y,
+             int blockIndex,
+             Teuchos::ETransp mode,
+             InverseScalar alpha,
+             InverseScalar beta) const
 {
     TEUCHOS_TEST_FOR_EXCEPTION(
       Inverses_[blockIndex]->getDomainMap()->getNodeNumElements() != X.getLocalLength(),
@@ -219,18 +165,15 @@ applyImpl (inverse_mv_type& X,
 
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType, InverseType>::
-apply (HostView& X,
-       HostView& Y,
+apply (HostView X,
+       HostView Y,
        int blockIndex,
-       int stride,
        Teuchos::ETransp mode,
-       scalar_type alpha,
-       scalar_type beta) const
+       SC alpha,
+       SC beta) const
 {
   using Teuchos::ArrayView;
   using Teuchos::as;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   // The InverseType template parameter might have different template
   // parameters (Scalar, LO, GO, and/or Node) than MatrixType.  For
@@ -246,7 +189,7 @@ apply (HostView& X,
   size_t numVecs = X.extent(1);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! IsComputed_, std::runtime_error, "Ifpack2::SparseContainer::apply: "
+    ! this->IsComputed_, std::runtime_error, "Ifpack2::SparseContainer::apply: "
     "You must have called the compute() method before you may call apply().  "
     "You may call the apply() method as many times as you want after calling "
     "compute() once, but you must have called compute() at least once.");
@@ -260,11 +203,11 @@ apply (HostView& X,
     return; // done! nothing to do
   }
 
-  const local_ordinal_type numRows_ = this->blockRows_[blockIndex];
+  const LO numRows = this->blockSizes_[blockIndex];
 
   // The operator Inverse_ works on a permuted subset of the local
   // parts of X and Y.  The subset and permutation are defined by the
-  // index array returned by getLocalRows().  If the permutation is
+  // index array returned by getBlockRows().  If the permutation is
   // trivial and the subset is exactly equal to the local indices,
   // then we could use the local parts of X and Y exactly, without
   // needing to permute.  Otherwise, we have to use temporary storage
@@ -276,7 +219,7 @@ apply (HostView& X,
   // the domain Map of the operator, which may be a permuted subset of
   // the local Map corresponding to X.getMap().  Similarly, Y_local
   // has the range Map of the operator, which may be a permuted subset
-  // of the local Map corresponding to Y.getMap().  numRows_ here
+  // of the local Map corresponding to Y.getMap().  numRows here
   // gives the number of rows in the row Map of the local Inverse_
   // operator.
   //
@@ -289,20 +232,23 @@ apply (HostView& X,
 
   if(invX.size() == 0)
   {
-    for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
+    for(LO i = 0; i < this->numBlocks_; i++)
       invX.emplace_back(Inverses_[i]->getDomainMap(), numVecs);
-    for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
+    for(LO i = 0; i < this->numBlocks_; i++)
       invY.emplace_back(Inverses_[i]->getDomainMap(), numVecs);
   }
   inverse_mv_type& X_local = invX[blockIndex];
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X_local.getLocalLength() != (size_t) numRows_, std::logic_error,
+    X_local.getLocalLength() != size_t(numRows * this->scalarsPerRow_), std::logic_error,
     "Ifpack2::SparseContainer::apply: "
     "X_local has length " << X_local.getLocalLength() << ", which does "
-    "not match numRows_ = " << numRows_ << ".  Please report this bug to "
+    "not match numRows = " << numRows * this->scalarsPerRow_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  const ArrayView<const local_ordinal_type> localRows = this->getLocalRows(blockIndex);
-  mvgs.gatherMVtoView(X_local, X, localRows);
+  const ArrayView<const LO> blockRows = this->getBlockRows(blockIndex);
+  if(this->scalarsPerRow_ == 1)
+    mvgs.gatherMVtoView(X_local, X, blockRows);
+  else
+    mvgs.gatherMVtoViewBlock(X_local, X, blockRows, this->scalarsPerRow_);
 
   // We must gather the output multivector Y even on input to
   // Inverse_->apply(), since the Inverse_ operator might use it as an
@@ -311,46 +257,47 @@ apply (HostView& X,
 
   inverse_mv_type& Y_local = invY[blockIndex];
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Y_local.getLocalLength () != (size_t) numRows_, std::logic_error,
+    Y_local.getLocalLength () != size_t(numRows * this->scalarsPerRow_), std::logic_error,
     "Ifpack2::SparseContainer::apply: "
     "Y_local has length " << Y_local.getLocalLength () << ", which does "
-    "not match numRows_ = " << numRows_ << ".  Please report this bug to "
+    "not match numRows = " << numRows * this->scalarsPerRow_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  mvgs.gatherMVtoView(Y_local, Y, localRows);
+
+  if(this->scalarsPerRow_ == 1)
+    mvgs.gatherMVtoView(Y_local, Y, blockRows);
+  else
+    mvgs.gatherMVtoViewBlock(Y_local, Y, blockRows, this->scalarsPerRow_);
 
   // Apply the local operator:
   // Y_local := beta*Y_local + alpha*M^{-1}*X_local
-  this->applyImpl(X_local, Y_local, blockIndex, stride, mode, as<InverseScalar>(alpha),
-                  as<InverseScalar>(beta));
+  this->solveBlockMV(X_local, Y_local, blockIndex, mode,
+      InverseScalar(alpha), InverseScalar(beta));
+
 
   // Scatter the permuted subset output vector Y_local back into the
   // original output multivector Y.
-  mvgs.scatterMVtoView(Y, Y_local, localRows);
+  if(this->scalarsPerRow_ == 1)
+    mvgs.scatterMVtoView(Y, Y_local, blockRows);
+  else
+    mvgs.scatterMVtoViewBlock(Y, Y_local, blockRows, this->scalarsPerRow_);
 }
 
 //==============================================================================
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType, InverseType>::
-weightedApply (HostView& X,
-               HostView& Y,
-               HostView& D,
+weightedApply (HostView X,
+               HostView Y,
+               HostView D,
                int blockIndex,
-               int /* stride */,
                Teuchos::ETransp mode,
-               scalar_type alpha,
-               scalar_type beta) const
+               SC alpha,
+               SC beta) const
 {
-  using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::Range1D;
-  using Teuchos::Ptr;
-  using Teuchos::ptr;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_const_cast;
   using std::cerr;
   using std::endl;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Teuchos::ScalarTraits<InverseScalar> STS;
 
   // The InverseType template parameter might have different template
   // parameters (Scalar, LO, GO, and/or Node) than MatrixType.  For
@@ -368,7 +315,7 @@ weightedApply (HostView& X,
   const size_t numVecs = X.extent(1);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! IsComputed_, std::runtime_error, "Ifpack2::SparseContainer::"
+    ! this->IsComputed_, std::runtime_error, "Ifpack2::SparseContainer::"
     "weightedApply: You must have called the compute() method before you may "
     "call apply().  You may call the apply() method as many times as you want "
     "after calling compute() once, but you must have called compute() at least "
@@ -379,13 +326,18 @@ weightedApply (HostView& X,
     "of vectors.  X has " << X.extent(1) << ", but Y has "
     << Y.extent(1) << ".");
 
+  //bmk 7-2019: BlockRelaxation already checked this, but if that changes...
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->scalarsPerRow_ > 1, std::logic_error, "Ifpack2::SparseContainer::weightedApply: "
+    "Use of block rows isn't allowed in overlapping Jacobi (the only method that uses weightedApply");
+
   if (numVecs == 0) {
     return; // done! nothing to do
   }
 
   // The operator Inverse_ works on a permuted subset of the local
   // parts of X and Y.  The subset and permutation are defined by the
-  // index array returned by getLocalRows().  If the permutation is
+  // index array returned by getBlockRows().  If the permutation is
   // trivial and the subset is exactly equal to the local indices,
   // then we could use the local parts of X and Y exactly, without
   // needing to permute.  Otherwise, we have to use temporary storage
@@ -397,7 +349,7 @@ weightedApply (HostView& X,
   // the domain Map of the operator, which may be a permuted subset of
   // the local Map corresponding to X.getMap().  Similarly, Y_local
   // has the range Map of the operator, which may be a permuted subset
-  // of the local Map corresponding to Y.getMap().  numRows_ here
+  // of the local Map corresponding to Y.getMap().  numRows here
   // gives the number of rows in the row Map of the local Inverse_
   // operator.
   //
@@ -407,18 +359,18 @@ weightedApply (HostView& X,
   //
   // FIXME (mfh 20 Aug 2013) This "local permutation" functionality
   // really belongs in Tpetra.
-  const local_ordinal_type numRows = this->blockRows_[blockIndex];
+  const LO numRows = this->blockSizes_[blockIndex];
 
   if(invX.size() == 0)
   {
-    for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
+    for(LO i = 0; i < this->numBlocks_; i++)
       invX.emplace_back(Inverses_[i]->getDomainMap(), numVecs);
-    for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
+    for(LO i = 0; i < this->numBlocks_; i++)
       invY.emplace_back(Inverses_[i]->getDomainMap(), numVecs);
   }
   inverse_mv_type& X_local = invX[blockIndex];
-  const ArrayView<const local_ordinal_type> localRows = this->getLocalRows(blockIndex);
-  mvgs.gatherMVtoView(X_local, X, localRows);
+  const ArrayView<const LO> blockRows = this->getBlockRows(blockIndex);
+  mvgs.gatherMVtoView(X_local, X, blockRows);
 
   // We must gather the output multivector Y even on input to
   // Inverse_->apply(), since the Inverse_ operator might use it as an
@@ -427,12 +379,12 @@ weightedApply (HostView& X,
 
   inverse_mv_type Y_local = invY[blockIndex];
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Y_local.getLocalLength() != (size_t) numRows, std::logic_error,
+    Y_local.getLocalLength() != size_t(numRows), std::logic_error,
     "Ifpack2::SparseContainer::weightedApply: "
     "Y_local has length " << X_local.getLocalLength() << ", which does "
-    "not match numRows_ = " << numRows << ".  Please report this bug to "
+    "not match numRows = " << numRows << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  mvgs.gatherMVtoView(Y_local, Y, localRows);
+  mvgs.gatherMVtoView(Y_local, Y, blockRows);
 
   // Apply the diagonal scaling D to the input X.  It's our choice
   // whether the result has the original input Map of X, or the
@@ -446,12 +398,12 @@ weightedApply (HostView& X,
 
   inverse_vector_type D_local(Inverses_[blockIndex]->getDomainMap());
   TEUCHOS_TEST_FOR_EXCEPTION(
-    D_local.getLocalLength() != (size_t) this->blockRows_[blockIndex], std::logic_error,
+    D_local.getLocalLength() != size_t(this->blockSizes_[blockIndex]), std::logic_error,
     "Ifpack2::SparseContainer::weightedApply: "
     "D_local has length " << X_local.getLocalLength () << ", which does "
-    "not match numRows_ = " << this->blockRows_[blockIndex] << ".  Please report this bug to "
+    "not match numRows = " << this->blockSizes_[blockIndex] << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  mvgs.gatherMVtoView(D_local, D, localRows);
+  mvgs.gatherMVtoView(D_local, D, blockRows);
   inverse_mv_type X_scaled(Inverses_[blockIndex]->getDomainMap(), numVecs);
   X_scaled.elementWiseMultiply(STS::one(), D_local, X_local, STS::zero());
 
@@ -460,13 +412,11 @@ weightedApply (HostView& X,
   // Y_temp may alias Y_local.  Otherwise, if beta != 0, we need
   // temporary storage for M^{-1}*X_scaled, so Y_temp must be
   // different than Y_local.
-  Ptr<inverse_mv_type> Y_temp;
-  bool deleteYT = false;
-  if (beta == STS::zero ()) {
-    Y_temp = ptr(&Y_local);
+  inverse_mv_type* Y_temp;
+  if (InverseScalar(beta) == STS::zero ()) {
+    Y_temp = &Y_local;
   } else {
-    Y_temp = ptr(new inverse_mv_type(Inverses_[blockIndex]->getRangeMap(), numVecs));
-    deleteYT = true;
+    Y_temp = new inverse_mv_type(Inverses_[blockIndex]->getRangeMap(), numVecs);
   }
   // Apply the local operator: Y_temp := M^{-1} * X_scaled
   Inverses_[blockIndex]->apply(X_scaled, *Y_temp, mode);
@@ -476,11 +426,11 @@ weightedApply (HostView& X,
   // because Y_temp has the same permuted subset Map.  That's good, in
   // fact, because it's a subset: less data to read and multiply.
   Y_local.elementWiseMultiply(alpha, D_local, *Y_temp, beta);
-  if(deleteYT)
-    delete Y_temp.get();
+  if(Y_temp != &Y_local)
+    delete Y_temp;
   // Copy the permuted subset output vector Y_local into the original
   // output multivector Y.
-  mvgs.scatterMVtoView(Y, Y_local, localRows);
+  mvgs.scatterMVtoView(Y, Y_local, blockRows);
 }
 
 //==============================================================================
@@ -499,8 +449,8 @@ std::string SparseContainer<MatrixType,InverseType>::description() const
 {
   std::ostringstream oss;
   oss << "\"Ifpack2::SparseContainer\": {";
-  if (isInitialized()) {
-    if (isComputed()) {
+  if (this->isInitialized()) {
+    if (this->isComputed()) {
       oss << "status = initialized, computed";
     }
     else {
@@ -530,10 +480,10 @@ void SparseContainer<MatrixType,InverseType>::describe(Teuchos::FancyOStream &os
   os << "Ifpack2::SparseContainer" << endl;
   for(int i = 0; i < this->numBlocks_; i++)
   {
-    os << "Block " << i << " rows: = " << this->blockRows_[i] << endl;
+    os << "Block " << i << " rows: = " << this->blockSizes_[i] << endl;
   }
-  os << "isInitialized()         = " << IsInitialized_ << endl;
-  os << "isComputed()            = " << IsComputed_ << endl;
+  os << "isInitialized()         = " << this->IsInitialized_ << endl;
+  os << "isComputed()            = " << this->IsComputed_ << endl;
   os << "================================================================================" << endl;
   os << endl;
 }
@@ -545,92 +495,159 @@ extract ()
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
-
-  auto& A = *this->inputMatrix_;
-  const size_t MatrixInNumRows = A.getNodeNumRows ();
-
-  // Sanity checking
-  for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
+  using Teuchos::RCP;
+  const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  //To extract diagonal blocks, need to translate local rows to local columns.
+  //Strategy: make a lookup table that translates local cols in the matrix to offsets in blockRows_:
+  //blockOffsets_[b] <= offset < blockOffsets_[b+1]: tests whether the column is in block b.
+  //offset - blockOffsets_[b]: gives the column within block b.
+  //
+  //This provides the block and col within a block in O(1).
+  Teuchos::Array<InverseGlobalOrdinal> indicesToInsert;
+  Teuchos::Array<InverseScalar> valuesToInsert;
+  if(this->scalarsPerRow_ > 1)
   {
-    const ArrayView<const local_ordinal_type> localRows = this->getLocalRows(i);
-    for (local_ordinal_type j = 0; j < localRows.size(); j++)
+    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
+    for(int i = 0; i < this->numBlocks_; i++)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        localRows[j] < 0 ||
-        static_cast<size_t> (localRows[j]) >= MatrixInNumRows,
-        std::runtime_error, "Ifpack2::SparseContainer::extract: localRows[j="
-        << j << "] = " << localRows[j] << ", which is out of the valid range.  "
-        "This probably means that compute() has not yet been called.");
-    }
-  }
-
-  const size_t maxNumEntriesInRow = A.getNodeMaxNumRowEntries();
-  Array<scalar_type> Values;
-  Array<local_ordinal_type> Indices;
-  Array<InverseScalar> Values_insert;
-  Array<InverseGlobalOrdinal> Indices_insert;
-
-  Values.resize (maxNumEntriesInRow);
-  Indices.resize (maxNumEntriesInRow);
-  Values_insert.resize (maxNumEntriesInRow);
-  Indices_insert.resize (maxNumEntriesInRow);
-
-  const InverseLocalOrdinal INVALID = Teuchos::OrdinalTraits<InverseLocalOrdinal>::invalid ();
-  for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
-  {
-    const local_ordinal_type numRows_ = this->blockRows_[i];
-    const ArrayView<const local_ordinal_type> localRows = this->getLocalRows(i);
-    for (local_ordinal_type j = 0; j < numRows_; j++)
-    {
-      const local_ordinal_type localRow = this->partitions_[this->partitionIndices_[i] + j];
-      size_t numEntries;
-      A.getLocalRowCopy(localRow, Indices(), Values(), numEntries);
-      size_t num_entries_found = 0;
-      for(size_t k = 0; k < numEntries; ++k)
+      //Get the interval where block i is defined in blockRows_
+      LO blockStart = this->blockOffsets_[i];
+      LO blockSize = this->blockSizes_[i];
+      LO blockPointSize = this->blockSizes_[i] * this->scalarsPerRow_;
+      LO blockEnd = blockStart + blockSize;
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
+      //Set the lookup table entries for the columns appearing in block i.
+      //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
+      //this is OK. The values updated here are only needed to process block i's entries.
+      for(LO j = 0; j < blockSize; j++)
       {
-        const local_ordinal_type localCol = Indices[k];
-        // Skip off-process elements
-        //
-        // FIXME (mfh 24 Aug 2013) This assumes the following:
-        //
-        // 1. The column and row Maps begin with the same set of
-        //    on-process entries, in the same order.  That is,
-        //    on-process row and column indices are the same.
-        // 2. All off-process indices in the column Map of the input
-        //    matrix occur after that initial set.
-        if(static_cast<size_t> (localCol) >= MatrixInNumRows)
-          continue;
-        // for local column IDs, look for each ID in the list
-        // of columns hosted by this object
-        InverseLocalOrdinal jj = INVALID;
-        for(local_ordinal_type kk = 0; kk < numRows_; kk++)
+        LO localCol = this->translateRowToCol(blockRows[j]);
+        colToBlockOffset[localCol] = blockStart + j;
+      }
+      //First, count the number of entries in each row of block i
+      //(to allocate it with StaticProfile)
+      Array<size_t> rowEntryCounts(blockPointSize, 0);
+      //blockRow counts the BlockCrs LIDs that are going into this block
+      //Rows are inserted into the CrsMatrix in sequential order
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
+      {
+        //get a raw view of the whole block row
+        const LO* indices;
+        SC* values;
+        LO numEntries;
+        LO inputRow = this->blockRows_[blockStart + blockRow];
+        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
+        for(LO br = 0; br < this->bcrsBlockSize_; br++)
         {
-          if(localRows[kk] == localCol)
-            jj = kk;
-        }
-        if (jj != INVALID)
-        {
-          Indices_insert[num_entries_found] = localMaps_[i].getGlobalElement(jj);
-          Values_insert[num_entries_found] = Values[k];
-          num_entries_found++;
+          for(LO k = 0; k < numEntries; k++)
+          {
+            LO colOffset = colToBlockOffset[indices[k]];
+            if(blockStart <= colOffset && colOffset < blockEnd)
+            {
+              rowEntryCounts[blockRow * this->bcrsBlockSize_ + br] += this->bcrsBlockSize_;
+            }
+          }
         }
       }
-      diagBlocks_[i]->insertGlobalValues(j, Indices_insert (0, num_entries_found),
-                                        Values_insert (0, num_entries_found));
+      //now that row sizes are known, can allocate the diagonal matrix
+      RCP<InverseMap> tempMap(new InverseMap(blockPointSize, 0, this->localComm_));
+      diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts, Tpetra::StaticProfile));
+      Inverses_[i] = rcp(new InverseType(diagBlocks_[i]));
+      //insert the actual entries, one row at a time
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
+      {
+        //get a raw view of the whole block row
+        const LO* indices;
+        SC* values;
+        LO numEntries;
+        LO inputRow = this->blockRows_[blockStart + blockRow];
+        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
+        for(LO br = 0; br < this->bcrsBlockSize_; br++)
+        {
+          indicesToInsert.clear();
+          valuesToInsert.clear();
+          for(LO k = 0; k < numEntries; k++)
+          {
+            LO colOffset = colToBlockOffset[indices[k]];
+            if(blockStart <= colOffset && colOffset < blockEnd)
+            {
+              LO blockCol = colOffset - blockStart;
+              //bc iterates over the columns in (block) entry k
+              for(LO bc = 0; bc < this->bcrsBlockSize_; bc++)
+              {
+                indicesToInsert.push_back(blockCol * this->bcrsBlockSize_ + bc);
+                valuesToInsert.push_back(values[k * this->bcrsBlockSize_ * this->bcrsBlockSize_ + bc * this->bcrsBlockSize_ + br]);
+              }
+            }
+          }
+          InverseGlobalOrdinal rowToInsert = blockRow * this->bcrsBlockSize_ + br;
+          if(indicesToInsert.size())
+            diagBlocks_[i]->insertGlobalValues(rowToInsert, indicesToInsert(), valuesToInsert());
+        }
+      }
+      diagBlocks_[i]->fillComplete();
     }
-    // FIXME (mfh 24 Aug 2013) If we generalize the current set of
-    // assumptions on the column and row Maps (see note above), we may
-    // need to supply custom domain and range Maps to fillComplete().
-    diagBlocks_[i]->fillComplete ();
+  }
+  else
+  {
+    //get the mapping from point-indexed matrix columns to offsets in blockRows_
+    //(this includes regular CrsMatrix columns, in which case scalarsPerRow_ == 1)
+    Array<LO> colToBlockOffset(this->inputMatrix_->getNodeNumCols() * this->bcrsBlockSize_, INVALID);
+    for(int i = 0; i < this->numBlocks_; i++)
+    {
+      //Get the interval where block i is defined in blockRows_
+      LO blockStart = this->blockOffsets_[i];
+      LO blockSize = this->blockSizes_[i];
+      LO blockEnd = blockStart + blockSize;
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
+      //Set the lookup table entries for the columns appearing in block i.
+      //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
+      //this is OK. The values updated here are only needed to process block i's entries.
+      for(LO j = 0; j < blockSize; j++)
+      {
+        //translateRowToCol will return the corresponding split column
+        LO localCol = this->translateRowToCol(blockRows[j]);
+        colToBlockOffset[localCol] = blockStart + j;
+      }
+      Teuchos::Array<size_t> rowEntryCounts(blockSize, 0);
+      for(LO j = 0; j < blockSize; j++)
+      {
+        rowEntryCounts[j] = this->getInputRowView(this->blockRows_[blockStart + j]).size();
+      }
+      RCP<InverseMap> tempMap(new InverseMap(blockSize, 0, this->localComm_));
+      diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts, Tpetra::StaticProfile));
+      Inverses_[i] = rcp(new InverseType(diagBlocks_[i]));
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
+      {
+        valuesToInsert.clear();
+        indicesToInsert.clear();
+        //get a view of the split row
+        LO inputSplitRow = this->blockRows_[blockStart + blockRow];
+        auto rowView = this->getInputRowView(inputSplitRow);
+        for(size_t k = 0; k < rowView.size(); k++)
+        {
+          LO colOffset = colToBlockOffset[rowView.ind(k)];
+          if(blockStart <= colOffset && colOffset < blockEnd)
+          {
+            LO blockCol = colOffset - blockStart;
+            indicesToInsert.push_back(blockCol);
+            valuesToInsert.push_back(rowView.val(k));
+          }
+        }
+        if(indicesToInsert.size())
+          diagBlocks_[i]->insertGlobalValues(blockRow, indicesToInsert(), valuesToInsert());
+      }
+      diagBlocks_[i]->fillComplete ();
+    }
   }
 }
 
 template<typename MatrixType, typename InverseType>
 std::string SparseContainer<MatrixType, InverseType>::getName()
 {
-  typedef ILUT<Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> > ILUTInverse;
+  typedef ILUT<Tpetra::RowMatrix<SC, LO, GO, NO> > ILUTInverse;
 #ifdef HAVE_IFPACK2_AMESOS2
-  typedef Details::Amesos2Wrapper<Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>> AmesosInverse;
+  typedef Details::Amesos2Wrapper<Tpetra::RowMatrix<SC, LO, GO, NO>> AmesosInverse;
   if(std::is_same<InverseType, ILUTInverse>::value)
   {
     return "SparseILUT";

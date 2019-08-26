@@ -32,6 +32,7 @@
 
 #include <cgns/Iocgns_DatabaseIO.h> // for DatabaseIO -- serial
 #include <cgns/Iocgns_IOFactory.h>
+#include <cgns/Iocgns_Utils.h>
 #include <cstddef> // for nullptr
 #if defined(SEACAS_HAVE_MPI)
 #include <cgns/Iocgns_ParallelDatabaseIO.h> // for DatabaseIO -- parallel
@@ -47,10 +48,10 @@ namespace Ioss {
 
 #if defined(SEACAS_HAVE_MPI)
 namespace {
-  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
-                                           Ioss::DatabaseUsage db_usage);
-  bool        check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
-                                         Ioss::DatabaseUsage db_usage);
+  std::string check_decomposition_property(const Ioss::PropertyManager &properties,
+                                           Ioss::DatabaseUsage          db_usage);
+  bool        check_composition_property(const Ioss::PropertyManager &properties,
+                                         Ioss::DatabaseUsage          db_usage);
 } // namespace
 #endif
 
@@ -89,13 +90,13 @@ namespace Iocgns {
     if (proc_count > 1) {
       decompose = true; // Default to decompose instead of file-per-processor if parallel.
       if (db_usage == Ioss::READ_MODEL || db_usage == Ioss::READ_RESTART) {
-        std::string method = check_decomposition_property(communicator, properties, db_usage);
+        std::string method = check_decomposition_property(properties, db_usage);
         if (!method.empty() && method == "EXTERNAL") {
           decompose = false;
         }
       }
       else if (db_usage == Ioss::WRITE_RESULTS || db_usage == Ioss::WRITE_RESTART) {
-        decompose = check_composition_property(communicator, properties, db_usage);
+        decompose = check_composition_property(properties, db_usage);
       }
     }
 
@@ -105,12 +106,14 @@ namespace Iocgns {
 #endif
       return new Iocgns::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
+
+  void IOFactory::show_config() const { Iocgns::Utils::show_config(); }
 } // namespace Iocgns
 
 #if defined(SEACAS_HAVE_MPI)
 namespace {
-  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
-                                           Ioss::DatabaseUsage db_usage)
+  std::string check_decomposition_property(const Ioss::PropertyManager &properties,
+                                           Ioss::DatabaseUsage          db_usage)
   {
     std::string decomp_method;
     std::string decomp_property;
@@ -135,8 +138,8 @@ namespace {
     return decomp_method;
   }
 
-  bool check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
-                                  Ioss::DatabaseUsage db_usage)
+  bool check_composition_property(const Ioss::PropertyManager &properties,
+                                  Ioss::DatabaseUsage          db_usage)
   {
     bool        compose          = true;
     std::string compose_property = "COMPOSE_INVALID";

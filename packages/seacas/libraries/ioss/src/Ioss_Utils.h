@@ -37,6 +37,7 @@
 #include <Ioss_Field.h>
 #include <algorithm> // for sort, lower_bound, copy, etc
 #include <cassert>
+#include <cmath>
 #include <cstddef>   // for size_t
 #include <cstdint>   // for int64_t
 #include <cstdlib>   // for nullptrr
@@ -164,11 +165,50 @@ namespace Ioss {
 #endif
     }
 
+    static void copy_string(char *dest, char const *source, size_t elements);
+
+    static void copy_string(char *dest, const std::string &source, size_t elements)
+    {
+      copy_string(dest, source.c_str(), elements);
+    }
+
+    template <size_t size> static void copy_string(char (&output)[size], const std::string &source)
+    {
+      copy_string(output, source.c_str(), size);
+    }
+
+    template <size_t size> static void copy_string(char (&output)[size], const char *source)
+    {
+      // Copy the string — don’t copy too many bytes.
+      copy_string(output, source, size);
+    }
+
     template <typename T> static void clear(std::vector<T> &vec)
     {
       vec.clear();
       vec.shrink_to_fit();
       assert(vec.capacity() == 0);
+    }
+
+    /**
+     * Returns the number of digits required to print the number.
+     * If `use_commas` is specified, then the width will be adjusted
+     * to account for the comma used every 3 digits.
+     * (1,234,567,890 would return 13)
+     * Typically used with the `fmt::print()` functions as:
+     * `fmt::print("{:{}n}", number, number_width(number,true))`
+     * `fmt::print("{:{}d}", number, number_width(number,false))`
+     */
+    inline static int number_width(const size_t number, bool use_commas = false)
+    {
+      if (number == 0) {
+        return 1;
+      }
+      int width = std::floor(std::log10(number)) + 1;
+      if (use_commas) {
+        width += (width / 3);
+      }
+      return width;
     }
 
     inline static int power_2(int count)

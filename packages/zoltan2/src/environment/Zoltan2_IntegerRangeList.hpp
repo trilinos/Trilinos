@@ -583,7 +583,7 @@ template <typename Integral>
 template <typename Integral>
   void IntegerRangeListValidator<Integral>::validate( 
     Teuchos::ParameterEntry  const& entry,
-    std::string const& paramName, std::string const& sublistName) const
+    std::string const& /* paramName */, std::string const& /* sublistName */) const
 {
   if (!entry.isType<std::string>()){
     return;  // already converted to an an array
@@ -635,7 +635,7 @@ template <typename Integral>
 
 template <typename Integral>
   void IntegerRangeListValidator<Integral>::validateAndModify( 
-    std::string const& paramName, std::string const& sublistName, 
+    std::string const& /* paramName */, std::string const& /* sublistName */, 
     Teuchos::ParameterEntry * entry) const
 {
   typedef typename Teuchos::Array<Integral>::size_type arraySize_t;

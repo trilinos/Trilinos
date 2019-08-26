@@ -8,152 +8,151 @@
 
 // forward declaration
 namespace KokkosBatched {
-  namespace Experimental {
-    template<typename T, int l>
-    class Vector;
 
-    template<typename T, int l>
-    struct is_vector<Vector<SIMD<T>,l> > : public std::true_type {};
+  template<typename T, int l>
+  class Vector;
 
-    template<typename ValueType, typename MemorySpace>
-    struct DefaultVectorLength {
-      enum : int { value = 1 };
-    };
+  template<typename T, int l>
+  struct is_vector<Vector<SIMD<T>,l> > : public std::true_type {};
 
-    template<>
-    struct DefaultVectorLength<float,Kokkos::HostSpace> {
+  template<typename ValueType, typename MemorySpace>
+  struct DefaultVectorLength {
+    enum : int { value = 1 };
+  };
+
+  template<>
+  struct DefaultVectorLength<float,Kokkos::HostSpace> {
 #if   defined(__AVX512F__)
-      enum : int { value = 16 };
+    enum : int { value = 16 };
 #elif defined(__AVX__) || defined(__AVX2__)
-      enum : int { value = 8 };
+    enum : int { value = 8 };
 #else
-      enum : int { value = 16 };      
+    enum : int { value = 16 };      
 #endif
-    };
-    template<>
-    struct DefaultVectorLength<double,Kokkos::HostSpace> {
+  };
+  template<>
+  struct DefaultVectorLength<double,Kokkos::HostSpace> {
 #if   defined(__AVX512F__)
-      enum : int { value = 8 };
+    enum : int { value = 8 };
 #elif defined(__AVX__) || defined(__AVX2__)
-      enum : int { value = 4 };
+    enum : int { value = 4 };
 #else
-      enum : int { value = 8 };      
+    enum : int { value = 8 };      
 #endif
-    };
-    template<>    
-    struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::HostSpace> {
+  };
+  template<>    
+  struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::HostSpace> {
 #if   defined(__AVX512F__)
-      enum : int { value = 8 };
+    enum : int { value = 8 };
 #elif defined(__AVX__) || defined(__AVX2__)
-      enum : int { value = 4 };
+    enum : int { value = 4 };
 #else
-      enum : int { value = 8 };      
+    enum : int { value = 8 };      
 #endif
-    };
-    template<>
-    struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::HostSpace> {
+  };
+  template<>
+  struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::HostSpace> {
 #if   defined(__AVX512F__)
-      enum : int { value = 4 };
+    enum : int { value = 4 };
 #elif defined(__AVX__) || defined(__AVX2__)
-      enum : int { value = 2 };
+    enum : int { value = 2 };
 #else 
-      enum : int { value = 4 };      
+    enum : int { value = 4 };      
 #endif
-    };
+  };
 
 #if defined(KOKKOS_ENABLE_CUDA)
-    template<>
-    struct DefaultVectorLength<float,Kokkos::CudaSpace> {
-      enum : int { value = 16 };
-    };
-    template<>
-    struct DefaultVectorLength<double,Kokkos::CudaSpace> {
-      enum : int { value = 16 };
-    };
-    template<>
-    struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::CudaSpace> {
-      enum : int { value = 16 };
-    };
-    template<>
-    struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::CudaSpace> {
-      enum : int { value = 16 };
-    };
-    template<>
-    struct DefaultVectorLength<float,Kokkos::CudaUVMSpace> {
-      enum : int { value = 16 };
-    };
-    template<>
-    struct DefaultVectorLength<double,Kokkos::CudaUVMSpace> {
-      enum : int { value = 16 };
-    };
-    template<>
-    struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::CudaUVMSpace> {
-      enum : int { value = 16 };
-    };
-    template<>
-    struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::CudaUVMSpace> {
-      enum : int { value = 16 };
-    };
+  template<>
+  struct DefaultVectorLength<float,Kokkos::CudaSpace> {
+    enum : int { value = 8 };
+  };
+  template<>
+  struct DefaultVectorLength<double,Kokkos::CudaSpace> {
+    enum : int { value = 8 };
+  };
+  template<>
+  struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::CudaSpace> {
+    enum : int { value = 8 };
+  };
+  template<>
+  struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::CudaSpace> {
+    enum : int { value = 8 };
+  };
+  template<>
+  struct DefaultVectorLength<float,Kokkos::CudaUVMSpace> {
+    enum : int { value = 8 };
+  };
+  template<>
+  struct DefaultVectorLength<double,Kokkos::CudaUVMSpace> {
+    enum : int { value = 8 };
+  };
+  template<>
+  struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::CudaUVMSpace> {
+    enum : int { value = 8 };
+  };
+  template<>
+  struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::CudaUVMSpace> {
+    enum : int { value = 8 };
+  };
 #endif
 
-    template<typename ValueType, typename MemorySpace>
-    struct DefaultInternalVectorLength {
-      enum : int { value = 1 };
-    };
-    template<typename ValueType>
-    struct DefaultInternalVectorLength<ValueType,Kokkos::HostSpace> {
-      enum : int { value = DefaultVectorLength<ValueType,Kokkos::HostSpace>::value };      
-    };
+  template<typename ValueType, typename MemorySpace>
+  struct DefaultInternalVectorLength {
+    enum : int { value = 1 };
+  };
+  template<typename ValueType>
+  struct DefaultInternalVectorLength<ValueType,Kokkos::HostSpace> {
+    enum : int { value = DefaultVectorLength<ValueType,Kokkos::HostSpace>::value };      
+  };
     
 #if defined(KOKKOS_ENABLE_CUDA)
-    template<>
-    struct DefaultInternalVectorLength<float,Kokkos::CudaSpace> {
-      enum : int { value = 4 };
-    };
-    template<>
-    struct DefaultInternalVectorLength<double,Kokkos::CudaSpace> {
-      enum : int { value = 2 };
-    };
-    template<>
-    struct DefaultInternalVectorLength<Kokkos::complex<float>,Kokkos::CudaSpace> {
-      enum : int { value = 2 };
-    };
-    template<>
-    struct DefaultInternalVectorLength<Kokkos::complex<double>,Kokkos::CudaSpace> {
-      enum : int { value = 1 };
-    };
-    template<>
-    struct DefaultInternalVectorLength<float,Kokkos::CudaUVMSpace> {
-      enum : int { value = 4 };
-    };
-    template<>
-    struct DefaultInternalVectorLength<double,Kokkos::CudaUVMSpace> {
-      enum : int { value = 2 };
-    };
-    template<>
-    struct DefaultInternalVectorLength<Kokkos::complex<float>,Kokkos::CudaUVMSpace> {
-      enum : int { value = 2 };
-    };
-    template<>
-    struct DefaultInternalVectorLength<Kokkos::complex<double>,Kokkos::CudaUVMSpace> {
-      enum : int { value = 1 };
-    };
+  template<>
+  struct DefaultInternalVectorLength<float,Kokkos::CudaSpace> {
+    enum : int { value = 4 };
+  };
+  template<>
+  struct DefaultInternalVectorLength<double,Kokkos::CudaSpace> {
+    enum : int { value = 2 };
+  };
+  template<>
+  struct DefaultInternalVectorLength<Kokkos::complex<float>,Kokkos::CudaSpace> {
+    enum : int { value = 2 };
+  };
+  template<>
+  struct DefaultInternalVectorLength<Kokkos::complex<double>,Kokkos::CudaSpace> {
+    enum : int { value = 1 };
+  };
+  template<>
+  struct DefaultInternalVectorLength<float,Kokkos::CudaUVMSpace> {
+    enum : int { value = 4 };
+  };
+  template<>
+  struct DefaultInternalVectorLength<double,Kokkos::CudaUVMSpace> {
+    enum : int { value = 2 };
+  };
+  template<>
+  struct DefaultInternalVectorLength<Kokkos::complex<float>,Kokkos::CudaUVMSpace> {
+    enum : int { value = 2 };
+  };
+  template<>
+  struct DefaultInternalVectorLength<Kokkos::complex<double>,Kokkos::CudaUVMSpace> {
+    enum : int { value = 1 };
+  };
 #endif
     
-    template<typename T>
-    struct MagnitudeScalarType;
+  template<typename T>
+  struct MagnitudeScalarType;
 
-    template<> struct MagnitudeScalarType<float> { typedef float type; };
-    template<> struct MagnitudeScalarType<double> { typedef double type; };
-    template<> struct MagnitudeScalarType<Kokkos::complex<float> > { typedef float type; };
-    template<> struct MagnitudeScalarType<Kokkos::complex<double> > { typedef double type; };
+  template<> struct MagnitudeScalarType<float> { typedef float type; };
+  template<> struct MagnitudeScalarType<double> { typedef double type; };
+  template<> struct MagnitudeScalarType<Kokkos::complex<float> > { typedef float type; };
+  template<> struct MagnitudeScalarType<Kokkos::complex<double> > { typedef double type; };
 
-    template<int l> struct MagnitudeScalarType<Vector<SIMD<float>,l> > { typedef float type; };
-    template<int l> struct MagnitudeScalarType<Vector<SIMD<double>,l> > { typedef double type; };
-    template<int l> struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<float> >,l> > { typedef float type; };
-    template<int l> struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<double> >,l> > { typedef double type; };
+  template<int l> struct MagnitudeScalarType<Vector<SIMD<float>,l> > { typedef float type; };
+  template<int l> struct MagnitudeScalarType<Vector<SIMD<double>,l> > { typedef double type; };
+  template<int l> struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<float> >,l> > { typedef float type; };
+  template<int l> struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<double> >,l> > { typedef double type; };
 
-  }
 }
 
 #include "KokkosBatched_Vector_SIMD.hpp"
@@ -165,13 +164,13 @@ namespace Kokkos {
     // do not use Vector alone as other can use the name.
 
     template<typename T, int l>
-    class ArithTraits<KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<T>,l> > { 
+    class ArithTraits<KokkosBatched::Vector<KokkosBatched::SIMD<T>,l> > { 
     public:
       typedef typename ArithTraits<T>::val_type val_scalar_type;
       typedef typename ArithTraits<T>::mag_type mag_scalar_type;
 
-      typedef KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<val_scalar_type>,l> val_type;
-      typedef KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<mag_scalar_type>,l> mag_type;
+      typedef KokkosBatched::Vector<KokkosBatched::SIMD<val_scalar_type>,l> val_type;
+      typedef KokkosBatched::Vector<KokkosBatched::SIMD<mag_scalar_type>,l> mag_type;
      
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type &val) {
         return val;
@@ -186,13 +185,13 @@ namespace Kokkos {
 	
 	
     template<typename T, int l>
-    class ArithTraits<KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<Kokkos::complex<T>>,l> > { 
+    class ArithTraits<KokkosBatched::Vector<KokkosBatched::SIMD<Kokkos::complex<T>>,l> > { 
     public:
       typedef typename ArithTraits<T>::val_type val_scalar_type;
       typedef typename ArithTraits<T>::mag_type mag_scalar_type;
 
-      typedef KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<Kokkos::complex<val_scalar_type> >,l> val_type;
-      typedef KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<mag_scalar_type >,l> mag_type;
+      typedef KokkosBatched::Vector<KokkosBatched::SIMD<Kokkos::complex<val_scalar_type> >,l> val_type;
+      typedef KokkosBatched::Vector<KokkosBatched::SIMD<mag_scalar_type >,l> mag_type;
 
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type &val) {
         mag_type r_val;

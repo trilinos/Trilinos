@@ -36,10 +36,11 @@
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Utils.h"      // for Utils
 #include "shell_interface.h"
-#include <cctype>   // for tolower
-#include <cstddef>  // for nullptr
-#include <cstdlib>  // for exit, strtod, EXIT_SUCCESS, etc
-#include <cstring>  // for strcmp
+#include <cctype>  // for tolower
+#include <cstddef> // for nullptr
+#include <cstdlib> // for exit, strtod, EXIT_SUCCESS, etc
+#include <cstring> // for strcmp
+#include <fmt/ostream.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for string, char_traits
 #include <vector>   // for vector
@@ -188,6 +189,10 @@ void IOShell::Interface::enroll_options()
                   "\t\tElements assigned randomly to processors in a way that preserves balance\n"
                   "\t\t(do *not* use for a real run)",
                   nullptr);
+  options_.enroll(
+      "add_processor_id_field", Ioss::GetLongOption::NoValue,
+      "For CGNS, add a cell-centered field whose value is the processor id of that cell", nullptr);
+
   options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
                   "Number of processors that can perform simultaneous IO operations in "
                   "a parallel run; 0 to disable",
@@ -196,6 +201,9 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("file_per_state", Ioss::GetLongOption::NoValue,
                   "put transient data for each timestep in separate file (EXPERMENTAL)", nullptr);
+
+  options_.enroll("reverse", Ioss::GetLongOption::NoValue,
+                  "define CGNS zones in reverse order. Used for testing (TEST)", nullptr);
 
   options_.enroll(
       "split_times", Ioss::GetLongOption::MandatoryValue,
@@ -303,9 +311,11 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   // Get options from environment variable also...
   char *options = getenv("IO_SHELL_OPTIONS");
   if (options != nullptr) {
-    std::cerr
-        << "\nThe following options were specified via the IO_SHELL_OPTIONS environment variable:\n"
-        << "\t" << options << "\n\n";
+    fmt::print(
+        stderr,
+        "\nThe following options were specified via the IO_SHELL_OPTIONS environment variable:\n"
+        "\t{}\n\n",
+        options);
     options_.parse(options, options_.basename(*argv));
   }
 
@@ -316,8 +326,8 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help") != nullptr) {
     options_.usage(std::cerr);
-    std::cerr << "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.";
-    std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for io_shell support.<-<-<-\n";
+    fmt::print(stderr, "\n\tCan also set options via IO_SHELL_OPTIONS environment variable."
+                       "\n\t->->-> Send email to gdsjaar@sandia.gov for io_shell support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -326,17 +336,9 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     exit(0);
   }
 
-  if (options_.retrieve("64-bit") != nullptr) {
-    ints_64_bit = true;
-  }
-
-  if (options_.retrieve("32-bit") != nullptr) {
-    ints_32_bit = true;
-  }
-
-  if (options_.retrieve("float") != nullptr) {
-    reals_32_bit = true;
-  }
+  ints_64_bit  = (options_.retrieve("64-bit") != nullptr);
+  ints_32_bit  = (options_.retrieve("32-bit") != nullptr);
+  reals_32_bit = (options_.retrieve("float") != nullptr);
 
   if (options_.retrieve("netcdf4") != nullptr) {
     netcdf4 = true;
@@ -348,9 +350,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     netcdf4 = false;
   }
 
-  if (options_.retrieve("shuffle") != nullptr) {
-    shuffle = true;
-  }
+  shuffle = (options_.retrieve("shuffle") != nullptr);
 
   {
     const char *temp = options_.retrieve("compress");
@@ -360,6 +360,8 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   }
 
 #if defined(PARALLEL_AWARE_EXODUS)
+  add_processor_id_field = (options_.retrieve("add_processor_id_field") != nullptr);
+
   if (options_.retrieve("rcb") != nullptr) {
     decomp_method = "RCB";
   }
@@ -426,45 +428,18 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     decomp_method = "EXTERNAL";
   }
 
-  if (options_.retrieve("minimize_open_files") != nullptr) {
-    minimize_open_files = true;
-  }
-
-  if (options_.retrieve("debug") != nullptr) {
-    debug = true;
-  }
-
-  if (options_.retrieve("file_per_state") != nullptr) {
-    file_per_state = true;
-  }
-
-  if (options_.retrieve("quiet") != nullptr) {
-    quiet = true;
-  }
-
-  if (options_.retrieve("statistics") != nullptr) {
-    statistics = true;
-  }
-
-  if (options_.retrieve("memory_statistics") != nullptr) {
-    memory_statistics = true;
-  }
-
-  if (options_.retrieve("memory_read") != nullptr) {
-    in_memory_read = true;
-  }
-
-  if (options_.retrieve("memory_write") != nullptr) {
-    in_memory_write = true;
-  }
-
-  if (options_.retrieve("native_variable_names") != nullptr) {
-    lower_case_variable_names = false;
-  }
-
-  if (options_.retrieve("delete_timesteps") != nullptr) {
-    delete_timesteps = true;
-  }
+  minimize_open_files       = (options_.retrieve("minimize_open_files") != nullptr);
+  debug                     = (options_.retrieve("debug") != nullptr);
+  file_per_state            = (options_.retrieve("file_per_state") != nullptr);
+  reverse                   = (options_.retrieve("reverse") != nullptr);
+  quiet                     = (options_.retrieve("quiet") != nullptr);
+  statistics                = (options_.retrieve("statistics") != nullptr);
+  memory_statistics         = (options_.retrieve("memory_statistics") != nullptr);
+  in_memory_read            = (options_.retrieve("memory_read") != nullptr);
+  in_memory_write           = (options_.retrieve("memory_write") != nullptr);
+  delete_timesteps          = (options_.retrieve("delete_timesteps") != nullptr);
+  lower_case_variable_names = (options_.retrieve("native_variable_names") == nullptr);
+  disable_field_recognition = (options_.retrieve("disable_field_recognition") != nullptr);
 
   {
     const char *temp = options_.retrieve("in_type");
@@ -501,10 +476,6 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     if (temp != nullptr) {
       fieldSuffixSeparator = temp[0];
     }
-  }
-
-  if (options_.retrieve("disable_field_recognition") != nullptr) {
-    disable_field_recognition = true;
   }
 
   {
@@ -548,12 +519,12 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 #endif
 
       if (data_storage_type == 0) {
-        std::cerr << "ERROR: Option data_storage must be one of\n";
+        fmt::print(stderr, "ERROR: Option data_storage must be one of\n");
 #ifdef SEACAS_HAVE_KOKKOS
-        std::cerr << "       POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or "
-                     "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE\n";
+        fmt::print(stderr, "       POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or "
+                           "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE\n");
 #else
-        std::cerr << "       POINTER, or STD_VECTOR\n";
+        fmt::print(stderr, "       POINTER, or STD_VECTOR\n");
 #endif
         return false;
       }
@@ -603,33 +574,33 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    std::cerr << "\n"
-              << "Copyright(C) 1999-2017 National Technology & Engineering Solutions\n"
-              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-              << "NTESS, the U.S. Government retains certain rights in this software.\n\n"
-              << "Redistribution and use in source and binary forms, with or without\n"
-              << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n\n "
-              << "    * Redistributions of source code must retain the above copyright\n"
-              << "      notice, this list of conditions and the following disclaimer.\n\n"
-              << "    * Redistributions in binary form must reproduce the above\n"
-              << "      copyright notice, this list of conditions and the following\n"
-              << "      disclaimer in the documentation and/or other materials provided\n"
-              << "      with the distribution.\n\n"
-              << "    * Neither the name of NTESS nor the names of its\n"
-              << "      contributors may be used to endorse or promote products derived\n"
-              << "      from this software without specific prior written permission.\n\n"
-              << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-              << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-              << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-              << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-              << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-              << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-              << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-              << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-              << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
+    fmt::print(stderr, "\n"
+                       "Copyright(C) 1999-2017 National Technology & Engineering Solutions\n"
+                       "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
+                       "NTESS, the U.S. Government retains certain rights in this software.\n\n"
+                       "Redistribution and use in source and binary forms, with or without\n"
+                       "modification, are permitted provided that the following conditions are\n"
+                       "met:\n\n "
+                       "    * Redistributions of source code must retain the above copyright\n"
+                       "      notice, this list of conditions and the following disclaimer.\n\n"
+                       "    * Redistributions in binary form must reproduce the above\n"
+                       "      copyright notice, this list of conditions and the following\n"
+                       "      disclaimer in the documentation and/or other materials provided\n"
+                       "      with the distribution.\n\n"
+                       "    * Neither the name of NTESS nor the names of its\n"
+                       "      contributors may be used to endorse or promote products derived\n"
+                       "      from this software without specific prior written permission.\n\n"
+                       "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+                       "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+                       "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+                       "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
+                       "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
+                       "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
+                       "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+                       "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+                       "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+                       "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+                       "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -641,7 +612,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     outputFile = argv[option_index];
   }
   else {
-    std::cerr << "\nERROR: input and output filename not specified\n\n";
+    fmt::print(stderr, "\nERROR: input and output filename not specified\n\n");
     return false;
   }
 

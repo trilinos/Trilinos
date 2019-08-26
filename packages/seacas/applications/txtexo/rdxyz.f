@@ -54,8 +54,7 @@ C   --upon exit at end of coordinates.
 
       REAL XN(*), YN(*), ZN(*)
       CHARACTER*(NAMLEN) NAMECO(*)
-      integer idum(3), kval(3)
-      real    rdum(3)
+      integer kval(3)
 
       character*512 scratch
       CHARACTER*32 STRA

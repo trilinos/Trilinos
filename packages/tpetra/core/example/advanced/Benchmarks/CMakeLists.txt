@@ -26,3 +26,9 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES localView.cpp
   COMM serial mpi
 )
+
+TRIBITS_ADD_EXECUTABLE(
+  CrsMatrix_sumIntoLocalValues
+  SOURCES CrsMatrix_sumIntoLocalValues.cpp
+  COMM serial mpi
+)

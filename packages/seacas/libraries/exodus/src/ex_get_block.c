@@ -55,14 +55,12 @@
 
 #include "exodusII.h" // for ex_block, void_int, etc
 #include "exodusII_int.h"
-#include <string.h>    // for strcpy
-#include <sys/types.h> // for int64_t
 
 /*
  * reads the parameters used to describe an edge, face, or element block
  */
 
-int ex_get_block(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, char *elem_type,
+int ex_get_block(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, char *entity_descrip,
                  void_int *num_entries_this_blk, void_int *num_nodes_per_entry,
                  void_int *num_edges_per_entry, void_int *num_faces_per_entry,
                  void_int *num_attr_per_entry)
@@ -124,8 +122,8 @@ int ex_get_block(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, char *
     }
   }
 
-  if (elem_type) {
-    strcpy(elem_type, block.topology);
+  if (entity_descrip) {
+    ex_copy_string(entity_descrip, block.topology, MAX_STR_LENGTH + 1);
   }
 
   EX_FUNC_LEAVE(err);

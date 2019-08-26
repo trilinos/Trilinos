@@ -323,7 +323,7 @@ private:
   {};
 
   //! operator= (should never be used)
-  Ifpack_ILUT& operator=(const Ifpack_ILUT& RHS)
+  Ifpack_ILUT& operator=(const Ifpack_ILUT& /* RHS */)
   {
     return(*this);
   }

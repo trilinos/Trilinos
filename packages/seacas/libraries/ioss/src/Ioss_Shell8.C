@@ -39,6 +39,7 @@
 #include <cassert> // for assert
 
 namespace Ioss {
+  const char *Shell8::name = "shell8";
   class St_Shell8 : public ElementVariableType
   {
   public:

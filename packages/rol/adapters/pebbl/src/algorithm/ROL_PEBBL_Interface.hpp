@@ -7,7 +7,6 @@
 #include <pebbl/utilib/BitArray.h>
 #include <pebbl/utilib/IntVector.h>
 #include <pebbl/utilib/DoubleVector.h>
-#include <pebbl/utilib/_math.h>
 #include <pebbl/misc/chunkAlloc.h>
 
 #include "ROL_OptimizationSolver.hpp"
@@ -164,11 +163,13 @@ public:
       nfrac_(-1), index_(-1), integralityMeasure_(-1), 
       verbosity_(rpbs.verbosity_), outStream_(rpbs.outStream_) {
     branchSubAsChildOf(this);
-    problem0_   = branching_->getProblemFactory()->build();
-    solution_   = rpbs.solution_->clone();   solution_->set(*rpbs.solution_);
-    multiplier_ = rpbs.multiplier_->clone(); multiplier_->set(*rpbs.multiplier_);
-    ptrans_     = branching_->getBranchHelper()->createTransform();
-    bound = rpbs.bound;
+    problem0_   = rpbs.branching_->getProblemFactory()->build();
+    solution_   = rpbs.solution_->clone();
+    solution_->set(*rpbs.solution_);
+    multiplier_ = rpbs.multiplier_->clone();
+    multiplier_->set(*rpbs.multiplier_);
+    ptrans_     = rpbs.branching_->getBranchHelper()->createTransform();
+    bound       = rpbs.bound;
   }
 
   pebbl::branching* bGlobal() const {
@@ -276,7 +277,8 @@ public:
   }
 
   int splitComputation() {
-    index_ = bHelper_->getIndex(*solution_);
+    index_ = bHelper_->getIndex(*solution_, *multiplier_, *tobj_, *tcon_);
+    //index_ = bHelper_->getIndex(*solution_);
     if (verbosity_ > 1) {
       std::ios_base::fmtflags flags(outStream_->flags());
       *outStream_ << std::scientific << std::setprecision(3);

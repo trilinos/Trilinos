@@ -47,7 +47,7 @@
 PyTrilinos.Thyra is the python interface to the Trilinos abstract
 interface package Thyra:
 
-    http://trilinos.sandia.gov/packages/thyra
+    https://trilinos.org/docs/dev/packages/thyra/doc/html/index.html
 
 The purpose of Thyra is to provide a set of interfaces and supporting
 code that defines basic interoperability mechanisms between different

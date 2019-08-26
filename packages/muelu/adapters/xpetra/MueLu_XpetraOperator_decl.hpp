@@ -57,10 +57,10 @@ namespace MueLu {
 
 /*!  @brief Wraps an existing MueLu::Hierarchy as a Xpetra::Operator.
 */
-  template <class Scalar = Xpetra::Operator<>::scalar_type,
-            class LocalOrdinal = typename Xpetra::Operator<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class XpetraOperator : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   protected:
     XpetraOperator() { }
@@ -100,9 +100,9 @@ namespace MueLu {
     */
     void apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                          Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                                         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                                         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                                         Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const{
+                                         Teuchos::ETransp /* mode */ = Teuchos::NO_TRANS,
+                                         Scalar /* alpha */ = Teuchos::ScalarTraits<Scalar>::one(),
+                                         Scalar /* beta */  = Teuchos::ScalarTraits<Scalar>::one()) const{
       try {
 #ifdef HAVE_MUELU_DEBUG
         typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
@@ -131,11 +131,14 @@ namespace MueLu {
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const { return false; }
 
+#ifdef HAVE_MUELU_DEPRECATED_CODE
     template <class NewNode>
     Teuchos::RCP< XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
+    MUELU_DEPRECATED
     clone(const RCP<NewNode>& new_node) const {
       return Teuchos::rcp (new XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> (Hierarchy_->template clone<NewNode> (new_node)));
     }
+#endif
 
     //! @name MueLu specific
     //@{

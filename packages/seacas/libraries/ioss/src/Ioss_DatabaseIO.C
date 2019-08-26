@@ -56,17 +56,27 @@
 #include <cfloat>
 #include <cstddef>
 #include <cstring>
+#include <fmt/ostream.h>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <set>
 #include <string>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <tokenize.h>
 #include <utility>
 #include <vector>
 
+#if defined SEACAS_HAVE_DATAWARP
+extern "C" {
+#include <datawarp.h>
+}
+#endif
+
 namespace {
+  auto initial_time = std::chrono::high_resolution_clock::now();
+
   void log_time(std::chrono::time_point<std::chrono::high_resolution_clock> &start,
                 std::chrono::time_point<std::chrono::high_resolution_clock> &finish,
                 int current_state, double state_time, bool is_input, bool single_proc_only,
@@ -90,14 +100,8 @@ namespace {
     unsigned int       min_hash   = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MIN);
     if (max_hash != min_hash) {
       const std::string &ge_name = ge->name();
-      std::string        errmsg  = "Parallel inconsistency detected for ";
-      errmsg += in_out == 0 ? "writing" : "reading";
-      errmsg += " field '";
-      errmsg += field_name;
-      errmsg += "' on entity '";
-      errmsg += ge_name;
-      errmsg += "'\n";
-      IOSS_WARNING << errmsg;
+      fmt::print(IOSS_WARNING, "Parallel inconsistency detected for {} field '{}' on entity '{}'\n",
+                 in_out == 0 ? "writing" : "reading", field_name, ge_name);
       return false;
     }
     return true;
@@ -199,6 +203,7 @@ namespace Ioss {
       overlayCount = properties.get("OVERLAY_COUNT").get_int();
     }
 
+    Utils::check_set_bool_property(properties, "ENABLE_TRACING", m_enableTracing);
     Utils::check_set_bool_property(properties, "TIME_STATE_INPUT_OUTPUT", m_timeStateInOut);
     {
       bool logging;
@@ -218,6 +223,8 @@ namespace Ioss {
         set_parallel_consistency(consistent);
       }
     }
+
+    check_setDW();
 
     if (!is_input()) {
       // Create full path to the output file at this point if it doesn't
@@ -262,6 +269,120 @@ namespace Ioss {
     fieldSeparator = separator;
   }
 
+  /**
+   * Check whether user wants to use Cray DataWarp.  It will be enabled if:
+   * the `DW_JOB_STRIPED` or `DW_JOB_PRIVATE` environment variable
+   * is set by the queuing system during runtime and the IOSS property
+   * `ENABLE_DATAWARP` set to `YES`.
+   *
+   * We currently only want output files to be directed to BB.
+   */
+  void DatabaseIO::check_setDW() const
+  {
+    if (!is_input()) {
+      bool set_dw = false;
+      Utils::check_set_bool_property(properties, "ENABLE_DATAWARP", set_dw);
+      if (set_dw) {
+        std::string bb_path;
+        // Selected via `#DW jobdw type=scratch access_mode=striped`
+        util().get_environment("DW_JOB_STRIPED", bb_path, isParallel);
+
+        if (bb_path.empty()) { // See if using `private` mode...
+          // Selected via `#DW jobdw type=scratch access_mode=private`
+          util().get_environment("DW_JOB_PRIVATE", bb_path, isParallel);
+        }
+        if (!bb_path.empty()) {
+          usingDataWarp = true;
+          dwPath        = bb_path;
+          if (myProcessor == 0) {
+            fmt::print(stderr, "\nDataWarp Burst Buffer Enabled.  Path = `{}`\n\n", dwPath);
+          }
+        }
+        else {
+          if (myProcessor == 0) {
+            fmt::print(IOSS_WARNING,
+                       "\nWARNING: DataWarp enabled via Ioss property `ENABLE_DATAWARP`, but\n"
+                       "         burst buffer path was not specified via `DW_JOB_STRIPED` or "
+                       "`DW_JOB_PRIVATE`\n"
+                       "         environment variables (typically set by queuing system)\n"
+                       "         DataWarp will *NOT* be enabled, but job will still run.\n\n");
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * In this wrapper function we check if user intends to use Cray
+   * DataWarp(aka DW), which provides ability to use NVMe based flash
+   * storage available across all compute nodes accessible via high
+   * speed NIC.
+   */
+  void DatabaseIO::openDW(const std::string &filename) const
+  {
+    set_pfsname(filename); // Name on permanent-file-store
+    if (using_dw()) {      // We are about to write to a output database in BB
+      Ioss::FileInfo path{filename};
+      Ioss::FileInfo bb_file{get_dwPath() + path.tailname()};
+      if (bb_file.exists() &&
+          !bb_file.is_writable()) { // already existing file which has been closed
+        // If we can't write to the file on the BB, then it is a file which
+        // is being staged by datawarp system over to the permanent filesystem.
+        // Wait until staging has finished...
+        // stage wait returns 0 = success, -ENOENT or -errno
+#if defined SEACAS_HAVE_DATAWARP
+        int dwret = dw_wait_file_stage(bb_file.filename().c_str());
+        if (dwret < 0) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR: failed waiting for file stage `{}`: {}\n", bb_file.filename(),
+                     std::strerror(-dwret));
+          IOSS_ERROR(errmsg);
+        }
+#else
+        // Used to debug DataWarp logic on systems without DataWarp...
+        fmt::print(stderr, "DW: (FAKE) dw_wait_file_stage({});\n", bb_file.filename());
+#endif
+      }
+      set_dwname(bb_file.filename());
+    }
+    else {
+      set_dwname(filename);
+    }
+  }
+
+  /** \brief This function gets called inside closeDatabase__(), which checks if Cray Datawarp (DW)
+   * is in use, if so, we want to call a stageout before actual close of this file.
+   */
+  void DatabaseIO::closeDW() const
+  {
+    if (using_dw()) {
+      if (!using_parallel_io() || (using_parallel_io() && myProcessor == 0)) {
+#if defined SEACAS_HAVE_DATAWARP
+        int ret =
+            dw_stage_file_out(get_dwname().c_str(), get_pfsname().c_str(), DW_STAGE_IMMEDIATE);
+        if (ret < 0) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR: file staging of `{}` to `{}` failed at close: {}\n",
+                     get_dwname(), get_pfsname(), std::strerror(-ret));
+          IOSS_ERROR(errmsg);
+        }
+#else
+        fmt::print(stderr, "\nDW: (FAKE) dw_stage_file_out({}, {}, DW_STAGE_IMMEDIATE);\n",
+                   get_dwname(), get_pfsname());
+#endif
+      }
+#ifdef SEACAS_HAVE_MPI
+      if (using_parallel_io()) {
+        MPI_Barrier(util().communicator());
+      }
+#endif
+    }
+  }
+
+  void DatabaseIO::openDatabase__() const { openDW(get_filename()); }
+
+  void DatabaseIO::closeDatabase__() const { closeDW(); }
+
   IfDatabaseExistsBehavior DatabaseIO::open_create_behavior() const
   {
     IfDatabaseExistsBehavior exists = DB_OVERWRITE;
@@ -277,45 +398,37 @@ namespace Ioss {
     std::ostringstream errmsg;
 
     if (myProcessor == 0) {
-      Ioss::FileInfo file = Ioss::FileInfo(filename);
-      std::string    path = file.pathname();
+      Ioss::FileInfo file      = Ioss::FileInfo(filename);
+      std::string    path      = file.pathname();
+      std::string    path_root = path[0] == '/' ? "/" : "";
 
-      const int mode = 0777; // Users umask will be applied to this.
+      auto comps = tokenize(path, "/");
+      for (const auto &comp : comps) {
+        path_root += comp;
 
-      auto iter = path.cbegin();
-      while (iter != path.cend() && !error_found) {
-        iter                  = std::find(iter, path.cend(), '/');
-        std::string path_root = std::string(path.cbegin(), iter);
-
-        if (iter != path.cend()) {
-          ++iter; // Skip past the '/'
-        }
-
-        if (path_root.empty()) { // Path started with '/'
-          continue;
-        }
-
-        struct stat st
-        {
-        };
+        struct stat st;
         if (stat(path_root.c_str(), &st) != 0) {
+          const int mode = 0777; // Users umask will be applied to this.
           if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
-            errmsg << "ERROR: Cannot create directory '" << path_root
-                   << "' : " << std::strerror(errno) << "\n";
+            fmt::print(errmsg, "ERROR: Cannot create directory '{}': {}\n", path_root,
+                       std::strerror(errno));
             error_found = true;
+            break;
           }
         }
         else if (!S_ISDIR(st.st_mode)) {
           errno = ENOTDIR;
-          errmsg << "ERROR: Path '" << path_root << "' is not a directory.\n";
+          fmt::print(errmsg, "ERROR: Path '{}' is not a directory.\n", path_root);
           error_found = true;
+          break;
         }
+        path_root += "/";
       }
     }
     else {
       // Give the other processors something to say in case there is an error.
-      errmsg << "ERROR: Could not create path. See processor 0 output for more "
-                "details.\n";
+      fmt::print(errmsg,
+                 "ERROR: Could not create path. See processor 0 output for more details.\n");
     }
 
     // Sync all processors with error status...
@@ -334,7 +447,7 @@ namespace Ioss {
   {
     if (decodedFilename.empty()) {
       if (isParallel) {
-        decodedFilename = util().decode_filename(get_filename(), isParallel);
+        decodedFilename = util().decode_filename(get_filename(), isParallel && !usingParallelIO);
       }
       else if (properties.exists("processor_count") && properties.exists("my_processor")) {
         int proc_count  = properties.get("processor_count").get_int();
@@ -343,6 +456,12 @@ namespace Ioss {
       }
       else {
         decodedFilename = get_filename();
+      }
+
+      openDW(decodedFilename);
+      if (using_dw()) {
+        // Note that if using_dw(), then we need to set the decodedFilename to the BB name.
+        decodedFilename = get_dwname();
       }
     }
     return decodedFilename;
@@ -425,10 +544,11 @@ namespace Ioss {
       // locations.  OK to have a single member
       if (group_spec.size() < 2) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Invalid " << type_name << " group specification '" << group << "'\n"
-               << "       Correct syntax is 'new_group,member1,...,memberN' and "
-                  "their must "
-               << "       be at least 1 member of the group";
+        fmt::print(errmsg,
+                   "ERROR: Invalid {} group specification '{}'\n"
+                   "       Correct syntax is 'new_group,member1,...,memberN' and there must "
+                   "       be at least 1 member of the group",
+                   type_name, group);
         IOSS_ERROR(errmsg);
       }
 
@@ -440,9 +560,10 @@ namespace Ioss {
   void DatabaseIO::create_group(EntityType /*type*/, const std::string &type_name,
                                 const std::vector<std::string> &group_spec, const T * /*set_type*/)
   {
-    IOSS_WARNING << "WARNING: Grouping of " << type_name << " sets is not yet implemented.\n"
-                 << "         Skipping the creation of " << type_name << " set '" << group_spec[0]
-                 << "'\n\n";
+    fmt::print(IOSS_WARNING,
+               "WARNING: Grouping of {0} sets is not yet implemented.\n"
+               "         Skipping the creation of {0} set '{1}'\n\n",
+               type_name, group_spec[0]);
   }
 
   template <>
@@ -494,9 +615,11 @@ namespace Ioss {
         }
       }
       else {
-        IOSS_WARNING << "WARNING: While creating the grouped surface '" << group_spec[0]
-                     << "', the surface '" << group_spec[i] << "' does not exist. "
-                     << "This surface will skipped and not added to the group.\n\n";
+        fmt::print(
+            IOSS_WARNING,
+            "WARNING: While creating the grouped surface '{}', the surface '{}' does not exist. "
+            "This surface will skipped and not added to the group.\n\n",
+            group_spec[0], group_spec[i]);
       }
     }
   }
@@ -817,10 +940,8 @@ namespace Ioss {
       assert(result != MPI_SUCCESS || non_zero == req_cnt);
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Irecv error on processor " << util().parallel_rank() << " in "
-               << __func__;
-        std::cerr << errmsg.str();
+        fmt::print(stderr, "ERROR: MPI_Irecv error on processor {} in {}", util().parallel_rank(),
+                   __func__);
       }
 
       int local_error  = (MPI_SUCCESS == result) ? 0 : 1;
@@ -828,8 +949,7 @@ namespace Ioss {
 
       if (global_error != 0) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Irecv error on some processor "
-               << "in " << __func__;
+        fmt::print(errmsg, "ERROR: MPI_Irecv error on some processor in {}", __func__);
         IOSS_ERROR(errmsg);
       }
 
@@ -848,10 +968,8 @@ namespace Ioss {
       assert(result != MPI_SUCCESS || non_zero == req_cnt);
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Rsend error on processor " << util().parallel_rank() << " in "
-               << __func__;
-        std::cerr << errmsg.str();
+        fmt::print(stderr, "ERROR: MPI_Rsend error on processor {} in {}", util().parallel_rank(),
+                   __func__);
       }
 
       local_error  = (MPI_SUCCESS == result) ? 0 : 1;
@@ -859,18 +977,15 @@ namespace Ioss {
 
       if (global_error != 0) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Rsend error on some processor "
-               << "in " << __func__;
+        fmt::print(errmsg, "ERROR: MPI_Rsend error on some processor in {}", __func__);
         IOSS_ERROR(errmsg);
       }
 
       result = MPI_Waitall(req_cnt, TOPTR(request), TOPTR(status));
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Waitall error on processor " << util().parallel_rank() << " in "
-               << __func__;
-        std::cerr << errmsg.str();
+        fmt::print(stderr, "ERROR: MPI_Waitall error on processor {} in {}", util().parallel_rank(),
+                   __func__);
       }
 
       // Unpack the data and update the inv_con arrays for boundary
@@ -1035,12 +1150,7 @@ namespace Ioss {
   }
 } // namespace Ioss
 
-#include <sys/time.h>
-
 namespace {
-  struct timeval tp;
-  double         initial_time = -1.0;
-
   void log_time(std::chrono::time_point<std::chrono::high_resolution_clock> &start,
                 std::chrono::time_point<std::chrono::high_resolution_clock> &finish,
                 int current_state, double state_time, bool is_input, bool single_proc_only,
@@ -1057,8 +1167,8 @@ namespace {
 
     if (util.parallel_rank() == 0 || single_proc_only) {
       std::ostringstream strm;
-      strm << "\nIOSS: Time to " << (is_input ? "read " : "write") << " state " << current_state
-           << ", time " << state_time << " is ";
+      fmt::print(strm, "\nIOSS: Time to {} state {}, time {} is ", (is_input ? "read " : "write"),
+                 current_state, state_time);
 
       double total = 0.0;
       for (auto &p_time : all_times) {
@@ -1067,34 +1177,29 @@ namespace {
 
       // Now append each processors time onto the stream...
       if (util.parallel_size() == 1) {
-        strm << total << " (ms)\n";
+        fmt::print(strm, "{} (ms)\n", total);
       }
       else if (util.parallel_size() > 4) {
-	std::sort(all_times.begin(), all_times.end());
-	strm << " Min: " << all_times.front() << "\tMax: " << all_times.back()
-             << "\tMed: " << all_times[all_times.size()/2];
+        std::sort(all_times.begin(), all_times.end());
+        fmt::print(strm, " Min: {}\tMax: {}\tMed: {}", all_times.front(), all_times.back(),
+                   all_times[all_times.size() / 2]);
       }
       else {
         char sep = (util.parallel_size() > 1) ? ':' : ' ';
         for (auto &p_time : all_times) {
-          strm << std::setw(8) << p_time << sep;
+          fmt::print(strm, "{:8d}{}", p_time, sep);
         }
       }
       if (util.parallel_size() > 1) {
-        strm << "\tTot: " << total << " (ms)\n";
+        fmt::print(strm, "\tTot: {} (ms)\n", total);
       }
-      std::cerr << strm.str();
+      fmt::print(stderr, "{}", strm.str());
     }
   }
 
   void log_field(const char *symbol, const Ioss::GroupingEntity *entity, const Ioss::Field &field,
                  bool single_proc_only, const Ioss::ParallelUtils &util)
   {
-    if (initial_time < 0.0) {
-      gettimeofday(&tp, nullptr);
-      initial_time = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-    }
-
     if (entity != nullptr) {
       std::vector<int64_t> all_sizes;
       if (single_proc_only) {
@@ -1105,12 +1210,11 @@ namespace {
       }
 
       if (util.parallel_rank() == 0 || single_proc_only) {
-        const std::string &name = entity->name();
-        std::ostringstream strm;
-        gettimeofday(&tp, nullptr);
-        double time_now = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-        strm << symbol << " [" << std::fixed << std::setprecision(3) << time_now - initial_time
-             << "]\t";
+        const std::string &           name = entity->name();
+        std::ostringstream            strm;
+        auto                          now  = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff = now - initial_time;
+        fmt::print(strm, "{} [{:.3f}]\t", symbol, diff.count());
 
         int64_t total = 0;
         for (auto &p_size : all_sizes) {
@@ -1119,19 +1223,19 @@ namespace {
         // Now append each processors size onto the stream...
         if (util.parallel_size() > 4) {
           auto min_max = std::minmax_element(all_sizes.cbegin(), all_sizes.cend());
-          strm << " m:" << std::setw(8) << *min_max.first << " M:" << std::setw(8)
-               << *min_max.second << " A:" << std::setw(8) << total / all_sizes.size();
+          fmt::print(strm, " m: {:8d} M: {:8d} A: {:8d}", *min_max.first, *min_max.second,
+                     total / all_sizes.size());
         }
         else {
           for (auto &p_size : all_sizes) {
-            strm << std::setw(8) << p_size << ":";
+            fmt::print(strm, "{:8d}:", p_size);
           }
         }
         if (util.parallel_size() > 1) {
-          strm << " T:" << std::setw(8) << total;
+          fmt::print(strm, " T:{:8d}", total);
         }
-        strm << "\t" << name << "/" << field.get_name() << "\n";
-        std::cout << strm.str();
+        fmt::print(strm, "\t{}/{}\n", name, field.get_name());
+        fmt::print(stderr, "{}", strm.str());
       }
     }
     else {
@@ -1141,12 +1245,9 @@ namespace {
       }
 #endif
       if (util.parallel_rank() == 0 || single_proc_only) {
-        std::ostringstream strm;
-        gettimeofday(&tp, nullptr);
-        double time_now = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-        strm << symbol << " [" << std::fixed << std::setprecision(3) << time_now - initial_time
-             << "]\n";
-        std::cout << strm.str();
+        auto                          time_now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff     = time_now - initial_time;
+        fmt::print("{} [{:.3f}]\n", symbol, diff.count());
       }
     }
   }

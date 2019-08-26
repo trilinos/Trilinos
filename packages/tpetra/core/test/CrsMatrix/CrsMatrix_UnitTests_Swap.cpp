@@ -311,7 +311,6 @@ class crsMatrix_Swap_Tester
         using Teuchos::Comm;
         using Teuchos::RCP;
 
-        using graph_type           = Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;     // Tpetra CrsGraph type
         using map_type             = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;          // Tpetra Map type
         using map_rows_type        = std::map<GlobalOrdinal, int>;                            // map rows to pid's
         using vec_go_type          = std::vector<GlobalOrdinal>;                              // vector of GlobalOrdinals
@@ -389,7 +388,7 @@ class crsMatrix_Swap_Tester
         // Create the Row Map
         RCP<const map_type> row_map(new map_type(gbl_num_rows, global_ids.data(), lcl_num_rows, 0, comm));
 
-        Teuchos::ArrayRCP<size_t> num_ent_per_row(lcl_num_rows);
+        Teuchos::Array<size_t> num_ent_per_row(lcl_num_rows);
         size_t                    idx = 0;
         for(auto& r: gbl_rows)
         {
@@ -411,7 +410,7 @@ class crsMatrix_Swap_Tester
             }
         }
 
-        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row, Tpetra::StaticProfile));
+        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row (), Tpetra::StaticProfile));
 
         for(auto& r: gbl_rows)
         {
@@ -474,7 +473,6 @@ class crsMatrix_Swap_Tester
         using vec_go_type          = std::vector<GlobalOrdinal>;                                        // vector of GlobalOrdinals
         using map_row_to_cols_type = std::map<GlobalOrdinal, vec_go_type>;                              // Map rows to columns
 
-        using matrix_type          = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;      // Tpetra CrsMatrix type
         using vec_scalar_type      = std::vector<Scalar>;                                               // Vector of Scalars
         using map_row_to_vals_type = std::map<GlobalOrdinal, vec_scalar_type>;
 
@@ -569,7 +567,7 @@ class crsMatrix_Swap_Tester
         // Create the Row Map
         RCP<const map_type> row_map(new map_type(gbl_num_rows, global_ids.data(), lcl_num_rows, 0, comm));
 
-        Teuchos::ArrayRCP<size_t> num_ent_per_row(lcl_num_rows);
+        Teuchos::Array<size_t> num_ent_per_row(lcl_num_rows);
         size_t                    idx = 0;
         for(auto& r: gbl_vals)
         {
@@ -787,9 +785,6 @@ using Teuchos::VERB_HIGH;
 using Teuchos::VERB_LOW;
 using Teuchos::VERB_MEDIUM;
 using Teuchos::VERB_NONE;
-using Tpetra::DynamicProfile;
-using Tpetra::ProfileType;
-using Tpetra::StaticProfile;
 using Tpetra::TestingUtilities::getDefaultComm;
 typedef Tpetra::global_size_t GST;
 

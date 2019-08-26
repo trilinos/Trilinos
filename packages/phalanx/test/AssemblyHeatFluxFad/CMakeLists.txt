@@ -6,7 +6,6 @@ SET(example_SOURCES
   Cell.hpp
   Cell.cpp
   Dimension.hpp
-  Dimension.cpp
   Workset.hpp
   evaluators/Evaluator_Constant.hpp
   evaluators/Evaluator_Constant_Def.hpp

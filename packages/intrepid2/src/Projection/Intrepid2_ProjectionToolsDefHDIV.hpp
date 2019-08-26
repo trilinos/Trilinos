@@ -464,7 +464,7 @@ ProjectionTools<SpT>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
 
   Teuchos::LAPACK<ordinal_type,funValsValueType> lapack;
   ordinal_type info = 0;
-  Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", numElemDofs+numCurlInteriorDOFs, 1);
+  Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", 2*(numElemDofs+numCurlInteriorDOFs), 1);
 
   for(ordinal_type ic=0; ic<numCells; ++ic) {
     Kokkos::deep_copy(massMat,funValsValueType(0));  //LAPACK might overwrite the matrix
@@ -479,12 +479,21 @@ ProjectionTools<SpT>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
       for(ordinal_type j=0; j<numElemDofs; ++j)
         massMat(i,j) = massMat(j,i);
 
-    lapack.GESV(numElemDofs+numCurlInteriorDOFs, 1,
-        massMat.data(),
-        massMat.stride_1(),
-        (ordinal_type*)pivVec.data(),
-        rhsMat.data(),
-        rhsMat.stride_1(),
+    // lapack.GESV(numElemDofs+numCurlInteriorDOFs, 1,
+    //     massMat.data(),
+    //     massMat.stride_1(),
+    //     (ordinal_type*)pivVec.data(),
+    //     rhsMat.data(),
+    //     rhsMat.stride_1(),
+    //     &info);
+
+    // Using GELS because the matrix can be close to singular.
+    // TODO check why matrix is close to singular and possibly whether it makes sense to solve the
+    // least square problem with a better method (e.g. GGLSE)
+    lapack.GELS('N', numElemDofs+numCurlInteriorDOFs, numElemDofs+numCurlInteriorDOFs, 1,
+        massMat.data(), massMat.stride_1(),
+        rhsMat.data(), rhsMat.stride_1(),
+        pivVec.data(), pivVec.extent(0),
         &info);
 
     if (info) {

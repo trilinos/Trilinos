@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -92,7 +93,7 @@ HexFixture::HexFixture(   MetaData& meta
               , size_t nx
               , size_t ny
               , size_t nz
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
@@ -105,7 +106,7 @@ HexFixture::HexFixture(   MetaData& meta
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map)
+                )
                ),
     m_meta(*m_meta_p),
     m_bulk_data(*m_bulk_p),
@@ -128,7 +129,7 @@ HexFixture::HexFixture(   MetaData& meta
               , size_t ny
               , size_t nz
               , const std::string& coordinate_name
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
@@ -141,7 +142,7 @@ HexFixture::HexFixture(   MetaData& meta
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map)
+                )
                ),
     m_meta(*m_meta_p),
     m_bulk_data(*m_bulk_p),
@@ -162,7 +163,7 @@ HexFixture::HexFixture(   MetaData& meta
               , size_t ny
               , size_t nz
               , bool auraOn
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
@@ -175,7 +176,7 @@ HexFixture::HexFixture(   MetaData& meta
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map)
+                )
                ),
     m_meta(*m_meta_p),
     m_bulk_data(*m_bulk_p),

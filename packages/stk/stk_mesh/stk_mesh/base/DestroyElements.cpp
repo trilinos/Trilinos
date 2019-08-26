@@ -50,6 +50,12 @@ void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elemen
 void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete)
 {
     bulk.modification_begin();
+    destroy_elements_no_mod_cycle(bulk, elementsToDestroy, orphansToDelete);
+    bulk.modification_end();
+}
+
+void destroy_elements_no_mod_cycle(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete)
+{
     std::vector<stk::mesh::EntityVector> downwardConnectivity(bulk.mesh_meta_data().entity_rank_count());
 
     for(stk::mesh::Entity element : elementsToDestroy) {
@@ -85,7 +91,6 @@ void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elemen
             }
         }
     }
-    bulk.modification_end();
 }
 
 }}

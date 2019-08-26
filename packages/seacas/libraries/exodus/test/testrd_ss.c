@@ -58,6 +58,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void *my_calloc(size_t length, size_t size)
+{
+  if (length == 0 || size == 0) {
+    return NULL;
+  }
+  return calloc(length, size);
+}
+
 int main(int argc, char **argv)
 {
   int  exoid, num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets;
@@ -125,10 +133,10 @@ int main(int argc, char **argv)
 
   /* read element block parameters */
 
-  ids                = (int *)calloc(num_elem_blk, sizeof(int));
-  num_elem_in_block  = (int *)calloc(num_elem_blk, sizeof(int));
-  num_nodes_per_elem = (int *)calloc(num_elem_blk, sizeof(int));
-  num_attr           = (int *)calloc(num_elem_blk, sizeof(int));
+  ids                = (int *)my_calloc(num_elem_blk, sizeof(int));
+  num_elem_in_block  = (int *)my_calloc(num_elem_blk, sizeof(int));
+  num_nodes_per_elem = (int *)my_calloc(num_elem_blk, sizeof(int));
+  num_attr           = (int *)my_calloc(num_elem_blk, sizeof(int));
 
   error = ex_get_ids(exoid, EX_ELEM_BLOCK, ids);
   printf("\nafter ex_get_elem_blk_ids, error = %3d\n", error);
@@ -148,7 +156,7 @@ int main(int argc, char **argv)
   /* read element connectivity */
 
   for (i = 0; i < num_elem_blk; i++) {
-    connect = (int *)calloc((num_nodes_per_elem[i] * num_elem_in_block[i]), sizeof(int));
+    connect = (int *)my_calloc((num_nodes_per_elem[i] * num_elem_in_block[i]), sizeof(int));
 
     error = ex_get_conn(exoid, EX_ELEM_BLOCK, ids[i], connect, NULL, NULL);
     printf("\nafter ex_get_elem_conn, error = %d\n", error);
@@ -167,7 +175,7 @@ int main(int argc, char **argv)
 
   /* read individual side sets */
 
-  ids = (int *)calloc(num_side_sets, sizeof(int));
+  ids = (int *)my_calloc(num_side_sets, sizeof(int));
 
   error = ex_get_ids(exoid, EX_SIDE_SET, ids);
   printf("\nafter ex_get_side_set_ids, error = %3d\n", error);
@@ -182,11 +190,11 @@ int main(int argc, char **argv)
 
     /* Note: The # of elements is same as # of sides!  */
     num_elem_in_set = num_sides_in_set;
-    elem_list       = (int *)calloc(num_elem_in_set, sizeof(int));
-    side_list       = (int *)calloc(num_sides_in_set, sizeof(int));
-    node_ctr_list   = (int *)calloc(num_elem_in_set, sizeof(int));
-    node_list       = (int *)calloc(num_elem_in_set * 21, sizeof(int));
-    dist_fact       = (float *)calloc(num_df_in_set, sizeof(float));
+    elem_list       = (int *)my_calloc(num_elem_in_set, sizeof(int));
+    side_list       = (int *)my_calloc(num_sides_in_set, sizeof(int));
+    node_ctr_list   = (int *)my_calloc(num_elem_in_set, sizeof(int));
+    node_list       = (int *)my_calloc(num_elem_in_set * 21, sizeof(int));
+    dist_fact       = (float *)my_calloc(num_df_in_set, sizeof(float));
 
     error = ex_get_set(exoid, EX_SIDE_SET, ids[i], elem_list, side_list);
     printf("\nafter ex_get_side_set, error = %3d\n", error);
@@ -255,14 +263,14 @@ int main(int argc, char **argv)
 
   /* concatenated side set read */
 
-  ids              = (int *)calloc(num_side_sets, sizeof(int));
-  num_elem_per_set = (int *)calloc(num_side_sets, sizeof(int));
-  num_df_per_set   = (int *)calloc(num_side_sets, sizeof(int));
-  elem_ind         = (int *)calloc(num_side_sets, sizeof(int));
-  df_ind           = (int *)calloc(num_side_sets, sizeof(int));
-  elem_list        = (int *)calloc(elem_list_len, sizeof(int));
-  side_list        = (int *)calloc(elem_list_len, sizeof(int));
-  dist_fact        = (float *)calloc(df_list_len, sizeof(float));
+  ids              = (int *)my_calloc(num_side_sets, sizeof(int));
+  num_elem_per_set = (int *)my_calloc(num_side_sets, sizeof(int));
+  num_df_per_set   = (int *)my_calloc(num_side_sets, sizeof(int));
+  elem_ind         = (int *)my_calloc(num_side_sets, sizeof(int));
+  df_ind           = (int *)my_calloc(num_side_sets, sizeof(int));
+  elem_list        = (int *)my_calloc(elem_list_len, sizeof(int));
+  side_list        = (int *)my_calloc(elem_list_len, sizeof(int));
+  dist_fact        = (float *)my_calloc(df_list_len, sizeof(float));
 
   {
     struct ex_set_specs set_specs;

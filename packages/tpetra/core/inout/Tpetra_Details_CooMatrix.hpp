@@ -994,29 +994,26 @@ protected:
     return ! (* (this->localError_));
   }
 
-  /// \brief Whether the subclass implements the "old" or "new"
-  ///   (Kokkos-friendly) interface (it implements the "new"
-  ///   interface).
-  virtual bool useNewInterface () { return true; }
-
-
   //! Kokkos::Device specialization for DistObject communication buffers.
   using buffer_device_type =
     typename ::Tpetra::DistObject<char, LO, GO, NT>::buffer_device_type;
 
-  /// \brief While we do use the "new" Kokkos::DualView - based
-  ///   interface, we don't currently use device Views.
   virtual void
-  copyAndPermuteNew (const ::Tpetra::SrcDistObject& sourceObject,
-                     const size_t numSameIDs,
-                     const Kokkos::DualView<const LO*,
-                       buffer_device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const LO*,
-                       buffer_device_type>& permuteFromLIDs)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const ::Tpetra::SrcDistObject& sourceObject,
+   const size_t numSameIDs,
+   const Kokkos::DualView<const LO*,
+     buffer_device_type>& permuteToLIDs,
+   const Kokkos::DualView<const LO*,
+     buffer_device_type>& permuteFromLIDs)
   {
     using std::endl;
     using this_type = CooMatrix<SC, LO, GO, NT>;
-    const char prefix[] = "Tpetra::Details::CooMatrix::copyAndPermuteNew: ";
+    const char prefix[] = "Tpetra::Details::CooMatrix::copyAndPermute: ";
 
     // There's no communication in this method, so it's safe just to
     // return on error.
@@ -1206,24 +1203,27 @@ protected:
     }
   }
 
-  /// \brief While we do use the "new" Kokkos::DualView - based
-  ///   interface, we don't currently use device Views.
   virtual void
-  packAndPrepareNew (const ::Tpetra::SrcDistObject& sourceObject,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& exportLIDs,
-                     Kokkos::DualView<packet_type*,
-                       buffer_device_type>& exports,
-                     Kokkos::DualView<size_t*,
-                       buffer_device_type> numPacketsPerLID,
-                     size_t& constantNumPackets,
-                     ::Tpetra::Distributor& /* distor */)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const ::Tpetra::SrcDistObject& sourceObject,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& exportLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type>& exports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   size_t& constantNumPackets,
+   ::Tpetra::Distributor& /* distor */)
   {
     using Teuchos::Comm;
     using Teuchos::RCP;
     using std::endl;
     using this_type = CooMatrix<SC, LO, GO, NT>;
-    const char prefix[] = "Tpetra::Details::CooMatrix::packAndPrepareNew: ";
+    const char prefix[] = "Tpetra::Details::CooMatrix::packAndPrepare: ";
     const char suffix[] = "  This should never happen.  "
       "Please report this bug to the Tpetra developers.";
 
@@ -1404,23 +1404,26 @@ protected:
     }
   }
 
-  /// \brief While we do use the "new" Kokkos::DualView - based
-  ///   interface, we don't currently use device Views.
   virtual void
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& importLIDs,
-                       Kokkos::DualView<packet_type*,
-                         buffer_device_type> imports,
-                       Kokkos::DualView<size_t*,
-                         buffer_device_type> numPacketsPerLID,
-                       const size_t /* constantNumPackets */,
-                       ::Tpetra::Distributor& /* distor */,
-                       const ::Tpetra::CombineMode /* combineMode */)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& importLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type> imports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   const size_t /* constantNumPackets */,
+   ::Tpetra::Distributor& /* distor */,
+   const ::Tpetra::CombineMode /* combineMode */)
   {
     using Teuchos::Comm;
     using Teuchos::RCP;
     using std::endl;
-    const char prefix[] = "Tpetra::Details::CooMatrix::unpackAndCombineNew: ";
+    const char prefix[] = "Tpetra::Details::CooMatrix::unpackAndCombine: ";
     const char suffix[] = "  This should never happen.  "
       "Please report this bug to the Tpetra developers.";
 

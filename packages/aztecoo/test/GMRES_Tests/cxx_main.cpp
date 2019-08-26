@@ -130,32 +130,44 @@ int main(int argc, char *argv[]) {
   solver.SetAztecOption(AZ_diagnostics, AZ_none);
   if (!verbose)
       solver.SetAztecOption(AZ_output, AZ_none);
-
+#ifndef NDEBUG
   double single_error = 0.0;
   double double_error = 0.0;
+#endif
   for (int i=0; i<5; i++) {
     
     if (i==0) {
       solver.SetAztecOption(AZ_orthog, AZ_single_classic);
       solver.Iterate(NumGlobalElements, 1.0E-14);
-      single_error = solver.RecursiveResidual();
-      
+#ifndef NDEBUG
+      single_error =
+#endif
+      solver.RecursiveResidual();
     }
     else if (i==1)  {
       solver.SetAztecOption(AZ_orthog, AZ_double_classic);
       solver.Iterate(NumGlobalElements, 1.0E-14);
-      double_error = solver.RecursiveResidual();
+#ifndef NDEBUG
+      double_error =
+#endif
+      solver.RecursiveResidual();
       assert(double_error < single_error); // Error from double classic should be less than single
     }
     else if (i==2)  {
       solver.SetAztecOption(AZ_orthog, AZ_single_modified);
       solver.Iterate(NumGlobalElements, 1.0E-14);
-      single_error = solver.RecursiveResidual();
+#ifndef NDEBUG
+      single_error =
+#endif
+      solver.RecursiveResidual();
     }
     else if (i==3)  {
       solver.SetAztecOption(AZ_orthog, AZ_double_modified);
       solver.Iterate(NumGlobalElements, 1.0E-14);
-      double_error = solver.RecursiveResidual();
+#ifndef NDEBUG
+      double_error =
+#endif
+      solver.RecursiveResidual();
       assert(double_error < single_error); // Error from double classic should be less than single
     }
     else if (i==4)  {

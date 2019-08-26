@@ -87,8 +87,8 @@ bool DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::acceptsPreconditionerFa
 
 template<class Scalar>
 void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
-  const RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
-  const std::string &precFactoryName
+  const RCP<PreconditionerFactoryBase<Scalar> > &/* precFactory */,
+  const std::string &/* precFactoryName */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, we don't support a preconditioner factory!");
@@ -105,8 +105,8 @@ DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::getPreconditionerFactory() c
 
 template<class Scalar>
 void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::unsetPreconditionerFactory(
-  RCP<PreconditionerFactoryBase<Scalar> > *precFactory,
-  std::string *precFactoryName
+  RCP<PreconditionerFactoryBase<Scalar> > * /* precFactory */,
+  std::string * /* precFactoryName */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, we don't support a preconditioner factory!");
@@ -135,7 +135,7 @@ template<class Scalar>
 void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::initializeOp(
   const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
   LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
 
@@ -176,7 +176,7 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
   RCP<const PreconditionerBase<Scalar> > *prec,
   RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
-  ESupportSolveUse *supportSolveUse
+  ESupportSolveUse * /* supportSolveUse */
   ) const
 {
   using Teuchos::dyn_cast;
@@ -203,7 +203,7 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::uninitializeOp(
 
 template<class Scalar>
 bool DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(
-  const EPreconditionerInputType precOpType
+  const EPreconditionerInputType /* precOpType */
   ) const
 {
   // LAPACK does not support any external preconditioners!
@@ -213,10 +213,10 @@ bool DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::supportsPreconditionerI
 
 template<class Scalar>
 void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  const RCP<const PreconditionerBase<Scalar> > &prec,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse
+  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
+  const RCP<const PreconditionerBase<Scalar> > &/* prec */,
+  LinearOpWithSolveBase<Scalar> * /* Op */,
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, we don't support an external preconditioner!");
@@ -225,10 +225,10 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::initializePreconditione
 
 template<class Scalar>
 void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse
+  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
+  const RCP<const LinearOpSourceBase<Scalar> > &/* approxFwdOpSrc */,
+  LinearOpWithSolveBase<Scalar> * /* Op */,
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, we don't support an external preconditioner!");

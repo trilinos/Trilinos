@@ -73,7 +73,7 @@ using Teuchos::rcp_dynamic_cast;
 
 namespace panzer_stk {
 
-Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
+Teuchos::RCP<panzer::ConnManager> buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
    pl.set<int>("X Elements",xelmts);
@@ -85,7 +85,7 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+   return Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 }
 
 template <typename Intrepid2Type>
@@ -116,8 +116,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
    out << *patternI1 << std::endl;
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
    dofManager->buildGlobalUnknowns();
 
    for(int i=0;i<4;i++) {
-      const int * indices = connManager->getConnectivity(i);
+      const auto * indices = connManager->getConnectivity(i);
       TEST_EQUALITY(connManager->getConnectivitySize(i),8);
 
       out << "cell = " << i << ": ";
@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
 
    out << "GIDS" << std::endl;
    for(int i=0;i<4;i++) {
-      std::vector<int> gids;
+     std::vector<panzer::GlobalOrdinal> gids;
       dofManager->getElementGIDs(i,gids);
 
       TEST_EQUALITY(gids.size(),4);
@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
       out << std::endl;
    }
 
-   std::vector<int> total;
+   std::vector<panzer::GlobalOrdinal> total;
    dofManager->getOwnedIndices(total);
    TEST_EQUALITY(total.size(),12);
 

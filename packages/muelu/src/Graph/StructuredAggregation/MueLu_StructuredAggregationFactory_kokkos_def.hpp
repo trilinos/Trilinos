@@ -164,7 +164,6 @@ namespace MueLu {
     const int interpolationOrder = pL.get<int>("aggregation: coarsening order");
     std::string outputType = pL.get<std::string>("aggregation: output type");
     const bool outputAggregates = (outputType == "Aggregates" ? true : false);
-    Array<GO> gFineNodesPerDir(3);
     Array<LO> lFineNodesPerDir(3);
     int numDimensions;
     if(currentLevel.GetLevelID() == 0) {
@@ -181,7 +180,6 @@ namespace MueLu {
     // First make sure that input parameters are set logically based on dimension
     for(int dim = 0; dim < 3; ++dim) {
       if(dim >= numDimensions) {
-        gFineNodesPerDir[dim] = 1;
         lFineNodesPerDir[dim] = 1;
       }
     }
@@ -216,7 +214,6 @@ namespace MueLu {
 
     // Now we are ready for the big loop over the fine node that will assign each
     // node on the fine grid to an aggregate and a processor.
-    RCP<const Map> coarseCoordinatesFineMap, coarseCoordinatesMap;
     RCP<AggregationStructuredAlgorithm_kokkos> myStructuredAlgorithm
       = rcp(new AggregationStructuredAlgorithm_kokkos());
 
@@ -247,16 +244,14 @@ namespace MueLu {
     } else {
       // Create Coarse Data
       RCP<CrsGraph> myGraph;
-      myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph,
-                                        coarseCoordinatesFineMap, coarseCoordinatesMap);
+      myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph);
       Set(currentLevel, "prolongatorGraph", myGraph);
     }
 
-    Set(currentLevel, "lCoarseNodesPerDim", geoData->getCoarseNodesPerDirArray());
-    Set(currentLevel, "coarseCoordinatesFineMap", coarseCoordinatesFineMap);
-    Set(currentLevel, "coarseCoordinatesMap", coarseCoordinatesMap);
-    Set(currentLevel, "interpolationOrder", interpolationOrder);
-    Set(currentLevel, "numDimensions", numDimensions);
+    Set(currentLevel, "lCoarseNodesPerDim",       geoData->getCoarseNodesPerDirArray());
+    Set(currentLevel, "indexManager",             geoData);
+    Set(currentLevel, "interpolationOrder",       interpolationOrder);
+    Set(currentLevel, "numDimensions",            numDimensions);
 
   } // Build()
 

@@ -13,12 +13,13 @@
 namespace Tacho {
 
   template<typename ValueType,
-           typename ExecSpace>
+           typename SchedulerType>
   struct Solver {
   public:
     typedef ValueType value_type;
-    typedef ExecSpace exec_space;
-    typedef typename ExecSpace::memory_space exec_memory_space;
+    typedef SchedulerType scheduler_type;
+    typedef typename scheduler_type::execution_space exec_space;
+    typedef typename exec_space::memory_space exec_memory_space;
     typedef Kokkos::DefaultHostExecutionSpace host_space;
 
     typedef Kokkos::View<size_type*,exec_space> size_type_array;
@@ -38,7 +39,7 @@ namespace Tacho {
 #endif
 
     typedef SymbolicTools symbolic_tools_type;
-    typedef NumericTools<value_type,exec_space> numeric_tools_type;
+    typedef NumericTools<value_type,scheduler_type> numeric_tools_type;
 
   private:
     enum : int { Cholesky = 1,

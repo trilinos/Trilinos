@@ -46,6 +46,9 @@
 
     <ParameterList name="Demo Stepper">
       <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
+      <Parameter name="Use FSAL" type="bool" value="true"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
     </ParameterList>
 
   </ParameterList>

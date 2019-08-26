@@ -31,6 +31,8 @@
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>
+#include <stk_io/FillMesh.hpp>
+#include <stk_io/WriteMesh.hpp>
 
 #include <iostream>
 #include <unistd.h>                     // for unlink
@@ -375,6 +377,31 @@ TEST_F(StkIoResultsOutput, reconstruct_on_creating_sideset)
     EXPECT_EQ(1, entry.side);
 
     EXPECT_FALSE( stk::io::should_reconstruct_sideset(bulk, surface_part) );
+}
+
+TEST(TestStkIo, readWrite)
+{
+    std::string meshSpec = stk::unit_test_util::get_option("--mesh", "none specified");
+    if (meshSpec == "none specified") {
+        if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+            std::cout<<"No mesh specified, exiting."<<std::endl;
+        }
+        return;
+    }
+
+    std::string autoDecomp = stk::unit_test_util::get_option("--auto-decomp", "false");
+
+    stk::mesh::MetaData meta;
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+
+    if (autoDecomp == "false") {
+        stk::io::fill_mesh(meshSpec, bulk);
+    }
+    else {
+        stk::io::fill_mesh_with_auto_decomp(meshSpec, bulk);
+    }
+
+    stk::io::write_mesh("readWriteTest.exo", bulk);
 }
 
 }

@@ -343,6 +343,25 @@ iallreduceRawVoid (const void* sendbuf,
 #endif // HAVE_TPETRACORE_MPI
 
 } // namespace Impl
+
+std::shared_ptr<CommRequest>
+iallreduce (const int localValue,
+            int& globalValue,
+            const ::Teuchos::EReductionType op,
+            const ::Teuchos::Comm<int>& comm)
+{
+  using input_view_type =
+    Kokkos::View<const int*, Kokkos::HostSpace,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using output_view_type =
+    Kokkos::View<int*, Kokkos::HostSpace,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+  input_view_type localView (&localValue, 1);
+  output_view_type globalView (&globalValue, 1);
+  return ::Tpetra::Details::iallreduce (localView, globalView, op, comm);
+}
+
 } // namespace Details
 } // namespace Tpetra
 

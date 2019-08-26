@@ -151,16 +151,6 @@ public:
   explicit Vector (const Teuchos::RCP<const map_type>& map,
                    const bool zeroOut = true);
 
-  /// \brief Copy constructor (always a shallow copy).
-  ///
-  /// In this, the Kokkos refactor version of Tpetra, the "copy
-  /// constructor" does a shallow copy.  Use the nonmember function
-  /// deep_copy() to do a deep copy from one existing Vector to
-  /// another, and use the two-argument copy constructor below (with
-  /// copyOrView=Teuchos::Copy) to create a Vector which is a deep
-  /// copy of an existing Vector.
-  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source);
-
   /// \brief Copy constructor (shallow or deep copy).
   ///
   /// \param source [in] The Vector to copy.
@@ -174,6 +164,15 @@ public:
   ///   copy.
   Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
           const Teuchos::DataAccess copyOrView);
+
+  /// \brief "Offset view" constructor that views the input Vector's
+  ///   local data, but with the given Map, using the given row offset.
+  ///
+  /// \param source [in] The Vector to view.
+  /// \param map [in] The Map to use to interpret the local data.
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+          const Teuchos::RCP<const map_type>& map,
+          const local_ordinal_type rowOffset = 0);
 
   //! \brief Set vector values from an existing array (copy)
   Vector (const Teuchos::RCP<const map_type>& map,
@@ -220,8 +219,41 @@ public:
   Vector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
           const size_t j);
 
-  //! Destructor.
-  virtual ~Vector ();
+  /// \brief Copy constructor (shallow copy).
+  ///
+  /// Vector's copy constructor always does a shallow copy.  Use the
+  /// nonmember function <tt>Tpetra::deep_copy</tt> (see
+  /// <tt>Tpetra_MultiVector_decl.hpp</tt>) to deep-copy one existing
+  /// Vector to another, and use the two-argument "copy constructor"
+  /// below (with <tt>copyOrView=Teuchos::Copy</tt>) to create a
+  /// Vector that is a deep copy of an existing Vector.
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = default;
+
+  //! Move constructor (shallow move).
+  Vector (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = default;
+
+  /// \brief Copy assignment (shallow copy).
+  ///
+  /// Vector's copy assignment operator always does a shallow copy.
+  /// Use the nonmember function <tt>Tpetra::deep_copy</tt> (see
+  /// <tt>Tpetra_MultiVector_decl.hpp</tt>) to deep-copy one existing
+  /// Vector to another.
+  Vector& operator= (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = default;
+
+  //! Move assigment (shallow move).
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+  operator= (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = default;
+
+  /// \brief Destructor (virtual for memory safety of derived classes).
+  ///
+  /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+  ///   ("If you define or <tt>=delete</tt> any default operation,
+  ///   define or <tt>=delete</tt> them all"), in particular the
+  ///   AbstractBase example, for why this destructor declaration
+  ///   implies that we need the above four <tt>=default</tt>
+  ///   declarations for copy construction, move construction, copy
+  ///   assignment, and move assignment.
+  virtual ~Vector () = default;
 
   //@}
   //! \name Clone method
@@ -232,9 +264,11 @@ public:
   /// \tparam Node2 The returned Vector's Node type.
   ///
   /// \param node2 [in] The returned Vector's Kokkos Node instance.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Node2>
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > TPETRA_DEPRECATED
   clone (const Teuchos::RCP<Node2>& node2);
+#endif
 
   //@}
   //! @name Post-construction modification routines
@@ -344,12 +378,14 @@ public:
   //! Return the infinity-norm of this Vector.
   mag_type normInf() const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::normWeighted; // overloading, not hiding
   /// \brief Compute Weighted 2-norm (RMS Norm) of this Vector.
   ///
   /// \warning This method is DEPRECATED.
   mag_type TPETRA_DEPRECATED
   normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::meanValue; // overloading, not hiding
   //! Compute mean (average) value of this Vector.

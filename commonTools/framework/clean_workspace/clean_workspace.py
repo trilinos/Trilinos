@@ -11,14 +11,14 @@ from __future__ import print_function
 import sys
 sys.dont_write_bytecode = True
 
+import os
+
 import argparse
-import subprocess
+import shutil
 
 from clean_sentinel import clean_reference_date
 from clean_sentinel import last_clean_date
 from clean_sentinel import update_last_clean_date
-
-from Modules import Module as Moduler
 
 
 class Cleaner(object):
@@ -34,7 +34,8 @@ class Cleaner(object):
         self.args = self.parse_args()
         if self.args.dir is None:
             raise SystemExit("No directory passed - exiting!")
-        if self.args.force:
+        if self.args.force_clean:
+            print("Cleaning directory {clean_dir} due to command line option".format(clean_dir=self.args.dir))
             self.force_clean_space()
         else:
             self.clean_space_by_date()
@@ -56,15 +57,13 @@ class Cleaner(object):
 
     def force_clean_space(self):
         """Do the actual cleanup
-             Load the module to enable ninja
-             Run "make -C %s clean"
+             basically just os.unlink()
         """
-        Moduler.module('load', 'atdm-env')
-        Moduler.module('load', 'atdm-ninja_fortran/1.7.2')
-        subprocess.check_call(['make', '-C', self.args.dir, 'clean'])
+        shutil.rmtree(self.args.dir)
 
     def clean_space_by_date(self):
         if last_clean_date() < clean_reference_date():
+            print("Cleaning directory {clean_dir} due to newer reference date".format(clean_dir=self.args.dir))
             self.force_clean_space()
             update_last_clean_date()
         

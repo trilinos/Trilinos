@@ -865,14 +865,6 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
   # Custom code in configuration file.
   SET(PROJECT_CONFIG_CODE "")
 
-  # Appending the logic to include each package's config file.
-  SET(LOAD_CODE "# Load configurations from enabled packages")
-  FOREACH(TRIBITS_PACKAGE ${FULL_PACKAGE_SET})
-    SET(LOAD_CODE "${LOAD_CODE}
-include(\"\${CMAKE_CURRENT_LIST_DIR}/../${TRIBITS_PACKAGE}/${TRIBITS_PACKAGE}Config.cmake\")")
-  ENDFOREACH()
-  SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}\n${LOAD_CODE}")
-
   IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
     CONFIGURE_FILE(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.cmake.in

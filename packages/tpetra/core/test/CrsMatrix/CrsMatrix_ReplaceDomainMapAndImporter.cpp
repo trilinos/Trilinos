@@ -79,15 +79,10 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
-  using Tpetra::createNonContigMapWithNode;
-  using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createLocalMapWithNode;
   using Tpetra::createVector;
-  using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -210,5 +205,3 @@ namespace {
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }
-
-

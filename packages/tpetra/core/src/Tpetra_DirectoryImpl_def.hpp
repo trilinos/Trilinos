@@ -581,7 +581,7 @@ namespace Tpetra {
       // the index base.  The index base should be separate from the
       // minimum GID.
       directoryMap_ = rcp (new map_type (numGlobalEntries, minAllGID, comm,
-                                         GloballyDistributed, map.getNode ()));
+                                         GloballyDistributed));
       // The number of Directory elements that my process owns.
       const size_t dir_numMyEntries = directoryMap_->getNodeNumElements ();
 
@@ -1189,13 +1189,15 @@ namespace Tpetra {
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra::Details namespace!
+// Must be expanded from within the Tpetra namespace!
 //
-#define TPETRA_DIRECTORY_IMPL_INSTANT(LO,GO,NODE)                     \
-  template class Directory< LO , GO , NODE >;                         \
-  template class ReplicatedDirectory< LO , GO , NODE >;               \
-  template class ContiguousUniformDirectory< LO, GO, NODE >;          \
-  template class DistributedContiguousDirectory< LO , GO , NODE >;    \
-  template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
+#define TPETRA_DIRECTORYIMPL_INSTANT(LO,GO,NODE) \
+  namespace Details { \
+    template class Directory< LO , GO , NODE >; \
+    template class ReplicatedDirectory< LO , GO , NODE >; \
+    template class ContiguousUniformDirectory< LO, GO, NODE >; \
+    template class DistributedContiguousDirectory< LO , GO , NODE >; \
+    template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
+  }
 
 #endif // __Tpetra_DirectoryImpl_def_hpp

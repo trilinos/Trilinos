@@ -128,6 +128,7 @@ int InterpolationProjectionTri(const bool verbose) {
 
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+  typedef Kokkos::DynRankView<ordinal_type,HostSpaceType> DynRankViewIntHost;
 
   *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
   *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
@@ -270,7 +271,7 @@ int InterpolationProjectionTri(const bool verbose) {
         }
 
         // compute orientations for cells
-        DynRankViewInt elemNodes(&tris[0][0], numCells, numElemVertexes);
+        DynRankViewIntHost elemNodes(&tris[0][0], numCells, numElemVertexes);
         Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, tri);
 
@@ -428,7 +429,7 @@ int InterpolationProjectionTri(const bool verbose) {
             }
           }
 
-
+#ifndef KOKKOS_ENABLE_CUDA
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHGrad, numCells, basisCardinality);
           {
@@ -570,6 +571,7 @@ int InterpolationProjectionTri(const bool verbose) {
                   "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
             }
           }
+#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -650,7 +652,7 @@ int InterpolationProjectionTri(const bool verbose) {
         }
 
         // compute orientations for cells (one time computation)
-        DynRankViewInt elemNodes(&tris[0][0], numCells, numElemVertexes);
+        DynRankViewIntHost elemNodes(&tris[0][0], numCells, numElemVertexes);
         Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, tri);
 
@@ -815,6 +817,7 @@ int InterpolationProjectionTri(const bool verbose) {
             }
           }
 
+#ifndef KOKKOS_ENABLE_CUDA
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHCurl, numCells, basisCardinality);
           {
@@ -955,6 +958,7 @@ int InterpolationProjectionTri(const bool verbose) {
                   "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
             }
           }
+#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -1032,7 +1036,7 @@ int InterpolationProjectionTri(const bool verbose) {
         }
 
         // compute orientations for cells (one time computation)
-        DynRankViewInt elemNodes(&tris[0][0], numCells, numElemVertexes);
+        DynRankViewIntHost elemNodes(&tris[0][0], numCells, numElemVertexes);
         Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, tri);
 
@@ -1207,6 +1211,7 @@ int InterpolationProjectionTri(const bool verbose) {
             }
           }
 
+#ifndef KOKKOS_ENABLE_CUDA
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHDiv, numCells, basisCardinality);
           {
@@ -1350,6 +1355,7 @@ int InterpolationProjectionTri(const bool verbose) {
                   "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
             }
           }
+#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -1402,7 +1408,7 @@ int InterpolationProjectionTri(const bool verbose) {
           physVertexes(i,j,k) = vertices[tris[i][j]][k];
 
     // compute orientations for cells (one time computation)
-    DynRankViewInt elemNodes(&tris[0][0], numCells, numElemVertexes);
+    DynRankViewIntHost elemNodes(&tris[0][0], numCells, numElemVertexes);
     Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
     ots::getOrientation(elemOrts, elemNodes, tri);
 
@@ -1540,6 +1546,7 @@ int InterpolationProjectionTri(const bool verbose) {
         }
       }
 
+#ifndef KOKKOS_ENABLE_CUDA
       //compute projection-based interpolation of the Lagrangian interpolation
       DynRankView ConstructWithLabel(basisCoeffsHVol, numCells, basisCardinality);
       {
@@ -1659,6 +1666,7 @@ int InterpolationProjectionTri(const bool verbose) {
               "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
         }
       }
+#endif
     }
   } catch (std::exception err) {
     std::cout << " Exeption\n";

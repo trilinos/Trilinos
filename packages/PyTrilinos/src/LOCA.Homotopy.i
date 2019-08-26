@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Homotopy is the python interface to namespace Homotopy
 of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Homotopy is to provide groups that allow for
 Homotopy to be applied.  The python version of LOCA.Homotopy supports

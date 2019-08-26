@@ -1144,7 +1144,7 @@ init (const keys_type& keys,
 
   // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
   // CUDA when ptr is filled.
-  execution_space::fence ();
+  execution_space().fence ();
 
   // Kokkos::View fills with zeros by default.
   typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size+1);
@@ -1179,7 +1179,7 @@ init (const keys_type& keys,
 
   // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
   // CUDA when val is filled.
-  execution_space::fence ();
+  execution_space().fence ();
 
   // Allocate the array of (key,value) pairs.  Don't fill it with
   // zeros, because we will fill it with actual data below.

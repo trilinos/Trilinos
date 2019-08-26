@@ -545,14 +545,16 @@ int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetIterations()
 
 // Get most recent solver tolerance achieved
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-double ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetResidual()
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetResidual()
 {
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
-  double residual = SolverManager_ -> achievedTol();
+  MT residual = SolverManager_ -> achievedTol();
   return residual;
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "ShiftedLaplacian only available with Tpetra and GO=int enabled.");
-  return -1.0;
+  return MT(-1.0);
 #endif
 }
 

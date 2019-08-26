@@ -62,9 +62,9 @@ class crsGraph_Swap_Tester
 {
     using Scalar                   = int;                                                   // Not really used for CrsGraph construction but
                                                                                             // we keep this around since the CrsMatrix::swap
-                                                                                            // test is constructing its graphs the same way 
-                                                                                            // so hanging onto this to keep the structs in 
-                                                                                            // this file happy (this does not get passed to 
+                                                                                            // test is constructing its graphs the same way
+                                                                                            // so hanging onto this to keep the structs in
+                                                                                            // this file happy (this does not get passed to
                                                                                             // anything in Tpetra in this test).
     using comm_type                = Teuchos::RCP<const Teuchos::Comm<int>>;                // The comm type
     using graph_type               = Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;   // Tpetra CrsGraph type
@@ -242,7 +242,6 @@ class crsGraph_Swap_Tester
         using Teuchos::Comm;
         using Teuchos::RCP;
 
-        using graph_type           = Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;      // Tpetra CrsGraph type
         using map_type             = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;           // Tpetra Map type
         using map_rows_type        = std::map<GlobalOrdinal, int>;                   // map rows to pid's
         using vec_go_type          = std::vector<GlobalOrdinal>;                     // vector of GlobalOrdinals
@@ -342,7 +341,7 @@ class crsGraph_Swap_Tester
             }
         }
 
-        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row, Tpetra::StaticProfile));
+        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row (), Tpetra::StaticProfile));
 
         for(auto& r: gbl_rows)
         {
@@ -413,8 +412,6 @@ using Teuchos::VERB_HIGH;
 using Teuchos::VERB_LOW;
 using Teuchos::VERB_MEDIUM;
 using Teuchos::VERB_NONE;
-using Tpetra::DynamicProfile;
-using Tpetra::ProfileType;
 using Tpetra::StaticProfile;
 using Tpetra::TestingUtilities::getDefaultComm;
 typedef Tpetra::global_size_t GST;

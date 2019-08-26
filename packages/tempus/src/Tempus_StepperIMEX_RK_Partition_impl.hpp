@@ -25,13 +25,11 @@ template<class Scalar> class StepperFactory;
 
 
 template<class Scalar>
-StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  std::string stepperType)
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition()
 {
-  this->setTableaus(Teuchos::null, stepperType);
-  this->setModel(appModel);
-  this->initialize();
+  this->setTableaus(Teuchos::null, "Partitioned IMEX RK SSP2");
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
 }
 
 
@@ -42,8 +40,31 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
 {
   this->setTableaus(pList, "Partitioned IMEX RK SSP2");
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
+}
+
+
+template<class Scalar>
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableaus(Teuchos::null, stepperType);
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -55,8 +76,14 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
 {
   this->setTableaus(pList, stepperType);
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -220,11 +247,9 @@ void StepperIMEX_RK_Partition<Scalar>::setExplicitTableau(
   std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  explicitTableau_ = createRKBT<Scalar>(stepperType,pList);
-  TEUCHOS_TEST_FOR_EXCEPTION(explicitTableau_->isImplicit() == true,
-    std::logic_error,
-       "Error - Received an implicit Tableau for setExplicitTableau()!\n"
-    << "  Stepper Type = " << stepperType << "\n");
+  Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau =
+    createRKBT<Scalar>(stepperType,pList);
+  this->setExplicitTableau(explicitTableau);
 }
 
 
@@ -234,8 +259,8 @@ void StepperIMEX_RK_Partition<Scalar>::setExplicitTableau(
 {
   TEUCHOS_TEST_FOR_EXCEPTION(explicitTableau->isImplicit() == true,
     std::logic_error,
-       "Error - Received an implicit Tableau for setExplicitTableau()!\n"
-    << "  explicitTableau = " << explicitTableau->description() << "\n");
+    "Error - Received an implicit Tableau for setExplicitTableau()!\n" <<
+    "        Tableau = " << explicitTableau->description() << "\n");
   explicitTableau_ = explicitTableau;
 }
 
@@ -245,14 +270,9 @@ void StepperIMEX_RK_Partition<Scalar>::setImplicitTableau(
   std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  implicitTableau_ = createRKBT<Scalar>(stepperType,pList);
-  //Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  //Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  //implicitTableau_->describe(*out,verbLevel);
-  TEUCHOS_TEST_FOR_EXCEPTION( implicitTableau_->isDIRK() != true,
-    std::logic_error,
-       "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n"
-    << "  Stepper Type = " << stepperType << "\n");
+  Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau =
+    createRKBT<Scalar>(stepperType,pList);
+  this->setImplicitTableau(implicitTableau);
 }
 
 
@@ -260,10 +280,10 @@ template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::setImplicitTableau(
   Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( implicitTableau_->isDIRK() != true,
+  TEUCHOS_TEST_FOR_EXCEPTION( implicitTableau->isDIRK() != true,
     std::logic_error,
-       "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n"
-    << "  implicitTableau = " << implicitTableau->description() << "\n");
+    "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n" <<
+    "        Tableau = " << implicitTableau->description() << "\n");
   implicitTableau_ = implicitTableau;
 }
 
@@ -334,18 +354,18 @@ void StepperIMEX_RK_Partition<Scalar>::setObserver(
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperObserver_ == Teuchos::null) {
+    if (this->stepperObserver_ == Teuchos::null) {
       stepperIMEX_RKPartObserver_ =
         Teuchos::rcp(new StepperIMEX_RKPartObserver<Scalar>());
-      stepperObserver_ =
+      this->stepperObserver_ =
         Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
           (stepperIMEX_RKPartObserver_);
      }
   } else {
-    stepperObserver_ = obs;
+    this->stepperObserver_ = obs;
     stepperIMEX_RKPartObserver_ =
       Teuchos::rcp_dynamic_cast<StepperIMEX_RKPartObserver<Scalar> >
-        (stepperObserver_);
+        (this->stepperObserver_);
   }
 }
 
@@ -389,6 +409,54 @@ void StepperIMEX_RK_Partition<Scalar>::initialize()
   xTilde_ = Thyra::createMember(wrapperModelPairIMEX->
                                 getImplicitModel()->get_x_space());
   assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+}
+
+
+template<class Scalar>
+void StepperIMEX_RK_Partition<Scalar>::setInitialConditions(
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+{
+  using Teuchos::RCP;
+
+  int numStates = solutionHistory->getNumStates();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numStates < 1, std::logic_error,
+    "Error - setInitialConditions() needs at least one SolutionState\n"
+    "        to set the initial condition.  Number of States = " << numStates);
+
+  if (numStates > 1) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperIMEX_RK::setInitialConditions()");
+    *out << "Warning -- SolutionHistory has more than one state!\n"
+         << "Setting the initial conditions on the currentState.\n"<<std::endl;
+  }
+
+  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
+  RCP<Thyra::VectorBase<Scalar> > x = initialState->getX();
+
+  // Use x from inArgs as ICs, if needed.
+  auto inArgs = this->wrapperModel_->getNominalValues();
+  if (x == Teuchos::null) {
+    TEUCHOS_TEST_FOR_EXCEPTION( (x == Teuchos::null) &&
+      (inArgs.get_x() == Teuchos::null), std::logic_error,
+      "Error - setInitialConditions() needs the ICs from the SolutionHistory\n"
+      "        or getNominalValues()!\n");
+
+    x = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x());
+    initialState->setX(x);
+  }
+
+
+  // Perform IC Consistency
+  std::string icConsistency = this->getICConsistency();
+  TEUCHOS_TEST_FOR_EXCEPTION(icConsistency != "None", std::logic_error,
+    "Error - setInitialConditions() requested a consistency of '"
+             << icConsistency << "'.\n"
+    "        But only 'None' is available for IMEX-RK!\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION( this->getUseFSAL(), std::logic_error,
+    "Error - The First-Step-As-Last (FSAL) principle is not "
+         << "available for IMEX-RK.  Set useFSAL=false.\n");
 }
 
 
@@ -481,7 +549,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -550,7 +618,8 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
-        Scalar alpha = 1.0/(dt*A(i,i));
+        const Scalar alpha = Scalar(1.0)/(dt*A(i,i));
+        const Scalar beta  = Scalar(1.0);
 
         // Setup TimeDerivative
         RCP<TimeDerivative<Scalar> > timeDer =
@@ -571,7 +640,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
         if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (ts);
         if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
         if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
-        if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
+        if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (beta);
         if (inArgs.supports(MEB::IN_ARG_stage_number))
           inArgs.set_stage_number(i);
 
@@ -615,7 +684,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     if (pass == true) workingState->setSolutionStatus(Status::PASSED);
     else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
-    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -647,7 +716,7 @@ std::string StepperIMEX_RK_Partition<Scalar>::description() const
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl
       << "wrapperModelPairIMEX = " << this->wrapperModel_->description()
@@ -675,10 +744,12 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperIMEX_RK_Partition<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - IMEX RK SSP2");
-  pl->set("Stepper Type", "IMEX RK SSP2");
-  pl->set("Zero Initial Guess", false);
-  pl->set("Solver Name", "",
+  pl->setName("Default Stepper - Partitioned IMEX RK SSP2");
+  pl->set<std::string>("Stepper Type", "Partitioned IMEX RK SSP2");
+  this->getValidParametersBasic(pl);
+  pl->set<bool>("Initial Condition Consistency Check", false);
+  pl->set<bool>       ("Zero Initial Guess", false);
+  pl->set<std::string>("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");
 
   return pl;
@@ -688,12 +759,15 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperIMEX_RK_Partition<Scalar>::getDefaultParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - IMEX RK SSP2");
-  pl->set<std::string>("Stepper Type", "IMEX RK SSP2");
-  pl->set<bool>       ("Zero Initial Guess", false);
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  using Teuchos::rcp_const_cast;
+
+  RCP<ParameterList> pl =
+    rcp_const_cast<ParameterList>(this->getValidParameters());
+
   pl->set<std::string>("Solver Name", "Default Solver");
-  Teuchos::RCP<Teuchos::ParameterList> solverPL=this->defaultSolverParameters();
+  RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 
   return pl;

@@ -135,9 +135,9 @@ namespace MueLuExamples {
 #include "MueLu_UseShortNames.hpp"
     using Teuchos::rcp;
 
+    if(lib == Xpetra::UseEpetra) {MueLuList.set("use kokkos refactor", false);}
     Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H =
-        MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
-            A, MueLuList, Teuchos::null, Teuchos::null);
+        MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, MueLuList);
 
     typedef Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef Belos::OperatorT<MV>                                         OP;

@@ -220,7 +220,7 @@ bool DefaultClusteredSpmdProductVectorSpace<Scalar>::isEuclidean() const
 
 template<class Scalar>
 bool DefaultClusteredSpmdProductVectorSpace<Scalar>::hasInCoreView(
-  const Range1D& rng, const EViewType viewType, const EStrideType strideType
+  const Range1D& /* rng */, const EViewType /* viewType */, const EStrideType /* strideType */
   ) const
 {
   return false; // ToDo: Figure this out for real!

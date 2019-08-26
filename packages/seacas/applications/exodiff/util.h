@@ -35,13 +35,16 @@
 #ifndef EXODIFF_UTIL_H
 #define EXODIFF_UTIL_H
 
-#include "terminal_color.h"
+#include <fmt/color.h>
+#include <sstream>
+#include <string>
 
 char **get_name_array(int size, int length);
 void   free_name_array(char **names, int size);
 
+void Error(const std::string &x);
 void ERR_OUT(std::ostringstream &buf);
-void DIFF_OUT(std::ostringstream &buf, trmclr::Style color = trmclr::red);
-void DIFF_OUT(const char *buf, trmclr::Style color = trmclr::red);
+void DIFF_OUT(std::ostringstream &buf, fmt::internal::color_type color = fmt::color::red);
+void DIFF_OUT(const std::string &buf, fmt::internal::color_type color = fmt::color::red);
 
 #endif

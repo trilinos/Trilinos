@@ -31,13 +31,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "ED_SystemInterface.h" // for ERROR, SystemInterface, etc
+#include "ED_SystemInterface.h" // for SystemInterface, etc
 #include "exodusII.h"           // for ex_set, etc
 #include "iqsort.h"             // for index_qsort
 #include "side_set.h"
 #include "smart_assert.h" // for SMART_ASSERT
 #include <cstdlib>        // for exit
-#include <iostream>       // for operator<<, basic_ostream, etc
 #include <vector>         // for vector
 
 template <typename INT>
@@ -88,7 +87,8 @@ template <typename INT> void Side_Set<INT>::entity_load_params()
   int err = ex_get_sets(fileId, 1, &sets[0]);
 
   if (err < 0) {
-    ERROR("Failed to get sideset parameters for sideset " << id_ << ". !  Aborting...\n");
+    Error(fmt::format("{}: Failed to get sideset parameters for sideset {}. !  Aborting...\n",
+                      __func__, id_));
     exit(1);
   }
 
@@ -124,7 +124,7 @@ template <typename INT> void Side_Set<INT>::load_sides(const INT *elmt_map) cons
     err = ex_get_set(fileId, EX_SIDE_SET, id_, elmts, sides);
 
     if (err < 0) {
-      ERROR("Side_Set<INT>::Load_Set(): Failed to read side set " << id_ << "!  Aborting...\n");
+      Error(fmt::format("{}: Failed to read side set {}!  Aborting...\n", __func__, id_));
       exit(1);
     }
 
@@ -179,8 +179,8 @@ template <typename INT> void Side_Set<INT>::load_df() const
   else {
     int err = ex_get_side_set_node_count(fileId, id_, count.data());
     if (err < 0) {
-      ERROR("Side_Set::load_df(): Failed to read side set node count for sideset "
-            << id_ << "!  Aborting...\n");
+      Error(fmt::format("{}: Failed to read side set node count for sideset {}!  Aborting...\n",
+                        __func__, id_));
       exit(1);
     }
   }
@@ -195,18 +195,19 @@ template <typename INT> void Side_Set<INT>::load_df() const
 
   // index value should now equal df count for this sideset...
   if (index != num_dist_factors) {
-    ERROR("Side_Set::load_df(): Mismatch in distribution factor count for sideset "
-          << id_ << ", file says there should be " << num_dist_factors
-          << ",\n\t\tbut ex_get_side_set_node_count says there should be " << index
-          << "!  Aborting...\n");
+    Error(fmt::format("{}: Mismatch in distribution factor count for sideset {}, "
+                      "file says there should be {},\n\t\tbut ex_get_side_set_node_count says "
+                      "there should be {}!  Aborting...\n",
+                      __func__, id_, num_dist_factors, index));
     exit(1);
   }
   SMART_ASSERT(index == num_dist_factors);
   dist_factors = new double[index];
   int err      = ex_get_set_dist_fact(fileId, EX_SIDE_SET, id_, dist_factors);
   if (err < 0) {
-    ERROR("Side_Set::load_df(): Failed to read side set distribution factors for sideset "
-          << id_ << "!  Aborting...\n");
+    Error(fmt::format(
+        "{}: Failed to read side set distribution factors for sideset {}!  Aborting...\n", __func__,
+        id_));
     exit(1);
   }
 }
@@ -260,21 +261,12 @@ std::pair<INT, INT> Side_Set<INT>::Distribution_Factor_Range(size_t side) const
     load_df();
   }
   if (dfIndex == nullptr) {
-    ERROR("Failed to get distribution factors for sideset " << id_ << ". !  Aborting...\n");
+    Error(fmt::format("{}: Failed to get distribution factors for sideset {}!  Aborting...\n",
+                      __func__, id_));
     exit(1);
   }
   size_t side_index = sideIndex[side];
   return std::make_pair(dfIndex[side_index], dfIndex[side_index + 1]);
-}
-
-template <typename INT> void Side_Set<INT>::Display(std::ostream &s) const
-{
-  SMART_ASSERT(Check_State());
-
-  s << "Side_Set<INT>::Display()  Exodus side set ID = " << id_ << '\n'
-    << "                        number of sides = " << numEntity << '\n'
-    << "         number of distribution factors = " << num_dist_factors << '\n'
-    << "                    number of variables = " << var_count() << '\n';
 }
 
 template <typename INT> int Side_Set<INT>::Check_State() const

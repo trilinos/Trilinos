@@ -192,7 +192,7 @@ public:
    void apply(const Tpetra::MultiVector<ST,LO,GO,NT> & X, Tpetra::MultiVector<ST,LO,GO,NT> & Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, ST alpha=Teuchos::ScalarTraits< ST >::one(), ST beta=Teuchos::ScalarTraits< ST >::zero()) const;
 
    //! Can't call ApplyInverse on a zeroed operator
-   void applyInverse(const Tpetra::MultiVector<ST,LO,GO,NT>& X, Tpetra::MultiVector<ST,LO,GO,NT>& Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, ST alpha=Teuchos::ScalarTraits< ST >::one(), ST beta=Teuchos::ScalarTraits< ST >::zero()) const
+   void applyInverse(const Tpetra::MultiVector<ST,LO,GO,NT>& /* X */, Tpetra::MultiVector<ST,LO,GO,NT>& /* Y */, Teuchos::ETransp /* mode */=Teuchos::NO_TRANS, ST /* alpha */=Teuchos::ScalarTraits< ST >::one(), ST /* beta */=Teuchos::ScalarTraits< ST >::zero()) const
    { TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't call applyInverse on a ZeroedOperator"); }
 
    //!

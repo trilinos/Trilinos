@@ -66,7 +66,7 @@ template <class Scalar>
 bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
   const VectorSpaceBase<Scalar>    &vecSpc
   ,std::ostream                    *out
-  ,const bool                      &dumpAll
+  ,const bool                      &/* dumpAll */
   )
 {
   using Teuchos::as;

@@ -135,15 +135,9 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
-  using Tpetra::createNonContigMapWithNode;
-  using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createVector;
-  using Tpetra::createCrsMatrix;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -218,34 +212,39 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
       // create static-profile matrix, fill-complete without inserting (and therefore, without allocating)
-      MAT matrix(map,1,StaticProfile);
+      MAT matrix(map,1,Tpetra::StaticProfile);
       matrix.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
-      // create dynamic-profile matrix, fill-complete without inserting (and therefore, without allocating)
-      MAT matrix(map,1,DynamicProfile);
+      // create profile matrix, fill-complete without inserting (and therefore, without allocating)
+      MAT matrix(map,1,Tpetra::DynamicProfile);
       matrix.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
       // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph(map,1,StaticProfile);
+      GRPH graph(map,1,Tpetra::StaticProfile);
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
       // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph(map,1,DynamicProfile);
+      GRPH graph(map,1,Tpetra::DynamicProfile);
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   }
 
   ////
@@ -284,7 +283,12 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm) );
     RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
-      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      Tpetra::ProfileType pftype = ( (T & 1) == 1 ) ? Tpetra::StaticProfile : Tpetra::DynamicProfile;
+#else
+      if ( (T & 1) != 1 ) continue;
+      Tpetra::ProfileType pftype = Tpetra::StaticProfile;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       params->set("Optimize Storage",((T & 2) == 2));
       MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
@@ -301,9 +305,16 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
         matrix.insertGlobalValues(myrowind,ginds(j,1),tuple(ST::one()));
       }
       TEST_EQUALITY( matrix.getNumEntriesInLocalRow(0), matrix.getCrsGraph()->getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
-      // if static graph, insert one additional entry on my row and verify that an exception is thrown
-      if (pftype == StaticProfile) {
-        TEST_THROW( matrix.insertGlobalValues(myrowind,arrayView(&myrowind,1),tuple(ST::one())), std::runtime_error );
+      // Before Mar 2019, insertion in to a matrix (graph) would append new indices/values
+      // to the appropriate row. The result was that insertion would result in duplicate
+      // indices (which would later be compressed out at fillComplete). A side-effect was
+      // that insertion would throw if the total number of inserted indices exceeded the
+      // space allocated - not just the number of unique indices. The current behavior now
+      // checks if an index exists the graph and only inserts if it doesn't. Thus, the
+      // following test needs to be modified to insert another *unique* index and not a
+      // repeat.
+      if (pftype == Tpetra::StaticProfile) {
+        TEST_THROW( matrix.insertGlobalValues(myrowind, tuple(myrowind+5), tuple(ST::one())), std::runtime_error );
       }
       matrix.fillComplete(params);
       // check for throws and no-throws/values
@@ -411,7 +422,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // call fillComplete()
     out << "Call fillComplete on the matrix" << endl;
-    TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
     A.fillComplete (lclmap, rowmap);
     A.describe (out, VERB_LOW);
 
@@ -471,5 +481,3 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }
-
-

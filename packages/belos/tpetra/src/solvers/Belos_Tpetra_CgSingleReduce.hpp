@@ -15,15 +15,13 @@ private:
   using base_type = Krylov<SC, MV, OP>;
 
 public:
-  CgSingleReduce () :
-    base_type::Krylov ()
-  {}
+  CgSingleReduce () = default;
 
   CgSingleReduce (const Teuchos::RCP<const OP>& A) :
     base_type::Krylov (A)
   {}
 
-  virtual ~CgSingleReduce () {}
+  virtual ~CgSingleReduce () = default;
 
 protected:
   using vec_type = typename base_type::vec_type;

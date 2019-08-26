@@ -48,7 +48,7 @@ PyTrilinos.LOCA.Pitchfork.MooreSpence is the python interface to
 namespace Pitchfork::MooreSpence of the Trilinos continuation
 algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Pitchfork.MooreSpence is to provide groups and
 vectors for locating pitchfork bifurcations using the Moore-Spence
@@ -59,6 +59,17 @@ supports the following classes:
                        calculations using the Moore-Spence formulation
     * SolverFactory  - Factory for creating solver objects for solving Moore-
                        Spence pitchfork equations
+"
+%enddef
+
+%define %loca_pitchfork_moorespence_importcode
+"
+from . import MooreSpence
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import MultiContinuation
+from PyTrilinos.LOCA import TurningPoint
 "
 %enddef
 
@@ -108,13 +119,6 @@ supports the following classes:
 %teuchos_rcp(LOCA::Pitchfork::MooreSpence::SolverFactory)
 
 // Base class support
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 %import "NOX.Abstract.i"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
 %import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"

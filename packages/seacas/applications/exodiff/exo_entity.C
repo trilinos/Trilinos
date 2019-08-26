@@ -31,15 +31,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "ED_SystemInterface.h" // for ERROR
+#include "ED_SystemInterface.h"
 #include "exo_entity.h"
-#include "exodusII.h"     // for ex_get_var, EX_INVALID_ID, etc
+#include "exodusII.h" // for ex_get_var, EX_INVALID_ID, etc
+#include "fmt/color.h"
+#include "fmt/ostream.h"
 #include "smart_assert.h" // for SMART_ASSERT
 #include "stringx.h"      // for to_lower
 #include <cstdint>        // for int64_t
 #include <cstdlib>        // for exit
 #include <cstring>        // for strlen
-#include <iostream>       // for operator<<, basic_ostream, etc
 #include <string>
 #include <string> // for string, char_traits, etc
 #include <vector>
@@ -135,7 +136,7 @@ std::string Exo_Entity::Load_Results(int time_step, int var_index)
     return "exodiff: ERROR:  Must initialize block parameters first!";
   }
   if (var_index < 0 || var_index >= numVars) {
-    ERROR("Exo_Entity::Load_Results(): var_index is invalid. Aborting...\n");
+    Error("Exo_Entity::Load_Results(): var_index is invalid. Aborting...\n");
     exit(1);
   }
   SMART_ASSERT(time_step >= 1 && time_step <= (int)get_num_timesteps(fileId));
@@ -161,15 +162,15 @@ std::string Exo_Entity::Load_Results(int time_step, int var_index)
                        results_[var_index]);
 
       if (err < 0) {
-        ERROR("Exo_Entity::Load_Results(): Call to exodus routine"
-              << " returned error value! " << label() << " id = " << id_ << '\n'
-              << "Aborting...\n");
+        Error(fmt::format("Exo_Entity::Load_Results(): Call to exodus routine"
+                          " returned error value! {} id = {}\n"
+                          "Aborting...\n",
+                          label(), id_));
         exit(1);
       }
       else if (err > 0) {
-        std::ostringstream oss;
-        oss << "WARNING:  Number " << err << " returned from call to exodus get variable routine.";
-        return oss.str();
+        return fmt::format("WARNING:  Number {} returned from call to exodus get variable routine.",
+                           err);
       }
     }
     else {
@@ -218,15 +219,15 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
           ex_get_var(fileId, t1, exodus_type(), var_index + 1, id_, numEntity, results_[var_index]);
 
       if (err < 0) {
-        ERROR("Exo_Entity::Load_Results(): Call to exodus routine"
-              << " returned error value! " << label() << " id = " << id_ << '\n'
-              << "Aborting...\n");
+        Error(fmt::format(
+            "Exo_Entity::Load_Results(): Call to exodus routine returned error value! {} id = {}\n"
+            "Aborting...\n",
+            label(), id_));
         exit(1);
       }
       else if (err > 0) {
-        std::ostringstream oss;
-        oss << "WARNING:  Number " << err << " returned from call to exodus get variable routine.";
-        return oss.str();
+        return fmt::format("WARNING:  Number {} returned from call to exodus get variable routine.",
+                           err);
       }
 
       if (t1 != t2) {
@@ -234,9 +235,10 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
         err = ex_get_var(fileId, t2, exodus_type(), var_index + 1, id_, numEntity, &results2[0]);
 
         if (err < 0) {
-          ERROR("Exo_Entity::Load_Results(): Call to exodus routine"
-                << " returned error value! " << label() << " id = " << id_ << '\n'
-                << "Aborting...\n");
+          Error(fmt::format("Exo_Entity::Load_Results(): Call to exodus routine"
+                            " returned error value! {} id = {}\n"
+                            "Aborting...\n",
+                            label(), id_));
           exit(1);
         }
 
@@ -293,7 +295,7 @@ void Exo_Entity::get_truth_table() const
     }
     int err = ex_get_object_truth_vector(fileId, exodus_type(), id_, numVars, truth_);
     if (err < 0) {
-      ERROR("Exo_Entity::get_truth_table(): ex_get_object_truth_vector returned error.\n");
+      Error("Exo_Entity::get_truth_table(): ex_get_object_truth_vector returned error.\n");
     }
   }
 }
@@ -320,15 +322,15 @@ std::string Exo_Entity::Load_Attributes(int attr_index)
     err     = ex_get_one_attr(fileId, exodus_type(), id_, attr_index + 1, attributes_[attr_index]);
 
     if (err < 0) {
-      ERROR("Exo_Entity::Load_Attributes(): Call to exodus routine"
-            << " returned error value! " << label() << " id = " << id_ << '\n'
-            << "Aborting...\n");
+      Error(fmt::format("Exo_Entity::Load_Attributes(): Call to exodus routine"
+                        " returned error value! {} id = {}\n"
+                        "Aborting...\n",
+                        label(), id_));
       exit(1);
     }
     else if (err > 0) {
-      std::ostringstream oss;
-      oss << "WARNING:  Number " << err << " returned from call to exodus get attribute routine.";
-      return oss.str();
+      return fmt::format("WARNING:  Number {} returned from call to exodus get variable routine.",
+                         err);
     }
   }
   else {
@@ -407,8 +409,9 @@ void Exo_Entity::internal_load_params()
     char **names = get_name_array(numAttr, name_size);
     int    err   = ex_get_attr_names(fileId, exodus_type(), id_, names);
     if (err < 0) {
-      ERROR("ExoII_Read::Get_Init_Data(): Failed to get " << label()
-                                                          << " attribute names!  Aborting...\n");
+      Error(fmt::format(
+          "ExoII_Read::Get_Init_Data(): Failed to get {} attribute names!  Aborting...\n",
+          label()));
       exit(1);
     }
 
@@ -419,16 +422,16 @@ void Exo_Entity::internal_load_params()
         attributeNames.push_back(name);
       }
       else if (static_cast<int>(std::strlen(names[vg])) > name_size) {
-        std::cerr << trmclr::red << "exodiff: ERROR: " << label()
-                  << " attribute names appear corrupt\n"
-                  << "                A length is 0 or greater than "
-                  << "name_size(" << name_size << ")\n"
-                  << "                Here are the names that I received from"
-                  << " a call to ex_get_attr_names(...):\n";
+        fmt::print(stderr, fmt::v5::fg(fmt::color::red),
+                   "exodiff: ERROR: {} attribute names appear corrupt\n"
+                   "                A length is 0 or greater than name_size({})\n"
+                   "                Here are the names that I received from"
+                   " a call to ex_get_attr_names(...):\n",
+                   label(), name_size);
         for (int k = 1; k <= numAttr; ++k) {
-          std::cerr << "\t\t" << k << ") \"" << names[k - 1] << "\"\n";
+          fmt::print(stderr, fmt::v5::fg(fmt::color::red), "\t\t{}) \"{}\"\n", k, names[k - 1]);
         }
-        std::cerr << "                 Aborting...\n" << trmclr::normal;
+        fmt::print(stderr, fmt::v5::fg(fmt::color::red), "                 Aborting...\n");
         exit(1);
       }
       else {
@@ -467,20 +470,20 @@ namespace {
       }
     }
 
-    ERROR(label << " id " << id << " does not exist!\n");
+    Error(fmt::format("{} id {} does not exist!\n", label, id));
     return 0;
   }
 
   size_t get_num_entities(int file_id, EXOTYPE exo_type)
   {
-    int inquiry = 0;
+    ex_inquiry inquiry = EX_INQ_INVALID;
     switch (exo_type) {
     case EX_ELEM_BLOCK: inquiry = EX_INQ_ELEM_BLK; break;
     case EX_NODE_SET: inquiry = EX_INQ_NODE_SETS; break;
     case EX_SIDE_SET: inquiry = EX_INQ_SIDE_SETS; break;
-    default: ERROR("Invalid entity type in get_num_entities\n"); exit(1);
+    default: Error("Invalid entity type in get_num_entities\n"); exit(1);
     }
-    SMART_ASSERT(inquiry > 0);
+    SMART_ASSERT(inquiry != EX_INQ_INVALID);
     return ex_inquire_int(file_id, inquiry);
   }
 
@@ -489,7 +492,7 @@ namespace {
     int num_vars = 0;
     int err      = ex_get_variable_param(file_id, type, &num_vars);
     if (err < 0) {
-      ERROR("Failed to get number of '" << label << "' variables!  Aborting...\n");
+      Error(fmt::format("Failed to get number of '{}' variables!  Aborting...\n", label));
       exit(1);
     }
     return num_vars;
@@ -500,7 +503,7 @@ namespace {
     int num_attr = 0;
     int err      = ex_get_attr_param(file_id, type, id, &num_attr);
     if (err < 0) {
-      ERROR("Failed to get number of '" << label << "' attributes!  Aborting...\n");
+      Error(fmt::format("Failed to get number of '{}' attributes!  Aborting...\n", label));
       exit(1);
     }
     return num_attr;

@@ -76,9 +76,9 @@ namespace MueLu {
 
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class AggregationPhase3Algorithm_kokkos :
     public MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_SHORT
@@ -89,7 +89,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationPhase3Algorithm_kokkos(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    AggregationPhase3Algorithm_kokkos(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~AggregationPhase3Algorithm_kokkos() { }

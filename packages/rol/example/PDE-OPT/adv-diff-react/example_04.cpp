@@ -57,11 +57,11 @@
 #include <algorithm>
 //#include <fenv.h>
 
-#include "ROL_Algorithm.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -269,8 +269,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::Ptr<ROL::OptimizationProblem<RealT> > opt;
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
+    ROL::Ptr<ROL::OptimizationProblem<RealT>> opt;
+    ROL::Ptr<ROL::OptimizationSolver<RealT>>  solver;
 
     const int nruns = 7;
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
@@ -329,9 +329,10 @@ int main(int argc, char *argv[]) {
       }
 
       // Solve optimization problem
-      algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",plvec[i],false);
+      plvec[i].sublist("Step").set("Type","Trust Region");
+      solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*opt,plvec[i]);
       std::clock_t timer = std::clock();
-      algo->run(*opt,true,*outStream);
+      solver->solve(*outStream);
       stat = opt->getSolutionStatistic();
       *outStream << "Optimization time: "
                  << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
@@ -360,7 +361,7 @@ int main(int argc, char *argv[]) {
       print<RealT>(*objReduced,*zp,*sampler_dist,nsamp_dist,comm,name.str());
     }
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

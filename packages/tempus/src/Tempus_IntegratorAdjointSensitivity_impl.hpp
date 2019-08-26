@@ -29,6 +29,15 @@ IntegratorAdjointSensitivity(
   model_ = model;
   setParameterList(inputPL);
   state_integrator_ = integratorBasic<Scalar>(inputPL, model_);
+
+  TEUCHOS_TEST_FOR_EXCEPTION( getStepper()->getUseFSAL(), std::logic_error,
+    "Error - IntegratorAdjointSensitivity(): Cannot use FSAL with\n"
+    "        IntegratorAdjointSensitivity, because the state and adjoint\n"
+    "        integrators require ModelEvaluator evaluation in the\n"
+    "        constructor to make the initial conditions consistent.\n"
+    "        For the adjoint integrator, this requires special construction\n"
+    "        which has not been implemented yet.\n");
+
   adjoint_model_ = createAdjointModel(model_, inputPL);
   adjoint_integrator_ = integratorBasic<Scalar>(inputPL, adjoint_model_);
 }
@@ -122,7 +131,7 @@ advanceTime(const Scalar timeFinal)
   }
 
   // Run sensitivity integrator and get solution
-  adjoint_integrator_->setInitialState(Scalar(0.0), adjoint_init);
+  adjoint_integrator_->initializeSolutionHistory(Scalar(0.0), adjoint_init);
   bool sens_status = adjoint_integrator_->advanceTime(timeFinal);
   RCP<const SolutionHistory<Scalar> > adjoint_solution_history =
     adjoint_integrator_->getSolutionHistory();
@@ -282,15 +291,15 @@ getTimeStepControl() const
 
 template<class Scalar>
 void IntegratorAdjointSensitivity<Scalar>::
-setInitialState(Scalar t0,
+initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0,
   Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxDp0,
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotDp0,
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotdotDp0)
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > /* DxdotDp0 */,
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > /* DxdotdotDp0 */)
 {
-  state_integrator_->setInitialState(t0, x0, xdot0, xdotdot0);
+  state_integrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0);
   dxdp_init_ = DxDp0;
 }
 

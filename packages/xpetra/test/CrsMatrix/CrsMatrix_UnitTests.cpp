@@ -484,7 +484,7 @@ namespace {
 
         Teuchos::ArrayRCP<const Scalar> diagCopyData = diagCopy->getData(0);
 
-        for (size_t i = 0; i < diagCopyData.size(); ++i)
+        for (size_t i = 0; i < static_cast<size_t>(diagCopyData.size()); ++i)
           TEST_EQUALITY_CONST(diagCopyData[i], rankAsScalar);
       }
     }
@@ -1480,9 +1480,12 @@ namespace {
     TEST_EQUALITY(mat->getGlobalMaxNumRowEntries(),3);
     TEST_EQUALITY(mat->getNodeMaxNumRowEntries(),3);
     TEST_EQUALITY(mat->getNodeNumRows(),3);
-    TEST_EQUALITY(mat->getGlobalNumCols(),3*numProcs);
-    TEST_EQUALITY(mat->getGlobalNumRows(),3*numProcs);
-    TEST_EQUALITY(mat->getGlobalNumEntries(),9*numProcs-2);
+    TEST_EQUALITY(static_cast<size_t>(mat->getGlobalNumCols()),
+                  static_cast<size_t>(3*numProcs));
+    TEST_EQUALITY(static_cast<size_t>(mat->getGlobalNumRows()),
+                  static_cast<size_t>(3*numProcs));
+    TEST_EQUALITY(static_cast<size_t>(mat->getGlobalNumEntries()),
+                  static_cast<size_t>(9*numProcs-2));
 
     size_t numLocalRows = mat->getNodeNumRows();
     for(size_t row=0; row<numLocalRows; row++) {
@@ -1491,7 +1494,7 @@ namespace {
       Teuchos::ArrayView<const LO> indices;
       Teuchos::ArrayView<const Scalar> vals;
       mat->getLocalRowView(row, indices, vals);
-      for(size_t col = 0; col< indices.size(); col++) {
+      for(size_t col = 0; col < static_cast<size_t>(indices.size()); col++) {
         if(grid == colMap->getGlobalElement(indices[col])) {
           TEST_EQUALITY(vals[col],2.0);
         } else {

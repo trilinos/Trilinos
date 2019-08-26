@@ -41,7 +41,6 @@
 // ************************************************************************
 // @HEADER
 
-#include "Phalanx_DimTag.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -55,20 +54,11 @@
 
 // ********************************************************
 // Dimension tags for this problem
-PHX_DIM_TAG_DECLARATION(Dim)
-PHX_DIM_TAG_IMPLEMENTATION(Dim)
-
-PHX_DIM_TAG_DECLARATION(Quadrature)
-PHX_DIM_TAG_IMPLEMENTATION(Quadrature)
-
-PHX_DIM_TAG_DECLARATION(Node)
-PHX_DIM_TAG_IMPLEMENTATION(Node)
-
-PHX_DIM_TAG_DECLARATION(Point)
-PHX_DIM_TAG_IMPLEMENTATION(Point)
-
-PHX_DIM_TAG_DECLARATION(Cell)
-PHX_DIM_TAG_IMPLEMENTATION(Cell)
+PHX_EXTENT(Dim)
+PHX_EXTENT(Quadrature)
+PHX_EXTENT(Node)
+PHX_EXTENT(Point)
+PHX_EXTENT(Cell)
 
 namespace phalanx_test {
 
@@ -97,7 +87,7 @@ namespace phalanx_test {
 
     typedef PHX::MDField<double>::size_type size_type;
     PHX::MDField<double> b("density",dl);
-    b.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(b.fieldTag()));
+    b.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(b.fieldTag()));
     
     for (size_type i=0; i < b.dimension(0); ++i)
       for (size_type j=0; j < b.dimension(1); ++j)

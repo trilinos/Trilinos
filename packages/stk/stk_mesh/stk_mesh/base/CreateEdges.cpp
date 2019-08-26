@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -106,11 +107,11 @@ struct create_single_edge_impl
     BulkData & mesh = m_mesh;
     PartVector add_parts;
 
-    add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( EdgeTopology::value )));
+    add_parts.push_back( & mesh.mesh_meta_data().get_topology_root_part( EdgeTopology::value ));
     if (m_part_to_insert_new_edges)
       add_parts.push_back(m_part_to_insert_new_edges);
 
-    std::array<Entity,Topology::num_nodes> elem_nodes;
+    Entity elem_nodes[(Topology::num_nodes > 0) ? Topology::num_nodes : 1];
     EntityVector edge_nodes(m_edge_nodes, m_edge_nodes+m_num_edge_nodes);
     OrdinalVector scratch1, scratch2, scratch3;
 
@@ -168,7 +169,7 @@ struct create_single_edge_impl
     else {
       side = iedge->second;
     }
-    perm = mesh.find_permutation(elem_topo, elem_nodes.data(), edge_topo, edge_nodes.data(), m_edge_ordinal);
+    perm = mesh.find_permutation(elem_topo, elem_nodes, edge_topo, edge_nodes.data(), m_edge_ordinal);
     ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
     mesh.declare_relation(ielem, side, m_edge_ordinal, perm, scratch1, scratch2, scratch3);
   }
@@ -216,11 +217,11 @@ struct create_edge_impl
     EdgeTopology edge_topo;
 
     PartVector add_parts;
-    add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( EdgeTopology::value )));
+    add_parts.push_back( & mesh.mesh_meta_data().get_topology_root_part( EdgeTopology::value ));
     if (m_part_to_insert_new_edges)
       add_parts.push_back(m_part_to_insert_new_edges);
 
-    std::array<Entity,Topology::num_nodes> elem_nodes;
+    Entity elem_nodes[(Topology::num_nodes > 0) ? Topology::num_nodes : 1];
     EntityVector edge_nodes(EdgeTopology::num_nodes);
     EntityKeyVector edge_node_keys(EdgeTopology::num_nodes);
     OrdinalVector scratch1, scratch2, scratch3;
@@ -250,7 +251,7 @@ struct create_edge_impl
 
         if (edge_exist[e]) continue;
 
-        Topology::edge_nodes(elem_nodes, e, edge_nodes.begin());
+        Topology::edge_nodes(elem_nodes, e, edge_nodes.data());
 
         //sort side nodes into lexicographical smallest permutation
         if (EntityLess(mesh)(edge_nodes[1], edge_nodes[0])) {
@@ -281,7 +282,7 @@ struct create_edge_impl
         else {
           side = iedge->second;
         }
-        perm = mesh.find_permutation(elem_topo, elem_nodes.data(), edge_topo, edge_nodes.data(), e);
+        perm = mesh.find_permutation(elem_topo, elem_nodes, edge_topo, edge_nodes.data(), e);
         ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
         mesh.declare_relation(m_bucket[ielem], side, e, perm, scratch1, scratch2, scratch3);
       }
@@ -317,7 +318,7 @@ struct connect_face_impl
 
     BulkData & mesh = m_bucket.mesh();
 
-    std::array<Entity,Topology::num_nodes> face_nodes;
+    Entity face_nodes[(Topology::num_nodes > 0) ? Topology::num_nodes : 1];
     EntityVector edge_nodes(EdgeTopology::num_nodes);
     OrdinalVector scratch1, scratch2, scratch3;
 
@@ -346,7 +347,7 @@ struct connect_face_impl
 
         if (edge_exist[e]) continue;
 
-        Topology::edge_nodes(face_nodes, e, edge_nodes.begin());
+        Topology::edge_nodes(face_nodes, e, edge_nodes.data());
 
         //sort edge nodes into lexicographical smallest permutation
         if (EntityLess(mesh)(edge_nodes[1], edge_nodes[0])) {
@@ -360,7 +361,7 @@ struct connect_face_impl
         //which is fine
         if (iedge != m_edge_map.end()) {
           Entity edge = iedge->second;
-          Permutation perm = mesh.find_permutation(face_topo, face_nodes.data(), edge_topo, edge_nodes.data(), e);
+          Permutation perm = mesh.find_permutation(face_topo, face_nodes, edge_topo, edge_nodes.data(), e);
           ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
           mesh.declare_relation(m_bucket[iface], edge, e, perm, scratch1, scratch2, scratch3);
         }

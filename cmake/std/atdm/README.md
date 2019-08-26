@@ -14,6 +14,7 @@ build locally as described below.
 
 **Outline:**
 * <a href="#quick-start">Quick-start</a>
+* <a href="#parallel-build-and-test-processes">Parallel build and test processes</a>
 * <a href="#installation-and-usage">Installation and usage</a>
 * <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
 * <a href="#ctest-s-local-test-driversh">ctest-s-local-test-driver.sh</a>
@@ -23,6 +24,7 @@ build locally as described below.
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
 * <a href="#disabling-failing-tests">Disabling failing tests</a>
 * <a href="#specific-systems-supported">Specific systems supported</a>
+* <a href="#custom-systems-and-configurations">Custom systems and configurations</a>
 
 
 ## Quick-start
@@ -73,10 +75,10 @@ Using white/ride compiler stack GNU to build DEBUG code with Kokkos node type OP
 
 **[build-name-keywords]** The `<build-name>` argument is a single string of
 the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
-`XXX_<keyword0>_<keyword1>_..._YYY`, either seprator is supported) .  The
+`XXX_<keyword0>_<keyword1>_..._YYY`, either separator is supported) .  The
 typical order and format of this string is:
 
-    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>
+    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>-<pt>
 
 (but almost any order is supported).  All of these keywords, except for
 `<compiler>` (which can be `default`), are optional.  All of the other
@@ -85,9 +87,9 @@ build name strings [below](#build-name-examples).
 
 Each of these keywords [`<system_name>`](#system_name),
 [`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
-[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc), [`<complex>`](#complex),
-[`<shared_static>`](#shared_static) and [`<release_debug>`](#release_debug),
-is described below.
+[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc), [`<fpic>`](#fpic),
+[`<complex>`](#complex), [`<shared_static>`](#shared_static),
+[`<release_debug>`](#release_debug), and [`<pt>`](#pt), are described below.
 
 <a name="system_name"/>
 
@@ -165,7 +167,6 @@ Kokkos threading / backend model variable `<NODE_TYPE>` (default is
 `<NODE_TYPE>=SERIAL` unless `<COMPILER>=CUDA`):
 
 * `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
-* `pthread`: Use Pthreads for host threading (`NODE_TYPE=THREAD`)
 * `openmp`: Use OpenMP for host threading (`NODE_TYPE=OPENMP`)
 
 If `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.) is given, then `<NODE_TYPE>` is
@@ -182,6 +183,13 @@ builds (does nothing in non-CUDA builds):
 
 NOTE: Setting `rdc` also currently adds the `nvcc_wrapper` option
 `--remove-duplicate-link-files` as well.
+
+<a name="fpic"/>
+
+**`<fpic>`:** The following `<build-name>` keyword will result in `-fPIC`
+being added to `CMAKE_CXX_FLAGS`:
+
+* `fpic`: Add `-fPIC` to `CMAKE_CXX_FLAGS`
 
 <a name="complex"/>
 
@@ -226,6 +234,17 @@ checking (e.g. array bounds checking, pointer checking etc.)):
   * Set `CMAKE_BULD_TYPE=DEBUG` (i.e. `-O0 -g` compiler options)
   * Turn **ON** runtime debug checking
   * NOTE: This build supports running in a debugger. 
+
+<a name="pt"/>
+
+**`<pt>`:** The following `<build-name>` keywords specify all Primary Tested
+(pt) packages are allowed to be enabled.  The default is to allow enable of
+Secondary Tested packages with disables for packages that the ATDM APPs do not
+use (as specified in the file `ATDMDisables.cmake`):
+
+* `-pt` or `_pt` and the very end of the `<build-name>` string: Allow enable
+  if all PT packages, don't disable any PT packages by default and enable
+  Fortran.
 
 All other strings in `<build-name>` are ignored but are allowed for
 informational purposes.  The reason that a `<build-name>` string is defined in
@@ -349,6 +368,31 @@ where
 * If the CMake cache variable `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is
   not specified, then it is given the name `ATDM_TRILINOS_INSTALL_PREFIX` by
   default.
+
+
+## Parallel build and test processes
+
+By default, each system's `<system_name>/environment.sh` script automatically
+selects the parallel build and test jobs by setting the env vars:
+
+* `ATDM_CONFIG_BUILD_COUNT`: Number of default parallel build jobs passed to
+  `ninja -j ${ATDM_CONFIG_BUILD_COUNT}`
+
+* `ATDM_CONFIG_PARALLEL_COMPILE_JOBS_LIMIT`: Max number of parallel processes
+  allowed to build object files with ninja (default is usually empty).
+
+* `ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT`: Max number of parallel processes
+  allowed to link libraries and executables (default is usually empty).
+
+* `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`: Number passed to `ctest -j ${ATDM_CONFIG_CTEST_PARALLEL_LEVEL}`
+
+These values can be overridden by setting the following env vars before running
+`source cmake/std/atdm/load-env.sh <build-name>`:
+
+* `ATDM_CONFIG_BUILD_COUNT_OVERRIDE`
+* `ATDM_CONFIG_PARALLEL_COMPILE_JOBS_LIMIT_OVERRIDE`
+* `ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT_OVERRIDE`
+* `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE`
 
 
 ## checkin-test-atdm.sh
@@ -521,10 +565,11 @@ example, skip configure, skip the build, skip running tests, etc.
 
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
-* <a href="#chamaserrano">chama/serrano/eclipse/ghost</a>
+* <a href="#tlcc-2-and-cts-1">TLCC-2 and CTS-1</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
+* <a href="#spack-rhel-environment">Spack RHEL Environment</a>
 * <a href="#cee-rhel6-environment">CEE RHEL6 Environment</a>
 * <a href="#waterman">waterman</a>
 
@@ -564,7 +609,7 @@ and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
 'white' and 'ride'.
 
-Note that one can also run the same build a tests using the <a
+Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -608,7 +653,7 @@ and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
 'hansen' and 'shiller'.
 
-Note that one can also run the same build a tests using the <a
+Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -620,15 +665,15 @@ $ srun ./checkin-test-atdm.sh intel-opt-openmp \
 ```
 
 
-### chama/serrano
+### TLCC-2 and CTS-1
 
-Once logged on to the TLCC-2 machine 'chama' or the CTS-1 'serrano', 'eclipse'
-or 'ghost' machines, one can directly configure and build on the login node
-(being careful not to overload the node) using the `chama` and `serrano` envs,
-respectively.  But to run the tests, one must run on the compute nodes using
-the `srun` command.  For example, to configure, build and run the tests for
-say `MueLu` on 'serrano', (after cloning Trilinos on the `develop` branch) one
-would do:
+Once logged on to any TLCC2 machine (e.g. 'chama', 'skybridge') or the CTS-1
+machine 'serrano', 'eclipse' or 'ghost' machines, one can directly configure
+and build on the login node (being careful not to overload the node) using the
+`chama` and `serrano` envs, respectively.  But to run the tests, one must run
+on the compute nodes using the `srun` command.  For example, to configure,
+build and run the tests for say `MueLu` on 'serrano', (after cloning Trilinos
+on the `develop` branch) one would do:
 
 
 ```
@@ -652,8 +697,9 @@ computing.sandia.gov
 
 **NOTE:** Unlike some of the other machines, one must load the environment,
 configure and build on the login node and then run the test suite on a compute
-node on this system.  This is what the CTest -S driver on 'chama' and
-'serrano' does in order to drive jobs and submit to CDash.
+node on this system.  This is what the CTest -S driver does on TLCC-2 and
+CTS-1 systems like 'chama' and 'serrano' in order to drive jobs and submit to
+CDash.
 
 To use the checkin-test-atdm.sh script, you must split running the tests from
 the configure and build as with:
@@ -732,7 +778,7 @@ NOTE: Above including `sems-rhel6` in the build name
 CEE LAN RHEL6 machine to be explicit that the SEMS env is being used and not
 the <a href="#cee-rhel6-environment">CEE RHEL6 env</a>.
 
-One can also run the same build a tests using the <a
+One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -774,7 +820,7 @@ $ make NP=16
 $ ctest -j8
 ```
 
-One can also run the same build a tests using the <a
+One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -791,12 +837,63 @@ this can be overridden by setting the env var
 `ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` running `source
 cmake/std/atdm/load-env.sh <build_name>`.
 
-NOTE: The default Intel compiler license server can be overridded by setting
+NOTE: The default Intel compiler license server can be overridden by setting
 the env var:
 
 ```
 $ export ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE=<some-url>
 ```
+
+
+### Spack RHEL Environment
+
+The env 'spack-rhel' should work on any RedHad Enterprise Linux (RHEL) (and
+perhaps many other Linux systems) that have the SNL ATDM Spack modules
+installed on them.  See the [installation
+documentation](https://gitlab.sandia.gov/atdm/atdm-spack-scripts/blob/master/README.md).
+**WARNING:** This Spack env is still under development and may change in the
+future.
+
+Once logged onto a Linux machine with the SNL ATDM Spack modules installed,
+one can directly configure, build, and run tests using the `spack-rhel` env.
+For example, to configure, build and run the tests for `MueLu` one would clone
+Trilinos on the `develop` branch and then do the following:
+
+
+```
+$ cd <some_build_dir>/
+
+$ source <spack-install-base-dir>/setup-env.sh
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh spack-rhel-gnu-openmp-opt
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make NP=16
+
+$ ctest -j8
+```
+
+One can also run the same build and tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ env ATDM_CHT_DEFAULT_ENV=spack-rhel-default \
+  ./checkin-test-atdm.sh spack-rhel-gnu-openmp-opt \
+  --enable-packages=MueLu \
+  --local-do-all
+```
+
+NOTE: Above one must set `ATDM_CHT_DEFAULT_ENV=spack-rhel-default` in the env
+when passing in `all` in order for it to select the correct set of supported
+builds for the `spack-rhel` env and also to load the correct env to find
+Python, etc.
 
 
 ### CEE RHEL6 Environment
@@ -828,7 +925,7 @@ NOTE: Above one must include `cee-rhel6` in the build name
 LAN RHEL6 machine or the <a href="#sems-rhel6-environment">sems-rhel6</a> env
 will be used by default.
 
-One can also run the same build a tests using the <a
+One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -881,7 +978,7 @@ and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
 'waterman'.
 
-Note that one can also run the same build a tests using the <a
+Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -894,86 +991,10 @@ $ bsub -x -Is -n 20 \
 
 ## Building and installing Trilinos for ATDM Applications
 
-The sections below describe how to configure, build, and install Trilinos for
-usage by the ATDM applications:
+See the following internal SNL wiki page for instructions on building and
+testing that ATDM APPs (e.g. SPARC and EMPIRE) against ATDM Trilinos builds:
 
-* <a href="#building-and-installing-trilinos-for-empire">Building and installing Trilinos for EMPIRE</a>
-* <a href="#building-and-installing-trilinos-for-sparc">Building and installing Trilinos for SPARC</a>
-
-
-### Building and installing Trilinos for EMPIRE
-
-Configuring, building and installing Trilinos for EMPIRE and then building and testing EMPIRE against that Trilinos installation is an easy process.  To build the ATDM Trilinos configuration on any supported system just do:
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh <build-name>
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/empire/EMPIRETrilinosPackagesEnables.cmake \
-  -DCMAKE_INSTALL_PREFIX=<trilinos-install-dir> \
-  $TRILINOS_DIR
-
-$ make NP=16  # Uses ninja -j16
-
-$ make NP=16 install
-```
-
-Once the Trilinos installation is complete, one can configure, build, and test EMPIRE with:
-
-```
-$ cd <empire-build-dir>/
-
-$ source <trilinos-install-dir>/load_matching_env.sh
-
-$ rm -r CMake*
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_INSTALL_DIR=${ATDM_TRILINOS_INSTALL_PREFIX} \
-  [other options] \
-  <empire-src-dir>
-
-$ ninja -j20
-
-$ ctest -j8
-```
-
-The EMPIRE configuration gets everything it needs from the sourced and loaded environment and from the Trilinos installation directory.  Easy as pie!
-
-Details on where to get the EMPIRE source repos and the exact CMake options to use when configuring EMPIRE are given at:
-
-* [Building and Testing EMPIRE against Local Trilinos Installation](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Building+ATDM+APPs+Against+Local+Installs+of+Trilinos#BuildingATDMAPPsAgainstLocalInstallsofTrilinos-BuildingandTestingEMPIREagainstLocalTrilinosInstallation)
-
-
-### Building and installing Trilinos for SPARC
-
-
-To configure, build, and install Trilinos for usage by SPARC, one must use a very specific name for the installation directory or the CMake configure of SPARC will not pick it up.  Specific instructions and some helper scripts for building and installing Trilinos and then building and testing SPARC against Trilinos installation are given at:
-
-* [Building and Testing SPARC against Local Trilinos Installation](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Building+ATDM+APPs+Against+Local+Installs+of+Trilinos#BuildingATDMAPPsAgainstLocalInstallsofTrilinos-BuildingandTestingSPARCagainstLocalTrilinosInstallation)
-
-But for a specific build example on a CEE RHEL6 machine, one wouild configure, build, and install Triilnos for SPARC using:
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cee-rhel6-gnu-7.2.0-openmpi-1.10.2-serial-static-dbg
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/sparc/SPARCTrilinosPackagesEnables.cmake \
-  -DCMAKE_INSTALL_PREFIX=<base-dir>/cee-cpu_gcc-7.2.0_openmpi-1.10.2_serial_static_dbg
-  $TRILINOS_DIR
-
-$ make NP=16  # Uses ninja -j16
-
-$ make NP=16 install
-```
-
-In addition, configuring and building SPARC requires special CMake configure scripts be used.  Again, consult the above web page and helper scripts.
+* [Building ATDM APPs against Trilinos](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Building+ATDM+APPs+against+Trilinos)
 
 
 ## Troubleshooting configuration problems
@@ -1049,7 +1070,7 @@ contents:
   <system-name>/
     environment.sh  # Load env for the given system based on $ATDM_CONFIG_BUILD_NAME keys
     all_supported_builds.sh  # [Optional] List of all supported builds
-    custom_bulds.sh  # [Optional] Special logic for compiler keywords, etc.
+    custom_builds.sh  # [Optional] Special logic for compiler keywords, etc.
     tweaks/
        <COMPILER0>_<BUILD_TYPE0>_<NODE_TYPE0>_<KOKKOS_ARCH0>.cmake  # [Optional]
        <COMPILER1>_<BUILD_TYPE1>_<NODE_TYPE1>_<KOKKOS_ARCH0>.cmake  # [Optional]
@@ -1081,7 +1102,7 @@ builds that submit to CDash.
 
 The optional file `<system-name>/custom_builds.sh` contains specialized logic
 for compiler versions and other specialized keywords and versions.  (For an
-example, see `atdm/cee-rhel6/cutome-builds.sh` and
+example, see `atdm/cee-rhel6/custom-builds.sh` and
 `atdm/cee-rhel6/environment.sh`.)
 
 <a name="ATDM_TWEAKS_FILES"/>
@@ -1198,7 +1219,7 @@ For example, Trilinos commit
 shows the disable of the test:
 
 ```
-# Disable test that times out for some unkown reason (#2925)
+# Disable test that times out for some unknown reason (#2925)
 ATDM_SET_ENABLE(Stratimikos_test_aztecoo_thyra_driver_MPI_1_DISABLE ON)
 ```
 
@@ -1302,8 +1323,6 @@ they support are:
 
 * `cee-rhel6/`: CEE LANL RHEL6 systems with a CEE environment
 
-* `chama/`: Supports SNL HPC TLCC-2 machine 'chama'.
-
 * `mutrino/`: Supports SNL HPC machine 'mutrino'.
 
 * `ride/`: Supports GNU and CUDA builds on both the SRN machine 'ride' and the
@@ -1313,10 +1332,84 @@ they support are:
 
 * `sems-rhel7/`: SNL COE RHEL7 systems with the SEMS NFS environment
 
+* `spack-rhel/`: RHEL (and likely other Linux) systems with the SNL ATDM Spack modules installed.
+
 * `serrano/`: Supports SNL HPC CTS-1 machines 'serrano', 'eclipse', and
   'ghost'.
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   'shiller' and the mirror SON machine 'hansen'.
 
+* `tlcc2/`: Supports SNL HPC TLCC-2 machines 'chama', 'skybridge', etc..
+
 * `waterman/`: Supports GNU and CUDA builds on the SRN machine 'waterman'.
+
+
+## Custom systems and configurations
+
+In addition to officially defined system configurations described
+[above](#specific-instructions-for-each-system), one can also define a custom
+system configuration and use that.  To do so, create a new directory with the
+contents:
+
+```
+<some-base-dir>/<custom-system-name>/
+  environment.sh           # Required
+  custom_builds.sh         # Optional
+  all_supported_builds.sh  # Optional
+```
+
+(only the `environment.sh` script is required).
+
+Then one can explicitly use that custom system setup using:
+
+```
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh <build-name> \
+  <some-base-dir>/<custom-system-name>
+```
+
+The name of the new custom system name is taken from the last directory name
+`<custom-system-name>` and the files in that directory are read and treated
+like any of the offically defined system configurations.  Also, if the name of
+an officially supported system is present in `<build-name>`, it will be
+ignored.
+
+A second approach is to register a custom system configuration as:
+
+```
+export ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=<some-base-dir>/<custom-system-name>
+```
+
+and then that configuration can be selected by adding the keyword
+`<custom-system-name>` to the `<build-name>` passed in as:
+
+```
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh \
+  <custom-system-name>-<other-keywords>
+```
+
+In this case, if `<custom-system-name>` is found in the input `<build-name>`
+argument, then the custom configuration will be used even if one of the
+officially defined configurations would otherwise match.  But if
+`<custom-system-name>` is not included in the build name, then the registered
+custom system configuration will not be selected.
+
+When a custom configuration is selected, when Trilinos is installed, the
+directory `<some-base-dir>/<custom-system-name>` is copied to the install tree
+and the installed [`load-matching-env.sh`](#installation-and-usage) script
+will automatically load that custom env according to the custom build
+configuration script.
+
+A simple example can be seen in:
+
+* [cmake/std/atdm/examples/my-sems-rhel6-config/environment.sh](examples/my-sems-rhel6-config/environment.sh)
+
+which works on any SEMS RHEL6 machine similarly to the offically defined <a
+href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>.
+
+To see how things can be specified look at examples of other `environment.sh`
+scripts in the offically defined configurations under:
+
+* [cmake/std/atdm/<system_name>/](.)
+
+where `<system_name>` is `ride`, `waterman`, `tlcc2`, etc.

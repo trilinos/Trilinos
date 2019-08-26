@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Extended is the python interface to namespace Extended
 of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Extended is to provide classes that extend
 NOX.Abstract classes to handle an arbitrary number of multi-vectors

@@ -79,7 +79,7 @@ namespace TPMultiVector {
       const int M = X_.extent(1);
       for(int j=0;j<M;++j) {
         X_(i,j) = f_->apply(X_(i,j));
-      } 
+      }
     }
   };
 
@@ -104,7 +104,7 @@ namespace TPMultiVector {
       for(int j=0;j<M;++j) {
         X_(i,j) = f_->apply(X_(i,j),Y_(i,j));
       }
-    } 
+    }
   };
 
   // Locally define a Kokkos wrapper functor for ReductionOp
@@ -288,7 +288,7 @@ private:
 
 public:
   void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
-    ViewType v_lcl =  tpetra_vec_->getDualView().d_view;
+    ViewType v_lcl =  tpetra_vec_->getLocalViewDevice();
 
     int lclDim = tpetra_vec_->getLocalLength();
     TPMultiVector::unaryFunc<Real,LO,GO,Node> func(v_lcl, &f);
@@ -305,8 +305,8 @@ public:
    const TpetraMultiVector &ex = dynamic_cast<const TpetraMultiVector&>(x);
    Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > xp = ex.getVector();
 
-    ViewType v_lcl = tpetra_vec_->getDualView().d_view;
-    ViewType x_lcl = xp->getDualView().d_view;
+    ViewType v_lcl = tpetra_vec_->getLocalViewDevice();
+    ViewType x_lcl = xp->getLocalViewDevice();
 
     int lclDim = tpetra_vec_->getLocalLength();
 
@@ -317,7 +317,7 @@ public:
   }
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
-    ViewType v_lcl = tpetra_vec_->getDualView().d_view;
+    ViewType v_lcl = tpetra_vec_->getLocalViewDevice();
 
     int lclDim = tpetra_vec_->getLocalLength();
     TPMultiVector::reduceFunc<Real,LO,GO,Node> func(v_lcl, &r);

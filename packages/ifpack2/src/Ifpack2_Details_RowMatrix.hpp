@@ -45,11 +45,13 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Ifpack2_Details_throwBecauseDeprecated.hpp"
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+#  include "Ifpack2_Details_throwBecauseDeprecated.hpp"
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 namespace Ifpack2 {
 namespace Details {
-    
+
 /// \class RowMatrix
 /// \brief All Ifpack2 implementations of Tpetra::RowMatrix must
 ///   inherit from this class.
@@ -63,26 +65,31 @@ namespace Details {
 template<class MatrixType>
 class RowMatrix :
     public Tpetra::RowMatrix<typename MatrixType::scalar_type,
-			     typename MatrixType::local_ordinal_type,
-			     typename MatrixType::global_ordinal_type,
-			     typename MatrixType::node_type> {
+                             typename MatrixType::local_ordinal_type,
+                             typename MatrixType::global_ordinal_type,
+                             typename MatrixType::node_type> {
 public:
   //! \name Typedefs
   //@{
-  typedef typename MatrixType::scalar_type scalar_type;
-  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-  typedef typename MatrixType::node_type node_type;
+  using scalar_type = typename MatrixType::scalar_type;
+  using local_ordinal_type = typename MatrixType::local_ordinal_type;
+  using global_ordinal_type = typename MatrixType::global_ordinal_type;
+  using node_type = typename MatrixType::node_type;
 
   //@}
   //! \name Destructor
   //@{
 
   //! Destructor (virtual for memory safety of derived classes)
-  virtual ~RowMatrix () {}
+  virtual ~RowMatrix () = default;
 
   //@}
-  //! @name Work-around implementations of deprecated virtual methods  
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  /// \name Work-around implementations of deprecated virtual methods
+  ///
+  /// These methods exist to smooth the path for fixing GitHub Issue
+  /// #2630.  This is why their existence depends on a Tpetra macro.
   //@{
 
   /// \brief The global number of diagonal entries.
@@ -92,7 +99,7 @@ public:
   getGlobalNumDiags () const final
   {
     throwBecauseDeprecated ("getGlobalNumDiags");
-    return Tpetra::global_size_t (0);    
+    return Tpetra::global_size_t (0);
   }
 
   /// \brief The local number of diagonal entries.
@@ -102,7 +109,7 @@ public:
   getNodeNumDiags () const final
   {
     throwBecauseDeprecated ("getNodeNumDiags");
-    return std::size_t (0);    
+    return std::size_t (0);
   }
 
   /// \brief Whether this graph is locally lower triangular.
@@ -123,6 +130,9 @@ public:
     throwBecauseDeprecated ("isUpperTriangular");
     return false;
   }
+
+  //@}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 };
 
 } // namespace Details

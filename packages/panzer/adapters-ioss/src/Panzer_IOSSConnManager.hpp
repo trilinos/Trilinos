@@ -78,12 +78,11 @@
 
 namespace panzer_ioss {
 
-template <typename GO>
-class IOSSConnManager : public panzer::ConnManager<int,GO> {
+class IOSSConnManager : public panzer::ConnManager {
 
 public:
-   typedef typename panzer::ConnManager<int, GO>::LocalOrdinal LocalOrdinal;
-   typedef typename panzer::ConnManager<int, GO>::GlobalOrdinal GlobalOrdinal;
+   using LocalOrdinal = panzer::ConnManager::LocalOrdinal;
+   using GlobalOrdinal = panzer::ConnManager::GlobalOrdinal;
 
    typedef typename std::vector<Ioss::NodeBlock*> NodeBlockContainer;
    typedef typename std::vector<Ioss::ElementBlock*> ElementBlockContainer;
@@ -105,7 +104,7 @@ public:
      * This default version assumes an exodus-type database and a property
      * manager containing the single property DECOMPOSITION_METHOD=LINEAR
      */
-   virtual Teuchos::RCP<panzer::ConnManagerBase<int> > noConnectivityClone() const {
+   virtual Teuchos::RCP<panzer::ConnManager> noConnectivityClone() const {
      std::string type = "exodus";
      Ioss::PropertyManager properties;
      Ioss::Property decomp_prop("DECOMPOSITION_METHOD", "LINEAR");
@@ -117,7 +116,7 @@ public:
         * about the required connectivity (e.g. <code>buildConnectivity</code>
         * has never been called).
         */
-   virtual Teuchos::RCP<panzer::ConnManagerBase<int> > noConnectivityClone(std::string & type, Ioss::PropertyManager & properties) const;
+   virtual Teuchos::RCP<panzer::ConnManager> noConnectivityClone(std::string & type, Ioss::PropertyManager & properties) const;
 
    /** Get ID connectivity for a particular element
      *

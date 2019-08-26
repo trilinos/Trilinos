@@ -107,9 +107,22 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~Amesos2Smoother() { }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+    validParamList->set< RCP<const FactoryBase> >("A",         null, "Factory of the coarse matrix");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace", null, "Factory of the nullspace");
+    validParamList->set<bool>("fix nullspace", false, "Remove zero eigenvalue by adding rank one correction.");
+    return validParamList;
+  }
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
+    ParameterList pL = this->GetParameterList();
+
     this->Input(currentLevel, "A");
+    if (pL.get<bool>("fix nullspace"))
+      this->Input(currentLevel, "Nullspace");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -165,7 +178,79 @@ namespace MueLu {
       B_ = MultiVectorFactory::Build(map, 1);
     }
 
-    RCP<Tpetra_CrsMatrix> tA = Utilities::Op2NonConstTpetraCrs(A);
+    RCP<Matrix> factorA;
+    Teuchos::ParameterList pL = this->GetParameterList();
+    if (pL.get<bool>("fix nullspace")) {
+      this->GetOStream(Runtime1) << "MueLu::Amesos2Smoother::Setup(): fixing nullspace" << std::endl;
+
+      rowMap = A->getRowMap();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(rowMap->getComm()->getSize() > 1, Exceptions::RuntimeError,
+        "MueLu::Amesos2Smoother::Setup Fixing nullspace for coarse matrix for Amesos2 for multiple processors has not been implemented yet.");
+
+      RCP<MultiVector> Nullspace = Factory::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(Nullspace->getNumVectors() > 1, Exceptions::RuntimeError,
+        "MueLu::Amesos2Smoother::Setup Fixing nullspace for coarse matrix for Amesos2 for nullspace of dim > 1 has not been implemented yet.");
+
+      ArrayRCP<const SC> nullspaceRCP;
+      ArrayView<const SC> nullspace;
+      nullspaceRCP = Nullspace->getData(0);
+      nullspace = nullspaceRCP();
+
+      RCP<CrsMatrixWrap> Acrs = rcp_dynamic_cast<CrsMatrixWrap>(A);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(Acrs.is_null(), Exceptions::RuntimeError,
+        "MueLu::Amesos2Smoother::Setup Fixing nullspace for coarse matrix for Amesos2 when matrix is not a Crs matrix has not been implemented yet.");
+
+      ArrayRCP<const size_t> rowPointers;
+      ArrayRCP<const LO>     colIndices;
+      ArrayRCP<const SC>     values;
+      Acrs->getCrsMatrix()->getAllValues(rowPointers, colIndices, values);
+
+      ArrayRCP<size_t> newRowPointers_RCP;
+      ArrayRCP<LO>     newColIndices_RCP;
+      ArrayRCP<SC>     newValues_RCP;
+
+      size_t N = rowMap->getGlobalNumElements();
+      newRowPointers_RCP.resize(N+1);
+      newColIndices_RCP.resize(N*N);
+      newValues_RCP.resize(N*N);
+
+      ArrayView<size_t> newRowPointers = newRowPointers_RCP();
+      ArrayView<LO>     newColIndices  = newColIndices_RCP();
+      ArrayView<SC>     newValues      = newValues_RCP();
+
+      for (size_t i = 0; i < N; i++) {
+        newRowPointers[i] = i*N;
+        for (size_t j = 0; j < N; j++) {
+          newColIndices[i*N+j] = Teuchos::as<LO>(j);
+          newValues[i*N+j] = nullspace[i]*Teuchos::ScalarTraits<Scalar>::conjugate(nullspace[j]);
+        }
+      }
+      newRowPointers[N] = N*N;
+
+      for (size_t i = 0; i < N; i++) {
+        for (size_t jj = rowPointers[i]; jj < rowPointers[i+1]; jj++) {
+          LO j = colIndices[jj];
+          SC v = values[jj];
+          newValues[i*N+j] += v;
+        }
+      }
+
+      RCP<Matrix>    newA    = rcp(new CrsMatrixWrap(rowMap, rowMap, 0, Xpetra::StaticProfile));
+      RCP<CrsMatrix> newAcrs = rcp_dynamic_cast<CrsMatrixWrap>(newA)->getCrsMatrix();
+
+      using Teuchos::arcp_const_cast;
+      newAcrs->setAllValues(arcp_const_cast<size_t>(newRowPointers_RCP), arcp_const_cast<LO>(newColIndices_RCP), arcp_const_cast<SC>(newValues_RCP));
+      newAcrs->expertStaticFillComplete(rowMap, rowMap);
+
+      factorA = newA;
+    } else {
+      factorA = A;
+    }
+
+    RCP<Tpetra_CrsMatrix> tA = Utilities::Op2NonConstTpetraCrs(factorA);
 
     prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
     TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
@@ -174,7 +259,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool /* InitialGuessIsZero */) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
 
     RCP<Tpetra_MultiVector> tX, tB;

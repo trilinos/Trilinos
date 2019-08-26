@@ -51,7 +51,7 @@
 
 #include "PanzerAdaptersSTK_config.hpp"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 
@@ -65,11 +65,11 @@
 
 namespace panzer_stk {
 
-
+/** Build LOWS factory. */
 Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
 buildLOWSFactory(bool blockedAssembly,
-                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                 const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                 const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer,
+                 const Teuchos::RCP<panzer::ConnManager> & conn_manager,
                  int spatialDim,
                  const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                  const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
@@ -78,17 +78,15 @@ buildLOWSFactory(bool blockedAssembly,
                  #endif 
                  bool writeCoordinates=false,
                  bool writeTopo=false,
-                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null,
+                 const Teuchos::RCP<const panzer::GlobalIndexer> & auxGlobalIndexer=Teuchos::null,
                  bool useCoordinates=true
                  );
 
-/** Build LOWS factory.
-  */
-template <typename GO> 
+/** Build LOWS factory. */
 Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > 
 buildLOWSFactory(bool blockedAssembly,
-                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                 const Teuchos::RCP<panzer_stk::STKConnManager<GO> > & stkConn_manager,
+                 const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer,
+                 const Teuchos::RCP<panzer_stk::STKConnManager> & stkConn_manager,
                  int spatialDim,
                  const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                  const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
@@ -97,7 +95,7 @@ buildLOWSFactory(bool blockedAssembly,
                  #endif 
                  bool writeCoordinates=false,
                  bool writeTopo=false,
-                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null,
+                 const Teuchos::RCP<const panzer::GlobalIndexer> & auxGlobalIndexer=Teuchos::null,
                  bool useCoordinates=true
                  );
 

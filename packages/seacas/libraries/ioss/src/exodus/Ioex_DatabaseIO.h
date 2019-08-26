@@ -142,8 +142,8 @@ namespace Ioex {
     }
 
     size_t handle_block_ids(const Ioss::EntityBlock *eb, ex_entity_type map_type,
-                            Ioss::Map &entity_map, void *ids, size_t num_to_get, size_t offset,
-                            size_t count) const;
+                            Ioss::Map &entity_map, void *ids, size_t num_to_get,
+                            size_t offset) const;
 
     void compute_block_membership__(Ioss::SideBlock *         efblock,
                                     std::vector<std::string> &block_membership) const override;
@@ -211,9 +211,13 @@ namespace Ioex {
 
     void openDatabase__() const override { get_file_pointer(); }
 
-    void closeDatabase__() const override { free_file_pointer(); }
+    void closeDatabase__() const override
+    {
+      free_file_pointer();
+      closeDW();
+    }
 
-    virtual int get_file_pointer() const = 0; // Open file and set exodusFilePtr.
+    virtual int get_file_pointer() const override = 0; // Open file and set exodusFilePtr.
 
     virtual int free_file_pointer() const; // Close file and set exodusFilePtr.
 
@@ -315,7 +319,7 @@ namespace Ioex {
     mutable std::map<std::string, Ioss::Int64Vector> activeNodeSetNodesIndex;
 
     time_t timeLastFlush{0};
-    int    flushInterval{1};
+    int    flushInterval{-1};
 
     mutable bool fileExists{false}; // False if file has never been opened/created
     mutable bool minimizeOpenFiles{false};

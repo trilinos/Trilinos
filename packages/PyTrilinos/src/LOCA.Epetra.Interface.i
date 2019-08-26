@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Epetra.Interface is the python interface to namespace
 Epetra::Interface of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Epetra.Interface is to provide a concrete Epetra
 implementation of LOCA interfaces.  The python version of

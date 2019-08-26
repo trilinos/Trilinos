@@ -1,10 +1,11 @@
-#---------------------------------------------------------------
-#    Copyright 2006 Sandia Corporation.
-#    Under the terms of Contract DE-AC04-94AL85000, there is a
-#    non-exclusive license for use of this work by or on behalf
-#    of the U.S. Government.  Export of this program may require
-#    a license from the United States Government.
-#---------------------------------------------------------------
+#--------------------------------------------------------------------
+#    Copyright 2002 - 2008, 2010, 2011 National Technology &         
+#    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   
+#    of Contract DE-NA0003525 with NTESS, there is a                 
+#    non-exclusive license for use of this work by or on behalf      
+#    of the U.S. Government.  Export of this program may require     
+#    a license from the United States Government.                    
+#--------------------------------------------------------------------
 
 #
 # The signature for Boost.build rules is described here:
@@ -68,6 +69,7 @@ local installed-end-user-files =
 local installed-developer-files = 
   stk_balance_unit_tester
   stk_balance_integration_tester
+  stk_balance_doc_tester
   ;
 
 #
@@ -175,9 +177,8 @@ lib stk_balance_lib
     search_tolerance_algs
     /sierra/stk_io//stk_io
     /sierra/stk_mesh//stk_mesh_base
-    /tpl/trilinos//teuchos
     /tpl/trilinos//zoltan2
-    /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_tools//stk_transfer_utils_lib
     /sierra/stk_search//stk_search
     /sierra/stk_tools//stk_tools_lib
     /sierra/stk_util//stk_util_command_line
@@ -212,9 +213,18 @@ lib stk_balance_test_utils
 
 exe stk_balance_unit_tester
   :
-    [ glob
-      $(stk_balance-root)/unit_tests/*.cpp
-      $(stk_balance-root)/doc_tests/*.cpp
+    [ glob $(stk_balance-root)/../stk_unit_tests/stk_balance/*.cpp 
+    ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+    /sierra/stk_mesh//stk_mesh_fixtures
+    stk_balance_test_utils
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+exe stk_balance_doc_tester
+  :
+    [ glob $(stk_balance-root)/../stk_doc_tests/stk_balance/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_balance_test_utils
@@ -224,8 +234,7 @@ exe stk_balance_unit_tester
 
 exe stk_balance_integration_tester
   :
-    [ glob
-      $(stk_balance-root)/integration_tests/*.cpp
+    [ glob $(stk_balance-root)/../stk_integration_tests/stk_balance/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_balance_test_utils

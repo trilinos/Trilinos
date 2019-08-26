@@ -102,9 +102,9 @@ cloneAndSolveWithBelos (
   RCP<clone_multi_vector_type> B_clone, X_clone;
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Clone System", clone_system);
-    A_clone = A->clone(clone_node, plClone);
-    B_clone = B->clone(clone_node);
-    X_clone = X->clone(clone_node);
+    A_clone = rcp(new clone_sparse_matrix_type(A, Teuchos::Copy));
+    B_clone = rcp(new clone_multi_vector_type(B, Teuchos::Copy));
+    X_clone = rcp(new clone_multi_vector_type(X, Teuchos::Copy));
   }
 
   // Clone preconditioner(s)
@@ -142,7 +142,7 @@ cloneAndSolveWithBelos (
   // Copy X_clone back into X
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Clone Solution", clone_sol);
-    RCP<multivector_type> X_host = X_clone->clone(X->getMap()->getNode());
+    RCP<multivector_type> X_host = rcp(new multivector_type(X_clone, Teuchos::Copy));
     X->update(1.0, *X_host, 0.0);
   }
 }

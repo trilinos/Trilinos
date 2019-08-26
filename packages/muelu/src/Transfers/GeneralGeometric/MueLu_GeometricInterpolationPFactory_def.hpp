@@ -49,6 +49,8 @@
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_CrsMatrixUtils.hpp"
 
+#include "Xpetra_IO.hpp"
+
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -92,7 +94,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeometricInterpolationPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
     const ParameterList& pL = GetParameterList();
 
     Input(fineLevel, "A");
@@ -196,9 +198,6 @@ namespace MueLu {
 
     *out << "The coarse nullspace is constructed and set on the coarse level." << std::endl;
 
-    Array<LO> lNodesPerDir = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
-    Set(coarseLevel, "numDimensions", numDimensions);
-    Set(coarseLevel, "lNodesPerDim", lNodesPerDir);
     Set(coarseLevel, "P", P);
 
     *out << "GeometricInterpolationPFactory::BuildP has completed." << std::endl;

@@ -399,7 +399,7 @@ void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec )
   TimeRange<Scalar> range = this->getTimeRange();
   for (int i=0; i<N ; ++i) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ~(range.lower() <= time_vec[i]) && (time_vec[i] <= range.upper()),
+      (range.lower() <= time_vec[i]) && (time_vec[i] <= range.upper()),
       std::logic_error,
       "Error, time_vec[" << i << "] = " << time_vec[i] <<
       "is not in range of this interpolation buffer = [" <<

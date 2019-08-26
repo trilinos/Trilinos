@@ -228,8 +228,8 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
 //==============================================================================
 int Ifpack_SingletonFilter::
-Solve(bool Upper, bool Trans, bool UnitDiagonal,
-      const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+Solve(bool /* Upper */, bool /* Trans */, bool /* UnitDiagonal */,
+      const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   return(-1);
 }
@@ -244,7 +244,7 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
 //==============================================================================
 int Ifpack_SingletonFilter::
-ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+ApplyInverse(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   return(-1); // NOT IMPLEMENTED AT THIS STAGE
 }

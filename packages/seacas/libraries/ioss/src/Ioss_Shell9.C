@@ -39,6 +39,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Shell9::name = "shell9";
   class St_Shell9 : public ElementVariableType
   {
   public:

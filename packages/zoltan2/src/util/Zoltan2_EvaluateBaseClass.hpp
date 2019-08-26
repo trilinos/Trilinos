@@ -59,7 +59,7 @@ class EvaluateBaseClassRoot{
     virtual ~EvaluateBaseClassRoot() {} // required virtual declaration
 
     /*! \brief Print all metrics */
-    virtual void printMetrics(std::ostream &os) const {};
+    virtual void printMetrics(std::ostream &/* os */) const {};
 };
 
 template <typename Adapter>

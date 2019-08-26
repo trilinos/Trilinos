@@ -153,14 +153,9 @@ namespace Intrepid2 {
     
     using range_policy_type = Kokkos::Experimental::MDRangePolicy
       < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
-    
-    const ordinal_type
-      C = output.extent(0),
-      F = output.extent(1),
-      P = output.extent(2);
-    
+
     range_policy_type policy( { 0, 0, 0 },
-                              { C, F, P } );
+                              { /*C*/ output.extent(0), /*F*/ output.extent(1), /*P*/ output.extent(2) } );
     const ordinal_type valRank = output.rank() - 3;
     switch (valRank) {
     case 0: {
@@ -207,12 +202,8 @@ namespace Intrepid2 {
     using range_policy_type = Kokkos::Experimental::MDRangePolicy
       < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     
-    const ordinal_type
-      C = output.extent(0),
-      P = output.extent(1);
-    
     range_policy_type policy( { 0, 0 },
-                              { C, P } );
+                              { /*C*/ output.extent(0), /*P*/ output.extent(1) } );
     const ordinal_type valRank = output.rank() - 2;
     switch (valRank) {
     case 0: {

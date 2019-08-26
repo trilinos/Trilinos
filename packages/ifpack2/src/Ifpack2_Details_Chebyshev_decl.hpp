@@ -51,14 +51,19 @@
 /// This file is meant for Ifpack2 developers only, not for users.
 /// It declares a new implementation of Chebyshev iteration.
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Teuchos_VerbosityLevel.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
+#include "Teuchos_Describable.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace Ifpack2 {
-
 namespace Details {
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+template<class TpetraOperatorType>
+class ScaledDampedResidual; // forward declaration
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
 /// \class Chebyshev
 /// \brief Left-scaled Chebyshev iteration.
 /// \tparam ScalarType The type of entries in the matrix and vectors.
@@ -353,6 +358,9 @@ private:
   /// nonnull input.
   Teuchos::RCP<const row_matrix_type> A_;
 
+  //! "Operator" implementing W := alpha*D_inv*(B-A*X) + beta*W.
+  Teuchos::RCP<ScaledDampedResidual<op_type>> sdr_;
+
   /// \brief The inverse of the diagonal entries of A.
   ///
   /// This is distributed using the range Map of the matrix.  If the
@@ -388,12 +396,7 @@ private:
   //! \name Cached computed data
   //@{
 
-  /// \brief In ifpackApplyImpl(): the result of A*Y.
-  ///
-  /// We cache this multivector here to avoid creating it on each call.
-  Teuchos::RCP<MV> V_;
-
-  /// \brief In ifpackApplyImpl(): Iteration update multivector.
+  /// \brief In ifpackApplyImpl(): Iteration update MultiVector.
   ///
   /// We cache this multivector here to avoid creating it on each call.
   Teuchos::RCP<MV> W_;
@@ -515,22 +518,21 @@ private:
   /// matrix to setMatrix() is the same object as A_.
   void reset ();
 
-  /// \brief Set V and W to temporary multivectors with the same Map as X.
-  ///
-  /// \param V [out]
-  /// \param W [out]
-  /// \param X [in] Multivector, whose Map to use when making V and W.
+  /// \brief Set W to temporary MultiVector with the same Map as B.
   ///
   /// This is an optimization for apply().  This method caches the
-  /// created multivectors in the class instance as V_ resp. W_.
-  /// Caching optimizes the common case of calling apply() many times.
-  ///
-  /// We call the first argument V1 instead of V, so as not to confuse
-  /// the multivector V with the typedef V (for Tpetra::Vector).
+  /// created MultiVector as W_.  Caching optimizes the common case of
+  /// calling apply() many times.
+  Teuchos::RCP<MV> makeTempMultiVector (const MV& B);
+
+  //! W = alpha*D_inv*B and X = 0 + W.
   void
-  makeTempMultiVectors (Teuchos::RCP<MV>& V1,
-                        Teuchos::RCP<MV>& W,
-                        const MV& X);
+  firstIterationWithZeroStartingSolution
+  (MV& W,
+   const ScalarType& alpha,
+   const V& D_inv,
+   const MV& B,
+   MV& X);
 
   //! R = B - Op(A) * X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   static void

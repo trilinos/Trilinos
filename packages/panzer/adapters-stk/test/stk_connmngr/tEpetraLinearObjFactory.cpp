@@ -72,7 +72,7 @@ using Teuchos::rcpFromRef;
 
 namespace panzer_stk {
 
-Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
+Teuchos::RCP<panzer::ConnManager> buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
    pl.set<int>("X Elements",xelmts);
@@ -84,7 +84,7 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+   return Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 }
 
 template <typename Intrepid2Type>
@@ -120,8 +120,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    RCP<const panzer::FieldPattern> patternC1 
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
@@ -132,7 +132,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);
    Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph(0,0);
 
-   std::vector<int> owned,ownedAndGhosted;
+   std::vector<panzer::GlobalOrdinal> owned,ownedAndGhosted;
    dofManager->getOwnedIndices(owned);
    dofManager->getOwnedAndGhostedIndices(ownedAndGhosted);
   

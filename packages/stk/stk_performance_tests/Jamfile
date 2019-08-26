@@ -1,10 +1,11 @@
-#---------------------------------------------------------------
-#    Copyright 2006 - 2010 Sandia Corporation.
-#    Under the terms of Contract DE-AC04-94AL85000, there is a
-#    non-exclusive license for use of this work by or on behalf
-#    of the U.S. Government.  Export of this program may require
-#    a license from the United States Government.
-#---------------------------------------------------------------
+#--------------------------------------------------------------------
+#    Copyright 2002 - 2008, 2010, 2011 National Technology &         
+#    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   
+#    of Contract DE-NA0003525 with NTESS, there is a                 
+#    non-exclusive license for use of this work by or on behalf      
+#    of the U.S. Government.  Export of this program may require     
+#    a license from the United States Government.                    
+#--------------------------------------------------------------------
 
 #
 # The signature for Boost.build rules is described here:
@@ -41,6 +42,7 @@ project votd
     $(sierra-warnings)
     <include>$(stk_performance_tests-root)
     <define>STK_BUILT_IN_SIERRA
+    <define>STK_HIDE_DEPRECATED_CODE
   : usage-requirements
     <include>$(stk_performance_tests-root)
   : build-dir $(stk_performance_tests-builddir)

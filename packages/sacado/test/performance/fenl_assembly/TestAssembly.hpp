@@ -156,7 +156,7 @@ Perf fenl_assembly(
 
     elemcomp.apply();
 
-    Device::fence();
+    Device().fence();
     perf.fill_time = wall_clock.seconds();
 
     //--------------------------------

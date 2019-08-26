@@ -271,6 +271,47 @@ namespace {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, NumericFactorizationNullThrows, SCALAR, LO, GO )
+  {
+    typedef ScalarTraits<SCALAR> ST;
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    RCP<const Comm<int> > comm = getDefaultComm();
+    //const size_t numprocs = comm->getSize();
+    const size_t rank     = comm->getRank();
+    // create a Map
+    const size_t numLocal = 10;
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<MAT> eye = rcp( new MAT(map,1) );
+    GO base = numLocal*rank;
+    for( size_t i = 0; i < numLocal; ++i ){
+      eye->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<SCALAR>(ST::one()));
+    }
+
+    // now make the matrix singular to cause a throw
+    // add one to the two opposite corners
+    eye->insertGlobalValues(base+numLocal-1,tuple<GO>(base),tuple<SCALAR>(ST::one()));
+    eye->insertGlobalValues(base,tuple<GO>(base+numLocal-1),tuple<SCALAR>(ST::one()));
+
+    eye->fillComplete();
+
+    // Create X
+    RCP<MV> X = rcp(new MV(map,11));
+    X->randomize();
+
+    // Create B
+    RCP<MV> B = rcp(new MV(map,11));
+    B->randomize();
+
+    // Constructor from Factory
+    RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("KLU2",eye,X,B);
+
+    // now test that we get a runtime_error throw
+    TEST_THROW(solver->symbolicFactorization().numericFactorization(), std::runtime_error);
+  }
+
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, Solve, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
@@ -417,7 +458,7 @@ namespace {
           "KLU2 NonContigGID Test: The non-contiguous map claims to be contiguous.");
 
       //RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
-      RCP<MAT> A = rcp( new MAT(map,0) );
+      RCP<MAT> A = rcp( new MAT(map,3) );
       A->setObjectLabel("A");
 
       /*
@@ -758,6 +799,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, Initialization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SymbolicFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NumericFactorization, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NumericFactorizationNullThrows, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, Solve, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveTrans, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NonContgGID, SCALAR, LO, GO )

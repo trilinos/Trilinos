@@ -1,6 +1,7 @@
-# Copyright (c) 2013, Sandia Corporation.
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
+# Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+# Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+# DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+# in this software.
 # 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -14,10 +15,10 @@
 #       disclaimer in the documentation and/or other materials provided
 #       with the distribution.
 # 
-#     * Neither the name of Sandia Corporation nor the names of its
-#       contributors may be used to endorse or promote products derived
-#       from this software without specific prior written permission.
-# 
+#     * Neither the name of NTESS nor the names of its contributors
+#       may be used to endorse or promote products derived from this
+#       software without specific prior written permission.
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -50,8 +51,12 @@ SET(SOURCES "")
 
 FILE(GLOB MESH_CLONE_HEADERS mesh_clone/*.hpp)
 FILE(GLOB MESH_CLONE_SOURCES mesh_clone/*.cpp)
+FILE(GLOB MESH_TOOLS_HEADERS mesh_tools/*.hpp)
+FILE(GLOB MESH_TOOLS_SOURCES mesh_tools/*.cpp)
 FILE(GLOB BLOCK_EXTRACTOR_HEADERS block_extractor/*.hpp)
 FILE(GLOB BLOCK_EXTRACTOR_SOURCES block_extractor/*.cpp)
+FILE(GLOB TRANSFER_UTILS_HEADERS transfer_utils/*.hpp)
+FILE(GLOB TRANSFER_UTILS_SOURCES transfer_utils/*.cpp)
 LIST(REMOVE_ITEM BLOCK_EXTRACTOR_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp)
 
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
@@ -61,10 +66,17 @@ INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 #
 
 TRIBITS_ADD_LIBRARY(
-  stk_tools_lib
-  NOINSTALLHEADERS ${MESH_CLONE_HEADERS} ${BLOCK_EXTRACTOR_HEADERS}
+  stk_transfer_utils_lib
+  NOINSTALLHEADERS ${TRANSFER_UTILS_HEADERS}
   DEPLIBS
-  SOURCES ${MESH_CLONE_SOURCES} ${BLOCK_EXTRACTOR_SOURCES}
+  SOURCES ${TRANSFER_UTILS_SOURCES}
+  )
+
+TRIBITS_ADD_LIBRARY(
+  stk_tools_lib
+  NOINSTALLHEADERS ${MESH_CLONE_HEADERS} ${MESH_TOOLS_HEADERS} ${BLOCK_EXTRACTOR_HEADERS}
+  DEPLIBS
+  SOURCES ${MESH_CLONE_SOURCES} ${MESH_TOOLS_SOURCES} ${BLOCK_EXTRACTOR_SOURCES}
   )
 
 INSTALL(FILES ${MESH_CLONE_HEADERS} DESTINATION
@@ -73,15 +85,15 @@ INSTALL(FILES ${MESH_CLONE_HEADERS} DESTINATION
 INSTALL(FILES ${BLOCK_EXTRACTOR_HEADERS} DESTINATION
     ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_tools/block_extractor)
 
-#
-#Disabling due to undefined reference to `stk::parallel::require(bool, std::string const&, ompi_communicator_t*)'
-#
-#TRIBITS_ADD_EXECUTABLE(
-#  stk_block_extractor
-#  NOEXEPREFIX
-#  NOEXESUFFIX
-#  SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp
-#  COMM serial mpi
-#  )
-#
-#INSTALL(TARGETS stk_block_extractor COMPONENT ${PACKAGE_NAME} RUNTIME DESTINATION ${${PROJECT_NAME}_INSTALL_RUNTIME_DIR})
+INSTALL(FILES ${TRANSFER_UTILS_HEADERS} DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_tools/transfer_utils)
+
+TRIBITS_ADD_EXECUTABLE(
+  stk_block_extractor
+  NOEXEPREFIX
+  NOEXESUFFIX
+  SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp
+  COMM serial mpi
+  )
+
+INSTALL(TARGETS stk_block_extractor COMPONENT ${PACKAGE_NAME} RUNTIME DESTINATION ${${PROJECT_NAME}_INSTALL_RUNTIME_DIR})

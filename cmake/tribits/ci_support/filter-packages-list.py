@@ -97,4 +97,4 @@ inputPackagesList = options.inputPackagesList.split(",")
 keepTestTestCategoriesList = options.keepTestTestCategories.split(",")
 outputPackagesList = \
   trilinosDependencies.filterPackageNameList(inputPackagesList, keepTestTestCategoriesList)
-print ','.join(outputPackagesList)
+print(','.join(outputPackagesList))

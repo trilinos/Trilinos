@@ -1,0 +1,137 @@
+root:
+
+  ########################################################
+  # SOLVER CONFIGURATION
+  ########################################################
+
+  Linear Solver Type: Belos
+  Linear Solver Types:
+    Belos:
+      # Select which solver should be used
+      # Solver Type: Pseudo Block CG
+      Solver Type: Pseudo Block GMRES
+
+      # Parameters for the solvers
+      Solver Types:
+        Pseudo Block CG:
+          Convergence Tolerance: 1.0e-08
+          Maximum Iterations: 100
+          Output Frequency: 1
+          Output Style: 1
+          # Verbosity
+          # Errors = 0,
+          # Warnings = 0x1,
+          # IterationDetails = 0x2,
+          # OrthoDetails = 0x4,
+          # FinalSummary = 0x8,
+          # TimingDetails = 0x10 = 16,
+          # StatusTestDetails = 0x20 = 32,
+          # Debug = 0x40 = 64
+          Verbosity: 41
+        Pseudo Block GMRES:
+          Convergence Tolerance: 1.0e-08
+          Maximum Iterations: 100
+          Num Blocks: 40
+          Output Frequency: 1
+          Output Style: 1
+          # Verbosity
+          # Errors = 0,
+          # Warnings = 0x1,
+          # IterationDetails = 0x2,
+          # OrthoDetails = 0x4,
+          # FinalSummary = 0x8,
+          # TimingDetails = 0x10 = 16,
+          # StatusTestDetails = 0x20 = 32,
+          # Debug = 0x40 = 64
+          Verbosity: 41
+      VerboseObject:
+        Verbosity Level: low
+
+  ########################################################
+  # PRECONDITIONER CONFIGURATION
+  ########################################################
+
+  # Select which preconditioner should be used
+  Preconditioner Type: None
+  # Preconditioner Type: Ifpack2
+  # Preconditioner Type: MueLu
+
+  # Parameters for the preconditioners
+  Preconditioner Types:
+    Ifpack2:
+      Ifpack2 Settings:
+        'relaxation: sweeps': 1
+        'relaxation: type': Gauss-Seidel
+      Prec Type: relaxation
+    MueLu:
+
+      verbosity: medium
+
+      'coarse: max size': 1000
+      'coarse: type': Klu2
+
+      cycle type: V
+
+      multigrid algorithm: sa
+
+      'transpose: use implicit': true
+
+      max levels: 10
+      number of equations: 1
+      'sa: use filtered matrix': true
+
+      # AGGREGATION
+      'aggregation: type': uncoupled
+      'aggregation: drop scheme': classical
+      'aggregation: drop tol': 0.02
+
+      # 'aggregation: export visualization data': true
+      # 'aggregation: output file: agg style': Convex Hulls
+      # 'aggregation: output filename': 'aggs.proc=%PROCID.level=%LEVELID.vtk'
+
+
+      # SMOOTHING
+      'smoother: type': RELAXATION
+      'smoother: params':
+        'relaxation: type': Jacobi
+        'relaxation: damping factor': 0.8
+        'relaxation: sweeps': 1
+
+      # Use the following block instead for symmetric Gauss-Seidel smoothing
+      # 'smoother: type': RELAXATION
+      # 'smoother: params':
+      #   'relaxation: type': Symmetric Gauss-Seidel
+      #   'relaxation: sweeps': 1
+
+      # Use the following block instead for Gauss-Seidel smoothing
+      # 'smoother: pre type': RELAXATION
+      # 'smoother: post params':
+      #   'relaxation: type': Gauss-Seidel
+      #   'relaxation: sweeps': 1
+      #   'relaxtion: backward mode': false
+      # 'smoother: post type': RELAXATION
+      # 'smoother: post params':
+      #   'relaxation: type': Gauss-Seidel
+      #   'relaxation: sweeps': 1
+      #   'relaxtion: backward mode': true
+
+      # Use the following block instead for Chebyshev smoothing
+      # 'smoother: type': CHEBYSHEV
+      # 'smoother: params':
+      #   'chebyshev: degree': 2
+      #   'chebyshev: ratio eigenvalue': 7.0
+      #   'chebyshev: min eigenvalue': 1.0
+
+      # REPARTITIONING
+      # 'repartition: enable': true
+      # 'repartition: max imbalance': 1.1
+      # 'repartition: min rows per proc': 800
+      # 'repartition: partitioner': zoltan2
+      # 'repartition: rebalance P and R': false
+      # 'repartition: remap parts': false
+      # 'repartition: start level': 2
+      # 'repartition: params':
+      #   algorithm: multijagged
+
+      # for runs on with OpenMP or Cuda backend, enable
+      use kokkos refactor: false

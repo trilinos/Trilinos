@@ -105,7 +105,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
     Input(fineLevel, "A");
     Input(fineLevel, "Nullspace");
     Input(fineLevel, "Coordinates");
@@ -329,7 +329,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  MeshLayoutInterface(const int interpolationOrder, const LO blkSize, RCP<const Map> fineCoordsMap,
+  MeshLayoutInterface(const int /* interpolationOrder */, const LO /* blkSize */, RCP<const Map> fineCoordsMap,
                       RCP<GeometricData> myGeo, RCP<NodesIDs> ghostedCoarseNodes,
                       Array<Array<GO> >& lCoarseNodesGIDs) const{
     // The goal here is to produce maps that globally labels the mesh lexicographically.
@@ -564,7 +564,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetCoarsePoints(const int interpolationOrder, const LO blkSize, RCP<const Map> fineCoordsMap,
+  GetCoarsePoints(const int /* interpolationOrder */, const LO /* blkSize */, RCP<const Map> fineCoordsMap,
                   RCP<GeometricData> myGeo, RCP<NodesIDs> ghostedCoarseNodes,
                   Array<Array<GO> >& lCoarseNodesGIDs) const{
     // Assuming perfect global lexicographic ordering of the mesh, produce two arrays:
@@ -1795,7 +1795,7 @@ namespace MueLu {
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
-                const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const
+                const typename Teuchos::Array<LocalOrdinal>::iterator& /* last2 */) const
   {
     typedef typename std::iterator_traits<typename Teuchos::Array<LocalOrdinal>::iterator>::difference_type DT;
     DT n = last1 - first1;
@@ -1822,7 +1822,7 @@ namespace MueLu {
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
-                const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const
+                const typename Teuchos::Array<LocalOrdinal>::iterator& /* last2 */) const
   {
     typedef typename std::iterator_traits<typename Teuchos::Array<LocalOrdinal>::iterator>::difference_type DT;
     DT n = last1 - first1;
@@ -1849,7 +1849,7 @@ namespace MueLu {
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GetGIDLocalLexicographic(const GO i, const GO j, const GO k,
                            const Array<LO> coarseNodeFineIndices, const RCP<GeometricData> myGeo,
-                           const LO myRankIndex, const LO pi, const LO pj, const LO pk,
+                           const LO myRankIndex, const LO pi, const LO pj, const LO /* pk */,
                            const typename std::vector<std::vector<GO> >::iterator blockStart,
                            const typename std::vector<std::vector<GO> >::iterator blockEnd,
                            GO& myGID, LO& myPID, LO& myLID) const {

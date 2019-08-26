@@ -1,15 +1,19 @@
 TRIBITS_SUBPACKAGE(Unit_test_utils)
 
+INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_util)
+INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util)
+
+IF(Trilinos_ENABLE_STKIO)
 ADD_SUBDIRECTORY(comparison)
 
-INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR})
-
 FILE(GLOB HEADERS *.hpp)
-#disabling due to creation of circular dependency on stk_unit_tests mesh_fixture
-LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/unittestMeshUtils.hpp")
 FILE(GLOB SOURCES *.cpp)
-#disabling due to creation of circular dependency on stk_unit_tests mesh_fixture
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/unittestMeshUtils.cpp")
+ELSE()
+FILE(GLOB HEADERS ParallelGtest*.hpp)
+FILE(GLOB SOURCES ParallelGtest*.cpp)
+
+ENDIF()
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/)
@@ -18,8 +22,6 @@ TRIBITS_ADD_LIBRARY(
   stk_unit_test_utils
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  #NO_INSTALL_LIB_OR_HEADERS
-  #TESTONLY
   )
 
 IF (NOT DEFINED STK_ENABLE_UnitMain)
@@ -32,6 +34,7 @@ IF (STK_ENABLE_UnitMain)
   TRIBITS_ADD_LIBRARY(
     stk_unit_main
     DEPLIBS
+    TESTONLY
     SOURCES ${UNIT_MAIN_SOURCES}
   )
 ENDIF()

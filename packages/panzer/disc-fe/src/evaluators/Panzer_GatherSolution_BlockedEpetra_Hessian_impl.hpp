@@ -59,7 +59,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 // Phalanx
 #include "Phalanx_DataLayout.hpp"
@@ -80,7 +80,7 @@
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_BlockedEpetra<panzer::Traits::Hessian, TRAITS, LO, GO>::
 GatherSolution_BlockedEpetra(
-  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+  const std::vector<Teuchos::RCP<const GlobalIndexer<LO, int>>>&
     indexers,
   const Teuchos::ParameterList& p)
   :
@@ -88,7 +88,7 @@ GatherSolution_BlockedEpetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::string;
   using std::vector;
@@ -122,7 +122,7 @@ GatherSolution_BlockedEpetra(
     firstName = names[0];
   if (not firstSensitivitiesAvailable_)
     n += ", No First Sensitivities";
-  n += "):  " + firstName + " (" + typeAsString<EvalT>() + ")";
+  n += "):  " + firstName + " (" + print<EvalT>() + ")";
   this->setName(n);
 } // end of Initializing Constructor (Hessian Specialization)
 

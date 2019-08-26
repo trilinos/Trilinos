@@ -106,10 +106,8 @@ C
       CHARACTER*72 SCHEME, DEFSCH, TITLE, DEV1*3, CIN(MCOM)
       CHARACTER*2048 FNAME
       CHARACTER*80 NUMBER, HOLD, VERSN*10
-      CHARACTER*8 NAMEHI(MAXNAM), NAMEGL(MAXNAM)
-      CHARACTER*8 NAMENV(MAXNAM), NAMEEV(MAXNAM)
 C
-      LOGICAL OPTIM, STEP, ERR, END, ALPHA, THREE, EIGHT, NINE
+      LOGICAL OPTIM, STEP, ERR, ALPHA, THREE, EIGHT, NINE
       LOGICAL AXIS, AREACG, LABE, LABO, LABN, LABNB, LABSB, LABM, LABW
       LOGICAL ADDLNK, BATCH, VAXVMS, WROTE, HARDPL, LGROUP
       LOGICAL REMESH, LONG
@@ -1040,24 +1038,6 @@ C
          CALL HELP_FQ (12)
       END IF
       GOTO 100
-  280 CONTINUE
-      CALL MESAGE (' ')
-      CALL MESAGE ('**********************************************')
-      CALL MESAGE ('* END OF FILE ENCOUNTERED WHILE READING DATA *')
-      CALL MESAGE ('*           NO DATA HAS BEEN INPUT           *')
-      CALL MESAGE ('**********************************************')
-      KKK = 0
-      GOTO 100
-C
-  290 CONTINUE
-      CALL MESAGE (' ')
-      CALL MESAGE ('**********************************************')
-      CALL MESAGE ('*   ERROR ENCOUNTERED WHILE READING DATA     *')
-      CALL MESAGE ('*           NO DATA HAS BEEN INPUT           *')
-      CALL MESAGE ('**********************************************')
-      KKK = 0
-      GOTO 100
-C
 C
 10000 FORMAT (' REGION NO:', I5, ' IS NOT IN THE DATABASE', /,
      &   ' THUS NO SIZE CAN BE ENTERED')

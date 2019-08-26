@@ -133,8 +133,8 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getCubature( pointViewType  cubPoints,
-                 weightViewType cubWeights ) const {
+    getCubature( pointViewType  /* cubPoints */,
+                 weightViewType /* cubWeights */ ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Cubature::getCubature): this method should be over-riden by derived classes.");
     }
@@ -148,9 +148,9 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getCubature( pointViewType  cubPoints,
-                 weightViewType cubWeights,
-                 pointViewType  cellVertices) const {
+    getCubature( pointViewType  /* cubPoints */,
+                 weightViewType /* cubWeights */,
+                 pointViewType  /* cellVertices */) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Cubature::getCubature): this method should be over-riden by derived classes.");
     }

@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,8 +35,7 @@
 #include <iostream>
 #include <assert.h>
 
-#include <boost/program_options.hpp>
-#include <boost/program_options/cmdline.hpp>
+#include <stk_util/command_line/CommandLineParser.hpp>
 
 #include <Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
@@ -875,56 +875,41 @@ namespace stk_example_io {
   }
 }
 
-// ========================================================================
-#include <boost/program_options.hpp>
+int main(int argc, const char** argv)
+{
+  stk::parallel_machine_init(&argc, const_cast<char***>(&argv));
 
-  namespace bopt = boost::program_options;
-  int main(int argc, char** argv)
-  {
-    stk::parallel_machine_init(&argc, &argv);
+  stk::CommandLineParser cmdLine;
+  cmdLine.add_required<std::string>({"mesh", "m", "mesh file"});
+  cmdLine.add_optional<std::string>({"decomposition", "D", "decomposition method"}, "not provided");
+  cmdLine.add_optional<std::string>({"directory", "d", "working directory"}, "not provided");
+  cmdLine.add_optional<std::string>({"output-log", "o", "output log path"}, "not provided");
+  cmdLine.add_optional<std::string>({"runtest", "r", "runtest pid file"}, "not provided");
 
-    bopt::options_description desc("options");
+  stk::CommandLineParser::ParseState parseState = cmdLine.parse(argc, argv);
 
-    desc.add_options()
-      ("help,h",        "produce help message")
-      ("mesh",         bopt::value<std::string>(), "mesh file" )
-      ("decomposition,D", bopt::value<std::string>(), "decomposition method" )
-      ("directory,d",  bopt::value<std::string>(), "working directory" )
-      ("output-log,o", bopt::value<std::string>(), "output log path" )
-      ("runtest,r",    bopt::value<std::string>(), "runtest pid file" );
-
-    bopt::variables_map vm;
-    try {
-      bopt::store(bopt::parse_command_line(argc, argv, desc), vm);
-      bopt::notify(vm);
+  if (stk::CommandLineParser::ParseComplete == parseState) {
+    std::string in_filename = cmdLine.get_option_value<std::string>("mesh");
+    std::string out_filename = in_filename + ".out";
+    std::string decomp_method;
+    if (cmdLine.is_option_provided("decomposition")) {
+      decomp_method = cmdLine.get_option_value<std::string>("decomposition");
     }
-    catch (std::exception & /* x */) {
-      std::exit(1);
-    }
-
-    if (vm.count("help")) {
-      std::cout << desc << "\n";
-      std::exit(EXIT_SUCCESS);
-    }
-
-    //----------------------------------
-
-    if ( vm.count("mesh") ) {
-      std::string in_filename = boost::any_cast<std::string>(vm["mesh"].value());
-      std::string out_filename = in_filename + ".out";
-      std::string decomp_method;
-      if (vm.count("decomposition")) {
-	decomp_method = boost::any_cast<std::string>(vm["decomposition"].value());
-      }
-      stk_example_io::io_example(in_filename, out_filename, decomp_method );
-    } else {
-      std::cout << "OPTION ERROR: The '--mesh <filename>' option is required!\n";
-      std::exit(EXIT_FAILURE);
-    }
-    stk::parallel_machine_finalize();
-
-    return 0;
+  
+    stk_example_io::io_example(in_filename, out_filename, decomp_method );
   }
+  else if (stk::CommandLineParser::ParseHelpOnly == parseState ||
+           stk::CommandLineParser::ParseError == parseState) {
+    std::cout << cmdLine.get_usage() << "\n";
+  }
+  else if (stk::CommandLineParser::ParseVersionOnly == parseState) {
+    std::cout << "This program doesn't have a version number." << "\n";
+  }
+
+  stk::parallel_machine_finalize();
+
+  return 0;
+}
 
 /**
  * \}

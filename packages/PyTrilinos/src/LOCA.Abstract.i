@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Abstract is the python interface to namespace Abstract
 of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Abstract is to provide abstract continuation
 problem base classes.  The python version of LOCA.Abstract supports
@@ -62,10 +62,27 @@ the following classes:
 "
 %enddef
 
+%define %loca_abstract_importcode
+"
+from . import _Abstract
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import MultiContinuation
+from PyTrilinos.LOCA import Homotopy
+from PyTrilinos.LOCA import TimeDependent
+from PyTrilinos.LOCA import TurningPoint
+from PyTrilinos.LOCA import Pitchfork
+from PyTrilinos.LOCA import Hopf
+from PyTrilinos.LOCA import PhaseTransition
+"
+%enddef
+
 %module(package      = "PyTrilinos.LOCA",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %loca_abstract_importcode,
 	docstring    = %loca_abstract_docstring) Abstract
 
 %{

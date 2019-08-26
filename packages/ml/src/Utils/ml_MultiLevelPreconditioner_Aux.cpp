@@ -457,12 +457,16 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
     }
 
     // check that the diagonal block exists
+#ifndef NDEBUG
     bool ok = false;
+#endif
     int DiagonalBlock = 0;
     for (int j = 0 ; j < NumBlockEntries ; ++j) {
       if (BlockIndices[j] == LocalRow) {
         DiagonalBlock = j;
+#ifndef NDEBUG
         ok = true;
+#endif
         break;
       }
     }

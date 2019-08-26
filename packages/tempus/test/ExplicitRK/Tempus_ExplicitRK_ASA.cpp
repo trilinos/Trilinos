@@ -98,8 +98,16 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
       if (RKMethods[m] == "General ERK") {
         pl->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper 2");
+        pl->sublist("Demo Stepper 2").set("Initial Condition Consistency",
+                                          "None");
+        pl->sublist("Demo Stepper 2").set("Initial Condition Consistency Check",
+                                          false);
       } else {
         pl->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
+        pl->sublist("Demo Stepper").set("Initial Condition Consistency",
+                                        "None");
+        pl->sublist("Demo Stepper").set("Initial Condition Consistency Check",
+                                        false);
       }
 
 
@@ -133,7 +141,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
       for (int i=0; i<num_param; ++i)
         Thyra::assign(DxDp0->col(i).ptr(),
                       *(model->getExactSensSolution(i, t0).get_x()));
-      integrator->setInitialState(t0, x0, Teuchos::null, Teuchos::null,
+      integrator->initializeSolutionHistory(t0, x0, Teuchos::null, Teuchos::null,
                                   DxDp0, Teuchos::null, Teuchos::null);
 
       // Integrate to timeMax

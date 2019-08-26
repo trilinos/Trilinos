@@ -124,17 +124,17 @@ void LSCSIMPLECStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState
 }
 
 // functions inherited from LSCStrategy
-LinearOp LSCSIMPLECStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp LSCSIMPLECStrategy::getInvBQBt(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    return state.getInverse("invBQBtmC");
 }
 
-LinearOp LSCSIMPLECStrategy::getInvBHBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp LSCSIMPLECStrategy::getInvBHBt(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    return state.getInverse("invBQBtmC").getConst();
 }
 
-LinearOp LSCSIMPLECStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp LSCSIMPLECStrategy::getInvF(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    return state.getInverse("invF");
 }
@@ -150,7 +150,7 @@ LinearOp LSCSIMPLECStrategy::getInnerStabilization(const BlockedLinearOp & A,Blo
 }
 
 
-LinearOp LSCSIMPLECStrategy::getInvMass(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp LSCSIMPLECStrategy::getInvMass(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);

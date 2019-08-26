@@ -470,6 +470,16 @@ void cdrwfs();
 void cdrcfs();
 void cdroab();
 
+static char *copy_string(char *dest, char const *source, long int elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
+}
+
 /*-------------------------------------------------------------*/
 /* >> GLOBAL VARIABLE DECLARATIONS                             */
 /*-------------------------------------------------------------*/
@@ -496,9 +506,7 @@ int   varray[MAX_ARRAY];
 /* >> CGI/SVDI DEVICE DRIVER ROUTINES                          */
 /*-------------------------------------------------------------*/
 
-void      cgixxx(params, num_surfaces, surf_list) anything *params[];
-int       num_surfaces;
-anything *surf_list[];
+void cgixxx(anything *params[], int num_surfaces, anything *surf_list[])
 {
   /* Main entry point */
   switch (*(short *)params[0]) {
@@ -596,7 +604,7 @@ static void xactivate(anything **surf_list)
   surf_states[new_state].cgi_inited = CNO;
   surf_states[new_state].this_index = new_state; /* save for dealloc */
   /* -- for batch devices */
-  strcpy(surf_states[new_state].filename, DEFAULT_OUTFILE_NAME);
+  copy_string(surf_states[new_state].filename, DEFAULT_OUTFILE_NAME, 100);
   surf_states[new_state].file_d = -1;
 
   /* set surface state_list pointer to point to this state list */
@@ -787,10 +795,10 @@ static void xcvdcx(anything **params, int num_surfaces, anything **surf_list)
 
     /* store the values in the state list */
     /* default integer precision is 16 - check range */
-    if (*(float *)params[1] > 32767. || *(float *)params[2] > 32767. ||
-        *(float *)params[3] > 32767. || *(float *)params[4] > 32767. ||
-        *(float *)params[1] < -32767. || *(float *)params[2] < -32767. ||
-        *(float *)params[3] < -32767. || *(float *)params[4] < -32767.) {
+    if (*(float *)params[1] > 32767.0f || *(float *)params[2] > 32767.0f ||
+        *(float *)params[3] > 32767.0f || *(float *)params[4] > 32767.0f ||
+        *(float *)params[1] < -32767.0f || *(float *)params[2] < -32767.0f ||
+        *(float *)params[3] < -32767.0f || *(float *)params[4] < -32767.0f) {
       /* error 1:-103 VDC Extent out of range.  Function ignored */
       report_error(cur_state, 1, -103, *(short *)params[0]);
       return;
@@ -1058,7 +1066,7 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
       /* this function must be called before CI */
       /* ...error message if not?? check for legal file name?? */
       if (cur_state->cgi_inited != CYES) {
-        strcpy(cur_state->filename, data);
+        copy_string(cur_state->filename, data, 100);
       }
 
       break;
@@ -1172,8 +1180,7 @@ static void xcqid(anything **params, anything **surf_list)
     vdiqdc(&qdc_index, &value);
     cgi_devid = get_devid_char(value);
     if (cgi_devid != NULL) {
-      strncpy(dev_descrip.dev_id, cgi_devid, 3);
-      dev_descrip.dev_id[3] = '\0';
+      copy_string(dev_descrip.dev_id, cgi_devid, 4);
     }
 
   } /* end if not set */
@@ -1186,7 +1193,7 @@ static void xcqid(anything **params, anything **surf_list)
 
   /* return device id */
   maxchr = (*(int *)params[1] > 3) ? 3 : *(int *)params[1];
-  strncpy((char *)params[4], dev_descrip.dev_id, maxchr);
+  copy_string((char *)params[4], dev_descrip.dev_id, maxchr);
   *((char *)params[4] + maxchr) = '\0';
 
 } /* end xcqid */
@@ -1211,10 +1218,10 @@ static void xcqd(anything **params, anything **surf_list)
     /* display type */
     qdc_index = 2;
     vdiqdc(&qdc_index, &value);
-    if (value == 0.) {
+    if (value == 0.0f) {
       dev_descrip.display_type = CVECT;
     }
-    else if (value == 1.) {
+    else if (value == 1.0f) {
       dev_descrip.display_type = CRAST;
     }
     else {
@@ -1224,7 +1231,7 @@ static void xcqd(anything **params, anything **surf_list)
     /* background color capability */
     qdc_index = 32;
     vdiqdc(&qdc_index, &value);
-    dev_descrip.bcolor_cap = (value == 1.0) ? CYES : CNO;
+    dev_descrip.bcolor_cap = (value == 1.0f) ? CYES : CNO;
 
     /* dynamic modification for background color */
     dev_descrip.dynamic_mod_bg = CIRG;
@@ -1309,10 +1316,10 @@ static void xclf(anything **params, anything **surf_list)
     case CPM_FN: ((int *)params[5])[i] = CSYES; break;
     case CTX_FN: ((int *)params[5])[i] = CSYES; break;
     case CPG_FN:
-      if (poly_support == -1.) {
+      if (poly_support == -1.0f) {
         vdiqdc(&qdc_index, &poly_support);
       }
-      if (poly_support < 3.) {
+      if (poly_support < 3.0f) {
         ((int *)params[5])[i] = CSNO;
       }
       else {
@@ -2151,13 +2158,13 @@ static void xcpg(anything **params, int num_surfaces, anything **surf_list)
   static float vdi_polymax  = -1.; /* store SVDI polygon max value */
 
   /* find out SVDI support for polygons. */
-  if (poly_support == -1.) {
+  if (poly_support == -1.0f) {
     qdc_index = 24;
     vdiqdc(&qdc_index, &poly_support);
   }
 
   /* get and store max polygon points from SVDI */
-  if (vdi_polymax == -1.) {
+  if (vdi_polymax == -1.0f) {
     qdc_index = 25;
     vdiqdc(&qdc_index, &vdi_polymax);
   }
@@ -2209,7 +2216,7 @@ static void xcpg(anything **params, int num_surfaces, anything **surf_list)
       /* if hollow or if no polygon support, draw the border lines.
          if solid, call vdpoly */
       if ((cur_state->interior_style == CHOLLO) || /* hallow OR   */
-          (poly_support < 3.)) {                   /*no poly supp */
+          (poly_support < 3.0f)) {                 /*no poly supp */
 
         vdiqos(&temp_array[1]); /* make sure line style is solid */
         if (temp_array[4] != 0) {
@@ -2529,9 +2536,9 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
-              rarray[count] = (float)cells[index++] / 255.;
-              garray[count] = (float)cells[index++] / 255.;
-              barray[count] = (float)cells[index++] / 255.;
+              rarray[count] = (float)cells[index++] / 255.0f;
+              garray[count] = (float)cells[index++] / 255.0f;
+              barray[count] = (float)cells[index++] / 255.0f;
               count++;
             } /* end for j */
 
@@ -2564,9 +2571,9 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
-              rarray[count] = (float)cells[index] / 255.;
-              garray[count] = (float)cells[index + 1] / 255.;
-              barray[count] = (float)cells[index + 2] / 255.;
+              rarray[count] = (float)cells[index] / 255.0f;
+              garray[count] = (float)cells[index + 1] / 255.0f;
+              barray[count] = (float)cells[index + 2] / 255.0f;
               index         = index - 3;
               count++;
             } /* end for j */
@@ -2633,7 +2640,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
   pxclrs   = (int *)params[9];
 
   /* find (and save) the number of pixels in full NDC space */
-  if (x_pixels == -1. && y_pixels == -1.) {
+  if (x_pixels == -1.0f && y_pixels == -1.0f) {
     vdstrv(&zero, &dev_descrip.xndc_max, &zero, &dev_descrip.yndc_max);
     qrs_index = 2;
     vdiqrs(&qrs_index, temp_array);
@@ -2908,9 +2915,9 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
-              rarray[count] = (float)pxclrs[index++] / 255.;
-              garray[count] = (float)pxclrs[index++] / 255.;
-              barray[count] = (float)pxclrs[index++] / 255.;
+              rarray[count] = (float)pxclrs[index++] / 255.0f;
+              garray[count] = (float)pxclrs[index++] / 255.0f;
+              barray[count] = (float)pxclrs[index++] / 255.0f;
               count++;
             } /* end for j */
 
@@ -2943,9 +2950,9 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
-              rarray[count] = (float)pxclrs[index] / 255.;
-              garray[count] = (float)pxclrs[index + 1] / 255.;
-              barray[count] = (float)pxclrs[index + 2] / 255.;
+              rarray[count] = (float)pxclrs[index] / 255.0f;
+              garray[count] = (float)pxclrs[index + 1] / 255.0f;
+              barray[count] = (float)pxclrs[index + 2] / 255.0f;
               index         = index - 3;
               count++;
             } /* end for j */
@@ -3406,9 +3413,9 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
     if (first) {
       k = 0;
       for (j = starti; j < starti + num_cols; j++) {
-        color_array[j][0] = (float)((int *)params[3])[k++] / 255.;
-        color_array[j][1] = (float)((int *)params[3])[k++] / 255.;
-        color_array[j][2] = (float)((int *)params[3])[k++] / 255.;
+        color_array[j][0] = (float)((int *)params[3])[k++] / 255.0f;
+        color_array[j][1] = (float)((int *)params[3])[k++] / 255.0f;
+        color_array[j][2] = (float)((int *)params[3])[k++] / 255.0f;
       }
       first = FALSE;
     }
@@ -4526,13 +4533,13 @@ static void init_state(surf_statelist *surf_state)
 
     /* set the current surface color table */
     vdiqco(&one, &dev_descrip.index_array[surf_state->bg_index], tmp_array, &dev_descrip.col_mode);
-    surf_state->color_table[0].r = (int)(tmp_array[0][0] * 255.);
-    surf_state->color_table[0].g = (int)(tmp_array[0][1] * 255.);
-    surf_state->color_table[0].b = (int)(tmp_array[0][2] * 255.);
+    surf_state->color_table[0].r = (int)(tmp_array[0][0] * 255.0f);
+    surf_state->color_table[0].g = (int)(tmp_array[0][1] * 255.0f);
+    surf_state->color_table[0].b = (int)(tmp_array[0][2] * 255.0f);
     vdiqco(&one, &dev_descrip.index_array[surf_state->fg_index], tmp_array, &dev_descrip.col_mode);
-    surf_state->color_table[1].r = (int)(tmp_array[0][0] * 255.);
-    surf_state->color_table[1].g = (int)(tmp_array[0][1] * 255.);
-    surf_state->color_table[1].b = (int)(tmp_array[0][2] * 255.);
+    surf_state->color_table[1].r = (int)(tmp_array[0][0] * 255.0f);
+    surf_state->color_table[1].g = (int)(tmp_array[0][1] * 255.0f);
+    surf_state->color_table[1].b = (int)(tmp_array[0][2] * 255.0f);
   } /* end if vector SVDI */
 
   else { /* raster SVDI */
@@ -4543,12 +4550,12 @@ static void init_state(surf_statelist *surf_state)
            &surf_state->fg_index);
 
     /* set the current surface color table */
-    surf_state->color_table[0].r = (int)(dev_descrip.att_array[8] * 255.);
-    surf_state->color_table[0].g = (int)(dev_descrip.att_array[9] * 255.);
-    surf_state->color_table[0].b = (int)(dev_descrip.att_array[10] * 255.);
-    surf_state->color_table[1].r = (int)(dev_descrip.att_array[11] * 255.);
-    surf_state->color_table[1].g = (int)(dev_descrip.att_array[12] * 255.);
-    surf_state->color_table[1].b = (int)(dev_descrip.att_array[13] * 255.);
+    surf_state->color_table[0].r = (int)(dev_descrip.att_array[8] * 255.0f);
+    surf_state->color_table[0].g = (int)(dev_descrip.att_array[9] * 255.0f);
+    surf_state->color_table[0].b = (int)(dev_descrip.att_array[10] * 255.0f);
+    surf_state->color_table[1].r = (int)(dev_descrip.att_array[11] * 255.0f);
+    surf_state->color_table[1].g = (int)(dev_descrip.att_array[12] * 255.0f);
+    surf_state->color_table[1].b = (int)(dev_descrip.att_array[13] * 255.0f);
   } /* end else raster SVDI */
 
   /* set/reset the SVDI attribute array */
@@ -4742,7 +4749,7 @@ static void set_mapping(surf_statelist *surf_state)
 
 /* set_clipping */
 /* Set up the clip region. */
-static void set_clipping(surf_statelist *cur_state)
+static void set_clipping(surf_statelist *my_cur_state)
 {
   point clip1, clip2; /* temp clip values */
   clip1.x = clip1.y = clip2.x = clip2.y = 0;
@@ -4750,32 +4757,32 @@ static void set_clipping(surf_statelist *cur_state)
   /* The clip region depends on clip indicator and drawing surface
    * clip indicator.
    */
-  switch (cur_state->clip_indicator) {
+  switch (my_cur_state->clip_indicator) {
   case CON:
 
     /* VDC clipping is on */
-    switch (cur_state->ds_clip_indicator) {
+    switch (my_cur_state->ds_clip_indicator) {
 
     case CDCOFF: /* view surface clipping off */
 
       /* map the effective clip rectangle to NDC */
-      cur_state->clip_on = TRUE;
-      clip1.x            = cur_state->eff_clip_rect1.x * cur_state->xscale + cur_state->xoffset;
-      clip1.y            = cur_state->eff_clip_rect1.y * cur_state->yscale + cur_state->yoffset;
-      clip2.x            = cur_state->eff_clip_rect2.x * cur_state->xscale + cur_state->xoffset;
-      clip2.y            = cur_state->eff_clip_rect2.y * cur_state->yscale + cur_state->yoffset;
+      my_cur_state->clip_on = TRUE;
+      clip1.x = my_cur_state->eff_clip_rect1.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip1.y = my_cur_state->eff_clip_rect1.y * my_cur_state->yscale + my_cur_state->yoffset;
+      clip2.x = my_cur_state->eff_clip_rect2.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip2.y = my_cur_state->eff_clip_rect2.y * my_cur_state->yscale + my_cur_state->yoffset;
 
       break; /* end case CDCOFF */
 
     case CVPORT: /* clip at viewport */
 
       /* map the effective clip rectangle to NDC */
-      cur_state->clip_on = TRUE;
+      my_cur_state->clip_on = TRUE;
 
-      clip1.x = cur_state->eff_clip_rect1.x * cur_state->xscale + cur_state->xoffset;
-      clip1.y = cur_state->eff_clip_rect1.y * cur_state->yscale + cur_state->yoffset;
-      clip2.x = cur_state->eff_clip_rect2.x * cur_state->xscale + cur_state->xoffset;
-      clip2.y = cur_state->eff_clip_rect2.y * cur_state->yscale + cur_state->yoffset;
+      clip1.x = my_cur_state->eff_clip_rect1.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip1.y = my_cur_state->eff_clip_rect1.y * my_cur_state->yscale + my_cur_state->yoffset;
+      clip2.x = my_cur_state->eff_clip_rect2.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip2.y = my_cur_state->eff_clip_rect2.y * my_cur_state->yscale + my_cur_state->yoffset;
 
       break; /* end case CVPORT */
 
@@ -4783,12 +4790,12 @@ static void set_clipping(surf_statelist *cur_state)
 
       /* map the effective clip rectangle to NDC and intersect it
          with the max NDC space */
-      cur_state->clip_on = TRUE;
+      my_cur_state->clip_on = TRUE;
 
-      clip1.x = cur_state->eff_clip_rect1.x * cur_state->xscale + cur_state->xoffset;
-      clip1.y = cur_state->eff_clip_rect1.y * cur_state->yscale + cur_state->yoffset;
-      clip2.x = cur_state->eff_clip_rect2.x * cur_state->xscale + cur_state->xoffset;
-      clip2.y = cur_state->eff_clip_rect2.y * cur_state->yscale + cur_state->yoffset;
+      clip1.x = my_cur_state->eff_clip_rect1.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip1.y = my_cur_state->eff_clip_rect1.y * my_cur_state->yscale + my_cur_state->yoffset;
+      clip2.x = my_cur_state->eff_clip_rect2.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip2.y = my_cur_state->eff_clip_rect2.y * my_cur_state->yscale + my_cur_state->yoffset;
 
       clip1.x = max(min(clip1.x, clip2.x), 0.0);
       clip1.y = max(min(clip1.y, clip2.y), 0.0);
@@ -4808,32 +4815,32 @@ static void set_clipping(surf_statelist *cur_state)
   case COFF:
 
     /* VDC clipping is off */
-    switch (cur_state->ds_clip_indicator) {
+    switch (my_cur_state->ds_clip_indicator) {
 
     case CDCOFF: /* display surface clipping off */
 
       /* no clip */
-      cur_state->clip_on = FALSE;
+      my_cur_state->clip_on = FALSE;
       break; /* end case CDCOFF */
 
     case CVPORT: /* clip at viewport */
 
       /* clip at NDC effective viewport  */
-      cur_state->clip_on = TRUE;
-      clip1.x            = cur_state->eff_vp1.x * dev_descrip.xndc_max;
-      clip1.y            = cur_state->eff_vp1.y * dev_descrip.yndc_max;
-      clip2.x            = cur_state->eff_vp2.x * dev_descrip.xndc_max;
-      clip2.y            = cur_state->eff_vp2.y * dev_descrip.yndc_max;
+      my_cur_state->clip_on = TRUE;
+      clip1.x               = my_cur_state->eff_vp1.x * dev_descrip.xndc_max;
+      clip1.y               = my_cur_state->eff_vp1.y * dev_descrip.yndc_max;
+      clip2.x               = my_cur_state->eff_vp2.x * dev_descrip.xndc_max;
+      clip2.y               = my_cur_state->eff_vp2.y * dev_descrip.yndc_max;
       break; /* end case CVPORT */
 
     case CDCREC: /* clip at display surface */
 
       /* clip at max NDC space */
-      cur_state->clip_on = TRUE;
-      clip1.x            = 0.0;
-      clip1.y            = 0.0;
-      clip2.x            = dev_descrip.xndc_max;
-      clip2.y            = dev_descrip.yndc_max;
+      my_cur_state->clip_on = TRUE;
+      clip1.x               = 0.0;
+      clip1.y               = 0.0;
+      clip2.x               = dev_descrip.xndc_max;
+      clip2.y               = dev_descrip.yndc_max;
       break; /* end case CDCREC */
 
     default:
@@ -4854,11 +4861,11 @@ static void set_clipping(surf_statelist *cur_state)
    * the clipping window, and clipmax is the maximum. This is done
    * so that the clipping algorithms work correctly with mirroring.
    */
-  if (cur_state->clip_on) {
-    cur_state->clipmin.x = min(clip1.x, clip2.x);
-    cur_state->clipmax.x = max(clip1.x, clip2.x);
-    cur_state->clipmin.y = min(clip1.y, clip2.y);
-    cur_state->clipmax.y = max(clip1.y, clip2.y);
+  if (my_cur_state->clip_on) {
+    my_cur_state->clipmin.x = min(clip1.x, clip2.x);
+    my_cur_state->clipmax.x = max(clip1.x, clip2.x);
+    my_cur_state->clipmin.y = min(clip1.y, clip2.y);
+    my_cur_state->clipmax.y = max(clip1.y, clip2.y);
   }
 } /* end set_clipping */
 
@@ -4918,14 +4925,14 @@ static void set_foreground_color(surf_statelist *surf_state, int *colors)
 
       /* does foreground need to be updated? */
       /* -- i need to check this out - might need to store as int */
-      if (colors[0] != (int)(cur_state->vdi_attrib.fg_rgb[0] * 255.) ||
-          colors[1] != (int)(cur_state->vdi_attrib.fg_rgb[1] * 255.) ||
-          colors[2] != (int)(cur_state->vdi_attrib.fg_rgb[2] * 255.)) {
+      if (colors[0] != (int)(cur_state->vdi_attrib.fg_rgb[0] * 255.0f) ||
+          colors[1] != (int)(cur_state->vdi_attrib.fg_rgb[1] * 255.0f) ||
+          colors[2] != (int)(cur_state->vdi_attrib.fg_rgb[2] * 255.0f)) {
 
     /* update att_array */
-    cur_state->vdi_attrib.fg_rgb[0] = (float)colors[0] / 255.;
-    cur_state->vdi_attrib.fg_rgb[1] = (float)colors[1] / 255.;
-    cur_state->vdi_attrib.fg_rgb[2] = (float)colors[2] / 255.;
+    cur_state->vdi_attrib.fg_rgb[0] = (float)colors[0] / 255.0f;
+    cur_state->vdi_attrib.fg_rgb[1] = (float)colors[1] / 255.0f;
+    cur_state->vdi_attrib.fg_rgb[2] = (float)colors[2] / 255.0f;
 
     /* set new foreground color */
     vdfrgb(&cur_state->vdi_attrib.fg_rgb[0], &cur_state->vdi_attrib.fg_rgb[1],
@@ -4950,14 +4957,14 @@ static void set_background_color(surf_statelist *surf_state, int *colors)
 
   /* does background need to be updated */
   /* --background color is saved in att_array, even for vector */
-  if (colors[0] != (int)(cur_state->vdi_attrib.bg_rgb[0] * 255.) ||
-      colors[1] != (int)(cur_state->vdi_attrib.bg_rgb[1] * 255.) ||
-      colors[2] != (int)(cur_state->vdi_attrib.bg_rgb[2] * 255.)) {
+  if (colors[0] != (int)(cur_state->vdi_attrib.bg_rgb[0] * 255.0f) ||
+      colors[1] != (int)(cur_state->vdi_attrib.bg_rgb[1] * 255.0f) ||
+      colors[2] != (int)(cur_state->vdi_attrib.bg_rgb[2] * 255.0f)) {
 
     /* store new values in att_array */
-    cur_state->vdi_attrib.bg_rgb[0] = (float)colors[0] / 255.;
-    cur_state->vdi_attrib.bg_rgb[1] = (float)colors[1] / 255.;
-    cur_state->vdi_attrib.bg_rgb[2] = (float)colors[2] / 255.;
+    cur_state->vdi_attrib.bg_rgb[0] = (float)colors[0] / 255.0f;
+    cur_state->vdi_attrib.bg_rgb[1] = (float)colors[1] / 255.0f;
+    cur_state->vdi_attrib.bg_rgb[2] = (float)colors[2] / 255.0f;
 
     /* set the cgi state color table - index 0 */
     cur_state->color_table[0].r = colors[0];
@@ -5304,7 +5311,7 @@ static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int b
   File descriptor which is returned from open is stored in current
   statelist
 */
-void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for compatibility */
+void cdrofs(int *ifilcd)
 {
   int        errnum, errsev;
   char       symbol[1024];
@@ -5330,7 +5337,7 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
   }
 
   /* copy filename to symbol */
-  strcpy(symbol, cur_state->filename);
+  copy_string(symbol, cur_state->filename, 1024);
 
   /* check the environment to see if a file name has been assigned */
   env = getenv(symbol);
@@ -5350,24 +5357,17 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
 }
 
 /* this routine is here only for compatibility with SVDI drivers */
-void cdrof3(ifilcd, idum) int *ifilcd, *idum;
-{
-  cdrofs(ifilcd);
-}
+void cdrof3(int *ifilcd, int *idum) { cdrofs(ifilcd); }
 
 /* this routine is here only for compatibility with SVDI drivers */
-void cdroff(ifilcd, idum1, idum2, idum3) int *ifilcd, *idum1, *idum2, *idum3;
-{
-  cdrofs(ifilcd);
-}
+void cdroff(int *ifilcd, int *idum1, int *idum2, int *idum3) { cdrofs(ifilcd); }
 
 /*
   Try to read LENGTH words from the file. Return the actual number
   of words read. FORTRAN unit number is ignored, file descriptor is
   gotten from the current statelist
 */
-void  cdrrfs(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
-char *buffer;
+void cdrrfs(int *ifilcd, int *length, char *buffer, int *istat)
 {
 
   /* if the file hasn't been opened, open it */
@@ -5385,8 +5385,7 @@ char *buffer;
   Write LENGTH words from BUFFER to the file.  FORTRAN unit number is
   ignored, file descriptor is gotten from the current state list
 */
-void  cdrwfs(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
-char *buffer;
+void cdrwfs(int *ifilcd, int *length, char *buffer, int *istat)
 {
 
   /* if the file hasn't been opened, open it */
@@ -5407,7 +5406,7 @@ char *buffer;
   Close file sequential. FORTRAN unit number is ignore and file
   descriptor is gotten from current state
 */
-void cdrcfs(ifilcd, eof) int *ifilcd, *eof;
+void cdrcfs(int *ifilcd, int *eof)
 {
   int  istat;
   char buf[4];
@@ -5427,8 +5426,7 @@ void cdrcfs(ifilcd, eof) int *ifilcd, *eof;
 }
 
 /* open routine for the Abekas */
-void cdroab(ifilcd, frame) int *ifilcd;
-int *frame;
+void cdroab(int *ifilcd, int *frame)
 {
   char ic[5];
   int  i, inbr;
@@ -5453,8 +5451,7 @@ void nmtbuf();
   16 bits/word, right justified.  This buffering routine assumes
   16 bits/word and assumes 8 bit bytes.
 */
-void     nmtbuf(numwds, outary) int *numwds; /* number of words in OUTARY, 0 = buffer flush */
-unsigned outary[];                           /* data to be buffered */
+void nmtbuf(int *numwds, unsigned outary[])
 {
   static unsigned mask1 = ~(~0u << 8) << 8; /* mask off higher 8 bits */
   static unsigned mask2 = ~(~0u << 8);      /* mask off lower 8 bits */

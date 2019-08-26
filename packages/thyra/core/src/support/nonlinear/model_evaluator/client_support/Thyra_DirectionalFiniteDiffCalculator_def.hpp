@@ -160,6 +160,9 @@ private:
         << ", the space p_space("<<l<<") must be in-core so that they can"
         " act as the domain space for the multi-vector derivative!"
         );
+#else
+      (void)model;
+      (void)l;
 #endif
     }
 

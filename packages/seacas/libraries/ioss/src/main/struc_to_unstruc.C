@@ -37,10 +37,10 @@
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_SurfaceSplit.h>
-#include <Ioss_TerminalColor.h>
 #include <Ioss_Utils.h>
 #include <cgns/Iocgns_StructuredZoneData.h>
 #include <cgns/Iocgns_Utils.h>
+#include <fmt/ostream.h>
 
 #include <algorithm>
 #include <cassert>
@@ -53,13 +53,14 @@
 #include <unistd.h>
 #include <vector>
 
-#define OUTPUT                                                                                     \
-  if (rank == 0)                                                                                   \
-  std::cerr
-
-// ========================================================================
-
 namespace {
+
+  struct my_numpunct : std::numpunct<char>
+  {
+  protected:
+    char        do_thousands_sep() const override { return ','; }
+    std::string do_grouping() const override { return "\3"; }
+  };
 
   int rank = 0;
 
@@ -111,28 +112,34 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  Ioss::Init::Initializer io;
-  std::string             in_file = argv[1];
-  std::string             out_file;
-  if (argc > 2) {
-    out_file = argv[2];
-  }
-  else {
-    OUTPUT << "ERROR: Syntax is " << argv[0] << " {structured_input} {unstructured_output}\n";
+  codename = Ioss::FileInfo(argv[0]).basename();
+
+  if (argc <= 2) {
+    if (rank == 0) {
+      fmt::print(stderr, "ERROR: Syntax is {} {{structured_input}} {{unstructured_output}}\n",
+                 argv[0]);
+    }
     return EXIT_FAILURE;
   }
 
-  OUTPUT << "Structured Input:    '" << in_file << "'\n";
-  OUTPUT << "Unstructured Output: '" << out_file << "'\n";
-  OUTPUT << '\n';
+  Ioss::Init::Initializer io;
+  std::string             in_file  = argv[1];
+  std::string             out_file = argv[2];
 
+  if (rank == 0) {
+    fmt::print(stderr,
+               "Structured Input:    '{}'\n"
+               "Unstructured Output: '{}'\n\n",
+               in_file, out_file);
+  }
   double begin = Ioss::Utils::timer();
   create_unstructured(in_file, out_file);
   double end = Ioss::Utils::timer();
 
-  OUTPUT << "\n\tElapsed time = " << end - begin << " seconds.\n";
-
-  OUTPUT << "\n" << codename << " execution successful.\n";
+  if (rank == 0) {
+    fmt::print(stderr, "\n\tElapsed time = {} seconds.\n", end - begin);
+    fmt::print(stderr, "\n{} execution successful.\n", codename);
+  }
 #ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
@@ -155,7 +162,7 @@ namespace {
     if (region.mesh_type() != Ioss::MeshType::STRUCTURED) {
       int myProcessor = region.get_database()->util().parallel_rank();
       if (myProcessor == 0) {
-        std::cerr << "\nERROR: The input mesh is not of type STRUCTURED.\n";
+        fmt::print(stderr, "\nERROR: The input mesh is not of type STRUCTURED.\n");
       }
       return;
     }
@@ -182,7 +189,9 @@ namespace {
     output_region.property_add(Ioss::Property(std::string("code_version"), version));
 
     if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
-      OUTPUT << "ERROR: Could not put output region into define model state\n";
+      if (rank == 0) {
+        fmt::print(stderr, "ERROR: Could not put output region into define model state\n");
+      }
       std::exit(EXIT_FAILURE);
     }
 
@@ -201,8 +210,10 @@ namespace {
     output_region.end_mode(Ioss::STATE_MODEL);
 
     if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
-      OUTPUT << "\n Number of time steps on database     =" << std::setw(12)
-             << region.get_property("state_count").get_int() << "\n\n";
+      if (rank == 0) {
+        fmt::print(stderr, "\n Number of time steps on database     = {:12n}\n\n",
+                   region.get_property("state_count").get_int());
+      }
 
       output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
@@ -408,7 +419,7 @@ namespace {
               }
 
 #if IOSS_DEBUG_OUTPUT
-              std::cerr << bc << "\n";
+              fmt::print(stderr, "{}\n", bc);
 #endif
               auto parent_face = face_map[bc.which_face()];
               elem_side.reserve(bc.get_face_count() * 2);
@@ -481,10 +492,8 @@ namespace {
       nb->put_field_data("owning_processor", owning_processor);
     }
 
-    std::cout << "P[" << rank << "] Number of coordinates per node =" << std::setw(12) << degree
-              << "\n";
-    std::cout << "P[" << rank << "] Number of nodes                =" << std::setw(12) << num_nodes
-              << "\n";
+    fmt::print("P[{}] Number of coordinates per node = {:12n}\n", rank, degree);
+    fmt::print("P[{}] Number of nodes                = {:12n}\n", rank, num_nodes);
   }
 
   void transfer_elementblocks(Ioss::Region &region, Ioss::Region &output_region)
@@ -498,14 +507,13 @@ namespace {
       auto block = new Ioss::ElementBlock(output_region.get_database(), name, type, count);
       output_region.add(block);
 #if IOSS_DEBUG_OUTPUT
-      std::cerr << "P[" << rank << "] Created Element Block '" << name << "' with " << count
-                << " elements.\n";
+      fmt::print(stderr, "P[{}] Created Element Block '{}' with {} elements.\n", rank, name, count);
 #endif
       total_entities += count;
     }
-    std::cout << "P[" << rank << "] Number of Element Blocks       =" << std::setw(12)
-              << blocks.size() << ", Number of elements (cells) =" << std::setw(12)
-              << total_entities << "\n";
+    fmt::print(
+        "P[{}] Number of Element Blocks       = {:12n}, Number of elements (cells) = {:12n}\n",
+        rank, blocks.size(), total_entities);
   }
 
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region)
@@ -534,17 +542,16 @@ namespace {
       }
       output_region.add(surf);
     }
-    std::cout << "P[" << rank << "] Number of SideSets             =" << std::setw(12)
-              << ssets.size() << ", Number of cell faces       =" << std::setw(12) << total_sides
-              << "\n";
+    fmt::print(
+        "P[{}] Number of SideSets             = {:12n}, Number of cell faces       = {:12n}\n",
+        rank, ssets.size(), total_sides);
   }
 
   void show_step(int istep, double time)
   {
-    OUTPUT.setf(std::ios::scientific);
-    OUTPUT.setf(std::ios::showpoint);
-    OUTPUT << "     Time step " << std::setw(5) << istep << " at time " << std::setprecision(5)
-           << time << '\n';
+    if (rank == 0) {
+      fmt::print(stderr, "     Time step {:5d} at time {:.5e}\n", istep, time);
+    }
   }
 
   void transfer_sb_fields(const Ioss::Region &region, Ioss::Region &output_region,

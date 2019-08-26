@@ -25,13 +25,31 @@ namespace Tempus {
  *  <b> Algorithm </b>
  *  The single-timestep algorithm for Trapezoidal method is simply,
  *   - Solve \f$f(\dot{x}=(x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}, x_n, t_n)=0\f$ for \f$x_n\f$
- *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}\f$ [Optional]
- *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
+ *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}\f$
+ *
+ *   The First-Step-As-Last (FSAL) principle is required for the Trapezoidal
+ *   Stepper (i.e., useFSAL=true)!  There are at least two ways around this,
+ *   but are not implemented.
+ *    - Do a solve for xDotOld, xDot_{n-1}, at each time step as for the
+ *      initial conditions.  This is expensive since you would be doing
+ *      two solves every time step.
+ *    - Use evaluateExplicitODE to get xDot_{n-1} if the application
+ *      provides it.  Explicit evaluations are cheaper but requires the
+ *      application to implement xDot = f(x,t).
  */
 template<class Scalar>
 class StepperTrapezoidal : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
+
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperTrapezoidal();
 
   /// Constructor
   StepperTrapezoidal(
@@ -45,6 +63,10 @@ public:
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -62,15 +84,13 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
-    
-  /// Pass initial guess to Newton solver (only relevant for explicit schemes)  
-  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-     {initial_guess_ = initial_guess;}
 
-  /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
-  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > x);
+  /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const { return Scalar(2.0)/dt; }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
   /// \name ParameterList methods
   //@{
@@ -90,16 +110,8 @@ public:
 
 private:
 
-  /// Default Constructor -- not allowed
-  StepperTrapezoidal();
-
-private:
-
   Teuchos::RCP<Stepper<Scalar> >                    predictorStepper_;
-  Teuchos::RCP<StepperObserver<Scalar> >            stepperObserver_;
   Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > stepperTrapObserver_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >          xDotTemp_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 
 };
 
@@ -135,7 +147,7 @@ public:
     xDotDot = Teuchos::null;
     // Calculate the Trapezoidal method x dot vector
     Thyra::V_StVpStV(xDot.ptr(),s_,*x,-s_,*xOld_);
-    Thyra::V_VpStV  (xDot.ptr(),*xDot,-1.0,*xDotOld_);
+    Thyra::V_VpStV  (xDot.ptr(),*xDot,Scalar(-1.0),*xDotOld_);
   }
 
   virtual void initialize(Scalar s,

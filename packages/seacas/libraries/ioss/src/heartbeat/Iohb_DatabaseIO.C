@@ -188,14 +188,22 @@ namespace Iohb {
 
       DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
 
-      if (properties.exists("FIELD_SEPARATOR")) {
-        new_this->separator_ = properties.get("FIELD_SEPARATOR").get_string();
-      }
-
       if (properties.exists("FILE_FORMAT")) {
         std::string format = properties.get("FILE_FORMAT").get_string();
         if (Ioss::Utils::case_strcmp(format, "spyhis") == 0) {
           new_this->fileFormat = SPYHIS;
+        }
+        else if (Ioss::Utils::case_strcmp(format, "csv") == 0) {
+          new_this->fileFormat = CSV;
+        }
+        else if (Ioss::Utils::case_strcmp(format, "ts_csv") == 0) {
+          new_this->fileFormat = TS_CSV;
+        }
+        else if (Ioss::Utils::case_strcmp(format, "text") == 0) {
+          new_this->fileFormat = TEXT;
+        }
+        else if (Ioss::Utils::case_strcmp(format, "ts_text") == 0) {
+          new_this->fileFormat = TS_TEXT;
         }
       }
 
@@ -213,7 +221,39 @@ namespace Iohb {
         }
       }
 
+      // "Predefined" formats... (put first so can modify settings if wanted)
+      if (fileFormat == CSV) {
+        new_this->addTimeField = true;
+        new_this->showLegend   = true;
+        new_this->showLabels   = false;
+        new_this->separator_   = ", ";
+      }
+      else if (fileFormat == TS_CSV) {
+        new_this->addTimeField = true;
+        new_this->showLegend   = true;
+        new_this->showLabels   = false;
+        new_this->separator_   = ", ";
+        new_this->tsFormat     = defaultTsFormat;
+      }
+      else if (fileFormat == TEXT) {
+        new_this->addTimeField = true;
+        new_this->showLegend   = true;
+        new_this->showLabels   = false;
+        new_this->separator_   = "\t";
+      }
+      else if (fileFormat == TS_TEXT) {
+        new_this->addTimeField = true;
+        new_this->showLegend   = true;
+        new_this->showLabels   = false;
+        new_this->separator_   = "\t";
+        new_this->tsFormat     = defaultTsFormat;
+      }
+
       // Pull variables from the regions property data...
+      if (properties.exists("FIELD_SEPARATOR")) {
+        new_this->separator_ = properties.get("FIELD_SEPARATOR").get_string();
+      }
+
       if (properties.exists("FLUSH_INTERVAL")) {
         new_this->flushInterval_ = properties.get("FLUSH_INTERVAL").get_int();
       }
@@ -224,7 +264,12 @@ namespace Iohb {
 
       if (properties.exists("SHOW_TIME_STAMP")) {
         bool show_time_stamp = properties.get("SHOW_TIME_STAMP").get_int() == 1;
-        if (!show_time_stamp) {
+        if (show_time_stamp) {
+          if (tsFormat.empty()) {
+            new_this->tsFormat = defaultTsFormat;
+          }
+        }
+        else {
           new_this->tsFormat = "";
         }
       }
@@ -254,6 +299,7 @@ namespace Iohb {
         new_this->addTimeField = (properties.get("SHOW_TIME_FIELD").get_int() == 1);
       }
 
+      // SpyHis format is specific format, so don't override these settings:
       if (fileFormat == SPYHIS) {
         new_this->addTimeField = true;
         new_this->showLegend   = true;
@@ -278,6 +324,7 @@ namespace Iohb {
           }
         }
       }
+
       new_this->initialized_ = true;
     }
   }
@@ -378,6 +425,13 @@ namespace Iohb {
     return -1;
   }
 
+  int64_t DatabaseIO::get_field_internal(const Ioss::StructuredBlock * /* sb */,
+                                         const Ioss::Field & /* field */, void * /* data */,
+                                         size_t /* data_size */) const
+  {
+    return -1;
+  }
+
   int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet * /* ns */,
                                          const Ioss::Field & /* field */, void * /* data */,
                                          size_t /* data_size */) const
@@ -421,8 +475,9 @@ namespace Iohb {
     return -1;
   }
 
-  int64_t DatabaseIO::put_field_internal(const Ioss::Region *region, const Ioss::Field &field,
-                                         void *data, size_t data_size) const
+  int64_t DatabaseIO::put_field_internal(const Ioss::Region * /* region */,
+                                         const Ioss::Field &field, void *data,
+                                         size_t data_size) const
   {
     initialize();
     Ioss::Field::RoleType role       = field.get_role();
@@ -557,6 +612,13 @@ namespace Iohb {
     return -1;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::CommSet * /* cs */,
+                                         const Ioss::Field & /* field */, void * /* data */,
+                                         size_t /* data_size */) const
+  {
+    return -1;
+  }
+
+  int64_t DatabaseIO::put_field_internal(const Ioss::StructuredBlock * /* sb */,
                                          const Ioss::Field & /* field */, void * /* data */,
                                          size_t /* data_size */) const
   {

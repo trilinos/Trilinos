@@ -64,8 +64,7 @@ C   --
       EQUIVALENCE (A(1), IA(1))
 C      --A - the dynamic memory base array
 
-      CHARACTER*8 STR8, cdum
-      character*80 ws
+      CHARACTER*8 STR8
       LOGICAL EXODUS
       LOGICAL WHOTIM
 
@@ -89,7 +88,7 @@ C   --Open the input and output files
       NET = 20
 
 c
-c	make netCDF and exodus errors not show up
+c       make netCDF and exodus errors not show up
 c
       call exopts(0,ierr)
 
@@ -119,17 +118,6 @@ C .. Get filename from command line.  If not specified, emit error message
 
       CALL get_argument(2,netfil, lnam)
       write(*,*)'Output filename: ',netfil(1:lnam)
-
-c$$$c     output file word size is specifed in environment variable EXT05
-c$$$      call exname (-5, ws, llen)
-c$$$      read(ws,'(i1)',ERR=25)wsout
-c$$$      if (llen .lt. 1) goto 25
-c$$$      if (wsout .ne. 4 .and. wsout .ne. 8) then
-c$$$         CALL PRTERR ('FATAL', 'Invalid output word size')
-c$$$         STOP
-c$$$      endif
-c$$$      goto 26
-c$$$25    continue
 
       wsout = 8
       write(*,*)'Output word size: ',wsout
@@ -332,7 +320,7 @@ c
      1      IA(KNELB+IELB-1),
      2      IA(KNMLNK+IELB-1), IA(KNMATR+IELB-1), IERR)
          IF (IERR .lt. 0) THEN
-      		CALL exerr('ex1ex2v2','Error from expelb',EXLMSG)
+                CALL exerr('ex1ex2v2','Error from expelb',EXLMSG)
          ENDIF
 c
 c          write block attributes to the netcdf file
@@ -340,7 +328,7 @@ c
          IF (IA(KNMATR+IELB-1) .GT. 0) THEN
            call expeat (IDEXO, IA(KIDELB+IELB-1), A(KATRIB+ioff), IERR)
            IF (IERR .lt. 0) THEN
-      		CALL exerr ('rdelb','Error from expeat', EXLMSG)
+                CALL exerr ('rdelb','Error from expeat', EXLMSG)
            ENDIF
          end if
 
@@ -354,10 +342,10 @@ c         CALL MDLONG ('ATRIB', KATRIB, 0)
       do 101 ielb = 1, nelblk
 c
 c          write the element block connectivity to the netcdf file
-c	     skipping null element blocks
+c            skipping null element blocks
 c
-	if (IA(KNELB+IELB-1) .eq. 0) then
-	  write(*,*)'Null element block: ',ielb
+        if (IA(KNELB+IELB-1) .eq. 0) then
+          write(*,*)'Null element block: ',ielb
         else
           call expelc (idexo, ia(kidelb+ielb-1), ia(iptr), ierr)
           if (ierr .lt. 0) then
@@ -373,7 +361,7 @@ c
 c
 c     write out the nodal point sets to the regular netcdf file
 c
-c	Note: For exodus I data, dist factors always exist.
+c       Note: For exodus I data, dist factors always exist.
 
       if (numnps .gt. 0) then
         call expcns (idexo, ia(kidns), ia(knnns), ia(knnns),
@@ -386,12 +374,12 @@ c	Note: For exodus I data, dist factors always exist.
 
 c     write element side sets
 c
-c	Note: Exodus II V2.0 represents a major change for side sets:
-c		They are represented as side IDs - not node IDs and
-c		must be translated.
+c       Note: Exodus II V2.0 represents a major change for side sets:
+c               They are represented as side IDs - not node IDs and
+c               must be translated.
       if (numess .gt. 0) then
         call excn2s (idexo, ia(kness), ia(knnss), ia(kixess),
-     1		ia(kixnss), ia(kltess), ia(kltnss), ia(kltsss), ierr)
+     1          ia(kixnss), ia(kltess), ia(kltnss), ia(kltsss), ierr)
         if (ierr .lt. 0) then
           call exerr ('ex1ex2v2','Error from excn2s', exlmsg)
           goto 150

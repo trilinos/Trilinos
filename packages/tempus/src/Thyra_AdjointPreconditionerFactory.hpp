@@ -178,6 +178,8 @@ private:
     const RCP<const PreconditionerFactoryBase<Scalar> > &prec_fac) {
 #ifdef TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT(is_null(prec_fac));
+#else
+    (void)prec_fac;
 #endif
   }
 

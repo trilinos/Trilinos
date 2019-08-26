@@ -37,10 +37,12 @@
 
 #include <algorithm>
 #include <cassert>
+#include <copy_string_cpp.h>
 #include <cstddef> // for size_t
-#include <cstdio>  // for printf, nullptr, sprintf
+#include <cstdio>  // for nullptr
 #include <cstdlib> // for malloc, free, calloc
 #include <cstring> // for strlen
+#include <fmt/ostream.h>
 #include <string>
 #include <vector>
 
@@ -48,7 +50,6 @@
 #include "elb_elem.h" // for get_elem_type, E_Type, etc
 #include "elb_err.h"  // for Gen_Error, MAX_ERR_MSG
 #include "elb_exo.h"
-#include "elb_format.h"
 #include "elb_groups.h" // for parse_groups
 #include "elb_util.h"   // for in_list, roundfloat
 
@@ -66,17 +67,17 @@ template int read_exo_weights(Problem_Description *prob, Weight_Description<int6
 template <typename INT>
 int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
 {
-  int   exoid, cpu_ws = 0, io_ws = 0;
-  int   neblks;
-  float version, minval = 1.0f;
-  char  elem_type[MAX_STR_LENGTH + 1];
-  char  ctemp[1024];
+  int         exoid, cpu_ws = 0, io_ws = 0;
+  int         neblks;
+  float       version, minval = 1.0f;
+  char        elem_type[MAX_STR_LENGTH + 1];
+  std::string ctemp;
   /*---------------------------Execution Begins--------------------------------*/
 
   /* Open the ExodusII file containing the weights */
   int mode = EX_READ | prob->int64api;
   if ((exoid = ex_open(weight->exo_filename.c_str(), mode, &cpu_ws, &io_ws, &version)) < 0) {
-    sprintf(ctemp, "fatal: could not open ExodusII file %s", weight->exo_filename.c_str());
+    ctemp = fmt::format("fatal: could not open ExodusII file {}", weight->exo_filename.c_str());
     Gen_Error(0, ctemp);
     return 0;
   }
@@ -146,7 +147,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
 
   /* Close the ExodusII weighting file */
   if (ex_close(exoid) < 0) {
-    sprintf(ctemp, "warning: failed to close ExodusII file %s", weight->exo_filename.c_str());
+    ctemp = fmt::format("warning: failed to close ExodusII file {}", weight->exo_filename.c_str());
     Gen_Error(0, ctemp);
   }
 
@@ -157,7 +158,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
 
   /* now translate the values to be greater than 1 and convert to ints */
   for (int cnt = 0; cnt < weight->nvals; cnt++) {
-    values[cnt] += 1.0 - minval;
+    values[cnt] += 1.0f - minval;
     weight->vertices[cnt] = roundfloat(values[cnt]);
   }
   return 1;
@@ -198,7 +199,7 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
     ex_close(exoid);
     return 0;
   }
-  strcpy(mesh->title, exo.title);
+  copy_string(mesh->title, exo.title);
   mesh->num_dims      = exo.num_dim;
   mesh->num_nodes     = exo.num_nodes;
   mesh->num_elems     = exo.num_elem;
@@ -285,16 +286,16 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
     Gen_Error(1, "warning: unable to close ExodusII file");
   }
 
-  printf("ExodusII mesh information\n");
+  fmt::print("ExodusII mesh information\n");
   if (strlen(mesh->title) > 0) {
-    printf("\ttitle: %s\n", mesh->title);
+    fmt::print("\ttitle: {}\n", mesh->title);
   }
-  printf("\tgeometry dimension: " ST_ZU "\n", mesh->num_dims);
-  printf("\tnumber of nodes: " ST_ZU "\tnumber of elements: " ST_ZU "\n", mesh->num_nodes,
-         mesh->num_elems);
-  printf("\tnumber of element blocks: " ST_ZU "\n", mesh->num_el_blks);
-  printf("\tnumber of node sets: " ST_ZU "\tnumber of side sets: " ST_ZU "\n", mesh->num_node_sets,
-         mesh->num_side_sets);
+  fmt::print("\tgeometry dimension: {}\n", mesh->num_dims);
+  fmt::print("\tnumber of nodes: {:n}\tnumber of elements: {:n}\n", mesh->num_nodes,
+             mesh->num_elems);
+  fmt::print("\tnumber of element blocks: {}\n", mesh->num_el_blks);
+  fmt::print("\tnumber of node sets: {}\tnumber of side sets: {}\n", mesh->num_node_sets,
+             mesh->num_side_sets);
 
   return 1;
 
@@ -332,12 +333,8 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
 
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
-    case 3:
-      zptr = (mesh->coords) + 2 * (mesh->num_nodes);
-      /* FALLTHRU */
-    case 2:
-      yptr = (mesh->coords) + (mesh->num_nodes);
-      /* FALLTHRU */
+    case 3: zptr = (mesh->coords) + 2 * (mesh->num_nodes); FALL_THROUGH;
+    case 2: yptr = (mesh->coords) + (mesh->num_nodes); FALL_THROUGH;
     case 1: xptr = mesh->coords;
     }
 

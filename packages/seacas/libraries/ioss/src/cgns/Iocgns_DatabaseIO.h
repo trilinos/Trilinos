@@ -101,6 +101,8 @@ namespace Iocgns {
     void write_meta_data();
     void write_results_meta_data();
 
+    int get_file_pointer() const override;
+
   private:
     void openDatabase__() const override;
     void closeDatabase__() const override;
@@ -149,6 +151,9 @@ namespace Iocgns {
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
 
+    int64_t get_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                      void *data, size_t data_size) const;
+
     int64_t put_field_internal(const Ioss::Region *region, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
@@ -176,12 +181,15 @@ namespace Iocgns {
     int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                void *data, size_t data_size) const override;
 
+    int64_t put_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                      void *data, size_t data_size) const;
+
     // ID Mapping functions.
     const Ioss::Map &get_map(entity_type type) const;
     const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, int64_t file_offset,
                              int64_t file_count, entity_type type) const;
 
-    int         get_file_pointer() const;
+  private:
     mutable int m_cgnsFilePtr{-1};
 
     int m_flushInterval{0}; // Default is no flushing after each timestep

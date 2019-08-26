@@ -247,7 +247,8 @@ private:
       //  gtol1 = c*std::min(algo_state.gnorm,state->searchSize);
       //}
       //algo_state.ngrad++;
-      Real gtol1  = scale0_*std::min(algo_state.gnorm,state->searchSize);
+      Real gtol1  = scale0_*state->searchSize;
+      //Real gtol1  = scale0_*std::min(algo_state.gnorm,state->searchSize);
       Real gtol0  = gtol1 + one;
       while ( gtol0 > gtol1 ) {
         obj.gradient(*(state->gradientVec),x,gtol1);
@@ -414,6 +415,7 @@ public:
     algo_state.snorm = oe10;
     algo_state.value = obj.value(x,ftol); 
     algo_state.nfval++;
+    algo_state.gnorm = ROL_INF<Real>();
     updateGradient(x,obj,bnd,algo_state);
 
     // Try to apply inverse Hessian

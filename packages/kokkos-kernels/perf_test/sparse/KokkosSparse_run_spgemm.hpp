@@ -256,7 +256,7 @@ crsMat_t3 run_experiment(
         row_mapC_ref
     );
 
-    ExecSpace::fence();
+    ExecSpace().fence();
 
 
     size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
@@ -283,7 +283,7 @@ crsMat_t3 run_experiment(
         entriesC_ref,
         valuesC_ref
     );
-    ExecSpace::fence();
+    ExecSpace().fence();
 
     typename crsMat_t3::HostMirror::StaticCrsGraphType static_graph (entriesC_ref, row_mapC_ref);
     typename crsMat_t3::HostMirror Ccrsmat("CrsMatrixC", k, valuesC_ref, static_graph);
@@ -337,7 +337,7 @@ crsMat_t3 run_experiment(
 			  row_mapC
 	  );
 
-	  ExecSpace::fence();
+	  ExecSpace().fence();
 	  double symbolic_time = timer1.seconds();
 
 	  Kokkos::Impl::Timer timer3;
@@ -366,7 +366,7 @@ crsMat_t3 run_experiment(
 			  entriesC,
 			  valuesC
 	  );
-	  ExecSpace::fence();
+	  ExecSpace().fence();
 	  double numeric_time = timer3.seconds();
 
 	  std::cout

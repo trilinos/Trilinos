@@ -47,7 +47,7 @@
 PyTrilinos.TriUtils is the python interface to the Trilinos utilities
 package TriUtils:
 
-    http://trilinos.sandia.gov/packages/triutils
+    https://trilinos.org/docs/dev/packages/triutils/doc/html/index.html
 
 The purpose of TriUtils is to provide some utilities typically needed
 when testing Trilinos software.

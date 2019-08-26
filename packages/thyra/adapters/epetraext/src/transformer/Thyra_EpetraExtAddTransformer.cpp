@@ -72,7 +72,7 @@ namespace Thyra {
 
 
 bool EpetraExtAddTransformer::isCompatible(
-      const LinearOpBase<double> &op_in) const
+      const LinearOpBase<double> &/* op_in */) const
 {
    TEUCHOS_TEST_FOR_EXCEPT(true);
    TEUCHOS_UNREACHABLE_RETURN(false);

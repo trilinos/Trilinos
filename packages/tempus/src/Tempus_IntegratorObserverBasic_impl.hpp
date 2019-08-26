@@ -40,23 +40,23 @@ observeStartIntegrator(const Integrator<Scalar>& integrator){
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeStartTimeStep(const Integrator<Scalar>& integrator){}
+observeStartTimeStep(const Integrator<Scalar>& /* integrator */){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeNextTimeStep(const Integrator<Scalar>& integrator){}
+observeNextTimeStep(const Integrator<Scalar>& /* integrator */){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeBeforeTakeStep(const Integrator<Scalar>& integrator){}
+observeBeforeTakeStep(const Integrator<Scalar>& /* integrator */){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeAfterTakeStep(const Integrator<Scalar>& integrator){}
+observeAfterTakeStep(const Integrator<Scalar>& /* integrator */){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeAfterCheckTimeStep(const Integrator<Scalar>& integrator){}
+observeAfterCheckTimeStep(const Integrator<Scalar>& /* integrator */){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
@@ -76,7 +76,8 @@ observeEndTimeStep(const Integrator<Scalar>& integrator){
 
      const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
      Teuchos::OSTab ostab(out,0,"ScreenOutput");
-     *out<<std::scientific<<std::setw( 6)<<std::setprecision(3)<<csmd->getIStep()
+     *out<<std::scientific
+        <<std::setw( 6)<<std::setprecision(3)<<csmd->getIStep()
         <<std::setw(11)<<std::setprecision(3)<<csmd->getTime()
         <<std::setw(11)<<std::setprecision(3)<<csmd->getDt()
         <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorAbs()

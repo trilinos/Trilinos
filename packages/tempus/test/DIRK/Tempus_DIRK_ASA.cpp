@@ -130,7 +130,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA)
       // Initial Conditions
       // During the Integrator construction, the initial SolutionState
       // is set by default to model->getNominalVales().get_x().  However,
-      // the application can set it also by integrator->setInitialState.
+      // the application can set it also by integrator->initializeSolutionHistory.
       RCP<Thyra::VectorBase<double> > x0 =
         model->getNominalValues().get_x()->clone_v();
       const int num_param = model->get_p_space(0)->dim();
@@ -139,7 +139,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA)
       for (int i=0; i<num_param; ++i)
         Thyra::assign(DxDp0->col(i).ptr(),
                       *(model->getExactSensSolution(i, 0.0).get_x()));
-      integrator->setInitialState(0.0, x0, Teuchos::null, Teuchos::null,
+      integrator->initializeSolutionHistory(0.0, x0, Teuchos::null, Teuchos::null,
                                   DxDp0, Teuchos::null, Teuchos::null);
 
       // Integrate to timeMax

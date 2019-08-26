@@ -19,7 +19,10 @@
 
 namespace MueLu {
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Scalar = DefaultScalar,
+           class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class TopRAPFactory : public TwoLevelFactoryBase {
 #undef MUELU_TOPRAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

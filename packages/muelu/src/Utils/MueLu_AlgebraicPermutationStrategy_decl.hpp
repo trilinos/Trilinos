@@ -27,7 +27,7 @@
 namespace MueLu {
 
 // template struct for comparing pairs
-template<class Scalar = double, class LocalOrdinal = int>
+template<class Scalar = DefaultScalar, class LocalOrdinal = DefaultGlobalOrdinal>
 struct CompPairs {
   CompPairs(const std::vector<Scalar> & v) : vinternal_(v) {}
   std::vector<Scalar> vinternal_;
@@ -61,10 +61,10 @@ void sortingPermutation(const std::vector<Scalar> & values, std::vector<LocalOrd
 
     */
 
-  template<class Scalar = double,
-           class LocalOrdinal = int,
-           class GlobalOrdinal = LocalOrdinal,
-           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class AlgebraicPermutationStrategy : public BaseClass {
 #undef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
 #include "MueLu_UseShortNames.hpp"

@@ -59,9 +59,9 @@
 #include "Stokhos.hpp"
 
 double weightFunction(const double& x){
-  if(2*abs(x+2) < 1){
+  if(2*fabs(x+2) < 1){
     return exp(-1/(1-pow(2*(x+2),2)));
-  }else if(2*abs(x-2)<1){
+  }else if(2*fabs(x-2)<1){
     return exp(-1/(1-pow(2*(x-2),2)));
   }else{
     return 0;

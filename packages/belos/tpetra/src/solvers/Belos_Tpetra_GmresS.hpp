@@ -24,16 +24,13 @@ private:
   using vec_type = typename Krylov<SC, MV, OP>::vec_type;
 
 public:
-  GmresS () :
-    base_type::Gmres ()
-  {}
+  GmresS () = default;
 
   GmresS (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A)
   {}
 
-  virtual ~GmresS ()
-  {}
+  virtual ~GmresS () = default;
 
   virtual void
   setParameters (Teuchos::ParameterList& params) {

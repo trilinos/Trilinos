@@ -63,6 +63,7 @@ APPEND_SET(HEADERS
   APPEND_SET(HEADERS ${HEADERS}
   Kokkos/Intrepid_KokkosRank.hpp
   )
+IF (Intrepid_ENABLE_DEPRECATED_KOKKOS_CODE) 
 IF (HAVE_INTREPID_KOKKOSCORE AND KOKKOS_ENABLE_CUDA)
   IF( TPL_ENABLE_MPI )
       CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
@@ -96,6 +97,7 @@ IF(HAVE_INTREPID_KOKKOSCORE)
   APPEND_SET(HEADERS ${HEADERS}
   Kokkos/Intrepid_KokkosRank.hpp
   )	
+ENDIF()
 ENDIF()
 
 
@@ -261,7 +263,7 @@ APPEND_SET(HEADERS
   Cell/Intrepid_CellTools.hpp
   Cell/Intrepid_CellToolsDef.hpp
   )
-IF(HAVE_INTREPID_KOKKOSCORE)
+IF(INTREPID_OLD_KOKKOS_CODE)
   APPEND_SET(HEADERS
     Cell/Intrepid_CellTools_Kokkos.hpp
   )

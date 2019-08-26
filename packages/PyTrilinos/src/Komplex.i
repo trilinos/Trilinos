@@ -47,7 +47,7 @@
 PyTrilinos.Komplex is the python interface to the Trilinos complex
 linear algebra package Komplex:
 
-    http://trilinos.sandia.gov/packages/komplex
+    https://trilinos.org/docs/dev/packages/komplex/doc/html/index.html
 
 The purpose of Komplex is to define complex (real + imaginary) linear
 algebra problems using real-valued Epetra vectors and matrix

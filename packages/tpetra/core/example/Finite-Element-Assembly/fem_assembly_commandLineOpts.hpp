@@ -41,12 +41,9 @@
 #ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_COMMANDLINEOPTS_HPP
 #define TPETRAEXAMPLES_FEM_ASSEMBLY_COMMANDLINEOPTS_HPP
 
-#include <Teuchos_CommandLineProcessor.hpp>
+#include "Teuchos_CommandLineProcessor.hpp"
 
-
-namespace TpetraExamples
-{
-
+namespace TpetraExamples {
 
 // Options to read in from the command line
 struct CmdLineOpts
@@ -63,6 +60,8 @@ struct CmdLineOpts
   bool saveMM;
   // StaticProfile
   bool useStaticProfile;
+  // execInsertGlobalIndicesFEDP - execute the FE Insert Global Indices kernel
+  bool execInsertGlobalIndicesFE;
   // execInsertGlobalIndicesDP - execute the Insert Global Indices kernel
   bool execInsertGlobalIndices;
   // execLocalElementLoopDP - execute the Local Element Loop kernel
@@ -71,9 +70,11 @@ struct CmdLineOpts
   bool execTotalElementLoop;
   // repetitions - how many times to execute the kernel for testing
   size_t repetitions;
+  // Use Kokkos assembly for matrix
+  bool useKokkosAssembly;
+  // Number of doubles per element (for simulated state transfer)
+  int numStateDoublesPerElement;
 };
-
-
 
 // Use a utility from the Teuchos package of Trilinos to set up
 // command-line options for reading, and set default values of
@@ -81,7 +82,9 @@ struct CmdLineOpts
 // set-up options.  It retains pointers to fields in 'opts'.
 // Reading the command-line options will update those fields in
 // place.
-void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp)
+void
+setCmdLineOpts (struct CmdLineOpts& opts,
+                Teuchos::CommandLineProcessor& clp)
 {
   // Set default values of command-line options.
   opts.numElementsX = 3;
@@ -90,10 +93,13 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
   opts.timing = true;
   opts.saveMM = false;
   opts.useStaticProfile  = true;
-  opts.execInsertGlobalIndices = false;
-  opts.execLocalElementLoop    = false;
-  opts.execTotalElementLoop    = false;
+  opts.execInsertGlobalIndices   = false;
+  opts.execInsertGlobalIndicesFE = false;
+  opts.execLocalElementLoop      = false;
+  opts.execTotalElementLoop      = false;
   opts.repetitions  = 1;
+  opts.useKokkosAssembly = false;
+  opts.numStateDoublesPerElement = 4;
 
   clp.setOption("num-elements-x", &(opts.numElementsX), "Number of elements to generate in the X-directon of the 2D grid.");
   clp.setOption("num-elements-y", &(opts.numElementsY), "Number of elements to generate in the Y-direction of the 2D grid.");
@@ -104,6 +110,8 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
 
   clp.setOption("with-StaticProfile", "with-DynamicProfile", &(opts.useStaticProfile), "Use StaticProfile or DynamicProfile");
 
+  clp.setOption("with-insert-global-indices-fe", "without-insert-global-indices-fe", &(opts.execInsertGlobalIndicesFE),
+                "Execute the Insert FECrsMatrix Global Indices FEM Assembly kernel.");
   clp.setOption("with-insert-global-indices", "without-insert-global-indices", &(opts.execInsertGlobalIndices),
                 "Execute the Insert Global Indices FEM Assembly kernel.");
   clp.setOption("with-local-element-loop",    "without-local-element-loop",    &(opts.execLocalElementLoop),
@@ -111,6 +119,8 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
   clp.setOption("with-total-element-loop",    "without-total-element-loop",    &(opts.execTotalElementLoop),
                 "Execute the Total Element Loop FEM Assembly kernel.");
   clp.setOption("repetitions", &(opts.repetitions), "Number of times to repeat the kernel.");
+  clp.setOption("kokkos", "no-kokkos", &(opts.useKokkosAssembly), "Use Kokkos assembly.");
+  clp.setOption("state-per-element",&(opts.numStateDoublesPerElement),"Number of doubles per element to store element state");
 }
 
 
@@ -142,8 +152,6 @@ int parseCmdLineOpts(Teuchos::CommandLineProcessor& clp, int argc, char* argv[])
   }
 }
 
-
-
 // Check the command-line options that were read in by
 // parseCmdLineOpts.  Return 0 if all correct, else return nonzero,
 // using the LAPACK error reporting convention of the negative of
@@ -154,22 +162,23 @@ int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
 {
   int err = 0;
 
-  if( 1 != (opts.execInsertGlobalIndices + opts.execLocalElementLoop + opts.execTotalElementLoop))
+  if( !opts.useStaticProfile && 1 != (opts.execInsertGlobalIndices + opts.execLocalElementLoop + opts.execTotalElementLoop))
   {
     out << std::endl
         << "Please select one algorithm to run.  Options are:" << std::endl
-        << "  --with-insert-global-indices  :  Execute the Insert Global Indices example." << std::endl
-        << "  --with-local-element-loop     :  Execute the Local Element Loop example." << std::endl
-        << "  --with-total-element-loop     :  Execute the Total Element Loop example." << std::endl
+        << "  --with-insert-global-indices     :  Execute the Insert Global Indices example." << std::endl
+        << "  --with-local-element-loop        :  Execute the Local Element Loop example." << std::endl
+        << "  --with-total-element-loop        :  Execute the Total Element Loop example." << std::endl
         << std::endl;
     err = -1;
   }
   else
   {
     // Currently we only have StaticProfile for TotalElementLoop
-    if(opts.useStaticProfile && !(opts.execTotalElementLoop))
+    if(opts.useStaticProfile && 1 != (opts.execInsertGlobalIndicesFE + opts.execTotalElementLoop))
     {
       out << std::endl
+        << "  --with-insert-global-indices-fe  :  Execute the FE Insert Global Indices example." << std::endl
           << "StaticProfile is currently only implemented with Total Element Loop, please use:" << std::endl
           << "  --with-total-element-loop :  Execute the Total Element Loop example." << std::endl
           << std::endl;
@@ -178,8 +187,6 @@ int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
   }
   return err;
 }
-
-
 
 int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char* argv[])
 {
@@ -206,30 +213,27 @@ int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char*
     }
   }
 
-  if(opts.verbose)
-  {
+  if (opts.verbose) {
     out << "Command-line options:" << endl;
-    {
-      Teuchos::OSTab tab1(out); // push one tab in this scope
-      out << "numElementsX : " << opts.numElementsX     << endl
-          << "numElementsY : " << opts.numElementsY     << endl
-          << "verbose      : " << opts.verbose          << endl
-          << "timing       : " << opts.timing           << endl
-          << "saveMM       : " << opts.saveMM           << endl
-          << "staticProfile: " << opts.useStaticProfile << endl
-          << "repetitions  : " << opts.repetitions      << endl
-          << endl
-          << "execInsertGlobalIndices: " << opts.execInsertGlobalIndices << endl
-          << "execLocalElementLoop   : " << opts.execLocalElementLoop    << endl
-          << "execTotalElementLoop   : " << opts.execTotalElementLoop    << endl
-          << endl;
-    }
+
+    Teuchos::OSTab tab1(out); // push one tab in this scope
+    out << "numElementsX : " << opts.numElementsX     << endl
+        << "numElementsY : " << opts.numElementsY     << endl
+        << "verbose      : " << opts.verbose          << endl
+        << "timing       : " << opts.timing           << endl
+        << "saveMM       : " << opts.saveMM           << endl
+        << "staticProfile: " << opts.useStaticProfile << endl
+        << "repetitions  : " << opts.repetitions      << endl
+        << endl
+        << "execInsertGlobalIndicesFE : " << opts.execInsertGlobalIndicesFE << endl
+        << "execInsertGlobalIndices   : " << opts.execInsertGlobalIndices << endl
+        << "execLocalElementLoop      : " << opts.execLocalElementLoop    << endl
+        << "execTotalElementLoop      : " << opts.execTotalElementLoop    << endl
+        << endl;
   }
 
   return EXIT_SUCCESS;
 }
-
-
 
 } // namespace TpetraExamples
 

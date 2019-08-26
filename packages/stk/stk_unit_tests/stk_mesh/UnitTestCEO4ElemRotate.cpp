@@ -460,7 +460,7 @@ void fillMeshfor4Elem4ProcRotateAndTest(stk::unit_test_util::BulkDataTester &mes
     stk::mesh::Part * block2_part = meta.get_part("block_2");
     stk::mesh::Part * block3_part = meta.get_part("block_3");
     stk::mesh::Part * block4_part = meta.get_part("block_4");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -535,7 +535,7 @@ void checkStatesAfterCEO_4Elem4ProcRotate(stk::unit_test_util::BulkDataTester &m
     stk::mesh::Part * block2_part = meta.get_part("block_2");
     stk::mesh::Part * block3_part = meta.get_part("block_3");
     stk::mesh::Part * block4_part = meta.get_part("block_4");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -972,7 +972,7 @@ void checkStatesAfterCEOME_4Elem4ProcRotate(stk::unit_test_util::BulkDataTester 
     stk::mesh::Part * block2_part = meta.get_part("block_2");
     stk::mesh::Part * block3_part = meta.get_part("block_3");
     stk::mesh::Part * block4_part = meta.get_part("block_4");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();

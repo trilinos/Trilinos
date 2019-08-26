@@ -49,12 +49,9 @@
 #  include "Amesos2_Lapack_def.hpp"
 #  include "Amesos2_ExplicitInstantiationHelpers.hpp"
 
-
-#ifdef HAVE_TPETRA_INST_INT_INT
-namespace Amesos2 {
 #ifdef HAVE_AMESOS2_EPETRA
+namespace Amesos2 {
   AMESOS2_SOLVER_EPETRA_INST(Lapack);
-#endif
 }
 #endif
 
@@ -153,7 +150,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #endif
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    #ifdef HAVE_TPETRA_INST_INT_INT   
+    #ifdef HAVE_TPETRA_INST_INT_INT
       AMESOS2_LAPACK_LOCAL_INSTANT(double, int, int, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG
@@ -200,7 +197,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #if defined(HAVE_TPETRA_INST_PTHREAD) && !defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #define NODETYPE Kokkos_Compat_KokkosThreadsWrapperNode
 #ifdef HAVE_TPETRA_INST_FLOAT
-  #ifdef HAVE_TPETRA_INST_INT_INT 
+  #ifdef HAVE_TPETRA_INST_INT_INT
     AMESOS2_LAPACK_LOCAL_INSTANT(float, int, int, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG

@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -130,13 +131,6 @@ void MetaData::assign_topology(Part& part, stk::topology stkTopo)
   ThrowRequireMsg(stkTopo != stk::topology::INVALID_TOPOLOGY, "bad topology in MetaData::assign_topology");
 }
 
-void MetaData::assign_cell_topology(
-  Part &                   part,
-  const shards::CellTopology       cell_topology)
-{
-  assign_topology(part, stk::mesh::get_topology(cell_topology, spatial_dimension()));
-}
-
 void MetaData::set_mesh_on_fields(BulkData* bulk)
 {
   const FieldVector& fields = get_fields();
@@ -214,6 +208,7 @@ void MetaData::require_valid_entity_rank( EntityRank rank ) const
 MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& entity_rank_names)
   : m_bulk_data(NULL),
     m_commit( false ),
+    m_are_late_fields_enabled( false ),
     m_part_repo( this ),
     m_attributes(),
     m_universal_part( NULL ),
@@ -239,6 +234,7 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
 MetaData::MetaData()
   : m_bulk_data(NULL),
     m_commit( false ),
+    m_are_late_fields_enabled( false ),
     m_part_repo( this ),
     m_attributes(),
     m_universal_part( NULL ),
@@ -454,6 +450,10 @@ void MetaData::declare_field_restriction(
       arg_first_dimension,
       arg_init_value
       );
+
+  if (is_commit()) {
+    m_bulk_data->reallocate_field_data(arg_field);
+  }
 }
 
 void MetaData::declare_field_restriction(
@@ -477,6 +477,10 @@ void MetaData::declare_field_restriction(
       arg_first_dimension,
       arg_init_value
       );
+
+  if (is_commit()) {
+    m_bulk_data->reallocate_field_data(arg_field);
+  }
 }
 
 //----------------------------------------------------------------------
@@ -521,6 +525,8 @@ void MetaData::internal_declare_known_cell_topology_parts()
     register_topology(stk::topology::LINE_2_1D);
     register_topology(stk::topology::LINE_3_1D);
 
+    register_topology(stk::topology::SPRING_2);
+    register_topology(stk::topology::SPRING_3);
   }
 
   else if (m_spatial_dimension == 2) {
@@ -543,6 +549,9 @@ void MetaData::internal_declare_known_cell_topology_parts()
 
     register_topology(stk::topology::SHELL_LINE_2);
     register_topology(stk::topology::SHELL_LINE_3);
+
+    register_topology(stk::topology::SPRING_2);
+    register_topology(stk::topology::SPRING_3);
   }
 
   else if (m_spatial_dimension == 3) {
@@ -562,6 +571,9 @@ void MetaData::internal_declare_known_cell_topology_parts()
 
     register_topology(stk::topology::BEAM_2);
     register_topology(stk::topology::BEAM_3);
+
+    register_topology(stk::topology::SPRING_2);
+    register_topology(stk::topology::SPRING_3);
 
     register_topology(stk::topology::TET_4);
     register_topology(stk::topology::TET_8);
@@ -610,15 +622,18 @@ Part& MetaData::register_topology(stk::topology stkTopo)
   return *iter->second;
 }
 
-void MetaData::register_cell_topology(const shards::CellTopology cell_topology, EntityRank entity_rank)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+STK_DEPRECATED void MetaData::register_cell_topology(const shards::CellTopology cell_topology, EntityRank entity_rank)
 {
   ThrowRequireMsg(is_initialized(),"MetaData::register_cell_topology: initialize() must be called before this function");
 
   stk::topology stkTopo = stk::mesh::get_topology(cell_topology, spatial_dimension());
   register_topology(stkTopo);
 }
+#endif
 
-shards::CellTopology MetaData::register_super_cell_topology(stk::topology topo)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+STK_DEPRECATED shards::CellTopology MetaData::register_super_cell_topology(stk::topology topo)
 {
   shards::CellTopology cell_topology = get_cell_topology(topo.name());
   if (!cell_topology.isValid()) {
@@ -647,8 +662,10 @@ shards::CellTopology MetaData::register_super_cell_topology(stk::topology topo)
   }
   return cell_topology;
 }
+#endif
 
-shards::CellTopology
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+STK_DEPRECATED shards::CellTopology
 MetaData::get_cell_topology(
   const std::string &   topology_name) const
 {
@@ -660,6 +677,7 @@ MetaData::get_cell_topology(
   else
     return shards::CellTopology();
 }
+#endif
 
 Part& MetaData::get_topology_root_part(stk::topology stkTopo) const
 {
@@ -668,7 +686,13 @@ Part& MetaData::get_topology_root_part(stk::topology stkTopo) const
     return *iter->second;
 }
 
-Part &MetaData::get_cell_topology_root_part(const shards::CellTopology cell_topology) const
+bool MetaData::has_topology_root_part(stk::topology stkTopo) const
+{
+    return (m_topologyPartMap.find(stkTopo) != m_topologyPartMap.end());
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+STK_DEPRECATED Part &MetaData::get_cell_topology_root_part(const shards::CellTopology cell_topology) const
 {
   ThrowRequireMsg(is_initialized(),"MetaData::get_cell_topology_root_part: initialize() must be called before this function");
   stk::topology stkTopo = stk::mesh::get_topology(cell_topology, spatial_dimension());
@@ -676,11 +700,14 @@ Part &MetaData::get_cell_topology_root_part(const shards::CellTopology cell_topo
 
   return get_topology_root_part(stkTopo);
 }
+#endif
 
-shards::CellTopology MetaData::get_cell_topology( const Part & part) const
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+STK_DEPRECATED shards::CellTopology MetaData::get_cell_topology( const Part & part) const
 {
   return stk::mesh::get_cell_topology(get_topology(part));
 }
+#endif
 
 stk::topology MetaData::get_topology(const Part & part) const
 {
@@ -824,9 +851,9 @@ void verify_parallel_consistency( const MetaData & s , ParallelMachine pm )
 
 bool is_topology_root_part(const Part & part) {
   MetaData & meta = MetaData::get(part);
-  shards::CellTopology top = meta.get_cell_topology(part);
-  if (top.isValid()) {
-    const Part & root_part = meta.get_cell_topology_root_part(top);
+  stk::topology top = meta.get_topology(part);
+  if (top.is_valid()) {
+    const Part & root_part = meta.get_topology_root_part(top);
     return (root_part == part);
   }
   return false;
@@ -840,7 +867,7 @@ bool is_topology_root_part(const Part & part) {
 void set_topology(Part & part, stk::topology topo)
 {
   MetaData& meta = part.mesh_meta_data();
-  ThrowRequireMsg(meta.is_initialized(),"set_cell_topology: initialize() must be called before this function");
+  ThrowRequireMsg(meta.is_initialized(),"set_topology: initialize() must be called before this function");
 
   if (part.primary_entity_rank() == InvalidEntityRank) {
     //declare_part will set the rank on the part, if the part already exists.
@@ -859,13 +886,15 @@ void set_topology(Part & part, stk::topology topo)
   meta.declare_part_subset(*root_part, part);
 }
 
-void set_cell_topology( Part& part, shards::CellTopology cell_topology)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+STK_DEPRECATED void set_cell_topology( Part& part, shards::CellTopology cell_topology)
 {
   MetaData& meta = MetaData::get(part);
 
   stk::topology stkTopo = get_topology(cell_topology, meta.spatial_dimension());
   set_topology(part, stkTopo);
 }
+#endif
 
 const std::vector<std::string>&
 entity_rank_names()
@@ -953,11 +982,21 @@ stk::topology get_topology( shards::CellTopology shards_topology, unsigned spati
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellLine<3> >()) )
     t = stk::topology::SHELL_LINE_3;
 
+  //NOTE: shards does not define a spring 2
+  //else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Spring<2> >()) )
+  //  t = stk::topology::SPRING_2;
+
+  //NOTE: shards does not define a spring 3
+  //else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Spring<3> >()) )
+  //  t = stk::topology::SPRING_3;
+
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >()) )
     t = stk::topology::SHELL_TRI_3;
+
   //NOTE: shards does not define a shell triangle 4
   //else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<4> >()) )
   //  t = stk::topology::SHELL_TRI_4;
+
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<6> >()) )
     t = stk::topology::SHELL_TRI_6;
 
@@ -1046,6 +1085,12 @@ shards::CellTopology get_cell_topology(stk::topology t)
       return shards::CellTopology( shards::getCellTopologyData< shards::ShellLine<2>          >() );
   case stk::topology::SHELL_LINE_3:
       return shards::CellTopology( shards::getCellTopologyData< shards::ShellLine<3>          >() );
+  case stk::topology::SPRING_2: break;
+    //NOTE: shards does not define a topology for a 2-noded spring element
+    //return shards::CellTopology( shards::getCellTopologyData< shards::Spring<2>             >() );
+  case stk::topology::SPRING_3: break;
+    //NOTE: shards does not define a topology for a 3-noded spring element
+    //return shards::CellTopology( shards::getCellTopologyData< shards::Spring<3>             >() );
   case stk::topology::TRI_3_2D:
       return shards::CellTopology( shards::getCellTopologyData< shards::Triangle<3>           >() );
   case stk::topology::TRI_4_2D:
@@ -1060,9 +1105,9 @@ shards::CellTopology get_cell_topology(stk::topology t)
       return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<9>      >() );
   case stk::topology::SHELL_TRI_3:
       return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<3>      >() );
-  case stk::topology::SHELL_TRI_4:break;
+  case stk::topology::SHELL_TRI_4: break;
     //NOTE: shards does not define a topology for a 4-noded triangular shell
-    //return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<4>    >() );
+    //return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<4>      >() );
   case stk::topology::SHELL_TRI_6:
       return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<6>      >() );
   case stk::topology::SHELL_QUAD_4:

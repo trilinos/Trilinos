@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.MultiPredictor is the python interface to namespace
 MultiPredictor of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.MultiPredictor is to provide predictor direction
 strategies.  The python version of LOCA.MultiPredictor supports the

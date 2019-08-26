@@ -314,36 +314,28 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
 namespace Kokkos {
   template <class S, class L, class G, class N>
   size_t dimension_scalar(const Tpetra::MultiVector<S,L,G,N>& mv) {
-    typedef Tpetra::MultiVector<S,L,G,N> MV;
-    typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev device_type;
-    typedef typename dual_view_type::t_host host_type;
-    dual_view_type dual_view = mv.getDualView();
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    if (dual_view.modified_host() > dual_view.modified_device())
-      return dimension_scalar(dual_view.template view<device_type>());
-#else
-    if ( dual_view.need_sync_device() )
-    { return dimension_scalar(dual_view.template view<device_type>()); }
-#endif
-    return dimension_scalar(dual_view.template view<host_type>());
+    if ( mv.need_sync_device() ) {
+      // NOTE (mfh 02 Apr 2019) This doesn't look right.  Shouldn't I
+      // want the most recently updated View, which in this case would
+      // be the host View?  However, this is what I found when I
+      // changed these lines not to call deprecated code, so I'm
+      // leaving it.
+      return dimension_scalar(mv.getLocalViewDevice());
+    }
+    return dimension_scalar(mv.getLocalViewHost());
   }
 
   template <class S, class L, class G, class N>
   size_t dimension_scalar(const Tpetra::Vector<S,L,G,N>& v) {
-    typedef Tpetra::Vector<S,L,G,N> V;
-    typedef typename V::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev device_type;
-    typedef typename dual_view_type::t_host host_type;
-    dual_view_type dual_view = v.getDualView();
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    if (dual_view.modified_host() > dual_view.modified_device())
-      return dimension_scalar(dual_view.template view<device_type>());
-#else
-    if ( dual_view.need_sync_device() )
-    { return dimension_scalar(dual_view.template view<device_type>()); }
-#endif
-    return dimension_scalar(dual_view.template view<host_type>());
+    if ( v.need_sync_device() ) {
+      // NOTE (mfh 02 Apr 2019) This doesn't look right.  Shouldn't I
+      // want the most recently updated View, which in this case would
+      // be the host View?  However, this is what I found when I
+      // changed these lines not to call deprecated code, so I'm
+      // leaving it.
+      return dimension_scalar(v.getLocalViewDevice());
+    }
+    return dimension_scalar(v.getLocalViewHost());
   }
 }
 

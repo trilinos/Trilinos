@@ -384,7 +384,11 @@ public:
   //! @name I/O methods.
   //@{
   //! Print method.  Defines the behavior of the std::ostream << operator
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
   virtual void print(std::ostream& os) const;
+#else
+  virtual std::ostream& print(std::ostream& os) const;
+#endif
 
   //@}
 protected:
@@ -1001,7 +1005,11 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::multiply (ESide sideA, ScalarTyp
 }
 
 template<typename OrdinalType, typename ScalarType>
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
 void SerialDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
+#else
+std::ostream& SerialDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
+#endif
 {
   os << std::endl;
   if(valuesCopied_)
@@ -1021,6 +1029,9 @@ void SerialDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
       os << std::endl;
     }
   }
+#ifdef TEUCHOS_HIDE_DEPRECATED_CODE
+  return os;
+#endif
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -1084,6 +1095,35 @@ std::ostream& operator<< (std::ostream& os, const Teuchos::SerialDenseMatrix<Ord
   return os;
 }
 #endif
+
+/// \brief Ostream manipulator for SerialDenseMatrix 
+template<typename OrdinalType, typename ScalarType>
+struct SerialDenseMatrixPrinter {
+public:
+  const SerialDenseMatrix<OrdinalType,ScalarType> &obj;
+  SerialDenseMatrixPrinter(
+        const SerialDenseMatrix<OrdinalType,ScalarType> &obj_in)
+      : obj(obj_in) {}
+};
+
+/// \brief Output SerialDenseMatrix object through its stream manipulator. 
+template<typename OrdinalType, typename ScalarType>
+std::ostream&
+operator<<(std::ostream &out,
+           const SerialDenseMatrixPrinter<OrdinalType,ScalarType> printer)
+{
+  printer.obj.print(out);
+  return out;
+}
+
+/// \brief Return SerialDenseMatrix ostream manipulator Use as:
+template<typename OrdinalType, typename ScalarType>
+SerialDenseMatrixPrinter<OrdinalType,ScalarType>
+printMat(const SerialDenseMatrix<OrdinalType,ScalarType> &obj)
+{
+  return SerialDenseMatrixPrinter<OrdinalType,ScalarType>(obj);
+}
+
 
 } // namespace Teuchos
 

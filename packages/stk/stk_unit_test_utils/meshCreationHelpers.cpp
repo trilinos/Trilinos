@@ -51,7 +51,11 @@ size_t write_mesh_data__field_1__field_2__field_3(const std::string & filename, 
 void create_mesh_without_time_steps(const std::string & filename, MPI_Comm communicator)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, communicator);
+    stk::mesh::BulkData bulk(meta, communicator, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRAION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     stk::io::StkMeshIoBroker stkIoWriter(communicator);
     stk::unit_test_util::write_mesh_data__field_1__field_2__field_3(filename, communicator, bulk, stkIoWriter);
 }

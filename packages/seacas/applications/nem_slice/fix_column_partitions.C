@@ -5,7 +5,6 @@
 #include "elb_err.h"
 #include "fix_column_partitions.h"
 #include <cmath>
-#include <cstdio> // for sprintf
 #include <iostream>
 #include <map>
 #include <vector>
@@ -117,7 +116,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
     INT *elnodes  = mesh->connect[i];
     int  nelnodes = get_elem_info(NNODES, etype);
 
-    float elcoord[8][3];
+    float elcoord[27][3];
     for (int j = 0; j < nelnodes; j++)
       for (int d = 0; d < 3; d++)
         elcoord[j][d] = mesh->coords[elnodes[j] + d * nnod];
@@ -146,7 +145,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
       ss_to_node_list(etype, mesh->connect[i], j + 1, fnodes);
 
       // Translate global IDs of side nodes to local IDs in element
-      int fnodes_loc[4];
+      int fnodes_loc[9];
       for (int k = 0; k < nfn; k++) {
         bool found = false;
         for (int k2 = 0; k2 < nelnodes; k2++)
@@ -299,14 +298,14 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
     typename std::vector<INT>::reverse_iterator rit = above_list.rbegin();
     while (rit != above_list.rend()) {
       colelems.push_back(*rit);
-      rit++;
+      ++rit;
     }
     colelems.push_back(i);
 
     typename std::vector<INT>::iterator it = below_list.begin();
     while (it != below_list.end()) {
       colelems.push_back(*it);
-      it++;
+      ++it;
     }
 
     // Make all the other elements in the column be on the same
@@ -329,7 +328,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
         std::map<int, int>::iterator itmap = status.first;
         (itmap->second)++;
       }
-      it++;
+      ++it;
     }
 
     // Which processor has a dominant presence in this column?
@@ -341,7 +340,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
         max_procid = itmap->first;
         max_elems  = itmap->second;
       }
-      itmap++;
+      ++itmap;
     }
 
     // Switch all elements in the column to the dominant processor
@@ -350,13 +349,13 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
       INT elem2 = *it;
       if (lb->vertex2proc[elem2] != max_procid) {
 #ifdef DEBUG
-        std::cout << " Reassigning element " << elem2 << " from proc " << lb->vertex2proc[elem2]
-                  << " to " << max_procid << "\n";
+        fmt::print(" Reassigning element {} from proc {} to {}\n", elem2, lb->vertex2proc[elem2],
+                   max_procid);
 #endif
         lb->vertex2proc[elem2] = max_procid;
-        nmoved++;
+        ++nmoved;
       }
-      it++;
+      ++it;
     }
 
   } // for (int i = 0; i < nel; i++)

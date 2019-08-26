@@ -43,6 +43,8 @@
 
 #include "SL_Version.h"
 #include <SL_tokenize.h>
+#include <copyright.h>
+#include <fmt/format.h>
 
 #if defined(__PUMAGON__)
 #define NPOS (size_t) - 1
@@ -68,7 +70,7 @@ namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
   void parse_integer_list(const char *tokens, std::vector<int> *list);
   void parse_omissions(const char *tokens, Omissions *omissions,
-		       const std::string &basename, bool require_ids);
+                       const std::string &basename, bool require_ids);
 #endif
 } // namespace
 
@@ -87,7 +89,7 @@ void SystemInterface::enroll_options()
   options_.enroll("processors", GetLongOption::MandatoryValue,
                   "Number of processors to decompose the mesh for", "1");
 
-  options_.enroll("debug", GetLongOption::MandatoryValue, "Debug level: 0, 1, 2", "0");
+  options_.enroll("debug", GetLongOption::MandatoryValue, "Debug level: 0, 1, 2, 4 or'd", "0");
 
   options_.enroll("input_type", GetLongOption::MandatoryValue,
                   "File format for input mesh file (default = exodus)", "exodusii");
@@ -95,7 +97,7 @@ void SystemInterface::enroll_options()
   options_.enroll("method", GetLongOption::MandatoryValue,
                   "Decomposition method\n"
                   "\t\t'linear'   : #elem/#proc to each processor\n"
-                  "\t\t'scattered': Shuffle elements to each processor\n"
+                  "\t\t'scattered': Shuffle elements to each processor (cyclic)\n"
                   "\t\t'random'   : Random distribution of elements, maintains balance\n"
                   "\t\t'rb'       : Metis multilevel recursive bisection\n"
                   "\t\t'kway'     : Metis multilevel k-way graph partitioning\n"
@@ -125,37 +127,37 @@ void SystemInterface::enroll_options()
 
 #if 0
   options_.enroll("omit_blocks", GetLongOption::MandatoryValue,
-		  "Omit the specified part/block pairs. The specification is\n"
-		  "\t\tp#:block_id1:block_id2,p#:block_id1. For example, to\n"
-		  "\t\tOmit block id 1,3,4 from part 1; block 2 3 4 from part 2;\n"
-		  "\t\tand block 8 from part5, specify\n"
-		  "\t\t\t '-omit_blocks p1:1:3:4,p2:2:3:4,p5:8'",
-		  nullptr);
+                  "Omit the specified part/block pairs. The specification is\n"
+                  "\t\tp#:block_id1:block_id2,p#:block_id1. For example, to\n"
+                  "\t\tOmit block id 1,3,4 from part 1; block 2 3 4 from part 2;\n"
+                  "\t\tand block 8 from part5, specify\n"
+                  "\t\t\t '-omit_blocks p1:1:3:4,p2:2:3:4,p5:8'",
+                  nullptr);
 
   options_.enroll("omit_nodesets", GetLongOption::OptionalValue,
-		  "If no value, then don't transfer any nodesets to output file.\n"
-		  "\t\tIf just p#,p#,... specified, then omit sets on specified parts\n"
-		  "\t\tIf p#:id1:id2,p#:id2,id4... then omit the sets with the specified\n"
-		  "\t\tid in the specified parts.",
-		  0, "ALL");
+                  "If no value, then don't transfer any nodesets to output file.\n"
+                  "\t\tIf just p#,p#,... specified, then omit sets on specified parts\n"
+                  "\t\tIf p#:id1:id2,p#:id2,id4... then omit the sets with the specified\n"
+                  "\t\tid in the specified parts.",
+                  0, "ALL");
 
   options_.enroll("omit_sidesets", GetLongOption::OptionalValue,
-		  "If no value, then don't transfer any sidesets to output file.\n"
-		  "\t\tIf just p#,p#,... specified, then omit sets on specified parts\n"
-		  "\t\tIf p#:id1:id2,p#:id2,id4... then omit the sets with the specified\n"
-		  "\t\tid in the specified parts.",
-		  0, "ALL");
+                  "If no value, then don't transfer any sidesets to output file.\n"
+                  "\t\tIf just p#,p#,... specified, then omit sets on specified parts\n"
+                  "\t\tIf p#:id1:id2,p#:id2,id4... then omit the sets with the specified\n"
+                  "\t\tid in the specified parts.",
+                  0, "ALL");
 
   options_.enroll("steps", GetLongOption::MandatoryValue,
                   "Specify subset of timesteps to transfer to output file.\n"
                   "\t\tFormat is beg:end:step. 1:10:2 --> 1,3,5,7,9\n"
-		  "\t\tTo only transfer last step, use '-steps LAST'",
+                  "\t\tTo only transfer last step, use '-steps LAST'",
                   "1:");
 
   options_.enroll("disable_field_recognition", GetLongOption::NoValue,
-		  "Do not try to combine scalar fields into higher-order fields such as\n"
-		  "\t\tvectors or tensors based on the field suffix",
-		  nullptr);
+                  "Do not try to combine scalar fields into higher-order fields such as\n"
+                  "\t\tvectors or tensors based on the field suffix",
+                  nullptr);
 
 #endif
   options_.enroll("contiguous_decomposition", GetLongOption::NoValue,
@@ -177,8 +179,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help") != nullptr) {
     options_.usage();
-    std::cerr << "\n\tCan also set options via SLICE_OPTIONS environment variable.\n";
-    std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for slice support.<-<-<-\n";
+    fmt::print(stderr, "\n\t   Can also set options via SLICE_OPTIONS environment variable.\n");
+    fmt::print(stderr, "\n\t->->-> Send email to gsjaardema@gmail.com for slice support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -188,39 +190,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    std::cerr << "\n"
-              << "Copyright(C) 2016-2017 National Technology & Engineering Solutions of\n"
-              << "Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-              << "NTESS, the U.S. Government retains certain rights in this software.\n"
-              << "\n"
-              << "Redistribution and use in source and binary forms, with or without\n"
-              << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n"
-              << "\n"
-              << "* Redistributions of source code must retain the above copyright\n"
-              << "   notice, this list of conditions and the following disclaimer.\n"
-              << "\n"
-              << "* Redistributions in binary form must reproduce the above\n"
-              << "  copyright notice, this list of conditions and the following\n"
-              << "  disclaimer in the documentation and/or other materials provided\n"
-              << "  with the distribution.\n"
-              << "\n"
-              << "* Neither the name of NTESS nor the names of its\n"
-              << "  contributors may be used to endorse or promote products derived\n"
-              << "  from this software without specific prior written permission.\n"
-              << "\n"
-              << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-              << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-              << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-              << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-              << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-              << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-              << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-              << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-              << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-              << "\n";
+    fmt::print("{}", copyright("2016-2019"));
     exit(EXIT_SUCCESS);
   }
 
@@ -228,7 +198,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     inputFile_ = argv[option_index++];
   }
   else {
-    std::cerr << "\nERROR: no input mesh file specified\n\n";
+    fmt::print(stderr, "\nERROR: no input mesh file specified\n\n");
     return false;
   }
 
@@ -242,9 +212,11 @@ bool SystemInterface::parse_options(int argc, char **argv)
   // Get options from environment variable also...
   char *options = getenv("SLICE_OPTIONS");
   if (options != nullptr) {
-    std::cerr
-        << "\nThe following options were specified via the SLICE_OPTIONS environment variable:\n"
-        << "\t" << options << "\n\n";
+    fmt::print(
+        stderr,
+        "\nThe following options were specified via the SLICE_OPTIONS environment variable:\n"
+        "\t{}\n\n",
+        options);
     options_.parse(options, options_.basename(*argv));
   }
 
@@ -280,8 +252,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
         decompFile_ = temp;
       }
       else {
-        std::cerr << "\nThe 'file' decompositon method was specified, but no element "
-                     "to processor mapping file was specified via the -decomposition_file option\n";
+        fmt::print(stderr,
+                   "\nThe 'file' decompositon method was specified, but no element "
+                   "to processor mapping file was specified via the -decomposition_file option\n");
         return false;
       }
     }
@@ -413,10 +386,10 @@ void SystemInterface::dump(std::ostream & /*unused*/) const {}
 
 void SystemInterface::show_version()
 {
-  std::cout << "Slice"
-            << "\n"
-            << "\t(A code for decomposing finite element meshes for running parallel analyses.)\n"
-            << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
+  fmt::print("Slice\n"
+             "\t(A code for decomposing finite element meshes for running parallel analyses.)\n"
+             "\t(Version: {}) Modified: {}\n",
+             qainfo[2], qainfo[1]);
 }
 
 namespace {
@@ -452,19 +425,19 @@ namespace {
       // written for all blocks.
       std::vector<std::string>::iterator I = var_list.begin();
       while (I != var_list.end()) {
-	StringVector name_id;
-	name_id = SLIB::tokenize(*I, ":");
-	std::string var_name = LowerCase(name_id[0]);
-	if (name_id.size() == 1) {
-	  (*variable_list).push_back(std::make_pair(var_name,0));
-	} else {
-	  for (size_t i=1; i < name_id.size(); i++) {
-	    // Convert string to integer...
-	    int id = std::stoi(name_id[i]);
-	    (*variable_list).push_back(std::make_pair(var_name,id));
-	  }
-	}
-	++I;
+        StringVector name_id;
+        name_id = SLIB::tokenize(*I, ":");
+        std::string var_name = LowerCase(name_id[0]);
+        if (name_id.size() == 1) {
+          (*variable_list).push_back(std::make_pair(var_name,0));
+        } else {
+          for (size_t i=1; i < name_id.size(); i++) {
+            // Convert string to integer...
+            int id = std::stoi(name_id[i]);
+            (*variable_list).push_back(std::make_pair(var_name,id));
+          }
+        }
+        ++I;
       }
       // Sort the list...
       std::sort(variable_list->begin(), variable_list->end(), string_id_sort);
@@ -476,8 +449,8 @@ namespace {
     // Break into tokens separated by ","
     if (tokens != nullptr) {
       if (LowerCase(tokens) == "all") {
-	(*list).push_back(0);
-	return;
+        (*list).push_back(0);
+        return;
       }
 
       std::string token_string(tokens);
@@ -486,18 +459,18 @@ namespace {
 
       std::vector<std::string>::iterator I = part_list.begin();
       while (I != part_list.end()) {
-	int id = std::stoi(*I);
-	(*list).push_back(id);
-	++I;
+        int id = std::stoi(*I);
+        (*list).push_back(id);
+        ++I;
       }
     }
   }
 
   void parse_omissions(const char *tokens, Omissions *omissions,
-		       const std::string &basename, bool require_ids)
+                       const std::string &basename, bool require_ids)
   {
-    //	to Omit block id 1,3,4 from part 1; block 2 3 4 from part 2;
-    //	and block 8 from part5, specify
+    //  to Omit block id 1,3,4 from part 1; block 2 3 4 from part 2;
+    //  and block 8 from part5, specify
     // '-omit_blocks p1:1:3:4,p2:2:3:4,p5:8'
 
     // Break into tokens separated by "," Each token will then be a
@@ -528,14 +501,14 @@ namespace {
       StringVector part_block;
       part_block = SLIB::tokenize(*I, ":");
       if (part_block.empty() || (part_block[0][0] != 'p' && part_block[0][0] != 'P')) {
-	std::cerr << "ERROR: Bad syntax specifying the part number.  Use 'p' + part number\n"
-		  << "       For example -omit_blocks p1:1:2:3,p2:2:3:4\n";
-	exit(EXIT_FAILURE);
+        fmt::print(stderr, "ERROR: Bad syntax specifying the part number.  Use 'p' + part number\n"
+                   "       For example -omit_blocks p1:1:2:3,p2:2:3:4\n");
+        exit(EXIT_FAILURE);
       }
       if (require_ids && part_block.size() == 1) {
-	std::cerr << "ERROR: No block ids were found following the part specification.\n"
-		  << "       for part " << part_block[0] << "\n";
-	exit(EXIT_FAILURE);
+        fmt::print(stderr, "ERROR: No block ids were found following the part specification.\n"
+                   "       for part {}\n", part_block[0]);
+        exit(EXIT_FAILURE);
       }
 
       // Extract the part number...
@@ -546,16 +519,16 @@ namespace {
       // this part.  Since don't know how many entities there are,
       // store the id as '0' to signify all.
       if (part_block.size() == 1) {
-	(*omissions)[part_num].push_back("ALL");
+        (*omissions)[part_num].push_back("ALL");
       } else {
-	// Get the list of blocks to omit for this part...
-	std::vector<std::string>::iterator J = part_block.begin(); ++J; // Skip p#
-	while (J != part_block.end()) {
-	  std::string block = *J;
-	  std::string name = basename + '_'+ block;
-	  (*omissions)[part_num].push_back(name);
-	  ++J;
-	}
+        // Get the list of blocks to omit for this part...
+        std::vector<std::string>::iterator J = part_block.begin(); ++J; // Skip p#
+        while (J != part_block.end()) {
+          std::string block = *J;
+          std::string name = basename + '_'+ block;
+          (*omissions)[part_num].push_back(name);
+          ++J;
+        }
       }
       ++I;
     }

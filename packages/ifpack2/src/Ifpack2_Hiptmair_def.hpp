@@ -315,13 +315,9 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
     {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
-      auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-#else
       auto X_lcl_host = X.getLocalViewHost ();
       auto Y_lcl_host = Y.getLocalViewHost ();
-#endif
+
       if (X_lcl_host.data () == Y_lcl_host.data ()) {
         Xcopy = rcp (new MV (X, Teuchos::Copy));
       } else {

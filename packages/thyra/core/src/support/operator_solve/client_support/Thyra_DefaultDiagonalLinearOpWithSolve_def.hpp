@@ -89,7 +89,7 @@ DefaultDiagonalLinearOpWithSolve<Scalar>::solveSupportsImpl(
 template<class Scalar>
 bool
 DefaultDiagonalLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureTypeImpl(
-  EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const
+  EOpTransp M_trans, const SolveMeasureType& /* solveMeasureType */) const
 {
   return this->solveSupportsImpl(M_trans); // I am a direct solver!
 }
@@ -107,6 +107,8 @@ DefaultDiagonalLinearOpWithSolve<Scalar>::solveImpl(
 
 #ifdef THYRA_DEBUG
   TEUCHOS_ASSERT(this->solveSupportsImpl(transp));
+#else
+  (void)transp;
 #endif
 
   typedef Teuchos::ScalarTraits<Scalar> ST;

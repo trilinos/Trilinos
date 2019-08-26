@@ -85,6 +85,7 @@ structured aggregation = 0   [default]
 transpose: use implicit = 1
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 
@@ -205,6 +206,7 @@ structured aggregation = 0   [default]
 transpose: use implicit = 1
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 
@@ -309,6 +311,7 @@ structured aggregation = 0   [default]
 transpose: use implicit = 1
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 
@@ -361,6 +364,7 @@ structured aggregation = 0   [default]
 transpose: use implicit = 1
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 

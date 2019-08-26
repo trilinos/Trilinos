@@ -543,7 +543,7 @@ namespace Xpetra {
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel /* verbLevel */=Teuchos::Describable::verbLevel_default) const {
       XPETRA_MONITOR("EpetraMultiVectorT::describe");
       vec_->Print(out);
     }
@@ -957,7 +957,7 @@ namespace Xpetra {
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel /* verbLevel */=Teuchos::Describable::verbLevel_default) const {
       XPETRA_MONITOR("EpetraMultiVectorT::describe");
       vec_->Print(out);
     }

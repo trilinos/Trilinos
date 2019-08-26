@@ -53,8 +53,7 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
@@ -182,9 +181,10 @@ int main(int argc, char *argv[]) {
 */
 
     /*** Solve optimization problem. ***/
-    ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
+    parlist->sublist("Step").set("Type","Trust Region");
+    ROL::OptimizationSolver<RealT> solver(opt,*parlist);
     zp->zero(); // set zero initial guess
-    algo_tr.run(opt, true, *outStream);
+    solver.solve(*outStream);
 
     *outStream << " Solution Statistic: S(z) = " << opt.getSolutionStatistic() << "\n";
 
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     }
     file.close();
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

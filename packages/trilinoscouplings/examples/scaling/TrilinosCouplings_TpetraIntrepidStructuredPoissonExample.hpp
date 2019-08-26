@@ -80,8 +80,8 @@ namespace TpetraIntrepidPoissonExample {
 // besides the default.
 //
 typedef double ST;
-typedef int    LO;
-typedef int    GO;
+typedef Tpetra::Map<>::local_ordinal_type    LO;
+typedef Tpetra::Map<>::global_ordinal_type    GO;
 typedef Tpetra::Map<>::node_type  Node;
 typedef Teuchos::ScalarTraits<ST> STS;
 typedef STS::magnitudeType MT;
@@ -165,7 +165,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::Array<Teuchos::Array<MT> >& coordArray,
                             Teuchos::Array<LO>& lNodesPerDim,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
@@ -181,7 +180,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::Array<Teuchos::Array<MT> >& coordArray,
                             Teuchos::Array<LO>& lNodesPerDim,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,

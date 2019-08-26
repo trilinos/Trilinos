@@ -64,12 +64,10 @@
 
 namespace Xpetra {
 
-  template <class Scalar = double,
-            class LocalOrdinal = CrsGraph<>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename CrsGraph<LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class CrsMatrix
     : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
       public DistObject<char, LocalOrdinal,GlobalOrdinal,Node>
@@ -111,8 +109,16 @@ namespace Xpetra {
     //! Scale the current values of a matrix, this = alpha*this.
     virtual void scale(const Scalar &alpha)= 0;
 
-    //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
-    //** \warning This is an expert-only routine and should not be called from user code. */
+    /*!
+    \brief Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+
+    \param numNonZeros Number of non-zeros
+    \param rowptr Pointer to row array of Crs data
+    \param colind Pointer to colInd array of Crs data
+    \param values Pointer to value array of Crs data
+
+    \warning This is an expert-only routine and should not be called from user code.
+    */
     virtual void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values)=0;
 
     //! Sets the 1D pointer arrays of the graph.
@@ -176,6 +182,9 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
+    //! Returns the current number of entries in the specified global row.
+    virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const = 0;
+
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
@@ -237,7 +246,18 @@ namespace Xpetra {
     //! @name Methods implementing Operator
     //@{
 
-    //! Computes the sparse matrix-multivector multiplication.
+    /*! \brief Computes the sparse matrix-multivector multiplication.
+     *
+     * This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
+     * where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the transpose),
+     * or \f$A^H\f$ (the conjugate transpose).
+     *
+     * @param[in] X Input vector
+     * @param[in,out] Y Result vector
+     * @param[in] mode Transpose mode
+     * @param[in] alpha Scaling factor
+     * @param[in] beta Scaling factor
+     */
     virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const = 0;
 
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.

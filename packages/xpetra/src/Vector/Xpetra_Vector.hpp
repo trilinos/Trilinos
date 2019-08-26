@@ -53,13 +53,10 @@
 
 namespace Xpetra {
 
-  template <class Scalar = MultiVector<>::scalar_type,
-            class LocalOrdinal =
-              typename MultiVector<Scalar>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Vector
     : public virtual MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {

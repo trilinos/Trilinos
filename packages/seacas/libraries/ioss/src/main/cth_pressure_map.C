@@ -630,7 +630,6 @@ namespace {
   {
     const Ioss::NodeBlockContainer &         nbs = region.get_node_blocks();
     Ioss::NodeBlockContainer::const_iterator i   = nbs.begin();
-    int                                      id  = 1;
     while (i != nbs.end()) {
       const std::string &name = (*i)->name();
       if (debug) {
@@ -650,7 +649,6 @@ namespace {
       transfer_fields(*i, nb, Ioss::Field::MESH);
       transfer_fields(*i, nb, Ioss::Field::ATTRIBUTE);
       ++i;
-      ++id;
     }
     if (debug) {
       std::cerr << '\n';
@@ -802,7 +800,7 @@ namespace {
     for (IF = fields.begin(); IF != fields.end(); ++IF) {
       std::string field_name = *IF;
       if (field_name != "ids" && !oge->field_exists(field_name) &&
-          (prefix.length() == 0 ||
+          (prefix.empty() ||
            std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
         // If the field does not already exist, add it to the output node block
         Ioss::Field field = ige->get_field(field_name);
@@ -844,9 +842,8 @@ namespace {
         continue;
       }
 
-      if (field_name != "ids" &&
-          (prefix.length() == 0 ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+      if (field_name != "ids" && (prefix.empty() || std::strncmp(prefix.c_str(), field_name.c_str(),
+                                                                 prefix.length()) == 0)) {
         assert(oge->field_exists(field_name));
         transfer_field_data_internal(ige, oge, field_name);
       }

@@ -85,6 +85,8 @@ stk::topology get_topology_by_name(const std::string& name)
        {  "BEAM_3"        , stk::topology::BEAM_3       },
        {  "SHELL_LINE_2"  , stk::topology::SHELL_LINE_2 },
        {  "SHELL_LINE_3"  , stk::topology::SHELL_LINE_3 },
+       {  "SPRING_2"      , stk::topology::SPRING_2     },
+       {  "SPRING_3"      , stk::topology::SPRING_3     },
        {  "TRI_3_2D"      , stk::topology::TRI_3_2D     },
        {  "TRI_4_2D"      , stk::topology::TRI_4_2D     },
        {  "TRI_6_2D"      , stk::topology::TRI_6_2D     },
@@ -271,7 +273,7 @@ MeshData parse_input(const std::string& meshDescription)
         }
         data.elementDataVec.push_back(elementData);
     }
-    ThrowRequireMsg(spatialDim>1, "Error!  Spatial dimension not defined to be 2 or 3!");
+    ThrowRequireMsg(spatialDim>=1, "Error!  Spatial dimension not defined to be 1, 2 or 3!");
     data.spatialDim = spatialDim;
     return data;
 }
@@ -288,19 +290,28 @@ void declare_parts_and_coordinates(MeshData &meshData, stk::mesh::MetaData &meta
         if(!stk::io::is_part_io_part(part))
             stk::io::put_io_part_attribute(part);
     }
-    CoordinatesField & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
-    stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), meshData.spatialDim,
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian> >::data_type*) nullptr);
+    if (meshData.spatialDim == 3 || meshData.spatialDim == 1)
+    {
+        CoordinatesField & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
+        stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), meshData.spatialDim,
+                                    (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian> >::data_type*) nullptr);
+    }
+    else if (meshData.spatialDim == 2)
+    {
+        stk::mesh::Field<double, stk::mesh::Cartesian2d> & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian2d>>(stk::topology::NODE_RANK, "coordinates", 1);
+        stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), meshData.spatialDim,
+                                    (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian2d> >::data_type*) nullptr);
+    }
 }
 
 void fill_coordinates(const std::vector<double> coordinates, stk::mesh::BulkData &bulk, unsigned spatialDimension)
 {
     stk::mesh::EntityVector nodes;
     stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
-    CoordinatesField & coordsField = static_cast<CoordinatesField&>(*bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates"));
+    stk::mesh::FieldBase & coordsField = *bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
     for(size_t nodeIndex=0; nodeIndex < nodes.size(); nodeIndex++)
     {
-       double * nodalCoords = stk::mesh::field_data(coordsField, nodes[nodeIndex]);
+       double * nodalCoords = static_cast<double*>(stk::mesh::field_data(coordsField, nodes[nodeIndex]));
        for(unsigned coordIndex=0; coordIndex < spatialDimension; coordIndex++)
            nodalCoords[coordIndex] = coordinates[nodeIndex*spatialDimension+coordIndex];
     }

@@ -1157,17 +1157,17 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       const value_type dx(int i) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return if_then_else( c.val() == scalar_type(0.0) || expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.dx(i)*pow(expr1.val(),c.val()-scalar_type(1.0))) );
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),c.val())) );
       }
 
       KOKKOS_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return if_then_else( c.val() == scalar_type(0.0) || expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)*pow(expr1.val(),c.val()-scalar_type(1.0))) );
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c.val())));
       }
 
     protected:
@@ -1381,17 +1381,17 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       const value_type dx(int i) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return c.val() == scalar_type(0.0) || expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.dx(i)*pow(expr1.val(),c.val()-scalar_type(1.0)));
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),c.val()));
       }
 
       KOKKOS_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return c.val() == scalar_type(0.0) || expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.fastAccessDx(i)*pow(expr1.val(),c.val()-scalar_type(1.0)));
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c.val()));
       }
 
     protected:

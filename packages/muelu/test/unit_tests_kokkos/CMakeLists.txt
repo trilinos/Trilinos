@@ -31,12 +31,8 @@ APPEND_SET(SOURCES
 
 # First ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos
   ${PACKAGE_NAME}_ENABLE_Amesos2
-  ${PACKAGE_NAME}_ENABLE_Ifpack
   ${PACKAGE_NAME}_ENABLE_Ifpack2
-  ${PACKAGE_NAME}_ENABLE_Epetra
-  ${PACKAGE_NAME}_ENABLE_EpetraExt
   ${PACKAGE_NAME}_ENABLE_Tpetra
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_Zoltan
@@ -48,29 +44,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     SOURCES ${SOURCES}
     COMM serial mpi
     )
-
-  IF (${PACKAGE_NAME}_ENABLE_Epetra  AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
-      ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
-
-    TRIBITS_ADD_TEST(
-      UnitTests_kokkos
-      NAME "UnitTestsEpetra_kokkos"
-      ARGS "--linAlgebra=Epetra"
-      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-      )
-
-    TRIBITS_ADD_TEST(
-      UnitTests_kokkos
-      NAME "UnitTestsEpetra_kokkos"
-      ARGS "--linAlgebra=Epetra"
-      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-      NUM_MPI_PROCS 4
-      COMM mpi
-      )
-
-  ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 

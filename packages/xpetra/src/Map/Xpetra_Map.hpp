@@ -73,9 +73,6 @@ namespace Xpetra {
 # else
   typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
 # endif
-#else
-  // We can instantiate Xpetra::Tpetra objects for EpetraNode.  So this has to be defined.
-  typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
 #endif
 
   enum UnderlyingLib {
@@ -84,8 +81,8 @@ namespace Xpetra {
     NotSpecified
   };
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Map
     : public Teuchos::Describable
@@ -179,8 +176,10 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     virtual Teuchos::RCP< const Teuchos::Comm< int > > getComm() const = 0;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     virtual Teuchos::RCP< Node > getNode() const = 0;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 

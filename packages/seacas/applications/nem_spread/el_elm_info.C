@@ -37,16 +37,17 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fmt/ostream.h>
 
 #define LINEAR 1
 #define QUADRATIC 2
 
 /*************** R O U T I N E S   I N   T H I S   F I L E ********************
  *
- *  NAME				TYPE		CALL_BY
- * ---------------		-------		------------------------
- *  elem_info ()			int		"rf_fill.c" matrix_fill
- *  get_type  ()			int
+ *  NAME                                TYPE            CALL_BY
+ * ---------------              -------         ------------------------
+ *  elem_info ()                        int             "rf_fill.c" matrix_fill
+ *  get_type  ()                        int
  *  calc_elem_vol()              double          multiple routines
  *
  ******************************************************************************/
@@ -66,15 +67,14 @@ int elem_info(int info, int ielem_type, int supp)
  * The routine currently handles the following requests for information
  * about element type, ielem_type:
  *
- *	NNODES     = Number of nodes in the element
- *	NDIM	   = Dimension of the element
+ *      NNODES     = Number of nodes in the element
+ *      NDIM       = Dimension of the element
  *      NN_SIDE    = Number of nodes on a side/face of the element.
  */
 
 {
 
-  int         answer = 0;
-  const char *yo     = "elem_info: ";
+  int answer = 0;
 
   /* return desired element information */
 
@@ -83,7 +83,7 @@ int elem_info(int info, int ielem_type, int supp)
   case SPHERE:
     switch (info) {
     case NNODES: answer = 1; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -99,7 +99,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -115,7 +115,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -131,7 +131,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -147,7 +147,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -163,7 +163,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -179,7 +179,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -195,7 +195,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -205,7 +205,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 2; break;
     case NDIM: answer = 1; break;
     case NN_SIDE: answer = 1; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -215,7 +215,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 3; break;
     case NDIM: answer = 1; break;
     case NN_SIDE: answer = 1; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -224,7 +224,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 4; break;
     case NDIM: answer = 2; break;
     case NN_SIDE: answer = 2; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -233,7 +233,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 8; break;
     case NDIM: answer = 2; break;
     case NN_SIDE: answer = 3; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -242,7 +242,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 9; break;
     case NDIM: answer = 2; break;
     case NN_SIDE: answer = 3; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -251,7 +251,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 3; break;
     case NDIM: answer = 2; break;
     case NN_SIDE: answer = 2; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -260,7 +260,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 4; break;
     case NDIM: answer = 2; break;
     case NN_SIDE: answer = 2; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -269,7 +269,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 6; break;
     case NDIM: answer = 2; break;
     case NN_SIDE: answer = 3; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -278,7 +278,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 7; break;
     case NDIM: answer = 2; break;
     case NN_SIDE: answer = 3; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -287,7 +287,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 8; break;
     case NDIM: answer = 3; break;
     case NN_SIDE: answer = 4; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -303,7 +303,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -312,7 +312,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 20; break;
     case NDIM: answer = 3; break;
     case NN_SIDE: answer = 8; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -321,7 +321,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 27; break;
     case NDIM: answer = 3; break;
     case NN_SIDE: answer = 9; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity.\n", __func__); exit(1);
     }
     break;
 
@@ -330,7 +330,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 4; break;
     case NDIM: answer = 3; break;
     case NN_SIDE: answer = 3; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -339,7 +339,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 10; break;
     case NDIM: answer = 3; break;
     case NN_SIDE: answer = 6; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity.\n", __func__); exit(1);
     }
     break;
 
@@ -348,7 +348,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 14; break;
     case NDIM: answer = 3; break;
     case NN_SIDE: answer = 7; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity.\n", __func__); exit(1);
     }
     break;
 
@@ -357,7 +357,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 15; break;
     case NDIM: answer = 3; break;
     case NN_SIDE: answer = 7; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity.\n", __func__); exit(1);
     }
     break;
 
@@ -366,7 +366,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 8; break;
     case NDIM: answer = 3; break;
     case NN_SIDE: answer = 4; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity.\n", __func__); exit(1);
     }
     break;
 
@@ -382,7 +382,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -391,7 +391,7 @@ int elem_info(int info, int ielem_type, int supp)
     case NNODES: answer = 12; break;
     case NDIM: answer = 3; break;
     case NN_SIDE: answer = 6; break;
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -407,7 +407,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -424,7 +424,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -441,7 +441,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -458,7 +458,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -474,7 +474,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -489,7 +489,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -504,7 +504,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -519,7 +519,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -534,7 +534,7 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
@@ -549,11 +549,11 @@ int elem_info(int info, int ielem_type, int supp)
       }
       break;
 
-    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    default: fmt::print(stderr, "{}ERROR: Unknown quantity\n", __func__); exit(1);
     }
     break;
 
-  default: fprintf(stderr, "%sERROR: Unimplemented element type.\n", yo); exit(1);
+  default: fmt::print(stderr, "{}ERROR: Unimplemented element type.\n", __func__); exit(1);
   }
 
   return answer;
@@ -581,8 +581,7 @@ int get_type(char string[], int nodes, int num_dim)
 
 {
 
-  int         answer = 0;
-  const char *yo     = "get_type: ";
+  int answer = 0;
 
   /* Precondition: string is lower case */
   switch (string[0]) {
@@ -594,10 +593,10 @@ int get_type(char string[], int nodes, int num_dim)
       case 8: /* serendipity biquadratic quadralateral */ answer = QUAD8; break;
       case 9: /* biquadratic quadrilateral */ answer = QUAD9; break;
       default:
-        fprintf(stderr,
-                "%sERROR: Quadralateral element with %d nodes "
-                "not valid.\n",
-                yo, nodes);
+        fmt::print(stderr,
+                   "{}ERROR: Quadrilateral element with {} nodes "
+                   "not valid.\n",
+                   __func__, nodes);
         exit(1);
       }
     }
@@ -614,10 +613,10 @@ int get_type(char string[], int nodes, int num_dim)
           answer = SHELL2;
         }
         else {
-          fprintf(stderr,
-                  "%sERROR: Shell element with %d nodes "
-                  "only valid in 2D.\n",
-                  yo, nodes);
+          fmt::print(stderr,
+                     "{}ERROR: Shell element with {} nodes "
+                     "only valid in 2D.\n",
+                     __func__, nodes);
           exit(1);
         }
         break;
@@ -626,10 +625,10 @@ int get_type(char string[], int nodes, int num_dim)
           answer = SHELL3;
         }
         else {
-          fprintf(stderr,
-                  "%sERROR: Shell element with %d nodes "
-                  "only valid in 2D.\n",
-                  yo, nodes);
+          fmt::print(stderr,
+                     "{}ERROR: Shell element with {} nodes "
+                     "only valid in 2D.\n",
+                     __func__, nodes);
           exit(1);
         }
         break;
@@ -637,7 +636,7 @@ int get_type(char string[], int nodes, int num_dim)
       case 8: answer = SHELL8; break;
       case 9: answer = SHELL9; break;
       default:
-        fprintf(stderr, "%sERROR: Shell element with %d nodes unknown.\n", yo, nodes);
+        fmt::print(stderr, "{}ERROR: Shell element with {} nodes unknown.\n", __func__, nodes);
         exit(1);
       }
     }
@@ -658,7 +657,8 @@ int get_type(char string[], int nodes, int num_dim)
       case 2: answer = BAR2; break;
       case 3: answer = BAR3; break;
       default:
-        fprintf(stderr, "%sERROR: Bar/beam/truss elements with %d nodes unknown.\n", yo, nodes);
+        fmt::print(stderr, "{}ERROR: Bar/beam/truss elements with {} nodes unknown.\n", __func__,
+                   nodes);
         exit(1);
       }
     }
@@ -698,10 +698,12 @@ int get_type(char string[], int nodes, int num_dim)
         break;
       default:
         if (num_dim == 2) {
-          fprintf(stderr, "%sERROR: triangle element with %d nodes not valid.\n", yo, nodes);
+          fmt::print(stderr, "{}ERROR: triangle element with {} nodes not valid.\n", __func__,
+                     nodes);
         }
         else {
-          fprintf(stderr, "%sERROR: triangle shell element with %d nodes not valid.\n", yo, nodes);
+          fmt::print(stderr, "{}ERROR: triangle shell element with {} nodes not valid.\n", __func__,
+                     nodes);
         }
         exit(1);
       }
@@ -713,7 +715,8 @@ int get_type(char string[], int nodes, int num_dim)
       case 8: /* 8-node (mid-face) tetrahedron */ answer = TET8; break;
       case 10: /* triquadratic tetrahedron */ answer = TET10; break;
       default:
-        fprintf(stderr, "%sERROR: tetrahedral element with %d nodes not valid.\n", yo, nodes);
+        fmt::print(stderr, "{}ERROR: tetrahedral element with {} nodes not valid.\n", __func__,
+                   nodes);
         exit(1);
       }
     }
@@ -726,7 +729,7 @@ int get_type(char string[], int nodes, int num_dim)
       switch (nodes) {                         /* select number of nodes in this element */
       case 12: /* only one hexshell */ answer = HEXSHELL; break;
       default:
-        fprintf(stderr, "%sERROR: hexshell element with %d nodes not valid.\n", yo, nodes);
+        fmt::print(stderr, "{}ERROR: hexshell element with {} nodes not valid.\n", __func__, nodes);
         exit(1);
       }
     }
@@ -738,7 +741,8 @@ int get_type(char string[], int nodes, int num_dim)
       case 20: /* serendipity triquadratic hexahedron */ answer = HEX20; break;
       case 27: /* triquadratic hexahedron */ answer = HEX27; break;
       default:
-        fprintf(stderr, "%sERROR: Hexahedron element with %d nodes not valid.\n", yo, nodes);
+        fmt::print(stderr, "{}ERROR: Hexahedron element with {} nodes not valid.\n", __func__,
+                   nodes);
         exit(1);
       }
     }
@@ -753,7 +757,7 @@ int get_type(char string[], int nodes, int num_dim)
       case 18: answer = PYRAMID18; break;
       case 19: answer = PYRAMID19; break;
       default:
-        fprintf(stderr, "%sERROR: pyramid element with %d nodes not valid.\n", yo, nodes);
+        fmt::print(stderr, "{}ERROR: pyramid element with {} nodes not valid.\n", __func__, nodes);
         exit(1);
       }
     }
@@ -767,13 +771,15 @@ int get_type(char string[], int nodes, int num_dim)
       case 15: /* triquadratic wedge */ answer = WEDGE15; break;
       case 16: /* triquadratic wedge */ answer = WEDGE16; break;
       default:
-        fprintf(stderr, "%sERROR: wedge element with %d nodes not valid.\n", yo, nodes);
+        fmt::print(stderr, "{}ERROR: wedge element with {} nodes not valid.\n", __func__, nodes);
         exit(1);
       }
     }
     break;
 
-  default: fprintf(stderr, "%sERROR: Element type %s not supported!\n", yo, string); exit(1);
+  default:
+    fmt::print(stderr, "{}ERROR: Element type {} not supported!\n", __func__, string);
+    exit(1);
   }
   /* return desired element information */
   return answer;
@@ -781,5 +787,5 @@ int get_type(char string[], int nodes, int num_dim)
 } /* get_type */
 
 /*****************************************************************************/
-/*			END of el_elm_info.c				     */
+/*                      END of el_elm_info.c                                 */
 /*****************************************************************************/

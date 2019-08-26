@@ -52,8 +52,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
-#include <inttypes.h>     // for PRId64
-#include <stdio.h>
 
 /*!
  * \undoc reads the attributes for an edge, face, or element block
@@ -68,14 +66,14 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, void *a
   const char *vattrbname;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* Determine index of obj_id in vobjids array */
   if (obj_type == EX_NODAL) {
     obj_id_ndx = 0;
   }
   else {
-    obj_id_ndx = ex_id_lkup(exoid, obj_type, obj_id);
+    obj_id_ndx = ex__id_lkup(exoid, obj_type, obj_id);
     if (obj_id_ndx <= 0) {
       ex_get_err(NULL, NULL, &status);
 
@@ -124,7 +122,7 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, void *a
   }
 
   /* read in the attributes */
-  if (ex_comp_ws(exoid) == 4) {
+  if (ex__comp_ws(exoid) == 4) {
     status = nc_get_var_float(exoid, attrid, attrib);
   }
   else {

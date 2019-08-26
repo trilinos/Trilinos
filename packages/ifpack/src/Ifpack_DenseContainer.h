@@ -233,7 +233,7 @@ public:
                                const double value);
 
   //! Sets all necessary parameters.
-  virtual int SetParameters(Teuchos::ParameterList& List)
+  virtual int SetParameters(Teuchos::ParameterList& /* List */)
   {
     return(0);
   }

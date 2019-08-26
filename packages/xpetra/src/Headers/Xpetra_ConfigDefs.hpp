@@ -212,8 +212,8 @@ namespace Xpetra {
   //   };
 
   enum CombineMode {
-    ADD,    /*!< TODO */
-    INSERT, /*!< TODO */
+    ADD,    /*!< Existing values will be summed with new values. */
+    INSERT, /*!< Insert new values that don't currently exist. */
     ABSMAX  /*!< TODO: don't exist for Tpetra */
   };
 

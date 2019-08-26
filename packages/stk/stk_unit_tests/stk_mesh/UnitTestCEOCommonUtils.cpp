@@ -622,8 +622,8 @@ void fillMeshfor3Elem4Proc1Edge3DAndTest(stk::unit_test_util::BulkDataTester &me
 
     mesh.modification_end();
 
-    stk::mesh::Part * hex_topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::HEXAHEDRON_8));
-    stk::mesh::Part * edge_topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::LINE_2));
+    stk::mesh::Part * hex_topo_part  = &meta.get_topology_root_part(stk::topology::HEXAHEDRON_8);
+    stk::mesh::Part * edge_topo_part = &meta.get_topology_root_part(stk::topology::LINE_2);
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
     Part * shared_part    = &meta.globally_shared_part();
@@ -988,8 +988,8 @@ void checkStatesAfterCEO_3Elem4Proc1Edge3D(stk::unit_test_util::BulkDataTester &
     stk::mesh::MetaData &meta = mesh.mesh_meta_data();
     stk::mesh::Part * elem_part = meta.get_part("elem_part");
     stk::mesh::Part * edge_part = meta.get_part("edge_part");
-    stk::mesh::Part * hex_topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::HEXAHEDRON_8));
-    stk::mesh::Part * edge_topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::LINE_2));
+    stk::mesh::Part * hex_topo_part  = &meta.get_topology_root_part(stk::topology::HEXAHEDRON_8);
+    stk::mesh::Part * edge_topo_part = &meta.get_topology_root_part(stk::topology::LINE_2);
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
     Part * shared_part    = &meta.globally_shared_part();
@@ -1336,8 +1336,8 @@ void checkStatesAfterCEOME_3Elem4Proc1Edge3D(stk::unit_test_util::BulkDataTester
     stk::mesh::MetaData &meta = mesh.mesh_meta_data();
     stk::mesh::Part * elem_part = meta.get_part("elem_part");
     stk::mesh::Part * edge_part = meta.get_part("edge_part");
-    stk::mesh::Part * hex_topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::HEXAHEDRON_8));
-    stk::mesh::Part * edge_topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::LINE_2));
+    stk::mesh::Part * hex_topo_part  = &meta.get_topology_root_part(stk::topology::HEXAHEDRON_8);
+    stk::mesh::Part * edge_topo_part = &meta.get_topology_root_part(stk::topology::LINE_2);
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
     Part * shared_part    = &meta.globally_shared_part();

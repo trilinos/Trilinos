@@ -252,10 +252,10 @@ public:
     return(*Matrix_);
   }
 
-  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
-                         const int MaxIters = 1550,
-                         const double Tol = 1e-9,
-                         Epetra_RowMatrix* Matrix_in = 0)
+  virtual double Condest(const Ifpack_CondestType /* CT */ = Ifpack_Cheap,
+                         const int /* MaxIters */ = 1550,
+                         const double /* Tol */ = 1e-9,
+                         Epetra_RowMatrix* /* Matrix_in */ = 0)
   {
     return(-1.0);
   }

@@ -101,9 +101,9 @@ namespace MueLu {
     go away, while others should be moved to Xpetra.
   */
   template <class Scalar,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class Utilities_kokkos : public MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_UTILITIES_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -562,7 +562,7 @@ namespace MueLu {
       Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
       In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
      */
-    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false, const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
+    static RCP<Matrix> Transpose(Matrix& Op, bool /* optimizeTranspose */ = false, const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
       switch (Op.getRowMap()->lib()) {
       case Xpetra::UseTpetra:
       {
@@ -574,7 +574,16 @@ namespace MueLu {
           // Compute the transpose A of the Tpetra matrix tpetraOp.
           RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
           Tpetra::RowMatrixTransposer<SC,LO,GO,NO> transposer(rcpFromRef(tpetraOp),label);
-          A = transposer.createTranspose(params);
+          {
+            using Teuchos::ParameterList;
+            using Teuchos::rcp;
+            RCP<ParameterList> transposeParams = params.is_null () ?
+              rcp (new ParameterList) :
+              rcp (new ParameterList (*params));
+            transposeParams->set ("sort", false);
+            A = transposer.createTranspose(transposeParams);
+          }
+
           RCP<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > AA   = rcp(new Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>(A));
           RCP<CrsMatrix>                             AAA  = rcp_implicit_cast<CrsMatrix>(AA);
           RCP<CrsMatrixWrap>                         AAAA = rcp(new CrsMatrixWrap(AAA));

@@ -30,6 +30,9 @@ using namespace Tacho;
 typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
 typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
 
+typedef TaskSchedulerType<DeviceSpaceType> scheduler_type;
+typedef TaskSchedulerType<HostSpaceType> host_scheduler_type;
+
 TEST( Numeric, constructor ) {
   TEST_BEGIN;
   const ordinal_type
@@ -85,7 +88,7 @@ TEST( Numeric, constructor ) {
   Kokkos::deep_copy(s_snodes_tree_ptr      , S.SupernodesTreePtr());
   Kokkos::deep_copy(s_snodes_tree_children , S.SupernodesTreeChildren());
 
-  NumericTools<ValueType,DeviceSpaceType> N(m, a_row_ptr, a_cols,
+  NumericTools<ValueType,scheduler_type> N(m, a_row_ptr, a_cols,
                                             d_idx, d_idx,
                                             S.NumSupernodes(), s_supernodes,
                                             s_gid_spanel_ptr, s_gid_spanel_colidx,
@@ -116,7 +119,7 @@ TEST( Numeric, Cholesky_Serial ) {
   SymbolicTools S(A, T);
   S.symbolicFactorize();
   
-  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), 
+  NumericTools<ValueType,scheduler_type> N(A.NumRows(), A.RowPtr(), A.Cols(), 
                                             T.PermVector(), T.InvPermVector(),
                                             S.NumSupernodes(), S.Supernodes(),
                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
@@ -201,7 +204,7 @@ TEST( Numeric, factorizeCholesky_Parallel ) {
   Kokkos::deep_copy(s_snodes_tree_ptr      , S.SupernodesTreePtr());
   Kokkos::deep_copy(s_snodes_tree_children , S.SupernodesTreeChildren());
 
-  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), a_row_ptr, a_cols,
+  NumericTools<ValueType,scheduler_type> N(A.NumRows(), a_row_ptr, a_cols,
                                             t_perm, t_peri,
                                             S.NumSupernodes(), s_supernodes,
                                             s_gid_spanel_ptr, s_gid_spanel_colidx,
