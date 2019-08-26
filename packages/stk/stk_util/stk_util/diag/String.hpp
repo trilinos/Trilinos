@@ -774,8 +774,11 @@ operator+ ( const char *cs1, const StringBase<CT> &cs2 ) {
 }
 
 template<class CT>
-std::string operator+(const std::string & lhs, const StringBase<CT> & rhs ) {
-  std::string s( lhs ); return s.append( rhs.c_str(), rhs.length() );
+StringBase<CT>
+operator+(const std::string & cs1, const StringBase<CT> & cs2 ) {
+  StringBase<CT> t(cs1);
+  t.append(cs2.c_str(), cs2.length());
+  return t;
 }
 
 ///

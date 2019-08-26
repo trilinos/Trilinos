@@ -182,6 +182,13 @@ public:
         m_isSkinMesh = skinMesh;
     }
 
+    bool get_is_restart() const {
+        return m_isRestart;
+    }
+    void set_is_restart(const bool restart) {
+        m_isRestart = restart;
+    }
+
     const std::vector<stk::io::FieldAndName>& get_additional_attribute_fields() const {
         return m_additionalAttributeFields;
     }
@@ -215,6 +222,7 @@ private:
     bool m_hasGhosting = false;
     bool m_hasAdaptivity = false;
     bool m_isSkinMesh = false;
+    bool m_isRestart = false;
     std::vector<stk::io::FieldAndName> m_additionalAttributeFields;
 };
 

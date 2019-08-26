@@ -52,18 +52,9 @@ void SidesetUpdater::entity_added(stk::mesh::Entity entity)
 
 void SidesetUpdater::entity_deleted(stk::mesh::Entity entity)
 {
-//    if(isActive) {
-//        if ((bulkData.entity_rank(entity) == stk::topology::ELEMENT_RANK) && bulkData.bucket(entity).owned())
-//        {
-////            sierra::Env::outputP0() << "P[" << bulkData.parallel_rank() << "] Deleting element " << bulkData.identifier(entity) << std::endl;
-//            fill_sidesets_element_belongs_to(entity);
-//        }
-//        if(bulkData.entity_rank(entity) == bulkData.mesh_meta_data().side_rank())
-//        {
-//            std::vector<const stk::mesh::Part*> sidesetParts = get_sideset_io_parts(bulkData, entity);
-//            insert_parts(entity, sidesetParts, DELETED);
-//        }
-//    }
+  if(isActive) {
+    remove_element_entries_from_sidesets(bulkData, entity, &sidesetPartsWithDeletedEntries);
+  }
 }
 
 bool is_part_a_sideset(const stk::mesh::BulkData& bulkData, const stk::mesh::Part& part)
@@ -162,8 +153,37 @@ void issue_internal_sideset_warning(const std::string& sidesetName)
            <<"Execution will continue but correct results are not guaranteed. Contact sierra-help@sandia.gov"<<std::endl;
 }
 
+void SidesetUpdater::update_sidesets_without_surface_block_mapping(stk::mesh::BulkData &bulk)
+{
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  std::vector<const stk::mesh::Part *> surfacesInMap = meta.get_surfaces_in_surface_to_block_map();
+  std::set<const stk::mesh::Part*> alreadyUpdatedSidesetParts;
+  std::set<const stk::mesh::Part*> difference;
+
+  for(const stk::mesh::Part *part : surfacesInMap) {
+    if(part->subsets().empty()) {
+        const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(*part);
+
+        bool sidesetExists = bulk.does_sideset_exist(parentPart);
+        if(sidesetExists) {
+          alreadyUpdatedSidesetParts.insert( &parentPart );
+        }
+    }
+  }
+
+  std::set_difference(sidesetPartsWithDeletedEntries.begin(), sidesetPartsWithDeletedEntries.end(),
+                      alreadyUpdatedSidesetParts.begin(), alreadyUpdatedSidesetParts.end(), std::inserter(difference, difference.end()));
+
+  for (const stk::mesh::Part* sidePart: difference)
+  {
+    bulk.clear_sideset(*sidePart);
+    fill_sideset(*sidePart, bulk, meta.universal_part());
+  }
+}
+
 void SidesetUpdater::reconstruct_noninternal_sidesets(const std::vector<size_t> &reducedValues)
 {
+    bool reconstructed = false;
     if(bulkData.was_mesh_modified_since_sideset_creation())
     {
         std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
@@ -178,7 +198,6 @@ void SidesetUpdater::reconstruct_noninternal_sidesets(const std::vector<size_t> 
                 const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(*part);
                 parents.insert(&parentPart);
             } else {
-//                sierra::Env::outputP0() << "P[" << bulkData.parallel_rank() << "] Skipping internal sideset: " << part->name() << std::endl;
                 if (!internalSidesetWarningHasBeenIssued && bulkData.parallel_rank()==0)
                 {
                     issue_internal_sideset_warning(part->name());
@@ -186,6 +205,8 @@ void SidesetUpdater::reconstruct_noninternal_sidesets(const std::vector<size_t> 
                 internalSidesetWarningHasBeenIssued = true;
             }
         }
+
+        update_sidesets_without_surface_block_mapping(bulkData);
 
         for(auto part : parents) {
             bulkData.clear_sideset(*part);
@@ -197,12 +218,20 @@ void SidesetUpdater::reconstruct_noninternal_sidesets(const std::vector<size_t> 
             bool isInternal = reducedValues[i] == 1;
             if (!isInternal)
             {
-//                sierra::Env::outputP0() << "P[" << bulkData.parallel_rank() << "] Constructing sideset: " << surfacePart->name() << std::endl;
                 std::vector<const stk::mesh::Part *> touching_parts = bulkData.mesh_meta_data().get_blocks_touching_surface(surfacePart);
 
                 stk::mesh::Selector elementSelector = stk::mesh::selectUnion(touching_parts);
+                if(touching_parts.size() == 0) {
+                  elementSelector = bulkData.mesh_meta_data().universal_part();
+                }
                 fill_sideset(*surfacePart, bulkData, elementSelector);
+                reconstructed = true;
             }
+        }
+
+        if (reconstructed)
+        {
+            bulkData.synchronize_sideset_sync_count();
         }
     }
 }
@@ -240,6 +269,7 @@ void SidesetUpdater::finished_modification_end_notification()
 
 void SidesetUpdater::started_modification_end_notification()
 {
+  sidesetPartsWithDeletedEntries.clear();
 }
 
 void SidesetUpdater::fill_values_to_reduce(std::vector<size_t> &valuesToReduce)

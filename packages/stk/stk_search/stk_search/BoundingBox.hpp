@@ -244,19 +244,19 @@ inline bool intersects(Box<T1> const& a, Box<T2> const& b)
 }
 
 template <typename T, typename U>
-inline void scale_by(Sphere<T> &s, U const& c)
+inline void scale_by(Sphere<T> &s, U const& mult_fact, U const& add_fact = 0)
 {
-  s.set_radius(s.radius()*c);
+  s.set_radius(s.radius()*mult_fact + add_fact);
 }
 
 template <typename T, typename U>
-inline void scale_by(Box<T> &b, U const& c)
+inline void scale_by(Box<T> &b, U const& mult_fact, U const& add_fact = 0)
 {
   Point<T> & min_corner = b.min_corner();
   Point<T> & max_corner = b.max_corner();
-  const U factor = (c-1)/2;
+  const U factor = (mult_fact-1)/2;
   for (int i=0; i<3; ++i) {
-    const T d = factor*(max_corner[i] - min_corner[i]);
+    const T d = factor*(max_corner[i] - min_corner[i]) + add_fact;
     min_corner[i] -= d;
     max_corner[i] += d;
   }

@@ -34,7 +34,42 @@ class Plane3 {
 
   /// N = Cross(P1-P0,P2-P0)/Length(Cross(P1-P0,P2-P0)), c = Dot(N,P0) where
   /// P0, P1, P2 are points on the plane.
-  Plane3 (const Vec<REAL,3>& P0, const Vec<REAL,3>& P1, const Vec<REAL,3>& P2) { m_normal = Cross(P1 - P0, P2 - P0); m_normal.unitize(); m_constant = Dot(m_normal,P0); }
+  Plane3 (const Vec<REAL,3>& P0, const Vec<REAL,3>& P1, const Vec<REAL,3>& P2) {
+    m_normal = Cross(P1 - P0, P2 - P0);
+    m_normal.unitize();
+    m_constant = Dot(m_normal,P0);
+  }
+
+  void set_from_most_orthogonal_angle_of_triangle(const Vec<REAL,3>& P0, const Vec<REAL,3>& P1, const Vec<REAL,3>& P2) {
+    const Vec<REAL,3> P01 = P1-P0;
+    const Vec<REAL,3> P12 = P2-P1;
+    const Vec<REAL,3> P20 = P0-P2;
+    const double L01 = P01.length();
+    const double L12 = P12.length();
+    const double L20 = P20.length();
+
+    const double sin0 = std::abs(Dot(P01,P20)/(L01*L20));
+    const double sin1 = std::abs(Dot(P12,P01)/(L12*L01));
+    const double sin2 = std::abs(Dot(P20,P12)/(L20*L12));
+
+    if (sin0 < sin1)
+    {
+      if (sin0 < sin2)
+        m_normal = Cross(P01, -P20);
+      else
+        m_normal = Cross(P20, -P12);
+    }
+    else
+    {
+      if (sin1 < sin2)
+        m_normal = Cross(P12, -P01);
+      else
+        m_normal = Cross(P20, -P12);
+    }
+    m_normal.unitize();
+
+    m_constant = Dot(m_normal,P0);
+  }
 
   bool is_valid() const
   {
