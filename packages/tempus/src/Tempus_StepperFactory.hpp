@@ -114,6 +114,7 @@ private:
       stepperType == "Bogacki-Shampine 3(2) Pair" ||
       stepperType == "Merson 4(5) Pair" ||
       stepperType == "SSPERK22" ||
+      stepperType == "SSPERK33" ||
       stepperType == "General ERK" )
       return rcp(new StepperExplicitRK<Scalar>(model, stepperType, stepperPL));
     else if (

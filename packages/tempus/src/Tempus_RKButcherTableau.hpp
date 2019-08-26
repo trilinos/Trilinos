@@ -729,6 +729,7 @@ class Explicit4Stage4thOrder_RKBT :
  *               
  *
  */
+
 template<class Scalar>
 class SSPERK22 :
   virtual public RKButcherTableau<Scalar>
@@ -773,6 +774,88 @@ class SSPERK22 :
   }
   virtual std::string description() const { return "SSPERK22"; }
 };
+
+
+
+
+// ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Explicit RK Butcher Tableau
+ *
+ *  The tableau (stage=3, order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \begin{array}{c|ccc}  0  &  0  &     &     \\
+ *                        1  &  1  &  0  &     \\
+ *                       1/2 & 1/4 & 1/4 &  0  \\ \hline
+ *                           & 1/6 & 1/6 & 4/6  \end{array}
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+
+template<class Scalar>
+class SSPERK33 :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SSPERK33()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "Strong Stability Preserving Explicit RK (stage=3, order=3)\n"
+                  << "c = [  0   1  1/2 ]'\n"
+                  << "A = [  0          ]\n"
+                  << "    [  1   0      ]\n"
+                  << "    [ 1/4 1/4  0  ]\n"
+                  << "b = [ 1/6 1/6 4/6 ]'\n"
+                << std::endl;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 3;
+    const int order     = 3;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar onehalf = one/(2*one);
+    const Scalar onefourth = one/(4*one);
+    const Scalar onesixth = one/(6*one);
+    const Scalar foursixth = 4*one/(6*one);
+
+    // Fill A:
+    A(0,0) = A(0,1) =  A(0,2) = zero;
+
+    A(1,0) = one;
+    A(1,1) = A(1,2) = zero;
+
+    A(2,0) = onefourth;
+    A(2,1) = onefourth;
+    A(2,2) = zero;
+
+
+    // Fill b:
+    b(0) = b(1) = onesixth;
+    b(2) = foursixth;
+
+    // Fill c:
+    c(0) = zero;
+    c(1) = one;
+    c(2) = onehalf;
+
+    this->initialize(A,b,c,order,Description.str());
+  }
+  virtual std::string description() const { return "SSPERK33"; }
+};
+
 
 
 
@@ -1421,7 +1504,7 @@ class Explicit3Stage3rdOrderTVD_RKBT :
     b(1) = onesixth;
     b(2) = foursixth;
 
-    // fill b_c_
+    // fill c:
     c(0) = zero;
     c(1) = one;
     c(2) = onehalf;
