@@ -177,6 +177,11 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
                           ExplicitMerson45_RKBT<Scalar> >(),
       "Merson 4(5) Pair");
 
+  // Explicit Strong Stability Preserving Runge-Kutta Methods
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          SSPERK22<Scalar> >(), "SSPERK22");
+
   // Implicit
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,

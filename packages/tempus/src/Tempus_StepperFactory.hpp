@@ -113,6 +113,7 @@ private:
       stepperType == "RK Explicit Trapezoidal" ||
       stepperType == "Bogacki-Shampine 3(2) Pair" ||
       stepperType == "Merson 4(5) Pair" ||
+      stepperType == "SSPERK22" ||
       stepperType == "General ERK" )
       return rcp(new StepperExplicitRK<Scalar>(model, stepperType, stepperPL));
     else if (
@@ -201,6 +202,10 @@ private:
       << "    'RK Explicit 2 Stage 2nd order by Runge'\n"
       << "    'RK Explicit Trapezoidal'\n"
       << "    'Bogacki-Shampine 3(2) Pair'\n"
+      << "    'SSPERK22'\n"
+      << "    'SSPERK33'\n"
+      << "    'SSPERK54'\n"
+      << "    'SSPERK104'\n"
       << "    'General ERK'\n"
       << "  Implicit Runge-Kutta Methods:\n"
       << "    'RK Backward Euler'\n"

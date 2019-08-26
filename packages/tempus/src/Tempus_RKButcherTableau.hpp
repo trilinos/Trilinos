@@ -709,6 +709,74 @@ class Explicit4Stage4thOrder_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Explicit RK Butcher Tableau
+ *
+ *  The tableau (stage=2, order=2) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  0  & 0    & \\
+ *                         1  & 1    & \\   \hline
+ *                            & 1/2  & 1/2  \end{array}
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+template<class Scalar>
+class SSPERK22 :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SSPERK22()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "Strong Stability Preserving Explicit RK (stage=2, order=2)\n"
+                << "c =     [ 0      1  ]'\n"
+                << "A =     [ 0         ]\n"
+                << "        [ 1         ]\n"
+                << "b     = [ 1/2   1/2 ]\n"
+                << std::endl;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 2;
+    const int order     = 2;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> bstar(NumStages);
+
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+
+    // Fill A:
+    A(0,0) = A(0,1) = zero;
+
+    A(1,0) = one;
+    A(1,1) = zero;
+
+    // Fill b:
+    b(0) = b(1) = as<Scalar>(one/(2*one));
+
+    // Fill c:
+    c(0) = zero;
+    c(1) = one;
+
+    this->initialize(A,b,c,order,Description.str());
+  }
+  virtual std::string description() const { return "SSPERK22"; }
+};
+
+
+
+// ----------------------------------------------------------------------------
 /** \brief Explicit RK Bogacki-Shampine Butcher Tableau
  *
  *  The tableau (order=3(2)) is
