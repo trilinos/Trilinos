@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -56,8 +56,12 @@ namespace FROSch {
     SchwarzPreconditioner<SC,LO,GO,NO> (parameterList,k->getRangeMap()->getComm()),
     K_ (k),
     SumOperator_ (new SumOperator<SC,LO,GO,NO>(k->getRangeMap()->getComm())),
-    FirstLevelOperator_ (new AlgebraicOverlappingOperator<SC,LO,GO,NO>(k,sublist(parameterList,"OneLevelOperator")))
+    FirstLevelOperator_ ()
     {
+        FROSCH_TIMER_START_LEVELID(algebraicOverlappingPreconditionerTime,"AlgebraicOverlappingPreconditioner::AlgebraicOverlappingPreconditioner");
+        // Set the LevelID in the sublist
+        parameterList->sublist("GDSWCoarseOperator").set("Level ID",this->LevelID_);
+        FirstLevelOperator_.reset(new AlgebraicOverlappingOperator<SC,LO,GO,NO>(k,sublist(parameterList,"AlgebraicOverlappingOperator")));
         SumOperator_->addOperator(FirstLevelOperator_);
     }
 
@@ -71,12 +75,14 @@ namespace FROSch {
     int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
                                                                     ConstXMapPtr repeatedMap)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"AlgebraicOverlappingPreconditioner::initialize");
         return FirstLevelOperator_->initialize(overlap,repeatedMap);
     }
 
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::compute()
     {
+        FROSCH_TIMER_START_LEVELID(computeTime,"AlgebraicOverlappingPreconditioner::compute");
         return FirstLevelOperator_->compute();
     }
 
@@ -87,6 +93,7 @@ namespace FROSch {
                                                                 SC alpha,
                                                                 SC beta) const
     {
+        FROSCH_TIMER_START_LEVELID(applyTime,"AlgebraicOverlappingPreconditioner::apply");
         return SumOperator_->apply(x,y,true,mode,alpha,beta);
     }
 

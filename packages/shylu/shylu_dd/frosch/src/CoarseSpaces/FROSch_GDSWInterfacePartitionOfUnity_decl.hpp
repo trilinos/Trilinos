@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -96,7 +96,8 @@ namespace FROSch {
                                       ConstXMapPtr nodesMap,
                                       ConstXMapPtrVecPtr dofsMaps,
                                       ParameterListPtr parameterList,
-                                      Verbosity verbosity = All);
+                                      Verbosity verbosity = All,
+                                      UN levelID = 1);
 
         virtual ~GDSWInterfacePartitionOfUnity();
 
@@ -106,7 +107,7 @@ namespace FROSch {
         virtual int sortInterface(ConstXMatrixPtr matrix,
                                   ConstXMultiVectorPtr nodeList);
 
-        virtual int computePartitionOfUnity();
+        virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null);
 
     protected:
 

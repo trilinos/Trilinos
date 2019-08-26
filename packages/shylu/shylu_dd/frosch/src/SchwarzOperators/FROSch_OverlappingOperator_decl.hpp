@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -111,6 +111,12 @@ namespace FROSch {
 
         ConstXMapPtr OverlappingMap_;
 
+        // Temp Vectors for apply()
+        mutable XMultiVectorPtr XTmp_;
+        mutable XMultiVectorPtr XOverlap_;
+        mutable XMultiVectorPtr XOverlapTmp_;
+        mutable XMultiVectorPtr YOverlap_;
+
         XImportPtr Scatter_;
 
         SubdomainSolverPtr SubdomainSolver_;
@@ -118,9 +124,6 @@ namespace FROSch {
         XMultiVectorPtr Multiplicity_;
 
         CombinationType Combine_;
-
-        int LevelID_;
-
     };
 
 }

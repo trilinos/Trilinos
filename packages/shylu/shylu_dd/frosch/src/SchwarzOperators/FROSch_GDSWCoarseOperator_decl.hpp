@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -203,7 +203,6 @@ namespace FROSch {
                                           ConstXMultiVectorPtr nodeList);
 
         DDInterfacePtr DDInterface_;
-
     };
 
 }

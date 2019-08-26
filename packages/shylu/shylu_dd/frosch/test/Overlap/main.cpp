@@ -46,6 +46,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 // Galeri::Xpetra
 #include "Galeri_XpetraProblemFactory.hpp"
@@ -137,6 +138,10 @@ int main(int argc, char *argv[])
     if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
+
+    CommWorld->barrier();
+    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("Overlap Test"));
+    TimeMonitor::setStackedTimer(stackedTimer);
 
     int N = 0;
     int color=1;
@@ -379,6 +384,12 @@ int main(int argc, char *argv[])
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
+
+    CommWorld->barrier();
+    stackedTimer->stop("Overlap Test");
+    StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stackedTimer->report(*out,CommWorld,options);
 
     return(EXIT_SUCCESS);
 
