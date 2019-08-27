@@ -75,20 +75,24 @@ SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
 
 SET(Trilinos_PACKAGES Tpetra)
-SET(Trilinos_EXCLUDE_PACKAGES Epetra, GlobiPack, OptiPack, Domi, PyTrilinos, Moertel)
+SET(Trilinos_EXCLUDE_PACKAGES Epetra GlobiPack OptiPack Domi PyTrilinos Moertel)
 SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
-SET(Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES ON)
-SET(Trilinos_ENABLE_TESTS ON)
+
+# Because Trilinos_ENABLE_PyTrilinos is set to OFF in TrilinosCTestDriverCore.rocketman.gcc.cmake,
+# the packages in Trilinos_EXCLUDE_PACKAGES above must also be disabled explicitly in EXTRA_CONFIGURE_OPTIONS
+# below.
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_ENABLE_DEPRECATED_CODE=OFF"
   "-DKOKKOS_ENABLE_DEPRECATED_CODE=OFF"
-  "-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON"
   "-DTPL_ENABLE_Matio=OFF"
   "-DTPL_ENABLE_X11=OFF"
-  "-DKokkos_ENABLE_TESTS:BOOL=OFF"
-  "-DTeuchos_ENABLE_TESTS:BOOL=OFF"
-  "-DKokkosKernels_ENABLE_TESTS:BOOL=OFF"
+  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
+  "-DTrilinos_ENABLE_GlobiPack:BOOL=OFF"
+  "-DTrilinos_ENABLE_OptiPack:BOOL=OFF"
+  "-DTrilinos_ENABLE_Domi:BOOL=OFF"
+  "-DTrilinos_ENABLE_PyTrilinos:BOOL=OFF"
+  "-DTrilinos_ENABLE_Moertel:BOOL=OFF"
 )
 
 #
