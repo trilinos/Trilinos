@@ -135,6 +135,7 @@ namespace FROSch {
         using DofOrderingVecPtr                 = ArrayRCP<DofOrdering>;
 
         using UN                                = unsigned;
+        using ConstUN                           = const UN;
         using UNVec                             = Array<UN>;
         using UNVecPtr                          = ArrayRCP<UN>;
 
@@ -215,7 +216,7 @@ namespace FROSch {
         bool IsInitialized_;
         bool IsComputed_;
 
-        UN LevelID_;
+        ConstUN LevelID_;
     };
 
 }

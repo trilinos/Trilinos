@@ -87,6 +87,7 @@ namespace FROSch {
         using InterfaceEntityPtr            = RCP<InterfaceEntity<SC,LO,GO,NO> >;
 
         using UN                            = unsigned;
+        using ConstUN                       = const UN;
 
         using GOVec                         = Array<GO>;
         using GOVecView                     = ArrayView<GO>;
@@ -136,7 +137,7 @@ namespace FROSch {
 
         bool Verbose_;
 
-        UN LevelID_;
+        const UN LevelID_;
     };
 
 }
