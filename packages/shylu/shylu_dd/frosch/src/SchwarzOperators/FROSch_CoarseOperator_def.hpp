@@ -222,7 +222,6 @@ namespace FROSch {
             // Build Map for the coarse solver
             k0 = buildCoarseSolveMap(k0);
             
-            
             // Possibly change the Send type for this Exporter
             ParameterListPtr gatheringCommunicationList = sublist(DistributionList_,"Gathering Communication");
             // Set communication type "Alltoall" if not specified differently

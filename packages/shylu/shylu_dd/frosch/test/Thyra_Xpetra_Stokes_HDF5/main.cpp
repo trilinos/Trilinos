@@ -48,6 +48,8 @@
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 #include <Teuchos_StackedTimer.hpp>
 
+#include <Epetra_MpiComm.h>
+#include <Xpetra_EpetraCrsMatrix.hpp>
 #if defined(HAVE_SHYLU_DDFROSCH_EPETRAEXT) && defined(HAVE_SHYLU_DDFROSCH_HDF5)
 #include "EpetraExt_HDF5.h"
 #endif
@@ -86,10 +88,6 @@
 // Xpetra include
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Epetra_MpiComm.h>
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#endif
 #include <Xpetra_Parameters.hpp>
 
 // FROSCH thyra includes
