@@ -344,6 +344,7 @@ const char *ex_strerror(int err_num)
   case EX_NOTROOTID: return "File id is not the root id; it is a subgroup id.";
   case EX_NULLENTITY: return "Null entity found.";
   case EX_DUPLICATEID: return "Duplicate entity id found.";
+  case EX_MSG: return "Message printed; no error implied.";
   default: return nc_strerror(err_num);
   }
 }

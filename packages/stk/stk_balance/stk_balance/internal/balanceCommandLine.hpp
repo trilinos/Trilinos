@@ -40,6 +40,8 @@ ParsedOptions parse_balance_command_line(int argc,
 
 void print_running_msg(const std::string &execName, const ParsedOptions &balanceOptions, MPI_Comm comm);
 
+std::string construct_output_file_name(const std::string& outputDirectory, const std::string& inputFile);
+
 }
 }
 

@@ -68,7 +68,11 @@ namespace stk{ namespace unit_test_util{ namespace sideset{
 
 struct IdAndSideSet {
     int id;
-    stk::mesh::SideSet sideSet;
+    stk::mesh::SideSet* sideSet = nullptr;
+
+    ~IdAndSideSet() {
+        delete sideSet;
+    }
 };
 typedef std::vector<IdAndSideSet> SideSetData;
 
@@ -124,7 +128,7 @@ public:
     }
 };
 
-stk::mesh::SideSet get_stk_side_set(stk::mesh::BulkData &bulk, const ElemIdSideVector &ss);
+stk::mesh::SideSet* get_stk_side_set(stk::mesh::BulkData &bulk, const ElemIdSideVector &ss);
 SideSetData get_stk_side_set_data(stk::mesh::BulkData &bulk, const SideSetIdAndElemIdSidesVector &ssData);
 
 void write_exo_file(BulkDataTester &bulkData, const std::string &filename);

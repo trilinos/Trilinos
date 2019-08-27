@@ -54,67 +54,50 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rocketman.gcc.cmake")
 
 #
-# Platform/compiler specific options for geminga using clang
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_NAME_DETAILS TPETRA_DEPRECATED_CODE_OFF_ENABLE_DOWNSTREAM)
+SET(CTEST_BUILD_FLAGS     "-j20 -i" )
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+SET(CTEST_PARALLEL_LEVEL 8)
+SET(CTEST_TEST_TYPE Experimental)
+SET(Trilinos_TRACK  Experimental)  # Set the CDash track to Nightly
+SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
+SET(CTEST_DO_MEMORY_TESTING FALSE)
 
-  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+SET(Trilinos_PACKAGES Tpetra)
+SET(Trilinos_EXCLUDE_PACKAGES Epetra)
+SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
 
-  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
+SET(EXTRA_CONFIGURE_OPTIONS
+  "-DTpetra_ENABLE_DEPRECATED_CODE=OFF"
+  "-DTrilinos_ENABLE_TESTS=ON"
+  "-DKOKKOS_ENABLE_DEPRECATED_CODE=OFF"
+  "-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON"
+  "-DTPL_ENABLE_Matio=OFF"
+  "-DTPL_ENABLE_X11=OFF"
+  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
+  "-DTrilinos_ENABLE_Moertel:BOOL=OFF"
+  "-DTrilinos_ENABLE_PyTrilinos:BOOL=OFF"
+  "-DTrilinos_ENABLE_Domi:BOOL=OFF"
+  "-DTrilinos_ENABLE_GlobiPack:BOOL=OFF"
+  "-DTrilinos_ENABLE_OptiPack:BOOL=OFF"
+  "-DKokkos_ENABLE_TESTS:BOOL=OFF"
+  "-DTeuchos_ENABLE_TESTS:BOOL=OFF"
+  "-DKokkosKernels_ENABLE_TESTS:BOOL=OFF"
+)
 
-  SET( CTEST_BUILD_FLAGS "-j35 -i" )
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "35" )
-
-  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
-
-  SET(Trilinos_CTEST_DO_ALL_AT_ONCE FALSE)
-
-  # Only turn on PyTrilinos for shared libraries
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-
-  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
-    "-DCMAKE_VERBOSE_MAKEFILE=ON"
-
-    "-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
-
-    "-DTrilinos_ENABLE_Fortran=OFF"
-
-    "-DTPL_ENABLE_SuperLU=ON"
-        "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
-        "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
-        "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
-    )
-
-  SET_DEFAULT(COMPILER_VERSION "Clang-3.6.0")
-
-  #Ensuring that MPI is on for all parallel builds that might be run.
-  IF(COMM_TYPE STREQUAL MPI)
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-         "-DTPL_ENABLE_MPI:BOOL=ON"
-         "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.10.0"
-       )
-
-  ELSE()
-
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/llvm-3.6.0/bin/clang"
-      "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/llvm-3.6.0/bin/clang++"
-        "-DCMAKE_CXX_FLAGS=-I/home/aprokop/local/opt/llvm/3.6.0/include/c++/v1"
-      )
-
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

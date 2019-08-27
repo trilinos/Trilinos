@@ -99,7 +99,7 @@ void computeUpperBound(const ROL::Ptr<Tpetra::MultiVector<> > & ubVec,
                        const ROL::Ptr<const FE<Real> > & fe,
                        const ROL::Ptr<Intrepid::FieldContainer<Real> > & cellNodes,
                        const ROL::Ptr<Intrepid::FieldContainer<int> > & cellDofs,
-                       const Teuchos::Array<int> & cellIds) {
+                       const Teuchos::Array<typename Tpetra::Map<>::global_ordinal_type> & cellIds) {
   int c = fe->gradN()->dimension(0);
   int f = fe->gradN()->dimension(1);
   int d = fe->gradN()->dimension(3);

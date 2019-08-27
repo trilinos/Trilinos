@@ -209,7 +209,6 @@ void construct_comm_data(const typename MeshA::EntityProcVec & entity_key_proc_f
 
   comm.offset_and_num_keys_from_mesh.resize(comm.numFromMeshCommunications);
   impl::create_offset_and_num_key(comm.uniqueFromProcVec, entity_key_proc_from, comm.offset_and_num_keys_from_mesh );
-
 }
 
 //Send data from mesh b to mesh a
@@ -302,6 +301,10 @@ template <class INTERPOLATE> ReducedDependencyGeometricTransfer<INTERPOLATE>::Re
  const stk::search::SearchMethod search_method) :
       m_mesha(mesha), m_meshb(meshb), m_name(name), m_expansion_factor(expansion_factor), m_search_method(search_method)
   {
+    //In an mpmd program, there's no guarantee that the types specified for the entity keys are honored by each program,
+    //so for now, enforce that the types are 64bit for consistency during mpi comms
+    static_assert(8 == sizeof(typename InterpolateClass::EntityKeyA), "Size of EntityKeyA needs to be 64 bit");
+    static_assert(8 == sizeof(typename InterpolateClass::EntityKeyB), "Size of EntityKeyB needs to be 64 bit");
     m_comm_data.m_shared_comm = pm;
     ThrowRequire(mesha || meshb);
   }

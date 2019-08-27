@@ -138,16 +138,16 @@ template <typename EvalT,typename LO,typename GO>
 bool ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 typeSupported() const
 {
-  if(   PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Residual>() ||
-        PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Tangent>()
+  if(   PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>() ||
+        PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>()
     )
     return true;
 
-  if(PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Jacobian>())
+  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Jacobian>())
     return linearObjFactory_!=Teuchos::null;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-  if(PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Hessian>()) {
+  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Hessian>()) {
     return linearObjFactory_!=Teuchos::null;
   }
 #endif

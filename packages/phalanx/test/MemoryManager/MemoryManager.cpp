@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -40,73 +40,27 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef PHX_MEMORY_POOL_HPP
-#define PHX_MEMORY_POOL_HPP
 
-#include "Phalanx_config.hpp"
-#include <forward_list>
-#include <memory>
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_FieldTag.hpp"
+#include "Phalanx_MemoryManager.hpp"
 
-namespace PHX {
+#include "Sacado.hpp"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_View_Fad.hpp"
+#include "Kokkos_DynRankView.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
 
-  class MemoryPool {
+namespace phalanx_test {
 
-    struct Tracker {
-      bool is_used_;
-      Kokkos::Impl::SharedAllocationTracker tracker_;
-    };
+  TEUCHOS_UNIT_TEST(Kokkos_AllocationTracker, MemoryManager)
+  {
+    PHX::MemoryManager pool1;
 
-    std::forward_list<PHX::MemoryPool::Tracker> trackers_;
-
-    /// Tracks cloned memory pools so that all clones can get access to newly allocated fields from any individual memory pool.
-    std::shared_ptr<std::forward_list<PHX::MemoryPool*>> shared_memory_pools_;
-
-    void findMemoryAllocation() {}
-
-  public:
-    MemoryPool()
-    {
-      shared_memory_pools_ = std::make_shared<std::forward_list<PHX::MemoryPool*>>();
-      shared_memory_pools_->push_front(this);
-    }
-
-    ~MemoryPool()
-    {
-      // remove self from list of memory pools
-      shared_memory_pools_->remove(this);
-    }
-
-    /// Allocate a new memory pool re-using trackers from shared memory pools.
-    MemoryPool(const MemoryPool& mp)
-    {
-      shared_memory_pools_ = mp.shared_memory_pools_;
-      trackers_ = mp.trackers_;
-      shared_memory_pools_->push_front(this);
-    }
-
-    /** \brief Clones MemoryPool to reuse tracker allocations with a separate FieldManager. */
-    std::shared_ptr<PHX::MemoryPool> clone() const
-    {return std::make_shared<PHX::MemoryPool>(*this);}
-
-    /// Assigns memory to a view, allocates new memory if needed.
-    template<class View>
-    void bindViewMemory(const PHX::FieldTag& tag, View& view) {
-      //const size_t bytes = view.span();
-
-      // Find an unused memory allocation.
-
-
-      // loop over other pools and register as free memory
-
-    }
-
-    /// Inserts tracker
-    void insertTracker(Kokkos::Impl::SharedAllocationTracker& t) {
-
-    }
-
-  };
+    auto pool2 = pool1.clone();
+  }
 
 }
-
-#endif

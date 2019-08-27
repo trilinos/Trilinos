@@ -48,7 +48,7 @@
 
 
 #include "Xpetra_TpetraExport_decl.hpp"
-
+#include "Tpetra_Distributor.hpp"
 
 namespace Xpetra {
 
@@ -195,6 +195,14 @@ getTargetMap() const
     return toXpetra(export_->getTargetMap());
 }
 
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+TpetraExport<LocalOrdinal, GlobalOrdinal, Node>::
+setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const {
+  XPETRA_MONITOR("TpetraExport::setDistributorParameters");
+  export_->getDistributor().setParameterList(params);
+}
+
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void
@@ -331,6 +339,9 @@ class TpetraExport<int, int, EpetraNode>
 
     //! The target Map used to construct this Export.
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> getTargetMap() const { return Teuchos::null; }
+
+    //! Set parameters on the underlying object
+    void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const { };
 
 
     //@}
@@ -477,6 +488,8 @@ class TpetraExport<int, long long, EpetraNode>
     //! The target Map used to construct this Export.
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> getTargetMap() const { return Teuchos::null; }
 
+    //! Set parameters on the underlying object
+    void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const { };
 
     //@}
 

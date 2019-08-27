@@ -702,9 +702,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           // relative to the cell DoF numbering
           for (int cellCol = 0; cellCol < numFieldsG; ++cellCol) {
             int localCol  = elemToNode (cell, cellCol);
-            GO globalCol = globalNodeIds[localCol];
+            GO globalCol = as<GO> (globalNodeIds[localCol]);
             //create ArrayView globalCol object for Tpetra
-            ArrayView<const GO> globalColAV = arrayView (&globalCol, 1);
+            ArrayView<GO> globalColAV = arrayView (&globalCol, 1);
 
             //Update Tpetra overlap Graph
             overlappedGraph->insertGlobalIndices (globalRowT, globalColAV);

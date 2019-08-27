@@ -49,7 +49,7 @@ namespace FROSch {
 
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -79,10 +79,10 @@ namespace FROSch {
         using ParameterListPtr              = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr;
 
         using DDInterfacePtr                = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr;
-        
+
         using EntitySetPtr                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr;
         using EntitySetPtrVecPtr            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::EntitySetPtrVecPtr;
-        
+
         using InterfaceEntityPtr            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::InterfaceEntityPtr;
 
         using UN                            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::UN;
@@ -99,9 +99,8 @@ namespace FROSch {
                                        ConstXMapPtr nodesMap,
                                        ConstXMapPtrVecPtr dofsMaps,
                                        ParameterListPtr parameterList,
-                                       Verbosity verbosity = All);
-
-        virtual int computePartitionOfUnity();
+                                       Verbosity verbosity = All,
+                                       UN levelID = 1);
 
         virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList);
 

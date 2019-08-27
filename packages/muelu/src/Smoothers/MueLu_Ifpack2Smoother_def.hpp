@@ -452,6 +452,7 @@ namespace MueLu {
       {
         actualDofsPerNode = A_->GetFixedBlockSize();
       }
+      myparamList.set("partitioner: PDE equations", actualDofsPerNode);
 
       if (numLocalRows == Teuchos::as<size_t>(TVertLineIdSmoo.size())) {
         myparamList.set("partitioner: type","user");

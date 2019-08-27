@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -120,8 +120,10 @@ namespace FROSch {
 
         SchwarzOperatorPtrVec OperatorVector_;
 
-        BoolVec EnableOperators_;
+        // Temp Vectors for apply()
+        mutable XMultiVectorPtr XTmp_;
 
+        BoolVec EnableOperators_;
     };
 
 }

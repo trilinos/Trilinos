@@ -413,6 +413,9 @@ namespace MueLu {
     // Detect if we use implicit transpose
     changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(paramList, "transpose: use implicit", bool, this->implicitTranspose_);
 
+    if (paramList.isSublist("matvec params"))
+      this->matvecParams_ = Teuchos::parameterList(paramList.sublist("matvec params"));
+
     // Create default manager
     // FIXME: should it be here, or higher up
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -1848,6 +1851,10 @@ namespace MueLu {
         this->implicitTranspose_ = hieraList.get<bool>("transpose: use implicit");
         hieraList.remove("transpose: use implicit");
       }
+
+      if (hieraList.isSublist("matvec params"))
+        this->matvecParams_ = Teuchos::parameterList(hieraList.sublist("matvec params"));
+
 
       if (hieraList.isParameter("coarse grid correction scaling factor")) {
         this->scalingFactor_ = hieraList.get<double>("coarse grid correction scaling factor");

@@ -64,7 +64,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -133,7 +133,7 @@ namespace FROSch {
         using SubdomainSolverPtr                = RCP<SubdomainSolver<SC,LO,GO,NO> >;
 
         using DofOrderingVecPtr                 = ArrayRCP<DofOrdering>;
-        
+
         using UN                                = unsigned;
         using UNVec                             = Array<UN>;
         using UNVecPtr                          = ArrayRCP<UN>;
@@ -215,6 +215,7 @@ namespace FROSch {
         bool IsInitialized_;
         bool IsComputed_;
 
+        UN LevelID_;
     };
 
 }

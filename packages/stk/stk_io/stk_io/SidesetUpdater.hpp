@@ -107,12 +107,15 @@ public:
     void set_active(bool active);
     bool get_active_flag() const { return isActive; }
 
+    void update_sidesets_without_surface_block_mapping(stk::mesh::BulkData &bulk);
+
 private:
     stk::mesh::BulkData &bulkData;
     stk::mesh::Selector activeSelector;
     std::set<const stk::mesh::Part*, part_compare_by_ordinal> stkSideSets;
     bool isActive = true;
     bool internalSidesetWarningHasBeenIssued;
+    std::set<const stk::mesh::Part*> sidesetPartsWithDeletedEntries;
 };
 
 void toggle_sideset_updaters(stk::mesh::BulkData& bulk, bool flag);

@@ -58,7 +58,7 @@
 #include "Xpetra_EpetraIntMultiVector.hpp"
 #endif
 
-#include "Xpetra_BlockedMap.hpp"
+// #include "Xpetra_BlockedMap.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {

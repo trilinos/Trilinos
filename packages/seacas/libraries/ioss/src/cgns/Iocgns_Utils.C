@@ -1265,8 +1265,8 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
   std::string v_name = fmt::format("VertexSolutionAtStep{:05}", state);
   std::string step   = std::to_string(state);
 
-  const auto &nblocks          = region->get_node_blocks();
-  const auto &nblock           = nblocks[0];
+  const auto &nblocks                 = region->get_node_blocks();
+  const auto &nblock                  = nblocks[0];
   bool        global_has_nodal_fields = nblock->field_count(Ioss::Field::TRANSIENT) > 0;
 
   // Create a lambda to avoid code duplication for similar treatment
@@ -1294,7 +1294,7 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
   const auto &sblocks = region->get_structured_blocks();
   for (auto &block : sblocks) {
     if (is_parallel_io || block->is_active()) {
-      const auto &nb = block->get_node_block();
+      const auto &nb        = block->get_node_block();
       bool has_nodal_fields = global_has_nodal_fields || nb.field_count(Ioss::Field::TRANSIENT) > 0;
       sol_lambda(block, has_nodal_fields);
     }

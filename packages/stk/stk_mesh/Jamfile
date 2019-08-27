@@ -198,6 +198,7 @@ lib stk_mesh_base
     /sierra/stk_util//stk_util_diag
     /sierra/stk_topology//stk_topology
     /tpl/trilinos//shards
+    /tpl/lapack//lapack
     /mpi//mpi
   :
     [ ifuserbuild

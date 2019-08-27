@@ -150,7 +150,7 @@ extern "C" {
 #define EX_MPIPOSIX 0x40000 /**< \deprecated As of libhdf5 1.8.13. */
 #define EX_PNETCDF 0x80000
 
-/*@}*/
+/** @}*/
 
 /*! \sa ex_inquire() */
 enum ex_inquiry {
@@ -248,7 +248,7 @@ enum ex_option_type {
                             the database. */
 };
 typedef enum ex_option_type ex_option_type;
-/*@}*/
+/** @}*/
 
 enum ex_entity_type {
   EX_NODAL      = 14, /**< nodal "block" for variables*/
@@ -306,7 +306,7 @@ typedef enum ex_options ex_options;
 #define MAX_LINE_LENGTH 80L
 /** Maximum length of an error message passed to ex_err() function. Typically, internal use only */
 #define MAX_ERR_LENGTH 256
-/* @} */
+/** @} */
 
 /** Specifies that this argument is the id of an entity: element block, nodeset, sideset, ... */
 typedef int64_t ex_entity_id;
@@ -425,7 +425,7 @@ typedef struct ex_var_params
   int *sset_var_tab;
   int *elset_var_tab;
 } ex_var_params;
-/* @} */
+/** @} */
 
 #ifndef EXODUS_EXPORT
 #define EXODUS_EXPORT extern
@@ -1699,7 +1699,7 @@ EXODUS_EXPORT int ex_get_idx(int         exoid,       /**< NetCDF/Exodus file ID
 #define EX_FATAL -1 /**< fatal error flag def                     */
 #define EX_NOERR 0  /**< no error flag def                        */
 #define EX_WARN 1   /**< warning flag def                         */
-/* @} */
+/** @} */
 
 #ifdef __cplusplus
 } /* close brackets on extern "C" declaration */

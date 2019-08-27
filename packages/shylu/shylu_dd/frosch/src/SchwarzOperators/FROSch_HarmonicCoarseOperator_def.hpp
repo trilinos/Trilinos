@@ -49,7 +49,7 @@ namespace FROSch {
 
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template <class SC,class LO,class GO,class NO>
     HarmonicCoarseOperator<SC,LO,GO,NO>::HarmonicCoarseOperator(ConstXMatrixPtr k,
                                                                 ParameterListPtr parameterList) :
@@ -63,12 +63,13 @@ namespace FROSch {
     DofsMaps_ (0),
     NumberOfBlocks_ (0)
     {
-
+        FROSCH_TIMER_START_LEVELID(harmonicCoarseOperatorTime,"HarmonicCoarseOperator::HarmonicCoarseOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeCoarseSpace(CoarseSpacePtr coarseSpace)
     {
+        FROSCH_TIMER_START_LEVELID(computeCoarseSpaceTime,"HarmonicCoarseOperator::computeCoarseSpace");
         XMapPtr repeatedMap = assembleSubdomainMap();
 
         // Build local saddle point problem
@@ -110,6 +111,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleCoarseMap()
     {
+        FROSCH_TIMER_START_LEVELID(assembleCoarseMapTime,"HarmonicCoarseOperator::assembleCoarseMap");
         GOVec mapVector(0);
         GO tmp = 0;
         for (UN i=0; i<NumberOfBlocks_; i++) {
@@ -128,6 +130,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleSubdomainMap()
     {
+        FROSCH_TIMER_START_LEVELID(assembleSubdomainMapTime,"HarmonicCoarseOperator::assembleSubdomainMap");
         FROSCH_ASSERT(DofsMaps_.size()==NumberOfBlocks_,"DofsMaps_.size()!=NumberOfBlocks_");
         FROSCH_ASSERT(DofsPerNode_.size()==NumberOfBlocks_,"DofsPerNode_.size()!=NumberOfBlocks_");
 
@@ -150,6 +153,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int  HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap)
     {
+        FROSCH_TIMER_START_LEVELID(addZeroCoarseSpaceBlockTime,"HarmonicCoarseOperator::addZeroCoarseSpaceBlock");
         // Das könnte man noch ändern
         GammaDofs_->resize(GammaDofs_.size()+1);
         IDofs_->resize(IDofs_.size()+1);
@@ -214,6 +218,7 @@ namespace FROSch {
                                                                     ConstXMultiVectorPtr nodeList,
                                                                     EntitySetPtr interior)
     {
+        FROSCH_TIMER_START_LEVELID(computeVolumeFunctionsTime,"HarmonicCoarseOperator::computeVolumeFunctions");
         // Process the parameter list
         std::stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
@@ -278,6 +283,7 @@ namespace FROSch {
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeTranslations(UN blockId,
                                                                                                                                  EntitySetPtr entitySet)
     {
+        FROSCH_TIMER_START_LEVELID(computeTranslationsTime,"HarmonicCoarseOperator::computeTranslations");
         XMultiVectorPtrVecPtr translations(this->DofsPerNode_[blockId]);
         XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
         for (UN i=0; i<this->DofsPerNode_[blockId]; i++) {
@@ -304,6 +310,7 @@ namespace FROSch {
                                                                                                                               ConstXMultiVectorPtr nodeList,
                                                                                                                               EntitySetPtr entitySet)
     {
+        FROSCH_TIMER_START_LEVELID(computeRotationsTime,"HarmonicCoarseOperator::computeRotations");
         FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
         FROSCH_ASSERT(dimension==this->DofsPerNode_[blockId],"dimension!=this->DofsPerNode_[blockId]");
 
@@ -379,6 +386,7 @@ namespace FROSch {
                                                                                                                          XMatrixPtr kII,
                                                                                                                          XMatrixPtr kIGamma)
     {
+        FROSCH_TIMER_START_LEVELID(computeExtensionsTime,"HarmonicCoarseOperator::computeExtensions");
         //this->Phi_ = MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),coarseMap,coarseMap->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
         XMultiVectorPtr mVPhi = MultiVectorFactory<SC,LO,GO,NO>::Build(localMap,coarseMap->getNodeNumElements());
         XMultiVectorPtr mVtmp = MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());

@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -105,19 +105,22 @@ namespace FROSch {
 
     template <typename LO,typename GO,typename NO>
     LowerPIDTieBreak<LO,GO,NO>::LowerPIDTieBreak(CommPtr comm,
-                                                 ConstXMapPtr originalMap) :
+                                                 ConstXMapPtr originalMap,
+                                                 UN levelID) :
     MpiComm_ (comm),
     OriginalMap_ (originalMap),
     ElementCounter_ (),
     OverlappingDataList_ (2*(OriginalMap_->getGlobalNumElements()/MpiComm_->getSize())),
-    ComponentsSubdomains_ (OriginalMap_->getNodeNumElements())
+    ComponentsSubdomains_ (OriginalMap_->getNodeNumElements()),
+    LevelID_ (levelID)
     {
-
+        FROSCH_TIMER_START_LEVELID(lowerPIDTieBreakTime,"LowerPIDTieBreak::LowerPIDTieBreak");
     }
 
     template <typename LO,typename GO,typename NO>
     int LowerPIDTieBreak<LO,GO,NO>::sendDataToOriginalMap()
     {
+        FROSCH_TIMER_START_LEVELID(sendDataToOriginalMapTime,"LowerPIDTieBreak::sendDataToOriginalMap");
         // This is done analogously to  DistributedNoncontiguousDirectory<LO, GO, NT>::DistributedNoncontiguousDirectory(const map_type& map,const tie_break_type& tie_break)
         typedef typename ArrayView<const GO>::size_type size_type;
 
@@ -193,6 +196,7 @@ namespace FROSch {
                                              bool useCreateOneToOneMap,
                                              RCP<Tpetra::Details::TieBreak<LO,GO> > tieBreak)
     {
+        FROSCH_TIMER_START(buildUniqueMapTime,"BuildUniqueMap");
         if (useCreateOneToOneMap && map->lib()==UseTpetra) {
             // Obtain the underlying Tpetra Map
             const RCP<const TpetraMap<LO,GO,NO> >& xTpetraMap = rcp_dynamic_cast<const TpetraMap<LO,GO,NO> >(map);
@@ -237,6 +241,7 @@ namespace FROSch {
     ArrayRCP<RCP<const Map<LO,GO,NO> > > BuildRepeatedSubMaps(RCP<const Matrix<SC,LO,GO,NO> > matrix,
                                                               ArrayRCP<RCP<const Map<LO,GO,NO> > > subMaps)
     {
+        FROSCH_TIMER_START(buildRepeatedSubMapsTime,"BuildRepeatedSubMaps");
         ArrayRCP<RCP<Map<LO,GO,NO> > > repeatedSubMaps(subMaps.size());
         for (unsigned i = 0; i < subMaps.size(); i++) {
             RCP<Matrix<SC,LO,GO,NO> > subMatrixII;
@@ -254,6 +259,7 @@ namespace FROSch {
     ArrayRCP<RCP<const Map<LO,GO,NO> > > BuildRepeatedSubMaps(RCP<const CrsGraph<LO,GO,NO> > graph,
                                                               ArrayRCP<RCP<const Map<LO,GO,NO> > > subMaps)
     {
+        FROSCH_TIMER_START(buildRepeatedSubMapsTime,"BuildRepeatedSubMaps");
         ArrayRCP<RCP<Map<LO,GO,NO> > > repeatedSubMaps(subMaps.size());
         for (unsigned i = 0; i < subMaps.size(); i++) {
             RCP<CrsGraph<LO,GO,NO> > subGraphII;
@@ -270,6 +276,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConst(RCP<const Matrix<SC,LO,GO,NO> > matrix)
     {
+        FROSCH_TIMER_START(buildRepeatedMapNonConstTime,"BuildRepeatedMapNonConst");
         RCP<Map<LO,GO,NO> > uniqueMap = MapFactory<LO,GO,NO>::Build(matrix->getRowMap(),1);
         RCP<const Map<LO,GO,NO> > overlappingMap = uniqueMap.getConst();
         ExtendOverlapByOneLayer<SC,LO,GO,NO>(matrix,overlappingMap,matrix,overlappingMap);
@@ -367,6 +374,7 @@ namespace FROSch {
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConst(RCP<const CrsGraph<LO,GO,NO> > graph)
     {
+        FROSCH_TIMER_START(buildRepeatedMapNonConstTime,"BuildRepeatedMapNonConst");
         RCP<Map<LO,GO,NO> > uniqueMap = MapFactory<LO,GO,NO>::Build(graph->getRowMap(),1);
         RCP<const Map<LO,GO,NO> > overlappingMap = uniqueMap.getConst();
         ExtendOverlapByOneLayer<LO,GO,NO>(graph,overlappingMap,graph,overlappingMap);
@@ -550,6 +558,7 @@ namespace FROSch {
                                     RCP<const Matrix<SC,LO,GO,NO> > &outputMatrix,
                                     RCP<const Map<LO,GO,NO> > &outputMap)
     {
+        FROSCH_TIMER_START(extendOverlapByOneLayer_OldTime,"ExtendOverlapByOneLayer_Old");
         RCP<Matrix<SC,LO,GO,NO> > tmpMatrix = MatrixFactory<SC,LO,GO,NO>::Build(inputMap,inputMatrix->getGlobalMaxNumRowEntries());
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(inputMatrix->getRowMap(),inputMap);
         tmpMatrix->doImport(*inputMatrix,*scatter,ADD);
@@ -578,6 +587,7 @@ namespace FROSch {
                                 RCP<const Matrix<SC,LO,GO,NO> > &outputMatrix,
                                 RCP<const Map<LO,GO,NO> > &outputMap)
     {
+        FROSCH_TIMER_START(extendOverlapByOneLayerTime,"ExtendOverlapByOneLayer");
         RCP<Matrix<SC,LO,GO,NO> > tmpMatrix = MatrixFactory<SC,LO,GO,NO>::Build(inputMap,inputMatrix->getGlobalMaxNumRowEntries());
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(inputMatrix->getRowMap(),inputMap);
         tmpMatrix->doImport(*inputMatrix,*scatter,ADD);
@@ -595,6 +605,7 @@ namespace FROSch {
                                 RCP<const CrsGraph<LO,GO,NO> > &outputGraph,
                                 RCP<const Map<LO,GO,NO> > &outputMap)
     {
+        FROSCH_TIMER_START(extendOverlapByOneLayerTime,"ExtendOverlapByOneLayer");
         RCP<CrsGraph<LO,GO,NO> > tmpGraph = CrsGraphFactory<LO,GO,NO>::Build(inputMap,inputGraph->getGlobalMaxNumRowEntries());
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(inputGraph->getRowMap(),inputMap);
         tmpGraph->doImport(*inputGraph,*scatter,ADD);
@@ -610,6 +621,7 @@ namespace FROSch {
     RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
                                      ArrayRCP<ArrayRCP<LO> > &partMappings)
     {
+        FROSCH_TIMER_START(assembleMapsTime,"AssembleMaps");
         FROSCH_ASSERT(mapVector.size()>0,"Length of mapVector is == 0!");
         LO i = 0;
         LO localstart = 0;
@@ -652,6 +664,7 @@ namespace FROSch {
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > MergeMapsNonConst(ArrayRCP<RCP<const Map<LO,GO,NO> > > mapVector)
     {
+        FROSCH_TIMER_START(mergeMapsNonConstTime,"MergeMapsNonConst");
         FROSCH_ASSERT(!mapVector.is_null(),"mapVector is null!");
         FROSCH_ASSERT(mapVector.size()>0,"Length of mapVector is == 0!");
 
@@ -682,8 +695,9 @@ namespace FROSch {
                         ArrayRCP<unsigned> dofsPerNodeVec,
                         ArrayRCP<FROSch::DofOrdering> dofOrderingVec,
                         ArrayRCP<RCP<const Map<LO,GO,NO> > > &nodesMapVec,
-                        ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > >&dofMapsVec){
-
+                        ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > >&dofMapsVec)
+    {
+        FROSCH_TIMER_START(buildDofMapsVecTime,"BuildDofMapsVec");
         unsigned numberBlocks = mapVec.size();
         nodesMapVec = ArrayRCP<RCP<const Map<LO,GO,NO> > > (numberBlocks);
         dofMapsVec = ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > > (numberBlocks);
@@ -706,6 +720,7 @@ namespace FROSch {
                      ArrayRCP<RCP<const Map<LO,GO,NO> > > &dofMaps,
                      GO offset)
     {
+        FROSCH_TIMER_START(buildDofMapsTime,"BuildDofMaps");
         //if (map->getComm()->getRank()==0) std::cout << "WARNING: BuildDofMaps is yet to be tested...\n";
         FROSCH_ASSERT(dofOrdering==0 || dofOrdering==1,"ERROR: Specify a valid DofOrdering.");
         FROSCH_ASSERT(map->getGlobalNumElements()%dofsPerNode==0 && map->getNodeNumElements()%dofsPerNode==0,"ERROR: The number of dofsPerNode does not divide the number of global dofs in the map!");
@@ -747,6 +762,7 @@ namespace FROSch {
                                                   unsigned dofsPerNode,
                                                   unsigned dofOrdering)
     {
+        FROSCH_TIMER_START(buildMapFromDofMapsTime,"BuildMapFromDofMaps");
         FROSCH_ASSERT(dofOrdering==0 || dofOrdering==1,"ERROR: Specify a valid DofOrdering.");
         FROSCH_ASSERT(!dofMaps.is_null(),"dofMaps.is_null().");
         FROSCH_ASSERT(dofMaps.size()==dofsPerNode,"dofMaps.size!=dofsPerNode.");
@@ -779,6 +795,7 @@ namespace FROSch {
                                             unsigned dofsPerNode,
                                             unsigned dofOrdering)
     {
+        FROSCH_TIMER_START(buildMapFromNodeMapTime,"BuildMapFromNodeMap");
         FROSCH_ASSERT(dofOrdering==0 || dofOrdering==1,"ERROR: Specify a valid DofOrdering.");
         FROSCH_ASSERT(!nodesMap.is_null(),"nodesMap.is_null().");
 
@@ -813,6 +830,7 @@ namespace FROSch {
     ArrayRCP<RCP<Map<LO,GO,NO> > > BuildSubMaps(RCP<const Map<LO,GO,NO> > &fullMap,
                                                 ArrayRCP<GO> maxSubGIDVec)
     {
+        FROSCH_TIMER_START(buildSubMapsTime,"BuildSubMaps");
         ArrayRCP<RCP<Map<LO,GO,NO> > > subMaps(maxSubGIDVec.size());
 
         Array<Array<GO> > indicesSubMaps(maxSubGIDVec.size());
@@ -837,6 +855,7 @@ namespace FROSch {
     ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const Matrix<SC,LO,GO,NO> > matrix,
                                             RCP<const Map<LO,GO,NO> > repeatedMap)
     {
+        FROSCH_TIMER_START(findOneEntryOnlyRowsGlobalTime,"FindOneEntryOnlyRowsGlobal");
         RCP<Matrix<SC,LO,GO,NO> > repeatedMatrix = MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap,2*matrix->getGlobalMaxNumRowEntries());
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(matrix->getRowMap(),repeatedMap);
         repeatedMatrix->doImport(*matrix,*scatter,ADD);
@@ -918,6 +937,7 @@ namespace FROSch {
     RCP<MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(RCP<const MultiVector<SC,LO,GO,NO> > multiVector,
                                                        ArrayView<unsigned> zero)
     {
+        FROSCH_TIMER_START(modifiedGramSchmidtTime,"ModifiedGramSchmidt");
         /*
          n = size(V,1);
          k = size(V,2);
@@ -972,6 +992,7 @@ namespace FROSch {
                                                         ArrayRCP<RCP<const Map<LO,GO,NO> > > dofsMaps,
                                                         RCP<const MultiVector<SC,LO,GO,NO> > nodeList)
     {
+        FROSCH_TIMER_START(buildNullSpaceTime,"BuildNullSpace");
         /*
          Here, the nodeList has to be ordered in accordence to the dofsMaps.
          */
@@ -1056,6 +1077,7 @@ namespace FROSch {
                                                                                     Epetra_MultiVector &vector,
                                                                                     RCP<const Comm<int> > comm)
     {
+        FROSCH_TIMER_START(convertMultiVectorTime,"ConvertToXpetra::ConvertMultiVector");
         RCP<Map<LO,GO,NO> > map = ConvertToXpetra<SC,LO,GO,NO>::ConvertMap(lib,vector.Map(),comm);
         RCP<MultiVector<SC,LO,GO,NO> > xMultiVector = MultiVectorFactory<SC,LO,GO,NO>::Build(map,vector.NumVectors());
         for (LO i=0; i<vector.NumVectors(); i++) {
@@ -1071,6 +1093,7 @@ namespace FROSch {
                                                                    const Epetra_BlockMap &map,
                                                                    RCP<const Comm<int> > comm)
     {
+        FROSCH_TIMER_START(convertMapTime,"ConvertToXpetra::ConvertMap");
         ArrayView<int> mapArrayView(map.MyGlobalElements(),map.NumMyElements());
         return MapFactory<LO,int,NO>::Build(lib,-1,mapArrayView,0,comm);
     }
@@ -1080,6 +1103,7 @@ namespace FROSch {
                                                                             Epetra_CrsMatrix &matrix,
                                                                             RCP<const Comm<int> > comm)
     {
+        FROSCH_TIMER_START(convertMatrixTime,"ConvertToXpetra::ConvertMatrix");
         RCP<Map<LO,int,NO> > rowMap = ConvertToXpetra<SC,LO,int,NO>::ConvertMap(lib,matrix.RowMap(),comm);
         RCP<Matrix<SC,LO,int,NO> > xmatrix = MatrixFactory<SC,LO,int,NO>::Build(rowMap,matrix.MaxNumEntries());
         for (unsigned i=0; i<xmatrix->getNodeNumRows(); i++) {
@@ -1104,6 +1128,7 @@ namespace FROSch {
                                                                                       Epetra_MultiVector &vector,
                                                                                       RCP<const Comm<int> > comm)
     {
+        FROSCH_TIMER_START(convertMultiVectorTime,"ConvertToXpetra::ConvertMultiVector");
         RCP<Map<LO,int,NO> > map = ConvertToXpetra<SC,LO,int,NO>::ConvertMap(lib,vector.Map(),comm);
         RCP<MultiVector<SC,LO,int,NO> > xMultiVector = MultiVectorFactory<SC,LO,int,NO>::Build(map,vector.NumVectors());
         for (LO i=0; i<vector.NumVectors(); i++) {
@@ -1119,6 +1144,7 @@ namespace FROSch {
                                                                                const Epetra_BlockMap &map,
                                                                                RCP<const Comm<int> > comm)
     {
+        FROSCH_TIMER_START(convertMapTime,"ConvertToXpetra::ConvertMap");
         ArrayView<long long> mapArrayView(map.MyGlobalElements64(),map.NumMyElements());
         return MapFactory<LO,long long,NO>::Build(lib,-1,mapArrayView,0,comm);
     }
@@ -1128,6 +1154,7 @@ namespace FROSch {
                                                                                         Epetra_CrsMatrix &matrix,
                                                                                         RCP<const Comm<int> > comm)
     {
+        FROSCH_TIMER_START(convertMatrixTime,"ConvertToXpetra::ConvertMatrix");
         RCP<Map<LO,long long,NO> > rowMap = ConvertToXpetra<SC,LO,long long,NO>::ConvertMap(lib,matrix.RowMap(),comm);
         RCP<Matrix<SC,LO,long long,NO> > xmatrix = MatrixFactory<SC,LO,long long,NO>::Build(rowMap,matrix.MaxNumEntries());
         for (unsigned i=0; i<xmatrix->getNodeNumRows(); i++) {
@@ -1152,6 +1179,7 @@ namespace FROSch {
                                                                                                   Epetra_MultiVector &vector,
                                                                                                   RCP<const Comm<int> > comm)
     {
+        FROSCH_TIMER_START(convertMultiVectorTime,"ConvertToXpetra::ConvertMultiVector");
         RCP<Map<LO,long long,NO> > map = ConvertToXpetra<SC,LO,long long,NO>::ConvertMap(lib,vector.Map(),comm);
         RCP<MultiVector<SC,LO,long long,NO> > xMultiVector = MultiVectorFactory<SC,LO,long long,NO>::Build(map,vector.NumVectors());
         for (LO i=0; i<vector.NumVectors(); i++) {
@@ -1167,6 +1195,7 @@ namespace FROSch {
     RCP<Type> ExtractPtrFromParameterList(ParameterList& paramList,
                                           std::string namePtr)
     {
+        FROSCH_TIMER_START(extractPtrFromParameterListTime,"ExtractPtrFromParameterList");
         RCP<Type> pointer = null;
 
         if (paramList.isParameter(namePtr) == false)
@@ -1183,6 +1212,7 @@ namespace FROSch {
     ArrayRCP<Type> ExtractVectorFromParameterList(ParameterList& paramList,
                                                   std::string nameVector)
     {
+        FROSCH_TIMER_START(extractVectorFromParameterListTime,"ExtractVectorFromParameterList");
         ArrayRCP<Type> vector = null;
 
         if (paramList.isParameter(nameVector) == false)
@@ -1200,6 +1230,7 @@ namespace FROSch {
     RCP<Epetra_Map> ConvertToEpetra(const Map<LO,GO,NO> &map,
                                     RCP<Epetra_Comm> epetraComm)
     {
+        FROSCH_TIMER_START(convertToEpetraTime,"ConvertToEpetra");
         ArrayView<const GO> elementList = map.getNodeElementList();
 
         GO numGlobalElements = map.getGlobalNumElements();
@@ -1214,6 +1245,7 @@ namespace FROSch {
     RCP<Epetra_MultiVector> ConvertToEpetra(const MultiVector<SC,LO,GO,NO> &vector,
                                             RCP<Epetra_Comm> epetraComm)
     {
+        FROSCH_TIMER_START(convertToEpetraTime,"ConvertToEpetra");
         RCP<Epetra_Map> map = ConvertToEpetra<LO,GO,NO>(*vector.getMap(),epetraComm);
         RCP<Epetra_MultiVector > multiVector(new Epetra_MultiVector(*map,vector.getNumVectors()));
         for (LO i=0; i<vector.getNumVectors(); i++) {
@@ -1228,6 +1260,7 @@ namespace FROSch {
     RCP<Epetra_CrsMatrix> ConvertToEpetra(const Matrix<SC,LO,GO,NO> &matrix,
                                           RCP<Epetra_Comm> epetraComm)
     {
+        FROSCH_TIMER_START(convertToEpetraTime,"ConvertToEpetra");
         RCP<Epetra_Map> map = ConvertToEpetra<LO,GO,NO>(*matrix.getMap(),epetraComm);
         RCP<Epetra_CrsMatrix> matrixEpetra(new Epetra_CrsMatrix(::Copy,*map,matrix.getGlobalMaxNumRowEntries()));
         ArrayView<const SC> valuesArrayView;
@@ -1249,8 +1282,8 @@ namespace FROSch {
 #endif
 
     template <class LO>
-    Array<LO> GetIndicesFromString(std::string string, LO dummy){
-
+    Array<LO> GetIndicesFromString(std::string string, LO dummy)
+    {
         Array<LO> indices(0);
         for (unsigned i=0; i<string.length(); i++) {
             indices.push_back((LO) stoi(string.substr(i,i+1)));
@@ -1263,6 +1296,7 @@ namespace FROSch {
     int RepartionMatrixZoltan2(RCP<Matrix<SC,LO,GO,NO> > &crsMatrix,
                                RCP<ParameterList> parameterList)
     {
+        FROSCH_TIMER_START(repartionMatrixZoltan2Time,"RepartionMatrixZoltan2");
         RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
 
         using inputAdapter    = Zoltan2::XpetraCrsMatrixAdapter<CrsMatrix<SC,LO,GO,NO> >;
@@ -1284,21 +1318,6 @@ namespace FROSch {
         return 0;
     }
 #endif
-
-    void ThrowErrorMissingPackage(const std::string& froschObj,
-                                  const std::string& packageName)
-    {
-      // Create the error message
-      std::stringstream errMsg;
-      errMsg << froschObj << " is asking for the Trilinos packate '"<< packageName << "', "
-          "but this package is not included in your build configuration. "
-          "Please enable '" << packageName << "' in your build configuration to be used with ShyLU_DDFROSch.";
-
-      // Throw the error
-      FROSCH_ASSERT(false, errMsg.str());
-
-      return;
-    }
 } // namespace FROSch
 
 #endif

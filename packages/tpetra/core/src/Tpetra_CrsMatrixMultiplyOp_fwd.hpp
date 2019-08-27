@@ -1,12 +1,11 @@
 // @HEADER
-// ************************************************************************
+// ***********************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
-//       Kernel for Flexible Management of Complex Dependency Chains
-//                    Copyright 2008 Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,25 +34,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
-// National Laboratories.
-//
 // ************************************************************************
 // @HEADER
 
+#ifndef TPETRA_CRSMATRIXMULTIPLYOP_FWD_HPP
+#define TPETRA_CRSMATRIXMULTIPLYOP_FWD_HPP
 
-#ifndef PHX_TYPE_STRINGS_HPP
-#define PHX_TYPE_STRINGS_HPP
+#include "Tpetra_Details_DefaultTypes.hpp"
 
-#include "Teuchos_TypeNameTraits.hpp"
-#include <string>
+/// \file Tpetra_CrsMatrixMultiplyOp_fwd.hpp
+/// \brief Forward declaration of Tpetra::CrsMatrixMultiplyOp
 
-namespace PHX {
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Tpetra {
+template<class Scalar,
+         class MatScalar = Scalar,
+         class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+         class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+class CrsMatrixMultiplyOp;
+} // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  template<typename ObjectT>
-  std::string typeAsString() 
-  { return Teuchos::TypeNameTraits<ObjectT>::name(); }
-
-}
-   
-#endif
+#endif // TPETRA_CRSMATRIXMULTIPLYOP_FWD_HPP

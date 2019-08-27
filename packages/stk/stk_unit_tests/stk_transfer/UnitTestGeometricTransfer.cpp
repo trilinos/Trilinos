@@ -27,7 +27,7 @@ namespace stk {
 namespace transfer {
 
 
-using EntityKey = unsigned;
+using EntityKey = uint64_t;
 
 class MockMeshA_Common
 {
