@@ -87,6 +87,7 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+#include <Epetra_MpiComm.h>
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
 #include <Xpetra_Parameters.hpp>
