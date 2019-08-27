@@ -78,7 +78,7 @@ SET(Trilinos_PACKAGES Tpetra)
 SET(Trilinos_EXCLUDE_PACKAGES Epetra GlobiPack OptiPack Domi PyTrilinos Moertel)
 SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
 
-# Because Trilinos_ENABLE_PyTrilinos is set to OFF in TrilinosCTestDriverCore.rocketman.gcc.cmake,
+# Because Trilinos_CTEST_DO_ALL_AT_ONCE is set to OFF in TrilinosCTestDriverCore.rocketman.gcc.cmake,
 # the packages in Trilinos_EXCLUDE_PACKAGES above must also be disabled explicitly in EXTRA_CONFIGURE_OPTIONS
 # below.
 
