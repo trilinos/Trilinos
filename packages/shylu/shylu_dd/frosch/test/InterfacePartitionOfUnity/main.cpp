@@ -50,6 +50,7 @@
 #include <Teuchos_DefaultSerialComm.hpp>
 #include "Teuchos_CommandLineProcessor.hpp"
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
 
@@ -97,6 +98,10 @@ int main(int argc, char *argv[])
     if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
+
+    CommWorld->barrier();
+    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("Interface Partition of Unity Test"));
+    TimeMonitor::setStackedTimer(stackedTimer);
 
     int N=4;
     int color=1;
@@ -161,7 +166,7 @@ int main(int argc, char *argv[])
         RCP<const Comm<int> > SerialComm = createSerialComm<int>();
 
         RCP<ParameterList> parameterList = getParametersFromXmlFile("ParametersIPOU.xml");
-        RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > IPOU(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(RepeatedMap->getComm(),SerialComm,Dimension,1,RepeatedNodesMap,RepeatedDofMaps,parameterList));
+        RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > IPOU(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(RepeatedMap->getComm(),SerialComm,Dimension,1,RepeatedNodesMap,RepeatedDofMaps,parameterList,All,UN(1)));
         IPOU->removeDirichletNodes();
         IPOU->sortInterface(K);
         IPOU->computePartitionOfUnity();
@@ -169,6 +174,11 @@ int main(int argc, char *argv[])
         comm->barrier(); if (comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
 
+    CommWorld->barrier();
+    stackedTimer->stop("Interface Partition of Unity Test");
+    StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stackedTimer->report(*out,CommWorld,options);
 
-  return(EXIT_SUCCESS);
+    return(EXIT_SUCCESS);
 }

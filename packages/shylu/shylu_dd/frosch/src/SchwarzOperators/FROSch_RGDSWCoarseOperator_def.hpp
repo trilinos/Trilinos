@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -55,7 +55,7 @@ namespace FROSch {
                                                           ParameterListPtr parameterList) :
     GDSWCoarseOperator<SC,LO,GO,NO> (k,parameterList)
     {
-
+        FROSCH_TIMER_START_LEVELID(rGDSWCoarseOperatorTime,"RGDSWCoarseOperator::RGDSWCoarseOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -67,6 +67,7 @@ namespace FROSch {
                                                                 GOVecPtr dirichletBoundaryDofs,
                                                                 ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(resetCoarseSpaceBlockTime,"RGDSWCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
@@ -128,7 +129,7 @@ namespace FROSch {
         Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
 
-        this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap.getConst(),verbosity,communicationStrategy));
+        this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap.getConst(),verbosity,this->LevelID_,communicationStrategy));
         this->DDInterface_->resetGlobalDofs(dofsMaps);
         this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs);
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
@@ -206,6 +207,7 @@ namespace FROSch {
                                                                                                                            EntitySetPtrVecPtr entitySetVector,
                                                                                                                            DistanceFunction distanceFunction)
     {
+        FROSCH_TIMER_START_LEVELID(computeTranslationsTime,"RGDSWCoarseOperator::computeTranslations");
         XMultiVectorPtrVecPtr translations(this->DofsPerNode_[blockId]);
         XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
         for (UN i=0; i<this->DofsPerNode_[blockId]; i++) {
@@ -257,6 +259,7 @@ namespace FROSch {
                                                                                                                         EntitySetPtrVecPtr entitySetVector,
                                                                                                                         DistanceFunction distanceFunction)
     {
+        FROSCH_TIMER_START_LEVELID(computeRotationsTime,"RGDSWCoarseOperator::computeRotations");
         FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
         FROSCH_ASSERT(dimension==this->DofsPerNode_[blockId],"dimension!=this->DofsPerNode_[blockId]");
 

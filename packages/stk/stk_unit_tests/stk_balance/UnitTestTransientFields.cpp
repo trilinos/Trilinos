@@ -8,6 +8,7 @@
 
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
+#include "stk_unit_test_utils/GenerateALefRAMesh.hpp"
 #include "stk_io/FillMesh.hpp"
 #include "stk_io/WriteMesh.hpp"
 #include <stk_io/StkMeshIoBroker.hpp>
@@ -235,6 +236,116 @@ TEST(TestTransientFieldBalance, verifyNumberOfSteps)
         unlink_serial_file(outputMeshName.c_str());
         unlink_parallel_file(outputMeshName.c_str());
     }
+}
+
+void check_sideset_orientation(const stk::mesh::BulkData& bulk,
+                               const std::vector<stk::mesh::SideSet*> & sidesets,
+                               const stk::mesh::EntityId expectedId,
+                               const stk::mesh::ConnectivityOrdinal expectedOrdinal)
+{
+    const stk::mesh::SideSetEntry sideSetEntry = (*sidesets[0])[0];
+    EXPECT_EQ(expectedId, bulk.identifier(sideSetEntry.element));
+    EXPECT_EQ(expectedOrdinal, sideSetEntry.side);
+}
+
+TEST(TestTransientFieldBalance, verifyTransientDataTransferWithSidesets)
+{
+    std::string serialOutputMeshName = "two_hex_transient.e";
+    std::string parallelOutputMeshName = "two_hex_transient_balanced.e";
+    const std::vector<double> expectedTimeSteps = {0.0};
+    const stk::mesh::EntityId expectedId = 1;
+    const stk::mesh::ConnectivityOrdinal expectedOrdinal = 5;
+
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
+    {
+        // Build the target serial mesh and write it to a file
+        if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
+        {
+            stk::mesh::MetaData meta(3);
+            stk::mesh::BulkData bulk(meta, MPI_COMM_SELF);
+
+            stk::unit_test_util::create_AB_mesh_with_sideset_and_field(bulk, stk::unit_test_util::LEFT, stk::unit_test_util::INCREASING, "dummyField");
+            stk::io::write_mesh_with_fields(serialOutputMeshName, bulk, 1, 1.0);
+
+            std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
+            ASSERT_EQ(1u, sidesets.size());
+            EXPECT_EQ(1u, sidesets[0]->size());
+
+            check_sideset_orientation(bulk, sidesets, expectedId, expectedOrdinal);
+        }
+
+        // Read, balance, and write the mesh on two processors
+        stk::balance::BasicZoltan2Settings rcbOptions;
+        stk::balance::run_stk_balance_with_settings(parallelOutputMeshName, serialOutputMeshName, MPI_COMM_WORLD, rcbOptions);
+
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+
+        // Read the decomposed mesh to make sure the sideset maintains its polarity
+        stk::io::fill_mesh(parallelOutputMeshName, bulk);
+
+        std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
+        if ((sidesets.size() == 1u) && (sidesets[0]->size() == 1u))
+        {
+            check_sideset_orientation(bulk, sidesets, expectedId, expectedOrdinal);
+        }
+    }
+    unlink_serial_file(serialOutputMeshName);
+    unlink_parallel_file(parallelOutputMeshName);
+}
+
+TEST(TestTransientFieldBalance, verifyTransientDataTransferWithSidesetsOnMovedElements)
+{
+    std::string serialOutputMeshName = "two_hex_transient.e";
+    std::string parallelOutputMeshName = "two_hex_transient_balanced.e";
+    const std::vector<double> expectedTimeSteps = {0.0};
+    const stk::mesh::EntityId expectedId = 2;
+    const stk::mesh::ConnectivityOrdinal expectedOrdinal = 5;
+
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
+    {
+        // Build the target serial mesh and write it to a file
+        if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
+        {
+            stk::mesh::MetaData meta(3);
+            stk::mesh::BulkData bulk(meta, MPI_COMM_SELF);
+
+            stk::unit_test_util::create_AB_mesh_with_sideset_and_field(bulk, stk::unit_test_util::LEFT, stk::unit_test_util::DECREASING, "dummyField");
+            stk::io::write_mesh_with_fields(serialOutputMeshName, bulk, 1, 1.0);
+
+            std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
+            ASSERT_EQ(1u, sidesets.size());
+            ASSERT_EQ(1u, sidesets[0]->size());
+
+            check_sideset_orientation(bulk, sidesets, expectedId, expectedOrdinal);
+        }
+
+        {
+            // Read, balance, and write the mesh on two processors
+            stk::balance::BasicZoltan2Settings rcbOptions;
+            const std::string initialDecompMethod = "BLOCK";
+            stk::mesh::MetaData meta;
+            stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+            stk::balance::initial_decomp_and_balance(bulk, rcbOptions, serialOutputMeshName, parallelOutputMeshName, initialDecompMethod);
+        }
+
+        {
+            stk::mesh::MetaData meta(3);
+            stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+
+            // Read the decomposed mesh to make sure the sideset maintains its polarity
+            stk::io::fill_mesh(parallelOutputMeshName, bulk);
+
+            std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
+            if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+              ASSERT_EQ(1u, sidesets.size());
+              ASSERT_EQ(1u, sidesets[0]->size());
+              check_sideset_orientation(bulk, sidesets, expectedId, expectedOrdinal);
+            }
+        }
+    }
+    unlink_serial_file(serialOutputMeshName);
+    unlink_parallel_file(parallelOutputMeshName);
 }
 
 TEST(TestTransientFieldBalance, verifyTransientDataTransferOnFourProcessors)

@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -145,7 +145,6 @@ namespace FROSch {
         ConstXMapPtrVecPtr2D DofsMaps_; // notwendig??
 
         UN NumberOfBlocks_;
-
     };
 
 }

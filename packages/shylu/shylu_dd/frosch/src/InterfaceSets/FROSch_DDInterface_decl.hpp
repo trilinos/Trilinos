@@ -56,7 +56,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -91,10 +91,10 @@ namespace FROSch {
 
         using XImport                   = Import<LO,GO,NO>;
         using XImportPtr                = RCP<XImport>;
-        
+
         using XExport                   = Export<LO,GO,NO>;
         using XExportPtr                = RCP<XExport>;
-        
+
         using EntitySetPtr              = RCP<EntitySet<SC,LO,GO,NO> >;
         using EntitySetConstPtr         = const EntitySetPtr;
         using EntitySetPtrVecPtr        = ArrayRCP<EntitySetPtr>;
@@ -131,6 +131,7 @@ namespace FROSch {
                     UN dofsPerNode,
                     ConstXMapPtr localToGlobalMap,
                     Verbosity verbosity = All,
+                    UN levelID = 1,
                     CommunicationStrategy commStrategy = CommCrsGraph);
 
         ~DDInterface();
@@ -236,6 +237,7 @@ namespace FROSch {
 
         Verbosity Verbosity_;
 
+        UN LevelID_;
     };
 
 }

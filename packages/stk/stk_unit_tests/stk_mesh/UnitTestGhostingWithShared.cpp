@@ -77,6 +77,8 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
     stk::io::fill_mesh(generatedMeshSpecification, bulk);
     bulk.modification_begin();
     stk::mesh::Ghosting& custom_shared_ghosting = bulk.create_ghosting("custom_shared");
+    stk::mesh::Ghosting& custom_shared_ghosting2= bulk.create_ghosting("custom_shared");
+    EXPECT_EQ(custom_shared_ghosting.ordinal(), custom_shared_ghosting2.ordinal());
     bulk.modification_end();
 
     stk::mesh::EntityProcVec ownedEntitiesToGhost;

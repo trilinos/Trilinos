@@ -439,7 +439,7 @@ struct StaticBucket {
         hostEntities = Kokkos::create_mirror_view(entities);
         nodeConnectivity = BucketConnectivityType(Kokkos::ViewAllocateWithoutInitializing("BucketConnectivity"+bktIdStr), bucketSize, numNodesPerEntity);
         hostNodeConnectivity = Kokkos::create_mirror_view(nodeConnectivity);
-        nodeOrdinals = OrdinalViewType(Kokkos::ViewAllocateWithoutInitializing("NodeOrdinals"+bktIdStr), numNodesPerEntity);
+        nodeOrdinals = OrdinalViewType(Kokkos::ViewAllocateWithoutInitializing("NodeOrdinals"+bktIdStr), static_cast<size_t>(numNodesPerEntity));
         hostNodeOrdinals = Kokkos::create_mirror_view(nodeOrdinals);
         for(unsigned i=0; i<numNodesPerEntity; ++i)
         {
@@ -579,6 +579,15 @@ public:
             fill_mesh_indices(*bulk, rank);
         }
         copy_mesh_indices_to_device();
+    }
+
+    void update_buckets() const
+    {
+       //Should this be a throw or a no-op? StaticMesh certainly can't update buckets,
+       //but an app might call this in code that is written for ngp::Mesh (i.e., can
+       //work for either StkMeshAdapter or StaticMesh.
+       //
+       //ThrowRequireMsg(false,"ERROR, update_buckets not supported for ngp::StaticMesh");
     }
 
     STK_FUNCTION

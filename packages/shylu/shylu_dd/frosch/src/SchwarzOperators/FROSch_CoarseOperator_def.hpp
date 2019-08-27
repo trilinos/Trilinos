@@ -49,7 +49,7 @@ namespace FROSch {
 
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template<class SC,class LO,class GO,class NO>
     CoarseOperator<SC,LO,GO,NO>::CoarseOperator(ConstXMatrixPtr k,
                                                 ParameterListPtr parameterList) :
@@ -60,6 +60,14 @@ namespace FROSch {
     CoarseSpace_ (new CoarseSpace<SC,LO,GO,NO>()),
     Phi_ (),
     CoarseMatrix_ (),
+    XTmp_ (),
+    XCoarse_ (),
+    XCoarseSolve_ (),
+    XCoarseSolveTmp_ (),
+    YTmp_ (),
+    YCoarse_ (),
+    YCoarseSolve_ (),
+    YCoarseSolveTmp_ (),
     GatheringMaps_ (0),
     CoarseSolveMap_ (),
     CoarseSolveRepeatedMap_ (),
@@ -67,7 +75,7 @@ namespace FROSch {
     DistributionList_ (sublist(parameterList,"Distribution")),
     CoarseSolveExporters_ (0)
     {
-
+        FROSCH_TIMER_START_LEVELID(coarseOperatorTime,"CoarseOperator::CoarseOperator");
     }
 
     template<class SC,class LO,class GO,class NO>
@@ -79,6 +87,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int CoarseOperator<SC,LO,GO,NO>::compute()
     {
+        FROSCH_TIMER_START_LEVELID(computeTime,"CoarseOperator::compute");
         FROSCH_ASSERT(this->IsInitialized_,"ERROR: CoarseOperator has to be initialized before calling compute()");
         // This is not optimal yet... Some work could be moved to Initialize
         if (this->Verbose_) std::cout << "FROSch::CoarseOperator : WARNING: Some of the operations could probably be moved from initialize() to Compute().\n";
@@ -116,24 +125,23 @@ namespace FROSch {
                                             SC alpha,
                                             SC beta) const
     {
+        FROSCH_TIMER_START_LEVELID(applyTime,"CoarseOperator::apply");
         static int i = 0;
         if (this->IsComputed_) {
-            XMultiVectorPtr xTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
-            *xTmp = x;
-
+            if (XTmp_.is_null()) XTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+            *XTmp_ = x;
             if (!usePreconditionerOnly && mode == NO_TRANS) {
-                this->K_->apply(x,*xTmp,mode,ScalarTraits<SC>::one(),ScalarTraits<SC>::zero());
+                this->K_->apply(x,*XTmp_,mode,ScalarTraits<SC>::one(),ScalarTraits<SC>::zero());
             }
-
-            XMultiVectorPtr xCoarseSolve = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],x.getNumVectors());
-            XMultiVectorPtr yCoarseSolve = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],y.getNumVectors());
-            applyPhiT(*xTmp,*xCoarseSolve);
-            applyCoarseSolve(*xCoarseSolve,*yCoarseSolve,mode);
-            applyPhi(*yCoarseSolve,*xTmp);
+            if (XCoarseSolve_.is_null()) XCoarseSolve_ = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],x.getNumVectors());
+            if (YCoarseSolve_.is_null()) YCoarseSolve_ = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],y.getNumVectors());
+            applyPhiT(*XTmp_,*XCoarseSolve_);
+            applyCoarseSolve(*XCoarseSolve_,*YCoarseSolve_,mode);
+            applyPhi(*YCoarseSolve_,*XTmp_);
             if (!usePreconditionerOnly && mode != NO_TRANS) {
-                this->K_->apply(*xTmp,*xTmp,mode,ScalarTraits<SC>::one(),ScalarTraits<SC>::zero());
+                this->K_->apply(*XTmp_,*XTmp_,mode,ScalarTraits<SC>::one(),ScalarTraits<SC>::zero());
             }
-            y.update(alpha,*xTmp,beta);
+            y.update(alpha,*XTmp_,beta);
         } else {
             if (i==1) {
                 if (this->Verbose_) std::cout << "WARNING: CoarseOperator has not been computed yet => It will just act as the identity...\n";
@@ -147,17 +155,16 @@ namespace FROSch {
     void CoarseOperator<SC,LO,GO,NO>::applyPhiT(const XMultiVector& x,
                                                 XMultiVector& y) const
     {
-        XMultiVectorPtr xCoarse = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),x.getNumVectors());
-
-        Phi_->apply(x,*xCoarse,TRANS);
-
-        XMultiVectorPtr xCoarseSolveTmp;
+        FROSCH_TIMER_START_LEVELID(applyPhiTTime,"CoarseOperator::applyPhiT");
+        // AH 08/22/2019 TODO: We cannot ger rid of the Build() calls because of "XCoarse_ = XCoarseSolveTmp_;". This is basically caused by the whole Gathering Map strategy. As soon as we have replaced this, we can get rid of the Build() calls
+        XCoarse_ = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),x.getNumVectors()); // AH 08/22/2019 TODO: Can we get rid of this? If possible, we should remove the whole GatheringMaps idea and replace it by some smart all-to-all MPI communication
+        Phi_->apply(x,*XCoarse_,TRANS);
         for (UN j=0; j<GatheringMaps_.size(); j++) {
-            xCoarseSolveTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],x.getNumVectors());
-            xCoarseSolveTmp->doExport(*xCoarse,*CoarseSolveExporters_[j],ADD);
-            xCoarse = xCoarseSolveTmp;
+            XCoarseSolveTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],x.getNumVectors()); // AH 08/22/2019 TODO: Can we get rid of this? If possible, we should remove the whole GatheringMaps idea and replace it by some smart all-to-all MPI communication
+            XCoarseSolveTmp_->doExport(*XCoarse_,*CoarseSolveExporters_[j],ADD);
+            XCoarse_ = XCoarseSolveTmp_;
         }
-        y = *xCoarseSolveTmp;
+        y = *XCoarseSolveTmp_;
     }
 
     template<class SC,class LO,class GO,class NO>
@@ -165,38 +172,34 @@ namespace FROSch {
                                                        XMultiVector& y,
                                                        ETransp mode) const
     {
-        XMultiVectorPtr yTmp;
+        FROSCH_TIMER_START_LEVELID(applyCoarseSolveTime,"CoarseOperator::applyCoarseSolve");
         if (OnCoarseSolveComm_) {
             x.replaceMap(CoarseSolveMap_);
-            yTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,x.getNumVectors());
-            CoarseSolver_->apply(x,*yTmp,mode);
+            if (YTmp_.is_null()) YTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,x.getNumVectors());
+            CoarseSolver_->apply(x,*YTmp_,mode);
         } else {
-            yTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,x.getNumVectors());
+            if (YTmp_.is_null()) YTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,x.getNumVectors());
         }
-        yTmp->replaceMap(GatheringMaps_[GatheringMaps_.size()-1]);
-        y = *yTmp;
+        YTmp_->replaceMap(GatheringMaps_[GatheringMaps_.size()-1]);
+        y = *YTmp_;
     }
 
     template<class SC,class LO,class GO,class NO>
     void CoarseOperator<SC,LO,GO,NO>::applyPhi(const XMultiVector& x,
                                                XMultiVector& y) const
     {
-        XMultiVectorPtr yCoarseSolveTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
-        *yCoarseSolveTmp = x;
-
-        XMultiVectorPtr yCoarse;
+        FROSCH_TIMER_START_LEVELID(applyPhiTime,"CoarseOperator::applyPhi");
+        // AH 08/22/2019 TODO: We have the same issue here as in applyPhiT()
+        YCoarseSolveTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+        *YCoarseSolveTmp_ = x;
         for (int j=GatheringMaps_.size()-1; j>0; j--) {
-            yCoarse = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j-1],x.getNumVectors());
-            yCoarse->doImport(*yCoarseSolveTmp,*CoarseSolveExporters_[j],INSERT);
-            yCoarseSolveTmp = yCoarse;
+            YCoarse_ = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j-1],x.getNumVectors());
+            YCoarse_->doImport(*YCoarseSolveTmp_,*CoarseSolveExporters_[j],INSERT);
+            YCoarseSolveTmp_ = YCoarse_;
         }
-
-        yCoarse = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),x.getNumVectors());
-
-        yCoarse->doImport(*yCoarseSolveTmp,*CoarseSolveExporters_[0],INSERT);
-
-        Phi_->apply(*yCoarse,y,NO_TRANS);
-
+        YCoarse_ = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),x.getNumVectors());
+        YCoarse_->doImport(*YCoarseSolveTmp_,*CoarseSolveExporters_[0],INSERT);
+        Phi_->apply(*YCoarse_,y,NO_TRANS);
     }
 
     template<class SC,class LO,class GO,class NO>
@@ -208,6 +211,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     int CoarseOperator<SC,LO,GO,NO>::setUpCoarseOperator()
     {
+        FROSCH_TIMER_START_LEVELID(setUpCoarseOperatorTime,"CoarseOperator::setUpCoarseOperator");
         // Build CoarseMatrix_
         XMatrixPtr k0 = buildCoarseMatrix();
 
@@ -326,6 +330,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     typename CoarseOperator<SC,LO,GO,NO>::XMatrixPtr CoarseOperator<SC,LO,GO,NO>::buildCoarseMatrix()
     {
+        FROSCH_TIMER_START_LEVELID(buildCoarseMatrixTime,"CoarseOperator::buildCoarseMatrix");
         XMatrixPtr k0 = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),CoarseSpace_->getBasisMap()->getNodeNumElements());
 
         if (this->ParameterList_->get("Use Triple MatrixMultiply",false)) {
@@ -342,6 +347,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     int CoarseOperator<SC,LO,GO,NO>::buildCoarseSolveMap(XMatrixPtr &k0)
     {
+        FROSCH_TIMER_START_LEVELID(buildCoarseSolveMapTime,"CoarseOperator::buildCoarseSolveMap");
         NumProcsCoarseSolve_ = DistributionList_->get("NumProcs",0);
         double fac = DistributionList_->get("Factor",1.0);
 
