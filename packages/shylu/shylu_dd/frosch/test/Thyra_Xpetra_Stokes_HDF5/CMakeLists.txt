@@ -14,7 +14,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ThyraXpetraPrecBlockCopyFiles
 # TwoLevelBlockPreconditioner_GDSW #
 ####################################
 ## Epetra
-IF(NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode" AND (HAVE_AMESOS2_EPETRA AND HAVE_XPETRA_EPETRA))
 TRIBITS_ADD_TEST(
 thyra_xpetra_stokes_hdf5
 NAME test_thyra_xpetra_stokes_hdf5_TLBP_GDSW_O0_EPETRA
