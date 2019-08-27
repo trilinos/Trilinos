@@ -101,6 +101,8 @@ namespace FROSch {
 
         int checkForLinearDependencies();
 
+        bool hasUnassembledMaps() const;
+        
         bool hasBasisMap() const;
 
         XMapPtr getBasisMap() const;

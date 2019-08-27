@@ -56,7 +56,6 @@ namespace FROSch {
     SchwarzOperator<SC,LO,GO,NO> (k,parameterList),
     CoarseSolveComm_ (),
     OnCoarseSolveComm_ (false),
-    NumProcsCoarseSolve_ (0),
     CoarseSpace_ (new CoarseSpace<SC,LO,GO,NO>()),
     Phi_ (),
     CoarseMatrix_ (),
@@ -101,9 +100,13 @@ namespace FROSch {
         } else {
             clearCoarseSpace(); // AH 12/11/2018: If we do not clear the coarse space, we will always append just append the coarse space
             XMapPtr subdomainMap = this->computeCoarseSpace(CoarseSpace_); // AH 12/11/2018: This map could be overlapping, repeated, or unique. This depends on the specific coarse operator
-            CoarseSpace_->assembleCoarseSpace();
-            CoarseSpace_->buildGlobalBasisMatrix(this->K_->getRangeMap(),subdomainMap,this->ParameterList_->get("Threshold Phi",1.e-8));
-            Phi_ = CoarseSpace_->getGlobalBasisMatrix();
+            if (CoarseSpace_->hasUnassembledMaps()) {
+                CoarseSpace_->assembleCoarseSpace();
+                FROSCH_ASSERT(CoarseSpace_->hasAssembledBasis(),"FROSch::CoarseOperator : !CoarseSpace_->hasAssembledBasis()");
+                CoarseSpace_->buildGlobalBasisMatrix(this->K_->getRangeMap(),subdomainMap,this->ParameterList_->get("Threshold Phi",1.e-8));
+                FROSCH_ASSERT(CoarseSpace_->hasGlobalBasisMatrix(),"FROSch::CoarseOperator : !CoarseSpace_->hasGlobalBasisMatrix()");
+                Phi_ = CoarseSpace_->getGlobalBasisMatrix();
+            }
             this->setUpCoarseOperator();
 
             this->IsComputed_ = true;
@@ -127,7 +130,7 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(applyTime,"CoarseOperator::apply");
         static int i = 0;
-        if (this->IsComputed_) {
+        if (!Phi_.is_null() && this->IsComputed_) {
             if (XTmp_.is_null()) XTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
             *XTmp_ = x;
             if (!usePreconditionerOnly && mode == NO_TRANS) {
@@ -212,50 +215,73 @@ namespace FROSch {
     int CoarseOperator<SC,LO,GO,NO>::setUpCoarseOperator()
     {
         FROSCH_TIMER_START_LEVELID(setUpCoarseOperatorTime,"CoarseOperator::setUpCoarseOperator");
-        // Build CoarseMatrix_
-        XMatrixPtr k0 = buildCoarseMatrix();
-
-        // Build Map for the coarse solver
-        buildCoarseSolveMap(k0);
-
-        //------------------------------------------------------------------------------------------------------------------------
-        // Communicate coarse matrix
-        if (!DistributionList_->get("Type","linear").compare("linear")) {
-            CoarseSolveExporters_[0] = ExportFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),GatheringMaps_[0]);
-
-            XMatrixPtr tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
-
-            tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[0],INSERT);
-
-            for (UN j=1; j<GatheringMaps_.size(); j++) {
-                tmpCoarseMatrix->fillComplete();
+        if (!Phi_.is_null()) {
+            // Build CoarseMatrix_
+            XMatrixPtr k0 = buildCoarseMatrix();
+            
+            // Build Map for the coarse solver
+            k0 = buildCoarseSolveMap(k0);
+            
+            
+            // Possibly change the Send type for this Exporter
+            ParameterListPtr gatheringCommunicationList = sublist(DistributionList_,"Gathering Communication");
+            // Set communication type "Alltoall" if not specified differently
+            if (!gatheringCommunicationList->isParameter("Send type")) gatheringCommunicationList->set("Send type","Alltoall");
+            
+            //------------------------------------------------------------------------------------------------------------------------
+            // Communicate coarse matrix
+            if (!DistributionList_->get("Type","linear").compare("linear")) {
+                CoarseSolveExporters_[0] = ExportFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),GatheringMaps_[0]);
+                CoarseSolveExporters_[0]->setDistributorParameters(gatheringCommunicationList); // Set the parameter list for the communication of the exporter
+                
+                XMatrixPtr tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
+                
+                tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[0],INSERT);
+                
+                for (UN j=1; j<GatheringMaps_.size(); j++) {
+                    tmpCoarseMatrix->fillComplete();
+                    k0 = tmpCoarseMatrix;
+                    CoarseSolveExporters_[j] = ExportFactory<LO,GO,NO>::Build(GatheringMaps_[j-1],GatheringMaps_[j]);
+                    tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],k0->getGlobalMaxNumRowEntries());
+                    
+                    tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[j],INSERT);
+                }
                 k0 = tmpCoarseMatrix;
-                CoarseSolveExporters_[j] = ExportFactory<LO,GO,NO>::Build(GatheringMaps_[j-1],GatheringMaps_[j]);
-                tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],k0->getGlobalMaxNumRowEntries());
-
-                tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[j],INSERT);
+                
+            } else if (!DistributionList_->get("Type","linear").compare("Zoltan2")) {
+#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
+                //------------------------------------------------------------------------------------------------------------------------
+                //coarse matrix already communicated with Zoltan2.
+                //------------------------------------------------------------------------------------------------------------------------
+#else
+                ThrowErrorMissingPackage("FROSch::CoarseOperator","Zoltan2");
+#endif
+                //------------------------------------------------------------------------------------------------------------------------
+            } else {
+                FROSCH_ASSERT(false,"Distribution Type unknown!");
             }
+            
             //------------------------------------------------------------------------------------------------------------------------
             // Matrix to the new communicator
             if (OnCoarseSolveComm_) {
-                LO numRows = tmpCoarseMatrix->getNodeNumRows();
+                LO numRows = k0->getNodeNumRows();
                 ArrayRCP<size_t> elemsPerRow(numRows);
                 ConstGOVecView indices;
                 ConstSCVecView values;
                 for (LO i = 0; i < numRows; i++) {
-                  GO globalRow = CoarseSolveMap_->getGlobalElement(i);
-                  size_t numEntries = tmpCoarseMatrix->getNumEntriesInGlobalRow(globalRow);
-                  if(numEntries == 0)
-                  {
-                    //Always add the diagonal for empty rows
-                    numEntries = 1;
-                  }
-                  elemsPerRow[i] = numEntries;
+                    GO globalRow = CoarseSolveMap_->getGlobalElement(i);
+                    size_t numEntries = k0->getNumEntriesInGlobalRow(globalRow);
+                    if(numEntries == 0)
+                    {
+                        //Always add the diagonal for empty rows
+                        numEntries = 1;
+                    }
+                    elemsPerRow[i] = numEntries;
                 }
                 CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_, elemsPerRow, StaticProfile);
                 for (LO i = 0; i < numRows; i++) {
                     GO globalRow = CoarseSolveMap_->getGlobalElement(i);
-                    tmpCoarseMatrix->getGlobalRowView(globalRow,indices,values);
+                    k0->getGlobalRowView(globalRow,indices,values);
                     if (indices.size()>0) {
                         CoarseMatrix_->insertGlobalValues(globalRow,indices,values);
                     } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
@@ -263,67 +289,17 @@ namespace FROSch {
                         SCVec values(1,ScalarTraits<SC>::one());
                         CoarseMatrix_->insertGlobalValues(globalRow,indices(),values());
                     }
-
+                    
                 }
-
                 CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
+                
                 CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
                 CoarseSolver_->initialize();
-
                 CoarseSolver_->compute();
-
             }
-#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
-        } else if (!DistributionList_->get("Type","linear").compare("Zoltan2")) {
-            //------------------------------------------------------------------------------------------------------------------------
-            //coarse matrix already communicated with Zoltan2. Communicate to CoarseSolveComm.
-            //------------------------------------------------------------------------------------------------------------------------
-
-            // Matrix to the new communicator
-            if (OnCoarseSolveComm_) {
-                CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,k0->getGlobalMaxNumRowEntries());
-                ConstLOVecView indices;
-                ConstSCVecView values;
-                for (UN i=0; i<k0->getNodeNumRows(); i++) {
-                    // different sorted maps: CoarseSolveMap_ and k0
-                    LO locRow = k0->getRowMap()->getLocalElement(CoarseSolveMap_->getGlobalElement(i));
-                    k0->getLocalRowView(locRow,indices,values);
-                    if (indices.size()>0) {
-                        GOVec indicesGlob(indices.size());
-                        for (UN j=0; j<indices.size(); j++) {
-                            indicesGlob[j] = k0->getColMap()->getGlobalElement(indices[j]);
-                        }
-                        CoarseMatrix_->insertGlobalValues(CoarseSolveMap_->getGlobalElement(i),indicesGlob(),values);
-                    } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
-                        GOVec indices(1,CoarseSolveMap_->getGlobalElement(i));
-                        SCVec values(1,ScalarTraits<SC>::one());
-                        CoarseMatrix_->insertGlobalValues(CoarseSolveMap_->getGlobalElement(i),indices(),values());
-                    }
-
-                }
-
-                CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
-
-                if (!this->ParameterList_->sublist("CoarseSolver").get("SolverType","Amesos").compare("MueLu")) {
-                    CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
-                }
-                else{
-                    CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
-                }
-
-                CoarseSolver_->initialize();
-
-                CoarseSolver_->compute();
-
-            }
-            //------------------------------------------------------------------------------------------------------------------------
-#endif
         } else {
-            FROSCH_ASSERT(false,"Distribution Type unknown!");
+            if (this->Verbose_) std::cout << "FROSch::CoarseOperator : WARNING: No coarse basis has been set up. Neglecting CoarseOperator." << std::endl;
         }
-
-
-
         return 0;
     }
 
@@ -345,39 +321,28 @@ namespace FROSch {
     }
 
     template<class SC,class LO,class GO,class NO>
-    int CoarseOperator<SC,LO,GO,NO>::buildCoarseSolveMap(XMatrixPtr &k0)
+    typename CoarseOperator<SC,LO,GO,NO>::XMatrixPtr CoarseOperator<SC,LO,GO,NO>::buildCoarseSolveMap(XMatrixPtr &k0)
     {
         FROSCH_TIMER_START_LEVELID(buildCoarseSolveMapTime,"CoarseOperator::buildCoarseSolveMap");
-        NumProcsCoarseSolve_ = DistributionList_->get("NumProcs",0);
-        double fac = DistributionList_->get("Factor",1.0);
-
-        // Redistribute Matrix
-        if (NumProcsCoarseSolve_==0) {
-            NumProcsCoarseSolve_ = this->MpiComm_->getSize();//Phi->DomainMap().Comm().getSize();
-        } else if (NumProcsCoarseSolve_==1) {
-            NumProcsCoarseSolve_ = 1;
-        } else if (NumProcsCoarseSolve_==-1) {
-            NumProcsCoarseSolve_ = int(1+std::max(k0->getGlobalNumRows()/10000,k0->getGlobalNumEntries()/100000));
-        } else if (NumProcsCoarseSolve_>1) {
-
-        } else if (NumProcsCoarseSolve_<-1) {
-            NumProcsCoarseSolve_ = round(pow(1.0*this->MpiComm_->getSize(), 1./(-NumProcsCoarseSolve_)));
-        } else {
-            FROSCH_ASSERT(false,"This should never happen...");
+        int numProcsCoarseSolve = DistributionList_->get("NumProcs",1);
+        double factor = DistributionList_->get("Factor",0.0);
+        
+        switch (numProcsCoarseSolve) {
+            case -1:
+                numProcsCoarseSolve = int(0.5*(1+std::max(k0->getGlobalNumRows()/10000,k0->getGlobalNumEntries()/100000)));
+                break;
+                
+            case 0:
+                numProcsCoarseSolve = this->MpiComm_->getSize();
+                break;
+                
+            default:
+                if (numProcsCoarseSolve>this->MpiComm_->getSize()) numProcsCoarseSolve = this->MpiComm_->getSize();
+                if (fabs(factor) > 1.0e-12) numProcsCoarseSolve = int(numProcsCoarseSolve/factor);
+                if (numProcsCoarseSolve<1) numProcsCoarseSolve = 1;
+                break;
         }
-
-        NumProcsCoarseSolve_ = (LO)  NumProcsCoarseSolve_ * fac;
-        if (NumProcsCoarseSolve_<1) {
-            NumProcsCoarseSolve_ = 1;
-        }
-
-        if (NumProcsCoarseSolve_ >= this->MpiComm_->getSize() && DistributionList_->get("Type","linear").compare("Zoltan2")) {
-            GatheringMaps_.resize(1);
-            CoarseSolveExporters_.resize(1);
-            GatheringMaps_[0] = BuildUniqueMap<LO,GO,NO>(Phi_->getColMap()); // DO WE NEED THIS IN ANY CASE???
-            return 0;
-        }
-        //cout << DistributionList_->get("Type","linear") << std::endl;
+        
         if (!DistributionList_->get("Type","linear").compare("linear")) {
 
             int gatheringSteps = DistributionList_->get("GatheringSteps",1);
@@ -387,7 +352,7 @@ namespace FROSch {
             LO numProcsGatheringStep = this->MpiComm_->getSize();
             GO numGlobalIndices = CoarseSpace_->getBasisMap()->getMaxAllGlobalIndex()+1;
             GO numMyRows;
-            double gatheringFactor = pow(double(this->MpiComm_->getSize())/double(NumProcsCoarseSolve_),1.0/double(gatheringSteps));
+            double gatheringFactor = pow(double(this->MpiComm_->getSize())/double(numProcsCoarseSolve),1.0/double(gatheringSteps));
 
             for (int i=0; i<gatheringSteps-1; i++) {
                 numMyRows = 0;
@@ -404,11 +369,11 @@ namespace FROSch {
             }
 
             numMyRows = 0;
-            if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/NumProcsCoarseSolve_) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/NumProcsCoarseSolve_) < NumProcsCoarseSolve_) {
+            if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/numProcsCoarseSolve) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/numProcsCoarseSolve) < numProcsCoarseSolve) {
                 if (this->MpiComm_->getRank()==0) {
-                    numMyRows = numGlobalIndices - (numGlobalIndices/NumProcsCoarseSolve_)*(NumProcsCoarseSolve_-1);
+                    numMyRows = numGlobalIndices - (numGlobalIndices/numProcsCoarseSolve)*(numProcsCoarseSolve-1);
                 } else {
-                    numMyRows = numGlobalIndices/NumProcsCoarseSolve_;
+                    numMyRows = numGlobalIndices/numProcsCoarseSolve;
                 }
             }
             GatheringMaps_[gatheringSteps-1] = MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,numMyRows,0,this->MpiComm_);
@@ -423,46 +388,41 @@ namespace FROSch {
             }
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
             CoarseSolveMap_ = MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,tmpCoarseMap->getNodeElementList(),0,CoarseSolveComm_);
-
+            
+        } else if(!DistributionList_->get("Type","linear").compare("Zoltan2")) {
 #ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
-        } else if(!DistributionList_->get("Type","linear").compare("Zoltan2")){
-
-            RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
-
             GatheringMaps_.resize(1);
             CoarseSolveExporters_.resize(1);
-
+            
             GatheringMaps_[0] = rcp_const_cast<XMap> (BuildUniqueMap(k0->getRowMap()));
-            //
             CoarseSolveExporters_[0] = ExportFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),GatheringMaps_[0]);
-
-            XMatrixPtr k0Unique = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
-
-            k0Unique->doExport(*k0,*CoarseSolveExporters_[0],INSERT);
-            k0Unique->fillComplete(GatheringMaps_[0],GatheringMaps_[0]);
-            if (NumProcsCoarseSolve_<this->MpiComm_->getSize()) {
-                ParameterListPtr tmpList = sublist(DistributionList_,"Zoltan2 Parameter");
-                tmpList->set("num_global_parts", NumProcsCoarseSolve_);
-                FROSch::RepartionMatrixZoltan2(k0Unique,tmpList);
+            
+            if (numProcsCoarseSolve < this->MpiComm_->getSize()) {
+                XMatrixPtr k0Unique = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
+                k0Unique->doExport(*k0,*CoarseSolveExporters_[0],INSERT);
+                k0Unique->fillComplete(GatheringMaps_[0],GatheringMaps_[0]);
+                
+                if (numProcsCoarseSolve<this->MpiComm_->getSize()) {
+                    ParameterListPtr tmpList = sublist(DistributionList_,"Zoltan2 Parameter");
+                    tmpList->set("num_global_parts",numProcsCoarseSolve);
+                    FROSch::RepartionMatrixZoltan2(k0Unique,tmpList);
+                }
+                
+                k0 = k0Unique;
+                GatheringMaps_[0] = k0->getRowMap();
+                CoarseSolveExporters_[0] = ExportFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),GatheringMaps_[0]);
+                
+                if (GatheringMaps_[0]->getNodeNumElements()>0) {
+                    OnCoarseSolveComm_=true;
+                }
+                CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
+                CoarseSolveMap_ = MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,GatheringMaps_[0]->getNodeElementList(),0,CoarseSolveComm_);
             }
-
-            k0 = k0Unique;
-
-            GatheringMaps_[0] = k0->getRowMap();
-            CoarseSolveExporters_[0] = ExportFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),GatheringMaps_[0]);
-
-            ConstXMapPtr tmpCoarseMap = GatheringMaps_[0];
-
-            if (tmpCoarseMap->getNodeNumElements()>0) {
-                OnCoarseSolveComm_=true;
-            }
-
-            GOVec elementList(tmpCoarseMap->getNodeElementList());
-            CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
-            CoarseSolveMap_ = MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,elementList,0,CoarseSolveComm_);
+#else
+            ThrowErrorMissingPackage("FROSch::CoarseOperator","Zoltan2");
 #endif
         } else {
-            FROSCH_ASSERT(false,"Distribution type not defined...");
+            FROSCH_ASSERT(false,"FROSch::CoarseOperator : ERROR: Distribution type unsknown.");
         }
 
         if (this->Verbose_) {
@@ -471,13 +431,13 @@ namespace FROSch {
      Coarse problem statistics\n\
     ------------------------------------------------------------------------------\n\
       dimension of the coarse problem             --- " << CoarseSpace_->getBasisMap()->getMaxAllGlobalIndex()+1 << "\n\
-      number of processes                         --- " << NumProcsCoarseSolve_ << "\n\
+      number of processes                         --- " << numProcsCoarseSolve << "\n\
     ------------------------------------------------------------------------------\n";
         }
 
-        return 0;
+        return k0;
     }
-
+    
 }
 
 #endif

@@ -140,14 +140,12 @@ namespace FROSch {
 
         XMatrixPtr buildCoarseMatrix();
 
-        virtual int buildCoarseSolveMap(XMatrixPtr &k0);
+        XMatrixPtr buildCoarseSolveMap(XMatrixPtr &k0);
 
 
         CommPtr CoarseSolveComm_;
 
         bool OnCoarseSolveComm_;
-
-        LO NumProcsCoarseSolve_;
 
         CoarseSpacePtr CoarseSpace_;
 
