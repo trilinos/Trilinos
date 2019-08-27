@@ -1566,6 +1566,8 @@ void STK_Interface::refineMesh(const int numberOfLevels, const bool deleteParent
   TEUCHOS_ASSERT(nonnull(refinedMesh_));
   TEUCHOS_ASSERT(nonnull(breakPattern_));
 
+  refinedMesh_->setCoordinatesField();
+
   percept::UniformRefiner breaker(*refinedMesh_,*breakPattern_);
 
   for (int i=0; i < numberOfLevels; ++i)
