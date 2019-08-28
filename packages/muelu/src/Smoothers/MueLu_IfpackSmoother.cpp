@@ -361,5 +361,6 @@ template class MueLu::IfpackSmoother<long long,Xpetra::EpetraNode>;
 #else
 template class MueLu::IfpackSmoother<int,Xpetra::EpetraNode>;
 #endif
+#endif
 
 #endif
