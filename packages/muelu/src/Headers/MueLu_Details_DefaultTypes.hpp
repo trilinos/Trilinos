@@ -54,13 +54,14 @@ namespace MueLu
   typedef double DefaultScalar;
   typedef int DefaultLocalOrdinal;
 
-  #ifdef HAVE_MUELU_DEFAULT_GO_LONG
+#if defined(HAVE_MUELU_DEFAULT_GO_LONG)
   typedef long DefaultGlobalOrdinal;
-  #elif HAVE_MUELU_DEFAULT_GO_LONGLONG
+#elif defined(HAVE_MUELU_DEFAULT_GO_LONGLONG)
   typedef long long DefaultGlobalOrdinal;
-  #else
+#else
+  #warning "Using GO = int"
   typedef int DefaultGlobalOrdinal;
-  #endif
+#endif
 
   typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNode;
 }
