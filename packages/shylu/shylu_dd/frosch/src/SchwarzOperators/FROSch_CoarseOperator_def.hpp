@@ -251,22 +251,21 @@ namespace FROSch {
     int CoarseOperator<SC,LO,GO,NO>::setUpCoarseOperator()
     {
         FROSCH_TIMER_START_LEVELID(setUpCoarseOperatorTime,"CoarseOperator::setUpCoarseOperator");
-        // Build CoarseMatrix_
-        XMatrixPtr k0 = buildCoarseMatrix();
-
-        // Build Map for the coarse solver
-        k0 = buildCoarseSolveMap(k0);
-
-        
-        // Possibly change the Send type for this Exporter
-        ParameterListPtr gatheringCommunicationList = sublist(DistributionList_,"Gathering Communication");
-        // Set communication type "Alltoall" if not specified differently
-        if (!gatheringCommunicationList->isParameter("Send type")) gatheringCommunicationList->set("Send type","Send");
-     
-        //------------------------------------------------------------------------------------------------------------------------
-        // Communicate coarse matrix
-        if (!DistributionList_->get("Type","linear").compare("linear")) {
-            {
+        if (!Phi_.is_null()) {
+            // Build CoarseMatrix_
+            XMatrixPtr k0 = buildCoarseMatrix();
+            
+            // Build Map for the coarse solver
+            k0 = buildCoarseSolveMap(k0);
+            
+            // Possibly change the Send type for this Exporter
+            ParameterListPtr gatheringCommunicationList = sublist(DistributionList_,"Gathering Communication");
+            // Set communication type "Alltoall" if not specified differently
+            if (!gatheringCommunicationList->isParameter("Send type")) gatheringCommunicationList->set("Send type","Alltoall");
+            
+            //------------------------------------------------------------------------------------------------------------------------
+            // Communicate coarse matrix
+            if (!DistributionList_->get("Type","linear").compare("linear")) {
 #ifdef FROSCH_COARSEOPERATOR_DETAIL_TIMERS
                 FROSCH_TIMER_START_LEVELID(coarseSolveExportersTime,"Build Exporters");
 #endif
@@ -321,57 +320,59 @@ namespace FROSch {
                 }
             }
             k0 = tmpCoarseMatrix;
-            
-        } else if (!DistributionList_->get("Type","linear").compare("Zoltan2")) {
-#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
-            //------------------------------------------------------------------------------------------------------------------------
-            //coarse matrix already communicated with Zoltan2.
-            //------------------------------------------------------------------------------------------------------------------------
-#else
-            ThrowErrorMissingPackage("FROSch::CoarseOperator","Zoltan2");
-#endif
-            //------------------------------------------------------------------------------------------------------------------------
-        } else {
-            FROSCH_ASSERT(false,"Distribution Type unknown!");
-        }
-        
-        //------------------------------------------------------------------------------------------------------------------------
-        // Matrix to the new communicator
-        if (OnCoarseSolveComm_) {
-            LO numRows = k0->getNodeNumRows();
-            ArrayRCP<size_t> elemsPerRow(numRows);
-            ConstGOVecView indices;
-            ConstSCVecView values;
-            for (LO i = 0; i < numRows; i++) {
-                GO globalRow = CoarseSolveMap_->getGlobalElement(i);
-                size_t numEntries = k0->getNumEntriesInGlobalRow(globalRow);
-                if(numEntries == 0)
-                {
-                    //Always add the diagonal for empty rows
-                    numEntries = 1;
-                }
-                elemsPerRow[i] = numEntries;
-            }
-            CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_, elemsPerRow, StaticProfile);
-            for (LO i = 0; i < numRows; i++) {
-                GO globalRow = CoarseSolveMap_->getGlobalElement(i);
-                k0->getGlobalRowView(globalRow,indices,values);
-                if (indices.size()>0) {
-                    CoarseMatrix_->insertGlobalValues(globalRow,indices,values);
-                } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
-                    GOVec indices(1,globalRow);
-                    SCVec values(1,ScalarTraits<SC>::one());
-                    CoarseMatrix_->insertGlobalValues(globalRow,indices(),values());
-                }
                 
+            } else if (!DistributionList_->get("Type","linear").compare("Zoltan2")) {
+#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
+                //------------------------------------------------------------------------------------------------------------------------
+                //coarse matrix already communicated with Zoltan2.
+                //------------------------------------------------------------------------------------------------------------------------
+#else
+                ThrowErrorMissingPackage("FROSch::CoarseOperator","Zoltan2");
+#endif
+                //------------------------------------------------------------------------------------------------------------------------
+            } else {
+                FROSCH_ASSERT(false,"Distribution Type unknown!");
             }
-            CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
             
-            CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
-            CoarseSolver_->initialize();
-            CoarseSolver_->compute();
+            //------------------------------------------------------------------------------------------------------------------------
+            // Matrix to the new communicator
+            if (OnCoarseSolveComm_) {
+                LO numRows = k0->getNodeNumRows();
+                ArrayRCP<size_t> elemsPerRow(numRows);
+                ConstGOVecView indices;
+                ConstSCVecView values;
+                for (LO i = 0; i < numRows; i++) {
+                    GO globalRow = CoarseSolveMap_->getGlobalElement(i);
+                    size_t numEntries = k0->getNumEntriesInGlobalRow(globalRow);
+                    if(numEntries == 0)
+                    {
+                        //Always add the diagonal for empty rows
+                        numEntries = 1;
+                    }
+                    elemsPerRow[i] = numEntries;
+                }
+                CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_, elemsPerRow, StaticProfile);
+                for (LO i = 0; i < numRows; i++) {
+                    GO globalRow = CoarseSolveMap_->getGlobalElement(i);
+                    k0->getGlobalRowView(globalRow,indices,values);
+                    if (indices.size()>0) {
+                        CoarseMatrix_->insertGlobalValues(globalRow,indices,values);
+                    } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
+                        GOVec indices(1,globalRow);
+                        SCVec values(1,ScalarTraits<SC>::one());
+                        CoarseMatrix_->insertGlobalValues(globalRow,indices(),values());
+                    }
+                    
+                }
+                CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
+                
+                CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
+                CoarseSolver_->initialize();
+                CoarseSolver_->compute();
+            }
+        } else {
+            if (this->Verbose_) std::cout << "FROSch::CoarseOperator : WARNING: No coarse basis has been set up. Neglecting CoarseOperator." << std::endl;
         }
-
         return 0;
     }
 
