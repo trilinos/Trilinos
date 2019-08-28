@@ -172,5 +172,5 @@ typedef MueLu::SmootherFactoryBase SmootherFactoryBase;
 typedef MueLu::AmesosSmoother<GlobalOrdinal,Node> AmesosSmoother;
 #endif
 #ifdef MUELU_IFPACKSMOOTHER_SHORT
-typedef MueLu::IfpackSmoother<Node> IfpackSmoother;
+typedef MueLu::IfpackSmoother<GlobalOrdinal,Node> IfpackSmoother;
 #endif
