@@ -63,8 +63,8 @@
 
 namespace MueLu {
 
-  template <class Node>
-  AmesosSmoother<Node>::AmesosSmoother(const std::string& type, const Teuchos::ParameterList& paramList)
+  template <class GlobalOrdinal, class Node>
+  AmesosSmoother<GlobalOrdinal, Node>::AmesosSmoother(const std::string& type, const Teuchos::ParameterList& paramList)
     : type_(type) {
     this->SetParameterList(paramList);
 
@@ -104,13 +104,13 @@ namespace MueLu {
     }
   }
 
-  template <class Node>
-  void AmesosSmoother<Node>::DeclareInput(Level &currentLevel) const {
+  template <class GlobalOrdinal, class Node>
+  void AmesosSmoother<GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "A");
   }
 
-  template <class Node>
-  void AmesosSmoother<Node>::Setup(Level& currentLevel) {
+  template <class GlobalOrdinal, class Node>
+  void AmesosSmoother<GlobalOrdinal, Node>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
@@ -145,8 +145,8 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
   }
 
-  template <class Node>
-  void AmesosSmoother<Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  template <class GlobalOrdinal, class Node>
+  void AmesosSmoother<GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
 
     Epetra_MultiVector &epX = Utilities::MV2NonConstEpetraMV(X);
@@ -165,13 +165,13 @@ namespace MueLu {
     linearProblem_->SetRHS(0);
   }
 
-  template <class Node>
-  RCP<MueLu::SmootherPrototype<double,int,int,Node> > AmesosSmoother<Node>::Copy() const {
-    return rcp( new AmesosSmoother<Node>(*this) );
+  template <class GlobalOrdinal, class Node>
+  RCP<MueLu::SmootherPrototype<double,int,GlobalOrdinal,Node> > AmesosSmoother<GlobalOrdinal, Node>::Copy() const {
+    return rcp( new AmesosSmoother<GlobalOrdinal, Node>(*this) );
   }
 
-  template <class Node>
-  std::string AmesosSmoother<Node>::description() const {
+  template <class GlobalOrdinal, class Node>
+  std::string AmesosSmoother<GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     out << SmootherPrototype::description();
     out << "{type = " << type_ << "}";
@@ -179,8 +179,8 @@ namespace MueLu {
   }
 
   //using MueLu::Describable::describe; // overloading, not hiding
-  template <class Node>
-  void AmesosSmoother<Node>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
+  template <class GlobalOrdinal, class Node>
+  void AmesosSmoother<GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0)
@@ -207,8 +207,8 @@ namespace MueLu {
     }
   }
 
-  template <class Node>
-  size_t AmesosSmoother<Node>::getNodeSmootherComplexity() const {
+  template <class GlobalOrdinal, class Node>
+  size_t AmesosSmoother<GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
     // FIXME: This is a placeholder
     return Teuchos::OrdinalTraits<size_t>::invalid();
   }
@@ -217,11 +217,15 @@ namespace MueLu {
 
 } // namespace MueLu
 
-// The AmesosSmoother is only templated on the Node, since it is an Epetra only object
+// The AmesosSmoother is only templated on the GO & Node, since it is an Epetra only object
 // Therefore we do not need the full ETI instantiations as we do for the other MueLu
 // objects which are instantiated on all template parameters.
 #if defined(HAVE_MUELU_EPETRA)
-template class MueLu::AmesosSmoother<Xpetra::EpetraNode>;
+#if defined(HAVE_MUELU_DEFAULT_GO_LONGLONG)
+template class MueLu::AmesosSmoother<long long,Xpetra::EpetraNode>;
+#else
+template class MueLu::AmesosSmoother<int,Xpetra::EpetraNode>;
+#endif
 #endif
 
 

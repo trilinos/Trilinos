@@ -72,12 +72,11 @@ namespace MueLu {
     This class creates an Amesos preconditioner factory.  The factory is capable of generating direct solvers
     based on the type and ParameterList passed into the constructor.  See the constructor for more information.
   */
-  template <class Node = typename SmootherPrototype<double,int,int>::node_type>
-  class AmesosSmoother : public SmootherPrototype<double, int, int, Node>
+  template <class GlobalOrdinal, class Node = typename SmootherPrototype<double,int,int>::node_type>
+  class AmesosSmoother : public SmootherPrototype<double, int, GlobalOrdinal, Node>
   {
     typedef double Scalar;
     typedef int    LocalOrdinal;
-    typedef int    GlobalOrdinal;
 
 #undef MUELU_AMESOSSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -203,11 +202,21 @@ namespace MueLu {
 
   // specialization for Epetra
 #if defined(HAVE_MUELU_SERIAL)
+  #if defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
+  template <>
+  inline RCP<MueLu::SmootherPrototype<double, int, long long, Xpetra::EpetraNode> >
+  GetAmesosSmoother<double, int, long long, Xpetra::EpetraNode> (const std::string& type, const Teuchos::ParameterList& paramList) {
+    return rcp (new MueLu::AmesosSmoother<long long,Xpetra::EpetraNode>(type, paramList));
+   }
+  #endif
+  #if defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
   template <>
   inline RCP<MueLu::SmootherPrototype<double, int, int, Xpetra::EpetraNode> >
   GetAmesosSmoother<double, int, int, Xpetra::EpetraNode> (const std::string& type, const Teuchos::ParameterList& paramList) {
-    return rcp (new MueLu::AmesosSmoother<Xpetra::EpetraNode>(type, paramList));
-  }
+    return rcp (new MueLu::AmesosSmoother<int,Xpetra::EpetraNode>(type, paramList));
+   }
+  #endif
+
 #endif // HAVE_MUELU_SERIAL
 
 } // namespace MueLu

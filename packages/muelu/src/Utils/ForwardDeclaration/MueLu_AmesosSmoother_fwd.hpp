@@ -50,7 +50,7 @@
 
 
 namespace MueLu {
-  template <class Node>
+  template <class GlobalOrdinal, class Node>
   class AmesosSmoother;
 }
 

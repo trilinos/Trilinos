@@ -72,11 +72,10 @@ namespace MueLu {
     This class creates an Ifpack preconditioner factory. The factory creates a smoother based on the
     type and ParameterList passed into the constructor. See the constructor for more information.
   */
-  template <class Node = typename SmootherPrototype<double,int,int>::node_type>
-  class IfpackSmoother : public MueLu::SmootherPrototype<double,int,int,Node> {
+  template <class GlobalOrdinal, class Node = typename SmootherPrototype<double,int,GlobalOrdinal>::node_type>
+  class IfpackSmoother : public MueLu::SmootherPrototype<double,int,GlobalOrdinal,Node> {
     typedef double Scalar;
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
 #undef MUELU_IFPACKSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -214,11 +213,20 @@ namespace MueLu {
 
   // Specialization for serial node (used for Epetra)
 #if defined(HAVE_MUELU_EPETRA)
+#if defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
+  template <>
+  inline RCP<MueLu::SmootherPrototype<double, int, long long, Xpetra::EpetraNode> >
+  GetIfpackSmoother<double, int, long long, Xpetra::EpetraNode> (const std::string& type, const Teuchos::ParameterList& paramList, const int& overlap) {
+    return rcp(new MueLu::IfpackSmoother<long long,Xpetra::EpetraNode>(type, paramList, overlap));
+  }
+#endif
+#if defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
   template <>
   inline RCP<MueLu::SmootherPrototype<double, int, int, Xpetra::EpetraNode> >
   GetIfpackSmoother<double, int, int, Xpetra::EpetraNode> (const std::string& type, const Teuchos::ParameterList& paramList, const int& overlap) {
-    return rcp(new MueLu::IfpackSmoother<Xpetra::EpetraNode>(type, paramList, overlap));
+    return rcp(new MueLu::IfpackSmoother<int,Xpetra::EpetraNode>(type, paramList, overlap));
   }
+#endif
 #endif
 
 } // namespace MueLu

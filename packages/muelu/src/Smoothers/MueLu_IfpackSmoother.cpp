@@ -58,15 +58,15 @@
 
 namespace MueLu {
 
-  template <class Node>
-  IfpackSmoother<Node>::IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap)
+  template <class GlobalOrdinal, class Node>
+  IfpackSmoother<GlobalOrdinal, Node>::IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap)
     : type_(type), overlap_(overlap)
   {
     SetParameterList(paramList);
   }
 
-  template <class Node>
-  void IfpackSmoother<Node>::SetParameterList(const Teuchos::ParameterList& paramList) {
+  template <class GlobalOrdinal, class Node>
+  void IfpackSmoother<GlobalOrdinal, Node>::SetParameterList(const Teuchos::ParameterList& paramList) {
     Factory::SetParameterList(paramList);
 
     if (SmootherPrototype::IsSetup()) {
@@ -76,8 +76,8 @@ namespace MueLu {
     }
   }
 
-  template <class Node>
-  void IfpackSmoother<Node>::SetPrecParameters(const Teuchos::ParameterList& list) const {
+  template <class GlobalOrdinal, class Node>
+  void IfpackSmoother<GlobalOrdinal, Node>::SetPrecParameters(const Teuchos::ParameterList& list) const {
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
     paramList.setParameters(list);
 
@@ -109,8 +109,8 @@ namespace MueLu {
     // Ifpack2 does not have this problem, as it does not populate the list with new entries
   }
 
-  template <class Node>
-  void IfpackSmoother<Node>::DeclareInput(Level &currentLevel) const {
+  template <class GlobalOrdinal, class Node>
+  void IfpackSmoother<GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "A");
 
     if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
@@ -124,8 +124,8 @@ namespace MueLu {
     } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
   }
 
-  template <class Node>
-  void IfpackSmoother<Node>::Setup(Level &currentLevel) {
+  template <class GlobalOrdinal, class Node>
+  void IfpackSmoother<GlobalOrdinal, Node>::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true)
       this->GetOStream(Warnings0) << "MueLu::IfpackSmoother::Setup(): Setup() has already been called" << std::endl;
@@ -256,8 +256,8 @@ namespace MueLu {
     this->GetOStream(Statistics1) << description() << std::endl;
   }
 
-  template <class Node>
-  void IfpackSmoother<Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  template <class GlobalOrdinal, class Node>
+  void IfpackSmoother<GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack
@@ -294,15 +294,15 @@ namespace MueLu {
     }
   }
 
-  template <class Node>
-  RCP<MueLu::SmootherPrototype<double, int, int, Node> > IfpackSmoother<Node>::Copy() const {
-    RCP<IfpackSmoother<Node> > smoother = rcp(new IfpackSmoother<Node>(*this) );
+  template <class GlobalOrdinal, class Node>
+  RCP<MueLu::SmootherPrototype<double, int, GlobalOrdinal, Node> > IfpackSmoother<GlobalOrdinal, Node>::Copy() const {
+    RCP<IfpackSmoother<GlobalOrdinal, Node> > smoother = rcp(new IfpackSmoother<GlobalOrdinal, Node>(*this) );
     smoother->SetParameterList(this->GetParameterList());
-    return Teuchos::rcp_dynamic_cast<MueLu::SmootherPrototype<double, int, int, Node> >(smoother);
+    return Teuchos::rcp_dynamic_cast<MueLu::SmootherPrototype<double, int, GlobalOrdinal, Node> >(smoother);
   }
 
-  template <class Node>
-  std::string IfpackSmoother<Node>::description() const {
+  template <class GlobalOrdinal, class Node>
+  std::string IfpackSmoother<GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     // The check "GetVerbLevel() == Test" is to avoid
     // failures in the EasyInterface test.
@@ -315,8 +315,8 @@ namespace MueLu {
     return out.str();
   }
 
-  template <class Node>
-  void IfpackSmoother<Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+  template <class GlobalOrdinal, class Node>
+  void IfpackSmoother<GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0)
@@ -343,8 +343,8 @@ namespace MueLu {
     }
   }
 
-  template <class Node>
-  size_t IfpackSmoother<Node>::getNodeSmootherComplexity() const {
+  template <class GlobalOrdinal, class Node>
+  size_t IfpackSmoother<GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
     // FIXME: This is a placeholder
     return Teuchos::OrdinalTraits<size_t>::invalid();
   }
@@ -356,7 +356,10 @@ namespace MueLu {
 // Therefore we do not need the full ETI instantiations as we do for the other MueLu
 // objects which are instantiated on all template parameters.
 #if defined(HAVE_MUELU_EPETRA)
-template class MueLu::IfpackSmoother<Xpetra::EpetraNode>;
+#if defined(HAVE_MUELU_DEFAULT_GO_LONGLONG)
+template class MueLu::IfpackSmoother<long long,Xpetra::EpetraNode>;
+#else
+template class MueLu::IfpackSmoother<int,Xpetra::EpetraNode>;
 #endif
 
 #endif
