@@ -104,6 +104,7 @@ namespace FROSch {
 
         using XImport                           = Import<LO,GO,NO>;
         using XImportPtr                        = RCP<XImport>;
+        using XImportPtrVecPtr                  = ArrayRCP<XImportPtr>;
 
         using XExport                           = Export<LO,GO,NO>;
         using XExportPtr                        = RCP<XExport>;

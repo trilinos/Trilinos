@@ -7,8 +7,9 @@ ADD_SUBDIRECTORIES(
 
 IF(ShyLU_DDFROSch_ENABLE_Belos AND KOKKOS_ENABLE_SERIAL AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra)
 ADD_SUBDIRECTORIES(
-    Thyra_Xpetra_Laplace
+    Gathering
     Overlap
+    Thyra_Xpetra_Laplace
 )
 ENDIF()
 
