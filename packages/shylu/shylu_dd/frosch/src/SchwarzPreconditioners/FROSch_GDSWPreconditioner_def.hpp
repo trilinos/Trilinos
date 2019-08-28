@@ -54,13 +54,13 @@ namespace FROSch {
     GDSWPreconditioner<SC,LO,GO,NO>::GDSWPreconditioner(ConstXMatrixPtr k,
                                                         ParameterListPtr parameterList) :
     AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> (k,parameterList),
-    CoarseLevelOperator_ ()
+    CoarseOperator_ ()
     {
         FROSCH_TIMER_START_LEVELID(gDSWPreconditionerTime,"GDSWPreconditioner::GDSWPreconditioner");
         // Set the LevelID in the sublist
         parameterList->sublist("GDSWCoarseOperator").set("Level ID",this->LevelID_);
-        CoarseLevelOperator_.reset(new GDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"GDSWCoarseOperator")));
-        this->SumOperator_->addOperator(CoarseLevelOperator_);
+        CoarseOperator_.reset(new GDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"GDSWCoarseOperator")));
+        this->SumOperator_->addOperator(CoarseOperator_);
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -138,8 +138,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWPreconditioner::initialize");
         int ret = 0;
-        if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
-        if (0>CoarseLevelOperator_->initialize(dimension,repeatedMap)) ret -= 10;
+        if (0>this->OverlappingOperator_->initialize(overlap,repeatedMap)) ret -= 1;
+        if (0>CoarseOperator_->initialize(dimension,repeatedMap)) ret -= 10;
 
         return 0;
     }
@@ -152,8 +152,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWPreconditioner::initialize");
         int ret = 0;
-        if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
-        if (0>CoarseLevelOperator_->initialize(dimension,repeatedMap,dirichletBoundaryDofs)) ret -= 10;
+        if (0>this->OverlappingOperator_->initialize(overlap,repeatedMap)) ret -= 1;
+        if (0>CoarseOperator_->initialize(dimension,repeatedMap,dirichletBoundaryDofs)) ret -= 10;
 
         return 0;
     }
@@ -168,11 +168,11 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWPreconditioner::initialize");
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
-        if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
+        if (0>this->OverlappingOperator_->initialize(overlap,repeatedMap)) ret -= 1;
         ConstXMapPtr repeatedNodesMap;
         ConstXMapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
-        if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps)) ret -=10;
+        if (0>CoarseOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps)) ret -=10;
 
         return ret;
     }
@@ -188,11 +188,11 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWPreconditioner::initialize");
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
-        if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
+        if (0>this->OverlappingOperator_->initialize(overlap,repeatedMap)) ret -= 1;
         ConstXMapPtr repeatedNodesMap;
         ConstXMapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
-        if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs)) ret -=10;
+        if (0>CoarseOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs)) ret -=10;
 
         return ret;
     }
@@ -208,11 +208,11 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWPreconditioner::initialize");
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
-        if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
+        if (0>this->OverlappingOperator_->initialize(overlap,repeatedMap)) ret -= 1;
         ConstXMapPtr repeatedNodesMap;
         ConstXMapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
-        if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList)) ret -=10;
+        if (0>CoarseOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList)) ret -=10;
 
         return ret;
     }
@@ -229,12 +229,12 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWPreconditioner::initialize");
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
-        if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
+        if (0>this->OverlappingOperator_->initialize(overlap,repeatedMap)) ret -= 1;
 
         ConstXMapPtr repeatedNodesMap;
         ConstXMapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
-        if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList)) ret -=10;
+        if (0>CoarseOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList)) ret -=10;
 
         return ret;
     }
@@ -244,8 +244,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(computeTime,"GDSWPreconditioner::compute");
         int ret = 0;
-        if (0>this->FirstLevelOperator_->compute()) ret -= 1;
-        if (0>CoarseLevelOperator_->compute()) ret -= 10;
+        if (0>this->OverlappingOperator_->compute()) ret -= 1;
+        if (0>CoarseOperator_->compute()) ret -= 10;
         return ret;
     }
 
@@ -253,7 +253,7 @@ namespace FROSch {
     void GDSWPreconditioner<SC,LO,GO,NO>::describe(FancyOStream &out,
                                                    const EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(false,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has to be implemented properly...");
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -262,6 +262,15 @@ namespace FROSch {
         return "GDSW Preconditioner";
     }
 
+    template <class SC,class LO,class GO,class NO>
+    int GDSWPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr &k)
+    {
+        FROSCH_TIMER_START_LEVELID(resetMatrixTime,"GDSWPreconditioner::resetMatrix");
+        this->K_ = k;
+        this->OverlappingOperator_->resetMatrix(this->K_);
+        CoarseOperator_->resetMatrix(this->K_);
+        return 0;
+    }
 }
 
 #endif

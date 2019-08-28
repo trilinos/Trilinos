@@ -158,7 +158,7 @@ namespace FROSch {
     void GDSWCoarseOperator<SC,LO,GO,NO>::describe(FancyOStream &out,
                                                    const EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(false,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has to be implemented properly...");
     }
 
     template <class SC,class LO,class GO,class NO>

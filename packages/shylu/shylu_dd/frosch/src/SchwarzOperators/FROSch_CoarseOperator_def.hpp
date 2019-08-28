@@ -88,26 +88,30 @@ namespace FROSch {
     int CoarseOperator<SC,LO,GO,NO>::compute()
     {
         FROSCH_TIMER_START_LEVELID(computeTime,"CoarseOperator::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"ERROR: CoarseOperator has to be initialized before calling compute()");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::CoarseOperator : ERROR: CoarseOperator has to be initialized before calling compute()");
         // This is not optimal yet... Some work could be moved to Initialize
         if (this->Verbose_) std::cout << "FROSch::CoarseOperator : WARNING: Some of the operations could probably be moved from initialize() to Compute().\n";
 
-        if (!this->ParameterList_->get("Recycling","none").compare("basis") && this->IsComputed_) {
-            this->setUpCoarseOperator();
+        bool reuseCoarseBasis = this->ParameterList_->get("Reuse: Coarse Basis",true);
+        bool reuseCoarseMatrix = this->ParameterList_->get("Reuse: Coarse Matrix",false);
+        if (!this->IsComputed_ && (reuseCoarseBasis||reuseCoarseMatrix)) {
+            reuseCoarseBasis = false;
+            reuseCoarseMatrix = false;
+        }
 
-            this->IsComputed_ = true;
-        } else if(!this->ParameterList_->get("Recycling","none").compare("all") && this->IsComputed_) {
-            // Maybe use some advanced settings in the future
-        } else {
+        if (!reuseCoarseBasis) {
+            if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::CoarseOperator : Recomputing the Coarse Basis" << std::endl;
             clearCoarseSpace(); // AH 12/11/2018: If we do not clear the coarse space, we will always append just append the coarse space
             XMapPtr subdomainMap = this->computeCoarseSpace(CoarseSpace_); // AH 12/11/2018: This map could be overlapping, repeated, or unique. This depends on the specific coarse operator
             CoarseSpace_->assembleCoarseSpace();
             CoarseSpace_->buildGlobalBasisMatrix(this->K_->getRangeMap(),subdomainMap,this->ParameterList_->get("Threshold Phi",1.e-8));
             Phi_ = CoarseSpace_->getGlobalBasisMatrix();
-            this->setUpCoarseOperator();
-
-            this->IsComputed_ = true;
         }
+        if (!reuseCoarseMatrix) {
+            if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::CoarseOperator : Recomputing the Coarse Matrix" << std::endl;
+            this->setUpCoarseOperator();
+        }
+        this->IsComputed_ = true;
         return 0;
     }
 
