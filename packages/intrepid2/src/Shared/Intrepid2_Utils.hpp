@@ -109,26 +109,19 @@ namespace Intrepid2 {
 #endif
   
 // adapted from Kokkos_Macros.hpp
-// adapted from Kokkos_Macros.hpp
 #if defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
   #if defined(KOKKOS_COMPILER_CLANG)
     #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit) __attribute__((deprecated(msg,fixit)))
     #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
   #else // GNU
-    #if not defined(KOKKOS_ENABLE_CUDA)
-      #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
-      #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg) __attribute__((deprecated(msg)))
-      // see https://gcc.gnu.org/onlinedocs/gcc-4.9.0/gcc/Function-Attributes.html
-    #else
-      // for unknown reasons, the CUDA compilers seem to have trouble with this gcc feature
-      // we therefore disable typedef deprecation warnings on CUDA
-      #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
-      #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
-    #endif
+    #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit) __attribute__ ((deprecated(msg)))
+    #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
+    // see https://gcc.gnu.org/onlinedocs/gcc-4.9.0/gcc/Function-Attributes.html
   #endif
 #else
+  // don't issue deprecation warnings on compilers other than gcc and clang (this is not part of the C++11 standard; it is compiler-specific)
   #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
-  #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg) __attribute__((deprecated(msg)))
+  #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg) 
 #endif
   /**
    \brief scalar type traits
