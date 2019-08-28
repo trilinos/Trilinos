@@ -65,22 +65,35 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rocketman.gcc.cmake")
 # details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_NAME_DETAILS PERFORMANCE)
-SET(CTEST_BUILD_FLAGS     "-j35 -i" )
+SET(BUILD_NAME_DETAILS TPETRA_DEPRECATED_CODE_OFF_ENABLE_DOWNSTREAM)
+SET(CTEST_BUILD_FLAGS     "-j20 -i" )
 
-SET(CTEST_PARALLEL_LEVEL 36)
+SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Experimental)
 SET(Trilinos_TRACK  Experimental)  # Set the CDash track to Nightly
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
 
 SET(Trilinos_PACKAGES Tpetra)
+SET(Trilinos_EXCLUDE_PACKAGES Epetra GlobiPack OptiPack Domi PyTrilinos Moertel)
+SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
+
+# Because Trilinos_CTEST_DO_ALL_AT_ONCE is set to OFF in TrilinosCTestDriverCore.rocketman.gcc.cmake,
+# the packages in Trilinos_EXCLUDE_PACKAGES above must also be disabled explicitly in EXTRA_CONFIGURE_OPTIONS
+# below.
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
-  "-DTrilinos_TEST_CATEGORIES:STRING=PERFORMANCE"
-  "-DMPI_EXEC_MAX_NUMPROCS=36"
-  "-DMPI_EXEC_DEFAULT_NUMPROCS=36"
+  "-DTpetra_ENABLE_DEPRECATED_CODE=OFF"
+  "-DKOKKOS_ENABLE_DEPRECATED_CODE=OFF"
+  "-DTPL_ENABLE_Matio=OFF"
+  "-DTPL_ENABLE_X11=OFF"
+  "-DTPL_ENABLE_Boost=ON"
+  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
+  "-DTrilinos_ENABLE_GlobiPack:BOOL=OFF"
+  "-DTrilinos_ENABLE_OptiPack:BOOL=OFF"
+  "-DTrilinos_ENABLE_Domi:BOOL=OFF"
+  "-DTrilinos_ENABLE_PyTrilinos:BOOL=OFF"
+  "-DTrilinos_ENABLE_Moertel:BOOL=OFF"
 )
 
 #

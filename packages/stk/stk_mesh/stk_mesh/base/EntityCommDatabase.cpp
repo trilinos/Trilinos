@@ -32,22 +32,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <sstream>                      // for operator<<, basic_ostream
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
-#include <stk_mesh/base/FieldTraits.hpp>
-#include <stk_mesh/base/Relation.hpp>   // for Relation
-#include <string>                       // for operator<<
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg
+#include <algorithm>                       // for operator<<
+#include <sstream>                      // for operator<<, basic_ostream
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/EntityCommDatabase.hpp>
+#include <stk_mesh/base/FieldTraits.hpp>
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Relation.hpp>   // for Relation
+#include <string>                       // for operator<<
 
 
 namespace stk {
@@ -175,6 +175,103 @@ void unpack_entity_info(
   }
 }
 
+//----------------------------------------------------------------------
+
+struct SideSetInfo {
+  unsigned partOrdinal;
+  bool fromInput;
+  std::vector<ConnectivityOrdinal> sideOrdinals;
+};
+
+void fill_sideset_info_for_entity(const MetaData& meta, const Entity entity, SideSet* sideset, std::vector<SideSetInfo>& sideSetInfo)
+{
+  std::vector<SideSetEntry>::iterator lowerBound = std::lower_bound(sideset->begin(), sideset->end(), SideSetEntry(entity, 0));
+  std::vector<SideSetEntry>::iterator upperBound = std::upper_bound( sideset->begin(), sideset->end(), SideSetEntry(entity, INVALID_CONNECTIVITY_ORDINAL));
+  unsigned distance = std::distance(lowerBound, upperBound);
+  if (distance > 0) {
+    SideSetInfo sideInfo;
+    Part* part = meta.get_part(sideset->get_name());
+    sideInfo.partOrdinal = part->mesh_meta_data_ordinal();
+    sideInfo.fromInput = sideset->is_from_input();
+    for (std::vector<SideSetEntry>::iterator iter = lowerBound; iter != upperBound; ++iter) {
+      sideInfo.sideOrdinals.push_back(iter->side);
+    }
+    sideSetInfo.push_back(sideInfo);
+  }
+}
+
+std::vector<SideSetInfo> get_sideset_info_for_entity(BulkData& mesh, const Entity entity) {
+  const MetaData& meta = mesh.mesh_meta_data();
+  std::vector<SideSet*> sidesets = mesh.get_sidesets();
+  std::vector<SideSetInfo> sideSetInfo;
+  for (SideSet* sideset : sidesets) {
+    fill_sideset_info_for_entity(meta, entity, sideset, sideSetInfo);
+  }
+  return sideSetInfo;
+}
+
+void fill_comm_buffer_with_sideset_info(const std::vector<SideSetInfo>& sideSetInfo, CommBuffer& buf) {
+  buf.pack<unsigned>(sideSetInfo.size());
+  if (sideSetInfo.size() > 0) {
+    for (const SideSetInfo& sideInfo : sideSetInfo) {
+      buf.pack<unsigned>(sideInfo.partOrdinal);
+      buf.pack<bool>(sideInfo.fromInput);
+      buf.pack<unsigned>(sideInfo.sideOrdinals.size());
+      for (const ConnectivityOrdinal sideOrdinal : sideInfo.sideOrdinals) {
+        buf.pack<ConnectivityOrdinal>(sideOrdinal);
+      }
+    }
+  }
+}
+
+void pack_sideset_info(BulkData& mesh, CommBuffer & buf, const Entity entity)
+{
+  if (mesh.entity_rank(entity) == stk::topology::ELEMENT_RANK)
+  {
+    std::vector<SideSetInfo> sideSetInfo = get_sideset_info_for_entity(mesh, entity);
+    fill_comm_buffer_with_sideset_info(sideSetInfo, buf);
+  }
+}
+
+void unpack_sideset_info(
+  CommBuffer & buf,
+  BulkData & mesh,
+  const Entity entity)
+{
+  if (mesh.entity_rank(entity) == stk::topology::ELEMENT_RANK)
+  {
+    unsigned numSideSetInfo;
+    buf.unpack<unsigned>( numSideSetInfo );
+
+    if (numSideSetInfo > 0)
+    {
+      const stk::mesh::MetaData& meta = mesh.mesh_meta_data();
+      for (unsigned sideInfo = 0; sideInfo < numSideSetInfo; ++sideInfo)
+      {
+        unsigned partOrdinal;
+        bool fromInput;
+        buf.unpack<unsigned>(partOrdinal);
+        buf.unpack<bool>(fromInput);
+
+        stk::mesh::Part& sidePart = meta.get_part(partOrdinal);
+        if (!mesh.does_sideset_exist(sidePart))
+        {
+          mesh.create_sideset(sidePart, fromInput);
+        }
+        SideSet& sideset = mesh.get_sideset(sidePart);
+
+        unsigned numSideOrdinals;
+        buf.unpack<unsigned>(numSideOrdinals);
+        for (unsigned side = 0; side < numSideOrdinals; ++side)
+        {
+          ConnectivityOrdinal sideOrdinal;
+          buf.unpack<ConnectivityOrdinal>(sideOrdinal);
+          sideset.add(entity, sideOrdinal);
+        }
+      }
+    }
+  }
+}
 
 //----------------------------------------------------------------------
 

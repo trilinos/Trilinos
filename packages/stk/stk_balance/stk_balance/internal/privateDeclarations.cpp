@@ -474,10 +474,15 @@ Teuchos::ParameterList getGraphBasedParameters(const BalanceSettings& balanceSet
     }
 
     // should not hurt other methods, only affects RCB.
-    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters", false);
-    zparams.set("debug_level", "0");
-//    zparams.set("LB_METHOD", "PHG");
-//    zparams.set("LB_APPROACH", "PARTITION");
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("debug_level","0");
+    zparams.set("LB_APPROACH","PARTITION");
+    zparams.set("LB_METHOD","GRAPH");
+    zparams.set("GRAPH_PACKAGE","ParMETIS");
+    zparams.set("GRAPH_SYMMETRIZE","None");
+    zparams.set("PARMETIS_METHOD","PartKway");
+    //zparams.set("PARMETIS_METHOD","AdaptiveRepart");
+    //zparams.set("PARMETIS_ITR",1000);
     return params;
 }
 

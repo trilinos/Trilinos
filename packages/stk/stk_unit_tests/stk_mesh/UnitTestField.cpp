@@ -32,20 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <stddef.h>                     // for size_t, NULL
-#include <unistd.h>                     // for unlink
-#include <iostream>                     // for ostream, operator<<, etc
-#include <stdexcept>                    // for runtime_error
-#include <string>                       // for string, operator==, etc
-#include <vector>                       // for vector
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include "stk_util/environment/WallTime.hpp"
 #include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL
 #include "Ioss_ElementBlock.h"          // for ElementBlock
 #include "Ioss_Field.h"                 // for Field, etc
@@ -57,6 +43,7 @@
 #include "mpi.h"                        // for ompi_communicator_t, etc
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_io/MeshField.hpp"         // for MeshField
+#include "stk_io/WriteMesh.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_bytes_per_entity, etc
@@ -64,7 +51,22 @@
 #include "stk_mesh/base/Selector.hpp"   // for operator<<, Selector, etc
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/GenerateALefRAMesh.hpp"
+#include "stk_util/environment/WallTime.hpp"
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <iostream>                     // for ostream, operator<<, etc
+#include <stddef.h>                     // for size_t, NULL
+#include <stdexcept>                    // for runtime_error
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <string>                       // for string, operator==, etc
+#include <unistd.h>                     // for unlink
+#include <vector>                       // for vector
 
 namespace Ioss { class DatabaseIO; }
 namespace stk { namespace mesh { class Bucket; } }
@@ -1426,5 +1428,60 @@ TEST_F(LateFieldFixture, DISABLED_performanceOfSingleLateFieldContiguous)
   setup_performance_of_single_late_field<int>(stk::topology::NODE_RANK, 64, fieldDataManager);
 }
 
+TEST(SharedSidesetField, verifySidesetFieldAfterMeshRead) {
+  std::string serialOutputMeshName = "ARB.e";
+
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
+  {
+    const std::string fieldName = "surface_1_df";
+    const double initValue = 123.0;
+
+    // Build the target serial mesh and write it to a file
+    if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
+    {
+      stk::mesh::MetaData meta(3);
+      stk::mesh::BulkData bulk(meta, MPI_COMM_SELF);
+
+      stk::unit_test_util::create_AB_mesh_with_sideset_and_distribution_factors(bulk,
+                                                                                stk::unit_test_util::LEFT,
+                                                                                stk::unit_test_util::DECREASING,
+                                                                                fieldName,
+                                                                                initValue);
+
+      stk::io::write_mesh_with_fields(serialOutputMeshName, bulk, 1, 1.0);
+    }
+
+    {
+      stk::mesh::MetaData meta(3);
+      stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+      stk::io::StkMeshIoBroker stkIo;
+      stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
+
+      stkIo.set_bulk_data(bulk);
+      stkIo.add_mesh_database(serialOutputMeshName, stk::io::READ_MESH);
+      stkIo.create_input_mesh();
+      stkIo.add_all_mesh_fields_as_input_fields();
+
+      stkIo.populate_bulk_data();
+
+      const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::FACE_RANK, meta.universal_part());
+      ASSERT_EQ(1u, buckets.size());
+      for (stk::mesh::Bucket* bucket : buckets)
+      {
+        ASSERT_EQ(1u, bucket->size());
+        stk::mesh::Entity face = (*bucket)[0];
+        stk::mesh::FieldBase* field = meta.get_field(stk::topology::FACE_RANK, fieldName);
+        EXPECT_NE(nullptr, field);
+        unsigned numEntries = stk::mesh::field_scalars_per_entity(*field, face);
+        double* fieldData = reinterpret_cast<double*>(stk::mesh::field_data(*field, face));
+        for (unsigned entry = 0; entry < numEntries; ++entry)
+        {
+            EXPECT_NEAR(initValue, fieldData[entry], 1e-12);
+        }
+      }
+    }
+  }
+  unlink(serialOutputMeshName.c_str());
+}
 } //namespace <anonymous>
 

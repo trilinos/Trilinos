@@ -160,7 +160,7 @@ lib stk_io
     /sierra/seacas//ioss
     /sierra/seacas//ioinit
     /tpl/trilinos//shards
-    /tpl/trilinos//teuchos
+    /tpl/trilinos//teuchoscore
   : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -186,7 +186,7 @@ lib stk_io_util
     /sierra/stk_util//stk_util_parallel
     /sierra/seacas//ioss
     /tpl/trilinos//shards
-    /tpl/trilinos//teuchos
+    /tpl/trilinos//teuchoscore
   : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

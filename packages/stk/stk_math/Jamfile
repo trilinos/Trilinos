@@ -140,7 +140,7 @@ alias stk_math_headers
 exe stk_math_utest
   :
     [ glob $(stk_math-root)/unit_tests/*.cpp ]
-    /tpl/trilinos-kokkoscore//kokkoscore
+    /tpl/trilinos//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
   ;

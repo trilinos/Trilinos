@@ -1,4 +1,4 @@
- // Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
 // Solutions of Sandia, LLC (NTESS). Under the terms of Contract
 // DE-NA0003525 with NTESS, the U.S. Government retains certain rights
 // in this software.
@@ -30,37 +30,38 @@
  // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- //
-#ifndef STKBALANCE_HPP
-#define STKBALANCE_HPP
 
-namespace stk { namespace balance { class BalanceSettings; } }
-namespace stk { namespace mesh { class BulkData; } }
+#ifndef NGPFIELDPARALLEL_HPP
+#define NGPFIELDPARALLEL_HPP
 
-#include <stk_mesh/base/Selector.hpp>
 #include <vector>
-#include <string>
-#include "mpi.h"
-#include <stk_balance/internal/balanceDefaults.hpp>
+#include "stk_ngp/Ngp.hpp"
+#include "stk_ngp/NgpField.hpp"
+#include "stk_mesh/base/FieldParallel.hpp"
 
-namespace stk
-{
-namespace balance
-{
+namespace ngp {
 
-bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData);
-bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors);
-bool colorStkMesh(const BalanceSettings& colorSettings, stk::mesh::BulkData& stkMeshBulkData);
-void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, stk::balance::AppTypeDefaults appType, MPI_Comm comm);
-void run_stk_balance_with_settings(const std::string& outputDirectory, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions);
-void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
-                                stk::balance::BalanceSettings& graphOptions,
-                                const std::string& exodusFilename,
-                                const std::string& outputFilename,
-                                const std::string& initialDecompMethod);
-void fill_coloring_parts(const stk::mesh::MetaData& meta, stk::mesh::PartVector& coloringParts);
-void fill_coloring_parts_with_topology(const stk::mesh::MetaData& meta, const stk::topology topo, stk::mesh::PartVector& coloringParts);
-std::string construct_coloring_part_name(const int color, const stk::mesh::Part& part);
+template <typename T>
+void parallel_sum(stk::mesh::BulkData & bulk, const std::vector<ngp::Field<T> *> & ngpFields)
+{
+  stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+  const std::vector<stk::mesh::FieldBase *> & allStkFields = meta.get_fields();
+
+  std::vector<const stk::mesh::FieldBase *> stkFields;
+  for (ngp::Field<T> * ngpField : ngpFields) {
+    stkFields.push_back(allStkFields[ngpField->get_ordinal()]);
+    ngpField->sync_to_host();
+  }
+
+  stk::mesh::parallel_sum(bulk, stkFields);
+
+  for (ngp::Field<T> * ngpField : ngpFields) {
+    ngpField->modify_on_host();
+    ngpField->sync_to_device();
+  }
 }
+
 }
+
 #endif
+

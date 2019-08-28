@@ -722,6 +722,7 @@ namespace stk {
       StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
       StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
     void store_attribute_field_ordering();
+    void update_sidesets();
 
     protected:
       size_t m_activeMeshIndex;

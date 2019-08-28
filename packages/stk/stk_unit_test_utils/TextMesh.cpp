@@ -273,7 +273,7 @@ MeshData parse_input(const std::string& meshDescription)
         }
         data.elementDataVec.push_back(elementData);
     }
-    ThrowRequireMsg(spatialDim>1, "Error!  Spatial dimension not defined to be 2 or 3!");
+    ThrowRequireMsg(spatialDim>=1, "Error!  Spatial dimension not defined to be 1, 2 or 3!");
     data.spatialDim = spatialDim;
     return data;
 }
@@ -290,7 +290,7 @@ void declare_parts_and_coordinates(MeshData &meshData, stk::mesh::MetaData &meta
         if(!stk::io::is_part_io_part(part))
             stk::io::put_io_part_attribute(part);
     }
-    if (meshData.spatialDim == 3)
+    if (meshData.spatialDim == 3 || meshData.spatialDim == 1)
     {
         CoordinatesField & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
         stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), meshData.spatialDim,
