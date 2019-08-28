@@ -60,26 +60,28 @@ namespace MueLu {
     @brief Turns a MueLu::Hierarchy into a Epetra_Operator.
     It allows MueLu to be used as a preconditioner for AztecOO (for instance).
 */
-  class EpetraOperator : public Epetra_Operator {
+template<class GlobalOrdinal>
+  class EpetraOperatorT : public Epetra_Operator {
     typedef double              SC;
     typedef int                 LO;
-    typedef int                 GO;
+    typedef GlobalOrdinal       GO;
     typedef Xpetra::EpetraNode  NO;
 
     typedef Xpetra::Matrix<SC,LO,GO,NO>                     Matrix;
     typedef MueLu::Hierarchy<SC,LO,GO,NO>                   Hierarchy;
-    typedef MueLu::Utilities<SC,LO,GO,NO>                       Utils;
+    typedef MueLu::Utilities<SC,LO,GO,NO>                   Utils;
 
   public:
+  typedef GlobalOrdinal       global_ordinal_t;
 
     //! @name Constructor/Destructor
     //@{
 
     //! Constructor
-    EpetraOperator(const RCP<Hierarchy>& H) : Hierarchy_(H) { }
+    EpetraOperatorT(const RCP<Hierarchy>& H) : Hierarchy_(H) { }
 
     //! Destructor.
-    virtual ~EpetraOperator() { }
+    virtual ~EpetraOperatorT() { }
 
     //@}
 
@@ -159,6 +161,13 @@ namespace MueLu {
     RCP<Hierarchy> Hierarchy_;
 
   };
+
+#if defined(HAVE_MUELU_DEFAULT_GO_LONGLONG)
+  typedef EpetraOperatorT<long long> EpetraOperator;
+#else
+  typedef EpetraOperatorT<int> EpetraOperator;
+#endif
+
 
 } // namespace
 

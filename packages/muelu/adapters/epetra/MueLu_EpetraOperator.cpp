@@ -55,7 +55,8 @@
 
 namespace MueLu {
 
-int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+template<class GlobalOrdinal>
+int EpetraOperatorT<GlobalOrdinal>::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
   try {
     // There is no rcpFromRef(const T&), so we need to do const_cast
     const Xpetra::EpetraMultiVectorT<GO,NO> eX(rcpFromRef(const_cast<Epetra_MultiVector&>(X)));
@@ -84,15 +85,17 @@ int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector
 
   } catch (std::exception& e) {
     //TODO: error msg directly on std::cerr?
-    std::cerr << "Caught an exception in MueLu::EpetraOperator::ApplyInverse():" << std::endl
+    std::cerr << "Caught an exception in MueLu::EpetraOperatorT<GlobalOrdinal>::ApplyInverse():" << std::endl
         << e.what() << std::endl;
     return -1;
   }
   return 0;
 }
 
-const Epetra_Comm& EpetraOperator::Comm() const {
-  RCP<Matrix> A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
+template<class GlobalOrdinal>
+const Epetra_Comm& EpetraOperatorT<GlobalOrdinal>::Comm() const {
+  RCP<Level> L  = Hierarchy_->GetLevel(0);
+  RCP<Matrix> A = L->Get<RCP<Matrix> >("A");
 
   //TODO: This code is not pretty
   RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
@@ -100,10 +103,10 @@ const Epetra_Comm& EpetraOperator::Comm() const {
     RCP<const Xpetra::Matrix<SC, LO, GO, NO> > blockMat = epbA->getMatrix(0,0);
     RCP<const Xpetra::CrsMatrixWrap<SC, LO, GO, NO> > blockCrsWrap = Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC, LO, GO, NO> >(blockMat);
     if (blockCrsWrap == Teuchos::null)
-      throw Exceptions::BadCast("MueLu::EpetraOperator::Comm(): Cast from block (0,0) to CrsMatrixWrap failed. Could be a block matrix. TODO implement recursive support for block matrices.");
+      throw Exceptions::BadCast("MueLu::EpetraOperatorT<GlobalOrdinal>::Comm(): Cast from block (0,0) to CrsMatrixWrap failed. Could be a block matrix. TODO implement recursive support for block matrices.");
     RCP<const Xpetra::EpetraCrsMatrixT<GO,NO>> tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GO,NO> >(blockCrsWrap->getCrsMatrix());
     if (tmp_ECrsMtx == Teuchos::null)
-      throw Exceptions::BadCast("MueLu::EpetraOperator::Comm(): Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
+      throw Exceptions::BadCast("MueLu::EpetraOperatorT<GlobalOrdinal>::Comm(): Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
     RCP<Epetra_CrsMatrix> epA = tmp_ECrsMtx->getEpetra_CrsMatrixNonConst();
     return epA->Comm();
   }
@@ -117,8 +120,10 @@ const Epetra_Comm& EpetraOperator::Comm() const {
   return tmp_ECrsMtx->getEpetra_CrsMatrixNonConst()->Comm();
 }
 
-const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
-  RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
+template<class GlobalOrdinal>
+const Epetra_Map& EpetraOperatorT<GlobalOrdinal>::OperatorDomainMap() const {
+  RCP<Level> L  = Hierarchy_->GetLevel(0);
+  RCP<Matrix> A = L->Get<RCP<Matrix> >("A");
 
   RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
   if (epbA != Teuchos::null)
@@ -133,9 +138,11 @@ const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
   return tmp_ECrsMtx->getEpetra_CrsMatrixNonConst()->DomainMap();
 }
 
-const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
-  RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
-
+template<class GlobalOrdinal>
+const Epetra_Map & EpetraOperatorT<GlobalOrdinal>::OperatorRangeMap() const {
+  RCP<Level> L  = Hierarchy_->GetLevel(0);
+  RCP<Matrix> A = L->Get<RCP<Matrix> >("A");
+ 
   RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
   if (epbA != Teuchos::null)
     return Xpetra::toEpetra(epbA->getFullRangeMap());
@@ -150,5 +157,11 @@ const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
 }
 
 } // namespace
+
+#if defined(HAVE_MUELU_DEFAULT_GO_LONGLONG)
+template class MueLu::EpetraOperatorT<long long>;
+#else
+template class MueLu::EpetraOperatorT<int>;
+#endif
 
 #endif // #if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)

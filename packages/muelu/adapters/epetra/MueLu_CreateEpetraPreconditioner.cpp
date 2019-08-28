@@ -37,7 +37,7 @@ namespace MueLu {
   {
     using SC = double;
     using LO = int;
-    using GO = int;
+    using GO = typename MueLu::EpetraOperator::global_ordinal_t;
     using NO = Xpetra::EpetraNode;
 
     using Teuchos::ParameterList;
@@ -109,7 +109,7 @@ namespace MueLu {
   void ReuseEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>& inA, MueLu::EpetraOperator& Op) {
     using SC = double;
     using LO = int;
-    using GO = int;
+    using GO = typename MueLu::EpetraOperator::global_ordinal_t;
     using NO = Xpetra::EpetraNode;
 
     using Teuchos::ParameterList;
@@ -144,7 +144,7 @@ namespace MueLu {
   {
     using SC = double;
     using LO = int;
-    using GO = int;
+    using GO = typename MueLu::EpetraOperator::global_ordinal_t;
     using NO = Xpetra::EpetraNode;
 
     using Teuchos::ParameterList;
@@ -193,7 +193,7 @@ namespace MueLu {
   {
     using SC = double;
     using LO = int;
-    using GO = int;
+    using GO = typename MueLu::EpetraOperator::global_ordinal_t;
     using NO = Xpetra::EpetraNode;
 
     using Teuchos::ParameterList;
@@ -233,7 +233,7 @@ namespace MueLu {
                              const Teuchos::RCP<Epetra_MultiVector>& inNullspace) {
     using SC = double;
     using LO = int;
-    using GO = int;
+    using GO = typename MueLu::EpetraOperator::global_ordinal_t;
     using NO = Xpetra::EpetraNode;
 
     using MultiVector = Xpetra::MultiVector<SC, LO, GO, NO>;
@@ -274,7 +274,7 @@ namespace MueLu {
                              const Teuchos::RCP<Epetra_MultiVector>& inCoords) {
     using SC = double;
     using LO = int;
-    using GO = int;
+    using GO = typename MueLu::EpetraOperator::global_ordinal_t;
     using NO = Xpetra::EpetraNode;
 
     using MultiVector = Xpetra::MultiVector<SC, LO, GO, NO>;
@@ -311,7 +311,7 @@ namespace MueLu {
   {
     using SC = double;
     using LO = int;
-    using GO = int;
+    using GO = typename MueLu::EpetraOperator::global_ordinal_t;
     using NO = Xpetra::EpetraNode;
 
     using MultiVector = Xpetra::MultiVector<SC, LO, GO, NO>;
@@ -355,7 +355,7 @@ namespace MueLu {
   {
     using SC = double;
     using LO = int;
-    using GO = int;
+    using GO = typename MueLu::EpetraOperator::global_ordinal_t;
     using NO = Xpetra::EpetraNode;
 
     using MultiVector = Xpetra::MultiVector<SC, LO, GO, NO>;
