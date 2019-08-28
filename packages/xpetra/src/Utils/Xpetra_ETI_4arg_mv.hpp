@@ -31,8 +31,15 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_TPETRA)
   TPETRA_INSTANTIATE_MULTIVECTOR(XPETRA_ETI_GROUP)
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
-    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT)))) \
+  && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
   XPETRA_ETI_GROUP(double,int,int,EpetraNode)
+# endif
+
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG)))) \
+  && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+  XPETRA_ETI_GROUP(double,int,long long,EpetraNode)
 # endif
 
 #endif

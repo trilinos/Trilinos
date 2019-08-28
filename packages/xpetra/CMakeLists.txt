@@ -135,31 +135,29 @@ ELSE () # Tpetra NOT enabled
   ENDIF ()
 ENDIF ()
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  IF(NOT ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
-    MESSAGE("-- Xpetra support for 32 bit Epetra enabled.")
-    MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
-    
-    # Tpetra and Epetra need to match GO types
-    IF(${PACKAGE_NAME}_ENABLE_Tpetra)
-      IF(NOT Tpetra_INST_INT_INT)
-        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 32-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_INT")
-      ENDIF()
+# Diagnostic message on chosen GO
+IF (${PACKAGE_NAME}_INT_LONG_LONG)
+  MESSAGE(STATUS "Xpetra: Enabling GO = long long support")
+ELSE()
+  MESSAGE(STATUS "Xpetra: Enabling GO = int support")
+ENDIF()
+
+# If Tpetra AND Epetra are available, we need to make sure they're sync'd on GO type
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
+  IF (${PACKAGE_NAME}_INT_LONG_LONG)
+    IF(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES)
+      MESSAGE(FATAL_ERROR "If Tpetra's long long support is enabled, Epetra's 64-bit support must be enabled to use both with Xpetra.")    
+    ELSE()
+      GLOBAL_SET(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES ON)
+      SET( ${PACKAGE_NAME_UC}_EPETRA_NO_32BIT_GLOBAL_INDICES ON BOOL "Set to ON by CMake because GO=int is disabled" )
     ENDIF()
-
-  ENDIF()
-  IF(NOT ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
-    MESSAGE("-- Xpetra support for 64 bit Epetra enabled.")
-    MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
-
-    # Tpetra and Epetra need to match GO types
-    IF(${PACKAGE_NAME}_ENABLE_Tpetra)
-      IF(NOT Tpetra_INST_INT_LONG_LONG)
-        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 64-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_LONG_LONG")
-      ENDIF()
-    ENDIF()
-
-  ENDIF()
+  ELSE()
+    IF(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES)
+      MESSAGE(FATAL_ERROR "If Tpetra's int support is enabled, Epetra's 32-bit support must be enabled to use both with Xpetra.")    
+    ELSE()
+      SET( ${PACKAGE_NAME_UC}_EPETRA_NO_64BIT_GLOBAL_INDICES ON BOOL "Set to ON by CMake because GO=long long is disabled" )
+    ENDIF()    
+  ENDIF() 
 ENDIF()
 
 ##################################
