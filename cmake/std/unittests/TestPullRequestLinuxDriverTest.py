@@ -24,7 +24,7 @@ except ImportError:  # pragma nocover
     import unittest.mock as mock
 
 from argparse import Namespace
-# from subprocess import CalledProcessError
+from subprocess import CalledProcessError
 
 import PullRequestLinuxDriverTest
 
@@ -79,7 +79,8 @@ class Test_run(unittest.TestCase):
             else:
                 with self.assertRaisesRegex(SystemExit, bad_git_string):
                     PullRequestLinuxDriverTest.confirmGitVersion()
-        m_check_out.assert_called_once_with(['git', '--version'])
+
+            m_check_out.assert_called_once_with(['git', '--version'])
 
 
     def test_verifyGit_passes_with_2_10(self):
@@ -87,13 +88,9 @@ class Test_run(unittest.TestCase):
         with self.m_check_out as m_check_out:
             m_check_out.return_value='git version 2.10.1'
 
-            if sys.version_info.major is not 3:
-                with self.IOredirect:
-                    PullRequestLinuxDriverTest.confirmGitVersion()
-            else:
-                with self.IOredirect:
-                    PullRequestLinuxDriverTest.confirmGitVersion()
-        m_check_out.assert_called_once_with(['git', '--version'])
+            with self.IOredirect:
+                PullRequestLinuxDriverTest.confirmGitVersion()
+            m_check_out.assert_called_once_with(['git', '--version'])
 
 
     def test_verifyGit_passes_with_2_12(self):
@@ -101,12 +98,8 @@ class Test_run(unittest.TestCase):
         with self.m_check_out as m_check_out:
             m_check_out.return_value='git version 2.12.4'
 
-            if sys.version_info.major is not 3:
-                with self.IOredirect:
-                    PullRequestLinuxDriverTest.confirmGitVersion()
-            else:
-                with self.IOredirect:
-                    PullRequestLinuxDriverTest.confirmGitVersion()
+            with self.IOredirect:
+                PullRequestLinuxDriverTest.confirmGitVersion()
         m_check_out.assert_called_once_with(['git', '--version'])
 
 
@@ -115,12 +108,8 @@ class Test_run(unittest.TestCase):
         with self.m_check_out as m_check_out:
             m_check_out.return_value='git version 3.6.1'
 
-            if sys.version_info.major is not 3:
-                with self.IOredirect:
-                    PullRequestLinuxDriverTest.confirmGitVersion()
-            else:
-                with self.IOredirect:
-                    PullRequestLinuxDriverTest.confirmGitVersion()
+            with self.IOredirect:
+                PullRequestLinuxDriverTest.confirmGitVersion()
         m_check_out.assert_called_once_with(['git', '--version'])
 
 
@@ -202,6 +191,7 @@ Set CWD = /dev/null/workspace
                 self.m_check_call as m_call, \
                 l_argv, \
                 self.m_environ, \
+                mock.patch('PullRequestLinuxDriverTest.createPackageEnables'), \
                 mock.patch('PullRequestLinuxDriverTest.setBuildEnviron'), \
                 mock.patch('PullRequestLinuxDriverTest.getCDashTrack'):
             PullRequestLinuxDriverTest.run()
@@ -258,6 +248,7 @@ Set CWD = /dev/null/workspace
                 self.m_check_call as m_call, \
                 l_argv, \
                 self.m_environ, \
+                mock.patch('PullRequestLinuxDriverTest.createPackageEnables'), \
                 mock.patch('PullRequestLinuxDriverTest.setBuildEnviron'), \
                 mock.patch('PullRequestLinuxDriverTest.getCDashTrack',
                            return_value='testTrack'):
@@ -275,6 +266,78 @@ Set CWD = /dev/null/workspace
                                         '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
                                         '-Dpackage_enables=../packageEnables.cmake',
                                         '-Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake'])
+
+
+class Test_createPackageEnables(unittest.TestCase):
+
+    def setUp(self):
+        self.source_branch = 'incoming_branch'
+        self.source_url = '/dev/null/source/Trilinos.git'
+        self.target_branch = 'base_branch'
+        self.target_url = '/dev/null/target/Trilinos.git'
+        self.job_base_name = 'JenkinsBaseName'
+        self.github_pr_number = '8888'
+        self.jenkins_build_number = '7777'
+        self.jenkins_workspace='/dev/null/workspace'
+
+        self.arguments = Namespace()
+        setattr(self.arguments, 'sourceBranch', self.source_branch)
+        setattr(self.arguments, 'sourceRepo', self.source_url)
+        setattr(self.arguments, 'targetBranch', self.target_branch)
+        setattr(self.arguments, 'targetRepo', self.target_url)
+        setattr(self.arguments, 'job_base_name', self.job_base_name)
+        setattr(self.arguments, 'github_pr_number', self.github_pr_number)
+        setattr(self.arguments, 'workspaceDir', self.jenkins_workspace)
+
+
+    def success_side_effect(self):
+        with open('packageEnables.cmake',  'w') as f_out:
+            f_out.write('''
+MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
+  MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
+  SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
+ENDMACRO()
+''')
+            f_out.write("PR_ENABLE_BOOL(Trilinos_ENABLE_FooPackageBar ON)")
+
+    def test_call_success(self):
+        expected_output = '''Enabled packages:
+-- Setting Trilinos_ENABLE_FooPackageBar = ON
+
+'''
+        with mock.patch('subprocess.check_call',
+                        side_effect=self.success_side_effect()) as m_out, \
+            mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
+            PullRequestLinuxDriverTest.createPackageEnables(self.arguments)
+        m_out.assert_called_once_with([os.path.join(self.jenkins_workspace,
+                                                    'Trilinos',
+                                                    'commonTools',
+                                                    'framework',
+                                                    'get-changed-trilinos-packages.sh'),
+                                       os.path.join('origin',
+                                                    self.target_branch),
+                                       'HEAD', 'packageEnables.cmake'])
+        self.assertEqual(expected_output, m_stdout.getvalue())
+        os.unlink('packageEnables.cmake')
+
+    def test_call_failure(self):
+        expected_output = '''There was an issue generating packageEnables.cmake.  The error code was: 39
+'''
+        with mock.patch('subprocess.check_call',
+                        side_effect=CalledProcessError(cmd='cmake',
+                                                       returncode=39)) as m_out, \
+                 mock.patch('sys.stdout',
+                            new_callable=StringIO) as m_stdout:
+             PullRequestLinuxDriverTest.createPackageEnables(self.arguments)
+        m_out.assert_called_once_with([os.path.join(self.jenkins_workspace,
+                                                    'Trilinos',
+                                                    'commonTools',
+                                                    'framework',
+                                                    'get-changed-trilinos-packages.sh'),
+                                       os.path.join('origin',
+                                                    self.target_branch),
+                                       'HEAD', 'packageEnables.cmake'])
+        self.assertEqual(expected_output, m_stdout.getvalue())
 
 
 class Test_setEnviron(unittest.TestCase):
