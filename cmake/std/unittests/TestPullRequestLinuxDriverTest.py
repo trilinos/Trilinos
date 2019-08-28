@@ -307,7 +307,8 @@ ENDMACRO()
 '''
         with mock.patch('subprocess.check_call',
                         side_effect=self.success_side_effect()) as m_out, \
-            mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
+                mock.patch('sys.stdout',
+                           new_callable=StringIO) as m_stdout:
             PullRequestLinuxDriverTest.createPackageEnables(self.arguments)
         m_out.assert_called_once_with([os.path.join(self.jenkins_workspace,
                                                     'Trilinos',
@@ -317,6 +318,22 @@ ENDMACRO()
                                        os.path.join('origin',
                                                     self.target_branch),
                                        'HEAD', 'packageEnables.cmake'])
+        self.assertEqual(expected_output, m_stdout.getvalue())
+        os.unlink('packageEnables.cmake')
+
+    def test_call_python2(self):
+        expected_output = '''Enabled packages:
+-- Setting Trilinos_ENABLE_TrilinosFrameworkTests = ON
+
+'''
+
+        l_arguments = self.arguments
+        l_arguments.job_base_name = 'Trilinos_pullrequest_python_2'
+        with mock.patch('subprocess.check_call',
+                        side_effect=self.success_side_effect()) as m_out, \
+            mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
+            PullRequestLinuxDriverTest.createPackageEnables(l_arguments)
+        m_out.assert_not_called()
         self.assertEqual(expected_output, m_stdout.getvalue())
         os.unlink('packageEnables.cmake')
 
