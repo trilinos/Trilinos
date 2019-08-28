@@ -5,64 +5,69 @@ ASSERT_DEFINED(
   Xpetra_INT_LONG_LONG
   )
 
-TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
+ADD_SUBDIRECTORY(unit_tests)
 
 IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
-  TRIBITS_ADD_TEST_DIRECTORIES(unit_tests_kokkos)
-  TRIBITS_ADD_TEST_DIRECTORIES(perf_tests_kokkos)
+    ADD_SUBDIRECTORY(unit_tests_kokkos)
+    ADD_SUBDIRECTORY(perf_tests_kokkos)
 ENDIF()
 
-TRIBITS_ADD_TEST_DIRECTORIES(scaling)
+ADD_SUBDIRECTORY(scaling)
 
 if (NOT MUELU_VALGRIND_TESTING)
-  TRIBITS_ADD_TEST_DIRECTORIES(interface)
+    ADD_SUBDIRECTORY(interface)
 ELSE()
-  MESSAGE(STATUS "Skipping ParameterListInterpreter.")
+    MESSAGE(STATUS "Skipping ParameterListInterpreter.")
 ENDIF()
 
-TRIBITS_ADD_TEST_DIRECTORIES(blockedtransfer)
+ADD_SUBDIRECTORY(blockedtransfer)
 
 IF(Xpetra_INT_LONG_LONG AND HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-  TRIBITS_ADD_TEST_DIRECTORIES(longlong)
+    ADD_SUBDIRECTORY(longlong)
 ENDIF()
-TRIBITS_ADD_TEST_DIRECTORIES(factories)
-TRIBITS_ADD_TEST_DIRECTORIES(maxwell)
-TRIBITS_ADD_TEST_DIRECTORIES(navierstokes)
+
+ADD_SUBDIRECTORY(factories)
+ADD_SUBDIRECTORY(maxwell)
+ADD_SUBDIRECTORY(navierstokes)
+
 if (NOT MUELU_VALGRIND_TESTING)
-  # JJH 4Feb2014:  This is failing the nightly MPI valgrind test.  It runs fine
-  # interactively.  If/when I figure out the cause, I'll reenable this during
-  # memory testing.
-  TRIBITS_ADD_TEST_DIRECTORIES(paramlist)
+    # JJH 4Feb2014:  This is failing the nightly MPI valgrind test.  It runs fine
+    # interactively.  If/when I figure out the cause, I'll reenable this during
+    # memory testing.
+    ADD_SUBDIRECTORY(paramlist)
 ENDIF()
-TRIBITS_ADD_TEST_DIRECTORIES(permutation)
-TRIBITS_ADD_TEST_DIRECTORIES(profiling)
-TRIBITS_ADD_TEST_DIRECTORIES(simple1D)
+
+ADD_SUBDIRECTORY(permutation)
+ADD_SUBDIRECTORY(profiling)
+ADD_SUBDIRECTORY(simple1D)
+
 IF(NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
-  # AggregationExportFactory can't work with
-  # Aggregates_kokkos (yet)
-  TRIBITS_ADD_TEST_DIRECTORIES(viz)
+    # AggregationExportFactory can't work with
+    # Aggregates_kokkos (yet)
+    ADD_SUBDIRECTORY(viz)
 ENDIF()
-TRIBITS_ADD_TEST_DIRECTORIES(toggletransfer)
-TRIBITS_ADD_TEST_DIRECTORIES(perf_tests)
+
+ADD_SUBDIRECTORY(toggletransfer)
+ADD_SUBDIRECTORY(perf_tests)
 
 if (NOT MUELU_VALGRIND_TESTING)
-  TRIBITS_ADD_TEST_DIRECTORIES(vardofpernode)
+    ADD_SUBDIRECTORY(vardofpernode)
 ELSE()
-  MESSAGE(STATUS "Skipping vardofpernode test due to valgrind.")
+    MESSAGE(STATUS "Skipping vardofpernode test due to valgrind.")
 ENDIF()
+
 if (NOT MUELU_VALGRIND_TESTING)
-  TRIBITS_ADD_TEST_DIRECTORIES(convergence)
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-    TRIBITS_ADD_TEST_DIRECTORIES(helmholtz)
-  ENDIF()
-
+    ADD_SUBDIRECTORY(convergence)
+    IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+        ADD_SUBDIRECTORY(helmholtz)
+    ENDIF()
 ELSE()
-  MESSAGE(STATUS "Skipping Helmholtz due to valgrind testing.")
+    MESSAGE(STATUS "Skipping Helmholtz due to valgrind testing.")
 ENDIF()
 
-#TRIBITS_ADD_TEST_DIRECTORIES(mhdvanka)
+#ADD_SUBDIRECTORY(mhdvanka)
 
-TRIBITS_ADD_TEST_DIRECTORIES(structured)
+ADD_SUBDIRECTORY(structured)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 
