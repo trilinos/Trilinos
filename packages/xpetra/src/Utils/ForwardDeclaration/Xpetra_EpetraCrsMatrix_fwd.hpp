@@ -53,6 +53,9 @@ namespace Xpetra {
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   typedef EpetraCrsMatrixT<int, KokkosClassic::DefaultNode::DefaultNodeType> EpetraCrsMatrix;
 #endif
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+  typedef EpetraCrsMatrixT<long long, KokkosClassic::DefaultNode::DefaultNodeType> EpetraCrsMatrix;
+#endif
 }
 
 #ifndef XPETRA_EPETRACRSMATRIX_SHORT
