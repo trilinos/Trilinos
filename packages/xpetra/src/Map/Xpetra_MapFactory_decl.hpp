@@ -47,15 +47,8 @@
 #define XPETRA_MAPFACTORY_DECL_HPP
 
 #include "Xpetra_ConfigDefs.hpp"
+
 #include "Xpetra_Map.hpp"
-
-//#ifdef HAVE_XPETRA_TPETRA
-//#    include "Xpetra_TpetraMap.hpp"
-//#endif
-//#ifdef HAVE_XPETRA_EPETRA
-//#    include "Xpetra_EpetraMap.hpp"
-//#endif
-
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
@@ -91,7 +84,7 @@ class MapFactory
           GlobalOrdinal                                 indexBase,
           const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
           LocalGlobal                                   lg,
-          const Teuchos::RCP<Node>& /* node */);
+          const Teuchos::RCP<Node>&                     /* node */);
 #endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
@@ -112,7 +105,7 @@ class MapFactory
           size_t                                        numLocalElements,
           GlobalOrdinal                                 indexBase,
           const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-          const Teuchos::RCP<Node>& /* node */);
+          const Teuchos::RCP<Node>&                     /* node */);
 #endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
@@ -133,7 +126,7 @@ class MapFactory
           const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
           GlobalOrdinal                                  indexBase,
           const Teuchos::RCP<const Teuchos::Comm<int>>&  comm,
-          const Teuchos::RCP<Node>& /* node */);
+          const Teuchos::RCP<Node>&                      /* node */);
 #endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
