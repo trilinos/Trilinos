@@ -312,12 +312,11 @@ namespace MueLu {
 
         Note: this is the implementation for Epetra. Tpetra throws if TPETRA_INST_INT_INT is disabled!
    */
-  template <class Node>
-  class Utilities_kokkos<double,int,int,Node> : public UtilitiesBase<double,int,int,Node> {
+  template <class GlobalOrdinal,class Node>
+  class Utilities_kokkos<double,int,GlobalOrdinal,Node> : public UtilitiesBase<double,int,GlobalOrdinal,Node> {
   public:
     typedef double Scalar;
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
     typedef Xpetra::MultiVector<Magnitude,LocalOrdinal,GlobalOrdinal,Node> RealValuedMultiVector;
 

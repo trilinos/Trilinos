@@ -75,7 +75,7 @@ struct widget {
 
   typedef double Scalar;
   typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
+  typedef MueLu::DefaultGlobalOrdinal GlobalOrdinal;
   typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   int maxRegPerProc;

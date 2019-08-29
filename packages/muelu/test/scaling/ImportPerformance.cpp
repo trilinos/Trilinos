@@ -407,12 +407,12 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     bool SortGhosts=true;
 
     if(Au->RowMap().GlobalIndicesInt()) {
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+#if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
       EpetraExt::import_only<int> (*Pu,Au->ColMap(),Pview,Au->Importer(),SortGhosts,"ImportPerf: ");
 #endif
     }
     else if(Au->RowMap().GlobalIndicesInt()) {
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+#if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
       EpetraExt::import_only<long long>(*Pu,Au->ColMap(),Pview,Au->Importer(),SortGhosts,"ImportPerf: ");
 #endif
     }

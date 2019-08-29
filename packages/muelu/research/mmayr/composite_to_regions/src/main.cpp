@@ -94,7 +94,7 @@
  */
 // typedef double Scalar;
 // typedef int LocalOrdinal;
-// typedef int GlobalOrdinal;
+// typedef MueLu::DefaultGlobalOrdinal;
 // typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>

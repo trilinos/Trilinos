@@ -912,7 +912,7 @@ namespace MueLuTests {
 #if !defined(HAVE_TPETRA_INST_INT_INT)
     template <class Scalar, class LocalOrdinal, class Node>
     class TpetraTestFactory<Scalar, LocalOrdinal, int, Node> {
-      typedef int GlobalOrdinal;
+      typedef MueLu::DefaultGlobalOrdinal GlobalOrdinal;
 #include "MueLu_UseShortNames.hpp"
     public:
       static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }

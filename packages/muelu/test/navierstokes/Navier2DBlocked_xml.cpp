@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   typedef double Scalar;
   typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
+  typedef MueLu::DefaultGlobalOrdinal GlobalOrdinal;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
   typedef Xpetra::EpetraNode Node;

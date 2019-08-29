@@ -401,13 +401,14 @@ namespace MueLu {
     return MueLu::DetectDirichletRows<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, tol, count_twos_as_dirichlet);
   }
 
-  template <class Node>
+  /*
+    template <class Node>
   Kokkos::View<const bool*, typename Node::device_type>
   Utilities_kokkos<double,int,int,Node>::
   DetectDirichletRows(const Xpetra::Matrix<double,int,int,Node>& A, const typename Teuchos::ScalarTraits<double>::magnitudeType& tol, const bool count_twos_as_dirichlet) {
     return MueLu::DetectDirichletRows<double,int,int,Node>(A, tol,count_twos_as_dirichlet);
   }
-
+  */
 
   template <class SC, class LO, class GO, class NO>
   Kokkos::View<const bool*, typename NO::device_type>
@@ -469,6 +470,7 @@ namespace MueLu {
     return MueLu::DetectDirichletCols<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, dirichletRows);
   }
 
+  /*
   template <class Node>
   Kokkos::View<const bool*, typename Node::device_type>
   Utilities_kokkos<double,int,int,Node>::
@@ -476,7 +478,7 @@ namespace MueLu {
                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
     return MueLu::DetectDirichletCols<double,int,int,Node>(A, dirichletRows);
   }
-
+  */
 
   // Zeros out rows
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -509,7 +511,7 @@ namespace MueLu {
     MueLu::ZeroDirichletRows<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, dirichletRows, replaceWith);
   }
 
-  template <class Node>
+  /*template <class Node>
   void
   Utilities_kokkos<double,int,int,Node>::
   ZeroDirichletRows(RCP<Xpetra::Matrix<double, int, int, Node> >& A,
@@ -517,7 +519,7 @@ namespace MueLu {
                     double replaceWith) {
     return MueLu::ZeroDirichletRows<double,int,int,Node>(A, dirichletRows, replaceWith);
   }
-
+  */
 
   // Zeros out rows
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -546,14 +548,14 @@ namespace MueLu {
     MueLu::ZeroDirichletRows<Scalar,LocalOrdinal,GlobalOrdinal,Node>(X, dirichletRows, replaceWith);
   }
 
-  template <class Node>
+  /*  template <class Node>
   void
   Utilities_kokkos<double,int,int,Node>::
   ZeroDirichletRows(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, int, int, Node> >& X,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                     double replaceWith) {
     return MueLu::ZeroDirichletRows<double,int,int,Node>(X, dirichletRows, replaceWith);
-  }
+    }*/
 
 
   // Zeros out columns
@@ -587,6 +589,7 @@ namespace MueLu {
     MueLu::ZeroDirichletCols<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, dirichletCols, replaceWith);
   }
 
+  /*
   template <class Node>
   void
   Utilities_kokkos<double,int,int,Node>::
@@ -594,7 +597,7 @@ namespace MueLu {
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols,
                     double replaceWith) {
     return MueLu::ZeroDirichletCols<double,int,int,Node>(A, dirichletCols, replaceWith);
-  }
+    }*/
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -624,10 +627,10 @@ namespace MueLu {
     return Xscalar;
   }
 
-  template <class Node>
-  RCP<Xpetra::MultiVector<double,int,int,Node> >
-  Utilities_kokkos<double,int,int,Node>::
-  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<Magnitude,int,int,Node> > X) {
+  template <class GlobalOrdinal,class Node>
+  RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Node> >
+  Utilities_kokkos<double,int,GlobalOrdinal,Node>::
+  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Node> > X) {
     return X;
   }
 
