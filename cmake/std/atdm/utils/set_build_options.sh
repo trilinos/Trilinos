@@ -135,10 +135,6 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]]; then
   export ATDM_CONFIG_COMPILER=CLANG
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"arm-19.2"* ]]; then
   export ATDM_CONFIG_COMPILER=ARM-19.2
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"arm-19.1"* ]]; then
-  export ATDM_CONFIG_COMPILER=ARM-19.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"arm-19.0"* ]]; then
-  export ATDM_CONFIG_COMPILER=ARM-19.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"arm"* ]]; then
   export ATDM_CONFIG_COMPILER=ARM-19.2
 else
