@@ -616,6 +616,15 @@ namespace FROSch {
 
         return 0;
     }
+    
+    template <class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > SortMapByGlobalIndex(RCP<const Map<LO,GO,NO> > inputMap)
+    {
+        FROSCH_TIMER_START(sortMapByGlobalIndexTime,"SortMapByGlobalIndex");
+        Array<GO> globalIDs(inputMap->getNodeElementList());
+        sort(globalIDs);
+        return MapFactory<LO,GO,NO>::Build(inputMap->lib(),-1,globalIDs(),0,inputMap->getComm());
+    }
 
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
@@ -924,6 +933,12 @@ namespace FROSch {
             }
         }
         return true;
+    }
+    
+    template<class T>
+    inline void sort(T &v)
+    {
+        std::sort(v.begin(),v.end());
     }
 
     template<class T>

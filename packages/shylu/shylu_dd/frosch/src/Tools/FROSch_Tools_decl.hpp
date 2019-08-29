@@ -225,6 +225,12 @@ namespace FROSch {
                                 RCP<const Map<LO,GO,NO> > inputMap,
                                 RCP<const CrsGraph<LO,GO,NO> > &outputGraph,
                                 RCP<const Map<LO,GO,NO> > &outputMap);
+    
+    /*! \brief Sort the Xpetra::Map by the global IDs \c x
+     * \param[in] inputMap Unsorted input map
+     */
+    template <class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > SortMapByGlobalIndex(RCP<const Map<LO,GO,NO> > inputMap);
 
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
@@ -274,6 +280,9 @@ namespace FROSch {
     bool ismultiple(ArrayView<SC> A,
                     ArrayView<SC> B);
 
+    template<class T>
+    inline void sort(T &v);
+    
     template<class T>
     inline void sortunique(T &v);
 
