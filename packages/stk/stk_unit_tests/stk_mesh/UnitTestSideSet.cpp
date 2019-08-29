@@ -58,7 +58,7 @@ TEST_F(TestSideSet, creatingSideOfOneElem_eachProcHasOneSide)
     stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), localElems);
     ASSERT_GE(localElems.size(), 1u);
 
-    stk::mesh::SideSet sideSet;
+    stk::mesh::SideSet sideSet(get_bulk());
     sideSet.add(stk::mesh::SideSetEntry(localElems[0], 1));
 
     EXPECT_EQ(0u, stk::mesh::count_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(get_meta().side_rank())));
@@ -876,6 +876,33 @@ TEST_F(TestShellQuad9, createNodeOrderingAndTestPolarity)
             unsigned ordinal = 0;
             bool expectedPositivePolarity = false;
             test_polarity(nodeIds, ordinal, expectedPositivePolarity);
+        }
+    }
+}
+
+TEST_F(TestSideSet, findSidesetEntry)
+{
+    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+    {
+        setup_mesh("generated:1x1x1|sideset:x", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::mesh::Part* sidePart = get_meta().get_part("surface_1");
+
+        stk::mesh::SideSet& sideset = get_bulk().get_sideset(*sidePart);
+        stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
+        const stk::mesh::ConnectivityOrdinal expectedSideOrdinal = 3;
+        const int numSides = 6;
+        for (int i = 0; i < numSides; ++i)
+        {
+            if (expectedSideOrdinal != stk::mesh::ConnectivityOrdinal(i))
+            {
+                EXPECT_FALSE(sideset.contains(elem1, stk::mesh::ConnectivityOrdinal(i)));
+                EXPECT_FALSE(sideset.contains(stk::mesh::SideSetEntry(elem1, stk::mesh::ConnectivityOrdinal(i))));
+            }
+            else
+            {
+                EXPECT_TRUE(sideset.contains(elem1, stk::mesh::ConnectivityOrdinal(i)));
+                EXPECT_TRUE(sideset.contains(stk::mesh::SideSetEntry(elem1, stk::mesh::ConnectivityOrdinal(i))));
+            }
         }
     }
 }

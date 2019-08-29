@@ -35,13 +35,16 @@
 #ifndef SIDESETENTRY_HPP_
 #define SIDESETENTRY_HPP_
 
-#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 
 namespace stk
 {
 namespace mesh
 {
+
+class BulkData;
 
 struct SideSetEntry
 {
@@ -57,6 +60,11 @@ struct SideSetEntry
   bool operator==(const SideSetEntry &rhs) const
   {
       return ((element == rhs.element) && (side == rhs.side));
+  }
+
+  bool operator!=(const SideSetEntry &rhs) const
+  {
+      return ((element != rhs.element) || (side != rhs.side));
   }
 
   bool operator<(const SideSetEntry &rhs) const
@@ -77,53 +85,49 @@ class SideSet
 public:
     typedef std::vector<SideSetEntry>::value_type value_type;
 
-    SideSet(bool fromInput = false) : m_fromInput(fromInput) {}
-    SideSet(const std::vector<SideSetEntry>& data, bool fromInput = false) : m_fromInput(fromInput), m_data(data)  {}
+    SideSet(const BulkData& bulk, bool fromInput = false);
+    SideSet(const BulkData& bulk, const std::vector<SideSetEntry>& data, bool fromInput = false);
 
-    bool is_from_input() const {return m_fromInput;}
-    void add(const SideSetEntry& entry) { m_data.push_back(entry); }
-    void add(stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side)
-    {
-        add(SideSetEntry{element, side});
-    }
+    bool is_from_input() const;
+    void add(const SideSetEntry& entry);
+    void add(stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side);
 
-    SideSetEntry operator[](unsigned index) const
-    {
-        return m_data[index];
-    }
+    bool contains(const SideSetEntry& entry) const;
+    bool contains(stk::mesh::Entity elem, stk::mesh::ConnectivityOrdinal side) const;
 
-    SideSet& operator=(const SideSet &rhs)
-    {
-        m_fromInput = rhs.m_fromInput;
-        m_data = rhs.m_data;
+    SideSetEntry operator[](unsigned index) const;
+    SideSet& operator=(const SideSet &rhs);
 
-        return *this;
-    }
+    std::vector<SideSetEntry>::iterator erase(std::vector<SideSetEntry>::iterator iter);
+    std::vector<SideSetEntry>::iterator erase(std::vector<SideSetEntry>::iterator begin, std::vector<SideSetEntry>::iterator end);
 
-    inline std::vector<SideSetEntry>::iterator erase(std::vector<SideSetEntry>::iterator iter) { return m_data.erase(iter); }
+    std::vector<SideSetEntry>::iterator begin();
+    std::vector<SideSetEntry>::iterator end();
 
-    inline std::vector<SideSetEntry>::iterator begin() { return m_data.begin(); }
-    inline std::vector<SideSetEntry>::iterator end() { return m_data.end(); }
+    std::vector<SideSetEntry>::const_iterator begin() const;
+    std::vector<SideSetEntry>::const_iterator end() const;
 
-    inline std::vector<SideSetEntry>::const_iterator begin() const { return m_data.begin(); }
-    inline std::vector<SideSetEntry>::const_iterator end() const { return m_data.end(); }
+    void clear();
 
-    void clear() { m_data.clear();}
+    size_t size() const;
+    void resize(size_t n);
 
-    size_t size() const { return m_data.size(); }
-    void resize(size_t n) { m_data.resize(n); }
-
-    const std::string& get_name() const { return m_name; }
-    void set_name(const std::string& name) { m_name = name; }
+    const std::string& get_name() const;
+    void set_name(const std::string& name);
+    void set_part(const stk::mesh::Part* part);
+    const stk::mesh::Part* get_part() const;
 
 private:
+    const BulkData& m_bulk;
     bool m_fromInput;
     std::vector<SideSetEntry> m_data;
     std::string m_name;
+    const stk::mesh::Part * m_part = nullptr;
 };
 
-//typedef std::vector<SideSetEntry> SideSet;
 typedef std::vector<SideSet*> SideSetVector;
+
+void remove_element_entries_from_sidesets(BulkData& mesh, const Entity entity, std::set<const stk::mesh::Part*> *touchedSidesetParts = nullptr);
 
 }
 }

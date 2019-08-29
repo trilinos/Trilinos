@@ -145,7 +145,7 @@ install install-user-bin
 #    stk_sierra_util
 #    /mpi//mpi
 #    /tpl/gtest//gtest
-#    /tpl/trilinos-kokkoscore//kokkoscore
+#    /tpl/trilinos//kokkoscore
 #    /sierra/stk_mesh//stk_mesh_base
 #    /sierra/stk_io//stk_io
 #    /sierra/stk_io//stk_io_util

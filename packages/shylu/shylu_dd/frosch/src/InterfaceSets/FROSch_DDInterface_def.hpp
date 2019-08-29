@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -55,6 +55,7 @@ namespace FROSch {
                                           UN dofsPerNode,
                                           ConstXMapPtr localToGlobalMap,
                                           Verbosity verbosity,
+                                          UN levelID,
                                           CommunicationStrategy commStrategy) :
     MpiComm_ (localToGlobalMap->getComm()),
     Dimension_ (dimension),
@@ -73,8 +74,10 @@ namespace FROSch {
     NodesMap_ (localToGlobalMap),
     UniqueNodesMap_ (),
     Verbose_ (MpiComm_->getRank()==0),
-    Verbosity_ (verbosity)
+    Verbosity_ (verbosity),
+    LevelID_ (levelID)
     {
+        FROSCH_TIMER_START_LEVELID(dDInterfaceTime,"DDInterface::DDInterface");
         FROSCH_ASSERT(((Dimension_==2)||(Dimension_==3)),"FROSch::DDInterface : ERROR: Only dimension 2 and 3 are available");
 
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface" << std::endl;
@@ -96,6 +99,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::resetGlobalDofs(ConstXMapPtrVecPtr dofsMaps)
     {
+        FROSCH_TIMER_START_LEVELID(resetGlobalDofsTime,"DDInterface::resetGlobalDofs");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Resetting Global IDs" << std::endl;
 
         // EntityVector
@@ -148,6 +152,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs)
     {
+        FROSCH_TIMER_START_LEVELID(removeDirichletNodesTime,"DDInterface::removeDirichletNodes");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Removing Dirichlet Nodes from the domain decomposition interface" << std::endl;
 
         // EntityVector
@@ -180,6 +185,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::divideUnconnectedEntities(ConstXMatrixPtr matrix)
     {
+        FROSCH_TIMER_START_LEVELID(divideUnconnectedEntitiesTime,"DDInterface::divideUnconnectedEntities");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Decomposing unconnected interface components" << std::endl;
 
         GOVecPtr indicesGammaDofs(DofsPerNode_*Interface_->getEntity(0)->getNumNodes());
@@ -218,6 +224,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::flagEntities(ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(flagEntitiesTime,"DDInterface::flagEntities");
         for (UN l=0; l<EntitySetVector_.size(); l++) {
             EntitySetVector_[l]->flagNodes();
             EntitySetVector_[l]->flagShortEntities();
@@ -233,6 +240,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::removeEmptyEntities()
     {
+        FROSCH_TIMER_START_LEVELID(removeEmptyEntitiesTime,"DDInterface::removeEmptyEntities");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Removing empty interface components" << std::endl;
 
         for (UN l=0; l<EntitySetVector_.size(); l++) {
@@ -244,6 +252,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::sortVerticesEdgesFaces(ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(sortVerticesEdgesFacesTime,"DDInterface::sortVerticesEdgesFaces");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Sorting interface components" << std::endl;
 
         flagEntities(nodeList);
@@ -321,6 +330,7 @@ namespace FROSch {
                                                   bool buildFacesMap,
                                                   bool buildCoarseNodesMap)
     {
+        FROSCH_TIMER_START_LEVELID(buildEntityMapsTime,"DDInterface::buildEntityMaps");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Building global interface component maps" << std::endl;
 
         if (buildVerticesMap) Vertices_->buildEntityMap(NodesMap_);
@@ -474,6 +484,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::buildEntityHierarchy()
     {
+        FROSCH_TIMER_START_LEVELID(buildEntityHierarchyTime,"DDInterface::buildEntityHierarchy");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Building hierarchy of interface components" << std::endl;
 
         for (UN i=0; i<EntitySetVector_.size(); i++) {
@@ -496,6 +507,7 @@ namespace FROSch {
                                                                 ConstXMultiVectorPtr &nodeList,
                                                                 DistanceFunction distanceFunction)
     {
+        FROSCH_TIMER_START_LEVELID(computeDistancesToCoarseNodesTime,"DDInterface::computeDistancesToCoarseNodes");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Computing distances to the coarse nodes" << std::endl;
 
         for (UN i=0; i<EntitySetVector_.size(); i++) {
@@ -508,6 +520,7 @@ namespace FROSch {
     int DDInterface<SC,LO,GO,NO>::identifyConnectivityEntities(UNVecPtr multiplicities,
                                                                EntityFlagVecPtr flags)
     {
+        FROSCH_TIMER_START_LEVELID(identifyConnectivityEntitiesTime,"DDInterface::identifyConnectivityEntities");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Preparing subdomain graph" << std::endl;
 
         if (multiplicities.is_null()) {
@@ -620,6 +633,7 @@ namespace FROSch {
                                                              IntVecVec &componentsSubdomainsUnique,
                                                              CommunicationStrategy commStrategy)
     {
+        FROSCH_TIMER_START_LEVELID(communicateLocalComponentsTime,"DDInterface::communicateLocalComponents");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Communicating nodes" << std::endl;
 
         if (NodesMap_->lib() == UseEpetra && commStrategy == CreateOneToOneMap) {
@@ -725,6 +739,7 @@ namespace FROSch {
     int DDInterface<SC,LO,GO,NO>::identifyLocalComponents(IntVecVecPtr &componentsSubdomains,
                                                           IntVecVec &componentsSubdomainsUnique)
     {
+        FROSCH_TIMER_START_LEVELID(identifyLocalComponentsTime,"DDInterface::identifyLocalComponents");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Classifying interface components based on equivalence classes" << std::endl;
 
         // Hier herausfinden, ob Ecke, Kante oder Fläche

@@ -123,5 +123,14 @@ void print_running_msg(const std::string &execName, const ParsedOptions &balance
     }
 }
 
+std::string construct_output_file_name(const std::string& outputDirectory, const std::string& inputFile) {
+  std::size_t found = inputFile.find_last_of("/");
+  std::string filename = inputFile;
+  if (found != std::string::npos) {
+    filename = inputFile.substr(found + 1);
+  }
+  return outputDirectory + "/" + filename;
+}
+
 }
 }

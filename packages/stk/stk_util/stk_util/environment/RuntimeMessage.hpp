@@ -239,6 +239,14 @@ std::ostream &operator<<(std::ostream &os, const MessageType &message_type);
 /// @}
 ///
 
+enum class CutoffStatus {
+  MSG_DISPLAY           = 0,
+  MSG_CUTOFF            = 1,
+  MSG_CUTOFF_EXCEEDED   = 2
+};
+CutoffStatus count_message(const MessageCode &   message_code);
+
+
 } // namespace stk
 
 #endif // STK_UTIL_ENVIRONMENT_RUNTIMEMESSAGE_HPP

@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -54,17 +54,20 @@ namespace FROSch {
     SumOperator<SC,LO,GO,NO>::SumOperator(CommPtr comm) :
     SchwarzOperator<SC,LO,GO,NO> (comm),
     OperatorVector_ (0),
+    XTmp_ (),
     EnableOperators_ (0)
     {
-
+        FROSCH_TIMER_START_LEVELID(sumOperatorTime,"SumOperator::SumOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
     SumOperator<SC,LO,GO,NO>::SumOperator(SchwarzOperatorPtrVecPtr operators) :
     SchwarzOperator<SC,LO,GO,NO> (operators[0]->getRangeMap()->getComm()),
     OperatorVector_ (0),
+    XTmp_ (),
     EnableOperators_ (0)
     {
+        FROSCH_TIMER_START_LEVELID(sumOperatorTime,"SumOperator::SumOperator");
         FROSCH_ASSERT(operators.size()>0,"operators.size()<=0");
         OperatorVector_.push_back(operators[0]);
         for (unsigned i=1; i<operators.size(); i++) {
@@ -118,16 +121,17 @@ namespace FROSch {
                                          SC alpha,
                                          SC beta) const
     {
+        FROSCH_TIMER_START_LEVELID(applyTime,"SumOperator::apply");
         if (OperatorVector_.size()>0) {
-            XMultiVectorPtr xTmp = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
-            *xTmp = x; // Das brauche ich für den Fall das x=y
+            if (XTmp_.is_null()) XTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+            *XTmp_ = x; // Das brauche ich für den Fall das x=y
             UN itmp = 0;
             for (UN i=0; i<OperatorVector_.size(); i++) {
-              if (EnableOperators_[i]) {
-                OperatorVector_[i]->apply(*xTmp,y,usePreconditionerOnly,mode,alpha,beta);
-                if (itmp==0) beta = ScalarTraits<SC>::one();
-                itmp++;
-              }
+                if (EnableOperators_[i]) {
+                    OperatorVector_[i]->apply(*XTmp_,y,usePreconditionerOnly,mode,alpha,beta);
+                    if (itmp==0) beta = ScalarTraits<SC>::one();
+                    itmp++;
+                }
             }
         } else {
             y.update(alpha,x,beta);
@@ -170,6 +174,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)
     {
+        FROSCH_TIMER_START_LEVELID(addOperatorTime,"SumOperator::addOperator");
         int ret = 0;
         if (OperatorVector_.size()>0) {
             if (!op->getDomainMap()->isSameAs(*OperatorVector_[0]->getDomainMap())) {
@@ -191,6 +196,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int SumOperator<SC,LO,GO,NO>::addOperators(SchwarzOperatorPtrVecPtr operators)
     {
+        FROSCH_TIMER_START_LEVELID(addOperatorsTime,"SumOperator::addOperators");
         int ret = 0;
         for (UN i=1; i<operators.size(); i++) {
             if (0>addOperator(operators[i])) ret -= pow(10,i);
@@ -202,6 +208,7 @@ namespace FROSch {
     int SumOperator<SC,LO,GO,NO>::resetOperator(UN iD,
                                                 SchwarzOperatorPtr op)
     {
+        FROSCH_TIMER_START_LEVELID(resetOperatorTime,"SumOperator::resetOperator");
         FROSCH_ASSERT(iD<OperatorVector_.size(),"iD exceeds the length of the OperatorVector_");
         int ret = 0;
         if (!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())) {
@@ -220,6 +227,7 @@ namespace FROSch {
     int SumOperator<SC,LO,GO,NO>::enableOperator(UN iD,
                                                  bool enable)
   {
+      FROSCH_TIMER_START_LEVELID(enableOperatorTime,"SumOperator::enableOperatorOperator");
       EnableOperators_[iD] = enable;
       return 0;
   }

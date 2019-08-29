@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -60,7 +60,10 @@ namespace FROSch {
     OverlappingOperator_ (),
     UseMultiplicative_(false)
     {
+        FROSCH_TIMER_START_LEVELID(oneLevelPreconditionerTime,"OneLevelPreconditioner::OneLevelPreconditioner");
         if (!this->ParameterList_->get("OverlappingOperator Type","AlgebraicOverlappingOperator").compare("AlgebraicOverlappingOperator")) {
+            // Set the LevelID in the sublist
+            parameterList->sublist("AlgebraicOverlappingOperator").set("Level ID",this->LevelID_);
             OverlappingOperator_ = AlgebraicOverlappingOperatorPtr(new AlgebraicOverlappingOperator<SC,LO,GO,NO>(k,sublist(parameterList,"AlgebraicOverlappingOperator")));
         } else {
             FROSCH_ASSERT(false,"OverlappingOperator Type unkown.");
@@ -102,6 +105,7 @@ namespace FROSch {
     int OneLevelPreconditioner<SC,LO,GO,NO>::initialize(int overlap,
                                                         ConstXMapPtr repeatedMap)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"OneLevelPreconditioner::initialize");
         int ret = 0;
         if (overlap<0) {
             overlap = this->ParameterList_->get("Overlap",1);
@@ -118,6 +122,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int OneLevelPreconditioner<SC,LO,GO,NO>::compute()
     {
+        FROSCH_TIMER_START_LEVELID(computeTime,"OneLevelPreconditioner::compute");
         return OverlappingOperator_->compute();
     }
 
@@ -128,6 +133,7 @@ namespace FROSch {
                                                     SC alpha,
                                                     SC beta) const
     {
+        FROSCH_TIMER_START_LEVELID(applyTime,"OneLevelPreconditioner::apply");
         if (UseMultiplicative_) {
             return MultiplicativeOperator_->apply(x,y,true,mode,alpha,beta);
         }
@@ -170,6 +176,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int OneLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr &k)
     {
+        FROSCH_TIMER_START_LEVELID(resetMatrixTime,"OneLevelPreconditioner::resetMatrix");
         K_ = k;
         OverlappingOperator_->resetMatrix(K_);
         return 0;

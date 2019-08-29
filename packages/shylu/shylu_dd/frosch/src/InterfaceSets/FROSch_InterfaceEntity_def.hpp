@@ -321,8 +321,8 @@ namespace FROSch {
                     }
                     break;
                 case InverseEuclideanDistanceFunction:
-                    FROSCH_ASSERT(!nodeList.is_null(),"The inverse euclidean distance cannot be calculated without coordinates of the nodes!");
-                    FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
+                    FROSCH_ASSERT(!nodeList.is_null(),"FROSch::InterfaceEntity : ERROR: The inverse euclidean distance cannot be calculated without coordinates of the nodes!");
+                    FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"FROSch::InterfaceEntity : ERROR: Inconsistent Dimension.");
                     for (UN i=0; i<CoarseNodes_->getNumEntities(); i++) {
                         for (UN j=0; j<CoarseNodes_->getEntity(i)->getNumNodes(); j++) {
                             // Coordinates of the nodes of the coarse node
@@ -351,6 +351,7 @@ namespace FROSch {
                     }
                     break;
                 default:
+                    FROSCH_ASSERT(false,"FROSch::InterfaceEntity : ERROR: Specify a valid Distance Function.");
                     break;
             }
 
