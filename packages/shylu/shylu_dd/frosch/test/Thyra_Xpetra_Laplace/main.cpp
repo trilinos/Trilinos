@@ -46,6 +46,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 // Galeri::Xpetra
 #include "Galeri_XpetraProblemFactory.hpp"
@@ -138,6 +139,10 @@ int main(int argc, char *argv[])
         return(EXIT_SUCCESS);
     }
 
+    CommWorld->barrier();
+    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("Thyra Laplace Test"));
+    TimeMonitor::setStackedTimer(stackedTimer);
+
     int N = 0;
     int color=1;
     if (Dimension == 2) {
@@ -184,7 +189,7 @@ int main(int argc, char *argv[])
             GaleriList.set("mx", GO(N));
             GaleriList.set("my", GO(N));
             GaleriList.set("mz", GO(N));
-            
+
             RCP<const Map<LO,GO,NO> > UniqueMapTmp;
             RCP<MultiVector<SC,LO,GO,NO> > CoordinatesTmp;
             RCP<Matrix<SC,LO,GO,NO> > KTmp;
@@ -379,6 +384,12 @@ int main(int argc, char *argv[])
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
+
+    CommWorld->barrier();
+    stackedTimer->stop("Thyra Laplace Test");
+    StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stackedTimer->report(*out,CommWorld,options);
 
     return(EXIT_SUCCESS);
 

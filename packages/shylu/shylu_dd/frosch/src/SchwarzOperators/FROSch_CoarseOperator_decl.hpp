@@ -48,7 +48,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -154,6 +154,16 @@ namespace FROSch {
         XMatrixPtr Phi_;
         XMatrixPtr CoarseMatrix_;
 
+        // Temp Vectors for apply()
+        mutable XMultiVectorPtr XTmp_;
+        mutable XMultiVectorPtr XCoarse_;
+        mutable XMultiVectorPtr XCoarseSolve_;
+        mutable XMultiVectorPtr XCoarseSolveTmp_;
+        mutable XMultiVectorPtr YTmp_;
+        mutable XMultiVectorPtr YCoarse_;
+        mutable XMultiVectorPtr YCoarseSolve_;
+        mutable XMultiVectorPtr YCoarseSolveTmp_;
+
         ConstXMapPtrVecPtr GatheringMaps_;
         XMapPtr CoarseSolveMap_;
         XMapPtr CoarseSolveRepeatedMap_;
@@ -163,7 +173,6 @@ namespace FROSch {
         ParameterListPtr DistributionList_;
 
         XExportPtrVecPtr CoarseSolveExporters_;
-
     };
 
 }

@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -54,8 +54,12 @@ namespace FROSch {
     RGDSWPreconditioner<SC,LO,GO,NO>::RGDSWPreconditioner(ConstXMatrixPtr k,
                                                           ParameterListPtr parameterList) :
     AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> (k,parameterList),
-    CoarseLevelOperator_ (new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"CoarseOperator")))
+    CoarseLevelOperator_ ()
     {
+        FROSCH_TIMER_START_LEVELID(rGDSWPreconditionerTime,"RGDSWPreconditioner::RGDSWPreconditioner");
+        // Set the LevelID in the sublist
+        parameterList->sublist("RGDSWCoarseOperator").set("Level ID",this->LevelID_);
+        CoarseLevelOperator_.reset(new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"RGDSWCoarseOperator")));
         this->SumOperator_->addOperator(CoarseLevelOperator_);
     }
 
@@ -132,6 +136,7 @@ namespace FROSch {
                                                      int overlap,
                                                      ConstXMapPtr repeatedMap)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"RGDSWPreconditioner::initialize");
         int ret = 0;
         if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
         if (0>CoarseLevelOperator_->initialize(dimension,repeatedMap)) ret -= 10;
@@ -145,6 +150,7 @@ namespace FROSch {
                                                      ConstXMapPtr repeatedMap,
                                                      GOVecPtr &dirichletBoundaryDofs)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"RGDSWPreconditioner::initialize");
         int ret = 0;
         if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
         if (0>CoarseLevelOperator_->initialize(dimension,repeatedMap,dirichletBoundaryDofs)) ret -= 10;
@@ -159,6 +165,7 @@ namespace FROSch {
                                                      int overlap,
                                                      ConstXMapPtr repeatedMap)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"RGDSWPreconditioner::initialize");
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
         if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
@@ -178,6 +185,7 @@ namespace FROSch {
                                                      ConstXMapPtr repeatedMap,
                                                      GOVecPtr &dirichletBoundaryDofs)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"RGDSWPreconditioner::initialize");
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
         if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
@@ -197,6 +205,7 @@ namespace FROSch {
                                                      ConstXMapPtr repeatedMap,
                                                      ConstXMultiVectorPtr &nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"RGDSWPreconditioner::initialize");
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
         if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
@@ -217,6 +226,7 @@ namespace FROSch {
                                                      GOVecPtr &dirichletBoundaryDofs,
                                                      ConstXMultiVectorPtr &nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"RGDSWPreconditioner::initialize");
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
         if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
@@ -232,6 +242,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::compute()
     {
+        FROSCH_TIMER_START_LEVELID(computeTime,"RGDSWPreconditioner::compute");
         int ret = 0;
         if (0>this->FirstLevelOperator_->compute()) ret -= 1;
         if (0>CoarseLevelOperator_->compute()) ret -= 10;

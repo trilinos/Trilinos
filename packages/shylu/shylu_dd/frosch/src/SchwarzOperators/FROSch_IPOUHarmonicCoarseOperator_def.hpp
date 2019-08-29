@@ -46,18 +46,18 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
-    IPOUHarmonicCoarseOperator<SC,LO,GO,NO>:: IPOUHarmonicCoarseOperator(ConstXMatrixPtr k,
+    IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::IPOUHarmonicCoarseOperator(ConstXMatrixPtr k,
                                                                          ParameterListPtr parameterList) :
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
     InterfacePartitionOfUnity_ (),
     LocalPartitionOfUnityBasis_ ()
     {
-
+        FROSCH_TIMER_START_LEVELID(iPOUHarmonicCoarseOperatorTime,"IPOUHarmonicCoarseOperator::IPOUHarmonicCoarseOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -69,6 +69,7 @@ namespace FROSch {
                                                             ConstXMultiVectorPtr nodeList,
                                                             GOVecPtr dirichletBoundaryDofs)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"IPOUHarmonicCoarseOperator::initialize");
         int ret = buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
@@ -84,6 +85,7 @@ namespace FROSch {
                                                             ConstXMultiVectorPtrVecPtr nodeListVec,
                                                             GOVecPtr2D dirichletBoundaryDofsVec)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"IPOUHarmonicCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,nullSpaceBasisVec,dirichletBoundaryDofsVec,nodeListVec);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
@@ -112,6 +114,7 @@ namespace FROSch {
                                                                    GOVecPtr dirichletBoundaryDofs,
                                                                    ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
 
         // Das könnte man noch ändern
@@ -135,6 +138,7 @@ namespace FROSch {
                                                                   GOVecPtr2D dirichletBoundaryDofsVec,
                                                                   ConstXMultiVectorPtrVecPtr nodeListVec)
     {
+        FROSCH_TIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
         // Das könnte man noch ändern
         // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
         for (UN i=0; i<repeatedNodesMapVec.size(); i++) {
@@ -160,6 +164,7 @@ namespace FROSch {
                                                                        GOVecPtr dirichletBoundaryDofs,
                                                                        ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(resetCoarseSpaceBlockTime,"IPOUHarmonicCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
@@ -196,17 +201,17 @@ namespace FROSch {
             if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("GDSW")) {
 
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("GDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
-                InterfacePartitionOfUnity_ = InterfacePartitionOfUnityPtr(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"GDSW"),verbosity));
+                InterfacePartitionOfUnity_ = InterfacePartitionOfUnityPtr(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"GDSW"),verbosity,this->LevelID_));
             } else if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("RGDSW")) {
 
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("RGDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
-                InterfacePartitionOfUnity_ = InterfacePartitionOfUnityPtr(new RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"RGDSW"),verbosity));
+                InterfacePartitionOfUnity_ = InterfacePartitionOfUnityPtr(new RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"RGDSW"),verbosity,this->LevelID_));
             } else {
                 FROSCH_ASSERT(false,"InterfacePartitionOfUnity Type is unknown.");
             }
             InterfacePartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
             InterfacePartitionOfUnity_->sortInterface(this->K_,nodeList);
-            InterfacePartitionOfUnity_->computePartitionOfUnity();
+            InterfacePartitionOfUnity_->computePartitionOfUnity(nodeList);
 
             InterfaceEntityPtr interface = InterfacePartitionOfUnity_->getDDInterface()->getInterface()->getEntity(0);
             InterfaceEntityPtr interior = InterfacePartitionOfUnity_->getDDInterface()->getInterior()->getEntity(0);

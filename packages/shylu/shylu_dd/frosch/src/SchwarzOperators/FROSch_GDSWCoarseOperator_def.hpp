@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -56,13 +56,14 @@ namespace FROSch {
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
     DDInterface_ ()
     {
-
+        FROSCH_TIMER_START_LEVELID(gDSWCoarseOperatorTime,"GDSWCoarseOperator::GDSWCoarseOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
                                                     ConstXMapPtr repeatedMap)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,repeatedMap);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
@@ -74,6 +75,7 @@ namespace FROSch {
                                                     ConstXMapPtr repeatedMap,
                                                     GOVecPtr dirichletBoundaryDofs)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,repeatedMap,dirichletBoundaryDofs);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
@@ -86,6 +88,7 @@ namespace FROSch {
                                                     ConstXMapPtr repeatedNodesMap,
                                                     ConstXMapPtrVecPtr repeatedDofMaps)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
@@ -99,6 +102,7 @@ namespace FROSch {
                                                     ConstXMapPtrVecPtr repeatedDofMaps,
                                                     GOVecPtr dirichletBoundaryDofs)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
@@ -112,6 +116,7 @@ namespace FROSch {
                                                     ConstXMapPtrVecPtr repeatedDofMaps,
                                                     ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
@@ -126,6 +131,7 @@ namespace FROSch {
                                                     GOVecPtr dirichletBoundaryDofs,
                                                     ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
@@ -140,6 +146,7 @@ namespace FROSch {
                                                     GOVecPtr2D dirichletBoundaryDofsVec,
                                                     ConstXMultiVectorPtrVecPtr nodeListVec)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,dirichletBoundaryDofsVec,nodeListVec);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
@@ -229,6 +236,7 @@ namespace FROSch {
                                                           GOVecPtr dirichletBoundaryDofs,
                                                           ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(buildCoarseSpaceTime,"GDSWCoarseOperator::buildCoarseSpace");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
 
         // Das könnte man noch ändern
@@ -255,6 +263,7 @@ namespace FROSch {
                                                           GOVecPtr2D dirichletBoundaryDofsVec,
                                                           ConstXMultiVectorPtrVecPtr nodeListVec)
     {
+        FROSCH_TIMER_START_LEVELID(buildCoarseSpaceTime,"GDSWCoarseOperator::buildCoarseSpace");
         // Das könnte man noch ändern
         // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
         for (UN i=0; i<repeatedNodesMapVec.size(); i++) {
@@ -279,6 +288,7 @@ namespace FROSch {
                                                                GOVecPtr dirichletBoundaryDofs,
                                                                ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(resetCoarseSpaceBlockTime,"GDSWCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
@@ -351,7 +361,7 @@ namespace FROSch {
         Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
 
-        DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap.getConst(),verbosity,communicationStrategy));
+        DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap.getConst(),verbosity,this->LevelID_,communicationStrategy));
         DDInterface_->resetGlobalDofs(dofsMaps);
         DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs());
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {

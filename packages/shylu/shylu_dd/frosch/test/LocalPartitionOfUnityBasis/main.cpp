@@ -44,6 +44,7 @@
 
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 #include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -85,13 +86,16 @@ int main(int argc, char *argv[])
         return(EXIT_SUCCESS);
     }
 
+    CommWorld->barrier();
+    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("Local Partition of Unity Test"));
+    TimeMonitor::setStackedTimer(stackedTimer);
+
     UnderlyingLib xpetraLib = UseTpetra;
     if (useepetra) {
         xpetraLib = UseEpetra;
     } else {
         xpetraLib = UseTpetra;
     }
-
 
     RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
 
@@ -182,6 +186,12 @@ int main(int argc, char *argv[])
         std::cout << "\n";
     }
     std::cout << "\n";
+
+    CommWorld->barrier();
+    stackedTimer->stop("Local Partition of Unity Test");
+    StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stackedTimer->report(*out,CommWorld,options);
 
     return(EXIT_SUCCESS);
 }

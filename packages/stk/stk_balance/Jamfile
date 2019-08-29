@@ -177,7 +177,6 @@ lib stk_balance_lib
     search_tolerance_algs
     /sierra/stk_io//stk_io
     /sierra/stk_mesh//stk_mesh_base
-    /tpl/trilinos//teuchos
     /tpl/trilinos//zoltan2
     /sierra/stk_tools//stk_transfer_utils_lib
     /sierra/stk_search//stk_search

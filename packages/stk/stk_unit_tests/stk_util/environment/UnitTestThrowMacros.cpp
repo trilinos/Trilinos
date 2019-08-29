@@ -258,9 +258,10 @@ void testNGPThrowRequireMsg()
 
 TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
 {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
+  // Also, OpenMP seems to produce an abort (in adddition to a throw?).
   //
   // testNGPThrowRequireMsg();
 #else
@@ -272,10 +273,14 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
     testNGPThrowRequireMsg();
   }
   catch (std::exception & ex) {
+    std::cerr<<"ex.what(): "<<ex.what()<<std::endl;
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
                                "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:251\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+  catch (...) {
+    std::cerr<<"Unexpected exception-type thrown."<<std::endl;
   }
 #endif
 #endif
@@ -291,7 +296,7 @@ void testNGPThrowRequire()
 
 TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
 {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
@@ -303,7 +308,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:288\n";
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:293\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
 #endif
@@ -322,7 +327,7 @@ void testNGPThrowAssertMsg()
 
 TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
 {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
@@ -354,7 +359,7 @@ void testNGPThrowAssertMsg()
 
 TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_release)
 {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
@@ -377,7 +382,7 @@ void testNGPThrowErrorMsgIf()
 
 TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
 {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
@@ -389,7 +394,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:374\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:379\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
@@ -407,7 +412,7 @@ void testNGPThrowErrorIf()
 
 TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
 {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
@@ -419,7 +424,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:404\n";
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:409\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
 #endif
@@ -435,7 +440,7 @@ void testNGPThrowErrorMsg()
 
 TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
 {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
@@ -446,7 +451,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
     testNGPThrowErrorMsg();
   }
   catch (std::exception & ex) {
-    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:432\n"
+    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:437\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }

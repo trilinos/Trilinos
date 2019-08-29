@@ -139,6 +139,10 @@ void unpack_entity_info(
   PartVector     & parts ,
   std::vector<Relation> & relations );
 
+void pack_sideset_info(BulkData& mesh, CommBuffer & buf, const Entity entity);
+
+void unpack_sideset_info(CommBuffer & buf, BulkData & mesh, const Entity entity);
+
 /** \brief  Pack an entity's field values into a buffer */
 void pack_field_values(const BulkData& mesh, CommBuffer & , Entity );
 

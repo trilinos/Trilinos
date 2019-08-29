@@ -32,29 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stddef.h>                     // for size_t, NULL
-#include <string.h>                     // for memcpy, strcmp
-#include <algorithm>                    // for sort, lower_bound, unique, etc
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <sstream>
-#include <fstream>
-#include <iterator>                     // for back_insert_iterator, etc
-#include <set>                          // for set, set<>::iterator, etc
-#include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
-#include <stk_mesh/base/FaceCreator.hpp>
-#include <stk_mesh/baseImpl/check_comm_list.hpp>
-#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, print_entity_key, etc
-#include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
-#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg, etc
-#include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
-#include <stk_util/util/StaticAssert.hpp>  // for StaticAssert, etc
-#include <stk_util/util/string_case_compare.hpp>
-#include <string>                       // for char_traits, string, etc
-#include <utility>                      // for pair, make_pair, swap
-#include <vector>                       // for vector, etc
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<, etc
 #include "stk_mesh/base/EntityCommDatabase.hpp"  // for pack_entity_info, etc
@@ -70,18 +47,42 @@
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
 #include "stk_util/util/NamedPair.hpp"
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
 #include "stk_util/util/SortAndUnique.hpp"
-#include "stk_util/diag/StringUtil.hpp"
-#include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
+#include <algorithm>                    // for sort, lower_bound, unique, etc
+#include <fstream>
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <iterator>                     // for back_insert_iterator, etc
+#include <set>                          // for set, set<>::iterator, etc
+#include <sstream>
+#include <stddef.h>                     // for size_t, NULL
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FaceCreator.hpp>
+#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, print_entity_key, etc
+#include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_mesh/baseImpl/ElementTopologyDeletions.hpp>
+#include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
+#include <stk_mesh/baseImpl/check_comm_list.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
 #include <stk_mesh/baseImpl/elementGraph/SideSharingUsingGraph.hpp>
-#include <stk_mesh/baseImpl/ElementTopologyDeletions.hpp>
+#include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
+#include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg, etc
+#include <stk_util/util/StaticAssert.hpp>  // for StaticAssert, etc
+#include <stk_util/util/string_case_compare.hpp>
+#include <string.h>                     // for memcpy, strcmp
+#include <string>                       // for char_traits, string, etc
+#include <utility>                      // for pair, make_pair, swap
+#include <vector>                       // for vector, etc
 
 namespace stk {
 namespace mesh {
@@ -3002,6 +3003,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
       Entity entity = i->first;
       pack_entity_info(*this, buffer , entity );
       pack_field_values(*this, buffer , entity );
+      pack_sideset_info(*this, buffer , entity );
 
       if (unique_list_of_send_closure.empty() || entity_key(unique_list_of_send_closure.back()) != entity_key(entity)) {
         unique_list_of_send_closure.push_back(entity);
@@ -3016,9 +3018,16 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
       Entity entity = i->first;
       pack_entity_info(*this, buffer , entity );
       pack_field_values(*this, buffer , entity );
+      pack_sideset_info(*this, buffer , entity );
     }
 
     comm.communicate();
+
+    for ( std::set<EntityProc,EntityLess>::iterator
+          i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
+      Entity entity = i->first;
+      remove_element_entries_from_sidesets(*this, entity);
+    }
 
     OrdinalVector partOrdinals;
     OrdinalVector scratchOrdinalVec, scratchSpace;
@@ -3070,6 +3079,8 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
         if ( ! unpack_field_values(*this, buf , entity , error_msg ) ) {
           ++error_count ;
         }
+
+        unpack_sideset_info( buf, *this, entity);
       }
     }
 
@@ -3144,6 +3155,12 @@ Ghosting & BulkData::internal_create_ghosting( const std::string & name )
     ThrowErrorMsgIf( error, "Parallel name inconsistency");
   }
 #endif
+
+  for(Ghosting* ghosting : ghostings()) {
+    if (ghosting->name() == name) {
+      return *ghosting;
+    }
+  }
 
   Ghosting * const g =
     new Ghosting( *this , name , m_ghosting.size() , m_meshModification.synchronized_count() );
@@ -7518,6 +7535,11 @@ void BulkData::clear_sideset(const stk::mesh::Part &part)
 }
 
 std::vector<SideSet *> BulkData::get_sidesets()
+{
+    return m_sideSetData.get_sidesets();
+}
+
+std::vector<const SideSet *> BulkData::get_sidesets() const
 {
     return m_sideSetData.get_sidesets();
 }

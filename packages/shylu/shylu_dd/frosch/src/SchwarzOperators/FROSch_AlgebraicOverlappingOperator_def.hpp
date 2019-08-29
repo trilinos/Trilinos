@@ -49,13 +49,14 @@ namespace FROSch {
 
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template <class SC,class LO,class GO,class NO>
     AlgebraicOverlappingOperator<SC,LO,GO,NO>::AlgebraicOverlappingOperator(ConstXMatrixPtr k,
                                                                             ParameterListPtr parameterList) :
     OverlappingOperator<SC,LO,GO,NO> (k,parameterList),
     AddingLayersStrategy_ ()
     {
+        FROSCH_TIMER_START_LEVELID(algebraicOverlappingOperatorTime,"AlgebraicOverlappingOperator::AlgebraicOverlappingOperator");
         if (!this->ParameterList_->get("Adding Layers Strategy","CrsGraph").compare("CrsGraph")) {
             AddingLayersStrategy_ = LayersFromGraph;
         } else if (!this->ParameterList_->get("Adding Layers Strategy","CrsGraph").compare("CrsMatrix")) {
@@ -71,6 +72,7 @@ namespace FROSch {
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize(int overlap,
                                                               ConstXMapPtr repeatedMap)
     {
+        FROSCH_TIMER_START_LEVELID(initializeTime,"AlgebraicOverlappingOperator::initialize");
         if (this->Verbose_) {
             std::cout << "\n\
 +------------------------------+\n\
@@ -92,6 +94,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::compute()
     {
+        FROSCH_TIMER_START_LEVELID(computeTime,"AlgebraicOverlappingOperator::compute");
         FROSCH_ASSERT(this->IsInitialized_,"ERROR: AlgebraicOverlappingOperator has to be initialized before calling compute()");
         this->computeOverlappingOperator();
 
@@ -116,6 +119,7 @@ namespace FROSch {
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
                                                                             ConstXMapPtr repeatedMap)
     {
+        FROSCH_TIMER_START_LEVELID(buildOverlappingMatricesTime,"AlgebraicOverlappingOperator::buildOverlappingMatrices");
         // ====================================================================================
         // AH 08/09/2019: This is just temporary. Implement this properly in all the classes
         Verbosity verbosity = All;

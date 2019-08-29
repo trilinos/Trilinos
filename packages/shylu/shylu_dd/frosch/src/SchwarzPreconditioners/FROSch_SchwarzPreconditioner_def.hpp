@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -58,7 +58,8 @@ namespace FROSch {
     UseTranspose_ (false),
     IsInitialized_ (false),
     IsComputed_ (false),
-    Verbose_ (comm->getRank()==0)
+    Verbose_ (comm->getRank()==0),
+    LevelID_ (ParameterList_->get("Level ID",UN(1)))
     {
 
     }

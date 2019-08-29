@@ -57,25 +57,29 @@ namespace mesh
 
 void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto, const stk::mesh::Selector& air)
 {
-    std::vector<SideSetEntry> skinnedSideSet = SkinMeshUtil::get_skinned_sideset_excluding_region(bulkData, blocksToSkin, air);
-    FaceCreator(bulkData, bulkData.get_face_adjacent_element_graph()).create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto);
+    std::vector<SideSetEntry> skinnedSideSetVector = SkinMeshUtil::get_skinned_sideset_excluding_region(bulkData, blocksToSkin, air);
+    SideSet sideSet(bulkData, skinnedSideSetVector);
+    FaceCreator(bulkData, bulkData.get_face_adjacent_element_graph()).create_side_entities_given_sideset(sideSet, partToPutSidesInto);
 }
 
 void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto)
 {
-    std::vector<SideSetEntry> skinnedSideSet = SkinMeshUtil::get_skinned_sideset(bulkData, blocksToSkin);
-    FaceCreator(bulkData, bulkData.get_face_adjacent_element_graph()).create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto);
+    std::vector<SideSetEntry> skinnedSideSetVector = SkinMeshUtil::get_skinned_sideset(bulkData, blocksToSkin);
+    SideSet sideSet(bulkData, skinnedSideSetVector);
+    FaceCreator(bulkData, bulkData.get_face_adjacent_element_graph()).create_side_entities_given_sideset(sideSet, partToPutSidesInto);
 }
 
 void create_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &blocksToConsider, const stk::mesh::PartVector& partToPutSidesInto)
 {
-    std::vector<SideSetEntry> skinnedSideSet = SkinMeshUtil::get_interior_sideset(bulkData, blocksToConsider);
-    FaceCreator(bulkData, bulkData.get_face_adjacent_element_graph()).create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto);
+    std::vector<SideSetEntry> skinnedSideSetVector = SkinMeshUtil::get_interior_sideset(bulkData, blocksToConsider);
+    SideSet sideSet(bulkData, skinnedSideSetVector);
+    FaceCreator(bulkData, bulkData.get_face_adjacent_element_graph()).create_side_entities_given_sideset(sideSet, partToPutSidesInto);
 }
 
 void create_all_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &blocksToConsider, const stk::mesh::PartVector& partToPutSidesInto, bool connect_faces_to_edges)
 {
-    std::vector<SideSetEntry> sideSet = SkinMeshUtil::get_all_sides_sideset(bulkData, blocksToConsider);
+    std::vector<SideSetEntry> sideSetVector = SkinMeshUtil::get_all_sides_sideset(bulkData, blocksToConsider);
+    SideSet sideSet(bulkData, sideSetVector);
     FaceCreator(bulkData, bulkData.get_face_adjacent_element_graph()).create_side_entities_given_sideset(sideSet, partToPutSidesInto);
 
     impl::edge_map_type edge_map;
@@ -160,11 +164,11 @@ void add_locally_owned_side_from_element_side_pair(BulkData &bulkData, const Sid
     }
 }
 
-stk::mesh::EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet, impl::SkinBoundaryErrorReporter &reporter)
+stk::mesh::EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSetVector, impl::SkinBoundaryErrorReporter &reporter)
 {
     stk::mesh::EntityVector sidesetSides;
 
-    for(const SideSetEntry &facet : skinnedSideSet)
+    for(const SideSetEntry &facet : skinnedSideSetVector)
         add_locally_owned_side_from_element_side_pair(bulkData, facet, sidesetSides, reporter);
 
     return sidesetSides;
@@ -173,10 +177,10 @@ stk::mesh::EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData,
 
 bool check_exposed_block_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart, std::ostream &stream)
 {
-    std::vector<SideSetEntry> skinnedSideSet = SkinMeshUtil::get_skinned_sideset(bulkData, skinnedBlock);
+    std::vector<SideSetEntry> skinnedSideSetVector = SkinMeshUtil::get_skinned_sideset(bulkData, skinnedBlock);
     impl::SkinBoundaryErrorReporter reporter(stream, bulkData);
 
-    stk::mesh::EntityVector sidesetSides = get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet, reporter);
+    stk::mesh::EntityVector sidesetSides = get_locally_owned_sides_from_sideset(bulkData, skinnedSideSetVector, reporter);
     return is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart, reporter);
 }
 
@@ -187,10 +191,10 @@ bool check_exposed_block_boundary_sides(BulkData &bulkData, const Selector& skin
 
 bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, stk::mesh::Part &skinnedPart, std::ostream &stream)
 {
-    std::vector<SideSetEntry> skinnedSideSet = SkinMeshUtil::get_interior_sideset(bulkData, skinnedBlock);
+    std::vector<SideSetEntry> skinnedSideSetVector = SkinMeshUtil::get_interior_sideset(bulkData, skinnedBlock);
     impl::SkinBoundaryErrorReporter reporter(stream, bulkData);
 
-    stk::mesh::EntityVector sidesetSides = stk::mesh::get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet, reporter);
+    stk::mesh::EntityVector sidesetSides = stk::mesh::get_locally_owned_sides_from_sideset(bulkData, skinnedSideSetVector, reporter);
     return stk::mesh::is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart, reporter);
 }
 
@@ -201,10 +205,10 @@ bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const st
 
 bool check_all_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, stk::mesh::Part &skinnedPart, std::ostream &stream)
 {
-    std::vector<SideSetEntry> skinnedSideSet = SkinMeshUtil::get_all_sides_sideset(bulkData, skinnedBlock);
+    std::vector<SideSetEntry> skinnedSideSetVector = SkinMeshUtil::get_all_sides_sideset(bulkData, skinnedBlock);
     impl::SkinBoundaryErrorReporter reporter(stream, bulkData);
 
-    stk::mesh::EntityVector sidesetSides = stk::mesh::get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet, reporter);
+    stk::mesh::EntityVector sidesetSides = stk::mesh::get_locally_owned_sides_from_sideset(bulkData, skinnedSideSetVector, reporter);
     return stk::mesh::is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart, reporter);
 }
 

@@ -57,15 +57,16 @@ namespace mesh {
  * See Field.hpp for more.
  */
 enum FieldState {
-  StateNone = 0,  ///< \brief State of a field with one state
-  StateNew  = 0,  ///< \brief Newest state of a field with two or more states
-  StateNP1  = 0,  ///< \brief Newest state of a field with two or more states
-  StateOld  = 1,  ///< \brief Previous state of a field with two states
-  StateN    = 1,  ///< \brief Previous state of a field with three+ states
-  StateNM1  = 2,  ///< \brief Previous-1 state of a field with three+ states
-  StateNM2  = 3,  ///< \brief Previous-2 state of a field with four+ states
-  StateNM3  = 4,  ///< \brief Previous-3 state of a field with five+ states
-  StateNM4  = 5   ///< \brief Previous-4 state of a field with six states
+  StateNone    = 0,  ///< \brief State of a field with one state
+  StateNew     = 0,  ///< \brief Newest state of a field with two or more states
+  StateNP1     = 0,  ///< \brief Newest state of a field with two or more states
+  StateOld     = 1,  ///< \brief Previous state of a field with two states
+  StateN       = 1,  ///< \brief Previous state of a field with three+ states
+  StateNM1     = 2,  ///< \brief Previous-1 state of a field with three+ states
+  StateNM2     = 3,  ///< \brief Previous-2 state of a field with four+ states
+  StateNM3     = 4,  ///< \brief Previous-3 state of a field with five+ states
+  StateNM4     = 5,  ///< \brief Previous-4 state of a field with six states
+  StateInvalid = 6
 };
 
 /** \brief Maximum number of states that a \ref stk::mesh::Field "field"

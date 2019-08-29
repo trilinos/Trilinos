@@ -21,6 +21,8 @@
 #include <stk_unit_test_utils/getOption.h>
 #include "NgpUnitTestUtils.hpp"
 
+namespace {
+
 using IntDualViewType = Kokkos::DualView<int*, ngp::ExecSpace>;
 
 extern int gl_argc;
@@ -1123,4 +1125,6 @@ TEST_F(NgpHowTo, checkPartMembership)
     run_part_membership_test<ngp::StkMeshAdapter>(get_bulk(), testPart.mesh_meta_data_ordinal());
 #endif
     run_part_membership_test<ngp::StaticMesh>(get_bulk(), testPart.mesh_meta_data_ordinal());
+}
+
 }
