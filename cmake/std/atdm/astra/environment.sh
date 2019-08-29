@@ -96,14 +96,14 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-19.2" ]]; then
   export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
   module load devpack-gnu7/20190618
-  module load armpl/19.2.0
+  module load openblas/0.3.4
   module load ninja
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
-  export LAPACK_ROOT="$ARMPL_LIB"
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-larmpl_ilp64_mp"
-  export ATDM_CONFIG_BLAS_LIBS="-L${LAPACK_ROOT};-larmpl_ilp64_mp"
+  export LAPACK_ROOT="${OPENBLAS_LIB}"
+  export ATDM_CONFIG_LAPACK_LIBS="-L${OPENBLAS_LIB};-lopenblas;-lgfortran;-lgomp"
+  export ATDM_CONFIG_BLAS_LIBS="-L${OPENBLAS_LIB};-lopenblas;-lgfortran;-lgomp"
   export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
 else
   echo
