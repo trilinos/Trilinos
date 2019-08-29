@@ -257,6 +257,9 @@ namespace FROSch {
 
         //! Get #IsComputed_
         bool isComputed() const;
+        
+        int resetMatrix(ConstXMatrixPtr k,
+                        bool reuseInitialize);
 
         //!@}
 

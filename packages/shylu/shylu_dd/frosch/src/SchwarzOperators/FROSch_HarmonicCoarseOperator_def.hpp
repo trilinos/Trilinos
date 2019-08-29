@@ -97,15 +97,12 @@ namespace FROSch {
 
         BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
 
-        // Assemble coarse map
-        XMapPtr coarseMap = assembleCoarseMap(); // AH 12/11/2018: Should this be in initalize?
-
         // Build the saddle point harmonic extensions
         XMultiVectorPtr localCoarseSpaceBasis;
-        if (coarseMap->getNodeNumElements()) {
-            localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),coarseMap,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
+        if (this->CoarseMap_->getNodeNumElements()) {
+            localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),this->CoarseMap_,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
             
-            coarseSpace->addSubspace(coarseMap,localCoarseSpaceBasis);
+            coarseSpace->addSubspace(this->CoarseMap_,localCoarseSpaceBasis);
         }
 
         return repeatedMap;

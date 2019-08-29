@@ -104,8 +104,8 @@ namespace FROSch {
             YOverlap_->replaceMap(OverlappingMatrix_->getDomainMap());
         }
         // AH 11/28/2018: replaceMap does not update the GlobalNumRows. Therefore, we have to create a new MultiVector on the serial Communicator. In Epetra, we can prevent to copy the MultiVector.
-        #ifdef HAVE_XPETRA_EPETRA
         if (XTmp_->getMap()->lib() == UseEpetra) {
+#ifdef HAVE_XPETRA_EPETRA
             if (XOverlapTmp_.is_null()) XOverlapTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
             XOverlapTmp_->doImport(*XTmp_,*Scatter_,INSERT);
             const RCP<const EpetraMultiVectorT<GO,NO> > xEpetraMultiVectorXOverlapTmp = rcp_dynamic_cast<const EpetraMultiVectorT<GO,NO> >(XOverlapTmp_);
@@ -117,9 +117,10 @@ namespace FROSch {
             epetraMultiVectorXOverlapTmp->ExtractView(&A,&MyLDA);
             RCP<Epetra_MultiVector> epetraMultiVectorXOverlap(new Epetra_MultiVector(::View,epetraMap,A,MyLDA,x.getNumVectors()));
             XOverlap_ = RCP<EpetraMultiVectorT<GO,NO> >(new EpetraMultiVectorT<GO,NO>(epetraMultiVectorXOverlap));
-        } else
-        #endif
-        {
+#else
+            FROSCH_ASSERT(false,"HAVE_XPETRA_EPETRA not defined.");
+#endif
+        } else {
             if (XOverlap_.is_null()) {
                 XOverlap_ = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
             } else {
@@ -188,16 +189,17 @@ namespace FROSch {
         OverlappingMatrix_ = ExtractLocalSubdomainMatrix(OverlappingMatrix_,OverlappingMap_);
 
         bool reuseSymbolicFactorization = this->ParameterList_->get("Reuse: Symbolic Factorization",true);
-        if (!this->IsComputed_ && reuseSymbolicFactorization) {
+        if (!this->IsComputed_) {
             reuseSymbolicFactorization = false;
         }
 
         if (!reuseSymbolicFactorization) {
-            if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::CoarseOperator : Recomputing the Symbolic Factorization" << std::endl;
+            if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::OverlappingOperator : Recomputing the Symbolic Factorization" << std::endl;
             SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
             SubdomainSolver_->initialize();
         } else {
             FROSCH_ASSERT(!SubdomainSolver_.is_null(),"FROSch::OverlappingOperator : ERROR: SubdomainSolver_.is_null()");
+            SubdomainSolver_->resetMatrix(OverlappingMatrix_,true);
         }
         this->IsComputed_ = true;
         return SubdomainSolver_->compute();

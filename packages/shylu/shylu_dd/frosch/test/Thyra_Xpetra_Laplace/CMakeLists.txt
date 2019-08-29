@@ -1111,3 +1111,42 @@ ARGS "--M=3 --DIM=3 --O=1 --NB=3 --DPN=3 --ORD=1 --PLIST=ParameterLists/Paramete
 COMM mpi
 NUM_MPI_PROCS 8
 )
+
+##############
+# 1 MPI-Rank #
+##############
+## Epetra
+IF(ShyLU_DDFROSch_ENABLE_Epetra AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_one_rank_DIM2_EPETRA
+ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 1
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_one_rank_DIM3_EPETRA
+ARGS "--M=3 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 1
+)
+ENDIF()
+
+## Tpetra
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_one_rank_DIM2_TPETRA
+ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 1
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_one_rank_DIM3_TPETRA
+ARGS "--M=3 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 1
+)

@@ -65,6 +65,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,repeatedMap);
+        this->CoarseMap_ = this->assembleCoarseMap();
+        this->buildCoarseSolveMap();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -77,6 +79,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,repeatedMap,dirichletBoundaryDofs);
+        this->CoarseMap_ = this->assembleCoarseMap();
+        this->buildCoarseSolveMap();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -90,6 +94,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps);
+        this->CoarseMap_ = this->assembleCoarseMap();
+        this->buildCoarseSolveMap();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -104,6 +110,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs);
+        this->CoarseMap_ = this->assembleCoarseMap();
+        this->buildCoarseSolveMap();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -118,6 +126,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList);
+        this->CoarseMap_ = this->assembleCoarseMap();
+        this->buildCoarseSolveMap();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -133,6 +143,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList);
+        this->CoarseMap_ = this->assembleCoarseMap();
+        this->buildCoarseSolveMap();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -148,6 +160,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,dirichletBoundaryDofsVec,nodeListVec);
+        this->CoarseMap_ = this->assembleCoarseMap();
+        this->buildCoarseSolveMap();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;

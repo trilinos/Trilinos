@@ -71,6 +71,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"IPOUHarmonicCoarseOperator::initialize");
         int ret = buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
+        this->CoarseMap_ = this->assembleCoarseMap();
+        this->buildCoarseSolveMap();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return ret;
@@ -87,6 +89,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"IPOUHarmonicCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,nullSpaceBasisVec,dirichletBoundaryDofsVec,nodeListVec);
+        this->CoarseMap_ = this->assembleCoarseMap();
+        this->buildCoarseSolveMap();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;

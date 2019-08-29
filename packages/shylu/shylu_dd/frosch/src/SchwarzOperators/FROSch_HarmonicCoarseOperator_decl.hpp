@@ -104,6 +104,8 @@ namespace FROSch {
 
     protected:
 
+        int intializeCoarseMap();
+        
         XMapPtr assembleCoarseMap();
 
         XMapPtr assembleSubdomainMap();
