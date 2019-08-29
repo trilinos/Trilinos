@@ -2013,7 +2013,8 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
         distribute_points_on_cut_lines(true), max_concurrent_part_calculation(1),
         mj_run_as_rcb(false), mj_user_recursion_depth(0), mj_keep_part_boxes(false),
         check_migrate_avoid_migration_option(0), migration_type(0), minimum_migration_imbalance(0.30),
-        num_threads(1), total_num_cut(0), total_num_part(0), max_num_part_along_dim(0),
+        num_threads(1), num_first_level_parts(1), first_level_distribution(NULL), 
+        total_num_cut(0), total_num_part(0), max_num_part_along_dim(0),
         max_num_cut_along_dim(0), max_num_total_part_along_dim(0), total_dim_num_reduce_all(0),
         last_dim_num_part(0), comm(), fEpsilon(0), sEpsilon(0), maxScalar_t(0), minScalar_t(0),
         all_cut_coordinates(NULL), max_min_coords(NULL), process_cut_line_weight_to_put_left(NULL),
@@ -6203,7 +6204,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_partitioning_paramet
  *                      the result partids corresponding to the coordinates given in result_mj_gnos.
  *  \param result_mj_gnos: Output - 1D pointer, should be provided as null. Memory is given in the function.
  *                      the result coordinate global id's corresponding to the part_ids array.
- *
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -6287,15 +6287,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         this->mj_weights = mj_weights_; //will copy the memory to this->mj_weights
         this->mj_uniform_parts = mj_uniform_parts_;
         this->mj_part_sizes = mj_part_sizes_;
-
-        // Nonuniform first level partitioning (currently for sequential_task_partitioning only)
-        // Currently used for Dragonfly task mapping by partitioning Dragonfly RCA 
-        // machine coordinates and application coordinates.
-        // An optimization that completely partitions the most important machine dimension 
-        // first (i.e. the Dragonfly group coordinate, or RCA's x coordinate). The standard 
-        // MJ alg follows after the nonuniform first level partitioning.   
-        this->num_first_level_parts = 1;
-        this->first_level_distribution = NULL;
 
         this->num_threads = 1;
 #ifdef HAVE_ZOLTAN2_OMP
