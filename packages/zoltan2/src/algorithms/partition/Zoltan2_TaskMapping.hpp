@@ -200,43 +200,15 @@ void getSolutionCenterCoordinates(
   //get parts with parallel gnos.
 //  const part_t *parts = soln_->getPartListView();
 
-/*
-  for (lno_t i=0; i < numLocalCoords; i++) {
-    std::cout << "me:" << comm->getRank() 
-      << " gno:" << soln_gnos[i] 
-      << " tmp.part :" << parts[i] << endl;
-    }
-*/
-
   envConst->timerStart(MACRO_TIMERS, "Mapping - Center Calculation");
 
   for (lno_t i = 0; i < numLocalCoords; i++) {
     part_t p = parts[i];
-  
-//    std::cout << "\nRank: " << comm->getRank() 
-//    << " i: " << i << " part: " << p << std::endl;
 
     //add up all coordinates in each part.
     for (int j = 0; j < coordDim; ++j) {
-
-//      std::cout << "\nRank: " << comm->getRank() 
-//      << " i: " << i << " j: " << j << " part: " << p << std::endl;
       scalar_t c = multiJagged_coordinates[j][i];
-
-
-
-//      std::cout << "\nRank: " << comm->getRank() 
-//      << " i: " << i << " j: " << j 
-//        << " part: " << p << " coord: " << c << std::endl;
-
-
       partCenters[j][p] += c;
-
-
-//      std::cout << "\nRank: " << comm->getRank() 
-//      << " i: " << i << " j: " << j
-//        << " part: " << p << " coord: " << c 
-//        << " centers: " << partCenters[j][p] << std::endl;
     }
     ++point_counts[p];
   }
