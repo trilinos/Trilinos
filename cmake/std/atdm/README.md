@@ -609,6 +609,7 @@ example, skip the configure, skip the build, skip running tests, etc.
 * <a href="#cee-rhel6-and-rhel7-environment">CEE RHEL6 and RHEL7 Environment</a>
 * <a href="#waterman">waterman</a>
 * <a href="#ats-2">ATS-2</a>
+* <a href="#astra-vanguard-arm-system">ASTRA (Vanguard ARM System)</a>
 
 
 ### ride/white
@@ -729,7 +730,7 @@ $ make NP=16
 $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j4
 ```
 
-To get information on <YOUR_WCID> used above, there is a WC tool tab on
+To get information on `<YOUR_WCID>` used above, there is a WC tool tab on
 computing.sandia.gov
 
 **NOTE:** Unlike some of the other machines, one must load the environment,
@@ -1160,6 +1161,89 @@ $ ./checkin-test-atdm.sh <buildname0> <buildname1> ... \
 - One can directly log into any compute node (independent of if that node is
   allocated to you or not).  That can be useful to examine a running job but
   use caution when doing so as not to disturb the job running.
+
+
+### ASTRA (Vanguard ARM System)
+
+Once logged onto a supported Vanguard ARM system (called system 'van1-tx2')
+system like 'stria', one can build and configure on a login node.
+
+To configure, build and run the tests for the default `arm-20.0` build for
+`Kokkos` (after cloning Trilinos on the 'develop' branch), run the following
+from a login node on 'stria':
+
+```bash
+$ cd <some_build_dir>/
+
+# List available environments
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh help
+
+# Load hsw env and configure on the login node
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh arm-20.0
+$ cmake -G Ninja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON \
+  -DTrilinos_ENABLE_Tpetra=ON \
+  $TRILINOS_DIR
+
+$ make NP=8  # This is a shared node!
+
+# Get a node allocation and run ctest
+$ salloc -N 1 --time=2:00:00  -p short,batch --account=<YOUR_WCID> ctest -j4
+```
+
+One can also get an allocation first and then configure, build on a compute
+node, and then run the test suite using:
+
+```bash
+$ salloc -N 1 --time=4:00:00 -p short,batch --account=<YOUR_WCID> bash
+# NOTE: After the above runs, hostname=stria-login<n> but now a compute node
+# has been allocated for immediately usage.
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh arm-20.0
+
+$ cmake -G Ninja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON \
+  -DTrilinos_ENABLE_Tpetra=ON \
+  $TRILINOS_DIR
+
+$ srun -N 1 make NP=20  # We have the entire compute node to ourselves!
+
+$ ctest -j4
+```
+
+The advantage of the latter approach is that one just waits once for a node
+allocationand then one can immediately run fast parallel builds on the compute
+node (taking up the entire node).  Then one can run the test suite multiple
+times without waiting for a new allocation.
+
+One can also directly build on a compute node from the login node in one
+command:
+
+```bash
+$ srun -N 1 --time=2:00:00 -p short,batch --account=<YOUR_WCID> make NP=20
+```
+
+To use the `ctest-s-local-test-driver.sh` script, one must set one's WCID
+account using:
+
+```
+$ export ATDM_CONFIG_WCID_ACCOUNT=<YOUR_WCID>
+```
+
+If `ATDM_CONFIG_WCID_ACCOUNT` is not set, then a default account will be used.
+(But if the user is not approved for that account, then the allocation will
+fail.)
+
+**NOTES:**
+- To get information on <YOUR_WCID> used above, there is a WC tool tab on
+  computing.sandia.gov.
+- CTest runs everything using the `mpirun` command and this must be run from
+  inside a `salloc` or `sbatch` allocation and can **not** be directly
+  launched from a compute node.  For example, one cannot get an interactive
+  shell directly on a compute node using `srun ... bash' an` then run `mpirun`
+  from there.
 
 
 ## Building and installing Trilinos for ATDM Applications

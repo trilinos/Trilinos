@@ -55,6 +55,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   mutrino   # Will be repalced by 'ats1'
   waterman
   ats2
+  van1-tx2
   cts1
   tlcc2
   sems-rhel7
@@ -127,16 +128,22 @@ fi
 # matching system type will be selected.
 #
 
-# TLCC2 systems
-if [[ $SNLSYSTEM == "tlcc2"* ]] ; then
-  systemNameTypeMatchedList+=(tlcc2)
-  systemNameTypeMatchedListHostNames[tlcc2]=$SNLCLUSTER
+# ASTRA/Van1-Tx2 systems
+if [[ $SNLSYSTEM == "astra"* ]] ; then
+  systemNameTypeMatchedList+=(van1-tx2)
+  systemNameTypeMatchedListHostNames[van1-tx2]=$SNLCLUSTER
 fi
 
 # CTS1 systems
 if [[ $SNLSYSTEM == "cts1" ]] ; then
   systemNameTypeMatchedList+=(cts1)
   systemNameTypeMatchedListHostNames[cts1]=$SNLCLUSTER
+fi
+
+# TLCC2 systems
+if [[ $SNLSYSTEM == "tlcc2"* ]] ; then
+  systemNameTypeMatchedList+=(tlcc2)
+  systemNameTypeMatchedListHostNames[tlcc2]=$SNLCLUSTER
 fi
 
 # SEMS RHEL6 and RHEL7 systems
@@ -216,7 +223,7 @@ fi
 #
 
 if [[ $ATDM_SYSTEM_NAME != "" ]] ; then
-  echo "Hostname '$realHostname' matches known ATDM host '$ATDM_HOSTNAME' and system '$ATDM_SYSTEM_NAME'"
+  echo "Hostname '$realHostname' matches known ATDM host '$realHostname' and system '$ATDM_SYSTEM_NAME'"
   export ATDM_CONFIG_REAL_HOSTNAME=$realHostname
   export ATDM_CONFIG_CDASH_HOSTNAME=$ATDM_HOSTNAME
   export ATDM_CONFIG_SYSTEM_NAME=$ATDM_SYSTEM_NAME
