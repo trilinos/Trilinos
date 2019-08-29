@@ -911,6 +911,12 @@ PHX::DagManager<Traits>::getFieldUseRange()
     }
   }
 
+  // Required field values must exist to the end of the DAG evalaution
+  // since users will access the data after the DAG is finished
+  // running.
+  for (const auto& f : required_fields_)
+    field_use_range_[f->identifier()].second = topoSortEvalIndex.size()-1;
+
 #ifdef PHX_DEBUG
   for (const auto& f : field_use_range_) {
     TEUCHOS_TEST_FOR_EXCEPTION(f.second.first > f.second.first,
@@ -931,6 +937,14 @@ PHX::DagManager<Traits>::
 printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
 {
   start_stop_debug_ostream_ = ostr;
+}
+
+//=======================================================================
+template<typename Traits>
+const std::vector<Teuchos::RCP<PHX::FieldTag>>&
+PHX::DagManager<Traits>::getRequiredFields() const
+{
+  return required_fields_;
 }
 
 //=======================================================================

@@ -85,9 +85,9 @@ namespace PHX {
         *ptr_ = tmp;
       }
       catch (std::exception& ) {
-        std::cout << "\n\nError in MemoryBinder using PHX::any_cast. Tried to cast a field "
-                  << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
-                  << "\" from a PHX::any object containing a type of \""
+        std::cout << "\n\nERROR in MemoryBinder using PHX::any_cast. Tried to cast a field "
+                  << "to the type:\n  \"" << Teuchos::demangleName(typeid(non_const_view).name())
+                  << "\"\nfrom a PHX::any object containing a field of type:\n  \""
                   << Teuchos::demangleName(f.type().name()) << "\"." << std::endl;
         throw;
       }

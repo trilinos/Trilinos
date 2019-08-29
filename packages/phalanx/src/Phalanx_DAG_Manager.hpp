@@ -238,6 +238,9 @@ namespace PHX {
     */
     void printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr);
 
+    /// Returns all fields that the user requested to to be evaluated by the field manager.
+    const std::vector<Teuchos::RCP<PHX::FieldTag>>& getRequiredFields() const;
+
   protected:
 
     /*! @brief Depth-first search algorithm. */ 
