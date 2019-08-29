@@ -582,9 +582,20 @@ private:
     			//1 - will aim for minimized number of messages with possibly bad load-imbalance
     double minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
     int num_threads; //num threads
-
-    mj_part_t num_first_cut_parts; // If used, number of parts for a nonuniform first cut
-    const mj_part_t *first_cut_distribution; // If used, the distribution of parts for the nonuniform first cut
+   
+    // Nonuniform first level partitioning (Currently available only for sequential_task_partitioning):
+    // Used for Dragonfly task mapping by partitioning Dragonfly RCA 
+    // machine coordinates and application coordinates.
+    // An optimization that completely partitions the most important machine dimension 
+    // first (i.e. the Dragonfly group coordinate, or RCA's x coordinate). The standard 
+    // MJ alg follows after the nonuniform first level partitioning. 
+    //
+    // Ex. (first level partitioning): If we have 120 elements, 
+    // num_first_level_parts = 3, first_level_distribution = [4, 10, 6], then
+    // part sizes after first level will be [24, 60, 36]. Standard uniform MJ 
+    // continues for all subsequent levels.
+    mj_part_t num_first_level_parts; // If used, number of parts requested for a nonuniform first level partitioning
+    const mj_part_t *first_level_distribution; // If used, the requested distribution of parts for the nonuniform first level partitioning
 
     mj_part_t total_num_cut ; //how many cuts will be totally
     mj_part_t total_num_part;    //how many parts will be totally
@@ -771,8 +782,15 @@ private:
      * for the parts that will be obtained at the end of this coordinate partitioning.
      * \param concurrent_current_part is the index of the part in the future_num_part_in_parts vector.
      * \param obtained_part_index holds the amount of shift in the next_future_num_parts_in_parts for the output parts.
-     * \param num_first_cut is the number of parts after the first level of partitioning (may be nonuniform)
-     * \param first_cut_dist is an array containing the distribution of elements in each part after the first cut (used for nonuniform first cuts)
+     *
+     * Nonuniform first level partitioning: 
+     * \param num_target_first_level_parts is the number of parts requested 
+     * after the first level of partitioning (resulting parts may be imbalanced)
+     * \param first_level_dist is an array requesting the distribution of elements 
+     * in each part after the first cut (used for nonuniform first cuts)
+     * 
+     * Ex. If we have num_first_level_parts = 3, first_level_dist = [4, 10, 6], then
+     * target_part_weights will be [.20, .70, 1.00] * global_weight
      */
     void mj_get_initial_cut_coords_target_weights(
         mj_scalar_t min_coord,
@@ -786,8 +804,8 @@ private:
         std::vector <mj_part_t> *next_future_num_parts_in_parts,
         mj_part_t concurrent_current_part,
         mj_part_t obtained_part_index,
-        mj_part_t num_first_cut = 0,
-        const mj_part_t *first_cut_dist = NULL);
+        mj_part_t num_target_first_level_parts = 1,
+        const mj_part_t *target_first_level_dist = NULL);
 
     /*! \brief Function that calculates the new coordinates for the cut lines. Function is called inside the parallel region.
      * \param max_coordinate maximum coordinate in the range.
@@ -1280,9 +1298,6 @@ public:
      *                          the result partids corresponding to the coordinates given in result_mj_gnos.
      *  \param result_mj_gnos: Output - 1D pointer, should be provided as null.
      *                          the result coordinate global id's corresponding to the part_ids array.
-     *  \param num_first_cut_parts_: the number of parts after the first level of partitioning (may be nonuniform)
-     *  \param first_cut_distribution_: an array containing the distribution of elements in each part after the first cut (used for nonuniform first cuts)
-     *
      */
     void multi_jagged_part(
                 const RCP<const Environment> &env,
@@ -1306,10 +1321,8 @@ public:
                 mj_scalar_t **mj_part_sizes,
 
                 mj_part_t *&result_assigned_part_ids,
-                mj_gno_t *&result_mj_gnos,
-
-                mj_part_t num_first_cut_parts_ = 0,
-                const mj_part_t *first_cut_distribution_ = NULL);
+                mj_gno_t *&result_mj_gnos);
+                  
 
     /*! \brief Multi Jagged  coordinate partitioning algorithm.
      *
@@ -1362,9 +1375,24 @@ public:
      *
      *  \param rd: recursion depth
      *  \param part_no_array_: possibly null part_no_array, specifying how many parts each should be divided during partitioning.
-     *  
-     *  \param num_first_cut_parts_: the number of parts after the first level of partitioning (may be nonuniform)
-     *  \param first_cut_distribution_: an array containing the distribution of elements in each part after the first cut (used for nonuniform first cuts)
+     *   
+     *
+     *  Nonuniform first level partitioning (Currently available only for sequential_task_partitioning):
+     *  Currently used for Dragonfly task mapping by partitioning Dragonfly RCA 
+     *  machine coordinates and application coordinates.
+     *  An optimization that completely partitions the most important machine dimension 
+     *  first (i.e. the Dragonfly group coordinate, or RCA's x coordinate). The standard 
+     *  MJ alg follows after the nonuniform first level partitioning. 
+     *
+     *  \param num_first_level_parts_: the number of parts after the first level of 
+     *  partitioning (may be nonuniform)
+     *  \param first_level_distribution_: an array containing the distribution of 
+     *  elements in each part after the first cut (used for nonuniform first cuts)
+     * 
+     *  Ex. (first level partitioning): If we have 120 elements, 
+     *  num_first_level_parts = 3, first_level_distribution = [4, 10, 6], then
+     *  part sizes after first level will be [24, 60, 36]. Standard uniform MJ 
+     *  continues for all subsequent levels.
      */
     void sequential_task_partitioning(
         const RCP<const Environment> &env,
@@ -1380,8 +1408,8 @@ public:
         bool partition_along_longest_dim,
         int num_ranks_per_node,
         bool divide_to_prime_first_,
-        mj_part_t num_first_cut_parts_ = 0,
-        const mj_part_t *first_cut_distribution_ = NULL);
+        mj_part_t num_first_level_parts_ = 1,
+        const mj_part_t *first_level_distribution_ = NULL);
 
 };
 
@@ -1408,9 +1436,24 @@ public:
  *
  *  \param rd: recursion depth
  *  \param part_no_array_: possibly null part_no_array, specifying how many parts each should be divided during partitioning.
- *    
- * \param num_first_cut_parts_: the number of parts after the first level of partitioning (may be nonuniform)
- * \param first_cut_distribution_: an array containing the distribution of elements in each part after the first cut (used for nonuniform first cuts)
+ *  
+ *
+ *  Nonuniform first level partitioning:
+ *  Currently used for Dragonfly task mapping by partitioning Dragonfly RCA 
+ *  machine coordinates and application coordinates.
+ *  An optimization that completely partitions the most important machine dimension 
+ *  first (i.e. the Dragonfly group coordinate, or RCA's x coordinate). The standard 
+ *  MJ alg follows after the nonuniform first level partitioning. 
+ *
+ *  \param num_target_first_level_parts: the number of parts requested after 
+ *  the first level of partitioning (resulting parts may be imbalanced)
+ *  \param first_level_dist: an array requesting the distribution of elements 
+ *  in each part after the first cut (used for nonuniform first cuts)
+ *
+ *  Ex. (first level partitioning): If we have 120 elements, 
+ *  num_first_level_parts = 3, first_level_distribution = [4, 10, 6], then
+ *  part sizes after first level will be [24, 60, 36]. Standard uniform MJ 
+ *  continues for all subsequent levels.
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -1428,8 +1471,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
     bool partition_along_longest_dim,
     int num_ranks_per_node,
     bool divide_to_prime_first_,
-    mj_part_t num_first_cut_parts_,
-    const mj_part_t *first_cut_distribution_) {
+    mj_part_t num_first_level_parts_,
+    const mj_part_t *first_level_distribution_) {
 
     this->mj_env = env;
     const RCP<Comm<int> > commN;
@@ -1454,10 +1497,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
     this->part_no_array = (mj_part_t *)part_no_array_;
     this->recursion_depth = rd;
 
-    // If nonuniform first cut, num of parts and the distribution of 
+    // If nonuniform first level partitioning, the requested num of parts and the requested distribution of 
     // elements for each part
-    this->num_first_cut_parts = num_first_cut_parts_;
-    this->first_cut_distribution = (mj_part_t *)first_cut_distribution_;
+    this->num_first_level_parts = num_first_level_parts_;
+    this->first_level_distribution = (mj_part_t *)first_level_distribution_;
 
     this->coord_dim = coord_dim_;
     this->num_local_coords = num_total_coords;
@@ -1730,9 +1773,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                         //for this part.
                         this->my_incomplete_cut_count[kk] = partition_count - 1;
 
-                        // Nonuniform partitioning on the first cut
-                        if (i == 0 && first_cut_distribution != NULL) {
-
+                        // Nonuniform partitioning on the first level, providing
+                        // requested number of parts (num_first_level_parts) and 
+                        // requested distribution in parts (first_level_distribution)
+                        if (i == 0 &&  
+                            first_level_distribution != NULL &&
+                            num_first_level_parts > 1) { 
                           // Get the target part weights given a desired distribution 
                           this->mj_get_initial_cut_coords_target_weights(
                               min_coordinate,
@@ -1745,8 +1791,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                               next_future_num_parts_in_parts,
                               concurrent_current_part_index,
                               obtained_part_index,
-                              this->num_first_cut_parts,
-                              this->first_cut_distribution);       
+                              this->num_first_level_parts,
+                              this->first_level_distribution);       
                         }
                         // Uniform partitioning
                         else {
@@ -2050,11 +2096,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_part_specifications(
         else {
                 mj_part_t future_num_parts = this->num_global_parts;
 
-                // Initial value max_num_part_along_dim == num_first_cut_parts 
-                // if using nonuniform first cut partitioning.
-                if (this->num_first_cut_parts > 0 &&
-                    this->first_cut_distribution != NULL) {
-                  this->max_num_part_along_dim = this->num_first_cut_parts;
+                // If using nonuniform first level partitioning.
+                // initial value max_num_part_along_dim == num_first_level_parts  
+                if (this->first_level_distribution != NULL && 
+                    this->num_first_level_parts > 1) {
+                  this->max_num_part_along_dim = this->num_first_level_parts;
                 }
 
                 // We need to calculate the part numbers now, to determine the maximum along the dimensions.
@@ -2063,28 +2109,29 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_part_specifications(
                         mj_part_t maxNoPartAlongI = 0;
                         mj_part_t nfutureNumParts = 0;
 
-                        // Nonuniform first cut partitioning
+                        // Nonuniform first level partitioning sets part specificiations for rd == 0 only,
+                        // given requested num of parts and distribution in parts for the first level.
                         if (rd == 0 &&
-                            this->num_first_cut_parts > 0 &&
-                            this->first_cut_distribution != NULL) {
+                            this->first_level_distribution != NULL &&
+                            this->num_first_level_parts > 1) {
                                   
-                          maxNoPartAlongI = this->num_first_cut_parts;              
-                          this->max_num_part_along_dim = this->num_first_cut_parts;
+                          maxNoPartAlongI = this->num_first_level_parts;              
+                          this->max_num_part_along_dim = this->num_first_level_parts;
                         
-                          mj_part_t sum_first_cut_dist = 0;
+                          mj_part_t sum_first_level_dist = 0;
                           mj_part_t max_part = 0; 
 
                           // Cumulative sum of distribution of parts and size of largest part 
-                          for (int i = 0; i < this->num_first_cut_parts; ++i) {
+                          for (int i = 0; i < this->num_first_level_parts; ++i) {
                            
-                            sum_first_cut_dist += this->first_cut_distribution[i];
+                            sum_first_level_dist += this->first_level_distribution[i];
                           
-                            if (this->first_cut_distribution[i] > max_part)
-                              max_part = this->first_cut_distribution[i];
+                            if (this->first_level_distribution[i] > max_part)
+                              max_part = this->first_level_distribution[i];
                           }
 
-                          // Total parts in largest nonuniform superpart from first cut 
-                          nfutureNumParts = this->num_global_parts * max_part / sum_first_cut_dist; 
+                          // Total parts in largest nonuniform superpart from first level partitioning
+                          nfutureNumParts = this->num_global_parts * max_part / sum_first_level_dist; 
                         
                         }
                         // Standard uniform partitioning this level
@@ -2213,17 +2260,16 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
         if (p == 1){
             return current_num_parts;
         }
-        // If using part_no_array, ensure compatibility with num_first_cut_parts.
-        if (this->first_cut_distribution != NULL && 
+        // If using part_no_array, ensure compatibility with num_first_level_parts.
+        if (this->first_level_distribution != NULL && 
             current_iteration == 0 && 
-            p != this->num_first_cut_parts)
+            p != this->num_first_level_parts)
         {
             std::cout << "Current recursive iteration: " << current_iteration 
               << " part_no_array[" << current_iteration << "] is given as: " << p 
-              << " and contradicts num_first_cut_parts: " << this->num_first_cut_parts << std::endl;
+              << " and contradicts num_first_level_parts: " << this->num_first_level_parts << std::endl;
             exit(1);
         }
-
 
         for (mj_part_t ii = 0; ii < current_num_parts; ++ii){
             num_partitioning_in_current_dim.push_back(p);
@@ -2298,39 +2344,45 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
 
 //            mj_part_t largest_prime_factor = num_partitions_in_current_dim;
               
-            // Update part num arrays when nonuniformly partitioning on the first cut
-            if (this->first_cut_distribution != NULL && current_iteration == 0) {
+            // Update part num arrays when on current_iteration == 0 and 
+            // using nonuniform first level partitioning
+            // with requested num parts (num_first_level_parts) and
+            // a requested distribution in parts (first_level_distribution).
+            if (current_iteration == 0 && 
+                this->first_level_distribution != NULL && 
+                this->num_first_level_parts > 1) {
 
-              // Only 1 current part and the results number of parts will be the
-              // number of first cuts
-              num_partitioning_in_current_dim.push_back(this->num_first_cut_parts);
+              // Only 1 current part to begin and partitions into 
+              // num_first_level_parts many parts 
+              num_partitioning_in_current_dim.push_back(this->num_first_level_parts);
 
-              // Number of parts from first cut
-              output_num_parts = this->num_first_cut_parts;
+              // The output number of parts from first level partitioning
+              output_num_parts = this->num_first_level_parts;
               
-              // Remaining parts left to partition
-              future_num_parts /= this->num_first_cut_parts;
+              // Remaining parts left to partition for all future levels
+              future_num_parts /= this->num_first_level_parts;
 
               mj_part_t max_part = 0;
-              mj_part_t sum_first_cut_dist = 0;
+              mj_part_t sum_first_level_dist = 0;
              
-              // Cumulative sum of distribution of parts and size of largest part 
-              for (int i = 0; i < this->num_first_cut_parts; ++i) {
-                sum_first_cut_dist += this->first_cut_distribution[i];
+              // Cumulative sum of distribution of first level parts 
+              // and size of largest first level part 
+              for (int i = 0; i < this->num_first_level_parts; ++i) {
+                sum_first_level_dist += this->first_level_distribution[i];
 
-                if (this->first_cut_distribution[i] > max_part)
-                  max_part = this->first_cut_distribution[i];
+                if (this->first_level_distribution[i] > max_part)
+                  max_part = this->first_level_distribution[i];
               }
 
-              // Remaining parts left to partition
-              future_num_parts = this->num_global_parts * max_part / sum_first_cut_dist;
+              // Maximum # of remaining parts left to partition for all future levels
+              future_num_parts = this->num_global_parts * max_part / sum_first_level_dist;
               
               // Number of parts remaining left to partition for each future_part
               // The sum must exactly equal global_num_parts 
-              for (int i = 0; i < this->num_first_cut_parts; ++i) {
+              for (int i = 0; i < this->num_first_level_parts; ++i) {
 
-                next_future_num_parts_in_parts->push_back(this->first_cut_distribution[i] * 
-                    this->num_global_parts / sum_first_cut_dist);
+                next_future_num_parts_in_parts->push_back(this->first_level_distribution[i] * 
+                    this->num_global_parts / sum_first_level_dist);
               }              
             }
             else if (this->divide_to_prime_first) {
@@ -2841,8 +2893,15 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_global_min_max_co
  * for the parts that will be obtained at the end of this coordinate partitioning.
  * \param concurrent_current_part is the index of the part in the future_num_part_in_parts vector.
  * \param obtained_part_index holds the amount of shift in the next_future_num_parts_in_parts for the output parts.
- * \param num_first_cut is the number of parts after the first level of partitioning (may be nonuniform)
- * \param first_cut_dist is an array containing the distribution of elements in each part after the first cut (used for nonuniform first cuts)
+ *
+ * Nonuniform first level partitioning: 
+ * \param num_target_first_level_parts is the number of parts requested 
+ * after the first level of partitioning (resulting parts may be imbalanced)
+ * \param first_level_dist is an array requesting the distribution of elements 
+ * in each part after the first cut (used for nonuniform first cuts)
+ * 
+ * Ex. If we have num_first_level_parts = 3, first_level_dist = [4, 10, 6], then
+ * target_part_weights will be [.20, .70, 1.00] * global_weight
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -2858,13 +2917,14 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_initial_cut_coord
     std::vector <mj_part_t> *next_future_num_parts_in_parts,
     mj_part_t concurrent_current_part,
     mj_part_t obtained_part_index,
-    mj_part_t num_first_cut,
-    const mj_part_t *first_cut_dist) {
+    mj_part_t num_target_first_level_parts,
+    const mj_part_t *target_first_level_dist) {
 
     mj_scalar_t coord_range = max_coord - min_coord;
 
     // Uniform target weights
-    if (first_cut_dist == NULL && this->mj_uniform_parts[0]) {
+    if (num_target_first_level_parts <= 1 && 
+        this->mj_uniform_parts[0]) {
       {
         mj_part_t cumulative = 0;
             
@@ -2894,21 +2954,22 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_initial_cut_coord
         }
       }
     }
-    // Nonuniform target weights for first cut
-    else if(first_cut_dist != NULL) {
+    // Nonuniform target weights for first level of partitioning 
+    else if(num_target_first_level_parts > 1 && 
+            target_first_level_dist != NULL) {
       {
         // Running sum of the total weight
         mj_part_t cumulative = 0.0;
 
-        // Sum of entries in the first_partition vector
-        mj_scalar_t sum_first_cut_dist = 0.0;
+        // Sum of entries in the first level partition distribution vector
+        mj_scalar_t sum_target_first_level_dist = 0.0;
 
-        for (int i = 0; i < num_first_cut; ++i) {
-          sum_first_cut_dist += first_cut_dist[i];
+        for (int i = 0; i < num_target_first_level_parts; ++i) {
+          sum_target_first_level_dist += target_first_level_dist[i];
         }
         
         for (mj_part_t i = 0; i < num_cuts; ++i) {
-          cumulative += global_weight * first_cut_dist[i] / sum_first_cut_dist;
+          cumulative += global_weight * target_first_level_dist[i] / sum_target_first_level_dist;
 
           // Set target part weight.
           current_target_part_weights[i] = cumulative; 
@@ -6169,10 +6230,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         mj_scalar_t **mj_part_sizes_,
 
         mj_part_t *&result_assigned_part_ids_,
-        mj_gno_t *&result_mj_gnos_,
-
-        mj_part_t num_first_cut_parts_,
-        const mj_part_t *first_cut_distribution_
+        mj_gno_t *&result_mj_gnos_
 )
 {
 
@@ -6230,8 +6288,14 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         this->mj_uniform_parts = mj_uniform_parts_;
         this->mj_part_sizes = mj_part_sizes_;
 
-        this->num_first_cut_parts = num_first_cut_parts_;
-        this->first_cut_distribution = (mj_part_t *)first_cut_distribution_;
+        // Nonuniform first level partitioning (currently for sequential_task_partitioning only)
+        // Currently used for Dragonfly task mapping by partitioning Dragonfly RCA 
+        // machine coordinates and application coordinates.
+        // An optimization that completely partitions the most important machine dimension 
+        // first (i.e. the Dragonfly group coordinate, or RCA's x coordinate). The standard 
+        // MJ alg follows after the nonuniform first level partitioning.   
+        this->num_first_level_parts = 1;
+        this->first_level_distribution = NULL;
 
         this->num_threads = 1;
 #ifdef HAVE_ZOLTAN2_OMP
@@ -6750,8 +6814,14 @@ private:
     bool *mj_uniform_parts; //if the target parts are uniform
     mj_scalar_t **mj_part_sizes; //target part weight sizes.
 
-    mj_part_t num_first_cut_parts; // If used, number of parts for a nonuniform first cut
-    const mj_part_t *first_cut_distribution; // If used, the distribution of parts for the nonuniform first cut
+    // Nonuniform first level partitioning
+    // Currently used for Dragonfly task mapping by partitioning Dragonfly RCA 
+    // machine coordinates and application coordinates.
+    // An optimization that completely partitions the most important machine dimension 
+    // first (i.e. the Dragonfly group coordinate, or RCA's x coordinate). The standard 
+    // MJ alg follows after the nonuniform first level partitioning.   
+    mj_part_t num_first_level_parts; // If used, number of parts for the first level partitioing
+    const mj_part_t *first_level_distribution; // If used, the distribution of parts for the nonuniform first level partitioning
 
     bool distribute_points_on_cut_lines; //if partitioning can distribute points on same coordiante to different parts.
     mj_part_t max_concurrent_part_calculation; // how many parts we can calculate concurrently.
@@ -6825,8 +6895,8 @@ public:
                         mj_weights(NULL),
                         mj_uniform_parts(NULL),
                         mj_part_sizes(NULL),
-                        num_first_cut_parts(0),
-                        first_cut_distribution(NULL),
+                        num_first_level_parts(1),
+                        first_level_distribution(NULL),
                         distribute_points_on_cut_lines(true),
                         max_concurrent_part_calculation(1),
                         check_migrate_avoid_migration_option(0), 

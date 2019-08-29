@@ -1555,15 +1555,16 @@ public:
 //    std::cout << "recursion_depth:" << recursion_depth 
 //      << " partArraySize:" << partArraySize << std::endl;
 
-    // Optimization for Dragonfly Networks, First Cut is imbalanced to ensure
-    // procs are divided by first RCA coord (a.k.a. group).
-    part_t num_group_count = 0;
+    // Optimization for Dragonfly Networks, First Level of partitioning 
+    // is imbalanced to ensure procs are divided by first RCA 
+    // coord (a.k.a. group).
+    part_t num_group_count = 1;
     part_t *group_count = NULL;
 
     if (machine != NULL)
       num_group_count = machine->getNumUniqueGroups();
  
-    if (num_group_count > 0) {
+    if (num_group_count > 1) {
       group_count = new part_t[num_group_count];    
       memset(group_count, 0, sizeof(part_t) * num_group_count);
  

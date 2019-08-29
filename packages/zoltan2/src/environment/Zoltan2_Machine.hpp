@@ -103,10 +103,11 @@ public:
      *  return the number of unique Dragonfly network groups in provided 
      *  allocation.
      *
-     *  Equals the length of group_count member data, if available
+     *  Equals the length of group_count member data, if available,
+     *  otherwise we consider the whole allocation to be one group.
      */
     virtual part_t getNumUniqueGroups() const {
-      return 0;
+      return 1;
     }
 
     /*! \brief getGroupCount function
