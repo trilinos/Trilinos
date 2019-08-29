@@ -63,17 +63,24 @@ namespace MueLuTests {
   namespace TestHelpers {
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void AllocateEpetraFECrsMatrix(RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & pn_rowmap,  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & B)
+    class Allocator {
+    public:
+
+    static void AllocateEpetraFECrsMatrix(RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & pn_rowmap,  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & B)
     {
       throw MueLu::Exceptions::RuntimeError("MueLuTests::TestHelpers::AllocateEpetraFECrsMatrix only works for Kokkos::Compat::KokkosSerialWrapperNode");
     }
+
+    };
 
 #if defined(HAVE_MUELU_EPETRA) && \
            (!defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) || \
             (defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_SERIAL)) \
            )
-    template <>
-    void AllocateEpetraFECrsMatrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode>(RCP<const Xpetra::Map<int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> > & pn_rowmap,  RCP<const Xpetra::Map<int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode > > & B)
+    template <class GlobalOrdinal>
+    class Allocator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> {
+    public:
+    static void AllocateEpetraFECrsMatrix(RCP<const Xpetra::Map<int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> > & pn_rowmap,  RCP<const Xpetra::Map<int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode > > & B)
 
     {
       // Epetra is hard
@@ -82,7 +89,9 @@ namespace MueLuTests {
       RCP<Epetra_CrsMatrix> B_epetra = rcp(new Epetra_FECrsMatrix(Copy,pn_rowmap_epetra,pn_colmap_epetra,0));
       B = MueLu::Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode>(B_epetra);
     }
+    };
 #endif
+   
 
 
 
@@ -224,7 +233,7 @@ namespace MueLuTests {
       // Since we're inserting off-proc, we really need to use the Epetra_FECrsMatrix here if we're in Epetra mode
       RCP<Matrix> B;
       if(lib==Xpetra::UseEpetra) {
-        AllocateEpetraFECrsMatrix(pn_rowmap, pn_colmap,B);
+        Allocator<SC,LO,GO,NO>::AllocateEpetraFECrsMatrix(pn_rowmap, pn_colmap,B);
       }
       else {
         // Tpetra is easy
