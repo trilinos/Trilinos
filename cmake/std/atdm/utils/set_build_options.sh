@@ -133,6 +133,14 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1"* ]]; then
   export ATDM_CONFIG_COMPILER=CLANG-5.0.1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]]; then
   export ATDM_CONFIG_COMPILER=CLANG
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"arm-19.2"* ]]; then
+  export ATDM_CONFIG_COMPILER=ARM-19.2
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"arm-19.1"* ]]; then
+  export ATDM_CONFIG_COMPILER=ARM-19.1
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"arm-19.0"* ]]; then
+  export ATDM_CONFIG_COMPILER=ARM-19.0
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"arm"* ]]; then
+  export ATDM_CONFIG_COMPILER=ARM-19.2
 else
   echo
   echo "***"
@@ -197,6 +205,8 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Volta72"* ]]; then
   export ATDM_CONFIG_KOKKOS_ARCH=Volta72
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-WSM"* ]]; then
   export ATDM_CONFIG_KOKKOS_ARCH=WSM
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"-TX2"* ]]; then
+  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
 else
   export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
   if [[ $ATDM_CONFIG_VERBOSE == "1" ]] ; then

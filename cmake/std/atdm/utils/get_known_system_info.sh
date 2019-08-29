@@ -52,6 +52,9 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "mutrino"* ]] ; then
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
   ATDM_HOSTNAME=waterman
   ATDM_SYSTEM_NAME=waterman
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "astra-"* ]] ; then
+  ATDM_HOSTNAME=astra
+  ATDM_SYSTEM_NAME=astra
 
 # cts1 systems
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] \
