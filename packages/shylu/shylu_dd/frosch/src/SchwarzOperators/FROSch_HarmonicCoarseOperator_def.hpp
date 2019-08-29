@@ -101,9 +101,12 @@ namespace FROSch {
         XMapPtr coarseMap = assembleCoarseMap(); // AH 12/11/2018: Should this be in initalize?
 
         // Build the saddle point harmonic extensions
-        XMultiVectorPtr localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),coarseMap,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
-
-        coarseSpace->addSubspace(coarseMap,localCoarseSpaceBasis);
+        XMultiVectorPtr localCoarseSpaceBasis;
+        if (coarseMap->getNodeNumElements()) {
+            localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),coarseMap,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
+            
+            coarseSpace->addSubspace(coarseMap,localCoarseSpaceBasis);
+        }
 
         return repeatedMap;
     }
@@ -115,12 +118,14 @@ namespace FROSch {
         GOVec mapVector(0);
         GO tmp = 0;
         for (UN i=0; i<NumberOfBlocks_; i++) {
-            if (InterfaceCoarseSpaces_[i]->hasBasisMap()) {
-                for (UN j=0; j<InterfaceCoarseSpaces_[i]->getBasisMap()->getNodeNumElements(); j++) {
-                    mapVector.push_back(InterfaceCoarseSpaces_[i]->getBasisMap()->getGlobalElement(j)+tmp);
-                }
-                if (InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()>=0) {
-                    tmp += InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()+1;
+            if (!InterfaceCoarseSpaces_[i].is_null()) {
+                if (InterfaceCoarseSpaces_[i]->hasBasisMap()) {
+                    for (UN j=0; j<InterfaceCoarseSpaces_[i]->getBasisMap()->getNodeNumElements(); j++) {
+                        mapVector.push_back(InterfaceCoarseSpaces_[i]->getBasisMap()->getGlobalElement(j)+tmp);
+                    }
+                    if (InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()>=0) {
+                        tmp += InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()+1;
+                    }
                 }
             }
         }
@@ -265,15 +270,13 @@ namespace FROSch {
             }
 
             if (this->MpiComm_->getRank() == 0) {
-                std::cout << "\n\
-                --------------------------------------------\n\
-                # volumes:               --- " << numEntitiesGlobal << "\n\
-                --------------------------------------------\n\
-                Coarse space:\n\
-                --------------------------------------------\n\
-                volume: translations      --- " << 1 << "\n\
-                volume: rotations         --- " << useRotations << "\n\
-                --------------------------------------------\n";
+                std::cout << std::boolalpha << "\n\
+    ------------------------------------------------------------------------------\n\
+     GDSW coarse space\n\
+    ------------------------------------------------------------------------------\n\
+      Volumes: translations                       --- " << useForCoarseSpace << "\n\
+      Volumes: rotations                          --- " << useRotations << "\n\
+    ------------------------------------------------------------------------------\n" << std::noboolalpha;
             }
         }
         return 0;
@@ -421,10 +424,12 @@ namespace FROSch {
         mVtmp->scale(-ScalarTraits<SC>::one());
 
         // Jetzt der solver für kII
-        ExtensionSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(kII,sublist(this->ParameterList_,"ExtensionSolver")));
-        ExtensionSolver_->initialize();
-        ExtensionSolver_->compute();
-        ExtensionSolver_->apply(*mVtmp,*mVPhiI);
+        if (indicesIDofsAll.size()>0) {
+            ExtensionSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(kII,sublist(this->ParameterList_,"ExtensionSolver")));
+            ExtensionSolver_->initialize();
+            ExtensionSolver_->compute();
+            ExtensionSolver_->apply(*mVtmp,*mVPhiI);
+        }
 
         GOVec priorIndex(NumberOfBlocks_,0);
         GOVec postIndex(NumberOfBlocks_,0);
