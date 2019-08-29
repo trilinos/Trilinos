@@ -11,12 +11,12 @@
 
 if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
-elif [[ "$ATDM_CONFIG_COMPILER" == "ARM"* ]]; then
-  export ATDM_CONFIG_COMPILER=ARM-19.2
+elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-19.2"* ]]; then
+    export ATDM_CONFIG_COMPILER=ARM-19.2
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "GNU" ]] ; then
     export ATDM_CONFIG_COMPILER=GNU-7.2.0
-  elif [[ "$ATDM_CONFIG_COMPILER" != "GNU-7.2.0" ]] ; then
+elif [[ "$ATDM_CONFIG_COMPILER" != "GNU-7.2.0" ]] ; then
     echo
     echo "***"
     echo "*** ERROR: GNU COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
@@ -66,19 +66,8 @@ module purge
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
   export OMP_NUM_THREADS=2
-  # NOTE: With hyper-threading enabled, you can run as many threads as there
-  # are cores and with 2 OpenMP threads per MPI process, the means you can run
-  # as many MPI processes as there are cores on the machine with 2 OpenMP
-  # threads.  But we want to be conservative and instead run with half that
-  # many to be safe and avoid time-outs.
 else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
-  # NOTE: NOTE: When running in serial, the second hyperthread can't seem to
-  # run a sperate MPI process and if you try to run with as many they you get
-  # a bunch of failures that say "libgomp: Thread creation failed: Resource
-  # temporarily unavailable".  So we can only run with as many MPI processes
-  # as there are cores on the machine.  But we want to be conservative and
-  # instead run with half that many to be safe and avoid time-outs.
   export OMP_PROC_BIND=FALSE
   export OMP_NUM_THREADS=1
 fi
