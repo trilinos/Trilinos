@@ -91,7 +91,7 @@
 // run plain Epetra
 typedef double Scalar;
 typedef int LocalOrdinal;
-typedef int GlobalOrdinal;
+typedef MueLu::DefaultGlobalOrdinal GlobalOrdinal;
 typedef Xpetra::EpetraNode Node;
 #endif
 

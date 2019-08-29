@@ -84,7 +84,7 @@
 // Define default data types
 typedef double Scalar;
 typedef int LocalOrdinal;
-typedef int GlobalOrdinal;
+typedef MueLu::DefaultGlobalOrdinal GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 int main(int argc, char *argv[]) {

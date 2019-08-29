@@ -104,15 +104,7 @@
 //
 typedef double Scalar;
 typedef int    LocalOrdinal;
-//FIXME we need a HAVE_MUELU_LONG_LONG_INT option
-//
-// NOTE (mfh 11 Aug 2015) I just added a HAVE_XPETRA_INT_LONG_LONG option.
-
-#ifdef HAVE_XPETRA_INT_LONG_LONG
-typedef long long int GlobalOrdinal;
-#else
-typedef int GlobalOrdinal;
-#endif
+typedef MueLu::DefaultGlobalOrdinal GlobalOrdinal;
 //
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 //
