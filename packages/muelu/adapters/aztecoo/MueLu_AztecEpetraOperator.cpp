@@ -12,8 +12,8 @@
 #if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)
 
 namespace MueLu {
-
-int AztecEpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+template<class GlobalOrdinal>
+int AztecEpetraOperator<GlobalOrdinal>::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
   try {
      // There is no rcpFromRef(const T&), so we need to do const_cast
      const Xpetra::EpetraMultiVectorT<GO,NO> eX(Teuchos::rcpFromRef(const_cast<Epetra_MultiVector&>(X)));
@@ -41,12 +41,14 @@ int AztecEpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiV
    return 0;
 }
 
-const Epetra_Comm& AztecEpetraOperator::Comm() const {
+template<class GlobalOrdinal>
+const Epetra_Comm& AztecEpetraOperator<GlobalOrdinal>::Comm() const {
   const Epetra_Map emap = Xpetra::toEpetra(xOp_->getDomainMap());
   return emap.Comm();
 }
 
-const Epetra_Map& AztecEpetraOperator::OperatorDomainMap() const {
+template<class GlobalOrdinal>
+const Epetra_Map& AztecEpetraOperator<GlobalOrdinal>::OperatorDomainMap() const {
   if(Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(xOp_) != Teuchos::null) {
     RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(xOp_)->getJacobian();
     RCP<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(A);
@@ -64,7 +66,8 @@ const Epetra_Map& AztecEpetraOperator::OperatorDomainMap() const {
   return Xpetra::toEpetra(map);
 }
 
-const Epetra_Map & AztecEpetraOperator::OperatorRangeMap() const {
+template<class GlobalOrdinal>
+const Epetra_Map & AztecEpetraOperator<GlobalOrdinal>::OperatorRangeMap() const {
 
   if(Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(xOp_) != Teuchos::null) {
     RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(xOp_)->getJacobian();
@@ -83,7 +86,16 @@ const Epetra_Map & AztecEpetraOperator::OperatorRangeMap() const {
   return Xpetra::toEpetra(map);
 }
 
-}
+} // namespace
+
+
+#if defined(HAVE_MUELU_DEFAULT_GO_LONGLONG)
+template class MueLu::AztecEpetraOperator<long long>;
+#else
+template class MueLu::AztecEpetraOperator<int>;
+#endif
+
+
 
 #endif /*#if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)*/
 

@@ -68,7 +68,7 @@ namespace Stratimikos {
   // Dynamically register MueLu Tpetra adapters in Stratimikos
   // Note: No Scalar template argument is available because Stratimikos
   // does not support types beyond double
-  template <typename LocalOrdinal = int, typename GlobalOrdinal = int, typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <typename LocalOrdinal = int, typename GlobalOrdinal = MueLu::DefaultGlobalOrdinal, typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
   void enableMueLu(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLu")
   {
     const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
@@ -85,7 +85,7 @@ namespace Stratimikos {
   // Dynamically register MueLu RefMaxwell adapters in Stratimikos
   // Note: No Scalar template argument is available because Stratimikos
   // does not support types beyond double
-  template <typename LocalOrdinal = int, typename GlobalOrdinal = int, typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <typename LocalOrdinal = int, typename GlobalOrdinal = MueLu::DefaultGlobalOrdinal, typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
   void enableMueLuRefMaxwell(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLuRefMaxwell")
   {
     const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");

@@ -16,10 +16,11 @@ namespace MueLu {
 
     Currently only used for RefMaxwell.
 */
+  template<class GlobalOrdinal>
   class AztecEpetraOperator : public Epetra_Operator {
     typedef double              SC;
     typedef int                 LO;
-    typedef int                 GO;
+    typedef GlobalOrdinal       GO;
     typedef Xpetra::EpetraNode  NO;
 
     typedef Xpetra::Map<LO,GO,NO>                        Map;

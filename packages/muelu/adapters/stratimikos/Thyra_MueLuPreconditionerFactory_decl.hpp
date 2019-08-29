@@ -176,12 +176,11 @@ namespace Thyra {
 
       Specialization for Epetra
   */
-  template <>
-  class MueLuPreconditionerFactory<double,int,int,Xpetra::EpetraNode> : public PreconditionerFactoryBase<double> {
+  template <class GlobalOrdinal>
+  class MueLuPreconditionerFactory<double,int,GlobalOrdinal,Xpetra::EpetraNode> : public PreconditionerFactoryBase<double> {
   public:
     typedef double Scalar;
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
     typedef Xpetra::EpetraNode Node;
 
     /** @name Constructors/initializers/accessors */
