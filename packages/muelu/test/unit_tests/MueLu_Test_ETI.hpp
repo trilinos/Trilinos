@@ -121,7 +121,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       //      We still need to make sure that the test compiles (i.e., we
       //      need some preprocessor flags/macros RUN_WITH_EPETRA and RUN_WITH_TPETRA
 #  ifdef HAVE_MUELU_TPETRA
-#    if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+#    if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
       // Both Epetra and Tpetra (with double, int, int) enabled
       return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
 #    else

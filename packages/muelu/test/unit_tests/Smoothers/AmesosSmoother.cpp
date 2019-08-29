@@ -54,7 +54,7 @@ namespace MueLuTests {
 
   typedef double                Scalar;
   typedef int                   LocalOrdinal;
-  typedef int                   GlobalOrdinal;
+  typedef MueLu::DefaultGlobalOrdinal  GlobalOrdinal;
   typedef Xpetra::EpetraNode    Node;
 #include "MueLu_UseShortNames.hpp"
 

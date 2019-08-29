@@ -318,12 +318,12 @@ namespace MueLuTests {
 #include "Epetra_config.h"
 #include "Xpetra_Map.hpp" // defines EpetraNode
 typedef Xpetra::EpetraNode EpetraNode;
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+#if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_EpetraMV, double, int, int, EpetraNode)
 #endif
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-//typedef long long int LongLong;
-//TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_EpetraMV, double, int, LongLong, EpetraNode)
+#if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+typedef long long int LongLong;
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_EpetraMV, double, int, LongLong, EpetraNode)
 #endif
 #endif
 
