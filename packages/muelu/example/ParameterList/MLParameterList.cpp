@@ -267,8 +267,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         solver.Iterate(nIts, 1e-10);
 
         { //TODO: simplify this
-          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int,Node>(eX));
-          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int,Node>(eB));
+          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(eX));
+          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(eB));
           // Print relative residual norm
           typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
           if (comm->getRank() == 0)
@@ -390,8 +390,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         solver.Iterate(nIts, 1e-10);
 
         { //TODO: simplify this
-          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int,Node>(eX));
-          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int,Node>(eB));
+          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(eX));
+          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(eB));
           // Print relative residual norm
           typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
           if (comm->getRank() == 0)
@@ -449,8 +449,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       solver.Iterate(nIts, 1e-10);
 
       { //TODO: simplify this
-        RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int,Node>(eX));
-        RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int,Node>(eB));
+        RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(eX));
+        RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(eB));
         // Print relative residual norm
         typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
         if (comm->getRank() == 0)
@@ -500,7 +500,7 @@ int main(int argc, char* argv[]) {
 
     if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
+      return main_<double,int,MueLu::DefaultGlobalOrdinal,Xpetra::EpetraNode>(clp, lib, argc, argv);
 #else
       throw MueLu::Exceptions::RuntimeError("Epetra is not available");
 #endif

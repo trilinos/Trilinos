@@ -448,8 +448,8 @@ namespace Thyra {
 
 #if defined(HAVE_MUELU_EPETRA)
       if (bIsEpetra) {
-        RCP<MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> > epetraH =
-            rcp_dynamic_cast<MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> >(H);
+        RCP<MueLu::Hierarchy<double,int,GlobalOrdinal,Xpetra::EpetraNode> > epetraH =
+            rcp_dynamic_cast<MueLu::Hierarchy<double,int,GlobalOrdinal,Xpetra::EpetraNode> >(H);
         TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(epetraH), MueLu::Exceptions::RuntimeError,
                                    "Thyra::MueLuPreconditionerFactory: Failed to cast Hierarchy to Hierarchy<double,int,int,Xpetra::EpetraNode>. Epetra runs only on the Serial node.");
         RCP<MueEpOp> muelu_epetraOp = rcp(new MueEpOp(epetraH));

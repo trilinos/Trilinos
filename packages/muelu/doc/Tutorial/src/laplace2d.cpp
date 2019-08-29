@@ -132,8 +132,8 @@ int main(int argc, char *argv[]) {
     // Parameters initialization
     // ================================
     Teuchos::CommandLineProcessor clp(false);
-    GO nx                    = 100;           clp.setOption("nx",                       &nx, "mesh size in x direction");
-    GO ny                    = 100;           clp.setOption("ny",                       &ny, "mesh size in y direction");
+    int nx                    = 100;           clp.setOption("nx",                       &nx, "mesh size in x direction");
+    int ny                    = 100;           clp.setOption("ny",                       &ny, "mesh size in y direction");
     std::string xmlFileName  = "xml/s2a.xml"; clp.setOption("xml",             &xmlFileName, "read parameters from a file");
     int mgridSweeps          = 1;             clp.setOption("mgridSweeps",     &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
     std::string printTimings = "no";          clp.setOption("timings",        &printTimings, "print timings to screen [yes/no]");
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 
     // TUTORIALSPLIT ===========================================================
     // Epetra -> Xpetra
-    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int,Node>(epA));
+    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>(epA));
     Teuchos::RCP<CrsMatrixWrap> exAWrap = Teuchos::rcp(new CrsMatrixWrap(exA));
 
     RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(exAWrap);
@@ -213,9 +213,9 @@ int main(int argc, char *argv[]) {
     X->PutScalar(0.0);
 
     // Epetra -> Xpetra
-    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(B));
-    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(X));
-    RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epCoord));
+    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(B));
+    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(X));
+    RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>(epCoord));
 
     xX->setSeed(100);
     xX->randomize();
@@ -422,7 +422,7 @@ int main(int argc, char *argv[]) {
 
     // export map
     RCP<const Map> Amap = A->getRowMap();
-    RCP<const Xpetra::EpetraMapT<int,Node> > epAmap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int,Node> >(Amap);
+    RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > epAmap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(Amap);
 
     //Epetra_Map* eMap;
     //int rv = EpetraExt::MatrixMarketFileToMap(fileName.c_str(), *(Xpetra::toEpetra(comm)), eMap);

@@ -122,8 +122,8 @@ int main(int argc, char *argv[]) {
     // Parameters initialization
     // =========================================================================
     Teuchos::CommandLineProcessor clp(false);
-    GO nx = 100, ny = 100;
-    GO maxCoarseSize = 10;
+    int nx = 100, ny = 100;
+    int maxCoarseSize = 10;
     LO maxLevels = 4;
     clp.setOption("nx",                   &nx,              "mesh size in x direction");
     clp.setOption("ny",                   &ny,              "mesh size in y direction");
@@ -159,7 +159,11 @@ int main(int argc, char *argv[]) {
     GaleriList.set("conv", 1.0);
 
     // create map
+#if defined(HAVE_MUELU_DEFAULT_GO_LONGLONG)
+    Teuchos::RCP<Epetra_Map> epMap = Teuchos::rcp(Galeri::CreateMap64("Cartesian2D", *epComm, GaleriList));
+#else
     Teuchos::RCP<Epetra_Map> epMap = Teuchos::rcp(Galeri::CreateMap("Cartesian2D", *epComm, GaleriList));
+#endif
 
     // create coordinates
     Teuchos::RCP<Epetra_MultiVector> epCoord = Teuchos::rcp(Galeri::CreateCartesianCoordinates("2D", epMap.get(), GaleriList));
@@ -168,7 +172,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(Galeri::CreateCrsMatrix("Recirc2D", epMap.get(), GaleriList));
 
     // Epetra -> Xpetra
-    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int,Node>(epA));
+    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>(epA));
     Teuchos::RCP<CrsMatrixWrap> exAWrap = Teuchos::rcp(new CrsMatrixWrap(exA));
 
     RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(exAWrap);
@@ -182,8 +186,8 @@ int main(int argc, char *argv[]) {
     X->PutScalar(0.0);
 
     // Epetra -> Xpetra
-    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(B));
-    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(X));
+    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(B));
+    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(X));
 
     xX->setSeed(100);
     xX->randomize();
