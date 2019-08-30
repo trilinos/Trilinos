@@ -211,11 +211,11 @@ namespace FROSch {
     ------------------------------------------------------------------------------\n\
      GDSW Interface Partition Of Unity (GDSW IPOU)\n\
     ------------------------------------------------------------------------------\n\
-      vertices                                    --- " << UseVertices_ << "\n\
-      shortEdges                                  --- " << UseShortEdges_ << "\n\
-      straightEdges                               --- " << UseStraightEdges_ << "\n\
-      edges                                       --- " << UseEdges_ << "\n\
-      faces                                       --- " << UseFaces_ << "\n\
+      Vertices                                    --- " << UseVertices_ << "\n\
+      ShortEdges                                  --- " << UseShortEdges_ << "\n\
+      StraightEdges                               --- " << UseStraightEdges_ << "\n\
+      Edges                                       --- " << UseEdges_ << "\n\
+      Faces                                       --- " << UseFaces_ << "\n\
     ------------------------------------------------------------------------------\n" << std::noboolalpha;
         }
 

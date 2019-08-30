@@ -573,8 +573,8 @@ namespace FROSch {
     ------------------------------------------------------------------------------\n\
      Coarse problem statistics\n\
     ------------------------------------------------------------------------------\n\
-      dimension of the coarse problem             --- " << CoarseMap_->getMaxAllGlobalIndex()+1 << "\n\
-      number of processes                         --- " << NumProcsCoarseSolve_ << "\n\
+      Dimension of the coarse problem             --- " << CoarseMap_->getMaxAllGlobalIndex()+1 << "\n\
+      Number of processes                         --- " << NumProcsCoarseSolve_ << "\n\
     ------------------------------------------------------------------------------\n";
         }
 
