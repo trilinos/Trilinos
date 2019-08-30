@@ -290,6 +290,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, parameter_list_construction)
 
 }
 
+#ifdef PANZER_HAVE_PERCEPT
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, percept)
 {
   STK_ExodusReaderFactory factory;
@@ -307,6 +308,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, percept)
   // test  number of total elements to make sure refinement works
   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),32);
 }
+#endif
 
 }
 
