@@ -39,47 +39,58 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_ENTITYSET_DECL_HPP
-#define _FROSCH_ENTITYSET_DECL_HPP
+#ifndef _FROSCH_PARTITIONOFUNITY_DECL_HPP
+#define _FROSCH_PARTITIONOFUNITY_DECL_HPP
 
-#include <FROSch_InterfaceEntity_def.hpp>
-
-#include <FROSch_Tools_def.hpp>
+#include <FROSch_DDInterface_def.hpp>
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
-    template <class SC,
-              class LO,
-              class GO,
-              class NO>
-    class EntitySet {
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+    class PartitionOfUnity {
 
     protected:
+
+        using CommPtr                       = RCP<const Comm<int> >;
 
         using XMap                          = Map<LO,GO,NO>;
         using XMapPtr                       = RCP<XMap>;
         using ConstXMapPtr                  = RCP<const XMap>;
+        using XMapPtrVecPtr                 = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr            = ArrayRCP<ConstXMapPtr>;
 
         using XMatrix                       = Matrix<SC,LO,GO,NO>;
         using XMatrixPtr                    = RCP<XMatrix>;
         using ConstXMatrixPtr               = RCP<const XMatrix>;
 
         using XMultiVector                  = MultiVector<SC,LO,GO,NO>;
-        using XMultiVectorPtr               = RCP<XMultiVector>;
         using ConstXMultiVectorPtr          = RCP<const XMultiVector>;
+        using XMultiVectorPtr               = RCP<XMultiVector>;
+        using XMultiVectorPtrVecPtr         = ArrayRCP<XMultiVectorPtr>;
+        using ConstXMultiVectorPtrVecPtr    = ArrayRCP<ConstXMultiVectorPtr>;
+
+        using ParameterListPtr              = RCP<ParameterList>;
+
+        using DDInterfacePtr                = RCP<DDInterface<SC,LO,GO,NO> >;
+        using ConstDDInterfacePtr           = RCP<const DDInterface<SC,LO,GO,NO> >;
 
         using EntitySetPtr                  = RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetPtrVecPtr            = ArrayRCP<EntitySetPtr>;
 
         using InterfaceEntityPtr            = RCP<InterfaceEntity<SC,LO,GO,NO> >;
-        using InterfaceEntityPtrVec         = Array<InterfaceEntityPtr>;
-        using InterfaceEntityPtrVecPtr      = ArrayRCP<InterfaceEntityPtr>;
 
         using UN                            = unsigned;
-
+        using ConstUN                       = const UN;
+        
+        using LOVec                         = Array<LO>;
+        
         using GOVec                         = Array<GO>;
         using GOVecView                     = ArrayView<GO>;
 
@@ -88,104 +99,42 @@ namespace FROSch {
 
     public:
 
-        EntitySet(EntityType type);
+        PartitionOfUnity(CommPtr mpiComm,
+                         CommPtr serialComm,
+                         UN dofsPerNode,
+                         ConstXMapPtr nodesMap,
+                         ConstXMapPtrVecPtr dofsMaps,
+                         ParameterListPtr parameterList,
+                         Verbosity verbosity = All,
+                         UN levelID = 1);
 
-        EntitySet(const EntitySet &entitySet);
+        virtual ~PartitionOfUnity();
 
-        ~EntitySet();
+        virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs,
+                                         ConstXMultiVectorPtr nodeList = null) = 0;
 
-        int addEntity(InterfaceEntityPtr entity);
+        virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null) = 0;
 
-        int addEntitySet(EntitySetPtr entitySet);
+        XMultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
 
-        EntitySetPtr deepCopy();
-        
-        int buildEntityMap(ConstXMapPtr localToGlobalNodesMap);
-
-        int findAncestorsInSet(EntitySetPtr entitySet);
-
-        int clearAncestors();
-
-        int clearOffspring();
-
-        EntitySetPtr findCoarseNodes();
-
-        int clearCoarseNodes();
-
-        int computeDistancesToCoarseNodes(UN dimension,
-                                          ConstXMultiVectorPtr &nodeList = null,
-                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
-
-        int divideUnconnectedEntities(ConstXMatrixPtr matrix,
-                                      int pID);
-
-        int flagNodes();
-
-        int flagShortEntities();
-
-        int flagStraightEntities(UN dimension,
-                                 ConstXMultiVectorPtr &nodeList);
-
-        EntitySetPtr sortOutEntities(EntityFlag flag);
-
-        int removeEntity(UN iD);
-
-        int removeNodesWithDofs(GOVecView dirichletBoundaryDofs);
-        
-        int removeEmptyEntities();
-
-        int sortUnique();
-
-        bool checkForVertices();
-
-        bool checkForShortEdges();
-
-        bool checkForStraightEdges(UN dimension,
-                                   ConstXMultiVectorPtr &nodeList);
-
-        bool checkForEmptyEntities();
-
-        /////////////////
-        // Set Methods //
-        /////////////////
-
-        int setUniqueIDToFirstGlobalNodeID();
-
-        int setCoarseNodeID();
-
-        int resetEntityType(EntityType type);
-
-        /////////////////
-        // Get Methods //
-        /////////////////
-
-        EntityType getEntityType() const;
-
-        UN getNumEntities() const;
-
-        const InterfaceEntityPtrVec & getEntityVector() const;
-
-        const InterfaceEntityPtr getEntity(UN iD) const;
-
-        const XMapPtr getEntityMap() const;
-
-        const SCVecPtr getDirection(UN dimension,
-                                    ConstXMultiVectorPtr &nodeList,
-                                    UN iD) const;
+        XMapPtrVecPtr getPartitionOfUnityMaps() const;
 
     protected:
 
-        ///////////////
-        // Variables //
-        ///////////////
+        CommPtr MpiComm_;
+        CommPtr SerialComm_;
 
-        EntityType Type_;
+        ParameterListPtr ParameterList_;
 
-        InterfaceEntityPtrVec EntityVector_;
+        XMultiVectorPtrVecPtr LocalPartitionOfUnity_;
 
-        bool EntityMapIsUpToDate_;
+        XMapPtrVecPtr PartitionOfUnityMaps_;
 
-        XMapPtr EntityMap_;
+        bool Verbose_;
+        
+        Verbosity Verbosity_;
+
+        const UN LevelID_;
     };
 
 }

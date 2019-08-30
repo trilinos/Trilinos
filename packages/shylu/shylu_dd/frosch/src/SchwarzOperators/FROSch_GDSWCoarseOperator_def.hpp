@@ -378,17 +378,13 @@ namespace FROSch {
         DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap.getConst(),verbosity,this->LevelID_,communicationStrategy));
         DDInterface_->resetGlobalDofs(dofsMaps);
         DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs());
-        if (this->ParameterList_->get("Test Unconnected Interface",true)) {
-            DDInterface_->divideUnconnectedEntities(this->K_);
-        }
 
-        DDInterface_->sortVerticesEdgesFaces(nodeList);
-
-        EntitySetPtr interface = DDInterface_->getInterface();
-        EntitySetPtr interior = DDInterface_->getInterior();
-
+        EntitySetPtr interface = this->DDInterface_->getInterface();
+        EntitySetPtr interior = this->DDInterface_->getInterior();
+        
         // Check for interface
-        if (this->DofsPerNode_[blockId]*interface->getEntity(0)->getNumNodes()==0) {
+        if (interface->getEntity(0)->getNumNodes()==0) {
+            if (this->Verbose_) std::cout << "FROSch::GDSWCoarseOperator : WARNING: No interface found => Volume functions will be used instead.";
             this->computeVolumeFunctions(blockId,dimension,nodesMap,nodeList,interior);
         } else {
             this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getEntity(0)->getNumNodes());
@@ -405,6 +401,15 @@ namespace FROSch {
             this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
 
             if (useForCoarseSpace && (useVertexTranslations||useShortEdgeTranslations||useShortEdgeRotations||useStraightEdgeTranslations||useStraightEdgeRotations||useEdgeTranslations||useEdgeRotations||useFaceTranslations||useFaceRotations)) {
+                
+                if (this->ParameterList_->get("Test Unconnected Interface",true)) {
+                    DDInterface_->divideUnconnectedEntities(this->K_);
+                }
+                
+                DDInterface_->sortVerticesEdgesFaces(nodeList);
+                
+                EntitySetPtr interface = DDInterface_->getInterface();
+                EntitySetPtr interior = DDInterface_->getInterior();
 
                 ////////////////////////////////
                 // Build Processor Map Coarse //

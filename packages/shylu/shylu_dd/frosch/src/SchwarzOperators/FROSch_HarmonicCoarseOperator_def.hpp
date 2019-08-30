@@ -103,6 +103,8 @@ namespace FROSch {
             localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),this->CoarseMap_,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
             
             coarseSpace->addSubspace(this->CoarseMap_,localCoarseSpaceBasis);
+        } else {
+            if (this->Verbose_) std::cout << "FROSch::HarmonicCoarseOperator : WARNING: The Coarse Space is empty. No extensions are computed" << std::endl;
         }
 
         return repeatedMap;
@@ -133,15 +135,15 @@ namespace FROSch {
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleSubdomainMap()
     {
         FROSCH_TIMER_START_LEVELID(assembleSubdomainMapTime,"HarmonicCoarseOperator::assembleSubdomainMap");
-        FROSCH_ASSERT(DofsMaps_.size()==NumberOfBlocks_,"DofsMaps_.size()!=NumberOfBlocks_");
-        FROSCH_ASSERT(DofsPerNode_.size()==NumberOfBlocks_,"DofsPerNode_.size()!=NumberOfBlocks_");
+        FROSCH_ASSERT(DofsMaps_.size()==NumberOfBlocks_,"FROSch::HarmonicCoarseOperator : ERROR: DofsMaps_.size()!=NumberOfBlocks_");
+        FROSCH_ASSERT(DofsPerNode_.size()==NumberOfBlocks_,"FROSch::HarmonicCoarseOperator : ERROR: DofsPerNode_.size()!=NumberOfBlocks_");
 
         GOVec mapVector(0);
         for (UN i=0; i<NumberOfBlocks_; i++) {
-            FROSCH_ASSERT(DofsMaps_[i].size()==DofsPerNode_[i],"DofsMaps_[i].size()!=DofsPerNode_[i]");
+            FROSCH_ASSERT(DofsMaps_[i].size()==DofsPerNode_[i],"FROSch::HarmonicCoarseOperator : ERROR: DofsMaps_[i].size()!=DofsPerNode_[i]");
             UN numMyElements = DofsMaps_[i][0]->getNodeNumElements();
             for (UN j=1; j<DofsPerNode_[i]; j++) {
-                FROSCH_ASSERT(DofsMaps_[i][j]->getNodeNumElements()==(unsigned) numMyElements,"DofsMaps_[i][j]->getNodeNumElements()==numMyElements");
+                FROSCH_ASSERT(DofsMaps_[i][j]->getNodeNumElements()==(unsigned) numMyElements,"FROSch::HarmonicCoarseOperator : ERROR: DofsMaps_[i][j]->getNodeNumElements()==numMyElements");
             }
             for (UN j=0; j<numMyElements; j++) {
                 for (UN k=0; k<DofsPerNode_[i]; k++) {
@@ -311,8 +313,8 @@ namespace FROSch {
                                                                                                                               EntitySetPtr entitySet)
     {
         FROSCH_TIMER_START_LEVELID(computeRotationsTime,"HarmonicCoarseOperator::computeRotations");
-        FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
-        FROSCH_ASSERT(dimension==this->DofsPerNode_[blockId],"dimension!=this->DofsPerNode_[blockId]");
+        FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"FROSch::HarmonicCoarseOperator : ERROR: Dimension of the nodeList is wrong.");
+        FROSCH_ASSERT(dimension==this->DofsPerNode_[blockId],"FROSch::HarmonicCoarseOperator : ERROR: Dimension!=this->DofsPerNode_[blockId]");
 
         UN rotationsPerEntity = 0;
         switch (dimension) {
@@ -326,7 +328,7 @@ namespace FROSch {
                 rotationsPerEntity = 3;
                 break;
             default:
-                FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
+                FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator : ERROR: The dimension is neither 2 nor 3!");
                 break;
         }
 

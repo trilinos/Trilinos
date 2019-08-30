@@ -123,6 +123,7 @@ namespace FROSch {
 
         using InterfaceEntityPtr                = RCP<InterfaceEntity<SC,LO,GO,NO> >;
 
+        using PartitionOfUnityPtr               = RCP<PartitionOfUnity<SC,LO,GO,NO> >;
         using InterfacePartitionOfUnityPtr      = RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> >;
 
         using LocalPartitionOfUnityBasisPtr     = RCP<LocalPartitionOfUnityBasis<SC,LO,GO,NO> >;

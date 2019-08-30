@@ -93,6 +93,29 @@ namespace FROSch {
         }
         return 0;
     }
+    
+    template<class SC,class LO,class GO,class NO>
+    typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::deepCopy()
+    {
+        EntitySetPtr copy(new EntitySet<SC,LO,GO,NO>(Type_));
+        for (UN i=0; i<getNumEntities(); i++) {
+            InterfaceEntityPtr entity(new InterfaceEntity<SC,LO,GO,NO>(EntityVector_[i]->getEntityType(),
+                                                                              EntityVector_[i]->getDofsPerNode(),
+                                                                              EntityVector_[i]->getMultiplicity(),
+                                                                              &(EntityVector_[i]->getSubdomainsVector()[0])));
+            for (UN j=0; j<EntityVector_[i]->getNumNodes(); j++) {
+                entity->addNode(EntityVector_[i]->getNode(j).NodeIDGamma_,
+                                EntityVector_[i]->getNode(j).NodeIDLocal_,
+                                EntityVector_[i]->getNode(j).NodeIDGlobal_,
+                                EntityVector_[i]->getNode(j).DofsGamma_.size(),
+                                EntityVector_[i]->getNode(j).DofsGamma_,
+                                EntityVector_[i]->getNode(j).DofsLocal_,
+                                EntityVector_[i]->getNode(j).DofsGlobal_);
+            }
+            copy->addEntity(entity);
+        }
+        return copy;
+    }
 
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::buildEntityMap(ConstXMapPtr localToGlobalNodesMap)
@@ -318,6 +341,29 @@ namespace FROSch {
         return 0;
     }
 
+    template<class SC,class LO,class GO,class NO>
+    int EntitySet<SC,LO,GO,NO>::removeNodesWithDofs(GOVecView dirichletBoundaryDofs)
+    {
+        UN dofsPerNode = 0;
+        if (getNumEntities()>0) dofsPerNode = EntityVector_[0]->getDofsPerNode();
+        for (UN i=0; i<getNumEntities(); i++) {
+            UN length = EntityVector_[i]->getNumNodes();
+            for (UN j=0; j<length; j++) {
+                UN itmp = length-1-j;
+                UN k = 0;
+                while (k<dofsPerNode) {
+                    GO dofGlobal = EntityVector_[i]->getGlobalDofID(itmp,k);
+                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
+                        EntityVector_[i]->removeNode(itmp);
+                        break;
+                    }
+                    k++;
+                }
+            }
+        }
+        return 0;
+    }
+    
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::removeEmptyEntities()
     {

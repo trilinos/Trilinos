@@ -156,7 +156,9 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(sortInterfaceTime,"GDSWInterfacePartitionOfUnity::sortInterface");
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
-            this->DDInterface_->divideUnconnectedEntities(matrix);
+            if (matrix.is_null()) {
+                if (this->Verbose_) std::cout << "FROSch::GDSWInterfacePartitionOfUnity : WARNING: divideUnconnectedEntities() cannot be performed without the matrix." << std::endl;
+            } else this->DDInterface_->divideUnconnectedEntities(matrix);
         }
         this->DDInterface_->sortVerticesEdgesFaces(nodeList);
 

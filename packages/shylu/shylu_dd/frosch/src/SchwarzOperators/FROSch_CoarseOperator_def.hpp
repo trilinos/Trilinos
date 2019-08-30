@@ -107,7 +107,7 @@ namespace FROSch {
             if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::CoarseOperator : Recomputing the Coarse Basis" << std::endl;
             clearCoarseSpace(); // AH 12/11/2018: If we do not clear the coarse space, we will always append just append the coarse space
             XMapPtr subdomainMap = this->computeCoarseSpace(CoarseSpace_); // AH 12/11/2018: This map could be overlapping, repeated, or unique. This depends on the specific coarse operator
-            if (CoarseSpace_->hasUnassembledMaps()) {
+            if (CoarseSpace_->hasUnassembledMaps()) { // If there is no unassembled basis, the current Phi_ should already be correct
                 CoarseSpace_->assembleCoarseSpace();
                 FROSCH_ASSERT(CoarseSpace_->hasAssembledBasis(),"FROSch::CoarseOperator : !CoarseSpace_->hasAssembledBasis()");
                 CoarseSpace_->buildGlobalBasisMatrix(this->K_->getRangeMap(),subdomainMap,this->ParameterList_->get("Threshold Phi",1.e-8));
@@ -157,7 +157,8 @@ namespace FROSch {
             y.update(alpha,*XTmp_,beta);
         } else {
             if (i==0) {
-                if (this->Verbose_) std::cout << "FROSch::CoarseOperator : WARNING: CoarseOperator or Coarse Basis has not been computed yet => The CoarseOperator will just act as the identity...\n";
+                if (this->Verbose_ && Phi_.is_null()) std::cout << "FROSch::CoarseOperator : WARNING: Coarse Basis is empty => The CoarseOperator will just act as the identity...\n";
+                if (this->Verbose_ && !this->IsComputed_) std::cout << "FROSch::CoarseOperator : WARNING: CoarseOperator has not been computed yet => The CoarseOperator will just act as the identity...\n";
                 i++;
             }
             y.update(ScalarTraits<SC>::one(),x,ScalarTraits<SC>::zero());
@@ -381,7 +382,7 @@ namespace FROSch {
                             CoarseMatrix_->insertGlobalValues(globalRow,indices(),values());
                         }
                     }
-                    CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
+                    CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
                 }
                 
                 bool reuseCoarseMatrixSymbolicFactorization = this->ParameterList_->get("Reuse: Coarse Matrix Symbolic Factorization",true);

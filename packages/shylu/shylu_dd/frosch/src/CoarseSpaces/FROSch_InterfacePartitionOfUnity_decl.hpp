@@ -42,7 +42,7 @@
 #ifndef _FROSCH_INTERFACEPARTITIONOFUNITY_DECL_HPP
 #define _FROSCH_INTERFACEPARTITIONOFUNITY_DECL_HPP
 
-#include <FROSch_DDInterface_def.hpp>
+#include <FROSch_PartitionOfUnity_def.hpp>
 
 
 namespace FROSch {
@@ -54,45 +54,45 @@ namespace FROSch {
               class LO = int,
               class GO = DefaultGlobalOrdinal,
               class NO = KokkosClassic::DefaultNode::DefaultNodeType>
-    class InterfacePartitionOfUnity {
+    class InterfacePartitionOfUnity : public PartitionOfUnity<SC,LO,GO,NO> {
 
     protected:
 
-        using CommPtr                       = RCP<const Comm<int> >;
+        using CommPtr                       = typename PartitionOfUnity<SC,LO,GO,NO>::CommPtr;
 
-        using XMap                          = Map<LO,GO,NO>;
-        using XMapPtr                       = RCP<XMap>;
-        using ConstXMapPtr                  = RCP<const XMap>;
-        using XMapPtrVecPtr                 = ArrayRCP<XMapPtr>;
-        using ConstXMapPtrVecPtr            = ArrayRCP<ConstXMapPtr>;
+        using XMap                          = typename PartitionOfUnity<SC,LO,GO,NO>::XMap;
+        using XMapPtr                       = typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr                  = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr                 = typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
 
-        using XMatrix                       = Matrix<SC,LO,GO,NO>;
-        using XMatrixPtr                    = RCP<XMatrix>;
-        using ConstXMatrixPtr               = RCP<const XMatrix>;
+        using XMatrix                       = typename PartitionOfUnity<SC,LO,GO,NO>::XMatrix;
+        using XMatrixPtr                    = typename PartitionOfUnity<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr               = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using XMultiVector                  = MultiVector<SC,LO,GO,NO>;
-        using ConstXMultiVectorPtr          = RCP<const XMultiVector>;
-        using XMultiVectorPtr               = RCP<XMultiVector>;
-        using XMultiVectorPtrVecPtr         = ArrayRCP<XMultiVectorPtr>;
-        using ConstXMultiVectorPtrVecPtr    = ArrayRCP<ConstXMultiVectorPtr>;
+        using XMultiVector                  = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVector;
+        using ConstXMultiVectorPtr          = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using XMultiVectorPtr               = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtr;
+        using XMultiVectorPtrVecPtr         = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+        using ConstXMultiVectorPtrVecPtr    = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
 
-        using ParameterListPtr              = RCP<ParameterList>;
+        using ParameterListPtr              = typename PartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr;
 
-        using DDInterfacePtr                = RCP<DDInterface<SC,LO,GO,NO> >;
-        using ConstDDInterfacePtr           = RCP<const DDInterface<SC,LO,GO,NO> >;
+        using DDInterfacePtr                = typename PartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr;
+        using ConstDDInterfacePtr           = typename PartitionOfUnity<SC,LO,GO,NO>::ConstDDInterfacePtr;
 
-        using EntitySetPtr                  = RCP<EntitySet<SC,LO,GO,NO> >;
-        using EntitySetPtrVecPtr            = ArrayRCP<EntitySetPtr>;
+        using EntitySetPtr                  = typename PartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr;
+        using EntitySetPtrVecPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::EntitySetPtrVecPtr;
 
-        using InterfaceEntityPtr            = RCP<InterfaceEntity<SC,LO,GO,NO> >;
+        using InterfaceEntityPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::InterfaceEntityPtr;
 
-        using UN                            = unsigned;
-        using ConstUN                       = const UN;
+        using UN                            = typename PartitionOfUnity<SC,LO,GO,NO>::UN;
+        using ConstUN                       = typename PartitionOfUnity<SC,LO,GO,NO>::ConstUN;
 
-        using GOVec                         = Array<GO>;
-        using GOVecView                     = ArrayView<GO>;
+        using GOVec                         = typename PartitionOfUnity<SC,LO,GO,NO>::GOVec;
+        using GOVecView                     = typename PartitionOfUnity<SC,LO,GO,NO>::GOVecView;
 
-        using SCVecPtr                      = ArrayRCP<SC>;
+        using SCVecPtr                      = typename PartitionOfUnity<SC,LO,GO,NO>::SCVecPtr;
 
     public:
 
@@ -106,38 +106,18 @@ namespace FROSch {
                                   Verbosity verbosity = All,
                                   UN levelID = 1);
 
-        virtual ~InterfacePartitionOfUnity();
+        virtual ~InterfacePartitionOfUnity();        
 
-        virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs = null,
-                                         ConstXMultiVectorPtr nodeList = null) = 0;
-
-        virtual int sortInterface(ConstXMatrixPtr matrix,
+        virtual int sortInterface(ConstXMatrixPtr matrix = null,
                                   ConstXMultiVectorPtr nodeList = null) = 0;
 
-        virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null)  = 0;
-
-        XMultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
-
-        XMapPtrVecPtr getPartitionOfUnityMaps() const;
-
         ConstDDInterfacePtr getDDInterface() const;
+        
+        virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null) = 0;
 
     protected:
 
-        CommPtr MpiComm_;
-        CommPtr SerialComm_;
-
         DDInterfacePtr DDInterface_;
-
-        ParameterListPtr ParameterList_;
-
-        XMultiVectorPtrVecPtr LocalPartitionOfUnity_;
-
-        XMapPtrVecPtr PartitionOfUnityMaps_;
-
-        bool Verbose_;
-
-        const UN LevelID_;
     };
 
 }
