@@ -65,9 +65,9 @@ public:
   #elif defined(ZOLTAN2_MACHINE_DRAGONFLY)
     typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
   #else 
-//    typedef MachineForTesting<pcoord_t, part_t> machine_t;
+    typedef MachineForTesting<pcoord_t, part_t> machine_t;
 //    typedef MachineTorusRCAForTesting<pcoord_t, part_t> machine_t;
-    typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
+//    typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
   #endif
 #endif
 
