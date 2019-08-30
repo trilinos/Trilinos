@@ -13,6 +13,24 @@
 #include "Tempus_Stepper.hpp"
 
 
+template<class Scalar>
+class ExplicitODEParameters
+{
+  public:
+    /// Constructor
+    ExplicitODEParameters()
+      : timeStepSize_(Scalar(0.0)), stageNumber_(0)
+    {}
+    /// Constructor
+    ExplicitODEParameters(Scalar timeStepSize, int stageNumber = 0)
+      : timeStepSize_(timeStepSize), stageNumber_(stageNumber)
+    {}
+
+    Scalar                                timeStepSize_;
+    int                                   stageNumber_;
+};
+
+
 namespace Tempus {
 
 
@@ -122,14 +140,16 @@ public:
     virtual void evaluateExplicitODE(
       Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDot,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
-      const Scalar time);
+      const Scalar time,
+      const Teuchos::RCP<ExplicitODEParameters<Scalar> > & p );
 
     /// Evaluate xDotDot = f(x, xDot, t).
     virtual void evaluateExplicitODE(
       Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xDot,
-      const Scalar time);
+      const Scalar time,
+      const Teuchos::RCP<ExplicitODEParameters<Scalar> > & p );
   //@}
 
 

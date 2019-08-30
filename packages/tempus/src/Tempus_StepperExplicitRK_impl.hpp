@@ -344,8 +344,11 @@ void StepperExplicitRK<Scalar>::takeStep(
         if (!Teuchos::is_null(stepperExplicitRKObserver_))
           stepperExplicitRKObserver_->observeBeforeExplicit(solutionHistory,
                                                             *this);
+
+        auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
+
         // Evaluate xDot = f(x,t).
-        this->evaluateExplicitODE(stageXDot_[i], stageX_, ts);
+        this->evaluateExplicitODE(stageXDot_[i], stageX_, ts, p);
       }
 
       if (!Teuchos::is_null(stepperExplicitRKObserver_))

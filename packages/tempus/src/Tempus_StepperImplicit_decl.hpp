@@ -23,23 +23,26 @@ class ImplicitODEParameters
   public:
     /// Constructor
     ImplicitODEParameters()
-      : timeDer_(Teuchos::null), timeStepSize_(Scalar(0.0)), stageNumber_(0),
-        alpha_(Scalar(0.0)), beta_(Scalar(0.0)), evaluationType_(SOLVE_FOR_X)
+      : timeDer_(Teuchos::null), timeStepSize_(Scalar(0.0)),
+        alpha_(Scalar(0.0)), beta_(Scalar(0.0)), evaluationType_(SOLVE_FOR_X),
+        stageNumber_(0)
     {}
     /// Constructor
     ImplicitODEParameters(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
                           Scalar timeStepSize, Scalar alpha, Scalar beta,
-                          EVALUATION_TYPE evaluationType = SOLVE_FOR_X)
-      : timeDer_(timeDer), timeStepSize_(timeStepSize), stageNumber_(0),
-        alpha_(alpha), beta_(beta), evaluationType_(evaluationType)
+                          EVALUATION_TYPE evaluationType = SOLVE_FOR_X,
+                          int stageNumber = 0)
+      : timeDer_(timeDer), timeStepSize_(timeStepSize),
+        alpha_(alpha), beta_(beta), evaluationType_(evaluationType),
+        stageNumber_(stageNumber)
     {}
 
     Teuchos::RCP<TimeDerivative<Scalar> > timeDer_;
     Scalar                                timeStepSize_;
-    int                                   stageNumber_;
     Scalar                                alpha_;
     Scalar                                beta_;
     EVALUATION_TYPE                       evaluationType_;
+    int                                   stageNumber_;
 };
 
 /** \brief Thyra Base interface for implicit time steppers.
@@ -95,7 +98,7 @@ public:
       const Scalar time,
       const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p );
 
-    /// Evaluate implicit ODE, f(x, xDot, t, p), residual.
+    /// Evaluate implicit ODE residual, f(x, xDot, t, p).
     void evaluateImplicitODE(
             Teuchos::RCP<Thyra::VectorBase<Scalar> > & f,
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,

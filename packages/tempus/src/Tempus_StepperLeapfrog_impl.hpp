@@ -137,10 +137,12 @@ void StepperLeapfrog<Scalar>::takeStep(
     if (!Teuchos::is_null(stepperLFObserver_))
       stepperLFObserver_->observeBeforeExplicit(solutionHistory, *this);
 
+    auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
+
     // Evaluate xDotDot = f(x,t).
     this->evaluateExplicitODE(workingState->getXDotDot(),
                               workingState->getX(),
-                              Teuchos::null, time+dt);
+                              Teuchos::null, time+dt, p);
 
     if (!Teuchos::is_null(stepperLFObserver_))
       stepperLFObserver_->observeBeforeXDotUpdate(solutionHistory, *this);
