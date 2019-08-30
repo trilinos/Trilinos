@@ -1269,7 +1269,7 @@ namespace Xpetra {
           throw Exceptions::RuntimeError("Error reading map from file " + fileName + " with EpetraExt::MatrixMarketToMap (returned " + Teuchos::toString(rv) + ")");
 
         RCP<Epetra_Map> eMap1 = rcp(new Epetra_Map(*eMap));
-        return Xpetra::toXpetra<int,Node>(*eMap1);
+        return Xpetra::toXpetra<GlobalOrdinal,Node>(*eMap1);
 #else
         throw Exceptions::RuntimeError("Xpetra has not been compiled with Epetra and EpetraExt support.");
 #endif
