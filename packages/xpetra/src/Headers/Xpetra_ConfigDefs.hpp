@@ -86,6 +86,10 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Kokkos_ConfigDefs.hpp>
 
+#if defined(HAVE_XPETRA_TPETRA)
+    #include <Tpetra_ConfigDefs.hpp>
+#endif
+
 //! %Xpetra namespace
 namespace Xpetra {
   // Used in all Xpetra code that explicitly must a type (like a loop index)

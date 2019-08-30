@@ -78,7 +78,10 @@ SET(Trilinos_PACKAGES Tpetra)
 SET(Trilinos_EXCLUDE_PACKAGES Epetra GlobiPack OptiPack Domi PyTrilinos Moertel)
 SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
 
-# Because Trilinos_CTEST_DO_ALL_AT_ONCE is set to OFF in TrilinosCTestDriverCore.rocketman.gcc.cmake,
+# If true, this option yields faster builds. In that case, however, it won't disable any upstream package that fails to compile.
+SET(Trilinos_CTEST_DO_ALL_AT_ONCE FALSE)
+
+# Because Trilinos_CTEST_DO_ALL_AT_ONCE is set to OFF above,
 # the packages in Trilinos_EXCLUDE_PACKAGES above must also be disabled explicitly in EXTRA_CONFIGURE_OPTIONS
 # below.
 
@@ -87,7 +90,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DKOKKOS_ENABLE_DEPRECATED_CODE=OFF"
   "-DTPL_ENABLE_Matio=OFF"
   "-DTPL_ENABLE_X11=OFF"
-  "-DTPL_ENABLE_Boost=ON"
+  "-DTPL_ENABLE_BoostLib=ON"
   "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
   "-DTrilinos_ENABLE_GlobiPack:BOOL=OFF"
   "-DTrilinos_ENABLE_OptiPack:BOOL=OFF"

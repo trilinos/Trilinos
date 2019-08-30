@@ -76,6 +76,9 @@ SET(CTEST_DO_MEMORY_TESTING FALSE)
 
 SET(Trilinos_PACKAGES Tpetra)
 
+# If true, this option yields faster builds. In that case, however, it won't disable any upstream package that fails to compile.
+SET(Trilinos_CTEST_DO_ALL_AT_ONCE TRUE)
+
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_ENABLE_DEPRECATED_CODE=OFF"
   "-DKOKKOS_ENABLE_DEPRECATED_CODE=OFF"
