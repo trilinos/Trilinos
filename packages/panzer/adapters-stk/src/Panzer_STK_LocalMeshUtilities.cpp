@@ -61,6 +61,7 @@
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 #include "Tpetra_Import.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -216,7 +217,7 @@ buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 //  print_view("buildNodeMap : cells_to_nodes",cells_to_nodes);
 //  print_view_1D("buildNodeMap : node_ids",node_ids);
 
-  return rcp(new map_type(-1,node_ids,0,comm));
+  return rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),node_ids,0,comm));
 }
 
 /** Given a cell to node map in a Kokkos array, build the node
@@ -248,7 +249,7 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   auto unique_node_map  = Tpetra::createOneToOne(node_map);
 
   // This map identifies the cells owned by this process
-  RCP<map_type> cell_map = rcp(new map_type(-1,owned_cells,0,comm));
+  RCP<map_type> cell_map = rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),owned_cells,0,comm));
 
   // Create a CRS matrix that stores a pointless value for every global node that belongs to a global cell
   // This is essentially another way to store cells_to_nodes
@@ -791,15 +792,15 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   // build cell maps
   /////////////////////////////////////////////////////////////////////
 
-  RCP<map_type> owned_cell_map = rcp(new map_type(-1,owned_cells,  0,comm));
-  RCP<map_type> ghstd_cell_map = rcp(new map_type(-1,ghstd_cells,0,comm));
+  RCP<map_type> owned_cell_map = rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),owned_cells,  0,comm));
+  RCP<map_type> ghstd_cell_map = rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),ghstd_cells,0,comm));
 
   // build importer: cell importer, owned to ghstd
   RCP<import_type> cellimport_own2ghst = rcp(new import_type(owned_cell_map,ghstd_cell_map));
 
   // read all the vertices associated with these elements, get ghstd contributions
   /////////////////////////////////////////////////////////////////////
-  std::vector<std::size_t> localCells(owned_cells.extent(0),-1);
+  std::vector<std::size_t> localCells(owned_cells.extent(0),Teuchos::OrdinalTraits<std::size_t>::invalid());
   for(size_t i=0;i<localCells.size();i++){
     localCells[i] = i;
   }
