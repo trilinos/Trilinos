@@ -98,13 +98,13 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
 if (TPL_ENABLE_MPI)
   IF (TPL_Netcdf_PARALLEL)
   TRIBITS_ADD_ADVANCED_TEST(exodus_fpp_serialize
-     TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${SERIALIZE_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
+     TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${SERIALIZE_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32-ser.g
         NOEXEPREFIX NOEXESUFFIX
         NUM_MPI_PROCS ${NPROCS}
-     TEST_1 EXEC io_shell ARGS ${JOIN_ARG} ${SERIALIZE_ARG} 8-block32.g 8-block-32j.g
+     TEST_1 EXEC io_shell ARGS ${JOIN_ARG} ${SERIALIZE_ARG} 8-block32-ser.g 8-block-32-serj.g
         NOEXEPREFIX NOEXESUFFIX
         NUM_MPI_PROCS ${NPROCS}
-     TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32j.g
+     TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
   COMM mpi
   )
 endif()
