@@ -76,6 +76,9 @@ SET(CTEST_DO_MEMORY_TESTING FALSE)
 
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
+# If true, this option yields faster builds. In that case, however, it won't disable any upstream package that fails to compile.
+SET(Trilinos_CTEST_DO_ALL_AT_ONCE FALSE)
+
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
