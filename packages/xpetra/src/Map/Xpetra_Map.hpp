@@ -53,13 +53,13 @@
 #include <Teuchos_Describable.hpp>
 
 #ifdef HAVE_XPETRA_EPETRA
-#include "Epetra_config.h"
+    #include "Epetra_config.h"
 #endif
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
-#include <Tpetra_Map.hpp>
-#endif
+    #ifdef HAVE_XPETRA_TPETRA
+        #include <Tpetra_Map.hpp>
+    #endif
 #endif
 
 namespace Xpetra {

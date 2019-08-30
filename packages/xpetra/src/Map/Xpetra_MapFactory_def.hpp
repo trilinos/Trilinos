@@ -79,7 +79,7 @@ Build(UnderlyingLib                                 lib,
       GlobalOrdinal                                 indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
       LocalGlobal                                   lg,
-      const Teuchos::RCP<Node>& /* node */)
+      const Teuchos::RCP<Node>&                     /* node */)
 {
     return Build(lib, numGlobalElements, indexBase, comm, lg);
 }
@@ -119,7 +119,7 @@ Build(UnderlyingLib                                 lib,
       size_t                                        numLocalElements,
       GlobalOrdinal                                 indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-      const Teuchos::RCP<Node>& /* node */)
+      const Teuchos::RCP<Node>&                     /* node */)
 {
     return Build(lib, numGlobalElements, numLocalElements, indexBase, comm);
 }
@@ -159,7 +159,7 @@ Build(UnderlyingLib                                  lib,
       const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
       GlobalOrdinal                                  indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int>>&  comm,
-      const Teuchos::RCP<Node>& /* node */)
+      const Teuchos::RCP<Node>&                      /* node */)
 {
     return Build(lib, numGlobalElements, elementList, indexBase, comm);
 }

@@ -213,7 +213,6 @@ RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > TpetraImport<Lo
 
     //! Set parameters on the underlying object
     void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const { }
-    }
 
     //@}
 

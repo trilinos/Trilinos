@@ -1082,7 +1082,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {}
 
-    void replaceDiag(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {    }
+    void replaceDiag(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) {    }
 
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
     void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
