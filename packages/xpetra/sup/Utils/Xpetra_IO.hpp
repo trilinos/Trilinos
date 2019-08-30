@@ -110,12 +110,27 @@ namespace Xpetra {
     TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 
-  // specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
+  // specialization for the case of ScalarType=double and LocalOrdinal=int GlobalOrdinal=int
   template<>
   inline RCP<Xpetra::CrsMatrixWrap<double,int,int,Xpetra::EpetraNode> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,Xpetra::EpetraNode> (RCP<Epetra_CrsMatrix> &epAB) {
     typedef double             SC;
     typedef int                LO;
     typedef int                GO;
+    typedef Xpetra::EpetraNode NO;
+
+    RCP<Xpetra::EpetraCrsMatrixT<GO,NO> >    tmpC1 = rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(epAB));
+    RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> >     tmpC2 = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<SC,LO,GO,NO> >(tmpC1);
+    RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(tmpC2));
+
+    return tmpC3;
+  }
+
+  // specialization for the case of ScalarType=double and LocalOrdinal=int GlobalOrdinal=long long
+  template<>
+  inline RCP<Xpetra::CrsMatrixWrap<double,int,long long,Xpetra::EpetraNode> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,long long,Xpetra::EpetraNode> (RCP<Epetra_CrsMatrix> &epAB) {
+    typedef double             SC;
+    typedef int                LO;
+    typedef long long          GO;
     typedef Xpetra::EpetraNode NO;
 
     RCP<Xpetra::EpetraCrsMatrixT<GO,NO> >    tmpC1 = rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(epAB));
@@ -134,7 +149,7 @@ namespace Xpetra {
     TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 
-  // specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
+  // specialization for the case of ScalarType=double and LocalOrdinal=int GlobalOrdinal=int
   template<>
   inline RCP<Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> > Convert_Epetra_MultiVector_ToXpetra_MultiVector<double,int,int,Xpetra::EpetraNode> (RCP<Epetra_MultiVector> &epX) {
     typedef double             SC;
@@ -146,6 +161,19 @@ namespace Xpetra {
     return tmp;
   }
 
+  // specialization for the case of ScalarType=double and LocalOrdinal=int GlobalOrdinal=long long
+  template<>
+  inline RCP<Xpetra::MultiVector<double,int,long long,Xpetra::EpetraNode> > Convert_Epetra_MultiVector_ToXpetra_MultiVector<double,int,long long,Xpetra::EpetraNode> (RCP<Epetra_MultiVector> &epX) {
+    typedef double             SC;
+    typedef int                LO;
+    typedef long long          GO;
+    typedef Xpetra::EpetraNode NO;
+
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO >> tmp = Xpetra::toXpetra<GO,NO>(epX);
+    return tmp;
+  }
+
+
 #endif
 
   /*!
@@ -154,7 +182,7 @@ namespace Xpetra {
     */
   template <class Scalar,
             class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
+            class GlobalOrdinal = int,
             class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class IO {
 
