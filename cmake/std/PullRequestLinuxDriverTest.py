@@ -419,6 +419,43 @@ config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4Testing
               'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
 
 
+def createPackageEnables(arguments):
+    enable_map = {'Trilinos_pullrequest_python_2': 'TrilinosFrameworkTests',
+                  'Trilinos_pullrequest_python_3': 'TrilinosFrameworkTests'}
+
+    try:
+        if arguments.job_base_name not in enable_map:
+            subprocess.check_call([os.path.join(arguments.workspaceDir,
+                                                'Trilinos',
+                                                'commonTools',
+                                                'framework',
+                                                'get-changed-trilinos-packages.sh'),
+                                   os.path.join('origin', arguments.targetBranch),
+                                   'HEAD',
+                                   'packageEnables.cmake'])
+        else:
+            with open('packageEnables.cmake',  'w') as f_out:
+                f_out.write('''
+MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
+  MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
+  SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
+ENDMACRO()
+
+PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' ON)
+''')
+        print('Enabled packages:')
+        cmake_rstring = subprocess.check_output(['cmake',
+                                                 '-P',
+                                                 'packageEnables.cmake'],
+                                                stderr=subprocess.STDOUT)
+        if sys.version_info.major is not 3:
+            print(cmake_rstring)
+        else:
+            print(str(cmake_rstring, 'ASCII'))
+    except subprocess.CalledProcessError as cpe:
+        print('There was an issue generating packageEnables.cmake.  '
+              'The error code was: {}'.format(cpe.returncode))
+
 def run():
     return_value = True
     arguments = parse_args()
@@ -447,6 +484,8 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
     setBuildEnviron(arguments)
 
     CDash_Track = getCDashTrack()
+
+    createPackageEnables(arguments)
 
     parallel_level = compute_n()
 
