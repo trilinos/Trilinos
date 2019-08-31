@@ -341,8 +341,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
        Teko::LinearOp id_E = Teko::identity(Teko::rangeSpace(Q_E));
        Teko::beginBlockFill(invL,rows,rows);
        Teko::setBlock(0,0,invL,id_B);
-       // Teko::setBlock(1,0,invL,Teko::multiply(Thyra::scale(-dt, Ct), Q_B));
-       Teko::setBlock(1,0,invL,Thyra::scale(dt, Kt));
+       Teko::setBlock(1,0,invL,Thyra::scale(-dt, Kt));
        Teko::setBlock(1,1,invL,id_E);
        Teko::endBlockFill(invL);
 
