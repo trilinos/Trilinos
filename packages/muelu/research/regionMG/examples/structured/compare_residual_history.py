@@ -1,4 +1,3 @@
-import numpy as np
 import os
 import sys
 from __builtin__ import True, False
