@@ -210,7 +210,15 @@ namespace FROSch {
                                                           ConstXMapPtr nodesMap,
                                                           ConstXMapPtrVecPtr dofsMaps)
     {
+/*
+#ifdef FindOneEntryOnlyRowsGlobal_Matrix
         GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),nodesMap);
+#else
+        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),nodesMap);
+#end
+ */
+        if (this->Verbose_) std::cout << "FROSch::GDSWCoarseOperator : WARNING: We do not have the right map (repeatedMap) to use FindOneEntryOnlyRowsGlobal. A variant that uses the row map could be implemented?! => We use dirichletBoundaryDofs = null for now" << std::endl;
+        GOVecPtr dirichletBoundaryDofs = null;
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs);
 
         return 0;
@@ -236,7 +244,15 @@ namespace FROSch {
                                                           ConstXMapPtrVecPtr dofsMaps,
                                                           ConstXMultiVectorPtr nodeList)
     {
+/*
+#ifdef FindOneEntryOnlyRowsGlobal_Matrix
         GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),nodesMap);
+#else
+        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),nodesMap);
+#end
+ */
+        if (this->Verbose_) std::cout << "FROSch::GDSWCoarseOperator : WARNING: We do not have the right map (repeatedMap) to use FindOneEntryOnlyRowsGlobal. A variant that uses the row map could be implemented?! => We use dirichletBoundaryDofs = null for now" << std::endl;
+        GOVecPtr dirichletBoundaryDofs = null;
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs,nodeList);
 
         return 0;

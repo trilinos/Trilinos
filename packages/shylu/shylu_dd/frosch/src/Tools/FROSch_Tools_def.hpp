@@ -898,6 +898,30 @@ namespace FROSch {
         return oneEntryOnlyRows;
     }
 
+    template <class LO,class GO,class NO>
+    ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const CrsGraph<LO,GO,NO> > graph,
+                                            RCP<const Map<LO,GO,NO> > repeatedMap)
+    {
+        FROSCH_TIMER_START(findOneEntryOnlyRowsGlobalTime,"FindOneEntryOnlyRowsGlobal");
+        RCP<CrsGraph<LO,GO,NO> > repeatedGraph = CrsGraphFactory<LO,GO,NO>::Build(repeatedMap,2*graph->getGlobalMaxNumRowEntries());
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(graph->getRowMap(),repeatedMap);
+        repeatedGraph->doImport(*graph,*scatter,ADD);
+        
+        ArrayRCP<GO> oneEntryOnlyRows(repeatedGraph->getNodeNumRows());
+        LO tmp = 0;
+        GO row;
+        for (unsigned i=0; i<repeatedGraph->getNodeNumRows(); i++) {
+            row = repeatedMap->getGlobalElement(i);
+            ArrayView<const GO> indices;
+            repeatedGraph->getGlobalRowView(row,indices);
+            if (indices.size()==1) {
+                oneEntryOnlyRows[tmp] = row;
+                tmp++;
+            }
+        }
+        oneEntryOnlyRows.resize(tmp);
+        return oneEntryOnlyRows;
+    }
 
     template <class SC,class LO>
     bool ismultiple(ArrayView<SC> A,

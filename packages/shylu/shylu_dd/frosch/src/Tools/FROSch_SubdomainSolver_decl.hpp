@@ -58,6 +58,10 @@
 #define FROSCH_TIMER_STOP(A) A.reset();
 #endif
 
+#ifndef FROSCH_TEST_OUTPUT
+#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
+#endif
+
 #include <ShyLU_DDFROSch_config.h>
 #include <FROSch_Tools_decl.hpp>
 
