@@ -14,6 +14,7 @@
 #   ATDM_CONFIG_CDASH_HOSTNAME
 #   ATDM_CONFIG_SYSTEM_NAME
 #   ATDM_CONFIG_SYSTEM_DIR
+#   ATDM_CONFIG_CUSTOM_CONFIG_DIR
 #  
 # If it can't, these vars will not get set (and in fact are unset)
 #
@@ -25,6 +26,7 @@ unset ATDM_CONFIG_REAL_HOSTNAME
 unset ATDM_CONFIG_CDASH_HOSTNAME
 unset ATDM_CONFIG_SYSTEM_NAME
 unset ATDM_CONFIG_SYSTEM_DIR
+unset ATDM_CONFIG_CUSTOM_CONFIG_DIR
 
 unset ATDM_CONFIG_GET_CUSTOM_SYSTEM_INFO_COMPLETED
 
@@ -41,7 +43,7 @@ if [ -z "$ATDM_CONFIG_BUILD_NAME" ] ; then
   return
 fi
 
-# See if a custom confiugration directory is pssed in or registered
+# See if a custom confiugration directory is passed in or registered as env var
 unset ATDM_CUSTOM_CONFIG_DIR
 if [[ "${ATDM_CONFIG_CUSTOM_CONFIG_DIR_ARG}" != "" ]] ; then
   ATDM_CUSTOM_CONFIG_DIR=${ATDM_CONFIG_CUSTOM_CONFIG_DIR_ARG}
@@ -92,6 +94,7 @@ if [[ "${select_custom_system_config}" == "1" ]] ; then
   export ATDM_CONFIG_CDASH_HOSTNAME=$ATDM_CONFIG_REAL_HOSTNAME
   export ATDM_CONFIG_SYSTEM_NAME=$custom_system_name
   export ATDM_CONFIG_SYSTEM_DIR=$(readlink -f ${ATDM_CUSTOM_CONFIG_DIR})
+  export ATDM_CONFIG_CUSTOM_CONFIG_DIR=${ATDM_CONFIG_SYSTEM_DIR}
 fi
 
 export ATDM_CONFIG_GET_CUSTOM_SYSTEM_INFO_COMPLETED=1
