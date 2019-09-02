@@ -27,7 +27,6 @@ ASSERT_DEFINED(ENV{ATDM_CONFIG_BUILD_NAME})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_BUILD_COUNT})
 
 ASSERT_DEFINED(ENV{ATDM_CONFIG_SYSTEM_NAME})
-ASSERT_DEFINED(ENV{ATDM_CONFIG_SYSTEM_DIR})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_COMPILER})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_BUILD_TYPE})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_CUDA_RDC})
@@ -491,20 +490,29 @@ IF (COMMAND INSTALL AND NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "")
   SET( ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME  ATDM_TRILINOS_INSTALL_PREFIX
     CACHE STRING
     "Name of env var set to <CMAKE_INSTALL_PREFIX> set in installed script <ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME>." )
-
-  INSTALL( DIRECTORY "$ENV{ATDM_CONFIG_SYSTEM_DIR}"
-    DESTINATION ${ATDM_CONFIG_SCRIPTS_INSTALL_DIR}
-    PATTERN "*.cmake" EXCLUDE )
-  # NOTE: Above works for both offical and custom configurations!
   
   SET(ATDM_CONFIG_SYSTEM_NAME $ENV{ATDM_CONFIG_SYSTEM_NAME})
-  SET(ATDM_CONFIG_CUSTOM_CONFIG_DIR_ARG $ENV{ATDM_CONFIG_CUSTOM_CONFIG_DIR_ARG})
-  IF (ATDM_CONFIG_CUSTOM_CONFIG_DIR_ARG)
+  SET(ATDM_CONFIG_CUSTOM_CONFIG_DIR $ENV{ATDM_CONFIG_CUSTOM_CONFIG_DIR})
+  IF (ATDM_CONFIG_CUSTOM_CONFIG_DIR)
+    SET(ATDM_SYSTEM_DIR_SRC "${ATDM_CONFIG_CUSTOM_CONFIG_DIR}")
     SET(ATDM_CUSTOM_CONFIG_DIR_ARG
       "${ATDM_CONFIG_SCRIPTS_INSTALL_DIR}/${ATDM_CONFIG_SYSTEM_NAME}")
   ELSE()
+    SET(ATDM_SYSTEM_DIR_SRC "${CMAKE_CURRENT_LIST_DIR}/${ATDM_CONFIG_SYSTEM_NAME}")
+    # NOTE: Can't install directly from $ENV{ATDM_CONFIG_SYSTEM_DIR} for an
+    # offical system env because on the 'atdm-devops-admin' account can't read
+    # under the orginal jenkins workspace directory which is in the var
+    # ATDM_CONFIG_SYSTEM_DIR when the Jenkins job installs using the
+    # 'run-as-atdm-devops-admin' account.  This is tricky to explain but this
+    # is a fairly simple fix for the problem.  See #5834 for more details.
+    # (NOTE: This assumes that a jenkins job will never work with a custom
+    # config env which is a pretty safe assumption.)
     SET(ATDM_CUSTOM_CONFIG_DIR_ARG)
   ENDIF()
+
+  INSTALL( DIRECTORY "${ATDM_SYSTEM_DIR_SRC}"
+    DESTINATION ${ATDM_CONFIG_SCRIPTS_INSTALL_DIR}
+    PATTERN "*.cmake" EXCLUDE )
 
   CONFIGURE_FILE( ${CMAKE_CURRENT_LIST_DIR}/utils/load_matching_env.sh.in
     ${CMAKE_CURRENT_BINARY_DIR}/cmake/std/atdm/utils/load_matching_env.sh @ONLY )
