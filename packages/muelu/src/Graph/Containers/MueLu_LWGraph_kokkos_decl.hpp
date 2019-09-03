@@ -132,6 +132,16 @@ namespace MueLu {
       return graph_.row_map(GetNodeNumVertices());
     }
 
+    //! Return the row pointers of the local graph
+    KOKKOS_INLINE_FUNCTION typename local_graph_type::row_map_type getRowPtrs() const {
+      return graph_.row_map;
+    }
+
+    //! Return the list entries in the local graph
+    KOKKOS_INLINE_FUNCTION typename local_graph_type::entries_type getEntries() const {
+      return graph_.entries;
+    }
+
     //! Return the list of vertices adjacent to the vertex 'v'.
     // Unfortunately, C++11 does not support the following:
     //    auto getNeighborVertices(LO i) const -> decltype(rowView)
