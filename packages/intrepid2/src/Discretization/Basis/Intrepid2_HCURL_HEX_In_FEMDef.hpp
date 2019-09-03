@@ -55,14 +55,14 @@ namespace Intrepid2 {
   namespace Impl {
 
     template<EOperator opType>
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType,
              typename workViewType,
              typename vinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HCURL_HEX_In_FEM::Serial<opType>::
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType  input,
                      workViewType   work,
                const vinvViewType   vinvLine,
@@ -370,8 +370,8 @@ namespace Intrepid2 {
       cardLine = lineBasis.getCardinality(),
       cardBubble = bubbleBasis.getCardinality();
 
-    this->vinvLine_   = Kokkos::DynRankView<typename scalarViewType::value_type,SpT>("Hcurl::Hex::In::vinvLine", cardLine, cardLine);
-    this->vinvBubble_ = Kokkos::DynRankView<typename scalarViewType::value_type,SpT>("Hcurl::Hex::In::vinvBubble", cardBubble, cardBubble);
+    this->vinvLine_   = Kokkos::DynRankView<typename ScalarViewType::value_type,SpT>("Hcurl::Hex::In::vinvLine", cardLine, cardLine);
+    this->vinvBubble_ = Kokkos::DynRankView<typename ScalarViewType::value_type,SpT>("Hcurl::Hex::In::vinvBubble", cardBubble, cardBubble);
 
     lineBasis.getVandermondeInverse(this->vinvLine_);
     bubbleBasis.getVandermondeInverse(this->vinvBubble_);
@@ -381,6 +381,7 @@ namespace Intrepid2 {
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
     this->basisType_         = BASIS_FEM_FIAT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
+    this->functionSpace_     = FUNCTION_SPACE_HCURL;
 
     // initialize tags
     {
@@ -534,7 +535,7 @@ namespace Intrepid2 {
                                       "counted tag index is not same as cardinality." );
       }
 
-      ordinal_type_array_1d_host tagView(&tags[0][0], this->basisCardinality_*4);
+      OrdinalTypeArray1DHost tagView(&tags[0][0], this->basisCardinality_*4);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       // tags are constructed on host
@@ -549,14 +550,14 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoeffsHost("dofCoeffsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
-    Kokkos::DynRankView<typename scalarViewType::value_type,SpT>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,SpT>
       dofCoordsLine("dofCoordsLine", cardLine, 1),
       dofCoordsBubble("dofCoordsBubble", cardBubble, 1);
 

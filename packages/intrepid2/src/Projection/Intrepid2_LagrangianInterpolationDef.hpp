@@ -58,44 +58,44 @@ namespace Experimental {
 
 
 
-template<typename scalarViewType,
+template<typename ScalarViewType,
 typename ortViewType,
 typename t2oViewType,
 typename subcellParamViewType,
 typename intViewType>
 struct computeDofCoordsAndCoeffs {
-  typedef typename scalarViewType::value_type value_type;
+  typedef typename ScalarViewType::value_type value_type;
 
-  scalarViewType dofCoords_, dofCoeffs_;
+  ScalarViewType dofCoords_, dofCoeffs_;
   const ortViewType orts_;
   const t2oViewType tagToOrdinal_;
   const subcellParamViewType edgeParam_, faceParam_;
   const intViewType edgeInternalDofOrdinals_, facesInternalDofOrdinals_;
-  const scalarViewType edgeInternalDofCoords_, edgeDofCoeffs_, ortJacobianEdge_, refEdgesTan_, refEdgesNormal_;
-  const scalarViewType facesInternalDofCoords_, faceDofCoeffs_, ortJacobianFace_, refFaceTangents_, refFacesNormal_;
-  scalarViewType edgeWorkView_, faceWorkView_;
+  const ScalarViewType edgeInternalDofCoords_, edgeDofCoeffs_, ortJacobianEdge_, refEdgesTan_, refEdgesNormal_;
+  const ScalarViewType facesInternalDofCoords_, faceDofCoeffs_, ortJacobianFace_, refFaceTangents_, refFacesNormal_;
+  ScalarViewType edgeWorkView_, faceWorkView_;
   const ordinal_type cellDim_, numEdges_, numFaces_;
   const ordinal_type edgeTopoKey_, numEdgeInternalDofs_;
   const intViewType faceTopoKey_, numFacesInternalDofs_;
   const value_type edgeScale_, faceScale_;
   const bool isBasisHCURL_, isBasisHDIV_;
 
-  computeDofCoordsAndCoeffs( scalarViewType dofCoords,
-      scalarViewType dofCoeffs,
+  computeDofCoordsAndCoeffs( ScalarViewType dofCoords,
+      ScalarViewType dofCoeffs,
       const ortViewType orts,
       const t2oViewType tagToOrdinal,
       const subcellParamViewType edgeParam,
       const subcellParamViewType faceParam,
       const intViewType edgeInternalDofOrdinals,
       const intViewType facesInternalDofOrdinals,
-      const scalarViewType edgeInternalDofCoords,
-      const scalarViewType edgeDofCoeffs,
-      const scalarViewType refEdgesTan,
-      const scalarViewType refEdgesNormal,
-      const scalarViewType facesInternalDofCoords,
-      const scalarViewType faceDofCoeffs,
-      const scalarViewType refFaceTangents,
-      const scalarViewType refFacesNormal,
+      const ScalarViewType edgeInternalDofCoords,
+      const ScalarViewType edgeDofCoeffs,
+      const ScalarViewType refEdgesTan,
+      const ScalarViewType refEdgesNormal,
+      const ScalarViewType facesInternalDofCoords,
+      const ScalarViewType faceDofCoeffs,
+      const ScalarViewType refFaceTangents,
+      const ScalarViewType refFacesNormal,
       const ordinal_type cellDim,
       const ordinal_type numEdges,
       const ordinal_type numFaces,
@@ -137,9 +137,9 @@ struct computeDofCoordsAndCoeffs {
     isBasisHDIV_(isBasisHDIV)
   {
     if(numEdges > 0)
-      edgeWorkView_ = scalarViewType("edgeWorkView", dofCoords.extent(0), numEdgeInternalDofs, 1);
+      edgeWorkView_ = ScalarViewType("edgeWorkView", dofCoords.extent(0), numEdgeInternalDofs, 1);
     if(numFaces > 0)
-      faceWorkView_ = scalarViewType("faceWorkView", dofCoords.extent(0), facesInternalDofCoords.extent(1), 2);
+      faceWorkView_ = ScalarViewType("faceWorkView", dofCoords.extent(0), facesInternalDofCoords.extent(1), 2);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -151,7 +151,7 @@ struct computeDofCoordsAndCoeffs {
       //compute coordinates associated to edge DoFs
       ordinal_type eOrt[12];
       value_type ortJac;
-      scalarViewType ortJacobianEdge(&ortJac, 1, 1);
+      ScalarViewType ortJacobianEdge(&ortJac, 1, 1);
       orts_(cell).getEdgeOrientation(eOrt, numEdges_);
       auto edgeInternalDofCoordsOriented = Kokkos::subview(edgeWorkView_,cell, Kokkos::ALL(), Kokkos::ALL());
       //map edge DoFs coords into parent element coords
@@ -208,7 +208,7 @@ struct computeDofCoordsAndCoeffs {
       //compute coordinates associated to face DoFs
       ordinal_type fOrt[12];
       value_type ortJac[4];
-      scalarViewType ortJacobianFace(ortJac, 2, 2);
+      ScalarViewType ortJacobianFace(ortJac, 2, 2);
       orts_(cell).getFaceOrientation(fOrt, numFaces_);
       //map face dofs coords into parent element coords
       for (ordinal_type iface=0; iface < numFaces_; ++iface) {
@@ -280,7 +280,7 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts) {
 
   typedef typename BasisType::scalarType scalarType;
-  typedef  Kokkos::DynRankView<scalarType, SpT> scalarViewType;
+  typedef  Kokkos::DynRankView<scalarType, SpT> ScalarViewType;
   typedef  Kokkos::DynRankView<ordinal_type, SpT> intViewType;
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
@@ -352,14 +352,14 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
 
   const ordinal_type numCells = dofCoeffs.extent(0);
 
-  scalarViewType refDofCoords("refDofCoords", dofCoords.extent(1), dofCoords.extent(2)), refDofCoeffs;
+  ScalarViewType refDofCoords("refDofCoords", dofCoords.extent(1), dofCoords.extent(2)), refDofCoeffs;
   basis->getDofCoords(refDofCoords);
   RealSpaceTools<SpT>::clone(dofCoords,refDofCoords);
 
   if(dofCoeffs.rank() == 3) //vector basis
-    refDofCoeffs = scalarViewType("refDofCoeffs", dofCoeffs.extent(1), dofCoeffs.extent(2));
+    refDofCoeffs = ScalarViewType("refDofCoeffs", dofCoeffs.extent(1), dofCoeffs.extent(2));
   else //scalar basis
-    refDofCoeffs = scalarViewType("refDofCoeffs",dofCoeffs.extent(1));
+    refDofCoeffs = ScalarViewType("refDofCoeffs",dofCoeffs.extent(1));
   basis->getDofCoeffs(refDofCoeffs);
   RealSpaceTools<SpT>::clone(dofCoeffs,refDofCoeffs);
 
@@ -367,14 +367,14 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
 
   ordinal_type edgeTopoKey = Teuchos::nonnull(edgeBasis) ? edgeBasis->getBaseCellTopology().getBaseKey() : 0;
   intViewType eOrt("eOrt", numEdges);
-  scalarViewType refEdgesTan("refEdgesTan",  numEdges, dim);
-  scalarViewType refEdgesNormal("refEdgesNormal",  numEdges, dim);
-  scalarViewType edgeParam;
+  ScalarViewType refEdgesTan("refEdgesTan",  numEdges, dim);
+  ScalarViewType refEdgesNormal("refEdgesNormal",  numEdges, dim);
+  ScalarViewType edgeParam;
   ordinal_type edgeBasisCardinality = Teuchos::nonnull(edgeBasis) ? edgeBasis->getCardinality() : ordinal_type(0);
   ordinal_type numEdgeInternalDofs = Teuchos::nonnull(edgeBasis) ? edgeBasis->getDofCount(1,0) : ordinal_type(0);
-  scalarViewType edgeDofCoords("edgeDofCoords", edgeBasisCardinality, 1);
-  scalarViewType edgeDofCoeffs("edgeDofCoeffs", edgeBasisCardinality);
-  scalarViewType edgeInternalDofCoords("edgeInternalDofCoords", numEdgeInternalDofs, 1);
+  ScalarViewType edgeDofCoords("edgeDofCoords", edgeBasisCardinality, 1);
+  ScalarViewType edgeDofCoeffs("edgeDofCoeffs", edgeBasisCardinality);
+  ScalarViewType edgeInternalDofCoords("edgeInternalDofCoords", numEdgeInternalDofs, 1);
   intViewType edgeInternalDofOrdinals("edgeInternalDofOrdinals", numEdgeInternalDofs);
   //depending on how the reference basis is defined, the edges are scaled differently
   auto edgeScale = (isBasisTriOrTet||isBasisI1) ? 2.0 :1.0;
@@ -411,13 +411,13 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
 
   intViewType faceTopoKey("faceTopoKey",numFaces);
   intViewType fOrt("fOrt", numFaces);
-  scalarViewType refFaceTangents("refFaceTangents", numFaces, dim, 2);
-  scalarViewType refFacesNormal("refFacesNormal",  numFaces, dim);
-  scalarViewType faceParam;
+  ScalarViewType refFaceTangents("refFaceTangents", numFaces, dim, 2);
+  ScalarViewType refFacesNormal("refFacesNormal",  numFaces, dim);
+  ScalarViewType faceParam;
   intViewType numFacesInternalDofs("numFacesInternalDofs", numFaces);
-  scalarViewType  facesInternalDofCoords;
+  ScalarViewType  facesInternalDofCoords;
   intViewType  facesInternalDofOrdinals;
-  scalarViewType  faceDofCoeffs;
+  ScalarViewType  faceDofCoeffs;
   //depending on how the reference basis is defined, the faces are scaled differently
   auto faceScale = (isBasisHEXI1) ? 4.0 :
       (isBasisTETI1) ? 0.5 : 1.0;
@@ -434,19 +434,19 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
     faceBasisMaxCardinality = std::max(faceBasisMaxCardinality, faceBasisCardinality);
   }
 
-  facesInternalDofCoords = scalarViewType("faceInternalDofCoords", numFaces, maxNumFacesInternalDofs, 2);
+  facesInternalDofCoords = ScalarViewType("faceInternalDofCoords", numFaces, maxNumFacesInternalDofs, 2);
   facesInternalDofOrdinals = intViewType("faceInternalDofCoords", numFaces, maxNumFacesInternalDofs);
 
   if(isBasisHCURL)
-    faceDofCoeffs = scalarViewType("faceDofCoeffs", numFaces, faceBasisMaxCardinality,2);
+    faceDofCoeffs = ScalarViewType("faceDofCoeffs", numFaces, faceBasisMaxCardinality,2);
   else
-    faceDofCoeffs = scalarViewType("faceDofCoeffs", numFaces, faceBasisMaxCardinality);
+    faceDofCoeffs = ScalarViewType("faceDofCoeffs", numFaces, faceBasisMaxCardinality);
 
   for (ordinal_type iface=0; iface < numFaces; ++iface) {
     auto faceBasis = faceBases[iface];
     faceTopoKey(iface) = faceBasis->getBaseCellTopology().getBaseKey();
     ordinal_type faceBasisCardinality = faceBasis->getCardinality();
-    scalarViewType  faceDofCoords("faceDofCoords", faceBasisCardinality, 2);
+    ScalarViewType  faceDofCoords("faceDofCoords", faceBasisCardinality, 2);
     faceBasis->getDofCoords(faceDofCoords);
     for(ordinal_type i=0; i<numFacesInternalDofs(iface); ++i) {
       facesInternalDofOrdinals(iface, i) = faceBasis->getDofOrdinal(2, 0, i);
@@ -481,7 +481,7 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
 
   const Kokkos::RangePolicy<SpT> policy(0, numCells);
   typedef computeDofCoordsAndCoeffs
-      <scalarViewType,
+      <ScalarViewType,
       decltype(orts),
       decltype(tagToOrdinal),
       decltype(edgeParam),

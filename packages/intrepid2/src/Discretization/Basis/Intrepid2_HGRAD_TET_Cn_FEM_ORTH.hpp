@@ -66,14 +66,14 @@ namespace Impl {
 
 /** \brief See Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH
  */
-template<typename outputViewType,
+template<typename OutputViewType,
 typename inputViewType, 
 typename workViewType,
 bool hasDeriv, ordinal_type n>
 struct OrthPolynomialTet {
   KOKKOS_INLINE_FUNCTION
   static void
-  generate(       outputViewType output,
+  generate(       OutputViewType output,
             const inputViewType input,
                   workViewType work,
             const ordinal_type p );
@@ -81,14 +81,14 @@ struct OrthPolynomialTet {
 
 /** \brief See Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH
  */
-template<typename outputViewType,
+template<typename OutputViewType,
 typename inputViewType,
 typename workViewType,
 bool hasDeriv>
-struct OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0> {
+struct OrthPolynomialTet<OutputViewType,inputViewType,workViewType,hasDeriv,0> {
   KOKKOS_INLINE_FUNCTION
   static void
-  generate(       outputViewType output,
+  generate(       OutputViewType output,
             const inputViewType input,
                   workViewType work,
             const ordinal_type p );
@@ -96,14 +96,14 @@ struct OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0> {
 
 /** \brief See Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH
  */
-template<typename outputViewType,
+template<typename OutputViewType,
 typename inputViewType,
 typename workViewType,
 bool hasDeriv>
-struct OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,1> {
+struct OrthPolynomialTet<OutputViewType,inputViewType,workViewType,hasDeriv,1> {
   KOKKOS_INLINE_FUNCTION
   static void
-  generate(   outputViewType output,
+  generate(   OutputViewType output,
       const inputViewType input,
             workViewType work,
       const ordinal_type p );
@@ -120,12 +120,12 @@ public:
   */
   template<EOperator opType>
   struct Serial {
-    template<typename outputViewType,
+    template<typename OutputViewType,
     typename inputViewType,
     typename workViewType>
     KOKKOS_INLINE_FUNCTION
     static void
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType  input,
                      workViewType work,
                const ordinal_type   order);
@@ -217,23 +217,27 @@ class Basis_HGRAD_TET_Cn_FEM_ORTH
     : public Basis<ExecSpaceType,outputValueType,pointValueType> {
     public:
   typedef double value_type;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
 
   /** \brief  Constructor.
    */
   Basis_HGRAD_TET_Cn_FEM_ORTH( const ordinal_type order );
 
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+  using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
+  using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
+  using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
+  
+  using outputViewType INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OutputViewType instead","OutputViewType") = OutputViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OutputViewType instead");
+  using pointViewType INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use PointViewType instead","PointViewType") = PointViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use PointViewType instead");
   
   using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
   virtual
   void
-  getValues(       outputViewType outputValues,
-             const pointViewType  inputPoints,
+  getValues(       OutputViewType outputValues,
+             const PointViewType  inputPoints,
              const EOperator operatorType = OPERATOR_VALUE ) const {
     #ifdef HAVE_INTREPID2_DEBUG
           Intrepid2::getValues_HGRAD_Args(outputValues,
