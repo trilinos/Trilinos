@@ -50,6 +50,8 @@
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
 
+#include <array>
+
 namespace Intrepid2 {
 
 namespace Experimental {

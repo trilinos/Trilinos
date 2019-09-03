@@ -124,14 +124,14 @@ namespace Intrepid2 {
   }
 
   template<typename ortViewType,
-           typename outputViewType,
+           typename OutputViewType,
            typename inputViewType,
            typename o2tViewType,
            typename t2oViewType,
            typename dataViewType>
   struct F_modifyBasisByOrientation {
     ortViewType orts;
-    outputViewType output;
+    OutputViewType output;
     inputViewType input;
     o2tViewType ordinalToTag;
     t2oViewType tagToOrdinal;
@@ -140,7 +140,7 @@ namespace Intrepid2 {
     const ordinal_type cellDim, numVerts, numEdges, numFaces, numPoints, dimBasis;
 
     F_modifyBasisByOrientation(ortViewType orts_,
-                               outputViewType output_,
+                               OutputViewType output_,
                                inputViewType input_,
                                o2tViewType ordinalToTag_,
                                t2oViewType tagToOrdinal_,

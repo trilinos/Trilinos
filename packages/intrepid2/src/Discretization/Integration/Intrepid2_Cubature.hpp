@@ -122,7 +122,7 @@ namespace Intrepid2 {
   class Cubature {
   public:
 
-    typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>   pointViewType;
+    typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>   PointViewType;
     typedef Kokkos::DynRankView<weightValueType,Kokkos::LayoutStride,ExecSpaceType>  weightViewType;
 
     /** \brief Returns cubature points and weights
@@ -133,7 +133,7 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getCubature( pointViewType  /* cubPoints */,
+    getCubature( PointViewType  /* cubPoints */,
                  weightViewType /* cubWeights */ ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Cubature::getCubature): this method should be over-riden by derived classes.");
@@ -148,9 +148,9 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getCubature( pointViewType  /* cubPoints */,
+    getCubature( PointViewType  /* cubPoints */,
                  weightViewType /* cubWeights */,
-                 pointViewType  /* cellVertices */) const {
+                 PointViewType  /* cellVertices */) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Cubature::getCubature): this method should be over-riden by derived classes.");
     }

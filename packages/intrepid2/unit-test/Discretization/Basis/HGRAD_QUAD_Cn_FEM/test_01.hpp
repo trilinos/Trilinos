@@ -850,7 +850,38 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
     errorFlag = -1000;
   };
 
-
+  *outStream
+  << "\n"
+  << "===============================================================================\n"
+  << "| TEST 4: Function Space is Correct                                           |\n"
+  << "===============================================================================\n";
+  
+  try {
+    const auto order = std::min(5, maxOrder);
+    QuadBasisType quadBasis(order);
+    
+    const EFunctionSpace fs = quadBasis.getFunctionSpace();
+    
+    if (fs != FUNCTION_SPACE_HGRAD)
+    {
+      *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
+      
+      // Output the multi-index of the value where the error is:
+      *outStream << " Expected a function space of FUNCTION_SPACE_HGRAD (enum value " << FUNCTION_SPACE_HGRAD << "),";
+      *outStream << " but got " << fs << "\n";
+      if (fs == FUNCTION_SPACE_MAX)
+      {
+        *outStream << "Note that this matches the default value defined by superclass, FUNCTION_SPACE_MAX.  Likely the subclass has failed to set the superclass functionSpace_ field.\n";
+      }
+      errorFlag++;
+    }
+  } catch (std::logic_error err){
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  }
+  
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else
