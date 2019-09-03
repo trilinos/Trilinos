@@ -132,6 +132,7 @@ private:
       stepperType == "SDIRK 5 Stage 5th order" ||
       stepperType == "SDIRK 2(1) Pair" ||
       stepperType == "SSPDIRK22" ||
+      stepperType == "SSPDIRK32" ||
       stepperType == "General DIRK"
       )
       return rcp(new StepperDIRK<Scalar>(model, stepperType, stepperPL));
