@@ -133,6 +133,7 @@ private:
       stepperType == "SDIRK 2(1) Pair" ||
       stepperType == "SSPDIRK22" ||
       stepperType == "SSPDIRK32" ||
+      stepperType == "SSPDIRK23" ||
       stepperType == "General DIRK"
       )
       return rcp(new StepperDIRK<Scalar>(model, stepperType, stepperPL));

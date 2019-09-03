@@ -64,6 +64,7 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
   RKMethods.push_back("SDIRK 2(1) Pair");
   RKMethods.push_back("SSPDIRK22");
   RKMethods.push_back("SSPDIRK32");
+  RKMethods.push_back("SSPDIRK23");
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -294,6 +295,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethods.push_back("SDIRK 2(1) Pair");
   RKMethods.push_back("SSPDIRK22");
   RKMethods.push_back("SSPDIRK32");
+  RKMethods.push_back("SSPDIRK23");
 
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(0.0124201);
@@ -310,6 +312,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethodErrors.push_back(0.0001041);
   RKMethodErrors.push_back(1.30205e-05);
   RKMethodErrors.push_back(5.78697e-06);
+  RKMethodErrors.push_back(1.00713e-07);
 
   TEUCHOS_ASSERT( RKMethods.size() == RKMethodErrors.size() );
 
