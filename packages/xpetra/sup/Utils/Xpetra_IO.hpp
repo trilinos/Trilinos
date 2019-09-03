@@ -181,8 +181,8 @@ namespace Xpetra {
     @brief Xpetra utility class containing IO routines to read/write vectors, matrices etc...
     */
   template <class Scalar,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = int,
+            class LocalOrdinal,
+            class GlobalOrdinal,
             class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class IO {
 

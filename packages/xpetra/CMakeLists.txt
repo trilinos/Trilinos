@@ -137,27 +137,37 @@ ENDIF ()
 
 # Diagnostic message on chosen GO
 IF (${PACKAGE_NAME}_INT_LONG_LONG)
-  MESSAGE(STATUS "Xpetra: Enabling GO = long long support")
-ELSE()
-  MESSAGE(STATUS "Xpetra: Enabling GO = int support")
+  MESSAGE(STATUS "Xpetra: Enabling Tpetra GO = long long support")
+ENDIF()
+IF (${PACKAGE_NAME}_INT_INT)
+  MESSAGE(STATUS "Xpetra: Enabling Tpetra GO = int support")
 ENDIF()
 
 # If Tpetra AND Epetra are available, we need to make sure they're sync'd on GO type
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
-  IF (${PACKAGE_NAME}_INT_LONG_LONG)
+  IF (${PACKAGE_NAME}_INT_INT)
+    IF(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES)
+      MESSAGE(FATAL_ERROR "If Tpetra's int support is enabled, Epetra's 32-bit support must be enabled to use both with Xpetra.")    
+    ELSE()
+      SET( ${PACKAGE_NAME_UC}_EPETRA_NO_64BIT_GLOBAL_INDICES ON BOOL "Set to ON by CMake because GO=long long is disabled" )
+    ENDIF()    
+  ELSE()
     IF(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES)
       MESSAGE(FATAL_ERROR "If Tpetra's long long support is enabled, Epetra's 64-bit support must be enabled to use both with Xpetra.")    
     ELSE()
       GLOBAL_SET(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES ON)
       SET( ${PACKAGE_NAME_UC}_EPETRA_NO_32BIT_GLOBAL_INDICES ON BOOL "Set to ON by CMake because GO=int is disabled" )
     ENDIF()
-  ELSE()
-    IF(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES)
-      MESSAGE(FATAL_ERROR "If Tpetra's int support is enabled, Epetra's 32-bit support must be enabled to use both with Xpetra.")    
-    ELSE()
-      SET( ${PACKAGE_NAME_UC}_EPETRA_NO_64BIT_GLOBAL_INDICES ON BOOL "Set to ON by CMake because GO=long long is disabled" )
-    ENDIF()    
   ENDIF() 
+
+  # Diagnostic output
+  IF (${PACKAGE_NAME_UC}_EPETRA_NO_64BIT_GLOBAL_INDICES)
+    MESSAGE(STATUS "Xpetra: Enabling Epetra GO = int support")
+  ENDIF()
+  IF (${PACKAGE_NAME_UC}_EPETRA_NO_32BIT_GLOBAL_INDICES)
+    MESSAGE(STATUS "Xpetra: Enabling Epetra GO = long long support")
+  ENDIF()
+
 ENDIF()
 
 ##################################

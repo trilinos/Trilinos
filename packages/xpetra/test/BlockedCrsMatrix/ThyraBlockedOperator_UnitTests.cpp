@@ -1085,7 +1085,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ReadWriteMatrixMatrixMa
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MATRIX_INSTANT )
+//TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MATRIX_INSTANT )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
 
 #endif
@@ -1100,13 +1100,16 @@ XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
 XP_MATRIX_INSTANT(double,int,int,EpetraNode)
 XP_EPETRA_MATRIX_INSTANT(double,int,int,EpetraNode)
 #endif
-// EpetraExt routines are not working with 64 bit
-/*#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 typedef long long LongLong;
 XPETRA_EPETRA_TYPES(double,int,LongLong,EpetraNode)
+XP_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
 XP_EPETRA_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
-#endif*/
+#endif
 
+#elif defined(HAVE_XPETRA_TPETRA)
+// This is to work around a bug in the ETI test instantiation system
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MATRIX_INSTANT )
 #endif
 
 }
