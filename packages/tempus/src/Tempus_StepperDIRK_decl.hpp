@@ -132,6 +132,12 @@ public:
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
+    /// Set parameter so that the initial guess is reset at the beginning of each timestep.
+    virtual void setResetInitialGuess(bool reset_guess)
+      { this->stepperPL_->template set<bool>("Reset Initial Guess", reset_guess); }
+    virtual bool getResetInitialGuess() const
+      { return this->stepperPL_->template get<bool>("Reset Initial Guess", true); }
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
