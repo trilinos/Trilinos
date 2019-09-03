@@ -90,6 +90,8 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
            .set<double>("theta", 0.5);
       tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
       tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
+      tempusPL->sublist("Default Stepper").remove("Reset Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Reset Initial Guess", 1);
       tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
     } else if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
       // Construct in the same order as default.
@@ -101,6 +103,8 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
            .set<double>("gamma", 0.2928932188134524);
       tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
       tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
+      tempusPL->sublist("Default Stepper").remove("Reset Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Reset Initial Guess", 1);
       tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
     } else if (RKMethods[m] == "SDIRK 2 Stage 3rd order") {
       // Construct in the same order as default.
@@ -114,6 +118,8 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
            .set<double>("gamma", 0.7886751345948128);
       tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
       tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
+      tempusPL->sublist("Default Stepper").remove("Reset Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Reset Initial Guess", 1);
       tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
     }
 
