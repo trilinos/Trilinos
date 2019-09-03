@@ -258,6 +258,11 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
                           EDIRK2Stage3rdOrder_RKBT<Scalar> >(),
       "EDIRK 2 Stage 3rd order");
 
+  // Diagonally-Implicit Strong Stability Preserving Runge-Kutta Methods
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+      SSPDIRK22<Scalar> >(), "SSPDIRK22");
+
   // IRK
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
