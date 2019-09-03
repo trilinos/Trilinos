@@ -4488,6 +4488,112 @@ class SSPDIRK23 :
 };
 
 
+// ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Diagonally-Implicit RK Butcher Tableau
+ *
+ *  The tableau (stage=3, order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  1/6  & 1/6  & \\
+ *                         1/2  & 1/3  & 1/6 & \\   \hline
+ *                         5/6  & 1/3  & 1/3 & 1/3 \\   \hline
+ *                              & 1/3  & 1/3 & 1/3  \end{array}
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+
+template<class Scalar>
+class SSPDIRK33 :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SSPDIRK33()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+      << "Strong Stability Preserving Diagonally-Implicit RK (stage=3, order=3)\n"
+      << "SSP-Coef = 2 + 2 sqrt(2)\n"
+      << "c =     [ 1/( 4 + 2 sqrt(2)      1/2            (1/4)(2 + sqrt(2) ] '\n"
+      << "A =     [ 1/( 4 + 2 sqrt(2)                                       ] \n"
+      << "        [ 1/(2 sqrt(2)       1/( 4 + 2 sqrt(2)                    ] \n"
+      << "        [ 1/(2 sqrt(2)        1/(2 sqrt(2)      1/( 4 + 2 sqrt(2) ] \n"
+      << "b     = [ 1/3                    1/3                1/3           ] \n" << std::endl;
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 3;
+    const int order     = 3;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    const Scalar one      = ST::one();
+    const Scalar zero     = ST::zero();
+    const Scalar onethird = one/(3*one);
+    const Scalar rootwo   = std::sqrt(2);
+
+    // Fill A:
+    A(0,0) = A(1,1) = A(2,2) = one / (4*one + 2*rootwo);
+    A(1,0) = A(2,0) = A(2,1) = one / (2*rootwo);
+    A(0,1) = A(0,2) = A(1,2) = zero;
+
+    // Fill b:
+    b(0) = b(1) = b(2) = onethird;
+
+    // Fill c:
+    c(0) = A(0,0);
+    c(1) = A(1,0) + A(1,1);
+    c(2) = A(2,0) + A(2,1) + A(2,2);
+
+    this->initialize(A,b,c,order,this->getDescription());
+    this->setMyParamList(pl);
+    this->rkbtPL_ = pl;
+  }
+
+  virtual std::string description() const { return "SSPDIRK33"; }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters() const
+    {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->setName("Default Stepper - " + this->description());
+      pl->set<std::string>("Description", this->getDescription());
+      pl->set<std::string>("Stepper Type", this->description());
+      pl->set<bool>("Use Embedded", false);
+      pl->set<bool>("Use FSAL", false);
+      pl->set<std::string>("Initial Condition Consistency", "None");
+      pl->set<bool>("Initial Condition Consistency Check", false);
+      pl->set<std::string>("Solver Name", "",
+          "Name of ParameterList containing the solver specifications.");
+
+      return pl;
+    }
+};
 } // namespace Tempus
 
 

@@ -271,6 +271,10 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< RKButcherTableau<Scalar>,
       SSPDIRK23<Scalar> >(), "SSPDIRK23");
 
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+      SSPDIRK33<Scalar> >(), "SSPDIRK33");
+
   // IRK
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
