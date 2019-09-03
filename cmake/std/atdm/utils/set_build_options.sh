@@ -5,7 +5,7 @@
 #
 #   source set_build_options.sh
 #
-# where ATDM_CONFIG_BULID_NAME must be set in the env prior to sourcing this
+# where ATDM_CONFIG_BUILD_NAME must be set in the env prior to sourcing this
 # scirpt.
 #
 # On completion, this will set the env vars:
@@ -89,6 +89,8 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.0"* ]]; then
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2-gnu-7.2.0"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2_gnu-7.2.0"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2_gnu-6.3.1_openmpi-2.1.1"* ]]; then
+  export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0-gnu-7.4.0"* ]] \
