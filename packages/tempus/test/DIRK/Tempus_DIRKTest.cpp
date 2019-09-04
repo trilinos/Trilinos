@@ -37,11 +37,11 @@ using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
 // Comment out any of the following tests to exclude from build/run.
-#define TEST_PARAMETERLIST
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
+//#define TEST_PARAMETERLIST
+//#define TEST_CONSTRUCTING_FROM_DEFAULTS
 #define TEST_SINCOS
-#define TEST_VANDERPOL
-#define TEST_EMBEDDED_DIRK
+//#define TEST_VANDERPOL
+//#define TEST_EMBEDDED_DIRK
 
 
 #ifdef TEST_PARAMETERLIST
@@ -62,6 +62,10 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
   RKMethods.push_back("SDIRK 2(1) Pair");
+  RKMethods.push_back("SSPDIRK22");
+  RKMethods.push_back("SSPDIRK32");
+  RKMethods.push_back("SSPDIRK23");
+  RKMethods.push_back("SSPDIRK33");
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -290,6 +294,10 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
   RKMethods.push_back("SDIRK 2(1) Pair");
+  RKMethods.push_back("SSPDIRK22");
+  RKMethods.push_back("SSPDIRK32");
+  RKMethods.push_back("SSPDIRK23");
+  RKMethods.push_back("SSPDIRK33");
 
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(0.0124201);
@@ -304,6 +312,12 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethodErrors.push_back(3.30631e-10);
   RKMethodErrors.push_back(1.35728e-11);
   RKMethodErrors.push_back(0.0001041);
+  RKMethodErrors.push_back(1.30205e-05);
+  RKMethodErrors.push_back(5.78697e-06);
+  RKMethodErrors.push_back(1.00713e-07);
+  RKMethodErrors.push_back(3.94916e-08);
+
+  TEUCHOS_ASSERT( RKMethods.size() == RKMethodErrors.size() );
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 

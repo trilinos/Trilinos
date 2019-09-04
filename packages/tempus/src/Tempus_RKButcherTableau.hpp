@@ -709,6 +709,242 @@ class Explicit4Stage4thOrder_RKBT :
 
 
 // ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Explicit RK Butcher Tableau
+ *
+ *  The tableau (stage=2, order=2) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  0  & 0    & \\
+ *                         1  & 1    & \\   \hline
+ *                            & 1/2  & 1/2  \end{array}
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+
+template<class Scalar>
+class SSPERK22 :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SSPERK22()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "Strong Stability Preserving Explicit RK (stage=2, order=2)\n"
+                << "c =     [ 0      1  ]'\n"
+                << "A =     [ 0         ]\n"
+                << "        [ 1         ]\n"
+                << "b     = [ 1/2   1/2 ]\n"
+                << std::endl;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 2;
+    const int order     = 2;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> bstar(NumStages);
+
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+
+    // Fill A:
+    A(0,0) = A(0,1) = zero;
+
+    A(1,0) = one;
+    A(1,1) = zero;
+
+    // Fill b:
+    b(0) = b(1) = as<Scalar>(one/(2*one));
+
+    // Fill c:
+    c(0) = zero;
+    c(1) = one;
+
+    this->initialize(A,b,c,order,Description.str());
+  }
+  virtual std::string description() const { return "SSPERK22"; }
+};
+
+
+
+
+// ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Explicit RK Butcher Tableau
+ *
+ *  The tableau (stage=3, order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \begin{array}{c|ccc}  0  &  0  &     &     \\
+ *                        1  &  1  &  0  &     \\
+ *                       1/2 & 1/4 & 1/4 &  0  \\ \hline
+ *                           & 1/6 & 1/6 & 4/6  \end{array}
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+
+template<class Scalar>
+class SSPERK33 :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SSPERK33()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "Strong Stability Preserving Explicit RK (stage=3, order=3)\n"
+                  << "c = [  0   1  1/2 ]'\n"
+                  << "A = [  0          ]\n"
+                  << "    [  1   0      ]\n"
+                  << "    [ 1/4 1/4  0  ]\n"
+                  << "b = [ 1/6 1/6 4/6 ]'\n"
+                << std::endl;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 3;
+    const int order     = 3;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar onehalf = one/(2*one);
+    const Scalar onefourth = one/(4*one);
+    const Scalar onesixth = one/(6*one);
+    const Scalar foursixth = 4*one/(6*one);
+
+    // Fill A:
+    A(0,0) = A(0,1) =  A(0,2) = zero;
+
+    A(1,0) = one;
+    A(1,1) = A(1,2) = zero;
+
+    A(2,0) = onefourth;
+    A(2,1) = onefourth;
+    A(2,2) = zero;
+
+
+    // Fill b:
+    b(0) = b(1) = onesixth;
+    b(2) = foursixth;
+
+    // Fill c:
+    c(0) = zero;
+    c(1) = one;
+    c(2) = onehalf;
+
+    this->initialize(A,b,c,order,Description.str());
+  }
+  virtual std::string description() const { return "SSPERK33"; }
+};
+
+
+// ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Explicit RK Butcher Tableau
+ *
+ *  The tableau (stage=5, order=4) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+
+template<class Scalar>
+class SSPERK54 :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SSPERK54()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "Strong Stability Preserving Explicit RK (stage=5, order=4)\n"
+                << std::endl;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 5;
+    const int order     = 4;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    //const Scalar onehalf = one/(2*one);
+    //const Scalar onefourth = one/(4*one);
+    //const Scalar onesixth = one/(6*one);
+    //const Scalar foursixth = 4*one/(6*one);
+
+    // Fill A:
+    A(0,0) = A(0,1) =  A(0,2) = A(0,3) = A(0,4) = zero;
+
+    A(1,0) = as<Scalar>(0.391752226571889);
+    A(1,1) = A(1,2) = A(1,3) = A(0,4) = zero;
+
+    A(2,0) = as<Scalar>(0.217669096261169);
+    A(2,1) = as<Scalar>(0.368410593050372);
+    A(2,2) = A(2,3) = A(2,4) = zero;
+
+    A(3,0) = as<Scalar>(0.082692086657811);
+    A(3,1) = as<Scalar>(0.139958502191896);
+    A(3,2) = as<Scalar>(0.251891774271693);
+    A(3,3) = A(2,4) = zero;
+
+    A(4,0) = as<Scalar>(0.067966283637115);
+    A(4,1) = as<Scalar>(0.115034698504632);
+    A(4,2) = as<Scalar>(0.207034898597385);
+    A(4,3) = as<Scalar>(0.544974750228520);
+    A(4,4) = zero;
+
+
+    // Fill b:
+    b(0) = as<Scalar>(0.146811876084786);
+    b(1) = as<Scalar>(0.248482909444976);
+    b(2) = as<Scalar>(0.104258830331980);
+    b(3) = as<Scalar>(0.274438900901350);
+    b(4) = as<Scalar>(0.226007483236908);
+
+    // Fill c:
+    c(0) = zero;
+    c(1) = A(1,0);
+    c(2) = A(2,0) + A(2,1);
+    c(3) = A(3,0) + A(3,1) + A(3,1);
+    c(4) = A(4,0) + A(4,1) + A(4,2) + A(4,3);
+
+    this->initialize(A,b,c,order,Description.str());
+  }
+  virtual std::string description() const { return "SSPERK54"; }
+};
+
+
+// ----------------------------------------------------------------------------
 /** \brief Explicit RK Bogacki-Shampine Butcher Tableau
  *
  *  The tableau (order=3(2)) is
@@ -1353,7 +1589,7 @@ class Explicit3Stage3rdOrderTVD_RKBT :
     b(1) = onesixth;
     b(2) = foursixth;
 
-    // fill b_c_
+    // fill c:
     c(0) = zero;
     c(1) = one;
     c(2) = onehalf;
@@ -3933,6 +4169,431 @@ class SDIRK21_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Diagonally-Implicit RK Butcher Tableau
+ *
+ *  The tableau (stage=2, order=2) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  1/4  & 1/4  & \\
+ *                         3/4  & 1/2  & 1/4 \\   \hline
+ *                              & 1/2  & 1/2  \end{array}
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+
+template<class Scalar>
+class SSPDIRK22 :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SSPDIRK22()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+      << "Strong Stability Preserving Diagonally-Implicit RK (stage=2, order=2)\n"
+      << "SSP-Coef = 4\n"
+      << "c =     [ 1/4   3/4 ]'\n"
+      << "A =     [ 1/4       ]\n"
+      << "        [ 1/2   1/4 ]\n"
+      << "b     = [ 1/2   1/2 ]\n" << std::endl;
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 2;
+    const int order     = 2;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    const Scalar one       = ST::one();
+    const Scalar zero      = ST::zero();
+    const Scalar onehalf   = one/(2*one);
+    const Scalar onefourth = one/(4*one);
+
+    // Fill A:
+    A(0,0) = A(1,1) = onefourth;
+    A(0,1) = zero;
+    A(1,0) = onehalf;
+
+    // Fill b:
+    b(0) = b(1) = onehalf;
+
+    // Fill c:
+    c(0) = A(0,0);
+    c(1) = A(1,0) + A(1,1);
+
+    this->initialize(A,b,c,order,this->getDescription());
+    this->setMyParamList(pl);
+    this->rkbtPL_ = pl;
+  }
+
+  virtual std::string description() const { return "SSPDIRK22"; }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters() const
+    {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->setName("Default Stepper - " + this->description());
+      pl->set<std::string>("Description", this->getDescription());
+      pl->set<std::string>("Stepper Type", this->description());
+      pl->set<bool>("Use Embedded", false);
+      pl->set<bool>("Use FSAL", false);
+      pl->set<std::string>("Initial Condition Consistency", "None");
+      pl->set<bool>("Initial Condition Consistency Check", false);
+      pl->set<std::string>("Solver Name", "",
+          "Name of ParameterList containing the solver specifications.");
+
+      return pl;
+    }
+};
+
+
+
+// ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Diagonally-Implicit RK Butcher Tableau
+ *
+ *  The tableau (stage=3, order=2) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  1/6  & 1/6  & \\
+ *                         1/2  & 1/3  & 1/6 & \\   \hline
+ *                         5/6  & 1/3  & 1/3 & 1/3 \\   \hline
+ *                              & 1/3  & 1/3 & 1/3  \end{array}
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+
+template<class Scalar>
+class SSPDIRK32 :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SSPDIRK32()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+      << "Strong Stability Preserving Diagonally-Implicit RK (stage=3, order=2)\n"
+      << "SSP-Coef = 6\n"
+      << "c =     [ 1/6   1/2   5/6 ]'\n"
+      << "A =     [ 1/6             ]\n"
+      << "        [ 1/3   1/6       ]\n"
+      << "        [ 1/3   1/3   1/6 ]\n"
+      << "b     = [ 1/3   1/3   1/3 ]\n" << std::endl;
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 3;
+    const int order     = 2;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    const Scalar one      = ST::one();
+    const Scalar zero     = ST::zero();
+    const Scalar onethird = one/(3*one);
+    const Scalar onesixth = one/(6*one);
+
+    // Fill A:
+    A(0,0) = A(1,1) = A(2,2) = onesixth;
+    A(1,0) = A(2,0) = A(2,1) = onethird;
+    A(0,1) = A(0,2) = A(1,2) = zero;
+
+    // Fill b:
+    b(0) = b(1) = b(2) = onethird;
+
+    // Fill c:
+    c(0) = A(0,0);
+    c(1) = A(1,0) + A(1,1);
+    c(2) = A(2,0) + A(2,1) + A(2,2);
+
+    this->initialize(A,b,c,order,this->getDescription());
+    this->setMyParamList(pl);
+    this->rkbtPL_ = pl;
+  }
+
+  virtual std::string description() const { return "SSPDIRK32"; }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters() const
+    {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->setName("Default Stepper - " + this->description());
+      pl->set<std::string>("Description", this->getDescription());
+      pl->set<std::string>("Stepper Type", this->description());
+      pl->set<bool>("Use Embedded", false);
+      pl->set<bool>("Use FSAL", false);
+      pl->set<std::string>("Initial Condition Consistency", "None");
+      pl->set<bool>("Initial Condition Consistency Check", false);
+      pl->set<std::string>("Solver Name", "",
+          "Name of ParameterList containing the solver specifications.");
+
+      return pl;
+    }
+};
+
+// ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Diagonally-Implicit RK Butcher Tableau
+ *
+ *  The tableau (stage=2, order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  1/(3+\sqrt{3})    & 1/(3+\sqrt{3}) & \\
+ *                         (1/6)(3+\sqrt{3}) & 1/\sqrt{3}     & 1/(3+\sqrt{3}) \\   \hline
+ *                                           & 1/2            & 1/2 \end{array}
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+
+template<class Scalar>
+class SSPDIRK23 :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SSPDIRK23()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+      << "Strong Stability Preserving Diagonally-Implicit RK (stage=2, order=3)\n"
+      << "SSP-Coef = 1 + sqrt( 3 )\n"
+      << "c =     [ 1/(3 + sqrt( 3 ))  (1/6)(3 + sqrt( 3 )) ] '\n"
+      << "A =     [ 1/(3 + sqrt( 3 ))                       ] \n"
+      << "        [ 1/sqrt( 3 )        1/(3 + sqrt( 3 ))    ] \n"
+      << "b     = [ 1/2                   1/2               ] \n" << std::endl;
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 2;
+    const int order     = 3;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    const Scalar one      = ST::one();
+    const Scalar zero     = ST::zero();
+    const Scalar onethird = one/(3*one);
+    const Scalar onehalf = one/(2*one);
+    const Scalar rootthree = std::sqrt(3);
+
+    // Fill A:
+    A(0,0) = A(1,1) = one/(3*one + rootthree);
+    A(1,0) = one/rootthree;
+    A(0,1) = zero;
+
+    // Fill b:
+    b(0) = b(1) = onehalf;
+
+    // Fill c:
+    c(0) = A(0,0);
+    c(1) = A(1,0) + A(1,1);
+
+    this->initialize(A,b,c,order,this->getDescription());
+    this->setMyParamList(pl);
+    this->rkbtPL_ = pl;
+  }
+
+  virtual std::string description() const { return "SSPDIRK23"; }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters() const
+    {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->setName("Default Stepper - " + this->description());
+      pl->set<std::string>("Description", this->getDescription());
+      pl->set<std::string>("Stepper Type", this->description());
+      pl->set<bool>("Use Embedded", false);
+      pl->set<bool>("Use FSAL", false);
+      pl->set<std::string>("Initial Condition Consistency", "None");
+      pl->set<bool>("Initial Condition Consistency Check", false);
+      pl->set<std::string>("Solver Name", "",
+          "Name of ParameterList containing the solver specifications.");
+
+      return pl;
+    }
+};
+
+
+// ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Diagonally-Implicit RK Butcher Tableau
+ *
+ *  The tableau (stage=3, order=3) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  1/6  & 1/6  & \\
+ *                         1/2  & 1/3  & 1/6 & \\   \hline
+ *                         5/6  & 1/3  & 1/3 & 1/3 \\   \hline
+ *                              & 1/3  & 1/3 & 1/3  \end{array}
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+
+template<class Scalar>
+class SSPDIRK33 :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SSPDIRK33()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+      << "Strong Stability Preserving Diagonally-Implicit RK (stage=3, order=3)\n"
+      << "SSP-Coef = 2 + 2 sqrt(2)\n"
+      << "c =     [ 1/( 4 + 2 sqrt(2)      1/2            (1/4)(2 + sqrt(2) ] '\n"
+      << "A =     [ 1/( 4 + 2 sqrt(2)                                       ] \n"
+      << "        [ 1/(2 sqrt(2)       1/( 4 + 2 sqrt(2)                    ] \n"
+      << "        [ 1/(2 sqrt(2)        1/(2 sqrt(2)      1/( 4 + 2 sqrt(2) ] \n"
+      << "b     = [ 1/3                    1/3                1/3           ] \n" << std::endl;
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 3;
+    const int order     = 3;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    const Scalar one      = ST::one();
+    const Scalar zero     = ST::zero();
+    const Scalar onethird = one/(3*one);
+    const Scalar rootwo   = std::sqrt(2);
+
+    // Fill A:
+    A(0,0) = A(1,1) = A(2,2) = one / (4*one + 2*rootwo);
+    A(1,0) = A(2,0) = A(2,1) = one / (2*rootwo);
+    A(0,1) = A(0,2) = A(1,2) = zero;
+
+    // Fill b:
+    b(0) = b(1) = b(2) = onethird;
+
+    // Fill c:
+    c(0) = A(0,0);
+    c(1) = A(1,0) + A(1,1);
+    c(2) = A(2,0) + A(2,1) + A(2,2);
+
+    this->initialize(A,b,c,order,this->getDescription());
+    this->setMyParamList(pl);
+    this->rkbtPL_ = pl;
+  }
+
+  virtual std::string description() const { return "SSPDIRK33"; }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters() const
+    {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->setName("Default Stepper - " + this->description());
+      pl->set<std::string>("Description", this->getDescription());
+      pl->set<std::string>("Stepper Type", this->description());
+      pl->set<bool>("Use Embedded", false);
+      pl->set<bool>("Use FSAL", false);
+      pl->set<std::string>("Initial Condition Consistency", "None");
+      pl->set<bool>("Initial Condition Consistency Check", false);
+      pl->set<std::string>("Solver Name", "",
+          "Name of ParameterList containing the solver specifications.");
+
+      return pl;
+    }
+};
 } // namespace Tempus
 
 

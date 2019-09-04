@@ -113,6 +113,9 @@ private:
       stepperType == "RK Explicit Trapezoidal" ||
       stepperType == "Bogacki-Shampine 3(2) Pair" ||
       stepperType == "Merson 4(5) Pair" ||
+      stepperType == "SSPERK22" ||
+      stepperType == "SSPERK33" ||
+      stepperType == "SSPERK54" ||
       stepperType == "General ERK" )
       return rcp(new StepperExplicitRK<Scalar>(model, stepperType, stepperPL));
     else if (
@@ -128,6 +131,10 @@ private:
       stepperType == "SDIRK 5 Stage 4th order" ||
       stepperType == "SDIRK 5 Stage 5th order" ||
       stepperType == "SDIRK 2(1) Pair" ||
+      stepperType == "SSPDIRK22" ||
+      stepperType == "SSPDIRK32" ||
+      stepperType == "SSPDIRK23" ||
+      stepperType == "SSPDIRK33" ||
       stepperType == "General DIRK"
       )
       return rcp(new StepperDIRK<Scalar>(model, stepperType, stepperPL));
@@ -201,6 +208,9 @@ private:
       << "    'RK Explicit 2 Stage 2nd order by Runge'\n"
       << "    'RK Explicit Trapezoidal'\n"
       << "    'Bogacki-Shampine 3(2) Pair'\n"
+      << "    'SSPERK22'\n"
+      << "    'SSPERK33'\n"
+      << "    'SSPERK54'\n"
       << "    'General ERK'\n"
       << "  Implicit Runge-Kutta Methods:\n"
       << "    'RK Backward Euler'\n"

@@ -177,6 +177,19 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
                           ExplicitMerson45_RKBT<Scalar> >(),
       "Merson 4(5) Pair");
 
+  // Explicit Strong Stability Preserving Runge-Kutta Methods
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          SSPERK22<Scalar> >(), "SSPERK22");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          SSPERK33<Scalar> >(), "SSPERK33");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          SSPERK54<Scalar> >(), "SSPERK54");
+
   // Implicit
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
@@ -244,6 +257,23 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< RKButcherTableau<Scalar>,
                           EDIRK2Stage3rdOrder_RKBT<Scalar> >(),
       "EDIRK 2 Stage 3rd order");
+
+  // Diagonally-Implicit Strong Stability Preserving Runge-Kutta Methods
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+      SSPDIRK22<Scalar> >(), "SSPDIRK22");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+      SSPDIRK32<Scalar> >(), "SSPDIRK32");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+      SSPDIRK23<Scalar> >(), "SSPDIRK23");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+      SSPDIRK33<Scalar> >(), "SSPDIRK33");
 
   // IRK
   builder_.setObjectFactory(
