@@ -176,9 +176,9 @@ namespace Intrepid2{
   template <typename SpT, typename PT, typename WT>
   void
   CubatureControlVolumeBoundary<SpT,PT,WT>::
-  getCubature( pointViewType  cubPoints,
+  getCubature( PointViewType  cubPoints,
                weightViewType cubWeights,
-               pointViewType  cellCoords ) const {
+               PointViewType  cellCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( cubPoints.rank() != 3, std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolumeBoundary): cubPoints must have rank 3 (C,P,D).");
@@ -258,13 +258,13 @@ namespace Intrepid2{
       typedef Kokkos::View<ordinal_type*,SpT> mapViewType;
       const auto sideNodeMap = Kokkos::subview(sideNodeMap_, node, Kokkos::ALL());
       
-      typedef typename ExecSpace<typename pointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+      typedef typename ExecSpace<typename PointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
       
       const auto loopSize = numCells;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
       
       // compute centers
-      typedef Functor<pointViewType,tempPointStrideViewType,mapViewType> FunctorType;
+      typedef Functor<PointViewType,tempPointStrideViewType,mapViewType> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(cubPointsNode,
                                                 subcvCoordsNode,
                                                 sideNodeMap) );

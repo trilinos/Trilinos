@@ -53,12 +53,12 @@ namespace Intrepid2 {
   namespace Impl {
 
     template<EOperator opType>
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HVOL_C0_FEM::Serial<opType>::
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType /* input */ ) {
       switch (opType) {
       case OPERATOR_VALUE : {
@@ -139,6 +139,7 @@ namespace Intrepid2 {
     this->basisCellTopology_ = cellTopo;
     this->basisType_         = Intrepid2::BASIS_FEM_DEFAULT;
     this->basisCoordinates_  = Intrepid2::COORDINATES_CARTESIAN;
+    this->functionSpace_     = FUNCTION_SPACE_HVOL;
 
     // initialize tags
     {
@@ -151,7 +152,7 @@ namespace Intrepid2 {
       // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration
       ordinal_type tags[4] = { spaceDim, 0, 0, 1 };
 
-      ordinal_type_array_1d_host tagView(&tags[0], 4);
+      OrdinalTypeArray1DHost tagView(&tags[0], 4);
 
       this->setOrdinalTagData(this->tagToOrdinal_,
                               this->ordinalToTag_,
@@ -164,7 +165,7 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoords("dofCoordsHost", this->basisCardinality_, spaceDim), cellVerts("cellVerts", spaceDim);
 
     CellTools<SpT>::getReferenceCellCenter(Kokkos::subview(dofCoords, 0, Kokkos::ALL()),

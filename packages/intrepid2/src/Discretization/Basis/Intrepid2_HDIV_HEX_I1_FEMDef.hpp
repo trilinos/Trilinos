@@ -55,12 +55,12 @@ namespace Intrepid2 {
   namespace Impl {
 
     template<EOperator opType>
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HDIV_HEX_I1_FEM::Serial<opType>::
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType input ) {
       switch (opType) {
       case OPERATOR_VALUE : {
@@ -206,6 +206,7 @@ namespace Intrepid2 {
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
     this->basisType_         = BASIS_FEM_DEFAULT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
+    this->functionSpace_     = FUNCTION_SPACE_HDIV;
 
     // initialize tags
     {
@@ -224,7 +225,7 @@ namespace Intrepid2 {
                                  2, 5, 0, 1 };
 
       // when exec space is device, this wrapping relies on uvm.
-      ordinal_type_array_1d_host tagView(&tags[0], 24);
+      OrdinalTypeArray1DHost tagView(&tags[0], 24);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
@@ -237,7 +238,7 @@ namespace Intrepid2 {
                               posDfOrd);
     }
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     dofCoords(0,0)  =  0.0;   dofCoords(0,1)  = -1.0;   dofCoords(0,2)  =  0.0;
@@ -251,7 +252,7 @@ namespace Intrepid2 {
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
 
     // dofCoeffs on host and create its mirror view to device
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     // for HDIV_HEX_I1 dofCoeffs are the normals on the hexahedron faces (with normals magnitude equal to faces' areas)
