@@ -177,14 +177,14 @@ namespace Intrepid2 {
     //
     // Cubature public functions
     //
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
+    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::PointViewType  PointViewType;
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
     using Cubature<ExecSpaceType,pointValueType,weightValueType>::getCubature;
 
     virtual
     void
-    getCubature( pointViewType  cubPoints,
+    getCubature( PointViewType  cubPoints,
                  weightViewType cubWeights ) const {
       this->getCubatureFromData(cubPoints, cubWeights, this->cubatureData_);
     }

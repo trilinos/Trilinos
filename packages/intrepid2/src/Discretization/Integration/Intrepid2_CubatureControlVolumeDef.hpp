@@ -90,9 +90,9 @@ namespace Intrepid2 {
   template <typename SpT, typename PT, typename WT>
   void
   CubatureControlVolume<SpT,PT,WT>::
-  getCubature( pointViewType  cubPoints,
+  getCubature( PointViewType  cubPoints,
                weightViewType cubWeights,
-               pointViewType  cellCoords ) const {
+               PointViewType  cellCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( cubPoints.rank() != 3, std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cubPoints must have rank 3 (C,P,D).");
@@ -149,12 +149,12 @@ namespace Intrepid2 {
                                      subcvJacobianNode);    // C, P, D, D
     }
     
-    typedef typename ExecSpace<typename pointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename ExecSpace<typename PointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
     
     const auto loopSize = numCells;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     
-    typedef Functor<pointViewType,weightViewType,tempPointViewType,tempPointViewType,tempPointViewType> FunctorType;
+    typedef Functor<PointViewType,weightViewType,tempPointViewType,tempPointViewType,tempPointViewType> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(cubPoints, 
                                               cubWeights, 
                                               subcvCoords, 

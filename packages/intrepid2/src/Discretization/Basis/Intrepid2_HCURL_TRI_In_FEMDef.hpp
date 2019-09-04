@@ -59,14 +59,14 @@ namespace Intrepid2 {
   namespace Impl {
 
     template<EOperator opType>
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType,
              typename workViewType,
              typename vinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HCURL_TRI_In_FEM::Serial<opType>::
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType  input,
                      workViewType   work,
                const vinvViewType   coeffs ) {
@@ -195,6 +195,7 @@ namespace Intrepid2 {
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
     this->basisType_         = BASIS_FEM_FIAT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
+    this->functionSpace_     = FUNCTION_SPACE_HCURL;
 
     const ordinal_type card = this->basisCardinality_;
 
@@ -456,7 +457,7 @@ namespace Intrepid2 {
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
-      ordinal_type_array_1d_host tagView(&tags[0][0], card*tagSize);
+      OrdinalTypeArray1DHost tagView(&tags[0][0], card*tagSize);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       // tags are constructed on host
