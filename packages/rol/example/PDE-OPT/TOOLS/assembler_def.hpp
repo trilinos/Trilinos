@@ -2313,13 +2313,30 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   /****************************************/
   /*** Assemble global graph structure. ***/
   /****************************************/
-  matJ1Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, 0);
+
   // Make a GO copy to interface with Tpetra; currently dof manager uses int directly
   Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
   Teuchos::ArrayRCP<GO> cellDofsGO(cellDofsArrayRCP.size(), GO());
   std::copy(cellDofsArrayRCP.getRawPtr(), cellDofsArrayRCP.getRawPtr()+cellDofsArrayRCP.size(), 
             cellDofsGO.getRawPtr());
   Teuchos::ArrayRCP<const GO> cellDofsGOArrayRCP = cellDofsGO.getConst();
+
+  // Estimate the max number of entries per row 
+  // using a map (row indicies can be non-contiguous)
+  GO maxEntriesPerRow(0);
+  {
+    std::map<GO,GO> numEntiresCount;
+    for (int i=0; i<numCells_; ++i) 
+      for (int j=0; j<numLocalDofs; ++j) 
+        numEntiresCount[GO(cellDofs(myCellIds_[i],j))] += numLocalDofs;
+    const auto rowIndexWithMaxEntries 
+      = std::max_element(std::begin(numEntiresCount), std::end(numEntiresCount), 
+                         [](const std::pair<GO,GO> &pa, const std::pair<GO,GO> &pb) {
+                           return pa.second < pb.second;
+                         });
+    maxEntriesPerRow = rowIndexWithMaxEntries->second;
+  }
+  matJ1Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, maxEntriesPerRow);
   for (int i=0; i<numCells_; ++i) {
     for (int j=0; j<numLocalDofs; ++j) {
       matJ1Graph_->insertGlobalIndices(GO(cellDofs(myCellIds_[i],j)),

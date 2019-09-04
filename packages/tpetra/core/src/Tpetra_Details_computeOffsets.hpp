@@ -204,36 +204,13 @@ public:
   ComputeOffsetsFromConstantCount (const offsets_view_type& offsets,
                                    const count_type count) :
     offsets_ (offsets),
-    count_ (count),
-    size_ (offsets_.extent (0) == 0 ?
-           size_type (0) :
-           size_type (offsets_.extent (0) - 1))
+    count_ (count)
   {}
 
-  //! Set the initial value of the reduction result.
-  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
-  {
-    dst = 0;
-  }
-
-  //! Combine intermedate reduction results across threads.
   KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst,
-        const volatile value_type& src) const
+  operator () (const size_type i) const 
   {
-    dst += src;
-  }
-
-  //! Reduction operator.
-  KOKKOS_INLINE_FUNCTION void
-  operator () (const size_type i, value_type& update, const bool final) const
-  {
-    if (final) {
-      offsets_[i] = update;
-    }
-    if (i < size_) {
-      update += count_;
-    }
+    offsets_[i] = count_*i;
   }
 
 private:
@@ -241,8 +218,6 @@ private:
   offsets_view_type offsets_;
   //! "Count" input argument
   count_type count_;
-  //! Number of entries in offsets_, minus 1.
-  size_type size_;
 };
 
 } // namespace (anonymous)
@@ -429,7 +404,6 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
   const char funcName[] = "Tpetra::Details::computeOffsetsFromConstantCount";
 
   const auto numOffsets = ptr.size ();
-  offset_type total (0);
 
   if (numOffsets != 0) {
     using CT = typename std::decay<CountType>::type;
@@ -442,7 +416,8 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
     using range_type = Kokkos::RangePolicy<execution_space, SizeType>;
     range_type range (0, numOffsets);
     try {
-      Kokkos::parallel_scan (range, functor, total, funcName);
+      /// computing offsets from constant count don't need scan
+      Kokkos::parallel_for (range, functor, funcName);
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -457,7 +432,7 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
          ">) threw an exception not a subclass of std::exception");
     }
   }
-  return total;
+  return numOffsets*count;
 }
 
 } // namespace Details
