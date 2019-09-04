@@ -71,6 +71,10 @@ protected:
     multipliers_->get(lam, pt);
   }
 
+  void setMultiplier(Real &lam, const std::vector<Real> &pt) {
+    multipliers_new_->set(lam, pt);
+  }
+
   // Get penalty parameter
   Real getPenaltyParameter(void) const {
     return pen_;
@@ -112,7 +116,7 @@ public:
     }
   }
 
-  Real computeDual(SampleGenerator<Real> &sampler) {
+  virtual Real computeDual(SampleGenerator<Real> &sampler) {
     const Real zero(0), one(1);
     Real val(0), lold(0), lnew(0), mdiff(0), gdiff(0);
     for (int i = sampler.start(); i < sampler.numMySamples(); ++i) {
