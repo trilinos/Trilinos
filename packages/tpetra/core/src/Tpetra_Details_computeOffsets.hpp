@@ -321,7 +321,6 @@ computeOffsetsFromCounts (const ExecutionSpace& execSpace,
       counts_a = counts_copy;
     }
 
-    typename offsets_device_type::execution_space execSpace;
     using functor_type =
       ComputeOffsetsFromCounts<offset_type, count_type, SizeType>;
     total = functor_type::run (execSpace, ptr_a, counts_a);
