@@ -55,12 +55,12 @@ namespace Intrepid2 {
   namespace Impl {
 
     template<EOperator opType>
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_HEX_C1_FEM::Serial<opType>::
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType input ) {
       switch (opType) {
       case OPERATOR_VALUE : {
@@ -280,6 +280,7 @@ namespace Intrepid2 {
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
     this->basisType_         = BASIS_FEM_DEFAULT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
+    this->functionSpace_     = FUNCTION_SPACE_HGRAD;
 
     // initialize tags
     {
@@ -300,11 +301,11 @@ namespace Intrepid2 {
                                  0, 7, 0, 1 };
 
       // host tags
-      ordinal_type_array_1d_host tagView(&tags[0], 32);
+      OrdinalTypeArray1DHost tagView(&tags[0], 32);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-      //ordinal_type_array_2d_host ordinalToTag;
-      //ordinal_type_array_3d_host tagToOrdinal;
+      //OrdinalTypeArray2DHost ordinalToTag;
+      //OrdinalTypeArray3DHost tagToOrdinal;
       this->setOrdinalTagData(this->tagToOrdinal_,
                               this->ordinalToTag_,
                               tagView,
@@ -322,7 +323,7 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
     
     dofCoords(0,0) = -1.0;   dofCoords(0,1) = -1.0; dofCoords(0,2) = -1.0;

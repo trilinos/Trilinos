@@ -2636,6 +2636,8 @@ ReComputePreconditioner(bool keepFineLevelSmoother)
   profileIterations_ = List_.get("profile: operator iterations", 0);
   ML_Operator_Profile_SetIterations(profileIterations_);
   ML_CHK_ERR(SetNullSpace());
+  NumPDEEqns_ = List_.get("PDE equations", 1);
+  ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
   ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
 
   if (verbose_)
