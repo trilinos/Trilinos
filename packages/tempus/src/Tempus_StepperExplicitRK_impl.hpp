@@ -162,8 +162,9 @@ void StepperExplicitRK<Scalar>::setObserver(
 {
   if (obs != Teuchos::null ) {
     stepperObserver_->addObserver(obs);
-    stepperExplicitRKObserver_->addObserver(
-      Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> > (obs,true));
+    auto ERKObs =
+      Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> > (obs);
+    if (ERKObs!=Teuchos::null) stepperExplicitRKObserver_->addObserver(ERKObs);
   } else {
     if (stepperExplicitRKObserver_->empty()) {
       auto ERKObs = Teuchos::rcp(new StepperExplicitRKObserver<Scalar>());
