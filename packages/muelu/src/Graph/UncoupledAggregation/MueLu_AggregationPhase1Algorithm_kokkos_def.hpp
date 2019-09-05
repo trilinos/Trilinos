@@ -70,10 +70,23 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph,
-                  Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat,
+  BuildAggregates(const Teuchos::ParameterList& params,
+                  const LWGraph_kokkos& graph,
+                  Aggregates_kokkos& aggregates,
+                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggstat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
+
+    using memory_space = typename LWGraph_kokkos::memory_space;
+
+    typename Kokkos::View<unsigned*, memory_space>::HostMirror aggstatHost
+      = Kokkos::create_mirror(aggstat);
+    Kokkos::deep_copy(aggstatHost, aggstat);
+    std::vector<unsigned> aggStat;
+    aggStat.resize(aggstatHost.extent(0));
+    for(size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
+      aggStat[idx] = aggstatHost(idx);
+    }
 
     std::string orderingStr     = params.get<std::string>("aggregation: ordering");
     int maxNeighAlreadySelected = params.get<int>        ("aggregation: max selected neighbors");
@@ -104,6 +117,11 @@ namespace MueLu {
       BuildAggregatesSerial(graph, aggregates, aggStat, numNonAggregatedNodes, minNodesPerAggregate,
                             maxNodesPerAggregate, maxNeighAlreadySelected, orderingStr);
     }
+
+    for(size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
+      aggstatHost(idx) = aggStat[idx];
+    }
+    Kokkos::deep_copy(aggstat, aggstatHost);
   }
 
 

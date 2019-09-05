@@ -180,7 +180,9 @@ namespace MueLu {
     const LO numRows = graph->GetNodeNumVertices();
 
     // construct aggStat information
-    std::vector<unsigned> aggStat(numRows, READY);
+    Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space> aggStat("aggregation status",
+                                                                           numRows);
+    Kokkos::deep_copy(aggStat, READY);
 
     // TODO
     //ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
