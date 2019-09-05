@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
     }
 
     CommWorld->barrier();
-    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("BlockILU_Subdomain_Solver Test"));
+    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("Thyra Elasticity Test"));
     TimeMonitor::setStackedTimer(stackedTimer);
 
     int N = 0;
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
     }
 
     CommWorld->barrier();
-    stackedTimer->stop("BlockILU_Subdomain_Solver Test");
+    stackedTimer->stop("Thyra Elasticity Test");
     StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stackedTimer->report(*out,CommWorld,options);
