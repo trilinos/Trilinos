@@ -192,7 +192,7 @@ namespace { // (anonymous)
 
         int threshold = std::stoi(std::string(varVal));
         const size_t threshold2 = Behavior::verbosePrintCountThreshold ();
-        TEST_EQUALITY( threshold, threshold2 );
+        TEST_EQUALITY( static_cast<const size_t>(threshold), threshold2 );
       }
     }
 
