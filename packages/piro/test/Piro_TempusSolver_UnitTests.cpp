@@ -46,7 +46,8 @@
 
 #ifdef HAVE_PIRO_TEMPUS
 #include "Piro_TempusSolver.hpp"
-#include "Tempus_StepperBackwardEuler.hpp"
+#include "Tempus_StepperFactory.hpp"
+//#include "Tempus_StepperBackwardEuler.hpp"
 #include "Piro_ObserverToTempusIntegrationObserverAdapter.hpp"
 
 #ifdef HAVE_PIRO_NOX
@@ -125,7 +126,10 @@ const RCP<TempusSolver<double> > solverNew(
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
 
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
-  const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
+
+  RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
+  const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
+  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, finalTime));
 }
 
@@ -155,7 +159,9 @@ const RCP<TempusSolver<double> > solverNew(
   integrator->setObserver(tempusObserver);
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
-  const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
+  RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
+  const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
+  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
 
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
 }
@@ -190,7 +196,9 @@ const RCP<TempusSolver<double> > solverNew(
   integrator->setObserver(tempusObserver);
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
-  const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
+  RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
+  const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
+  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
 
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
 }

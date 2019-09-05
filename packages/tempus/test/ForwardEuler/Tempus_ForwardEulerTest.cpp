@@ -70,8 +70,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
       Tempus::integratorBasic<double>(tempusPL, model);
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
-    RCP<ParameterList> defaultPL =
-      integrator->getStepper()->getDefaultParameters();
+    RCP<const ParameterList> defaultPL =
+      integrator->getStepper()->getValidParameters();
 
     bool pass = haveSameValues(*stepperPL, *defaultPL, true);
     if (!pass) {
@@ -88,8 +88,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
       Tempus::integratorBasic<double>(model, "Forward Euler");
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
-    RCP<ParameterList> defaultPL =
-      integrator->getStepper()->getDefaultParameters();
+    RCP<const ParameterList> defaultPL =
+      integrator->getStepper()->getValidParameters();
 
     bool pass = haveSameValues(*stepperPL, *defaultPL, true);
     if (!pass) {

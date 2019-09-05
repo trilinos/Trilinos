@@ -141,6 +141,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperHHTAlpha<double>());
   stepper->setModel(model);
+  stepper->setSolver();
   stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------
