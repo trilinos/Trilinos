@@ -92,8 +92,8 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
 
   Kokkos::parallel_for("Tpetra::extractBlockDiagonal",range_type(0,numrows),KOKKOS_LAMBDA(const LO i){
       LO diag_col   = colmap.getLocalElement(rowmap.getGlobalElement(i));
-      LO blockStart = diag_col - blocksize + 1;
-      LO blockStop  = diag_col + blocksize - 1;
+      LO blockStart = diag_col - (diag_col % blocksize);
+      LO blockStop  = blockStart + blocksize;
       for(LO k=0; k<blocksize; k++)
         diag(i,k)=ZERO;
 
