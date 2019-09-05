@@ -60,7 +60,7 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(algebraicOverlappingPreconditionerTime,"AlgebraicOverlappingPreconditioner::AlgebraicOverlappingPreconditioner");
         // Set the LevelID in the sublist
-        parameterList->sublist("GDSWCoarseOperator").set("Level ID",this->LevelID_);
+        parameterList->sublist("AlgebraicOverlappingOperator").set("Level ID",this->LevelID_);
         OverlappingOperator_.reset(new AlgebraicOverlappingOperator<SC,LO,GO,NO>(k,sublist(parameterList,"AlgebraicOverlappingOperator")));
         SumOperator_->addOperator(OverlappingOperator_);
     }

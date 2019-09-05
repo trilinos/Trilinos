@@ -106,11 +106,12 @@ namespace FROSch {
     template <typename LO,typename GO,typename NO>
     LowerPIDTieBreak<LO,GO,NO>::LowerPIDTieBreak(CommPtr comm,
                                                  ConstXMapPtr originalMap,
+                                                 UN dimension,
                                                  UN levelID) :
     MpiComm_ (comm),
     OriginalMap_ (originalMap),
     ElementCounter_ (),
-    OverlappingDataList_ (2*(OriginalMap_->getGlobalNumElements()/MpiComm_->getSize())),
+    OverlappingDataList_ (dimension*(OriginalMap_->getGlobalNumElements()/MpiComm_->getSize())+std::pow(3,dimension)),
     ComponentsSubdomains_ (OriginalMap_->getNodeNumElements()),
     LevelID_ (levelID)
     {
@@ -177,11 +178,21 @@ namespace FROSch {
         int minpid = pid_and_lid[0].first;
         std::size_t minidx = 0;
 
+        static int counter = 0;
         for (idx = 0; idx < numLids; ++idx) {
             // Organize the overlapping data to send it back to the original processes
-            OverlappingDataList_[ElementCounter_].reset(new OverlappingData<LO,GO>(GID,
-                                                                                   pid_and_lid[idx].first,
-                                                                                   pid_and_lid[idx].second));
+            if (ElementCounter_>=OverlappingDataList_.size()) std::cout << "FUUUUUUUUCCCCKKKKK!!!!!!!" << ElementCounter_ << " " << OverlappingDataList_.size() << std::endl;
+            if (ElementCounter_<OverlappingDataList_.size()) {
+                OverlappingDataList_[ElementCounter_].reset(new OverlappingData<LO,GO>(GID,
+                                                                                       pid_and_lid[idx].first,
+                                                                                       pid_and_lid[idx].second));
+            } else {
+                if (counter == 0) std::cout << "FROSch::LowerPIDTieBreak : WARNING: Preallocation for OverlappingDataList_ is not sufficient on proc " << MpiComm_->getRank() << std::endl;
+                OverlappingDataList_.push_back(RCP<OverlappingData<LO,GO> >(new OverlappingData<LO,GO>(GID,
+                                                                                                       pid_and_lid[idx].first,
+                                                                                                       pid_and_lid[idx].second)));
+                counter++;
+            }
             ElementCounter_++;
             if (pid_and_lid[idx].first < minpid) {
                 minpid = pid_and_lid[idx].first;
@@ -668,6 +679,34 @@ namespace FROSch {
             //if (mapVector[j]->getComm()->getRank() == 0) std::cout << std::endl << globalstart << std::endl;
         }
         return MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),-1,assembledMapTmp(),0,mapVector[0]->getComm());
+    }
+    
+    template <class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > AssembleSubdomainMap(unsigned numberOfBlocks,
+                                             ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > > dofsMaps,
+                                             ArrayRCP<unsigned> dofsPerNode)
+    {
+        FROSCH_ASSERT(numberOfBlocks>0,"FROSch : ERROR: numberOfBlocks==0");
+        FROSCH_TIMER_START(assembleSubdomainMapTime,"AssembleSubdomainMap");
+        FROSCH_ASSERT(dofsMaps.size()==numberOfBlocks,"FROSch : ERROR: dofsMaps.size()!=NumberOfBlocks_");
+        FROSCH_ASSERT(dofsPerNode.size()==numberOfBlocks,"FROSch : ERROR: dofsPerNode.size()!=NumberOfBlocks_");
+        
+        Array<GO> mapVector(0);
+        for (unsigned i=0; i<numberOfBlocks; i++) {
+            FROSCH_ASSERT(!dofsMaps[i].is_null(),"FROSch : ERROR: dofsMaps[i].is_null()");
+            FROSCH_ASSERT(dofsMaps[i].size()==dofsPerNode[i],"FROSch : ERROR: dofsMaps[i].size()!=dofsPerNode[i]");
+            unsigned numMyElements = dofsMaps[i][0]->getNodeNumElements();
+            for (unsigned j=1; j<dofsPerNode[i]; j++) {
+                FROSCH_ASSERT(dofsMaps[i][j]->getNodeNumElements()==(unsigned) numMyElements,"FROSch : ERROR: dofsMaps[i][j]->getNodeNumElements()==numMyElements");
+            }
+            for (unsigned j=0; j<numMyElements; j++) {
+                for (unsigned k=0; k<dofsPerNode[i]; k++) {
+                    mapVector.push_back(dofsMaps[i][k]->getGlobalElement(j));
+                }
+            }
+        }
+        FROSCH_ASSERT(!dofsMaps[0].is_null(),"FROSch : ERROR: dofsMaps[0].is_null()");
+        return MapFactory<LO,GO,NO>::Build(dofsMaps[0][0]->lib(),-1,mapVector(),0,dofsMaps[0][0]->getComm());
     }
 
     template <class LO,class GO,class NO>

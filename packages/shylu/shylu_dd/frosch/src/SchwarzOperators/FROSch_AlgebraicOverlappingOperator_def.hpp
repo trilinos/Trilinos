@@ -80,9 +80,7 @@ namespace FROSch {
 +------------------------------+\n";
         }
 
-        if (repeatedMap.is_null()) {
-            repeatedMap = MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap(),1);
-        }
+        if (repeatedMap.is_null()) repeatedMap = this->K_->getRangeMap();
         this->buildOverlappingMatrices(overlap,repeatedMap);
         this->initializeOverlappingOperator();
 
@@ -213,6 +211,15 @@ namespace FROSch {
         return 0;
     }
 
+    template <class SC,class LO,class GO,class NO>
+    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::updateLocalOverlappingMatrices()
+    {
+        if (this->IsComputed_) { // already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
+            this->OverlappingMatrix_ = this->K_;
+        }
+        this->OverlappingMatrix_ = ExtractLocalSubdomainMatrix(this->OverlappingMatrix_,this->OverlappingMap_);
+        return 0;
+    }
 }
 
 #endif

@@ -139,8 +139,6 @@ namespace FROSch {
 
     protected:
 
-        virtual XMapPtr assembleSubdomainMap() = 0;
-
         virtual int setUpCoarseOperator();
 
         XMatrixPtr buildCoarseMatrix();

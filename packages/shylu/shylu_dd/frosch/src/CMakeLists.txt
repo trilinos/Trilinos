@@ -81,6 +81,8 @@ APPEND_SET(HEADERS
   InterfaceSets/FROSch_InterfaceEntity_def.hpp
   SchwarzOperators/FROSch_AlgebraicOverlappingOperator_decl.hpp
   SchwarzOperators/FROSch_AlgebraicOverlappingOperator_def.hpp
+  SchwarzOperators/FROSch_AlgebraicOverlappingOperatorBlock_decl.hpp
+  SchwarzOperators/FROSch_AlgebraicOverlappingOperatorBlock_def.hpp
   SchwarzOperators/FROSch_CoarseOperator_decl.hpp
   SchwarzOperators/FROSch_CoarseOperator_def.hpp
   SchwarzOperators/FROSch_GDSWCoarseOperator_decl.hpp

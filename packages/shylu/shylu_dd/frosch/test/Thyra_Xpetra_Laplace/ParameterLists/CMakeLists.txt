@@ -1,4 +1,4 @@
-TRIBITS_COPY_FILES_TO_BINARY_DIR(ThyraXpetraCopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ThyraXpetraLaplaceCopyFiles
 DEST_FILES ParameterList_GDSWPreconditioner.xml 
            ParameterList_RGDSWPreconditioner.xml 
            ParameterList_TwoLevelBlockPreconditioner_GDSW.xml 

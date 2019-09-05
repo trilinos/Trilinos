@@ -183,10 +183,8 @@ namespace FROSch {
     int OverlappingOperator<SC,LO,GO,NO>::computeOverlappingOperator()
     {
         FROSCH_TIMER_START_LEVELID(computeOverlappingOperatorTime,"OverlappingOperator::computeOverlappingOperator");
-        if (this->IsComputed_) { // already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
-            OverlappingMatrix_ = this->K_;
-        }
-        OverlappingMatrix_ = ExtractLocalSubdomainMatrix(OverlappingMatrix_,OverlappingMap_);
+        
+        updateLocalOverlappingMatrices();
 
         bool reuseSymbolicFactorization = this->ParameterList_->get("Reuse: Symbolic Factorization",true);
         if (!this->IsComputed_) {

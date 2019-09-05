@@ -696,7 +696,7 @@ namespace FROSch {
 
             case CreateOneToOneMap:
                 {
-                    RCP<LowerPIDTieBreak<LO,GO,NO> > lowerPIDTieBreak(new LowerPIDTieBreak<LO,GO,NO>(MpiComm_,NodesMap_));
+                    RCP<LowerPIDTieBreak<LO,GO,NO> > lowerPIDTieBreak(new LowerPIDTieBreak<LO,GO,NO>(MpiComm_,NodesMap_,Dimension_,LevelID_));
                     UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_,true,lowerPIDTieBreak);
                     lowerPIDTieBreak->sendDataToOriginalMap();
                     componentsSubdomains = lowerPIDTieBreak->getComponents();

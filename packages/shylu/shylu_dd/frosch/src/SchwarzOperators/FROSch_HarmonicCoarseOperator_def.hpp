@@ -70,7 +70,7 @@ namespace FROSch {
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeCoarseSpace(CoarseSpacePtr coarseSpace)
     {
         FROSCH_TIMER_START_LEVELID(computeCoarseSpaceTime,"HarmonicCoarseOperator::computeCoarseSpace");
-        XMapPtr repeatedMap = assembleSubdomainMap();
+        XMapPtr repeatedMap = AssembleSubdomainMap(NumberOfBlocks_,DofsMaps_,DofsPerNode_);
 
         // Build local saddle point problem
         ConstXMatrixPtr repeatedMatrix = ExtractLocalSubdomainMatrix(this->K_.getConst(),repeatedMap.getConst()); // AH 12/11/2018: Should this be in initalize?
@@ -125,29 +125,6 @@ namespace FROSch {
                     if (InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()>=0) {
                         tmp += InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()+1;
                     }
-                }
-            }
-        }
-        return MapFactory<LO,GO,NO>::Build(DofsMaps_[0][0]->lib(),-1,mapVector(),0,this->MpiComm_);
-    }
-
-    template <class SC,class LO,class GO,class NO>
-    typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleSubdomainMap()
-    {
-        FROSCH_TIMER_START_LEVELID(assembleSubdomainMapTime,"HarmonicCoarseOperator::assembleSubdomainMap");
-        FROSCH_ASSERT(DofsMaps_.size()==NumberOfBlocks_,"FROSch::HarmonicCoarseOperator : ERROR: DofsMaps_.size()!=NumberOfBlocks_");
-        FROSCH_ASSERT(DofsPerNode_.size()==NumberOfBlocks_,"FROSch::HarmonicCoarseOperator : ERROR: DofsPerNode_.size()!=NumberOfBlocks_");
-
-        GOVec mapVector(0);
-        for (UN i=0; i<NumberOfBlocks_; i++) {
-            FROSCH_ASSERT(DofsMaps_[i].size()==DofsPerNode_[i],"FROSch::HarmonicCoarseOperator : ERROR: DofsMaps_[i].size()!=DofsPerNode_[i]");
-            UN numMyElements = DofsMaps_[i][0]->getNodeNumElements();
-            for (UN j=1; j<DofsPerNode_[i]; j++) {
-                FROSCH_ASSERT(DofsMaps_[i][j]->getNodeNumElements()==(unsigned) numMyElements,"FROSch::HarmonicCoarseOperator : ERROR: DofsMaps_[i][j]->getNodeNumElements()==numMyElements");
-            }
-            for (UN j=0; j<numMyElements; j++) {
-                for (UN k=0; k<DofsPerNode_[i]; k++) {
-                    mapVector.push_back(DofsMaps_[i][k]->getGlobalElement(j));
                 }
             }
         }

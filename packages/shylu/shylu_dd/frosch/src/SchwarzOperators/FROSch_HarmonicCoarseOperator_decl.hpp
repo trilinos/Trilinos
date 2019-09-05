@@ -108,8 +108,6 @@ namespace FROSch {
         
         XMapPtr assembleCoarseMap();
 
-        XMapPtr assembleSubdomainMap();
-
         int addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap);
 
         int computeVolumeFunctions(UN blockId,

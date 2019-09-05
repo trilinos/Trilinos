@@ -156,6 +156,7 @@ namespace FROSch {
     public:
         LowerPIDTieBreak(CommPtr comm,
                          ConstXMapPtr originalMap,
+                         UN dimension,
                          UN levelID = 1); // This is in order to estimate the length of SendImageIDs_ and ExportEntries_ in advance
 
         virtual bool mayHaveSideEffects() const {
@@ -239,6 +240,11 @@ namespace FROSch {
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
                                      ArrayRCP<ArrayRCP<LO> > &partMappings);
+    
+    template <class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > AssembleSubdomainMap(unsigned numberOfBlocks,
+                                             ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > > dofsMaps,
+                                             ArrayRCP<unsigned> dofsPerNode);
 
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > MergeMapsNonConst(ArrayRCP<RCP<const Map<LO,GO,NO> > > mapVector);
