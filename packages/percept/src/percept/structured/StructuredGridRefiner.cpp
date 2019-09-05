@@ -165,6 +165,8 @@ namespace percept {
     }
 
     return num_refined_cells;
+#else
+    return 0;
 #endif
   }
 
