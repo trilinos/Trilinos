@@ -61,19 +61,11 @@ public:
     virtual Teuchos::RCP<const WrapperModelEvaluator<Scalar> >
       getWrapperModel(){return wrapperModel_;}
 
-    /// Set solver via ParameterList solver name.
-    virtual void setSolver(std::string solverName);
-    /// Set solver via solver ParameterList.
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     /// Set solver.
     virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null);
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return solver_; }
-
-    virtual std::string getStepperType() const
-     { return stepperPL_->get<std::string>("Stepper Type"); }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -109,44 +101,12 @@ public:
       {initial_guess_ = initial_guess;}
 
     /// Set parameter so that the initial guess is set to zero (=True) or use last timestep (=False).
-    virtual void setZeroInitialGuess(bool zIG)
-      { stepperPL_->set<bool>("Zero Initial Guess", zIG); }
-    virtual bool getZeroInitialGuess() const
-      { return stepperPL_->get<bool>("Zero Initial Guess", false); }
+    virtual void setZeroInitialGuess(bool zIG) { zeroInitialGuess_ = zIG; }
+    virtual bool getZeroInitialGuess() const { return zeroInitialGuess_; }
+
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const
       {return Scalar(1.0e+99);}
-
-    virtual bool getEmbedded() const
-      { return stepperPL_->get<bool>("Use Embedded", false); }
-
-    virtual void setUseFSAL(bool a) {stepperPL_->set<bool>("Use FSAL", a);}
-    virtual bool getUseFSAL() const
-      {
-        bool defaultUseFSAL =
-          this->getDefaultParameters()->template get<bool>("Use FSAL");
-        return stepperPL_->get<bool>("Use FSAL", defaultUseFSAL);
-      }
-
-    virtual void setICConsistency(std::string s)
-      {stepperPL_->set<std::string>("Initial Condition Consistency", s);}
-    virtual std::string getICConsistency() const
-      {
-        std::string defaultICConsistency = this->getDefaultParameters()->
-          template get<std::string>("Initial Condition Consistency");
-        return stepperPL_->get<std::string>("Initial Condition Consistency",
-                                            defaultICConsistency);
-      }
-
-    virtual void setICConsistencyCheck(bool c)
-      {stepperPL_->set<bool>("Initial Condition Consistency Check", c);}
-    virtual bool getICConsistencyCheck() const
-      {
-        bool defaultICConsistencyCheck = this->getDefaultParameters()->
-          template get<bool>("Initial Condition Consistency Check");
-        return stepperPL_->get<bool>("Initial Condition Consistency Check",
-                                     defaultICConsistencyCheck);
-      }
 
     /// Set xDot for Stepper storage.
     virtual void setStepperXDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > xDot)
@@ -163,10 +123,10 @@ public:
 
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>                stepperPL_;
   Teuchos::RCP<WrapperModelEvaluator<Scalar> >        wrapperModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >   solver_;
   Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+  bool zeroInitialGuess_;
 
   Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
 
