@@ -627,6 +627,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     Scalar SC_one = ST::one();
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const size_t numImages = comm->getSize();
 
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
@@ -666,9 +667,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     diag3->norm1(norms3());
 
     Array<Mag> cmp1(1), cmp2(3), cmp3(5);
-    cmp1[0] = numLocal;
-    cmp2[1] = numLocal;
-    cmp3[2] = numLocal;
+    cmp1[0] = numLocal*numImages;
+    cmp2[1] = numLocal*numImages;
+    cmp3[2] = numLocal*numImages;
 
     if (ST::isOrdinal) {
       TEST_COMPARE_ARRAYS(norms1,cmp1);
