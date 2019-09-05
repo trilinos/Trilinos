@@ -45,6 +45,7 @@
 #include "TpetraCore_config.h"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 
 /// \file Tpetra_Details_extractBlockDiagonal.hpp
 /// \brief Functions that allow for the extraction of a block diagonal
@@ -61,6 +62,7 @@ template<class SparseMatrixType,
          class MultiVectorType>
 void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal) {
   using local_map_type = typename SparseMatrixType::map_type::local_map_type;
+  using SC             = typename MultiVectorType::scalar_type;
   using LO             = typename SparseMatrixType::local_ordinal_type;
   using KCRS           = typename SparseMatrixType::local_matrix_type;
   using lno_view_t     = typename KCRS::StaticCrsGraphType::row_map_type::const_type;
@@ -70,27 +72,31 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
   using range_type     = Kokkos::RangePolicy<typename SparseMatrixType::node_type::execution_space, size_t>;
 
   // Sanity checking: Map Compatibility (A's rowmap matches diagonal's map)
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.getRowMap()->isSameAs(*diagonal.getMap()),
-    std::runtime_error, "Tpetra::Details::extractBlockDiagonal was given incompatible maps");
+  if (Tpetra::Details::Behavior::debug() == true) {
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.getRowMap()->isSameAs(*diagonal.getMap()),
+       std::runtime_error, "Tpetra::Details::extractBlockDiagonal was given incompatible maps");
+  }
 
-  int numrows   = diagonal.getLocalLength();
-  int blocksize = diagonal.getNumVectors();
-  diagonal.putScalar(Teuchos::ScalarTraits<typename MultiVectorType::scalar_type>::zero());
+  LO numrows   = diagonal.getLocalLength();
+  LO blocksize = diagonal.getNumVectors();
+  SC ZERO = Teuchos::ScalarTraits<typename MultiVectorType::scalar_type>::zero();
 
   // Get Kokkos versions of objects
   local_map_type rowmap  = A.getRowMap()->getLocalMap();
   local_map_type colmap  = A.getRowMap()->getLocalMap();
   local_mv_type diag     = diagonal.getLocalViewDevice();
-  const KCRS & Amat      = A.getLocalMatrix();
+  const KCRS   Amat      = A.getLocalMatrix();
   lno_view_t Arowptr     = Amat.graph.row_map;
   lno_nnz_view_t Acolind = Amat.graph.entries;
   scalar_view_t Avals    = Amat.values;
 
-  Kokkos::parallel_for("Tpetra::extractBlockDiagonal",range_type(0,numrows),[=](const size_t i){
+  Kokkos::parallel_for("Tpetra::extractBlockDiagonal",range_type(0,numrows),KOKKOS_LAMBDA(const LO i){
       LO diag_col   = colmap.getLocalElement(rowmap.getGlobalElement(i));
       LO blockStart = diag_col - blocksize + 1;
       LO blockStop  = diag_col + blocksize - 1;
-      
+      for(LO k=0; k<blocksize; k++)
+        diag(i,k)=ZERO;
+
       for (size_t k = Arowptr(i); k < Arowptr(i+1); k++) {
         LO col = Acolind(k);
         if (blockStart <= col && col <= blockStop) {
