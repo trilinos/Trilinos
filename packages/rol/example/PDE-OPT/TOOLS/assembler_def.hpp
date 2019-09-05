@@ -2325,16 +2325,17 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   // using a map (row indicies can be non-contiguous)
   GO maxEntriesPerRow(0);
   {
-    std::map<GO,GO> numEntiresCount;
+    std::map<GO,GO> numEntriesCount;
     for (int i=0; i<numCells_; ++i) 
       for (int j=0; j<numLocalDofs; ++j) 
-        numEntiresCount[GO(cellDofs(myCellIds_[i],j))] += numLocalDofs;
+        numEntriesCount[GO(cellDofs(myCellIds_[i],j))] += numLocalDofs;
     const auto rowIndexWithMaxEntries 
-      = std::max_element(std::begin(numEntiresCount), std::end(numEntiresCount), 
+      = std::max_element(std::begin(numEntriesCount), std::end(numEntriesCount), 
                          [](const std::pair<GO,GO> &pa, const std::pair<GO,GO> &pb) {
                            return pa.second < pb.second;
                          });
-    maxEntriesPerRow = rowIndexWithMaxEntries->second;
+    if (!numEntriesCount.empty())
+      maxEntriesPerRow = rowIndexWithMaxEntries->second;
   }
   matJ1Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, maxEntriesPerRow);
   for (int i=0; i<numCells_; ++i) {
