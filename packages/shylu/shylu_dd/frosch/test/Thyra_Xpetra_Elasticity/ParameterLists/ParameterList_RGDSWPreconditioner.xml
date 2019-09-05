@@ -22,8 +22,11 @@
 
             <ParameterList name="AlgebraicOverlappingOperator">
                 <ParameterList name="Solver">
-                    <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                    <Parameter name="Solver"                                    type="string"   value="Klu"/>
+                    <Parameter name="SolverType"                                type="string"   value="Ifpack2"/>
+                    <Parameter name="Solver"                                    type="string"   value="RILUK"/>
+                    <ParameterList name="Ifpack2">
+                        <Parameter name="fact: iluk level-of-fill"              type="int"      value="3"/>
+                    </ParameterList>
                 </ParameterList>
             </ParameterList>
 
