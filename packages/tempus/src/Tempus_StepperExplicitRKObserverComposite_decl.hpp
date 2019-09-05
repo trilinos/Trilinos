@@ -64,6 +64,9 @@ public:
 
     // clear all observer from the composite observer list
     void clearObservers();
+
+    // Size of composite observer list
+    bool empty();
   //@}
 
 private:

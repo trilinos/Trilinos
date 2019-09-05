@@ -49,5 +49,9 @@ template<class Scalar>
 void StepperObserverComposite<Scalar>::
 clearObservers() { observers_.clear();}
 
+template<class Scalar>
+bool StepperObserverComposite<Scalar>::
+empty() { return observers_.empty();}
+
 } // namespace Tempus
 #endif // Tempus_StepperObserverComposite_impl_hpp

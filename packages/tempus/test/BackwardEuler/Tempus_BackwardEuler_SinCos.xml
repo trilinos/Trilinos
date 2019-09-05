@@ -50,10 +50,9 @@
       <Parameter name="Use FSAL"       type="bool" value="false"/>
       <Parameter name="Initial Condition Consistency" type="string" value="None"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
-      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
-      <Parameter name="Predictor Name" type="string" value="Default Predictor"/>
-
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
+      <Parameter name="Predictor Stepper Type" type="string" value="Forward Euler"/>
       <ParameterList name="Default Solver">
         <ParameterList name="NOX">
           <ParameterList name="Direction">
@@ -102,10 +101,6 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="Default Predictor">
-        <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
       </ParameterList>
 
     </ParameterList>
