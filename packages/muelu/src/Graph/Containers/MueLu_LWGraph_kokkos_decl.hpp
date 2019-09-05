@@ -132,6 +132,21 @@ namespace MueLu {
       return graph_.row_map(GetNodeNumVertices());
     }
 
+    //! Returns the maximum number of entries across all rows/columns on this node
+    KOKKOS_INLINE_FUNCTION size_type getNodeMaxNumRowEntries () const {
+      return maxNumRowEntries_;
+    }
+
+    //! Return the row pointers of the local graph
+    KOKKOS_INLINE_FUNCTION typename local_graph_type::row_map_type getRowPtrs() const {
+      return graph_.row_map;
+    }
+
+    //! Return the list entries in the local graph
+    KOKKOS_INLINE_FUNCTION typename local_graph_type::entries_type getEntries() const {
+      return graph_.entries;
+    }
+
     //! Return the list of vertices adjacent to the vertex 'v'.
     // Unfortunately, C++11 does not support the following:
     //    auto getNeighborVertices(LO i) const -> decltype(rowView)
@@ -151,11 +166,6 @@ namespace MueLu {
     //! Set boolean array indicating which rows correspond to Dirichlet boundaries.
     KOKKOS_INLINE_FUNCTION void SetBoundaryNodeMap(const boundary_nodes_type bndry) {
       dirichletBoundaries_ = bndry;
-    }
-
-    //! Returns the maximum number of entries across all rows/columns on this node
-    KOKKOS_INLINE_FUNCTION size_type getNodeMaxNumRowEntries () const {
-      return maxNumRowEntries_;
     }
 
     //! Returns map with global ids of boundary nodes.

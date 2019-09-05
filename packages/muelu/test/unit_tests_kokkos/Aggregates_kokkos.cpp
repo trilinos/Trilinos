@@ -144,15 +144,15 @@ namespace MueLuTests {
     // Setup aggregation factory (use default factory for graph)
     RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
     aggFact->SetFactory("Graph", dropFact);
-    aggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(3));
-    aggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(3));
-    aggFact->SetParameter("aggregation: max selected neighbors",Teuchos::ParameterEntry(0));
-    aggFact->SetParameter("aggregation: ordering",Teuchos::ParameterEntry(std::string("natural")));
-    aggFact->SetParameter("aggregation: enable phase 1",  Teuchos::ParameterEntry(true));
-    aggFact->SetParameter("aggregation: phase 1 algorithm",Teuchos::ParameterEntry(std::string("Distance2")));
-    aggFact->SetParameter("aggregation: enable phase 2a", Teuchos::ParameterEntry(true));
-    aggFact->SetParameter("aggregation: enable phase 2b", Teuchos::ParameterEntry(true));
-    aggFact->SetParameter("aggregation: enable phase 3",  Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: max agg size",           Teuchos::ParameterEntry(3));
+    aggFact->SetParameter("aggregation: min agg size",           Teuchos::ParameterEntry(3));
+    aggFact->SetParameter("aggregation: max selected neighbors", Teuchos::ParameterEntry(0));
+    aggFact->SetParameter("aggregation: ordering",               Teuchos::ParameterEntry(std::string("natural")));
+    aggFact->SetParameter("aggregation: enable phase 1",         Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: phase 1 algorithm",      Teuchos::ParameterEntry(std::string("Distance2")));
+    aggFact->SetParameter("aggregation: enable phase 2a",        Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 2b",        Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 3",         Teuchos::ParameterEntry(true));
 
     level.Request("Aggregates", aggFact.get());
     level.Request("UnAmalgamationInfo", amalgFact.get());
