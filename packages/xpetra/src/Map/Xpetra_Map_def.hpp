@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
+//             Xpetra: A linear algebra interface package
 //                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,61 +43,32 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP
-#define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP
+#ifndef XPETRA_MAP_DEF_HPP
+#define XPETRA_MAP_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "Xpetra_Map_decl.hpp"
 
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_CommHelpers.hpp>
 
-#include <Xpetra_Vector.hpp>
+namespace Xpetra {
 
-#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos.hpp"
 
-#include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_Monitor.hpp"
+    template<class LocalOrdinal, class GlobalOrdinal, class Node>
+    Map<LocalOrdinal, GlobalOrdinal, Node>::
+    ~Map()
+    {  }
 
-namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void IsolatedNodeAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(const ParameterList& /* params */,
-                  const LWGraph_kokkos& graph,
-                  Aggregates_kokkos& /* aggregates */,
-                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggstat,
-                  LO& numNonAggregatedNodes) const {
-    Monitor m(*this, "BuildAggregates");
-
-    using memory_space = typename LWGraph_kokkos::memory_space;
-
-    typename Kokkos::View<unsigned*, memory_space>::HostMirror aggstatHost
-      = Kokkos::create_mirror(aggstat);
-    Kokkos::deep_copy(aggstatHost, aggstat);
-    std::vector<unsigned> aggStat;
-    aggStat.resize(aggstatHost.extent(0));
-    for(size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
-      aggStat[idx] = aggstatHost(idx);
+    template<class LocalOrdinal, class GlobalOrdinal, class Node>
+    RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
+    Map<LocalOrdinal, GlobalOrdinal, Node>::
+    getMap() const
+    {
+        return rcpFromRef(*this);
     }
 
-    const LO  numRows = graph.GetNodeNumVertices();
 
-    // Remove all isolated nodes
-    for (LO i = 0; i < numRows; i++)
-      if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && graph.getNeighborVertices(i).length == 1) {
-        aggStat[i] = IGNORED;
-        numNonAggregatedNodes--;
-      }
+} // Xpetra namespace
 
-    for(size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
-      aggstatHost(idx) = aggStat[idx];
-    }
-    Kokkos::deep_copy(aggstat, aggstatHost);
-  }
+#endif // XPETRA_MAP_DEF_HPP
 
-} // end namespace
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
-#endif // MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP

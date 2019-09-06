@@ -51,8 +51,8 @@
       <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
 
-      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
 
       <ParameterList name="Default Solver">
         <ParameterList name="NOX">

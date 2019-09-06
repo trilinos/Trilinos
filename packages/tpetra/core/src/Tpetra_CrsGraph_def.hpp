@@ -5196,12 +5196,13 @@ namespace Tpetra {
           } ();
 
           // If there are too many errors, don't bother printing them.
-          constexpr size_t tooManyErrsToPrint = 200; // arbitrary constant
+          size_t tooManyErrsToPrint = ::Tpetra::Details::Behavior::verbosePrintCountThreshold();
           if (lclNumErrs > tooManyErrsToPrint) {
             errStrm << "(Process " << myRank << ") When converting column "
               "indices from global to local, we encountered " << lclNumErrs
               << " indices that do not live in the column Map on this "
-              "process.  That's too many to print." << endl;
+              "process.  That's exceeds the allowable number to print."
+              << "This limit is controllable by TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD." << endl;
           }
           else {
             // Map from local row index, to any global column indices
