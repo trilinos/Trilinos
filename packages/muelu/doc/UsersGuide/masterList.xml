@@ -454,6 +454,14 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: deterministic</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: phase 1 algorithm</name>
       <type>string</type>
       <default>Serial</default>
