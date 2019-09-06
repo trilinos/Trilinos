@@ -40,7 +40,7 @@
 
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class Entity; } }
+namespace stk { namespace mesh { struct Entity; } }
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
