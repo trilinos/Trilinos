@@ -192,8 +192,8 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
     L2norm = std::sqrt(L2norm);
     ErrorNorm.push_back(L2norm);
 
-    *my_out << " n = " << n << " dt = " << dt << " error = " << L2norm
-            << std::endl;
+    //*my_out << " n = " << n << " dt = " << dt << " error = " << L2norm
+    //        << std::endl;
 
   }
 

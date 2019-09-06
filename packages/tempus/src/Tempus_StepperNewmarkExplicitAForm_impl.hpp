@@ -59,23 +59,38 @@ correctVelocity(Thyra::VectorBase<Scalar>& v,
 
 template<class Scalar>
 StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm()
+  : gammaDefault_(Scalar(0.5)), gamma_(Scalar(0.5))
 {
-  this->setParameterList(Teuchos::null);
-  this->modelWarning();
+  this->setStepperType(        "Newmark Explicit a-Form");
+  this->setUseFSAL(            this->getUseFSALDefault());
+  this->setICConsistency(      this->getICConsistencyDefault());
+  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+
+  //this->setObserver();
 }
 
 
 template<class Scalar>
 StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  Teuchos::RCP<Teuchos::ParameterList> pList)
+  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  bool useFSAL,
+  std::string ICConsistency,
+  bool ICConsistencyCheck,
+  Scalar gamma)
+  : gammaDefault_(Scalar(0.5)), gamma_(Scalar(0.5))
 {
-  this->setParameterList(pList);
+  this->setStepperType(        "Newmark Explicit a-Form");
+  this->setUseFSAL(            useFSAL);
+  this->setICConsistency(      ICConsistency);
+  this->setICConsistencyCheck( ICConsistencyCheck);
 
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
+  //this->setObserver(obs);
+
+  setGamma(gamma);
+
+  if (appModel != Teuchos::null) {
+
     this->setModel(appModel);
     this->initialize();
   }
@@ -89,8 +104,6 @@ void StepperNewmarkExplicitAForm<Scalar>::initialize()
     this->appModel_ == Teuchos::null, std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
     "StepperNewmarkExplicitAForm::initialize()\n");
-
-  this->setParameterList(this->stepperPL_);
 }
 
 template<class Scalar>
@@ -197,10 +210,10 @@ void StepperNewmarkExplicitAForm<Scalar>::setInitialConditions(
     this->evaluateExplicitODE(f, x, xDot, initialState->getTime());
     Thyra::Vp_StV(f.ptr(), Scalar(-1.0), *(xDotDot));
     Scalar reldiff = Thyra::norm(*f);
-    Scalar normxDotDot = Thyra::norm(*xDotDot); 
-    //The following logic is to prevent FPEs  
+    Scalar normxDotDot = Thyra::norm(*xDotDot);
+    //The following logic is to prevent FPEs
     Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
-    if (normxDotDot > eps*reldiff) reldiff /= normxDotDot;  
+    if (normxDotDot > eps*reldiff) reldiff /= normxDotDot;
 
     if (reldiff > eps) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -301,16 +314,8 @@ Teuchos::RCP<Tempus::StepperState<Scalar> > StepperNewmarkExplicitAForm<Scalar>:
 getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
-    rcp(new StepperState<Scalar>(description()));
+    rcp(new StepperState<Scalar>(this->getStepperType()));
   return stepperState;
-}
-
-
-template<class Scalar>
-std::string StepperNewmarkExplicitAForm<Scalar>::description() const
-{
-  std::string name = "Newmark Explicit a-Form";
-  return(name);
 }
 
 
@@ -319,39 +324,8 @@ void StepperNewmarkExplicitAForm<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
-  out << description() << "::describe:" << std::endl
+  out << this->getStepperType() << "::describe:" << std::endl
       << "appModel_ = " << this->appModel_->description() << std::endl;
-}
-
-
-template <class Scalar>
-void StepperNewmarkExplicitAForm<Scalar>::setParameterList(
-  const Teuchos::RCP<Teuchos::ParameterList> & pList)
-{
-  if (pList == Teuchos::null) {
-    // Create default parameters if null, otherwise keep current parameters.
-    if (this->stepperPL_ == Teuchos::null)
-      this->stepperPL_ = this->getDefaultParameters();
-  } else {
-    this->stepperPL_ = pList;
-  }
-  this->stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
-
-  std::string stepperType =
-    this->stepperPL_->template get<std::string>("Stepper Type");
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Newmark Explicit a-Form",
-    std::logic_error,
-       "Error - Stepper Type is not 'Newmark Explicit a-Form'!\n"
-    << "  Stepper Type = "
-    << this->stepperPL_->template get<std::string>("Stepper Type") << "\n");
-
-  gamma_ = this->stepperPL_->sublist("Newmark Explicit Parameters")
-                            .template get<double>("Gamma");
-  TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
-    std::logic_error,
-    "Error in 'Newmark Explicit a-Form' stepper: invalid value of Gamma = "
-     << gamma_ << ".  Please select 0 <= Gamma <= 1. \n");
-
 }
 
 
@@ -360,50 +334,14 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperNewmarkExplicitAForm<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", "Newmark Explicit a-Form",
-                       "'Stepper Type' must be 'Newmark Explicit a-Form'.");
-  this->getValidParametersBasic(pl);
-  pl->set<bool>("Use FSAL", true);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
+  getValidParametersBasic(pl, this->getStepperType());
+  pl->set<bool>("Use FSAL", this->getUseFSALDefault());
+  pl->set<std::string>("Initial Condition Consistency",
+                       this->getICConsistencyDefault());
   pl->sublist("Newmark Explicit Parameters", false, "");
   pl->sublist("Newmark Explicit Parameters", false, "").set("Gamma",
                0.5, "Newmark Explicit parameter");
-
   return pl;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperNewmarkExplicitAForm<Scalar>::getDefaultParameters() const
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-  using Teuchos::rcp_const_cast;
-
-  RCP<ParameterList> pl =
-    rcp_const_cast<ParameterList>(this->getValidParameters());
-
-  return pl;
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperNewmarkExplicitAForm<Scalar>::getNonconstParameterList()
-{
-  return(this->stepperPL_);
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperNewmarkExplicitAForm<Scalar>::unsetParameterList()
-{
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
-  this->stepperPL_ = Teuchos::null;
-  return(temp_plist);
 }
 
 

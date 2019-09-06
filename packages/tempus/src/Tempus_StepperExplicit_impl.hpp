@@ -17,7 +17,7 @@ template<class Scalar>
 void StepperExplicit<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->validExplicitODE(appModel);
+  validExplicitODE(appModel);
   appModel_ = appModel;
 
   inArgs_  = appModel_->getNominalValues();
@@ -99,7 +99,7 @@ void StepperExplicit<Scalar>::setInitialConditions(
   }
 
   // Perform IC Consistency
-  std::string icConsistency = getICConsistency();
+  std::string icConsistency = this->getICConsistency();
   if (icConsistency == "None") {
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
       if (initialState->getXDot() == Teuchos::null) {
@@ -166,8 +166,8 @@ void StepperExplicit<Scalar>::setInitialConditions(
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Error - setInitialConditions() invalid IC consistency, "
-      << icConsistency << ".\n");
+      "Error - setInitialConditions() invalid IC consistency, '"
+      << icConsistency << "'.\n");
   }
 
   // At this point, x, and xDot (and xDotDot) sync'ed or consistent
@@ -175,7 +175,7 @@ void StepperExplicit<Scalar>::setInitialConditions(
   initialState->setIsSynced(true);
 
   // Test for consistency.
-  if (getICConsistencyCheck()) {
+  if (this->getICConsistencyCheck()) {
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
       auto xDot = getStepperXDot(initialState);
       auto f    = initialState->getX()->clone_v();
@@ -224,27 +224,6 @@ void StepperExplicit<Scalar>::setInitialConditions(
       }
     }
   }
-}
-
-template<class Scalar>
-void StepperExplicit<Scalar>::setSolver(std::string /* solverName */)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperExplicit::setSolver()");
-  *out << "Warning -- No solver to set for StepperExplicit "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
-void StepperExplicit<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> /* solverPL */)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperExplicit::setSolver()");
-  *out << "Warning -- No solver to set for StepperExplicit "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
 }
 
 template<class Scalar>
