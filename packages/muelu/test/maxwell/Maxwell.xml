@@ -35,9 +35,7 @@
     <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
     <Parameter name="coarse: max size" type="int" value="128"/>
     <Parameter name="coarse: type" type="string" value="Klu"/>
-    <ParameterList name="coarse: params">
-      <Parameter name="fix nullspace" type="bool" value="true"/>
-    </ParameterList>
+
     <Parameter name="smoother: type" type="string" value="RELAXATION"/>
     <ParameterList name="smoother: params">
       <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
