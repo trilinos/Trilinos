@@ -293,7 +293,7 @@ int Epetra_IntMultiVector::DoCopy(void)
       Pointers_[i] = to;
       const int myLength = MyLength_;
 #ifdef EPETRA_HAVE_OMP
-#pragma omp parallel for default(none) shared(to,from)
+#pragma omp parallel for default(none) shared(to,from,myLength)
       for (int j=0; j<myLength; j++) to[j] = from[j];
 #else
       memcpy(to, from, myLength*sizeof(int));
@@ -573,7 +573,7 @@ int Epetra_IntMultiVector::PutScalar(int ScalarConstant) {
   for (int i = 0; i < NumVectors_; i++) {
     int * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
-#pragma omp parallel for default(none) shared(ScalarConstant)
+#pragma omp parallel for default(none) shared(ScalarConstant,myLength,to)
 #endif
     for (int j=0; j<myLength; j++) to[j] = ScalarConstant;
   }
@@ -1108,7 +1108,7 @@ int  Epetra_IntMultiVector::MinValue (int* Result) const {
       int MinVal = 2000000000; // 2 billion is close to largest 32 bit int
       if (myLength>0) MinVal = from[0];
 #ifdef EPETRA_HAVE_OMP
-#pragma omp parallel default(none) shared(MinVal)
+#pragma omp parallel default(none) shared(MinVal,myLength,from)
 {
       int localMinVal = MinVal;
 #pragma omp for
@@ -1221,7 +1221,7 @@ int  Epetra_IntMultiVector::MaxValue (int* Result) const {
       int MaxVal = -2000000000; // Negative 2 billion is close to smallest 32 bit int
       if (myLength>0) MaxVal = from[0];
 #ifdef EPETRA_HAVE_OMP
-#pragma omp parallel default(none) shared(MaxVal)
+#pragma omp parallel default(none) shared(MaxVal,myLength,from)
 {
       int localMaxVal = MaxVal;
 #pragma omp for
@@ -1377,7 +1377,7 @@ void Epetra_IntMultiVector::Assign(const Epetra_IntMultiVector& A) {
       int * const to = Pointers_[i];
       const int * const from = A_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
-#pragma omp parallel for default(none)
+#pragma omp parallel for default(none) shared(myLength,to,from)
 #endif
       for (int j=0; j<myLength; j++) to[j] = from[j];
     }
