@@ -49,9 +49,8 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
+#include "Xpetra_Import.hpp"
 #include "Xpetra_Map.hpp"
-#include "Xpetra_ImportFactory.hpp"     // TODO: Put this in the DEF file
-#include "Xpetra_MapFactory_decl.hpp"   // TODO: put this into the DEF file
 
 
 
@@ -289,7 +288,8 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node>
     // need to understand the type of underlying matrix. But in src/Map we have no knowledge of StridedMaps, so
     // we cannot check for it by casting. This function allows us to avoid the restriction, as StridedMap redefines
     // it to return the base map.
-    virtual RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getMap() const;
+    virtual RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
+    getMap() const;
 
 
     //@}
@@ -303,15 +303,18 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node>
     /// returns the sub map i from list of sub maps
     /// depending on the parameter bThyraMode the sub map that is returned uses Thyra or Xpetra numbering
     /// Note: Thyra-numbering is only allowed if the BlockedMap is also constructed using Thyra numbering
-    const RCP<const Map> getMap(size_t i, bool bThyraMode = false) const;
+    const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>
+    getMap(size_t i, bool bThyraMode = false) const;
 
 
     /// get the importer between full map and partial map
-    const RCP<Import> getImporter(size_t i) const;
+    const RCP<Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node>>
+    getImporter(size_t i) const;
 
 
     /// the full map
-    const RCP<const Map> getFullMap() const;
+    const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>
+    getFullMap() const;
 
 
     /// returns map index in map extractor which contains GID

@@ -49,6 +49,11 @@
 
 #include "Xpetra_BlockedMap_decl.hpp"
 
+#include "Xpetra_Exceptions.hpp"
+#include "Xpetra_ImportFactory.hpp"
+#include "Xpetra_MapFactory_decl.hpp"
+
+
 
 namespace Xpetra {
 
@@ -166,7 +171,7 @@ BlockedMap(const RCP<const Map>& fullmap, const std::vector<RCP<const Map>>& map
     importers_.resize(maps_.size());
     for(unsigned i = 0; i < maps_.size(); ++i)
     {
-        if(null != maps[ i ])
+        if(maps[ i ] != null)
         {
             importers_[ i ] = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(fullmap_, maps_[ i ]);
         }
@@ -399,7 +404,7 @@ BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
 isNodeGlobalElement(GlobalOrdinal globalIndex) const
 {
     return fullmap_->isNodeGlobalElement(globalIndex);
-};
+}
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -418,7 +423,7 @@ BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
 isDistributed() const
 {
     return fullmap_->isDistributed();
-};
+}
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -442,7 +447,7 @@ isCompatible(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
         }
     }
     return true;
-};
+}
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -482,7 +487,7 @@ isSameAs(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
         }
     }
     return true;
-};
+}
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -491,7 +496,7 @@ BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
 getComm() const
 {
     return fullmap_->getComm();
-};
+}
 
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -533,7 +538,7 @@ removeEmptyProcesses() const
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdial, Node>>
+RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
 replaceCommWithSubset(const Teuchos::RCP<const Teuchos::Comm<int>>& /* newComm */) const
 {
@@ -546,7 +551,7 @@ UnderlyingLib
 BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::lib() const
 {
     return fullmap_->lib();
-};
+}
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -568,9 +573,10 @@ getNumMaps() const
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const RCP<const Map>
+const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
-getMap(size_t i, bool bThyraMode) const
+getMap(size_t i,
+       bool   bThyraMode) const
 {
     XPETRA_TEST_FOR_EXCEPTION(i >= getNumMaps(),
                               Xpetra::Exceptions::RuntimeError,
@@ -591,7 +597,7 @@ getMap(size_t i, bool bThyraMode) const
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const RCP<Import>
+const RCP<Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node>>
 BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
 getImporter(size_t i) const
 {
@@ -605,7 +611,7 @@ getImporter(size_t i) const
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const RCP<const Map>
+const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>
 BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
 getFullMap() const
 {
@@ -706,7 +712,7 @@ assign(const BlockedMap& input)
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-static Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
+Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
 concatenateMaps(const std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>>& subMaps)
 {
