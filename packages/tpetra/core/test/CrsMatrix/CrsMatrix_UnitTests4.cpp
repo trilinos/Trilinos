@@ -654,31 +654,37 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // Now, rip out some diagonals.
     RCP<MV> diag1 = rcp(new MV(map,1));  diag1->putScalar(SC_one);
     RCP<MV> diag2 = rcp(new MV(map,2));  diag2->putScalar(SC_one);
-    RCP<MV> diag3 = rcp(new MV(map,3));  diag3->putScalar(SC_one);
+    RCP<MV> diag5 = rcp(new MV(map,5));  diag5->putScalar(SC_one);
 
     Tpetra::Details::extractBlockDiagonal(*eye,*diag1);
     Tpetra::Details::extractBlockDiagonal(*eye,*diag2);
-    Tpetra::Details::extractBlockDiagonal(*eye,*diag3);
+    Tpetra::Details::extractBlockDiagonal(*eye,*diag5);
 
-    // FIXME: check norms
-    Array<Mag> norms1(1), norms2(3), norms3(5);
+    // Check norms
+    Array<Mag> norms1(1), norms2(2), norms5(5);
     diag1->norm1(norms1());
     diag2->norm1(norms2());
-    diag3->norm1(norms3());
+    diag5->norm1(norms5());
 
-    Array<Mag> cmp1(1), cmp2(3), cmp3(5);
+    Array<Mag> cmp1(1), cmp2(2), cmp5(5);
     cmp1[0] = numLocal*numImages;
-    cmp2[1] = numLocal*numImages;
-    cmp3[2] = numLocal*numImages;
+    cmp2[0] = numLocal*numImages/2;
+    cmp2[1] = numLocal*numImages/2;
+
+    cmp5[0] = numLocal*numImages/5;
+    cmp5[1] = numLocal*numImages/5;
+    cmp5[2] = numLocal*numImages/5;
+    cmp5[3] = numLocal*numImages/5;
+    cmp5[4] = numLocal*numImages/5;
 
     if (ST::isOrdinal) {
       TEST_COMPARE_ARRAYS(norms1,cmp1);
       TEST_COMPARE_ARRAYS(norms2,cmp2);
-      TEST_COMPARE_ARRAYS(norms3,cmp3);
+      TEST_COMPARE_ARRAYS(norms5,cmp5);
     } else {
       TEST_COMPARE_FLOATING_ARRAYS(norms1,cmp1,MT::zero());
       TEST_COMPARE_FLOATING_ARRAYS(norms2,cmp2,MT::zero());
-      TEST_COMPARE_FLOATING_ARRAYS(norms3,cmp3,MT::zero());
+      TEST_COMPARE_FLOATING_ARRAYS(norms5,cmp5,MT::zero());
     }
   }
 
