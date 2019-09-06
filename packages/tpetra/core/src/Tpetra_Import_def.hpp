@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -1740,35 +1738,172 @@ namespace Tpetra {
     return unionImport;
   }
 
-
-
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const
   {
+    using ::Tpetra::Details::Behavior;
+    using ::Tpetra::Details::gathervPrint;
+    using Teuchos::outArg;
     using Teuchos::rcp;
-    using import_type = Import<LocalOrdinal,GlobalOrdinal,Node>;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    using std::endl;
     using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using import_type = Import<LocalOrdinal,GlobalOrdinal,Node>;
+
+    const char funcPrefix[] = "Tpetra::createRemoteOnlyImport: ";
+    int lclSuccess = 1;
+    int gblSuccess = 1;
+    const bool debug = Behavior::debug ();
 
     const size_t NumRemotes = this->getNumRemoteIDs ();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      NumRemotes != remoteTarget->getNodeNumElements (),
-      std::runtime_error, "Tpetra::createRemoteOnlyImport: "
-      "remoteTarget map ID count doesn't match.");
+    std::unique_ptr<std::string> procPrefix;
+    Teuchos::RCP<const Teuchos::Comm<int>> comm;
+    if (debug) {
+      comm = remoteTarget.is_null () ? Teuchos::null :
+        remoteTarget->getComm ();
+      std::ostringstream os;
+      os << "Proc ";
+      if (comm.is_null ()) {
+        os << "?";
+      }
+      else {
+        os << comm->getRank ();
+      }
+      os << ": ";
+      procPrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    }
+
+    if (debug) {
+      std::ostringstream lclErr;
+      if (remoteTarget.is_null ()) {
+        lclSuccess = -1;
+      }
+      else if (NumRemotes != remoteTarget->getNodeNumElements ()) {
+        lclSuccess = 0;
+        lclErr << *procPrefix << "getNumRemoteIDs() = " << NumRemotes
+               << " != remoteTarget->getNodeNumElements() = "
+               << remoteTarget->getNodeNumElements () << "." << endl;
+      }
+
+      if (comm.is_null ()) {
+        lclSuccess = gblSuccess;
+      }
+      else {
+        reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (gblSuccess == -1, std::invalid_argument, funcPrefix
+         << "Input target Map is null on at least one process.");
+
+      if (gblSuccess != 1) {
+        if (comm.is_null ()) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, lclErr.str ());
+        }
+        else {
+          std::ostringstream gblErr;
+          gblErr << funcPrefix << endl;
+          gathervPrint (gblErr, lclErr.str (), *comm);
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, gblErr.str ());
+        }
+      }
+    }
 
     // Compute the new Remote LIDs
     Teuchos::ArrayView<const LO> oldRemoteLIDs = this->getRemoteLIDs ();
     Teuchos::Array<LO> newRemoteLIDs (NumRemotes);
     const map_type& tgtMap = * (this->getTargetMap ());
+    size_t badCount = 0;
+
+    std::unique_ptr<std::vector<size_t>> badIndices;
+    if (debug) {
+      badIndices = std::unique_ptr<std::vector<size_t>> (new std::vector<size_t>);
+    }
     for (size_t i = 0; i < NumRemotes; ++i) {
-      newRemoteLIDs[i] = remoteTarget->getLocalElement (tgtMap.getGlobalElement (oldRemoteLIDs[i]));
+      const LO oldLclInd = oldRemoteLIDs[i];
+      if (oldLclInd == Teuchos::OrdinalTraits<LO>::invalid ()) {
+        ++badCount;
+        if (debug) { badIndices->push_back (i); }
+        continue;
+      }
+      const GO gblInd = tgtMap.getGlobalElement (oldLclInd);
+      if (gblInd == Teuchos::OrdinalTraits<GO>::invalid ()) {
+        ++badCount;
+        if (debug) { badIndices->push_back (i); }
+        continue;
+      }
+      const LO newLclInd = remoteTarget->getLocalElement (gblInd);
+      if (newLclInd == Teuchos::OrdinalTraits<LO>::invalid ()) {
+        ++badCount;
+        if (debug) { badIndices->push_back (i); }
+        continue;
+      }
+      newRemoteLIDs[i] = newLclInd;
       // Now we make sure these guys are in sorted order (AztecOO-ML ordering)
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        i > 0 && newRemoteLIDs[i] < newRemoteLIDs[i-1],
-        std::runtime_error, "Tpetra::createRemoteOnlyImport: "
-        "this and remoteTarget order don't match.");
+      if (i > 0 && newRemoteLIDs[i] < newRemoteLIDs[i-1]) {
+        ++badCount;
+        if (debug) { badIndices->push_back (i); }
+      }
+    }
+
+    if (badCount != 0) {
+      lclSuccess = 0;
+    }
+
+    if (debug) {
+      if (comm.is_null ()) {
+        lclSuccess = gblSuccess;
+      }
+      else {
+        reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      }
+      std::ostringstream lclErr;
+      if (lclSuccess != 1) {
+        lclErr << *procPrefix << "Count of bad indices: " << badCount
+               << ", bad indices: [";
+        // TODO (mfh 04 Sep 2019) Limit the maximum number of bad
+        // indices to print.
+        for (size_t k = 0; k < badCount; ++k) {
+          const size_t badIndex = (*badIndices)[k];
+          lclErr << "(" << badIndex << ","
+                 << oldRemoteLIDs[badIndex] << ")";
+          if (k + size_t (1) < badCount) {
+            lclErr << ", ";
+          }
+        }
+        lclErr << "]" << endl;
+      }
+
+      if (gblSuccess != 1) {
+        std::ostringstream gblErr;
+        gblErr << funcPrefix << "this->getRemoteLIDs() has \"bad\" "
+          "indices on one or more processes.  \"Bad\" means that the "
+          "indices are invalid, they don't exist in the target Map, "
+          "they don't exist in remoteTarget, or they are not in "
+          "sorted order.  In what follows, I will show the \"bad\" "
+          "indices as (k, LID) pairs, where k is the zero-based "
+          "index of the LID in this->getRemoteLIDs()." << endl;
+        if (comm.is_null ()) {
+          gblErr << lclErr.str ();
+        }
+        else {
+          gathervPrint (gblErr, lclErr.str (), *comm);
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::runtime_error, gblErr.str ());
+      }
+    }
+    else { // not debug
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (lclSuccess == 0, std::runtime_error, funcPrefix
+         << "this->getRemoteLIDs() has " << badCount
+         << "ind" << (badCount == 1 ? "ex" : "ices")
+         << " \"bad\" indices on this process." << endl);
     }
 
     // Copy ExportPIDs and such

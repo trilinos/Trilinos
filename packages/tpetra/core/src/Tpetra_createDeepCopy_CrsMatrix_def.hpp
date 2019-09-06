@@ -96,7 +96,6 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
       crs_matrix_type (A.getRowMap (), entPerRow_av);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
-    using IST = typename crs_matrix_type::impl_scalar_type;
     const bool hasViews = A.supportsRowViews ();
 
     Teuchos::Array<GO> inputIndsBuf;
