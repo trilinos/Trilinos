@@ -1533,19 +1533,29 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
     if (myRank == 0)
-      {
-        log = rcp(new std::ofstream(convergenceLog.c_str()));
-        (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
-               << "# iteration | res-norm\n"
-               << "#\n";
-        *log << std::setprecision(16) << std::scientific;
-      }
+    {
+      log = rcp(new std::ofstream(convergenceLog.c_str()));
+      (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
+             << "# iteration | res-norm (scaled=" << scaleResidualHist << ")\n"
+             << "#\n";
+      *log << std::setprecision(16) << std::scientific;
+    }
+
+    // Print type of residual norm to the screen
+    if (myRank == 0)
+    {
+      if (scaleResidualHist)
+        std::cout << "Using scaled residual norm." << std::endl;
+      else
+        std::cout << "Using unscaled residual norm." << std::endl;
+    }
 
     // Richardson iterations
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni;
     const int old_precision = std::cout.precision();
     std::cout << std::setprecision(8) << std::scientific;
-    for (int cycle = 0; cycle < maxIts; ++cycle) {
+    for (int cycle = 0; cycle < maxIts; ++cycle)
+    {
       // check for convergence
       {
         ////////////////////////////////////////////////////////////////////////
@@ -1565,26 +1575,29 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
         if(cycle == 0) { normResIni = normRes; }
 
+        if (scaleResidualHist)
+          normRes /= normResIni;
+
         // Output current residual norm to screen (on proc 0 only)
         if (myRank == 0)
-          {
-            std::cout << cycle << "\t" << normRes << std::endl;
-            (*log) << cycle << "\t" << normRes << "\n";
-          }
+        {
+          std::cout << cycle << "\t" << normRes << std::endl;
+          (*log) << cycle << "\t" << normRes << "\n";
+        }
 
-        if ((normRes/normResIni) < tol)
+        if (normRes < tol)
           break;
-      }
+        }
 
-      /////////////////////////////////////////////////////////////////////////
-      // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
-      /////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////
+        // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
+        /////////////////////////////////////////////////////////////////////////
 
-      //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-      vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
-             regX, regB, regMatrices,
-             regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData, hierarchyData);
+        //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
+        vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
+               regX, regB, regMatrices,
+               regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
+               regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData, hierarchyData);
     }
     std::cout << std::setprecision(old_precision);
     std::cout.unsetf(std::ios::fixed | std::ios::scientific);

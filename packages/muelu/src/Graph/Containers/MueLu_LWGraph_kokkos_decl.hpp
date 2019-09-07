@@ -75,17 +75,20 @@ namespace MueLu {
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   class LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> {
   public:
-    typedef LocalOrdinal                                             local_ordinal_type;
-    typedef GlobalOrdinal                                            global_ordinal_type;
-    typedef typename DeviceType::execution_space                     execution_space;
-    typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
-    typedef size_t                                                   size_type;
+    using local_ordinal_type  = LocalOrdinal;
+    using global_ordinal_type = GlobalOrdinal;
+    using execution_space     = typename DeviceType::execution_space;
+    using memory_space        = typename DeviceType::memory_space;
+    using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
+    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
+    using size_type           = size_t;
 
-    typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
-    typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space> local_graph_type;
-    typedef Kokkos::View<const bool*, DeviceType>               boundary_nodes_type;
-    typedef Kokkos::View<const LocalOrdinal*, DeviceType>       row_type;
+    using map_type            = Xpetra::Map<LocalOrdinal, GlobalOrdinal, node_type>;
+    using local_graph_type    = Kokkos::StaticCrsGraph<LocalOrdinal,
+                                                       Kokkos::LayoutLeft,
+                                                       execution_space>;
+    using boundary_nodes_type = Kokkos::View<const bool*, memory_space>;
+    using row_type            = Kokkos::View<const LocalOrdinal*, memory_space>;
 
   private:
     // For compatibility

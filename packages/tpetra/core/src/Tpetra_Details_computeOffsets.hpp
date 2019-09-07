@@ -172,23 +172,14 @@ public:
   ComputeOffsetsFromConstantCount (const offsets_view_type& offsets,
                                    const CountType count) :
     offsets_ (offsets),
-    count_ (count),
-    size_ (offsets_.extent (0) == 0 ?
-           SizeType (0) :
-           SizeType (offsets_.extent (0) - 1))
+    count_ (count)
   {}
 
   //! Reduction operator.
   KOKKOS_INLINE_FUNCTION void
-  operator () (const SizeType i, OffsetType& update,
-               const bool finalPass) const
+  operator () (const SizeType i) const
   {
-    if (finalPass) {
-      offsets_[i] = update;
-    }
-    if (i < size_) {
-      update += count_;
-    }
+    offsets_[i] = count_*i;
   }
 
   template<class ExecutionSpace>
@@ -203,10 +194,10 @@ public:
     using functor_type =
       ComputeOffsetsFromConstantCount<OffsetType, CountType, SizeType>;
     functor_type functor (offsets, count);
-    OffsetType total (0);
+    const OffsetType total = numOffsets*count;
     const char funcName[] =
       "Tpetra::Details::computeOffsetsFromConstantCount";
-    Kokkos::parallel_scan (range, functor, total, funcName);
+    Kokkos::parallel_for (range, functor, funcName);
     return total;
   }
 
@@ -215,8 +206,6 @@ private:
   offsets_view_type offsets_;
   //! "Count" input argument
   CountType count_;
-  //! Number of entries in offsets_, minus 1.
-  SizeType size_;
 };
 
 } // namespace (anonymous)

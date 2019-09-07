@@ -109,15 +109,20 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+    void BuildAggregates(const Teuchos::ParameterList& params,
+                         const LWGraph_kokkos& graph,
+                         Aggregates_kokkos& aggregates,
+                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                         LO& numNonAggregatedNodes) const;
 
     void BuildAggregatesSerial(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-      std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
-      LO minNodesPerAggregate, LO maxNodesPerAggregate,
-      LO maxNeighAlreadySelected, std::string& orderingStr) const;
+                               std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
+                               LO minNodesPerAggregate, LO maxNodesPerAggregate,
+                               LO maxNeighAlreadySelected, std::string& orderingStr) const;
 
     void BuildAggregatesDistance2(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-        std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes, LO maxAggSize) const;
+                                  std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
+                                  LO maxAggSize) const;
     //@}
 
     std::string description() const { return "Phase 1 (main)"; }
@@ -125,7 +130,7 @@ namespace MueLu {
     enum struct Algorithm
     {
       Serial,
-      Distance2 
+      Distance2
     };
 
     static Algorithm algorithmFromName(const std::string& name)
