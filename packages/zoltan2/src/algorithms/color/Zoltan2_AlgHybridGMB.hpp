@@ -592,7 +592,14 @@ class AlgHybridGMB : public Algorithm<Adapter>
       Kokkos::View<int[1], device_type> conflictSize("Conflict Queue Size");
       conflictSize(0) = 0;
       Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > conflictSize_atomic = conflictSize;
-     
+      
+      Kokkos::View<int*,device_type> host_rand("randVec",rand.size());
+      for(int i = 0; i < rand.size(); i++){
+        host_rand(i) = rand[i];
+      }
+      
+      Kokkos::View<int[1], device_type> host_maxDegree("max degree");
+      
       //get a subview of the colors:
       Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
       Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
@@ -619,10 +626,10 @@ class AlgHybridGMB : public Algorithm<Adapter>
           }
         }*/
         Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA (const int& i){
-          for(offset_t j = offsets[i]; j < offsets[i+1]; j++){
+          for(offset_t j = host_offsets(i); j < host_offsets(i+1); j++){
             int currColor = femv_colors(i);
-            int nborColor = femv_colors(adjs[j]);
-            if(currColor == nborColor && rand[i] > rand[adjs[j]]){
+            int nborColor = femv_colors(host_adjs(j));
+            if(currColor == nborColor && host_rand(i) > host_rand(host_adjs(j))){
               recoloringQueue_atomic(recoloringSize_atomic(0)++) = i;
               //conflictQueue_atomic(conflictSize_atomic(0)++) = i;
               break;
@@ -640,11 +647,11 @@ class AlgHybridGMB : public Algorithm<Adapter>
       }
       int globalMaxDegree = 0;
       Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX, 1, &maxDegree, &globalMaxDegree);
-      
+      host_maxDegree(0) = globalMaxDegree;
       Teuchos::ArrayRCP<bool> forbiddenColors;
       forbiddenColors.resize(numColors);
-      Kokkos::View<bool*, device_type> forbidden("Forbidden colors",maxDegree);
-      Kokkos::parallel_for(maxDegree, KOKKOS_LAMBDA(const int& i){
+      Kokkos::View<bool*, device_type> forbidden("Forbidden colors",globalMaxDegree);
+      Kokkos::parallel_for(globalMaxDegree, KOKKOS_LAMBDA(const int& i){
         forbidden(i) = false;
       });
       
@@ -691,7 +698,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                }
                //pick the color for currVtx based on the forbidden array
                bool colored = false;
-               for(int i = 0; i < maxDegree; i++){
+               <for(int i = 0; i < maxDegree; i++){
                  if(!forbidden(i)) {
                    femv->replaceLocalValue(currVtx,0,i+1);
                    colored = true;
@@ -703,16 +710,16 @@ class AlgHybridGMB : public Algorithm<Adapter>
                });
                if(!colored){
                  femv->replaceLocalValue(currVtx,0,numColors+1);
-                 numColors++;
-                 forbiddenColors.resize(numColors);
+	 numColors++;
+	 forbiddenColors.resize(numColors);
                }
                //printf("--Rank %d: colored vtx %u color %d\n",comm->getRank(),currVtx, femv->getData(0)[currVtx]);
             }*/
-            printf("--Rank %d: recoloring\n\t",comm->getRank());
-            for(int i = 0; i< recoloringSize(0); i++){
+            //printf("--Rank %d: recoloring\n\t",comm->getRank());
+            //for(int i = 0; i< recoloringSize(0); i++){
               //printf("%d ",recoloringQueue(i));
-            }
-            printf("\n");
+            //}
+            //printf("\n");
             typedef KokkosKernels::Experimental::KokkosKernelsHandle
                 <size_t, lno_t, lno_t, execution_space, memory_space, 
                  memory_space> KernelHandle;
@@ -725,27 +732,47 @@ class AlgHybridGMB : public Algorithm<Adapter>
                                                      recoloringQueue,recoloringSize(0),0);
             Kokkos::parallel_for("Recoloring",recoloringSize(0),gc);*/
             //need to provide means of expanding forbidden array.
-            Kokkos::parallel_for(recoloringSize(0), KOKKOS_LAMBDA(const int& i){
-              bool dev_forbidden[2*globalMaxDegree];
-              for(int j = 0; j < globalMaxDegree; j++) dev_forbidden[j]=false;
-              lno_t currVtx = recoloringQueue(i);
+
+            typedef Kokkos::TeamPolicy<execution_space>::member_type member_type;
+            Kokkos::parallel_for(Kokkos::TeamPolicy<>(recoloringSize(0),1).set_scratch_size(0,Kokkos::PerTeam(0),Kokkos::PerThread(2*host_maxDegree(0)*sizeof(bool))),
+                    KOKKOS_LAMBDA (const member_type& team_member){
+              bool* dev_forbidden = (bool*) team_member.team_shmem().get_shmem(host_maxDegree(0)*sizeof(bool));
+              for(int j=0; j < host_maxDegree(0); j++) dev_forbidden[j] = false;
+              lno_t currVtx = recoloringQueue(team_member.league_rank());
               conflictQueue_atomic(conflictSize_atomic(0)++) = currVtx;
-              for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
-                int nborColor=femv_colors(adjs[nborIdx]);
+              for(offset_t nborIdx = host_offsets(currVtx); nborIdx < host_offsets(currVtx+1); nborIdx++){
+                int nborColor = femv_colors(host_adjs(nborIdx));
                 if(nborColor > 0) dev_forbidden[nborColor-1] = true;
               }
-              for(int j = 0; j < globalMaxDegree; j++){
+              for( int j = 0; j < 2*host_maxDegree(0); j++){
+                if(!dev_forbidden[j]){
+                  femv_colors(currVtx)=j+1;
+                  break;
+                }
+              }
+            });
+            /*Kokkos::parallel_for(recoloringSize(0), KOKKOS_LAMBDA(const int& i){
+              bool* dev_forbidden = new bool[2*host_maxDegree(0)];
+              for(int j = 0; j < 2*host_maxDegree(0); j++) dev_forbidden[j]=false;
+              lno_t currVtx = recoloringQueue(i);
+              conflictQueue_atomic(conflictSize_atomic(0)++) = currVtx;
+              for(offset_t nborIdx = host_offsets(currVtx); nborIdx < host_offsets(currVtx+1); nborIdx++){
+                int nborColor=femv_colors(host_adjs(nborIdx));
+                if(nborColor > 0) dev_forbidden[nborColor-1] = true;
+              }
+              for(int j = 0; j < 2*host_maxDegree(0); j++){
                 if(!dev_forbidden[j]){
                   femv_colors(currVtx) = j+1;
                   //printf("\t--Rank %d recolored vertex %u color %d\n",comm->getRank(),currVtx,j+1);
                 }
               }
-            });
+              delete [] dev_forbidden;
+            });*/
             recoloringSize(0) = 0;
             timeBoundaryComp->stop();
             timeBoundaryComm->start();
       //    communicate
-            printf("--Rank %d: communicating\n",comm->getRank());
+            //printf("--Rank %d: communicating\n",comm->getRank());
             femv->switchActiveMultiVector();
             femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
             femv->switchActiveMultiVector();
@@ -775,14 +802,14 @@ class AlgHybridGMB : public Algorithm<Adapter>
                 //printf("--Rank %d: putting vertex %u on the recoloring queue\n",comm->getRank(),currVtx);
               }
             }*/
-            printf("--Rank %d: Detecting conflicts\n",comm->getRank());
+            //printf("--Rank %d: Detecting conflicts\n",comm->getRank());
             Kokkos::parallel_for(conflictSize(0),KOKKOS_LAMBDA(const int& i){
               lno_t currVtx = conflictQueue(i);
               bool conflict = false;
               int currColor = femv_colors(currVtx);
-              for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
-                int nborColor = femv_colors(adjs[nborIdx]);
-                if(nborColor == currColor && rand[currVtx] > rand[adjs[nborIdx]]){
+              for(offset_t nborIdx = host_offsets(currVtx); nborIdx < host_offsets(currVtx+1); nborIdx++){
+                int nborColor = femv_colors(host_adjs(nborIdx));
+                if(nborColor == currColor && host_rand(currVtx) > host_rand(host_adjs(nborIdx))){
                   conflict = true;
                   break;
                 }
