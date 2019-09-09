@@ -389,6 +389,7 @@ namespace MueLu {
     Kokkos::View<const bool*, typename Node::device_type> BCrowsKokkos_;
     Kokkos::View<const bool*, typename Node::device_type> BCcolsKokkos_;
 #endif
+    int BCrowcount_, BCcolcount_;
     Teuchos::ArrayRCP<const bool> BCrows_;
     Teuchos::ArrayRCP<const bool> BCcols_;
     //! Nullspace
