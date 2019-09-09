@@ -291,7 +291,7 @@ int Epetra_IntMultiVector::DoCopy(void)
       int * from = Pointers_[i];
       int * to = Values_+i*Stride_;
       Pointers_[i] = to;
-      const int myLength = MyLength_;
+      int myLength = MyLength_;
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(to,from,myLength)
       for (int j=0; j<myLength; j++) to[j] = from[j];
@@ -569,9 +569,9 @@ int Epetra_IntMultiVector::PutScalar(int ScalarConstant) {
 
   // Fills MultiVector with the value ScalarConstant **/
 
-  const int myLength = MyLength_;
+  int myLength = MyLength_;
   for (int i = 0; i < NumVectors_; i++) {
-    int * const to = Pointers_[i];
+    int * to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarConstant,myLength,to)
 #endif
@@ -1099,12 +1099,12 @@ int  Epetra_IntMultiVector::MinValue (int* Result) const {
 
   int ierr = 0;
 
-  const int myLength = MyLength_;
+  int myLength = MyLength_;
   UpdateOrdinalTemp();
 
   for (int i=0; i < NumVectors_; i++)
     {
-      const int * const from = Pointers_[i];
+      const int * from = Pointers_[i];
       int MinVal = 2000000000; // 2 billion is close to largest 32 bit int
       if (myLength>0) MinVal = from[0];
 #ifdef EPETRA_HAVE_OMP
@@ -1212,12 +1212,12 @@ int  Epetra_IntMultiVector::MaxValue (int* Result) const {
 
   int ierr = 0;
 
-  const int myLength = MyLength_;
+  int myLength = MyLength_;
   UpdateOrdinalTemp();
 
   for (int i=0; i < NumVectors_; i++)
     {
-      const int * const from = Pointers_[i];
+      const int * from = Pointers_[i];
       int MaxVal = -2000000000; // Negative 2 billion is close to smallest 32 bit int
       if (myLength>0) MaxVal = from[0];
 #ifdef EPETRA_HAVE_OMP
@@ -1364,7 +1364,7 @@ Epetra_IntMultiVector& Epetra_IntMultiVector::operator = (const Epetra_IntMultiV
 //=========================================================================
 void Epetra_IntMultiVector::Assign(const Epetra_IntMultiVector& A) {
 
-  const int myLength = MyLength_;
+  int myLength = MyLength_;
   if (NumVectors_ != A.NumVectors())
     throw ReportError("Number of vectors incompatible in Assign.  The this MultiVector has NumVectors = " + toString(NumVectors_)
           + ".  The A MultiVector has NumVectors = " + toString(A.NumVectors()), -3);
@@ -1374,8 +1374,8 @@ void Epetra_IntMultiVector::Assign(const Epetra_IntMultiVector& A) {
 
   int ** A_Pointers = A.Pointers();
   for (int i = 0; i< NumVectors_; i++) {
-      int * const to = Pointers_[i];
-      const int * const from = A_Pointers[i];
+      int * to = Pointers_[i];
+      const int * from = A_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(myLength,to,from)
 #endif

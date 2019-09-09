@@ -1875,7 +1875,7 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Ep
 //==============================================================================
 int Epetra_CrsGraph::OptimizeStorage() {
   int NumIndices;
-  const int numMyBlockRows = NumMyBlockRows();
+  int numMyBlockRows = NumMyBlockRows();
 
   Epetra_CrsGraphData::IndexData<int>& Data = CrsGraphData_->Data<int>();
 
