@@ -159,13 +159,7 @@ void KokkosSPGEMM
     //If we did compression in single step, row_mapB[i] points the begining of row i,
     //and new_row_mapB[i] points to the end of row i.
 
-#ifdef KOKKOS_ENABLE_CUDA
-    //BMK 8-19-19: emergency bug workaround on CUDA (#402): disable compression
-    if (compression_applied && !std::is_same<MyExecSpace, Kokkos::Cuda>::value) {
-#else
     if (compression_applied) {
-#endif
-    
 		nnz_lno_t maxNumRoughZeros = this->handle->get_spgemm_handle()->compressed_max_row_flops;
 
     	if (compress_in_single_step){
