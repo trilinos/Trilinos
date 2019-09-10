@@ -730,7 +730,7 @@
       <name>restriction: scale nullspace</name>
       <type>bool</type>
       <default>false</default>
-      <description>Block-diagonally scale (based on number of PDEs)      the nullspace for the restriction only.</description>
+      <description>Block-diagonally scale (based on number of PDEs) the nullspace for the restriction only.</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>
