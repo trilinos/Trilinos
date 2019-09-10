@@ -99,7 +99,7 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
 
       for (size_t k = Arowptr(i); k < Arowptr(i+1); k++) {
         LO col = Acolind(k);
-        if (blockStart <= col && col <= blockStop) {
+        if (blockStart <= col && col < blockStop) {
           diag(i,col-blockStart) = Avals(k);
         }
       }
