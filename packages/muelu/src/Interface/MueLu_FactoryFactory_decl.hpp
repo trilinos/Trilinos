@@ -117,6 +117,7 @@
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_ReorderBlockAFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_ScaledNullspaceFactory.hpp"
 #include "MueLu_SegregatedAFactory.hpp"
 #include "MueLu_SemiCoarsenPFactory.hpp"
 #include "MueLu_SchurComplementFactory.hpp"
@@ -259,6 +260,7 @@ namespace MueLu {
       if (factoryName == "RebalanceTransferFactory")              return Build2<RebalanceTransferFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ReorderBlockAFactory")                  return Build2<ReorderBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RepartitionInterface")                  return Build2<RepartitionInterface>                  (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ScaledNullspaceFactory")                      return Build2<ScaledNullspaceFactory>          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SegregatedAFactory")                    return Build2<SegregatedAFactory>                    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SemiCoarsenPFactory")                   return Build2<SemiCoarsenPFactory>                   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "StructuredAggregationFactory")          return Build2<StructuredAggregationFactory>          (paramList, factoryMapIn, factoryManagersIn);
