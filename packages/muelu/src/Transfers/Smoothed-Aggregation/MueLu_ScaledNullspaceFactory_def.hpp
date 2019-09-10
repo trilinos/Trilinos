@@ -122,13 +122,14 @@ namespace MueLu {
         tentativeNullspace = currentLevel.Get< RCP<MultiVector> >(nspName, NoFactory::get());
       } else {
         // A User "Nullspace" (nspName) is not available (use factory)
-        tentativeNullspace = currentLevel.Get< RCP<MultiVector> >(nspName);
+        tentativeNullspace = currentLevel.Get< RCP<MultiVector> >(nspName, GetFactory(nspName).get()); /* ! "Nullspace" and nspName mismatch possible here */
 
       } // end if "Nullspace" not available
     } else {
       tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory(nspName).get()); /* ! "Nullspace" and nspName mismatch possible here */
     }
 
+  
     // Scale!
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
     
@@ -140,14 +141,14 @@ namespace MueLu {
       numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
       oldView = A->SwitchToView(oldView);
     }
-    
-
-    nullspace = MultiVectorFactory::Build(tentativeNullspace->getMap(), tentativeNullspace->getNumVectors());  *nullspace = *tentativeNullspace;  // Copy the tentative nullspace
+   
+    GetOStream(Runtime1) << "ScaledNullspaceFactory: Generating scaled nullspace, blocksize = "<< tentativeNullspace->getNumVectors() <<std::endl;
+    nullspace = MultiVectorFactory::Build(tentativeNullspace->getMap(), tentativeNullspace->getNumVectors());  
+    *nullspace = *tentativeNullspace;  // Copy the tentative nullspace
     RCP<MultiVector> blockDiagonal = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
     
     Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractBlockDiagonal(*A,*blockDiagonal);
     Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::inverseScaleBlockDiagonal(*blockDiagonal,*nullspace);
-    GetOStream(Runtime1) << "ScaledNullspaceFactory: Generating scaled nullspace" <<std::endl;
 
     // provide "Nullspace" variable on current level (used by TentativePFactory)
     Set(currentLevel, "Nullspace", nullspace);
