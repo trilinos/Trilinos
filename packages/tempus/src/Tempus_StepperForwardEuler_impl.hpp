@@ -115,15 +115,18 @@ void StepperForwardEuler<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
 
     RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot(currentState);
+    const Scalar dt = workingState->getTimeStep();
 
     if ( !(this->getUseFSAL()) ) {
       // Need to compute XDotOld.
       if (!Teuchos::is_null(stepperFEObserver_))
         stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
 
+      auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
+
       // Evaluate xDot = f(x,t).
       this->evaluateExplicitODE(xDot, currentState->getX(),
-                                currentState->getTime());
+                                currentState->getTime(), p);
 
       // For UseFSAL=false, x and xDot are now sync'ed or consistent
       // at the same time level for the currentState.
@@ -132,7 +135,6 @@ void StepperForwardEuler<Scalar>::takeStep(
 
 
     // Forward Euler update, x^n = x^{n-1} + dt^n * xDot^{n-1}
-    const Scalar dt = workingState->getTimeStep();
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
       *(currentState->getX()),dt,*(xDot));
 
@@ -144,9 +146,11 @@ void StepperForwardEuler<Scalar>::takeStep(
       if (!Teuchos::is_null(stepperFEObserver_))
         stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
 
+      auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
+
       // Evaluate xDot = f(x,t).
       this->evaluateExplicitODE(xDot, workingState->getX(),
-                                workingState->getTime());
+                                workingState->getTime(), p);
 
       // For UseFSAL=true, x and xDot are now sync'ed or consistent
       // for the workingState.

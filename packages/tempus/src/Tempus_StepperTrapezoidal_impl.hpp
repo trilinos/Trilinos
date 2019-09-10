@@ -151,28 +151,18 @@ void StepperTrapezoidal<Scalar>::takeStep(
     const Scalar alpha = getAlpha(dt);
     const Scalar beta  = getBeta (dt);
 
-
     // Setup TimeDerivative
     Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
       Teuchos::rcp(new StepperTrapezoidalTimeDerivative<Scalar>(
         alpha, xOld, xDotOld));
 
-    // Setup InArgs and OutArgs
-    typedef Thyra::ModelEvaluatorBase MEB;
-    MEB::InArgs<Scalar>  inArgs  = this->wrapperModel_->getInArgs();
-    MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
-    inArgs.set_x(x);
-    if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
-    if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
-    if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
-    if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
-    if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (beta);
-
-    this->wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
+    auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+      timeDer, dt, alpha, beta));
 
     stepperTrapObserver_->observeBeforeSolve(solutionHistory, *this);
 
-    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(x);
+    const Thyra::SolveStatus<Scalar> sStatus =
+      this->solveImplicitODE(x, xDot, time, p);
 
     stepperTrapObserver_->observeAfterSolve(solutionHistory, *this);
 
