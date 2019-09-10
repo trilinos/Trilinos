@@ -79,6 +79,7 @@
 
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "../cartesian_topology/CartesianConnManager.hpp"
 
 #include <Tpetra_Export.hpp>
@@ -178,18 +179,20 @@ int feAssemblyHex(int argc, char *argv[]) {
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
   typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 
-  typedef Tpetra::Map<>::local_ordinal_type  local_ordinal_t;
-  typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
-  typedef Tpetra::Map<>::node_type           node_t;
-  typedef Tpetra::Map<>             map_t;
+  typedef Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal> map_t;
+
+  typedef typename map_t::local_ordinal_type  local_ordinal_t;
+  typedef typename map_t::global_ordinal_type global_ordinal_t;
+  typedef typename map_t::node_type           node_t;
   typedef Tpetra::FECrsGraph<local_ordinal_t,global_ordinal_t,node_t>      fe_graph_t;
   typedef ValueType scalar_t;
-  typedef Tpetra::FECrsMatrix<scalar_t> fe_matrix_t;
-  typedef Tpetra::FEMultiVector<scalar_t> fe_multivector_t;
+  typedef Tpetra::FECrsMatrix<scalar_t, local_ordinal_t, global_ordinal_t> fe_matrix_t;
+  typedef Tpetra::FEMultiVector<scalar_t, local_ordinal_t, global_ordinal_t> fe_multivector_t;
+  typedef Tpetra::Vector<scalar_t, local_ordinal_t, global_ordinal_t> vector_t;
 
-  typedef Kokkos::DynRankView<global_ordinal_t,HostSpaceType> DynRankViewIntHost;
+  typedef Kokkos::DynRankView<global_ordinal_t,DeviceSpaceType> DynRankViewGId;
+  typedef Kokkos::DynRankView<local_ordinal_t,DeviceSpaceType> DynRankViewLId;
 
   typedef CellTools<DeviceSpaceType> ct;
   typedef OrientationTools<DeviceSpaceType> ots;
@@ -233,11 +236,12 @@ int feAssemblyHex(int argc, char *argv[]) {
     clp.setOption("py",&py);
     clp.setOption("pz",&pz);
     clp.setOption("basis-degree",&degree);
-    ordinal_type cubDegree = 2*degree;
+    ordinal_type cubDegree = -1;
     clp.setOption("quadrature-degree",&cubDegree);
     clp.setOption("timings-file",&timingsFile);
     clp.setOption("verbose", &verbose);
     auto cmdResult = clp.parse(argc,argv);
+    cubDegree = (cubDegree == -1) ? 2*degree : cubDegree;    
 
     if(cmdResult!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       clp.printHelpMessage(argv[0], std::cout);
@@ -275,7 +279,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     // *********************************** COMPUTE GLOBAL IDs OF VERTICES AND DOFs  ************************************
 
     // build the dof manager, and assocaite with the topology
-    auto dofManager = Teuchos::rcp(new panzer::DOFManager<local_ordinal_t, global_ordinal_t>);
+    auto dofManager = Teuchos::rcp(new panzer::DOFManager);
     dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 
     // add solution field to the element block
@@ -353,7 +357,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     auto localFeAssemblyTimer =  Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Local Finite Element Assembly")));
 
     //compute global ids of element vertices
-    DynRankViewIntHost ConstructWithLabel(elemNodesGID, numOwnedElems, numNodesPerElem);
+    DynRankViewGId ConstructWithLabel(elemNodesGID, numOwnedElems, numNodesPerElem);
     {
       for(ordinal_type i=0; i<numOwnedElems; ++i) {
         const auto GIDs = connManager->getConnectivity(i);
@@ -429,8 +433,8 @@ int feAssemblyHex(int argc, char *argv[]) {
     fst::HGRADtransformGRAD(transformedBasisGradsAtQPointsOriented, jacobianAtQPoints_inv, basisGradsAtQPointsOriented);
 
     // compute integrals to assembly local matrices
-    DynRankView cellMat("cellMassMat", numOwnedElems, basisCardinality, basisCardinality),
-        cellRhs("cellRhs", numOwnedElems, basisCardinality);
+    DynRankView elemsMat("elemsMat", numOwnedElems, basisCardinality, basisCardinality),
+        elemsRHS("elemsRHS", numOwnedElems, basisCardinality);
 
     DynRankView ConstructWithLabel(weightedTransformedBasisValuesAtQPointsOriented, numOwnedElems, basisCardinality, numQPoints);
     DynRankView ConstructWithLabel(weightedTransformedBasisGradsAtQPointsOriented, numOwnedElems, basisCardinality, numQPoints, dim);
@@ -440,10 +444,10 @@ int feAssemblyHex(int argc, char *argv[]) {
     fst::multiplyMeasure(weightedTransformedBasisGradsAtQPointsOriented, cellWeights, transformedBasisGradsAtQPointsOriented);
     fst::multiplyMeasure(weightedTransformedBasisValuesAtQPointsOriented, cellWeights, transformedBasisValuesAtQPointsOriented);
 
-    fst::integrate(cellMat, transformedBasisGradsAtQPointsOriented, weightedTransformedBasisGradsAtQPointsOriented);
-    fst::integrate(cellMat, transformedBasisValuesAtQPointsOriented, weightedTransformedBasisValuesAtQPointsOriented, true);
+    fst::integrate(elemsMat, transformedBasisGradsAtQPointsOriented, weightedTransformedBasisGradsAtQPointsOriented);
+    fst::integrate(elemsMat, transformedBasisValuesAtQPointsOriented, weightedTransformedBasisValuesAtQPointsOriented, true);
     Kokkos::fence(); //make sure that funAtQPoints has been evaluated
-    fst::integrate(cellRhs, funAtQPoints, weightedTransformedBasisValuesAtQPointsOriented);
+    fst::integrate(elemsRHS, funAtQPoints, weightedTransformedBasisValuesAtQPointsOriented);
     
     localFeAssemblyTimer =  Teuchos::null;
 
@@ -452,11 +456,11 @@ int feAssemblyHex(int argc, char *argv[]) {
 
     auto mapsTimer =  Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Creating Maps")));
 
-    auto ugi = Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<local_ordinal_t, global_ordinal_t> >(dofManager);
+    auto globalIndexer = Teuchos::rcp_dynamic_cast<const panzer::GlobalIndexer >(dofManager);
     std::vector<global_ordinal_t> ownedIndices, ownedAndGhostedIndices;
-    ugi->getOwnedIndices(ownedIndices);
+    globalIndexer->getOwnedIndices(ownedIndices);
     Teuchos::RCP<const map_t> ownedMap = Teuchos::rcp(new map_t(Teuchos::OrdinalTraits<global_ordinal_t>::invalid(),ownedIndices,0,Teuchos::rcpFromRef(comm)));
-    ugi->getOwnedAndGhostedIndices(ownedAndGhostedIndices);
+    globalIndexer->getOwnedAndGhostedIndices(ownedAndGhostedIndices);
     Teuchos::RCP<const map_t> ownedAndGhosted_map = Teuchos::rcp(new const map_t(Teuchos::OrdinalTraits<global_ordinal_t>::invalid(),ownedAndGhostedIndices,0,Teuchos::rcpFromRef(comm)));
 
      *outStream << "Total number of DoFs: " << ownedMap->getGlobalNumElements() << ", number of owned DoFs: " << ownedMap->getNodeNumElements() << "\n";
@@ -469,9 +473,11 @@ int feAssemblyHex(int argc, char *argv[]) {
     auto feGraph = Teuchos::rcp(new fe_graph_t(rowMap, ownedAndGhosted_map, 8*basisCardinality));
 
     Teuchos::Array<global_ordinal_t> globalIdsInRow(basisCardinality);
+    const std::string blockId = "eblock-0_0_0";
+    auto elmtOffsetKokkos = dofManager->getGIDFieldOffsetsKokkos(blockId,0);
 
-    //auto elmtOffset = dofManager->getGIDFieldOffsetsKokkos("eblock-0_0_0",0);
-    auto elmtOffset = dofManager->getGIDFieldOffsets("eblock-0_0_0",0);
+
+    DynRankViewGId ConstructWithLabel(elementGIDsKokkos, numOwnedElems, basisCardinality);
 
     // fill graph
     // for each element in the mesh...
@@ -484,8 +490,10 @@ int feAssemblyHex(int argc, char *argv[]) {
       //   each row associated with this element's contribution.
       std::vector<global_ordinal_t> elementGIDs;
       dofManager->getElementGIDs(elemId, elementGIDs);
-      for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
-        globalIdsInRow[nodeId] = elementGIDs[elmtOffset[nodeId]];
+      for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++) {
+        globalIdsInRow[nodeId] = elementGIDs[elmtOffsetKokkos(nodeId)];
+        elementGIDsKokkos(elemId, nodeId) = globalIdsInRow[nodeId];
+      }
 
       // Add the contributions from the current row into the graph.
       // - For example, if Element 0 contains nodes [0,1,4,5, ...] then we insert the nodes:
@@ -506,39 +514,35 @@ int feAssemblyHex(int argc, char *argv[]) {
 
     auto matrixAndRhsAllocationTimer =  Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Allocation of Matrix and Rhs")));
    
-    auto importer = Teuchos::rcp(new fe_graph_t::import_type(ownedMap, ownedAndGhosted_map)); 
     auto A = Teuchos::rcp(new fe_matrix_t(feGraph));
-    auto b = Teuchos::rcp (new fe_multivector_t(domainMap, importer, 1));
-    //auto b = Teuchos::rcp (new fe_multivector_t(domainMap, feGraph->getImporter(), 1));
+    auto b = Teuchos::rcp (new fe_multivector_t(domainMap, feGraph->getImporter(), 1));
 
     matrixAndRhsAllocationTimer =  Teuchos::null;
 
     auto matrixAndRhsFillTimer =  Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Fill of Matrix and Rhs")));
-    Teuchos::Array<global_ordinal_t> columnLocalIds(basisCardinality);
+    Teuchos::Array<local_ordinal_t> columnLocalIds(basisCardinality);
     Teuchos::Array<global_ordinal_t> bLocalIds(basisCardinality);
     Teuchos::Array<scalar_t> columnScalarValues(basisCardinality);         // scalar values for each column
+
+    auto localColMap  = A->getColMap()->getLocalMap();
+    auto localMap  = ownedAndGhosted_map->getLocalMap();
+    auto localMatrix  = A->getLocalMatrix();
+    auto localRHS     = b->getLocalViewDevice();
 
     //fill matrix
     // Loop over elements
     Tpetra::beginFill(*A,*b);
+
     std::vector<global_ordinal_t> elementGIDs(basisCardinality);
-    auto cellRhsHost = Kokkos::create_mirror_view(cellRhs);
-    Kokkos::deep_copy(cellRhsHost,cellRhs);
-    auto cellMatHost = Kokkos::create_mirror_view(cellMat);
-    Kokkos::deep_copy(cellMatHost,cellMat);
-    auto elementLIDs = ugi->getLIDs();
-    auto elementLIDsHost = Kokkos::create_mirror_view(elementLIDs);
-    Kokkos::deep_copy(elementLIDsHost,elementLIDs);
+    auto elementLIDs = globalIndexer->getLIDs();
+/*  //using serial for
     for(ordinal_type elemId=0; elemId<numOwnedElems; elemId++)
     {
       // Fill the global column ids array for this element
       dofManager->getElementGIDs(elemId, elementGIDs);
 
-
-      for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++) {
-        bLocalIds[nodeId] = ownedAndGhosted_map->getLocalElement(elementGIDs[elmtOffset[nodeId]]);
-        columnLocalIds[nodeId] = A->getColMap()->getLocalElement(elementGIDs[elmtOffset[nodeId]]);
-      }
+      for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
+        columnLocalIds[nodeId] = localColMap.getLocalElement(elementGIDs[elmtOffsetKokkos(nodeId)]);
 
       // For each node (row) on the current element:
       // - populate the values array
@@ -546,15 +550,44 @@ int feAssemblyHex(int argc, char *argv[]) {
 
       for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
       {
-        global_ordinal_t localRowId = elementLIDsHost(elemId, elmtOffset[nodeId]);
+        local_ordinal_t localRowId = elementLIDs(elemId, elmtOffsetKokkos(nodeId));
 
         for(ordinal_type colId=0; colId<basisCardinality; colId++)
-          columnScalarValues[colId] = cellMatHost(elemId, nodeId, colId);
+          columnScalarValues[colId] = elemsMat(elemId, nodeId, colId);
 
         A->sumIntoLocalValues(localRowId, columnLocalIds, columnScalarValues);
-        b->sumIntoLocalValue(bLocalIds[nodeId], 0, cellRhsHost(elemId, nodeId));
+        b->sumIntoLocalValue(columnLocalIds[nodeId], 0, elemsRHS(elemId, nodeId));
       }
     }
+/*/ //using parallel for
+
+    DynRankViewLId ConstructWithLabel(columnLIds, numOwnedElems, basisCardinality);
+
+    Kokkos::parallel_for
+      ("Assemble FE matrix and right-hand side",
+       Kokkos::RangePolicy<DeviceSpaceType, int> (0, numOwnedElems),
+       KOKKOS_LAMBDA (const size_t elemId) {
+        // Get subviews
+        auto elemRHS    = Kokkos::subview(elemsRHS,elemId, Kokkos::ALL());
+        auto elemMat = Kokkos::subview(elemsMat,elemId, Kokkos::ALL(), Kokkos::ALL());
+        auto elemColumnLIds  = Kokkos::subview(columnLIds,elemId, Kokkos::ALL());
+          
+        for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
+          elemColumnLIds(nodeId) = localColMap.getLocalElement(elementGIDsKokkos(elemId, nodeId));
+
+        // For each node (row) on the current element
+        for (local_ordinal_t nodeId = 0; nodeId < basisCardinality; ++nodeId) {
+          const local_ordinal_t localRowId = elementLIDs(elemId,elmtOffsetKokkos(nodeId));
+          //  localMap.getLocalElement (elementGIDsKokkos(elemId, nodeId));
+
+          // Force atomics on sums
+          for (local_ordinal_t colId = 0; colId < basisCardinality; ++colId) 
+            localMatrix.sumIntoValues (localRowId, &elemColumnLIds(colId), 1, &(elemMat(nodeId,colId)), true, true);
+
+          Kokkos::atomic_add (&(localRHS(elemColumnLIds(nodeId),0)), elemRHS(nodeId));
+        }
+      });
+//*/
 
     Tpetra::endFill(*A, *b);
 
@@ -575,7 +608,7 @@ int feAssemblyHex(int argc, char *argv[]) {
  
       DynRankView ConstructWithLabel(funAtDofPoints, numOwnedElems, basisCardinality);
       {
-        DynRankView ConstructWithLabel(physDofPoints, numOwnedElems, numQPoints, dim);
+        DynRankView ConstructWithLabel(physDofPoints, numOwnedElems, basisCardinality, dim);
         ct::mapToPhysicalFrame(physDofPoints,dofCoordsOriented,physVertexes,basis->getBaseCellTopology());
         EvalSolFunctor<DynRankView> functor;
         functor.funAtPoints = funAtDofPoints;
@@ -589,18 +622,17 @@ int feAssemblyHex(int argc, char *argv[]) {
 
     {
       Teuchos::TimeMonitor vTimer1 =  *Teuchos::TimeMonitor::getNewTimer("Verification, assemble solution");
-      Tpetra::Vector<scalar_t> x(domainMap); //solution
+      vector_t x(domainMap); //solution
       auto basisCoeffsLIHost = Kokkos::create_mirror_view(basisCoeffsLI);
       Kokkos::deep_copy(basisCoeffsLIHost,basisCoeffsLI);
       for(ordinal_type elemId=0; elemId<numOwnedElems; elemId++)
       {
-        //auto elementLIDs = ugi->getElementLIDs(elemId);
         dofManager->getElementGIDs(elemId, elementGIDs);
 
 
         for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
         {
-          global_ordinal_t gid = elementGIDs[elmtOffset[nodeId]];
+          global_ordinal_t gid = elementGIDs[elmtOffsetKokkos(nodeId)];
           if(domainMap->isNodeGlobalElement(gid))
             x.replaceGlobalValue(gid, basisCoeffsLIHost(elemId, nodeId));
         }
