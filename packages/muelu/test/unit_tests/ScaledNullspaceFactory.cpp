@@ -96,7 +96,7 @@ namespace MueLuTests {
     nullSpace->norm1(norms);
     if (comm->getRank() == 0)
       out << "||NS|| = " << norms[0] << std::endl;
-    int maxLevels = 2;
+    int maxLevels = 3;
 
     // fill hierarchy
     RCP<Hierarchy> H = rcp( new Hierarchy() );
@@ -117,6 +117,7 @@ namespace MueLuTests {
     RCP<TentativePFactory> Ptent2 = rcp(new TentativePFactory());
     Ptent2->SetFactory("Nullspace",SNSFact);
 
+    NSFact->SetFactory("Nullspace",Ptent1);
     
     RCP<Factory>      Rfact = rcp( new TransPFactory() );
     Rfact->SetFactory("P",Ptent2);
