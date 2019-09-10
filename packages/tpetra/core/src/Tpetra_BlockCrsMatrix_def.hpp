@@ -2945,7 +2945,12 @@ public:
     // We use a "struct of arrays" approach to packing each row's
     // entries.  All the column indices (as global indices) go first,
     // then all their owning process ranks, and then the values.
-    exports.resize (totalNumBytes);
+    if(exports.extent(0) != totalNumBytes)
+    {
+      const std::string oldLabel = exports.d_view.label ();
+      const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
+      exports = Kokkos::DualView<packet_type*, buffer_device_type>(newLabel, totalNumBytes);
+    }
     if (totalNumEntries > 0) {
       // Current position (in bytes) in the 'exports' output array.
       Kokkos::View<size_t*, host_exec> offset("offset", numExportLIDs+1);

@@ -608,7 +608,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   MT effective_zero = Teuchos::ScalarTraits<MT>::eps();
 
   // Allocate P
-  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,0)); //FIXLATER: Need faster fill
+  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,numFieldsHi)); //FIXLATER: Need faster fill
   RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
   // Slow-ish fill
@@ -664,7 +664,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   MT effective_zero = Teuchos::ScalarTraits<MT>::eps();
 
   // Allocate P
-  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,0)); //FIXLATER: Need faster fill
+  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,numFieldsHi)); //FIXLATER: Need faster fill
   RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
   // Slow-ish fill
