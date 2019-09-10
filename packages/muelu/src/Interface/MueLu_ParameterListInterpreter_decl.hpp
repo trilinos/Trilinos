@@ -216,7 +216,7 @@ namespace MueLu {
     void UpdateFactoryManager_Aggregation_TentativeP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                                      int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Restriction(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
-                                        int levelID, std::vector<keep_pair>& keeps) const;
+                                          int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const;
     void UpdateFactoryManager_RAP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                   int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Coordinates(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
