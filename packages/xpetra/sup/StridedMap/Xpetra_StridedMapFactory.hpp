@@ -54,7 +54,7 @@
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
 
-#include "Xpetra_StridedMap.hpp"
+#include "Xpetra_StridedMap_decl.hpp"   // TODO: Once StridedMapFactory has ETI, we should be able to change this back to just StridedMap
 
 // This factory creates Xpetra::Map. User have to specify the exact class of object that he want to create (ie: a Xpetra::TpetraMap or a Xpetra::EpetraMap).
 
