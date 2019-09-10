@@ -46,6 +46,8 @@
 #include "Xpetra_MapFactory.hpp"
 
 #include "Xpetra_BlockedMap.hpp"
+#include "Xpetra_EpetraMap.hpp"
+#include "Xpetra_TpetraMap.hpp"
 
 namespace Xpetra {
 
@@ -93,7 +95,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg) );
+        return rcp( new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg) );
 #endif
 
       if (lib == UseEpetra)
