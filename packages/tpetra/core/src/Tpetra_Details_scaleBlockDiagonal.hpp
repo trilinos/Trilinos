@@ -102,6 +102,7 @@ void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, MultiVecto
       SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,algo_type>::invoke(SC_one,A,B);
 
     });  
+  typename MultiVectorType::execution_space().fence();
 }
 
 } // namespace Details
