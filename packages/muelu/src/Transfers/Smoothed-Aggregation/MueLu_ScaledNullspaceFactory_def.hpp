@@ -116,41 +116,38 @@ namespace MueLu {
     std::string nspName = pL.get<std::string>("Fine level nullspace");
 
     if (currentLevel.GetLevelID() == 0) {
-
       if (currentLevel.IsAvailable(nspName, NoFactory::get())) {
         // When a fine nullspace have already been defined by user using Set("Nullspace", ...) or
         // Set("Nullspace1", ...), we use it.
-        nullspace = currentLevel.Get< RCP<MultiVector> >(nspName, NoFactory::get());
-        GetOStream(Runtime1) << "Use user-given nullspace " << nspName << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
+        tentativeNullspace = currentLevel.Get< RCP<MultiVector> >(nspName, NoFactory::get());
       } else {
         // A User "Nullspace" (nspName) is not available (use factory)
-        nullspace = currentLevel.Get< RCP<MultiVector> >(nspName);
+        tentativeNullspace = currentLevel.Get< RCP<MultiVector> >(nspName);
 
       } // end if "Nullspace" not available
     } else {
-      // on coarser levels always use "Nullspace" as variable name, since it is expected by
-      // tentative P factory to be "Nullspace"
-      RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
-
-      // determine numPDEs
-      LocalOrdinal numPDEs = 1;
-      if(A->IsView("stridedMaps")==true) {
-        Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-        TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null, Exceptions::BadCast, "MueLu::CoalesceFactory::Build: cast to strided row map failed.");
-        numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
-        oldView = A->SwitchToView(oldView);
-      }
-
-
-
       tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory(nspName).get()); /* ! "Nullspace" and nspName mismatch possible here */
-      nullspace = MultiVectorFactory::Build(tentativeNullspace->getMap(), tentativeNullspace->getNumVectors());  *nullspace = *tentativeNullspace;  // Copy the tentative nullspace
-      RCP<MultiVector> blockDiagonal = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
-
-      Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractBlockDiagonal(*A,*blockDiagonal);
-      Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::inverseScaleBlockDiagonal(*blockDiagonal,*nullspace);
-      GetOStream(Runtime1) << "ScaledNullspaceFactory: Generating scaled nullspace" <<std::endl;
     }
+
+    // Scale!
+    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+    
+    // determine numPDEs
+    LocalOrdinal numPDEs = 1;
+    if(A->IsView("stridedMaps")==true) {
+      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null, Exceptions::BadCast, "MueLu::CoalesceFactory::Build: cast to strided row map failed.");
+      numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
+      oldView = A->SwitchToView(oldView);
+    }
+    
+
+    nullspace = MultiVectorFactory::Build(tentativeNullspace->getMap(), tentativeNullspace->getNumVectors());  *nullspace = *tentativeNullspace;  // Copy the tentative nullspace
+    RCP<MultiVector> blockDiagonal = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
+    
+    Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractBlockDiagonal(*A,*blockDiagonal);
+    Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::inverseScaleBlockDiagonal(*blockDiagonal,*nullspace);
+    GetOStream(Runtime1) << "ScaledNullspaceFactory: Generating scaled nullspace" <<std::endl;
 
     // provide "Nullspace" variable on current level (used by TentativePFactory)
     Set(currentLevel, "Nullspace", nullspace);
