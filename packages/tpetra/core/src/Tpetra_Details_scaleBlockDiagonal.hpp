@@ -88,7 +88,7 @@ void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, MultiVecto
   
   typedef Algo::Level3::Unblocked algo_type;
   Kokkos::parallel_for("scaleBlockDiagonal",range_type(0,numblocks),KOKKOS_LAMBDA(const LO i){
-      std::pair<LO,LO> row_range = std::make_pair(i*blocksize,(i+1)*blocksize);
+      Kokkos::pair<LO,LO> row_range(i*blocksize,(i+1)*blocksize);
       auto A = Kokkos::subview(blockDiag,row_range, Kokkos::ALL());
       auto B = Kokkos::subview(toScale,  row_range, Kokkos::ALL());
 
@@ -102,7 +102,6 @@ void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, MultiVecto
       SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,algo_type>::invoke(SC_one,A,B);
 
     });  
-  typename MultiVectorType::execution_space().fence();
 }
 
 } // namespace Details

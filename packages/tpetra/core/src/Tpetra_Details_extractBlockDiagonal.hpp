@@ -104,7 +104,6 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
         }
       }
     });
-  typename MultiVectorType::execution_space().fence();
 }
 
 } // namespace Details
