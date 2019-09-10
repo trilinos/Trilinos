@@ -268,9 +268,9 @@ namespace {
 
 
 #ifdef HAVE_XPETRA_TPETRA
-      typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
-      RCP<const Xpetra::Map<LO,GO,Node> > map =
-        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);   
+    typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
+    RCP<const Xpetra::Map<LO,GO,Node> > map =
+      Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);   
      {
        // create the identity matrix, via three arrays constructor
        ArrayRCP<size_t> rowptr(numLocal+1);
@@ -283,7 +283,7 @@ namespace {
          values[i] = SC_one + SC_one;
        }
        rowptr[numLocal]=numLocal;
-       RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > eye2 =  rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map,0));
+       RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > eye2  = Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map,map,0);
        TEST_NOTHROW( eye2->setAllValues(rowptr,colind,values) );
        TEST_NOTHROW( eye2->expertStaticFillComplete(map,map) );
 
@@ -294,12 +294,12 @@ namespace {
        RCP<MV> diag5 = rcp_const_cast<MV>(diag5c);
        diag5->putScalar(SC_one);
 
-       Xpetra::MatrixUtils<Scalar, LO, GO, Node>::extractBlockDiagonal(eye2x,diag5);
+       Xpetra::MatrixUtils<Scalar, LO, GO, Node>::extractBlockDiagonal(*eye2x,*diag5);
 
        RCP<MV> toScale5 = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(map,2); toScale5->putScalar(SC_one);
        
-       Xpetra::MatrixUtils<Scalar, LO, GO, Node>::inverseScaleBlockDiagonal(diag5c,toScale5);
-
+       Xpetra::MatrixUtils<Scalar, LO, GO, Node>::inverseScaleBlockDiagonal(*diag5c,*toScale5);
+      
 
      }
 #endif
