@@ -404,7 +404,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         ret = solver->solve();
         numIts = solver->getNumIters();
 
-      } catch (std::invalid_argument)
+      } catch (std::invalid_argument&)
 #endif
       {
 
