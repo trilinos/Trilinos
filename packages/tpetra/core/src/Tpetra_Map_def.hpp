@@ -536,6 +536,8 @@ namespace Tpetra {
     using Kokkos::LayoutLeft;
     using Kokkos::subview;
     using Kokkos::View;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
     using Teuchos::as;
     using Teuchos::broadcast;
     using Teuchos::outArg;
@@ -544,9 +546,9 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef global_size_t GST;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using GST = global_size_t;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
@@ -631,12 +633,15 @@ namespace Tpetra {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
       // doing so, fill in the LID -> GID table.
-      View<GO*, LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
-      auto lgMap_host = Kokkos::create_mirror_view (lgMap);
+      typename decltype (lgMap_)::non_const_type lgMap
+        (view_alloc ("lgMap", WithoutInitializing), numLocalElements_);
+      auto lgMap_host =
+        Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
 
       // The input array entryList_host is already on host, so we
       // don't need to take a host view of it.
-      // auto entryList_host = Kokkos::create_mirror_view (entryList);
+      // auto entryList_host =
+      //   Kokkos::create_mirror_view (Kokkos::HostSpace (), entryList);
       // Kokkos::deep_copy (entryList_host, entryList);
 
       firstContiguousGID_ = entryList_host[0];
@@ -690,7 +695,8 @@ namespace Tpetra {
         // FixedHashTable's constructor expects an owned device View,
         // so we must deep-copy the subview of the input indices.
         View<GO*, LayoutLeft, device_type>
-          nonContigGids ("nonContigGids", nonContigGids_host.size ());
+          nonContigGids (view_alloc ("nonContigGids", WithoutInitializing),
+                         nonContigGids_host.size ());
         Kokkos::deep_copy (nonContigGids, nonContigGids_host);
 
         glMap_ = global_to_local_table_type (nonContigGids,
@@ -706,7 +712,7 @@ namespace Tpetra {
 
       for ( ; i < numLocalElements_; ++i) {
         const GO curGid = entryList_host[i];
-        const LO curLid = as<LO> (i);
+        const LO curLid = static_cast<LO> (i);
         lgMap_host[curLid] = curGid; // LID -> GID table
 
         // While iterating through entryList, we compute its
@@ -880,6 +886,8 @@ namespace Tpetra {
     using Kokkos::LayoutLeft;
     using Kokkos::subview;
     using Kokkos::View;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
     using Teuchos::arcp;
     using Teuchos::ArrayView;
     using Teuchos::as;
@@ -976,12 +984,16 @@ namespace Tpetra {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
       // doing so, fill in the LID -> GID table.
-      View<GO*, LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
-      auto lgMap_host = Kokkos::create_mirror_view (lgMap);
+      typename decltype (lgMap_)::non_const_type lgMap
+        (view_alloc ("lgMap", WithoutInitializing), numLocalElements_);
+      auto lgMap_host =
+        Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
 
-      // Creating the mirror view is trivial, and the deep_copy is a
-      // no-op, if entryList is on host already.
-      auto entryList_host = Kokkos::create_mirror_view (entryList);
+      using array_layout =
+        typename View<const GO*, device_type>::array_layout;
+      View<GO*, array_layout, Kokkos::HostSpace> entryList_host
+        (view_alloc ("entryList_host", WithoutInitializing),
+         entryList.extent(0));
       Kokkos::deep_copy (entryList_host, entryList);
 
       firstContiguousGID_ = entryList_host[0];
@@ -1611,10 +1623,13 @@ namespace Tpetra {
 
       const LO numElts = static_cast<LO> (getNodeNumElements ());
 
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
       lg_view_type lgMap ("lgMap", numElts);
       FillLgMap<LO, GO, DT> fillIt (lgMap, minMyGID_);
 
-      auto lgMapHost = Kokkos::create_mirror_view (lgMap);
+      auto lgMapHost =
+        Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
       Kokkos::deep_copy (lgMapHost, lgMap);
 
       // "Commit" the local-to-global lookup table we filled in above.
