@@ -61,6 +61,7 @@
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include "Tpetra_Details_initializeKokkos.hpp"
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <typeinfo>
@@ -2413,13 +2414,36 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &M,
                         const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break)
 {
+  using ::Tpetra::Details::Behavior;
   using Teuchos::Array;
   using Teuchos::ArrayView;
+  using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Tpetra::Map<LO,GO,Node> map_type;
-  int myID = M->getComm()->getRank();
+  using Teuchos::toString;
+  using std::cerr;
+  using std::endl;
+  using LO = LocalOrdinal;
+  using GO = GlobalOrdinal;
+  using map_type = Tpetra::Map<LO, GO, Node>;
+  const char funcPrefix[] = "Tpetra::createOneToOne(Map,TieBreak): ";
+
+  const bool verbose = Behavior::verbose ("Map") ||
+    Behavior::verbose ("Directory");
+  std::unique_ptr<std::string> procPrefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Proc ";
+    if (M.is_null () || M->getComm ().is_null ()) {
+      os << "?";
+    }
+    else {
+      os << M->getComm ()->getRank ();
+    }
+    os << ": ";
+    procPrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    os << funcPrefix << "Start" << endl;
+    cerr << os.str ();
+  }
 
   // FIXME (mfh 20 Feb 2013) We should have a bypass for contiguous
   // Maps (which are 1-to-1 by construction).
@@ -2427,20 +2451,41 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   //Based off Epetra's one to one.
 
   Tpetra::Directory<LO, GO, Node> directory;
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << "Initialize Directory" << endl;
+    cerr << os.str ();
+  }
   directory.initialize (*M, tie_break);
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << "Done initializing Directory" << endl;
+    cerr << os.str ();
+  }
   size_t numMyElems = M->getNodeNumElements ();
   ArrayView<const GO> myElems = M->getNodeElementList ();
   Array<int> owner_procs_vec (numMyElems);
-
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << "Call Directory::getDirectoryEntries with "
+      "GIDs " << toString (myElems) << endl;
+    cerr << os.str ();
+  }
   directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << "Directory::getDirectoryEntries PIDs "
+      "result: " << toString (owner_procs_vec) << endl;
+    cerr << os.str ();
+  }
 
+  const int myRank = M->getComm()->getRank();
   Array<GO> myOwned_vec (numMyElems);
   size_t numMyOwnedElems = 0;
   for (size_t i = 0; i < numMyElems; ++i) {
-    GO GID = myElems[i];
-    int owner = owner_procs_vec[i];
-
-    if (myID == owner) {
+    const GO GID = myElems[i];
+    const int owner = owner_procs_vec[i];
+    if (myRank == owner) {
       myOwned_vec[numMyOwnedElems++] = GID;
     }
   }
@@ -2450,8 +2495,21 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   // valid for the new Map.  Why can't we reuse it?
   const global_size_t GINV =
     Tpetra::Details::OrdinalTraits<global_size_t>::invalid ();
-  return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
-                            M->getComm ()));
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << "Create Map with GIDs "
+       << toString (myOwned_vec) << endl;
+    cerr << os.str ();
+  }
+  RCP<const map_type> retMap
+    (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
+                   M->getComm ()));
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << funcPrefix << "Done!" << endl;
+    cerr << os.str ();
+  }
+  return retMap;
 }
 
 //

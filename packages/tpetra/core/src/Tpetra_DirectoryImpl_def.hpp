@@ -48,9 +48,10 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_TieBreak.hpp"
-
 #include "Tpetra_Details_FixedHashTable.hpp"
 #include "Teuchos_Comm.hpp"
+#include <memory>
+#include <sstream>
 
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
 #ifdef HAVE_TPETRACORE_MPI
@@ -942,13 +943,15 @@ namespace Tpetra {
       using Teuchos::as;
       using Teuchos::RCP;
       using Teuchos::toString;
+      using ::Tpetra::Details::Behavior;
       using std::cerr;
       using std::endl;
-      typedef typename Array<GO>::size_type size_type;
+      using size_type = typename Array<GO>::size_type;
       const char funcPrefix[] = "Tpetra::"
         "DistributedNoncontiguousDirectory::getEntriesImpl: ";
       const char errSuffix[] =
         "  Please report this bug to the Tpetra developers.";
+
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
       const bool verbose = Behavior::verbose ("Directory") ||
         Behavior::verbose ("Tpetra::Directory");
