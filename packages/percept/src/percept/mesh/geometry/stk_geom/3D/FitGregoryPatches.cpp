@@ -120,7 +120,8 @@ namespace percept {
                 // 3 slots for "left" of an edge, 3 for "right"
                 if (is_surface_topology(part.topology()))
                   {
-                    stk::mesh::put_field_on_mesh(*m_eMesh.m_node_normals, part, 3, nullptr);
+                    stk::mesh::FieldTraits<NormalsFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+                    stk::mesh::put_field_on_mesh(*m_eMesh.m_node_normals, part, 3, init_np);
                   }
 
                 if (!in_surface_sets(part.name()))
@@ -128,12 +129,14 @@ namespace percept {
 
                 if (pv[ii]->primary_entity_rank() == m_eMesh.side_rank())
                   {
-                    stk::mesh::put_field_on_mesh(*m_eMesh.m_gregory_control_points_field, part, numControlPoints, nullptr);
+                    stk::mesh::FieldTraits<GregoryControlPointsType>::data_type* init_np = nullptr; // gcc 4.8 hack
+                    stk::mesh::put_field_on_mesh(*m_eMesh.m_gregory_control_points_field, part, numControlPoints, init_np);
                   }
                 else if (pv[ii]->primary_entity_rank() == m_eMesh.element_rank()
                          && (pv[ii]->topology() == stk::topology::SHELL_QUAD_4 || pv[ii]->topology() == stk::topology::SHELL_TRI_3))
                   {
-                    stk::mesh::put_field_on_mesh(*m_eMesh.m_gregory_control_points_field_shell, part, numControlPoints, nullptr);
+                    stk::mesh::FieldTraits<GregoryControlPointsType>::data_type* init_np = nullptr; // gcc 4.8 hack
+                    stk::mesh::put_field_on_mesh(*m_eMesh.m_gregory_control_points_field_shell, part, numControlPoints, init_np);
                   }
               }
           }

@@ -104,11 +104,12 @@
           stk::io::put_io_part_attribute(quad_part);
 
           //put coord-field on all nodes:
+          stk::mesh::FieldTraits<CoordFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
           put_field_on_mesh(
                     coord_field,
                     meta_data.universal_part(),
                     SpatialDim,
-                    nullptr
+                    init_np
                     );
 
 #if PERCEPT_QF_USE_COORD_GATHER_FIELD

@@ -45,11 +45,12 @@
     {
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
-
-      put_field_on_mesh( m_coordinates_field , universal, nullptr);
-      put_field_on_mesh( m_centroid_field , universal, nullptr);
-      put_field_on_mesh( m_temperature_field, universal, nullptr);
-      put_field_on_mesh( m_volume_field, m_block_beam, nullptr);
+      stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_c = nullptr; // gcc 4.8 hack
+      stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_s = nullptr; // gcc 4.8 hack
+      put_field_on_mesh( m_coordinates_field , universal, init_c);
+      put_field_on_mesh( m_centroid_field , universal, init_c);
+      put_field_on_mesh( m_temperature_field, universal, init_s);
+      put_field_on_mesh( m_volume_field, m_block_beam, init_s);
 
       if (doCommit)
         m_metaData.commit();

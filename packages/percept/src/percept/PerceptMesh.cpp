@@ -213,7 +213,8 @@
           m_isAdopted = true;
           m_coordinatesField =
             &m_metaData->declare_field< CoordinatesFieldType >( stk::topology::NODE_RANK, "coordinates" );
-          stk::mesh::put_field_on_mesh( *m_coordinatesField, m_metaData->universal_part(), nullptr);
+          stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+          stk::mesh::put_field_on_mesh( *m_coordinatesField, m_metaData->universal_part(), init_np);
         }
       m_isOpen = true;
       m_filename = "";
@@ -2083,7 +2084,8 @@
               {
                 //std::cout << "createField scalar: " << name << std::endl;
                 ScalarIntFieldType & sfield =  m_metaData->declare_field<ScalarIntFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
-                stk::mesh::put_field_on_mesh( sfield , *part , nullptr);
+                stk::mesh::FieldTraits<ScalarIntFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+                stk::mesh::put_field_on_mesh( sfield , *part , init_np);
                 field = &sfield;
               }
               break;
@@ -2092,7 +2094,8 @@
               {
                 //std::cout << "createField vector: " << name << std::endl;
                 VectorIntFieldType & vfield =  m_metaData->declare_field<VectorIntFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
-                stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , nullptr);
+                stk::mesh::FieldTraits<VectorIntFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+                stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , init_np);
                 field = &vfield;
               }
               break;
@@ -2115,7 +2118,8 @@
               {
                 //std::cout << "createField scalar: " << name << std::endl;
                 ScalarFieldType & sfield =  m_metaData->declare_field<ScalarFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
-                stk::mesh::put_field_on_mesh( sfield , *part , nullptr);
+                stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+                stk::mesh::put_field_on_mesh( sfield , *part , init_np);
                 field = &sfield;
               }
               break;
@@ -2124,7 +2128,8 @@
               {
                 //std::cout << "createField vector: " << name << std::endl;
                 CoordinatesFieldType & vfield =  m_metaData->declare_field<CoordinatesFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
-                stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , nullptr);
+                stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+                stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , init_np);
                 field = &vfield;
               }
               break;
@@ -4535,7 +4540,8 @@
       {
         typedef stk::mesh::Field<stk::mesh::EntityId> GlobalIdField;
         GlobalIdField& cg_gid_field = m_metaData->declare_field<GlobalIdField>(node_rank(), "cg_gid");
-        stk::mesh::put_field_on_mesh( cg_gid_field , m_metaData->universal_part(), nullptr);
+        stk::mesh::FieldTraits<GlobalIdField>::data_type* init_np = nullptr; // gcc 4.8 hack
+        stk::mesh::put_field_on_mesh( cg_gid_field , m_metaData->universal_part(), init_np);
         stk::io::set_field_role(cg_gid_field, Ioss::Field::TRANSIENT);
       }
     }
@@ -6212,7 +6218,8 @@
           if(!m_parent_element_field)
             {
               ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType>(stk::topology::ELEMENT_RANK, "parent_element");
-              stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), nullptr);
+              stk::mesh::FieldTraits<ParentElementType>::data_type* init_np = nullptr; // gcc 4.8 hack
+              stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), init_np);
               stk::io::set_field_role(pe_field, Ioss::Field::TRANSIENT);
               m_parent_element_field = &pe_field;
             }
@@ -6220,7 +6227,8 @@
           if(!m_parent_element_field_side)
             {
               ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType>(side_rank(), "parent_element_side");
-              stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), nullptr);
+              stk::mesh::FieldTraits<ParentElementType>::data_type* init_np = nullptr; // gcc 4.8 hack
+              stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), init_np);
               stk::io::set_field_role(pe_field, Ioss::Field::TRANSIENT);
               m_parent_element_field_side = &pe_field;
             }
@@ -6255,7 +6263,8 @@
           if (!m_weights_field)
             {
               m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType>(stk::topology::ELEMENT_RANK, "rebalance_weights");
-              stk::mesh::put_field_on_mesh( *m_weights_field , get_fem_meta_data()->universal_part(), nullptr);
+              stk::mesh::FieldTraits<WeightsFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+              stk::mesh::put_field_on_mesh( *m_weights_field , get_fem_meta_data()->universal_part(), init_np);
               stk::io::set_field_role(*m_weights_field, Ioss::Field::TRANSIENT);
             }
         }
@@ -6287,7 +6296,8 @@
           m_unprojected_coordinates = &get_fem_meta_data()->declare_field<UnprojectedCoordinatesFieldType>(node_rank(), "unprojected_coordinates");
 
           // we use first 3 slots for coordinates, last for the flag for if it has been set yet
-          stk::mesh::put_field_on_mesh( *m_unprojected_coordinates, get_fem_meta_data()->universal_part(), 4, nullptr);
+          stk::mesh::FieldTraits<UnprojectedCoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+          stk::mesh::put_field_on_mesh( *m_unprojected_coordinates, get_fem_meta_data()->universal_part(), 4, init_np);
           stk::io::set_field_role(*m_unprojected_coordinates, Ioss::Field::TRANSIENT);
         }
       ADD_FIELD(m_unprojected_coordinates);
@@ -6297,7 +6307,8 @@
         {
           m_wall_distance_field = &get_fem_meta_data()->declare_field<WallDistanceFieldType>(node_rank(), "wall_distance");
 
-          stk::mesh::put_field_on_mesh( *m_wall_distance_field, get_fem_meta_data()->universal_part(), nullptr);
+          stk::mesh::FieldTraits<WallDistanceFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+          stk::mesh::put_field_on_mesh( *m_wall_distance_field, get_fem_meta_data()->universal_part(), init_np);
           stk::io::set_field_role(*m_wall_distance_field, Ioss::Field::TRANSIENT);
         }
       ADD_FIELD(m_wall_distance_field);

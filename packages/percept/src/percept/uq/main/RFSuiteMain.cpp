@@ -148,7 +148,8 @@ int main(int argc,  char **argv)
 
   stk::mesh::Field<double,stk::mesh::SimpleArrayTag> & phi = 
     mesh_data.meta_data().declare_field<stk::mesh::Field<double,stk::mesh::SimpleArrayTag> >(stk::topology::ELEMENT_RANK, "phi");
-  stk::mesh::put_field_on_mesh(phi, mesh_data.meta_data().universal_part(), maxNev, nullptr);
+  stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
+  stk::mesh::put_field_on_mesh(phi, mesh_data.meta_data().universal_part(), maxNev, init_np);
 
   mesh_data.populate_bulk_data();
   

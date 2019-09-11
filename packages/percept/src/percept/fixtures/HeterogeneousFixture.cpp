@@ -72,14 +72,16 @@
     {
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
+      stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_c = nullptr; // gcc 4.8 hack
+      stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_s = nullptr; // gcc 4.8 hack
 
-      put_field_on_mesh( m_coordinates_field , universal, nullptr);
-      put_field_on_mesh( m_centroid_field , universal, nullptr);
-      put_field_on_mesh( m_temperature_field, universal, nullptr);
-      put_field_on_mesh( m_volume_field, m_block_hex, nullptr);
-      put_field_on_mesh( m_volume_field, m_block_wedge, nullptr);
-      put_field_on_mesh( m_volume_field, m_block_tet, nullptr);
-      put_field_on_mesh( m_volume_field, m_block_pyramid, nullptr);
+      put_field_on_mesh( m_coordinates_field , universal, init_c);
+      put_field_on_mesh( m_centroid_field , universal, init_c);
+      put_field_on_mesh( m_temperature_field, universal, init_s);
+      put_field_on_mesh( m_volume_field, m_block_hex, init_s);
+      put_field_on_mesh( m_volume_field, m_block_wedge, init_s);
+      put_field_on_mesh( m_volume_field, m_block_tet, init_s);
+      put_field_on_mesh( m_volume_field, m_block_pyramid, init_s);
 
       stk::io::put_io_part_attribute(  m_block_hex );
       stk::io::put_io_part_attribute(  m_block_wedge );

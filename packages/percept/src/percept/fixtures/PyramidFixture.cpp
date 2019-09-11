@@ -80,11 +80,15 @@
           stk::io::put_io_part_attribute(*m_sideset_tri);
           m_metaData.declare_part_subset(*m_sideset_tri, *m_sideset_tri_subset);
         }
-      put_field_on_mesh( m_coordinates_field , universal, nullptr);
-      put_field_on_mesh( m_centroid_field , universal, nullptr);
-      put_field_on_mesh( m_temperature_field, universal, nullptr);
 
-      put_field_on_mesh( m_volume_field, m_block_pyramid, nullptr);
+      stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_c = nullptr; // gcc 4.8 hack
+      stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_s = nullptr; // gcc 4.8 hack
+
+      put_field_on_mesh( m_coordinates_field , universal, init_c);
+      put_field_on_mesh( m_centroid_field , universal, init_c);
+      put_field_on_mesh( m_temperature_field, universal, init_s);
+
+      put_field_on_mesh( m_volume_field, m_block_pyramid, init_s);
 
       stk::io::put_io_part_attribute(  m_block_pyramid );
 

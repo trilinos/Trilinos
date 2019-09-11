@@ -50,8 +50,9 @@
     {
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
+      stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
 
-      put_field_on_mesh( m_coordinates_field , universal, nullptr);
+      put_field_on_mesh( m_coordinates_field , universal, init_np);
 
       if (doCommit)
         m_metaData.commit();

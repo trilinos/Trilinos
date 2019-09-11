@@ -610,8 +610,9 @@
           stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
           stk::io::set_distribution_factor_field(*new_part, *distribution_factors_field);
           int side_node_count = new_part->topology().num_nodes();
+          stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
           stk::mesh::put_field_on_mesh(*distribution_factors_field,
-                               *new_part, side_node_count, nullptr);
+                               *new_part, side_node_count, init_np);
         }
     }
 

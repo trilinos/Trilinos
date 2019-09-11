@@ -569,7 +569,8 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
 
       ErrorFieldType * error_field =
         &eMesh.get_fem_meta_data()->declare_field<ErrorFieldType>(stk::topology::ELEMENT_RANK, rar.m_error_indicator_field);
-      stk::mesh::put_field_on_mesh( *error_field , eMesh.get_fem_meta_data()->universal_part(), 1, nullptr);
+      stk::mesh::FieldTraits<ErrorFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+      stk::mesh::put_field_on_mesh( *error_field , eMesh.get_fem_meta_data()->universal_part(), 1, init_np);
       stk::io::set_field_role( *error_field, Ioss::Field::TRANSIENT);
 
       if (has_ft_mesh) {
@@ -610,7 +611,8 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
 
         ErrorFieldType * from_error_field =
           &eMesh_error.get_fem_meta_data()->declare_field<ErrorFieldType>(stk::topology::ELEMENT_RANK, rar.m_error_indicator_field);
-        stk::mesh::put_field_on_mesh( *from_error_field , eMesh_error.get_fem_meta_data()->universal_part(), 1, nullptr);
+        stk::mesh::FieldTraits<ErrorFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+        stk::mesh::put_field_on_mesh( *from_error_field , eMesh_error.get_fem_meta_data()->universal_part(), 1, init_np);
         eMesh_error.add_input_field(from_error_field);
 
         eMesh_error.commit();
