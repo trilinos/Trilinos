@@ -79,23 +79,26 @@ namespace Xpetra {
     static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase,
         std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
         LocalOrdinal stridedBlockId, GlobalOrdinal offset, LocalGlobal lg,
-        const Teuchos::RCP<Node> & /* node */) 
+        const Teuchos::RCP<Node> & /* node */)
     {
       return Build(lib, numGlobalElements, indexBase, stridingInfo, comm,
                    stridedBlockId, offset, lg);
     }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
-    static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase,
+
+
+    static RCP<Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node>> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase,
         std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
         LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0, LocalGlobal lg = Xpetra::GloballyDistributed)
     {
-      return rcp(new StridedMap(lib, numGlobalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, lg));
+      return rcp(new Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node>(lib, numGlobalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, lg));
     }
+
 
     //! Map constructor with a user-defined contiguous distribution.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     TPETRA_DEPRECATED
-    static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
+    static RCP<Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node>> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
         std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
         LocalOrdinal stridedBlockId, GlobalOrdinal offset,
         const Teuchos::RCP<Node> & /* node */)
@@ -104,6 +107,8 @@ namespace Xpetra {
                    stridingInfo, comm, stridedBlockId, offset);
     }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+
     static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
         std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
         LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)
