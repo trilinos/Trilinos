@@ -108,6 +108,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ScaledNullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Nullspace factory", currentLevel);
+    currentLevel.print(std::cout,Debug);
 
     RCP<MultiVector> nullspace, tentativeNullspace;
 

@@ -1236,6 +1236,9 @@ namespace MueLu {
       scaledNSfactory->SetFactory("Nullspace",nullSpaceFactory);
       RCP<TentativePFactory> tentPFactory = rcp(new TentativePFactory());
       tentPFactory->SetFactory("Nullspace",scaledNSfactory);
+      tentPFactory->SetFactory("Aggregates",manager.GetFactory("Aggregates"));
+      tentPFactory->SetFactory("CoarseMap",manager.GetFactory("CoarseMap"));
+
       if(R.is_null())   R = rcp(new TransPFactory());
       R->SetFactory("P",tentPFactory);
     }

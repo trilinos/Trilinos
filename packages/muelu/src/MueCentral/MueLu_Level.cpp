@@ -389,12 +389,13 @@ namespace MueLu {
         //         ss1 << (*kt)->description();
         //         outputter.outputField((ss1.str()).substr(0,30));
 
-        // factory ptr
-        if (factory == NoFactory::get())
+        if (factory == NoFactory::get()) {
           outputter.outputField("NoFactory");
-        else
-          outputter.outputField(factory);
-
+        }
+        else {
+          std::ostringstream oss; oss << factory->ShortClassName() << "(" << factory <<")";
+          outputter.outputField(oss.str());
+        }
 
         int reqcount = NumRequests(factory, ename); // request counter
         outputter.outputField(reqcount);
@@ -452,8 +453,8 @@ namespace MueLu {
         std::ostringstream ss;
         for (container_type::const_iterator ct = requestedBy.begin(); ct != requestedBy.end(); ct++) {
           if (ct != requestedBy.begin()) ss << ",";
-          ss << ct->first;
-          if (ct->second > 1) ss << "(" << ct->second << ")";
+          ss << ct->first->ShortClassName() << "("<<ct->first<<")";
+          if (ct->second > 1) ss << "x" << ct->second;
         }
         outputter.outputField(ss.str());
 
