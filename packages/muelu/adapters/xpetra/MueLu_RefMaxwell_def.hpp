@@ -265,14 +265,24 @@ namespace MueLu {
         BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
         BCcolsKokkos_ = Utilities_kokkos::DetectDirichletCols(*D0_Matrix_,BCrowsKokkos_);
 
-        BCrowcount_ = 0;
+        int BCrowcountLocal = 0;
         for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
           if (BCrowsKokkos_(i))
-            BCrowcount_ += 1;
-        BCcolcount_ = 0;
+            BCrowcountLocal += 1;
+#ifdef HAVE_MPI
+        MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCrowcountLocal, BCrowcount_);
+#else
+        BCrowcount_ = BCrowcountLocal;
+#endif
+        int BCcolcountLocal = 0;
         for (size_t i = 0; i<BCcolsKokkos_.size(); i++)
           if (BCcolsKokkos_(i))
-            BCcolcount_ += 1;
+            BCcolcountLocal += 1;
+#ifdef HAVE_MPI
+        MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCcolcountLocal, BCcolcount_);
+#else
+        BCcolcount_ = BCcolcountLocal;
+#endif
         if (IsPrint(Statistics2)) {
           GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
         }
@@ -281,14 +291,24 @@ namespace MueLu {
         {
           BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
           BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
-          BCrowcount_ = 0;
+          int BCrowcountLocal = 0;
           for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
             if (*it)
-              BCrowcount_ += 1;
-          BCcolcount_ = 0;
+              BCrowcountLocal += 1;
+#ifdef HAVE_MPI
+          MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCrowcountLocal, BCrowcount_);
+#else
+          BCrowcount_ = BCrowcountLocal;
+#endif
+          int BCcolcountLocal = 0;
           for (auto it = BCcols_.begin(); it != BCcols_.end(); ++it)
             if (*it)
-              BCcolcount_ += 1;
+              BCcolcountLocal += 1;
+#ifdef HAVE_MPI
+          MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCcolcountLocal, BCcolcount_);
+#else
+          BCcolcount_ = BCcolcountLocal;
+#endif
           if (IsPrint(Statistics2)) {
             GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
           }
