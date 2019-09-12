@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <queue>
+#include <unistd.h>
 
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
@@ -303,7 +304,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       kh.set_dynamic_scheduling(use_dynamic_scheduling);
       kh.set_verbose(verbose);
     
-      switch(algorithm) {
+      /*switch(algorithm) {
         case 1:
           kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
           break;
@@ -330,7 +331,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
           break;
         default:
           kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
-      }
+      }*/
+      kh.create_graph_coloring_handle(KokkosGraph::COLORING_EB);
      
       //set the initial coloring of the kh.get_graph_coloring_handle() to be
       //the data view from the femv.
@@ -380,7 +382,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
 
     //Main entry point for graph coloring
     void color( const RCP<ColoringSolution<Adapter> > &solution ) {
-      
+      int rank = comm->getRank(); 
       Teuchos::RCP<Teuchos::Time>
              timeReorder(Teuchos::TimeMonitor::getNewTimer("00 REORDER")),
              timeInterior(Teuchos::TimeMonitor::getNewTimer("01 INTERIOR")),
@@ -412,7 +414,14 @@ class AlgHybridGMB : public Algorithm<Adapter>
       lno_t nInterior = 0;
       std::vector<lno_t> reorderToLocal;
       for(int i = 0;  i< nVtx; i++) reorderToLocal.push_back(i);
-
+      
+      volatile int debug = 0;
+      if(rank == 0){
+        printf("PID %d ready for attach\n",getpid());
+        while(debug == 0){
+          usleep(1000);
+        }
+      }
       //printf("Starting to create local graph\n");
       std::string kokkos_only_interior = pl->get<std::string>("Kokkos_only_interior","false");
       if(comm->getSize() == 1 || kokkos_only_interior=="false") {
