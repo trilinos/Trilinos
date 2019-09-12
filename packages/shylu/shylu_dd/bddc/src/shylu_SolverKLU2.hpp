@@ -53,15 +53,6 @@
 #include "Amesos2_KLU2.hpp"
 #include "shylu_SolverBaseBDDC.hpp"
 
-/*
-#include "klu2_defaults.hpp"
-#include "klu2_analyze.hpp"
-#include "klu2_factor.hpp"
-#include "klu2_solve.hpp"
-#include "klu2_free_symbolic.hpp"
-#include "klu2_free_numeric.hpp"
-*/
-
 namespace bddc {
   
   template <class SX> 
