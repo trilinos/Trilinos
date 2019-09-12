@@ -188,6 +188,53 @@ ENDFUNCTION()
 
 
 #
+# @FUNCTION: UNITTEST_NOT_HAS_SUBSTR_CONST()
+#
+# Check that a given string var does **NOT** contains the given substring and
+# update overall test statistics
+#
+# Usage::
+#
+#   UNITTEST_NOT_HAS_SUBSTR_CONST(<varName> <substr>)
+#
+# If ``${<varName>}`` contains the substring ``<substr>``, then the check
+# failed, otherwise it passes.  This prints the variable name and values and
+# shows the test result.
+#
+# This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
+# ``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
+# by the unit test harness system to assess overall pass/fail.
+#
+FUNCTION(UNITTEST_NOT_HAS_SUBSTR_CONST VAR_NAME SUBSTR_VAL)
+
+  MATH( EXPR NUMRUN ${UNITTEST_OVERALL_NUMRUN}+1 )
+  GLOBAL_SET(UNITTEST_OVERALL_NUMRUN ${NUMRUN})
+
+  MESSAGE(
+    "\nCheck:\n"
+    "    ${VAR_NAME} =\n"
+    "    [${${VAR_NAME}}]\n"
+    "  Does NOT contain:\n"
+    "    [${SUBSTR_VAL}]"
+    )
+
+  STRING(FIND "${${VAR_NAME}}" "${SUBSTR_VAL}" SUBSTR_START_IDX)
+  #PRINT_VAR(SUBSTR_START_IDX)
+
+  IF (${SUBSTR_START_IDX} GREATER -1)
+    MESSAGE("  [FAILED]\n")
+    GLOBAL_SET(UNITTEST_OVERALL_PASS FALSE)
+    MESSAGE(WARNING "Stack trace for failed unit test")
+  ELSE()
+    MESSAGE("  [PASSED]\n")
+    MATH( EXPR NUMPASSED ${UNITTEST_OVERALL_NUMPASSED}+1 )
+    GLOBAL_SET(UNITTEST_OVERALL_NUMPASSED ${NUMPASSED})
+  ENDIF()
+
+ENDFUNCTION()
+
+
+#
 # @FUNCTION: UNITTEST_FILE_REGEX()
 #
 # Perform a series regexes of given strings and update overall test statistics.
