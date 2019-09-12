@@ -166,9 +166,8 @@ void StepperImplicit<Scalar>::setInitialConditions(
       RCP<TimeDerivative<Scalar> > timeDer = Teuchos::null;
       const Scalar alpha = Scalar(1.0);    // d(xDot)/d(xDot)
       const Scalar beta  = Scalar(0.0);    // d(x   )/d(xDot)
-      RCP<ImplicitODEParameters<Scalar> > p =
-        Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
-                                                       SOLVE_FOR_XDOT_CONST_X));
+      auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+        timeDer, dt, alpha, beta, SOLVE_FOR_XDOT_CONST_X));
 
       auto xDot = this->getStepperXDot(initialState);
       const Thyra::SolveStatus<Scalar> sStatus =
@@ -206,9 +205,8 @@ void StepperImplicit<Scalar>::setInitialConditions(
     RCP<TimeDerivative<Scalar> > timeDer = Teuchos::null;
     const Scalar alpha = Scalar(0.0);
     const Scalar beta  = Scalar(0.0);
-    RCP<ImplicitODEParameters<Scalar> > p =
-      Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
-                                                     EVALUATE_RESIDUAL));
+    auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+      timeDer, dt, alpha, beta, EVALUATE_RESIDUAL));
 
     this->evaluateImplicitODE(f, x, xDot, time, p);
 

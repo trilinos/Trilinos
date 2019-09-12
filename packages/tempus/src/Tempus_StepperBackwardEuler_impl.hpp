@@ -195,9 +195,8 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
     const Scalar alpha = Scalar(1.0)/dt;
     const Scalar beta  = Scalar(1.0);
-    Teuchos::RCP<ImplicitODEParameters<Scalar> > p =
-      Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
-                                                     SOLVE_FOR_X));
+    auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+      timeDer, dt, alpha, beta));
 
     if (!Teuchos::is_null(stepperBEObserver_))
       stepperBEObserver_->observeBeforeSolve(solutionHistory, *this);

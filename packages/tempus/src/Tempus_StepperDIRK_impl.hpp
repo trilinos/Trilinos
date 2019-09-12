@@ -249,10 +249,8 @@ void StepperDIRK<Scalar>::takeStep(
             Teuchos::rcp(new StepperDIRKTimeDerivative<Scalar>(
               alpha,xTilde_.getConst()));
 
-          Teuchos::RCP<ImplicitODEParameters<Scalar> > p =
-            Teuchos::rcp(new ImplicitODEParameters<Scalar>(
-              timeDer, dt, alpha, beta));
-          p->stageNumber_ = i;
+          auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+            timeDer, dt, alpha, beta, SOLVE_FOR_X, i));
 
           if (!Teuchos::is_null(stepperDIRKObserver_))
             stepperDIRKObserver_->observeBeforeSolve(solutionHistory, *this);

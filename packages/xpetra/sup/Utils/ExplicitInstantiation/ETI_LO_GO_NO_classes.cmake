@@ -1,0 +1,1 @@
+APPEND_SET(XPETRA_LO_GO_NO_ETI_CLASSES Xpetra::StridedMap )
