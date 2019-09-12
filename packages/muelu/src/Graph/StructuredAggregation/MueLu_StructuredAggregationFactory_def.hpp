@@ -214,7 +214,7 @@ namespace MueLu {
     Teuchos::Array<LO> coarseRate;
     try {
       coarseRate = Teuchos::fromStringToArray<LO>(coarseningRate);
-    } catch(const Teuchos::InvalidArrayStringRepresentation e) {
+    } catch(const Teuchos::InvalidArrayStringRepresentation& e) {
       GetOStream(Errors,-1) << " *** \"aggregation: coarsening rate\" must be a string convertible into an array! *** "
                             << std::endl;
       throw e;

@@ -172,8 +172,9 @@ void StepperNewmarkExplicitAForm<Scalar>::setInitialConditions(
       *out << "Warning -- Requested IC consistency of 'None' but\n"
            << "           initialState does not have an xDotDot.\n"
            << "           Setting a 'Consistent' xDotDot!\n" << std::endl;
+      auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
       this->evaluateExplicitODE(initialState->getXDotDot(), x, xDot,
-                                initialState->getTime());
+                                initialState->getTime(), p);
 
       initialState->setIsSynced(true);
     }
@@ -190,8 +191,9 @@ void StepperNewmarkExplicitAForm<Scalar>::setInitialConditions(
   }
   else if (icConsistency == "Consistent") {
     // Evaluate xDotDot = f(x,t).
+    auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
     this->evaluateExplicitODE(initialState->getXDotDot(), x, xDot,
-                              initialState->getTime());
+                              initialState->getTime(), p);
 
     // At this point, x, xDot and xDotDot are sync'ed or consistent
     // at the same time level for the initialState.
@@ -207,7 +209,8 @@ void StepperNewmarkExplicitAForm<Scalar>::setInitialConditions(
   if (this->getICConsistencyCheck()) {
     auto xDotDot = initialState->getXDotDot();
     auto f       = initialState->getX()->clone_v();
-    this->evaluateExplicitODE(f, x, xDot, initialState->getTime());
+    auto p       = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
+    this->evaluateExplicitODE(f, x, xDot, initialState->getTime(), p);
     Thyra::Vp_StV(f.ptr(), Scalar(-1.0), *(xDotDot));
     Scalar reldiff = Thyra::norm(*f);
     Scalar normxDotDot = Thyra::norm(*xDotDot);
@@ -259,9 +262,10 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
     const Scalar dt = workingState->getTimeStep();
     const Scalar time_old = currentState->getTime();
 
+    auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
     if ( !(this->getUseFSAL()) ) {
       // Evaluate xDotDot = f(x, xDot, t).
-      this->evaluateExplicitODE(a_old, d_old, v_old, time_old);
+      this->evaluateExplicitODE(a_old, d_old, v_old, time_old, p);
 
       // For UseFSAL=false, x and xDot sync'ed or consistent
       // at the same time level for the currentState.
@@ -278,7 +282,7 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
     predictVelocity(*v_new, *v_old, *a_old, dt);
 
     // Evaluate xDotDot = f(x, xDot, t).
-    this->evaluateExplicitODE(a_new, d_new, v_new, time_old);
+    this->evaluateExplicitODE(a_new, d_new, v_new, time_old, p);
 
     // Set xDot in workingState to velocity corrector
     correctVelocity(*v_new, *v_new, *a_new, dt);
@@ -286,7 +290,7 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
     if ( this->getUseFSAL() ) {
       // Evaluate xDotDot = f(x, xDot, t).
       const Scalar time_new = workingState->getTime();
-      this->evaluateExplicitODE(a_new, d_new, v_new, time_new);
+      this->evaluateExplicitODE(a_new, d_new, v_new, time_new, p);
 
       // For UseFSAL=true, x, xDot and xDotxDot are now sync'ed or consistent
       // for the workingState.

@@ -92,6 +92,8 @@ namespace MueLu {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
+    using memory_space = typename LWGraph_kokkos::memory_space;
+
     //! @name Constructors/Destructors.
     //@{
 
@@ -112,7 +114,7 @@ namespace MueLu {
     void BuildAggregates(const Teuchos::ParameterList& params,
                          const LWGraph_kokkos& graph,
                          Aggregates_kokkos& aggregates,
-                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                         Kokkos::View<unsigned*, memory_space>& aggStat,
                          LO& numNonAggregatedNodes) const;
 
     void BuildAggregatesSerial(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
@@ -120,9 +122,17 @@ namespace MueLu {
                                LO minNodesPerAggregate, LO maxNodesPerAggregate,
                                LO maxNeighAlreadySelected, std::string& orderingStr) const;
 
-    void BuildAggregatesDistance2(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-                                  std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
-                                  LO maxAggSize) const;
+    void BuildAggregatesDistance2(const LO maxAggSize,
+                                  const LWGraph_kokkos& graph,
+                                  Aggregates_kokkos& aggregates,
+                                  Kokkos::View<unsigned*, memory_space>& aggStat,
+                                  LO& numNonAggregatedNodes) const;
+
+    void BuildAggregatesDeterministic(const LO maxAggSize,
+                                      const LWGraph_kokkos& graph,
+                                      Aggregates_kokkos& aggregates,
+                                      Kokkos::View<unsigned*, memory_space>& aggStat,
+                                      LO& numNonAggregatedNodes) const;
     //@}
 
     std::string description() const { return "Phase 1 (main)"; }
