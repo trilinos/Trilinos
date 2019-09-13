@@ -68,6 +68,13 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #endif
 
+#ifdef PANZER_HAVE_PERCEPT
+namespace percept {
+  class PerceptMesh;
+  class URP_Heterogeneous_3D;
+}
+#endif
+
 namespace panzer_stk {
 
 class PeriodicBC_MatcherBase;
@@ -159,8 +166,13 @@ public:
      * parallel machine has already been specified through <code>instantiateBulkData</code>
      * that communicator is used. Otherwise a new copy is constructed and
      * will be used through out this mesh object's lifetime.
+     *
+     * \param[in] parallelMach Communicator
+     * \param[in] setupIO If set to true and IOSS is enabled, the output mesh will be initialized.
+     * \param[in] buildRefinementSupport If true, build percept uniform refinement objects.
      */
-   void initialize(stk::ParallelMachine parallelMach,bool setupIO=true);
+  void initialize(stk::ParallelMachine parallelMach,bool setupIO=true,
+                  const bool buildRefinementSupport = false);
 
    /** Build a bulk data object but don't do anything with it.
      * If parallel machine has already been specified through <code>initialize</code>
@@ -907,6 +919,13 @@ public:
    template <typename ArrayT>
    void getElementVertices_FromCoordsNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const;
 
+  /** Uniformly refine the mesh using Percept
+   *
+   * \param[in] numberOfLevels Number of uniform refinement levels to apply. Must be >=1.
+   * \param[in] deleteParentElements If true, deletes the parent elements from the mesh to save memory.
+   */
+  void refineMesh(const int numberOfLevels, const bool deleteParentElements);
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -970,6 +989,10 @@ protected:
 
    Teuchos::RCP<stk::mesh::MetaData> metaData_;
    Teuchos::RCP<stk::mesh::BulkData> bulkData_;
+#ifdef PANZER_HAVE_PERCEPT
+  Teuchos::RCP<percept::PerceptMesh> refinedMesh_;
+  Teuchos::RCP<percept::URP_Heterogeneous_3D> breakPattern_;
+#endif
 
    std::map<std::string, stk::mesh::Part*> elementBlocks_;   // Element blocks
    std::map<std::string, stk::mesh::Part*> sidesets_; // Side sets

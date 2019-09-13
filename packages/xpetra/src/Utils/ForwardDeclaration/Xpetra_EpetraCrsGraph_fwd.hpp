@@ -48,7 +48,7 @@
 
 namespace Xpetra {
   template<class GO, class NO> class EpetraCrsGraphT;
-  typedef EpetraCrsGraphT<int, typename Xpetra::Map<int, int>::node_type> EpetraCrsGraph;
+  typedef EpetraCrsGraphT<int, EpetraNode> EpetraCrsGraph;
 }
 
 #ifndef XPETRA_EPETRACRSGRAPH_SHORT

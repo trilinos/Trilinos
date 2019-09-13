@@ -1,0 +1,292 @@
+// Copyright 2014 Sandia Corporation. Under the terms of
+// Contract DE-AC04-94AL85000 with Sandia Corporation, the
+// U.S. Government retains certain rights in this software.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+
+
+/* ========================================================================================== */
+/*  This is generated code, do not edit - see SmootherMetricGen.mhpp and *.m, *.nb files      */
+/* ========================================================================================== */
+
+
+#ifndef <* MetricClassName *>_hpp
+#define <* MetricClassName *>_hpp
+
+#include <percept/Percept.hpp>
+#if !defined(NO_GEOM_SUPPORT)
+
+#ifdef __GNUC__
+# if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#endif // GCC_VERSION
+#endif // __GNUC__
+
+#ifdef __INTEL_COMPILER
+#pragma warning disable 1599
+#pragma warning disable 1478
+#endif // __INTEL_COMPILER
+
+#include <percept/mesh/mod/smoother/SmootherMetric.hpp>
+#include <percept/mesh/mod/smoother/MeshSmoother.hpp>
+#include <percept/mesh/mod/smoother/ScalingMatricesGen.hpp>
+#include <percept/mesh/mod/smoother/CodeGenHelper.hpp>  // for MyHeaviside, MyPow, etc.
+
+namespace percept {
+
+  class <* MetricClassName *> : public <* MetricBaseClassName *>
+  {
+    MDArray A, W, WI;
+    stk::mesh::FieldBase *m_cg_lambda_field;
+    stk::mesh::FieldBase *m_cg_normal_field;
+    stk::mesh::FieldBase *m_coord_field_0;
+    MeshSmoother *m_smoother;
+  public:
+    <* MetricClassName *>(PerceptMesh *eMesh, MeshSmoother *smoother) : <* MetricBaseClassName *>(eMesh),m_smoother(smoother) {
+      m_cg_lambda_field    = eMesh->get_field(stk::topology::NODE_RANK, "cg_lambda");
+      m_cg_normal_field    = eMesh->get_field(stk::topology::NODE_RANK, "cg_normal");
+      m_coord_field_0      = eMesh->get_field(stk::topology::NODE_RANK, "coordinates_0");
+      A.resize(3,3);
+      W.resize(3,3);
+      WI.resize(3,3);
+    }
+
+    virtual bool has_gradient() { return true; }
+    virtual bool has_gradient_and_hessian() { return true; }
+
+    virtual double metric(stk::mesh::Entity element, bool& valid)
+    {
+      static double grad[8][4];
+      static double hess[8][4][8][4];
+      return grad_and_hessian(element, valid, grad, hess, false, false);
+    }
+
+    /// computes metric and its gradient - see Mesquite::TShapeB1, TQualityMetric, TargetMetricUtil
+    virtual double grad_metric(stk::mesh::Entity element, bool& valid, double grad[8][4])
+    {
+      double hess[8][4][8][4];
+      return grad_and_hessian(element, valid, grad, hess, true, false);
+    }
+
+    virtual double grad_and_hessian(stk::mesh::Entity element, bool& valid, double grad[8][4], double hess[8][4][8][4], const bool getGrad=false, const bool getHess=false)
+    {
+      <* If[MetricClassName == "SmootherMetricUntangleGen",
+            "const double beta = m_beta_mult;",
+            "const double beta = 0; " ]
+      *>
+      valid = true;
+
+      stk::mesh::Entity const *v_i = m_eMesh->get_bulk_data()->begin_nodes(element);
+      size_t num_nodes = m_eMesh->get_bulk_data()->num_nodes(element);
+
+#undef AVERTEX
+#define AVERTEX(vi)  stk::mesh::field_data( *static_cast<const CoordinatesFieldType  *>(m_coord_field_current) , vi )
+#undef WVERTEX
+#define WVERTEX(vi)  stk::mesh::field_data( *static_cast<const CoordinatesFieldType  *>(m_coord_field_original) , vi )
+
+      // double A_ = 0.0, W_ = 0.0; // current and reference detJ
+      // jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
+      // jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
+      double val=0.0, val_metric=0.0;
+
+      if (getGrad) memset(&grad[0][0],0,8*4*sizeof(double));
+      if (getHess) memset(&hess[0][0][0][0],0,8*4*8*4*sizeof(double));
+
+      stk::topology::topology_t stk_topo = m_eMesh->topology(element);
+      const MDArray& Sc = ScalingMatrices::s_scalingMatrices.get(stk_topo);
+      <*  CodeGen[RScm /. DerivRule /. RemoveDeps, " = ", " const double "]  *>
+
+      double *x0, *x1, *x2, *x3, *y0;
+      double *wx0, *wx1, *wx2, *wx3;
+      double *X[8];
+      double *WX[8];
+      double L[8];
+      double *Y[8];
+      double  Lambda0,  Lambda1,  Lambda2,  Lambda3;
+      double onB[8];
+      double *Norm[8];
+
+      static bool lambdaSet = false;
+      static bool useLambda = false;
+      static bool smoothSurfaces = false;
+      if (!lambdaSet)
+        {
+          lambdaSet = true;
+          smoothSurfaces = m_eMesh->get_smooth_surfaces();
+          if (m_eMesh->get_smooth_surfaces() && m_eMesh->getProperty("ReferenceMeshSmootherNewton.use_lambda") == "true")
+            {
+              useLambda = true;
+            }
+        }
+
+      int spatialDim = m_eMesh->get_spatial_dim();
+
+      static std::vector<double> normals(3, 0.0);
+      for (int i=0; i < num_nodes; i++)
+        {
+          stk::mesh::Entity node = v_i[i];
+          Norm[i] = (m_cg_normal_field? stk::mesh::field_data( *static_cast<const CoordinatesFieldType  *>(m_cg_normal_field) , v_i[i] ) : 0);
+
+          // double dn = 0.0;
+          // for (unsigned ic=0; ic < spatialDim; ++ic)
+          //   {
+          //     dn += Norm[ic]*Norm[ic];
+          //   }
+          // if (dn == 0.0)
+          //   {
+          //     m_smoother->m_meshGeometry->normal_at(m_eMesh, node, normals);
+          //     for (unsigned ic=0; ic < spatialDim; ++ic)
+          //       {
+          //         Norm[i][ic] = normals[ic];
+          //       }
+          //   }
+
+          X[i] = AVERTEX(v_i[i]);
+          WX[i] = WVERTEX(v_i[i]);
+          L[i] = (m_cg_lambda_field? *stk::mesh::field_data( *static_cast<const ScalarFieldType  *>(m_cg_lambda_field) , v_i[i] ) : 0.0);
+          Y[i] = (m_coord_field_0 ? stk::mesh::field_data( *static_cast<const CoordinatesFieldType  *>(m_coord_field_0) , v_i[i] ) : 0);
+          std::pair<bool,int> fixed;
+          if (useLambda) fixed = m_smoother->get_fixed_flag(v_i[i]);
+          if (useLambda && !fixed.first && (fixed.second == MS_SURFACE || fixed.second == MS_ON_BOUNDARY))
+            {
+              onB[i] = 1.0;
+            }
+          else
+            {
+              onB[i] = 0.0;
+            }
+
+        }
+
+
+
+#define X0(i) (spatialDim == 3 ? x0[i] : i == 2 ? 0 : x0[i])
+#define X1(i) (spatialDim == 3 ? x1[i] : i == 2 ? 0 : x1[i])
+#define X2(i) (spatialDim == 3 ? x2[i] : i == 2 ? 0 : x2[i])
+#define X3(i) (spatialDim == 3 ? x3[i] : i == 2 ? 1 : 0)
+
+#define Y0(i) (spatialDim == 3 ? y0[i] : i == 2 ? 0 : y0[i])
+
+#define WX0(i) (spatialDim == 3 ? wx0[i] : i == 2 ? 0 : wx0[i])
+#define WX1(i) (spatialDim == 3 ? wx1[i] : i == 2 ? 0 : wx1[i])
+#define WX2(i) (spatialDim == 3 ? wx2[i] : i == 2 ? 0 : wx2[i])
+#define WX3(i) (spatialDim == 3 ? wx3[i] : i == 2 ? 1 : 0)
+
+#define II(i) indices[i]
+#define GRAD(i,j) grad[i][j]
+#define HESS(i,j,k,l) hess[i][j][k][l]
+
+#define normal(j) (spatialDim == 3 ? Norm[i][j] : j == 2 ? 0 : Norm[i][j])
+
+      for (int i=0; i < num_nodes; i++)
+        {
+
+          const int *indices = Indices::s_indices.get_indices(stk_topo, i);
+          x0 = X[indices[0]];
+          x1 = X[indices[1]];
+          x2 = X[indices[2]];
+          x3 = X[indices[3]];
+          wx0 = WX[indices[0]];
+          wx1 = WX[indices[1]];
+          wx2 = WX[indices[2]];
+          wx3 = WX[indices[3]];
+
+          Lambda0 = L[indices[0]];
+          Lambda1 = L[indices[1]];
+          Lambda2 = L[indices[2]];
+          Lambda3 = L[indices[3]];
+
+          y0 = Y[indices[0]];
+
+          double onBoundary = onB[indices[0]];
+
+          double vv = 0.0, sdetA = 0.0, sdetW = 0.0;
+          if (!getGrad && !getHess)
+            {
+              <*  CodeGen[Resid[[1]] /. DerivRule /. RemoveDeps, " = ", " const double "]  *>
+
+#ifndef NDEBUG
+              if (detW <= 0.0)
+                {
+                  std::cout << "detW= 0, i = " << i << " detA= " << detA << " m_topology_data= " << m_topology_data << std::endl;
+                  m_eMesh->print_entity(element);
+                  m_eMesh->print_entity(element, m_coord_field_original);
+                  if (m_topology_data)
+                    {
+                      shards::CellTopology topology(m_topology_data);
+                      std::cout << "topology = " << topology.getName() << std::endl;
+                    }
+                }
+#endif
+              vv = met; sdetA = detA; sdetW = detW;
+            }
+          else
+            {
+              if (getGrad && !getHess)
+                {
+                  <*  CodeGen[Resid[[2]] /. DerivRule /. RemoveDeps, " = ", " const double "]  *>
+                  <*  CodeGen[ElimZeros[RD1m , ResidZR[[2]] ] /. DerivRule /. RemoveDeps, " += "]  *>
+                  vv = met; sdetA = detA; sdetW = detW;
+                }
+              else if (!getGrad && getHess)
+                {
+                  <*  CodeGen[Resid[[3]] /. DerivRule /. RemoveDeps, " = ", " const double "]  *>
+                  <*  CodeGen[ElimZeros[RD2m, ResidZR[[3]] ] /. DerivRule /. RemoveDeps, " += "]  *>
+                  vv = met; sdetA = detA; sdetW = detW;
+                }
+              else
+                {
+                  <*  CodeGen[Resid[[3]] /. DerivRule /. RemoveDeps, " = ", " const double "]  *>
+                  <*  CodeGen[ElimZeros[RD1m , ResidZR[[2]] ] /. DerivRule /. RemoveDeps, " += "]  *>
+                  <*  CodeGen[ElimZeros[RD2m, ResidZR[[3]] ] /. DerivRule /. RemoveDeps, " += "]  *>
+                  vv = met; sdetA = detA; sdetW = detW;
+                }
+            }
+
+          VERIFY_OP_ON(sdetW, >, 0.0, "bad reference mesh");
+          if (sdetA <= 0.)
+            {
+              valid = false;
+            }
+          val_metric += vv;
+
+        }
+      val = val_metric;
+      return val;
+    }
+
+
+
+  };
+
+}
+
+#undef X0
+#undef X1
+#undef X2
+#undef X3
+#undef WX0
+#undef WX1
+#undef WX2
+#undef WX3
+
+#undef GRAD
+#undef HESS
+#undef II
+#undef normal
+
+#ifdef __GNUC__
+# if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
+#pragma GCC diagnostic pop
+#endif // GCC_VERSION
+#endif // __GNUC__
+
+#endif
+#endif
