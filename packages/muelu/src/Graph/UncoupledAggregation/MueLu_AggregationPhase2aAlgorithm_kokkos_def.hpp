@@ -69,16 +69,15 @@ namespace MueLu {
   BuildAggregates(const ParameterList& params,
                   const LWGraph_kokkos& graph,
                   Aggregates_kokkos& aggregates,
-                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggstat,
+                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                   LO& numNonAggregatedNodes) const {
-    Monitor m(*this, "BuildAggregates");
 
     if(params.get<bool>("aggregation: deterministic")) {
-      std::cout << "Using deterministic Phase2a aggregation" << std::endl;
-      BuildAggregatesDeterministic(params, graph, aggregates, aggstat, numNonAggregatedNodes);
+      Monitor m(*this, "BuildAggregatesDeterministic");
+      BuildAggregatesDeterministic(params, graph, aggregates, aggStat, numNonAggregatedNodes);
     } else {
-      std::cout << "Using random Phase2a aggregation" << std::endl;
-      BuildAggregatesRandom(params, graph, aggregates, aggstat, numNonAggregatedNodes);
+      Monitor m(*this, "BuildAggregatesRandom");
+      BuildAggregatesRandom(params, graph, aggregates, aggStat, numNonAggregatedNodes);
     }
 
   } // BuildAggregates
