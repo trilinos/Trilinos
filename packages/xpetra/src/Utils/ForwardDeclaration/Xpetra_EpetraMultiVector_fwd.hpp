@@ -48,7 +48,7 @@
 
 namespace Xpetra {
   template<class GO, class NO> class EpetraMultiVectorT;
-  typedef EpetraMultiVectorT<int, typename Xpetra::Map<int, int>::node_type> EpetraMultiVector;
+  typedef EpetraMultiVectorT<int, EpetraNode> EpetraMultiVector;
 }
 
 #ifndef XPETRA_EPETRAMULTIVECTOR_SHORT
