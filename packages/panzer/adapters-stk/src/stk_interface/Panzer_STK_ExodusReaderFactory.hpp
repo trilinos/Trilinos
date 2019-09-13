@@ -145,6 +145,8 @@ private:
   //! If requested, scale the input mesh by this factor
   double meshScaleFactor_;
 
+  //! Number of levels of inline uniform mesh refinement to be applied to exodus mesh
+  int levelsOfRefinement_;
 };
 
 }
