@@ -379,6 +379,14 @@ public:
 
     const stk::mesh::BulkData& get_bulk() const { return *hostBulk; }
 
+    STK_FUNCTION
+    void swap_data(StaticField<T> &sf)
+    {
+      swap_views(hostData,   sf.hostData);
+      swap_views(deviceData, sf.deviceData);
+      swap_views(fieldData,  sf.fieldData);
+    }
+
 #ifdef STK_HIDE_DEPRECATED_CODE
 private:
 #endif
@@ -427,14 +435,6 @@ private:
       ViewType tmpView = view2;
       view2 = view1;
       view1 = tmpView;
-    }
-
-    STK_FUNCTION
-    void swap_data(StaticField<T> &sf)
-    {
-      swap_views(hostData,   sf.hostData);
-      swap_views(deviceData, sf.deviceData);
-      swap_views(fieldData,  sf.fieldData);
     }
 
     template <typename ViewType>
