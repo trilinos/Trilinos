@@ -44,8 +44,6 @@
 #include <cstdlib>
 #include <exception>
 #include <fmt/ostream.h>
-#include <iomanip>
-#include <iostream>
 #include <limits>
 #include <numeric>
 #include <set>
@@ -129,13 +127,6 @@ using ExodusIdVector = std::vector<ex_entity_id>;
 
 extern double seacas_timer();
 namespace {
-  struct my_numpunct : std::numpunct<char>
-  {
-  protected:
-    char        do_thousands_sep() const override { return ','; }
-    std::string do_grouping() const override { return "\3"; }
-  };
-
   unsigned int debug_level = 0;
   const double FILL_VALUE  = FLT_MAX;
   int          rank        = 0;
@@ -463,7 +454,7 @@ int main(int argc, char *argv[])
         // Rule of thumb -- number of subcycles = cube_root(processor_count);
         // if that value > max_open_file, then use square root.
         // if that is still too large, just do no subcycles... and implement
-        // a recursive subcycling capabilty at some point...
+        // a recursive subcycling capability at some point...
         int sub_cycle_count = (int)(std::pow(processor_count, 1.0 / 3) + 0.9);
         if (((processor_count + sub_cycle_count - 1) / sub_cycle_count) > max_open_file) {
           sub_cycle_count = (int)std::sqrt(processor_count);
@@ -3152,13 +3143,10 @@ namespace {
     osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 
     if (GetVersionEx(&osvi)) {
+      DWORD             build = osvi.dwBuildNumber & 0xFFFF;
       std::stringstream str;
-      str << " ";
-      str << osvi.dwMajorVersion << "." << osvi.dwMinorVersion;
-      str << " ";
-      str << osvi.szCSDVersion;
-      DWORD build = osvi.dwBuildNumber & 0xFFFF;
-      str << " (Build " << build << ")";
+      fmt::print(str, " {}.{} {} (Build {})", osvi.dwMajorVersion, osvi.dwMinorVersion,
+                 osvi.szCSDVersion, build);
       os += str.str();
     }
     info += os;

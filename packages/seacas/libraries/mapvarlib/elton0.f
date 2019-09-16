@@ -38,7 +38,7 @@ C========================================================================
 C
 C  *********************************************************************
 C
-C  Subroutine ELTON0 extracts nodal vaules of element variables by
+C  Subroutine ELTON0 extracts nodal values of element variables by
 C  looping over each element and summing the value of the variable
 C  at that element to each node in the connectivity list for that
 C  element. Then the nodal summation of element variables is divided

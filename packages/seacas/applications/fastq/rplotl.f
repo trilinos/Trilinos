@@ -49,9 +49,9 @@ C Changed scratch file unit number from 1 to 99. On some systems
 C (janus), this caused the input fastq file to be deleted since it had
 C earlier been assigned to unit 1. Even though the fastq file had
 C already been closed, the temporary status of the scratch file assigned
-C to unit 1 propogated back to the fastq file and deleted it.
+C to unit 1 propagated back to the fastq file and deleted it.
 C
-C Verison number upped to 2.6X
+C Version number upped to 2.6X
 C
 C Revision 1.1.1.1  1990/11/30 11:15:16  gdsjaar
 C FASTQ Version 2.0X

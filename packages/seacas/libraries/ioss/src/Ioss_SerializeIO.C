@@ -40,16 +40,11 @@
 
 namespace Ioss {
 
-  int SerializeIO::s_owner = -1;
-
-  int SerializeIO::s_rank = -1;
-
-  int SerializeIO::s_size = -1;
-
-  int SerializeIO::s_groupSize = -1;
-
-  int SerializeIO::s_groupRank = -1;
-
+  int SerializeIO::s_owner       = -1;
+  int SerializeIO::s_rank        = -1;
+  int SerializeIO::s_size        = -1;
+  int SerializeIO::s_groupSize   = -1;
+  int SerializeIO::s_groupRank   = -1;
   int SerializeIO::s_groupFactor = 0;
 
 #if defined(IOSS_THREADSAFE)
@@ -78,11 +73,9 @@ namespace Ioss {
     m_activeFallThru = s_owner != -1;
     if (!m_activeFallThru) {
       if (s_groupFactor > 0) {
-#ifdef SEACAS_HAVE_MPI
         do {
-          MPI_Barrier(util.communicator());
+          util.barrier();
         } while (++s_owner != s_groupRank);
-#endif
         m_databaseIO->openDatabase__();
       }
       else {
@@ -101,13 +94,11 @@ namespace Ioss {
       if (!m_activeFallThru) {
         if (s_groupFactor > 0) {
           m_databaseIO->closeDatabase__();
-#ifdef SEACAS_HAVE_MPI
           s_owner                        = s_groupRank;
           const Ioss::ParallelUtils util = m_databaseIO->util();
           do {
-            MPI_Barrier(util.communicator());
+            util.barrier();
           } while (++s_owner != s_groupSize);
-#endif
           s_owner = -1;
         }
         else {

@@ -1049,7 +1049,7 @@ static void gl_killword(int direction)
     while (pos < gl_cnt && isspace(gl_buf[pos]))
       pos++;
   }
-  else { /* backword */
+  else { /* backward */
     if (pos > 0)
       pos--;
     while (pos > 0 && isspace(gl_buf[pos]))
@@ -1075,7 +1075,7 @@ static void gl_killword(int direction)
 
 static void gl_word(int direction)
 
-/* move forward or backword one word */
+/* move forward or backward one word */
 {
   int pos = gl_pos;
 
@@ -1085,7 +1085,7 @@ static void gl_word(int direction)
     while (pos < gl_cnt && isspace(gl_buf[pos]))
       pos++;
   }
-  else { /* backword */
+  else { /* backward */
     if (pos > 0)
       pos--;
     while (pos > 0 && isspace(gl_buf[pos]))

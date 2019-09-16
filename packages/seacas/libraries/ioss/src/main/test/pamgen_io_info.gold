@@ -1,0 +1,6 @@
+2,3c2,3
+<  Database: pamgen.e
+<  Mesh Type = Unstructured, Exodus
+---
+>  Database: /Users/gdsjaar/src/Trilinos.fork/packages/seacas/libraries/ioss/src/main/test/pamgen.i
+>  Mesh Type = Unstructured, PamGen

@@ -38,7 +38,7 @@ C=======================================================================
 C
 C  *********************************************************************
 C
-C  Subroutine SETON1 extracts nodal vaules of element variables by
+C  Subroutine SETON1 extracts nodal values of element variables by
 C  performing a weighted least squares fit (4 or more elements) or
 C  a triangulation (3 elements) over the centroids of the elements
 C  attached to the current node.

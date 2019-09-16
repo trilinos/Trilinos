@@ -422,16 +422,16 @@ void Exo_Entity::internal_load_params()
         attributeNames.push_back(name);
       }
       else if (static_cast<int>(std::strlen(names[vg])) > name_size) {
-        fmt::print(stderr, fmt::v5::fg(fmt::color::red),
+        fmt::print(stderr, fmt::fg(fmt::color::red),
                    "exodiff: ERROR: {} attribute names appear corrupt\n"
                    "                A length is 0 or greater than name_size({})\n"
                    "                Here are the names that I received from"
                    " a call to ex_get_attr_names(...):\n",
                    label(), name_size);
         for (int k = 1; k <= numAttr; ++k) {
-          fmt::print(stderr, fmt::v5::fg(fmt::color::red), "\t\t{}) \"{}\"\n", k, names[k - 1]);
+          fmt::print(stderr, fmt::fg(fmt::color::red), "\t\t{}) \"{}\"\n", k, names[k - 1]);
         }
-        fmt::print(stderr, fmt::v5::fg(fmt::color::red), "                 Aborting...\n");
+        fmt::print(stderr, fmt::fg(fmt::color::red), "                 Aborting...\n");
         exit(1);
       }
       else {

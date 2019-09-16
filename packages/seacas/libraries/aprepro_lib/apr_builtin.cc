@@ -179,7 +179,7 @@ namespace SEAMS {
     return (temp);
   }
 
-  // DO_HYPOT: calcluate sqrt(p^2 + q^2)
+  // DO_HYPOT: calculate sqrt(p^2 + q^2)
   // Algorithm from "More Programming Pearls," Jon Bentley
   // Accuracy: 6.5 digits after 2 iterations,
   //           20  digits after 3 iterations,

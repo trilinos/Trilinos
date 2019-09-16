@@ -62,7 +62,7 @@ c DATE:                 December 20, 1988
 c
 c TYPE OF SUBPROGRAM:   logical function
 c
-c USEAGE:               instr()
+c USAGE:               instr()
 c
 c PARAMETERS:           none
 c
