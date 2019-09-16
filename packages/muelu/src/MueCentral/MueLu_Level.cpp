@@ -365,10 +365,10 @@ namespace MueLu {
     typedef Teuchos::TabularOutputter TTO;
     TTO outputter(out);
     outputter.pushFieldSpec("data name",                TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
-    outputter.pushFieldSpec("gen. factory addr.",       TTO::STRING, TTO::LEFT, TTO::GENERAL, 18);
+    outputter.pushFieldSpec("gen. factory addr.",       TTO::STRING, TTO::LEFT, TTO::GENERAL, 40);
     outputter.pushFieldSpec("req",                      TTO::INT,    TTO::LEFT, TTO::GENERAL, 3);
     outputter.pushFieldSpec("keep",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 5);
-    outputter.pushFieldSpec("type",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 15);
+    outputter.pushFieldSpec("type",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 18);
     outputter.pushFieldSpec("data",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 14);
     outputter.pushFieldSpec("req'd by",                 TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
     outputter.outputHeader();
@@ -453,7 +453,7 @@ namespace MueLu {
         std::ostringstream ss;
         for (container_type::const_iterator ct = requestedBy.begin(); ct != requestedBy.end(); ct++) {
           if (ct != requestedBy.begin()) ss << ",";
-          ss << ct->first->ShortClassName() << "("<<ct->first<<")";
+          ss << ct->first->ShortClassName() <<"("<<ct->first<<")";
           if (ct->second > 1) ss << "x" << ct->second;
         }
         outputter.outputField(ss.str());
