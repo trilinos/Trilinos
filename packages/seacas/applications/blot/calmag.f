@@ -108,7 +108,7 @@ C     REAL UNMESH(KFAR)
 C     LOGICAL WHOTIM(*)
 C     INTEGER NPSURF(*)
 C     LOGICAL DEFOK
-C     CHARACTER*8 CONVER
+C     CHARACTER*8 CONVERT
 C     IF (.NOT. DEFOK) THEN
 C        DEFFAC = 0.0
 C     ELSE
@@ -147,8 +147,8 @@ C     &         UNMESH(KRGT)-UNMESH(KLFT),
 C     &         UNMESH(KTOP)-UNMESH(KBOT))
 C            DLIM = MAX (ABS(XDMIN), ABS(XDMAX), ABS(YDMIN), ABS(YDMAX))
 C            IF (DLIM .NE. 0.0) THEN
-C               WRITE (CONVER, 10000) MAX (TLIM / DLIM, 1.0)
-C               READ (CONVER, 10000) DEFFAC
+C               WRITE (CONVERT, 10000) MAX (TLIM / DLIM, 1.0)
+C               READ (CONVERT, 10000) DEFFAC
 C10000           FORMAT (E8.1)
 C            ELSE
 C               DEFFAC = 0.0

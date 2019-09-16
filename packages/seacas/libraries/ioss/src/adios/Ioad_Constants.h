@@ -76,7 +76,7 @@ namespace Ioad {
       "name", // Name is already known as it is how it is encoded in the output file.
       "_base_stk_part_name", "db_name", // Not necessary
       "streaming_status", "streaming",  // Properties added during processing. Should not be saved.
-      "entity_count" // Set in GroupingEntity constructor and can be different accross mpi
+      "entity_count" // Set in GroupingEntity constructor and can be different across mpi
                      // processes.
   }};
 

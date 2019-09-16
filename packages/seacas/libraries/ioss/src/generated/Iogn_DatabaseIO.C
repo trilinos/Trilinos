@@ -730,9 +730,8 @@ namespace Iogn {
           Ioss::Property("global_entity_count", m_generatedMesh->element_count(i + 1)));
 
       if (type == "shell4" || type == "tri3") {
-        block->field_add(Ioss::Field("thickness", Ioss::Field::REAL, "scalar",
-                                     Ioss::Field::ATTRIBUTE,
-                                     m_generatedMesh->element_count_proc(i + 1)));
+        block->field_add(
+            Ioss::Field("thickness", Ioss::Field::REAL, "scalar", Ioss::Field::ATTRIBUTE));
       }
 
       get_region()->add(block);
@@ -794,8 +793,8 @@ namespace Iogn {
         std::string storage = "Real[";
         storage += std::to_string(4);
         storage += "]";
-        ef_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage,
-                                        Ioss::Field::MESH, number_faces));
+        ef_block->field_add(
+            Ioss::Field("distribution_factors", Ioss::Field::REAL, storage, Ioss::Field::MESH));
 
         Ioss::ElementBlock *el_block = get_region()->get_element_block(touching_blocks[0]);
         ef_block->set_parent_element_block(el_block);
@@ -818,8 +817,8 @@ namespace Iogn {
           std::string storage = "Real[";
           storage += std::to_string(4);
           storage += "]";
-          ef_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage,
-                                          Ioss::Field::MESH, number_faces));
+          ef_block->field_add(
+              Ioss::Field("distribution_factors", Ioss::Field::REAL, storage, Ioss::Field::MESH));
 
           Ioss::ElementBlock *el_block = get_region()->get_element_block(touching_block);
           ef_block->set_parent_element_block(el_block);
@@ -850,13 +849,11 @@ namespace Iogn {
 
   void DatabaseIO::add_transient_fields(Ioss::GroupingEntity *entity)
   {
-    Ioss::EntityType type         = entity->type();
-    size_t           entity_count = entity->entity_count();
-    size_t           var_count    = m_generatedMesh->get_variable_count(type);
+    Ioss::EntityType type      = entity->type();
+    size_t           var_count = m_generatedMesh->get_variable_count(type);
     for (size_t i = 0; i < var_count; i++) {
       std::string var_name = entity->type_string() + "_" + std::to_string(i + 1);
-      entity->field_add(
-          Ioss::Field(var_name, Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT, entity_count));
+      entity->field_add(Ioss::Field(var_name, Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT));
     }
   }
 } // namespace Iogn

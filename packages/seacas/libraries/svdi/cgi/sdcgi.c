@@ -1841,7 +1841,7 @@ void cili_(f_integer *iclass, f_integer *idev)
 /*      crqlc - request locator                                               */
 /*                                                                            */
 /******************************************************************************/
-void crqlc_(f_integer *idev, f_real *timout, f_integer *vstat, f_integer *rstat, f_integer *mvalid,
+void crqlc_(f_integer *idev, f_real *timeout, f_integer *vstat, f_integer *rstat, f_integer *mvalid,
             f_integer *triggr, f_real *x, f_real *y)
 {
   short     dev;       /* which device to look at now */
@@ -1854,7 +1854,7 @@ void crqlc_(f_integer *idev, f_real *timout, f_integer *vstat, f_integer *rstat,
   /* set up parameter array */
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)idev;
-  in_params[2] = (anything *)timout;
+  in_params[2] = (anything *)timeout;
   in_params[3] = (anything *)vstat;
   in_params[4] = (anything *)rstat;
   in_params[5] = (anything *)mvalid;

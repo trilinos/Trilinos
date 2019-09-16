@@ -352,7 +352,7 @@ int symmlq(long int *n, double *b, double *r1, double *r2, double *v, double *w,
 
   /*     C.C. Paige and M.A. Saunders,  Solution of Sparse Indefinite */
   /*          Systems of Linear Equations, */
-  /*          SIAM J. Numer. Anal. 12, 4, September 1975, pp. 617-629. */
+  /*          SIAM J. Numerical Analysis 12, 4, September 1975, pp. 617-629. */
 
   /*     J.G. Lewis,  Algorithms for Sparse Matrix Eigenvalue Problems, */
   /*          Report STAN-CS-77-595, Computer Science Department, */
@@ -464,7 +464,7 @@ int symmlq(long int *n, double *b, double *r1, double *r2, double *v, double *w,
 
   /*               Symmlq, I commented out the i/o within it and instead */
   /*               report its performance based only on the return value */
-  /*               of various parameters. That means we can modifiy the */
+  /*               of various parameters. That means we can modify the */
   /*               Fortran source, run f2c and recompile without losing or */
   /*               re-writing any functionality. */
 

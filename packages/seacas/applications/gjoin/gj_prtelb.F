@@ -38,7 +38,7 @@ C=======================================================================
 C $Id: prtelb.F,v 1.2 1999/03/23 15:56:43 gdsjaar Exp $
 C $Log: prtelb.F,v $
 C Revision 1.2  1999/03/23 15:56:43  gdsjaar
-C Upped format fields to accomodate larger element block ids
+C Upped format fields to accommodate larger element block ids
 C
 C Revision 1.1  1999/01/18 19:21:25  gdsjaar
 C ExodusII version of gjoin, needs testing and syncing with exodus 1 version, but is being committed to permit easier testing and modifications.  This was created by Dave Fry at Goodyear

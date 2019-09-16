@@ -58,8 +58,8 @@ C               (node in Mesh-B) is found
 C STRPT   REAL  The isoparametric coords of point in IELPT element
 C SOLEB   REAL  Element variables for Mesh-B
 C SOLN    REAL  SOLENA vector local to each Mesh-A element
-C TIMES   REAL  Array of times - passed thru to PNF
-C CENTER  REAL  Coordinates of element centroid - passed thru to PNF
+C TIMES   REAL  Array of times - passed through to PNF
+C CENTER  REAL  Coordinates of element centroid - passed through to PNF
 C ISTP    INT   Time step
 C INSUB   INT   Entry into subroutine; 1-first time in; >1-second,etc
 C ICOMPL  INT   Map completion; 0-incomplete; 1-complete

@@ -47,7 +47,7 @@
  *       int*    num_elem                number of elements
  *       int*    num_elem_blk            number of element blocks
  *       int*    num_node_sets           number of node sets
- *       int*    num_side_sets           numver of side sets
+ *       int*    num_side_sets           number of side sets
  *
  * revision history -
  *          David Thompson  - Moved to exginix.c (exgini.c now a special case)

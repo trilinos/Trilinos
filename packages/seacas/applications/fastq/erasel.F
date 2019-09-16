@@ -54,7 +54,7 @@ C
      &   LINKS, LINKR, IBAD, ALPHA)
 C***********************************************************************
 C
-C  SUBROUTINE ERASEL = ERASES A LINE, AND ALL DATA DEPENDANT ON THAT
+C  SUBROUTINE ERASEL = ERASES A LINE, AND ALL DATA DEPENDENT ON THAT
 C                      LINE (I.E. SIDES OR REGIONS)
 C
 C***********************************************************************

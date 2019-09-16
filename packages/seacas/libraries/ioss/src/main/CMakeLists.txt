@@ -165,16 +165,17 @@ TRIBITS_ADD_ADVANCED_TEST(pamgen_exodus_io_info
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
    TEST_1 EXEC io_info ARGS --db_type exodus --adjacencies pamgen.e
-     OUTPUT_FILE info_exodus.tmp
+     OUTPUT_FILE info_exodus.out
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
    TEST_2 EXEC io_info ARGS --db_type pamgen --adjacencies ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i
-     OUTPUT_FILE info_pamgen.tmp
+     OUTPUT_FILE info_pamgen.out
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
-   TEST_3 CMND grep ARGS -v pamgen info_pamgen.tmp OUTPUT_FILE info_pamgen.out
-   TEST_4 CMND grep ARGS -v pamgen info_exodus.tmp OUTPUT_FILE info_exodus.out
-   TEST_5 CMND diff ARGS info_exodus.out info_pamgen.out
+   TEST_3 CMND diff ARGS info_exodus.out info_pamgen.out
+     OUTPUT_FILE diff_pamgen_io_info.out
+     PASS_ANY
+   TEST_4 CMND diff ARGS diff_pamgen_io_info.out ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen_io_info.gold
   COMM mpi serial
   )
 ENDIF()

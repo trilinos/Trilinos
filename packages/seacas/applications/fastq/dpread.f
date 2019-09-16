@@ -51,7 +51,7 @@ C***********************************************************************
 C
       CHARACTER*1 BUTTON, DUMMY*5
 C
-C  SWITCH THE TERMINAL TO PASS-THRU MODE <ESC>[5i
+C  SWITCH THE TERMINAL TO PASSTHROUGH MODE <ESC>[5i
 C
       DUMMY (1:1) = '+'
       DUMMY (2:2) = CHAR (27)
@@ -88,7 +88,7 @@ C
 C
   100 CONTINUE
 C
-C  SWITCH THE TERMINAL OUT OF PASS-THRU MODE <ESC>[4i
+C  SWITCH THE TERMINAL OUT OF PASSTHROUGH MODE <ESC>[4i
 C
       WRITE (*, ' (A)')' '//CHAR (27)//'[4i'
       RETURN

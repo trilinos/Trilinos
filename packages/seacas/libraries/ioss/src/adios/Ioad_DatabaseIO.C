@@ -325,7 +325,7 @@ namespace Ioad {
     Ioss::Region *this_region = get_region();
     if (!is_input()) {
       // `BeginStep()` should not be used at the same time as random access. Since at read time,
-      // we currrently read variables with random access, `BeginStep()` should not be used
+      // we currently read variables with random access, `BeginStep()` should not be used
       // at read time.
       // Begin  step for transient data
       adios2::StepStatus status = adios_wrapper.BeginStep();
@@ -863,12 +863,13 @@ namespace Ioad {
       else if (type == GetType<double>()) {
         add_entity_property<double>(ge, encoded_name, property_name);
       }
-      else if (type == GetType<int>()) {
+      else if (type == GetType<int>() || type == "int32_t") {
         add_entity_property<int>(ge, encoded_name, property_name);
       }
       else {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Property type `" << type << "` not supported.\n";
+        errmsg << "ERROR: Property '" << property_name << "' with type `" << type
+               << "` not supported.\n";
         IOSS_ERROR(errmsg);
       }
     }

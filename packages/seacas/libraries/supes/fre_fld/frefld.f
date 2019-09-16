@@ -71,7 +71,7 @@ C
 ************************************************************************
 C
 C PHASE 1: Initialize output arrays to their default values and zero
-C          field counter. Set continuation flag to suppress futher
+C          field counter. Set continuation flag to suppress further
 C          initialization by FFISTR.
 C
       DO 300 I = 1 , MFIELD

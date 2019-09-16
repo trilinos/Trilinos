@@ -40,9 +40,6 @@ namespace Ioss {
   class Field;
 } // namespace Ioss
 
-namespace Ioss {
-} // namespace Ioss
-
 namespace Iotr {
 
   class VM_Factory : public Factory

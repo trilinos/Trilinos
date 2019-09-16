@@ -43,7 +43,7 @@ C   --            initialize the list of display variables and
 C   --            not to modify it.
 C   --   INLINE - IN/OUT - the parsed input lines for the log file
 C   --   IFLD, INTYP, CFIELD, - IN/OUT - the free-field reader index
-C   --          and charcter field.
+C   --          and character field.
 C   --   NAMES - IN - the variable names
 C   --   LIDSP(0:*)  - IN/OUT - the indices of the selected variables
 C   --          whose values will be displayed on the plot legend.

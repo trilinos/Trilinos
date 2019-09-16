@@ -70,15 +70,16 @@ namespace Skinner {
 
   public:
     std::string decomp_method;
-    std::string compose_output{"none"};
+    std::string compose_output{"default"};
     int         compression_level{0};
     bool        shuffle{false};
     bool        debug{false};
     bool        statistics{false};
     bool        ints64Bit_{false};
     bool        netcdf4_{false};
-    bool        ignoreFaceIds_{false};
+    bool        useFaceHashIds_{true};
     bool        noOutput_{false};
+    bool        blocks_{false};
   };
 } // namespace Skinner
 #endif

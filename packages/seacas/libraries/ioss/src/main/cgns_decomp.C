@@ -370,7 +370,7 @@ namespace {
                    comms.size());
         for (const auto &proc : comms) {
           if (proc.second < 0) {
-            // From decompostion
+            // From decomposition
             fmt::print(fg(fmt::color::yellow), "[{:{}}->{:{}}]  ", proc.first, pw, -proc.second,
                        pw);
           }

@@ -36,7 +36,7 @@ C Revision 1.7  2007/03/21 20:12:37  gdsjaar
 C Several commands which can work on the deformed geometry were only
 C checking whether the file was an exodus file (had timesteps) when
 C requesting deformed coordinates.  Changed to also check whether the
-C file had valid displacments also.
+C file had valid displacements also.
 C
 C Revision 1.6  2000/07/06 18:07:42  gdsjaar
 C Fix assumption that variables are saved between subroutine calls
