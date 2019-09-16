@@ -93,9 +93,9 @@ public:
     void increment_state()
     {
         for(unsigned i=numOldStates-1; i>0; i--) {
-            fieldOldStates[i].swap_data(fieldOldStates[i-1]);
+            fieldOldStates[i].swap(fieldOldStates[i-1]);
         }
-        fieldOldStates[0].swap_data(fieldNewState);
+        fieldOldStates[0].swap(fieldNewState);
     }
 
     void sync_to_host()
