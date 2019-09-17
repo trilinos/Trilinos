@@ -393,7 +393,10 @@ namespace MueLu {
           outputter.outputField("NoFactory");
         }
         else {
-          std::ostringstream oss; oss << factory->ShortClassName() << "(" << factory <<")";
+          std::ostringstream oss; oss << factory->ShortClassName() << "["<<factory->GetID()<<"]";
+#ifdef HAVE_MUELU_DEBUG
+          oss<<"(" << factory <<")";
+#endif
           outputter.outputField(oss.str());
         }
 
@@ -453,7 +456,11 @@ namespace MueLu {
         std::ostringstream ss;
         for (container_type::const_iterator ct = requestedBy.begin(); ct != requestedBy.end(); ct++) {
           if (ct != requestedBy.begin()) ss << ",";
-          ss << ct->first->ShortClassName() <<"("<<ct->first<<")";
+          ss << ct->first->ShortClassName() <<"["<<ct->first->GetID()<<"]";
+#ifdef HAVE_MUELU_DEBUG
+          ss<<"("<<ct->first<<")";
+#endif
+
           if (ct->second > 1) ss << "x" << ct->second;
         }
         outputter.outputField(ss.str());
@@ -473,7 +480,8 @@ namespace MueLu {
       for (TwoKeyMap::const_iterator it1 = map_.begin(); it1 != map_.end(); it1++) {
         if (vindices.find(it1->first) == vindices.end()) {
           BoostVertex boost_vertex = boost::add_vertex(graph);
-          boost::put("label", dp, boost_vertex, it1->first->description());
+          std::ostringstream oss; oss<<it1->first->ShortClassName() << "[" << it1->first->GetID() << "]";
+          boost::put("label", dp, boost_vertex, oss.str());
           vindices[it1->first] = vind++;
         }
 
@@ -483,7 +491,8 @@ namespace MueLu {
             if (vindices.find(rit->first) == vindices.end()) {
               // requested by factory which is unknown
               BoostVertex boost_vertex = boost::add_vertex(graph);
-	      boost::put("label", dp, boost_vertex, rit->first->description());
+              std::ostringstream oss; oss<<rit->first->ShortClassName() << "[" << rit->first->GetID() << "]";
+	      boost::put("label", dp, boost_vertex, oss.str());
               vindices[rit->first] = vind++;
             }
 

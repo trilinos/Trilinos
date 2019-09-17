@@ -495,6 +495,7 @@ namespace MueLu {
     }
 
     VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
+
   }
 
 
@@ -1188,8 +1189,14 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList , FactoryManager& manager,
-                                 int /* levelID */, std::vector<keep_pair>& /* keeps */, RCP<Factory> & nullSpaceFactory) const
+                                 int levelID, std::vector<keep_pair>& /* keeps */, RCP<Factory> & nullSpaceFactory) const
   {
+
+    std::cout<<"*** levelID = "<<levelID <<std::endl;
+    manager.Print();//CMS
+    std::cout<<"******"<<std::endl;
+
+
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     bool have_userR = false;
     if (paramList.isParameter("R") && !paramList.get<RCP<Matrix> >("R").is_null())
@@ -1233,7 +1240,8 @@ namespace MueLu {
     if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
       using SNF = ScaledNullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
       RCP<SNF> scaledNSfactory = rcp(new SNF());
-      scaledNSfactory->SetFactory("Nullspace",nullSpaceFactory);
+      //      scaledNSfactory->SetFactory("Nullspace",nullSpaceFactory);
+      scaledNSfactory->SetFactory("Nullspace",manager.GetFactory("Nullspace"));
       RCP<TentativePFactory> tentPFactory = rcp(new TentativePFactory());
       tentPFactory->SetFactory("Nullspace",scaledNSfactory);
       tentPFactory->SetFactory("Aggregates",manager.GetFactory("Aggregates"));
@@ -2223,7 +2231,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
     H.SetCycle(Cycle_);
-    H.SetProlongatorScalingFactor(scalingFactor_);
+    H.SetProlongatorScalingFactor(scalingFactor_);   
     HierarchyManager::SetupHierarchy(H);
   }
 

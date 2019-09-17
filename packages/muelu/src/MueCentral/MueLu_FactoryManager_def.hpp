@@ -232,7 +232,7 @@ namespace MueLu {
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetAndReturnDefaultFactory(const std::string& varName, const RCP<const FactoryBase>& factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(factory.is_null(), Exceptions::RuntimeError, "The default factory for building '" << varName << "' is null");
 
-    GetOStream(Runtime1) << "Using default factory (" << factory->description() << ") for building '" << varName << "'." << std::endl;
+    GetOStream(Runtime1) << "Using default factory (" << factory->ShortClassName() <<"["<<factory->GetID()<<"] "<< ") for building '" << varName << "'." << std::endl;
 
     defaultFactoryTable_[varName] = factory;
 
@@ -243,15 +243,36 @@ namespace MueLu {
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Print() const {
     std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
 
-    Teuchos::FancyOStream& fancy = GetOStream(Debug);
+    Teuchos::FancyOStream& fancy = GetOStream(Runtime1);
 
     fancy << "Users factory table (factoryTable_):" << std::endl;
-    for (it = factoryTable_.begin(); it != factoryTable_.end(); it++)
-      fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
+    for (it = factoryTable_.begin(); it != factoryTable_.end(); it++) {
+      fancy << "  " << it->first << " -> ";
+      if (it->second.get() == NoFactory::get()) fancy << "NoFactory";
+      else if (!it->second.get()) fancy<< "NULL";
+      else {
+        fancy << it->second.get()->ShortClassName()<<"["<<it->second.get()->GetID()<<"]";
+#ifdef HAVE_MUELU_DEBUG
+        fancy<<"("<<Teuchos::toString(it->second.get()) <<")";
+#endif
+      }
+      fancy<< std::endl;   
+    }
 
     fancy << "Default factory table (defaultFactoryTable_):" << std::endl;
-    for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++)
-      fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
+    for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++) {
+      fancy << "  " << it->first << " -> ";
+      if (it->second.get() == NoFactory::get()) fancy << "NoFactory";
+      else if (!it->second.get()) fancy<< "NULL";
+      else {
+        fancy << it->second.get()->ShortClassName()<<"["<<it->second.get()->GetID()<<"]";
+#ifdef HAVE_MUELU_DEBUG
+        fancy<<"("<<Teuchos::toString(it->second.get()) <<")";
+#endif
+      }
+      fancy<< std::endl;   
+    }
+
   }
 
 #ifdef HAVE_MUELU_DEBUG
