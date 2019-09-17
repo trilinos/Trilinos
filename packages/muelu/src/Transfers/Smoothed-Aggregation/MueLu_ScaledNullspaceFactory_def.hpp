@@ -84,9 +84,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ScaledNullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
-
-    //    const ParameterList & pL = GetParameterList();
-
     // Scaled Nullspace always needs A & a Nullspace from somewhere
     Input(currentLevel, "A");
     Input(currentLevel, "Nullspace");
@@ -99,7 +96,6 @@ namespace MueLu {
     RCP<MultiVector> nullspace, tentativeNullspace;
 
     //TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.GetLevelID() != 0, Exceptions::RuntimeError, "MueLu::ScaledNullspaceFactory::Build(): ScaledNullspaceFactory can be used for finest level (LevelID == 0) only.");
-    const ParameterList & pL = GetParameterList();
 
     if (currentLevel.GetLevelID() == 0) {
       if (currentLevel.IsAvailable("Nullspace", NoFactory::get())) {
