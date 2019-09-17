@@ -93,6 +93,7 @@ namespace MueLu {
     // Set fine level operator
     H->GetLevel(0)->Set("A", op);
     H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
+
     mueLuFactory->SetupHierarchy(*H);
 
     tm->stop();
