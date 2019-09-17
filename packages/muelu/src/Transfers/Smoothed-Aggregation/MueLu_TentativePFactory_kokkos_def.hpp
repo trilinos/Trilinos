@@ -438,6 +438,7 @@ namespace MueLu {
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
     typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
     typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    const ParameterList& pL = GetParameterList();
     std::string nspName = "Nullspace";
     if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
