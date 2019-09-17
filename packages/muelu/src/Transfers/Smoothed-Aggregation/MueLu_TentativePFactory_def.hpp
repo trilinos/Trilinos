@@ -104,6 +104,7 @@ namespace MueLu {
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
 
     const ParameterList& pL = GetParameterList();
+    // NOTE: This guy can only either be 'Nullspace' or 'Scaled Nullspace' or else the validator above will cause issues
     std::string nspName = "Nullspace";
     if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
