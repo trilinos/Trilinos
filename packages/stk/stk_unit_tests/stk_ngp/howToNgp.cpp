@@ -25,9 +25,6 @@ namespace {
 
 using IntDualViewType = Kokkos::DualView<int*, ngp::ExecSpace>;
 
-extern int gl_argc;
-extern char** gl_argv;
-
 void set_field_on_device_and_copy_back(stk::mesh::BulkData &bulk,
                                        stk::mesh::EntityRank rank,
                                        stk::mesh::Part &quadPart,
