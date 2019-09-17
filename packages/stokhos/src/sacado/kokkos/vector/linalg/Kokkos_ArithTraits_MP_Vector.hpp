@@ -44,6 +44,7 @@
 
 #include "Sacado_MP_Vector.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "KokkosBatched_Vector.hpp"
 
 //----------------------------------------------------------------------------
 // Specializations of Kokkos::ArithTraits for Sacado::MP::Vector scalar type
@@ -211,6 +212,16 @@ public:
 };
 
 }
+}
+
+namespace KokkosBatched {
+
+  template <typename S>
+  struct MagnitudeScalarType< Sacado::MP::Vector<S> > {
+    typedef Sacado::MP::Vector<S> val_type;
+    typedef typename Kokkos::Details::ArithTraits<val_type>::mag_type type;
+  };
+
 }
 
 #endif /* #ifndef KOKKOS_ARITHTRAITS_MP_VECTOR_HPP */
