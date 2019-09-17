@@ -78,8 +78,12 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     Teuchos::Array<magnitude_type> results(2);
-
-    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    // Do not run this test for Epetra
+    if (lib == Xpetra::UseEpetra) {
+      TEST_EQUALITY(1,1);
+      return;
+    }
 
     // Build a Matrix
     GlobalOrdinal nEle = 20;
@@ -120,8 +124,6 @@ namespace MueLuTests {
     Teuchos::ParameterList pt2_list; pt2_list.set("Nullspace name","Scaled Nullspace");
     Ptent2->SetParameterList(pt2_list);
     Ptent2->SetFactory("Scaled Nullspace",SNSFact);
-
-    NSFact->SetFactory("Nullspace",Ptent1);
     
     RCP<Factory>      Rfact = rcp( new TransPFactory() );
     Rfact->SetFactory("P",Ptent2);
@@ -143,7 +145,7 @@ namespace MueLuTests {
     M.SetKokkosRefactor(false);
     M.SetFactory("P", Ptent1);
     M.SetFactory("R", Rfact);
-    M.SetFactory("A", Acfact);
+    M.SetFactory("Nullspace", NSFact);
     M.SetFactory("Ptent", Ptent1);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
@@ -182,6 +184,7 @@ namespace MueLuTests {
     //    TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
     TEST_EQUALITY(coarseLevel->GetKeepFlag("R",Rfact.get()), 0);
     TEST_EQUALITY(coarseLevel->GetKeepFlag("A",Acfact.get()), 0);
+
 #   else
     out << "Skipping test because some required packages are not enabled (Tpetra)." << std::endl;
 #   endif
