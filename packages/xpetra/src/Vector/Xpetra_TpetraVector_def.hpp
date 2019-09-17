@@ -47,15 +47,6 @@
 #define XPETRA_TPETRAVECTOR_DEF_HPP
 #include "Xpetra_TpetraVector_decl.hpp"
 
-#include "Xpetra_TpetraMap.hpp"      //TMP
-#include "Xpetra_Utils.hpp"
-//#include "Xpetra_TpetraImport.hpp"
-//#include "Xpetra_TpetraExport.hpp"
-
-//#include "Xpetra_TpetraMultiVector.hpp"
-//#include "Tpetra_MultiVector.hpp"
-//#include "Tpetra_Vector.hpp"
-
 
 namespace Xpetra {
 
@@ -472,7 +463,7 @@ class TpetraVector<Scalar, int, int, EpetraNode>
 };      // TpetraVector class (specialization on GO=int, NO=EpetraNode)
 
 
-#endif    // #if((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) \
+#endif    // #if((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT)))
           //    || (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
 
 
@@ -668,7 +659,7 @@ class TpetraVector<Scalar, int, long long, EpetraNode>
 };      // TpetraVector class (specialization on GO=long long, NO=EpetraNode)
 
 
-#endif   // #if((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) \
+#endif   // #if((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
          //    || (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
 
 
