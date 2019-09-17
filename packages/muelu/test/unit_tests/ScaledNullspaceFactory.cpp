@@ -116,14 +116,12 @@ namespace MueLuTests {
     // define transfer operators
     RCP<NullspaceFactory> NSFact = rcp(new NullspaceFactory());
     RCP<ScaledNullspaceFactory> SNSFact = rcp(new ScaledNullspaceFactory());
-    SNSFact->SetFactory("Nullspace",NSFact);
 
     RCP<TentativePFactory> Ptent1 = rcp(new TentativePFactory());
-    Ptent1->SetFactory("Nullspace",NSFact);
+    NSFact->SetFactory("Nullspace",Ptent1);
     RCP<TentativePFactory> Ptent2 = rcp(new TentativePFactory());
     Teuchos::ParameterList pt2_list; pt2_list.set("Nullspace name","Scaled Nullspace");
     Ptent2->SetParameterList(pt2_list);
-    Ptent2->SetFactory("Scaled Nullspace",SNSFact);
     
     RCP<Factory>      Rfact = rcp( new TransPFactory() );
     Rfact->SetFactory("P",Ptent2);
@@ -146,6 +144,7 @@ namespace MueLuTests {
     M.SetFactory("P", Ptent1);
     M.SetFactory("R", Rfact);
     M.SetFactory("Nullspace", NSFact);
+    M.SetFactory("Scaled Nullspace", SNSFact);
     M.SetFactory("Ptent", Ptent1);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
