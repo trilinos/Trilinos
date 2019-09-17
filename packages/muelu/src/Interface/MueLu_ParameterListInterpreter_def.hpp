@@ -605,7 +605,7 @@ namespace MueLu {
     UpdateFactoryManager_SemiCoarsen(paramList, defaultList, manager, levelID, keeps);
 
     // === Restriction ===
-    UpdateFactoryManager_Restriction(paramList, defaultList, manager, levelID, keeps, nullSpaceFactory);
+    UpdateFactoryManager_Restriction(paramList, defaultList, manager, levelID, keeps);
 
     // === RAP ===
     UpdateFactoryManager_RAP(paramList, defaultList, manager, levelID, keeps);
@@ -1184,12 +1184,12 @@ namespace MueLu {
   }
 
   // =====================================================================================================
-  // =========================================== Restriction ===============================================
+  // =========================================== Restriction =============================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList , FactoryManager& manager,
-                                 int levelID, std::vector<keep_pair>& /* keeps */, RCP<Factory> & nullSpaceFactory) const
+                                 int levelID, std::vector<keep_pair>& /* keeps */) const
   {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     bool have_userR = false;
@@ -1455,7 +1455,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_Nullspace(ParameterList& paramList, const ParameterList& /* defaultList */, FactoryManager& manager,
-                                 int /*levelID*/, std::vector<keep_pair>& /* keeps */, RCP<Factory> & nullSpaceFactory) const
+                                 int /* levelID */, std::vector<keep_pair>& /* keeps */, RCP<Factory> & nullSpaceFactory) const
   {
     // Nullspace
     MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
@@ -2231,7 +2231,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
     H.SetCycle(Cycle_);
-    H.SetProlongatorScalingFactor(scalingFactor_);   
+    H.SetProlongatorScalingFactor(scalingFactor_);
     HierarchyManager::SetupHierarchy(H);
   }
 

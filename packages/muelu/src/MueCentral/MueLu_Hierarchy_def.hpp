@@ -297,14 +297,9 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError,
                                "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) "
                                "must be built before calling this function.");
+
     Level& level = *Levels_[coarseLevelID];
-    level.print(std::cout,Debug);//CMS
-    {
-      std::ostringstream oss; oss << "levelGraph_start." << coarseLevelID << "_";  
-      EnableGraphDumping(oss.str(),coarseLevelID);
-      DumpCurrentGraph();
-    }
-    
+
     std::string label        = FormattingHelper::getColonLabel(level.getObjectLabel());
     TimeMonitor m1(*this, label + this->ShortClassName() + ": " + "Setup (total)");
     TimeMonitor m2(*this, label + this->ShortClassName() + ": " + "Setup" + " (total, level=" + Teuchos::toString(coarseLevelID) + ")");
@@ -474,15 +469,6 @@ namespace MueLu {
       }
     }
 
-    level.print(std::cout,Debug);//CMS
-    {
-      std::ostringstream oss; oss << "levelGraph_middle." << coarseLevelID << "_";  
-      EnableGraphDumping(oss.str(),coarseLevelID);
-      DumpCurrentGraph();
-    }
-   
-
-
     if (isLastLevel) {
       if (!isOrigLastLevel) {
         // We did not expect to finish this early so we did request a smoother.
@@ -532,14 +518,6 @@ namespace MueLu {
 
     if (oldRank != -1)
       SetProcRankVerbose(oldRank);
-
-    level.print(std::cout,Debug);//CMS
-    {
-      std::ostringstream oss; oss << "levelGraph_stop." << coarseLevelID << "_";  
-      EnableGraphDumping(oss.str(),coarseLevelID);
-      DumpCurrentGraph();
-    }
- 
 
     return isLastLevel;
   }
