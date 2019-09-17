@@ -85,24 +85,11 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ScaledNullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
 
-    const ParameterList & pL = GetParameterList();
-    std::string nspName = pL.get<std::string>("Fine level nullspace");
+    //    const ParameterList & pL = GetParameterList();
 
-    // only request "A" in DeclareInput if
-    // 1) there is not nspName (e.g. "Nullspace") is available in Level, AND
-    // 2) it is the finest level (i.e. LevelID == 0)
-    if (currentLevel.IsAvailable(nspName, NoFactory::get()) == false && currentLevel.GetLevelID() == 0)
-      Input(currentLevel, "A");
-
-    if (currentLevel.GetLevelID() != 0) {
-      // validate nullspaceFact_
-      // 1) The factory for "Nullspace" (or nspName) must not be Teuchos::null, since the default factory
-      //    for "Nullspace" is a ScaledNullspaceFactory
-      // 2) The factory for "Nullspace" (or nspName) must be a TentativePFactory or any other TwoLevelFactoryBase derived object
-      //    which generates the variable "Nullspace" as output
-      TEUCHOS_TEST_FOR_EXCEPTION(GetFactory(nspName)==Teuchos::null, Exceptions::RuntimeError, "MueLu::ScaledNullspaceFactory::DeclareInput(): You must declare an existing factory which produces the variable \"Nullspace\" in the ScaledNullspaceFactory (e.g. a TentativePFactory).");
-      currentLevel.DeclareInput("Nullspace", GetFactory(nspName).get(), this); /* ! "Nullspace" and nspName mismatch possible here */
-    }
+    // Scaled Nullspace always needs A & a Nullspace from somewhere
+    Input(currentLevel, "A");
+    Input(currentLevel, "Nullspace");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -113,20 +100,19 @@ namespace MueLu {
 
     //TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.GetLevelID() != 0, Exceptions::RuntimeError, "MueLu::ScaledNullspaceFactory::Build(): ScaledNullspaceFactory can be used for finest level (LevelID == 0) only.");
     const ParameterList & pL = GetParameterList();
-    std::string nspName = pL.get<std::string>("Fine level nullspace");
 
     if (currentLevel.GetLevelID() == 0) {
-      if (currentLevel.IsAvailable(nspName, NoFactory::get())) {
+      if (currentLevel.IsAvailable("Nullspace", NoFactory::get())) {
         // When a fine nullspace have already been defined by user using Set("Nullspace", ...) or
         // Set("Nullspace1", ...), we use it.
-        tentativeNullspace = currentLevel.Get< RCP<MultiVector> >(nspName, NoFactory::get());
+        tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", NoFactory::get());
       } else {
         // A User "Nullspace" (nspName) is not available (use factory)
-        tentativeNullspace = currentLevel.Get< RCP<MultiVector> >(nspName, GetFactory(nspName).get()); /* ! "Nullspace" and nspName mismatch possible here */
+        tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory("Nullspace").get()); 
 
       } // end if "Nullspace" not available
     } else {
-      tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory(nspName).get()); /* ! "Nullspace" and nspName mismatch possible here */
+      tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory("Nullspace").get()); 
     }
 
   
@@ -150,8 +136,8 @@ namespace MueLu {
     Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractBlockDiagonal(*A,*blockDiagonal);
     Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::inverseScaleBlockDiagonal(*blockDiagonal,*nullspace);
 
-    // provide "Nullspace" variable on current level (used by TentativePFactory)
-    Set(currentLevel, "Nullspace", nullspace);
+    // provide "Scaled Nullspace" variable on current level (used by TentativePFactory)
+    Set(currentLevel, "Scaled Nullspace", nullspace);
 
   } // Build
 

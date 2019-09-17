@@ -115,7 +115,9 @@ namespace MueLuTests {
     RCP<TentativePFactory> Ptent1 = rcp(new TentativePFactory());
     Ptent1->SetFactory("Nullspace",NSFact);
     RCP<TentativePFactory> Ptent2 = rcp(new TentativePFactory());
-    Ptent2->SetFactory("Nullspace",SNSFact);
+    Teuchos::ParamterList pt2_list; pt2_list.set("Nullspace name","Scaled Nullspace");
+    Ptent2->SetParameterList(pt2_list);
+    Ptent2->SetFactory("Scaled Nullspace",SNSFact);
 
     NSFact->SetFactory("Nullspace",Ptent1);
     

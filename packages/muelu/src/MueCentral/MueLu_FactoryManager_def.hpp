@@ -64,6 +64,7 @@
 #include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_ScaledNullspaceFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -159,6 +160,8 @@ namespace MueLu {
         factory->SetFactory("Nullspace", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
       }
+      if (varName == "Scaled Nullspace")                return SetAndReturnDefaultFactory(varName, rcp(new ScaledNullspaceFactory()));
+
       if (varName == "Coordinates")                     return GetFactory("Ptent");
       if (varName == "Node Comm")                       return GetFactory("Ptent");
 

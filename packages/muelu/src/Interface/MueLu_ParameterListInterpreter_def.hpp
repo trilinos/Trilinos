@@ -1191,12 +1191,6 @@ namespace MueLu {
   UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList , FactoryManager& manager,
                                  int levelID, std::vector<keep_pair>& /* keeps */, RCP<Factory> & nullSpaceFactory) const
   {
-
-    std::cout<<"*** levelID = "<<levelID <<std::endl;
-    manager.Print();//CMS
-    std::cout<<"******"<<std::endl;
-
-
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     bool have_userR = false;
     if (paramList.isParameter("R") && !paramList.get<RCP<Matrix> >("R").is_null())
@@ -1238,12 +1232,10 @@ namespace MueLu {
 
     // === Restriction: Nullspace Scaling ===
     if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
-      using SNF = ScaledNullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-      RCP<SNF> scaledNSfactory = rcp(new SNF());
-      //      scaledNSfactory->SetFactory("Nullspace",nullSpaceFactory);
-      scaledNSfactory->SetFactory("Nullspace",manager.GetFactory("Nullspace"));
       RCP<TentativePFactory> tentPFactory = rcp(new TentativePFactory());
-      tentPFactory->SetFactory("Nullspace",scaledNSfactory);
+      Teuchos::ParameterList tentPlist;  
+      tentPlist.set("Nullspace name","Scaled Nullspace");
+      tentPFactory->SetParameterList(tentPlist);
       tentPFactory->SetFactory("Aggregates",manager.GetFactory("Aggregates"));
       tentPFactory->SetFactory("CoarseMap",manager.GetFactory("CoarseMap"));
 
@@ -1463,7 +1455,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_Nullspace(ParameterList& paramList, const ParameterList& /* defaultList */, FactoryManager& manager,
-                                 int /* levelID */, std::vector<keep_pair>& /* keeps */, RCP<Factory> & nullSpaceFactory) const
+                                 int /*levelID*/, std::vector<keep_pair>& /* keeps */, RCP<Factory> & nullSpaceFactory) const
   {
     // Nullspace
     MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
@@ -1477,6 +1469,14 @@ namespace MueLu {
       manager.SetFactory("Nullspace", nullSpace);
     }
     nullSpaceFactory = nullSpace;
+
+    if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
+      using SNF = ScaledNullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+      RCP<SNF> scaledNSfactory = rcp(new SNF());
+      scaledNSfactory->SetFactory("Nullspace",nullSpaceFactory);
+      manager.SetFactory("Scaled Nullspace",scaledNSfactory);
+    }
+
   }
 
   // =====================================================================================================
