@@ -160,22 +160,28 @@ ENDIF()
 ENDIF()
 
 IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)
+# This test makes sure that the adjacency information (what element blocks are adjacent to what other
+# element blocks and what sidesets touch which element blocks) is the same for reading an exodus mesh
+# and for reading a internally generated pamgen mesh (the exodus mesh is also from the same pamgen input
+# file, so the meshes should be identical). Should be able to just compare the io_info output from both
+# runs, but on some platforms, we are getting some KOKKOS/CUDA/? debug information which messes up the
+# comparison.  So...we just grep the output files for the word 'element' which gets the adjacency information
+# that we need to ensure the same information is generated on both (and some other information also)
 TRIBITS_ADD_ADVANCED_TEST(pamgen_exodus_io_info
    TEST_0 EXEC io_shell ARGS --in_type pamgen ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i pamgen.e
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
    TEST_1 EXEC io_info ARGS --db_type exodus --adjacencies pamgen.e
-     OUTPUT_FILE info_exodus.out
+     OUTPUT_FILE info_exodus.tmp
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
    TEST_2 EXEC io_info ARGS --db_type pamgen --adjacencies ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i
-     OUTPUT_FILE info_pamgen.out
+     OUTPUT_FILE info_pamgen.tmp
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
-   TEST_3 CMND diff ARGS info_exodus.out info_pamgen.out
-     OUTPUT_FILE diff_pamgen_io_info.out
-     PASS_ANY
-   TEST_4 CMND diff ARGS diff_pamgen_io_info.out ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen_io_info.gold
+   TEST_3 CMND grep ARGS element info_pamgen.tmp OUTPUT_FILE info_pamgen.out
+   TEST_4 CMND grep ARGS element info_exodus.tmp OUTPUT_FILE info_exodus.out
+   TEST_5 CMND diff ARGS info_exodus.out info_pamgen.out
   COMM mpi serial
   )
 ENDIF()
