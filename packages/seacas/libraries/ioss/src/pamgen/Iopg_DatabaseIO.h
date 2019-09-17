@@ -104,7 +104,7 @@ namespace Iopg {
     int         maximum_symbol_length() const override { return 32; }
 
     void compute_block_membership__(Ioss::SideBlock *         efblock,
-				    std::vector<std::string> &block_membership) const;
+                                    std::vector<std::string> &block_membership) const override;
 
   private:
     void read_meta_data__() override;
