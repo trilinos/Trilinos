@@ -264,6 +264,7 @@ ATDM_SET_CACHE(Trilinos_ENABLE_DEVELOPMENT_MODE OFF CACHE BOOL)
 ATDM_SET_CACHE(Trilinos_ASSERT_MISSING_PACKAGES ON CACHE BOOL)
 ATDM_SET_CACHE(Trilinos_ENABLE_OpenMP "${ATDM_USE_OPENMP}" CACHE BOOL)
 ATDM_SET_CACHE(Trilinos_ENABLE_COMPLEX "${ATDM_COMPLEX}" CACHE BOOL)
+ATDM_SET_CACHE(Gtest_SKIP_INSTALL TRUE CACHE BOOL)
 ATDM_SET_CACHE(Kokkos_ENABLE_OpenMP "${ATDM_USE_OPENMP}" CACHE BOOL)
 ATDM_SET_CACHE(Kokkos_ENABLE_Pthread "${ATDM_USE_PTHREADS}" CACHE BOOL)
 ATDM_SET_CACHE(Kokkos_ENABLE_Cuda_UVM "${ATDM_USE_CUDA}" CACHE BOOL)
@@ -298,7 +299,7 @@ ENDIF()
 #
 # F) TPL locations and enables
 #
-# Since this is special ATDM configuration of Trilinos, it makes sense to go
+# Since this is a special ATDM configuration of Trilinos, it makes sense to go
 # ahead and enable all of the TPLs by default that are used by the ATDM
 # applications.
 #
@@ -450,6 +451,11 @@ ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_MPI_4_DISABLE ON)
 # (see #5447)
 ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_EXE_DISABLE ON)
 ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_MPI_4_DISABLE ON)
+
+IF ("${ATDM_CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
+  ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-4_DISABLE ON)
+  ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedPoissonExample-ConvTest-Hex-Order-3_DISABLE ON)
+ENDIF()
 
 #
 # H) ATDM env config install hooks
