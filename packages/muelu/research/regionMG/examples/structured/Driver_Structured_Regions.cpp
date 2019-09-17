@@ -1554,7 +1554,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni;
     const int old_precision = std::cout.precision();
     std::cout << std::setprecision(8) << std::scientific;
-    for (int cycle = 0; cycle < maxIts; ++cycle)
+    int cycle = 0;
+    for (cycle = 0; cycle < maxIts; ++cycle)
     {
       // check for convergence
       {
@@ -1599,6 +1600,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
                regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData, hierarchyData);
     }
+    if (myRank == 0)
+      std::cout << "Number of iterations performed for this solve: " << cycle << std::endl;
+
     std::cout << std::setprecision(old_precision);
     std::cout.unsetf(std::ios::fixed | std::ios::scientific);
   }
