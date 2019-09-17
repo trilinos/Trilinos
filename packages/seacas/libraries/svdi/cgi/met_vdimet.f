@@ -2397,7 +2397,7 @@ C                   only to text primitives.
 C                   All devices must support at least a single device
 C                   dependent value that is the default.  If an
 C                   unsupported value is specified, set to the largest
-C                   suported character size that does not exceed the
+C                   supported character size that does not exceed the
 C                   specified size.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
@@ -2590,7 +2590,7 @@ C                   attribute values, the color table, and current
 C                   position are set to appropriate defaults for the
 C                   device.  All necessary input device initialization
 C                   is done.  The screen is cleared or paper advanced
-C                   if necessary to guarentee a blank view surface for
+C                   if necessary to guarantee a blank view surface for
 C                   drawing on.
 C
 C                   ASPECT specifies the ratio of the X dimension to the

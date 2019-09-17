@@ -1560,7 +1560,7 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
     else { /* clipping is on */
 
       /* This clipping algorithm is loosely based on the Cohen-
-       * Sutherland algorthim.  This algorithm takes into account
+       * Sutherland algorithm.  This algorithm takes into account
        * the fact that points are consective, ie., it tries to
        * encode each point only once. Everything is done
        * inline for efficiency

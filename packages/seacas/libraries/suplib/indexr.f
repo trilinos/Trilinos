@@ -33,7 +33,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C=======================================================================
       INTEGER FUNCTION INDEXR (STRING, CHAR)
 C=======================================================================
-C   --*** INDEXR *** (STRLIB) Find last occurance of CHAR in STRING
+C   --*** INDEXR *** (STRLIB) Find last occurrence of CHAR in STRING
 C   --
 C   --INDEXR returns the last position of CHAR in STRING
 C   --if not found, returns 0

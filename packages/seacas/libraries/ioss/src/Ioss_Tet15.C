@@ -81,12 +81,12 @@ namespace {
   int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
       {{0, 4, 3}, {1, 5, 4}, {3, 5, 2}, {2, 1, 0}};
 
-  // face 0 returns number of nodes for all faces if homogenous
+  // face 0 returns number of nodes for all faces if homogeneous
   //        returns -1 if faces have differing topology
   int Constants::nodes_per_face[nface + 1] = {nfacenode, nfacenode, nfacenode, nfacenode,
                                               nfacenode};
 
-  // face 0 returns number of edges for all faces if homogenous
+  // face 0 returns number of edges for all faces if homogeneous
   //        returns -1 if faces have differing topology
   int Constants::edges_per_face[nface + 1] = {nfaceedge, nfaceedge, nfaceedge, nfaceedge,
                                               nfaceedge};

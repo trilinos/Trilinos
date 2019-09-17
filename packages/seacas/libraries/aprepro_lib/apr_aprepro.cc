@@ -51,7 +51,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.11 (2019/02/27)";
+  const char *       version_string = "5.12 (2019/08/21)";
 
   void output_copyright();
 
@@ -520,7 +520,8 @@ namespace SEAMS {
           << "  --comment=char or -c=char: Change comment character to 'char'      \n"
           << "      --copyright or -C: Print copyright message                 \n"
           << "   --keep_history or -k: Keep a history of aprepro substitutions.\n"
-          << "          --quiet or -q: (ignored)                               \n"
+	  << "                         (not for general interactive use)       \n"
+          << "          --quiet or -q: (deprecated, option is ignored)         \n"
           << "                var=val: Assign value 'val' to variable 'var'    \n"
           << "                         Use var=\\\"sval\\\" for a string variable\n\n"
           << "\tUnits Systems: si, cgs, cgs-ev, shock, swap, ft-lbf-s, ft-lbm-s, in-lbf-s\n"

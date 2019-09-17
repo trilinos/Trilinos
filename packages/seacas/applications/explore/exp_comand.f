@@ -893,7 +893,7 @@ C ... Coordinate Frames
           CALL SHOCMD ('LIST/PRINT Options:', LISTBL)
         END IF
 
-C *** Miscellaneous Commmands ***
+C *** Miscellaneous Commands ***
 
       ELSE IF (VERB .EQ. 'LIMITS') THEN
         call limits(ndim, numnp, cord)
@@ -968,7 +968,7 @@ C     didn't, need to rewrite frefld to return mixed case.
      &      TIME, VARGL, VARNP, VAREL)
         END IF
 
-C *** Miscellaneous Commmands ***
+C *** Miscellaneous Commands ***
 
       ELSE IF (VERB .EQ. 'HELP') THEN
         ISON = HELP ('EXPLORE', 'COMMANDS', CFIELD(IFLD))

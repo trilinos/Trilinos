@@ -3,8 +3,8 @@ from ctypes import *
 import os
 
 """
-exodus.py v 1.11 (seacas-beta) is a python wrapper of some of the exodus library
-(Python 2 Version) 
+exodus.py v 1.13 (seacas-beta) is a python wrapper of some of the exodus library
+(Python 2 Version)
 
 Copyright(C) 2019 National Technology & Engineering Solutions of
 Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
@@ -41,10 +41,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.11 (seacas-beta)"
+EXODUS_PY_VERSION = "1.13 (seacas-py2)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.11 (seacas-beta), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.13 (seacas-py2), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -83,13 +83,21 @@ def getExodusVersion():
     Parse the exodusII.h header file and return the version number or 0 if not
     found.
     """
+    version_major = 0
+    version_minor = 0
     ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
     for line in open(ACCESS + "/include/exodusII.h"):
         fields = line.split()
         if (len(fields) == 3 and
                 fields[0] == '#define' and
-                fields[1] == 'EX_API_VERS_NODOT'):
-            return int(fields[2])
+                fields[1] == 'EXODUS_VERSION_MAJOR'):
+            version_major = int(fields[2])
+        if (len(fields) == 3 and
+                fields[0] == '#define' and
+                fields[1] == 'EXODUS_VERSION_MINOR'):
+            version_minor = int(fields[2])
+        if (version_major > 0 and version_minor > 0):
+           return 100 * version_major + version_minor
     return 0
 
 ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
@@ -408,7 +416,7 @@ class exodus:
           e.put_info_ext(self,info_struct)
           -> put initialization information into exodus file
         """
-        if len(p.title)>MAX_LINE_LENGTH: 
+        if len(p.title)>MAX_LINE_LENGTH:
             print('WARNING: Exodus title "%s" exceeds maximum line length (%i). It will be truncated.' %
                   (p.title,MAX_LINE_LENGTH))
             p.title = p.title[-1*MAX_LINE_LENGTH:]
@@ -429,7 +437,7 @@ class exodus:
     #
     # --------------------------------------------------------------------
 
-    def copy(self, fileName):
+    def copy(self, fileName, include_transient=False):
         """
         exo_copy = exo.copy(file_name)
 
@@ -450,7 +458,7 @@ class exodus:
         i64Status = EXODUS_LIB.ex_int64_status(self.fileId)
         EXODUS_LIB.ex_set_int64_status(fileId, i64Status)
 
-        self.__copy_file(fileId)
+        self.__copy_file(fileId, include_transient)
         EXODUS_LIB.ex_close(self.fileId)
 
         return exodus(fileName, "a")
@@ -3573,8 +3581,12 @@ class exodus:
 
     # --------------------------------------------------------------------
 
-    def __copy_file(self, fileId):
-        EXODUS_LIB.ex_copy(self.fileId, fileId)
+    def __copy_file(self, fileId, include_transient=False):
+        if include_transient:
+            EXODUS_LIB.ex_copy(self.fileId, fileId)
+            EXODUS_LIB.ex_copy_transient(self.fileId, fileId)
+        else:
+            EXODUS_LIB.ex_copy(self.fileId, fileId)
 
     # --------------------------------------------------------------------
 
@@ -3595,7 +3607,7 @@ class exodus:
             self.numNodeSets = c_int(0)
             self.numSideSets = c_int(0)
         EXODUS_LIB.ex_get_init(
-            self.fileId, self.Title, 
+            self.fileId, self.Title,
             byref(self.numDim),
             byref(self.numNodes),
             byref(self.numElem),

@@ -61,7 +61,7 @@ C   --   ALLONE - IN - true if df are all unity, false if not all unity
       INTEGER IXEESS(*)  ! NUMESS
       INTEGER LTEESS(*)  ! LESSEL
       INTEGER LTSSS(*)   ! LESSEL
-      INTEGER IBLOCK(*)  ! NELBLK - gives indes of last element in block
+      INTEGER IBLOCK(*)  ! NELBLK - gives index of last element in block
       CHARACTER*(MXSTLN) BLKTYP(*)
 
       LOGICAL ALLONE

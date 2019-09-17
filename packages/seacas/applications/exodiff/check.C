@@ -170,7 +170,7 @@ namespace {
         INT    n2 = node_map != nullptr ? node_map[n] : n;
         double dx = interface.coord_tol.Delta(x1[n], x2[n2]);
         if (dx > interface.coord_tol.value) {
-          fmt::print("   x coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})",
+          fmt::print("   x coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
                      interface.coord_tol.abrstr(), x1[n], x2[n2], dx, (size_t)id_map[n]);
           is_same = false;
         }
@@ -179,7 +179,7 @@ namespace {
         if (file1.Dimension() > 1 && file2.Dimension() > 1) {
           double dy = interface.coord_tol.Delta(y1[n], y2[n2]);
           if (dy > interface.coord_tol.value) {
-            fmt::print("   y coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})",
+            fmt::print("   y coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
                        interface.coord_tol.abrstr(), y1[n], y2[n2], dy, (size_t)id_map[n]);
             is_same = false;
           }
@@ -189,7 +189,7 @@ namespace {
         if (file1.Dimension() > 2 && file2.Dimension() > 2) {
           double dz = interface.coord_tol.Delta(z1[n], z2[n2]);
           if (dz > interface.coord_tol.value) {
-            fmt::print("   z coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})",
+            fmt::print("   z coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
                        interface.coord_tol.abrstr(), z1[n], z2[n2], dz, (size_t)id_map[n]);
             is_same = false;
           }

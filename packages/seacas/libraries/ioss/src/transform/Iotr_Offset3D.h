@@ -41,9 +41,6 @@ namespace Ioss {
   class Field;
 } // namespace Ioss
 
-namespace Ioss {
-} // namespace Ioss
-
 namespace Iotr {
 
   class Offset3D_Factory : public Factory
