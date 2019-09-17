@@ -390,6 +390,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Aggregates",         Teuchos::null, "Generating factory of the aggregates");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",          Teuchos::null, "Generating factory of the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("Scaled Nullspace",   Teuchos::null, "Generating factory of the scaled nullspace");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
@@ -406,10 +407,13 @@ namespace MueLu {
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
 
     const ParameterList& pL = GetParameterList();
+    // NOTE: This guy can only either be 'Nullspace' or 'Scaled Nullspace' or else the validator above will cause issues
+    std::string nspName = "Nullspace";
+    if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
     Input(fineLevel, "A");
     Input(fineLevel, "Aggregates");
-    Input(fineLevel, "Nullspace");
+    Input(fineLevel, nspName);
     Input(fineLevel, "UnAmalgamationInfo");
     Input(fineLevel, "CoarseMap");
     if( fineLevel.GetLevelID() == 0 &&
@@ -434,11 +438,13 @@ namespace MueLu {
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
     typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
     typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    std::string nspName = "Nullspace";
+    if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
     auto A             = Get< RCP<Matrix> >           (fineLevel, "A");
     auto aggregates    = Get< RCP<Aggregates_kokkos> >(fineLevel, "Aggregates");
     auto amalgInfo     = Get< RCP<AmalgamationInfo> > (fineLevel, "UnAmalgamationInfo");
-    auto fineNullspace = Get< RCP<MultiVector> >      (fineLevel, "Nullspace");
+    auto fineNullspace = Get< RCP<MultiVector> >      (fineLevel, nspName);
     auto coarseMap     = Get< RCP<const Map> >        (fineLevel, "CoarseMap");
     RCP<RealValuedMultiVector> fineCoords;
     if(bTransferCoordinates_) {
