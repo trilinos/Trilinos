@@ -19,6 +19,7 @@ if [ "$called" == "$0" ] ; then
 fi
 unset called
 
+
 # Assert that ATDM_CONFIG_BUILD_NAME is set!
 if [ -z "$ATDM_CONFIG_BUILD_NAME" ] ; then
   echo "Error, must set ATDM_CONFIG_BUILD_NAME in env!"

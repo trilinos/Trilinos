@@ -9,22 +9,22 @@
 # NOTE: The custom_builds.sh script in this directory sets the exact compilers
 # used so no need for dealing with different varients of compilers here.
 
-if [[ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ]] ; then
-  # Abort, no compiler was selected!
-  return
-fi
+#if [[ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ]] ; then
+#  # Abort, no compiler was selected!
+#  return
+#fi
 
 #TODO: jfrye 
-if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
-  unset ATDM_CONFIG_KOKKOS_ARCH
-else
-  echo
-  echo "***"
-  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on doom builds"
-  echo "*** remove '$ATDM_CONFIG_KOKKOS_ARCH' from JOB_NAME=$JOB_NAME"
-  echo "***"
-  return
-fi
+#if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
+#  unset ATDM_CONFIG_KOKKOS_ARCH
+#else
+#  echo
+#  echo "***"
+#  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on doom builds"
+#  echo "*** remove '$ATDM_CONFIG_KOKKOS_ARCH' from JOB_NAME=$JOB_NAME"
+#  echo "***"
+#  return
+#fi
 
 echo "Using doom compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
@@ -79,6 +79,10 @@ if [[ "${ATDM_CONFIG_ENABLE_STRONG_WARNINGS}" == "" ]] ; then
   export ATDM_CONFIG_ENABLE_STRONG_WARNINGS=1
 fi
 
+if [[ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ]] ; then
+  ATDM_CONFIG_COMPILER="CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1"
+fi
+
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1" ]] ; then
   unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
   unset OMP_PROC_BIND
@@ -115,7 +119,6 @@ else
   echo "***"
   echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
   echo "***"
-  return
 fi
 
 # ToDo: Update above to only load the compiler and MPI moudles and then
@@ -160,6 +163,9 @@ atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${ATDM_CONFIG_MKL_ROOT}/mkl/li
 atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${ATDM_CONFIG_MKL_ROOT}/lib/intel64 .so \
   iomp5
 
+atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${ATDM_CONFIG_MKL_ROOT}/compiler/lib/intel64_lin .so \
+  libiomp5
+
 export ATDM_CONFIG_LAPACK_LIBS=${ATDM_CONFIG_BLAS_LIBS}
 
 # Boost
@@ -188,6 +194,8 @@ if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
   export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
   export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist.a
 fi
+
+env|sort|grep ROOT
 
 # Finished!
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
