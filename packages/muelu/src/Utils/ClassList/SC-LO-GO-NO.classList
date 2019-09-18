@@ -78,6 +78,7 @@ RepartitionHeuristicFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
 SaPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+ScaledNullspaceFactory
 SchurComplementFactory
 SegregatedAFactory
 ShiftedLaplacian - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)

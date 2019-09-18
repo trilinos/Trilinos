@@ -50,6 +50,7 @@
 #include <cstdlib>
 #include <stack>
 #include <cerrno>
+#include <unistd.h>
 
 //----------------------------------------------------------------------------
 
@@ -650,7 +651,7 @@ void initialize(int& narg, char* arg[])
           if (skip_device > 0 && rdevices == 1)
             Impl::throw_runtime_exception("Error: cannot KOKKOS_SKIP_DEVICE the only KOKKOS_RAND_DEVICE.Raised by Kokkos::initialize(int narg, char* argc[]).");
 
-          std::srand(std::time(nullptr));
+          std::srand(getpid());
           while (device < 0 ) {
             int test_device = std::rand()%rdevices;
             if (test_device != skip_device)

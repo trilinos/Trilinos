@@ -51,7 +51,7 @@ C   --*** CFVMAX *** (DETOUR) Calculate face variable min/max and count number
 C   --   Written by Amy Gilkey - revised 03/09/88
 C   --
 C   --CFVMAX calculates the minimum and maximum value of a face variable
-C   --and counts the number of occurances of the minimum and maximum.
+C   --and counts the number of occurrences of the minimum and maximum.
 C   --
 C   --Parameters:
 C   --   NUMFAC - IN - the number of surface faces

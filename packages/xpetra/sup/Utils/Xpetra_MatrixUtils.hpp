@@ -64,7 +64,10 @@
 #include "Xpetra_IO.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
+#include "Xpetra_TpetraMultiVector.hpp"
 #include <Tpetra_RowMatrixTransposer.hpp>
+#include <Tpetra_Details_extractBlockDiagonal.hpp>
+#include <Tpetra_Details_scaleBlockDiagonal.hpp>
 #endif
 
 namespace Xpetra {
@@ -597,6 +600,45 @@ public:
     A = newA;
     A->fillComplete();
   }
+
+
+  // Extracting the block diagonal of a matrix
+  static void extractBlockDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & A,
+                                   Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & diagonal) {
+    const UnderlyingLib lib = A.getRowMap()->lib();
+
+      if(lib == Xpetra::UseEpetra) {
+#if defined(HAVE_XPETRA_EPETRA)
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixUtils::extractBlockDiagonal not available for Epetra."));
+#endif // HAVE_XPETRA_EPETRA
+      } else if(lib == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & At = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+        Tpetra::MultiVector<SC,LO,GO,NO> &     Dt = Xpetra::toTpetra(diagonal);
+        Tpetra::Details::extractBlockDiagonal(At,Dt);
+#endif // HAVE_XPETRA_TPETRA
+      }
+  }
+
+  // Inverse scaling by a block-diagonal matrix
+  static void inverseScaleBlockDiagonal(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & blockDiagonal,
+                                 Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & toBeScaled) {
+                            
+    const UnderlyingLib lib = blockDiagonal.getMap()->lib();
+
+      if(lib == Xpetra::UseEpetra) {
+#if defined(HAVE_XPETRA_EPETRA)
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixUtils::inverseScaleBlockDiagonal not available for Epetra."));
+#endif // HAVE_XPETRA_EPETRA
+      } else if(lib == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        const Tpetra::MultiVector<SC,LO,GO,NO> & Dt = Xpetra::toTpetra(blockDiagonal);
+        Tpetra::MultiVector<SC,LO,GO,NO> &       St = Xpetra::toTpetra(toBeScaled);
+        Tpetra::Details::inverseScaleBlockDiagonal(Dt,St);
+#endif // HAVE_XPETRA_TPETRA
+      }
+  }
+
 
 };
 

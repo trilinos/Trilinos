@@ -253,7 +253,7 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
       RETURN
 
 10020 FORMAT (/, 1X, 'ELEMENT BLOCKS', :, ' - ', A)
-C ... NOTE: Normal elements hava a mximum of <100 nodes, but superelements
+C ... NOTE: Normal elements have a a mximum of <100 nodes, but superelements
 C           Or other "strange" elements may have lots of nodes; keep format high
 10030 FORMAT (1X, 'Block', I12, 1X, A, ':',
      &  I12, ' elements', 1X, A,

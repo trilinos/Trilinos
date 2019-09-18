@@ -323,6 +323,13 @@ void Ioss::ParallelUtils::attribute_reduction(const int length, char buffer[]) c
 #endif
 }
 
+void Ioss::ParallelUtils::barrier() const
+{
+#ifdef SEACAS_HAVE_MPI
+  MPI_Barrier(communicator_);
+#endif
+}
+
 void Ioss::ParallelUtils::global_count(const IntVector &local_counts,
                                        IntVector &      global_counts) const
 {
@@ -442,6 +449,8 @@ template void Ioss::ParallelUtils::all_gather(int, std::vector<int> &) const;
 template void Ioss::ParallelUtils::all_gather(int64_t, std::vector<int64_t> &) const;
 /// \relates Ioss::ParallelUtils::all_gather
 template void Ioss::ParallelUtils::all_gather(std::vector<int> &, std::vector<int> &) const;
+/// \relates Ioss::ParallelUtils::all_gather
+template void Ioss::ParallelUtils::all_gather(std::vector<int64_t> &, std::vector<int64_t> &) const;
 
 template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T> &result) const
 {
@@ -512,14 +521,15 @@ void Ioss::ParallelUtils::all_gather(std::vector<T> &my_values, std::vector<T> &
 
 void Ioss::ParallelUtils::progress(const std::string &output) const
 {
+  static double begin = Utils::timer();
+
   int64_t MiB = 1024 * 1024;
   int64_t min = 0, max = 0, avg = 0;
   memory_stats(min, max, avg);
 
   if (parallel_rank() == 0) {
-    auto                          now  = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff = now - initial_time;
-    fmt::print(stderr, "  [{:.3f}] ({}MiB  {}MiB  {}MiB)\t{}\n", diff.count(), min / MiB, max / MiB,
+    double diff = Utils::timer() - begin;
+    fmt::print(stderr, "  [{:.3f}] ({}MiB  {}MiB  {}MiB)\t{}\n", diff, min / MiB, max / MiB,
                avg / MiB, output);
   }
 }

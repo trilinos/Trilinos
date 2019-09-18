@@ -87,6 +87,8 @@ namespace Iopg {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
+    const std::string get_format() const override {return "PamGen";}
+
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
@@ -102,7 +104,7 @@ namespace Iopg {
     int         maximum_symbol_length() const override { return 32; }
 
     void compute_block_membership__(Ioss::SideBlock *         efblock,
-				    std::vector<std::string> &block_membership) const;
+                                    std::vector<std::string> &block_membership) const override;
 
   private:
     void read_meta_data__() override;

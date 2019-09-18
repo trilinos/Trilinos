@@ -38,7 +38,7 @@ C   --This version of ALGEBRA will read and write EXODUSIIV2 database
 C   --format files.  Many changes have occurred since the first version
 C   --of ALGEBRA.  The original database files, genesis and exodusI
 C   --were sequential access files.  EXODUSIIV2 uses a random access
-C   --file format. Previous verions of ALGEBRA would have to read the
+C   --file format. Previous versions of ALGEBRA would have to read the
 C   --input database more than once in order to get the file pointer
 C   --to the desired data.  With random access files we are able to
 C   --select what we want to read or write at anytime.
