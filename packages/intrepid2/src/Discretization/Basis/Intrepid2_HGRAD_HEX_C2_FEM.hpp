@@ -296,7 +296,7 @@ namespace Intrepid2 {
     virtual
     const char*
     getName() const {
-      return "Intrepid2_HGRAD_HEX_C2_FEM.hpp";
+      return "Intrepid2_HGRAD_HEX_C2_FEM";
     }
 
   };
