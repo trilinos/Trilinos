@@ -102,9 +102,9 @@
 
 #define Intrepid2_Experimental
 
-namespace Intrepid2 {
+namespace Discretization {
 
-namespace Test {
+namespace Example {
 
   // ************************************ Define Analytic functions **************************************
 
@@ -194,18 +194,18 @@ int feAssemblyHex(int argc, char *argv[]) {
   typedef Kokkos::DynRankView<global_ordinal_t,DeviceSpaceType> DynRankViewGId;
   typedef Kokkos::DynRankView<local_ordinal_t,DeviceSpaceType> DynRankViewLId;
 
-  typedef CellTools<DeviceSpaceType> ct;
-  typedef OrientationTools<DeviceSpaceType> ots;
-  typedef RealSpaceTools<DeviceSpaceType> rst;
-  typedef FunctionSpaceTools<DeviceSpaceType> fst;
-  typedef Experimental::LagrangianInterpolation<DeviceSpaceType> li;
+  typedef Intrepid2::CellTools<DeviceSpaceType> ct;
+  typedef Intrepid2::OrientationTools<DeviceSpaceType> ots;
+  typedef Intrepid2::RealSpaceTools<DeviceSpaceType> rst;
+  typedef Intrepid2::FunctionSpaceTools<DeviceSpaceType> fst;
+  typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpaceType> li;
 
   int errorFlag = 0;
 
 
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-  Teuchos::MpiComm<ordinal_type> comm(MPI_COMM_WORLD);
+  Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
 
   //output stream/file
   Teuchos::RCP<Teuchos::FancyOStream> outStream;
@@ -215,16 +215,16 @@ int feAssemblyHex(int argc, char *argv[]) {
 
     
     // ************************************ GET INPUTS **************************************
-    constexpr ordinal_type dim = 3;
-    ordinal_type degree = 4;
+    constexpr local_ordinal_t dim = 3;
+    int degree = 4;
     local_ordinal_t nx = 2;
     local_ordinal_t ny            = nx;
     local_ordinal_t nz            = nx;
-    ordinal_type np   = comm.getSize(); // number of processors
-    ordinal_type px = std::cbrt(np); while(np%px!=0) --px;
-    ordinal_type py = std::sqrt(np/px); while(np%py!=0) --py;
-    ordinal_type pz = np/(px*py);
-    constexpr ordinal_type bx=1, by=1, bz=1;  //blocks on each process. Here we assume there is only one block per process
+    int np   = comm.getSize(); // number of processors
+    int px = std::cbrt(np); while(np%px!=0) --px;
+    int py = std::sqrt(np/px); while(np%py!=0) --py;
+    int pz = np/(px*py);
+    constexpr int bx=1, by=1, bz=1;  //blocks on each process. Here we assume there is only one block per process
     int verbose = 1;
 
     // parse command line arguments
@@ -236,7 +236,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     clp.setOption("py",&py);
     clp.setOption("pz",&pz);
     clp.setOption("basis-degree",&degree);
-    ordinal_type cubDegree = -1;
+    int cubDegree = -1;
     clp.setOption("quadrature-degree",&cubDegree);
     clp.setOption("timings-file",&timingsFile);
     clp.setOption("verbose", &verbose);
@@ -266,7 +266,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     CellTopology hexa(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
     // Get dimensions
-    ordinal_type numNodesPerElem = hexa.getNodeCount();
+    int numNodesPerElem = hexa.getNodeCount();
 
     // build the topology
     auto connManager = Teuchos::rcp(new panzer::unit_test::CartesianConnManager);
@@ -283,8 +283,8 @@ int feAssemblyHex(int argc, char *argv[]) {
     dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 
     // add solution field to the element block
-    Teuchos::RCP< Intrepid2::Basis<DeviceSpaceType, scalar_t,scalar_t> > basis = Teuchos::rcp(new Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,scalar_t,scalar_t>(degree));
-    ordinal_type basisCardinality = basis->getCardinality();
+    Teuchos::RCP< Intrepid2::Basis<DeviceSpaceType, scalar_t,scalar_t> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,scalar_t,scalar_t>(degree));
+    auto basisCardinality = basis->getCardinality();
     Teuchos::RCP<panzer::Intrepid2FieldPattern> fePattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
     dofManager->addField("block-0_0_0",fePattern);
 
@@ -329,7 +329,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     {
       auto physVertexesHost = Kokkos::create_mirror_view(physVertexes);
       DynRankView ConstructWithLabel(refVertices, numNodesPerElem, dim);
-      Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,scalar_t,scalar_t> hexaLinearBasis;
+      Intrepid2::Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,scalar_t,scalar_t> hexaLinearBasis;
       hexaLinearBasis.getDofCoords(refVertices);
       auto refVerticesHost = Kokkos::create_mirror_view(refVertices);   
       Kokkos::deep_copy(refVerticesHost, refVertices);
@@ -337,11 +337,11 @@ int feAssemblyHex(int argc, char *argv[]) {
       auto elemTriplet = connManager->getMyElementsTriplet();
       double h[3] = {hx, hy, hz};
 
-      for(ordinal_type i=0; i<numOwnedElems; ++i) {
+      for(int i=0; i<numOwnedElems; ++i) {
         elemTriplet =  connManager->computeLocalElementGlobalTriplet(i,connManager->getMyElementsTriplet(),connManager->getMyOffsetTriplet());
         double offset[3] = {leftX + elemTriplet.x*hx+hx/2, leftY +elemTriplet.y*hy+hy/2, leftX +elemTriplet.z*hz+hz/2};
-        for(ordinal_type j=0; j<numNodesPerElem; ++j) {
-          for(ordinal_type k=0; k<dim; ++k)
+        for(int j=0; j<numNodesPerElem; ++j) {
+          for(int k=0; k<dim; ++k)
             physVertexesHost(i,j,k) = offset[k]+h[k]/2.0*refVerticesHost(j,k);
         }
       }
@@ -359,24 +359,24 @@ int feAssemblyHex(int argc, char *argv[]) {
     //compute global ids of element vertices
     DynRankViewGId ConstructWithLabel(elemNodesGID, numOwnedElems, numNodesPerElem);
     {
-      for(ordinal_type i=0; i<numOwnedElems; ++i) {
+      for(int i=0; i<numOwnedElems; ++i) {
         const auto GIDs = connManager->getConnectivity(i);
-        for(ordinal_type j=0; j<numNodesPerElem; ++j) {
+        for(int j=0; j<numNodesPerElem; ++j) {
           elemNodesGID(i,j) = GIDs[j];
         }
       }
     }
 
     // compute orientations for cells (one time computation)
-    Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numOwnedElems);
+    Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpaceType> elemOrts("elemOrts", numOwnedElems);
     ots::getOrientation(elemOrts, elemNodesGID, hexa);
 
 
     // ************************************ ASSEMBLY OF LOCAL ELEMENT MATRICES **************************************
     // Compute quadrature (cubature) points
-    DefaultCubatureFactory cubFactory;
+    Intrepid2::DefaultCubatureFactory cubFactory;
     auto cellCub = cubFactory.create<DeviceSpaceType, scalar_t, scalar_t>(hexa.getBaseKey(), cubDegree);
-    ordinal_type numQPoints = cellCub->getNumPoints();
+    auto numQPoints = cellCub->getNumPoints();
     DynRankView ConstructWithLabel(quadPoints, numQPoints, dim);
     DynRankView ConstructWithLabel(weights, numQPoints);
     cellCub->getCubature(quadPoints, weights);
@@ -414,7 +414,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     DynRankView ConstructWithLabel(transformedBasisGradsAtQPointsOriented, numOwnedElems, basisCardinality, numQPoints, dim);
     DynRankView basisGradsAtQPointsCells("inValues", numOwnedElems, basisCardinality, numQPoints, dim);
     DynRankView ConstructWithLabel(basisGradsAtQPoints, basisCardinality, numQPoints, dim);
-    basis->getValues(basisGradsAtQPoints, quadPoints,OPERATOR_GRAD);
+    basis->getValues(basisGradsAtQPoints, quadPoints, Intrepid2::OPERATOR_GRAD);
     rst::clone(basisGradsAtQPointsCells,basisGradsAtQPoints);
 
     // modify basis values to account for orientations
@@ -482,7 +482,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     // fill graph
     // for each element in the mesh...
     Tpetra::beginFill(*feGraph);
-    for(ordinal_type elemId=0; elemId<numOwnedElems; elemId++)
+    for(int elemId=0; elemId<numOwnedElems; elemId++)
     {
       // Populate globalIdsInRow:
       // - Copy the global node ids for current element into an array.
@@ -490,7 +490,7 @@ int feAssemblyHex(int argc, char *argv[]) {
       //   each row associated with this element's contribution.
       std::vector<global_ordinal_t> elementGIDs;
       dofManager->getElementGIDs(elemId, elementGIDs);
-      for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++) {
+      for(int nodeId=0; nodeId<basisCardinality; nodeId++) {
         globalIdsInRow[nodeId] = elementGIDs[elmtOffsetKokkos(nodeId)];
         elementGIDsKokkos(elemId, nodeId) = globalIdsInRow[nodeId];
       }
@@ -501,7 +501,7 @@ int feAssemblyHex(int argc, char *argv[]) {
       //   - node 1 inserts [0, 1, 4, 5, ...]
       //   - node 4 inserts [0, 1, 4, 5, ...]
       //   - node 5 inserts [0, 1, 4, 5, ...]
-      for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
+      for(int nodeId=0; nodeId<basisCardinality; nodeId++)
       {
         feGraph->insertGlobalIndices(globalIdsInRow[nodeId], globalIdsInRow());
       }
@@ -536,23 +536,23 @@ int feAssemblyHex(int argc, char *argv[]) {
     std::vector<global_ordinal_t> elementGIDs(basisCardinality);
     auto elementLIDs = globalIndexer->getLIDs();
 /*  //using serial for
-    for(ordinal_type elemId=0; elemId<numOwnedElems; elemId++)
+    for(int elemId=0; elemId<numOwnedElems; elemId++)
     {
       // Fill the global column ids array for this element
       dofManager->getElementGIDs(elemId, elementGIDs);
 
-      for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
+      for(int nodeId=0; nodeId<basisCardinality; nodeId++)
         columnLocalIds[nodeId] = localColMap.getLocalElement(elementGIDs[elmtOffsetKokkos(nodeId)]);
 
       // For each node (row) on the current element:
       // - populate the values array
       // - add the values to the matrix A.
 
-      for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
+      for(int nodeId=0; nodeId<basisCardinality; nodeId++)
       {
         local_ordinal_t localRowId = elementLIDs(elemId, elmtOffsetKokkos(nodeId));
 
-        for(ordinal_type colId=0; colId<basisCardinality; colId++)
+        for(int colId=0; colId<basisCardinality; colId++)
           columnScalarValues[colId] = elemsMat(elemId, nodeId, colId);
 
         A->sumIntoLocalValues(localRowId, columnLocalIds, columnScalarValues);
@@ -572,7 +572,7 @@ int feAssemblyHex(int argc, char *argv[]) {
         auto elemMat = Kokkos::subview(elemsMat,elemId, Kokkos::ALL(), Kokkos::ALL());
         auto elemColumnLIds  = Kokkos::subview(columnLIds,elemId, Kokkos::ALL());
           
-        for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
+        for(int nodeId=0; nodeId<basisCardinality; nodeId++)
           elemColumnLIds(nodeId) = localColMap.getLocalElement(elementGIDsKokkos(elemId, nodeId));
 
         // For each node (row) on the current element
@@ -604,7 +604,7 @@ int feAssemblyHex(int argc, char *argv[]) {
       DynRankView ConstructWithLabel(dofCoordsOriented, numOwnedElems, basisCardinality, dim);
       DynRankView ConstructWithLabel(dofCoeffsPhys, numOwnedElems, basisCardinality);
       
-      li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basis.getRawPtr(), POINTTYPE_EQUISPACED, elemOrts);
+      li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basis.getRawPtr(), Intrepid2::POINTTYPE_EQUISPACED, elemOrts);
  
       DynRankView ConstructWithLabel(funAtDofPoints, numOwnedElems, basisCardinality);
       {
@@ -625,12 +625,12 @@ int feAssemblyHex(int argc, char *argv[]) {
       vector_t x(domainMap); //solution
       auto basisCoeffsLIHost = Kokkos::create_mirror_view(basisCoeffsLI);
       Kokkos::deep_copy(basisCoeffsLIHost,basisCoeffsLI);
-      for(ordinal_type elemId=0; elemId<numOwnedElems; elemId++)
+      for(int elemId=0; elemId<numOwnedElems; elemId++)
       {
         dofManager->getElementGIDs(elemId, elementGIDs);
 
 
-        for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
+        for(int nodeId=0; nodeId<basisCardinality; nodeId++)
         {
           global_ordinal_t gid = elementGIDs[elmtOffsetKokkos(nodeId)];
           if(domainMap->isNodeGlobalElement(gid))

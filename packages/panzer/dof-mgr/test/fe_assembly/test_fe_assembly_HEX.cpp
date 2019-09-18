@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   Kokkos::ScopeGuard kokkosScope (argc, argv);
   Teuchos::GlobalMPISession mpiScope (&argc, &argv);
   
-  const int r_val = Intrepid2::Test::feAssemblyHex<double,PHX::Device>(argc, argv);
+  const int r_val = Discretization::Example::feAssemblyHex<double,PHX::Device>(argc, argv);
 
   return r_val;
 }
