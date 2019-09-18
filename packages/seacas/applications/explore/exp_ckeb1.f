@@ -81,7 +81,7 @@ C   --   NODUSE - OUT - scratch array to determine whether all nodes used by an 
            NODE = LINK(I,NE)
            IF (NODE .LE. NUMNP) THEN
 C ... Note that if NODE is out of range, the error message above will have
-C     already been printed, so we dont print anything here.
+C     already been printed, so we don't print anything here.
              NODUSE(NODE) = 1
            END IF
  90      CONTINUE

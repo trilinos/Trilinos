@@ -53,6 +53,8 @@
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
+#include "matrixIssue402.hpp"
+
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>
 
@@ -380,11 +382,81 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
   //device::execution_space::finalize();
 }
 
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_issue402()
+{
+  using namespace Test;
+  typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 
+  //this specific matrix (from a circuit simulation) reliably replicated issue #402 (incorrect/crashing SPGEMM KKMEM)
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  const lno_t numRows = 1813;
+  const size_type nnz = 11156;
+  lno_view_t Arowmap("A rowmap", numRows + 1);
+  lno_nnz_view_t Aentries("A entries", nnz);
+  scalar_view_t Avalues("A values", nnz);
+  //Read out the matrix from the header file "matrixIssue402.hpp"
+  {
+    auto rowmapHost = Kokkos::create_mirror_view(Arowmap);
+    auto entriesHost = Kokkos::create_mirror_view(Aentries);
+    auto valuesHost = Kokkos::create_mirror_view(Avalues);
+    for(lno_t i = 0; i < numRows + 1; i++)
+      rowmapHost(i) = MatrixIssue402::rowmap[i];
+    for(size_type i = 0; i < nnz; i++)
+    {
+      entriesHost(i) = MatrixIssue402::entries[i];
+      valuesHost(i) = MatrixIssue402::values[i];
+    }
+    Kokkos::deep_copy(Arowmap, rowmapHost);
+    Kokkos::deep_copy(Aentries, entriesHost);
+    Kokkos::deep_copy(Avalues, valuesHost);
+  }
+  crsMat_t A("A", numRows, numRows, nnz, Avalues, Arowmap, Aentries);
+  //compute explicit transpose: the bug was replicated by computing AA'
+  lno_view_t Browmap("B = A^T rowmap", numRows + 1);
+  lno_nnz_view_t Bentries("B = A^T entries", nnz);
+  scalar_view_t Bvalues("B = A^T values", nnz);
+  KokkosKernels::Impl::transpose_matrix<
+    lno_view_t, lno_nnz_view_t, scalar_view_t,
+    lno_view_t, lno_nnz_view_t, scalar_view_t,
+    lno_view_t, typename device::execution_space>
+      (numRows, numRows, Arowmap, Aentries, Avalues, Browmap, Bentries, Bvalues);
+  crsMat_t B("B=A^T", numRows, numRows, nnz, Bvalues, Browmap, Bentries);
+  crsMat_t Cgold;
+  run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, Cgold);
+  crsMat_t C;
+  bool success = true;
+  std::string errMsg;
+  try
+  {
+    int res = run_spgemm<crsMat_t, device>(A, B, SPGEMM_KK_MEMORY, C);
+    if(res)
+      throw "run_spgemm returned error code";
+  }
+  catch(const char *message) {
+    errMsg = message;
+    success = false;
+  }
+  catch (std::string message) {
+    errMsg = message;
+    success = false;
+  }
+  catch (std::exception& e) {
+    errMsg = e.what();
+    success = false;
+  }
+  EXPECT_TRUE(success) << "KKMEM still has issue 402 bug! Error message:\n" << errMsg << '\n';
+  bool correctResult = is_same_matrix<crsMat_t, device>(C, Cgold);
+  EXPECT_TRUE(correctResult) << "KKMEM still has issue 402 bug; C=AA' is incorrect!\n";
+}
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## spgemm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 500, 10); \
+  test_issue402<SCALAR,ORDINAL,OFFSET,DEVICE>(); \
 }
 
 //test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10);

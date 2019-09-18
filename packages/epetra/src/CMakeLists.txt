@@ -8,9 +8,11 @@ SET(EPETRA_MPI ${TPL_ENABLE_MPI})
 IF(CMAKE_SIZEOF_VOID_P GREATER 4)
   SET(EPETRA_ADDRESS64BIT ON)
 ENDIF()
-SET(Epetra_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
-# This is the preferred macro to key on, but am keeping the old one for backward compatibility
-SET(EPETRA_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
+
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_OpenMP
+  EPETRA_HAVE_OMP
+  "Enable OpenMP support in Epetra."
+  ${${PROJECT_NAME}_ENABLE_OpenMP})
 
 SET(HAVE_BLAS ON)
 SET(HAVE_LAPACK ON)

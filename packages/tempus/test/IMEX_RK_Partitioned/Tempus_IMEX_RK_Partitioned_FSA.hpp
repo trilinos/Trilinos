@@ -272,8 +272,8 @@ void test_vdp_fsa(const std::string& method_name,
       StepSizeCheck.push_back(StepSize[i]);
       ErrorNorm.push_back(L2norm);
 
-      *my_out << " n = " << i << " dt = " << StepSize[i]
-              << " error = " << L2norm << std::endl;
+      //*my_out << " n = " << i << " dt = " << StepSize[i]
+      //        << " error = " << L2norm << std::endl;
     }
 
     // Check the order and intercept

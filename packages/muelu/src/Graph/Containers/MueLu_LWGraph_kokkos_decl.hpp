@@ -75,17 +75,20 @@ namespace MueLu {
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   class LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> {
   public:
-    typedef LocalOrdinal                                             local_ordinal_type;
-    typedef GlobalOrdinal                                            global_ordinal_type;
-    typedef typename DeviceType::execution_space                     execution_space;
-    typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
-    typedef size_t                                                   size_type;
+    using local_ordinal_type  = LocalOrdinal;
+    using global_ordinal_type = GlobalOrdinal;
+    using execution_space     = typename DeviceType::execution_space;
+    using memory_space        = typename DeviceType::memory_space;
+    using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
+    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
+    using size_type           = size_t;
 
-    typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
-    typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space> local_graph_type;
-    typedef Kokkos::View<const bool*, DeviceType>               boundary_nodes_type;
-    typedef Kokkos::View<const LocalOrdinal*, DeviceType>       row_type;
+    using map_type            = Xpetra::Map<LocalOrdinal, GlobalOrdinal, node_type>;
+    using local_graph_type    = Kokkos::StaticCrsGraph<LocalOrdinal,
+                                                       Kokkos::LayoutLeft,
+                                                       execution_space>;
+    using boundary_nodes_type = Kokkos::View<const bool*, memory_space>;
+    using row_type            = Kokkos::View<const LocalOrdinal*, memory_space>;
 
   private:
     // For compatibility
@@ -132,6 +135,21 @@ namespace MueLu {
       return graph_.row_map(GetNodeNumVertices());
     }
 
+    //! Returns the maximum number of entries across all rows/columns on this node
+    KOKKOS_INLINE_FUNCTION size_type getNodeMaxNumRowEntries () const {
+      return maxNumRowEntries_;
+    }
+
+    //! Return the row pointers of the local graph
+    KOKKOS_INLINE_FUNCTION typename local_graph_type::row_map_type getRowPtrs() const {
+      return graph_.row_map;
+    }
+
+    //! Return the list entries in the local graph
+    KOKKOS_INLINE_FUNCTION typename local_graph_type::entries_type getEntries() const {
+      return graph_.entries;
+    }
+
     //! Return the list of vertices adjacent to the vertex 'v'.
     // Unfortunately, C++11 does not support the following:
     //    auto getNeighborVertices(LO i) const -> decltype(rowView)
@@ -151,11 +169,6 @@ namespace MueLu {
     //! Set boolean array indicating which rows correspond to Dirichlet boundaries.
     KOKKOS_INLINE_FUNCTION void SetBoundaryNodeMap(const boundary_nodes_type bndry) {
       dirichletBoundaries_ = bndry;
-    }
-
-    //! Returns the maximum number of entries across all rows/columns on this node
-    KOKKOS_INLINE_FUNCTION size_type getNodeMaxNumRowEntries () const {
-      return maxNumRowEntries_;
     }
 
     //! Returns map with global ids of boundary nodes.

@@ -788,7 +788,7 @@ void vdbell_() {}
 void vdwait_()
 {
   int   temp, vstat, rstat, mvalid, trigger;
-  float xpos, ypos, timout;
+  float xpos, ypos, timeout;
 
   /*  make picture current - flush output buffers */
   vflush(); /*  flush polyline buffer  */
@@ -797,9 +797,9 @@ void vdwait_()
   /*  do read waiting for viewing for interactive devices only */
   /*  mod### changed from 0(erasibility) to 12(input)          */
   if (dev_cap[12] != 0.) {
-    temp   = 1;
-    timout = 1.;
-    crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
+    temp    = 1;
+    timeout = 1.;
+    crqlc_(&temp, &timeout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
     if (vstat != CVAL) {
       vdicgi_errh(" SVDI Shell (VDWAIT) invalid request for crqlc ");
     }
@@ -1288,13 +1288,13 @@ void vdstcs_(float *y_size)
 void vdaabu_(int *button)
 {
   int   temp, vstat, rstat, mvalid, trigger;
-  float xpos, ypos, timout;
+  float xpos, ypos, timeout;
 
   if (dev_cap[0] != 0.) {
     vflush(); /*  flush polyline buffer  */
-    temp   = 1;
-    timout = 1.;
-    crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
+    temp    = 1;
+    timeout = 1.;
+    crqlc_(&temp, &timeout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
     if (vstat == CVAL) {
       *button = trigger;
     }
@@ -1307,13 +1307,13 @@ void vdaabu_(int *button)
 void vdaloc_(float *x, float *y)
 {
   int   temp, vstat, rstat, mvalid, trigger;
-  float xpos, ypos, timout;
+  float xpos, ypos, timeout;
 
   if (dev_cap[0] != 0.) {
     vflush(); /*  flush polyline buffer  */
-    temp   = 1;
-    timout = 1.;
-    crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
+    temp    = 1;
+    timeout = 1.;
+    crqlc_(&temp, &timeout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
     if (vstat == CVAL) {
       *x = ndc_map_x(xpos);
       *y = ndc_map_y(ypos);
@@ -1327,13 +1327,13 @@ void vdaloc_(float *x, float *y)
 void vdabgl_(int *button, float *x, float *y)
 {
   int   temp, vstat, rstat, mvalid, trigger;
-  float xpos, ypos, timout;
+  float xpos, ypos, timeout;
 
   if (dev_cap[0] != 0.) {
     vflush(); /*  flush polyline buffer  */
-    temp   = 1;
-    timout = 1.;
-    crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
+    temp    = 1;
+    timeout = 1.;
+    crqlc_(&temp, &timeout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
     if (vstat == CVAL) {
       *x      = ndc_map_x(xpos);
       *y      = ndc_map_y(ypos);
@@ -1348,13 +1348,13 @@ void vdabgl_(int *button, float *x, float *y)
 void vdakgl_(int *charac, float *x, float *y)
 {
   int   temp, vstat, rstat, mvalid, trigger;
-  float xpos, ypos, timout;
+  float xpos, ypos, timeout;
 
   if (dev_cap[0] != 0.) {
     vflush(); /*  flush polyline buffer  */
-    temp   = 1;
-    timout = 1.;
-    crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
+    temp    = 1;
+    timeout = 1.;
+    crqlc_(&temp, &timeout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
     if (vstat == CVAL) {
       *x      = ndc_map_x(xpos);
       *y      = ndc_map_y(ypos);
@@ -1369,13 +1369,13 @@ void vdakgl_(int *charac, float *x, float *y)
 void vdstla_(float *x, float *y)
 {
   int   temp, vstat, rstat, mvalid, trigger;
-  float xpos, ypos, timout;
+  float xpos, ypos, timeout;
 
   if (dev_cap[0] != 0.) {
     vflush(); /*  flush polyline buffer  */
-    temp   = 1;
-    timout = 1.;
-    crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
+    temp    = 1;
+    timeout = 1.;
+    crqlc_(&temp, &timeout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
     if (vstat == CVAL) {
       *x = ndc_map_x(xpos);
       *y = ndc_map_y(ypos);

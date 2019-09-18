@@ -37,7 +37,7 @@ C=======================================================================
 C   --*** PCKSTR *** (STRLIB) Remove all blanks from string
 C   --   Written by Amy Gilkey - revised 03/21/88
 C   --
-C   --PCKSTR removes all imbedded blanks (left-justified) from an array
+C   --PCKSTR removes all embedded blanks (left-justified) from an array
 C   --of strings.
 C   --
 C   --Parameters:

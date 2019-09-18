@@ -50,7 +50,7 @@ namespace Ioss {
    * until all the processor have been released by the constructor.
    *
    * In the case where the constructor is called, and the sentry is already active and owned
-   * by the processes group, the constructor and destrutor simply fall through since the
+   * by the processes group, the constructor and destructor simply fall through since the
    * serialization is already in place at a higher level.
    *
    * \note All ranks must call the SerializeIO constructor synchronously.

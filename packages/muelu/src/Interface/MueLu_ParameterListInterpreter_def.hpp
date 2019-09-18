@@ -83,6 +83,7 @@
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_ScaledNullspaceFactory.hpp"
 #include "MueLu_SemiCoarsenPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
@@ -211,7 +212,7 @@ namespace MueLu {
     if      (paramList  .isParameter(paramName)) listWrite.set(paramName, paramList  .get<paramType>(paramName)); \
     else if (defaultList.isParameter(paramName)) listWrite.set(paramName, defaultList.get<paramType>(paramName)); \
   } \
-  catch(Teuchos::Exceptions::InvalidParameterType) { \
+  catch(Teuchos::Exceptions::InvalidParameterType&) { \
     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType, \
                                         "Error: parameter \"" << paramName << "\" must be of type " << Teuchos::TypeNameTraits<paramType>::name()); \
   } \
@@ -494,6 +495,7 @@ namespace MueLu {
     }
 
     VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
+
   }
 
 
@@ -963,6 +965,7 @@ namespace MueLu {
       if(useKokkos_) {
         //if not using kokkos refactor Uncoupled, there is no algorithm option (always Serial)
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase 1 algorithm",  std::string, aggParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",  bool, aggParams);
       }
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 1",            bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
@@ -1089,7 +1092,7 @@ namespace MueLu {
         RAPparams.set("RepairMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
       }
 
-    } catch (Teuchos::Exceptions::InvalidParameterType) {
+    } catch (Teuchos::Exceptions::InvalidParameterType&) {
       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType,
           "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
     }
@@ -1149,7 +1152,7 @@ namespace MueLu {
   }
 
   // =====================================================================================================
-  // ======================================= Restriction =================================================
+  // ======================================= Coordinates =================================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1182,12 +1185,12 @@ namespace MueLu {
   }
 
   // =====================================================================================================
-  // ======================================= Restriction =================================================
+  // =========================================== Restriction =============================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList,
-                                   FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /* keeps */) const
+  UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList , FactoryManager& manager,
+                                 int levelID, std::vector<keep_pair>& /* keeps */) const
   {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     bool have_userR = false;
@@ -1195,6 +1198,7 @@ namespace MueLu {
       have_userR = true;
 
     // === Restriction ===
+    RCP<Factory> R;
     if (!this->implicitTranspose_) {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
 
@@ -1216,7 +1220,6 @@ namespace MueLu {
         if (have_userR) {
           manager.SetFactory("R", NoFactory::getRCP());
         } else {
-          RCP<Factory> R;
           if (isSymmetric)  R = rcp(new TransPFactory());
           else              R = rcp(new GenericRFactory());
 
@@ -1224,9 +1227,24 @@ namespace MueLu {
           manager.SetFactory("R", R);
         }
 
-      } else {
-        manager.SetFactory("R", Teuchos::null);
-      }
+    } else {
+      manager.SetFactory("R", Teuchos::null);
+    }
+
+    // === Restriction: Nullspace Scaling ===
+    if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
+      RCP<TentativePFactory> tentPFactory = rcp(new TentativePFactory());
+      Teuchos::ParameterList tentPlist;  
+      tentPlist.set("Nullspace name","Scaled Nullspace");
+      tentPFactory->SetParameterList(tentPlist);
+      tentPFactory->SetFactory("Aggregates",manager.GetFactory("Aggregates"));
+      tentPFactory->SetFactory("CoarseMap",manager.GetFactory("CoarseMap"));
+
+      if(R.is_null())   R = rcp(new TransPFactory());
+      R->SetFactory("P",tentPFactory);
+    }
+
+ 
   }
 
   // =====================================================================================================
@@ -1452,6 +1470,14 @@ namespace MueLu {
       manager.SetFactory("Nullspace", nullSpace);
     }
     nullSpaceFactory = nullSpace;
+
+    if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
+      using SNF = ScaledNullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+      RCP<SNF> scaledNSfactory = rcp(new SNF());
+      scaledNSfactory->SetFactory("Nullspace",nullSpaceFactory);
+      manager.SetFactory("Scaled Nullspace",scaledNSfactory);
+    }
+
   }
 
   // =====================================================================================================

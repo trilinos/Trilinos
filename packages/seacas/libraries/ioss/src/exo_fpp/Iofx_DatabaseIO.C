@@ -256,11 +256,7 @@ namespace Iofx {
           }
         }
         if (bad_count != nullptr) {
-          for (int i = 0; i < util().parallel_size(); i++) {
-            if (status[i] < 0) {
-              (*bad_count)++;
-            }
-          }
+          *bad_count = std::count_if(status.begin(), status.end(), [](int i) { return i < 0; });
         }
         if (abort_if_error) {
           std::ostringstream errmsg;
@@ -684,7 +680,7 @@ namespace Iofx {
       // on the database.  Output a warning message if there is
       // potentially corrupt data on the database...
 
-      // Check whether user or application wants to limite the times even further...
+      // Check whether user or application wants to limit the times even further...
       // One use case is that job is restarting at a time prior to what has been
       // written to the results file, so want to start appending after
       // restart time instead of at end time on database.
@@ -1173,14 +1169,14 @@ namespace Iofx {
       // X -> Face?
       if (faces_per_X > 0 && rank_offset < 1) {
         std::string storage = "Real[" + std::to_string(faces_per_X) + "]";
-        block->field_add(Ioss::Field("connectivity_face", block->field_int_type(), storage,
-                                     Ioss::Field::MESH, local_X_count[iblk]));
+        block->field_add(
+            Ioss::Field("connectivity_face", block->field_int_type(), storage, Ioss::Field::MESH));
       }
       // X -> Edge?
       if (edges_per_X > 0 && rank_offset < 2) {
         std::string storage = "Real[" + std::to_string(edges_per_X) + "]";
-        block->field_add(Ioss::Field("connectivity_edge", block->field_int_type(), storage,
-                                     Ioss::Field::MESH, local_X_count[iblk]));
+        block->field_add(
+            Ioss::Field("connectivity_edge", block->field_int_type(), storage, Ioss::Field::MESH));
       }
 
       block->property_add(Ioss::Property("id", id)); // Do before adding for better error messages.
@@ -1310,7 +1306,7 @@ namespace Iofx {
   {
     // This function creates all sidesets (surfaces) for a
     // model.  Note that a sideset contains 1 or more sideblocks
-    // which are homogenous (same topology). In serial execution,
+    // which are homogeneous (same topology). In serial execution,
     // this is fairly straightforward since there are no null sets and
     // we have all the information we need. (...except see below for
     // surface evolution).
@@ -1367,7 +1363,7 @@ namespace Iofx {
 
       // Create sidesets for each entry in the fs_set... These are the
       // sidesets which were probably written by a previous run of the
-      // IO system and are already split into homogenous pieces...
+      // IO system and are already split into homogeneous pieces...
       {
         for (const auto &fs_name : fs_set) {
           auto side_set = new Ioss::SideSet(this, fs_name);
@@ -1711,12 +1707,12 @@ namespace Iofx {
               storage += std::to_string(side_topo->number_nodes());
               storage += "]";
               side_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage,
-                                                Ioss::Field::MESH, my_side_count));
+                                                Ioss::Field::MESH));
             }
 
             if (side_set_name == "universal_sideset") {
               side_block->field_add(Ioss::Field("side_ids", side_block->field_int_type(), "scalar",
-                                                Ioss::Field::MESH, my_side_count));
+                                                Ioss::Field::MESH));
             }
 
             int num_attr = 0;

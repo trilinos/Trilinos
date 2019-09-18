@@ -14,6 +14,7 @@
 #   ATDM_CONFIG_CDASH_HOSTNAME
 #   ATDM_CONFIG_SYSTEM_NAME
 #   ATDM_CONFIG_SYSTEM_DIR
+#   ATDM_CONFIG_CUSTOM_SYSTEM_DIR  (if custom config env selected)
 #
 # or it will error out if it can't select a system configuration
 #

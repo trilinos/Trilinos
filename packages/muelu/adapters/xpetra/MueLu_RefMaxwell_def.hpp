@@ -264,32 +264,53 @@ namespace MueLu {
       if (useKokkos_) {
         BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
         BCcolsKokkos_ = Utilities_kokkos::DetectDirichletCols(*D0_Matrix_,BCrowsKokkos_);
+
+        int BCrowcountLocal = 0;
+        for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
+          if (BCrowsKokkos_(i))
+            BCrowcountLocal += 1;
+#ifdef HAVE_MPI
+        MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCrowcountLocal, BCrowcount_);
+#else
+        BCrowcount_ = BCrowcountLocal;
+#endif
+        int BCcolcountLocal = 0;
+        for (size_t i = 0; i<BCcolsKokkos_.size(); i++)
+          if (BCcolsKokkos_(i))
+            BCcolcountLocal += 1;
+#ifdef HAVE_MPI
+        MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCcolcountLocal, BCcolcount_);
+#else
+        BCcolcount_ = BCcolcountLocal;
+#endif
         if (IsPrint(Statistics2)) {
-          int BCrowcount = 0;
-          for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
-            if (BCrowsKokkos_(i))
-              BCrowcount += 1;
-          int BCcolcount = 0;
-          for (size_t i = 0; i<BCcolsKokkos_.size(); i++)
-            if (BCcolsKokkos_(i))
-              BCcolcount += 1;
-          GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount << " BC rows and " << BCcolcount << " BC columns." << std::endl;
+          GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
         }
       } else
 #endif
         {
           BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
           BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
+          int BCrowcountLocal = 0;
+          for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
+            if (*it)
+              BCrowcountLocal += 1;
+#ifdef HAVE_MPI
+          MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCrowcountLocal, BCrowcount_);
+#else
+          BCrowcount_ = BCrowcountLocal;
+#endif
+          int BCcolcountLocal = 0;
+          for (auto it = BCcols_.begin(); it != BCcols_.end(); ++it)
+            if (*it)
+              BCcolcountLocal += 1;
+#ifdef HAVE_MPI
+          MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCcolcountLocal, BCcolcount_);
+#else
+          BCcolcount_ = BCcolcountLocal;
+#endif
           if (IsPrint(Statistics2)) {
-            int BCrowcount = 0;
-            for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
-              if (*it)
-                BCrowcount += 1;
-            int BCcolcount = 0;
-            for (auto it = BCcols_.begin(); it != BCcols_.end(); ++it)
-              if (*it)
-                BCcolcount += 1;
-            GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount << " BC rows and " << BCcolcount << " BC columns." << std::endl;
+            GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
           }
         }
     }
@@ -786,6 +807,11 @@ namespace MueLu {
         if (!reuse) {
           ParameterList& userParamList = precList22_.sublist("user data");
           userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
+          // If we detected no boundary conditions, the (2,2) problem is singular
+          if (BCrowcount_ == 0 &&
+              (!precList22_.isSublist("coarse: params") ||
+               !precList22_.sublist("coarse: params").isParameter("fix nullspace")))
+            precList22_.sublist("coarse: params").set("fix nullspace",true);
           Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_);
         } else {
           RCP<MueLu::Level> level0 = Hierarchy22_->GetLevel(0);

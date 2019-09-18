@@ -209,7 +209,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     if ((lastTime + dt > getFinalTime() ) ||
         (std::abs((lastTime+dt-getFinalTime())/(lastTime+dt)) < reltol)) {
       if (printChanges) *out << changeDT(iStep, dt, getFinalTime() - lastTime,
-        "Adjusting dt to hit the final time.");
+        "Adjusting dt to hit final time.");
       dt = getFinalTime() - lastTime;
     }
 

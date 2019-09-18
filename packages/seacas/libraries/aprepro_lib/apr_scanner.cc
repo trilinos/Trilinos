@@ -3204,8 +3204,6 @@ namespace SEAMS {
     // output stream.
     if (aprepro.ap_options.keep_history) {
       aprepro.add_history(history_string, buf);
-      history_string.clear();
-      hist_start = 0;
     }
 
     aprepro.outputStream.top()->write(buf, size);
@@ -3256,8 +3254,6 @@ namespace SEAMS {
   int Scanner::yywrap()
   {
     // Clear the history string.
-    history_string.clear();
-    hist_start = 0;
     curr_index = 0;
 
     // If we are using the string interactive method, we want to return to
@@ -3524,7 +3520,8 @@ namespace SEAMS {
     }
 
     // Don't do it if the file is the one used by execute and rescan.
-    if (aprepro.ap_file_list.top().name == "_string_") {
+    if (aprepro.ap_file_list.top().name == "_string_" ||
+	aprepro.ap_file_list.top().name == "standard input") {
       return;
     }
 
@@ -3536,10 +3533,17 @@ namespace SEAMS {
 
     // Go back in the stream to where we started keeping history.
     yyin->seekg(hist_start);
-
+    if (!yyin->good()) {
+      yyerror("Stream state bad in `save_history_string` seekg");
+      return;
+    }
     // Read everything up to this point again and save it.
     auto tmp = new char[len + 1];
     yyin->read(tmp, len);
+    if (!yyin->good()) {
+      yyerror("Stream state bad in `save_history_string` read");
+      return;
+    }
     tmp[len] = '\0';
 
     history_string = tmp;

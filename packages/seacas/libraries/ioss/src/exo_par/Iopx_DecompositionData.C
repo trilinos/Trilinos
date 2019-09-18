@@ -457,15 +457,15 @@ namespace Iopx {
         if (remain == 0 || total_read == entitylist_size) {
           // entitylist is full at this point...
           // * Broadcast data to other processors
-          // * Each procesor extracts the entitys it manages.
+          // * Each procesor extracts the entities it manages.
           m_decomposition.show_progress("\tBroadcast entitylist begin");
           MPI_Bcast(TOPTR(entitylist), entitylist.size(), Ioss::mpi_type(INT(0)), root, comm_);
           m_decomposition.show_progress("\tBroadcast entitylist end");
 
-          // Each processor now has same list of entitys in entitysets (i_beg ... i)
+          // Each processor now has same list of entities in entitysets (i_beg ... i)
           // Determine which of these are owned by the current
           // processor...
-          offset = 0; // Just got new list of entitys; starting at beginning.
+          offset = 0; // Just got new list of entities; starting at beginning.
           for (size_t j = ibeg; j <= i; j++) {
             size_t set_offset      = set_entities_read[j];
             size_t ns_beg          = offset;
@@ -478,7 +478,7 @@ namespace Iopx {
               bool owned = (set_type == EX_NODE_SET) ? i_own_node(entity) : i_own_elem(entity);
               if (owned) {
                 // Save entity in this processors entitylist for this set.
-                // The saved data is this entitys location in the global
+                // The saved data is this entities location in the global
                 // entitylist for this set.
                 entity_sets[j].entitylist_map.push_back(n - offset + set_offset);
               }
@@ -493,7 +493,7 @@ namespace Iopx {
       } while (entitys_to_read > 0);
     }
 
-    // Each processor knows how many of the entityset entitys it owns;
+    // Each processor knows how many of the entityset entities it owns;
     // broadcast that information (the count) to the other
     // processors. The first processor with non-zero entity count is
     // the "root" for this entityset.

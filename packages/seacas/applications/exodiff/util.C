@@ -83,7 +83,7 @@ void Error(const std::string &x)
 void ERR_OUT(std::ostringstream &buf)
 {
   if (cerr_out()) {
-    fmt::print(stderr, fmt::v5::fg(fmt::color::red), "{}", buf.str());
+    fmt::print(stderr, fmt::fg(fmt::color::red), "{}", buf.str());
   }
   else {
     fmt::print(stderr, "{}", buf.str());
@@ -93,7 +93,7 @@ void ERR_OUT(std::ostringstream &buf)
 void DIFF_OUT(std::ostringstream &buf, fmt::internal::color_type color)
 {
   if (term_out()) {
-    fmt::print(fmt::v5::fg(color), "{}\n", buf.str());
+    fmt::print(fmt::fg(color), "{}\n", buf.str());
   }
   else {
     fmt::print("{}\n", buf.str());
@@ -103,7 +103,7 @@ void DIFF_OUT(std::ostringstream &buf, fmt::internal::color_type color)
 void DIFF_OUT(const std::string &buf, fmt::internal::color_type color)
 {
   if (term_out()) {
-    fmt::print(fmt::v5::fg(color), "{}\n", buf);
+    fmt::print(fmt::fg(color), "{}\n", buf);
   }
   else {
     fmt::print("{}\n", buf);

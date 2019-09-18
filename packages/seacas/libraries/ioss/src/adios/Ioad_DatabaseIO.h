@@ -67,6 +67,8 @@ namespace Ioad {
     DatabaseIO(const DatabaseIO &from) = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
 
+    const std::string get_format() const override {return "ADIOS2";}
+
     bool begin__(Ioss::State state) override;
     bool end__(Ioss::State state) override;
 

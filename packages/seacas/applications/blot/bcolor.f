@@ -56,7 +56,7 @@ C   --   INIT  - IN - .TRUE. iff the purpose of the call is to
 C   --            initialize the BLKCOL array and not to modify it.
 C   --   INLINE - IN/OUT - the parsed input lines for the log file
 C   --   IFLD, INTYP, IFIELD, CFIELD, - IN/OUT - the free-field reader
-C   --          index and charcter field.
+C   --          index and character field.
 C   --   BLKCOL - IN/OUT - the user selected colors of the element blocks.
 C   --                    BLKCOL(0) = 1 if the user defined material
 C   --                                colors should be used in mesh plots.

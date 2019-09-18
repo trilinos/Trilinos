@@ -95,7 +95,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     NullSpaceDim = List_.get("null space: dimension", NumPDEEqns_);
     NullSpacePtr = List_.get("null space: vectors", NullSpacePtr);
 
-    if (NullSpacePtr == 0) {
+    if ( (NullSpacePtr == 0) && (RowMatrix_->NumMyRows() != 0) ) {
       if (Comm().MyPID() == 0)
         std::cerr << ErrorMsg_ << "Null space vectors is NULL!" << std::endl;
       ML_EXIT(EXIT_FAILURE);

@@ -643,6 +643,16 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "${TpetraCore_ETI_NODES}")
   LIST(APPEND SOURCES ${CRSGRAPH_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::FECrsGraph.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(FECRSGRAPH_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "FECrsGraph"
+    "FECRSGRAPH"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${FECRSGRAPH_OUTPUT_FILES})
+
   # Generate ETI .cpp files for Tpetra::Directory.
   TPETRA_PROCESS_ALL_LGN_TEMPLATES(DIRECTORY_OUTPUT_FILES
     "Tpetra_ETI_LO_GO_NT.tmpl"
