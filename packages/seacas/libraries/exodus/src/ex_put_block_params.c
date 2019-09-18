@@ -346,7 +346,7 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
       /*
        * There is currently a bug in netcdf-4.5.1-devel and earlier
        * for partial parallel output of strided arrays in collective
-       * mode for netcdf-4-based output.  If the number of attribues >
+       * mode for netcdf-4-based output.  If the number of attributes >
        * 1 and in parallel mode, set the mode to independent.
        */
       if (blocks[i].num_attribute > 1) {

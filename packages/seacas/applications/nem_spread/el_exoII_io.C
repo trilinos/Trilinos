@@ -1564,7 +1564,7 @@ size_t NemSpread<T, INT>::extract_elem_connect(INT elem_blk[], int icurrent_elem
   bool   found      = false;
 
   /* Match the Element Block Id of the global block with the local block number
-   * The end result is the currect value of ielem_blk, Store this value in the
+   * The end result is the current value of ielem_blk, Store this value in the
    * output variable, local_ielem_blk.
    */
   for (int ielem_blk = 0; ielem_blk < globals.Proc_Num_Elem_Blk[iproc]; ielem_blk++) {

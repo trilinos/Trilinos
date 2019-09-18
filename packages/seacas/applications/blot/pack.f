@@ -59,7 +59,7 @@ c DATE:                 December 20, 1988
 c
 c TYPE OF SUBPROGRAM:   subroutine
 c
-c USEAGE:               call pack ( string, lstr )
+c USAGE:               call pack ( string, lstr )
 c
 c PARAMETERS:
 c        character * (*) string    ( INPUT/OUTPUT )
@@ -112,7 +112,7 @@ c
       lstr = pt1
 
 c
-c        fill remainer of string with spaces
+c        fill remainder of string with spaces
 c
 
       do 110 i = lstr + 1, length

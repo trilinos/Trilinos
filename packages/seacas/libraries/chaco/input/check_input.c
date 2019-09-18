@@ -296,7 +296,7 @@ static int check_params(int global_method, /* global partitioning algorithm */
   extern int SIMULATOR; /* simulate the communication? */
 
   extern int    TERM_PROP;       /* perform terminal propagation? */
-  extern double CUT_TO_HOP_COST; /* ..if so, relativ cut/hop importance */
+  extern double CUT_TO_HOP_COST; /* ..if so, relative cut/hop importance */
   int           flag_params;
 
   flag_params = FALSE;

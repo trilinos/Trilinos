@@ -84,7 +84,7 @@ C   --   KNESS - OUT - index of NEESS; the number of elements for each set
 C   --   KNDSS - OUT - index of NDESS; the number of dist-fact for each set
 C   --   KIXESS - OUT - index of IXEESS; the index of the first element
 C   --      for each set
-C   --   KIXDSS - OUT - index of IXDESS; the indes of the first dist-fact for each set
+C   --   KIXDSS - OUT - index of IXDESS; the index of the first dist-fact for each set
 C   --   KLTESS - OUT - index of LTEESS; the elements for all sets
 C   --   KFACSS - OUT - index of FACESS; the distribution factors for all sets
 C   --   kltsss - OUT - index of LTSESS; the sides for all sets

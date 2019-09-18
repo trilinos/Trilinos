@@ -172,7 +172,7 @@ namespace Ioss {
 
     /** \brief What does this entity contain
      *
-     *  \returns The name of the thing this entitiy contains.
+     *  \returns The name of the thing this entity contains.
      */
     virtual std::string contains_string() const = 0;
 

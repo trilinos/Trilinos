@@ -37,7 +37,7 @@
 #include <stddef.h> // for nullptr
 #include <string>   // for string
 
-#include <adios2/ADIOSConfig.h>
+#include <adios2/common/ADIOSConfig.h>
 #include <fmt/ostream.h>
 
 namespace Ioss {

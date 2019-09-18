@@ -200,7 +200,7 @@ void IOShell::Interface::enroll_options()
 #endif
 
   options_.enroll("file_per_state", Ioss::GetLongOption::NoValue,
-                  "put transient data for each timestep in separate file (EXPERMENTAL)", nullptr);
+                  "put transient data for each timestep in separate file (EXPERIMENTAL)", nullptr);
 
   options_.enroll("reverse", Ioss::GetLongOption::NoValue,
                   "define CGNS zones in reverse order. Used for testing (TEST)", nullptr);
@@ -266,7 +266,7 @@ void IOShell::Interface::enroll_options()
                   nullptr);
 
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
-                  "Method used to split sidesets into homogenous blocks\n"
+                  "Method used to split sidesets into homogeneous blocks\n"
                   "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
                   "TOPOLOGY");
 

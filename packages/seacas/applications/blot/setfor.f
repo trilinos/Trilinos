@@ -70,7 +70,7 @@ C   --                 = 2 if the call is to reset the foreground color
 C   --                     to the default color.
 C   --   INLINE - IN/OUT - the parsed input lines for the log file
 C   --   IFLD, INTYP, CFIELD, - IN/OUT - the free-field reader
-C   --          index and charcter field.
+C   --          index and character field.
 C   --   * - return statement if command error; message is printed.
 
       include 'params.blk'

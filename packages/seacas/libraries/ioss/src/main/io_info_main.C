@@ -34,6 +34,7 @@
 
 #include "fmt/format.h"
 #include "io_info.h"
+#include <Ioss_ScopeGuard.h>
 
 // ========================================================================
 
@@ -46,6 +47,7 @@ int main(int argc, char *argv[])
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
+  ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
   Info::Interface interface;
@@ -64,8 +66,6 @@ int main(int argc, char *argv[])
     codename = codename.substr(ind + 1, codename.size());
   }
 
-  fmt::print("Input: '{}', Type: {}\n\n", interface.filename(), interface.type());
-
   if (interface.list_groups()) {
     Ioss::io_info_group_info(interface);
   }
@@ -74,8 +74,5 @@ int main(int argc, char *argv[])
   }
 
   fmt::print("\n{} execution successful.\n", codename);
-#ifdef SEACAS_HAVE_MPI
-  MPI_Finalize();
-#endif
   return EXIT_SUCCESS;
 }

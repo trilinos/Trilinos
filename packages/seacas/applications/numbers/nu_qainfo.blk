@@ -54,7 +54,7 @@ c ... fixed sideset nodes problem
 c ... coordinate names need to be uppercased
 c ... expand input to 32 characters; fix esum logicals
 c ...
-c ... check whether there are valid displacements for all comamnds calling getdsp
+c ... check whether there are valid displacements for all commands calling getdsp
 c ... Fix handling of empty sidesets
 c ... increase output precision
 c ... Add centroid option for 3d cavity
