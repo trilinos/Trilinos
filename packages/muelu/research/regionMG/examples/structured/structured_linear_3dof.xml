@@ -15,13 +15,12 @@
     </ParameterList>
 
     <ParameterList name="myAggregationFact">
-      <Parameter name="factory"                             type="string" value="StructuredAggregationFactory"/>
-      <Parameter name="aggregation: coupling"               type="string" value="uncoupled"/>
-      <Parameter name="aggregation: output type"            type="string" value="CrsGraph"/>
-      <Parameter name="aggregation: coarsening order"       type="int"    value="1"/>
-      <Parameter name="aggregation: coarsening rate"        type="string" value="{2}"/>
-      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
-      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
+      <Parameter name="factory"                                   type="string" value="StructuredAggregationFactory"/>
+      <Parameter name="aggregation: coupling"                     type="string" value="uncoupled"/>
+      <Parameter name="aggregation: output type"                  type="string" value="CrsGraph"/>
+      <Parameter name="aggregation: coarsening order"             type="int"    value="1"/>
+      <Parameter name="aggregation: coarsening rate"              type="string" value="{2}"/>
+      <Parameter name="Graph"                                     type="string" value="myCoalesceDropFact"/>
     </ParameterList>
 
     <ParameterList name="myCoarseMapFact">
@@ -44,6 +43,8 @@
       <Parameter name="structured aggregation"              type="bool"   value="true"/>
       <Parameter name="numDimensions"                       type="string" value="myAggregationFact"/>
       <Parameter name="lCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
+      <!-- <Parameter name="write start"                         type="int"    value="0"/> -->
+      <!-- <Parameter name="write end"                           type="int"    value="3"/> -->
     </ParameterList>
 
     <ParameterList name="myNullspaceFact">
@@ -73,7 +74,6 @@
       </ParameterList>
     </ParameterList>
 
-    <!-- ===========  SMOOTHING  =========== -->
     <ParameterList name="myILU">
       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
       <Parameter name="type"  type="string" value="RILUK"/>
@@ -88,36 +88,15 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="myChebyshev">
-      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-      <Parameter name="type"  type="string" value="CHEBYSHEV"/>
-      <ParameterList name="ParameterList">
-        <Parameter      name="chebyshev: degree"                    type="int"      value="2"/>
-        <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="7"/>
-        <Parameter      name="chebyshev: min eigenvalue"            type="double"   value="1.0"/>
-        <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="mySGS">
-      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-      <Parameter name="type" type="string" value="RELAXATION"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type"             type="string" value="Symmetric Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps"           type="int"    value="1"/>
-        <Parameter name="relaxation: damping factor"   type="double" value="0.8"/>
-      </ParameterList>
-    </ParameterList>
-
   </ParameterList>
 
 
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="max levels"                            type="int"      value="6"/> <!-- Max number of levels -->
-    <Parameter name="cycle type"                            type="string"   value="V"/>
-    <Parameter name="coarse: max size"                      type="int"      value="100"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="max levels"                            type="int"      value="3"/> <!-- Max number of levels -->
+    <Parameter name="cycle type"                            type="string"   value="W"/>
+    <Parameter name="coarse: max size"                      type="int"      value="20"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
     <ParameterList name="DataToWrite">
@@ -127,16 +106,16 @@
     </ParameterList>
 
     <ParameterList name="All">
-      <Parameter name="PreSmoother"                         type="string"   value="mySGS"/>
-      <Parameter name="PostSmoother"                        type="string"   value="mySGS"/>
+      <Parameter name="PreSmoother"                         type="string"   value="NoSmoother"/>
+      <Parameter name="PostSmoother"                        type="string"   value="NoSmoother"/>
       <Parameter name="Nullspace"                           type="string"   value="myNullspaceFact"/>
       <Parameter name="Aggregates"                          type="string"   value="myAggregationFact"/>
       <Parameter name="lCoarseNodesPerDim"                  type="string"   value="myAggregationFact"/>
       <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
       <Parameter name="A"                                   type="string"   value="myRAPFact"/>
-      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
-      <!-- <Parameter name="CoarseSolver"                        type="string"   value="myILU"/> -->
+      <!-- <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/> -->
+      <Parameter name="CoarseSolver"                        type="string"   value="myILU"/>
       <Parameter name="Coordinates"                         type="string"   value="myProlongatorFact"/>
       <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
       <Parameter name="numDimensions"                       type="string"   value="myCoordTransferFact"/>

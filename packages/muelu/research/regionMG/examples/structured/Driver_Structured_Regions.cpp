@@ -1216,6 +1216,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<LO> rNodesPerDim(3);
   Array<GO> quasiRegionGIDs(numLocalRegionNodes*numDofsPerNode);
   Array<GO> regionGIDs(numLocalRegionNodes*numDofsPerNode);
+  Array<GO> quasiRegionCoordGIDs(numLocalRegionNodes);
 
   rNodesPerDim[0] = lNodesPerDim[0];
   rNodesPerDim[1] = lNodesPerDim[1];
@@ -1260,6 +1261,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if( (regionIJK[0] == 0 && leftBC   == 0) ||
         (regionIJK[1] == 0 && frontBC  == 0) ||
         (regionIJK[2] == 0 && bottomBC == 0) ) {
+      quasiRegionCoordGIDs[nodeRegionIdx] = receiveGIDs[interfaceCount];
       for(int dof = 0; dof < numDofsPerNode; ++dof) {
         quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof] =
           receiveGIDs[interfaceCount]*numDofsPerNode + dof;
@@ -1270,6 +1272,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       compositeIdx = (regionIJK[2] + bottomBC - 1)*lNodesPerDim[1]*lNodesPerDim[0]
         + (regionIJK[1] + frontBC  - 1)*lNodesPerDim[0]
         + (regionIJK[0] + leftBC - 1);
+      quasiRegionCoordGIDs[nodeRegionIdx] = nodeMap->getGlobalElement(compositeIdx);
       for(int dof = 0; dof < numDofsPerNode; ++dof) {
         quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof]
           = dofMap->getGlobalElement(compositeIdx*numDofsPerNode + dof);
@@ -1283,6 +1286,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
   // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
+  std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
 
   // In our very particular case we know that a node is at most shared by 4 regions.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
@@ -1347,6 +1351,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                                                                  dofMap->getComm());
   revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
 
+  // Build objects needed to construct the region coordinates
+  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > quasiRegCoordMap = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          quasiRegionCoordGIDs(),
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > regCoordMap = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          numLocalRegionNodes,
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+
   comm->barrier();
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.2 - Build Region Importers")));
@@ -1356,6 +1374,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::vector<RCP<Import> > colImportPerGrp(maxRegPerProc);
   rowImportPerGrp[0] = ImportFactory::Build(dofMap, rowMapPerGrp[0]);
   colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
+  RCP<Import> coordImporter = ImportFactory::Build(nodeMap, quasiRegCoordMap);
 
   comm->barrier();
   tmLocal = Teuchos::null;
@@ -1407,10 +1426,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   regionNullspace[0]->replaceMap(revisedRowMapPerGrp[0]);
 
   // create region coordinates vector
-  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(rowMapPerGrp[0],
-                                                                               numDimensions);
-  regionCoordinates[0]->doImport(*coordinates, *rowImportPerGrp[0], Xpetra::INSERT);
-  regionCoordinates[0]->replaceMap(revisedRowMapPerGrp[0]);
+  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap,
+                                                                               coordinates->getNumVectors());
+  regionCoordinates[0]->doImport(*coordinates, *coordImporter, Xpetra::INSERT);
+  regionCoordinates[0]->replaceMap(regCoordMap);
+
+  Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(std::string("regionCoords.mat"),
+                                                               *(regionCoordinates[0]));
 
   using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
