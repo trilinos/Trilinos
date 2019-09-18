@@ -31,7 +31,7 @@ using Teuchos::ArrayRCP;
 
 
 // ============================================================================
-void FindLocalDiricheltLikeRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix, const double rowsum_threshold,
+void FindLocalDirichletLikeRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix, const double rowsum_threshold,
                                                 Teuchos::ArrayRCP<int> &dirichletRows11_rcp, Teuchos::ArrayRCP<int> & dirichletRows22_rcp) {
   int numBCRows11 = 0, numBCRows22 = 0;  
   Teuchos::ArrayView<int> dirichletRows11 = dirichletRows11_rcp();
@@ -83,7 +83,7 @@ void FindLocalDiricheltLikeRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix,
 
   dirichletRows11_rcp.resize(numBCRows11);
   dirichletRows22_rcp.resize(numBCRows22);
-}/*end FindLocalDiricheltLikeRowsFromOnesAndZeros*/
+}/*end FindLocalDirichletLikeRowsFromOnesAndZeros*/
 
 
 // ================================================ ====== ==== ==== == =
@@ -253,7 +253,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
 
   /* Find the Dirichlet Rows (using SM_Matrix_) and columns (using D0_Clean_Matrix_) */
   dirichletEdges11.resize(SM_Matrix_->NumMyRows()); dirichletEdges22.resize(SM_Matrix_->NumMyRows());
-  FindLocalDiricheltLikeRowsFromOnesAndZeros(*SM_Matrix_, rowsum_threshold, dirichletEdges11, dirichletEdges22);
+  FindLocalDirichletLikeRowsFromOnesAndZeros(*SM_Matrix_, rowsum_threshold, dirichletEdges11, dirichletEdges22);
 
   Epetra_IntVector * BCnodes11=FindLocalDirichletColumnsFromRows(dirichletEdges11.get(),dirichletEdges11.size(),*D0_Clean_Matrix_);
   int numBCnodes11=0;
