@@ -112,7 +112,7 @@ namespace Intrepid2 {
     // small meta data modification and it uses shards; let's do this on host
     typedef typename Kokkos::Impl::is_space<SpT>::host_mirror_space::execution_space host_space_type;
     auto elemOrtsHost = Kokkos::create_mirror_view(typename host_space_type::memory_space(), elemOrts);
-    auto elemNodesHost = Kokkos::create_mirror_view(typename host_space_type::memory_space(), elemNodes);
+    auto elemNodesHost = Kokkos::create_mirror_view_and_copy(typename host_space_type::memory_space(), elemNodes);
 
     const ordinal_type numCells = elemNodes.extent(0);
     for (auto cell=0;cell<numCells;++cell) {

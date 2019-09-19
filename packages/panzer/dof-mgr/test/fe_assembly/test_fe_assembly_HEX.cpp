@@ -1,12 +1,11 @@
 // @HEADER
+// ************************************************************************
 //
-// ***********************************************************************
+//                           Intrepid2 Package
+//                 Copyright (2007) Sandia Corporation
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,35 +34,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
-// ***********************************************************************
-//
+// ************************************************************************
 // @HEADER
 
-#ifndef MUELU_USEDEFAULTTYPES_HPP
-#define MUELU_USEDEFAULTTYPES_HPP
+/** \file test_01.cpp
+    \brief  Test for checking orientation tools for hexahedral elements.
+    \author Created by Mauro Perego
+*/
 
-#include <Kokkos_DefaultNode.hpp>
-#include "MueLu_config.hpp"
+#include "test_fe_assembly_HEX.hpp"
 
-namespace MueLu
-{
-  typedef double DefaultScalar;
-  typedef int DefaultLocalOrdinal;
+#include "Kokkos_Core.hpp"
 
-  #if defined HAVE_MUELU_DEFAULT_GO_LONG
-  typedef long DefaultGlobalOrdinal;
-  #elif defined HAVE_MUELU_DEFAULT_GO_LONGLONG
-  typedef long long DefaultGlobalOrdinal;
-  #else
-  typedef int DefaultGlobalOrdinal;
-  #endif
 
-  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNode;
+int main(int argc, char *argv[]) {
+
+  Kokkos::ScopeGuard kokkosScope (argc, argv);
+  Teuchos::GlobalMPISession mpiScope (&argc, &argv);
+  
+  const int r_val = Discretization::Example::feAssemblyHex<double,PHX::Device>(argc, argv);
+
+  return r_val;
 }
 
-#endif
