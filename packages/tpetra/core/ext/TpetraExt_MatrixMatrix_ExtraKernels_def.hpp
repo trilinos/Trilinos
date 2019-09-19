@@ -289,7 +289,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   copy_out_from_thread_memory(thread_total_nnz,tl_colind,tl_values,m,thread_chunk,row_mapC,entriesC,valuesC);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM.~(); // destruct the 'Core'
+  MM.~TimeMonitor(); // destruct the 'Core'
   Teuchos::TimeMonitor MMsort (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPSort")));
 #endif
     // Sort & set values
@@ -683,7 +683,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
 
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM.~();
+  MM.~TimeMonitor();
   Teuchos::TimeMonitor MMsort (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix OpenMPSort")));
 #endif
     // Sort & set values
@@ -990,7 +990,7 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
   Tpetra::MMdetails::mult_A_B_newmatrix(Aview,Bview,*AB,label+std::string(" MSAK"),params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MMmult.~();
+  MMmult.~TimeMonitor();
   Teuchos::TimeMonitor MMscale (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Scale")));
 #endif
 
@@ -998,7 +998,7 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
   AB->leftScale(Dinv);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MMscale.~();
+  MMscale.~TimeMonitor();
   Teuchos::TimeMonitor MMadd (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Add")));
 #endif
 
@@ -1238,14 +1238,14 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
           tl_values(tid) = Acvals;
         });
   #ifdef HAVE_TPETRA_MMM_TIMINGS
-        MM.~();
+        MM.~TimeMonitor();
         Teuchos::TimeMonitor MMcopy (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix copy from thread local")));
   #endif
 
         copy_out_from_thread_memory(thread_total_nnz,tl_colind, tl_values, m, thread_chunk, rowmapAc, entriesAc, valuesAc);
 
   #ifdef HAVE_TPETRA_MMM_TIMINGS
-        MMcopy.~();
+        MMcopy.~TimeMonitor();
         Teuchos::TimeMonitor MMsort (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix Final Sort")));
   #endif
 
@@ -1255,7 +1255,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         Ac.setAllValues(rowmapAc, entriesAc, valuesAc);
 
   #ifdef HAVE_TPETRA_MMM_TIMINGS
-        MMsort.~();
+        MMsort.~TimeMonitor();
         Teuchos::TimeMonitor MMfill (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix ESFC")));
   #endif
 
