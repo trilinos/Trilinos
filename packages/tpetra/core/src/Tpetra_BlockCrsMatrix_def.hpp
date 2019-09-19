@@ -771,11 +771,11 @@ public:
       " <= 0.  The block size must be positive.");
     {
       // These are rcp
-      const auto domainPointMap = getDomainMap();
+      const auto rcpDomainPointMap = getDomainMap();
       const auto colPointMap = Teuchos::rcp 
         (new typename BMV::map_type (BMV::makePointMap (*graph_.getColMap(), blockSize_)));
       *pointImporter_ = Teuchos::rcp 
-        (new typename crs_graph_type::import_type (domainPointMap, colPointMap));
+        (new typename crs_graph_type::import_type (rcpDomainPointMap, colPointMap));
     }
     {
       typedef typename crs_graph_type::local_graph_type::row_map_type row_map_type;
