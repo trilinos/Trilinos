@@ -84,7 +84,7 @@ namespace MueLu {
     P = rcp_const_cast<Matrix>(rcpFromRef(P0));
 
     for (size_t k = 0; k < nIts_; k++) {
-      AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false, mmfancy, true, false);
+      AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false, mmfancy, true, true);
 #if 0
       // gradient = -2 A^T * A * P
       SC stepLength = 2*stepLength_;
@@ -93,7 +93,7 @@ namespace MueLu {
 #else
       // gradient = - A * P
       SC stepLength = stepLength_;
-      Utilities::MyOldScaleMatrix(*AP, D, true, false, false);
+      Utilities::MyOldScaleMatrix(*AP, D, true, true, false);
       C.Apply(*AP, *Ptmp);
 #endif
 
