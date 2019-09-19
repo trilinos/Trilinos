@@ -1431,9 +1431,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   regionCoordinates[0]->doImport(*coordinates, *coordImporter, Xpetra::INSERT);
   regionCoordinates[0]->replaceMap(regCoordMap);
 
-  Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(std::string("regionCoords.mat"),
-                                                               *(regionCoordinates[0]));
-
   using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 

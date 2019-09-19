@@ -346,8 +346,14 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   Teuchos::ParameterList List_SA    = Build_Teuchos_List(N,coord_ptr,"smoother: type","symmetric Gauss-Seidel",0,1);
   List_SA.set("refmaxwell: 11solver","sa");
 
+  Teuchos::ParameterList List_Rowsum    = Build_Teuchos_List(N,coord_ptr,"smoother: type","symmetric Gauss-Seidel",0,1);
+  List_Rowsum.set("refmaxwell: rowsum threshold",0.9);
+  List_Rowsum.sublist("refmaxwell: 11list").set("aggregation: rowsum threshold",0.9);
+
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
+  int status1, status2 = 0;
+
   if(!Comm.MyPID()) printf("*** Test 1 ***\n");
   rpc_test_additive(Comm,List_2level,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
@@ -371,7 +377,6 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   }
 
   /* Check RNG control */
-  int status1, status2 = 0;
   lhs.PutScalar(0.0);
   if(!Comm.MyPID()) printf("*** Test 7 ***\n");
   status1 = rpc_test_additive_repeat(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
@@ -400,6 +405,12 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   lhs.PutScalar(0.0);
   if(!Comm.MyPID()) printf("*** Test 14 ***\n");
   rpc_test_additive_newconstructor(Comm,List_SA,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ rowsum */
+  lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 15 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_Rowsum,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
 
   delete M0; delete M1e;
   delete D0e;delete Se;
