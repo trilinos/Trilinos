@@ -72,6 +72,7 @@
 #include <set>
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace panzer
 {
