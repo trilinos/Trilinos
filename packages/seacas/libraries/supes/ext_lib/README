@@ -29,7 +29,7 @@ Notes on this version of SUPES:
 	    This interface appears to be a highly system dependent one.
 	    Also one will need to determine how the particular machine interprets
 	    strings passed in Fortran argument lists to C modules.  Hint:
-	    in general thay are *NOT* pointers to NULL terminated character arrays.
+	    in general they are *NOT* pointers to NULL terminated character arrays.
 	    To view concrete examples of these consider the following segment
 	    from the source file ``extime.c'':
 

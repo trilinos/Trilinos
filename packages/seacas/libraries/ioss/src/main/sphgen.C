@@ -53,6 +53,7 @@
 #include "Ioss_NodeSet.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_State.h"
 
 #define OUTPUT std::cerr
@@ -89,6 +90,7 @@ int main(int argc, char *argv[])
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
+  ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
   std::string in_type  = "exodus";
@@ -171,9 +173,6 @@ int main(int argc, char *argv[])
   create_sph(in_file, in_type, out_file, out_type, globals);
 
   OUTPUT << "\n" << codename << " execution successful.\n";
-#ifdef SEACAS_HAVE_MPI
-  MPI_Finalize();
-#endif
   return EXIT_SUCCESS;
 }
 

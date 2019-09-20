@@ -1,11 +1,11 @@
-##BlockMap
+BlockedMap
 #CrsGraph
 #CrsGraphFactory
 #Export
 #ExportFactory
 #Import
 #ImportFactory
-#Map
+Map
 MapFactory
 #MapUtils
 #MatrixView

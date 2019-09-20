@@ -74,7 +74,7 @@ C
       IF (LXN (4, N2) .EQ. 0) THEN
          ERR = .TRUE.
          CALL MESAGE ('** N2 IN UNDELM CANNOT BE USED'//
-     &      ' TO EXPAND AN ELEMNT **')
+     &      ' TO EXPAND AN ELEMENT **')
          GOTO 140
       ENDIF
 C

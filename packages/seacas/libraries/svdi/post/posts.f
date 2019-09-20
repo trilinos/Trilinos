@@ -114,7 +114,7 @@ C
 C          VARIABLES TO HANDLE COLOR
 C
       INTEGER NEXTFC, NEXTBC
-      INTEGER CSPOT, INDEXS(256), NXTDEX
+      INTEGER CSPOT, INDICES(256), NXTDEX
       INTEGER NUMCLR, COLMAP(0:255), INVMAP(0:255)
       REAL RGB(3,256), TABLE(3,0:255), VECTOR(7)
       LOGICAL BATCH, DRAWN, FIRST
@@ -145,8 +145,8 @@ C                - of the color table.
 C RGB(3,256)     - When doing a batch update of the color table, this array is
 C                  used to hold the color entries which can be sent to the
 C                  device, i.e. those entries for which COLMAP is not -1.
-C INDEXS(256)    - The color table indexes associated with the entries in RGB.
-C CSPOT          - The next open spot in RGB and INDEXS.
+C INDICES(256)    - The color table indexes associated with the entries in RGB.
+C CSPOT          - The next open spot in RGB and INDICES.
 C VECTOR(7)      - Used to find out the default foregound and background
 C                  colors from VDIQOS and to reinitialize the system at a
 C                  new file id.
@@ -503,7 +503,7 @@ C
          IF(.NOT.BATCH) THEN
                CALL VDSTCO(1,COLMAP(INDEX),TABLE(1,INDEX),0)
             ELSE
-               INDEXS(CSPOT) = COLMAP(INDEX)
+               INDICES(CSPOT) = COLMAP(INDEX)
                RGB(1,CSPOT) = TABLE(1,INDEX)
                RGB(2,CSPOT) = TABLE(2,INDEX)
                RGB(3,CSPOT) = TABLE(3,INDEX)
@@ -703,7 +703,7 @@ C
 C          C8 -- SEND COLOR TABLE / END BATCH UPDATE
 C
  7300 BATCH = .FALSE.
-      IF(CSPOT.GT.1) CALL VDSTCO(CSPOT-1,INDEXS,RGB,0)
+      IF(CSPOT.GT.1) CALL VDSTCO(CSPOT-1,INDICES,RGB,0)
       CSPOT = 1
       GOTO 3
 C

@@ -100,7 +100,7 @@ variables
 \param[out] version  Returned exodus database version number. Note that this is always a float,
                      never a double.
 
-\param[in] run_version Internally generated to verify library compatability.
+\param[in] run_version Internally generated to verify library compatibility.
 
 The following opens an exodus file named \file{test.exo} for read
 only, using default settings for compute and I/O word sizes:

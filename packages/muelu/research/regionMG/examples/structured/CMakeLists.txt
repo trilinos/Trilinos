@@ -18,6 +18,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       structured_1dof_3level.xml
       structured_1dof-complex.xml
       structured_linear_1dof.xml
+      structured_linear_3dof.xml
       structured_unstructured_1dof.xml
       compare_residual_history.py
       gold_files/Star2D_GS_4.log.gold

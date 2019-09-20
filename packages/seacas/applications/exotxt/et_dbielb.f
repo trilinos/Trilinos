@@ -125,7 +125,7 @@ C           6. error id
       END IF
 
       IF (ALL .OR. COPT) THEN
-C        Assumption: space has been reserverd for 'LINK'
+C        Assumption: space has been reserved for 'LINK'
 C        call MxFIND(array_name, ret_index, array_size)
          CALL MDFIND ('LINK', KLINK, IELNK)
          CALL MDSTAT (NERR, MEM)
@@ -135,7 +135,7 @@ C        call MxFIND(array_name, ret_index, array_size)
             RETURN
          END IF
          DO 110 IELB = NELBS, NELBE
-C           number of elments in a block
+C           number of elements in a block
             NEL  = NUMELB(IELB)
 C           number of nodes per element in the element block
             NLNK = NUMLNK(IELB)
@@ -153,7 +153,7 @@ C           number of nodes per element in the element block
       END IF
 
       IF (ALL .OR. AOPT) THEN
-C        Assumption: space has been reserverd for 'ATRIB'
+C        Assumption: space has been reserved for 'ATRIB'
 C        call MxFIND(array_name, ret_index, array_size)
          CALL MDFIND ('ATRIB', KATRIB, IEATR)
          CALL MDSTAT (NERR, MEM)
@@ -163,7 +163,7 @@ C        call MxFIND(array_name, ret_index, array_size)
             RETURN
          END IF
          DO 120 IELB = NELBS, NELBE
-C           number of elments in a block
+C           number of elements in a block
             NEL  = NUMELB(IELB)
 C           number of attributes in this block
             NATR = NUMATR(IELB)

@@ -105,7 +105,7 @@ namespace IOShell {
     bool delete_timesteps{false};
     bool minimize_open_files{false};
     bool disable_field_recognition{false};
-    // Put transient data for each timestep in separate file (EXPERMENTAL)
+    // Put transient data for each timestep in separate file (EXPERIMENTAL)
     bool file_per_state{false};
     // Testing CGNS - defines zones in reverse order from input file.
     bool reverse{false};

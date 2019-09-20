@@ -1,0 +1,140 @@
+// Copyright 2014 Sandia Corporation. Under the terms of
+// Contract DE-AC04-94AL85000 with Sandia Corporation, the
+// U.S. Government retains certain rights in this software.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+#include "GregoryPatch.hpp"
+
+#define DEBUG_PRINT 0
+
+namespace percept {
+/** given two points on an edge of a face, @param {pi,pj} and their associated
+ *    @param normals  {ni,nj}, fit a cubic with normal to the normals and
+ *     passing through the points, returning the control points in @param c
+ */
+
+void  GregoryPatch::
+fitCubic(MDArray& c, const MDArray& pi, const MDArray& pj, const MDArray& ni, const MDArray& nj)
+{
+  MDArray ci(3), cj(3);
+
+  <* CodeGen[cubicFitRules] *>
+}
+
+/** left side of ribbon = p, center (shared edge) = q, right side is r
+ * Note: qh will be degree-elevated for quads from input of q array; however,
+ * tri elements will pass in qh and q will be calculated from qh FIXME
+ */
+
+bool  GregoryPatch::
+fitRibbon(MDArray& pin, MDArray& q, MDArray& rin, MDArray& qh, bool pIsTri, bool rIsTri)
+{
+  MDArray p = pin, r = rin;
+  double Lam0, Lam1, Mu0, Mu1, DetAAtLhs;
+  //MDArray pt = p, rt = r;
+  MDArray pe(4,3), re(4,3);
+  MDArray m0(3,3), m1(3,3), R0(3), R1(3);
+  MDArray b(3,3), a(3,4), aat(3,3), aatI(3,3), d(3,3), d1(3,3);
+  double mpe = 1.e-6, Anorm=0;
+
+  //
+  if (pIsTri)
+    {
+      <* CodeGen[ptriRules] *>
+    }
+  if (rIsTri)
+    {
+      <* CodeGen[rtriRules] *>
+    }
+
+  // get the estimate for the ribbon
+  <* CodeGen[estRules] *>
+
+  // solve
+
+  <* CodeGen[ Join[Ro30, Ro10, Ro11, Ro12, Ro13] ] *>
+
+     double dd1, dd2, diffnc, det0, det1, localScaleFactor;
+  double bdd1, bdd2, bdiffnc;
+  MDArray nc1(3), nc2(3);
+  MDArray bnc1(3), bnc2(3);
+  <* CodeGen[ Join[Ro22,Ro22a,Ro23] ] *>
+     if (DEBUG_PRINT) std::cout << "\n\n ======================================================================= \n"
+                                << "\npIsTri= " << pIsTri << " rIsTri= " << rIsTri << std::endl;
+    if (DEBUG_PRINT) std::cout << "m0=\n" << m0 << " m1=\n" << m1 << std::endl;
+
+    if (DEBUG_PRINT) std::cout << "det0 = " << det0 << " det1= " << det1 << std::endl;
+
+    double scf1 = 0.0; //1.e-20*localScaleFactor;
+    double scf2 = 1.e-4*localScaleFactor;
+    VERIFY_OP_ON(localScaleFactor, >, 0.0, "localScaleFactor");
+    VERIFY_OP_ON(det0, >, scf1, "det0");
+    VERIFY_OP_ON(det1, >, scf1, "det1");
+    VERIFY_OP_ON(dd1, >, scf1, "dd1");
+    VERIFY_OP_ON(dd2, >, scf1, "dd2");
+    if (0) VERIFY_OP_ON(std::fabs(diffnc), <, scf2, "diffnc");
+    VERIFY_OP_ON(bdd1, >, scf1, "bdd1");
+    VERIFY_OP_ON(bdd2, >, scf1, "bdd2");
+    if (0) VERIFY_OP_ON(std::fabs(bdiffnc), <, scf2, "diffnc");
+ if (DEBUG_PRINT) std::cout << "dd1= " << dd1 << " dd2= " << dd2 << " diffnc= " << diffnc << std::endl;
+ if (DEBUG_PRINT) std::cout << "bdd1= " << bdd1 << " bdd2= " << bdd2 << " bdiffnc= " << bdiffnc << std::endl;
+
+ <* CodeGen[ Join[Ro20, Ro21, Ro3, Ro2, Ro100, Ro1, Ro40, Ro50] ] *>
+
+ if (DEBUG_PRINT) std::cout << "Lam0= " << Lam0 << " Lam1= " << Lam1 << " Mu0= " << Mu0 << " Mu1= " << Mu1 << std::endl;
+ if (DEBUG_PRINT) std::cout << "\nMatrix= " << printForMathematica(a) << "\nrhs= " << printForMathematica(b) << std::endl;
+ if (DEBUG_PRINT) std::cout << "\nDetAAtLhs= " << DetAAtLhs << std::endl;
+ if (DEBUG_PRINT) std::cout << "\npIsTri= " << pIsTri << " rIsTri= " << rIsTri
+                            << "\n\npin = " << printForMathematica(pin, false)
+                            << "\nq = " << printForMathematica(q, false)
+                            << "\nrin = " << printForMathematica(rin, false)
+                            // << "\npt = " << printForMathematica(pt, false)
+                            // << "\nrt = " << printForMathematica(rt, false)
+                            << "\n\npe = " << printForMathematica(pe, false)
+                            << "\nre = " << printForMathematica(re, false)
+                            << "\n\nqh = " << printForMathematica(qh, false)
+                            << "\n\nm0 = " << printForMathematica(m0, false)
+                            << "\nR0 = " << printForMathematica(R0, false)
+                            << "\n\nm1 = " << printForMathematica(m1, false)
+                            << "\nR1 = " << printForMathematica(R1, false)
+                            << "\n\npout = " << printForMathematica(p, false)
+                            << "\nq = " << printForMathematica(q, false)
+                            << "\nrout = " << printForMathematica(r, false)
+                            << std::endl;
+
+   if (DEBUG_PRINT) std::cout << "\n\n ======================================================================= \n" << std::endl;
+
+  pin = p;
+  rin = r;
+
+  return false;
+}
+
+void  GregoryPatch::
+fitRibbonNoNeighbor(MDArray& pin, MDArray& q, MDArray& qh, bool pIsTri)
+{
+  MDArray p = pin;
+  MDArray pe(4,3);
+
+  //
+  if (pIsTri)
+    {
+      <* CodeGen[ptriRules] *>
+    }
+
+  // get the estimate for the ribbon
+  <* CodeGen[estRulesP] *>
+
+  for (int ip = 1; ip < 3; ++ip)
+    {
+      for (int jc = 0; jc < 3; ++jc)
+        {
+          p(ip,jc) = pe(ip,jc);
+        }
+    }
+  pin = p;
+}
+
+}

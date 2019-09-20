@@ -38,7 +38,7 @@
 /* Function(s) contained in this file:
  *     ex_put_cmap_params_cc()
  *****************************************************************************
- * This function outputs the concantenated list of communication map
+ * This function outputs the concatenated list of communication map
  * parameters.
  *****************************************************************************
  *  Variable Index:

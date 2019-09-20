@@ -287,7 +287,28 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, parameter_list_construction)
       pl->set("No File Name","meshes/basic.gen");
       TEST_THROW(factory.setParameterList(pl),Teuchos::Exceptions::InvalidParameter);
    }
+
 }
+
+#ifdef PANZER_HAVE_PERCEPT
+TEUCHOS_UNIT_TEST(tExodusReaderFactory, percept)
+{
+  STK_ExodusReaderFactory factory;
+
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
+  pl->set("File Name","meshes/basic.gen");
+  pl->set("Levels of Uniform Refinement",1);
+  TEST_NOTHROW(factory.setParameterList(pl));
+
+  Teuchos::RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+  const bool delayCommitForRefinement = true;
+  mesh->initialize(MPI_COMM_WORLD,false,delayCommitForRefinement);
+  factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+
+  // test  number of total elements to make sure refinement works
+  TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),32);
+}
+#endif
 
 }
 

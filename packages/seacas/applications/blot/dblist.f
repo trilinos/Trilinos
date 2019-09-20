@@ -664,7 +664,7 @@ C      --Transfer needed variables to random disk
 
          CALL MDDEL ('SCRVAR')
 
-C *** Miscellaneous Commmands ***
+C *** Miscellaneous Commands ***
 
       ELSE IF (LISTYP .EQ. 'STEPS') THEN
          CALL PRTIMS ('NM', NOUT, .TRUE., .TRUE.,

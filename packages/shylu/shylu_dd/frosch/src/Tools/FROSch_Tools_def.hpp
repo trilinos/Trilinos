@@ -44,6 +44,10 @@
 
 #include <FROSch_Tools_decl.hpp>
 
+#include <Xpetra_Export.hpp>
+#include <Xpetra_Import.hpp>
+#include <Xpetra_ImportFactory.hpp>
+
 
 namespace FROSch {
 

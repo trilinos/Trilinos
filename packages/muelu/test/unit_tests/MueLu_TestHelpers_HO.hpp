@@ -228,7 +228,7 @@ namespace MueLuTests {
       }
       else {
         // Tpetra is easy
-        B = rcp(new CrsMatrixWrap(pn_rowmap,pn_colmap,0));
+        B = rcp(new CrsMatrixWrap(pn_rowmap,pn_colmap,global_num_elements));
       }
 
 

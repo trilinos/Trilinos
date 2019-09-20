@@ -84,6 +84,8 @@ namespace Iocgns {
 
     ~ParallelDatabaseIO();
 
+    const std::string get_format() const override {return "CGNS";}
+
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the

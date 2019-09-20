@@ -23,15 +23,29 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   DIRK_Combined_FSA
-  NAME "DIRK_Combined_FSA_IRK_1_Stage_Theta"
-  ARGS "--method=\"IRK 1 Stage Theta Method\""
+  NAME "DIRK_Combined_FSA_DIRK_1_Stage_Theta"
+  ARGS "--method=\"DIRK 1 Stage Theta Method\""
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_TEST(
   DIRK_Combined_FSA
-  NAME "DIRK_Combined_FSA_SDIRK_1_Stage_1st_Order"
-  ARGS "--method=\"SDIRK 1 Stage 1st order\""
+  NAME "DIRK_Combined_FSA_RK_Implicit_1_Stage_1st_order_Radau_IA"
+  ARGS "--method=\"RK Implicit 1 Stage 1st order Radau IA\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  DIRK_Combined_FSA
+  NAME "DIRK_Combined_FSA_RK_Implicit_2_Stage_2nd_order_Lobatto_IIIB"
+  ARGS "--method=\"RK Implicit 2 Stage 2nd order Lobatto IIIB\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  DIRK_Combined_FSA
+  NAME "DIRK_Combined_FSA_RK_Implicit_Midpoint"
+  ARGS "--method=\"RK Implicit Midpoint\""
   NUM_MPI_PROCS 1
   )
 
@@ -84,6 +98,27 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_ADD_TEST(
+  DIRK_Combined_FSA
+  NAME "DIRK_Combined_FSA_SDIRK_2-1_Pair"
+  ARGS "--method=\"SDIRK 2(1) Pair\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  DIRK_Combined_FSA
+  NAME "DIRK_Combined_FSA_RK_Trapezoidal_Rule"
+  ARGS "--method=\"RK Trapezoidal Rule\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  DIRK_Combined_FSA
+  NAME "DIRK_Combined_FSA_RK_Crank-Nicolson"
+  ARGS "--method=\"RK Crank-Nicolson\""
+  NUM_MPI_PROCS 1
+  )
+
 TRIBITS_ADD_EXECUTABLE(
   DIRK_Staggered_FSA
   SOURCES Tempus_DIRK_Staggered_FSA.cpp Tempus_DIRK_FSA.hpp
@@ -99,15 +134,29 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   DIRK_Staggered_FSA
-  NAME "DIRK_Staggered_FSA_IRK_1_Stage_Theta"
-  ARGS "--method=\"IRK 1 Stage Theta Method\""
+  NAME "DIRK_Staggered_FSA_DIRK_1_Stage_Theta"
+  ARGS "--method=\"DIRK 1 Stage Theta Method\""
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_TEST(
   DIRK_Staggered_FSA
-  NAME "DIRK_Staggered_FSA_SDIRK_1_Stage_1st_Order"
-  ARGS "--method=\"SDIRK 1 Stage 1st order\""
+  NAME "DIRK_Staggered_FSA_RK_Implicit_1_Stage_1st_order_Radau_IA"
+  ARGS "--method=\"RK Implicit 1 Stage 1st order Radau IA\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  DIRK_Staggered_FSA
+  NAME "DIRK_Staggered_FSA_RK_Implicit_2_Stage_2nd_order_Lobatto_IIIB"
+  ARGS "--method=\"RK Implicit 2 Stage 2nd order Lobatto IIIB\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  DIRK_Staggered_FSA
+  NAME "DIRK_Staggered_FSA_RK_Implicit_Midpoint"
+  ARGS "--method=\"RK Implicit Midpoint\""
   NUM_MPI_PROCS 1
   )
 
@@ -157,6 +206,27 @@ TRIBITS_ADD_TEST(
   DIRK_Staggered_FSA
   NAME "DIRK_Staggered_FSA_SDIRK_5_Stage_5th_Order"
   ARGS "--method=\"SDIRK 5 Stage 5th order\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  DIRK_Staggered_FSA
+  NAME "DIRK_Staggered_FSA_SDIRK_2-1_Pair"
+  ARGS "--method=\"SDIRK 2(1) Pair\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  DIRK_Staggered_FSA
+  NAME "DIRK_Staggered_FSA_RK_Trapezoidal_Rule"
+  ARGS "--method=\"RK Trapezoidal Rule\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  DIRK_Staggered_FSA
+  NAME "DIRK_Staggered_FSA_RK_Crank-Nicolson"
+  ARGS "--method=\"RK Crank-Nicolson\""
   NUM_MPI_PROCS 1
   )
 

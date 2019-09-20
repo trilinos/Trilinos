@@ -65,8 +65,24 @@ namespace MueLu {
   // Try to stick unaggregated nodes into a neighboring aggregate if they are
   // not already too big. Otherwise, make a new aggregate
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationPhase3Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  void AggregationPhase3Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  BuildAggregates(const ParameterList& params,
+                  const LWGraph_kokkos& graph,
+                  Aggregates_kokkos& aggregates,
+                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggstat,
+                  LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
+
+    using memory_space = typename LWGraph_kokkos::memory_space;
+
+    typename Kokkos::View<unsigned*, memory_space>::HostMirror aggstatHost
+      = Kokkos::create_mirror(aggstat);
+    Kokkos::deep_copy(aggstatHost, aggstat);
+    std::vector<unsigned> aggStat;
+    aggStat.resize(aggstatHost.extent(0));
+    for(size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
+      aggStat[idx] = aggstatHost(idx);
+    }
 
     bool makeNonAdjAggs = false;
     bool error_on_isolated = false;
@@ -135,19 +151,19 @@ namespace MueLu {
           vertex2AggId[i] = vertex2AggId[neighOfINode(j)];
           numNonAggregatedNodes--;
           failedToAggregate = false;
-        } 
+        }
       }
 
       if (failedToAggregate && makeNonAdjAggs) {
         //  it we are still didn't find an aggregate home for i (i.e., we have
-        //  a potential singleton), we are desperate. Basically, we seek to 
+        //  a potential singleton), we are desperate. Basically, we seek to
         //  group i with any other local point to form an aggregate (even if
         //  it is not a neighbor of i. Either we find a vertex that is already
         //  aggregated or not aggregated.
         //    1) if found vertex is aggregated, then assign i to this aggregate
         //    2) if found vertex is not aggregated, create new aggregate
-        
-           
+
+
         for (LO ii = 0; ii < numRows; ii++) { // look for anyone else
           if ( (ii != i) && (aggStat[ii] != IGNORED) ) {
             failedToAggregate = false;       // found someone so start
@@ -193,6 +209,11 @@ namespace MueLu {
       procWinner[i] = myRank;
 
     }
+
+    for(size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
+      aggstatHost(idx) = aggStat[idx];
+    }
+    Kokkos::deep_copy(aggstat, aggstatHost);
 
     // update aggregate object
     aggregates.SetNumAggregates(numLocalAggregates);

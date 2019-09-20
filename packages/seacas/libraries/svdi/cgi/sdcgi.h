@@ -123,7 +123,7 @@ void cqtxa_(f_integer *vstat, f_integer *txbi, f_integer *fonti, f_integer *font
             f_integer *veral, f_real *contva, f_integer *chsi, f_integer *achsi);
 void cqcte_(f_integer *nreq, f_integer *first, f_integer *vstat, f_integer *ntotal,
             f_integer *nlist, f_integer *colors);
-void crqlc_(f_integer *idev, f_real *timout, f_integer *vstat, f_integer *rstat, f_integer *mvalid,
+void crqlc_(f_integer *idev, f_real *timeout, f_integer *vstat, f_integer *rstat, f_integer *mvalid,
             f_integer *triggr, f_real *x, f_real *y);
 void cili_(f_integer *iclass, f_integer *idev);
 void cpxa_(f_real *x, f_real *y, f_integer *nx, f_integer *ny, f_integer *xscal, f_integer *yscal,

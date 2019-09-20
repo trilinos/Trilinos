@@ -94,7 +94,7 @@ C
       END IF
 C
 C initialize ICHKEL array - only needs to be done once because
-C checkmark used is specfic to each element
+C checkmark used is specific to each element
 C
       DO 10 I = 1, NUMEBA
         ICHKEL(I) = 0

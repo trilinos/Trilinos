@@ -657,7 +657,7 @@ struct KokkosSPGEMM
           num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
                               teamMember, vector_size, hash,n_set_index,
 			      n_set, used_hash_sizes, shmem_hash_size);
-
+          overall_num_unsuccess_ += num_unsuccess;
       }, overall_num_unsuccess);
 
 #ifdef KOKKOSKERNELSMOREMEM

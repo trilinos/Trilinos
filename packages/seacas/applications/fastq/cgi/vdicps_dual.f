@@ -96,7 +96,7 @@ C                   attribute values, the color table, and current
 C                   position are set to appropriate defaults for the
 C                   device.  All necessary input device initialization
 C                   is done.  The screen is cleared or paper advanced
-C                   if necessary to guarentee a blank view surface for
+C                   if necessary to guarantee a blank view surface for
 C                   drawing on.
 C
 C                   ASPECT specifies the ratio of the X dimension to the
@@ -1673,7 +1673,7 @@ C                   buffers if necessary.  Also prepare the device to
 C                   operate in alphanumeric (as opposed to graphic)
 C                   mode.  This is necessary on some devices so that
 C                   alphanumeric data from FORTRAN I/O won't be
-C                   misinterpretted as graphic data.
+C                   misinterpreted as graphic data.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
@@ -3147,7 +3147,7 @@ C                   only to text primitives.
 C                   All devices must support at least a single device
 C                   dependent value that is the default.  If an
 C                   unsupported value is specified, set to the largest
-C                   suported character size that does not exceed the
+C                   supported character size that does not exceed the
 C                   specified size.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
@@ -3266,7 +3266,7 @@ C
 C CONVERT LINE-WIDTH TO NDC
       LW=WIDTH*.005
 C
-C CONVERT WIDTH TO DEVICE COORDINATES AND ADD A DIGIT; NEED IT TO HUNDRETHS
+C CONVERT WIDTH TO DEVICE COORDINATES AND ADD A DIGIT; NEED IT TO HUNDREDTHS
       ILW=NINT(XSCALE*LW*10.)
 C     A LINEWIDTH OF ZERO WORKS ONLY PART OF THE TIME
       IF(ILW.LT.10) ILW=10
@@ -3290,7 +3290,7 @@ C
       CALL VBSTLS(LINSTY)
   999 RETURN
       END
-      SUBROUTINE WCPSIE(ESCPCD,SUPPRT)
+      SUBROUTINE WCPSIE(ESCPCD,SUPPORT)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
 C VDIQES           -Inquire Escape.
@@ -3306,18 +3306,18 @@ C                   function specified.  Range 0,1,2.
 C
 C NARRATIVE        -An integer value indicating 2=hardware supported,
 C                   1=software supported, 0=unsupported is returned in
-C                   SUPPRT for the escape function ESCPCD.
+C                   SUPPORT for the escape function ESCPCD.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
-      INTEGER ESCPCD,SUPPRT
+      INTEGER ESCPCD,SUPPORT
       IF (ESCPCD.EQ.2100) THEN
-         SUPPRT=2
+         SUPPORT=2
       ELSEIF ((ESCPCD.GE.2101).AND.(ESCPCD.LE.2110)) THEN
-         SUPPRT=2
+         SUPPORT=2
 C ELSE THERE IS NO SUPPORT OF ANY OTHER ESCAPE CODES
       ELSE
-         SUPPRT=0
+         SUPPORT=0
       END IF
       RETURN
       END

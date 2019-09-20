@@ -51,7 +51,9 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_Matrix.hpp"
+#include "Xpetra_MatrixUtils.hpp"
 #include "Xpetra_MatrixFactory.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
@@ -252,6 +254,57 @@ namespace {
   }
 
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Matrix, BlockDiagonalUtils_Tpetra, M, MA, Scalar, LO, GO, Node )
+  {
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+    const size_t numLocal = 10;
+    const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
+    using MV  = Xpetra::MultiVector<Scalar,LO,GO,Node>;
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+    Scalar SC_one = Teuchos::ScalarTraits<Scalar>::one();
+
+
+#ifdef HAVE_XPETRA_TPETRA
+    typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
+    RCP<const Xpetra::Map<LO,GO,Node> > map =
+      Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);   
+     {
+       // create the identity matrix, via three arrays constructor
+       ArrayRCP<size_t> rowptr(numLocal+1);
+       ArrayRCP<LO>     colind(numLocal); // one unknown per row
+       ArrayRCP<Scalar> values(numLocal); // one unknown per row
+       
+       for(size_t i=0; i<numLocal; i++){
+         rowptr[i] = i;
+         colind[i] = Teuchos::as<LO>(i);
+         values[i] = SC_one + SC_one;
+       }
+       rowptr[numLocal]=numLocal;
+       RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > eye2  = Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map,map,0);
+       TEST_NOTHROW( eye2->setAllValues(rowptr,colind,values) );
+       TEST_NOTHROW( eye2->expertStaticFillComplete(map,map) );
+
+       RCP<const Xpetra::Matrix<Scalar, LO, GO, Node> > eye2x(new CrsMatrixWrap(eye2));
+       
+       // Just extract & scale; don't test correctness (Tpetra does this)
+       RCP<const MV> diag5c = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(map,5);  
+       RCP<MV> diag5 = rcp_const_cast<MV>(diag5c);
+       diag5->putScalar(SC_one);
+
+       Xpetra::MatrixUtils<Scalar, LO, GO, Node>::extractBlockDiagonal(*eye2x,*diag5);
+
+       RCP<MV> toScale5 = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(map,2); toScale5->putScalar(SC_one);
+       
+       Xpetra::MatrixUtils<Scalar, LO, GO, Node>::inverseScaleBlockDiagonal(*diag5c,*toScale5);
+      
+
+     }
+#endif
+  }
+
 
 //
 // INSTANTIATIONS
@@ -276,7 +329,8 @@ namespace {
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, StridedMaps_Tpetra,  M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, BuildCopy_StridedMaps_Tpetra,  M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, ViewSwitching, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N )
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, ViewSwitching, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, BlockDiagonalUtils_Tpetra, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N )
 
 // List of tests which run only with Epetra
 #define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N) \

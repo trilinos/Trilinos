@@ -112,6 +112,8 @@ typedef struct ML_Aggregate_Struct
                                      /* will be applied                       */
   char   semicoarsen_coordinate;     /* coordinate direction to be coarsened  */
 
+  /*cms*/
+  double rowsum_threshold;          /**<  for dropping sub-CFL rows in reaction-diffusion */
 
 } ML_Aggregate;
 
@@ -263,6 +265,9 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,const int l
 
 int ML_Aggregate_Set_Threshold( ML_Aggregate *, double epsilon );
 int ML_Aggregate_Reset_Threshold( ML_Aggregate * );
+
+int ML_Aggregate_Set_RowSum_Threshold( ML_Aggregate *, double epsilon );
+int ML_Aggregate_Reset_RowSum_Threshold( ML_Aggregate * );
 
 /* ------------------------------------------------------------------------- */
 /* whether to smooth existing tentative prolongator                          */
