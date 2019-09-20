@@ -47,6 +47,8 @@
 #  include <quadmath.h> // __float128 functions
 #endif // HAVE_TEUCHOSCORE_QUADMATH
 
+// a trivial change for PR testing -- this won't be merged into Trilinos, I'm just testing a tweak to the PR system
+
 namespace Teuchos {
 
 /** \brief Default traits class for converting objects into strings.
