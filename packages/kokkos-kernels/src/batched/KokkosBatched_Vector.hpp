@@ -26,8 +26,10 @@ namespace KokkosBatched {
     enum : int { value = 16 };
 #elif defined(__AVX__) || defined(__AVX2__)
     enum : int { value = 8 };
+#elif defined(__ARM_ARCH)
+    enum : int { value = 8 };    
 #else
-    enum : int { value = 16 };      
+    enum : int { value = 8 };      
 #endif
   };
   template<>
@@ -36,8 +38,10 @@ namespace KokkosBatched {
     enum : int { value = 8 };
 #elif defined(__AVX__) || defined(__AVX2__)
     enum : int { value = 4 };
+#elif defined(__ARM_ARCH)
+    enum : int { value = 4 };    
 #else
-    enum : int { value = 8 };      
+    enum : int { value = 4 };      
 #endif
   };
   template<>    
@@ -46,8 +50,10 @@ namespace KokkosBatched {
     enum : int { value = 8 };
 #elif defined(__AVX__) || defined(__AVX2__)
     enum : int { value = 4 };
+#elif defined(__ARM_ARCH)
+    enum : int { value = 4 };    
 #else
-    enum : int { value = 8 };      
+    enum : int { value = 4 };      
 #endif
   };
   template<>
@@ -56,8 +62,10 @@ namespace KokkosBatched {
     enum : int { value = 4 };
 #elif defined(__AVX__) || defined(__AVX2__)
     enum : int { value = 2 };
+#elif defined(__ARM_ARCH)
+    enum : int { value = 2 };    
 #else 
-    enum : int { value = 4 };      
+    enum : int { value = 2 };      
 #endif
   };
 
