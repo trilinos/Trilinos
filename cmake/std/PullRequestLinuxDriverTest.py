@@ -30,6 +30,7 @@ import argparse
 import os
 import re
 import sys
+import textwrap
 
 import subprocess
 from multiprocessing import cpu_count
@@ -51,6 +52,9 @@ except ImportError:
 
 
 def parse_args():
+    """
+    Parse the command line arguments.
+    """
     parser = argparse.ArgumentParser(
         description='Parse the repo and build information')
     parser.add_argument('sourceRepo',
@@ -78,6 +82,9 @@ def parse_args():
 
 
 def print_input_variables(arguments):
+    """
+    Print out the input parameters to the console.
+    """
     print(
         "\n==========================================================================================",
         file=sys.stdout)
@@ -116,6 +123,10 @@ def print_input_variables(arguments):
 
 
 def confirmGitVersion():
+    """
+    Verify that the git version is at least 2.10.
+    If it is not then exit with an error.
+    """
     git_version_string = subprocess.check_output(['git', '--version'])
     git_version_number_string = git_version_string[git_version_string.rfind(' '):]
     major_git_version = int(git_version_number_string[:git_version_number_string.find('.')])
@@ -124,12 +135,14 @@ def confirmGitVersion():
 
     if major_git_version  <  2 or (major_git_version == 2 and
                                    minor_git_version < 10):
-        raise SystemExit("Git version  should be 2.10 or better - Exiting!")
+        raise SystemExit("Git version should be 2.10 or better - Exiting!")
     else:
         print(git_version_string)
 
 
 def setBuildEnviron(arguments):
+    """
+    """
     moduleMap = {'Trilinos_pullrequest_gcc_4.8.4':
                      ['sems-env',
                      'sems-git/2.10.1',
@@ -373,20 +386,30 @@ def setBuildEnviron(arguments):
 
 
 def getCDashTrack():
+    """
+    Return the CDash track to report results to.
+
+    If the OS environment variable `PULLREQUEST_CDASH_TRACK` is defined
+    then we use the its value. Otherwise, use the default value.
+
+    Default: "Pull Request"
+    """
     returnValue = 'Pull Request'
     if 'PULLREQUEST_CDASH_TRACK' in os.environ:
         returnValue = os.environ['PULLREQUEST_CDASH_TRACK']
-        print('PULLREQUEST_CDASH_TRACK is set. Setting CDASH_TRACK={}'.format(
-            returnValue) )
+        print('PULLREQUEST_CDASH_TRACK is set. Setting CDASH_TRACK={}'.format(returnValue) )
         returnValue = os.environ['PULLREQUEST_CDASH_TRACK']
     else:
         print('PULLREQUEST_CDASH_TRACK isn\'t set, using default value')
 
     return returnValue
 
+
 def compute_n():
-    '''given the default and the hardware environment determine the
-     number of processors  to use'''
+    """
+    Compute the numer of processors to use, given the default
+    settings and the hardware environment.
+    """
     try:
         environment_weight = int(os.environ['JENKINS_JOB_WEIGHT'])
     except KeyError:
@@ -396,7 +419,7 @@ def compute_n():
     n_cpu = cpu_count()
     # this assumes unix/linux systems. A more general
     # solution is available in psutil at the cost of
-    # using anaconda - which is not  bad.
+    # using anaconda - which is not bad.
     with open('/proc/meminfo') as f_ptr:
         meminfo = dict((i.split()[0].rstrip(':'), int(i.split()[1])) for i in
                         f_ptr.readlines())
@@ -408,15 +431,6 @@ def compute_n():
     if parallel_level > environment_weight:
         parallel_level = environment_weight
     return parallel_level
-
-
-config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4TestingSettings.cmake',
-              'Trilinos_pullrequest_intel_17.0.1': 'PullRequestLinuxIntelTestingSettings.cmake',
-              'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
-              'Trilinos_pullrequest_gcc_7.2.0': 'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
-              'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
-              'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
-              'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
 
 
 def createPackageEnables(arguments):
@@ -456,7 +470,22 @@ PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' O
         print('There was an issue generating packageEnables.cmake.  '
               'The error code was: {}'.format(cpe.returncode))
 
+
+
+config_map = {
+    'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4TestingSettings.cmake',
+    'Trilinos_pullrequest_intel_17.0.1': 'PullRequestLinuxIntelTestingSettings.cmake',
+    'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
+    'Trilinos_pullrequest_gcc_7.2.0': 'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
+    'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
+    'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
+    'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'
+}
+
+
 def run():
+    """
+    """
     return_value = True
     arguments = parse_args()
 
@@ -467,19 +496,22 @@ def run():
     re_src_branchname = "master_merge_[0-9]{8}_[0-9]{6}"
     if "master" == arguments.targetBranch:
         if re.match(re_src_branchname, arguments.sourceBranch) is None:
-            sys.exit("""------------------------------------------------------------------------------------------
-NOTICE: Destination branch is trilinos/Trilnos::master
-ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
-      : This violates Trilinos policy, pull requests into the master branch are restricted.
-      : Perhaps you forgot to specify the develop branch as the target in your PR?
-------------------------------------------------------------------------------------------
-""")
+            sys.exit(textwrap.dedent("""\
+                ------------------------------------------------------------------------------------------
+                NOTICE: Destination branch is trilinos/Trilnos::master
+                ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
+                      : This violates Trilinos policy, pull requests into the master branch are restricted.
+                      : Perhaps you forgot to specify the develop branch as the target in your PR?
+                ------------------------------------------------------------------------------------------
+                """))
         else:
-            print("""NOTICE: Source branch IS trilinos/Trilinos::{}
-        : This is allowed, proceeding with testing.""".format(arguments.sourceBranch))
+            print(textwrap.dedent("""\
+                NOTICE: Source branch IS trilinos/Trilinos::{}
+                      : This is allowed, proceeding with testing.""".format(arguments.sourceBranch)))
     else:
-        print("""NOTICE: Destination branch is NOT trilinos/Trilinos::master"
-      : PR testing will proceed.""")
+        print(textwrap.dedent("""\
+                NOTICE: Destination branch is NOT trilinos/Trilinos::master"
+                      : PR testing will proceed."""))
 
     setBuildEnviron(arguments)
 
