@@ -303,7 +303,7 @@ namespace MueLu {
 
         // compute D^{-1} * A * D^{-1} * A * P0
         bool doFillComplete=true;
-        bool optimizeStorage=false;
+        bool optimizeStorage=true;
         Teuchos::ArrayRCP<Scalar> diagA = Utilities::GetMatrixDiagonal(*A);
         RCP<Matrix> DinvADinvAP0 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *DinvAP0, false, GetOStream(Statistics2), doFillComplete, optimizeStorage);
         Utilities::MyOldScaleMatrix(*DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
