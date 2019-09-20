@@ -113,6 +113,8 @@ namespace FROSch {
 
         ConstDDInterfacePtr getDDInterface() const;
         
+        DDInterfacePtr getDDInterfaceNonConst() const;
+        
         virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null) = 0;
 
     protected:

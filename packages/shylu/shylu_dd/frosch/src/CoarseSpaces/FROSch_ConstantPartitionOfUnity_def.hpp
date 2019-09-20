@@ -59,9 +59,10 @@ namespace FROSch {
                                                                     ConstXMapPtrVecPtr dofsMaps,
                                                                     ParameterListPtr parameterList,
                                                                     Verbosity verbosity,
-                                                                    UN levelID) :
+                                                                    UN levelID,
+                                                                    DDInterfacePtr ddInterface) :
     PartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
-    DDInterface_ (),
+    DDInterface_ (ddInterface),
     UseVolumes_ (false),
     Volumes_ ()
     {
@@ -88,10 +89,10 @@ namespace FROSch {
             FROSCH_ASSERT(false,"FROSch::InterfacePartitionOfUnity : ERROR: Specify a valid communication strategy for the identification of the interface components.");
         }
         
-        DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap.getConst(),this->Verbosity_,this->LevelID_,communicationStrategy));
-        FROSCH_ASSERT(DDInterface_->getInterface()->getEntity(0)->getNumNodes()==0,"FROSch::ConstantPartitionOfUnity : ERROR: Is only reasonable if there is no interface.");
-        DDInterface_->resetGlobalDofs(dofsMaps);        
-        Volumes_ = DDInterface_->getInterior()->deepCopy();
+        if (DDInterface_.is_null()) DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap.getConst(),this->Verbosity_,this->LevelID_,communicationStrategy));
+        FROSCH_ASSERT(DDInterface_->getInterface()->getEntity(0)->getNumNodes()==0,"FROSch::ConstantPartitionOfUnity : ERROR: Is only reasonable if there is no interface."); this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST0.1\n";
+        DDInterface_->resetGlobalDofs(dofsMaps); this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST0.2\n";
+        Volumes_ = DDInterface_->getInterior()->deepCopy(); this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST0.3\n";
         
         this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(1);
         this->PartitionOfUnityMaps_ = XMapPtrVecPtr(1);
@@ -155,10 +156,8 @@ namespace FROSch {
                 max[0] = -1;
             }
             
-            for (UN i=0; i<global.size(); i++) {
-                if (global[i]<0) {
-                    global[i] = -1;
-                }
+            if (global[0]<0) {
+                global[0] = -1;
             }
             
             if (this->Verbose_) {

@@ -94,7 +94,8 @@ namespace FROSch {
                                  ConstXMapPtrVecPtr dofsMaps,
                                  ParameterListPtr parameterList,
                                  Verbosity verbosity = All,
-                                 UN levelID = 1);
+                                 UN levelID = 1,
+                                 DDInterfacePtr ddInterface = null);
 
         virtual ~ConstantPartitionOfUnity();
 

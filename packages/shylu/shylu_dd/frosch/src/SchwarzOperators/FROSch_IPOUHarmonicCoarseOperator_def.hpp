@@ -219,12 +219,21 @@ namespace FROSch {
 
             // Check whether the interface is empty. If so, we use a ConstantPartitionOfUnity instead, because we assume that the subdomains are decoupled.
             if (interface->getNumNodes()==0) {
-                if (this->Verbose_) std::cout << "FROSch::IPOUHarmonicCoarseOperator : WARNING: No interface found => A Consttant Partition of Unity will be used instead.";
+                if (this->Verbose_) std::cout << "FROSch::IPOUHarmonicCoarseOperator : WARNING: No interface found => A Constant Partition of Unity will be used instead." << std::endl;
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("RGDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
-                PartitionOfUnity_ = PartitionOfUnityPtr(new ConstantPartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"PartitionOfUnity"),"Constant"),verbosity,this->LevelID_));
-
+                PartitionOfUnity_ = PartitionOfUnityPtr(new ConstantPartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,
+                                                                                                  this->SerialComm_,
+                                                                                                  dimension,
+                                                                                                  this->DofsPerNode_[blockId],
+                                                                                                  nodesMap,
+                                                                                                  this->DofsMaps_[blockId],
+                                                                                                  sublist(sublist(coarseSpaceList,"PartitionOfUnity"),"Constant"),
+                                                                                                  verbosity,
+                                                                                                  this->LevelID_,
+                                                                                                  interfacePartitionOfUnity->getDDInterfaceNonConst()));
+this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST1\n";
                 PartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs());
-
+this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST2\n";
                 // Construct Interface and Interior index sets
                 this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getNumNodes());
                 this->IDofs_[blockId] = LOVecPtr(0);
@@ -233,7 +242,7 @@ namespace FROSch {
                         this->GammaDofs_[blockId][interior->getGammaDofID(i,k)] = interior->getLocalDofID(i,k);
                     }
                 }
-
+this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST3\n";
                 PartitionOfUnity_->computePartitionOfUnity(nodeList);
             } else {
                 interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);

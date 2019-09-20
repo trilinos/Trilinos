@@ -91,6 +91,11 @@ namespace FROSch {
         return DDInterface_.getConst();
     }
 
+    template <class SC,class LO,class GO,class NO>
+    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getDDInterfaceNonConst() const
+    {
+        return DDInterface_;
+    }
 }
 
 #endif
