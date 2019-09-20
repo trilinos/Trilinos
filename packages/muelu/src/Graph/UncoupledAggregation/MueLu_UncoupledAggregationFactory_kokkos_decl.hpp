@@ -138,9 +138,9 @@ namespace MueLu {
     | Aggregates   | UncoupledAggregationFactory   | Container class with aggregation information. See also Aggregates.
 */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class UncoupledAggregationFactory_kokkos : public SingleLevelFactoryBase {
 #undef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"

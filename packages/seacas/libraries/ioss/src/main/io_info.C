@@ -70,10 +70,11 @@ namespace {
 
   void info_df(const Ioss::GroupingEntity *ge, const std::string &prefix)
   {
-    int64_t num_dist = ge->get_property("distribution_factor_count").get_int();
+    int64_t             num_dist = ge->get_property("distribution_factor_count").get_int();
+    std::vector<double> df;
+    // Do even if num_dist == 0 so parallel does not assert.
+    ge->get_field_data("distribution_factors", df);
     if (num_dist > 0) {
-      std::vector<double> df;
-      ge->get_field_data("distribution_factors", df);
       auto mm = std::minmax_element(df.begin(), df.end());
       fmt::print("{}Distribution Factors: ", prefix);
       if (*mm.first == *mm.second) {
@@ -228,60 +229,52 @@ namespace {
 
   void info_structuredblock(Ioss::Region &region, const Info::Interface &interface)
   {
-    bool parallel      = region.get_database()->is_parallel();
-    int  parallel_size = region.get_database()->parallel_size();
+    bool                                  parallel = region.get_database()->is_parallel();
+    const Ioss::StructuredBlockContainer &sbs      = region.get_structured_blocks();
+    for (auto sb : sbs) {
+      int64_t num_cell = sb->get_property("cell_count").get_int();
+      int64_t num_node = sb->get_property("node_count").get_int();
+      int64_t num_dim  = sb->get_property("component_degree").get_int();
 
-    const Ioss::StructuredBlockContainer &sbs = region.get_structured_blocks();
-    for (int proc = 0; proc < parallel_size; proc++) {
-      if (proc == region.get_database()->parallel_rank()) {
-        if (parallel)
-          fmt::print("\nProcessor {}", proc);
+      fmt::print("\n{} {}", name(sb), sb->get_property("ni_global").get_int());
+      if (num_dim > 1) {
+        fmt::print("x{}", sb->get_property("nj_global").get_int());
       }
-      for (auto sb : sbs) {
-        int64_t num_cell = sb->get_property("cell_count").get_int();
-        int64_t num_node = sb->get_property("node_count").get_int();
-        int64_t num_dim  = sb->get_property("component_degree").get_int();
+      if (num_dim > 2) {
+        fmt::print("x{}", sb->get_property("nk_global").get_int());
+      }
 
-        fmt::print("\n{} {}", name(sb), sb->get_property("ni_global").get_int());
-        if (num_dim > 1) {
-          fmt::print("x{}", sb->get_property("nj_global").get_int());
-        }
-        if (num_dim > 2) {
-          fmt::print("x{}", sb->get_property("nk_global").get_int());
-        }
+      if (parallel) {
+        fmt::print(" [{}x{}x{}, Offset = {}, {}, {}] ", sb->get_property("ni").get_int(),
+                   sb->get_property("nj").get_int(), sb->get_property("nk").get_int(),
+                   sb->get_property("offset_i").get_int(), sb->get_property("offset_j").get_int(),
+                   sb->get_property("offset_k").get_int());
+      }
 
-        if (parallel) {
-          fmt::print(" [{}x{}x{}, Offset = {}, {}, {}] ", sb->get_property("ni").get_int(),
-                     sb->get_property("nj").get_int(), sb->get_property("nk").get_int(),
-                     sb->get_property("offset_i").get_int(), sb->get_property("offset_j").get_int(),
-                     sb->get_property("offset_k").get_int());
-        }
+      fmt::print("{:14n} cells, {:14n} nodes ", num_cell, num_node);
 
-        fmt::print("{:14n} cells, {:14n} nodes ", num_cell, num_node);
+      info_aliases(region, sb, true, false);
+      info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      info_nodeblock(region, sb->get_node_block(), interface, "\t");
+      fmt::print("\n");
 
-        info_aliases(region, sb, true, false);
-        info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
-        info_nodeblock(region, sb->get_node_block(), interface, "\t");
-        fmt::print("\n");
-
-        if (!sb->m_zoneConnectivity.empty()) {
-          fmt::print("\tConnectivity with other blocks:\n");
-          for (const auto &zgc : sb->m_zoneConnectivity) {
-            fmt::print("{}\n", zgc);
-          }
+      if (!sb->m_zoneConnectivity.empty()) {
+        fmt::print("\tConnectivity with other blocks:\n");
+        for (const auto &zgc : sb->m_zoneConnectivity) {
+          fmt::print("{}\n", zgc);
         }
-        if (!sb->m_boundaryConditions.empty()) {
-          fmt::print("\tBoundary Conditions:\n");
-          for (const auto &bc : sb->m_boundaryConditions) {
-            fmt::print("{}\n", bc);
-          }
+      }
+      if (!sb->m_boundaryConditions.empty()) {
+        fmt::print("\tBoundary Conditions:\n");
+        for (const auto &bc : sb->m_boundaryConditions) {
+          fmt::print("{}\n", bc);
         }
-        if (interface.compute_bbox()) {
-          Ioss::AxisAlignedBoundingBox bbox = sb->get_bounding_box();
-          fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
-                     "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
-                     bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax);
-        }
+      }
+      if (interface.compute_bbox()) {
+        Ioss::AxisAlignedBoundingBox bbox = sb->get_bounding_box();
+        fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
+                   "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
+                   bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax);
       }
     }
   }
@@ -392,16 +385,21 @@ namespace {
       if (interface.adjacencies()) {
         std::vector<std::string> blocks;
         fs->block_membership(blocks);
-        fmt::print("\n\tTouches {} element block(s):\t", blocks.size());
+        fmt::print("\n\t\tTouches {} element block(s):\t", blocks.size());
         for (const auto &block : blocks) {
           fmt::print("{}  ", block);
         }
-        fmt::print("\n");
       }
+      fmt::print("\n");
       const Ioss::SideBlockContainer &fbs = fs->get_side_blocks();
       for (auto fb : fbs) {
-        fmt::print("\n\t{}", name(fb));
-        info_fields(fb, Ioss::Field::TRANSIENT, "\n\t\tTransient: ");
+        int64_t count      = fb->entity_count();
+        int64_t num_attrib = fb->get_property("attribute_count").get_int();
+        int64_t num_dist   = fb->get_property("distribution_factor_count").get_int();
+        fmt::print("\t{}, {:8n} sides, {:3d} attributes, {:8n} distribution factors.\n", name(fb),
+                   count, num_attrib, num_dist);
+        info_df(fb, "\t\t");
+        info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ");
       }
     }
   }
@@ -572,23 +570,36 @@ namespace Ioss {
       std::exit(EXIT_FAILURE);
     }
 
-    // Get all properties of input database...
-    region.output_summary(std::cerr, true);
+    bool parallel      = region.get_database()->is_parallel();
+    int  parallel_size = region.get_database()->parallel_size();
+    int  parallel_rank = region.get_database()->parallel_rank();
+    region.get_database()->set_parallel_consistency(false);
 
-    if (interface.summary() == 0) {
-      info_nodeblock(region, interface);
-      info_edgeblock(region);
-      info_faceblock(region);
-      info_elementblock(region, interface);
-      info_structuredblock(region, interface);
+    for (int proc = 0; proc < parallel_size; proc++) {
+      if (proc == parallel_rank) {
+        if (parallel) {
+          fmt::print("\nProcessor {}", proc);
+        }
+        region.output_summary(std::cout, true);
 
-      info_nodesets(region);
-      info_edgesets(region);
-      info_facesets(region);
-      info_elementsets(region);
+        if (interface.summary() == 0) {
 
-      info_sidesets(region, interface);
-      info_coordinate_frames(region);
+          info_nodeblock(region, interface);
+          info_edgeblock(region);
+          info_faceblock(region);
+          info_elementblock(region, interface);
+          info_structuredblock(region, interface);
+
+          info_nodesets(region);
+          info_edgesets(region);
+          info_facesets(region);
+          info_elementsets(region);
+
+          info_sidesets(region, interface);
+          info_coordinate_frames(region);
+        }
+      }
+      region.get_database()->util().barrier();
     }
 
     if (interface.compute_volume()) {

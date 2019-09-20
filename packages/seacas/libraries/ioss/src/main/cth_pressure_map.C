@@ -59,6 +59,7 @@
 #include "Ioss_NodeSet.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
 #include "Ioss_State.h"
@@ -138,6 +139,7 @@ int main(int argc, char *argv[])
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
+  ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
   std::string in_type  = "exodusII";
@@ -323,9 +325,6 @@ int main(int argc, char *argv[])
   file_copy(in_file, in_type, out_file, out_type, sset_file, globals);
 
   std::cerr << "\n" << codename << " execution successful.\n";
-#ifdef SEACAS_HAVE_MPI
-  MPI_Finalize();
-#endif
   return EXIT_SUCCESS;
 }
 

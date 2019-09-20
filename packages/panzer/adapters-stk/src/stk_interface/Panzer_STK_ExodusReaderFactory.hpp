@@ -56,6 +56,23 @@ namespace panzer_stk {
 
 class STK_Interface;
 
+/** External function to return the dimension of an Exodus or Pamgen
+ * mesh. This uses a quick temporary read of the meta data from input
+ * file/mesh and is intended if you need the mesh dimension before the
+ * MeshFactory is used to build the uncommitted mesh. Once
+ * buildUncommittedMesh() is called, you can query the dimension from
+ * the MetaData in the STK_Interface object (will be faster than
+ * creating mesh metadata done in this function).
+ *
+ * \param[in] meshStr Filename containing the mesh string, or the mesh string itself.
+ * \param[in] parallelMach Descriptor for machine to build this mesh on.
+ * \param[in] isExodus Set to true for Exodus mesh, set to false for Pamgen mesh.
+ *
+ * \returns Integer indicating the spatial dimension of the mesh.
+ */
+  int getMeshDimension(const std::string & meshStr,stk::ParallelMachine parallelMach,
+                       const bool isExodus = true);
+
 /** Concrete mesh factory instantiation. This reads
   * a mesh from an exodus file and builds a STK_Interface object.
   *
@@ -71,7 +88,14 @@ public:
 
    STK_ExodusReaderFactory();
 
-   STK_ExodusReaderFactory(const std::string & fileName,int restartIndex=0);
+
+  /** \brief Ctor
+   *
+   * \param[in] fileName Name of the input file.
+   * \param[in] restartIndex Index used for restarts.
+   * \param[in] isExodus If true, the input file is in exodus format. If false, it assumes Pamgen format.
+   */
+  STK_ExodusReaderFactory(const std::string & fileName, const int restartIndex=0, const bool isExodus = true);
 
    /** Construct a STK_Inteface object described
      * by this factory.
@@ -93,7 +117,7 @@ public:
      */
    virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;
 
-   //! From ParameterListAcceptor
+   //! From ParameterListAcceptor. Must be called if the empty ctor is used to construct this object.
    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);
 
    //! From ParameterListAcceptor
@@ -111,6 +135,7 @@ protected:
 
    std::string fileName_;
    int restartIndex_;
+   bool isExodus_;
 
 private:
 
@@ -120,6 +145,8 @@ private:
   //! If requested, scale the input mesh by this factor
   double meshScaleFactor_;
 
+  //! Number of levels of inline uniform mesh refinement to be applied to exodus mesh
+  int levelsOfRefinement_;
 };
 
 }

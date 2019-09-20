@@ -67,6 +67,12 @@
 #include <stk_io/IossBridge.hpp>
 #endif
 
+#ifdef PANZER_HAVE_PERCEPT
+#include <percept/PerceptMesh.hpp>
+#include <adapt/UniformRefinerPattern.hpp>
+#include <adapt/UniformRefiner.hpp>
+#endif
+
 #include "Panzer_STK_PeriodicBC_Matcher.hpp"
 
 #include <set>
@@ -113,7 +119,7 @@ STK_Interface::STK_Interface(unsigned dim)
    entity_rank_names.push_back("FAMILY_TREE");
 
    metaData_ = rcp(new stk::mesh::MetaData(dimension_,entity_rank_names));
-   
+
    initializeFromMetaData();
 }
 
@@ -157,7 +163,7 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
       if ( initialized_ )  {
         metaData_->enable_late_fields();
         stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
-        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol ); 
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol );
       }
       fieldNameToSolution_[key] = field;
    }
@@ -178,7 +184,7 @@ void STK_Interface::addCellField(const std::string & fieldName,const std::string
       if ( initialized_ )  {
         metaData_->enable_late_fields();
         stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
-        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol ); 
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol );
       }
       fieldNameToCellField_[key] = field;
    }
@@ -228,7 +234,8 @@ void STK_Interface::addMeshCoordFields(const std::string & blockId,
    }
 }
 
-void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
+void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
+                               const bool buildRefinementSupport)
 {
    TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_ASSERT(dimension_!=0); // no zero dimensional meshes!
@@ -294,9 +301,23 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    }
 #endif
 
-   metaData_->commit();
+   if (buildRefinementSupport) {
+#ifdef PANZER_HAVE_PERCEPT
+     refinedMesh_ = Teuchos::rcp(new percept::PerceptMesh(this->getMetaData().get(),
+                                                          this->getBulkData().get(),
+                                                          true));
+
+     breakPattern_ = Teuchos::rcp(new percept::URP_Heterogeneous_3D(*refinedMesh_));
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                             "ERROR: Uniform refinement requested. This requires the Percept package to be enabled in Trilinos!");
+#endif
+   }
+
    if(bulkData_==Teuchos::null)
       instantiateBulkData(*mpiComm_->getRawMpiComm());
+
+   metaData_->commit();
 
    initialized_ = true;
 }
@@ -635,7 +656,7 @@ globalToExodus(
   using std::string;
   using Teuchos::Array;
 
-  // Loop over all the global variables to be added to the Exodus output file. 
+  // Loop over all the global variables to be added to the Exodus output file.
   // For each global variable, we determine the data type, and then add or
   // write it accordingly, depending on the value of flag.
   for (auto i = globalData_.begin(); i != globalData_.end(); ++i)
@@ -1537,5 +1558,29 @@ STK_Interface::getComm() const
   TEUCHOS_ASSERT(this->isInitialized());
   return mpiComm_;
 }
+
+void STK_Interface::refineMesh(const int numberOfLevels, const bool deleteParentElements) {
+#ifdef PANZER_HAVE_PERCEPT
+  TEUCHOS_TEST_FOR_EXCEPTION(numberOfLevels < 1,std::runtime_error,
+                             "ERROR: Number of levels for uniform refinement must be greater than 0");
+  TEUCHOS_ASSERT(nonnull(refinedMesh_));
+  TEUCHOS_ASSERT(nonnull(breakPattern_));
+
+  refinedMesh_->setCoordinatesField();
+
+  percept::UniformRefiner breaker(*refinedMesh_,*breakPattern_);
+
+  for (int i=0; i < numberOfLevels; ++i)
+    breaker.doBreak();
+
+  if (deleteParentElements)
+    breaker.deleteParentElements();
+
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                             "ERROR: Uniform refinement requested. This requires the Percept package to be enabled in Trilinos!");
+#endif
+}
+
 
 } // end namespace panzer_stk

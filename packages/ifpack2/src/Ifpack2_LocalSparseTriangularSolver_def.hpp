@@ -47,6 +47,7 @@
 #include "Tpetra_Core.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tpetra_Details_determineLocalTriangularStructure.hpp"
+#include "KokkosSparse_trsv.hpp"
 
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
 # include "shylu_hts.hpp"

@@ -242,6 +242,48 @@ namespace MueLu {
                                "MueLu::Hierarchy::Setup(): wrong level parent");
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetMatvecParams(RCP<ParameterList> matvecParams) {
+    for (int i = 0; i < GetNumLevels(); ++i) {
+      RCP<Level> level = Levels_[i];
+      if (level->IsAvailable("A")) {
+        RCP<Operator> Aop = level->Get<RCP<Operator> >("A");
+        RCP<Matrix> A = rcp_dynamic_cast<Matrix>(Aop);
+        if (!A.is_null()) {
+          RCP<const Import> xpImporter = A->getCrsGraph()->getImporter();
+          if (!xpImporter.is_null())
+            xpImporter->setDistributorParameters(matvecParams);
+          RCP<const Export> xpExporter = A->getCrsGraph()->getExporter();
+          if (!xpExporter.is_null())
+            xpExporter->setDistributorParameters(matvecParams);
+        }
+      }
+      if (level->IsAvailable("P")) {
+        RCP<Matrix> P = level->Get<RCP<Matrix> >("P");
+        RCP<const Import> xpImporter = P->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = P->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      if (level->IsAvailable("R")) {
+        RCP<Matrix> R = level->Get<RCP<Matrix> >("R");
+        RCP<const Import> xpImporter = R->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = R->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      if (level->IsAvailable("Importer")) {
+        RCP<const Import> xpImporter = level->Get< RCP<const Import> >("Importer");
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+      }
+    }
+  }
+
   // The function uses three managers: fine, coarse and next coarse
   // We construct the data for the coarse level, and do requests for the next coarse
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

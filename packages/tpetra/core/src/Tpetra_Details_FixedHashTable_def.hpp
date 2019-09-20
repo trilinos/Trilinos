@@ -51,6 +51,7 @@
 #endif // TPETRA_USE_MURMUR_HASH
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include <type_traits>
 
 namespace Tpetra {
@@ -76,7 +77,15 @@ namespace FHT {
 // we would need experiments to find out.
 template<class ExecSpace>
 bool worthBuildingFixedHashTableInParallel () {
-  return ExecSpace::concurrency() > 1;
+//  KDD 8/19:  A temporary fix for #5179.  It appears some errors come from
+//  KDD 8/19:  computeOffsetsFromCounts; this temporary patch avoids the most
+//  KDD 8/19:  reproducible of the errors.  We'll reverse this as we debug
+//  KDD 8/19:  the problem, but this temporary fix may allow users to make
+//  KDD 8/19:  progress toward their milestones.
+//std::cout << "KDDKDD WorthIt " << (ExecSpace::concurrency() > 1) << std::endl;
+    return ExecSpace::concurrency() > 1;
+//  return false;
+//  KDD 8/19
 }
 
 // If the input kokkos::View<const KeyType*, ArrayLayout,
@@ -203,6 +212,44 @@ public:
 
     const hash_value_type hashVal = hash_type::hashFunc (keys_[i], size_);
     Kokkos::atomic_increment (&counts_[hashVal]);
+  }
+
+  using value_type = Kokkos::pair<int, key_type>;
+
+  /// \brief Debug reduce version of above operator().
+  ///
+  /// Set dst to 1 on error (out-of-bounds hash value).
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const size_type& i, value_type& dst) const
+  {
+    using hash_value_type = typename hash_type::result_type;
+
+    const key_type keyVal = keys_[i];
+    const hash_value_type hashVal = hash_type::hashFunc (keyVal, size_);
+    if (hashVal < hash_value_type (0) ||
+        hashVal >= hash_value_type (counts_.extent (0))) {
+      dst.first = 1;
+      dst.second = keyVal;
+    }
+    else {
+      Kokkos::atomic_increment (&counts_[hashVal]);
+    }
+  }
+
+  //! Set the initial value of the reduction result.
+  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
+  {
+    dst.first = 0;
+    dst.second = key_type (0);
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& dst,
+        const volatile value_type& src) const
+  {
+    const bool good = dst.first == 0 || src.first == 0;
+    dst.first = good ? 0 : dst.first;
+    // leave dst.second as it is, to get the "first" key
   }
 
 private:
@@ -1027,6 +1074,7 @@ init (const keys_type& keys,
 
   const bool buildInParallel =
     FHT::worthBuildingFixedHashTableInParallel<execution_space> ();
+  const bool debug = ::Tpetra::Details::Behavior::debug ();
 
   // NOTE (mfh 14 May 2015) This method currently assumes UVM.  We
   // could change that by setting up ptr and val as Kokkos::DualView
@@ -1120,10 +1168,22 @@ init (const keys_type& keys,
   // incur overhead then.
   if (buildInParallel) {
     FHT::CountBuckets<counts_type, keys_type> functor (counts, theKeys, size);
-
-    typedef typename counts_type::execution_space execution_space;
-    typedef Kokkos::RangePolicy<execution_space, offset_type> range_type;
-    Kokkos::parallel_for (range_type (0, theNumKeys), functor);
+    using execution_space = typename counts_type::execution_space;
+    using range_type = Kokkos::RangePolicy<execution_space, offset_type>;
+    const char kernelLabel[] = "Tpetra::Details::FixedHashTable CountBuckets";
+    if (debug) {
+      using key_type = typename keys_type::non_const_value_type;
+      Kokkos::pair<int, key_type> err;
+      Kokkos::parallel_reduce (kernelLabel, range_type (0, theNumKeys),
+                               functor, err);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (err.first != 0, std::logic_error, "Tpetra::Details::FixedHashTable "
+         "constructor: CountBuckets found a key " << err.second << " that "
+         "results in an out-of-bounds hash value.");
+    }
+    else {
+      Kokkos::parallel_for (kernelLabel, range_type (0, theNumKeys), functor);
+    }
   }
   else {
     // Access to counts is not necessarily contiguous, but is
@@ -1135,8 +1195,18 @@ init (const keys_type& keys,
     Kokkos::deep_copy (countsHost, static_cast<offset_type> (0));
 
     for (offset_type k = 0; k < theNumKeys; ++k) {
-      typedef typename hash_type::result_type hash_value_type;
-      const hash_value_type hashVal = hash_type::hashFunc (theKeys[k], size);
+      using key_type = typename keys_type::non_const_value_type;
+      const key_type key = theKeys[k];
+
+      using hash_value_type = typename hash_type::result_type;
+      const hash_value_type hashVal = hash_type::hashFunc (key, size);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (hashVal < hash_value_type (0) ||
+         hashVal >= hash_value_type (countsHost.extent (0)),
+         std::logic_error, "Tpetra::Details::FixedHashTable "
+         "constructor: Sequential CountBuckets found a key " << key
+         << " that results in an out-of-bounds hash value.");
+
       ++countsHost[hashVal];
     }
     Kokkos::deep_copy (counts, countsHost);
@@ -1161,20 +1231,39 @@ init (const keys_type& keys,
   // with actual parallel execution spaces, it does require multiple
   // passes over the data.  Thus, it still makes sense to have a
   // sequential fall-back.
-  if (buildInParallel) {
-    ::Tpetra::Details::computeOffsetsFromCounts (ptr, counts);
-  }
-  else {
-    // mfh 28 Mar 2016: We could use UVM here, but it's pretty easy to
-    // use a host mirror too, so I'll just do that.
-    typename decltype (ptr)::HostMirror ptrHost = Kokkos::create_mirror_view (ptr);
 
-    ptrHost[0] = 0;
-    for (offset_type i = 0; i < size; ++i) {
-      //ptrHost[i+1] += ptrHost[i];
-      ptrHost[i+1] = ptrHost[i] + counts[i];
+  using ::Tpetra::Details::computeOffsetsFromCounts;
+  if (buildInParallel) {
+    computeOffsetsFromCounts (ptr, counts);
+  }
+
+  if (! buildInParallel || debug) {
+    Kokkos::HostSpace hostMemSpace;
+    auto counts_h = Kokkos::create_mirror_view (hostMemSpace, counts);
+    Kokkos::deep_copy (counts_h, counts);
+    auto ptr_h = Kokkos::create_mirror_view (hostMemSpace, ptr);
+
+#ifdef KOKKOS_ENABLE_SERIAL
+    Kokkos::Serial hostExecSpace;
+#else
+    Kokkos::DefaultHostExecutionSpace hostExecSpace;
+#endif // KOKKOS_ENABLE_SERIAL
+
+    computeOffsetsFromCounts (hostExecSpace, ptr_h, counts_h);
+    Kokkos::deep_copy (ptr, ptr_h);
+
+    if (debug) {
+      bool bad = false;
+      for (offset_type i = 0; i < size; ++i) {
+        if (ptr_h[i+1] != ptr_h[i] + counts_h[i]) {
+          bad = true;
+        }
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (bad, std::logic_error, "Tpetra::Details::FixedHashTable "
+         "constructor: computeOffsetsFromCounts gave an incorrect "
+         "result.");
     }
-    Kokkos::deep_copy (ptr, ptrHost);
   }
 
   // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/

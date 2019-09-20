@@ -1444,7 +1444,7 @@ namespace tsl {
 
       /*
        * Return true if a rehash will change the position of a key-value in the neighborhood of
-       * ibucket_neighborhood_check. In this case a rehash is needed instead of puting the value in
+       * ibucket_neighborhood_check. In this case a rehash is needed instead of putting the value in
        * overflow list.
        */
       bool will_neighborhood_change_on_rehash(size_t ibucket_neighborhood_check) const
@@ -1803,7 +1803,7 @@ namespace tsl {
       /**
        * Min size of the hash table before a rehash can occurs automatically (except if
        * m_max_load_threshold_rehash os reached). If the neighborhood of a bucket is full before the
-       * min is reacher, the elements are put into m_overflow_elements.
+       * min is reached, the elements are put into m_overflow_elements.
        */
       size_type m_min_load_threshold_rehash;
     };

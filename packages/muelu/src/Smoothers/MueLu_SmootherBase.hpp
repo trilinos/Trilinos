@@ -46,7 +46,7 @@
 #ifndef MUELU_SMOOTHERBASE_HPP
 #define MUELU_SMOOTHERBASE_HPP
 
-#include <Xpetra_MultiVector.hpp>
+#include "Xpetra_MultiVector.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -61,10 +61,10 @@ namespace MueLu {
     smoothers.
   */
 
-  template <class Scalar = Xpetra::MultiVector<>::scalar_type,
-            class LocalOrdinal = typename Xpetra::MultiVector<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class SmootherBase : public virtual BaseClass {
   public:
     typedef Scalar scalar_type;

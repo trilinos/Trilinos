@@ -96,10 +96,10 @@ namespace MueLu {
 
 
 
-  template <class Scalar,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Scalar,
+           class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class HierarchyUtils {
 #undef MUELU_HIERARCHYUTILS_SHORT
 #include "MueLu_UseShortNames.hpp"

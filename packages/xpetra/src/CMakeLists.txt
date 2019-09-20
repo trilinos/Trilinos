@@ -28,7 +28,7 @@ SET(XPETRA_ETI_CPP_SOURCES "")
 ##
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ##
-  ## XPETRA_(Something)_ETI_CLASSES is a list of all class names which ETI 
+  ## XPETRA_(Something)_ETI_CLASSES is a list of all class names which ETI
   ## *.cpp files have to be generated for.
   ##
 
@@ -74,7 +74,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   SET(SOURCES ${XPETRA_ETI_CPP_SOURCES})
   # grab any hand rolled ETI source files
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
-  
+
 ENDIF()
 
 ############################################################################################
@@ -89,6 +89,7 @@ APPEND_GLOB(SOURCES
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   APPEND_GLOB(SOURCES
     Map/Xpetra_EpetraMap.cpp
+    Map/Xpetra_EpetraMapFactory.cpp
     Import/Xpetra_EpetraImport.cpp
     Export/Xpetra_EpetraExport.cpp
     MultiVector/Xpetra_EpetraMultiVector.cpp
@@ -102,7 +103,8 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
 ENDIF()
 
 # Create the .hpp file in BUILD/packages/xpetra/src
-TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockCrsMatrix     NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockedCrsMatrix   NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockedMap         NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockedMultiVector NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockedVector      NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/CrsGraph           NOSIERRABJAM)

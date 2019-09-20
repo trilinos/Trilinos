@@ -66,6 +66,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rocketman.gcc.cmake")
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_NAME_DETAILS DEFAULT)
+SET(CTEST_BUILD_FLAGS     "-j35 -i" )
 
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
@@ -74,6 +75,9 @@ SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
 
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
+
+# If true, this option yields faster builds. In that case, however, it won't disable any upstream package that fails to compile.
+SET(Trilinos_CTEST_DO_ALL_AT_ONCE FALSE)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"

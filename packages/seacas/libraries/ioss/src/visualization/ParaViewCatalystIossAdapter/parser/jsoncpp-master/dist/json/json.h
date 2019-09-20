@@ -212,18 +212,18 @@ namespace Json {
 
 #endif // JSON_CONFIG_H_INCLUDED
 
-  // //////////////////////////////////////////////////////////////////////
-  // End of content of file: include/json/config.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// End of content of file: include/json/config.h
+// //////////////////////////////////////////////////////////////////////
 
-  // //////////////////////////////////////////////////////////////////////
-  // Beginning of content of file: include/json/forwards.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// Beginning of content of file: include/json/forwards.h
+// //////////////////////////////////////////////////////////////////////
 
-  // Copyright 2007-2010 Baptiste Lepilleur
-  // Distributed under MIT license, or public domain if desired and
-  // recognized in your jurisdiction.
-  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+// Copyright 2007-2010 Baptiste Lepilleur
+// Distributed under MIT license, or public domain if desired and
+// recognized in your jurisdiction.
+// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef JSON_FORWARDS_H_INCLUDED
 #define JSON_FORWARDS_H_INCLUDED
@@ -258,18 +258,18 @@ namespace Json {
 
 #endif // JSON_FORWARDS_H_INCLUDED
 
-  // //////////////////////////////////////////////////////////////////////
-  // End of content of file: include/json/forwards.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// End of content of file: include/json/forwards.h
+// //////////////////////////////////////////////////////////////////////
 
-  // //////////////////////////////////////////////////////////////////////
-  // Beginning of content of file: include/json/features.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// Beginning of content of file: include/json/features.h
+// //////////////////////////////////////////////////////////////////////
 
-  // Copyright 2007-2010 Baptiste Lepilleur
-  // Distributed under MIT license, or public domain if desired and
-  // recognized in your jurisdiction.
-  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+// Copyright 2007-2010 Baptiste Lepilleur
+// Distributed under MIT license, or public domain if desired and
+// recognized in your jurisdiction.
+// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef CPPTL_JSON_FEATURES_H_INCLUDED
 #define CPPTL_JSON_FEATURES_H_INCLUDED
@@ -325,18 +325,18 @@ namespace Json {
 
 #endif // CPPTL_JSON_FEATURES_H_INCLUDED
 
-  // //////////////////////////////////////////////////////////////////////
-  // End of content of file: include/json/features.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// End of content of file: include/json/features.h
+// //////////////////////////////////////////////////////////////////////
 
-  // //////////////////////////////////////////////////////////////////////
-  // Beginning of content of file: include/json/value.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// Beginning of content of file: include/json/value.h
+// //////////////////////////////////////////////////////////////////////
 
-  // Copyright 2007-2010 Baptiste Lepilleur
-  // Distributed under MIT license, or public domain if desired and
-  // recognized in your jurisdiction.
-  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+// Copyright 2007-2010 Baptiste Lepilleur
+// Distributed under MIT license, or public domain if desired and
+// recognized in your jurisdiction.
+// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef CPPTL_JSON_H_INCLUDED
 #define CPPTL_JSON_H_INCLUDED
@@ -1165,18 +1165,18 @@ namespace std {
 
 #endif // CPPTL_JSON_H_INCLUDED
 
-  // //////////////////////////////////////////////////////////////////////
-  // End of content of file: include/json/value.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// End of content of file: include/json/value.h
+// //////////////////////////////////////////////////////////////////////
 
-  // //////////////////////////////////////////////////////////////////////
-  // Beginning of content of file: include/json/reader.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// Beginning of content of file: include/json/reader.h
+// //////////////////////////////////////////////////////////////////////
 
-  // Copyright 2007-2010 Baptiste Lepilleur
-  // Distributed under MIT license, or public domain if desired and
-  // recognized in your jurisdiction.
-  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+// Copyright 2007-2010 Baptiste Lepilleur
+// Distributed under MIT license, or public domain if desired and
+// recognized in your jurisdiction.
+// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef CPPTL_JSON_READER_H_INCLUDED
 #define CPPTL_JSON_READER_H_INCLUDED
@@ -1571,18 +1571,18 @@ namespace Json {
 
 #endif // CPPTL_JSON_READER_H_INCLUDED
 
-  // //////////////////////////////////////////////////////////////////////
-  // End of content of file: include/json/reader.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// End of content of file: include/json/reader.h
+// //////////////////////////////////////////////////////////////////////
 
-  // //////////////////////////////////////////////////////////////////////
-  // Beginning of content of file: include/json/writer.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// Beginning of content of file: include/json/writer.h
+// //////////////////////////////////////////////////////////////////////
 
-  // Copyright 2007-2010 Baptiste Lepilleur
-  // Distributed under MIT license, or public domain if desired and
-  // recognized in your jurisdiction.
-  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+// Copyright 2007-2010 Baptiste Lepilleur
+// Distributed under MIT license, or public domain if desired and
+// recognized in your jurisdiction.
+// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef JSON_WRITER_H_INCLUDED
 #define JSON_WRITER_H_INCLUDED
@@ -1783,7 +1783,7 @@ namespace Json {
    *     - otherwise, it the values do not fit on one line, or the array contains
    *       object or non empty array, then print one value per line.
    *
-   * If the Value have comments then they are outputed according to their
+   * If the Value have comments then they are outputted according to their
    *#CommentPlacement.
    *
    * \sa Reader, Value, Value::setComment()
@@ -1845,7 +1845,7 @@ namespace Json {
    *     - otherwise, it the values do not fit on one line, or the array contains
    *       object or non empty array, then print one value per line.
    *
-   * If the Value have comments then they are outputed according to their
+   * If the Value have comments then they are outputted according to their
    #CommentPlacement.
    *
    * \param indentation Each level will be indented by this amount extra.
@@ -1914,18 +1914,18 @@ namespace Json {
 
 #endif // JSON_WRITER_H_INCLUDED
 
-  // //////////////////////////////////////////////////////////////////////
-  // End of content of file: include/json/writer.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// End of content of file: include/json/writer.h
+// //////////////////////////////////////////////////////////////////////
 
-  // //////////////////////////////////////////////////////////////////////
-  // Beginning of content of file: include/json/assertions.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// Beginning of content of file: include/json/assertions.h
+// //////////////////////////////////////////////////////////////////////
 
-  // Copyright 2007-2010 Baptiste Lepilleur
-  // Distributed under MIT license, or public domain if desired and
-  // recognized in your jurisdiction.
-  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+// Copyright 2007-2010 Baptiste Lepilleur
+// Distributed under MIT license, or public domain if desired and
+// recognized in your jurisdiction.
+// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef CPPTL_JSON_ASSERTIONS_H_INCLUDED
 #define CPPTL_JSON_ASSERTIONS_H_INCLUDED
@@ -1982,8 +1982,8 @@ namespace Json {
 
 #endif // CPPTL_JSON_ASSERTIONS_H_INCLUDED
 
-  // //////////////////////////////////////////////////////////////////////
-  // End of content of file: include/json/assertions.h
-  // //////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
+// End of content of file: include/json/assertions.h
+// //////////////////////////////////////////////////////////////////////
 
 #endif // ifndef JSON_AMALGATED_H_INCLUDED

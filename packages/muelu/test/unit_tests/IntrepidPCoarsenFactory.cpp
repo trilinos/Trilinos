@@ -683,7 +683,7 @@ namespace MueLuTests {
 
     FC physDofCoords;
     FCO cellGIDs;
-    vector<vector<LocalOrdinal>> expectedGIDs = {{ 0, 1, 2, 3, 4, 5, 6, 7, 8},
+    std::vector<std::vector<LocalOrdinal> > expectedGIDs = {{ 0, 1, 2, 3, 4, 5, 6, 7, 8},
       { 9,10,11,12,13,14, 0, 1, 2},
       {11,15,16,14,17,18, 2,19,20}};
     int numCells = 3, numPointsPerCell = 9, spaceDim = 2;
@@ -691,8 +691,8 @@ namespace MueLuTests {
     resize(cellGIDs,numCells,numPointsPerCell);
 
     // x,y coords of lower-left vertices for each cell:
-    vector<double> x0s = {0.0,0.0,1.0};
-    vector<double> y0s = {1.0,0.0,0.0};
+    std::vector<double> x0s = {0.0,0.0,1.0};
+    std::vector<double> y0s = {1.0,0.0,0.0};
     for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
     {
       double x0 = x0s[cellOrdinal], y0 = y0s[cellOrdinal];
@@ -733,9 +733,9 @@ namespace MueLuTests {
   void testBuildSampleElementToNodeMapThreeElementQuad(Teuchos::FancyOStream &out, bool &success)
   {
     // simple test with quadratic basis on quads: check that we have the right numbering (hard-coded)
-    vector<int> vertexGIDs = {0,2,6,8,9,11,16,20}; // should be 8 of these
-    vector<int> edgeGIDs = {1,3,5,7,10,12,14,15,18,19}; // 10 of these
-    vector<int> cellGIDs = {4,13,17};
+    std::vector<int> vertexGIDs = {0,2,6,8,9,11,16,20}; // should be 8 of these
+    std::vector<int> edgeGIDs = {1,3,5,7,10,12,14,15,18,19}; // 10 of these
+    std::vector<int> cellGIDs = {4,13,17};
 
     vector<vector<int>> expectedGIDs = {vertexGIDs,edgeGIDs,cellGIDs};
 
@@ -752,8 +752,8 @@ namespace MueLuTests {
 
     int polyOrder = 2, spaceDim = 2;
     RCP<Basis> basis = rcp( new Basis(polyOrder, Intrepid2::EPointType::POINTTYPE_EQUISPACED) );
-    vector<int> subcellCountForDimension;
-    vector<vector<int>> ordinalsForSubcellDimension;
+    std::vector<int> subcellCountForDimension;
+    std::vector<std::vector<int>> ordinalsForSubcellDimension;
     FCO elementToNodeMap;
     buildSampleElementToNodeMapThreeElements<Basis,ES,FC,FCO>(basis,elementToNodeMap,ordinalsForSubcellDimension,
                                                               subcellCountForDimension);

@@ -27,14 +27,13 @@ namespace Tempus {
  */
 template<class Scalar>
 class StepperStaggeredForwardSensitivity :
-    virtual public Tempus::Stepper<Scalar>
+    virtual public Tempus::Stepper<Scalar>,
+    virtual public Teuchos::ParameterListAcceptor
 {
 public:
 
   /** \brief Default constructor.
    *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
    *  - Requires subsequent setModel() and initialize() calls before calling
    *    takeStep().
   */
@@ -85,11 +84,8 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel();
 
-    virtual void setSolver(std::string solverName);
     virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null);
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
     { return stateStepper_->getSolver(); }
 
@@ -100,9 +96,6 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
-    /// True if stepper is initialized.
-    virtual bool isInitialized();
-
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}
@@ -110,9 +103,6 @@ public:
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
-    virtual std::string getStepperType() const
-     { return stepperPL_->get<std::string>("Stepper Type"); }
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >
@@ -170,12 +160,16 @@ public:
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
+    virtual std::string description() const
+    { return "StepperStaggeredForwardSensitivity"; }
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const
+  { return stepperPL_; }
 
 private:
 

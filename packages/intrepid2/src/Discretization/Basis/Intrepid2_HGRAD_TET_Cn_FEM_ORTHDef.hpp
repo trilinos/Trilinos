@@ -54,13 +54,13 @@ namespace Intrepid2 {
 
 namespace Impl {
 
-template<typename outputViewType,
+template<typename OutputViewType,
 typename inputViewType,
 typename workViewType,
 bool hasDeriv>
 KOKKOS_INLINE_FUNCTION
-void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::generate(
-    outputViewType output,
+void OrthPolynomialTet<OutputViewType,inputViewType,workViewType,hasDeriv,0>::generate(
+    OutputViewType output,
     const inputViewType input,
     workViewType  /*work*/,
     const ordinal_type order ) {
@@ -68,7 +68,7 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
   constexpr ordinal_type spaceDim = 3;
   constexpr ordinal_type maxNumPts = Parameters::MaxNumPtsPerBasisEval;
 
-  typedef typename outputViewType::value_type value_type;
+  typedef typename OutputViewType::value_type value_type;
 
   auto output0 = (hasDeriv) ? Kokkos::subview(output,  Kokkos::ALL(), Kokkos::ALL(),0) : Kokkos::subview(output,  Kokkos::ALL(), Kokkos::ALL());
 
@@ -266,13 +266,13 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
       }
 }
 
-template<typename outputViewType,
+template<typename OutputViewType,
 typename inputViewType,
 typename workViewType,
 bool hasDeriv>
 KOKKOS_INLINE_FUNCTION
-void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,1>::generate(
-    outputViewType output,
+void OrthPolynomialTet<OutputViewType,inputViewType,workViewType,hasDeriv,1>::generate(
+    OutputViewType output,
     const inputViewType  input,
     workViewType   work,
     const ordinal_type   order ) {
@@ -291,14 +291,14 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,1>::ge
 
 
 // when n >= 2, use recursion
-template<typename outputViewType,
+template<typename OutputViewType,
 typename inputViewType,
 typename workViewType,
 bool hasDeriv,
 ordinal_type n>
 KOKKOS_INLINE_FUNCTION
-void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,n>::generate(
-    outputViewType /* output */,
+void OrthPolynomialTet<OutputViewType,inputViewType,workViewType,hasDeriv,n>::generate(
+    OutputViewType /* output */,
     const inputViewType  /* input */,
     workViewType   /* work */,
     const ordinal_type   /* order */ ) {
@@ -307,7 +307,7 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,n>::ge
 constexpr ordinal_type spaceDim = 3;
 constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
 
-typedef typename outputViewType::value_type value_type;
+typedef typename OutputViewType::value_type value_type;
 typedef Sacado::Fad::SFad<value_type,spaceDim> fad_type;
 
 const ordinal_type
@@ -377,28 +377,28 @@ INTREPID2_TEST_FOR_ABORT( true,
 
 
 template<EOperator opType>
-template<typename outputViewType,
+template<typename OutputViewType,
 typename inputViewType,
 typename workViewType>
 KOKKOS_INLINE_FUNCTION
 void
 Basis_HGRAD_TET_Cn_FEM_ORTH::Serial<opType>::
-getValues( outputViewType output,
+getValues( OutputViewType output,
     const inputViewType  input,
     workViewType   work,
     const ordinal_type   order) {
   switch (opType) {
   case OPERATOR_VALUE: {
-    OrthPolynomialTet<outputViewType,inputViewType,workViewType,false,0>::generate( output, input, work, order );
+    OrthPolynomialTet<OutputViewType,inputViewType,workViewType,false,0>::generate( output, input, work, order );
     break;
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    OrthPolynomialTet<outputViewType,inputViewType,workViewType,true,1>::generate( output, input, work, order );
+    OrthPolynomialTet<OutputViewType,inputViewType,workViewType,true,1>::generate( output, input, work, order );
     break;
   }
   case OPERATOR_D2: {
-    OrthPolynomialTet<outputViewType,inputViewType,workViewType,true,2>::generate( output, input, work, order );
+    OrthPolynomialTet<OutputViewType,inputViewType,workViewType,true,2>::generate( output, input, work, order );
     break;
   }
   default: {
@@ -476,6 +476,7 @@ Basis_HGRAD_TET_Cn_FEM_ORTH( const ordinal_type order ) {
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
   this->basisType_         = BASIS_FEM_HIERARCHICAL;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
+  this->functionSpace_     = FUNCTION_SPACE_HGRAD;
 
   // initialize tags
   {
@@ -495,7 +496,7 @@ Basis_HGRAD_TET_Cn_FEM_ORTH( const ordinal_type order ) {
       tags[i][3] = card;  // total number of DoFs
     }
 
-    ordinal_type_array_1d_host tagView(&tags[0][0], card*tagSize);
+    OrdinalTypeArray1DHost tagView(&tags[0][0], card*tagSize);
 
     // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
     // tags are constructed on host

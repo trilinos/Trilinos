@@ -425,6 +425,13 @@ namespace Xpetra {
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    size_t 
+    TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+    getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const
+    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNumEntriesInGlobalRow"); return mtx_->getNumEntriesInGlobalRow(globalRow); }
+
+
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     size_t TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalMaxNumRowEntries() const
     { XPETRA_MONITOR("TpetraBlockCrsMatrix::getGlobalMaxNumRowEntries"); return mtx_->getGlobalMaxNumRowEntries(); }
 
@@ -998,6 +1005,9 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
 
+    //! Returns the current number of entries in the (locally owned) global row.
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
+
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     size_t getGlobalMaxNumRowEntries() const { return 0; }
 
@@ -1072,7 +1082,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {}
 
-    void replaceDiag(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {    }
+    void replaceDiag(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) {    }
 
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
     void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
@@ -1344,6 +1354,9 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
 
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
+
+    //! Returns the current number of entries in the (locally owned) global row.
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
 
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     size_t getGlobalMaxNumRowEntries() const { return 0; }

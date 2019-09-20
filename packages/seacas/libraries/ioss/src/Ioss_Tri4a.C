@@ -67,7 +67,7 @@ namespace {
   int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
       {{0, 1, 3}, {1, 2, -1}, {2, 0, -1}};
 
-  // edge 0 returns number of nodes for all edges if homogenous
+  // edge 0 returns number of nodes for all edges if homogeneous
   //        returns -1 if edges have differing topology
   int Constants::nodes_per_edge[nedge + 1] = {-1, 3, 2, 2};
 } // namespace

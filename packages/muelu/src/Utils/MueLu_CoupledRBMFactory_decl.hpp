@@ -67,10 +67,10 @@ namespace MueLu {
      Assumes that acoustic pressure DOFs are padded with 2 extra DOFs
      (so that there are 3 DOFs at each mesh grid point)
   */
-  template <class Scalar = double,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class CoupledRBMFactory : public SingleLevelFactoryBase {
 #undef MUELU_COUPLEDRBMFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

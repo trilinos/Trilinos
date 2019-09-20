@@ -36,7 +36,7 @@ C $Id: vdx11cps.F,v 1.3 2007/01/26 16:58:24 gdsjaar Exp $
 C   cps driver is the file device
 C   x11 driver is the terminal device
       SUBROUTINE VDESCP(ESCPCD,N,ARGS)
-      INTEGER ESCPCD,SUPPRT,TRMSUP,FILSUP
+      INTEGER ESCPCD,SUPPORT,TRMSUP,FILSUP
       REAL ARGS(*)
       LOGICAL TERMON,FILEON,TERMUP,FILEUP
 
@@ -104,11 +104,11 @@ C     is write only...
       RETURN
 C
 C------------------------------------------------------------------------
-      ENTRY VDIQES(ESCPCD,SUPPRT)
+      ENTRY VDIQES(ESCPCD,SUPPORT)
 C
 C Special Escape Codes for Dual Device Control:
       IF ( ESCPCD.EQ.10000 ) THEN
-         SUPPRT = 1
+         SUPPORT = 1
       ELSE IF ( ESCPCD.EQ.10001 ) THEN
 #ifdef Build64
          esc4 = 10000
@@ -117,10 +117,10 @@ C Special Escape Codes for Dual Device Control:
 #else
          CALL wx11ie(10000,TRMSUP)
 #endif
-         SUPPRT = 1 - TRMSUP
+         SUPPORT = 1 - TRMSUP
       ELSE IF ( ESCPCD.EQ.10002 ) THEN
          CALL wcpsie(10000,FILSUP)
-         SUPPRT = 1 - FILSUP
+         SUPPORT = 1 - FILSUP
       ELSE IF ( ESCPCD.EQ.10003 ) THEN
 #ifdef Build64
          esc4 = 10000
@@ -130,16 +130,16 @@ C Special Escape Codes for Dual Device Control:
          CALL wx11ie(10000,TRMSUP)
 #endif
          CALL wcpsie(10000,FILSUP)
-         SUPPRT = (1 - TRMSUP) * (1 - FILSUP)
+         SUPPORT = (1 - TRMSUP) * (1 - FILSUP)
       ELSE
-         IF (FILEON) CALL wcpsie(ESCPCD,SUPPRT)
+         IF (FILEON) CALL wcpsie(ESCPCD,SUPPORT)
          IF (TERMON) THEN
 #ifdef Build64
             escpcd4 = escpcd
             CALL wx11ie(ESCPCD4,SUPPRT4)
-            SUPPRT = SUPPRT4
+            SUPPORT = SUPPRT4
 #else
-            CALL wx11ie(ESCPCD,SUPPRT)
+            CALL wx11ie(ESCPCD,SUPPORT)
 #endif
          END IF
       END IF

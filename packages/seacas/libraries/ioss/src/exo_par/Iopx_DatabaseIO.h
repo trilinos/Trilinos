@@ -229,6 +229,8 @@ namespace Iopx {
 
     void get_commsets();
 
+    void check_valid_values() const;
+
     // ID Mapping functions.
     const Ioss::Map &get_map(ex_entity_type type) const;
     const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, int64_t file_offset,

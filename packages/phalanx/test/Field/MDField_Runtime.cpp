@@ -74,6 +74,15 @@ namespace PHX {
   template<> struct is_extent<Point> : std::true_type {};
 }
 
+// Demonstrate ability to override print string
+namespace PHX {
+  template<> std::string print<Dim>(){return "D";}
+  template<> std::string print<Quadrature>(){return "Q";}
+  template<> std::string print<Node>(){return "N";}
+  template<> std::string print<Cell>(){return "C";}
+  template<> std::string print<Point>(){return "P";}
+}
+
 TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
 {
   using namespace std;
@@ -545,7 +554,7 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     out << "Testing operator<<()...";
     ostringstream output;
     output << a;
-    TEUCHOS_TEST_FOR_EXCEPTION(output.str() != "MDField(100,4): Tag: density, double, DataLayout: <Cell,Node>(100,4)", std::logic_error, "String match failed!"); 
+    TEST_EQUALITY(output.str(),"MDField(100,4): Tag: density, double, DataLayout: <C,N>(100,4)");
     out << "passed!" << endl;
     out << output.str() << endl;
   }

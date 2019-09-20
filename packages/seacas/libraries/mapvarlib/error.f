@@ -33,7 +33,7 @@ C
 
 C=======================================================================
 *DECK,ERROR
-      SUBROUTINE ERROR (SUBNAM,MESSAG,LABEL1,I,LABEL2,J,LABEL3,WORD,
+      SUBROUTINE ERROR (SUBNAM,MESSAGE,LABEL1,I,LABEL2,J,LABEL3,WORD,
      1  ISTOP)
 C
 C     ******************************************************************
@@ -46,7 +46,7 @@ C     Called by everything
 C
 C     ******************************************************************
 C
-      CHARACTER*(*) SUBNAM,MESSAG,LABEL1,LABEL2,LABEL3,WORD
+      CHARACTER*(*) SUBNAM,MESSAGE,LABEL1,LABEL2,LABEL3,WORD
 C
       include 'tapes.blk'
 C
@@ -56,8 +56,8 @@ C
       WRITE (NTPOUT, 60)
       WRITE (NOUT, 10) SUBNAM
       WRITE (NTPOUT, 10) SUBNAM
-      WRITE (NOUT, 20) MESSAG
-      WRITE (NTPOUT, 20) MESSAG
+      WRITE (NOUT, 20) MESSAGE
+      WRITE (NTPOUT, 20) MESSAGE
       WRITE (NOUT, 30)
       WRITE (NTPOUT, 30)
       IF (LABEL1.NE.' ') THEN

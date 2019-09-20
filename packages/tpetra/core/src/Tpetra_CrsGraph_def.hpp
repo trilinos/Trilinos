@@ -5196,12 +5196,13 @@ namespace Tpetra {
           } ();
 
           // If there are too many errors, don't bother printing them.
-          constexpr size_t tooManyErrsToPrint = 200; // arbitrary constant
+          size_t tooManyErrsToPrint = ::Tpetra::Details::Behavior::verbosePrintCountThreshold();
           if (lclNumErrs > tooManyErrsToPrint) {
             errStrm << "(Process " << myRank << ") When converting column "
               "indices from global to local, we encountered " << lclNumErrs
               << " indices that do not live in the column Map on this "
-              "process.  That's too many to print." << endl;
+              "process.  That's exceeds the allowable number to print."
+              << "This limit is controllable by TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD." << endl;
           }
           else {
             // Map from local row index, to any global column indices
@@ -8121,8 +8122,6 @@ namespace Tpetra {
 //
 // Must be expanded from within the Tpetra namespace!
 //
-#define TPETRA_CRSGRAPH_GRAPH_INSTANT(LO,GO,NODE) \
-  template class CrsGraph< LO , GO , NODE >;
 
 #define TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
   template<>                                                                        \
@@ -8192,20 +8191,10 @@ namespace Tpetra {
                                                                const Teuchos::RCP<Teuchos::ParameterList>& params);
 
 
-// WARNING: These macros exist only for backwards compatibility.
-// We will remove them at some point.
-#define TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE)
-#define TPETRA_CRSGRAPH_MERGEROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE)
-#define TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE)
-#define TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE)
-
-#define TPETRA_CRSGRAPH_INSTANT(S,LO,GO,NODE)                    \
-  TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE)  \
-  TPETRA_CRSGRAPH_MERGEROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) \
-  TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE)         \
-  TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE)         \
-  TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE)   \
-  TPETRA_CRSGRAPH_EXPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE)   \
+#define TPETRA_CRSGRAPH_INSTANT( LO, GO, NODE ) \
+  template class CrsGraph<LO, GO, NODE>; \
+  TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
+  TPETRA_CRSGRAPH_EXPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
   TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT_TWO(LO,GO,NODE) \
   TPETRA_CRSGRAPH_EXPORT_AND_FILL_COMPLETE_INSTANT_TWO(LO,GO,NODE)
 

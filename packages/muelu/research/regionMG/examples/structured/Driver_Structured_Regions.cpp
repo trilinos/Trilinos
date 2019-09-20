@@ -352,6 +352,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
 #ifdef MATLAB_COMPARE
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("Ax.mm",*B);
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("A.mm",*A);
   B->putScalar(zero);
   Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("rhs.mm",*B);
   Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("x.mm",*X);
@@ -1214,6 +1216,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<LO> rNodesPerDim(3);
   Array<GO> quasiRegionGIDs(numLocalRegionNodes*numDofsPerNode);
   Array<GO> regionGIDs(numLocalRegionNodes*numDofsPerNode);
+  Array<GO> quasiRegionCoordGIDs(numLocalRegionNodes);
 
   rNodesPerDim[0] = lNodesPerDim[0];
   rNodesPerDim[1] = lNodesPerDim[1];
@@ -1258,6 +1261,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if( (regionIJK[0] == 0 && leftBC   == 0) ||
         (regionIJK[1] == 0 && frontBC  == 0) ||
         (regionIJK[2] == 0 && bottomBC == 0) ) {
+      quasiRegionCoordGIDs[nodeRegionIdx] = receiveGIDs[interfaceCount];
       for(int dof = 0; dof < numDofsPerNode; ++dof) {
         quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof] =
           receiveGIDs[interfaceCount]*numDofsPerNode + dof;
@@ -1268,6 +1272,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       compositeIdx = (regionIJK[2] + bottomBC - 1)*lNodesPerDim[1]*lNodesPerDim[0]
         + (regionIJK[1] + frontBC  - 1)*lNodesPerDim[0]
         + (regionIJK[0] + leftBC - 1);
+      quasiRegionCoordGIDs[nodeRegionIdx] = nodeMap->getGlobalElement(compositeIdx);
       for(int dof = 0; dof < numDofsPerNode; ++dof) {
         quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof]
           = dofMap->getGlobalElement(compositeIdx*numDofsPerNode + dof);
@@ -1281,6 +1286,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
   // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
+  std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
 
   // In our very particular case we know that a node is at most shared by 4 regions.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
@@ -1328,6 +1334,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - Build Region Matrix")));
 
+  RCP<TimeMonitor> tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.1 - Build Region Maps")));
+
   std::vector<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
   std::vector<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
   rowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
@@ -1343,46 +1351,60 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                                                                  dofMap->getComm());
   revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
 
+  // Build objects needed to construct the region coordinates
+  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > quasiRegCoordMap = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          quasiRegionCoordGIDs(),
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > regCoordMap = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          numLocalRegionNodes,
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+
+  comm->barrier();
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.2 - Build Region Importers")));
+
   // Setup importers
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > colImportPerGrp(maxRegPerProc);
   rowImportPerGrp[0] = ImportFactory::Build(dofMap, rowMapPerGrp[0]);
   colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
+  RCP<Import> coordImporter = ImportFactory::Build(nodeMap, quasiRegCoordMap);
+
+  comm->barrier();
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.3 - Import ghost GIDs")));
 
   RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGIDWithGhosts
     = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(rowMapPerGrp[0], maxRegPerGID, false);
   RCP<Import> regionsPerGIDImport = ImportFactory::Build(A->getRowMap(), A->getColMap());
   regionsPerGIDWithGhosts->doImport(*regionsPerGID, *rowImportPerGrp[0], Xpetra::INSERT);
 
-  // sleep(1);
-  // if(myRank == 0) std::cout << "regionsPerGIDWithGhosts:" << std::endl;
-  // regionsPerGIDWithGhosts->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-  // sleep(1);
+  comm->barrier();
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.4 - Build QuasiRegion Matrix")));
 
   std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > quasiRegionGrpMats(1);
   MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), maxRegPerProc,
                           regionsPerGIDWithGhosts, rowMapPerGrp, colMapPerGrp, rowImportPerGrp,
                           quasiRegionGrpMats);
 
+  comm->barrier();
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.4 - Build Region Matrix")));
+
   std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats(1);
   MakeRegionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), A->getRowMap(), rowMapPerGrp,
                      revisedRowMapPerGrp, revisedColMapPerGrp,
                      rowImportPerGrp, maxRegPerProc, quasiRegionGrpMats, regionGrpMats);
 
-  // sleep(1);
-  // if(myRank == 0) std::cout << "composite A:" << std::endl;
-  // A->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-  // sleep(1);
-
-  // sleep(1);
-  // if(myRank == 0) std::cout << "quasi-region A:" << std::endl;
-  // quasiRegionGrpMats[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-  // sleep(1);
-
-  // sleep(1);
-  // if(myRank == 0) std::cout << "region A:" << std::endl;
-  // regionGrpMats[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-  // sleep(1);
+  comm->barrier();
+  tmLocal = Teuchos::null;
 
   comm->barrier();
   tm = Teuchos::null;
@@ -1404,10 +1426,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   regionNullspace[0]->replaceMap(revisedRowMapPerGrp[0]);
 
   // create region coordinates vector
-  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(rowMapPerGrp[0],
-                                                                               numDimensions);
-  regionCoordinates[0]->doImport(*coordinates, *rowImportPerGrp[0], Xpetra::INSERT);
-  regionCoordinates[0]->replaceMap(revisedRowMapPerGrp[0]);
+  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap,
+                                                                               coordinates->getNumVectors());
+  regionCoordinates[0]->doImport(*coordinates, *coordImporter, Xpetra::INSERT);
+  regionCoordinates[0]->replaceMap(regCoordMap);
 
   using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -1430,11 +1452,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<std::vector<RCP<Matrix> > > regMatrices; // regional matrices on each level
   Array<std::vector<RCP<Matrix> > > regProlong; // regional prolongators on each level
   Array<std::vector<RCP<Import> > > regRowImporters; // regional row importers on each level
-  Array<std::vector<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
+  Array<Array<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
   Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
   RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
   coarseSolverData->set<bool>("use direct solver", directCoarseSolver);
   coarseSolverData->set<std::string>("amg xml file", coarseAmgXmlFile);
+  RCP<ParameterList> hierarchyData = rcp(new ParameterList());
 
 
   // Create multigrid hierarchy
@@ -1467,7 +1490,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         maxRegPerGID,
                         compositeToRegionLIDs(),
                         coarseSolverData,
-                        smootherParams);
+                        smootherParams,
+                        hierarchyData);
+
+  hierarchyData->print();
 
 
   comm->barrier();
@@ -1499,19 +1525,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // transform composite vectors to regional layout
-    std::vector<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc);
-    std::vector<Teuchos::RCP<Vector> > regX(maxRegPerProc);
+    Array<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc);
+    Array<Teuchos::RCP<Vector> > regX(maxRegPerProc);
     compositeToRegional(X, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
                         revisedRowMapPerGrp, rowImportPerGrp);
 
-    std::vector<RCP<Vector> > quasiRegB(maxRegPerProc);
-    std::vector<RCP<Vector> > regB(maxRegPerProc);
+    Array<RCP<Vector> > quasiRegB(maxRegPerProc);
+    Array<RCP<Vector> > regB(maxRegPerProc);
     compositeToRegional(B, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
                         revisedRowMapPerGrp, rowImportPerGrp);
 
     //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
 
-    std::vector<RCP<Vector> > regRes(maxRegPerProc);
+    Array<RCP<Vector> > regRes(maxRegPerProc);
     for (int j = 0; j < maxRegPerProc; j++) { // step 1
       regRes[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
     }
@@ -1526,19 +1552,30 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
     if (myRank == 0)
-      {
-        log = rcp(new std::ofstream(convergenceLog.c_str()));
-        (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
-               << "# iteration | res-norm\n"
-               << "#\n";
-        *log << std::setprecision(16) << std::scientific;
-      }
+    {
+      log = rcp(new std::ofstream(convergenceLog.c_str()));
+      (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
+             << "# iteration | res-norm (scaled=" << scaleResidualHist << ")\n"
+             << "#\n";
+      *log << std::setprecision(16) << std::scientific;
+    }
+
+    // Print type of residual norm to the screen
+    if (myRank == 0)
+    {
+      if (scaleResidualHist)
+        std::cout << "Using scaled residual norm." << std::endl;
+      else
+        std::cout << "Using unscaled residual norm." << std::endl;
+    }
 
     // Richardson iterations
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni;
     const int old_precision = std::cout.precision();
     std::cout << std::setprecision(8) << std::scientific;
-    for (int cycle = 0; cycle < maxIts; ++cycle) {
+    int cycle = 0;
+    for (cycle = 0; cycle < maxIts; ++cycle)
+    {
       // check for convergence
       {
         ////////////////////////////////////////////////////////////////////////
@@ -1558,27 +1595,33 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
         if(cycle == 0) { normResIni = normRes; }
 
+        if (scaleResidualHist)
+          normRes /= normResIni;
+
         // Output current residual norm to screen (on proc 0 only)
         if (myRank == 0)
-          {
-            std::cout << cycle << "\t" << normRes << std::endl;
-            (*log) << cycle << "\t" << normRes << "\n";
-          }
+        {
+          std::cout << cycle << "\t" << normRes << std::endl;
+          (*log) << cycle << "\t" << normRes << "\n";
+        }
 
-        if ((normRes/normResIni) < tol)
+        if (normRes < tol)
           break;
-      }
+        }
 
-      /////////////////////////////////////////////////////////////////////////
-      // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
-      /////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////
+        // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
+        /////////////////////////////////////////////////////////////////////////
 
-      //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-      vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
-             regX, regB, regMatrices,
-             regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData);
+        //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
+        vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
+               regX, regB, regMatrices,
+               regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
+               regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData, hierarchyData);
     }
+    if (myRank == 0)
+      std::cout << "Number of iterations performed for this solve: " << cycle << std::endl;
+
     std::cout << std::setprecision(old_precision);
     std::cout.unsetf(std::ios::fixed | std::ios::scientific);
   }

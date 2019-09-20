@@ -54,14 +54,14 @@ namespace Intrepid2 {
   namespace Impl {
     
     template<EOperator opType>
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType,
              typename workViewType,
              typename vinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HVOL_LINE_Cn_FEM::Serial<opType>::
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType  input,
                      workViewType   work,
                const vinvViewType   vinv,
@@ -201,11 +201,12 @@ namespace Intrepid2 {
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
     this->basisType_         = BASIS_FEM_FIAT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
+    this->functionSpace_     = FUNCTION_SPACE_HVOL;
 
     const ordinal_type card = this->basisCardinality_;
     
     // points are computed in the host and will be copied 
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoords("HVOL::Line::Cn::dofCoords", card, 1);
 
 
@@ -255,7 +256,7 @@ namespace Intrepid2 {
     // form Vandermonde matrix; actually, this is the transpose of the VDM,
     // this matrix is used in LAPACK so it should be column major and left layout
     const ordinal_type lwork = card*card;
-    Kokkos::DynRankView<typename scalarViewType::value_type,Kokkos::LayoutLeft,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,Kokkos::LayoutLeft,Kokkos::HostSpace>
       vmat("HVOL::Line::Cn::vmat", card, card),
       work("HVOL::Line::Cn::work", lwork),
       ipiv("HVOL::Line::Cn::ipiv", card);
@@ -266,7 +267,7 @@ namespace Intrepid2 {
       (vmat, dofCoords, order, alpha, beta, OPERATOR_VALUE);
 
     ordinal_type info = 0;
-    Teuchos::LAPACK<ordinal_type,typename scalarViewType::value_type> lapack;
+    Teuchos::LAPACK<ordinal_type,typename ScalarViewType::value_type> lapack;
 
     lapack.GETRF(card, card, 
                  vmat.data(), vmat.stride_1(),
@@ -288,7 +289,7 @@ namespace Intrepid2 {
                                   ">>> ERROR: (Intrepid2::Basis_HVOL_LINE_Cn_FEM) lapack.GETRI returns nonzero info." );
     
     // create host mirror 
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       vinv("HVOL::Line::Cn::vinv", card, card);
 
     for (ordinal_type i=0;i<card;++i) 
@@ -316,7 +317,7 @@ namespace Intrepid2 {
         tags[i][3] = card; // total number of dofs in this edge
       }
 
-      ordinal_type_array_1d_host tagView(&tags[0][0], card*4);
+      OrdinalTypeArray1DHost tagView(&tags[0][0], card*4);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       // tags are constructed on host

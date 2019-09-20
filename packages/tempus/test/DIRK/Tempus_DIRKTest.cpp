@@ -13,7 +13,7 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_StepperDIRK.hpp"
+#include "Tempus_StepperFactory.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
@@ -27,6 +27,7 @@ namespace Tempus_Test {
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
+using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::parameterList;
 using Teuchos::sublist;
@@ -50,11 +51,13 @@ using Tempus::SolutionState;
 TEUCHOS_UNIT_TEST(DIRK, ParameterList)
 {
   std::vector<std::string> RKMethods;
+  RKMethods.push_back("General DIRK");
   RKMethods.push_back("RK Backward Euler");
-  RKMethods.push_back("IRK 1 Stage Theta Method");
-  RKMethods.push_back("Implicit Midpoint");
-  RKMethods.push_back("SDIRK 1 Stage 1st order");
+  RKMethods.push_back("DIRK 1 Stage Theta Method");
+  RKMethods.push_back("RK Implicit 1 Stage 1st order Radau IA");
+  RKMethods.push_back("RK Implicit Midpoint");
   RKMethods.push_back("SDIRK 2 Stage 2nd order");
+  RKMethods.push_back("RK Implicit 2 Stage 2nd order Lobatto IIIB");
   RKMethods.push_back("SDIRK 2 Stage 3rd order");
   RKMethods.push_back("EDIRK 2 Stage 3rd order");
   RKMethods.push_back("EDIRK 2 Stage Theta Method");
@@ -62,6 +65,8 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
   RKMethods.push_back("SDIRK 2(1) Pair");
+  RKMethods.push_back("RK Trapezoidal Rule");
+  RKMethods.push_back("RK Crank-Nicolson");
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -78,44 +83,62 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
     RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
     tempusPL->sublist("Default Stepper").set("Stepper Type", RKMethods[m]);
 
-    if (RKMethods[m] == "IRK 1 Stage Theta Method" ||
-        RKMethods[m] == "Implicit Midpoint" ||
+    if (RKMethods[m] == "DIRK 1 Stage Theta Method" ||
         RKMethods[m] == "EDIRK 2 Stage Theta Method") {
       // Construct in the same order as default.
       RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
       RCP<ParameterList> solverPL = parameterList();
       *solverPL  = *(sublist(stepperPL, "Default Solver", true));
-      tempusPL->sublist("Default Stepper").remove("Default Solver");
-      tempusPL->sublist("Default Stepper")
-           .set<double>("theta", 0.5);
       tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
+      tempusPL->sublist("Default Stepper").remove("Default Solver");
       tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
+      tempusPL->sublist("Default Stepper").remove("Reset Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Reset Initial Guess", 1);
       tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
+      tempusPL->sublist("Default Stepper").set<double>("theta", 0.5);
     } else if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
       // Construct in the same order as default.
       RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
       RCP<ParameterList> solverPL = parameterList();
       *solverPL  = *(sublist(stepperPL, "Default Solver", true));
       tempusPL->sublist("Default Stepper").remove("Default Solver");
-      tempusPL->sublist("Default Stepper")
-           .set<double>("gamma", 0.2928932188134524);
       tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
       tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
+      tempusPL->sublist("Default Stepper").remove("Reset Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Reset Initial Guess", 1);
       tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
+      tempusPL->sublist("Default Stepper")
+           .set<double>("gamma", 0.2928932188134524);
     } else if (RKMethods[m] == "SDIRK 2 Stage 3rd order") {
       // Construct in the same order as default.
       RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
       RCP<ParameterList> solverPL = parameterList();
       *solverPL  = *(sublist(stepperPL, "Default Solver", true));
-      tempusPL->sublist("Default Stepper").remove("Default Solver");
-      tempusPL->sublist("Default Stepper").set("3rd Order A-stable", true);
-      tempusPL->sublist("Default Stepper").set("2nd Order L-stable", false);
-      tempusPL->sublist("Default Stepper")
-           .set<double>("gamma", 0.7886751345948128);
       tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
       tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
+      tempusPL->sublist("Default Stepper").remove("Default Solver");
+      tempusPL->sublist("Default Stepper").remove("Reset Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Reset Initial Guess", 1);
       tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
+      tempusPL->sublist("Default Stepper")
+           .set<std::string>("Gamma Type", "3rd Order A-stable");
+      tempusPL->sublist("Default Stepper")
+           .set<double>("gamma", 0.7886751345948128);
+    } else if (RKMethods[m] == "RK Crank-Nicolson") {
+      // Match default Stepper Type
+      tempusPL->sublist("Default Stepper")
+                   .set("Stepper Type", "RK Trapezoidal Rule");
+    } else if (RKMethods[m] == "General DIRK") {
+      // Add the default tableau.
+      Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
+      tableauPL->set<std::string>("A", "0.2928932188134524 0.0; 0.7071067811865476 0.2928932188134524");
+      tableauPL->set<std::string>("b", "0.7071067811865476 0.2928932188134524");
+      tableauPL->set<std::string>("c", "0.2928932188134524 1.0");
+      tableauPL->set<int>("order", 2);
+      tableauPL->set<std::string>("bstar", "");
+      tempusPL->sublist("Default Stepper").set("Tableau", *tableauPL);
     }
+
 
     // Test constructor IntegratorBasic(tempusPL, model)
     {
@@ -124,13 +147,9 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
 
       RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
       RCP<ParameterList> defaultPL =
-        integrator->getStepper()->getDefaultParameters();
+        Teuchos::rcp_const_cast<Teuchos::ParameterList>(
+          integrator->getStepper()->getValidParameters());
       defaultPL->remove("Description");
-
-      // Adjust default parameters for pseudonyms.
-      if ( RKMethods[m] == "Implicit Midpoint" ) {
-        defaultPL->set("Stepper Type", "Implicit Midpoint");
-      }
 
       bool pass = haveSameValues(*stepperPL, *defaultPL, true);
       if (!pass) {
@@ -148,13 +167,9 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
 
       RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
       RCP<ParameterList> defaultPL =
-        integrator->getStepper()->getDefaultParameters();
+        Teuchos::rcp_const_cast<Teuchos::ParameterList>(
+          integrator->getStepper()->getValidParameters());
       defaultPL->remove("Description");
-
-      // Adjust default parameters for pseudonyms.
-      if ( RKMethods[m] == "Implicit Midpoint" ) {
-        defaultPL->set("Stepper Type", "Implicit Midpoint");
-      }
 
       bool pass = haveSameValues(*stepperPL, *defaultPL, true);
       if (!pass) {
@@ -187,8 +202,12 @@ TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
   auto model = rcp(new SinCosModel<double>(scm_pl));
 
   // Setup Stepper for field solve ----------------------------
-  auto stepper = rcp(new Tempus::StepperDIRK<double>());
+  RCP<Tempus::StepperFactory<double> > sf =
+    Teuchos::rcp(new Tempus::StepperFactory<double>());
+  RCP<Tempus::Stepper<double> > stepper =
+    sf->createStepper("SDIRK 2 Stage 2nd order");
   stepper->setModel(model);
+  stepper->setSolver();
   stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------
@@ -272,11 +291,13 @@ TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
 TEUCHOS_UNIT_TEST(DIRK, SinCos)
 {
   std::vector<std::string> RKMethods;
+  RKMethods.push_back("General DIRK");
   RKMethods.push_back("RK Backward Euler");
-  RKMethods.push_back("IRK 1 Stage Theta Method");
-  RKMethods.push_back("Implicit Midpoint");
-  RKMethods.push_back("SDIRK 1 Stage 1st order");
+  RKMethods.push_back("DIRK 1 Stage Theta Method");
+  RKMethods.push_back("RK Implicit 1 Stage 1st order Radau IA");
+  RKMethods.push_back("RK Implicit Midpoint");
   RKMethods.push_back("SDIRK 2 Stage 2nd order");
+  RKMethods.push_back("RK Implicit 2 Stage 2nd order Lobatto IIIB");
   RKMethods.push_back("SDIRK 2 Stage 3rd order");
   RKMethods.push_back("EDIRK 2 Stage 3rd order");
   RKMethods.push_back("EDIRK 2 Stage Theta Method");
@@ -284,13 +305,17 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
   RKMethods.push_back("SDIRK 2(1) Pair");
+  RKMethods.push_back("RK Trapezoidal Rule");
+  RKMethods.push_back("RK Crank-Nicolson");
 
   std::vector<double> RKMethodErrors;
-  RKMethodErrors.push_back(0.0124201);
-  RKMethodErrors.push_back(5.20785e-05);
-  RKMethodErrors.push_back(5.20785e-05);
-  RKMethodErrors.push_back(0.0124201);
   RKMethodErrors.push_back(2.52738e-05);
+  RKMethodErrors.push_back(0.0124201);
+  RKMethodErrors.push_back(5.20785e-05);
+  RKMethodErrors.push_back(0.0124201);
+  RKMethodErrors.push_back(5.20785e-05);
+  RKMethodErrors.push_back(2.52738e-05);
+  RKMethodErrors.push_back(5.20785e-05);
   RKMethodErrors.push_back(1.40223e-06);
   RKMethodErrors.push_back(2.17004e-07);
   RKMethodErrors.push_back(5.20785e-05);
@@ -298,6 +323,8 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethodErrors.push_back(3.30631e-10);
   RKMethodErrors.push_back(1.35728e-11);
   RKMethodErrors.push_back(0.0001041);
+  RKMethodErrors.push_back(5.20785e-05);
+  RKMethodErrors.push_back(5.20785e-05);
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -328,16 +355,14 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
       // Set the Stepper
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
       pl->sublist("Default Stepper").set("Stepper Type", RKMethods[m]);
-      if (RKMethods[m] == "IRK 1 Stage Theta Method" ||
-          RKMethods[m] == "Implicit Midpoint" ||
+      if (RKMethods[m] == "DIRK 1 Stage Theta Method" ||
           RKMethods[m] == "EDIRK 2 Stage Theta Method") {
         pl->sublist("Default Stepper").set<double>("theta", 0.5);
       } else if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
         pl->sublist("Default Stepper").set("gamma", 0.2928932188134524);
       } else if (RKMethods[m] == "SDIRK 2 Stage 3rd order") {
-        pl->sublist("Default Stepper").set("3rd Order A-stable", true);
-        pl->sublist("Default Stepper").set("2nd Order L-stable", false);
-        pl->sublist("Default Stepper").set("gamma", 0.7886751345948128);
+        pl->sublist("Default Stepper")
+           .set<std::string>("Gamma Type", "3rd Order A-stable");
       }
 
       dt /= 2;

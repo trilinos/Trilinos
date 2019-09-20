@@ -92,66 +92,114 @@
 #include <Thyra_FROSchLinearOp_def.hpp>
 #include <FROSch_Tools_def.hpp>
 
-#include "Kokkos_DefaultNode.hpp"
 
 namespace Thyra {
-    
+
     using namespace FROSch;
     using namespace Teuchos;
-    
-    template <class SC,class LO,class GO,class NO=KokkosClassic::DefaultNode::DefaultNodeType>
+    using namespace Xpetra;
+
+    template <class SC,
+              class LO,
+              class GO,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class FROSchFactory : public Thyra::PreconditionerFactoryBase<SC> {
+
+    protected:
         
+        using CommPtr                       = RCP<const Comm<int> >;
+        
+        using LinearOpBasePtr               = RCP<LinearOpBase<SC> >;
+        using ConstLinearOpBasePtr          = RCP<const LinearOpBase<SC> >;
+        using ConstLinearOpSourceBasePtr    = RCP<const LinearOpSourceBase<SC> >;
+        
+        using ConstVectorSpaceBasePtr       = RCP<const VectorSpaceBase<SC> >;
+        
+        using PreconditionerBasePtr         = RCP<PreconditionerBase<SC> >;
+
+        using XMap                          = Map<LO,GO,NO>;
+        using ConstXMap                     = const XMap;
+        using XMapPtr                       = RCP<XMap>;
+        using ConstXMapPtr                  = RCP<ConstXMap>;
+        using XMapPtrVecPtr                 = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr            = ArrayRCP<ConstXMapPtr>;
+
+        using XMatrix                       = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr                    = RCP<XMatrix>;
+        using ConstXMatrixPtr               = RCP<const XMatrix>;
+        
+        using XCrsMatrix                    = CrsMatrix<SC,LO,GO,NO>;
+        using XCrsMatrixPtr                 = RCP<XCrsMatrix>;
+        using ConstXCrsMatrixPtr            = RCP<const XCrsMatrix>;
+        
+        using XMultiVector                  = MultiVector<SC,LO,GO,NO>;
+        using ConstXMultiVector             = const XMultiVector;
+        using XMultiVectorPtr               = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr          = RCP<ConstXMultiVector>;
+        
+        using ParameterListPtr              = RCP<ParameterList>;
+        using ConstParameterListPtr         = RCP<const ParameterList>;
+        
+        using DofOrderingVecPtr             = ArrayRCP<DofOrdering>;
+
+        using UN                            = unsigned;
+
+        using GOVecPtr                      = ArrayRCP<GO> ;
+
+        using SCVecPtr                      = ArrayRCP<SC>;
+
+        using UNVecPtr                      = ArrayRCP<UN>;
+
+        using LOVecPtr                      = ArrayRCP<LO>;
+
     public:
 
-        typedef Teuchos::ArrayRCP<DofOrdering> DofOrderingVecPtr;
-        
-        typedef unsigned UN;
-        
-        typedef Teuchos::ArrayRCP<GO> GOVecPtr;
-        
-        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        
-        typedef Teuchos::ArrayRCP<UN> UNVecPtr;
-        
-        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
-        
-        // More typedefs!!!
-        
         //Constructor
         FROSchFactory();
-        
+
         //Overridden from PreconditionerFactory Base
         bool isCompatible(const LinearOpSourceBase<SC>& fwdOp) const;
-        
-        Teuchos::RCP<PreconditionerBase<SC> > createPrec() const;
-        
-        void initializePrec(const RCP<const LinearOpSourceBase<SC> >& fwdOpSrc,
+
+        PreconditionerBasePtr createPrec() const;
+
+        void initializePrec(const ConstLinearOpSourceBasePtr& fwdOpSrc,
                             PreconditionerBase<SC>* prec,
                             const ESupportSolveUse supportSolveUse) const;
-        
+
         void uninitializePrec(PreconditionerBase<SC>* prec,
-                              RCP<const LinearOpSourceBase<SC> >* fwdOp,
+                              ConstLinearOpSourceBasePtr* fwdOp,
                               ESupportSolveUse* supportSolveUse) const;
-        
-        void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList);
-        
-        RCP<ParameterList> unsetParameterList();
-        
-        RCP<ParameterList>getNonconstParameterList();
-        
-        RCP<const ParameterList> getParameterList() const;
-        
-        RCP<const ParameterList> getValidParameters() const;
-        
+
+        void setParameterList(const ParameterListPtr& paramList);
+
+        ParameterListPtr unsetParameterList();
+
+        ParameterListPtr getNonconstParameterList();
+
+        ConstParameterListPtr getParameterList() const;
+
+        ConstParameterListPtr getValidParameters() const;
+
         std::string description() const;
-        private:
-        Teuchos::RCP<ParameterList> paramList_;
-                
+
+    private:
+        
+        ConstXMapPtr extractRepeatedMap(CommPtr comm,
+                                        UnderlyingLib lib) const;
+        
+        ConstXMultiVectorPtr extractCoordinatesList(CommPtr comm,
+                                                    UnderlyingLib lib) const;
+        
+        ConstXMultiVectorPtr extractNullSpace(CommPtr comm,
+                                              UnderlyingLib lib) const;
+        
+
+        ParameterListPtr paramList_;
+
     };
 }
 
-    
+
 
 #endif
 

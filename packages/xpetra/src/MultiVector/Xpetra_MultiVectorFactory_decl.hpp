@@ -58,16 +58,16 @@
 #include "Xpetra_EpetraIntMultiVector.hpp"
 #endif
 
-#include "Xpetra_BlockedMap.hpp"
+// #include "Xpetra_BlockedMap.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
 
 
-template<class Scalar        = MultiVector<>::scalar_type,
-         class LocalOrdinal  = typename MultiVector<Scalar>::local_ordinal_type,
-         class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
-         class Node          = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class MultiVectorFactory
 {
   private:

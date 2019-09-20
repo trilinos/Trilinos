@@ -40,7 +40,7 @@ C=======================================================================
 C
 C     *********************************************************************
 C
-C     Subroutine ELTON1 extracts nodal vaules of element variables by
+C     Subroutine ELTON1 extracts nodal values of element variables by
 C     c  performing a weighted least squares fit (4 or more elements) or
 C     c  a triangulation (3 elements) over the centroids of the elements
 C     c  attached to the current node.

@@ -20,9 +20,9 @@
         <Parameter name="X Blocks" type="int" value="1" />
         <Parameter name="Y Blocks" type="int" value="1" />
         <Parameter name="Z Blocks" type="int" value="1" />
-        <Parameter name="X Elements" type="int" value="10" />
-        <Parameter name="Y Elements" type="int" value="10" />
-        <Parameter name="Z Elements" type="int" value="10" />
+        <Parameter name="X Elements" type="int" value="15" />
+        <Parameter name="Y Elements" type="int" value="15" />
+        <Parameter name="Z Elements" type="int" value="15" />
         <!-- <ParameterList name="Periodic BCs"> -->
         <!--   <Parameter name="Count" type="int" value="3"/> -->
         <!--   <Parameter name="Periodic Condition 1" type="string" value="xz-all 1e-8: top;bottom"/> -->

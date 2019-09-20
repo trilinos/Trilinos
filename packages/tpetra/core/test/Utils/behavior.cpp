@@ -62,6 +62,8 @@ namespace { // (anonymous)
 
   constexpr bool defaultVerbose = false;
 
+  constexpr size_t defaultThreshold = 200;
+
   // See example here:
   //
   // http://en.cppreference.com/w/cpp/string/byte/toupper
@@ -163,6 +165,38 @@ namespace { // (anonymous)
       }
     }
   }
+
+  TEUCHOS_UNIT_TEST( TpetraDetailsBehavior, verbosePrintCountThreshold )
+  {
+    using Tpetra::Details::Behavior;
+    using std::endl;
+
+    out << "Test Tpetra::Details::Behavior" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    {
+      out << "Test Behavior::verbosePrintCountThreshold()" << endl;
+      Teuchos::OSTab tab2 (out);
+
+      const char* varVal = std::getenv ("TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD");
+      if (varVal == NULL) {
+        out << "TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD is not already set in environment" << endl;
+        Teuchos::OSTab tab3 (out);
+
+        const size_t threshold = Behavior::verbosePrintCountThreshold ();
+        TEST_EQUALITY( threshold, defaultThreshold );
+      }
+      else {
+        out << "TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD is already set in environment" << endl;
+        Teuchos::OSTab tab3 (out);
+
+        int threshold = std::stoi(std::string(varVal));
+        const size_t threshold2 = Behavior::verbosePrintCountThreshold ();
+        TEST_EQUALITY( static_cast<const size_t>(threshold), threshold2 );
+      }
+    }
+
+  } //verbosePrintCountThreshold
 
 } // namespace (anonymous)
 

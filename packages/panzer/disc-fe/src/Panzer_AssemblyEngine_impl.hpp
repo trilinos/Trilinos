@@ -74,7 +74,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
   GlobalEvaluationDataContainer gedc;
 
   if ( flags.getValue() & EvaluationFlags::Initialize ) {
-    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_gather("+PHX::typeAsString<EvalT>()+")", eval_gather);
+    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_gather("+PHX::print<EvalT>()+")", eval_gather);
 
     in.fillGlobalEvaluationDataContainer(gedc);
     gedc.initialize(); // make sure all ghosted data is ready to go
@@ -89,7 +89,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
   // Volumetric fill
   // *********************
   if ( flags.getValue() & EvaluationFlags::VolumetricFill) {
-    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_volume("+PHX::typeAsString<EvalT>()+")", eval_vol);
+    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_volume("+PHX::print<EvalT>()+")", eval_vol);
     this->evaluateVolume(in);
   }
 
@@ -102,24 +102,24 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
 
   if ( flags.getValue() & EvaluationFlags::BoundaryFill) {
     {
-      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")",eval_neumannbcs);
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::print<EvalT>()+")",eval_neumannbcs);
       this->evaluateNeumannBCs(in);
     }
 
     {
-      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::typeAsString<EvalT>()+")",eval_interfacebcs);
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::print<EvalT>()+")",eval_interfacebcs);
       this->evaluateInterfaceBCs(in);
     }
 
     // Dirchlet conditions require a global matrix
     {
-      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")",eval_dirichletbcs);
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::print<EvalT>()+")",eval_dirichletbcs);
       this->evaluateDirichletBCs(in);
     }
   }
 
   if ( flags.getValue() & EvaluationFlags::Scatter) {
-    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_scatter("+PHX::typeAsString<EvalT>()+")",eval_scatter);
+    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_scatter("+PHX::print<EvalT>()+")",eval_scatter);
     m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
     m_lin_obj_factory->beginFill(*in.container_);
@@ -212,7 +212,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
     // double s = 0.;
     // double p = 0.;
     // fm->template analyzeGraph<EvalT>(s,p);
-    // std::cout << "Analyze Graph: " << PHX::typeAsString<EvalT>() << ",b=" << block << ", s=" << s << ", p=" << p << std::endl; 
+    // std::cout << "Analyze Graph: " << PHX::print<EvalT>() << ",b=" << block << ", s=" << s << ", p=" << p << std::endl;
 
     fm->template postEvaluate<EvalT>(NULL);
   }

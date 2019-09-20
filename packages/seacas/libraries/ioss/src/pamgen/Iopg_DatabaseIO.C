@@ -610,6 +610,7 @@ namespace Iopg {
         get_region()->add(nodeset);
 
         get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id));
+        get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodeset", id));
       }
     }
   }
@@ -680,7 +681,7 @@ namespace Iopg {
   {
     // This function creates all sidesets (surfaces) for a
     // model.  Note that a side set contains 1 or more side
-    // blocks which are homogenous (same topology). In serial execution,
+    // blocks which are homogeneous (same topology). In serial execution,
     // this is fairly straightforward since there are no null sets and
     // we have all the information we need. (...except see below for
     // surface evolution).
@@ -1106,7 +1107,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
       // Handle the MESH fields required for an ExodusII file model.
       // (The 'genesis' portion)
 
-      if (field.get_name() == "connectivity") {
+      if (field.get_name() == "connectivity" || field.get_name() == "connectivity_raw") {
         int element_nodes = eb->get_property("topology_node_count").get_int();
         assert(field.raw_storage()->component_count() == element_nodes);
 
@@ -1118,7 +1119,9 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
             pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
           // Now, map the nodes in the connectivity from local to global ids
-          get_node_map().map_data(data, field, num_to_get * element_nodes);
+          if (field.get_name() == "connectivity") {
+            get_node_map().map_data(data, field, num_to_get * element_nodes);
+          }
         }
       }
       else if (field.get_name() == "ids") {
@@ -1558,8 +1561,8 @@ const Ioss::Map &DatabaseIO::get_element_map() const
   return elemMap;
 }
 
-void DatabaseIO::compute_block_membership(Ioss::SideBlock *         sideblock,
-                                          std::vector<std::string> &block_membership) const
+void DatabaseIO::compute_block_membership__(Ioss::SideBlock *         sideblock,
+                                            std::vector<std::string> &block_membership) const
 {
   Ioss::IntVector block_ids(elementBlockCount);
   if (elementBlockCount == 1) {

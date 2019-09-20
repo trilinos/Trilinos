@@ -54,14 +54,6 @@
 namespace Xpetra {
 
 
-//  template <class Scalar,
-//            class LocalOrdinal,
-//            class GlobalOrdinal,
-//            class Node>
-//  class MapExtractor : public Teuchos::Describable
-
-// MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MapExtractor(const RCP<const Map>& fullmap, const std::vector<RCP<const Map> >& maps, bool bThyraMode)
@@ -104,7 +96,8 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(const Vector& full, size_t block, Vector& partial) const
     {
-      XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps() << " partial blocks.");
+      XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(), std::out_of_range, 
+            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps() << " partial blocks.");
       XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block,false) == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: map_->getMap(" << block << ",false) is null");
 

@@ -1,0 +1,13 @@
+Code to fit a piecewise G1 spline to a heterogeneous surface mesh of
+tri and quad faces.  Uses Gregory patches.  See doc directory for
+background and technical papers.
+
+Algorithm is based on the paper
+FarinHansford-Agnostic-tri-quad-Gregory_paper.pdf. The authors were
+generous to contribute the Mathematica code for that paper, found here
+in general_gregory_dch.{nb,m}.
+
+Note: the files with .mcpp extension are Mathematica Splice files - do
+not edit the corresponding .cpp files since they are generated from
+the notebook: tri-greg-7-1.nb (evaluate all cells).
+

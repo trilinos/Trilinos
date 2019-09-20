@@ -89,8 +89,8 @@
 #include "user_app_EquationSetFactory.hpp"
 
 typedef double ScalarT;
-typedef int LocalOrdinalT;
-typedef int GlobalOrdinalT;
+using LocalOrdinalT = panzer::LocalOrdinal;
+using GlobalOrdinalT = panzer::GlobalOrdinal;
 typedef panzer::TpetraNodeType NodeT;
 
 typedef Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> VectorType;

@@ -189,6 +189,7 @@ public:
   global_size_t getGlobalNumEntries() const { return 0; }
   size_t getNodeNumEntries() const { return 0; }
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
   size_t getGlobalMaxNumRowEntries() const { return 0; }
   size_t getNodeMaxNumRowEntries() const { return 0; }
   bool isLocallyIndexed() const { return false; }
@@ -778,6 +779,9 @@ public:
 
   //! Returns the current number of entries on this node in the specified local row.
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsMatrixT::getNumEntriesInLocalRow"); return mtx_->NumMyEntries(localRow); }
+
+  //! Returns the current number of entries on this node in the specified (locally owned) global row.
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsMatrixT::getNumEntriesInGlobalRow"); return mtx_->NumGlobalEntries(globalRow); }
 
   //! Returns the maximum number of entries across all rows/columns on all nodes.
   size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalMaxNumRowEntries"); return mtx_->GlobalMaxNumEntries(); }
@@ -1774,6 +1778,9 @@ public:
 
   //! Returns the current number of entries on this node in the specified local row.
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsMatrixT::getNumEntriesInLocalRow"); return mtx_->NumMyEntries(localRow); }
+
+  //! Returns the current number of entries on this node in the specified (locally owned) global row.
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsMatrixT::getNumEntriesInGlobalRow"); return mtx_->NumGlobalEntries(globalRow); }
 
   //! Returns the maximum number of entries across all rows/columns on all nodes.
   size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalMaxNumRowEntries"); return mtx_->GlobalMaxNumEntries(); }

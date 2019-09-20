@@ -127,7 +127,7 @@ void Info::Interface::enroll_options()
                   "Show configuration of IOSS library (TPL versions)", nullptr);
 
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
-                  "Method used to split sidesets into homogenous blocks\n"
+                  "Method used to split sidesets into homogeneous blocks\n"
                   "\t\tOptions are: TOPOLOGY, BLOCK, NOSPLIT",
                   "TOPOLOGY");
 
@@ -270,6 +270,24 @@ bool Info::Interface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("group_name");
     if (temp != nullptr) {
       groupname_ = temp;
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("surface_split_scheme");
+    if (temp != nullptr) {
+      if (std::strcmp(temp, "TOPOLOGY") == 0) {
+        surfaceSplitScheme_ = 1;
+      }
+      else if (std::strcmp(temp, "ELEMENT_BLOCK") == 0) {
+        surfaceSplitScheme_ = 2;
+      }
+      else if (std::strcmp(temp, "BLOCK") == 0) {
+        surfaceSplitScheme_ = 2;
+      }
+      else if (std::strcmp(temp, "NO_SPLIT") == 0) {
+        surfaceSplitScheme_ = 3;
+      }
     }
   }
 

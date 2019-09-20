@@ -92,7 +92,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class BlockedCrsMatrix :
     public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
@@ -633,6 +633,16 @@ namespace Xpetra {
 	return getMatrix(row,row)->getNumEntriesInLocalRow(getMatrix(row,row)->getRowMap()->getLocalElement(gid));
       }
       throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow() not supported by BlockedCrsMatrix");
+    }
+
+    //! Returns the current number of entries in the specified (locally owned) global row.
+    /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNumEntriesInGlobalRow");
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getNumEntriesInGlobalRow(globalRow);
+      }
+      throw Xpetra::Exceptions::RuntimeError("getNumEntriesInGlobalRow not supported by this BlockedCrsMatrix");
     }
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.

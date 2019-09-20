@@ -115,7 +115,11 @@ int main(int narg, char *arg[]){
     typedef Tpetra::Map<zlno_t, zgno_t, mytest_znode_t> map_t;
     RCP<const map_t> map = rcp (new map_t (numGlobalTasks, myTasks, 0, tcomm));
 
-    RCP<tcrsGraph_t> TpetraCrsGraph(new tcrsGraph_t (map, 0));
+    Teuchos::Array<size_t> adjPerTask(myTasks);
+    for (zlno_t lclRow = 0; lclRow < myTasks; lclRow++)
+      adjPerTask[lclRow] = task_communication_xadj_[lclRow+1] 
+                         - task_communication_xadj_[lclRow];
+    RCP<tcrsGraph_t> TpetraCrsGraph(new tcrsGraph_t (map, adjPerTask()));
 
 
     for (zlno_t lclRow = 0; lclRow < myTasks; ++lclRow) {

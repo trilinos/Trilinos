@@ -76,12 +76,10 @@ namespace Xpetra {
   @class CrsMatrixWrap
   @brief Concrete implementation of Xpetra::Matrix.
 */
-template <class Scalar = Matrix<>::scalar_type,
-          class LocalOrdinal = typename Matrix<Scalar>::local_ordinal_type,
-          class GlobalOrdinal =
-            typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-          class Node =
-            typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class CrsMatrixWrap :
   public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
 {
@@ -93,7 +91,7 @@ class CrsMatrixWrap :
   typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrix;
 #endif
   typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
-  typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
+  typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
@@ -265,6 +263,10 @@ public:
   //! Returns the current number of entries on this node in the specified local row.
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
+
+  //! Returns the current number of entries in the specified global row.
+  /*! Returns OrdinalTraits<size_t>::invalid() if the row is not owned by this process. */
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
 
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   /** Undefined if isFillActive().

@@ -114,8 +114,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
     ghosted[4] = 5;
   }
 
-  RCP<const Tpetra_Map> ownedMap = rcp(new Tpetra_Map(-1,owned,0,comm));
-  RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(-1,ghosted,0,comm));
+  RCP<const Tpetra_Map> ownedMap = rcp(new Tpetra_Map(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),owned,0,comm));
+  RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),ghosted,0,comm));
   RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(ownedMap,ghostedMap));
 
   TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::GlobalOrdinal> ged;
@@ -301,8 +301,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, blocked)
     ghosted[4] = 5;
   }
 
-  RCP<const Tpetra_Map> ownedMap = rcp(new Tpetra_Map(-1,owned,0,comm));
-  RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(-1,ghosted,0,comm));
+  RCP<const Tpetra_Map> ownedMap = rcp(new Tpetra_Map(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),owned,0,comm));
+  RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),ghosted,0,comm));
   RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(ownedMap,ghostedMap));
 
   RCP<TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::GlobalOrdinal> > ged_a, ged_b;
@@ -442,8 +442,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
     ghosted[3] = 5;
   }
 
-  RCP<const Tpetra_Map> ownedMap = rcp(new Tpetra_Map(-1,owned,0,comm));
-  RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(-1,ghosted,0,comm));
+  RCP<const Tpetra_Map> ownedMap = rcp(new Tpetra_Map(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),owned,0,comm));
+  RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),ghosted,0,comm));
   RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(ownedMap,ghostedMap));
 
   TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::GlobalOrdinal> ged;

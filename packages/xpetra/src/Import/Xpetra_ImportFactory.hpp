@@ -61,9 +61,9 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal/* = Import<>::local_ordinal_type*/,
-            class GlobalOrdinal/* = typename Import<LocalOrdinal>::global_ordinal_type*/,
-            class Node = typename Import<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class ImportFactory {
   private:
     //! Private constructor. This is a static class.
@@ -72,14 +72,16 @@ namespace Xpetra {
   public:
 
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
+    static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source,
+                                                                 const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target,
+                                                                 const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null) {
       XPETRA_MONITOR("ImportFactory::Build");
 
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
-        return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
+        return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target, plist));
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(source->lib());
@@ -106,13 +108,15 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
+    static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source,
+                                                                 const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target,
+                                                                 const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null) {
       XPETRA_MONITOR("ImportFactory::Build");
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
-        return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
+        return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target,plist));
 #endif
 
       if (source->lib() == UseEpetra)
@@ -139,13 +143,15 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
+    static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source,
+                                                                 const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target,
+                                                                 const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null) {
       XPETRA_MONITOR("ImportFactory::Build");
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
-        return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
+        return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target, plist));
 #endif
 
       if (source->lib() == UseEpetra)

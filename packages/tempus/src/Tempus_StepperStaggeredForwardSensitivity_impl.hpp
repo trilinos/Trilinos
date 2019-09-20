@@ -29,7 +29,6 @@ StepperStaggeredForwardSensitivity<Scalar>::
 StepperStaggeredForwardSensitivity()
 {
   this->setParams(Teuchos::null, Teuchos::null);
-  this->modelWarning();
 }
 
 
@@ -75,12 +74,11 @@ setModel(
     stateStepper_ = sf->createStepper(stepperPL_, appModel);
   else
     stateStepper_->setModel(appModel);
+
   if (sensitivityStepper_ == Teuchos::null)
     sensitivityStepper_ = sf->createStepper(stepperPL_, fsa_model_);
   else
     sensitivityStepper_->setModel(fsa_model_);
-
-  this->isInitialized_ = false;
 }
 
 
@@ -94,16 +92,6 @@ setNonConstModel(
 
 
 template<class Scalar>
-void StepperStaggeredForwardSensitivity<Scalar>::
-setSolver(std::string solverName)
-{
-  stateStepper_->setSolver(solverName);
-  sensitivityStepper_->setSolver(solverName);
-
-  this->isInitialized_ = false;
-}
-
-template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 StepperStaggeredForwardSensitivity<Scalar>::
 getModel()
@@ -115,24 +103,10 @@ getModel()
 template<class Scalar>
 void StepperStaggeredForwardSensitivity<Scalar>::
 setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> solverPL)
-{
-  stateStepper_->setSolver(solverPL);
-  sensitivityStepper_->setSolver(solverPL);
-
-  this->isInitialized_ = false;
-}
-
-
-template<class Scalar>
-void StepperStaggeredForwardSensitivity<Scalar>::
-setSolver(
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
 {
   stateStepper_->setSolver(solver);
   sensitivityStepper_->setSolver(solver);
-
-  this->isInitialized_ = false;
 }
 
 
@@ -140,29 +114,14 @@ template<class Scalar>
 void StepperStaggeredForwardSensitivity<Scalar>::
 initialize()
 {
-  this->setSolver();
-
-  stateStepper_->initialize();
-  sensitivityStepper_->initialize();
-
-  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
-template<class Scalar>
-bool StepperStaggeredForwardSensitivity<Scalar>::isInitialized()
-{
-  return (this->isInitialized_ && stateStepper_->isInitialized()
-                               && sensitivityStepper_->isInitialized());
-}
 
 template<class Scalar>
 void StepperStaggeredForwardSensitivity<Scalar>::
 takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-    "Error - " << this->description() << " is not initialized!");
-
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -318,15 +277,6 @@ getDefaultStepperState()
 
 
 template<class Scalar>
-std::string StepperStaggeredForwardSensitivity<Scalar>::
-description() const
-{
-  std::string name = "StepperStaggeredForwardSensitivity";
-  return(name);
-}
-
-
-template<class Scalar>
 void StepperStaggeredForwardSensitivity<Scalar>::
 describe(
    Teuchos::FancyOStream               &out,
@@ -346,14 +296,13 @@ setParameterList(
 {
   if (pList == Teuchos::null) {
     // Create default parameters if null, otherwise keep current parameters.
-    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+    if (this->stepperPL_ == Teuchos::null) this->stepperPL_ =
+      Teuchos::rcp_const_cast<Teuchos::ParameterList>(this->getValidParameters());
   } else {
-    stepperPL_ = pList;
+    this->stepperPL_ = pList;
   }
   // Can not validate because of optional Parameters (e.g., Solver Name).
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
-
-  this->isInitialized_ = false;
 }
 
 
@@ -363,15 +312,6 @@ StepperStaggeredForwardSensitivity<Scalar>::
 getValidParameters() const
 {
   return stateStepper_->getValidParameters();
-}
-
-
-template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperStaggeredForwardSensitivity<Scalar>::
-getDefaultParameters() const
-{
-  return stateStepper_->getDefaultParameters();
 }
 
 
@@ -402,7 +342,7 @@ setParams(
   Teuchos::RCP<Teuchos::ParameterList> const& spList)
 {
   if (pList == Teuchos::null)
-    stepperPL_ = this->getDefaultParameters();
+    stepperPL_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(this->getValidParameters());
   else
     stepperPL_ = pList;
 
@@ -416,8 +356,6 @@ setParams(
 
   // Can not validate because of optional Parameters (e.g., Solver Name).
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
-
-  this->isInitialized_ = false;
 }
 
 

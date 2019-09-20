@@ -114,13 +114,6 @@ template<class Scalar>
 void IntegratorBasic<Scalar>::setStepperWStepper(
   Teuchos::RCP<Stepper<Scalar> > newStepper)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  // Make integratorPL_ consistent with new stepper.
-  RCP<ParameterList> newStepperPL = newStepper->getNonconstParameterList();
-  integratorPL_->set("Stepper Name", newStepperPL->name());
-  tempusPL_->set(newStepperPL->name(), *newStepperPL);
   stepper_ = newStepper;
 }
 
@@ -164,7 +157,6 @@ initializeSolutionHistory(Teuchos::RCP<SolutionState<Scalar> > state)
 
   // Get IC from the application model via the stepper and ensure consistency.
   stepper_->setInitialConditions(solutionHistory_);
-  stepper_->initialize();
 }
 
 
@@ -215,7 +207,6 @@ initializeSolutionHistory(Scalar t0,
 
   // Get IC from the application model via the stepper and ensure consistency.
   stepper_->setInitialConditions(solutionHistory_);
-  stepper_->initialize();
 }
 
 
@@ -322,7 +313,6 @@ void IntegratorBasic<Scalar>::initialize()
 
   // Set initial conditions, make them consistent, and set stepper memory.
   stepper_->setInitialConditions(solutionHistory_);
-  stepper_->initialize();
 
   // Ensure TimeStepControl orders match the Stepper orders.
   if (timeStepControl_->getMinOrder() < stepper_->getOrderMin())

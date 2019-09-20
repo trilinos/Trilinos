@@ -228,22 +228,6 @@ IF (Tpetra_ENABLE_Kokkos_Refactor_Map)
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_RTI
-  HAVE_TPETRACORE_RTI
-  "Enable Tpetra's Reduction/Transformation Interface (RTI).  It is OFF by default.  Note that RTI is currently incompatible with the new Kokkos wrapper Nodes."
-  OFF
-  )
-IF (${PACKAGE_NAME}_ENABLE_RTI)
-  MESSAGE(STATUS "Enabling Tpetra/RTI")
-ELSE()
-  MESSAGE(STATUS "Not enabling Tpetra/RTI")
-ENDIF()
-
-IF (Tpetra_ENABLE_Kokkos_Refactor AND ${PACKAGE_NAME}_ENABLE_RTI)
-  MESSAGE(FATAL_ERROR "You enabled the Reduction/Transformation Interface (RTI) in Tpetra by setting ${PACKAGE_NAME}_ENABLE_RTI, yet the Kokkos refactor (new) version of Tpetra is enabled.  We have not yet certified RTI for use with the new version of Tpetra.  If you really need RTI right now, you may bring back the old version of Tpetra temporarily by setting Tpetra_ENABLE_Kokkos_Refactor:BOOL=OFF.  Please note that the old version of Tpetra will go away completely with the 12.0 release of Trilinos.")
-ENDIF ()
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_BCRS_Point_Import
   HAVE_TPETRA_BCRS_DO_POINT_IMPORT
   "Do MV import instead of BMV import."
@@ -257,9 +241,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(inout)
 ADD_SUBDIRECTORY(ext)
-IF (${PACKAGE_NAME}_ENABLE_RTI)
-  ADD_SUBDIRECTORY(rti)
-ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example guide)

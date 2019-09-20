@@ -47,8 +47,10 @@
 #define XPETRA_MULTIVECTORFACTORY_DEF_HPP
 
 #include "Xpetra_MultiVectorFactory_decl.hpp"
+
 #include "Xpetra_BlockedMultiVector.hpp"
 
+#include "Xpetra_BlockedMap.hpp"
 
 namespace Xpetra {
 
@@ -57,9 +59,9 @@ namespace Xpetra {
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
-      size_t                                                                    NumVectors,
-      bool                                                                      zeroOut)
+Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
+      size_t                                                            NumVectors,
+      bool                                                              zeroOut)
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 

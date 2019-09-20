@@ -44,6 +44,7 @@
 
 #include "Sacado_UQ_PCE.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "KokkosBatched_Vector.hpp"
 
 //----------------------------------------------------------------------------
 // Specializations of Kokkos::ArithTraits for Sacado::UQ::PCE scalar type
@@ -203,6 +204,16 @@ public:
 };
 
 }
+}
+
+namespace KokkosBatched {
+
+  template <typename S>
+  struct MagnitudeScalarType< Sacado::UQ::PCE<S> > {
+    typedef Sacado::UQ::PCE<S> val_type;
+    typedef typename Kokkos::Details::ArithTraits<val_type>::mag_type type;
+  };
+
 }
 
 #endif /* #ifndef KOKKOS_ARITHTRAITS_UQ_PCE_HPP */

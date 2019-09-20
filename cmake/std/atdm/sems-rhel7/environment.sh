@@ -190,6 +190,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
   # some Trilinos tests require this to run correctly
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+  export KOKKOS_NUM_DEVICES=2
 else
   echo
   echo "***"

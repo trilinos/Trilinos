@@ -108,6 +108,7 @@ void Multiply(
 {
   using Teuchos::null;
   using Teuchos::RCP;
+  using Teuchos::rcp;
   typedef Scalar                            SC;
   typedef LocalOrdinal                      LO;
   typedef GlobalOrdinal                     GO;
@@ -121,7 +122,9 @@ void Multiply(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  TimeMonitor MM(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Setup")));
+  //MM is used to time setup, and then multiply.
+  
+  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Setup"))));
 #endif
 
   const std::string prefix = "TpetraExt::MatrixMatrix::Multiply(): ";
@@ -222,7 +225,7 @@ void Multiply(
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   {
-  TimeMonitor MM2(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All I&X")));
+  TimeMonitor MM_importExtract(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All I&X")));
 #endif
 
   // Now import any needed remote rows and populate the Aview struct
@@ -243,9 +246,9 @@ void Multiply(
     MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label, params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  }
-  TimeMonitor MM3(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply")));
-  {
+  } //stop MM_importExtract here
+  //stop the setup timer, and start the multiply timer
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
 #endif
 
   // Call the appropriate method to perform the actual multiplication.
@@ -265,21 +268,19 @@ void Multiply(
     CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
 
     MMdetails::mult_A_B(Aview, Bview, crsmat, label,params);
+  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  }
-    TimeMonitor MM4(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All FillComplete")));
+  TimeMonitor MM4(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All FillComplete")));
 #endif
-    if (call_FillComplete_on_result) {
-      // We'll call FillComplete on the C matrix before we exit, and give it a
-      // domain-map and a range-map.
-      // The domain-map will be the domain-map of B, unless
-      // op(B)==transpose(B), in which case the range-map of B will be used.
-      // The range-map will be the range-map of A, unless op(A)==transpose(A),
-      // in which case the domain-map of A will be used.
-      if (!C.isFillComplete())
-        C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
-    }
+  if (call_FillComplete_on_result && !C.isFillComplete()) {
+    // We'll call FillComplete on the C matrix before we exit, and give it a
+    // domain-map and a range-map.
+    // The domain-map will be the domain-map of B, unless
+    // op(B)==transpose(B), in which case the range-map of B will be used.
+    // The range-map will be the range-map of A, unless op(A)==transpose(A),
+    // in which case the domain-map of A will be used.
+    C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
   }
 }
 

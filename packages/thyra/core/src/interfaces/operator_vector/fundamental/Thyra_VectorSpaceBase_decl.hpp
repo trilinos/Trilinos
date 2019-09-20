@@ -709,6 +709,75 @@ protected:
   createMembersView(
     const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const = 0;
 
+
+ public:
+
+  /** \brief Create a (possibly) cached multi-vector member that is a non-<tt>const</tt> view of
+   * raw multi-vector data. The caching mechanism must be implemented by child classes, by default
+   * this just calls the regular <tt>createMembersView</tt>.
+   *
+   * @param raw_mv [in] On input contains pointer
+   * (i.e. <tt>raw_mv.values()</tt>) to array that the returned
+   * <tt>MultiVectorBase</tt> will be a view of.
+   *
+   * <b>Preconditions:</b><ul>
+   *
+   * <li><tt>raw_mv</tt> has been initialized to memory (i.e.
+   * <tt>raw_mv.subDim()!=0 && raw_mv.values()!=NULL</tt>).
+   *
+   * <li><tt>raw_mv</tt> is <em>consistent</em> with the local storage of this
+   * spaces vector data.  This precondition is purposefully vague since this
+   * function can be used an variety of specialized use-cases.
+   *
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   *
+   * <li>See <tt>this->createMembers()</tt> where
+   * <tt>numMembers==raw_mv.numSubCols()</tt>
+   *
+   * </ul>
+   *
+   * It is stated here that the client can not expect that the values pointed
+   * to by <tt>raw_mv.values()</tt> to be changed until the smart pointer
+   * <tt>returnVal</tt> goes out of scope.  This is to allow for an
+   * implementation that temporarily copies data into and out of a
+   * <tt>MultiVectorBase</tt> object using explicit vector access.
+   */
+  virtual RCP<MultiVectorBase<Scalar> >
+  createCachedMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const { return this->createMembersView(raw_mv); };
+
+  /** \brief Create a (possibly) cached multi-vector member that is a <tt>const</tt> view of raw
+   * multi-vector data. The caching mechanism must be implemented by child classes, by default
+   * this just calls the regular <tt>createMembersView</tt>.
+   *
+   * @param raw_mv [in] On input contains pointer
+   * (i.e. <tt>raw_mv.values()</tt>) to array that the returned
+   * <tt>MultiVectorBase</tt> will be a view of.  The data pointed to by
+   * <tt>raw_mv.values()</tt> must remain valid until the returned
+   * <tt>MultiVectorBase</tt> object is destroyed.
+   *
+   * This function works exactly the same as the previous version that takes a
+   * <tt>RTOpPack::SubMultiVectorView</tt> object except that this version
+   * takes a <tt>RTOpPack::ConstSubMultiVectorView</tt> object and returns a smart
+   * pointer to a <tt>const</tt> <tt>MultiVectorBase</tt> object.
+   *
+   * <b>Preconditions:</b><ul>
+   *
+   * <li>See the previous <tt>RTOpPack::SubMultiVectorView</tt> version of
+   * this function.
+   *
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   *
+   * <li>See <tt>this->createMember()</tt>
+   *
+   * </ul>
+   */
+  virtual RCP<const MultiVectorBase<Scalar> >
+  createCachedMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const { return this->createMembersView(raw_mv); };
+
   //@}
 
 protected:
