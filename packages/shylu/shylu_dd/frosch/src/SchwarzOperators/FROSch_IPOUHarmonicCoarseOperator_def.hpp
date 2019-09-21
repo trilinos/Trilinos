@@ -231,9 +231,9 @@ namespace FROSch {
                                                                                                   verbosity,
                                                                                                   this->LevelID_,
                                                                                                   interfacePartitionOfUnity->getDDInterfaceNonConst()));
-this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST1\n";
+
                 PartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs());
-this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST2\n";
+
                 // Construct Interface and Interior index sets
                 this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getNumNodes());
                 this->IDofs_[blockId] = LOVecPtr(0);
@@ -242,7 +242,7 @@ this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::c
                         this->GammaDofs_[blockId][interior->getGammaDofID(i,k)] = interior->getLocalDofID(i,k);
                     }
                 }
-this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST3\n";
+
                 PartitionOfUnity_->computePartitionOfUnity(nodeList);
             } else {
                 interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);

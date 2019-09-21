@@ -90,9 +90,9 @@ namespace FROSch {
         }
         
         if (DDInterface_.is_null()) DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap.getConst(),this->Verbosity_,this->LevelID_,communicationStrategy));
-        FROSCH_ASSERT(DDInterface_->getInterface()->getEntity(0)->getNumNodes()==0,"FROSch::ConstantPartitionOfUnity : ERROR: Is only reasonable if there is no interface."); this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST0.1\n";
-        DDInterface_->resetGlobalDofs(dofsMaps); this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST0.2\n";
-        Volumes_ = DDInterface_->getInterior()->deepCopy(); this->MpiComm_->barrier(); this->MpiComm_->barrier(); if (this->Verbose_) std::cout << "TEST0.3\n";
+        FROSCH_ASSERT(DDInterface_->getInterface()->getEntity(0)->getNumNodes()==0,"FROSch::ConstantPartitionOfUnity : ERROR: Is only reasonable if there is no interface.");
+        DDInterface_->resetGlobalDofs(dofsMaps);
+        Volumes_ = DDInterface_->getInterior()->deepCopy();
         
         this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(1);
         this->PartitionOfUnityMaps_ = XMapPtrVecPtr(1);
