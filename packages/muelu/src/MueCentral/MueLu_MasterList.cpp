@@ -168,6 +168,7 @@ namespace MueLu {
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
   "<Parameter name=\"hierarchy label\" type=\"string\" value=\"\"/>"
+  "<ParameterList name=\"matvec params\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
   "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
   "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"RELAXATION\"/>"
@@ -194,6 +195,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: brick z size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"aggregation: deterministic\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase 1 algorithm\" type=\"string\" value=\"Serial\"/>"
   "<Parameter name=\"aggregation: enable phase 1\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2a\" type=\"bool\" value=\"true\"/>"
@@ -224,6 +226,7 @@ namespace MueLu {
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"restriction: scale nullspace\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"use kokkos refactor\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"synchronize factory timers\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: triple product\" type=\"bool\" value=\"false\"/>"
@@ -501,6 +504,8 @@ namespace MueLu {
       
          ("hierarchy label","hierarchy label")
       
+         ("matvec params","matvec params")
+      
          ("smoother: pre or post","smoother: pre or post")
       
          ("smoother: type","smoother: type")
@@ -552,6 +557,8 @@ namespace MueLu {
          ("aggregation: max selected neighbors","aggregation: max selected neighbors")
       
          ("aggregation: Dirichlet threshold","aggregation: Dirichlet threshold")
+      
+         ("aggregation: deterministic","aggregation: deterministic")
       
          ("aggregation: phase 1 algorithm","aggregation: phase 1 algorithm")
       
@@ -612,6 +619,8 @@ namespace MueLu {
          ("print unused","print unused parameters")
       
          ("transpose: use implicit","transpose: use implicit")
+      
+         ("restriction: scale nullspace","restriction: scale nullspace")
       
          ("use kokkos refactor","use kokkos refactor")
       

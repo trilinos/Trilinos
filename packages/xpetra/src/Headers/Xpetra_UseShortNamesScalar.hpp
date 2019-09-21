@@ -150,9 +150,9 @@ typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetr
 // TODO remove this
 #ifdef XPETRA_EPETRACRSMATRIX_SHORT
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-typedef Xpetra::EpetraCrsMatrixT<long long, Node> EpetraCrsMatrix64;
+typedef Xpetra::EpetraCrsMatrixT<long long, Xpetra::EpetraNode> EpetraCrsMatrix64;
 #endif
-typedef Xpetra::EpetraCrsMatrixT<int, Node> EpetraCrsMatrix; // do we need this???
+typedef Xpetra::EpetraCrsMatrixT<int, Xpetra::EpetraNode> EpetraCrsMatrix; // do we need this???
 #endif
 // TODO remove above entries
 

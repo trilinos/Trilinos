@@ -114,13 +114,6 @@ template<class Scalar>
 void IntegratorBasic<Scalar>::setStepperWStepper(
   Teuchos::RCP<Stepper<Scalar> > newStepper)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  // Make integratorPL_ consistent with new stepper.
-  RCP<ParameterList> newStepperPL = newStepper->getNonconstParameterList();
-  integratorPL_->set("Stepper Name", newStepperPL->name());
-  tempusPL_->set(newStepperPL->name(), *newStepperPL);
   stepper_ = newStepper;
 }
 

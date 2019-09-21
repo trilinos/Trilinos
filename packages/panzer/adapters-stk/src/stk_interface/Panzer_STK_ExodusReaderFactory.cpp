@@ -47,7 +47,7 @@
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_Interface.hpp"
 
-#ifdef PANZER_HAVE_IOSS 
+#ifdef PANZER_HAVE_IOSS
 
 #include <Ionit_Initializer.h>
 #include <Ioss_ElementBlock.h>
@@ -61,12 +61,30 @@
 
 namespace panzer_stk {
 
+int getMeshDimension(const std::string & meshStr,
+                     stk::ParallelMachine parallelMach,
+                     const bool isExodus)
+{
+  stk::io::StkMeshIoBroker meshData(parallelMach);
+  meshData.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
+  if (isExodus)
+    meshData.add_mesh_database(meshStr, "exodusII", stk::io::READ_MESH);
+  else
+    meshData.add_mesh_database(meshStr, "pamgen", stk::io::READ_MESH);
+  meshData.create_input_mesh();
+  return Teuchos::as<int>(meshData.meta_data_rcp()->spatial_dimension());
+}
+
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
-  : fileName_(""), restartIndex_(0), userMeshScaling_(false), meshScaleFactor_(0.0)
+  : fileName_(""), restartIndex_(0), isExodus_(true), userMeshScaling_(false), meshScaleFactor_(0.0),
+    levelsOfRefinement_(0)
 { }
 
-STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,int restartIndex)
-  : fileName_(fileName), restartIndex_(restartIndex), userMeshScaling_(false), meshScaleFactor_(0.0)
+STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,
+                                                 const int restartIndex,
+                                                 const bool isExodus)
+  : fileName_(fileName), restartIndex_(restartIndex), isExodus_(isExodus), userMeshScaling_(false), meshScaleFactor_(0.0),
+    levelsOfRefinement_(0)
 { }
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const
@@ -75,16 +93,17 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
 
    using Teuchos::RCP;
    using Teuchos::rcp;
-   
+
    RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
 
    // in here you would add your fields...but it is better to use
    // the two step construction
 
    // this calls commit on meta data
-   mesh->initialize(parallelMach,false);
+   const bool buildRefinementSupport = levelsOfRefinement_ > 0 ? true : false;
+   mesh->initialize(parallelMach,false,buildRefinementSupport);
 
-   completeMeshConstruction(*mesh,parallelMach); 
+   completeMeshConstruction(*mesh,parallelMach);
 
    return mesh;
 }
@@ -93,8 +112,8 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
   * Allows user to add solution fields and other pieces. The mesh can be "completed"
   * by calling <code>completeMeshConstruction</code>.
   */
-Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const 
-{ 
+Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
+{
    PANZER_FUNC_TIME_MONITOR("panzer::STK_ExodusReaderFactory::buildUncomittedMesh()");
 
    using Teuchos::RCP;
@@ -103,11 +122,20 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    // read in meta data
    stk::io::StkMeshIoBroker* meshData = new stk::io::StkMeshIoBroker(parallelMach);
    meshData->property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
-   meshData->add_mesh_database(fileName_, "exodusII", stk::io::READ_MESH);
+
+   // add in "FAMILY_TREE" entity for doing refinement
+   std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
+   entity_rank_names.push_back("FAMILY_TREE");
+   meshData->set_rank_name_vector(entity_rank_names);
+
+   if (isExodus_)
+     meshData->add_mesh_database(fileName_, "exodusII", stk::io::READ_MESH);
+   else
+     meshData->add_mesh_database(fileName_, "pamgen", stk::io::READ_MESH);
+
    meshData->create_input_mesh();
    RCP<stk::mesh::MetaData> metaData = meshData->meta_data_rcp();
 
-   // add in "FAMILY_TREE" entity for doing refinement
    RCP<STK_Interface> mesh = rcp(new STK_Interface(metaData));
    mesh->initializeFromMetaData();
    mesh->instantiateBulkData(parallelMach);
@@ -117,7 +145,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    // trying to read other fields for use in solve
    meshData->add_all_mesh_fields_as_input_fields();
 
-   // store mesh data pointer for later use in initializing 
+   // store mesh data pointer for later use in initializing
    // bulk data
    mesh->getMetaData()->declare_attribute_with_delete(meshData);
 
@@ -128,7 +156,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
 
    mesh->addPeriodicBCs(periodicBCVec_);
 
-   return mesh; 
+   return mesh;
 }
 
 void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
@@ -138,8 +166,11 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    using Teuchos::RCP;
    using Teuchos::rcp;
 
-   if(not mesh.isInitialized())
-      mesh.initialize(parallelMach);
+
+   if(not mesh.isInitialized()) {
+     const bool buildRefinementSupport = levelsOfRefinement_ > 0 ? true : false;
+     mesh.initialize(parallelMach,true,buildRefinementSupport);
+   }
 
    // grab mesh data pointer to build the bulk data
    stk::mesh::MetaData & metaData = *mesh.getMetaData();
@@ -149,11 +180,15 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
          // if const_cast is wrong ... why does it feel so right?
          // I believe this is safe since we are basically hiding this object under the covers
          // until the mesh construction can be completed...below I cleanup the object myself.
-   TEUCHOS_ASSERT(metaData.remove_attribute(meshData)); 
+   TEUCHOS_ASSERT(metaData.remove_attribute(meshData));
       // remove the MeshData attribute
 
    // build mesh bulk data
    meshData->populate_bulk_data();
+
+   const bool deleteParentElements = true;
+   if (levelsOfRefinement_ > 0)
+     mesh.refineMesh(levelsOfRefinement_,deleteParentElements);
 
    // The following section of code is applicable if mesh scaling is
    // turned on from the input file.
@@ -231,8 +266,11 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    // Set default values here. Not all the params should be set so this
    // has to be done manually as opposed to using
    // validateParametersAndSetDefaults().
-   if(!paramList->isParameter("Restart Index")) 
+   if(!paramList->isParameter("Restart Index"))
      paramList->set<int>("Restart Index", -1);
+
+   if(!paramList->isParameter("File Type"))
+     paramList->set("File Type", "Exodus");
 
    if(!paramList->isSublist("Periodic BCs"))
      paramList->sublist("Periodic BCs");
@@ -241,6 +279,9 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    if (!p_bcs.isParameter("Count"))
      p_bcs.set<int>("Count", 0);
 
+   if(!paramList->isParameter("Levels of Uniform Refinement"))
+     paramList->set<int>("Levels of Uniform Refinement", 0);
+
    paramList->validateParameters(*getValidParameters(),0);
 
    setMyParamList(paramList);
@@ -248,6 +289,11 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    fileName_ = paramList->get<std::string>("File Name");
 
    restartIndex_ = paramList->get<int>("Restart Index");
+
+   {
+     const auto fileType = paramList->get<std::string>("File Type");
+     isExodus_ = fileType == "Exodus";
+   }
 
    // get any mesh scale factor
    if (paramList->isParameter("Scale Factor"))
@@ -258,6 +304,8 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
 
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
+
+   levelsOfRefinement_ = paramList->get<int>("Levels of Uniform Refinement");
 }
 
 //! From ParameterListAcceptor
@@ -267,23 +315,32 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
 
    if(validParams==Teuchos::null) {
       validParams = Teuchos::rcp(new Teuchos::ParameterList);
-      validParams->set<std::string>("File Name","<file name not set>","Name of exodus file to be read", 
+      validParams->set<std::string>("File Name","<file name not set>","Name of exodus file to be read",
                                     Teuchos::rcp(new Teuchos::FileNameValidator));
-      
-      validParams->set<int>("Restart Index",-1,"Index of solution to read in", 
+
+      validParams->set<int>("Restart Index",-1,"Index of solution to read in",
 			    Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_INT,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));
+
+      Teuchos::setStringToIntegralParameter<int>("File Type",
+                                                 "Exodus",
+                                                 "Choose input file type - either \"Exodus\" or \"Pamgen\"",
+                                                 Teuchos::tuple<std::string>("Exodus","Pamgen"),
+                                                 validParams.get()
+                                                 );
 
       validParams->set<double>("Scale Factor", 1.0, "Scale factor to apply to mesh after read",
                                Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_DOUBLE,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));
 
       Teuchos::ParameterList & bcs = validParams->sublist("Periodic BCs");
       bcs.set<int>("Count",0); // no default periodic boundary conditions
+
+      validParams->set("Levels of Uniform Refinement",0,"Number of levels of inline uniform mesh refinement");
    }
 
    return validParams.getConst();
 }
 
-void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const 
+void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const
 {
    using Teuchos::RCP;
 
@@ -295,7 +352,7 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io
    const Ioss::ElementBlockContainer & elem_blocks = meshData.get_input_io_region()->get_element_blocks();
    for(Ioss::ElementBlockContainer::const_iterator itr=elem_blocks.begin();itr!=elem_blocks.end();++itr) {
       Ioss::GroupingEntity * entity = *itr;
-      const std::string & name = entity->name(); 
+      const std::string & name = entity->name();
 
       const stk::mesh::Part * part = femMetaData->get_part(name);
       const CellTopologyData * ct = femMetaData->get_cell_topology(*part).getCellTopologyData();
@@ -333,16 +390,16 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh) const
       // on part contains all sub parts with consistent topology
       if(part->primary_entity_rank()==mesh.getSideRank() && ct==0 && subsets.size()>0) {
          TEUCHOS_TEST_FOR_EXCEPTION(subsets.size()!=1,std::runtime_error,
-                            "STK_ExodusReaderFactory::registerSidesets error - part \"" << part->name() << 
-                            "\" has more than one subset"); 
+                            "STK_ExodusReaderFactory::registerSidesets error - part \"" << part->name() <<
+                            "\" has more than one subset");
 
          // grab cell topology and name of subset part
          const stk::mesh::Part * ss_part = subsets[0];
          // const CellTopologyData * ss_ct = stk::mesh::get_cell_topology(*ss_part).getCellTopologyData();
          const CellTopologyData * ss_ct = metaData->get_cell_topology(*ss_part).getCellTopologyData();
- 
+
          // only add subset parts that have no topology
-         if(ss_ct!=0) 
+         if(ss_ct!=0)
             mesh.addSideset(part->name(),ss_ct);
       }
    }

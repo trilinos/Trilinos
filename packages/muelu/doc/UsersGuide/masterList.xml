@@ -117,6 +117,14 @@
        <visible>true</visible>
      </parameter>
 
+     <parameter>
+      <name>matvec params</name>
+      <type>\parameterlist</type>
+      <description>Pass parameters to the underlying linear algebra</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
   </general>
 
   <smoothing_and_coarse>
@@ -446,6 +454,14 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: deterministic</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: phase 1 algorithm</name>
       <type>string</type>
       <default>Serial</default>
@@ -715,6 +731,15 @@
       <MHD>true</MHD>
       <description>Use implicit transpose for the restriction operator.</description>
       <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>restriction: scale nullspace</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Block-diagonally scale (based on number of PDEs) the nullspace for the restriction only.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
     </parameter>
 
     <parameter>

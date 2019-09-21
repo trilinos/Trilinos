@@ -36,6 +36,10 @@
 #include <adios/Ioad_IOFactory.h>
 #include <stddef.h> // for nullptr
 #include <string>   // for string
+
+#include <adios2/common/ADIOSConfig.h>
+#include <fmt/ostream.h>
+
 namespace Ioss {
   class PropertyManager;
 }
@@ -57,4 +61,47 @@ namespace Ioad {
     return new DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
 
+  void IOFactory::show_config() const
+  {
+    fmt::print(stderr, "\tADIOS2 Library Version: {}.{}.{}\n", ADIOS2_VERSION_MAJOR,
+               ADIOS2_VERSION_MINOR, ADIOS2_VERSION_PATCH);
+#if defined(ADIOS2_HAVE_BZIP2)
+    fmt::print(stderr, "\t\tBZip2 (http://www.bzip.org/) compression enabled\n");
+#endif
+
+#if defined(ADIOS2_HAVE_ZFP)
+    fmt::print(stderr, "\t\tZFP (https://github.com/LLNL/zfp) compression enabled\n");
+#endif
+
+#if defined(ADIOS2_HAVE_SZ)
+    fmt::print(stderr, "\t\tSZ compression enabled\n");
+#endif
+
+#if defined(ADIOS2_HAVE_MPI)
+    fmt::print(stderr, "\t\tParallel (MPI) enabled\n");
+#else
+    fmt::print(stderr, "\t\tParallel *NOT* enabled\n");
+#endif
+
+#if defined(ADIOS2_HAVE_SST)
+    fmt::print(stderr, "\t\tStaging engine enabled\n");
+#else
+    fmt::print(stderr, "\t\tStaging engine *NOT* enabled\n");
+#endif
+
+#if defined(ADIOS2_HAVE_HDF5)
+    fmt::print(stderr, "\t\tHDF5 (https://www.hdfgroup.org) engine enabled\n\n");
+#else
+    fmt::print(stderr, "\t\tHDF5 engine *NOT* enabled\n\n");
+#endif
+
+    /* #if defined(ADIOS2_HAVE_ZEROMQ) */
+    /* #if defined(ADIOS2_HAVE_WDM) */
+    /* #if defined(ADIOS2_HAVE_DATAMAN) */
+    /* #if defined(ADIOS2_HAVE_MGARD) */
+    /* #undef ADIOS2_HAVE_PYTHON */
+    /* #define ADIOS2_HAVE_FORTRAN */
+    /* #define ADIOS2_HAVE_SYSVSHMEM */
+    /* #undef ADIOS2_HAVE_ENDIAN_REVERSE */
+  }
 } // namespace Ioad

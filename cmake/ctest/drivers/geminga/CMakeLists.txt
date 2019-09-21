@@ -7,18 +7,15 @@ execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 # parallel valgrind tests run every night except Sunday
 # coverage tests run on Saturday night
 
-if(${DAYOFWEEK} MATCHES "Saturday")
+if((${DAYOFWEEK} MATCHES "Sunday") OR (${DAYOFWEEK} MATCHES "Tuesday") OR (${DAYOFWEEK} MATCHES "Thursday")) 
   SET(RUN_HEAVY_MEMORY_TESTS ON)
   SET(RUN_COVERAGE_TESTS OFF)
-  SET(RUN_CUDA_OLD_TESTS ON)
-elseif(${DAYOFWEEK} MATCHES "Sunday")
+elseif((${DAYOFWEEK} MATCHES "Monday") OR (${DAYOFWEEK} MATCHES "Wednesday"))
   SET(RUN_HEAVY_MEMORY_TESTS OFF)
   SET(RUN_COVERAGE_TESTS ON)
-  SET(RUN_CUDA_OLD_TESTS OFF)
 else()
   SET(RUN_HEAVY_MEMORY_TESTS OFF)
   SET(RUN_COVERAGE_TESTS OFF)
-  SET(RUN_CUDA_OLD_TESTS OFF)
 endif()
 
 SET(RUN_CUDA_OLD_TESTS ON)

@@ -467,8 +467,17 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
 //
 // Explicit instantiation macros
 //
-// Must be expanded from within the Tpetra::Details namespace!
+// Must be expanded from within the Tpetra namespace!
 //
-#define TPETRA_DETAILS_MAKECOLMAP_INSTANT(LO,GO,NT) template int makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >&, Teuchos::Array<int>&, const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >&, const RowGraph<LO, GO, NT>&, const bool, std::ostream*);
+#define TPETRA_DETAILS_MAKECOLMAP_INSTANT(LO,GO,NT) \
+  namespace Details { \
+    template int \
+    makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >&, \
+                Teuchos::Array<int>&, \
+                const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >&, \
+                const RowGraph<LO, GO, NT>&, \
+                const bool, \
+                std::ostream*); \
+  }
 
 #endif // TPETRA_DETAILS_MAKECOLMAP_DEF_HPP

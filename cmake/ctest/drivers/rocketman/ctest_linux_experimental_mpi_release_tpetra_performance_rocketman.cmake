@@ -66,6 +66,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rocketman.gcc.cmake")
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_NAME_DETAILS PERFORMANCE)
+SET(CTEST_BUILD_FLAGS     "-j35 -i" )
 
 SET(CTEST_PARALLEL_LEVEL 36)
 SET(CTEST_TEST_TYPE Experimental)
@@ -75,9 +76,14 @@ SET(CTEST_DO_MEMORY_TESTING FALSE)
 
 SET(Trilinos_PACKAGES Tpetra)
 
+# If true, this option yields faster builds. In that case, however, it won't disable any upstream package that fails to compile.
+SET(Trilinos_CTEST_DO_ALL_AT_ONCE TRUE)
+
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
   "-DTrilinos_TEST_CATEGORIES:STRING=PERFORMANCE"
+  "-DMPI_EXEC_MAX_NUMPROCS=36"
+  "-DMPI_EXEC_DEFAULT_NUMPROCS=36"
 )
 
 #

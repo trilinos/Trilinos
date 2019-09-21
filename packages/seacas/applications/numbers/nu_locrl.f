@@ -36,7 +36,7 @@ C Revision 1.1  1991/02/21 15:44:00  gdsjaar
 C Initial revision
 C
 C=======================================================================
-      INTEGER FUNCTION LOCRL (VALU, NVALUS, VALUOK, VALUS)
+      INTEGER FUNCTION LOCRL (VALUE, NVALUS, VALUOK, VALUS)
 C=======================================================================
 
 C   --*** LOCRL *** (TIMSEL) Find closest real value of selected values
@@ -46,7 +46,7 @@ C   --LOCRL returns the closest real value to the given value in a list of
 C   --selected real values (which may not be ordered).
 C   --
 C   --Parameters:
-C   --   VALU - the value to be searched for
+C   --   VALUE - the value to be searched for
 C   --   NVALUS - the number of values in the list
 C   --   VALUOK - VALUS(i) is selected iff VALUOK(i)
 C   --   VALUS - the list of values
@@ -57,7 +57,7 @@ C   --   VALUS - the list of values
       IX = 0
       DO 100 I = 1, NVALUS
          IF (VALUOK(I)) THEN
-            DIFI = ABS (VALUS(I) - VALU)
+            DIFI = ABS (VALUS(I) - VALUE)
             IF ((IX .EQ. 0) .OR. (DIF .GT. DIFI)) THEN
                DIF = DIFI
                IX = I

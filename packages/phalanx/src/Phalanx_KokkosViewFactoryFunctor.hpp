@@ -3,7 +3,7 @@
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 #include "Phalanx_any.hpp"
 #include <string>
 #include <typeinfo>

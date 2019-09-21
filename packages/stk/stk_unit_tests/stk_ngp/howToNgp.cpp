@@ -21,10 +21,9 @@
 #include <stk_unit_test_utils/getOption.h>
 #include "NgpUnitTestUtils.hpp"
 
-using IntDualViewType = Kokkos::DualView<int*, ngp::ExecSpace>;
+namespace {
 
-extern int gl_argc;
-extern char** gl_argv;
+using IntDualViewType = Kokkos::DualView<int*, ngp::ExecSpace>;
 
 void set_field_on_device_and_copy_back(stk::mesh::BulkData &bulk,
                                        stk::mesh::EntityRank rank,
@@ -1123,4 +1122,6 @@ TEST_F(NgpHowTo, checkPartMembership)
     run_part_membership_test<ngp::StkMeshAdapter>(get_bulk(), testPart.mesh_meta_data_ordinal());
 #endif
     run_part_membership_test<ngp::StaticMesh>(get_bulk(), testPart.mesh_meta_data_ordinal());
+}
+
 }

@@ -41,6 +41,7 @@ APPEND_SET(SOURCES
   RAPFactory.cpp
   RAPShiftFactory.cpp
   SaPFactory.cpp
+  ScaledNullspaceFactory.cpp
   Smoothers/SmootherFactory.cpp
   StructuredAggregationFactory.cpp
   StructuredLineDetection.cpp

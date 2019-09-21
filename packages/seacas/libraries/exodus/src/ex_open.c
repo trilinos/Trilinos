@@ -84,27 +84,23 @@ number. Possible causes of errors include:
 \param[in,out] comp_ws The word size in bytes (0, 4 or 8) of the floating point
 variables
                used in the application program. If 0 (zero) is passed, the
-default
-               size of floating point values for the machine will be used and
-               returned in this variable. WARNING: all exodus functions
-requiring
-               reals must be passed reals declared with this passed in or
-returned
-               compute word size (4 or 8).
+               default size of floating point values for the machine will be
+               used and returned in this variable. WARNING: all exodus functions
+               requiring reals must be passed reals declared with this passed
+               in or returned compute word size (4 or 8).
 
 
 \param[in,out] io_ws The word size in bytes (0, 4 or 8) of the floating
                     point data as they are stored in the exodus file. If the
-word
-                    size does not match the word size of data stored in the
-file,
-                    a fatal error is returned. If this argument is 0, the word
-size
-                    of the floating point data already stored in the file is
-returned.
+                    word size does not match the word size of data stored in
+                    the file, a fatal error is returned. If this argument is
+                    0, the word size of the floating point data already
+                    stored in the file is returned.
 
 \param[out] version  Returned exodus database version number. Note that this is always a float,
-never a double.
+                     never a double.
+
+\param[in] run_version Internally generated to verify library compatibility.
 
 The following opens an exodus file named \file{test.exo} for read
 only, using default settings for compute and I/O word sizes:

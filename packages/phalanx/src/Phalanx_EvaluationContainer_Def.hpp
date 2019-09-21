@@ -49,9 +49,9 @@
 #include "Phalanx_Traits.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Evaluator_AliasField.hpp"
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 #include "Phalanx_KokkosViewFactoryFunctor.hpp"
-#include "Phalanx_MemoryPool.hpp"
+#include "Phalanx_MemoryManager.hpp"
 #include <sstream>
 #include <stdexcept>
 
@@ -61,9 +61,9 @@ PHX::EvaluationContainer<EvalT, Traits>::EvaluationContainer() :
   post_registration_setup_called_(false),
   build_device_dag_(false),
   minimize_dag_memory_use_(false),
-  memory_pool_(nullptr)
+  memory_manager_(nullptr)
 {
-  this->dag_manager_.setEvaluationTypeName( PHX::typeAsString<EvalT>() );
+  this->dag_manager_.setEvaluationTypeName( PHX::print<EvalT>() );
 }
 
 // *************************************************************************
@@ -125,17 +125,17 @@ postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm,
                       const bool& buildDeviceDAG,
                       const bool& minimizeDAGMemoryUse,
-                      const PHX::MemoryPool* const memoryPool)
+                      const PHX::MemoryManager* const memoryManager)
 {
   // Save input
   build_device_dag_ = buildDeviceDAG;
   minimize_dag_memory_use_ = minimizeDAGMemoryUse;
-  if (memoryPool != nullptr) {
+  if (memoryManager != nullptr) {
     // Clone memory pool to share memory allocated from other FieldManager/DAGs
-    memory_pool_ = memoryPool->clone();
+    memory_manager_ = memoryManager->clone();
   }
   else
-    memory_pool_ = std::make_shared<PHX::MemoryPool>();
+    memory_manager_ = std::make_shared<PHX::MemoryManager>();
 
   // Figure out all evaluator dependencies
   if ( !(this->dag_manager_.sortingCalled()) )
@@ -167,7 +167,7 @@ postRegistrationSetup(typename Traits::SetupData d,
       TEUCHOS_TEST_FOR_EXCEPTION(fields_.find((*var)->identifier()) == fields_.end(),std::runtime_error,
                                  "Error: PHX::EvaluationContainer::postRegistrationSetup(): could not build a Kokkos::View for field named \""
                                  << (*var)->name() << "\" of type \"" << (*var)->dataTypeInfo().name()
-                                 << "\" for the evaluation type \"" << PHX::typeAsString<EvalT>() << "\".");
+                                 << "\" for the evaluation type \"" << PHX::print<EvalT>() << "\".");
     }
   }
 
@@ -344,7 +344,7 @@ bindField(const PHX::FieldTag& f, const PHX::any& a)
     std::stringstream st;
     st << "\n ERROR in PHX::EvaluationContainer<EvalT, Traits>::bindField():\n"
        << " Failed to bind field: \"" <<  f.identifier() << "\"\n"
-       << " for evaluation type \"" << PHX::typeAsString<EvalT>() << "\".\n"
+       << " for evaluation type \"" << PHX::print<EvalT>() << "\".\n"
        << " This field is not used in the Evaluation DAG.\n";
 
     throw std::runtime_error(st.str());
@@ -371,14 +371,14 @@ template <typename EvalT, typename Traits>
 const std::string PHX::EvaluationContainer<EvalT, Traits>::
 evaluationType() const
 {
-  return PHX::typeAsString<EvalT>();
+  return PHX::print<EvalT>();
 }
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
 {
-  std::string type = PHX::typeAsString<EvalT>();
+  std::string type = PHX::print<EvalT>();
 
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << "Starting PHX::EvaluationContainer Output" << std::endl;

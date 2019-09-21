@@ -34,7 +34,7 @@
  */
 /**************************************************************************/
 /* Program to perform orthogonal range searches and nearest neighbor      */
-/* querys in a more sophisticated k-d tree.  In this implementation the,  */
+/* queries in a more sophisticated k-d tree.  In this implementation the,  */
 /* nodes on any given level of the tree do not have the same              */
 /* discriminating dimension as the discrimiator is chosen based on the    */
 /* dimension with   the "maxspead."                                       */

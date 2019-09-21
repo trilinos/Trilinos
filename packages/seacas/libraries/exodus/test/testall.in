@@ -160,7 +160,7 @@ echo "end testwt2" >> test.output
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test2-1.dmp | tee testwt2-1.res
 ${NCDUMP} -d5,5 test2.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test2-2.dmp | tee testwt2-2.res
 
-echo "testrdwt - read from one and write to another (simutaneously open) file..."
+echo "testrdwt - read from one and write to another (simultaneously open) file..."
 echo "begin testrdwt" >> test.output
 ${PREFIX} ${BINDIR}/testrdwt${SUFFIX} >> test.output
 echo "end testrdwt" >> test.output

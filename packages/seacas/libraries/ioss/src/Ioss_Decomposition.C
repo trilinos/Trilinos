@@ -93,6 +93,14 @@ namespace {
       method = properties.get("DECOMPOSITION_METHOD").get_string();
       method = Ioss::Utils::uppercase(method);
     }
+    else if (properties.exists("RESTART_DECOMPOSITION_METHOD")) {
+      method = properties.get("RESTART_DECOMPOSITION_METHOD").get_string();
+      method = Ioss::Utils::uppercase(method);
+    }
+    else if (properties.exists("MODEL_DECOMPOSITION_METHOD")) {
+      method = properties.get("MODEL_DECOMPOSITION_METHOD").get_string();
+      method = Ioss::Utils::uppercase(method);
+    }
 
     if (method != "LINEAR"
 #if !defined(NO_ZOLTAN_SUPPORT)
@@ -311,8 +319,16 @@ namespace Ioss {
   {
     show_progress(__func__);
     if (m_processor == 0) {
-      fmt::print("\nUsing decomposition method '{}' on {} processors.\n\n", m_method,
-                 m_processorCount);
+      fmt::print(stderr,
+                 "\nIOSS: Using decomposition method '{}' for {:n} elements on {} processors.\n",
+                 m_method, m_globalElementCount, m_processorCount);
+
+      if ((size_t)m_processorCount > m_globalElementCount) {
+        fmt::print(stderr,
+                   "\nWARNING: Decomposing {} elements across {} processors will "
+                   "result in some processors with *NO* elements.\n",
+                   m_globalElementCount, m_processorCount);
+      }
     }
 #if !defined(NO_PARMETIS_SUPPORT)
     if (m_method == "KWAY" || m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM" ||

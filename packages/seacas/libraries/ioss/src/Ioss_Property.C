@@ -63,29 +63,14 @@ namespace {
 
 /** \brief Create an explicit, empty property having no name, INVALID type
  */
-Ioss::Property::Property() : name_(""), type_(INVALID), isImplicit_(false) { data_.pval = nullptr; }
-
-/** \brief Create a property with a specified type.
- *
- *  \param[in] name The property name.
- *  \param[in] type The property type.
- *  \param[in] data The property value.
- *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
- */
-Ioss::Property::Property(std::string name, const BasicType type, void *data, bool is_it_implicit)
-    : name_(std::move(name)), type_(type), isImplicit_(is_it_implicit)
-{
-  data_.pval = data;
-}
+Ioss::Property::Property() : name_(""), type_(INVALID) { data_.pval = nullptr; }
 
 /** \brief Create an INTEGER type property.
  *
  *  \param[in] name The property name.
  *  \param[in] value The property value.
- *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
-Ioss::Property::Property(std::string name, int value, bool is_it_implicit)
-    : name_(std::move(name)), type_(INTEGER), isImplicit_(is_it_implicit)
+Ioss::Property::Property(std::string name, int value) : name_(std::move(name)), type_(INTEGER)
 {
   data_.ival = value;
 }
@@ -94,10 +79,8 @@ Ioss::Property::Property(std::string name, int value, bool is_it_implicit)
  *
  *  \param[in] name The property name.
  *  \param[in] value The property value.
- *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
-Ioss::Property::Property(std::string name, int64_t value, bool is_it_implicit)
-    : name_(std::move(name)), type_(INTEGER), isImplicit_(is_it_implicit)
+Ioss::Property::Property(std::string name, int64_t value) : name_(std::move(name)), type_(INTEGER)
 {
   data_.ival = value;
 }
@@ -106,10 +89,8 @@ Ioss::Property::Property(std::string name, int64_t value, bool is_it_implicit)
  *
  *  \param[in] name The property name.
  *  \param[in] value The property value.
- *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
-Ioss::Property::Property(std::string name, double value, bool is_it_implicit)
-    : name_(std::move(name)), type_(REAL), isImplicit_(is_it_implicit)
+Ioss::Property::Property(std::string name, double value) : name_(std::move(name)), type_(REAL)
 {
   data_.rval = value;
 }
@@ -118,10 +99,20 @@ Ioss::Property::Property(std::string name, double value, bool is_it_implicit)
  *
  *  \param[in] name The property name.
  *  \param[in] value The property value.
- *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
-Ioss::Property::Property(std::string name, const std::string &value, bool is_it_implicit)
-    : name_(std::move(name)), type_(STRING), isImplicit_(is_it_implicit)
+Ioss::Property::Property(std::string name, const std::string &value)
+    : name_(std::move(name)), type_(STRING)
+{
+  data_.sval = new std::string(value);
+}
+
+/** \brief Create a STRING type property from const char* argument.
+ *
+ *  \param[in] name The property name.
+ *  \param[in] value The property value.
+ */
+Ioss::Property::Property(std::string name, const char *value)
+    : name_(std::move(name)), type_(STRING)
 {
   data_.sval = new std::string(value);
 }
@@ -130,10 +121,8 @@ Ioss::Property::Property(std::string name, const std::string &value, bool is_it_
  *
  *  \param[in] name The property name.
  *  \param[in] value The property value.
- *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
-Ioss::Property::Property(std::string name, void *value, bool is_it_implicit)
-    : name_(std::move(name)), type_(POINTER), isImplicit_(is_it_implicit)
+Ioss::Property::Property(std::string name, void *value) : name_(std::move(name)), type_(POINTER)
 {
   data_.pval = value;
 }
@@ -236,10 +225,7 @@ void *Ioss::Property::get_pointer() const
 
 bool Ioss::Property::get_value(int64_t *value) const
 {
-  bool valid_request = false;
-  if (type_ == INTEGER) {
-    valid_request = true;
-  }
+  bool valid_request = type_ == INTEGER ? true : false;
   if (is_explicit()) {
     *value = data_.ival;
   }
@@ -253,10 +239,7 @@ bool Ioss::Property::get_value(int64_t *value) const
 
 bool Ioss::Property::get_value(double *value) const
 {
-  bool valid_request = false;
-  if (type_ == REAL) {
-    valid_request = true;
-  }
+  bool valid_request = type_ == REAL ? true : false;
   if (is_explicit()) {
     *value = data_.rval;
   }
@@ -270,10 +253,7 @@ bool Ioss::Property::get_value(double *value) const
 
 bool Ioss::Property::get_value(std::string *value) const
 {
-  bool valid_request = false;
-  if (type_ == STRING) {
-    valid_request = true;
-  }
+  bool valid_request = type_ == STRING ? true : false;
   if (is_explicit()) {
     *value = *(data_.sval);
   }
@@ -287,10 +267,7 @@ bool Ioss::Property::get_value(std::string *value) const
 
 bool Ioss::Property::get_value(void *&value) const
 {
-  bool valid_request = false;
-  if (type_ == POINTER) {
-    valid_request = true;
-  }
+  bool valid_request = type_ == POINTER ? true : false;
   if (is_explicit()) {
     value = data_.pval;
   }

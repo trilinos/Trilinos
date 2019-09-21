@@ -58,7 +58,10 @@ namespace MueLu {
    * Base class you can derive from to allow user defined dropping
    *
    */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Scalar = DefaultScalar,
+           class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class PreDropFunctionBaseClass : public BaseClass {
 #undef MUELU_PREDROPFUNCTIONBASECLASS_SHORT
 #include "MueLu_UseShortNames.hpp"

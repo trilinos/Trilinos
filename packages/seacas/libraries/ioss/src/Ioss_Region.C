@@ -446,8 +446,6 @@ namespace Ioss {
    */
   void Region::output_summary(std::ostream &strm, bool /* do_transient */)
   {
-    IOSS_FUNC_ENTER(m_);
-
     int64_t total_cells       = get_entity_count(get_structured_blocks());
     int64_t total_fs_faces    = get_entity_count(get_facesets());
     int64_t total_ns_nodes    = get_entity_count(get_nodesets());
@@ -500,39 +498,39 @@ namespace Ioss {
     fmt::print(
         strm,
         "\n Database: {0}\n"
-        " Mesh Type = {1}\n\n"
+        " Mesh Type = {1}, {39}\n\n"
         " Number of spatial dimensions = {2:{24}n}\t"
-        "                                   {38:{23}s}\t"
+        "                           {38:{23}s}\t"
         " Number of global variables     = {26:{25}n}\n"
         " Number of node blocks        = {7:{24}n}\t"
-        " Number of nodes              = {3:{23}n}\t"
+        " Number of nodes         = {3:{23}n}\t"
         " Number of nodal variables      = {27:{25}n}\n"
         " Number of edge blocks        = {8:{24}n}\t"
-        " Number of edges              = {4:{23}n}\t"
+        " Number of edges         = {4:{23}n}\t"
         " Number of edge variables       = {33:{25}n}\n"
         " Number of face blocks        = {9:{24}n}\t"
-        " Number of faces              = {5:{23}n}\t"
+        " Number of faces         = {5:{23}n}\t"
         " Number of face variables       = {34:{25}n}\n"
         " Number of element blocks     = {10:{24}n}\t"
-        " Number of elements           = {6:{23}n}\t"
+        " Number of elements      = {6:{23}n}\t"
         " Number of element variables    = {28:{25}n}\n"
         " Number of structured blocks  = {11:{24}n}\t"
-        " Number of cells              = {17:{23}n}\t"
+        " Number of cells         = {17:{23}n}\t"
         " Number of structured variables = {29:{25}n}\n"
         " Number of node sets          = {12:{24}n}\t"
-        " Length of node list          = {18:{23}n}\t"
+        " Length of node list     = {18:{23}n}\t"
         " Number of nodeset variables    = {30:{25}n}\n"
         " Number of edge sets          = {13:{24}n}\t"
-        " Length of edge list          = {19:{23}n}\t"
+        " Length of edge list     = {19:{23}n}\t"
         " Number of edgeset variables    = {35:{25}n}\n"
         " Number of face sets          = {14:{24}n}\t"
-        " Length of face list          = {20:{23}n}\t"
+        " Length of face list     = {20:{23}n}\t"
         " Number of faceset variables    = {36:{25}n}\n"
         " Number of element sets       = {15:{24}n}\t"
-        " Length of element list       = {21:{23}n}\t"
+        " Length of element list  = {21:{23}n}\t"
         " Number of elementset variables = {37:{25}n}\n"
         " Number of element side sets  = {16:{24}n}\t"
-        " Length of element sides      = {22:{23}n}\t"
+        " Length of element sides = {22:{23}n}\t"
         " Number of sideset variables    = {31:{25}n}\n\n"
         " Number of time steps         = {32:{24}n}\n",
         get_database()->get_filename(), mesh_type_string(),
@@ -547,7 +545,7 @@ namespace Ioss {
         total_cells, total_ns_nodes, total_es_edges, total_fs_faces, total_es_elements, total_sides,
         num_width, sb_width, vr_width, num_glo_vars, num_nod_vars, num_ele_vars, num_str_vars,
         num_ns_vars, num_ss_vars, num_ts, num_edg_vars, num_fac_vars, num_es_vars, num_fs_vars,
-        num_els_vars, " ");
+        num_els_vars, " ", get_database()->get_format());
   }
 
   /** \brief Set the Region and the associated DatabaseIO to the given State.

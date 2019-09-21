@@ -771,11 +771,11 @@ public:
       " <= 0.  The block size must be positive.");
     {
       // These are rcp
-      const auto domainPointMap = getDomainMap();
+      const auto rcpDomainPointMap = getDomainMap();
       const auto colPointMap = Teuchos::rcp 
         (new typename BMV::map_type (BMV::makePointMap (*graph_.getColMap(), blockSize_)));
       *pointImporter_ = Teuchos::rcp 
-        (new typename crs_graph_type::import_type (domainPointMap, colPointMap));
+        (new typename crs_graph_type::import_type (rcpDomainPointMap, colPointMap));
     }
     {
       typedef typename crs_graph_type::local_graph_type::row_map_type row_map_type;
@@ -2945,7 +2945,12 @@ public:
     // We use a "struct of arrays" approach to packing each row's
     // entries.  All the column indices (as global indices) go first,
     // then all their owning process ranks, and then the values.
-    exports.resize (totalNumBytes);
+    if(exports.extent(0) != totalNumBytes)
+    {
+      const std::string oldLabel = exports.d_view.label ();
+      const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
+      exports = Kokkos::DualView<packet_type*, buffer_device_type>(newLabel, totalNumBytes);
+    }
     if (totalNumEntries > 0) {
       // Current position (in bytes) in the 'exports' output array.
       Kokkos::View<size_t*, host_exec> offset("offset", numExportLIDs+1);

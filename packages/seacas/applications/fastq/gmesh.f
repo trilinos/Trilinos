@@ -271,7 +271,7 @@ C
      &   (CIN (ICOM) (1:1) .EQ. 'p')) THEN
          ICOM = ICOM + 1
          IF (ALPHA) THEN
-            CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHA-NUMERIC '//
+            CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &         'TERMINAL')
          ELSE
             CALL PMESH (NPNODE, NPELEM, MXNFLG, MXSFLG, NPNBC, NPSBC,
@@ -318,7 +318,7 @@ C
          END IF
          IF (GOPLOT) THEN
             IF (ALPHA) THEN
-               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHA-NUMERIC '//
+               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &            ' TERMINAL')
             ELSE
                CALL MNMXK (NPELEM, NPNODE, NNXK, NXK, XN, YN, CENTK,
@@ -382,7 +382,7 @@ C
          END IF
          IF (GOPLOT) THEN
             IF (ALPHA) THEN
-               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHA-NUMERIC '//
+               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &            'TERMINAL')
             ELSE
                CALL MNMXK (NPELEM, NPNODE, NNXK, NXK, XN, YN, CENTK,
@@ -439,7 +439,7 @@ C
          END IF
          IF (GOPLOT) THEN
             IF (ALPHA) THEN
-               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHA-NUMERIC '//
+               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &            'TERMINAL')
             ELSE
                CALL MNMXK (NPELEM, NPNODE, NNXK, NXK, XN, YN, CENTK,

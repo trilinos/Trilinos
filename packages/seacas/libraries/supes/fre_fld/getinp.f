@@ -46,8 +46,8 @@ C     specified by the caller as follows.
 C
 C     KIN     KOUT    Source           Echo
 C     ------------------------------------------------------------------
-C     0       0       Standard Input   Standard Ouput
-C     0       M       Standard Input   Standard Ouput and File (M)
+C     0       0       Standard Input   Standard Output
+C     0       M       Standard Input   Standard Output and File (M)
 C     N       M       File (N)         File (N)
 C     N       0       File (N)         none
 C

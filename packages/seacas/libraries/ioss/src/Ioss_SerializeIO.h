@@ -50,10 +50,32 @@ namespace Ioss {
    * until all the processor have been released by the constructor.
    *
    * In the case where the constructor is called, and the sentry is already active and owned
-   * by the processes group, the constructor and destrutor simply fall through since the
+   * by the processes group, the constructor and destructor simply fall through since the
    * serialization is already in place at a higher level.
    *
-   * The MPI
+   * \note All ranks must call the SerializeIO constructor synchronously.
+   * \note It is recommended to use RAII and keep the area protected by the SerializeIO as small as
+   * possible.
+   *
+   * The flow is that the ranks are split into groups of the specified size. Assume 3 ranks of group
+   * size 1.
+   *
+   * * First time through,
+   *   - rank 0 falls through and
+   *   - ranks 1, 2 sit at the barrier
+   *   - rank 0 hits the destructor and then all 3 ranks are in the barrier so they all go to next
+   * step
+   *   - (rank 1,2 in constructor, rank 0 in destructor)
+   * * `s_owner` is now equal to `m_groupRank` on rank 1, so it falls out of the do while;
+   *   - rank 2 still in the constructor do while Barrier
+   *   - rank 0 in the destructor do while Barrier
+   *   - rank 1 does its work and calls destructor;
+   *   - all ranks in Barrier, so they go to next step.
+   * * `s_owner` now equal to `m_groupRank` on rank 2, so if falls out of the do while;
+   *   - ranks 0,1 in destructor do while at the Barrier
+   *   - rank 2 does it work and calls destructor
+   *   - all ranks are now in the destructor Barrier, so they go to next step
+   *   - all ranks clear the Destructor and go to next step.
    *
    */
   class SerializeIO
@@ -92,7 +114,7 @@ namespace Ioss {
 #if defined(IOSS_THREADSAFE)
     static std::mutex m_;
 #endif
-    bool m_activeFallThru; ///< No barries since my group is running
+    bool m_activeFallThru; ///< No barriers since my group is running
 
     static int s_groupFactor; ///< Grouping factor
     static int s_size;        ///< Number of processors

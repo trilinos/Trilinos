@@ -35,12 +35,25 @@
     <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
     <Parameter name="coarse: max size" type="int" value="128"/>
     <Parameter name="coarse: type" type="string" value="Klu"/>
+
     <Parameter name="smoother: type" type="string" value="RELAXATION"/>
     <ParameterList name="smoother: params">
       <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
       <Parameter name="relaxation: sweeps" type="int" value="1"/>
       <Parameter name="relaxation: use l1" type="bool" value="true"/>
     </ParameterList>
+
+    <Parameter name="repartition: enable" type="bool" value="true"/>
+    <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="200"/>
+    <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+    <Parameter name="repartition: remap parts" type="bool" value="true"/>
+    <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
+    <ParameterList name="repartition: params">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+    </ParameterList>
+
   </ParameterList>
 
 </ParameterList>

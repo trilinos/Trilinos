@@ -40,16 +40,11 @@
 
 namespace Ioss {
 
-  int SerializeIO::s_owner = -1;
-
-  int SerializeIO::s_rank = -1;
-
-  int SerializeIO::s_size = -1;
-
-  int SerializeIO::s_groupSize = -1;
-
-  int SerializeIO::s_groupRank = -1;
-
+  int SerializeIO::s_owner       = -1;
+  int SerializeIO::s_rank        = -1;
+  int SerializeIO::s_size        = -1;
+  int SerializeIO::s_groupSize   = -1;
+  int SerializeIO::s_groupRank   = -1;
   int SerializeIO::s_groupFactor = 0;
 
 #if defined(IOSS_THREADSAFE)
@@ -65,7 +60,6 @@ namespace Ioss {
     }
     IOSS_FUNC_ENTER(m_);
 
-    m_activeFallThru               = s_owner != -1;
     const Ioss::ParallelUtils util = m_databaseIO->util();
     if (s_rank == -1) {
       s_rank = util.parallel_rank();
@@ -76,18 +70,17 @@ namespace Ioss {
       }
     }
 
-    if (m_activeFallThru) {
-    }
-    else if (s_groupFactor > 0) {
-#ifdef SEACAS_HAVE_MPI
-      do {
-        MPI_Barrier(util.communicator());
-      } while (++s_owner != s_groupRank);
-#endif
-      m_databaseIO->openDatabase();
-    }
-    else {
-      s_owner = s_groupRank;
+    m_activeFallThru = s_owner != -1;
+    if (!m_activeFallThru) {
+      if (s_groupFactor > 0) {
+        do {
+          util.barrier();
+        } while (++s_owner != s_groupRank);
+        m_databaseIO->openDatabase__();
+      }
+      else {
+        s_owner = s_groupRank;
+      }
     }
   }
 
@@ -98,22 +91,19 @@ namespace Ioss {
     }
     try {
       IOSS_FUNC_ENTER(m_);
-      if (m_activeFallThru) {
-        ;
-      }
-      else if (s_groupFactor > 0) {
-        m_databaseIO->closeDatabase();
-#ifdef SEACAS_HAVE_MPI
-        s_owner                        = s_groupRank;
-        const Ioss::ParallelUtils util = m_databaseIO->util();
-        do {
-          MPI_Barrier(util.communicator());
-        } while (++s_owner != s_groupSize);
-#endif
-        s_owner = -1;
-      }
-      else {
-        s_owner = -1;
+      if (!m_activeFallThru) {
+        if (s_groupFactor > 0) {
+          m_databaseIO->closeDatabase__();
+          s_owner                        = s_groupRank;
+          const Ioss::ParallelUtils util = m_databaseIO->util();
+          do {
+            util.barrier();
+          } while (++s_owner != s_groupSize);
+          s_owner = -1;
+        }
+        else {
+          s_owner = -1;
+        }
       }
     }
     catch (...) {

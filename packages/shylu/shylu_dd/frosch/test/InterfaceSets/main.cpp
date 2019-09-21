@@ -48,23 +48,24 @@
 #include "Galeri_XpetraMaps.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
+#include <Teuchos_StackedTimer.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 #include <Xpetra_DefaultPlatform.hpp>
-#include <Xpetra_UseDefaultTypes.hpp>
 
 #include <FROSch_DDInterface_def.hpp>
 
 #include <FROSch_Tools_decl.hpp>
 
-typedef unsigned                                    UN;
-typedef Scalar                                      SC;
-typedef LocalOrdinal                                LO;
-typedef GlobalOrdinal                               GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+
+using UN    = unsigned;
+using SC    = double;
+using LO    = int;
+using GO    = FROSch::DefaultGlobalOrdinal;
+using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace Teuchos;
@@ -81,7 +82,7 @@ int main(int argc, char *argv[])
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Comm<int> > CommWorld = DefaultPlatform::getDefaultPlatform().getComm();
 
     CommandLineProcessor My_CLP;
 
@@ -91,8 +92,10 @@ int main(int argc, char *argv[])
     My_CLP.setOption("M",&M,"H / h.");
     int Dimension = 3;
     My_CLP.setOption("DIM",&Dimension,"Dimension.");
-    bool useepetra = true;
-    My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
+    bool useEpetra = true;
+    My_CLP.setOption("USEEPETRA","USETPETRA",&useEpetra,"Use Epetra infrastructure for the linear algebra.");
+    int communicationStrategy = 0;
+    My_CLP.setOption("COMMSTRAT",&communicationStrategy,"Communication strategy for the domain decomposition interface.");
 
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
@@ -100,6 +103,10 @@ int main(int argc, char *argv[])
     if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
+
+    CommWorld->barrier();
+    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("InterfaceSets Test"));
+    TimeMonitor::setStackedTimer(stackedTimer);
 
     int N = 0;
     int color=1;
@@ -118,7 +125,7 @@ int main(int argc, char *argv[])
     }
 
     UnderlyingLib xpetraLib = UseTpetra;
-    if (useepetra) {
+    if (useEpetra) {
         xpetraLib = UseEpetra;
     } else {
         xpetraLib = UseTpetra;
@@ -129,14 +136,16 @@ int main(int argc, char *argv[])
     if (color==0) {
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
+        //stackedTimer->start("Assembly Time");
+        FROSCH_TIMER_START(assemblyTimer,"Assembly");
 
         ParameterList GaleriList;
-        GaleriList.set("nx", GlobalOrdinal(N*M));
-        GaleriList.set("ny", GlobalOrdinal(N*M));
-        GaleriList.set("nz", GlobalOrdinal(N*M));
-        GaleriList.set("mx", GlobalOrdinal(N));
-        GaleriList.set("my", GlobalOrdinal(N));
-        GaleriList.set("mz", GlobalOrdinal(N));
+        GaleriList.set("nx", GO(N*M));
+        GaleriList.set("ny", GO(N*M));
+        GaleriList.set("nz", GO(N*M));
+        GaleriList.set("mx", GO(N));
+        GaleriList.set("my", GO(N));
+        GaleriList.set("mz", GO(N));
 
         RCP<const Map<LO,GO,NO> > UniqueMap;
         RCP<MultiVector<SC,LO,GO,NO> > Coordinates;
@@ -153,115 +162,40 @@ int main(int argc, char *argv[])
             K = Problem->BuildMatrix();
         }
 
+        FROSCH_TIMER_STOP(assemblyTimer);
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Constructing Repeated Map #\n#############\n" << endl;
-        RCP<Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<SC,LO,GO,NO>(K);
+        FROSCH_TIMER_START(repMapTimer,"Construct RepeatedMap");
 
+        RCP<const Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<LO,GO,NO>(K->getCrsGraph());
+
+        FROSCH_TIMER_STOP(repMapTimer);
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Identification of Interface Sets #\n#############\n" << endl;
+        FROSCH_TIMER_START(intSetsTimer,"Identification of Interface Sets");
         RCP<EntitySet<SC,LO,GO,NO> > vertices,shortEdges,straightEdges,edges,faces,interface,interior;
         //RCP<Map<LO,GO,NO> > verticesMap,shortEdgesMap,straightEdgesMap,edgesMap,facesMap;
 
-        DDInterface<SC,LO,GO,NO> dDInterface(Dimension,1,RepeatedMap);
+        DDInterface<SC,LO,GO,NO> dDInterface(Dimension,1,RepeatedMap,All,(CommunicationStrategy) communicationStrategy);
         dDInterface.divideUnconnectedEntities(K);
         dDInterface.sortVerticesEdgesFaces();
 
-        ////////////////////////////////
-        // Build Processor Map Coarse //
-        ////////////////////////////////
-        ArrayRCP<RCP<Map<LO,GO,NO> > > MapVector(5);
+        dDInterface.buildEntityHierarchy();
 
-        vertices = dDInterface.getVertices();
-        vertices->buildEntityMap(RepeatedMap);
+        dDInterface.buildEntityMaps(true,
+                                    true,
+                                    true,
+                                    true,
+                                    true,
+                                    true);
 
-        shortEdges = dDInterface.getShortEdges();
-        shortEdges->buildEntityMap(RepeatedMap);
-
-        straightEdges = dDInterface.getStraightEdges();
-        straightEdges->buildEntityMap(RepeatedMap);
-
-        edges = dDInterface.getEdges();
-        edges->buildEntityMap(RepeatedMap);
-
-        faces = dDInterface.getFaces();
-        faces->buildEntityMap(RepeatedMap);
-
-        // Vertices
-        LO ii=0;
-        for (UN i=0; i<1; i++) {
-            MapVector[ii] = vertices->getEntityMap();
-            ii++;
-        }
-        // ShortEdges
-        for (UN i=0; i<1; i++) {
-            MapVector[ii] = shortEdges->getEntityMap();
-            ii++;
-        }
-        // StraightEdges
-        for (UN i=0; i<1; i++) {
-            MapVector[ii] = straightEdges->getEntityMap();
-            ii++;
-        }
-        // Edges
-        for (UN i=0; i<1; i++) {
-            MapVector[ii] = edges->getEntityMap();
-            ii++;
-        }
-        // Faces
-        for (UN i=0; i<1; i++) {
-            MapVector[ii] = faces->getEntityMap();
-            ii++;
-        }
-
-        vector<LO> NumEntitiesGlobal(5);
-        NumEntitiesGlobal[0] = vertices->getEntityMap()->getMaxAllGlobalIndex();
-        if (vertices->getEntityMap()->lib()==Xpetra::UseEpetra || vertices->getEntityMap()->getGlobalNumElements()>0) {
-            NumEntitiesGlobal[0] += 1;
-        }
-
-        NumEntitiesGlobal[1] = shortEdges->getEntityMap()->getMaxAllGlobalIndex();
-        if (shortEdges->getEntityMap()->lib()==Xpetra::UseEpetra || shortEdges->getEntityMap()->getGlobalNumElements()>0) {
-            NumEntitiesGlobal[1] += 1;
-        }
-
-        NumEntitiesGlobal[2] = straightEdges->getEntityMap()->getMaxAllGlobalIndex();
-        if (straightEdges->getEntityMap()->lib()==Xpetra::UseEpetra || straightEdges->getEntityMap()->getGlobalNumElements()>0) {
-            NumEntitiesGlobal[2] += 1;
-        }
-
-        NumEntitiesGlobal[3] = edges->getEntityMap()->getMaxAllGlobalIndex();
-        if (edges->getEntityMap()->lib()==Xpetra::UseEpetra || edges->getEntityMap()->getGlobalNumElements()>0) {
-            NumEntitiesGlobal[3] += 1;
-        }
-
-        NumEntitiesGlobal[4] = faces->getEntityMap()->getMaxAllGlobalIndex();
-        if (faces->getEntityMap()->lib()==Xpetra::UseEpetra || faces->getEntityMap()->getGlobalNumElements()>0) {
-            NumEntitiesGlobal[4] += 1;
-        }
-
-        if (Comm->getRank()==0) {
-
-            cout << "\n\
-            --------------------------------------------\n\
-            # vertices:       --- " << NumEntitiesGlobal.at(0) << "\n\
-            # shortEdges:     --- " << NumEntitiesGlobal.at(1) << "\n\
-            # straightEdges:  --- " << NumEntitiesGlobal.at(2) << "\n\
-            # edges:          --- " << NumEntitiesGlobal.at(3) << "\n\
-            # faces:          --- " << NumEntitiesGlobal.at(4) << "\n\
-            --------------------------------------------\n\
-            Coarse space:\n\
-            --------------------------------------------\n\
-            vertices: translations      --- " << true << "\n\
-            shortEdges: translations    --- " << true << "\n\
-            shortEdges: rotations       --- " << true << "\n\
-            straightEdges: translations --- " << true << "\n\
-            straightEdges: rotations    --- " << true << "\n\
-            edges: translations         --- " << true << "\n\
-            edges: rotations            --- " << true << "\n\
-            faces: translations         --- " << true << "\n\
-            faces: rotations            --- " << true << "\n\
-            --------------------------------------------\n";
-        }
-
+        FROSCH_TIMER_STOP(intSetsTimer);
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
+
+    CommWorld->barrier();
+    stackedTimer->stop("InterfaceSets Test");
+    StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stackedTimer->report(*out,CommWorld,options);
+
     return(EXIT_SUCCESS);
 }

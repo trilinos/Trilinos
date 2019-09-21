@@ -500,7 +500,7 @@ C
          CALL MDEROR(NOUT)
          CALL ERROR('MAPVAR',
      &              'MEMORY MANAGER ERROR',
-     &              'JUST BEFOR INTERPOLATION LOOP',
+     &              'JUST BEFORE INTERPOLATION LOOP',
      &              0,' ',0,' ',' ',1)
       END IF
 C
@@ -1557,7 +1557,7 @@ C NRSS=number of    real search scratch (=10)
 C
       DATA TOL,EPS,STRLMT,ITERMX/0.01,0.01,20.,20/
 C
-C TOL=difference in isoparametric coords after newton iteration (dont change)
+C TOL=difference in isoparametric coords after newton iteration (don't change)
 C EPS=tolerance used in checking if point is within element or coincident
 C     with a node
 C STRLMT=tolerance for isoparametric coords to lie within an element

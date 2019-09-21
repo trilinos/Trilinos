@@ -2589,8 +2589,9 @@ int UserInputForTests::chaco_input_assign(
     }
 
     flag = 0;
-    if (assignment[0] > nvtxs)
-        flag = assignment[1];
+    int np = this->tcomm_->getSize();
+    if (assignment[0] >= np) flag = assignment[0];
+    srand(this->tcomm_->getRank());
     for (i = 1; i < nvtxs; i++) {
         j = fscanf(finassign, "%hd", &(assignment[i]));
         if (j != 1) {
@@ -2604,15 +2605,21 @@ int UserInputForTests::chaco_input_assign(
             fclose(finassign);
             return (1);
         }
-        if (assignment[i] > nvtxs) {    /* warn since probably an error */
+        if (assignment[i] >= np) {    // warn since perhaps an error -- initial part 
+                                      // assignment is greater than number of processors
             if (assignment[i] > flag)
                 flag = assignment[i];
+            assignment[i] = rand() % np;  // randomly assign vtx to a proc in this case
         }
     }
+    srand(rand());
 
     if (flag) {
-        printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
-        printf("         More assignment sets (%d) than vertices (%d)\n", flag, nvtxs);
+        printf("WARNING: Possible error in assignment file `%s'\n",
+                         inassignname);
+        printf("         Max assignment set (%d) greater than "
+                         "max processor rank (%d)\n", flag, np-1);
+        printf("         Some vertices given random initial assignments\n");
     }
 
     /* Check for spurious extra stuff in file. */

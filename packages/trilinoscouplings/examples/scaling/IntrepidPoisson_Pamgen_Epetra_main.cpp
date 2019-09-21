@@ -264,10 +264,10 @@ main (int argc, char *argv[])
         else if (prec_type == "MueLu") {
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
           // Turns a Epetra_CrsMatrix into a MueLu::Matrix
-          RCP<Xpetra::CrsMatrix<ST> > mueluA_ =
+          RCP<Xpetra::CrsMatrix<ST, int, int, Xpetra::EpetraNode> > mueluA_ =
             rcp(new Xpetra::EpetraCrsMatrix(A));
-          RCP<Xpetra::Matrix <ST> > mueluA  =
-            rcp(new Xpetra::CrsMatrixWrap<ST>(mueluA_));
+          RCP<Xpetra::Matrix <ST, int, int, Xpetra::EpetraNode> > mueluA  =
+            rcp(new Xpetra::CrsMatrixWrap<ST, int, int, Xpetra::EpetraNode>(mueluA_));
 
           // Multigrid Hierarchy
           ParameterList mueluParams;

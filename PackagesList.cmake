@@ -113,6 +113,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Intrepid              packages/intrepid                 PT
   Intrepid2             packages/intrepid2                PT
   STK                   packages/stk                      PT # Depends on boost
+  Percept               packages/percept                  PT # Depends on boost
   SCORECapf_zoltan      SCOREC/zoltan                     ST
   SCORECapf_stk         SCOREC/stk                        ST
   SCORECma              SCOREC/ma                         ST

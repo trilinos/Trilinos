@@ -236,7 +236,7 @@ namespace MueLu {
       RCP<const tRowMatrix> tA;
       try {
         tA = Utilities::Op2NonConstTpetraRow(A_);
-      } catch (Exceptions::BadCast) {
+      } catch (Exceptions::BadCast&) {
         isTRowMatrix = false;
       }
 
@@ -452,6 +452,7 @@ namespace MueLu {
       {
         actualDofsPerNode = A_->GetFixedBlockSize();
       }
+      myparamList.set("partitioner: PDE equations", actualDofsPerNode);
 
       if (numLocalRows == Teuchos::as<size_t>(TVertLineIdSmoo.size())) {
         myparamList.set("partitioner: type","user");

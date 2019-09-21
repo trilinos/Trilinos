@@ -48,7 +48,7 @@
 
 namespace Xpetra {
   template<class GO, class NO> class EpetraIntVectorT;
-  typedef EpetraIntVectorT<int, typename Xpetra::Map<int, int>::node_type> EpetraIntVector;
+  typedef EpetraIntVectorT<int, EpetraNode> EpetraIntVector;
 }
 
 #ifndef XPETRA_EPETRAINTVECTOR_SHORT

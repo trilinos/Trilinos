@@ -46,6 +46,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 // Galeri::Xpetra
 #include "Galeri_XpetraProblemFactory.hpp"
@@ -84,18 +85,18 @@
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
 #include <Xpetra_Parameters.hpp>
-#include <Xpetra_UseDefaultTypes.hpp>
 
 // FROSCH thyra includes
 #include "Thyra_FROSchLinearOp_def.hpp"
 #include "Thyra_FROSchFactory_def.hpp"
 #include <FROSch_Tools_def.hpp>
 
-typedef unsigned                                    UN;
-typedef Scalar                                      SC;
-typedef LocalOrdinal                                LO;
-typedef GlobalOrdinal                               GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+
+using UN    = unsigned;
+using SC    = double;
+using LO    = int;
+using GO    = FROSch::DefaultGlobalOrdinal;
+using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace Teuchos;
@@ -107,13 +108,13 @@ int main(int argc, char *argv[])
 {
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-    
-    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
-    
+
+    RCP<const Comm<int> > CommWorld = DefaultPlatform::getDefaultPlatform().getComm();
+
     CommandLineProcessor My_CLP;
-    
+
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
-    
+
     int M = 4;
     My_CLP.setOption("M",&M,"H / h.");
     int Dimension = 2;
@@ -130,14 +131,18 @@ int main(int argc, char *argv[])
     My_CLP.setOption("PLIST",&xmlFile,"File name of the parameter list.");
     bool useepetra = false;
     My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
-    
+
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
     if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
-    
+
+    CommWorld->barrier();
+    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("Thyra Laplace Test"));
+    TimeMonitor::setStackedTimer(stackedTimer);
+
     int N = 0;
     int color=1;
     if (Dimension == 2) {
@@ -153,38 +158,38 @@ int main(int argc, char *argv[])
     } else {
         assert(false);
     }
-    
+
     UnderlyingLib xpetraLib = UseTpetra;
     if (useepetra) {
         xpetraLib = UseEpetra;
     } else {
         xpetraLib = UseTpetra;
     }
-    
+
     RCP<const Comm<int> > Comm = CommWorld->split(color,CommWorld->getRank());
-    
+
     if (color==0) {
-        
+
         RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
-        
+
         ArrayRCP<RCP<Matrix<SC,LO,GO,NO> > > K(NumberOfBlocks);
         ArrayRCP<RCP<Map<LO,GO,NO> > > RepeatedMaps(NumberOfBlocks);
         ArrayRCP<RCP<MultiVector<SC,LO,GO,NO> > > Coordinates(NumberOfBlocks);
         ArrayRCP<UN> dofsPerNodeVector(NumberOfBlocks);
-        
+
         for (UN block=0; block<(UN) NumberOfBlocks; block++) {
             Comm->barrier(); if (Comm->getRank()==0) cout << "###################\n# Assembly Block " << block << " #\n###################\n" << endl;
-            
+
             dofsPerNodeVector[block] = (UN) max(int(DofsPerNode-block),1);
-            
+
             ParameterList GaleriList;
-            GaleriList.set("nx", GlobalOrdinal(N*(M+block)));
-            GaleriList.set("ny", GlobalOrdinal(N*(M+block)));
-            GaleriList.set("nz", GlobalOrdinal(N*(M+block)));
-            GaleriList.set("mx", GlobalOrdinal(N));
-            GaleriList.set("my", GlobalOrdinal(N));
-            GaleriList.set("mz", GlobalOrdinal(N));
-            
+            GaleriList.set("nx", GO(N*(M+block)));
+            GaleriList.set("ny", GO(N*(M+block)));
+            GaleriList.set("nz", GO(N*(M+block)));
+            GaleriList.set("mx", GO(N));
+            GaleriList.set("my", GO(N));
+            GaleriList.set("mz", GO(N));
+
             RCP<const Map<LO,GO,NO> > UniqueMapTmp;
             RCP<MultiVector<SC,LO,GO,NO> > CoordinatesTmp;
             RCP<Matrix<SC,LO,GO,NO> > KTmp;
@@ -199,9 +204,9 @@ int main(int argc, char *argv[])
                 RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace3D",UniqueMapTmp,GaleriList);
                 KTmp = Problem->BuildMatrix();
             }
-            
+
             RCP<Map<LO,GO,NO> > UniqueMap;
-            
+
             if (DOFOrdering == 0) {
                 Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapTmp->getNodeNumElements());
                 for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
@@ -209,14 +214,14 @@ int main(int argc, char *argv[])
                         uniqueMapArray[dofsPerNodeVector[block]*i+j] = dofsPerNodeVector[block]*UniqueMapTmp->getGlobalElement(i)+j;
                     }
                 }
-                
+
                 UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
                 K[block] = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KTmp->getGlobalMaxNumRowEntries());
                 for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
                     ArrayView<const LO> indices;
                     ArrayView<const SC> values;
                     KTmp->getLocalRowView(i,indices,values);
-                    
+
                     for (UN j=0; j<dofsPerNodeVector[block]; j++) {
                         Array<GO> indicesArray(indices.size());
                         for (LO k=0; k<indices.size(); k++) {
@@ -233,14 +238,14 @@ int main(int argc, char *argv[])
                         uniqueMapArray[i+UniqueMapTmp->getNodeNumElements()*j] = UniqueMapTmp->getGlobalElement(i)+(UniqueMapTmp->getMaxAllGlobalIndex()+1)*j;
                     }
                 }
-                
+
                 UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
                 K[block] = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KTmp->getGlobalMaxNumRowEntries());
                 for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
                     ArrayView<const LO> indices;
                     ArrayView<const SC> values;
                     KTmp->getLocalRowView(i,indices,values);
-                    
+
                     for (UN j=0; j<dofsPerNodeVector[block]; j++) {
                         Array<GO> indicesArray(indices.size());
                         for (LO k=0; k<indices.size(); k++) {
@@ -255,15 +260,15 @@ int main(int argc, char *argv[])
             } else {
                 assert(false);
             }
-            
-            RepeatedMaps[block] = FROSch::BuildRepeatedMap<SC,LO,GO,NO>(K[block]); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); RepeatedMaps[block]->describe(*fancy,VERB_EXTREME);
+
+            RepeatedMaps[block] = BuildRepeatedMapNonConst<LO,GO,NO>(K[block]->getCrsGraph()); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); RepeatedMaps[block]->describe(*fancy,VERB_EXTREME);
         }
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Assembly Monolythic System #\n##############################\n" << endl;
-        
+
         RCP<Matrix<SC,LO,GO,NO> > KMonolithic;
         if (NumberOfBlocks>1) {
-            
+
             Array<GO> uniqueMapArray(0);
             GO tmpOffset = 0;
             for (UN block=0; block<(UN) NumberOfBlocks; block++) {
@@ -274,7 +279,7 @@ int main(int argc, char *argv[])
                 tmpOffset += K[block]->getMap()->getMaxAllGlobalIndex()+1;
             }
             RCP<Map<LO,GO,NO> > UniqueMapMonolithic = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
-            
+
             tmpOffset = 0;
             KMonolithic = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMapMonolithic,K[0]->getGlobalMaxNumRowEntries());
             for (UN block=0; block<(UN) NumberOfBlocks; block++) {
@@ -296,25 +301,25 @@ int main(int argc, char *argv[])
         } else {
             assert(false);
         }
-        
+
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
-        
-        xSolution->putScalar(0.0);
-        xRightHandSide->putScalar(1.0);
-        
+
+        xSolution->putScalar(ScalarTraits<SC>::zero());
+        xRightHandSide->putScalar(ScalarTraits<SC>::one());
+
         CrsMatrixWrap<SC,LO,GO,NO>& crsWrapK = dynamic_cast<CrsMatrixWrap<SC,LO,GO,NO>&>(*KMonolithic);
         RCP<const LinearOpBase<SC> > K_thyra = ThyraUtils<SC,LO,GO,NO>::toThyra(crsWrapK.getCrsMatrix());
         RCP<MultiVectorBase<SC> >thyraX = rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
         RCP<const MultiVectorBase<SC> >thyraB = ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
-        
+
         //-----------Set Coordinates and RepMap in ParameterList--------------------------
         RCP<ParameterList> plList =  sublist(parameterList,"Preconditioner Types");
         sublist(plList,"FROSch")->set("Dimension",Dimension);
         sublist(plList,"FROSch")->set("Overlap",Overlap);
         if (NumberOfBlocks>1) {
             sublist(plList,"FROSch")->set("Repeated Map Vector",RepeatedMaps);
-            
+
             ArrayRCP<DofOrdering> dofOrderings(NumberOfBlocks);
             if (DOFOrdering == 0) {
                 for (UN block=0; block<(UN) NumberOfBlocks; block++) {
@@ -327,13 +332,13 @@ int main(int argc, char *argv[])
             } else {
                 assert(false);
             }
-            
+
             sublist(plList,"FROSch")->set("DofOrdering Vector",dofOrderings);
             sublist(plList,"FROSch")->set("DofsPerNode Vector",dofsPerNodeVector);
         } else if (NumberOfBlocks==1) {
             sublist(plList,"FROSch")->set("Repeated Map",RepeatedMaps[0]);
             // sublist(plList,"FROSch")->set("Coordinates List",Coordinates[0]); // Does not work yet...
-            
+
             string DofOrderingString;
             if (DOFOrdering == 0) {
                 DofOrderingString = "NodeWise";
@@ -347,39 +352,45 @@ int main(int argc, char *argv[])
         } else {
             assert(false);
         }
-        
+
         Comm->barrier();
         if(Comm->getRank()==0) {
             cout << "##################\n# Parameter List #\n##################" << endl;
             parameterList->print(cout);
             cout << endl;
         }
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "###################################\n# Stratimikos LinearSolverBuilder #\n###################################\n" << endl;
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
         Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder);
         linearSolverBuilder.setParameterList(parameterList);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "######################\n# Thyra PrepForSolve #\n######################\n" << endl;
-        
+
         RCP<LinearOpWithSolveFactoryBase<SC> > lowsFactory =
         linearSolverBuilder.createLinearSolveStrategy("");
-        
+
         lowsFactory->setOStream(out);
-        lowsFactory->setVerbLevel(Teuchos::VERB_HIGH);
-        
+        lowsFactory->setVerbLevel(VERB_HIGH);
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "###########################\n# Thyra LinearOpWithSolve #\n###########################" << endl;
-        
+
         RCP<LinearOpWithSolveBase<SC> > lows =
         linearOpWithSolve(*lowsFactory, K_thyra);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#########\n# Solve #\n#########" << endl;
         SolveStatus<double> status =
         solve<double>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
-        
-        Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;        
+
+        Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
-    
+
+    CommWorld->barrier();
+    stackedTimer->stop("Thyra Laplace Test");
+    StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stackedTimer->report(*out,CommWorld,options);
+
     return(EXIT_SUCCESS);
-    
+
 }

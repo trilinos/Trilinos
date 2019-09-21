@@ -80,6 +80,7 @@ if (TPL_ENABLE_MPI)
     set(JOIN_ARG   "--compose=mpiio")
     set(PJOIN_ARG   "--compose=pnetcdf")
     set(NPROCS "1")
+    set(SERIALIZE_ARG "--serialize_io_size=2")
   else()
     set(NPROCS "1")
   endif()
@@ -93,6 +94,21 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
   COMM mpi serial
   )
+
+if (TPL_ENABLE_MPI)
+  IF (TPL_Netcdf_PARALLEL)
+  TRIBITS_ADD_ADVANCED_TEST(exodus_fpp_serialize
+     TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${SERIALIZE_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32-ser.g
+        NOEXEPREFIX NOEXESUFFIX
+        NUM_MPI_PROCS ${NPROCS}
+     TEST_1 EXEC io_shell ARGS ${JOIN_ARG} ${SERIALIZE_ARG} 8-block32-ser.g 8-block-32-serj.g
+        NOEXEPREFIX NOEXESUFFIX
+        NUM_MPI_PROCS ${NPROCS}
+     TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
+  COMM mpi
+  )
+endif()
+endif()
 
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus64
    TEST_0 EXEC io_shell ARGS -64 ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.g
@@ -141,6 +157,33 @@ ELSE()
   )
 ENDIF()
 ENDIF()
+ENDIF()
+
+IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)
+# This test makes sure that the adjacency information (what element blocks are adjacent to what other
+# element blocks and what sidesets touch which element blocks) is the same for reading an exodus mesh
+# and for reading a internally generated pamgen mesh (the exodus mesh is also from the same pamgen input
+# file, so the meshes should be identical). Should be able to just compare the io_info output from both
+# runs, but on some platforms, we are getting some KOKKOS/CUDA/? debug information which messes up the
+# comparison.  So...we just grep the output files for the word 'element' which gets the adjacency information
+# that we need to ensure the same information is generated on both (and some other information also)
+TRIBITS_ADD_ADVANCED_TEST(pamgen_exodus_io_info
+   TEST_0 EXEC io_shell ARGS --in_type pamgen ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i pamgen.e
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS 1
+   TEST_1 EXEC io_info ARGS --db_type exodus --adjacencies pamgen.e
+     OUTPUT_FILE info_exodus.tmp
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS 1
+   TEST_2 EXEC io_info ARGS --db_type pamgen --adjacencies ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i
+     OUTPUT_FILE info_pamgen.tmp
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS 1
+   TEST_3 CMND grep ARGS element info_pamgen.tmp OUTPUT_FILE info_pamgen.out
+   TEST_4 CMND grep ARGS element info_exodus.tmp OUTPUT_FILE info_exodus.out
+   TEST_5 CMND diff ARGS info_exodus.out info_pamgen.out
+  COMM mpi serial
+  )
 ENDIF()
 
 install_executable(cth_pressure_map)
@@ -390,7 +433,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_reordered_zones_fields
    TEST_0 EXEC io_shell ARGS --reverse --flush_interval 1 ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns multiple_zones_fields-out.cgns
      NUM_MPI_PROCS 1-4
      NOEXEPREFIX NOEXESUFFIX
-   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/transient-fields.cgns transient-fields-out.cgns
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns multiple_zones_fields-out.cgns
      NUM_MPI_PROCS 1
   COMM mpi serial
   )
@@ -419,17 +462,18 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_single_fpp_single_fields
   COMM mpi
   )
 
-IF (TPL_ENABLE_Pamgen)
+IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)
 TRIBITS_ADD_ADVANCED_TEST(pamgen_to_unstructured_cgns
-   TEST_0 EXEC io_shell ARGS --in_type pamgen ${CMAKE_CURRENT_SOURCE_DIR}/testpamgen.i pamgen.cgns
+   TEST_0 EXEC io_shell ARGS --in_type pamgen ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i pamgen.cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1-4
    TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld pamgen.cgns
-     OUTPUT_FILE pamgen_to_unstructured_cgns.out
-   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen_to_unstructured_cgns.gold pamgen_to_unstructured_cgns.out
+     OUTPUT_FILE pamgen_to_unstructured_cgns.tmp
+   TEST_2 CMND grep ARGS -v Information pamgen_to_unstructured_cgns.tmp OUTPUT_FILE pamgen_to_unstructured_cgns.out
+   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen_to_unstructured_cgns.gold pamgen_to_unstructured_cgns.out
   COMM mpi serial
   )
-ENDIF(TPL_ENABLE_Pamgen)
+ENDIF()
 endif()
 
 ENDIF(TPL_ENABLE_CGNS)

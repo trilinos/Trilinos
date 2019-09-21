@@ -55,9 +55,13 @@ std::vector<int> get_neighbor_procs(int numAllProcs, int localProc, int numNeigh
 
 TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
 {
-#if (defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION < 2 ))
-//this test doesn't pass with open-mpi 1.10 but does pass
-//with intel-mpi and (presumably) newer open-mpi versions.
+#ifdef OMPI_MAJOR_VERSION
+#if OMPI_MAJOR_VERSION < 2
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+#endif
+
+#if !defined(STK_MPI_SUPPORTS_NEIGHBOR_COMM)
   return;
 #else
 
@@ -234,6 +238,41 @@ TEST(Parallel, CommNeighbors)
           double expected = proc+1+i;
           EXPECT_EQ(expected, val);
       }
+  }
+}
+
+TEST(Parallel, CommNeighborsResetBuffers) {
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  std::vector<int> send, recv;
+  int numProcs = stk::parallel_machine_size(comm);
+  int rank= stk::parallel_machine_rank(comm);
+  if (numProcs == 1) {
+    return;
+  }
+  if(rank == 0) {
+    for(int p = 1; p < numProcs; ++p) {
+      send.push_back(p);
+    }
+  } else {
+    recv.push_back(0);
+  }
+
+  stk::CommNeighbors commNeighbors(comm, send, recv);
+
+  for(int i = 0; i < 3; ++i) {
+    commNeighbors.reset_buffers();
+    for(int p : commNeighbors.send_procs()) {
+      commNeighbors.send_buffer(p).pack<int>(i);
+    }
+
+    commNeighbors.communicate();
+
+    for(int p : commNeighbors.recv_procs()) {
+      int val = 0;
+      commNeighbors.recv_buffer(p).unpack<int>(val);
+      EXPECT_EQ(i, val);
+      EXPECT_EQ(0u, commNeighbors.recv_buffer(p).size_in_bytes());
+    }
   }
 }
 

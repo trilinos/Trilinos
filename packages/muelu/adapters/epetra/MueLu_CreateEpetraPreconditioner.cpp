@@ -52,7 +52,7 @@ namespace MueLu {
       RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<SC>::coordinateType,LO,GO,NO> > coordinates = Teuchos::null;
       try {
         coordinates = EpetraMultiVector_To_XpetraMultiVector<typename Teuchos::ScalarTraits<SC>::coordinateType,LO,GO,NO>(userList.get<RCP<Epetra_MultiVector> >("Coordinates"));
-      } catch(Teuchos::Exceptions::InvalidParameterType) {
+      } catch(Teuchos::Exceptions::InvalidParameterType&) {
         coordinates = userList.get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<SC>::coordinateType, LO, GO, NO> > >("Coordinates");
       }
       if(Teuchos::nonnull(coordinates)){
@@ -63,7 +63,7 @@ namespace MueLu {
       RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<SC>::coordinateType,LO,GO,NO> > nullspace = Teuchos::null;
       try {
         nullspace = EpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(userList.get<RCP<Epetra_MultiVector> >("Nullspace"));
-      } catch(Teuchos::Exceptions::InvalidParameterType) {
+      } catch(Teuchos::Exceptions::InvalidParameterType&) {
         nullspace = userList.get<RCP<Xpetra::MultiVector<SC, LO, GO, NO> > >("Nullspace");
       }
       if(Teuchos::nonnull(nullspace)){

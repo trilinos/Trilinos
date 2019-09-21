@@ -97,10 +97,10 @@ namespace MueLu {
     restrictors, and coarse level discretizations.  Additionally, this class contains
     an apply method that supports V and W cycles.
   */
-  template <class Scalar        = Xpetra::Operator<>::scalar_type,
-            class LocalOrdinal  = typename Xpetra::Operator<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node          = typename Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class Hierarchy : public BaseClass {
 #undef MUELU_HIERARCHY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -195,6 +195,8 @@ namespace MueLu {
 
     //! Helper function
     void CheckLevel(Level& level, int levelID);
+
+    void SetMatvecParams(RCP<ParameterList> matvecParams);
 
     //! Multi-level setup phase: build a new level of the hierarchy.
     /*!  This method is aimed to be used in a loop building the hierarchy level by level. See Hierarchy::Setup(manager, startLevel, numDesiredLevels) for an example of usage.

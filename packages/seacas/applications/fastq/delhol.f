@@ -62,7 +62,7 @@ C
       IF (.NOT. ERR) THEN
          ERR = .TRUE.
 C
-C  DELELE LINES PER ELEMENT; MARK ELEMENT NODES
+C  DELETE LINES PER ELEMENT; MARK ELEMENT NODES
          DO 110 J = 1, KS
             DO 100 K = 1, 4
                IF (NXH(NXL(1, LXK(K, KLIST(J)))) .EQ. 0)

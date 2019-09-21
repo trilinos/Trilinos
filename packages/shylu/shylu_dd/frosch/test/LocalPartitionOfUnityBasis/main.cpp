@@ -44,20 +44,21 @@
 
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 #include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_UseDefaultTypes.hpp>
 
 #include "FROSch_LocalPartitionOfUnityBasis_def.hpp"
 
-typedef unsigned                                    UN;
-typedef Scalar                                      SC;
-typedef LocalOrdinal                                LO;
-typedef GlobalOrdinal                               GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+
+using UN    = unsigned;
+using SC    = double;
+using LO    = int;
+using GO    = FROSch::DefaultGlobalOrdinal;
+using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace Teuchos;
@@ -69,7 +70,7 @@ int main(int argc, char *argv[])
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Comm<int> > CommWorld = DefaultPlatform::getDefaultPlatform().getComm();
 
     CommandLineProcessor My_CLP;
 
@@ -85,13 +86,16 @@ int main(int argc, char *argv[])
         return(EXIT_SUCCESS);
     }
 
+    CommWorld->barrier();
+    RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("Local Partition of Unity Test"));
+    TimeMonitor::setStackedTimer(stackedTimer);
+
     UnderlyingLib xpetraLib = UseTpetra;
     if (useepetra) {
         xpetraLib = UseEpetra;
     } else {
         xpetraLib = UseTpetra;
     }
-
 
     RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
 
@@ -121,40 +125,40 @@ int main(int argc, char *argv[])
     ArrayRCP<RCP<MultiVector<SC,LO,GO,NO> > > partitionOfUnity(2);
 
     RCP<MultiVector<SC,LO,GO,NO> > tmpVec = MultiVectorFactory<SC,LO,GO,NO>::Build(dofsMap,2);
-    tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[0]),0,1.0);
-    tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[0]),0,1.0);
-    tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[0]),0,1.0);
+    tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[0]),0,ScalarTraits<SC>::one());
+    tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[0]),0,ScalarTraits<SC>::one());
+    tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[0]),0,ScalarTraits<SC>::one());
 
-    tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[8]),1,1.0);
-    tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[8]),1,1.0);
-    tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[8]),1,1.0);
+    tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[8]),1,ScalarTraits<SC>::one());
+    tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[8]),1,ScalarTraits<SC>::one());
+    tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[8]),1,ScalarTraits<SC>::one());
     partitionOfUnity[0] = tmpVec;
 
     tmpVec = MultiVectorFactory<SC,LO,GO,NO>::Build(dofsMap,1);
     for (UN i=1; i<8; i++) {
-        tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),0,1.0);
-        tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),0,1.0);
-        tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),0,1.0);
+        tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),0,ScalarTraits<SC>::one());
+        tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),0,ScalarTraits<SC>::one());
+        tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),0,ScalarTraits<SC>::one());
     }
     partitionOfUnity[1] = tmpVec;
 
     RCP<MultiVector<SC,LO,GO,NO> > nullspace = MultiVectorFactory<SC,LO,GO,NO>::Build(dofsMap,6);
     for (UN i=0; i<9; i++) {
-        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),0,1.0);
-        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),1,1.0);
-        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),2,1.0);
+        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),0,ScalarTraits<SC>::one());
+        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),1,ScalarTraits<SC>::one());
+        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),2,ScalarTraits<SC>::one());
 
-        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),3,double(i));
-        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),3,-double(i));
-        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),3,0.0);
+        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),3,ScalarTraits<SC>::one()*double(i));
+        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),3,-ScalarTraits<SC>::one()*double(i));
+        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),3,ScalarTraits<SC>::zero());
 
-        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),4,-double(i));
-        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),4,0.0);
-        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),4,double(i));
+        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),4,-ScalarTraits<SC>::one()*double(i));
+        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),4,ScalarTraits<SC>::zero());
+        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),4,ScalarTraits<SC>::one()*double(i));
 
-        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),5,0.0);
-        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),5,double(i));
-        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),5,-double(i));
+        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),5,ScalarTraits<SC>::zero());
+        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),5,ScalarTraits<SC>::one()*double(i));
+        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),5,-ScalarTraits<SC>::one()*double(i));
     }
 
 
@@ -182,6 +186,12 @@ int main(int argc, char *argv[])
         std::cout << "\n";
     }
     std::cout << "\n";
+
+    CommWorld->barrier();
+    stackedTimer->stop("Local Partition of Unity Test");
+    StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stackedTimer->report(*out,CommWorld,options);
 
     return(EXIT_SUCCESS);
 }

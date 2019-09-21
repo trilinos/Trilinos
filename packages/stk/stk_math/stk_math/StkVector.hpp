@@ -276,6 +276,7 @@ inline typename Vec<REAL,DIM>::const_iterator Vec<REAL,DIM>::end() const
 typedef Vec<double,3> Vector3d;
 typedef Vec<double,2> Vector2d;
 typedef Vec<double,1> Vector1d;
+typedef Vec<float,2> Float2d;
 typedef Vec<float,3> Float3d;
 
 }} 

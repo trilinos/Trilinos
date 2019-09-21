@@ -59,7 +59,7 @@
 
 namespace PHX {
 
-  class MemoryPool;
+  class MemoryManager;
 
   /*! \brief Container that holds all data associated with an evaluation type.
 
@@ -95,7 +95,7 @@ namespace PHX {
 			       PHX::FieldManager<Traits>& fm,
                                const bool& buildDeviceDAG,
                                const bool& minimizeDAGMemoryUse,
-                               const PHX::MemoryPool* const memoryPool);
+                               const PHX::MemoryManager* const memoryManager);
 
     void evaluateFields(typename Traits::EvalData d);
 
@@ -175,7 +175,7 @@ namespace PHX {
 
     bool minimize_dag_memory_use_;
 
-    std::shared_ptr<PHX::MemoryPool> memory_pool_;
+    std::shared_ptr<PHX::MemoryManager> memory_manager_;
   };
   
 } 

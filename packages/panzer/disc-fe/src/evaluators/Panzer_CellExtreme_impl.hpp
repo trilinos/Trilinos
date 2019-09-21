@@ -56,7 +56,7 @@ namespace panzer {
 template<typename EvalT, typename Traits>
 CellExtreme<EvalT, Traits>::
 CellExtreme(
-  const Teuchos::ParameterList& p) : quad_index(-1)
+  const Teuchos::ParameterList& p) : quad_index(0)
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);

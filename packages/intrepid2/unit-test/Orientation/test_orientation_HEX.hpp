@@ -961,24 +961,28 @@ int OrientationHex(const bool verbose) {
 
         //Testing Kronecker property of basis functions
         {
+
+          DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
+          DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
+          DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
           for(ordinal_type i=0; i<numCells; ++i) {
-            DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
-            DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
-            DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
             auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
             auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
             basis.getValues(outView, inView);
+          }
 
-            // modify basis values to account for orientations
-            ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                basisValuesAtDofCoords,
-                elemOrts,
-                &basis);
+          // modify basis values to account for orientations
+          ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+              basisValuesAtDofCoords,
+              elemOrts,
+              &basis);
 
-            // transform basis values
-            fst::HCURLtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
-                jacobian_inv,
-                basisValuesAtDofCoordsOriented);
+          // transform basis values
+          fst::HCURLtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
+              jacobian_inv,
+              basisValuesAtDofCoordsOriented);
+
+          for(ordinal_type i=0; i<numCells; ++i) {
 
             for(ordinal_type k=0; k<basisCardinality; ++k) {
               for(ordinal_type j=0; j<basisCardinality; ++j){

@@ -53,17 +53,24 @@ public:
 
   /** \brief Default constructor.
    *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
-   *  - Requires subsequent setModel() and initialize() calls before calling
-   *    takeStep().
+   *  - Requires the following calls before takeStep():
+   *    setModel(), setSolver(), setStartUpStepper() and initialize().
   */
   StepperBDF2();
 
-  /// Constructor
+  /** \brief Constructor.
+   *
+   *  Constructs a fully initialized stepper.
+   */
   StepperBDF2(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess);
 
   /// \name Basic stepper methods
   //@{
@@ -71,8 +78,9 @@ public:
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Set the stepper to use in first step
-    void setStartUpStepper(std::string startupStepperName);
-    void setStartUpStepper(Teuchos::RCP<Teuchos::ParameterList>startUpStepperPL=Teuchos::null);
+    void setStartUpStepper(std::string startupStepperType =
+                           "DIRK 1 Stage Theta Method");
+    void setStartUpStepper(Teuchos::RCP<Stepper<Scalar> > startupStepper);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -112,18 +120,11 @@ public:
   virtual void computeStartUp(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-  /// \name ParameterList methods
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const;
-  //@}
+  virtual bool getICConsistencyCheckDefault() const { return false; }
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}

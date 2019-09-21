@@ -34,8 +34,8 @@
  */
 #include "copy_string_cpp.h"
 #include "exodusII.h" // for ex_close, etc
+#include "fmt/chrono.h"
 #include "fmt/ostream.h"
-#include "fmt/time.h"
 #include "nem_spread.h"     // for NemSpread, second, etc
 #include "pe_common.h"      // for PEX_MAX
 #include "ps_pario_const.h" // for PIO_Time_Array

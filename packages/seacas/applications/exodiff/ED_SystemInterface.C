@@ -377,7 +377,7 @@ void SystemInterface::enroll_options()
                   nullptr);
   options_.enroll("short", GetLongOption::NoValue,
                   "Short block type compare.  Forces element block type strings to\n"
-                  "\t\tbe compared only up to the shortest string length.  For example,\n"
+                  "\t\the compared only up to the shortest string length.  For example,\n"
                   "\t\t\"HEX\" and \"HEX8\" will be considered the same. (default)",
                   nullptr);
   options_.enroll("no_short", GetLongOption::NoValue,
@@ -409,7 +409,7 @@ void SystemInterface::enroll_options()
                   "True if forcing the use of 64-bit integers for the output file", nullptr);
   options_.enroll("nosymmetric_name_check", GetLongOption::NoValue,
                   "No symmetric variable name checking.  By default, a warning will\n"
-                  "\t\tbe produced if a name that is not to be excluded is contained\n"
+                  "\t\the produced if a name that is not to be excluded is contained\n"
                   "\t\tin the second file given on the command line but not the first.\n"
                   "\t\tThis \"symmetric\" check can be turned off with this option.",
                   nullptr);
@@ -1731,7 +1731,7 @@ namespace {
         "\n"
         "         - The variable names are case insensitive (unless or CASE SENSITIVE "
         "specified),\n"
-        "           All other comparisons are also case insensitive. Abreviations can be used. "
+        "           All other comparisons are also case insensitive. Abbreviations can be used. "
         "\n"
         "         - All comparisons use the compiled default of relative 1.e-6 for\n"
         "           variables and absolute 1.e-6 for coordinates.  This is overridden\n"

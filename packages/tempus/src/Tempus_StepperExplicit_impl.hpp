@@ -17,7 +17,7 @@ template<class Scalar>
 void StepperExplicit<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  this->validExplicitODE(appModel);
+  validExplicitODE(appModel);
   appModel_ = appModel;
 
   inArgs_  = appModel_->getNominalValues();
@@ -99,7 +99,7 @@ void StepperExplicit<Scalar>::setInitialConditions(
   }
 
   // Perform IC Consistency
-  std::string icConsistency = getICConsistency();
+  std::string icConsistency = this->getICConsistency();
   if (icConsistency == "None") {
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
       if (initialState->getXDot() == Teuchos::null) {
@@ -108,8 +108,9 @@ void StepperExplicit<Scalar>::setInitialConditions(
         *out << "Warning -- Requested IC consistency of 'None' but\n"
              << "           initialState does not have an xDot.\n"
              << "           Setting a 'Consistent' xDot!\n" << std::endl;
+        auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
         evaluateExplicitODE(getStepperXDot(initialState), x,
-                            initialState->getTime());
+                            initialState->getTime(), p);
         initialState->setIsSynced(true);
       }
     }
@@ -120,9 +121,10 @@ void StepperExplicit<Scalar>::setInitialConditions(
         *out << "Warning -- Requested IC consistency of 'None' but\n"
              << "           initialState does not have an xDotDot.\n"
              << "           Setting a 'Consistent' xDotDot!\n" << std::endl;
+        auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
         this->evaluateExplicitODE(getStepperXDotDot(initialState), x,
                                   initialState->getXDot(),
-                                  initialState->getTime());
+                                  initialState->getTime(), p);
         initialState->setIsSynced(true);
       }
     }
@@ -154,20 +156,22 @@ void StepperExplicit<Scalar>::setInitialConditions(
   else if (icConsistency == "Consistent") {
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
       // Evaluate xDot = f(x,t).
+      auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
       evaluateExplicitODE(getStepperXDot(initialState), x,
-                          initialState->getTime());
+                          initialState->getTime(), p);
     }
     else if (this->getOrderODE() == SECOND_ORDER_ODE) {
       // Evaluate xDotDot = f(x,xDot,t).
+      auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
       this->evaluateExplicitODE(initialState->getXDotDot(), x,
                                 initialState->getXDot(),
-                                initialState->getTime());
+                                initialState->getTime(), p);
     }
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Error - setInitialConditions() invalid IC consistency, "
-      << icConsistency << ".\n");
+      "Error - setInitialConditions() invalid IC consistency, '"
+      << icConsistency << "'.\n");
   }
 
   // At this point, x, and xDot (and xDotDot) sync'ed or consistent
@@ -175,11 +179,12 @@ void StepperExplicit<Scalar>::setInitialConditions(
   initialState->setIsSynced(true);
 
   // Test for consistency.
-  if (getICConsistencyCheck()) {
+  if (this->getICConsistencyCheck()) {
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
       auto xDot = getStepperXDot(initialState);
       auto f    = initialState->getX()->clone_v();
-      evaluateExplicitODE(f, x, initialState->getTime());
+      auto p    = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
+      evaluateExplicitODE(f, x, initialState->getTime(), p);
       Thyra::Vp_StV(f.ptr(), Scalar(-1.0), *(xDot));
       Scalar normX = Thyra::norm(*x);
       Scalar reldiff = Scalar(0.0);
@@ -201,8 +206,9 @@ void StepperExplicit<Scalar>::setInitialConditions(
     else if (this->getOrderODE() == SECOND_ORDER_ODE) {
       auto xDotDot = initialState->getXDotDot();
       auto f       = initialState->getX()->clone_v();
+      auto p       = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
       this->evaluateExplicitODE(f, x, initialState->getXDot(),
-                                initialState->getTime());
+                                initialState->getTime(), p);
       Thyra::Vp_StV(f.ptr(), Scalar(-1.0), *(xDotDot));
       Scalar normX = Thyra::norm(*x);
       Scalar reldiff = Scalar(0.0);
@@ -224,27 +230,6 @@ void StepperExplicit<Scalar>::setInitialConditions(
       }
     }
   }
-}
-
-template<class Scalar>
-void StepperExplicit<Scalar>::setSolver(std::string /* solverName */)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperExplicit::setSolver()");
-  *out << "Warning -- No solver to set for StepperExplicit "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
-void StepperExplicit<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> /* solverPL */)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperExplicit::setSolver()");
-  *out << "Warning -- No solver to set for StepperExplicit "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
 }
 
 template<class Scalar>
@@ -311,12 +296,17 @@ void
 StepperExplicit<Scalar>::
 evaluateExplicitODE(Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDot,
                     Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
-                    const Scalar time)
+                    const Scalar time,
+                    const Teuchos::RCP<ExplicitODEParameters<Scalar> > & p )
 {
   typedef Thyra::ModelEvaluatorBase MEB;
 
   inArgs_.set_x(x);
   if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time);
+  if (inArgs_.supports(MEB::IN_ARG_step_size))
+    inArgs_.set_step_size(p->timeStepSize_);
+  if (inArgs_.supports(MEB::IN_ARG_stage_number))
+    inArgs_.set_stage_number(p->stageNumber_);
 
   // For model evaluators whose state function f(x, xDot, t) describes
   // an implicit ODE, and which accept an optional xDot input argument,
@@ -336,13 +326,18 @@ StepperExplicit<Scalar>::
 evaluateExplicitODE(Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot,
                     Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
                     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xDot,
-                    const Scalar time)
+                    const Scalar time,
+                    const Teuchos::RCP<ExplicitODEParameters<Scalar> > & p )
 {
   typedef Thyra::ModelEvaluatorBase MEB;
 
   inArgs_.set_x(x);
   if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(xDot);
   if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time);
+  if (inArgs_.supports(MEB::IN_ARG_step_size))
+    inArgs_.set_step_size(p->timeStepSize_);
+  if (inArgs_.supports(MEB::IN_ARG_stage_number))
+    inArgs_.set_stage_number(p->stageNumber_);
 
   // For model evaluators whose state function f(x, xDot, xDotDot, t) describes
   // an implicit ODE, and which accept an optional xDotDot input argument,

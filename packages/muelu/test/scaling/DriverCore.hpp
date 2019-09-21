@@ -204,8 +204,10 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
      else {
        Teuchos::Array<LO> lNodesPerDim(3, 10);
        Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
-       userParamList.set<RCP<CoordinateMultiVector> >("Coordinates", coordinates);
-       userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
+       if(!coordinates.is_null())
+         userParamList.set<RCP<CoordinateMultiVector> >("Coordinates", coordinates);
+       if(!nullspace.is_null())
+         userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
        userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
        H = MueLu::CreateXpetraPreconditioner(A, mueluList);
      }
@@ -404,7 +406,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         ret = solver->solve();
         numIts = solver->getNumIters();
 
-      } catch (std::invalid_argument)
+      } catch (std::invalid_argument&)
 #endif
       {
 

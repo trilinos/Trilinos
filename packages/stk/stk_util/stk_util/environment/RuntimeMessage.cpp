@@ -169,30 +169,9 @@ get_message_type_info(
 }
 
 
-enum CutoffStatus {
-  MSG_DISPLAY           = 0,
-  MSG_CUTOFF            = 1,
-  MSG_CUTOFF_EXCEEDED   = 2
-};
 
 
-CutoffStatus
-count_message(
-  MessageId             message_id,
-  const char *          message, 
-  const Throttle &      throttle)
-{
-  std::pair<MessageIdMap::iterator, bool> res = s_messageIdMap.insert(MessageIdMap::value_type(MessageIdMap::key_type(message_id, std::string(message)), throttle));
-  size_t count = ++(*res.first).second.m_count;
 
-  if (count < (*res.first).second.m_cutoff) {
-    return MSG_DISPLAY;
-  } else if (count == (*res.first).second.m_cutoff) {
-    return MSG_CUTOFF;
-  } else {
-    return MSG_CUTOFF_EXCEEDED;
-  }
-}
 
 Marshal &operator<<(Marshal &mout, const DeferredMessage &s)  {
   mout << s.m_type << s.m_messageId << s.m_rank << s.m_throttleGroup << s.m_throttleCutoff << s.m_header << s.m_aggregate;
@@ -206,6 +185,25 @@ Marshal &operator>>(Marshal &min, DeferredMessage &s)  {
 
 } // namespace <empty>
 
+
+CutoffStatus
+count_message(const MessageCode &   message_code)
+{
+
+    MessageId message_id     = message_code.m_id;
+    const Throttle &throttle = message_code.m_throttle;
+
+  std::pair<MessageIdMap::iterator, bool> res = s_messageIdMap.insert(MessageIdMap::value_type(MessageIdMap::key_type(message_id, std::string("")), throttle));
+  size_t count = ++(*res.first).second.m_count;
+
+  if (count < (*res.first).second.m_cutoff) {
+      return CutoffStatus::MSG_DISPLAY;
+  } else if (count == (*res.first).second.m_cutoff) {
+      return CutoffStatus::MSG_CUTOFF;
+  } else {
+      return CutoffStatus::MSG_CUTOFF_EXCEEDED;
+  }
+}
 
 void
 register_message_type(
@@ -293,9 +291,9 @@ report_message(
     }
 
     else if (count < max_count) {
-      CutoffStatus cutoff = count_message(message_code.m_id, "", message_code.m_throttle);
+      CutoffStatus cutoff = count_message(message_code);
     
-      if (cutoff == MSG_CUTOFF) {
+      if (cutoff == CutoffStatus::MSG_CUTOFF) {
         report(message, message_type);
 
         std::ostringstream s;
@@ -304,7 +302,7 @@ report_message(
         report(s.str().c_str(), MSG_WARNING | MSG_SYMMETRIC);
       }
     
-      else if (cutoff == MSG_DISPLAY)
+      else if (cutoff == CutoffStatus::MSG_DISPLAY)
       {
         report(message, message_type);
       }

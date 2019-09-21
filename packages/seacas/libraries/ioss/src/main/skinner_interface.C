@@ -63,8 +63,11 @@ void Skinner::Interface::enroll_options()
   options_.enroll("no_output", Ioss::GetLongOption::NoValue,
                   "Do not produce output file, just generate the faces", nullptr);
 
-  options_.enroll("ignore_face_ids", Ioss::GetLongOption::NoValue,
-                  "Ignore internal face ids and just use 1..num_face", nullptr);
+  options_.enroll("ignore_face_hash_ids", Ioss::GetLongOption::NoValue,
+                  "Don't use face ids from hash of node ids; just use 1..num_face", nullptr);
+
+  options_.enroll("blocks", Ioss::GetLongOption::NoValue,
+                  "Skin block-by-block instead of entire model boundary", nullptr);
 
   options_.enroll("netcdf4", Ioss::GetLongOption::NoValue,
                   "Output database will be a netcdf4 "
@@ -81,10 +84,10 @@ void Skinner::Interface::enroll_options()
                   nullptr);
 
   options_.enroll(
-      "compose", Ioss::GetLongOption::MandatoryValue,
-      "Specify the parallel-io method to be used to output a single file in a parallel run. "
-      "Options are default, mpiio, mpiposix, pnetcdf",
-      nullptr);
+      "compose", Ioss::GetLongOption::OptionalValue,
+      "If no argument, specify single-file output; if 'external', then file-per-processor.\n"
+      "\t\tAll other options are ignored and just exist for backward-compatibility",
+      nullptr, "true");
 
   options_.enroll(
       "rcb", Ioss::GetLongOption::NoValue,
@@ -174,25 +177,14 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
     exit(0);
   }
 
-  if (options_.retrieve("64-bit") != nullptr) {
-    ints64Bit_ = true;
-  }
-
-  if (options_.retrieve("netcdf4") != nullptr) {
-    netcdf4_ = true;
-  }
-
-  if (options_.retrieve("shuffle") != nullptr) {
-    shuffle = true;
-  }
-
-  if (options_.retrieve("no_output") != nullptr) {
-    noOutput_ = true;
-  }
-
-  if (options_.retrieve("ignore_face_ids") != nullptr) {
-    ignoreFaceIds_ = true;
-  }
+  ints64Bit_     = options_.retrieve("64-bit") != nullptr;
+  netcdf4_       = options_.retrieve("netcdf4") != nullptr;
+  shuffle        = options_.retrieve("shuffle") != nullptr;
+  noOutput_      = options_.retrieve("no_output") != nullptr;
+  useFaceHashIds_= options_.retrieve("ignore_face_hash_ids") == nullptr;
+  debug          = options_.retrieve("debug") != nullptr;
+  statistics     = options_.retrieve("statistics") != nullptr;
+  blocks_        = options_.retrieve("blocks") != nullptr;
 
   {
     const char *temp = options_.retrieve("compress");
@@ -239,14 +231,6 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("external") != nullptr) {
     decomp_method = "EXTERNAL";
-  }
-
-  if (options_.retrieve("debug") != nullptr) {
-    debug = true;
-  }
-
-  if (options_.retrieve("statistics") != nullptr) {
-    statistics = true;
   }
 
   {

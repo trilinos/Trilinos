@@ -80,6 +80,17 @@ struct SideSetKeyGenerator<int64_t> {
 };
 
 template<>
+struct SideSetKeyGenerator<unsigned> {
+    unsigned generate_key(const stk::mesh::Part &part) const {
+        return part.mesh_meta_data_ordinal();
+    }
+
+    unsigned generate_key(int id) const {
+        return id;
+    }
+};
+
+template<>
 struct SideSetKeyGenerator<std::string> {
     std::string generate_key(const stk::mesh::Part &part) const {
         return part.name();
@@ -127,6 +138,7 @@ public:
     size_t size() const;
 
     std::vector<SideSet *> get_sidesets();
+    std::vector<const SideSet *> get_sidesets() const;
 
 private:
     SideSetImpl();
