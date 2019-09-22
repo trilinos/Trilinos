@@ -53,7 +53,7 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   auto stepperBE = sf->createStepperBackwardEuler(model, Teuchos::null);
   stepper->setSubcyclingStepper(stepperBE);
   stepper->initialize();
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
   auto obs    = rcp(new Tempus::StepperSubcyclingObserver<double>());
@@ -65,11 +65,11 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
 
   // Test the set functions
-  stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized_);
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized_);
-  stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized_);
-  stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized_);
-  stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized_);
+  stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 
   // Full argument list construction.
@@ -80,7 +80,7 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
 
   stepper = rcp(new Tempus::StepperSubcycling<double>(
     model, obs, scIntegrator, useFSAL, ICConsistency, ICConsistencyCheck));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 }
 #endif // CONSTRUCTION

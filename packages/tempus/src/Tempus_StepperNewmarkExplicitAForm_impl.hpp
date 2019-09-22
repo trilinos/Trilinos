@@ -98,15 +98,6 @@ StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
 
 
 template<class Scalar>
-void StepperNewmarkExplicitAForm<Scalar>::initialize()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    this->appModel_ == Teuchos::null, std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperNewmarkExplicitAForm::initialize()\n");
-}
-
-template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::setInitialConditions(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
@@ -238,6 +229,8 @@ template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperNewmarkExplicitAForm::takeStep()");
@@ -327,10 +320,27 @@ getDefaultStepperState()
 template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+   const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "appModel_ = " << this->appModel_->description() << std::endl;
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperExplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperNewmarkExplicitAForm ---\n";
+  out << "  gamma_ = " << gamma_ << std::endl;
+  out << "-----------------------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperNewmarkExplicitAForm<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if ( !StepperExplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  return isValidSetup;
 }
 
 

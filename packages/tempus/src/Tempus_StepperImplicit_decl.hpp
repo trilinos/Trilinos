@@ -232,16 +232,19 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return wrapperModel_->getAppModel();}
+    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
+    {
+      Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
+      if (wrapperModel_ != Teuchos::null) model = wrapperModel_->getAppModel();
+      return model;
+    }
     virtual Teuchos::RCP<const WrapperModelEvaluator<Scalar> >
       getWrapperModel(){return wrapperModel_;}
 
+    virtual void setDefaultSolver();
     /// Set solver.
     virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null);
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return solver_; }
 
@@ -275,11 +278,17 @@ public:
 
     /// Pass initial guess to Newton solver (only relevant for implicit solvers)
     virtual void setInitialGuess(
-      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-      {initial_guess_ = initial_guess;}
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initialGuess)
+    {
+      initialGuess_ = initialGuess;
+      this->isInitialized_ = false;
+    }
 
     /// Set parameter so that the initial guess is set to zero (=True) or use last timestep (=False).
-    virtual void setZeroInitialGuess(bool zIG) { zeroInitialGuess_ = zIG; }
+    virtual void setZeroInitialGuess(bool zIG) {
+      zeroInitialGuess_ = zIG;
+      this->isInitialized_ = false;
+    }
     virtual bool getZeroInitialGuess() const { return zeroInitialGuess_; }
 
     virtual Scalar getInitTimeStep(
@@ -299,11 +308,19 @@ public:
       Teuchos::RCP<SolutionState<Scalar> > state);
   //@}
 
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    virtual void describe(Teuchos::FancyOStream        & out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
+
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
 protected:
 
   Teuchos::RCP<WrapperModelEvaluator<Scalar> >        wrapperModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >   solver_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initialGuess_;
   bool zeroInitialGuess_;
 
   Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;

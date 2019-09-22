@@ -353,6 +353,8 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   void evalImplicitModelExplicitly(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & Y,

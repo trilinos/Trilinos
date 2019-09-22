@@ -16,6 +16,8 @@
 #include "Tempus_IntegratorObserverLogging.hpp"
 #include "Tempus_IntegratorObserverComposite.hpp"
 
+#include "Tempus_StepperExplicitRK.hpp"
+
 #include "Tempus_StepperRKObserverLogging.hpp"
 #include "Tempus_StepperRKObserverComposite.hpp"
 
@@ -161,7 +163,7 @@ TEUCHOS_UNIT_TEST(Observer, IntegratorObserverLogging)
 #endif // TEST_INTEGRATOROBSERVERLOGGING
 
 #ifdef TEST_INTEGRATOROBSERVERCOMPOSITE
-TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) 
+TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite)
 {
 
   // Read params from .xml file
@@ -270,11 +272,15 @@ TEUCHOS_UNIT_TEST(Observer, StepperRKObserverLogging)
     Teuchos::rcp(new Tempus::StepperRKObserverLogging<double>);
 
   const auto stepper_observer =
-      Teuchos::rcp_dynamic_cast<Tempus::StepperRKObserverComposite<double> >
-      (integrator->getStepper()->getObserver(), true);
-
+      Teuchos::rcp(new Tempus::StepperRKObserverComposite<double>());
   stepper_observer->clearObservers();
   stepper_observer->addObserver(loggingObs);
+
+  auto stepper =
+      Teuchos::rcp_dynamic_cast<Tempus::StepperExplicitRK<double> >
+      (integrator->getStepper(), true);
+  stepper->setObserver(stepper_observer);
+  stepper->initialize();
 
   // Integrate to timeMax
   bool integratorStatus = integrator->advanceTime();
