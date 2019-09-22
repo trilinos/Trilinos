@@ -11,7 +11,6 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperObserverComposite.hpp"
 #include "Tempus_StepperBDF2Observer.hpp"
 
 
@@ -55,7 +54,7 @@ public:
   /** \brief Default constructor.
    *
    *  - Requires the following calls before takeStep():
-   *    setModel(), setSolver(), setStartUpStepper() and initialize().
+   *    setModel() and initialize().
   */
   StepperBDF2();
 
@@ -65,7 +64,7 @@ public:
    */
   StepperBDF2(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+    const Teuchos::RCP<StepperBDF2Observer<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
     bool useFSAL,
@@ -75,15 +74,16 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
+    virtual void setObserver(Teuchos::RCP<StepperBDF2Observer<Scalar> > obs);
+
+    virtual Teuchos::RCP<StepperBDF2Observer<Scalar> > getObserver() const
+    { return stepperBDF2Observer_; }
 
     /// Set the stepper to use in first step
-    void setStartUpStepper(std::string startupStepperType =
-                           "DIRK 1 Stage Theta Method");
+    void setStartUpStepper(std::string startupStepperType);
     void setStartUpStepper(Teuchos::RCP<Stepper<Scalar> > startupStepper);
 
     /// Initialize during construction and after changing input parameters.
@@ -133,12 +133,13 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
 private:
 
-  Teuchos::RCP<Stepper<Scalar> >                     startUpStepper_;
-  Teuchos::RCP<StepperObserverComposite<Scalar> >    stepperObserver_;
-  Teuchos::RCP<StepperBDF2Observer<Scalar> >         stepperBDF2Observer_;
-  Scalar                                             order_;
+  Teuchos::RCP<Stepper<Scalar> >             startUpStepper_;
+  Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
+  Scalar                                     order_ = Scalar(2.0);
 };
 
 /** \brief Time-derivative interface for BDF2.

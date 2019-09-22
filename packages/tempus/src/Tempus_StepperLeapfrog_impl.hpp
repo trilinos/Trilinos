@@ -24,14 +24,14 @@ StepperLeapfrog<Scalar>::StepperLeapfrog()
   this->setICConsistency(      this->getICConsistencyDefault());
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
 
-  this->setObserver();
+  this->setObserver(Teuchos::rcp(new StepperLeapfrogObserver<Scalar>()));
 }
 
 
 template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperLeapfrogObserver<Scalar> >& obs,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck)
@@ -53,31 +53,16 @@ StepperLeapfrog<Scalar>::StepperLeapfrog(
 
 template<class Scalar>
 void StepperLeapfrog<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
+  Teuchos::RCP<StepperLeapfrogObserver<Scalar> > obs)
 {
+  if (obs != Teuchos::null) stepperLFObserver_ = obs;
 
-  if (this->stepperObserver_ == Teuchos::null)
-    this->stepperObserver_  =
-      Teuchos::rcp(new StepperObserverComposite<Scalar>());
+  if (stepperLFObserver_ == Teuchos::null)
+    stepperLFObserver_ = Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
 
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
-    obs = Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
-
-  this->stepperObserver_->addObserver(
-      Teuchos::rcp_dynamic_cast<StepperLeapfrogObserver<Scalar> > (obs, true) );
-
+  this->isInitialized_ = false;
 }
 
-template<class Scalar>
-void StepperLeapfrog<Scalar>::initialize()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    this->appModel_ == Teuchos::null, std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperLeapfrog::initialize()\n");
-
-  this->setObserver();
-}
 
 template<class Scalar>
 void StepperLeapfrog<Scalar>::setInitialConditions(
@@ -108,6 +93,8 @@ template<class Scalar>
 void StepperLeapfrog<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperLeapfrog::takeStep()");
@@ -120,7 +107,7 @@ void StepperLeapfrog<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    //this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperLFObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar time = currentState->getTime();
@@ -170,7 +157,7 @@ void StepperLeapfrog<Scalar>::takeStep(
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    //this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperLFObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -194,11 +181,33 @@ getDefaultStepperState()
 
 template<class Scalar>
 void StepperLeapfrog<Scalar>::describe(
-   Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+  Teuchos::FancyOStream               &out,
+  const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "appModel_ = " << this->appModel_->description() << std::endl;
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperExplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperLeapfrog ---\n";
+  out << "  stepperLFObserver_ = " << stepperLFObserver_ << std::endl;
+  out << "-----------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperLeapfrog<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if ( !StepperExplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  if (stepperLFObserver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The Leapfrog observer is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

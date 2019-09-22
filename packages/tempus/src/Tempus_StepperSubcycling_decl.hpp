@@ -135,9 +135,6 @@ public:
     virtual void setSubcyclingPrintDtChanges(bool printDtChanges);
   //@}
 
-  // Temporary until 5908 branch is committed.
-  bool isInitialized_ = false;
-
 protected:
 
   Teuchos::RCP<StepperSubcyclingObserver<Scalar> >  stepperSCObserver_;

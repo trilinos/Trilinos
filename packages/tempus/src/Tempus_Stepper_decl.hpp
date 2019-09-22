@@ -19,7 +19,6 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperObserver.hpp"
 
 
 namespace Tempus {
@@ -56,6 +55,9 @@ enum OrderODE {
  *       with ModelEvaluator C using Solver B
  *   - Steppers may maintain their own time history of the solution, e.g.,
  *     BDF steppers.
+ *   - Stepper are expected to have a setObserver() and a getObserver()
+ *     function, however they will have specific arguments for that
+ *     Stepper's Observer, so this can not be enforced by a pure virtual.
  */
 template<class Scalar>
 class Stepper
@@ -68,41 +70,36 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() = 0;
 
     /// Set solver.
     virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null) = 0;
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) = 0;
 
     /// Get solver
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
       getSolver() const = 0;
 
-    /// Set Observer
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null) = 0;
+    /// Initialize after construction and changing input parameters.
+    virtual void initialize();
 
-    /// Get Observer
-    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const = 0;
+    /// True if stepper's member data is initialized.
+    virtual bool isInitialized() { return isInitialized_; }
 
-
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize() = 0;
+    /// Check initialization, and error out on failure.
+    virtual void checkInitialized();
 
     /// Set initial conditions, make them consistent, and set stepper memory.
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
-
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
     /// Pass initial guess to Newton solver (for implicit schemes)
-    virtual void setInitialGuess(
-      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess = Teuchos::null) = 0;
+    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+      initialGuess = Teuchos::null) = 0;
 
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >
       getDefaultStepperState() = 0;
@@ -119,18 +116,21 @@ public:
     virtual bool isOneStepMethod() const = 0;
     virtual bool isMultiStepMethod() const = 0;
 
-    void setStepperType(std::string s) { stepperType_ = s;}
+    void setStepperType(std::string s) { stepperType_ = s;
+      isInitialized_ = false; }
     std::string getStepperType() const { return stepperType_; }
 
-    void setUseFSAL(bool a) { useFSAL_ = a; }
+    void setUseFSAL(bool a) { useFSAL_ = a; isInitialized_ = false; }
     bool getUseFSAL() const { return useFSAL_; }
     virtual bool getUseFSALDefault() const { return false; }
 
-    void setICConsistency(std::string s) { ICConsistency_ = s;}
+    void setICConsistency(std::string s) { ICConsistency_ = s;
+      isInitialized_ = false; }
     std::string getICConsistency() const { return ICConsistency_; }
     virtual std::string getICConsistencyDefault() const { return "None"; }
 
-    void setICConsistencyCheck(bool c) {ICConsistencyCheck_ = c;}
+    void setICConsistencyCheck(bool c) {ICConsistencyCheck_ = c;
+      isInitialized_ = false; }
     bool getICConsistencyCheck() const { return ICConsistencyCheck_; }
     virtual bool getICConsistencyCheckDefault() const { return false; }
 
@@ -142,6 +142,14 @@ public:
     virtual std::string description() const { return stepperType_; }
   //@}
 
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    virtual void describe(Teuchos::FancyOStream        & out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
+
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   /// \name Functions for Steppers with subSteppers (e.g., OperatorSplit)
   //@{
     virtual void createSubSteppers(
@@ -151,10 +159,15 @@ public:
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
 
 private:
-  std::string stepperType_;    //< Name of stepper type
-  bool useFSAL_;               //< Use First-Step-As-Last (FSAL) principle
-  std::string ICConsistency_;  //< Type of consistency to apply to ICs.
-  bool ICConsistencyCheck_;    //< Check if the initial condition is consistent
+
+  std::string stepperType_;             //< Name of stepper type
+  bool useFSAL_ = false;                //< Use First-Step-As-Last (FSAL) principle
+  std::string ICConsistency_ = "None";  //< Type of consistency to apply to ICs.
+  bool ICConsistencyCheck_ = true;      //< Check if the initial condition is consistent
+
+protected:
+
+  bool isInitialized_ = false; //< True if stepper's member data is initialized.
 };
 
 

@@ -11,6 +11,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
+#include "Tempus_StepperObserver.hpp"
 
 namespace Tempus {
 
@@ -70,7 +71,6 @@ public:
   /// Constructor
   StepperNewmarkExplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -78,14 +78,10 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
+    virtual void setObserver(Teuchos::RCP<StepperObserver<Scalar> > /*obs*/){}
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }
-
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -125,6 +121,8 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
                            const Thyra::VectorBase<Scalar>& v,
                            const Thyra::VectorBase<Scalar>& a,
@@ -149,6 +147,8 @@ public:
       std::logic_error,
       "Error in 'Newmark Explicit a-Form' stepper: invalid value of Gamma = "
        << gamma_ << ".  Please select 0 <= Gamma <= 1. \n");
+
+    this->isInitialized_ = false;
   }
 
   bool getUseFSALDefault() const { return true; }

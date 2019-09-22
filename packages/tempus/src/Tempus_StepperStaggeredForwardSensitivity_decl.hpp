@@ -10,6 +10,7 @@
 #define Tempus_StepperStaggeredForwardSensitivity_decl_hpp
 
 #include "Tempus_Stepper.hpp"
+#include "Tempus_StepperObserver.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
 
 namespace Tempus {
@@ -80,8 +81,6 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel();
 
     virtual void setSolver(
@@ -90,14 +89,10 @@ public:
     { return stateStepper_->getSolver(); }
 
     /// Set Observer
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
+    virtual void setObserver(Teuchos::RCP<StepperObserver<Scalar> > /*obs*/){}
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }
-
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -168,6 +163,8 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
+
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
 

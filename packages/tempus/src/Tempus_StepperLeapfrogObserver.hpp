@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperLeapfrogObserver_hpp
 #define Tempus_StepperLeapfrogObserver_hpp
 
+#include "Tempus_StepperObserver.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 

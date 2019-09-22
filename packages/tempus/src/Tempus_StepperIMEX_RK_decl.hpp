@@ -13,7 +13,7 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
-#include "Tempus_StepperRKObserverComposite.hpp"
+#include "Tempus_StepperRKObserver.hpp"
 
 
 namespace Tempus {
@@ -239,7 +239,7 @@ public:
   /// Constructor to specialize Stepper parameters.
   StepperIMEX_RK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -278,11 +278,10 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
 
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
+    virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
+    { return stepperRKObserver_; }
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -332,6 +331,8 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   void evalImplicitModelExplicitly(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
     Scalar time, Scalar stepSize, Scalar stageNumber,
@@ -359,7 +360,7 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperRKObserverComposite<Scalar> >        stepperObserver_;
+  Teuchos::RCP<StepperRKObserver<Scalar> >               stepperRKObserver_;
 
 };
 

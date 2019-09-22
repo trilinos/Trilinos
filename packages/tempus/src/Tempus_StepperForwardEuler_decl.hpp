@@ -64,21 +64,17 @@ public:
   /// Constructor
   StepperForwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+    const Teuchos::RCP<StepperForwardEulerObserver<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setObserver(Teuchos::RCP<StepperForwardEulerObserver<Scalar> > obs);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperFEObserver_; }
-
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
+    virtual Teuchos::RCP<StepperForwardEulerObserver<Scalar> > getObserver() const
+    { return stepperFEObserver_; }
 
     /// Set the initial conditions, make them consistent, and set needed memory.
     virtual void setInitialConditions (
@@ -104,6 +100,8 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
+
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
 protected:
 

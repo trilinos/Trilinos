@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperSubcyclingObserver_hpp
 #define Tempus_StepperSubcyclingObserver_hpp
 
+#include "Tempus_StepperObserver.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 

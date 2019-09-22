@@ -33,14 +33,15 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition()
   this->setZeroInitialGuess(   false);
 
   this->setTableaus("Partitioned IMEX RK SSP2");
-  this->setObserver();
+  this->setObserver(Teuchos::rcp(new StepperRKObserver<Scalar>()));
+  this->setDefaultSolver();
 }
 
 
 template<class Scalar>
 StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   bool useFSAL,
   std::string ICConsistency,
@@ -60,11 +61,10 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   this->setExplicitTableau(explicitTableau);
   this->setImplicitTableau(implicitTableau);
   this->setObserver(obs);
+  this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
-
     this->setModel(appModel);
-    this->setSolver(solver);
     this->initialize();
   }
 }
@@ -237,6 +237,8 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
     << "    number of stages = " << explicitTableau_->numStages() << "\n"
     << "  Implicit tableau = " << implicitTableau_->description() << "\n"
     << "    number of stages = " << implicitTableau_->numStages() << "\n");
+
+  this->isInitialized_ = false;
 }
 
 
@@ -249,6 +251,8 @@ void StepperIMEX_RK_Partition<Scalar>::setExplicitTableau(
     "Error - Received an implicit Tableau for setExplicitTableau()!\n" <<
     "        Tableau = " << explicitTableau->description() << "\n");
   explicitTableau_ = explicitTableau;
+
+  this->isInitialized_ = false;
 }
 
 
@@ -261,6 +265,8 @@ void StepperIMEX_RK_Partition<Scalar>::setImplicitTableau(
     "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n" <<
     "        Tableau = " << implicitTableau->description() << "\n");
   implicitTableau_ = implicitTableau;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -282,6 +288,8 @@ void StepperIMEX_RK_Partition<Scalar>::setModel(
     "  Likely have given the wrong ModelEvaluator to this Stepper.\n");
 
   setModelPair(modelPairIMEX);
+
+  this->isInitialized_ = false;
 }
 
 /** \brief Create WrapperModelPairIMEX from user-supplied ModelEvaluator pair.
@@ -304,6 +312,8 @@ void StepperIMEX_RK_Partition<Scalar>::setModelPair(
   wrapperModelPairIMEX->initialize();
 
   this->wrapperModel_ = wrapperModelPairIMEX;
+
+  this->isInitialized_ = false;
 }
 
 /** \brief Create WrapperModelPairIMEX from explicit/implicit ModelEvaluators.
@@ -321,53 +331,34 @@ void StepperIMEX_RK_Partition<Scalar>::setModelPair(
   this->wrapperModel_ = Teuchos::rcp(
     new WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>(
                                              explicitModel, implicitModel));
+
+  this->isInitialized_ = false;
 }
 
 
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
+  Teuchos::RCP<StepperRKObserver<Scalar> > obs)
 {
-  if (this->stepperObserver_ == Teuchos::null)
-     this->stepperObserver_  =
-        Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
+  if (obs != Teuchos::null) stepperRKObserver_ = obs;
 
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
-    return;
+  if (stepperRKObserver_ == Teuchos::null)
+    stepperRKObserver_ = Teuchos::rcp(new StepperRKObserver<Scalar>());
 
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
-     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
-
-    // Check that this casts to prevent a runtime error if it doesn't
-  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
-    this->stepperObserver_->addObserver(
-         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
-  } else {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,0,"setObserver");
-    *out << "Tempus::StepperIMEX_RK_Partition::setObserver: Warning: An observer has been provided that";
-    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
-    *out << " In the future, this will result in a runtime error!" << std::endl;
-  }
+  this->isInitialized_ = false;
 }
 
 
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::initialize()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    (explicitTableau_ == Teuchos::null) || (implicitTableau_ == Teuchos::null),
-    std::logic_error,
-    "Error - Need to set the Butcher Tableaus, setTableaus(), before calling "
-    "StepperIMEX_RK_Partition::initialize()\n");
-
   Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
     wrapperModelPairIMEX =
     Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
       (this->wrapperModel_);
   TEUCHOS_TEST_FOR_EXCEPTION( wrapperModelPairIMEX == Teuchos::null,
     std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
+    "Error - Can not cast the wrapper Model Evaluator to a IMEX Model Pair."
     "StepperIMEX_RK_Partition::initialize()\n");
 
   // Initialize the stage vectors
@@ -386,6 +377,8 @@ void StepperIMEX_RK_Partition<Scalar>::initialize()
   xTilde_ = Thyra::createMember(wrapperModelPairIMEX->
                                 getImplicitModel()->get_x_space());
   assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+
+  StepperImplicit<Scalar>::initialize();
 }
 
 
@@ -512,6 +505,8 @@ template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
   using Teuchos::SerialDenseMatrix;
   using Teuchos::SerialDenseVector;
@@ -526,7 +521,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperRKObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -556,7 +551,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
-        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+      stepperRKObserver_->observeBeginStage(solutionHistory, *this);
 
       Thyra::assign(stageY.ptr(),
         *(wrapperModelPairIMEX->getExplicitOnlyVector(currentState->getX())));
@@ -587,7 +582,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
           assign(stageGx_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           Thyra::assign(stageX.ptr(), *xTilde_);
-          this->stepperObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
+          stepperRKObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
           evalImplicitModelExplicitly(stageX, stageY, ts, dt, i, stageGx_[i]);
         }
       } else {
@@ -620,7 +615,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         wrapperModelPairIMEX->setForSolve(timeDer, inArgs, outArgs);
 
-        this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
+        stepperRKObserver_->observeBeforeSolve(solutionHistory, *this);
 
         this->solver_->setModel(wrapperModelPairIMEX);
         sStatus = this->solveImplicitODE(stageX);
@@ -628,15 +623,15 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         wrapperModelPairIMEX->setUseImplicitModel(false);
 
-        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+        stepperRKObserver_->observeAfterSolve(solutionHistory, *this);
 
         // Update contributions to stage values
         Thyra::V_StVpStV(stageGx_[i].ptr(), -alpha, *stageX, alpha, *xTilde_);
       }
 
-      this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
+      stepperRKObserver_->observeBeforeExplicit(solutionHistory, *this);
       evalExplicitModel(stageZ_, tHats, dt, i, stageF_[i]);
-      this->stepperObserver_->observeEndStage(solutionHistory, *this);
+      stepperRKObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: y_n = y_n-1 - dt*Sum{ bHat(i)*fy(i)            }
@@ -655,7 +650,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperRKObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -680,11 +675,78 @@ getDefaultStepperState()
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+   const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "wrapperModelPairIMEX = " << this->wrapperModel_->description()
-      << std::endl;
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperIMEX_RK_Partition ---\n";
+  out << "  explicitTableau_   = " << explicitTableau_ << std::endl;
+  out << "  implicitTableau_   = " << explicitTableau_ << std::endl;
+  out << "  xTilde_            = " << xTilde_  << std::endl;
+  out << "  stageZ_            = " << stageZ_  << std::endl;
+  out << "  stageF_.size()     = " << stageF_.size() << std::endl;
+  int numStages = stageF_.size();
+  for (int i=0; i<numStages; ++i)
+    out << "    stageF_["<<i<<"] = " << stageF_[i] << std::endl;
+  out << "  stageGx_.size()    = " << stageGx_.size() << std::endl;
+  numStages = stageGx_.size();
+  for (int i=0; i<numStages; ++i)
+    out << "    stageGx_["<<i<<"] = " << stageGx_[i] << std::endl;
+  out << "  stepperRKObserver_ = " << stepperRKObserver_ << std::endl;
+  out << "  order_             = " << order_ << std::endl;
+  out << "--------------------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperIMEX_RK_Partition<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > wrapperModelPairIMEX =
+    Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairIMEX<Scalar> >(
+      this->wrapperModel_);
+
+  if ( wrapperModelPairIMEX->getExplicitModel() == Teuchos::null) {
+    isValidSetup = false;
+    out << "The explicit ModelEvaluator is not set!\n";
+  }
+
+  if ( wrapperModelPairIMEX->getImplicitModel() == Teuchos::null) {
+    isValidSetup = false;
+    out << "The implicit ModelEvaluator is not set!\n";
+  }
+
+  if (this->wrapperModel_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The wrapper ModelEvaluator is not set!\n";
+  }
+
+  if (this->solver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The solver is not set!\n";
+  }
+
+  if (stepperRKObserver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The stepper observer is not set!\n";
+  }
+
+  if ( explicitTableau_ == Teuchos::null ) {
+    isValidSetup = false;
+    out << "The explicit tableau is not set!\n";
+  }
+
+  if ( implicitTableau_ == Teuchos::null ) {
+    isValidSetup = false;
+    out << "The implicit tableau is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

@@ -10,6 +10,7 @@
 #define Tempus_StepperHHTAlpha_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
+#include "Tempus_StepperObserver.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
 
 namespace Tempus {
@@ -55,7 +56,6 @@ public:
   /// Constructor
   StepperHHTAlpha(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -72,14 +72,10 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
+    virtual void setObserver(Teuchos::RCP<StepperObserver<Scalar> > /* obs */){}
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }
-
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -124,41 +120,43 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-    void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
+  void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
+                           const Thyra::VectorBase<Scalar>& v,
+                           const Thyra::VectorBase<Scalar>& a,
+                           const Scalar dt) const;
+
+  void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
+                             const Thyra::VectorBase<Scalar>& d,
                              const Thyra::VectorBase<Scalar>& v,
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
 
-    void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
-                               const Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& v,
-                               const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const;
+  void predictVelocity_alpha_f(Thyra::VectorBase<Scalar>& vPred,
+                               const Thyra::VectorBase<Scalar>& v) const;
 
-    void predictVelocity_alpha_f(Thyra::VectorBase<Scalar>& vPred,
-                                 const Thyra::VectorBase<Scalar>& v) const;
+  void predictDisplacement_alpha_f(Thyra::VectorBase<Scalar>& dPred,
+                                   const Thyra::VectorBase<Scalar>& d) const;
 
-    void predictDisplacement_alpha_f(Thyra::VectorBase<Scalar>& dPred,
-                                     const Thyra::VectorBase<Scalar>& d) const;
+  void correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
+                            const Thyra::VectorBase<Scalar>& a_n) const;
 
-    void correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
-                              const Thyra::VectorBase<Scalar>& a_n) const;
+  void correctVelocity(Thyra::VectorBase<Scalar>& v,
+                           const Thyra::VectorBase<Scalar>& vPred,
+                           const Thyra::VectorBase<Scalar>& a,
+                           const Scalar dt) const;
 
-    void correctVelocity(Thyra::VectorBase<Scalar>& v,
-                             const Thyra::VectorBase<Scalar>& vPred,
+  void correctDisplacement(Thyra::VectorBase<Scalar>& d,
+                             const Thyra::VectorBase<Scalar>& dPred,
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
 
-    void correctDisplacement(Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& dPred,
-                               const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const;
-
-    void setSchemeName(std::string schemeName);
-    void setBeta(Scalar beta);
-    void setGamma(Scalar gamma);
-    void setAlphaF(Scalar alpha_f);
-    void setAlphaM(Scalar alpha_m);
+  void setSchemeName(std::string schemeName);
+  void setBeta(Scalar beta);
+  void setGamma(Scalar gamma);
+  void setAlphaF(Scalar alpha_f);
+  void setAlphaM(Scalar alpha_m);
 
 private:
 

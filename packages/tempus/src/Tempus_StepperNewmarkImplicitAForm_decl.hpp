@@ -10,6 +10,7 @@
 #define Tempus_StepperNewmarkImplicitAForm_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
+#include "Tempus_StepperObserver.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
 
 namespace Tempus {
@@ -85,7 +86,6 @@ public:
   /// Constructor
   StepperNewmarkImplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -100,14 +100,10 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
+    virtual void setObserver(Teuchos::RCP<StepperObserver<Scalar> > /* obs */){}
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }
-
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -152,33 +148,35 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-    void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
+  void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
+                           const Thyra::VectorBase<Scalar>& v,
+                           const Thyra::VectorBase<Scalar>& a,
+                           const Scalar dt) const;
+
+  void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
+                             const Thyra::VectorBase<Scalar>& d,
                              const Thyra::VectorBase<Scalar>& v,
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
 
-    void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
-                               const Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& v,
-                               const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const;
+  void correctVelocity(Thyra::VectorBase<Scalar>& v,
+                           const Thyra::VectorBase<Scalar>& vPred,
+                           const Thyra::VectorBase<Scalar>& a,
+                           const Scalar dt) const;
 
-    void correctVelocity(Thyra::VectorBase<Scalar>& v,
-                             const Thyra::VectorBase<Scalar>& vPred,
+  void correctDisplacement(Thyra::VectorBase<Scalar>& d,
+                             const Thyra::VectorBase<Scalar>& dPred,
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
 
-    void correctDisplacement(Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& dPred,
-                               const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const;
+  void setSchemeName(std::string schemeName);
+  void setBeta(Scalar beta);
+  void setGamma(Scalar gamma);
 
-    void setSchemeName(std::string schemeName);
-    void setBeta(Scalar beta);
-    void setGamma(Scalar gamma);
-
-    virtual bool getUseFSALDefault() const { return true; }
-    virtual std::string getICConsistencyDefault() const { return "Consistent"; }
+  virtual bool getUseFSALDefault() const { return true; }
+  virtual std::string getICConsistencyDefault() const { return "Consistent"; }
 
 private:
 

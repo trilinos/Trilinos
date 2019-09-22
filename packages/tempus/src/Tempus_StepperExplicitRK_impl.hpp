@@ -25,15 +25,14 @@ void StepperExplicitRK<Scalar>::setupDefault()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setUseEmbedded(        this->getUseEmbeddedDefault());
 
-  this->stepperObserver_ =
-    Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
+  this->setObserver(Teuchos::rcp(new StepperRKObserver<Scalar>()));
 }
 
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setup(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
+  const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
@@ -44,8 +43,6 @@ void StepperExplicitRK<Scalar>::setup(
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setUseEmbedded(        useEmbedded);
 
-  this->stepperObserver_ =
-    Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
   this->setObserver(obs);
 
   if (appModel != Teuchos::null) {
@@ -153,31 +150,14 @@ void StepperExplicitRK<Scalar>::getValidParametersBasicERK(
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
+  Teuchos::RCP<StepperRKObserver<Scalar> > obs)
 {
+  if (obs != Teuchos::null) stepperRKObserver_ = obs;
 
-  if (this->stepperObserver_ == Teuchos::null)
-     this->stepperObserver_  =
-        Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
+  if (stepperRKObserver_ == Teuchos::null)
+    stepperRKObserver_ = Teuchos::rcp(new StepperRKObserver<Scalar>());
 
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
-    return;
-
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
-     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
-
-  // Check that this casts to prevent a runtime error if it doesn't
-  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
-    this->stepperObserver_->addObserver(
-         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
-  } else {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,0,"setObserver");
-    *out << "Tempus::StepperExplicit_RK::setObserver: Warning: An observer has been provided that";
-    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
-    *out << " In the future, this will result in a runtime error!" << std::endl;
-  }
-
+  this->isInitialized_ = false;
 }
 
 
@@ -191,12 +171,6 @@ void StepperExplicitRK<Scalar>::initialize()
   TEUCHOS_TEST_FOR_EXCEPTION( this->appModel_==Teuchos::null, std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
     "StepperExplicitRK::initialize()\n");
-
-  this->setObserver();
-
-  TEUCHOS_TEST_FOR_EXCEPTION( this->stepperObserver_->getSize() < 1
-    , std::logic_error,
-    "Error - Composite Observer is empty!\n");
 
   // Initialize the stage vectors
   int numStages = tableau_->numStages();
@@ -213,6 +187,8 @@ void StepperExplicitRK<Scalar>::initialize()
      abs_u = Thyra::createMember(this->appModel_->get_f_space());
      sc = Thyra::createMember(this->appModel_->get_f_space());
   }
+
+  Stepper<Scalar>::initialize();
 }
 
 
@@ -236,6 +212,8 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExplicitRK::takeStep()");
@@ -248,7 +226,7 @@ void StepperExplicitRK<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperRKObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -261,14 +239,14 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i=0; i < numStages; ++i) {
-        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+        stepperRKObserver_->observeBeginStage(solutionHistory, *this);
 
         // ???: is it a good idea to leave this (no-op) here?
-        this->stepperObserver_
+        stepperRKObserver_
             ->observeBeforeImplicitExplicitly(solutionHistory, *this);
 
         // ???: is it a good idea to leave this (no-op) here?
-        this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
+        stepperRKObserver_->observeBeforeSolve(solutionHistory, *this);
 
       if ( i == 0 && this->getUseFSAL() &&
            workingState->getNConsecutiveFailures() == 0 ) {
@@ -288,16 +266,16 @@ void StepperExplicitRK<Scalar>::takeStep(
         const Scalar ts = time + c(i)*dt;
 
         // ???: is it a good idea to leave this (no-op) here?
-        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+        stepperRKObserver_->observeAfterSolve(solutionHistory, *this);
 
-        this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
+        stepperRKObserver_->observeBeforeExplicit(solutionHistory, *this);
         auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
 
         // Evaluate xDot = f(x,t).
         this->evaluateExplicitODE(stageXDot_[i], stageX_, ts, p);
       }
 
-      this->stepperObserver_->observeEndStage(solutionHistory, *this);
+      stepperRKObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: x_n = x_n-1 + Sum{ b(i) * dt*f(i) }
@@ -352,7 +330,7 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperRKObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -376,11 +354,51 @@ getDefaultStepperState()
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::describe(
-   Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+  Teuchos::FancyOStream               &out,
+  const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "appModel_ = " << this->appModel_->description() << std::endl;
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperExplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperExplicitRK ---\n";
+  if (tableau_ != Teuchos::null) tableau_->describe(out, verbLevel);
+  out << "  tableau_           = " << tableau_ << std::endl;
+  out << "  stepperRKObserver_ = " << stepperRKObserver_ << std::endl;
+  out << "  stageX_            = " << stageX_ << std::endl;
+  out << "  stageXDot_.size()  = " << stageXDot_.size() << std::endl;
+  const int numStages = stageXDot_.size();
+  for (int i=0; i<numStages; ++i)
+    out << "    stageXDot_["<<i<<"] = " << stageXDot_[i] << std::endl;
+  out << "  useEmbedded_       = "
+      << Teuchos::toString(useEmbedded_) << std::endl;
+  out << "  ee_                = " << ee_ << std::endl;
+  out << "  abs_u0             = " << abs_u0 << std::endl;
+  out << "  abs_u              = " << abs_u << std::endl;
+  out << "  sc                 = " << sc << std::endl;
+  out << "-------------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperExplicitRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if ( !StepperExplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  if (tableau_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The tableau is not set!\n";
+  }
+
+  if (stepperRKObserver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The observer is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

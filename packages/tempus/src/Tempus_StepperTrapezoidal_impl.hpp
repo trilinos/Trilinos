@@ -31,14 +31,15 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setZeroInitialGuess(   false);
 
-  this->setObserver();
+  this->setObserver(Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>()));
+  this->setDefaultSolver();
 }
 
 
 template<class Scalar>
 StepperTrapezoidal<Scalar>::StepperTrapezoidal(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperTrapezoidalObserver<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   bool useFSAL,
   std::string ICConsistency,
@@ -53,10 +54,10 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal(
   this->setZeroInitialGuess(   zeroInitialGuess);
 
   this->setObserver(obs);
+  this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
     this->setModel(appModel);
-    this->setSolver(solver);
     this->initialize();
   }
 }
@@ -64,33 +65,14 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal(
 
 template<class Scalar>
 void StepperTrapezoidal<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
+  Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (this->stepperObserver_ == Teuchos::null) {
-      stepperTrapObserver_ =
-        Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>());
-      this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperTrapObserver_, true);
-     }
-  } else {
-    this->stepperObserver_ = obs;
-    stepperTrapObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperTrapezoidalObserver<Scalar> >
-        (this->stepperObserver_, true);
-  }
-}
+  if (obs != Teuchos::null) stepperTrapObserver_ = obs;
 
+  if (stepperTrapObserver_ == Teuchos::null)
+    stepperTrapObserver_ = Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>());
 
-template<class Scalar>
-void StepperTrapezoidal<Scalar>::initialize()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    this->wrapperModel_ == Teuchos::null, std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperTrapezoidal::initialize()\n");
+  this->isInitialized_ = false;
 }
 
 
@@ -125,6 +107,8 @@ template<class Scalar>
 void StepperTrapezoidal<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperTrapezoidal::takeStep()");
@@ -137,7 +121,7 @@ void StepperTrapezoidal<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperTrapObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
@@ -172,7 +156,7 @@ void StepperTrapezoidal<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperTrapObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -197,11 +181,33 @@ getDefaultStepperState()
 
 template<class Scalar>
 void StepperTrapezoidal<Scalar>::describe(
-   Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+  Teuchos::FancyOStream               &out,
+  const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperTrapezoidal ---\n";
+  out << "  stepperTrapObserver_ = " << stepperTrapObserver_ << std::endl;
+  out << "--------------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperTrapezoidal<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  if (stepperTrapObserver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The Trapezoidal observer is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

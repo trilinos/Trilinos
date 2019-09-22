@@ -13,7 +13,7 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperRKObserverComposite.hpp"
+#include "Tempus_StepperRKObserver.hpp"
 
 
 namespace Tempus {
@@ -90,16 +90,15 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
+
+    virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
+    { return stepperRKObserver_; }
 
     virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
     { return tableau_; }
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
-
-    /// Initialize during construction and after changing input parameters.
+    /// Initialize after construction and changing input parameters.
     virtual void initialize();
 
     /// Set the initial conditions and make them consistent.
@@ -165,6 +164,8 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   /// \name Accessors methods
   //@{
     /** \brief Use embedded if avialable. */
@@ -198,7 +199,7 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperRKObserverComposite<Scalar> >        stepperObserver_;
+  Teuchos::RCP<StepperRKObserver<Scalar> >               stepperRKObserver_;
 
   // For Embedded RK
   bool useEmbedded_;

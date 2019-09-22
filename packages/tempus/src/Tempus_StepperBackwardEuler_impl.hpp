@@ -31,15 +31,18 @@ StepperBackwardEuler<Scalar>::StepperBackwardEuler()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setZeroInitialGuess(   false);
 
-  this->setObserver();
+  this->setObserver(Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>()));
+  this->setDefaultSolver();
+  this->setPredictor("None");
 }
 
 
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperBackwardEulerObserver<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  const Teuchos::RCP<Stepper<Scalar> >& predictorStepper,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
@@ -53,13 +56,29 @@ StepperBackwardEuler<Scalar>::StepperBackwardEuler(
   this->setZeroInitialGuess(   zeroInitialGuess);
 
   this->setObserver(obs);
+  this->setSolver(solver);
+  this->setPredictor(predictorStepper);
 
   if (appModel != Teuchos::null) {
-
     this->setModel(appModel);
-    this->setSolver(solver);
     this->initialize();
   }
+}
+
+
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::setModel(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+{
+  StepperImplicit<Scalar>::setModel(appModel);
+  if (predictorStepper_ != Teuchos::null) {
+    if (predictorStepper_->getModel() == Teuchos::null) {
+      predictorStepper_->setModel(appModel);
+      predictorStepper_->initialize();
+    }
+  }
+
+  this->isInitialized_ = false;
 }
 
 
@@ -72,15 +91,17 @@ void StepperBackwardEuler<Scalar>::setPredictor(std::string predictorType)
     return;
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    this->wrapperModel_->getAppModel() == Teuchos::null, std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperBackwardEuler::setPredictor()\n");
-
   using Teuchos::RCP;
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
-  predictorStepper_ =
-    sf->createStepper(predictorType, this->wrapperModel_->getAppModel());
+  if (this->wrapperModel_ != Teuchos::null &&
+      this->wrapperModel_->getAppModel() != Teuchos::null) {
+    predictorStepper_ =
+      sf->createStepper(predictorType, this->wrapperModel_->getAppModel());
+  } else {
+    predictorStepper_ = sf->createStepper(predictorType);
+  }
+
+  this->isInitialized_ = false;
 }
 
 
@@ -89,45 +110,41 @@ template<class Scalar>
 void StepperBackwardEuler<Scalar>::setPredictor(
   Teuchos::RCP<Stepper<Scalar> > predictorStepper)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    this->wrapperModel_->getAppModel() == Teuchos::null, std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperBackwardEuler::setPredictor()\n");
+
+
+
+
 
   predictorStepper_ = predictorStepper;
-  predictorStepper_->setModel(this->wrapperModel_->getAppModel());
-  predictorStepper_->initialize();
+
+
+  if (predictorStepper != Teuchos::null &&
+      this->wrapperModel_ != Teuchos::null) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->wrapperModel_->getAppModel() == Teuchos::null, std::logic_error,
+      "Error - Need to set the model, setModel(), before calling "
+      "StepperBackwardEuler::setPredictor()\n");
+
+    if (predictorStepper_->getModel() == Teuchos::null) {
+      predictorStepper_->setModel(this->wrapperModel_->getAppModel());
+      predictorStepper_->initialize();
+    }
+  }
+
+  this->isInitialized_ = false;
 }
 
 
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
+  Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (this->stepperObserver_ == Teuchos::null) {
-      stepperBEObserver_ =
-        Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>());
-      this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperBEObserver_,true);
-    }
-  } else {
-    this->stepperObserver_ = obs;
-    stepperBEObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperBackwardEulerObserver<Scalar> >
-        (this->stepperObserver_,true);
-  }
-}
+  if (obs != Teuchos::null) stepperBEObserver_ = obs;
 
+  if (stepperBEObserver_ == Teuchos::null)
+    stepperBEObserver_ = Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>());
 
-template<class Scalar>
-void StepperBackwardEuler<Scalar>::initialize()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    this->wrapperModel_ == Teuchos::null, std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperBackwardEuler::initialize()\n");
+  this->isInitialized_ = false;
 }
 
 
@@ -160,6 +177,8 @@ template<class Scalar>
 void StepperBackwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackwardEuler::takeStep()");
@@ -172,7 +191,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperBEObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
@@ -213,7 +232,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperBEObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -255,11 +274,49 @@ getDefaultStepperState()
 
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::describe(
-   Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+  Teuchos::FancyOStream               &out,
+  const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperBackwardEuler ---\n";
+  if (predictorStepper_ != Teuchos::null) {
+    out << "  predictor stepper type             = "
+        << predictorStepper_->description() << std::endl;
+  }
+  out << "  predictorStepper_                  = "
+      << predictorStepper_ << std::endl;
+  out << "  predictorStepper_->isInitialized() = "
+      << Teuchos::toString(predictorStepper_->isInitialized()) << std::endl;
+  out << "  stepperBEObserver_             = "
+      << stepperBEObserver_ << std::endl;
+  out << "----------------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperBackwardEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  if (predictorStepper_ != Teuchos::null) {
+    if ( !predictorStepper_->isInitialized() ) {
+      isValidSetup = false;
+      out << "The predictor stepper is not initialized!\n";
+    }
+  }
+
+  if (stepperBEObserver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The Backward Euler observer is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 
