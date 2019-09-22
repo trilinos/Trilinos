@@ -230,8 +230,7 @@ namespace MueLu {
     if (IsPrint(Statistics1))
       MueLu_sumAll(comm, as<GO>(numRows), numGlobalRows);
 
-    std::string algoParamName = "aggregation: phase 1 algorithm";
-    if(pL.isParameter(algoParamName) && pL.get<std::string>(algoParamName) == "Distance2") {
+    {
       SubFactoryMonitor sfm(*this, "Algo \"Graph Coloring\"", currentLevel);
 
       // LBV on Sept 06 2019: the note below is a little worrisome,
