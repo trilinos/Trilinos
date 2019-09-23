@@ -67,18 +67,6 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",                          Teuchos::null, "Generating factory of the fine level matrix (only needed if default null space is generated)");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",                  Teuchos::null, "Generating factory of the fine level null space");
 
-    // TODO not very elegant.
-    // 1/20/2016: we could add a sublist (e.g. "Nullspaces" which is excluded from parameter validation)
-    validParamList->set< RCP<const FactoryBase> >("Nullspace1", Teuchos::null, "Generating factory of the fine level null space associated with the (1,1) block in your n x n block matrix.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace2", Teuchos::null, "Generating factory of the fine level null space associated with the (2,2) block in your n x n block matrix.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace3", Teuchos::null, "Generating factory of the fine level null space associated with the (3,3) block in your n x n block matrix.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace4", Teuchos::null, "Generating factory of the fine level null space associated with the (4,4) block in your n x n block matrix.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace5", Teuchos::null, "Generating factory of the fine level null space associated with the (5,5) block in your n x n block matrix.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace6", Teuchos::null, "Generating factory of the fine level null space associated with the (6,6) block in your n x n block matrix.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace7", Teuchos::null, "Generating factory of the fine level null space associated with the (7,7) block in your n x n block matrix.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace8", Teuchos::null, "Generating factory of the fine level null space associated with the (8,8) block in your n x n block matrix.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace9", Teuchos::null, "Generating factory of the fine level null space associated with the (9,9) block in your n x n block matrix.");
-
     return validParamList;
   }
 
