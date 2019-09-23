@@ -1286,7 +1286,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
   // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
-  std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
+  // std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
 
   // In our very particular case we know that a node is at most shared by 4 regions.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
