@@ -104,6 +104,9 @@ main (int argc, char *argv[])
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::LO LO;
   typedef TpetraIntrepidPoissonExample::GO GO;
+#else
+  typedef TpetraIntrepidPoissonExample::sparse_matrix_type::local_ordinal_type LO;
+  typedef TpetraIntrepidPoissonExample::sparse_matrix_type::global_ordinal_type GO;
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::Node Node;
   typedef Teuchos::ScalarTraits<ST> STS;
