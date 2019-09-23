@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_NULLSPACEFACTORY_DEF_HPP
-#define MUELU_NULLSPACEFACTORY_DEF_HPP
+#ifndef MUELU_SCALEDNULLSPACEFACTORY_DEF_HPP
+#define MUELU_SCALEDNULLSPACEFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixUtils.hpp>
@@ -91,7 +91,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ScaledNullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
-    FactoryMonitor m(*this, "Nullspace factory", currentLevel);
+    FactoryMonitor m(*this, "Scaled Nullspace factory", currentLevel);
 
     RCP<MultiVector> nullspace, tentativeNullspace;
 
@@ -139,4 +139,4 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#endif // MUELU_NULLSPACEFACTORY_DEF_HPP
+#endif // MUELU_SCALEDNULLSPACEFACTORY_DEF_HPP
