@@ -313,7 +313,6 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
 
   using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
-  RCP<const Teuchos::Comm<int> > comm = regProlong[1][0]->getRowMap()->getComm();
   const GO GO_INV = Teuchos::OrdinalTraits<GO>::invalid();
   const int numLevels = regProlong.size();
 
@@ -1048,87 +1047,95 @@ void vCycle(const int l, ///< ID of current level
 
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: * - coarsest grid solve")));
 
-    // First get the Xpetra vectors from region to composite format
-    // (the coarseCompMat should already exist)
-    RCP<Vector> compX = VectorFactory::Build(coarseCompMat->getRowMap(), true);
-    RCP<Vector> compRhs = VectorFactory::Build(coarseCompMat->getRowMap(), true);
-    {
-      for (int j = 0; j < maxRegPerProc; j++) {
-        RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(regInterfaceScalings[l][j]->getMap());
-        inverseInterfaceScaling->reciprocal(*regInterfaceScalings[l][j]);
-        fineRegB[j]->elementWiseMultiply(SC_ONE, *fineRegB[j], *inverseInterfaceScaling, SC_ZERO);
+    const bool useCoarseSmoother = false;
+    if (useCoarseSmoother) {
+      smootherApply(smootherParams[l], maxRegPerProc, fineRegX, fineRegB, regMatrices[l],
+                  regInterfaceScalings[l], compRowMaps[l],
+                  quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
+    }
+    else {
+      // First get the Xpetra vectors from region to composite format
+      // (the coarseCompMat should already exist)
+      RCP<Vector> compX = VectorFactory::Build(coarseCompMat->getRowMap(), true);
+      RCP<Vector> compRhs = VectorFactory::Build(coarseCompMat->getRowMap(), true);
+      {
+        for (int j = 0; j < maxRegPerProc; j++) {
+          RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(regInterfaceScalings[l][j]->getMap());
+          inverseInterfaceScaling->reciprocal(*regInterfaceScalings[l][j]);
+          fineRegB[j]->elementWiseMultiply(SC_ONE, *fineRegB[j], *inverseInterfaceScaling, SC_ZERO);
+        }
+
+        regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
+                            regRowImporters[l], Xpetra::ADD);
       }
 
-      regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
-                          regRowImporters[l], Xpetra::ADD);
-    }
-
-    const bool useDirectSolver = coarseSolverData->get<bool>("use direct solver");
-    if (useDirectSolver)
-    {
+      const bool useDirectSolver = coarseSolverData->get<bool>("use direct solver");
+      if (useDirectSolver)
+      {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-
-      using DirectCoarseSolver = Amesos2::Solver<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >;
-      RCP<DirectCoarseSolver> coarseSolver = coarseSolverData->get<RCP<DirectCoarseSolver> >("direct solver object");
-
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(coarseCompMat->getRowMap()->lib()!=Xpetra::UseTpetra,
-          "Coarse solver requires Tpetra/Amesos2 stack.");
-      TEUCHOS_ASSERT(!coarseSolver.is_null());
-
-      // using Utilities = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-      // From here on we switch to Tpetra for simplicity
-      // we could also implement a similar Epetra branch
-      using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-    //    *fos << "Attempting to use Amesos2 to solve the coarse grid problem" << std::endl;
-      RCP<Tpetra_MultiVector> tX = Utilities::MV2NonConstTpetraMV2(*compX);
-      RCP<const Tpetra_MultiVector> tB = Utilities::MV2TpetraMV(compRhs);
-
-      /* Solve!
-       *
-       * Calling solve() on the coarseSolver should just do a triangular solve, since symbolic
-       * and numeric factorization are supposed to have happened during hierarchy setup.
-       * Here, we just check if they're done and print message if not.
-       *
-       * We don't have to change the map of tX and tB since we have configured the Amesos2 solver
-       * during its construction to work with non-continuous maps.
-       */
-      if (not coarseSolver->getStatus().symbolicFactorizationDone())
-        *fos << "Symbolic factorization should have been done during hierarchy setup, "
-            "but actually is missing. Anyway ... just do it right now." << std::endl;
-      if (not coarseSolver->getStatus().numericFactorizationDone())
-        *fos << "Numeric factorization should have been done during hierarchy setup, "
-            "but actually is missing. Anyway ... just do it right now." << std::endl;
-      coarseSolver->solve(tX.ptr(), tB.ptr());
+  
+        using DirectCoarseSolver = Amesos2::Solver<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >;
+        RCP<DirectCoarseSolver> coarseSolver = coarseSolverData->get<RCP<DirectCoarseSolver> >("direct solver object");
+  
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(coarseCompMat->getRowMap()->lib()!=Xpetra::UseTpetra,
+            "Coarse solver requires Tpetra/Amesos2 stack.");
+        TEUCHOS_ASSERT(!coarseSolver.is_null());
+  
+        // using Utilities = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  
+        // From here on we switch to Tpetra for simplicity
+        // we could also implement a similar Epetra branch
+        using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  
+      //    *fos << "Attempting to use Amesos2 to solve the coarse grid problem" << std::endl;
+        RCP<Tpetra_MultiVector> tX = Utilities::MV2NonConstTpetraMV2(*compX);
+        RCP<const Tpetra_MultiVector> tB = Utilities::MV2TpetraMV(compRhs);
+  
+        /* Solve!
+         *
+         * Calling solve() on the coarseSolver should just do a triangular solve, since symbolic
+         * and numeric factorization are supposed to have happened during hierarchy setup.
+         * Here, we just check if they're done and print message if not.
+         *
+         * We don't have to change the map of tX and tB since we have configured the Amesos2 solver
+         * during its construction to work with non-continuous maps.
+         */
+        if (not coarseSolver->getStatus().symbolicFactorizationDone())
+          *fos << "Symbolic factorization should have been done during hierarchy setup, "
+              "but actually is missing. Anyway ... just do it right now." << std::endl;
+        if (not coarseSolver->getStatus().numericFactorizationDone())
+          *fos << "Numeric factorization should have been done during hierarchy setup, "
+              "but actually is missing. Anyway ... just do it right now." << std::endl;
+        coarseSolver->solve(tX.ptr(), tB.ptr());
 #else
-      *fos << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++\n"
-           << "+ Coarse level direct solver requires Tpetra and Amesos2.   +\n"
-           << "+ Skipping the coarse level solve.                          +\n"
-           << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++"
-           << std::endl;
+        *fos << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++\n"
+             << "+ Coarse level direct solver requires Tpetra and Amesos2.   +\n"
+             << "+ Skipping the coarse level solve.                          +\n"
+             << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++"
+             << std::endl;
 #endif
+      }
+      else // use AMG as coarse level solver
+      {
+  
+        // Extract the hierarchy from the coarseSolverData
+        RCP<Hierarchy> amgHierarchy = coarseSolverData->get<RCP<Hierarchy>>("amg hierarchy object");
+  
+        // Run a single V-cycle
+        amgHierarchy->Iterate(*compRhs, *compX, 1);
+      }
+  
+      // Transform back to region format
+      Array<RCP<Vector> > quasiRegX(maxRegPerProc);
+      compositeToRegional(compX, quasiRegX, fineRegX,
+                          maxRegPerProc,
+                          quasiRegRowMaps[l],
+                          regRowMaps[l],
+                          regRowImporters[l]);
+  
+      tm = Teuchos::null;
     }
-    else // use AMG as coarse level solver
-    {
-
-      // Extract the hierarchy from the coarseSolverData
-      RCP<Hierarchy> amgHierarchy = coarseSolverData->get<RCP<Hierarchy>>("amg hierarchy object");
-
-      // Run a single V-cycle
-      amgHierarchy->Iterate(*compRhs, *compX, 1);
-    }
-
-    // Transform back to region format
-    Array<RCP<Vector> > quasiRegX(maxRegPerProc);
-    compositeToRegional(compX, quasiRegX, fineRegX,
-                        maxRegPerProc,
-                        quasiRegRowMaps[l],
-                        regRowMaps[l],
-                        regRowImporters[l]);
-
-    tm = Teuchos::null;
-  }
+  } 
 
   return;
 } // vCycle
