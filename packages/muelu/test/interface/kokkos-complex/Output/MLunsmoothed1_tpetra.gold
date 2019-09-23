@@ -24,7 +24,7 @@ Level 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -102,7 +102,7 @@ Level 2
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -183,7 +183,7 @@ Level 3
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -264,7 +264,7 @@ Level 4
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
