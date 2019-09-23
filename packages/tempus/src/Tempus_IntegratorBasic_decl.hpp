@@ -98,7 +98,7 @@ public:
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override
     {return stepper_;}
     /// Set the Stepper
-    virtual void setStepper(Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model);
+    virtual void setStepper(Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model);
     /// Set the Stepper
     virtual void setStepper(
       std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
