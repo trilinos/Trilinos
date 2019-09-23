@@ -1472,8 +1472,7 @@ namespace MueLu {
     nullSpaceFactory = nullSpace;
 
     if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
-      using SNF = ScaledNullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-      RCP<SNF> scaledNSfactory = rcp(new SNF());
+      RCP<ScaledNullspaceFactory> scaledNSfactory = rcp(new ScaledNullspaceFactory());
       scaledNSfactory->SetFactory("Nullspace",nullSpaceFactory);
       manager.SetFactory("Scaled Nullspace",scaledNSfactory);
     }
