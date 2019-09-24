@@ -224,4 +224,40 @@ void sumInterfaceValues(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrd
   return;
 } // sumInterfaceValues
 
+
+/*! \brief Apply scaling to interface DOFs
+ *
+ * The vector scalingFactors contains the number of adjacent regions for every DOFs.
+ * In the interior of a region, this is always 1. On region interfaces, this is >1.
+ *
+ * We often need to scale interface entries by 1/N with N being the number of adjacent regions.
+ * This can be achieved by setting \c inverseScaling to \c true.
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void scaleInterfaceDOFs(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec, ///< Vector to be scaled
+                        const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& scalingFactors, ///< Vector with scaling factors
+                        bool inverseScaling ///< Divide by scaling factors (yes/no?)
+                        )
+{
+  using Vector = Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using VectorFactory = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+
+  for (int j = 0; j < regVec.size(); j++)
+  {
+    if (inverseScaling)
+    {
+      RCP<Vector> inverseScalingFactors = VectorFactory::Build(scalingFactors[j]->getMap());
+      inverseScalingFactors->reciprocal(*scalingFactors[j]);
+      regVec[j]->elementWiseMultiply(one, *regVec[j], *inverseScalingFactors, zero);
+    }
+    else
+    {
+      regVec[j]->elementWiseMultiply(one, *regVec[j], *scalingFactors[j], zero);
+    }
+  }
+}
+
 #endif // MUELU_SETUPREGIONVECTOR_DEF_HPP
