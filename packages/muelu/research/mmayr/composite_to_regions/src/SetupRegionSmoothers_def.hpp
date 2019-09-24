@@ -405,7 +405,6 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
   const Scalar eigRatio  = params->get<double>("smoother: eigRatio");
   const Scalar lambdaMax = params->get<Scalar>("chebyshev: lambda max");
   const Scalar lambdaMin = lambdaMax / eigRatio;
-  std::cout<<lambdaMax<<std::endl;
   
   Teuchos::Array<RCP<Vector> > diag_inv = params->get<Teuchos::Array<RCP<Vector> > >("chebyshev: inverse diagonal");
 
