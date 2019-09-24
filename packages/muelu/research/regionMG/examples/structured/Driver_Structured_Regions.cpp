@@ -167,7 +167,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string convergenceLog     = "residual_norm.txt"; clp.setOption("convergence-log",       &convergenceLog,    "file in which the convergence history of the linear solver is stored");
   int         maxIts             = 200;                 clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   std::string smootherType       = "Jacobi";            clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
-  int         smootherIts        =  20;                 clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
+  int         smootherIts        = 2;                   clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
   double      smootherDamp       = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
   double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
