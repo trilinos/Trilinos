@@ -778,17 +778,21 @@ void createRegionHierarchy(const int maxRegPerProc,
 
   std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeSolver ..." << std::endl;
 
-  const bool useDirectSolver = coarseSolverData->get<bool>("use direct solver");
-  if (useDirectSolver)
+  const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
+  if (coarseSolverType == "direct")
   {
     RCP<DirectCoarseSolver> coarseDirectSolver = MakeCompositeDirectSolver(coarseCompOp);
     coarseSolverData->set<RCP<DirectCoarseSolver>>("direct solver object", coarseDirectSolver);
   }
-  else
+  else if (coarseSolverType == "amg")
   {
     std::string amgXmlFileName = coarseSolverData->get<std::string>("amg xml file");
     RCP<Hierarchy> coarseAMGHierarchy = MakeCompositeAMGHierarchy(coarseCompOp, amgXmlFileName);
     coarseSolverData->set<RCP<Hierarchy>>("amg hierarchy object", coarseAMGHierarchy);
+  }
+  else
+  {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unknown coarse solver type.");
   }
 
   std::cout << mapComp->getComm()->getRank() << " | MakeInterfaceScalingFactors ..." << std::endl;
@@ -1047,8 +1051,8 @@ void vCycle(const int l, ///< ID of current level
 
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: * - coarsest grid solve")));
 
-    const bool useCoarseSmoother = false;
-    if (useCoarseSmoother) {
+    const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
+    if (coarseSolverType == "smoother") {
       smootherApply(smootherParams[l], maxRegPerProc, fineRegX, fineRegB, regMatrices[l],
                   regInterfaceScalings[l], compRowMaps[l],
                   quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
@@ -1069,8 +1073,7 @@ void vCycle(const int l, ///< ID of current level
                             regRowImporters[l], Xpetra::ADD);
       }
 
-      const bool useDirectSolver = coarseSolverData->get<bool>("use direct solver");
-      if (useDirectSolver)
+      if (coarseSolverType == "direct")
       {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
   
@@ -1115,7 +1118,7 @@ void vCycle(const int l, ///< ID of current level
              << std::endl;
 #endif
       }
-      else // use AMG as coarse level solver
+      else if (coarseSolverType == "amg") // use AMG as coarse level solver
       {
   
         // Extract the hierarchy from the coarseSolverData
@@ -1123,6 +1126,10 @@ void vCycle(const int l, ///< ID of current level
   
         // Run a single V-cycle
         amgHierarchy->Iterate(*compRhs, *compX, 1);
+      }
+      else
+      {
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unknown coarse solver type.");
       }
   
       // Transform back to region format
