@@ -256,7 +256,7 @@ namespace MueLu {
       // add A
       for (size_t i = 0; i < N; i++) {
         for (size_t jj = rowPointers[i]; jj < rowPointers[i+1]; jj++) {
-          LO j = A->getColMap()->getGlobalElement(colIndices[jj]);
+          LO j = colMap->getLocalElement(A->getColMap()->getGlobalElement(colIndices[jj]));
           SC v = values[jj];
           newValues[i*M+j] += v;
         }

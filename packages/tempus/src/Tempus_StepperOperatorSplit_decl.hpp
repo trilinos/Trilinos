@@ -63,17 +63,25 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
+
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
+
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel();
 
     virtual void setSolver(
         Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return Teuchos::null; }
+
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperOSObserver_; }
+
     virtual void setTempState(Teuchos::RCP<Tempus::SolutionState<Scalar>> state)
       { tempState_ = state; }
 

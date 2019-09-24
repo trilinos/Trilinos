@@ -15,7 +15,7 @@
 
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperRKButcherTableau.hpp"
-#include "Tempus_StepperExplicitRKObserverComposite.hpp"
+#include "Tempus_StepperRKObserverComposite.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
@@ -65,7 +65,7 @@ TEUCHOS_UNIT_TEST(ERK_ForwardEuler, Arglist_Construction)
 {
   auto defaultStepper = rcp(new Tempus::StepperERK_ForwardEuler<double>());
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
-  auto obs = rcp(new Tempus::StepperExplicitRKObserverComposite<double>());
+  auto obs = rcp(new Tempus::StepperRKObserverComposite<double>());
 
   auto stepper = rcp(new Tempus::StepperERK_ForwardEuler<double>(
                            model, obs,
@@ -118,7 +118,7 @@ TEUCHOS_UNIT_TEST(ERK_ForwardEuler, StepperFactory_Construction)
 
   auto defaultStepper = rcp(new Tempus::StepperERK_ForwardEuler<double>());
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
-  auto obs = rcp(new Tempus::StepperExplicitRKObserverComposite<double>());
+  auto obs = rcp(new Tempus::StepperRKObserverComposite<double>());
 
   auto stepper = rcp(new Tempus::StepperERK_ForwardEuler<double>(
                            model, obs,

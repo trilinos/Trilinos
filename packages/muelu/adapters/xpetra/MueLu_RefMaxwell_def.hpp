@@ -807,8 +807,19 @@ namespace MueLu {
         if (!reuse) {
           ParameterList& userParamList = precList22_.sublist("user data");
           userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
-          // If we detected no boundary conditions, the (2,2) problem is singular
+          // If we detected no boundary conditions, the (2,2) problem is singular.
+          // Therefore, if we want to use a direct coarse solver, we need to fix up the nullspace.
+          std::string coarseType = "";
+          if (precList22_.isParameter("coarse: type")) {
+            coarseType = precList22_.get<std::string>("coarse: type");
+            // Transform string to "Abcde" notation
+            std::transform(coarseType.begin(),   coarseType.end(),   coarseType.begin(), ::tolower);
+            std::transform(coarseType.begin(), ++coarseType.begin(), coarseType.begin(), ::toupper);
+          }
           if (BCrowcount_ == 0 &&
+              (coarseType == "" ||
+               coarseType == "Klu" ||
+               coarseType == "Klu2") &&
               (!precList22_.isSublist("coarse: params") ||
                !precList22_.sublist("coarse: params").isParameter("fix nullspace")))
             precList22_.sublist("coarse: params").set("fix nullspace",true);

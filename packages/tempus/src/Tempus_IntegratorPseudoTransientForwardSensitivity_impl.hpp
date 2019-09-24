@@ -121,7 +121,7 @@ getTime() const
 }
 
 template<class Scalar>
-Scalar
+int 
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 getIndex() const
 {

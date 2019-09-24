@@ -26,6 +26,7 @@ APPEND_SET(SOURCES
   StructuredAggregation_kokkos.cpp
   #SaPFactory_kokkos.cpp
   TentativePFactory_kokkos.cpp
+  UseKokkos_kokkos.cpp
 )
 
 ### Tests that require other Trilinos packages

@@ -1286,7 +1286,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
   // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
-  std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
+  // std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
 
   // In our very particular case we know that a node is at most shared by 4 regions.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
@@ -1534,6 +1534,41 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Array<RCP<Vector> > regB(maxRegPerProc);
     compositeToRegional(B, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
                         revisedRowMapPerGrp, rowImportPerGrp);
+#ifdef DUMP_LOCALX_AND_A
+    FILE *fp;
+    char str[80];
+    sprintf(str,"theMatrix.%d",myRank);
+    fp = fopen(str,"w");
+    fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+    LO numNzs = 0;
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) {
+      ArrayView<const LO> AAcols;
+      ArrayView<const SC> AAvals;
+      regionGrpMats[0]->getLocalRowView(kkk, AAcols, AAvals);
+      const int *Acols    = AAcols.getRawPtr();
+      const SC  *Avals = AAvals.getRawPtr();
+      numNzs += AAvals.size();
+    }
+    fprintf(fp, "%d %d %d\n",regionGrpMats[0]->getNodeNumRows(),regionGrpMats[0]->getNodeNumRows(),numNzs);
+
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) {
+      ArrayView<const LO> AAcols;
+      ArrayView<const SC> AAvals;
+      regionGrpMats[0]->getLocalRowView(kkk, AAcols, AAvals);
+      const int *Acols    = AAcols.getRawPtr();
+      const SC  *Avals = AAvals.getRawPtr();
+      LO RowLeng = AAvals.size();
+      for (LO kk = 0; kk < RowLeng; kk++) {
+          fprintf(fp, "%d %d %22.16e\n",kkk+1,Acols[kk]+1,Avals[kk]);
+      }
+    }
+    fclose(fp);
+    sprintf(str,"theX.%d",myRank);
+    fp = fopen(str,"w");
+    ArrayRCP<SC> lX= regX[0]->getDataNonConst(0);
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) fprintf(fp, "%22.16e\n",lX[kkk]);
+    fclose(fp);
+#endif
 
     //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
 

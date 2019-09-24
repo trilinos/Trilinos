@@ -421,6 +421,7 @@ namespace MueLu {
     // FIXME: should it be here, or higher up
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
+    defaultManager->SetKokkosRefactor(useKokkos_);
 
     // We will ignore keeps0
     std::vector<keep_pair> keeps0;

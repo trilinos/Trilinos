@@ -87,7 +87,7 @@ Teuchos::Array<int> findCommonRegions(const GlobalOrdinal nodeA, ///< GID of fir
   Array<int> regionsA, regionsB;
   {
     LO nodeALID = nodesToRegionsMap->getLocalElement(nodeA);
-    LO nodeBLID = nodesToRegionsMap->getLocalElement(nodeA);
+    LO nodeBLID = nodesToRegionsMap->getLocalElement(nodeB);
     for (int i = 0; i < nodesToRegions.size(); ++i) {
       regionsA.push_back(nodesToRegions[i][nodeALID]);
       regionsB.push_back(nodesToRegions[i][nodeBLID]);

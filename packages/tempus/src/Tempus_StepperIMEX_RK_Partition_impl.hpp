@@ -328,21 +328,15 @@ template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (this->stepperObserver_ == Teuchos::null) {
-      stepperIMEX_RKPartObserver_ =
-        Teuchos::rcp(new StepperIMEX_RKPartObserver<Scalar>());
-      this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperIMEX_RKPartObserver_);
-     }
-  } else {
-    this->stepperObserver_ = obs;
-    stepperIMEX_RKPartObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperIMEX_RKPartObserver<Scalar> >
-        (this->stepperObserver_);
-  }
+  if (this->stepperObserver_ == Teuchos::null)
+     this->stepperObserver_  =
+        Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
+
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
+     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
+
+  this->stepperObserver_->addObserver(
+       Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
 }
 
 
@@ -550,8 +544,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
-      if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-        stepperIMEX_RKPartObserver_->observeBeginStage(solutionHistory, *this);
+        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
 
       Thyra::assign(stageY.ptr(),
         *(wrapperModelPairIMEX->getExplicitOnlyVector(currentState->getX())));
@@ -582,9 +575,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
           assign(stageGx_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           Thyra::assign(stageX.ptr(), *xTilde_);
-          if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-            stepperIMEX_RKPartObserver_->
-              observeBeforeImplicitExplicitly(solutionHistory, *this);
+          this->stepperObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
           evalImplicitModelExplicitly(stageX, stageY, ts, dt, i, stageGx_[i]);
         }
       } else {
@@ -617,8 +608,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         wrapperModelPairIMEX->setForSolve(timeDer, inArgs, outArgs);
 
-        if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-          stepperIMEX_RKPartObserver_->observeBeforeSolve(solutionHistory, *this);
+        this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 
         this->solver_->setModel(wrapperModelPairIMEX);
         sStatus = this->solveImplicitODE(stageX);
@@ -626,18 +616,15 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         wrapperModelPairIMEX->setUseImplicitModel(false);
 
-        if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-          stepperIMEX_RKPartObserver_->observeAfterSolve(solutionHistory, *this);
+        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
 
         // Update contributions to stage values
         Thyra::V_StVpStV(stageGx_[i].ptr(), -alpha, *stageX, alpha, *xTilde_);
       }
 
-      if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-        stepperIMEX_RKPartObserver_->observeBeforeExplicit(solutionHistory,*this);
+      this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
       evalExplicitModel(stageZ_, tHats, dt, i, stageF_[i]);
-      if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-        stepperIMEX_RKPartObserver_->observeEndStage(solutionHistory, *this);
+      this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: y_n = y_n-1 - dt*Sum{ bHat(i)*fy(i)            }

@@ -141,7 +141,7 @@ namespace MueLu {
                                     // (aggStat[neigh] == AGGREGATED)
                                     if (graph.isLocalNeighborVertex(neigh) &&
                                         aggStat(neigh) == AGGREGATED)
-                                      Kokkos::atomic_add(&aggWeight(vertex2AggId(neigh, 0), 0),
+                                      Kokkos::atomic_add(&aggWeight(vertex2AggId(neigh, 0)),
                                                          connectWeight(neigh));
                                   }
 
@@ -169,7 +169,7 @@ namespace MueLu {
                                     }
                                   }
                                   if (bestScore >= 0) {
-                                    aggStat(i, 0)      = AGGREGATED;
+                                    aggStat(i)         = AGGREGATED;
                                     vertex2AggId(i, 0) = bestAggId;
                                     procWinner(i, 0)   = myRank;
 
@@ -244,7 +244,7 @@ namespace MueLu {
               // (aggStat[neigh] == AGGREGATED)
               if (graph.isLocalNeighborVertex(neigh) &&
                   aggStat(neigh) == AGGREGATED)
-              Kokkos::atomic_add(&aggWeight(vertex2AggId(neigh, 0), 0),
+              Kokkos::atomic_add(&aggWeight(vertex2AggId(neigh, 0)),
                   connectWeight(neigh));
             }
           });

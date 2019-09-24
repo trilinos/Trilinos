@@ -61,6 +61,9 @@ public:
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperBEObserver_; }
+
     /// Set the predictor
     void setPredictor(std::string predictorType = "None");
     void setPredictor(Teuchos::RCP<Stepper<Scalar> > predictorStepper);
