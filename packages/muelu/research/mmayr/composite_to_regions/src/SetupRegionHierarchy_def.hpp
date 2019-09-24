@@ -47,12 +47,6 @@
 
 #include <vector>
 #include <iostream>
-#include <chrono>
-#include <numeric>
-
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
 
 #include <Kokkos_DefaultNode.hpp>
 

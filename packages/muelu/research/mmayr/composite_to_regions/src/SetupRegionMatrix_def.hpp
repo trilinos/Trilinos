@@ -47,13 +47,9 @@
 
 #include <vector>
 #include <iostream>
-#include <numeric>
 
 #define RegionsSpanProcs  1
 #define MultipleRegionsPerProc  2
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
 
 #include <Kokkos_DefaultNode.hpp>
 

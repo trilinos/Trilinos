@@ -46,12 +46,6 @@
 #define MUELU_SETUPREGIONSMOOTHERS_DEF_HPP
 
 #include <vector>
-#include <iostream>
-#include <numeric>
-
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
 
 #include <Kokkos_DefaultNode.hpp>
 
@@ -65,17 +59,9 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 
-#include <MueLu_CreateXpetraPreconditioner.hpp>
-#include <MueLu_Utilities.hpp>
 
 #include "SetupRegionMatrix_def.hpp"
 #include "SetupRegionVector_def.hpp"
-
-
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-#include <Amesos2_config.h>
-#include <Amesos2.hpp>
-#endif
 
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
