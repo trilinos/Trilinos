@@ -353,7 +353,7 @@ namespace MueLu {
             if (!M.is_null()) {
               Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
             }
-          }	  
+          }
 	  else if (L->IsAvailable(name)) {
 	    // Try nofactory
             RCP<T> M = L->template Get< RCP<T> >(name);
