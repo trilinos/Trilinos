@@ -172,7 +172,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
-  bool        directCoarseSolver = true;                clp.setOption("direct-coarse-solver", "amg-coarse-solver", &directCoarseSolver, "Type of solver for composite coarse level operator");
+  std::string coarseSolverType   = "";                  clp.setOption("coarseSolverType",      &coarseSolverType,  "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
   std::string unstructured       = "{}";                clp.setOption("unstructured",          &unstructured,   "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
   std::string coarseAmgXmlFile   = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,  "Read parameters for AMG as coarse level solve from this xml file.");
 #ifdef HAVE_MUELU_TPETRA
@@ -1457,7 +1457,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<Array<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
   Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
   RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
-  coarseSolverData->set<bool>("use direct solver", directCoarseSolver);
+  coarseSolverData->set<std::string>("coarse solver type", coarseSolverType);
   coarseSolverData->set<std::string>("amg xml file", coarseAmgXmlFile);
   RCP<ParameterList> hierarchyData = rcp(new ParameterList());
 

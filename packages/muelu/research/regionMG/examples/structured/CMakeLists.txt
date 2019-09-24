@@ -2,7 +2,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../../test/unit_tests)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../mmayr/composite_to_regions/src)
 
-# This test requires Tpetra, so it's only included if Tpetra is enabled
+# This test requires Tpetra and Amesos2, so it's only included if Tpetra is enabled
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
   TRIBITS_ADD_EXECUTABLE(
@@ -57,11 +57,27 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
+    
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Star2D_CoarseSmoother_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Star2D_CoarseSmoother_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
 
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --amg-coarse-solver --coarseAmgXml=amg_1dof.xml"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof.xml"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
