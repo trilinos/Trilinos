@@ -140,9 +140,9 @@ CMD=$(echo curl -i -H $h -d \'[$LABELS]\' https://api.github.com/repos/$fork/$re
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
-    echo "PR $PRN labeled as: $labels"
+    echo "PR $PRN labeled as: $LABELS"
 else
-    echo "PR $PRN label failed: $labels"; 
+    echo "PR $PRN label failed: $LABELS"; 
     echo "See $TMPFILE and ${PR_BODY_TMPFILE}."
     exit 1
 fi
