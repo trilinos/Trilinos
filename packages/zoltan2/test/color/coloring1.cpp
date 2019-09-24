@@ -121,6 +121,7 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color, int rank){
   for(size_t i = 0; i < A->getNodeNumRows(); i++){
     R.replaceLocalValue(i,color[i]);
   }
+
   Vector C = Vector(colMap);
   Import imp = Import(rowMap, colMap);
   C.doImport(R, imp, Tpetra::REPLACE);
@@ -135,7 +136,7 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color, int rank){
   for (size_t i=0; i<n; i++) {
     A->getLocalRowView(i, indices, values);
     for (size_t j = 0; j < indices.size(); j++) {
-      if ((indices[j] != i) && (colorData[i] == colorData[indices[j]])){
+      if ((indices[j] != i) && (color[i] == colorData[indices[j]])){
         nconflicts++;
         std::cout << "Debug: Rank "<< rank <<" found conflict ("
                   << rowMap->getGlobalElement(i) << ", " 
@@ -359,7 +360,7 @@ int main(int narg, char** arg)
 
   ////// Basic metric checking of the coloring solution
   size_t checkLength;
-  int *checkColoring;
+  int *checkColoring = NULL;
   Zoltan2::ColoringSolution<SparseMatrixAdapter> *soln = problem.getSolution();
 
   if(comm->getRank()==0) std::cout << "Going to get results" << std::endl;
