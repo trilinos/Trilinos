@@ -337,11 +337,6 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       ArrayView<StridedData<lno_t, scalar_t> > ewgts;
       size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);      
       
-      Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
-                                           <Tpetra::global_size_t>::invalid();
-      
-      
-
 
       std::unordered_map<gno_t,lno_t> globalToLocal;
       std::vector<gno_t> ownedPlusGhosts;
@@ -373,6 +368,8 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       //}
       //printf("\n");
       
+      Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
+                                           <Tpetra::global_size_t>::invalid();
       RCP<const map_t> mapOwned = rcp(new map_t(dummy, vtxIDs, 0, comm));
       std::vector<gno_t> ghosts;
       std::vector<gno_t> ghostowners;
@@ -434,6 +431,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       //}
       //printf("\n");      
 
+      dummy = Teuchos::OrdinalTraits <Tpetra::global_size_t>::invalid();
       RCP<const map_t> mapWithCopies = rcp(new map_t(dummy,
                                            Teuchos::arrayViewFromVector(ownedPlusGhosts),
                                            0, comm));

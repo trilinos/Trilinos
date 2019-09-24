@@ -416,12 +416,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
       for(int i = 0;  i< nVtx; i++) reorderToLocal.push_back(i);
       
       volatile int debug = 0;
-      if(rank == 0){
-        printf("PID %d ready for attach\n",getpid());
-        while(debug == 0){
-          usleep(1000);
-        }
-      }
+//      if(rank == 0){
+//        printf("%d PID %d ready for attach\n", rank, getpid());
+//        while(debug == 0){
+//          usleep(1000);
+//        }
+//      }
       //printf("Starting to create local graph\n");
       std::string kokkos_only_interior = pl->get<std::string>("Kokkos_only_interior","false");
       if(comm->getSize() == 1 || kokkos_only_interior=="false") {
@@ -452,9 +452,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
         for(int i = 0; i < offsets.size(); i++) finalOffset_vec.push_back(offsets[i]);
         //finalOffsets = offsets;
         finalGIDs = ownedPlusGhosts;
+
         Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
                                              <Tpetra::global_size_t>::invalid();
         mapOwned = rcp(new map_t(dummy, vtxIDs, 0, comm));
+
+        dummy = Teuchos::OrdinalTraits <Tpetra::global_size_t>::invalid();
         mapWithCopies = rcp(new map_t(dummy, 
                                   Teuchos::arrayViewFromVector(ownedPlusGhosts),
                                   0, comm)); 
@@ -483,6 +486,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
                                                <Tpetra::global_size_t>::invalid();
         mapOwned = rcp(new map_t(dummy, Teuchos::arrayViewFromVector(ownedReorderGIDs),
                                              0, comm));
+
+        dummy = Teuchos::OrdinalTraits <Tpetra::global_size_t>::invalid();
         mapWithCopies = rcp(new map_t(dummy, 
                                         Teuchos::arrayViewFromVector(reorderGIDs),
                                         0, comm));
