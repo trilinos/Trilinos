@@ -50,7 +50,7 @@ class StepperERK_ForwardEuler :
 
   StepperERK_ForwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -122,7 +122,7 @@ class StepperERK_4Stage4thOrder :
 
   StepperERK_4Stage4thOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -222,7 +222,7 @@ class StepperERK_BogackiShampine32 :
 
   StepperERK_BogackiShampine32(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -335,7 +335,7 @@ class StepperERK_Merson45 :
 
   StepperERK_Merson45(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -456,7 +456,7 @@ public:
 
   StepperERK_3_8Rule(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -559,7 +559,7 @@ class StepperERK_4Stage3rdOrderRunge :
 
   StepperERK_4Stage3rdOrderRunge(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -657,7 +657,7 @@ class StepperERK_5Stage3rdOrderKandG :
 
   StepperERK_5Stage3rdOrderKandG(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -755,7 +755,7 @@ class StepperERK_3Stage3rdOrder :
 
   StepperERK_3Stage3rdOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -856,7 +856,7 @@ class StepperERK_3Stage3rdOrderTVD :
 
   StepperERK_3Stage3rdOrderTVD(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -958,7 +958,7 @@ class StepperERK_3Stage3rdOrderHeun :
 
   StepperERK_3Stage3rdOrderHeun(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -1055,7 +1055,7 @@ class StepperERK_Midpoint :
 
   StepperERK_Midpoint(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -1143,7 +1143,7 @@ class StepperERK_Trapezoidal :
 
   StepperERK_Trapezoidal(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -1241,7 +1241,7 @@ public:
 
   StepperERK_General(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -1369,7 +1369,7 @@ class StepperDIRK_BackwardEuler :
 
   StepperDIRK_BackwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -1474,7 +1474,7 @@ class StepperSDIRK_2Stage2ndOrder :
 
   StepperSDIRK_2Stage2ndOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -1614,7 +1614,7 @@ class StepperSDIRK_2Stage3rdOrder :
 
   StepperSDIRK_2Stage3rdOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -1775,7 +1775,7 @@ class StepperEDIRK_2Stage3rdOrder :
 
   StepperEDIRK_2Stage3rdOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -1891,7 +1891,7 @@ class StepperDIRK_1StageTheta :
 
   StepperDIRK_1StageTheta(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -2024,7 +2024,7 @@ class StepperEDIRK_2StageTheta :
 
   StepperEDIRK_2StageTheta(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -2158,7 +2158,7 @@ class StepperEDIRK_TrapezoidalRule :
 
   StepperEDIRK_TrapezoidalRule(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -2269,7 +2269,7 @@ class StepperSDIRK_ImplicitMidpoint :
 
   StepperSDIRK_ImplicitMidpoint(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -2377,7 +2377,7 @@ class StepperDIRK_1Stage1stOrderRadauIA :
 
   StepperDIRK_1Stage1stOrderRadauIA(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -2477,7 +2477,7 @@ class StepperDIRK_2Stage2ndOrderLobattoIIIB :
 
   StepperDIRK_2Stage2ndOrderLobattoIIIB(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -2594,7 +2594,7 @@ class StepperSDIRK_5Stage4thOrder :
 
   StepperSDIRK_5Stage4thOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -2754,7 +2754,7 @@ class StepperSDIRK_3Stage4thOrder :
 
   StepperSDIRK_3Stage4thOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -2885,7 +2885,7 @@ class StepperSDIRK_5Stage5thOrder :
 
   StepperSDIRK_5Stage5thOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -3058,7 +3058,7 @@ class StepperSDIRK_21Pair :
 
   StepperSDIRK_21Pair(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -3179,7 +3179,7 @@ class StepperDIRK_General :
 
   StepperDIRK_General(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,

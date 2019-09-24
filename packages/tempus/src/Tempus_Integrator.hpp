@@ -73,7 +73,7 @@ public:
     /// Get current time
     virtual Scalar getTime() const = 0;
     /// Get current index
-    virtual Scalar getIndex() const = 0;
+    virtual int getIndex() const = 0;
     /// Get the Status
     virtual Tempus::Status getStatus() const = 0;
     /// Get the stepper

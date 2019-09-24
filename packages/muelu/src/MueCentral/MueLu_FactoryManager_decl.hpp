@@ -176,6 +176,8 @@ namespace MueLu {
       useKokkos_ = useKokkos;
     }
 
+    bool GetKokkosRefactor() const { return useKokkos_; }
+
     //@}
 
     void Clean() const { defaultFactoryTable_.clear(); }
