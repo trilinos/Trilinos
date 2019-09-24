@@ -125,6 +125,8 @@
 
 // Region MG headers
 #include "SetupRegionHierarchy_def.hpp"
+#include "SetupRegionMatrix_def.hpp"
+#include "SetupRegionVector_def.hpp"
 
 #include "Driver_Structured_Interface.hpp"
 

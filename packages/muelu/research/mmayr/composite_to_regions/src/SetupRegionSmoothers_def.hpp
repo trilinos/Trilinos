@@ -69,6 +69,7 @@
 #include <MueLu_Utilities.hpp>
 
 #include "SetupRegionMatrix_def.hpp"
+#include "SetupRegionVector_def.hpp"
 
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
