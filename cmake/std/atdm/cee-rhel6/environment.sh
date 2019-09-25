@@ -163,24 +163,6 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
 
-elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1_INTELMPI-5.1.2" ]; then
-  module load sparc-dev/intel-17.0.1_intelmpi-5.1.2
-  export OMPI_CXX=`which icpc`
-  export OMPI_CC=`which icc`
-  export OMPI_FC=`which ifort`
-  export MPICC=`which mpicc`
-  export MPICXX=`which mpicxx`
-  export MPIF90=`which mpif90`
-  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
-    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_INTEL_CXX_WARNINGS}"
-  fi
-  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
-  export ATDM_CONFIG_MPI_EXEC=mpirun
-  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
-  export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
-  export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
-  export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
-
 else
   echo
   echo "***"
