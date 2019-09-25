@@ -138,6 +138,22 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     NUM_MPI_PROCS 4
     )
 
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Linear_Elasticity3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=7 --ny=7 --nz=7 --smootherIts=2 --tol=1.0e-8 --convergence-log=Elasticity3D_linear_1.log"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Linear_Elasticity3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=7 --ny=7 --nz=7 --smootherIts=2 --tol=1.0e-8 --convergence-log=Elasticity3D_linear_1.log"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
   ## These are very few regression tests, that also compare residual convergence history
   ASSERT_DEFINED(PYTHONINTERP_FOUND)
   IF (PYTHONINTERP_FOUND)
