@@ -77,7 +77,9 @@ DagManager(const std::string& evaluation_type_name) :
 #else
   allow_multiple_evaluators_for_same_field_(false),
 #endif
-  build_device_dag_(false)
+  build_device_dag_(false),
+  field_use_range_evaluated_(false),
+  unshared_evaluated_(false)
 { }
 
 //=======================================================================
@@ -389,20 +391,26 @@ template<typename Traits>
 void PHX::DagManager<Traits>::
 printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const
 {
-  os << "Name=" << e.getName() << "\n";
-  os << "  *Evaluated Fields:\n";
-  for (const auto& f : e.evaluatedFields())
-    os << "    " << f->identifier() << "\n";
-  os << "  *Contributed Fields:\n";
-  for (const auto& f : e.contributedFields())
-    os << "    " << f->identifier() << "\n";
-  os << "  *Dependent Fields:\n";
+  os << e.getName() << "\n";
+  if (e.evaluatedFields().size() > 0) {
+    os << "  *Evaluated Fields:\n";
+    for (const auto& f : e.evaluatedFields())
+      os << "    " << f->identifier() << "\n";
+  }
+  if (e.contributedFields().size() > 0) {
+    os << "  *Contributed Fields:\n";
+    for (const auto& f : e.contributedFields())
+      os << "    " << f->identifier() << "\n";
+  }
   if (e.dependentFields().size() > 0) {
+    os << "  *Dependent Fields:\n";
     for (const auto& f : e.dependentFields())
       os << "    " << f->identifier() << "\n";
   }
-  else {
-    os << "    None!\n";
+  if (e.unsharedFields().size() > 0) {
+    os << "  *Unshared Fields:\n";
+    for (const auto& f : e.unsharedFields())
+      os << "    " << f->identifier() << "\n";
   }
 }
 
@@ -884,6 +892,9 @@ template<typename Traits>
 const std::unordered_map<std::string,std::pair<int,int>>&
 PHX::DagManager<Traits>::getFieldUseRange()
 {
+  if (field_use_range_evaluated_)
+    return field_use_range_;
+
   // Initialize the fields just outside valid range for debugging
   for (const auto& f : fields_)
     field_use_range_[f->identifier()] = std::make_pair(topoSortEvalIndex.size(),-1);
@@ -927,7 +938,26 @@ PHX::DagManager<Traits>::getFieldUseRange()
   }
 #endif
 
+  field_use_range_evaluated_ = true;
   return field_use_range_;
+}
+//=======================================================================
+template<typename Traits>
+const std::unordered_map<std::string,Teuchos::RCP<PHX::FieldTag>>&
+PHX::DagManager<Traits>::getUnsharedFields()
+{
+  if (unshared_evaluated_)
+    return unshared_;
+
+  for (int idx=0; idx < static_cast<int>(topoSortEvalIndex.size()); ++idx) {
+    const auto& evaluator = nodes_.at(topoSortEvalIndex[idx]).get();
+    const auto& e_unshared = evaluator->unsharedFields();
+    for (const auto& f : e_unshared)
+      unshared_[f->identifier()] = f;
+  }
+
+  unshared_evaluated_ = true;
+  return unshared_;
 }
 
 //=======================================================================

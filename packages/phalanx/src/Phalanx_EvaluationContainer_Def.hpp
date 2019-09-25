@@ -160,7 +160,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   // allocation tracker. shared_fields->first is the field that will
   // not be allocated since it will use another field's
   // memory. shared_field->second is the field that whose memory the
-  // first field will point to.  
+  // first field will point to.
   if (minimize_dag_memory_use_)
     this->assignSharedFields();
 
@@ -183,7 +183,7 @@ postRegistrationSetup(typename Traits::SetupData d,
            unmanaged_fields_.find((*var)->identifier()) == unmanaged_fields_.end() ) {
         typedef typename PHX::eval_scalar_types<EvalT>::type EvalDataTypes;
         Sacado::mpl::for_each_no_kokkos<EvalDataTypes>(PHX::KokkosViewFactoryFunctor<EvalT>(fields_,*(*var),kokkos_extended_data_type_dimensions_));
-        
+
         TEUCHOS_TEST_FOR_EXCEPTION(fields_.find((*var)->identifier()) == fields_.end(),std::runtime_error,
                                    "Error: PHX::EvaluationContainer::postRegistrationSetup(): could not build a Kokkos::View for field named \""
                                    << (*var)->name() << "\" of type \"" << (*var)->dataTypeInfo().name()
@@ -209,11 +209,11 @@ postRegistrationSetup(typename Traits::SetupData d,
                                                                 field_allocation_trackers.at(field.second.second));
     }
   }
-  
+
   // Bind memory to all fields in all required evaluators
   for (const auto& field : var_list)
     this->bindField(*field,fields_[field->identifier()]);
-  
+
   // This needs to be set before the dag_manager calls each
   // evaluator's postRegistrationSetup() so that the evaluators can
   // use functions that are only valid after post registration setup
@@ -250,13 +250,13 @@ assignSharedFields()
     printf("  Evalaution Type: %s\n",PHX::print<EvalT>().c_str());
     printf("*******************************************\n");
   }
-  
+
   // Get a list of potential fields to share view allocations and the
   // required sizes of the fields.
   const auto& fields = this->dag_manager_.getFieldTags();
   const auto& ranges = this->dag_manager_.getFieldUseRange();
   // tuple args: 0=size in bytes, 1=FieldTag, 2=range of existence
-  using CandidateFieldsType = 
+  using CandidateFieldsType =
     std::list<std::tuple<std::size_t,Teuchos::RCP<PHX::FieldTag>,std::pair<int,int>>>;
   CandidateFieldsType candidate_fields;
   for (const auto& f : fields) {
@@ -275,11 +275,11 @@ assignSharedFields()
         std::cout << "Allocation size of \"" << f->identifier() << "\" = " << allocation_size << std::endl;
     }
   }
-  
+
   // Sort such that the largest allocations are first.
   using iter = std::tuple<std::size_t,Teuchos::RCP<PHX::FieldTag>,std::pair<int,int>>;
   candidate_fields.sort([](iter a, iter b) {return std::get<0>(a) > std::get<0>(b);});
-  
+
   while (!candidate_fields.empty()) {
 
     auto f = candidate_fields.begin();
@@ -287,10 +287,19 @@ assignSharedFields()
     Teuchos::RCP<PHX::FieldTag> f_tag = std::get<1>(*f);
     const std::string f_name = f_tag->identifier();
 
+    // Make sure the user hasn't declared this an unshared field.
+    bool f_is_unshared = false;
+    const auto& unshared_fields = this->dag_manager_.getUnsharedFields();
+    if (unshared_fields.find(f_name) != unshared_fields.end())
+      f_is_unshared = true;
+
     if (verbose_debug) {
       const int f_left = std::get<2>(*f).first;
       const int f_right = std::get<2>(*f).second;
-      printf("Candidate field=%s, range: [%i,%i]\n",f_name.c_str(),f_left,f_right);
+      std::string shared_string = "";
+      if (f_is_unshared)
+        shared_string = ", user declared UNSHARED!";
+      printf("Candidate field=%s, range: [%i,%i]%s\n",f_name.c_str(),f_left,f_right,shared_string.c_str());
     }
 
     std::list<std::pair<int,int>> current_ranges;
@@ -320,48 +329,59 @@ assignSharedFields()
     // Allocate and remove the field from search below.
     fields_to_allocate_.push_back(std::make_pair(std::get<0>(*f),std::get<1>(*f)));
     candidate_fields.erase(f);
-    
+
     // Loop over remaining candidate fields and and share memory if
     // the ranges don't overlap
-    std::vector<CandidateFieldsType::const_iterator> fields_to_erase;
-    for (auto tmp = candidate_fields.begin(); tmp != candidate_fields.end(); ++tmp) {
-      bool can_share_memory = true;
-      const int left = std::get<2>(*tmp).first;
-      const int right = std::get<2>(*tmp).second;
+    if (!f_is_unshared) {
+      std::vector<CandidateFieldsType::const_iterator> fields_to_erase;
+      for (auto tmp = candidate_fields.begin(); tmp != candidate_fields.end(); ++tmp) {
+        bool can_share_memory = true;
+        const auto tmp_name = std::get<1>(*tmp)->identifier();
+        const int left = std::get<2>(*tmp).first;
+        const int right = std::get<2>(*tmp).second;
 
-      if (verbose_debug) {
-        std::string n = std::get<1>(*tmp)->identifier();
-        printf("  Check field=%s, range: [%i,%i]...",n.c_str(),left,right);
-      }
+        if (verbose_debug)
+          printf("  Check field=%s, range: [%i,%i]...",tmp_name.c_str(),left,right);
 
-      // Loop over current ranges assigned to this memory alllocation
-      for (auto r : current_ranges) {
-        if ( (right < r.first) || (left  > r.second) ) {
-          // OK! Continue to check all r!
-        }
-        else {
-          if (verbose_debug)
-            printf(" overlap! NOT sharing!\n");
+        // Make sure the user hasn't declared tmp an unshared field.
+        if (unshared_fields.find(tmp_name) != unshared_fields.end()) {
           can_share_memory = false;
-          break;
+          if (verbose_debug)
+            printf(" user declared UNSHARED! NOT sharing!\n");
         }
-      }
 
-      if (can_share_memory) {
-        current_ranges.push_back(std::make_pair(left,right));
-        shared_fields_[std::get<1>(*tmp)->identifier()] = std::make_pair(std::get<1>(*tmp),f_name);
-        fields_to_erase.push_back(tmp);
-        if (verbose_debug) {
-          printf(" no overlap! Sharing!\n");
-          printf("  New memory allocation range:");
-          for (auto r : current_ranges)
-            printf(" [%i,%i]",r.first,r.second);
-          printf("\n");
+        // Loop over current ranges assigned to this memory
+        // alllocation and look for overlap
+        if (can_share_memory) {
+          for (auto r : current_ranges) {
+            if ( (right < r.first) || (left  > r.second) ) {
+              // OK! Continue to check all r!
+            }
+            else {
+              if (verbose_debug)
+                printf(" overlap! NOT sharing!\n");
+              can_share_memory = false;
+              break;
+            }
+          }
+        }
+
+        if (can_share_memory) {
+          current_ranges.push_back(std::make_pair(left,right));
+          shared_fields_[std::get<1>(*tmp)->identifier()] = std::make_pair(std::get<1>(*tmp),f_name);
+          fields_to_erase.push_back(tmp);
+          if (verbose_debug) {
+            printf(" no overlap! Sharing!\n");
+            printf("  New memory allocation range:");
+            for (auto r : current_ranges)
+              printf(" [%i,%i]",r.first,r.second);
+            printf("\n");
+          }
         }
       }
+      for (auto tmp : fields_to_erase)
+        candidate_fields.erase(tmp);
     }
-    for (auto tmp : fields_to_erase)
-      candidate_fields.erase(tmp);
   }
 
   if (verbose_debug) {
@@ -608,17 +628,17 @@ void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
     }
     os << "  Total Memory Allocated (includes Shared, excludes Aliased and Unmanaged): "
        << total_memory / 1.0e+6 << " (MB) " << std::endl;
-    
+
     double shared_memory = 0.0;
     for (const auto& s : shared_fields_)
       shared_memory += static_cast<double>(field_allocation_sizes_.at(s.first));
     os << "  Shared Memory savings: " << shared_memory / 1.0e+6 << " (MB)"
        << std::endl;
-    
+
     os << "  Percent of total memory allocated with shared fields: 100 * (total-shared) / total = "
        << (total_memory - shared_memory) * 100.0 / total_memory;
   }
-  
+
   os << "\n  Shared Fields:";
   if (shared_fields_.size() == 0)
     os << " None!";

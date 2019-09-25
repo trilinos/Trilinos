@@ -323,6 +323,14 @@ addDependentField(const PHX::FieldTag& ft,
 //**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
+addUnsharedField(const Teuchos::RCP<PHX::FieldTag>& ft)
+{
+  unshared_.push_back(ft);
+}
+
+//**********************************************************************
+template<typename Traits>
+void PHX::EvaluatorWithBaseImpl<Traits>::
 setName(const std::string& name)
 { name_ = name; }
 
@@ -350,6 +358,12 @@ template<typename Traits>
 const std::vector< Teuchos::RCP<PHX::FieldTag> >&
 PHX::EvaluatorWithBaseImpl<Traits>::dependentFields() const
 { return required_; }
+
+//**********************************************************************
+template<typename Traits>
+const std::vector< Teuchos::RCP<PHX::FieldTag> >&
+PHX::EvaluatorWithBaseImpl<Traits>::unsharedFields() const
+{ return unshared_; }
 
 //**********************************************************************
 #ifdef PHX_ENABLE_KOKKOS_AMT

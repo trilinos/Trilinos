@@ -112,6 +112,10 @@ namespace PHX {
     virtual const std::vector< Teuchos::RCP<FieldTag> >&
     dependentFields() const = 0;
 
+    //! Returns vector of fields that are not allowed to share memory with other fields.
+    virtual const std::vector< Teuchos::RCP<FieldTag> >&
+    unsharedFields() const = 0;
+
     //! Evaluate all fields that the provider supplies.
     /*!
         Input:

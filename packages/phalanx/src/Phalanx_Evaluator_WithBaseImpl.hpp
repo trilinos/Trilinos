@@ -126,6 +126,12 @@ namespace PHX {
     void addDependentField(const PHX::FieldTag& ft,
                            const Kokkos::View<DataT,Properties...>& f);
 
+    /** Tells the field manager to NOT share this field's memory with
+        any other field. Typically used for performance (e.g. don't
+        have to zero out off diagonal components of derivative array).
+    */
+    void addUnsharedField(const Teuchos::RCP<PHX::FieldTag>& ft);
+
     virtual void setName(const std::string& name);
 
     virtual void 
@@ -140,6 +146,9 @@ namespace PHX {
 
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
     dependentFields() const override;
+
+    virtual const std::vector< Teuchos::RCP<FieldTag> >&
+    unsharedFields() const override;
 
     virtual void evaluateFields(typename Traits::EvalData d) override = 0;
 
@@ -174,6 +183,8 @@ namespace PHX {
     std::vector< Teuchos::RCP<FieldTag> > contributed_;
 
     std::vector< Teuchos::RCP<FieldTag> > required_;
+
+    std::vector< Teuchos::RCP<FieldTag> > unshared_;
 
     std::string name_;
 
