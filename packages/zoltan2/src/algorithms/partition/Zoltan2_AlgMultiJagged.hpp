@@ -6810,8 +6810,8 @@ std::cout << " KDDKDD USING THE OLD WAY " << std::endl;
     // the correct implementation above when vortex's problems are fixed.
     //
     // KDD 9/25/19 Addressing Empire debugging of UVM+MPI and parallel_scan
-    ArrayRCP<gno_t> uvmHackIds = ArrayRCP(num_local_coords_);
-    for (size_t i = 0; i < num_local_coords_; i++) 
+    ArrayRCP<mj_gno_t> uvmHackIds(num_local_coords_);
+    for (mj_lno_t i = 0; i < num_local_coords_; i++) 
       uvmHackIds[i] = initial_mj_gnos_[i];
     ArrayView<const mj_gno_t> sent_gnos = uvmHackIds();
 std::cout << " KDDKDD USING THE HACKED WAY " << std::endl;
