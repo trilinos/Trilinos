@@ -6783,10 +6783,9 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset( int used_num_ranks,
   {
     ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
 
-#define ZOLTAN2_UVM_HACK
-#ifndef ZOLTAN2_UVM_HACK
+#if !defined(HAVE_TPETRACORE_CUDA)  // KDD UVM HACK FOR CUDA IS BELOW
     // This is the correct implementation, using initial_mj_gnos_ as the 
-    // data to be sent.  i
+    // data to be sent.
     ArrayView<const mj_gno_t> sent_gnos(initial_mj_gnos_, num_local_coords_);
 std::cout << " KDDKDD USING THE OLD WAY " << std::endl;
 #else
