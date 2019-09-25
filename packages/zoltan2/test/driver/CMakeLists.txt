@@ -176,6 +176,17 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
     test_driver
+    NAME mjTestPremigrate
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS
+    "./driverinputs/multiJaggedPremigrateTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    test_driver
     NAME zoltanWithGraphAdapter
     COMM serial mpi
     ARGS

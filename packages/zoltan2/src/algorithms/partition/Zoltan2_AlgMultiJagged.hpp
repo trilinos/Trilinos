@@ -7289,7 +7289,7 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 
         pe = pl.getEntryPtr("mj_premigration_coordinate_count");
         if (pe){
-        	min_coord_per_rank_for_premigration = pe->getValue(&mj_premigration_option);
+        	min_coord_per_rank_for_premigration = pe->getValue(&min_coord_per_rank_for_premigration);
         }else {
                 min_coord_per_rank_for_premigration = 32000;
         }
