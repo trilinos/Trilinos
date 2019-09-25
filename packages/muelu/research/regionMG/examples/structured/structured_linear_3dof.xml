@@ -19,7 +19,7 @@
       <Parameter name="aggregation: coupling"                     type="string" value="uncoupled"/>
       <Parameter name="aggregation: output type"                  type="string" value="CrsGraph"/>
       <Parameter name="aggregation: coarsening order"             type="int"    value="1"/>
-      <Parameter name="aggregation: coarsening rate"              type="string" value="{2}"/>
+      <Parameter name="aggregation: coarsening rate"              type="string" value="{3}"/>
       <Parameter name="Graph"                                     type="string" value="myCoalesceDropFact"/>
     </ParameterList>
 
