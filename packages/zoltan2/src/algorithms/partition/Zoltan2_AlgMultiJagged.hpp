@@ -6783,7 +6783,40 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset( int used_num_ranks,
   {
     ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
 
+#define ZOLTAN2_UVM_HACK
+#ifndef ZOLTAN2_UVM_HACK
+    // This is the correct implementation, using initial_mj_gnos_ as the 
+    // data to be sent.  i
     ArrayView<const mj_gno_t> sent_gnos(initial_mj_gnos_, num_local_coords_);
+std::cout << " KDDKDD USING THE OLD WAY " << std::endl;
+#else
+    // Unfortunately, this HACK is needed to workaround BUGs in SpectrumMPI.
+    // Apparently, SpectrumMPI does not communicate UVM memory correctly 
+    // without special command-line flags that dramatically slow MPI 
+    // communications.  
+    // When Tpetra is used in the XpetraMultiVectorAdapter, 
+    // initial_mj_gnos_ is obtained from Tpetra::Map::getNodeElementList().
+    // For CUDA builds, Tpetra returns UVM memory in getNodeNumElements(),
+    // so initial_mj_gnos_ may be UVM memory.
+    // So MPI_sending a view of the data returned by Tpetra causes problems
+    // with communication on vortex, because a UVM view is sent to 
+    // Distributor for communication.
+    // 
+    // In truth, the correct fix is for SpectrumMPI to work correctly with UVM.
+    // A better hack would be for Tpetra's Distributor to identify UVM memory 
+    // and copy it before sending it.
+    // But since the problem is showing up in Zoltan2, we'll hack it here
+    // to alleviate the current "crisis" and then, we hope, revert back to
+    // the correct implementation above when vortex's problems are fixed.
+    //
+    // KDD 9/25/19 Addressing Empire debugging of UVM+MPI and parallel_scan
+    ArrayRCP<gno_t> uvmHackIds = ArrayRCP(num_local_coords_);
+    for (size_t i = 0; i < num_local_coords_; i++) 
+      uvmHackIds[i] = initial_mj_gnos_[i];
+    ArrayView<const mj_gno_t> sent_gnos = uvmHackIds();
+std::cout << " KDDKDD USING THE HACKED WAY " << std::endl;
+#endif
+
     distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
 
     result_initial_mj_gnos_ = allocMemory<mj_gno_t>(num_incoming_gnos);
