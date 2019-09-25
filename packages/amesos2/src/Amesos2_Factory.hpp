@@ -118,7 +118,10 @@
 
 #ifdef HAVE_AMESOS2_TACHO       // Tacho
 #include "Amesos2_Tacho.hpp"
-#endif
+#ifdef KOKKOS_ENABLE_CUDA
+#include "Amesos2_TachoHost.hpp"
+#endif // KOKKOS_ENABLE_CUDA
+#endif // HAVE_AMESOS2_TACHO
 
 #ifdef HAVE_AMESOS2_SUPERLU     // Sequential SuperLU
 #include "Amesos2_Superlu.hpp"
@@ -583,6 +586,14 @@ struct throw_no_scalar_support_exception {
        (solverName == "tacho")){
       return handle_solver_type_support<TachoSolver,Matrix,Vector>::apply(A, X, B);
     }
+
+#ifdef KOKKOS_ENABLE_CUDA
+    if((solverName == "amesos2_tachohost") ||
+       (solverName == "tachohost")){
+        return handle_solver_type_support<TachoHostSolver,Matrix,Vector>::apply(A, X, B);
+    }
+#endif
+
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLU

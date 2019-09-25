@@ -69,7 +69,9 @@
 #include <MatrixMarket_Tpetra.hpp> // For reading matrix-market files
 
 #include "Amesos2.hpp"          // includes everything from Amesos2
+#include "Amesos2_Kokkos_View_Copy_Assign.hpp" // for test src memory selection
 
+#include "Kokkos_CudaUVMOff.hpp"
 
 
 // #ifdef HAVE_TPETRA_INST_INT_INT
@@ -204,6 +206,7 @@ int main(int argc, char*argv[])
   int root = 0;
 
   string xml_file("solvers_test.xml"); // default xml file
+  string src_memory_space_name("Undefined"); // default src memory space (no special testing)
   bool allprint = false;
   Teuchos::CommandLineProcessor cmdp;
   cmdp.setDocString("A test driver for Amesos2 solvers.  It reads parameters\n"
@@ -220,11 +223,19 @@ int main(int argc, char*argv[])
   cmdp.setOption("verbosity", &verbosity, "Set verbosity level of output");
   cmdp.setOption("multiple-solves","single-solve", &multiple_solves, "Perform multiple solves with different RHS arguments");
   cmdp.setOption("refactor","no-refactor", &refactor, "Recompute L and U using a numerically different matrix at some point");
+  cmdp.setOption("test-src-memory-space-name", &src_memory_space_name, "Which memory space to test copying from.");
   try{
     cmdp.parse(argc,argv);
   } catch (const Teuchos::CommandLineProcessor::HelpPrinted& hp) {
     return EXIT_SUCCESS;        // help was printed, exit gracefully.
   }
+
+  // save the src_memory_space selection in the static class option which
+  // handles copying and testing options. This design will likely change and
+  // was picked to quickly prototype a test setup where we have multiple
+  // source memory spaces all tested as the same time.
+  // MDM-TODO: Remove this global
+  Amesos2::TestChooseMemorySpace::src() = src_memory_space_name;
 
   // set up output streams based on command-line parameters
   fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -328,6 +339,7 @@ bool do_mat_test(const ParameterList& parameters)
           if( verbosity > 1) *fos << "  | with " << solver_name << " : " << std::endl;
 
           ParameterList test_params = Teuchos::getValue<ParameterList>(parameters.entry(solver_it));
+
           bool solver_success = test_mat_with_solver(mm_file, solver_name, test_params, solve_params);
 
           if( verbosity > 1 ){

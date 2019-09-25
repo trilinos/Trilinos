@@ -309,6 +309,18 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
     Amesos2_Tacho.cpp
     )
 
+# If Cuda, then also build a host version for testing - maybe to delete later
+IF (Kokkos_ENABLE_Cuda)
+  APPEND_SET(HEADERS
+    Amesos2_TachoHost.hpp
+    Amesos2_TachoHost_TypeMap.hpp
+    )
+  APPEND_SET(SOURCES
+    Amesos2_TachoHost.cpp
+    )
+ENDIF()
+
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)

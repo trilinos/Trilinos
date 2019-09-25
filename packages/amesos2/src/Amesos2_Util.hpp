@@ -376,7 +376,7 @@ namespace Amesos2 {
                                                        distribution, ordering);
         // MDM-TODO can we do deep_copy and skip Teuchos::as?
         Kokkos::parallel_for(
-          Kokkos::RangePolicy<typename KV_S::execution_space, typename KV_GO::size_type> (0, size),
+          Kokkos::RangePolicy<typename KV_GO::execution_space, typename KV_GO::size_type> (0, size),
           KOKKOS_LAMBDA (const typename KV_GO::size_type & i) {
           indices(i) = Teuchos::as<typename KV_GO::value_type>(indices_tmp(i));
         });
@@ -493,7 +493,7 @@ namespace Amesos2 {
                                                        distribution, ordering);
         // MDM-TODO can we do deep_copy and skip Teuchos::as?
         Kokkos::parallel_for(
-          Kokkos::RangePolicy<typename KV_S::execution_space, typename KV_GO::size_type> (0, size),
+          Kokkos::RangePolicy<typename KV_GO::execution_space, typename KV_GO::size_type> (0, size),
           KOKKOS_LAMBDA (const typename KV_GO::size_type & i) {
           indices(i) = Teuchos::as<typename KV_GO::value_type>(indices_tmp(i));
         });
@@ -858,13 +858,7 @@ namespace Amesos2 {
                         EDistribution distribution,
                         EStorage_Ordering ordering)
       {
-        // MDM-TODO - Did not develop this yet so just passing ArrayView
-        // I think we'll need Kokkos::View calls in Amesos2_MatrixAdapter
-        mat->getCrs(
-          Teuchos::ArrayView<typename KV_S::value_type>(nzvals.data(), nzvals.size()),
-          Teuchos::ArrayView<typename KV_GO::value_type>(colind.data(), colind.size()),
-          Teuchos::ArrayView<typename KV_GS::value_type>(rowptr.data(), rowptr.size()),
-          nnz, map, ordering, distribution);
+        mat->getCrs_kokkos_view(nzvals, colind, rowptr, nnz, map, ordering, distribution);
       }
 
       static

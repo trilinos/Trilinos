@@ -96,18 +96,116 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyTachoFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    SOURCE_FILES tacho_test.xml
+    SOURCE_FILES tacho_test.xml tacho_host_test.xml
     EXEDEPS Solver_Test
+    )
+
+
+
+IF (Kokkos_ENABLE_Cuda)
+
+  # Note the awkward naming issue - if Cuda is not enabled then we use tacho_test.xml for Host
+  # If Cuda is enabled, we use tacho_host_test.xml. Needs reworking.
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test_Default_To_Host
+    ARGS "--xml-params=tacho_host_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Default"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test_Host_To_Host
+    ARGS "--xml-params=tacho_host_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Host"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
     )
 
   TRIBITS_ADD_TEST(
     Solver_Test
-    NAME Tacho_Solver_Test
-    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    NAME Tacho_Solver_Test_CudaUVM_To_Host
+    ARGS "--xml-params=tacho_host_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=CudaUVM"
     STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1 # Need to determine if we want more MPI when not running OpenMP with threads
+    NUM_MPI_PROCS 1
     COMM serial mpi
     )
+
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test_Cuda_To_Host
+    ARGS "--xml-params=tacho_host_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Cuda"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test_Default_To_Cuda
+    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Default"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test_Host_To_Cuda
+    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Host"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test_CudaUVM_To_Cuda
+    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=CudaUVM"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test_Cuda_To_Cuda
+    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Cuda"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+ELSE()
+
+  # Note the awkward naming issue - if Cuda is not enabled then we use tacho_test.xml for Host
+  # If Cuda is enabled, we use tacho_host_test.xml. Needs reworking.
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test_Host_To_Host
+    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Host"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test_Default_To_Host
+    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Default"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+ENDIF()
 
 ENDIF()
 

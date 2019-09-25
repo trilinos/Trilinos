@@ -35,18 +35,74 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Sivasankaran Rajamanickam (srajama@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
 
-#include "Amesos2_config.h"
-#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#ifndef AMESOS2_TACHOHOST_TYPEMAP_HPP
+#define AMESOS2_TACHOHOST_TYPEMAP_HPP
 
-#define TACHO_BUILD_SOLVER
-#include "Amesos2_Tacho_Impl.hpp"
-#undef TACHO_BUILD_SOLVER
-#undef TACHO_SOLVER_NAME
+#include <functional>
+#ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+#endif
 
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#include <Teuchos_as.hpp>
+#ifdef HAVE_TEUCHOS_COMPLEX
+#include <Teuchos_SerializationTraits.hpp>
+#endif
+
+#include "Amesos2_TypeMap.hpp"
+
+namespace Amesos2 {
+
+template <class, class> class TachoHostSolver;
+
+/* Specialize the Amesos2::TypeMap struct for Tacho types
+ *
+ * \cond Tacho_type_specializations
+ */
+
+template <>
+struct TypeMap<TachoHostSolver,float>
+{
+  typedef float type;
+  typedef float magnitude_type;
+};
+
+template <>
+struct TypeMap<TachoHostSolver,double>
+{
+  typedef double type;
+  typedef double magnitude_type;
+};
+
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+
+template <>
+struct TypeMap<TachoHostSolver,std::complex<float> >
+{
+  typedef Kokkos::complex<float> type;
+  typedef float magnitude_type;
+};
+
+template <>
+struct TypeMap<TachoHostSolver,std::complex<double> >
+{
+  typedef Kokkos::complex<double> type;
+  typedef double magnitude_type;
+};
+
+
+#endif  // HAVE_TEUCHOS_COMPLEX
+
+/* \endcond Tacho_type_specializations */
+
+
+} // end namespace Amesos2
+
+#endif  // AMESOS2_TACHO_TYPEMAP_HPP

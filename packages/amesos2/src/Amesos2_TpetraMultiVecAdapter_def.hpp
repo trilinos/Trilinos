@@ -55,6 +55,7 @@
 
 #include <type_traits>
 #include "Amesos2_TpetraMultiVecAdapter_decl.hpp"
+#include "Amesos2_Kokkos_View_Copy_Assign.hpp"
 
 
 namespace Amesos2 {
@@ -258,17 +259,27 @@ namespace Amesos2 {
       distribution_map->getComm ()->getRank () << " of the distribution Map's "
       "communicator, the given stride lda = " << lda << " is not large enough "
       "for the local vector length " << requested_vector_length << ".");
+
+    // MDM Removing this check since I want the copy manager below to handle
+    // allocation. If it assigns we don't want the allocation to ever take place.
+    // MDM-TODO remove this code
+    /*
     TEUCHOS_TEST_FOR_EXCEPTION(
       as<size_t> (kokkos_view.size ()) < as<size_t> ((num_vecs - 1) * lda + requested_vector_length),
       std::invalid_argument, "Amesos2::MultiVector::get1dCopy: MultiVector "
       "storage not large enough given leading dimension and number of vectors." );
+    */
 #endif // HAVE_AMESOS2_DEBUG
 
     // Special case when number vectors == 1 and single MPI process
     if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
-      // MDM-TODO Check and discuss - need to learn more about MV
-      // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test - tested manually by setting numVecs 1 in Solver_Test.cpp. Add param?
-      kokkos_view = mv_->template getLocalView<typename KV::execution_space>();
+      if(mv_->isConstantStride()) {
+        mv_->sync_device(); // no testing of this right now - since UVM on
+        deep_copy_or_assign_view(kokkos_view, mv_->getLocalViewDevice());
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Resolve handling for non-constant stride.");
+      }
     }
     else {
 
@@ -298,10 +309,16 @@ namespace Amesos2 {
       redist_mv.doExport (*mv_, *exporter_, Tpetra::REPLACE);
 
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
-        // Do this if GIDs contiguous - existing functionality
-
-        // MDM-TODO Check and discuss - need to learn more about MV
-        kokkos_view = redist_mv.template getLocalView<typename KV::execution_space>();
+        // MDM-TODO Need to decide how sync is handled for UVM on mode of Tpetra
+        // This code is not really tested until UVM is off.
+        // MDM-TODO Need testing which requires lda setting - ignored here successfully.
+        if(redist_mv.isConstantStride()) {
+          redist_mv.sync_device(); // no testing of this right now - since UVM on
+          deep_copy_or_assign_view(kokkos_view, redist_mv.getLocalViewDevice());
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Resolve handling for non-constant stride.");
+        }
       }
       else {
         // Do this if GIDs not contiguous...
@@ -314,26 +331,30 @@ namespace Amesos2 {
         if ( redist_mv.isConstantStride() ) {
           // MDM-TODO - Determine if this is the best way
           // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
-          auto contig_local_view_2d = redist_mv.template getLocalView<typename KV::execution_space>();
-          Kokkos::deep_copy(kokkos_view, contig_local_view_2d);
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Untested code 1 - resolve and remove comments.");
+          // MDM-TODO switch to getLocalViewDevice() etc. See above.
+          // auto contig_local_view_2d = redist_mv.template getLocalView<typename KV::execution_space>();
+          // Kokkos::deep_copy(kokkos_view, contig_local_view_2d);
         }
         else {
           // ... lda should come from Teuchos::Array* allocation,
           // not the MultiVector, since the MultiVector does NOT
           // have constant stride in this case.
           // TODO lda comes from X->getGlobalLength() in solve_impl - should this be changed???
-          const size_t lclNumRows = redist_mv.getLocalLength();
+          // const size_t lclNumRows = redist_mv.getLocalLength();
           for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
             // MDM-TODO - Hacked this back to ArrayView - need to make host/device handling
             // Need to determine how this will interact with MV for device/host
             // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
-            auto av_j = Teuchos::ArrayView<Scalar>(kokkos_view.data(), lda * num_vecs)(lda*j, lclNumRows);
-            auto X_lcl_j_2d = redist_mv.template getLocalView<typename KV::execution_space> ();
-            auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Untested code 2 - resolve and remove comments.");
+            // MDM-TODO switch to getLocalViewDevice() etc. See above.
+            // auto av_j = Teuchos::ArrayView<Scalar>(kokkos_view.data(), lda * num_vecs)(lda*j, lclNumRows);
+            // auto X_lcl_j_2d = redist_mv.template getLocalView<typename KV::execution_space> ();
+            // auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
 
-            using val_type = typename decltype( X_lcl_j_1d )::value_type;
-            Kokkos::View<val_type*, typename KV::execution_space> umavj ( const_cast< val_type* > ( reinterpret_cast<const val_type*> ( av_j.getRawPtr () ) ), av_j.size () );
-            Kokkos::deep_copy (umavj, X_lcl_j_1d);
+            // using val_type = typename decltype( X_lcl_j_1d )::value_type;
+            // Kokkos::View<val_type*, typename KV::execution_space> umavj ( const_cast< val_type* > ( reinterpret_cast<const val_type*> ( av_j.getRawPtr () ) ), av_j.size () );
+            // Kokkos::deep_copy (umavj, X_lcl_j_1d);
           }
         }
       }
@@ -550,9 +571,8 @@ namespace Amesos2 {
 
       // num_vecs = 1; stride does not matter
 
-      // MDM-TODO Is this the right way to update MV: copying one element at a time?
       // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test - tested manually by setting numVecs 1 in Solver_Test.cpp. Add param?
-      auto mv_view_to_modify_2d = mv_->template getLocalView<typename KV::execution_space>();
+      auto mv_view_to_modify_2d = mv_->getLocalViewDevice();
       Kokkos::deep_copy(mv_view_to_modify_2d, kokkos_new_data);
     }
     else {
@@ -580,8 +600,10 @@ namespace Amesos2 {
         // Do this if GIDs contiguous - existing functionality
         // Redistribute the output (multi)vector.
 
-        // MDM-TODO Resolve this, currently just hacked View to ArrayView
-        // Implement host/device solutions
+        // MDM-TODO Need to resolve this. This code works if kokkos_new_data is
+        // CudaSpace (no UVM) or HostSpace. The destination Tpetra object is
+        // UVM on but it seems the source_mv has no property to designate the
+        // data source. Would like to understand why it doesn't crash.
         const multivec_t source_mv (srcMap, Teuchos::ArrayView<typename KV::value_type>(kokkos_new_data.data(), kokkos_new_data.size()), lda, num_vecs);
         mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
       }
@@ -594,6 +616,7 @@ namespace Amesos2 {
         if ( redist_mv.isConstantStride() ) {
           // MDM-TODO - Complete and validate
           // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Untested code 4 - resolve and remove comments.");
           auto contig_local_view_2d = redist_mv.template getLocalView<typename KV::execution_space>();
           Kokkos::deep_copy(contig_local_view_2d, kokkos_new_data);
         }
@@ -608,6 +631,7 @@ namespace Amesos2 {
             // MDM-TODO - Hacked this back to ArrayView - need to make host/device handling
             // Implement host/device solutions
             // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Untested code 5 - resolve and remove comments.");
             auto av_j = Teuchos::ArrayView<typename KV::value_type>(kokkos_new_data.data(), kokkos_new_data.size())(lda*j, lclNumRows);
 
             // MDM-TODO Set up testing of this code - validate space and how this works

@@ -42,11 +42,15 @@
 // @HEADER
 
 #include "Amesos2_config.h"
+#include "Kokkos_Core.hpp"
+
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
-#define TACHO_BUILD_SOLVER
-#include "Amesos2_Tacho_Impl.hpp"
-#undef TACHO_BUILD_SOLVER
-#undef TACHO_SOLVER_NAME
+#ifdef KOKKOS_ENABLE_CUDA
+  #define TACHOHOST_BUILD_SOLVER
+    #include "Amesos2_Tacho_Impl.hpp"
+  #undef TACHOHOST_BUILD_SOLVER
+  #undef TACHO_SOLVER_NAME
+#endif // KOKKOS_ENABLE_CUDA
 
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION

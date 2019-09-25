@@ -41,8 +41,20 @@
 //
 // @HEADER
 
-#ifndef AMESOS2_TACHO_DEF_HPP
-#define AMESOS2_TACHO_DEF_HPP
+// This file is used for TachoSolver and TachoHostSolver
+// So include guards exist twice
+#if (defined(TACHO_BUILD_SOLVER) && !defined(TACHO_BUILT_SOLVER_DEF_HPP)) || \
+    (defined(TACHOHOST_BUILD_SOLVER) && !defined(TACHOHOST_BUILT_SOLVER_DEF_HPP))
+
+#ifdef TACHO_BUILD_SOLVER
+  #define TACHO_BUILT_SOLVER_DEF_HPP
+  #define TACHO_SOLVER_CHAR_NAME "Tacho"
+#endif
+
+#ifdef TACHOHOST_BUILD_SOLVER
+  #define TACHOHOST_BUILT_SOLVER_DEF_HPP
+  #define TACHO_SOLVER_CHAR_NAME "TachoHost"
+#endif
 
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -55,26 +67,23 @@
 namespace Amesos2 {
 
 template <class Matrix, class Vector>
-TachoSolver<Matrix,Vector>::TachoSolver(
+TACHO_SOLVER_NAME<Matrix,Vector>::TACHO_SOLVER_NAME(
   Teuchos::RCP<const Matrix> A,
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
-  : SolverCore<Amesos2::TachoSolver,Matrix,Vector>(A, X, B)
-  , nzvals_()                   // initialize to empty arrays
-  , colind_()
-  , rowptr_()
+  : SolverCore<Amesos2::TACHO_SOLVER_NAME,Matrix,Vector>(A, X, B)
 {
 }
 
 
 template <class Matrix, class Vector>
-TachoSolver<Matrix,Vector>::~TachoSolver( )
+TACHO_SOLVER_NAME<Matrix,Vector>::~TACHO_SOLVER_NAME( )
 {
 }
 
 template <class Matrix, class Vector>
 std::string
-TachoSolver<Matrix,Vector>::description() const
+TACHO_SOLVER_NAME<Matrix,Vector>::description() const
 {
   std::ostringstream oss;
   oss << "Tacho solver interface";
@@ -83,32 +92,21 @@ TachoSolver<Matrix,Vector>::description() const
 
 template<class Matrix, class Vector>
 int
-TachoSolver<Matrix,Vector>::preOrdering_impl()
+TACHO_SOLVER_NAME<Matrix,Vector>::preOrdering_impl()
 {
   return(0);
 }
 
 template <class Matrix, class Vector>
 int
-TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
+TACHO_SOLVER_NAME<Matrix,Vector>::symbolicFactorization_impl()
 {
   int status = 0;
 
-  device_size_type_array row_ptr;
-  device_ordinal_type_array cols;
-
   if ( this->root_ ) {
     if(do_optimization()) {
-      // in the optimized case we read the values directly from the matrix
-      typedef typename MatrixAdapter<Matrix>::spmtx_ptr_t row_ptr_t;
-      typedef typename MatrixAdapter<Matrix>::spmtx_idx_t col_ind_t;
-      row_ptr_t sp_rowptr = this->matrixA_->returnRowPtr();
-        TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
-          std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null");
-      col_ind_t sp_colind = this->matrixA_->returnColInd();
-        TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
-          std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null");
-
+      // MDM-TODO some of these comments are about to become resolved so return
+      // and remove as necessary.
       /*
           A couple of things to resolve/discuss here:
 
@@ -124,62 +122,71 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 
       */
 
+      typedef typename Matrix::execution_space m_exec_space;
+
+      // first create a View in the matrix mem space as efficiently as possible,
+      // either directly, or by copy if types mismatch
+      typedef typename MatrixAdapter<Matrix>::spmtx_ptr_t row_ptr_t;
+      row_ptr_t sp_rowptr = this->matrixA_->returnRowPtr();
+      TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
+          std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null");
+      Kokkos::View<size_type*, m_exec_space> row_ptr_view_src;
       if(std::is_same<size_type, typename std::remove_pointer<row_ptr_t>::type>::value) {
-        // This line is used when types match exactly, but we need compilation when they don't
-        // match, hence the cast - not sure if there is a better way to do this.
-        row_ptr = device_size_type_array((size_type*)sp_rowptr, this->globalNumRows_ + 1);
+        // they match so get the view in matrix space and then copy or assign to us
+        Kokkos::View<size_type*, m_exec_space> src_row_ptr((size_type*)sp_rowptr, this->globalNumRows_ + 1);
+        deep_copy_or_assign_view(host_row_ptr_view_, src_row_ptr);
       }
       else {
-        row_ptr = device_size_type_array(
-          Kokkos::ViewAllocateWithoutInitializing("r"), this->globalNumRows_ + 1);
+        // they don't match so we'll need to loop - first make the view in matrix space
+        // but with the dst type, copy the types, then send to the copy manager
+        Kokkos::View<size_type*, m_exec_space> src_row_ptr(
+          Kokkos::ViewAllocateWithoutInitializing("src_row_ptr"), this->globalNumRows_ + 1);
 
-        // Keep this on device? We could copy to host first, then loop.
-        // Not sure if symbolic factorization might have a device mode later
-        // MDM-TODO need to learn about this sp_rowptr device/host state
-        Kokkos::parallel_for(
-          Kokkos::RangePolicy<DeviceSpaceType, global_size_type>
-              (0, this->globalNumRows_ + 1), KOKKOS_LAMBDA (int n) {
-          row_ptr(n) = static_cast<size_type>(sp_rowptr[n]);
+        // now copy in the matrix exec space
+        Kokkos::parallel_for(Kokkos::RangePolicy<m_exec_space, global_size_type>
+          (0, this->globalNumRows_ + 1), KOKKOS_LAMBDA (global_size_type n) {
+          src_row_ptr(n) = static_cast<size_type>(sp_rowptr[n]);
         });
+        deep_copy_or_assign_view(host_row_ptr_view_, src_row_ptr);
       }
 
+      // do the same procedure as above, but for cols
+      typedef typename MatrixAdapter<Matrix>::spmtx_idx_t col_ind_t;
+      col_ind_t sp_colind = this->matrixA_->returnColInd();
+      TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
+          std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null");
       if(std::is_same<ordinal_type, typename std::remove_pointer<col_ind_t>::type>::value) {
-        // cast is so that things compile when this line is not used - same issues as above.
-        cols = device_ordinal_type_array((ordinal_type*)sp_colind, this->globalNumNonZeros_);
+        // they match so get the view in matrix space and then copy or assign to us
+        Kokkos::View<ordinal_type*, m_exec_space> src_cols((ordinal_type*)sp_colind, this->globalNumNonZeros_);
+        deep_copy_or_assign_view(host_cols_view_, src_cols);
       }
       else {
-        cols = device_ordinal_type_array(
-          Kokkos::ViewAllocateWithoutInitializing("c"), this->globalNumNonZeros_);
+        // they don't match so we'll need to loop - first make the view in matrix space
+        // but with the dst type, copy the types, then send to the copy manager
+        Kokkos::View<ordinal_type*, m_exec_space> src_cols(
+          Kokkos::ViewAllocateWithoutInitializing("src_cols"), this->globalNumNonZeros_);
 
-        // Keep this on device? We could copy to host first, then loop.
-        // Not sure if symbolic factorization might have a device mode later
-        // MDM-TODO need to learn about this sp_rowptr device/host state
-        Kokkos::parallel_for(
-          Kokkos::RangePolicy<DeviceSpaceType, global_size_type>
-              (0, this->globalNumNonZeros_), KOKKOS_LAMBDA (int n) {
-          cols(n) = static_cast<ordinal_type>(sp_colind[n]);
+        // now copy in the matrix exec space
+        Kokkos::parallel_for(Kokkos::RangePolicy<m_exec_space, global_size_type>
+          (0, this->globalNumNonZeros_), KOKKOS_LAMBDA (global_size_type n) {
+          src_cols(n) = static_cast<ordinal_type>(sp_colind[n]);
         });
+        deep_copy_or_assign_view(host_cols_view_, src_cols);
       }
     }
-    else
-    {
-      // Non optimized case used the arrays set up in loadA_impl
-      row_ptr = this->rowptr_;
-      cols = this->colind_;
+    else {
+      // if both are host, then this will act like a host mirror and just point
+      // to itself. But if the src was on Cuda (UVM off) then this will do a
+      // a deep copy to prepare for the symbolic
+      deep_copy_or_assign_view(host_row_ptr_view_, device_row_ptr_view_);
+      deep_copy_or_assign_view(host_cols_view_, device_cols_view_);
     }
 
     // TODO: Confirm param options
     // data_.solver.setMaxNumberOfSuperblocks(data_.max_num_superblocks);
 
     // Symbolic factorization currently must be done on host
-    Kokkos::View<size_type*,HostSpaceType> host_row_ptr(
-      Kokkos::ViewAllocateWithoutInitializing("host_row_ptr"), this->globalNumRows_ + 1);
-    Kokkos::View<ordinal_type*,HostSpaceType> host_cols(
-      Kokkos::ViewAllocateWithoutInitializing("host_cols"), this->globalNumNonZeros_);
-    Kokkos::deep_copy(host_row_ptr, row_ptr);
-    Kokkos::deep_copy(host_cols, cols);
-
-    data_.solver.analyze(this->globalNumCols_, host_row_ptr, host_cols);
+    data_.solver.analyze(this->globalNumCols_, host_row_ptr_view_, host_cols_view_);
   }
 
   return status;
@@ -188,7 +195,7 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 
 template <class Matrix, class Vector>
 int
-TachoSolver<Matrix,Vector>::numericFactorization_impl()
+TACHO_SOLVER_NAME<Matrix,Vector>::numericFactorization_impl()
 {
   int status = 0;
 
@@ -207,7 +214,7 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
     else
     {
       // Non optimized case used the arrays set up in loadA_impl
-      values = this->nzvals_;
+      values = this->device_nzvals_view_;
     }
 
     data_.solver.factorize(values);
@@ -218,7 +225,7 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
 
 template <class Matrix, class Vector>
 int
-TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
+TACHO_SOLVER_NAME<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
@@ -226,10 +233,15 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  device_solve_array_t x(
-    Kokkos::ViewAllocateWithoutInitializing("x"), this->globalNumRows_, nrhs);
-  device_solve_array_t b(
-    Kokkos::ViewAllocateWithoutInitializing("b"), this->globalNumRows_, nrhs);
+  // if we did match the source we don't allocate
+  if(xValues_.extent(0) < ld_rhs || xValues_.extent(1) < nrhs) {
+    // allocate x because the solve expects it
+    xValues_ = device_solve_array_t(
+      Kokkos::ViewAllocateWithoutInitializing("xValues"), ld_rhs, nrhs);
+  }
+
+  // don't allocate b since it's handled by the copy manager and might just be
+  // be assigned, not copied anyways.
 
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
@@ -237,7 +249,7 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
     Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-                             device_solve_array_t>::do_get(B, b,
+                             device_solve_array_t>::do_get(B, this->bValues_,
                                                as<size_t>(ld_rhs),
                                                ROOTED, this->rowIndexBase_);
   }
@@ -249,12 +261,15 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
     // Bump up the workspace size if needed
+    // MDM-TODO This was assuming extra size is ok but now with views it seems
+    // a little dangerous - would we prefer to have this be == checks so the
+    // workspace always matches exactly? Need to learn about internal handling.
     if (workspace_.extent(0) < this->globalNumRows_ || workspace_.extent(1) < nrhs) {
       workspace_ = device_solve_array_t(
         Kokkos::ViewAllocateWithoutInitializing("t"), this->globalNumRows_, nrhs);
     }
 
-    data_.solver.solve(x, b, workspace_);
+    data_.solver.solve(xValues_, bValues_, workspace_);
 
     int status = 0; // TODO: determine what error handling will be
     if(status != 0) {
@@ -274,10 +289,10 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,device_solve_array_t>::do_put(X, x,
-                                         as<size_t>(ld_rhs),
-                                         ROOTED, this->rowIndexBase_);
+    Util::template put_1d_data_helper_kokkos_view<
+      MultiVecAdapter<Vector>,device_solve_array_t>::do_put(X, xValues_,
+                                        as<size_t>(ld_rhs),
+                                        ROOTED, this->rowIndexBase_);
   }
 
   return(ierr);
@@ -286,7 +301,7 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
 
 template <class Matrix, class Vector>
 bool
-TachoSolver<Matrix,Vector>::matrixShapeOK_impl() const
+TACHO_SOLVER_NAME<Matrix,Vector>::matrixShapeOK_impl() const
 {
   // Tacho can only apply the solve routines to square matrices
   return( this->matrixA_->getGlobalNumRows() == this->matrixA_->getGlobalNumCols() );
@@ -295,7 +310,7 @@ TachoSolver<Matrix,Vector>::matrixShapeOK_impl() const
 
 template <class Matrix, class Vector>
 void
-TachoSolver<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
+TACHO_SOLVER_NAME<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
 {
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
@@ -307,7 +322,7 @@ TachoSolver<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
 
 template <class Matrix, class Vector>
 Teuchos::RCP<const Teuchos::ParameterList>
-TachoSolver<Matrix,Vector>::getValidParameters_impl() const
+TACHO_SOLVER_NAME<Matrix,Vector>::getValidParameters_impl() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
@@ -326,14 +341,15 @@ TachoSolver<Matrix,Vector>::getValidParameters_impl() const
 
 template <class Matrix, class Vector>
 bool
-TachoSolver<Matrix,Vector>::do_optimization() const {
+TACHO_SOLVER_NAME<Matrix,Vector>::do_optimization() const {
   return (this->root_ && (this->matrixA_->getComm()->getSize() == 1));
 }
 
 template <class Matrix, class Vector>
 bool
-TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
+TACHO_SOLVER_NAME<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
+
   if(current_phase == SOLVE) {
     return(false);
   }
@@ -343,13 +359,19 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
 
+    // Note views are allocated but eventually we should remove this.
+    // The internal copy manager will decide if we can assign or deep_copy
+    // and then allocate if necessary. However I don't have working Tacho GPU
+    // right now for multiple ranks. So this code won't use the copy manager
+    // yet. Therefore allocate here to have it working at least for non-GPU
+    // parallel builds with more than 1 rank/
     // Only the root image needs storage allocated
     if( this->root_ ) {
-      nzvals_ = device_value_type_array(
+      device_nzvals_view_ = device_value_type_array(
         Kokkos::ViewAllocateWithoutInitializing("nzvals"), this->globalNumNonZeros_);
-      colind_ = device_ordinal_type_array(
+      device_cols_view_ = device_ordinal_type_array(
         Kokkos::ViewAllocateWithoutInitializing("colind"), this->globalNumNonZeros_);
-      rowptr_ = device_size_type_array(
+      device_row_ptr_view_ = device_size_type_array(
         Kokkos::ViewAllocateWithoutInitializing("rowptr"), this->globalNumRows_ + 1);
     }
 
@@ -366,9 +388,9 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
       Util::get_crs_helper_kokkos_view<
       MatrixAdapter<Matrix>,device_value_type_array,device_ordinal_type_array,device_size_type_array>::do_get(
                                                       this->matrixA_.ptr(),
-                                                      nzvals_,
-                                                      colind_,
-                                                      rowptr_,
+                                                      device_nzvals_view_,
+                                                      device_cols_view_,
+                                                      device_row_ptr_view_,
                                                       nnz_ret,
                                                       ROOTED, ARBITRARY,
                                                       this->columnIndexBase_);
@@ -378,11 +400,11 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
   return true;
 }
 
-
 template<class Matrix, class Vector>
-const char* TachoSolver<Matrix,Vector>::name = "Tacho";
-
+const char* TACHO_SOLVER_NAME<Matrix,Vector>::name = TACHO_SOLVER_CHAR_NAME;
 
 } // end namespace Amesos2
 
-#endif  // AMESOS2_TACHO_DEF_HPP
+#undef TACHO_SOLVER_CHAR_NAME
+
+#endif  // AMESOS2_TACHO_DEF_HPP or AMESOS2_TACHOHOST_DEF_HPP

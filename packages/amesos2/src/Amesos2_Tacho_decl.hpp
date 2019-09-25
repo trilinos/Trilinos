@@ -40,15 +40,32 @@
 // ***********************************************************************
 //
 // @HEADER
+#if (defined(TACHO_BUILD_SOLVER) && !defined(TACHO_BUILT_SOLVER_DECL_HPP)) || \
+    (defined(TACHOHOST_BUILD_SOLVER) && !defined(TACHOHOST_BUILT_SOLVER_DECL_HPP))
 
-#ifndef AMESOS2_TACHO_DECL_HPP
-#define AMESOS2_TACHO_DECL_HPP
+#ifdef TACHO_BUILD_SOLVER
+  #define TACHO_BUILT_SOLVER_DECL_HPP
+#endif
 
-#include <Kokkos_Core.hpp> // so we can check KOKKOS_ENABLE_CUDA
+#ifdef TACHOHOST_BUILD_SOLVER
+  #define TACHOHOST_BUILT_SOLVER_DECL_HPP
+#endif
+
+#include <Kokkos_Core.hpp>
+#include "Kokkos_CudaUVMOff.hpp"
 
 #include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
+
+#ifdef TACHO_BUILD_SOLVER
+#define TACHO_SOLVER_NAME TachoSolver
 #include "Amesos2_Tacho_FunctionMap.hpp"
+#endif
+
+#ifdef TACHOHOST_BUILD_SOLVER
+#define TACHO_SOLVER_NAME TachoHostSolver
+#include "Amesos2_TachoHost_FunctionMap.hpp"
+#endif
 
 #include "Tacho.hpp"
 #include "Tacho_Solver.hpp"
@@ -64,9 +81,9 @@ namespace Amesos2 {
  */
 template <class Matrix,
           class Vector>
-class TachoSolver : public SolverCore<Amesos2::TachoSolver, Matrix, Vector>
+class TACHO_SOLVER_NAME : public SolverCore<Amesos2::TACHO_SOLVER_NAME, Matrix, Vector>
 {
-  friend class SolverCore<Amesos2::TachoSolver,Matrix,Vector>; // Give our base access
+  friend class SolverCore<Amesos2::TACHO_SOLVER_NAME,Matrix,Vector>; // Give our base access
                                                           // to our private
                                                           // implementation funcs
 public:
@@ -74,15 +91,15 @@ public:
   /// Name of this solver interface.
   static const char* name;      // declaration. Initialization outside.
 
-  typedef TachoSolver<Matrix,Vector>                                   type;
-  typedef SolverCore<Amesos2::TachoSolver,Matrix,Vector>         super_type;
+  typedef TACHO_SOLVER_NAME<Matrix,Vector>                             type;
+  typedef SolverCore<Amesos2::TACHO_SOLVER_NAME,Matrix,Vector>   super_type;
 
   // Since typedef's are not inheritted, go grab them
   typedef typename super_type::scalar_type                      scalar_type;
   typedef typename super_type::local_ordinal_type        local_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
 
-  typedef TypeMap<Amesos2::TachoSolver,scalar_type>                type_map;
+  typedef TypeMap<Amesos2::TACHO_SOLVER_NAME,scalar_type>          type_map;
 
   /*
    * The Tacho interface will need two other typedef's, which are:
@@ -92,22 +109,37 @@ public:
   typedef typename type_map::type                                tacho_type;
   typedef typename type_map::magnitude_type                  magnitude_type;
 
-  typedef FunctionMap<Amesos2::TachoSolver,tacho_type>         function_map;
+  typedef FunctionMap<Amesos2::TACHO_SOLVER_NAME,tacho_type>         function_map;
 
   // TODO - Not sure yet best place for organizing these typedefs
   typedef Tacho::ordinal_type                                  ordinal_type;
   typedef Tacho::size_type                                        size_type;
   typedef Kokkos::DefaultHostExecutionSpace                   HostSpaceType;
 
-  // not sure if we want this here or restore the #ifdef macros we originally
-  // had below in this file.
-  typedef Kokkos::DefaultExecutionSpace                     DeviceSpaceType;
+#ifdef TACHO_BUILD_SOLVER
+  #ifdef KOKKOS_ENABLE_CUDA
+    // special case - use UVM Off not UVM on to test the current targets
+    typedef Kokkos::CudaUVMOff                               DeviceSpaceType;
+  #else
+    typedef Kokkos::DefaultExecutionSpace                    DeviceSpaceType;
+  #endif
+#endif // TACHO_BUILD_SOLVER
+
+#ifdef TACHOHOST_BUILD_SOLVER
+  typedef Kokkos::DefaultHostExecutionSpace                 DeviceSpaceType;
+#endif // TACHOHOST_BUILD_SOLVER
+
 
   typedef Kokkos::TaskScheduler<DeviceSpaceType>              SchedulerType;
 
   typedef Kokkos::View<size_type*, DeviceSpaceType>       device_size_type_array;
   typedef Kokkos::View<ordinal_type*, DeviceSpaceType> device_ordinal_type_array;
   typedef Kokkos::View<tacho_type*, DeviceSpaceType>     device_value_type_array;
+
+  // also work with host space - right now symbolic requires host space so we
+  // do everything in device space if source was device, then deep_copy
+  typedef Kokkos::View<size_type*, HostSpaceType>          host_size_type_array;
+  typedef Kokkos::View<ordinal_type*, HostSpaceType>    host_ordinal_type_array;
 
   /// \name Constructor/Destructor methods
   //@{
@@ -118,13 +150,13 @@ public:
    * \warning Should not be called directly!  Use instead
    * Amesos2::create() to initialize a Tacho interface.
    */
-  TachoSolver(Teuchos::RCP<const Matrix> A,
+  TACHO_SOLVER_NAME(Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
           Teuchos::RCP<const Vector> B);
 
 
   /// Destructor
-  ~TachoSolver( );
+  ~TACHO_SOLVER_NAME( );
 
   //@}
 
@@ -148,8 +180,9 @@ private:
    *
    * \throw std::runtime_error Tacho is not able to factor the matrix.
    */
-public: // TODO: Changed this just for trying Cuda issues - has parallel_for - need to clean up
+public: // MDM-TODO made this public for CUDA parallel_for usage - may change
   int symbolicFactorization_impl();
+
 private:
 
   /**
@@ -223,22 +256,28 @@ private:
   typedef typename Tacho::Solver<tacho_type,SchedulerType>::value_type_matrix
     device_solve_array_t;
 
-  // The following Arrays are persisting storage arrays for A, X, and B
-  /// Stores the values of the nonzero entries for Tacho
-  device_value_type_array nzvals_;
-  /// Stores the location in \c Ai_ and Aval_ that starts row j
-  device_ordinal_type_array colind_;
-  /// Stores the row indices of the nonzero entries
-  device_size_type_array rowptr_;
-
   // used as an internal workspace - possibly we can store this better in TACHOData
   mutable device_solve_array_t workspace_;
+
+  // x and b for solve - only allocated first time
+  // MDM-TODO - cam we redo this to remove mutables - same as above workspace_
+  mutable device_solve_array_t xValues_;
+  mutable device_solve_array_t bValues_;
+
+  // numeric is on device
+  device_value_type_array device_nzvals_view_;
+  device_size_type_array device_row_ptr_view_;
+  device_ordinal_type_array device_cols_view_;
+
+  // symbolic is done on host for Tacho so store these versions as well
+  host_size_type_array host_row_ptr_view_;
+  host_ordinal_type_array host_cols_view_;
 };                              // End class Tacho
 
 
 // Specialize solver_traits struct for Tacho
 template <>
-struct solver_traits<TachoSolver> {
+struct solver_traits<TACHO_SOLVER_NAME> {
 #ifdef HAVE_TEUCHOS_COMPLEX
   typedef Meta::make_list4<float,
                            double,
@@ -254,4 +293,4 @@ struct solver_traits<TachoSolver> {
 
 } // end namespace Amesos2
 
-#endif  // AMESOS2_TACHO_DECL_HPP
+#endif  // TACHO_BUILT_SOLVER_HPP or TACHOHOST_BUILT_SOLVER_HPP

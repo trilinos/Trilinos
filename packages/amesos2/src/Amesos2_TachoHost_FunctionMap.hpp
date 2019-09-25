@@ -35,18 +35,25 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Sivasankaran Rajamanickam (srajama@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
 
-#include "Amesos2_config.h"
-#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#ifndef AMESOS2_TACHOHOST_FUNCTIONMAP_HPP
+#define AMESOS2_TACHOHOST_FUNCTIONMAP_HPP
 
-#define TACHO_BUILD_SOLVER
-#include "Amesos2_Tacho_Impl.hpp"
-#undef TACHO_BUILD_SOLVER
-#undef TACHO_SOLVER_NAME
+#ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+#endif
 
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#include "Amesos2_FunctionMap.hpp"
+
+//#ifdef KOKKOS_ENABLE_CUDA
+#include "Amesos2_TachoHost_TypeMap.hpp"
+//#endif
+
+// No specializations
+
+#endif  // AMESOS2_TACHOHOST_FUNCTIONMAP_HPP
