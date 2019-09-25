@@ -188,6 +188,10 @@ public:
       { tscPL_->set<int>
         ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
     virtual void setNumTimeSteps(int numTimeSteps);
+    virtual void setOutputIndexInterval(int OutputIndexInterval)
+      { tscPL_->set<int>("Output Index Interval",OutputIndexInterval); }
+    virtual void setOutputTimeInterval(double OutputTimeInterval)
+      { tscPL_->set<double>("Output Time Interval",OutputTimeInterval); }
   //@}
 
 protected:
