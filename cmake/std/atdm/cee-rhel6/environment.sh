@@ -94,23 +94,6 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3_OPENMPI-1.10.2" ]] ; then
-  module load sparc-dev/gcc-4.9.3_openmpi-1.10.2
-  export OMPI_CXX=`which g++`
-  export OMPI_CC=`which gcc`
-  export OMPI_FC=`which gfortran`
-  export MPICC=`which mpicc`
-  export MPICXX=`which mpicxx`
-  export MPIF90=`which mpif90`
-  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
-    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
-  fi
-  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
-  export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
-  # Still uses old 
-  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/SRC
-  export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
-
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_INTELMPI-2018.4" ]; then
   module load sparc-dev/intel-19.0.3_intelmpi-2018.4
   export OMPI_CXX=`which icpc`
