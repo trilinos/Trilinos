@@ -47,13 +47,9 @@
 
 #include <vector>
 #include <iostream>
-#include <numeric>
 
 #define RegionsSpanProcs  1
 #define MultipleRegionsPerProc  2
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
 
 #include <Kokkos_DefaultNode.hpp>
 
@@ -124,163 +120,6 @@ Teuchos::Array<int> findCommonRegions(const GlobalOrdinal nodeA, ///< GID of fir
   return finalCommonRegions;
 }
 
-//! Create an empty vector in the regional layout
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void createRegionalVector(Teuchos::Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVecs, ///< regional vector to be filled
-                          const int maxRegPerProc, ///< max number of regions per process
-                          const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp ///< regional map
-                          )
-{
-#include "Xpetra_UseShortNames.hpp"
-  regVecs.resize(maxRegPerProc);
-  for (int j = 0; j < maxRegPerProc; j++)
-    regVecs[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
-
-  return;
-} // createRegionalVector
-
-/*! \brief Transform composite vector to regional layout
- *
- *  Starting from a vector in composite layout, we
- *  1. import it into an auxiliary vector in the quasiRegional layout
- *  2. replace the quasiRegional map of the auxiliary vector with the regional map
- */
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in]
-                         Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& quasiRegVecs, ///< Vector in quasiRegional layout [in/out]
-                         Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVecs, ///< Vector in regional layout [in/out]
-                         const int maxRegPerProc, ///< max number of regions per proc [in]
-                         const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in region layout [in]
-                         const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp, ///< revised row maps in region layout [in]
-                         const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in]
-                         )
-{
-#include "Xpetra_UseShortNames.hpp"
-  // quasiRegional layout
-  for (int j = 0; j < maxRegPerProc; j++) {
-    // create empty vectors and fill it by extracting data from composite vector
-    quasiRegVecs[j] = VectorFactory::Build(rowMapPerGrp[j], true);
-    TEUCHOS_ASSERT(!quasiRegVecs[j].is_null());
-    quasiRegVecs[j]->doImport(*compVec, *(rowImportPerGrp[j]), Xpetra::INSERT);
-  }
-
-  // regional layout
-  for (int j = 0; j < maxRegPerProc; j++) {
-    // create regVecs vector (copy from quasiRegVecs and swap the map)
-    regVecs[j] = quasiRegVecs[j]; // assignment operator= does deep copy in Xpetra
-    TEUCHOS_ASSERT(!regVecs[j].is_null());
-    regVecs[j]->replaceMap(revisedRowMapPerGrp[j]);
-  }
-
-  return;
-} // compositeToRegional
-
-/*! \brief Transform regional vector to composite layout
- *
- *  Starting from a \c Epetra_Vector in regional layout, we
- *  1. replace the regional map with the quasiRegional map
- *  2. export it into a vector with composite layout using the \c CombineMode \c Add.
- *     Note: on-process values also have to be added to account for region interfaces inside a process.
- *
- *  \note We also need the capability to add processor-local values. This is not supported by
- *  available CombineMode options in Xpetra/Tpetra, so we use a manual implementation here.
- */
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void regionalToComposite(const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec, ///< Vector in region layout [in]
-                         RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in/out]
-                         const int maxRegPerProc, ///< max number of regions per proc
-                         const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in quasiRegion layout [in]
-                         const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp, ///< row importer in region layout [in]
-                         const Xpetra::CombineMode combineMode ///< Combine mode for import/export [in]
-                         )
-{
-  /* Let's fake an ADD combine mode that also adds local values by
-   * 1. exporting quasiRegional vectors to auxiliary composite vectors (1 per group)
-   * 2. add all auxiliary vectors together
-   */
-#include "Xpetra_UseShortNames.hpp"
-  using Teuchos::TimeMonitor;
-
-  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("regionalToComposite: 1 - compVec setup")));
-
-  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-
-  const size_t compVecLocalLength = compVec->getLocalLength();
-  compVec->putScalar(SC_ZERO);
-
-  tm = Teuchos::null;
-
-  {
-    RCP<Vector> quasiRegVec;
-    for(int grpIdx = 0; grpIdx < maxRegPerProc; ++grpIdx) {
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("regionalToComposite: 2 - quasiRegVec")));
-      quasiRegVec = regVec[grpIdx];
-      TEUCHOS_ASSERT(Teuchos::nonnull(quasiRegVec));
-      quasiRegVec->replaceMap(rowImportPerGrp[grpIdx]->getTargetMap());
-
-      tm = Teuchos::null;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("regionalToComposite: 3 - partialCompVec")));
-
-      RCP<Vector> partialCompVec = VectorFactory::Build(rowImportPerGrp[0]->getSourceMap(), true);
-      TEUCHOS_ASSERT(Teuchos::nonnull(partialCompVec));
-      TEUCHOS_ASSERT(partialCompVec->getLocalLength() == compVecLocalLength);
-      // ToDo (mayr.mt) Use input variable 'combineMode'
-      partialCompVec->doExport(*quasiRegVec, *(rowImportPerGrp[grpIdx]), Xpetra::ADD);
-
-      tm = Teuchos::null;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("regionalToComposite: 4 - compVec->sumIntoLocalValue")));
-
-      ArrayRCP<const SC> partialCompVecData = partialCompVec->getData(0);
-      ArrayRCP<SC>       compVecData        = compVec->getDataNonConst(0);
-      for(size_t entryIdx = 0; entryIdx < compVecLocalLength; ++entryIdx) {
-        compVecData[entryIdx] += partialCompVecData[entryIdx];
-      }
-
-      tm = Teuchos::null;
-    }
-  }
-
-  return;
-} // regionalToComposite
-
-/*! \brief Sum region interface values
- *
- *  Sum values of interface GIDs using the underlying Export() routines. Technically, we perform the
- *  exchange/summation of interface data by exporting a regional vector to the composite layout and
- *  then immediately importing it back to the regional layout. The Export() involved when going to the
- *  composite layout takes care of the summation of interface values.
- */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void sumInterfaceValues(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec,
-                        const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > compMap,
-                        const int maxRegPerProc, ///< max number of regions per proc [in]
-                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,///< row maps in region layout [in]
-                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,///< revised row maps in region layout [in]
-                        const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in])
-                        )
-{
-#include "Xpetra_UseShortNames.hpp"
-  using Teuchos::TimeMonitor;
-
-  RCP<Vector> compVec = VectorFactory::Build(compMap, true);
-  TEUCHOS_ASSERT(!compVec.is_null());
-
-  Array<Teuchos::RCP<Vector> > quasiRegVec(maxRegPerProc);
-
-  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 1 - regionalToComposite")));
-  regionalToComposite(regVec, compVec, maxRegPerProc, rowMapPerGrp,
-                      rowImportPerGrp, Xpetra::ADD);
-
-  tm = Teuchos::null;
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 2 - compositeToRegional")));
-
-  compositeToRegional(compVec, quasiRegVec, regVec, maxRegPerProc,
-                      rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
-
-  tm = Teuchos::null;
-
-  return;
-} // sumInterfaceValues
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class widget>
 void MakeGroupRegionRowMaps(const int myRank,
@@ -767,5 +606,110 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
     regionCrsMat->replaceDiag(*regDiag);
   }
 }
+
+/*! \brief Transform regional matrix to composite layout
+ *
+ *  Starting from a \c Matrix in regional layout, we
+ *  1. copy data from regional matrix into quasiRegional matrix and set all maps
+ *     to be quasiRegional maps
+ *  2. export it into a \c Matrix with composite layout using the given \c combineMode.
+ *     Note: on-process values also have to be added to account for region interfaces inside a process.
+ *
+ *  \note We also need the capability to add processor-local values. This is not supported by
+ *  available CombineMode options in Xpetra/Tpetra, so we use a manual implementation here.
+ *
+ *  \return Composite matrix that is fill-completed
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void regionalToComposite(const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regMat, ///< Matrix in region layout [in]
+                         const int maxRegPerProc, ///< max number of regions per proc
+                         const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in quasiRegion layout [in]
+                         const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > colMapPerGrp, ///< col maps in quasiRegion layout [in]
+                         const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp, ///< row importer in region layout [in]
+                         const Xpetra::CombineMode combineMode, ///< Combine mode for import/export [in]
+                         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& compMat ///< Matrix in composite layout [in/out]
+                         )
+{
+#include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  using Teuchos::rcp;
+  using std::size_t;
+
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("regionalToComposite: Matrix")));
+
+  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const SC SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
+
+  // Make sure we add into an zero composite matrix
+  compMat->setAllToScalar(SC_ZERO);
+
+  /* Let's fake an ADD combine mode that also adds local values by
+   * 1. exporting quasiRegional matrices to auxiliary composite matrices (1 per group)
+   * 2. add all auxiliary matrices together
+   */
+
+  // Copy data from regMat into quasiRegMat
+  std::vector<RCP<Matrix> > quasiRegMat(maxRegPerProc);
+  {
+    for (int j = 0; j < maxRegPerProc; j++) {
+      quasiRegMat[j] = rcp(new CrsMatrixWrap(rowMapPerGrp[j],
+                                             colMapPerGrp[j],
+                                             regMat[j]->getCrsGraph()->getNodeMaxNumRowEntries(),
+                                             Xpetra::StaticProfile));
+
+      // Extract current quasi-region CrsMatrix
+      RCP<CrsMatrix> quasiRegionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegMat[j])->getCrsMatrix();
+
+      // Extract current region CrsMatrix
+      RCP<CrsMatrix> regionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(regMat[j])->getCrsMatrix();
+
+      // Pull out the data from the region CrsMatrix
+      Teuchos::ArrayRCP<const size_t> rowptrRegion;
+      Teuchos::ArrayRCP<const LocalOrdinal> colindRegion;
+      Teuchos::ArrayRCP<const Scalar> valuesRegion;
+      regionCrsMat->getAllValues(rowptrRegion, colindRegion, valuesRegion);
+
+      // Do a deep copy of values
+      // (at least we've been doing deep copies so far, maybe we could do shallow copies to save time?)
+      Teuchos::ArrayRCP<size_t> rowptrQuasiRegion(rowptrRegion.size());
+      Teuchos::ArrayRCP<LocalOrdinal> colindQuasiRegion(colindRegion.size());
+      Teuchos::ArrayRCP<Scalar> valuesQuasiRegion(valuesRegion.size());
+
+      quasiRegionCrsMat->allocateAllValues(valuesQuasiRegion.size(), rowptrQuasiRegion, colindQuasiRegion, valuesQuasiRegion);
+
+      for(LocalOrdinal idx = 0; idx < static_cast<LocalOrdinal>(rowptrQuasiRegion.size()); ++idx) {
+        rowptrQuasiRegion[idx] = rowptrRegion[idx];
+      }
+
+      for(LocalOrdinal idx = 0; idx < static_cast<LocalOrdinal>(colindQuasiRegion.size()); ++idx) {
+        colindQuasiRegion[idx] = colindRegion[idx];
+        valuesQuasiRegion[idx] = valuesRegion[idx];
+      }
+
+      // Set and fillComplete the quasiRegion CrsMatrix
+      quasiRegionCrsMat->setAllValues(rowptrQuasiRegion, colindQuasiRegion, valuesQuasiRegion);
+      quasiRegionCrsMat->expertStaticFillComplete(rowMapPerGrp[j], rowMapPerGrp[j]);
+    }
+  }
+
+  // Export from quasiRegional format to composite layout
+  std::vector<RCP<Matrix> > partialCompMat(maxRegPerProc);
+  for (int j = 0; j < maxRegPerProc; j++) {
+    partialCompMat[j] = MatrixFactory::Build(compMat->getRowMap(),
+                                             8*regMat[0]->getCrsGraph()->getNodeMaxNumRowEntries(),
+                                             Xpetra::StaticProfile);
+    partialCompMat[j]->doExport(*(quasiRegMat[j]), *(rowImportPerGrp[j]), Xpetra::INSERT);
+    partialCompMat[j]->fillComplete();
+  }
+
+  // Add all partialCompMat together
+  for (int j = 0; j < maxRegPerProc; j++) {
+    MatrixMatrix::TwoMatrixAdd(*partialCompMat[j], false, SC_ONE, *compMat, SC_ONE);
+  }
+
+  compMat->fillComplete();
+
+  return;
+} // regionalToComposite
 
 #endif // MUELU_SETUPREGIONMATRIX_DEF_HPP
