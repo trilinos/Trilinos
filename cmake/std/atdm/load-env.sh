@@ -64,9 +64,9 @@ fi
 #
 
 # Get the Trilins base dir
-export ATDM_CONFIG_TRILNOS_DIR=`atdm_config_get_abs_dir_path ${ATDM_CONFIG_SCRIPT_DIR}/../../..`
+export ATDM_CONFIG_TRILINOS_DIR=`atdm_config_get_abs_dir_path ${ATDM_CONFIG_SCRIPT_DIR}/../../..`
 if [[ $ATDM_CONFIG_VERBOSE == "1" ]] ; then
-  echo "ATDM_CONFIG_TRILNOS_DIR = $ATDM_CONFIG_TRILNOS_DIR"
+  echo "ATDM_CONFIG_TRILINOS_DIR = $ATDM_CONFIG_TRILINOS_DIR"
 fi
 
 #
@@ -98,7 +98,7 @@ if [[ "${ATDM_SCRIPT_DIR}" == *"atdm-trilinos" ]] ; then
   export ATDM_CONFIG_NVCC_WRAPPER="${ATDM_SCRIPT_DIR}/nvcc_wrapper"
 else
   # This is from the Trilinos source tree so grab nvcc_wrapper from there!
-  export ATDM_CONFIG_NVCC_WRAPPER="${ATDM_CONFIG_TRILNOS_DIR}/packages/kokkos/bin/nvcc_wrapper"
+  export ATDM_CONFIG_NVCC_WRAPPER="${ATDM_CONFIG_TRILINOS_DIR}/packages/kokkos/bin/nvcc_wrapper"
 fi
 
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/atdm_config_helper_funcs.sh
