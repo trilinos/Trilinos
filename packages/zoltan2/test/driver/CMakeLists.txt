@@ -177,7 +177,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
     test_driver
     NAME mjTestPremigrate
-    NUM_MPI_PROCS 3
+    NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
     "./driverinputs/multiJaggedPremigrateTest.xml"
