@@ -690,6 +690,15 @@ Cuda::size_type * cuda_internal_scratch_flags( const Cuda& instance, const Cuda:
 Cuda::size_type * cuda_internal_scratch_unified( const Cuda& instance, const Cuda::size_type size )
 { return instance.impl_internal_space_instance()->scratch_unified( size ); }
 
+Cuda::size_type * cuda_internal_scratch_space( const CudaUVMOff& instance, const Cuda::size_type size )
+{ return instance.impl_internal_space_instance()->scratch_space( size ); }
+
+Cuda::size_type * cuda_internal_scratch_flags( const CudaUVMOff& instance, const Cuda::size_type size )
+{ return instance.impl_internal_space_instance()->scratch_flags( size ); }
+
+Cuda::size_type * cuda_internal_scratch_unified( const CudaUVMOff& instance, const Cuda::size_type size )
+{ return instance.impl_internal_space_instance()->scratch_unified( size ); }
+
 
 } // namespace Impl
 } // namespace Kokkos
@@ -704,12 +713,24 @@ Cuda::size_type Cuda::detect_device_count()
 int Cuda::concurrency()
 { return Impl::CudaInternal::singleton().m_maxConcurrency ; }
 
+int CudaUVMOff::concurrency()
+{ return Impl::CudaInternal::singleton().m_maxConcurrency ; }
+
+
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 int Cuda::is_initialized()
 #else
 int Cuda::impl_is_initialized()
 #endif
 { return Impl::CudaInternal::singleton().is_initialized(); }
+
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+int CudaUVMOff::is_initialized()
+#else
+int CudaUVMOff::impl_is_initialized()
+#endif
+{ return Impl::CudaInternal::singleton().is_initialized(); }
+
 
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 void Cuda::initialize( const Cuda::SelectDevice config , size_t num_instances )
@@ -767,6 +788,19 @@ void Cuda::impl_finalize()
   #endif
 }
 
+CudaUVMOff::CudaUVMOff()
+  : m_space_instance( &Impl::CudaInternal::singleton() )
+{
+  Impl::CudaInternal::singleton().verify_is_initialized( "Cuda instance constructor" );
+}
+
+CudaUVMOff::CudaUVMOff(cudaStream_t stream)
+  :   m_space_instance(new Impl::CudaInternal)
+{
+  Impl::CudaInternal::singleton().verify_is_initialized( "Cuda instance constructor" );
+  m_space_instance->initialize(Impl::CudaInternal::singleton().m_cudaDev,stream);
+}
+
 Cuda::Cuda()
   : m_space_instance( &Impl::CudaInternal::singleton() )
 {
@@ -793,13 +827,23 @@ void Cuda::impl_static_fence()
 {
   Kokkos::Impl::cuda_device_synchronize();
 }
+void CudaUVMOff::impl_static_fence()
+{
+  Kokkos::Impl::cuda_device_synchronize();
+}
 
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 void Cuda::fence() {
   impl_static_fence();
 }
+void CudaUVMOff::fence() {
+  impl_static_fence();
+}
 #else
 void Cuda::fence() const {
+  m_space_instance->fence();
+}
+void CudaUVMOff::fence() const {
   m_space_instance->fence();
 }
 #endif

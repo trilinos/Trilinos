@@ -51,6 +51,11 @@ CudaSpace::size_type * cuda_internal_scratch_flags( const Cuda&, const CudaSpace
 CudaSpace::size_type * cuda_internal_scratch_space( const Cuda&, const CudaSpace::size_type size );
 CudaSpace::size_type * cuda_internal_scratch_unified( const Cuda&, const CudaSpace::size_type size );
 
+CudaSpace::size_type * cuda_internal_scratch_flags( const CudaUVMOff&, const CudaSpace::size_type size );
+CudaSpace::size_type * cuda_internal_scratch_space( const CudaUVMOff&, const CudaSpace::size_type size );
+CudaSpace::size_type * cuda_internal_scratch_unified( const CudaUVMOff&, const CudaSpace::size_type size );
+
+
 } // namespace Impl
 } // namespace Kokkos
 
