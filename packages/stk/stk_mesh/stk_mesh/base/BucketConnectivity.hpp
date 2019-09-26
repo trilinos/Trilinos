@@ -97,6 +97,12 @@ inline void check_bucket_ordinal(unsigned bucket_ordinal, Connectivity const* co
 template<EntityRank TargetRank, ConnectivityType >
 class BucketConnectivity;
 
+template<typename VecType>
+size_t capacity_in_bytes(const VecType& v)
+{
+  return sizeof(typename VecType::value_type)*v.capacity();
+}
+
 template<EntityRank TargetRank >
 class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 {
@@ -315,6 +321,13 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   {
     const static bool rv = TargetRank != stk::topology::NODE_RANK;
     return rv;
+  }
+
+  size_t heap_memory_in_bytes() const
+  {
+     return capacity_in_bytes(m_targets)
+          + capacity_in_bytes(m_ordinals)
+          + capacity_in_bytes(m_permutations);
   }
 
   void debug_dump(std::ostream& out) const
@@ -746,6 +759,13 @@ public:
 
   bool has_permutation() const
   { return does_rank_have_valid_permutations(TargetRank) && does_rank_have_valid_permutations(m_from_rank); }
+
+  size_t heap_memory_in_bytes() const
+  {
+     return capacity_in_bytes(m_targets)
+          + capacity_in_bytes(m_ordinals)
+          + capacity_in_bytes(m_permutations);
+  }
 
   void debug_dump(std::ostream& out) const
   {

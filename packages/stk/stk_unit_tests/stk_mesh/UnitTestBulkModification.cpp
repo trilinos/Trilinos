@@ -43,10 +43,11 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
-#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <vector>                                            // for vector, etc
 #include "mpi.h"
+
+#include "stk_unit_test_utils/stk_mesh_fixtures/RingFixture.hpp"
 #include "stk_mesh/base/Bucket.hpp"                          // for Bucket, etc
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/EntityKey.hpp"
