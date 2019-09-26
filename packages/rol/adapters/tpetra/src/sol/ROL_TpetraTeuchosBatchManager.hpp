@@ -74,7 +74,7 @@ public:
       ">>> (TpetraTeuchosBatchManager::sumAll): Inconsistent number of vectors!");
 
     for (size_t i = 0; i < invec; ++i) {
-      TeuchosBatchManager<Real,SO>::sumAll((ivec->getDataNonConst(i)).getRawPtr(),
+      TeuchosBatchManager<Real,GO>::sumAll((ivec->getDataNonConst(i)).getRawPtr(),
                                            (ovec->getDataNonConst(i)).getRawPtr(),
                                            ilength);
     }

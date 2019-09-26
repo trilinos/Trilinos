@@ -18,7 +18,7 @@ public:
   PDE_OptVector_BatchManager(const ROL::Ptr<const Teuchos::Comm<int> > &comm)
     : ROL::TeuchosBatchManager<Real,GO>(comm) {}
 
-  using ROL::TeuchosBatchManager<Real,SO>::sumAll;
+  using ROL::TeuchosBatchManager<Real,GO>::sumAll;
   void sumAll(ROL::Vector<Real> &input, ROL::Vector<Real> &output) {
     // Sum all field components across processors
     ROL::Ptr<ROL::TpetraMultiVector<Real,LO,GO,Node> > input_field_ptr
@@ -40,7 +40,7 @@ public:
         ">>> (PDE_OptVector_BatchManager::sumAll): Field dimension mismatch!");
 
       for (size_t i = 0; i < input_nvec; ++i) {
-        ROL::TeuchosBatchManager<Real,SO>::sumAll((input_field->getDataNonConst(i)).getRawPtr(),
+        ROL::TeuchosBatchManager<Real,GO>::sumAll((input_field->getDataNonConst(i)).getRawPtr(),
                                                   (output_field->getDataNonConst(i)).getRawPtr(),
                                                   input_length);
       }
@@ -59,7 +59,7 @@ public:
       TEUCHOS_TEST_FOR_EXCEPTION(input_size != output_size, std::invalid_argument,
         ">>> (PDE_OptVector_BatchManager::SumAll): Parameter dimension mismatch!");
 
-      ROL::TeuchosBatchManager<Real,SO>::sumAll(&input_param->front(),
+      ROL::TeuchosBatchManager<Real,GO>::sumAll(&input_param->front(),
                                                 &output_param->front(),
                                                 input_size);
     }
