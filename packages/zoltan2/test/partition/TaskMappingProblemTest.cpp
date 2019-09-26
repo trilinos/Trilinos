@@ -106,7 +106,12 @@ RCP<mytest_tcrsGraph_t> create_tpetra_input_matrix(
   using namespace Teuchos;
   RCP<const mytest_map_t> map = rcp (new mytest_map_t (numGlobalTasks, myTasks, 0, tcomm));
 
-  RCP<mytest_tcrsGraph_t> TpetraCrsGraph(new mytest_tcrsGraph_t (map, 0));
+  Teuchos::Array<size_t> adjPerTask(myTasks);
+  for (zgno_t lclRow = 0; lclRow < myTasks; ++lclRow)
+    adjPerTask[lclRow] = task_communication_xadj_[lclRow+1] 
+                       - task_communication_xadj_[lclRow];
+  RCP<mytest_tcrsGraph_t> TpetraCrsGraph(new mytest_tcrsGraph_t(map,
+                                                                adjPerTask()));
 
   env->timerStart(Zoltan2::MACRO_TIMERS, "TpetraGraphCreate");
 

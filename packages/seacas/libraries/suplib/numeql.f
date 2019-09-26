@@ -48,7 +48,7 @@ c Revision 1.1  90/08/09  13:39:40  gdsjaar
 c Initial revision
 c
 
-C   --*** NUMEQL *** (ETCLIB) Count number of occurances of logical in list
+C   --*** NUMEQL *** (ETCLIB) Count number of occurrences of logical in list
 C   --   Written by Amy Gilkey - revised 12/21/87
 C   --
 C   --NUMEQL returns the number of times the given logical occurs in a list

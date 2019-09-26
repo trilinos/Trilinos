@@ -24,6 +24,7 @@ build locally as described below.
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
 * <a href="#disabling-failing-tests">Disabling failing tests</a>
 * <a href="#specific-systems-supported">Specific systems supported</a>
+* <a href="#custom-systems-and-configurations">Custom systems and configurations</a>
 
 
 ## Quick-start
@@ -74,7 +75,7 @@ Using white/ride compiler stack GNU to build DEBUG code with Kokkos node type OP
 
 **[build-name-keywords]** The `<build-name>` argument is a single string of
 the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
-`XXX_<keyword0>_<keyword1>_..._YYY`, either seprator is supported) .  The
+`XXX_<keyword0>_<keyword1>_..._YYY`, either separator is supported) .  The
 typical order and format of this string is:
 
     <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>-<pt>
@@ -216,9 +217,10 @@ impacts if shared or stack TPL libs are linked to on some system):
 <a name="release_debug"/>
 
 **`<release_debug>`:** The following `<build-name>` keywords specify debug or
-optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
+optimized build and the `<BUILD_TYPE>` variable (used to set the CMake cache
 var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
-checking (e.g. array bounds checking, pointer checking etc.)):
+checking `Trilinos_ENABLE_DEBUG=ON`, e.g. array bounds checking, pointer
+checking etc.):
 
 * `release-debug` or `opt-dbg` (or using `_`): (`<BUILD_TYPE>=RELEASE-DEBUG`)
   * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
@@ -385,7 +387,7 @@ selects the parallel build and test jobs by setting the env vars:
 
 * `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`: Number passed to `ctest -j ${ATDM_CONFIG_CTEST_PARALLEL_LEVEL}`
 
-These values can be overridden by setting the following env vars before runnning
+These values can be overridden by setting the following env vars before running
 `source cmake/std/atdm/load-env.sh <build-name>`:
 
 * `ATDM_CONFIG_BUILD_COUNT_OVERRIDE`
@@ -564,7 +566,7 @@ example, skip configure, skip the build, skip running tests, etc.
 
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
-* <a href="#chamaserrano">chama/serrano/eclipse/ghost</a>
+* <a href="#tlcc-2-and-cts-1">TLCC-2 and CTS-1</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
@@ -664,15 +666,15 @@ $ srun ./checkin-test-atdm.sh intel-opt-openmp \
 ```
 
 
-### chama/serrano
+### TLCC-2 and CTS-1
 
-Once logged on to the TLCC-2 machine 'chama' or the CTS-1 'serrano', 'eclipse'
-or 'ghost' machines, one can directly configure and build on the login node
-(being careful not to overload the node) using the `chama` and `serrano` envs,
-respectively.  But to run the tests, one must run on the compute nodes using
-the `srun` command.  For example, to configure, build and run the tests for
-say `MueLu` on 'serrano', (after cloning Trilinos on the `develop` branch) one
-would do:
+Once logged on to any TLCC2 machine (e.g. 'chama', 'skybridge') or the CTS-1
+machine 'serrano', 'eclipse' or 'ghost' machines, one can directly configure
+and build on the login node (being careful not to overload the node) using the
+`chama` and `serrano` envs, respectively.  But to run the tests, one must run
+on the compute nodes using the `srun` command.  For example, to configure,
+build and run the tests for say `MueLu` on 'serrano', (after cloning Trilinos
+on the `develop` branch) one would do:
 
 
 ```
@@ -696,8 +698,9 @@ computing.sandia.gov
 
 **NOTE:** Unlike some of the other machines, one must load the environment,
 configure and build on the login node and then run the test suite on a compute
-node on this system.  This is what the CTest -S driver on 'chama' and
-'serrano' does in order to drive jobs and submit to CDash.
+node on this system.  This is what the CTest -S driver does on TLCC-2 and
+CTS-1 systems like 'chama' and 'serrano' in order to drive jobs and submit to
+CDash.
 
 To use the checkin-test-atdm.sh script, you must split running the tests from
 the configure and build as with:
@@ -835,7 +838,7 @@ this can be overridden by setting the env var
 `ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` running `source
 cmake/std/atdm/load-env.sh <build_name>`.
 
-NOTE: The default Intel compiler license server can be overridded by setting
+NOTE: The default Intel compiler license server can be overridden by setting
 the env var:
 
 ```
@@ -845,14 +848,14 @@ $ export ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE=<some-url>
 
 ### Spack RHEL Environment
 
-The env 'spack-rhel' should work on any RedHad Enterpise Linux (RHEL) (and
+The env 'spack-rhel' should work on any RedHad Enterprise Linux (RHEL) (and
 perhaps many other Linux systems) that have the SNL ATDM Spack modules
 installed on them.  See the [installation
 documentation](https://gitlab.sandia.gov/atdm/atdm-spack-scripts/blob/master/README.md).
 **WARNING:** This Spack env is still under development and may change in the
 future.
 
-Once logged onto a Linux machine with the SNL ATDM Spack mdoules installed,
+Once logged onto a Linux machine with the SNL ATDM Spack modules installed,
 one can directly configure, build, and run tests using the `spack-rhel` env.
 For example, to configure, build and run the tests for `MueLu` one would clone
 Trilinos on the `develop` branch and then do the following:
@@ -861,7 +864,7 @@ Trilinos on the `develop` branch and then do the following:
 ```
 $ cd <some_build_dir>/
 
-$ <load spack module defintions>
+$ source <spack-install-base-dir>/setup-env.sh
 
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh spack-rhel-gnu-openmp-opt
 
@@ -1068,7 +1071,7 @@ contents:
   <system-name>/
     environment.sh  # Load env for the given system based on $ATDM_CONFIG_BUILD_NAME keys
     all_supported_builds.sh  # [Optional] List of all supported builds
-    custom_bulds.sh  # [Optional] Special logic for compiler keywords, etc.
+    custom_builds.sh  # [Optional] Special logic for compiler keywords, etc.
     tweaks/
        <COMPILER0>_<BUILD_TYPE0>_<NODE_TYPE0>_<KOKKOS_ARCH0>.cmake  # [Optional]
        <COMPILER1>_<BUILD_TYPE1>_<NODE_TYPE1>_<KOKKOS_ARCH0>.cmake  # [Optional]
@@ -1100,7 +1103,7 @@ builds that submit to CDash.
 
 The optional file `<system-name>/custom_builds.sh` contains specialized logic
 for compiler versions and other specialized keywords and versions.  (For an
-example, see `atdm/cee-rhel6/cutome-builds.sh` and
+example, see `atdm/cee-rhel6/custom-builds.sh` and
 `atdm/cee-rhel6/environment.sh`.)
 
 <a name="ATDM_TWEAKS_FILES"/>
@@ -1217,7 +1220,7 @@ For example, Trilinos commit
 shows the disable of the test:
 
 ```
-# Disable test that times out for some unkown reason (#2925)
+# Disable test that times out for some unknown reason (#2925)
 ATDM_SET_ENABLE(Stratimikos_test_aztecoo_thyra_driver_MPI_1_DISABLE ON)
 ```
 
@@ -1321,8 +1324,6 @@ they support are:
 
 * `cee-rhel6/`: CEE LANL RHEL6 systems with a CEE environment
 
-* `chama/`: Supports SNL HPC TLCC-2 machine 'chama'.
-
 * `mutrino/`: Supports SNL HPC machine 'mutrino'.
 
 * `ride/`: Supports GNU and CUDA builds on both the SRN machine 'ride' and the
@@ -1340,4 +1341,76 @@ they support are:
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   'shiller' and the mirror SON machine 'hansen'.
 
+* `tlcc2/`: Supports SNL HPC TLCC-2 machines 'chama', 'skybridge', etc..
+
 * `waterman/`: Supports GNU and CUDA builds on the SRN machine 'waterman'.
+
+
+## Custom systems and configurations
+
+In addition to officially defined system configurations described
+[above](#specific-instructions-for-each-system), one can also define a custom
+system configuration and use that.  To do so, create a new directory with the
+contents:
+
+```
+<some-base-dir>/<custom-system-name>/
+  environment.sh           # Required
+  custom_builds.sh         # Optional
+  all_supported_builds.sh  # Optional
+```
+
+(only the `environment.sh` script is required).
+
+Then one can explicitly use that custom system setup using:
+
+```
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh <build-name> \
+  <some-base-dir>/<custom-system-name>
+```
+
+The name of the new custom system name is taken from the last directory name
+`<custom-system-name>` and the files in that directory are read and treated
+like any of the offically defined system configurations.  Also, if the name of
+an officially supported system is present in `<build-name>`, it will be
+ignored.
+
+A second approach is to register a custom system configuration as:
+
+```
+export ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=<some-base-dir>/<custom-system-name>
+```
+
+and then that configuration can be selected by adding the keyword
+`<custom-system-name>` to the `<build-name>` passed in as:
+
+```
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh \
+  <custom-system-name>-<other-keywords>
+```
+
+In this case, if `<custom-system-name>` is found in the input `<build-name>`
+argument, then the custom configuration will be used even if one of the
+officially defined configurations would otherwise match.  But if
+`<custom-system-name>` is not included in the build name, then the registered
+custom system configuration will not be selected.
+
+When a custom configuration is selected, when Trilinos is installed, the
+directory `<some-base-dir>/<custom-system-name>` is copied to the install tree
+and the installed [`load-matching-env.sh`](#installation-and-usage) script
+will automatically load that custom env according to the custom build
+configuration script.
+
+A simple example can be seen in:
+
+* [cmake/std/atdm/examples/my-sems-rhel6-config/environment.sh](examples/my-sems-rhel6-config/environment.sh)
+
+which works on any SEMS RHEL6 machine similarly to the offically defined <a
+href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>.
+
+To see how things can be specified look at examples of other `environment.sh`
+scripts in the offically defined configurations under:
+
+* [cmake/std/atdm/<system_name>/](.)
+
+where `<system_name>` is `ride`, `waterman`, `tlcc2`, etc.

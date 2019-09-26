@@ -68,7 +68,10 @@ namespace MueLu {
     @class BlockedRAPFactory
     @brief Factory for building coarse matrices.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class BlockedRAPFactory : public TwoLevelFactoryBase {
 #undef MUELU_BLOCKEDRAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

@@ -80,18 +80,18 @@ namespace Intrepid2 {
    /**
        \brief Functor for calculation HGRADtransformGRAD, see Intrepid2::FunctionSpaceTools for more
    */
-    template <typename outputViewType,
+    template <typename OutputViewType,
               typename jacInverseViewType,
               typename inputViewType,
               ordinal_type spaceDim>
     struct F_HGRADtransformGRAD {
-            outputViewType     _output;
+            OutputViewType     _output;
       const jacInverseViewType  _jacInverse;
       const inputViewType _input;
 
       // output CPDD, left CPDD or PDD, right FPD
       KOKKOS_INLINE_FUNCTION
-      F_HGRADtransformGRAD(outputViewType     output_,
+      F_HGRADtransformGRAD(OutputViewType     output_,
                            jacInverseViewType  jacInverse_,
                            inputViewType input_)
         : _output(output_), 
@@ -129,7 +129,7 @@ namespace Intrepid2 {
     // this modification is for 2d and 3d (not 1d)
     // this is an attempt to measure the overhead of subview of dynrankview. 
 
-    // typedef       Kokkos::DynRankView<outputValValueType,outputValProperties...> outputViewType;
+    // typedef       Kokkos::DynRankView<outputValValueType,outputValProperties...> OutputViewType;
     // typedef const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacInverseViewType;
     // typedef const Kokkos::DynRankView<inputValValueType,inputValProperties...>  inputViewType;
 
@@ -146,12 +146,12 @@ namespace Intrepid2 {
     // const ordinal_type spaceDim = inputVals.extent(2);
     // switch (spaceDim) {
     // case 2: {
-    //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 2> FunctorType;
+    //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<OutputViewType, jacInverseViewType, inputViewType, 2> FunctorType;
     //   Kokkos::parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
     //   break;
     // }
     // case 3: {
-    //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 3> FunctorType;
+    //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<OutputViewType, jacInverseViewType, inputViewType, 3> FunctorType;
     //   Kokkos::parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
     //   break;
     // }

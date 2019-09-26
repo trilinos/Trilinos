@@ -209,7 +209,8 @@ void getSolutionCenterCoordinates(
 
   for(int j = 0; j < coordDim; ++j){
     for (part_t i=0; i < ntasks; ++i){
-      partCenters[j][i] /= global_point_counts[i];
+      if (global_point_counts[i] > 0) 
+        partCenters[j][i] /= global_point_counts[i];
     }
   }
 

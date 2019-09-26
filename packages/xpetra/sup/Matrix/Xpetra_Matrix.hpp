@@ -90,10 +90,10 @@ namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
-  template <class Scalar        = Operator<>::scalar_type,
-            class LocalOrdinal  = Operator<>::local_ordinal_type,
-            class GlobalOrdinal = typename Operator<LocalOrdinal>::global_ordinal_type,
-            class Node          = typename Operator<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Matrix : public Xpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node > {
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
@@ -357,6 +357,10 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const =0;
+
+    //! Returns the current number of entries in the specified global row.
+    /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row is not owned by this process. */
+    virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const =0;
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
     /** Undefined if isFillActive().

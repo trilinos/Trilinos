@@ -1,5 +1,16 @@
 
 TRIBITS_ADD_EXECUTABLE(
+ Utst_utils
+ SOURCES Utst_utils.C
+)
+
+TRIBITS_ADD_TEST(
+	Utst_utils
+	NAME Utst_utils
+	NUM_MPI_PROCS 1
+)
+
+TRIBITS_ADD_EXECUTABLE(
  Utst_ioel
  SOURCES Utst_ioel.C
 )
@@ -34,9 +45,11 @@ TRIBITS_ADD_TEST(
 
 IF (TPL_ENABLE_CGNS)
 SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp.C PROPERTIES COMPILE_FLAGS -O0)
+SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp_rocket.C PROPERTIES COMPILE_FLAGS -O0)
+SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp_herron.C PROPERTIES COMPILE_FLAGS -O0)
 TRIBITS_ADD_EXECUTABLE(
  Utst_structured_decomp
- SOURCES Utst_structured_decomp.C
+ SOURCES Utst_structured_decomp.C Utst_structured_decomp_herron.C Utst_structured_decomp_rocket.C
 )
 
 TRIBITS_ADD_TEST(

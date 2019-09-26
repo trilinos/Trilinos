@@ -41,7 +41,6 @@
 // ************************************************************************
 // @HEADER
 
-#include "Phalanx_DimTag.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -81,22 +80,14 @@
 
 */
 
-struct Point : public PHX::DimTag {
-  Point(){};
-  const char * name() const ;
-  static const Point& tag();
-};
-
-const char * Point::name() const 
-{ static const char n[] = "Point" ; return n ; }
-const Point & Point::tag() 
-{ static const Point myself ; return myself ; }
+PHX_EXTENT(P)
 
 struct SPoint : public shards::ArrayDimTag {
   SPoint(){};
   const char * name() const ;
   static const SPoint& tag();
 };
+
 const char * SPoint::name() const 
 { static const char n[] = "SPoint" ; return n ; }
 const SPoint & SPoint::tag() 
@@ -161,14 +152,14 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
   using namespace PHX;
   
   RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
-  RCP<Time> phx_ct_time = TimeMonitor::getNewTimer("MDField Compiletime Rank (no parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> phx_ct_time_pf = TimeMonitor::getNewTimer("MDField Compiletime Rank (with parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> phx_rt_time = TimeMonitor::getNewTimer("MDField Runtime Rank (no parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> phx_rt_time_pf = TimeMonitor::getNewTimer("MDField Runtime Rank (with parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> k_time = TimeMonitor::getNewTimer("KokkosView<double***>(no parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> k_time_pf = TimeMonitor::getNewTimer("KokkosView<double***>(with parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> k_time_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(no parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
-  RCP<Time> k_time_pf_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(with parallel_for,device="+PHX::typeAsString<PHX::Device>()+")");
+  RCP<Time> phx_ct_time = TimeMonitor::getNewTimer("MDField Compiletime Rank (no parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> phx_ct_time_pf = TimeMonitor::getNewTimer("MDField Compiletime Rank (with parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> phx_rt_time = TimeMonitor::getNewTimer("MDField Runtime Rank (no parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> phx_rt_time_pf = TimeMonitor::getNewTimer("MDField Runtime Rank (with parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> k_time = TimeMonitor::getNewTimer("KokkosView<double***>(no parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> k_time_pf = TimeMonitor::getNewTimer("KokkosView<double***>(with parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> k_time_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(no parallel_for,device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> k_time_pf_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(with parallel_for,device="+PHX::print<PHX::Device>()+")");
   RCP<Time> s_time = TimeMonitor::getNewTimer("Shards Array Compiletime Rank (no parallel_for)");
   RCP<Time> raw_ptr_time = TimeMonitor::getNewTimer("double* Time");
   
@@ -177,11 +168,11 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
 
     std::cout << std::endl << std::endl
 	      << "PHX::Device::size_type = " 
-	      << PHX::typeAsString<PHX::Device::size_type>() 
+	      << PHX::print<PHX::Device::size_type>()
 	      << std::endl;
 
     std::cout << "PHX::index_size_type = " 
-	      << PHX::typeAsString<PHX::index_size_type>() 
+	      << PHX::print<PHX::index_size_type>()
 	      << std::endl;
     
     // For performance testing, build in RELEASE mode and use the
@@ -202,27 +193,27 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     double* raw_ptr_b = new double[size];
     double* raw_ptr_c = new double[size];
  
-    RCP<DataLayout> dl = rcp(new MDALayout<Point,Point,Point>(num_cells,
-							      num_ip,
-							      num_dim));
+    RCP<DataLayout> dl = rcp(new MDALayout<P,P,P>(num_cells,
+                                                  num_ip,
+                                                  num_dim));
 
     // Compiletime PHX:MDField
-    typedef MDField<double,Point,Point,Point> phx_ct_field;
+    typedef MDField<double,P,P,P> phx_ct_field;
     phx_ct_field phx_ct_a("phx_ct_a", dl);
     phx_ct_field phx_ct_b("phx_ct_a", dl);
     phx_ct_field phx_ct_c("phx_ct_a", dl);
-    phx_ct_a.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_ct_a.fieldTag()));
-    phx_ct_b.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_ct_b.fieldTag()));
-    phx_ct_c.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_ct_c.fieldTag()));
+    phx_ct_a.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_ct_a.fieldTag()));
+    phx_ct_b.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_ct_b.fieldTag()));
+    phx_ct_c.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_ct_c.fieldTag()));
 
     // Runtime PHX::MDField
     typedef MDField<double> phx_rt_field;
     phx_rt_field phx_rt_a("phx_rt_a", dl);
     phx_rt_field phx_rt_b("phx_rt_b", dl);
     phx_rt_field phx_rt_c("phx_rt_c", dl);
-    phx_rt_a.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_rt_a.fieldTag()));
-    phx_rt_b.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_rt_b.fieldTag()));
-    phx_rt_c.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_rt_c.fieldTag()));
+    phx_rt_a.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_rt_a.fieldTag()));
+    phx_rt_b.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_rt_b.fieldTag()));
+    phx_rt_c.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_rt_c.fieldTag()));
     
     // Kokkos View
     typedef Kokkos::View<double***,PHX::Device> kokkos_field;

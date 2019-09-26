@@ -34,8 +34,8 @@
  */
 #include "copy_string_cpp.h"
 #include "exodusII.h" // for ex_close, etc
+#include "fmt/chrono.h"
 #include "fmt/ostream.h"
-#include "fmt/time.h"
 #include "nem_spread.h"     // for NemSpread, second, etc
 #include "pe_common.h"      // for PEX_MAX
 #include "ps_pario_const.h" // for PIO_Time_Array
@@ -52,10 +52,10 @@
 template <typename INT> struct ELEM_COMM_MAP;
 template <typename INT> struct NODE_COMM_MAP;
 
-#if defined(__GNUC__) && __GNUC__ >= 7
+#if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
 #define FALL_THROUGH [[gnu::fallthrough]]
 #else
- #define FALL_THROUGH ((void)0)
+#define FALL_THROUGH ((void)0)
 #endif /* __GNUC__ >= 7 */
 
 namespace {
@@ -610,10 +610,8 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   T *z_coord = nullptr;
   if (itotal_nodes > 0) {
     switch (globals.Num_Dim) {
-    case 3: z_coord = globals.Coor[iproc][2];
-      FALL_THROUGH;
-    case 2: y_coord = globals.Coor[iproc][1];
-      FALL_THROUGH;
+    case 3: z_coord = globals.Coor[iproc][2]; FALL_THROUGH;
+    case 2: y_coord = globals.Coor[iproc][1]; FALL_THROUGH;
     case 1: x_coord = globals.Coor[iproc][0]; break;
     }
   }

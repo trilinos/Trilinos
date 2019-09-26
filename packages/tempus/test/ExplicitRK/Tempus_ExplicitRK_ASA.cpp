@@ -50,9 +50,11 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
   RKMethods.push_back("RK Explicit 3 Stage 3rd order");
   RKMethods.push_back("RK Explicit 3 Stage 3rd order TVD");
   RKMethods.push_back("RK Explicit 3 Stage 3rd order by Heun");
-  RKMethods.push_back("RK Explicit 2 Stage 2nd order by Runge");
+  RKMethods.push_back("RK Explicit Midpoint");
   RKMethods.push_back("RK Explicit Trapezoidal");
+  RKMethods.push_back("Heuns Method");
   RKMethods.push_back("General ERK");
+
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(0.154904);
   RKMethodErrors.push_back(4.55982e-06);
@@ -63,6 +65,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
   RKMethodErrors.push_back(0.000121968);
   RKMethodErrors.push_back(0.000109495);
   RKMethodErrors.push_back(0.00559871);
+  RKMethodErrors.push_back(0.00710492);
   RKMethodErrors.push_back(0.00710492);
   RKMethodErrors.push_back(4.55982e-06);
 
@@ -229,8 +232,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
       L2norm = std::sqrt(L2norm);
       ErrorNorm.push_back(L2norm);
 
-      *my_out << " n = " << n << " dt = " << dt << " error = " << L2norm
-              << std::endl;
+      //*my_out << " n = " << n << " dt = " << dt << " error = " << L2norm
+      //        << std::endl;
     }
 
     // Check the order and intercept

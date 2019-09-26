@@ -9,7 +9,6 @@
 #ifndef Tempus_StepperObserverBasic_impl_hpp
 #define Tempus_StepperObserverBasic_impl_hpp
 
-#include "Tempus_RKButcherTableauBuilder.hpp"
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_WrapperModelEvaluatorBasic.hpp"

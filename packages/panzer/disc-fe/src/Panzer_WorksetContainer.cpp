@@ -57,7 +57,7 @@ WorksetContainer::WorksetContainer()
 {}
 WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
                                    const std::map<std::string,WorksetNeeds> & needs)
-   : wkstFactory_(factory), worksetSize_(-1)
+   : wkstFactory_(factory), worksetSize_(0)
 {
   // thats all!
   ebToNeeds_ = needs;

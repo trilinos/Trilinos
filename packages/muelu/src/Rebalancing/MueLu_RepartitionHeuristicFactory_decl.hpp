@@ -115,7 +115,10 @@ namespace MueLu {
     If "number of partitions" is -1 we don't perform rebalancing (just keep the partition unchanged).
 
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class RepartitionHeuristicFactory : public SingleLevelFactoryBase {
 #undef MUELU_REPARTITIONHEURISTICFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

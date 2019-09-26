@@ -63,12 +63,14 @@
 
 #include "Xpetra_Map.hpp"
 #include "Xpetra_BlockedMap.hpp"
+#include "Xpetra_BlockedMultiVector.hpp"
 #include "Xpetra_MapUtils.hpp"
 #include "Xpetra_StridedMap.hpp"
 #include "Xpetra_StridedMapFactory.hpp"
 #include "Xpetra_MapExtractor.hpp"
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 
 #include <Thyra_VectorSpaceBase.hpp>
 #include <Thyra_SpmdVectorSpaceBase.hpp>
@@ -141,8 +143,10 @@ public:
     using Teuchos::as;
     typedef Thyra::VectorSpaceBase<Scalar> ThyVecSpaceBase;
     typedef Thyra::ProductVectorSpaceBase<Scalar> ThyProdVecSpaceBase;
-    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-    typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyUtils;
+
+    using Map      = Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+    using ThyUtils = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+
 
     RCP<Map> resultMap = Teuchos::null;
     RCP<const ThyProdVecSpaceBase > prodVectorSpace = rcp_dynamic_cast<const ThyProdVecSpaceBase >(vectorSpace);
@@ -204,12 +208,15 @@ public:
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
     using Teuchos::as;
-    typedef Thyra::MultiVectorBase<Scalar> ThyMultVecBase;
-    typedef Thyra::ProductMultiVectorBase<Scalar> ThyProdMultVecBase;
-    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-    typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > MultiVector;
-    typedef Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorFactory;
-    typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyUtils;
+
+    using ThyMultVecBase     = Thyra::MultiVectorBase<Scalar>;
+    using ThyProdMultVecBase = Thyra::ProductMultiVectorBase<Scalar>;
+
+    using Map                = Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+    using MultiVector        = Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using MultiVectorFactory = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using ThyUtils           = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
     // return value
     RCP<MultiVector> xpMultVec = Teuchos::null;
@@ -513,7 +520,10 @@ public:
     //typedef Thyra::SpmdMultiVectorBase<Scalar> ThySpmdMultVecBase;
     //typedef Thyra::ProductVectorSpaceBase<Scalar> ThyProdVecSpaceBase;
     typedef Thyra::ProductMultiVectorBase<Scalar> ThyProdMultVecBase;
-    typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > MultiVector;
+
+    using MultiVector        = Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+
 
     // copy data from tY_inout to Y_inout
     RCP<ThyProdMultVecBase> prodTarget = rcp_dynamic_cast<ThyProdMultVecBase>(target);
@@ -879,12 +889,14 @@ public:
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
     using Teuchos::as;
-    typedef Thyra::ProductMultiVectorBase<Scalar> ThyProdMultVecBase;
-    typedef Thyra::MultiVectorBase<Scalar> ThyMultVecBase;
-    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-    typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > MultiVector;
-    typedef Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorFactory;
-    typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyUtils;
+
+    using ThyProdMultVecBase = Thyra::ProductMultiVectorBase<Scalar>;
+    using ThyMultVecBase     = Thyra::MultiVectorBase<Scalar>;
+    using Map                = Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+    using MultiVector        = Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using MultiVectorFactory = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using ThyUtils           = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
     // return value
     RCP<MultiVector> xpMultVec = Teuchos::null;

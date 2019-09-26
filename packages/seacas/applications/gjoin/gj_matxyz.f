@@ -68,7 +68,7 @@ C     --   IXNP2 - IN/OUT - the index of the matching first database node;
 C     --      negative if no match; reset if NMATCH = 0
 C     --   NMATCH - IN/OUT - the number of matching nodes
 C     --   CLOSE - IN/OUT - true if match closest node, false if match any
-C     --      node withing tolerance.
+C     --      node within tolerance.
 C     --   IEXPCT - IN - number of expected nodal point matches.  Abort
 C     --      if actual matches not equal.
 

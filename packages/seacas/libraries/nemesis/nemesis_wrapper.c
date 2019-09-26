@@ -79,7 +79,7 @@ int ne_put_init_global(int     neid,            /* NemesisI file ID */
                             num_side_sets_g);
 }
 
-int ne_put_version(int neid) { return ex_put_nemesis_version(neid); }
+int ne_put_version(int neid) { return ex__put_nemesis_version(neid); }
 
 /*=============================================================================
  *     Loadbalance Parameter Routines
@@ -513,11 +513,11 @@ int ne_put_cmap_params_cc(int       neid,               /* NetCDF/Exodus file ID
                           void_int *node_map_ids,       /* Node map IDs */
                           void_int *node_map_node_cnts, /* Nodes in nodal comm */
                           void_int *node_proc_ptrs,     /* Pointer into array for */
-                                                        /* node maps		  */
+                                                        /* node maps              */
                           void_int *elem_map_ids,       /* Elem map IDs */
                           void_int *elem_map_elem_cnts, /* Elems in elemental comm */
                           void_int *elem_proc_ptrs      /* Pointer into array for */
-                                                        /* elem maps		  */
+                                                        /* elem maps              */
 )
 {
   return ex_put_cmap_params_cc(neid, node_map_ids, node_map_node_cnts, node_proc_ptrs, elem_map_ids,

@@ -92,7 +92,7 @@ public:
    { }
 
    void evaluateFields(typename TRAITS::EvalData d)
-   { std::cout << "unspecialized version of \"GatherSolution_BlockedTpetra::evaluateFields\" on \""+PHX::typeAsString<EvalT>()+"\" should not be used!" << std::endl;
+   { std::cout << "unspecialized version of \"GatherSolution_BlockedTpetra::evaluateFields\" on \""+PHX::print<EvalT>()+"\" should not be used!" << std::endl;
      TEUCHOS_ASSERT(false); }
 };
 

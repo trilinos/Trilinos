@@ -48,7 +48,7 @@ void sorts2d(
   int  nlists = 4; /* number of directions to sort */
   int  i;          /* loop counter */
 
-  void mergesort();
+  void ch_mergesort(double *vals, int nvals, int *indices, int *space);
 
   space = smalloc(nvtxs * sizeof(int));
 
@@ -56,10 +56,10 @@ void sorts2d(
     temp[i] = smalloc(nvtxs * sizeof(int));
   }
 
-  mergesort(vals[0][1], nvtxs, temp[0], space);
-  mergesort(vals[0][2], nvtxs, temp[1], space);
-  mergesort(vals[0][3], nvtxs, temp[2], space);
-  mergesort(vals[1][2], nvtxs, temp[3], space);
+  ch_mergesort(vals[0][1], nvtxs, temp[0], space);
+  ch_mergesort(vals[0][2], nvtxs, temp[1], space);
+  ch_mergesort(vals[0][3], nvtxs, temp[2], space);
+  ch_mergesort(vals[1][2], nvtxs, temp[3], space);
 
   sfree(space);
 

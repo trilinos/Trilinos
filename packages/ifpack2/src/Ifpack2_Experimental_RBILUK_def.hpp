@@ -320,16 +320,7 @@ initAllValues (const block_crs_matrix_type& A)
   // NOTE (mfh 27 May 2016) The factorization below occurs entirely on
   // host, so sync to host first.  The const_cast is unfortunate but
   // is our only option to make this correct.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  const_cast<block_crs_matrix_type&> (A).template sync<Kokkos::HostSpace> ();
-  L_block_->template sync<Kokkos::HostSpace> ();
-  U_block_->template sync<Kokkos::HostSpace> ();
-  D_block_->template sync<Kokkos::HostSpace> ();
-  // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
-  L_block_->template modify<Kokkos::HostSpace> ();
-  U_block_->template modify<Kokkos::HostSpace> ();
-  D_block_->template modify<Kokkos::HostSpace> ();
-#else
+
   const_cast<block_crs_matrix_type&> (A).sync_host ();
   L_block_->sync_host ();
   U_block_->sync_host ();
@@ -338,7 +329,6 @@ initAllValues (const block_crs_matrix_type& A)
   L_block_->modify_host ();
   U_block_->modify_host ();
   D_block_->modify_host ();
-#endif
 
   RCP<const map_type> rowMap = L_block_->getRowMap ();
 
@@ -484,21 +474,8 @@ void RBILUK<MatrixType>::compute ()
   if (! A_block_.is_null ()) {
     Teuchos::RCP<block_crs_matrix_type> A_nc =
       Teuchos::rcp_const_cast<block_crs_matrix_type> (A_block_);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    A_nc->template sync<Kokkos::HostSpace> ();
-#else
     A_nc->sync_host ();
-#endif
   }
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  L_block_->template sync<Kokkos::HostSpace> ();
-  U_block_->template sync<Kokkos::HostSpace> ();
-  D_block_->template sync<Kokkos::HostSpace> ();
-  // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
-  L_block_->template modify<Kokkos::HostSpace> ();
-  U_block_->template modify<Kokkos::HostSpace> ();
-  D_block_->template modify<Kokkos::HostSpace> ();
-#else
   L_block_->sync_host ();
   U_block_->sync_host ();
   D_block_->sync_host ();
@@ -506,7 +483,6 @@ void RBILUK<MatrixType>::compute ()
   L_block_->modify_host ();
   U_block_->modify_host ();
   D_block_->modify_host ();
-#endif
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing

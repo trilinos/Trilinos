@@ -194,13 +194,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test2, Scalar, LocalOrdinal
 
   TEST_INEQUALITY(&x, &y); // vector x and y are different
   // Vectors x and y point to the same data.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  TEST_EQUALITY(x.template getLocalView<Kokkos::HostSpace> ().data (),
-                y.template getLocalView<Kokkos::HostSpace> ().data ());
-#else
   TEST_EQUALITY(x.getLocalViewHost ().data (),
                 y.getLocalViewHost ().data ());
-#endif
 
   prec.apply(x, y);
 

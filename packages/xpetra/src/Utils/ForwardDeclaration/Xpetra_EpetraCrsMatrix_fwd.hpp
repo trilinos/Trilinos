@@ -51,7 +51,7 @@
 namespace Xpetra {
   template<class GO, class NO> class EpetraCrsMatrixT;
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraCrsMatrixT<int, typename Xpetra::Map<int, int>::node_type> EpetraCrsMatrix;
+  typedef EpetraCrsMatrixT<int, EpetraNode> EpetraCrsMatrix;
 #endif
 }
 

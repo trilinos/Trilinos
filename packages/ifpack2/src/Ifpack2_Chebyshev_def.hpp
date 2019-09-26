@@ -462,13 +462,8 @@ applyImpl (const MV& X,
   RCP<const MV> X_copy;
   bool copiedInput = false;
   {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
-    auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-#else
     auto X_lcl_host = X.getLocalViewHost ();
     auto Y_lcl_host = Y.getLocalViewHost ();
-#endif
     if (X_lcl_host.data () == Y_lcl_host.data ()) {
       X_copy = rcp (new MV (X, Teuchos::Copy));
       copiedInput = true;

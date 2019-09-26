@@ -108,6 +108,7 @@ void Multiply(
 {
   using Teuchos::null;
   using Teuchos::RCP;
+  using Teuchos::rcp;
   typedef Scalar                            SC;
   typedef LocalOrdinal                      LO;
   typedef GlobalOrdinal                     GO;
@@ -121,7 +122,9 @@ void Multiply(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  TimeMonitor MM(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Setup")));
+  //MM is used to time setup, and then multiply.
+  
+  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Setup"))));
 #endif
 
   const std::string prefix = "TpetraExt::MatrixMatrix::Multiply(): ";
@@ -159,19 +162,23 @@ void Multiply(
   use_optimized_ATB = false;
 #endif
 
-  if (!use_optimized_ATB && transposeA) {
-    transposer_type transposer(rcpFromRef (A));
-    Aprime = transposer.createTranspose();
+  using Teuchos::ParameterList;
+  RCP<ParameterList> transposeParams (new ParameterList);
+  transposeParams->set ("sort", false);
 
-  } else {
+  if (!use_optimized_ATB && transposeA) {
+    transposer_type transposer (rcpFromRef (A));
+    Aprime = transposer.createTranspose (transposeParams);
+  }
+  else {
     Aprime = rcpFromRef(A);
   }
 
   if (transposeB) {
-    transposer_type transposer(rcpFromRef (B));
-    Bprime = transposer.createTranspose();
-
-  } else {
+    transposer_type transposer (rcpFromRef (B));
+    Bprime = transposer.createTranspose (transposeParams);
+  }
+  else {
     Bprime = rcpFromRef(B);
   }
 
@@ -218,7 +225,7 @@ void Multiply(
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   {
-  TimeMonitor MM2(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All I&X")));
+  TimeMonitor MM_importExtract(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All I&X")));
 #endif
 
   // Now import any needed remote rows and populate the Aview struct
@@ -239,9 +246,9 @@ void Multiply(
     MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label, params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  }
-  TimeMonitor MM3(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply")));
-  {
+  } //stop MM_importExtract here
+  //stop the setup timer, and start the multiply timer
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
 #endif
 
   // Call the appropriate method to perform the actual multiplication.
@@ -261,21 +268,19 @@ void Multiply(
     CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
 
     MMdetails::mult_A_B(Aview, Bview, crsmat, label,params);
+  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  }
-    TimeMonitor MM4(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All FillComplete")));
+  TimeMonitor MM4(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All FillComplete")));
 #endif
-    if (call_FillComplete_on_result) {
-      // We'll call FillComplete on the C matrix before we exit, and give it a
-      // domain-map and a range-map.
-      // The domain-map will be the domain-map of B, unless
-      // op(B)==transpose(B), in which case the range-map of B will be used.
-      // The range-map will be the range-map of A, unless op(A)==transpose(A),
-      // in which case the domain-map of A will be used.
-      if (!C.isFillComplete())
-        C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
-    }
+  if (call_FillComplete_on_result && !C.isFillComplete()) {
+    // We'll call FillComplete on the C matrix before we exit, and give it a
+    // domain-map and a range-map.
+    // The domain-map will be the domain-map of B, unless
+    // op(B)==transpose(B), in which case the range-map of B will be used.
+    // The range-map will be the range-map of A, unless op(A)==transpose(A),
+    // in which case the domain-map of A will be used.
+    C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
   }
 }
 
@@ -488,11 +493,16 @@ void Add(
   TEUCHOS_TEST_FOR_EXCEPTION(B.isLocallyIndexed() , std::runtime_error,
     prefix << "ERROR, input matrix B must not be locally indexed!");
 
+  using Teuchos::ParameterList;
+  RCP<ParameterList> transposeParams (new ParameterList);
+  transposeParams->set ("sort", false);
+
   RCP<const crs_matrix_type> Aprime = null;
   if (transposeA) {
-    transposer_type transposer(rcpFromRef (A));
-    Aprime = transposer.createTranspose();
-  } else {
+    transposer_type transposer (rcpFromRef (A));
+    Aprime = transposer.createTranspose (transposeParams);
+  }
+  else {
     Aprime = rcpFromRef(A);
   }
 
@@ -666,37 +676,53 @@ add (const Scalar& alpha,
     std::cerr << os.str ();
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete () || !B.isFillComplete (), std::invalid_argument,
-    prefix_mmm << "A and B must both be fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! A.isFillComplete () || ! B.isFillComplete (), std::invalid_argument,
+     prefix_mmm << "A and B must both be fill complete.");
 #ifdef HAVE_TPETRA_DEBUG
   // The matrices don't have domain or range Maps unless they are fill complete.
   if (A.isFillComplete () && B.isFillComplete ()) {
     const bool domainMapsSame =
-      (!transposeA && !transposeB && !A.getDomainMap()->locallySameAs (*B.getDomainMap ())) ||
-      (!transposeA &&  transposeB && !A.getDomainMap()->isSameAs (*B.getRangeMap  ())) ||
-      ( transposeA && !transposeB && !A.getRangeMap ()->isSameAs (*B.getDomainMap ()));
+      (! transposeA && ! transposeB &&
+       ! A.getDomainMap()->locallySameAs (*B.getDomainMap ())) ||
+      (! transposeA &&   transposeB &&
+       ! A.getDomainMap()->isSameAs (*B.getRangeMap  ())) ||
+      (  transposeA && ! transposeB &&
+       ! A.getRangeMap ()->isSameAs (*B.getDomainMap ()));
     TEUCHOS_TEST_FOR_EXCEPTION(domainMapsSame, std::invalid_argument,
       prefix_mmm << "The domain Maps of Op(A) and Op(B) are not the same.");
 
     const bool rangeMapsSame =
-      (!transposeA && !transposeB && !A.getRangeMap ()->isSameAs (*B.getRangeMap ())) ||
-      (!transposeA &&  transposeB && !A.getRangeMap ()->isSameAs (*B.getDomainMap())) ||
-      ( transposeA && !transposeB && !A.getDomainMap()->isSameAs (*B.getRangeMap ()));
+      (! transposeA && ! transposeB &&
+       ! A.getRangeMap ()->isSameAs (*B.getRangeMap ())) ||
+      (! transposeA &&   transposeB &&
+       ! A.getRangeMap ()->isSameAs (*B.getDomainMap())) ||
+      (  transposeA && ! transposeB &&
+       ! A.getDomainMap()->isSameAs (*B.getRangeMap ()));
     TEUCHOS_TEST_FOR_EXCEPTION(rangeMapsSame, std::invalid_argument,
       prefix_mmm << "The range Maps of Op(A) and Op(B) are not the same.");
   }
 #endif // HAVE_TPETRA_DEBUG
+
+  using Teuchos::ParameterList;
+  RCP<ParameterList> transposeParams (new ParameterList);
+  transposeParams->set ("sort", false);
+
   auto comm = A.getComm();
   // Form the explicit transpose of A if necessary.
   RCP<const crs_matrix_type> Aprime = rcpFromRef(A);
   if (transposeA) {
-    transposer_type transposer(Aprime);
-    Aprime = transposer.createTranspose ();
+    transposer_type transposer (Aprime);
+    Aprime = transposer.createTranspose (transposeParams);
   }
+
 #ifdef HAVE_TPETRA_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(Aprime.is_null (), std::logic_error,
-    prefix_mmm << "Failed to compute Op(A). Please report this bug to the Tpetra developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (Aprime.is_null (), std::logic_error,
+     prefix_mmm << "Failed to compute Op(A). "
+     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
+
   // Form the explicit transpose of B if necessary.
   RCP<const crs_matrix_type> Bprime = rcpFromRef(B);
   if (transposeB) {
@@ -706,8 +732,8 @@ add (const Scalar& alpha,
          << "Form explicit xpose of B" << std::endl;
       std::cerr << os.str ();
     }
-    transposer_type transposer(Bprime);
-    Bprime = transposer.createTranspose ();
+    transposer_type transposer (Bprime);
+    Bprime = transposer.createTranspose (transposeParams);
   }
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(Bprime.is_null (), std::logic_error,
@@ -747,9 +773,9 @@ add (const Scalar& alpha,
   {
     //import Aprime into Bprime's row map so the local matrices have same # of rows
     auto import = rcp(new import_type(Aprime->getRowMap(), Bprime->getRowMap()));
-    // cbl do not set 
+    // cbl do not set
     // parameterlist "isMatrixMatrix_TransferAndFillComplete" true here as
-    // this import _may_ take the form of a transfer. In practice it would be unlikely, 
+    // this import _may_ take the form of a transfer. In practice it would be unlikely,
     // but the general case is not so forgiving.
 
     Aprime = importAndFillCompleteCrsMatrix<crs_matrix_type>(Aprime, *import, Bprime->getDomainMap(), Bprime->getRangeMap());
@@ -960,12 +986,17 @@ void Add(
   }
 #endif // HAVE_TPETRA_DEBUG
 
+  using Teuchos::ParameterList;
+  RCP<ParameterList> transposeParams (new ParameterList);
+  transposeParams->set ("sort", false);
+
   // Form the explicit transpose of A if necessary.
   RCP<const crs_matrix_type> Aprime;
   if (transposeA) {
     transposer_type theTransposer (rcpFromRef (A));
-    Aprime = theTransposer.createTranspose ();
-  } else {
+    Aprime = theTransposer.createTranspose (transposeParams);
+  }
+  else {
     Aprime = rcpFromRef (A);
   }
 
@@ -978,8 +1009,9 @@ void Add(
   RCP<const crs_matrix_type> Bprime;
   if (transposeB) {
     transposer_type theTransposer (rcpFromRef (B));
-    Bprime = theTransposer.createTranspose ();
-  } else {
+    Bprime = theTransposer.createTranspose (transposeParams);
+  }
+  else {
     Bprime = rcpFromRef (B);
   }
 
@@ -1450,8 +1482,6 @@ void printMultiplicationStatistics(Teuchos::RCP<TransferType > Transfer, const s
   }
 }
 
-
-/*********************************************************************************************************/
 // Kernel method for computing the local portion of C = A*B
 template<class Scalar,
          class LocalOrdinal,
@@ -1464,7 +1494,6 @@ void mult_AT_B_newmatrix(
   const std::string & label,
   const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
-  // Using &  Typedefs
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef Scalar                            SC;
@@ -1477,63 +1506,91 @@ void mult_AT_B_newmatrix(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T Transpose"))));
+  RCP<TimeMonitor> MM = rcp (new TimeMonitor
+    (*TimeMonitor::getNewTimer (prefix_mmm + "MMM-T Transpose")));
 #endif
 
   /*************************************************************/
   /* 1) Local Transpose of A                                   */
   /*************************************************************/
-  transposer_type transposer (rcpFromRef (A),label+std::string("XP: "));
-  RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) transposeParams->set("compute global constants",params->get("compute global constants: temporaries",false));
-  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atrans = transposer.createTransposeLocal(transposeParams);
+  transposer_type transposer (rcpFromRef (A), label + std::string("XP: "));
+
+  using Teuchos::ParameterList;
+  RCP<ParameterList> transposeParams (new ParameterList);
+  transposeParams->set ("sort", false);
+  if(! params.is_null ()) {
+    transposeParams->set ("compute global constants",
+                          params->get ("compute global constants: temporaries",
+                                       false));
+  }
+  RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> Atrans =
+    transposer.createTransposeLocal (transposeParams);
 
   /*************************************************************/
   /* 2/3) Call mult_A_B_newmatrix w/ fillComplete              */
   /*************************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T I&X"))));
+  MM = rcp (new TimeMonitor
+    (*TimeMonitor::getNewTimer (prefix_mmm + std::string ("MMM-T I&X"))));
 #endif
 
   // Get views, asserting that no import is required to speed up computation
   crs_matrix_struct_type Aview;
   crs_matrix_struct_type Bview;
-  RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > dummyImporter;
+  RCP<const Import<LO, GO, NO> > dummyImporter;
 
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
-  RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) {
-      importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
-      auto slist = params->sublist("matrixmatrix: kernel params",false);
-      bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      bool overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
-      int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
-      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
-      auto & sip1 = importParams1->sublist("matrixmatrix: kernel params",false);
-      sip1.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      sip1.set("isMatrixMatrix_TransferAndFillComplete",isMM);
-      sip1.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
+  RCP<Teuchos::ParameterList> importParams1 (new ParameterList);
+  if (! params.is_null ()) {
+    importParams1->set ("compute global constants",
+                        params->get ("compute global constants: temporaries",
+                                     false));
+    auto slist = params->sublist ("matrixmatrix: kernel params", false);
+    bool isMM = slist.get ("isMatrixMatrix_TransferAndFillComplete", false);
+    bool overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck", false);
+    int mm_optimization_core_count =
+      ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+    mm_optimization_core_count =
+      slist.get ("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
+    int mm_optimization_core_count2 =
+      params->get ("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
+    if (mm_optimization_core_count2 < mm_optimization_core_count) {
+      mm_optimization_core_count = mm_optimization_core_count2;
+    }
+    auto & sip1 = importParams1->sublist ("matrixmatrix: kernel params", false);
+    sip1.set ("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
+    sip1.set ("isMatrixMatrix_TransferAndFillComplete", isMM);
+    sip1.set ("MM_TAFC_OverrideAllreduceCheck", overrideAllreduce);
   }
 
-  MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview, dummyImporter,true, label,importParams1);
+  MMdetails::import_and_extract_views (*Atrans, Atrans->getRowMap (),
+                                       Aview, dummyImporter, true,
+                                       label, importParams1);
 
-  RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()){
-      importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
-      auto slist = params->sublist("matrixmatrix: kernel params",false);
-      bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      bool overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
-      int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
-      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
-      auto & sip2 = importParams2->sublist("matrixmatrix: kernel params",false);
-      sip2.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      sip2.set("isMatrixMatrix_TransferAndFillComplete",isMM);
-      sip2.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
+  RCP<ParameterList> importParams2 (new ParameterList);
+  if (! params.is_null ()) {
+    importParams2->set ("compute global constants",
+                        params->get ("compute global constants: temporaries",
+                                     false));
+    auto slist = params->sublist ("matrixmatrix: kernel params", false);
+    bool isMM = slist.get ("isMatrixMatrix_TransferAndFillComplete", false);
+    bool overrideAllreduce = slist.get ("MM_TAFC_OverrideAllreduceCheck", false);
+    int mm_optimization_core_count =
+      ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+    mm_optimization_core_count =
+      slist.get ("MM_TAFC_OptimizationCoreCount",
+                 mm_optimization_core_count);
+    int mm_optimization_core_count2 =
+      params->get ("MM_TAFC_OptimizationCoreCount",
+                   mm_optimization_core_count);
+    if (mm_optimization_core_count2 < mm_optimization_core_count) {
+      mm_optimization_core_count = mm_optimization_core_count2;
+    }
+    auto & sip2 = importParams2->sublist ("matrixmatrix: kernel params", false);
+    sip2.set ("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
+    sip2.set ("isMatrixMatrix_TransferAndFillComplete", isMM);
+    sip2.set ("MM_TAFC_OverrideAllreduceCheck", overrideAllreduce);
   }
 
   if(B.getRowMap()->isSameAs(*Atrans->getColMap())){
@@ -1548,16 +1605,17 @@ void mult_AT_B_newmatrix(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T AB-core"))));
 #endif
 
-  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >Ctemp;
+  RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> Ctemp;
 
   // If Atrans has no Exporter, we can use C instead of having to create a temp matrix
-  bool needs_final_export = !Atrans->getGraph()->getExporter().is_null();
-  if (needs_final_export)
-    Ctemp = rcp(new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atrans->getRowMap(),0));
-  else
-    Ctemp = rcp(&C,false);// don't allow deallocation
+  bool needs_final_export = ! Atrans->getGraph ()->getExporter ().is_null();
+  if (needs_final_export) {
+    Ctemp = rcp (new Tpetra::CrsMatrix<SC, LO, GO, NO> (Atrans->getRowMap (), 0));
+  }
+  else {
+    Ctemp = rcp (&C, false);
+  }
 
-  // Multiply
   mult_A_B_newmatrix(Aview, Bview, *Ctemp, label,params);
 
   /*************************************************************/
@@ -1568,29 +1626,32 @@ void mult_AT_B_newmatrix(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T exportAndFillComplete"))));
 #endif
 
-  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Crcp(&C,false);
+  RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> Crcp (&C, false);
 
   if (needs_final_export) {
-    Teuchos::ParameterList labelList;
+    ParameterList labelList;
     labelList.set("Timer Label", label);
     if(!params.is_null()) {
-        Teuchos::ParameterList& params_sublist = params->sublist("matrixmatrix: kernel params",false);
-        Teuchos::ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
-        int mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
-        mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-        int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-        if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
-        labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count,"Core Count above which the optimized neighbor discovery is used");
-        bool isMM = params_sublist.get("isMatrixMatrix_TransferAndFillComplete",false);
-        bool overrideAllreduce = params_sublist.get("MM_TAFC_OverrideAllreduceCheck",false);
+      ParameterList& params_sublist = params->sublist("matrixmatrix: kernel params",false);
+      ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
+      int mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+      mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+      labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count,"Core Count above which the optimized neighbor discovery is used");
+      bool isMM = params_sublist.get("isMatrixMatrix_TransferAndFillComplete",false);
+      bool overrideAllreduce = params_sublist.get("MM_TAFC_OverrideAllreduceCheck",false);
 
-        labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",isMM,
-                      "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
-        labelList.set("compute global constants",params->get("compute global constants",true));
-        labelList.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
+      labelList_subList.set ("isMatrixMatrix_TransferAndFillComplete", isMM,
+                             "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
+      labelList.set("compute global constants",params->get("compute global constants",true));
+      labelList.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
     }
-    Ctemp->exportAndFillComplete(Crcp,*Ctemp->getGraph()->getExporter(),
-                                 B.getDomainMap(),A.getDomainMap(),rcp(&labelList,false));
+    Ctemp->exportAndFillComplete (Crcp,
+                                  *Ctemp->getGraph ()->getExporter (),
+                                  B.getDomainMap (),
+                                  A.getDomainMap (),
+                                  rcp (&labelList, false));
   }
 #ifdef HAVE_TPETRA_MMM_STATISTICS
   printMultiplicationStatistics(Ctemp->getGraph()->getExporter(), label+std::string(" AT_B MMM"));
@@ -2871,7 +2932,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
       if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
       RCP<const Export<LO,GO,NO> > dummyExport;
       C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
-  
+
   }
 }
 
@@ -3317,7 +3378,7 @@ void import_and_extract_views(
     labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",isMM);
     labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
     labelList_subList.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
-    
+
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                     A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
 

@@ -39,7 +39,7 @@
 static void recursesort(double *vals, int nvals, int *indices, int *space);
 static void merge(double *vals, int *indices, int length1, int length2, int *space);
 
-void mergesort(double *vals, int nvals, int *indices, int *space)
+void ch_mergesort(double *vals, int nvals, int *indices, int *space)
 /* Merge sort values in vals, returning sorted indices. */
 /* values to be sorted */
 /* number of values */

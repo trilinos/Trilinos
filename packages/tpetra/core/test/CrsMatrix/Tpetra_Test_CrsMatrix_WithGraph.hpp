@@ -449,9 +449,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       V x(map,false), y(map,false);
       x.putScalar(SONE);
 
-      out << "Call localMultiply (local mat-vec) on the CrsMatrix; "
+      out << "Call localApply (local mat-vec) on the CrsMatrix; "
         "it should not throw" << endl;
-      TEST_NOTHROW( matrix.localMultiply(x,y,Teuchos::NO_TRANS,SONE,SZERO) );
+      TEST_NOTHROW( matrix.localApply(x,y,Teuchos::NO_TRANS,SONE,SZERO) );
 
       ArrayRCP<const Scalar> x_view = x.get1dView();
       ArrayRCP<const Scalar> y_view = y.get1dView();

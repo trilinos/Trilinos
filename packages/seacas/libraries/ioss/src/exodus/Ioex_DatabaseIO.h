@@ -103,6 +103,9 @@ namespace Ioex {
 
     ~DatabaseIO() override;
 
+
+    const std::string get_format() const override {return "Exodus";}
+
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
@@ -217,7 +220,7 @@ namespace Ioex {
       closeDW();
     }
 
-    virtual int get_file_pointer() const = 0; // Open file and set exodusFilePtr.
+    virtual int get_file_pointer() const override = 0; // Open file and set exodusFilePtr.
 
     virtual int free_file_pointer() const; // Close file and set exodusFilePtr.
 
@@ -319,7 +322,7 @@ namespace Ioex {
     mutable std::map<std::string, Ioss::Int64Vector> activeNodeSetNodesIndex;
 
     time_t timeLastFlush{0};
-    int    flushInterval{1};
+    int    flushInterval{-1};
 
     mutable bool fileExists{false}; // False if file has never been opened/created
     mutable bool minimizeOpenFiles{false};

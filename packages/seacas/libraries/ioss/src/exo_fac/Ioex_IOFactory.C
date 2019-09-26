@@ -53,9 +53,9 @@ namespace Ioss {
 #if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
   std::string check_decomposition_property(const Ioss::PropertyManager &properties,
-                                           Ioss::DatabaseUsage db_usage);
+                                           Ioss::DatabaseUsage          db_usage);
   bool        check_composition_property(const Ioss::PropertyManager &properties,
-                                         Ioss::DatabaseUsage db_usage);
+                                         Ioss::DatabaseUsage          db_usage);
 } // namespace
 #endif
 
@@ -126,7 +126,7 @@ namespace Ioex {
 #if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
   std::string check_decomposition_property(const Ioss::PropertyManager &properties,
-                                           Ioss::DatabaseUsage db_usage)
+                                           Ioss::DatabaseUsage          db_usage)
   {
     std::string decomp_method;
     std::string decomp_property;
@@ -152,7 +152,7 @@ namespace {
   }
 
   bool check_composition_property(const Ioss::PropertyManager &properties,
-                                  Ioss::DatabaseUsage db_usage)
+                                  Ioss::DatabaseUsage          db_usage)
   {
     bool        compose          = false;
     std::string compose_property = "COMPOSE_INVALID";

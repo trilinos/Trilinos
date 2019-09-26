@@ -53,7 +53,7 @@
 /* #define MAX_CHUNK_SIZE 16384 */
 #endif
 
-#define PEX_MAX(x, y) ((x > y) ? x : y) /* max function */
-#define PEX_MIN(x, y) ((x < y) ? x : y) /* min function */
+#define PEX_MAX(x, y) (((x) > (y)) ? (x) : (y)) /* max function */
+#define PEX_MIN(x, y) (((x) < (y)) ? (x) : (y)) /* min function */
 
 #endif /* _PE_COMMON_H */

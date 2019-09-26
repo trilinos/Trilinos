@@ -422,16 +422,16 @@ void Exo_Entity::internal_load_params()
         attributeNames.push_back(name);
       }
       else if (static_cast<int>(std::strlen(names[vg])) > name_size) {
-        fmt::print(stderr, fmt::v5::fg(fmt::color::red),
+        fmt::print(stderr, fmt::fg(fmt::color::red),
                    "exodiff: ERROR: {} attribute names appear corrupt\n"
                    "                A length is 0 or greater than name_size({})\n"
                    "                Here are the names that I received from"
                    " a call to ex_get_attr_names(...):\n",
                    label(), name_size);
         for (int k = 1; k <= numAttr; ++k) {
-          fmt::print(stderr, fmt::v5::fg(fmt::color::red), "\t\t{}) \"{}\"\n", k, names[k - 1]);
+          fmt::print(stderr, fmt::fg(fmt::color::red), "\t\t{}) \"{}\"\n", k, names[k - 1]);
         }
-        fmt::print(stderr, fmt::v5::fg(fmt::color::red), "                 Aborting...\n");
+        fmt::print(stderr, fmt::fg(fmt::color::red), "                 Aborting...\n");
         exit(1);
       }
       else {
@@ -476,14 +476,14 @@ namespace {
 
   size_t get_num_entities(int file_id, EXOTYPE exo_type)
   {
-    int inquiry = 0;
+    ex_inquiry inquiry = EX_INQ_INVALID;
     switch (exo_type) {
     case EX_ELEM_BLOCK: inquiry = EX_INQ_ELEM_BLK; break;
     case EX_NODE_SET: inquiry = EX_INQ_NODE_SETS; break;
     case EX_SIDE_SET: inquiry = EX_INQ_SIDE_SETS; break;
     default: Error("Invalid entity type in get_num_entities\n"); exit(1);
     }
-    SMART_ASSERT(inquiry > 0);
+    SMART_ASSERT(inquiry != EX_INQ_INVALID);
     return ex_inquire_int(file_id, inquiry);
   }
 

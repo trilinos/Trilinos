@@ -51,7 +51,7 @@ C   --
 C   --Parameters:
 C   --   INLINE - IN/OUT - the parsed input lines for the log file
 C   --   IFLD, INTYP, IFIELD, CFIELD, - IN/OUT - the free-field reader
-C   --          index and charcter field.
+C   --          index and character field.
 C   --   RESET - IN - =.TRUE. if call is only to reset the linethickness
 C   --                        parameter.
 C   --                 .FALSE. if call is to set the parameters.

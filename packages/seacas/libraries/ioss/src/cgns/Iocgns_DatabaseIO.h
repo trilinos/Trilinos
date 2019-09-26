@@ -90,6 +90,8 @@ namespace Iocgns {
 
     ~DatabaseIO() override;
 
+    const std::string get_format() const override {return "CGNS";}
+
     // This isn't quite true since a CGNS library with cgsize_t == 64-bits can read
     // a file with 32-bit ints. However,...
     int int_byte_size_db() const override { return CG_SIZEOF_SIZE; }
@@ -151,6 +153,9 @@ namespace Iocgns {
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
 
+    int64_t get_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                      void *data, size_t data_size) const;
+
     int64_t put_field_internal(const Ioss::Region *region, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
@@ -177,6 +182,9 @@ namespace Iocgns {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                void *data, size_t data_size) const override;
+
+    int64_t put_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                      void *data, size_t data_size) const;
 
     // ID Mapping functions.
     const Ioss::Map &get_map(entity_type type) const;

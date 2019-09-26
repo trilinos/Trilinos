@@ -39,7 +39,7 @@
 // This is used instead of the std::sort since we were having issues
 // with the std::sort on some compiler versions with certain options
 // enabled (-fopenmp).  If this shows up as a hotspot in performance
-// measurments, then we can use std::sort on most platforms and just
+// measurements, then we can use std::sort on most platforms and just
 // use this version where there are compiler issues.
 
 // Using Explicit Template Instantiation with the types:

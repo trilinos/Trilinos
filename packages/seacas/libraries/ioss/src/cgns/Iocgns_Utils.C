@@ -57,6 +57,7 @@
 #include <Ioss_Wedge18.h>
 #include <Ioss_Wedge6.h>
 
+#include <fmt/color.h>
 #include <fmt/ostream.h>
 #include <numeric>
 #include <set>
@@ -508,15 +509,22 @@ void Iocgns::Utils::update_db_zone_property(int cgns_file_ptr, const Ioss::Regio
   }
 }
 
-int Iocgns::Utils::get_db_zone(const Ioss::EntityBlock *block)
+int Iocgns::Utils::get_db_zone(const Ioss::GroupingEntity *entity)
 {
   // Returns the zone of the entity as it appears on the cgns database.
   // Usually, but not always the same as the IOSS zone...
   // Can differ on fpp reads and maybe writes.
-  if (block->property_exists("db_zone")) {
-    return block->get_property("db_zone").get_int();
+  if (entity->property_exists("db_zone")) {
+    return entity->get_property("db_zone").get_int();
   }
-  return block->get_property("zone").get_int();
+  if (entity->property_exists("zone")) {
+    return entity->get_property("zone").get_int();
+  }
+  std::ostringstream errmsg;
+  fmt::print(errmsg,
+             "ERROR: CGNS: Entity '{}' of type '{}' does not have the 'zone' property assigned.",
+             entity->name(), entity->type_string());
+  IOSS_ERROR(errmsg);
 }
 
 size_t Iocgns::Utils::index(const Ioss::Field &field) { return field.get_index() & 0xffffffff; }
@@ -1253,19 +1261,17 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
                                                  int *cell_center_solution_index,
                                                  bool is_parallel_io)
 {
-  std::string c_name = "CellCenterSolutionAtStep";
-  std::string v_name = "VertexSolutionAtStep";
+  std::string c_name = fmt::format("CellCenterSolutionAtStep{:05}", state);
+  std::string v_name = fmt::format("VertexSolutionAtStep{:05}", state);
   std::string step   = std::to_string(state);
-  c_name += step;
-  v_name += step;
 
-  const auto &nblocks          = region->get_node_blocks();
-  const auto &nblock           = nblocks[0];
-  bool        has_nodal_fields = nblock->field_count(Ioss::Field::TRANSIENT) > 0;
+  const auto &nblocks                 = region->get_node_blocks();
+  const auto &nblock                  = nblocks[0];
+  bool        global_has_nodal_fields = nblock->field_count(Ioss::Field::TRANSIENT) > 0;
 
   // Create a lambda to avoid code duplication for similar treatment
   // of structured blocks and element blocks.
-  auto sol_lambda = [=](Ioss::EntityBlock *block) {
+  auto sol_lambda = [=](Ioss::EntityBlock *block, bool has_nodal_fields) {
     int base = block->get_property("base").get_int();
     int zone = get_db_zone(block);
     if (has_nodal_fields) {
@@ -1288,13 +1294,15 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
   const auto &sblocks = region->get_structured_blocks();
   for (auto &block : sblocks) {
     if (is_parallel_io || block->is_active()) {
-      sol_lambda(block);
+      const auto &nb        = block->get_node_block();
+      bool has_nodal_fields = global_has_nodal_fields || nb.field_count(Ioss::Field::TRANSIENT) > 0;
+      sol_lambda(block, has_nodal_fields);
     }
   }
   // Use the lambda
   const auto &eblocks = region->get_element_blocks();
   for (auto &block : eblocks) {
-    sol_lambda(block);
+    sol_lambda(block, global_has_nodal_fields);
   }
 }
 
@@ -1627,103 +1635,43 @@ void Iocgns::Utils::add_structured_boundary_conditions_pio(int                  
   int zone = get_db_zone(block);
 
   // Called by Parallel run reading single file only.
-  // The 'cgns_file_ptr' is for the serial file on processor 0.
-  // Read all CGNS data on processor 0 and then broadcast to other processors.
   // Data needed:
   // * boco_name (CGNS_MAX_NAME_LENGTH + 1 chars)
   // * fam_name  (CGNS_MAX_NAME_LENGTH + 1 chars)
   // * data     (cgsize_t * 7) (bocotype + range[6])
 
   int num_bcs = 0;
-  int rank    = block->get_database()->util().parallel_rank();
-  if (rank == 0) {
-    CGCHECKNP(cg_nbocos(cgns_file_ptr, base, zone, &num_bcs));
-  }
-
-#ifdef SEACAS_HAVE_MPI
-  int proc = block->get_database()->util().parallel_size();
-  if (proc > 1) {
-    MPI_Bcast(&num_bcs, 1, MPI_INT, 0, block->get_database()->util().communicator());
-  }
-#endif
+  CGCHECKNP(cg_nbocos(cgns_file_ptr, base, zone, &num_bcs));
 
   std::vector<int>  bc_data(7 * num_bcs);
   std::vector<char> bc_names(2 * (CGNS_MAX_NAME_LENGTH + 1) * num_bcs);
 
-  if (rank == 0) {
-    int      off_data = 0;
-    int      off_name = 0;
-    cgsize_t range[6];
-
-    for (int ibc = 0; ibc < num_bcs; ibc++) {
-      char              boco_name[CGNS_MAX_NAME_LENGTH + 1];
-      char              fam_name[CGNS_MAX_NAME_LENGTH + 1];
-      CG_BCType_t       bocotype;
-      CG_PointSetType_t ptset_type;
-      cgsize_t          npnts;
-      cgsize_t          NormalListSize;
-      CG_DataType_t     NormalDataType;
-      int               ndataset;
-
-      // All we really want from this is 'boco_name'
-      CGCHECKNP(cg_boco_info(cgns_file_ptr, base, zone, ibc + 1, boco_name, &bocotype, &ptset_type,
-                             &npnts, nullptr, &NormalListSize, &NormalDataType, &ndataset));
-
-      if (bocotype == CG_FamilySpecified) {
-        // Get family name associated with this boco_name
-        CGCHECKNP(
-            cg_goto(cgns_file_ptr, base, "Zone_t", zone, "ZoneBC_t", 1, "BC_t", ibc + 1, "end"));
-        CGCHECKNP(cg_famname_read(fam_name));
-      }
-      else {
-        Ioss::Utils::copy_string(fam_name, boco_name);
-      }
-
-      CGCHECKNP(cg_boco_read(cgns_file_ptr, base, zone, ibc + 1, range, nullptr));
-
-      Ioss::Utils::copy_string(&bc_names[off_name], boco_name, CGNS_MAX_NAME_LENGTH + 1);
-      off_name += (CGNS_MAX_NAME_LENGTH + 1);
-      Ioss::Utils::copy_string(&bc_names[off_name], fam_name, CGNS_MAX_NAME_LENGTH + 1);
-      off_name += (CGNS_MAX_NAME_LENGTH + 1);
-
-      bc_data[off_data++] = bocotype;
-      bc_data[off_data++] = range[0];
-      bc_data[off_data++] = range[1];
-      bc_data[off_data++] = range[2];
-      bc_data[off_data++] = range[3];
-      bc_data[off_data++] = range[4];
-      bc_data[off_data++] = range[5];
-    }
-  }
-
-#ifdef SEACAS_HAVE_MPI
-  // Broadcast data to other processors...
-  if (proc > 1) {
-    MPI_Bcast(bc_names.data(), (int)bc_names.size(), MPI_BYTE, 0,
-              block->get_database()->util().communicator());
-    MPI_Bcast(bc_data.data(), (int)bc_data.size(), MPI_INT, 0,
-              block->get_database()->util().communicator());
-  }
-#endif
-
-  // Now just unpack the data and run through the same calculations on all processors.
-  int off_data = 0;
-  int off_name = 0;
   for (int ibc = 0; ibc < num_bcs; ibc++) {
-    cgsize_t range[6];
+    cgsize_t          range[6];
+    char              boco_name[CGNS_MAX_NAME_LENGTH + 1];
+    char              fam_name[CGNS_MAX_NAME_LENGTH + 1];
+    CG_BCType_t       bocotype;
+    CG_PointSetType_t ptset_type;
+    cgsize_t          npnts;
+    cgsize_t          NormalListSize;
+    CG_DataType_t     NormalDataType;
+    int               ndataset;
 
-    CG_BCType_t bocotype = (CG_BCType_t)bc_data[off_data++];
-    range[0]             = bc_data[off_data++];
-    range[1]             = bc_data[off_data++];
-    range[2]             = bc_data[off_data++];
-    range[3]             = bc_data[off_data++];
-    range[4]             = bc_data[off_data++];
-    range[5]             = bc_data[off_data++];
+    // All we really want from this is 'boco_name'
+    CGCHECKNP(cg_boco_info(cgns_file_ptr, base, zone, ibc + 1, boco_name, &bocotype, &ptset_type,
+                           &npnts, nullptr, &NormalListSize, &NormalDataType, &ndataset));
 
-    std::string boco_name{&bc_names[off_name]};
-    off_name += (CGNS_MAX_NAME_LENGTH + 1);
-    std::string fam_name{&bc_names[off_name]};
-    off_name += (CGNS_MAX_NAME_LENGTH + 1);
+    if (bocotype == CG_FamilySpecified) {
+      // Get family name associated with this boco_name
+      CGCHECKNP(
+          cg_goto(cgns_file_ptr, base, "Zone_t", zone, "ZoneBC_t", 1, "BC_t", ibc + 1, "end"));
+      CGCHECKNP(cg_famname_read(fam_name));
+    }
+    else {
+      Ioss::Utils::copy_string(fam_name, boco_name);
+    }
+
+    CGCHECKNP(cg_boco_read(cgns_file_ptr, base, zone, ibc + 1, range, nullptr));
 
     // There are some BC that are applied on an edge or a vertex;
     // Don't want those (yet?), so filter them out at this time...
@@ -2213,13 +2161,20 @@ void Iocgns::Utils::decompose_model(std::vector<Iocgns::StructuredZoneData *> &z
     std::vector<bool> exceeds(proc_count);
     for (size_t i = 0; i < work_vector.size(); i++) {
       double workload_ratio = double(work_vector[i]) / avg_work;
-      if (verbose && rank == 0) {
-        fmt::print(stderr, "\nProcessor {} work: {:n}, workload ratio: {}", i, work_vector[i],
-                   workload_ratio);
-      }
       if (workload_ratio > load_balance_threshold) {
         exceeds[i] = true;
         px++;
+        if (verbose && rank == 0) {
+          fmt::print(stderr, fg(fmt::color::red),
+                     "\nProcessor {} work: {:n}, workload ratio: {} (exceeds)", i, work_vector[i],
+                     workload_ratio);
+        }
+      }
+      else {
+        if (verbose && rank == 0) {
+          fmt::print(stderr, "\nProcessor {} work: {:n}, workload ratio: {}", i, work_vector[i],
+                     workload_ratio);
+        }
       }
     }
     if (verbose && rank == 0) {

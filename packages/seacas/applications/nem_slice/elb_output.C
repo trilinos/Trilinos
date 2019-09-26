@@ -39,8 +39,8 @@
 #include "elb_err.h"  // for Gen_Error, error_lev
 #include "elb_output.h"
 #include "elb_util.h" // for gds_qsort, qsort2, in_list, etc
+#include "fmt/chrono.h"
 #include "fmt/ostream.h"
-#include "fmt/time.h"
 #include "scopeguard.h"
 #include <copy_string_cpp.h>
 #include <cstddef>    // for size_t, nullptr
@@ -581,10 +581,8 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
     float *yptr = nullptr;
     float *zptr = nullptr;
     switch (mesh->num_dims) {
-    case 3: zptr = (mesh->coords) + 2 * mesh->num_nodes;
-      FALL_THROUGH;
-    case 2: yptr = (mesh->coords) + mesh->num_nodes;
-      FALL_THROUGH;
+    case 3: zptr = (mesh->coords) + 2 * mesh->num_nodes; FALL_THROUGH;
+    case 2: yptr = (mesh->coords) + mesh->num_nodes; FALL_THROUGH;
     case 1: xptr = mesh->coords;
     }
     if (ex_put_coord(exid_vis, xptr, yptr, zptr) < 0) {

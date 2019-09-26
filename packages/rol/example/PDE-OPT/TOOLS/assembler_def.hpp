@@ -2156,7 +2156,7 @@ const ROL::Ptr<DofManager<Real>> Assembler<Real>::getDofManager(void) const {
 }
 
 template<class Real>
-Teuchos::Array<int> Assembler<Real>::getCellIds(void) const {
+Teuchos::Array<typename Tpetra::Map<>::global_ordinal_type> Assembler<Real>::getCellIds(void) const {
   return myCellIds_;
 }
 /***************************************************************************/
@@ -2221,7 +2221,7 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   /****************************************************/
   // Partition the cells in the mesh.  We use a basic quasi-equinumerous partitioning,
   // where the remainder, if any, is assigned to the last processor.
-  Teuchos::Array<int> myGlobalIds;
+  Teuchos::Array<GO> myGlobalIds;
   cellOffsets_.assign(numProcs_, 0);
   int totalNumCells = meshMgr_->getNumCells();
   int cellsPerProc  = totalNumCells / numProcs_;
@@ -2293,15 +2293,14 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   myGlobalIds.erase( std::unique(myGlobalIds.begin(),myGlobalIds.end()),myGlobalIds.end() );
 
   // Build maps.
-  myOverlapStateMap_ = ROL::makePtr<Tpetra::Map<>>(
-                       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
-                       myGlobalIds, 0, comm_);
+  myOverlapStateMap_ = ROL::makePtr<Tpetra::Map<>>
+    (Teuchos::OrdinalTraits<GO>::invalid(), myGlobalIds, GO(0), comm_);
   //std::cout << std::endl << myOverlapMap_->getNodeElementList()<<std::endl;
   /** One can also use the non-member function:
       myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobalIds_, comm_);
       to build the overlap map.
   **/
-  myUniqueStateMap_ = Tpetra::createOneToOne<int,int>(myOverlapStateMap_);
+  myUniqueStateMap_ = Tpetra::createOneToOne(myOverlapStateMap_);
   //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
   myOverlapControlMap_  = myOverlapStateMap_;
   myUniqueControlMap_   = myUniqueStateMap_;
@@ -2314,12 +2313,35 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   /****************************************/
   /*** Assemble global graph structure. ***/
   /****************************************/
-  matJ1Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, 0);
+
+  // Make a GO copy to interface with Tpetra; currently dof manager uses int directly
   Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+  Teuchos::ArrayRCP<GO> cellDofsGO(cellDofsArrayRCP.size(), GO());
+  std::copy(cellDofsArrayRCP.getRawPtr(), cellDofsArrayRCP.getRawPtr()+cellDofsArrayRCP.size(), 
+            cellDofsGO.getRawPtr());
+  Teuchos::ArrayRCP<const GO> cellDofsGOArrayRCP = cellDofsGO.getConst();
+
+  // Estimate the max number of entries per row 
+  // using a map (row indicies can be non-contiguous)
+  GO maxEntriesPerRow(0);
+  {
+    std::map<GO,GO> numEntriesCount;
+    for (int i=0; i<numCells_; ++i) 
+      for (int j=0; j<numLocalDofs; ++j) 
+        numEntriesCount[GO(cellDofs(myCellIds_[i],j))] += numLocalDofs;
+    const auto rowIndexWithMaxEntries 
+      = std::max_element(std::begin(numEntriesCount), std::end(numEntriesCount), 
+                         [](const std::pair<GO,GO> &pa, const std::pair<GO,GO> &pb) {
+                           return pa.second < pb.second;
+                         });
+    if (!numEntriesCount.empty())
+      maxEntriesPerRow = rowIndexWithMaxEntries->second;
+  }
+  matJ1Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, maxEntriesPerRow);
   for (int i=0; i<numCells_; ++i) {
     for (int j=0; j<numLocalDofs; ++j) {
-      matJ1Graph_->insertGlobalIndices(cellDofs(myCellIds_[i],j),
-        cellDofsArrayRCP(myCellIds_[i]*numLocalDofs, numLocalDofs));
+      matJ1Graph_->insertGlobalIndices(GO(cellDofs(myCellIds_[i],j)),
+        cellDofsGOArrayRCP(myCellIds_[i]*numLocalDofs, numLocalDofs));
     }
   }
   matJ1Graph_->fillComplete();
@@ -2536,11 +2558,15 @@ void Assembler<Real>::assembleFieldMatrix(ROL::Ptr<Tpetra::CrsMatrix<>> &M,
   int numLocalDofs = cellDofs.dimension(1);
   int numLocalMatEntries = numLocalDofs * numLocalDofs;
   Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+  Teuchos::ArrayRCP<GO> cellDofsGO(cellDofsArrayRCP.size(), GO());
+  std::copy(cellDofsArrayRCP.getRawPtr(), cellDofsArrayRCP.getRawPtr()+cellDofsArrayRCP.size(), 
+            cellDofsGO.getRawPtr());
+  Teuchos::ArrayRCP<const GO> cellDofsGOArrayRCP = cellDofsGO.getConst();
   Teuchos::ArrayRCP<const Real> valArrayRCP = val->getData();
   for (int i=0; i<numCells_; ++i) {
     for (int j=0; j<numLocalDofs; ++j) {
-      M->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                             cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+      M->sumIntoGlobalValues(GO(cellDofs(myCellIds_[i],j)),
+                             cellDofsGOArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
                              valArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
     }
   }

@@ -71,8 +71,9 @@ namespace Stokhos {
     const size_t pce_sz = cijk.dimension();
     RCP<const Map> map =
       Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(pce_sz, comm);
-    RCP<Graph> graph = Tpetra::createCrsGraph(map);
+    RCP<Graph> graph;
     if (matrix_pce_size == 1) {
+      graph =  Tpetra::createCrsGraph(map, 1);
       // Mean-based case -- graph is diagonal
       for (size_t i=0; i<pce_sz; ++i) {
         const GlobalOrdinal row = i;
@@ -81,6 +82,16 @@ namespace Stokhos {
     }
     else {
       // General case
+
+      // Get max num entries
+      size_t max_num_entry = 0;
+      for (size_t i=0; i<pce_sz; ++i) {
+        const size_t num_entry = cijk.num_entry(i);
+        max_num_entry = (num_entry > max_num_entry) ? num_entry : max_num_entry;
+      }
+      max_num_entry *= 2; // 1 entry each for j, k coord
+      graph =  Tpetra::createCrsGraph(map, max_num_entry);
+
       for (size_t i=0; i<pce_sz; ++i) {
         const GlobalOrdinal row = i;
         const size_t num_entry = cijk.num_entry(i);
@@ -155,13 +166,14 @@ namespace Stokhos {
 
     // Build flattened graph that is the Kronecker product of the given
     // graph and cijk_graph
-    RCP<Graph> flat_graph = rcp(new Graph(flat_row_map, flat_col_map, 0));
 
     // Loop over outer rows
     ArrayView<const LocalOrdinal> outer_cols;
     ArrayView<const LocalOrdinal> inner_cols;
+    size_t max_num_row_entries = graph.getNodeMaxNumRowEntries()*block_size;
     Array<LocalOrdinal> flat_col_indices;
-    flat_col_indices.reserve(graph.getNodeMaxNumRowEntries()*block_size);
+    flat_col_indices.reserve(max_num_row_entries);
+    RCP<Graph> flat_graph = rcp(new Graph(flat_row_map, flat_col_map, max_num_row_entries));
     const LocalOrdinal num_outer_rows = graph.getNodeNumRows();
     for (LocalOrdinal outer_row=0; outer_row < num_outer_rows; outer_row++) {
 

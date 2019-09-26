@@ -34,7 +34,7 @@ C
 C $Id: intsct.f,v 1.2 1992/02/04 15:50:25 gdsjaar Exp $
 C $Log: intsct.f,v $
 C Revision 1.2  1992/02/04 15:50:25  gdsjaar
-C Added bouding box check in intsct, reduce time 5 percent
+C Added bounding box check in intsct, reduce time 5 percent
 C
 c Revision 1.1.1.1  1990/11/30  11:10:21  gdsjaar
 c FASTQ Version 2.0X

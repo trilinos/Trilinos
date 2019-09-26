@@ -53,7 +53,9 @@ namespace Ioad {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
+                              MPI_Comm                     communicator,
+                              const Ioss::PropertyManager &properties) const override;
+    void              show_config() const override;
   };
 } // namespace Ioad
 #endif // IOSS_Ioad_IOFactory_h

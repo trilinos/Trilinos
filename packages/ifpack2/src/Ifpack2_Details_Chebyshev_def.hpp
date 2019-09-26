@@ -1043,13 +1043,8 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
     // In debug mode, make sure that all diagonal entries are
     // positive, on all processes.  Note that *out_ only prints on
     // Process 0 of the matrix's communicator.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    D_rangeMap->template sync<Kokkos::HostSpace> ();
-    auto D_lcl = D_rangeMap->template getLocalView<Kokkos::HostSpace> ();
-#else
     D_rangeMap->sync_host ();
     auto D_lcl = D_rangeMap->getLocalViewHost ();
-#endif
     auto D_lcl_1d = Kokkos::subview (D_lcl, Kokkos::ALL (), 0);
 
     typedef typename MV::impl_scalar_type IST;

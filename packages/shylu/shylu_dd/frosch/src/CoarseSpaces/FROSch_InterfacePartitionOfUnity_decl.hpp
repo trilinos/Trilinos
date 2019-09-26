@@ -42,90 +42,103 @@
 #ifndef _FROSCH_INTERFACEPARTITIONOFUNITY_DECL_HPP
 #define _FROSCH_INTERFACEPARTITIONOFUNITY_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 #include <FROSch_DDInterface_def.hpp>
 
+
 namespace FROSch {
-    
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class InterfacePartitionOfUnity {
-        
+
+    protected:
+
+        using CommPtr                       = RCP<const Comm<int> >;
+
+        using XMap                          = Map<LO,GO,NO>;
+        using XMapPtr                       = RCP<XMap>;
+        using ConstXMapPtr                  = RCP<const XMap>;
+        using XMapPtrVecPtr                 = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr            = ArrayRCP<ConstXMapPtr>;
+
+        using XMatrix                       = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr                    = RCP<XMatrix>;
+        using ConstXMatrixPtr               = RCP<const XMatrix>;
+
+        using XMultiVector                  = MultiVector<SC,LO,GO,NO>;
+        using ConstXMultiVectorPtr          = RCP<const XMultiVector>;
+        using XMultiVectorPtr               = RCP<XMultiVector>;
+        using XMultiVectorPtrVecPtr         = ArrayRCP<XMultiVectorPtr>;
+        using ConstXMultiVectorPtrVecPtr    = ArrayRCP<ConstXMultiVectorPtr>;
+
+        using ParameterListPtr              = RCP<ParameterList>;
+
+        using DDInterfacePtr                = RCP<DDInterface<SC,LO,GO,NO> >;
+        using ConstDDInterfacePtr           = RCP<const DDInterface<SC,LO,GO,NO> >;
+
+        using EntitySetPtr                  = RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetPtrVecPtr            = ArrayRCP<EntitySetPtr>;
+
+        using InterfaceEntityPtr            = RCP<InterfaceEntity<SC,LO,GO,NO> >;
+
+        using UN                            = unsigned;
+
+        using GOVec                         = Array<GO>;
+        using GOVecView                     = ArrayView<GO>;
+
+        using SCVecPtr                      = ArrayRCP<SC>;
+
     public:
-        
-        typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
 
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
-        
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<const MultiVector> ConstMultiVectorPtr;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        typedef Teuchos::ArrayRCP<MultiVectorPtr> MultiVectorPtrVecPtr;
-        typedef Teuchos::ArrayRCP<ConstMultiVectorPtr> ConstMultiVectorPtrVecPtr;
-
-        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
-        
-        typedef Teuchos::RCP<DDInterface<SC,LO,GO,NO> > DDInterfacePtr;
-        typedef Teuchos::RCP<const DDInterface<SC,LO,GO,NO> > ConstDDInterfacePtr;
-        
-        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
-        
-        typedef unsigned UN;
-        
-        typedef Teuchos::Array<GO> GOVec;
-        typedef Teuchos::ArrayView<GO> GOVecView;
-        
-        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-
-        
         InterfacePartitionOfUnity(CommPtr mpiComm,
                                   CommPtr serialComm,
                                   UN dimension,
                                   UN dofsPerNode,
-                                  MapPtr nodesMap,
-                                  MapPtrVecPtr dofsMaps,
-                                  ParameterListPtr parameterList);
-        
+                                  ConstXMapPtr nodesMap,
+                                  ConstXMapPtrVecPtr dofsMaps,
+                                  ParameterListPtr parameterList,
+                                  Verbosity verbosity = All,
+                                  UN levelID = 1);
+
         virtual ~InterfacePartitionOfUnity();
-        
-        virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs = Teuchos::null,
-                                         MultiVectorPtr nodeList = Teuchos::null) = 0;
-        
-        virtual int sortInterface(CrsMatrixPtr matrix,
-                                  MultiVectorPtr nodeList = Teuchos::null) = 0;
-        
-        virtual int computePartitionOfUnity() = 0;
-        
-        MultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
-        
-        MapPtrVecPtr getPartitionOfUnityMaps() const;
-        
+
+        virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs = null,
+                                         ConstXMultiVectorPtr nodeList = null) = 0;
+
+        virtual int sortInterface(ConstXMatrixPtr matrix,
+                                  ConstXMultiVectorPtr nodeList = null) = 0;
+
+        virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null)  = 0;
+
+        XMultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
+
+        XMapPtrVecPtr getPartitionOfUnityMaps() const;
+
         ConstDDInterfacePtr getDDInterface() const;
-        
+
     protected:
-        
+
         CommPtr MpiComm_;
         CommPtr SerialComm_;
-        
+
         DDInterfacePtr DDInterface_;
-        
+
         ParameterListPtr ParameterList_;
-        
-        MultiVectorPtrVecPtr LocalPartitionOfUnity_;
-        
-        MapPtrVecPtr PartitionOfUnityMaps_;
-        
+
+        XMultiVectorPtrVecPtr LocalPartitionOfUnity_;
+
+        XMapPtrVecPtr PartitionOfUnityMaps_;
+
         bool Verbose_;
+
+        UN LevelID_;
     };
-    
+
 }
 
 #endif

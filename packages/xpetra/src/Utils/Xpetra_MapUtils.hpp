@@ -49,6 +49,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
+#include "Xpetra_Exceptions.hpp"
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MapFactory.hpp"
 
@@ -68,7 +69,7 @@ namespace Xpetra {
 */
 template <class LocalOrdinal,
           class GlobalOrdinal,
-          class Node>
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class MapUtils {
 #undef XPETRA_MAPUTILS_SHORT
 #include "Xpetra_UseShortNamesOrdinal.hpp"
@@ -124,11 +125,17 @@ public:
              result = { 0, 1, 2, 3, 4 }; on proc 0
              result = { 3, 4, 5, 6, 7 }; on proc 1
     */
-  static Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > shrinkMapGIDs(
-      const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& input,
-      const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& nonOvlInput ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() > input.getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::shrinkMapGIDs: the non-overlapping map must not have more local ids than the overlapping map.")
-    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getMaxAllGlobalIndex() != input.getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::shrinkMapGIDs: the maximum GIDs of the overlapping and non-overlapping maps must be the same.")
+  static Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > 
+  shrinkMapGIDs(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& input,
+                const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& nonOvlInput)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() > input.getNodeNumElements(), 
+                               Xpetra::Exceptions::Incompatible, 
+                               "Xpetra::MatrixUtils::shrinkMapGIDs: the non-overlapping map must not have more local ids than the overlapping map.")
+
+    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getMaxAllGlobalIndex() != input.getMaxAllGlobalIndex(), 
+            Xpetra::Exceptions::Incompatible, 
+            "Xpetra::MatrixUtils::shrinkMapGIDs: the maximum GIDs of the overlapping and non-overlapping maps must be the same.")
 
     RCP< const Teuchos::Comm<int> > comm = input.getComm();
 
@@ -146,7 +153,8 @@ public:
 
     // we use nonOvlInput to assign the globally unique shrinked GIDs and communicate them to input.
     std::map<const GlobalOrdinal, GlobalOrdinal> origGID2newGID;
-    for(size_t i = 0; i < nonOvlInput.getNodeNumElements(); i++) {
+    for(size_t i = 0; i < nonOvlInput.getNodeNumElements(); i++) 
+    {
       origGID2newGID[nonOvlInput.getGlobalElement(i)] = Teuchos::as<GlobalOrdinal>(i) + Teuchos::as<GlobalOrdinal>(gidOffset);
     }
     // build an overlapping version of mySpecialMap

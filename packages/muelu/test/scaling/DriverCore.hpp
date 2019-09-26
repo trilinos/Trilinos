@@ -204,8 +204,10 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
      else {
        Teuchos::Array<LO> lNodesPerDim(3, 10);
        Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
-       userParamList.set<RCP<CoordinateMultiVector> >("Coordinates", coordinates);
-       userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
+       if(!coordinates.is_null())
+         userParamList.set<RCP<CoordinateMultiVector> >("Coordinates", coordinates);
+       if(!nullspace.is_null())
+         userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
        userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
        H = MueLu::CreateXpetraPreconditioner(A, mueluList);
      }
@@ -328,7 +330,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
       typedef Belos::OperatorT<MV> OP;
 
       // Define Operator and Preconditioner
-      Teuchos::RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operato
+      Teuchos::RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
       Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
       if(useAMGX) {
 #if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
@@ -404,7 +406,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         ret = solver->solve();
         numIts = solver->getNumIters();
 
-      } catch (std::invalid_argument)
+      } catch (std::invalid_argument&)
 #endif
       {
 

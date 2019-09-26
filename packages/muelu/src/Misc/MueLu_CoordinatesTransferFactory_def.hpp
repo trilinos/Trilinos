@@ -77,8 +77,11 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("numDimensions"     ,           Teuchos::null, "Factory providing the number of spatial dimensions of the mesh");
     validParamList->set<int>                    ("write start",                  -1, "first level at which coordinates should be written to file");
     validParamList->set<int>                    ("write end",                    -1, "last level at which coordinates should be written to file");
-    validParamList->set<RCP<const FactoryBase> >("aggregationRegionTypeCoarse",  Teuchos::null, "Factory indicating what aggregation type is to be used on the coarse level of the region");
     validParamList->set<bool>                   ("hybrid aggregation",           false, "Flag specifying that hybrid aggregation data is transfered for HybridAggregationFactory");
+    validParamList->set<RCP<const FactoryBase> >("aggregationRegionTypeCoarse",  Teuchos::null, "Factory indicating what aggregation type is to be used on the coarse level of the region");
+    validParamList->set<bool>                   ("interface aggregation",        false, "Flag specifying that interface aggregation data is transfered for HybridAggregationFactory");
+    validParamList->set<RCP<const FactoryBase> >("coarseInterfacesDimensions",   Teuchos::null, "Factory providing coarseInterfacesDimensions");
+    validParamList->set<RCP<const FactoryBase> >("nodeOnCoarseInterface",        Teuchos::null, "Factory providing nodeOnCoarseInterface");
 
 
     return validParamList;
@@ -99,6 +102,14 @@ namespace MueLu {
       Input(coarseLevel, "coarseCoordinates");
       Input(coarseLevel, "gCoarseNodesPerDim");
       Input(coarseLevel, "lCoarseNodesPerDim");
+    } else if(pL.get<bool>("hybrid aggregation") == true) {
+      Input(fineLevel, "aggregationRegionTypeCoarse");
+      Input(fineLevel, "lCoarseNodesPerDim");
+      Input(fineLevel, "numDimensions");
+      if(pL.get<bool>("interface aggregation") == true) {
+        Input(fineLevel, "coarseInterfacesDimensions");
+        Input(fineLevel, "nodeOnCoarseInterface");
+      }
     } else {
       if (coarseLevel.GetRequestMode() == Level::REQUEST)
         isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
@@ -108,11 +119,6 @@ namespace MueLu {
         Input(fineLevel, "Aggregates");
         Input(fineLevel, "CoarseMap");
       }
-    }
-    if(pL.get<bool>("hybrid aggregation") == true) {
-      Input(fineLevel,"aggregationRegionTypeCoarse");
-      Input(fineLevel, "lCoarseNodesPerDim");
-      Input(fineLevel, "numDimensions");
     }
   }
 
@@ -137,8 +143,15 @@ namespace MueLu {
       numDimensions          = Get<int>(fineLevel, "numDimensions");
       lCoarseNodesPerDir     = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
       Set<std::string>(coarseLevel, "aggregationRegionType", regionType);
-      Set<int>(coarseLevel, "numDimensions", numDimensions);
-      Set< Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDir);
+      Set<int>        (coarseLevel, "numDimensions",         numDimensions);
+      Set<Array<LO> > (coarseLevel, "lNodesPerDim",          lCoarseNodesPerDir);
+
+      if((pL.get<bool>("interface aggregation") == true) && (regionType == "uncoupled")) {
+        Array<LO> coarseInterfacesDimensions = Get<Array<LO> >(fineLevel, "coarseInterfacesDimensions");
+        Array<LO> nodeOnCoarseInterface      = Get<Array<LO> >(fineLevel, "nodeOnCoarseInterface");
+        Set<Array<LO> >(coarseLevel, "interfacesDimensions", coarseInterfacesDimensions);
+        Set<Array<LO> >(coarseLevel, "nodeOnInterface",      nodeOnCoarseInterface);
+      }
 
     } else if(pL.get<bool>("structured aggregation") == true) {
       if(pL.get<bool>("aggregation coupled") == true) {

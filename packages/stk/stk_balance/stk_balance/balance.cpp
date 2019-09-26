@@ -3,14 +3,15 @@
 #include "balance.hpp"
 #include "balanceUtils.hpp"               // for BalanceSettings, etc
 #include "fixSplitCoincidentElements.hpp"
+#include "internal/DetectAndFixMechanisms.hpp"
 #include "internal/LastStepFieldWriter.hpp"
 #include "internal/balanceCoincidentElements.hpp"
+#include "internal/balanceCommandLine.hpp"
 #include "internal/privateDeclarations.hpp"  // for callZoltan1, etc
-#include "stk_balance/internal/DetectAndFixMechanisms.hpp"
-#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Comm.hpp"
+#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
 #include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
@@ -376,10 +377,11 @@ void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
 void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
                                 stk::balance::BalanceSettings& graphOptions,
                                 const std::string& exodusFilename,
-                                const std::string& outputFilename)
+                                const std::string& outputFilename,
+                                const std::string & initialDecompMethod)
 {
     stk::io::StkMeshIoBroker stkInput;
-    stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
+    stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", initialDecompMethod));
 
     internal::logMessage(bulk.parallel(), "Reading mesh and performing initial decomposition");
     read_mesh_with_auto_decomp(stkInput, exodusFilename, bulk, graphOptions);
@@ -399,12 +401,13 @@ void run_stk_balance_with_settings(const std::string& outputFilename, const std:
                      <<") == output-file, doing nothing. Specify outputDirectory if you "
                      <<"wish to copy the input-file to an output-file of the same name.");
 
+    const std::string initialDecompMethod = "RIB";
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, comm);
-    initial_decomp_and_balance(bulk, graphOptions, exodusFilename, outputFilename);
+    initial_decomp_and_balance(bulk, graphOptions, exodusFilename, outputFilename, initialDecompMethod);
 }
 
-void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, stk::balance::AppTypeDefaults appType, MPI_Comm comm)
+void run_stk_rebalance(const std::string& outputDirectory, const std::string& inputFile, stk::balance::AppTypeDefaults appType, MPI_Comm comm)
 {
     stk::balance::GraphCreationSettings graphOptions;
 
@@ -419,8 +422,8 @@ void run_stk_rebalance(const std::string& outputDirectory, const std::string& ex
         graphOptions.setToleranceFunctionForFaceSearch(std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
     }
 
-    std::string outputFilename = outputDirectory + "/" + exodusFilename;
-    run_stk_balance_with_settings(outputFilename, exodusFilename, comm, graphOptions);
+    std::string outputFilename = construct_output_file_name(outputDirectory, inputFile);
+    run_stk_balance_with_settings(outputFilename, inputFile, comm, graphOptions);
 }
 
 }

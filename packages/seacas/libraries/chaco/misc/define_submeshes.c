@@ -36,6 +36,7 @@
 #include "defs.h"
 #include "params.h"
 #include "structs.h"
+#include <stdlib.h>
 
 /* Figure out how to divide mesh into pieces.  Return true if nonstandard. */
 int define_submeshes(int              nsets,        /* number of subsets in this partition */
@@ -65,7 +66,6 @@ int define_submeshes(int              nsets,        /* number of subsets in this
   int        snaking;   /* is single stripe snaking through grid? */
   int        reverse;   /* should I reverse direction for embedding? */
   int        i, j, k;   /* loop counters */
-  int        abs();
 
   dims[0] = set->span[0];
   dims[1] = set->span[1];

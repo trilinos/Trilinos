@@ -35,7 +35,9 @@
 
 #include <Ionit_Initializer.h>
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -46,6 +48,8 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <sys/ioctl.h>
+#include <unistd.h>
 #include <utility>
 #include <vector>
 
@@ -82,17 +86,16 @@ namespace {
         exit(EXIT_SUCCESS);
       }
 
-      {
-        const std::string temp = options_.retrieve("output");
-        if (!temp.empty()) {
-          histogram            = temp.find("h") != std::string::npos;
-          work_per_processor   = temp.find("w") != std::string::npos;
-          zone_proc_assignment = temp.find("z") != std::string::npos;
-          verbose              = temp.find("v") != std::string::npos;
-          communication_map    = temp.find("c") != std::string::npos;
-        }
-      }
       verbose = options_.retrieve("verbose") != nullptr;
+
+      if (options_.retrieve("output") != nullptr) {
+        const std::string temp = options_.retrieve("output");
+        histogram              = temp.find("h") != std::string::npos;
+        work_per_processor     = temp.find("w") != std::string::npos;
+        zone_proc_assignment   = temp.find("z") != std::string::npos;
+        verbose                = temp.find("v") != std::string::npos || verbose;
+        communication_map      = temp.find("c") != std::string::npos;
+      }
 
       {
         const char *temp = options_.retrieve("processors");
@@ -122,6 +125,13 @@ namespace {
         const char *temp = options_.retrieve("line_decomposition");
         if (temp != nullptr) {
           line_decomposition = temp;
+        }
+      }
+
+      {
+        const char *temp = options_.retrieve("db_type");
+        if (temp != nullptr) {
+          filetype = temp;
         }
       }
 
@@ -160,9 +170,11 @@ namespace {
                       "this ordinal.",
                       nullptr);
       options_.enroll("load_balance", Ioss::GetLongOption::MandatoryValue,
-                      "Max ratio of processor work to average.", nullptr);
+                      "Max ratio of processor work to average. [default 1.4]", nullptr);
       options_.enroll("verbose", Ioss::GetLongOption::NoValue,
                       "Print additional decomposition information", nullptr);
+      options_.enroll("db_type", Ioss::GetLongOption::MandatoryValue,
+                      "Database Type: gen_struc or cgns. Default is cgns.", nullptr);
       options_.enroll("output", Ioss::GetLongOption::MandatoryValue,
                       "What is printed: z=zone-proc assignment, h=histogram, w=work-per-processor, "
                       "c=comm map, v=verbose.",
@@ -173,6 +185,7 @@ namespace {
     int                 ordinal{-1};
     double              load_balance{1.4};
     std::string         filename{};
+    std::string         filetype{"cgns"};
     std::string         line_decomposition{};
     bool                verbose{false};
     bool                histogram{true};
@@ -183,7 +196,9 @@ namespace {
 } // namespace
 namespace {
   std::string codename;
-  std::string version = "0.95";
+  std::string version = "0.96";
+
+  int term_width();
 
   void cleanup(std::vector<Iocgns::StructuredZoneData *> &zones)
   {
@@ -191,6 +206,20 @@ namespace {
       delete zone;
       zone = nullptr;
     }
+  }
+
+  double surface_ratio(const Iocgns::StructuredZoneData *zone)
+  {
+    size_t surf =
+        2 * (zone->m_ordinal[0] * zone->m_ordinal[1] + zone->m_ordinal[0] * zone->m_ordinal[2] +
+             zone->m_ordinal[1] * zone->m_ordinal[2]);
+    size_t vol = zone->cell_count();
+
+    // If a 'perfect' cube, then would be pl=cbrt(vol) on a side and surf would be 6*pl*pl
+    // Calculate 'perfect' surf / actual surf...
+    double pl    = std::cbrt(vol);
+    double psurf = 6.0 * pl * pl;
+    return double(surf) / psurf;
   }
 
   int64_t generate_guid(size_t id, int rank, int proc_count)
@@ -332,15 +361,16 @@ namespace {
         Ioss::Utils::uniquify(comms);
 
         int pw = Ioss::Utils::number_width(proc_count, false);
-        // Assume line width = 100, calculate output / line --
-        int npl  = 100 / (4 + 2 * pw);
+        // Two tabs at beginning ~16 spaces.  Each entry is "[pw->pw]  " which is 6+2pw
+        int npl  = (term_width() - 16) / (6 + 2 * pw);
         npl      = npl < 1 ? 1 : npl;
         int line = 0;
 
-        fmt::print("\tZone '{}' ({}):\n\t\t", adam_zone->m_name, comms.size());
+        fmt::print("\tZone '{}' ({} inter-processor communications):\n\t\t", adam_zone->m_name,
+                   comms.size());
         for (const auto &proc : comms) {
           if (proc.second < 0) {
-            // From decompostion
+            // From decomposition
             fmt::print(fg(fmt::color::yellow), "[{:{}}->{:{}}]  ", proc.first, pw, -proc.second,
                        pw);
           }
@@ -363,7 +393,7 @@ namespace {
 
   void output_histogram(const std::vector<size_t> &proc_work, size_t avg_work, size_t median)
   {
-    fmt::print("Work-per-processor Histogram\n\n");
+    fmt::print("Work-per-processor Histogram\n");
     std::array<size_t, 16> histogram{};
 
     auto wmin = *std::min_element(proc_work.begin(), proc_work.end());
@@ -373,7 +403,7 @@ namespace {
     hist_size        = std::min(hist_size, proc_work.size());
 
     if (hist_size <= 1) {
-      fmt::print("Work is the same on all processors; no histogram possible.\n\n");
+      fmt::print("\tWork is the same on all processors; no histogram needed.\n\n");
       return;
     }
 
@@ -387,7 +417,7 @@ namespace {
     size_t proc_width = Ioss::Utils::number_width(proc_work.size(), true);
     size_t work_width = Ioss::Utils::number_width(wmax, true);
 
-    fmt::print("\t{:^{}} {:^{}}\n", "Work Range", 2 * work_width + 2, "#", proc_width);
+    fmt::print("\n\t{:^{}} {:^{}}\n", "Work Range", 2 * work_width + 2, "#", proc_width);
     auto hist_max = *std::max_element(histogram.begin(), histogram.end());
     for (size_t i = 0; i < hist_size; i++) {
       int         max_star = 50;
@@ -418,7 +448,7 @@ namespace {
     fmt::print("\n");
   }
   void describe_decomposition(std::vector<Iocgns::StructuredZoneData *> &zones,
-                              const Interface &                          interface)
+                              size_t orig_zone_count, const Interface &interface)
   {
     size_t proc_count = interface.proc_count;
     bool   verbose    = interface.verbose;
@@ -444,12 +474,11 @@ namespace {
     }
     size_t ord_width = Ioss::Utils::number_width(max_ordinal, false);
     double avg_work  = total_work / (double)proc_count;
-    size_t zcount    = zones.size();
 
     // Print work/processor map...
-    fmt::print("\nDecomposition for {} zones over {:n} processors; Total work = {:n}; Average = "
+    fmt::print("\nDecomposing {:n} zones over {:n} processors; Total work = {:n}; Average = "
                "{:n} (goal)\n",
-               zcount, proc_count, (size_t)total_work, (size_t)avg_work);
+               orig_zone_count, proc_count, (size_t)total_work, (size_t)avg_work);
 
     // Get max name length for all zones...
     size_t name_len = 0;
@@ -469,7 +498,7 @@ namespace {
         if (adam_zone->m_parent == nullptr) {
           if (adam_zone->m_child1 == nullptr) {
             // Unsplit...
-            fmt::print("\tZone: {:{}}\t  Proc: {:{}}\tOrdinal: {:^12}\tWork: {:{}n} (unsplit)\n",
+            fmt::print("\tZone: {:{}}\t  Proc: {:{}}\tOrd: {:^12}    Work: {:{}n} (unsplit)\n",
                        adam_zone->m_name, name_len, adam_zone->m_proc, proc_width,
                        fmt::format("{1:{0}} x {2:{0}} x {3:{0}}", ord_width,
                                    adam_zone->m_ordinal[0], adam_zone->m_ordinal[1],
@@ -477,7 +506,7 @@ namespace {
                        adam_zone->work(), work_width);
           }
           else {
-            fmt::print("\tZone: {:{}} is decomposed. \tOrdinal: {:^12}\tWork: {:{}n}\n",
+            fmt::print("\tZone: {:{}} is decomposed. \tOrd: {:^12}    Work: {:{}n}\n",
                        adam_zone->m_name, name_len,
                        fmt::format("{1:{0}} x {2:{0}} x {3:{0}}", ord_width,
                                    adam_zone->m_ordinal[0], adam_zone->m_ordinal[1],
@@ -485,11 +514,12 @@ namespace {
                        adam_zone->work(), work_width);
             for (const auto zone : zones) {
               if (zone->is_active() && zone->m_adam == adam_zone) {
-                fmt::print("\t      {:{}}\t  Proc: {:{}}\tOrdinal: {:^12}\tWork: {:{}n}\n",
+                fmt::print("\t      {:{}}\t  Proc: {:{}}\tOrd: {:^12}    Work: {:{}n}    SurfExp: "
+                           "{:0.3}\n",
                            zone->m_name, name_len, zone->m_proc, proc_width,
                            fmt::format("{1:{0}} x {2:{0}} x {3:{0}}", ord_width, zone->m_ordinal[0],
                                        zone->m_ordinal[1], zone->m_ordinal[2]),
-                           zone->work(), work_width);
+                           zone->work(), work_width, surface_ratio(zone));
               }
             }
           }
@@ -569,20 +599,22 @@ namespace {
     }
 
     // Calculate "nodal inflation" -- number of new surface nodes created...
-    auto nodal_work =
-        std::accumulate(zones.begin(), zones.end(), 0, [](size_t a, Iocgns::StructuredZoneData *b) {
-          return a + (b->m_parent == nullptr ? b->node_count() : 0);
-        });
+    auto nodal_work = std::accumulate(zones.begin(), zones.end(), (size_t)0,
+                                      [](size_t a, Iocgns::StructuredZoneData *b) {
+                                        return a + (b->m_parent == nullptr ? b->node_count() : 0);
+                                      });
 
-    auto new_nodal_work =
-        std::accumulate(zones.begin(), zones.end(), 0, [](size_t a, Iocgns::StructuredZoneData *b) {
-          return a + (b->is_active() ? b->node_count() : 0);
-        });
+    if (nodal_work > 0) {
+      auto new_nodal_work = std::accumulate(zones.begin(), zones.end(), (size_t)0,
+                                            [](size_t a, Iocgns::StructuredZoneData *b) {
+                                              return a + (b->is_active() ? b->node_count() : 0);
+                                            });
 
-    auto delta = new_nodal_work - nodal_work;
-    fmt::print("Nodal Inflation:\n\tOriginal Node Count = {:n}, Decomposed Node Count = {:n}, "
-               "Created = {:n}, Ratio = {:.2f}\n\n",
-               nodal_work, new_nodal_work, delta, (double)new_nodal_work / nodal_work);
+      auto delta = new_nodal_work - nodal_work;
+      fmt::print("Nodal Inflation:\n\tOriginal Node Count = {:n}, Decomposed Node Count = {:n}, "
+                 "Created = {:n}, Ratio = {:.2f}\n\n",
+                 nodal_work, new_nodal_work, delta, (double)new_nodal_work / nodal_work);
+    }
 
     // Imbalance penalty -- max work / avg work.  If perfect balance, then all processors would have
     // "avg_work" work to do. With current decomposition, every processor has to wait until
@@ -606,7 +638,7 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  std::string in_type = "cgns";
+  std::string in_type = interface.filetype;
 
   codename   = argv[0];
   size_t ind = codename.find_last_of('/', codename.size());
@@ -647,18 +679,41 @@ int main(int argc, char *argv[])
     }
     zones.back()->m_zoneConnectivity = iblock->m_zoneConnectivity;
   }
-  Iocgns::Utils::set_line_decomposition(dbi->get_file_pointer(), interface.line_decomposition,
-                                        zones, 0, interface.verbose);
+
+  if (in_type == "cgns") {
+    Iocgns::Utils::set_line_decomposition(dbi->get_file_pointer(), interface.line_decomposition,
+                                          zones, 0, interface.verbose);
+  }
 
   region.output_summary(std::cout, false);
 
+  size_t orig_zone_count = zones.size();
   Iocgns::Utils::decompose_model(zones, interface.proc_count, 0, interface.load_balance,
                                  interface.verbose);
   update_zgc_data(zones, interface.proc_count);
 
-  describe_decomposition(zones, interface);
+  describe_decomposition(zones, orig_zone_count, interface);
 
   validate_decomposition(zones, interface.proc_count);
 
   cleanup(zones);
 }
+
+namespace {
+  int term_width(void)
+  {
+    int cols = 100;
+    if (isatty(fileno(stdout))) {
+#ifdef TIOCGSIZE
+      struct ttysize ts;
+      ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
+      cols = ts.ts_cols;
+#elif defined(TIOCGWINSZ)
+      struct winsize ts;
+      ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
+      cols = ts.ws_col;
+#endif /* TIOCGSIZE */
+    }
+    return cols;
+  }
+} // namespace

@@ -99,7 +99,7 @@ C              Loop over cumulative number of elements in element block IELB
             DO 120 IEL = IXELB(IELB-1)+1, IXELB(IELB)
 C                 increment number of elements to output
               NUMELO = NUMELO + 1
-C                 Indicies of the zoomed elements
+C                 Indices of the zoomed elements
               IXELEM(NUMELO) = IEL
 C                 Loop 1 to number of nodes per element in elem blk IELB
               DO 110 K = 1, NUMLNK(IELB)
@@ -160,7 +160,7 @@ C        Loop from 1 to total number of nodes
             ELSE
               NODEIN = .TRUE.
             END IF
-C              Resest NODIX variable
+C              Reset NODIX variable
             if (zoomin) then
               IF (.NOT. NODEIN) NODIX(INP) = 0
             else

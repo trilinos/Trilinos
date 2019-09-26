@@ -96,24 +96,24 @@ void SystemInterface::enroll_options()
 
 #if 0
   options_.enroll("evar", GetLongOption::MandatoryValue,
-		  "(Not Yet Implemented) Comma-separated list of element variables to be output or ALL or NONE.\n"
-		  "\t\tVariables can be limited to certain blocks by appending a\n"
-		  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
-		  nullptr);
+                  "(Not Yet Implemented) Comma-separated list of element variables to be output or ALL or NONE.\n"
+                  "\t\tVariables can be limited to certain blocks by appending a\n"
+                  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
+                  nullptr);
 
   options_.enroll("nvar", GetLongOption::MandatoryValue,
-		  "(Not Yet Implemented) Comma-separated list of nodal variables to be output or ALL or NONE.\n"
-		  "\t\tVariables can be limited to certain nodes by appending a\n"
-		  "\t\tcolon followed by the node id.  E.g. -nvar disp:10:20",
-		  nullptr);
+                  "(Not Yet Implemented) Comma-separated list of nodal variables to be output or ALL or NONE.\n"
+                  "\t\tVariables can be limited to certain nodes by appending a\n"
+                  "\t\tcolon followed by the node id.  E.g. -nvar disp:10:20",
+                  nullptr);
 
   options_.enroll("nsetvar", GetLongOption::MandatoryValue,
-		  "(Not Yet Implemented) Comma-separated list of nodeset variables to be output or ALL or NONE.",
-		  nullptr);
+                  "(Not Yet Implemented) Comma-separated list of nodeset variables to be output or ALL or NONE.",
+                  nullptr);
 
   options_.enroll("ssetvar", GetLongOption::MandatoryValue,
-		  "(Not Yet Implemented) Comma-separated list of sideset variables to be output or ALL or NONE.",
-		  nullptr);
+                  "(Not Yet Implemented) Comma-separated list of sideset variables to be output or ALL or NONE.",
+                  nullptr);
 #endif
 
   options_.enroll("copyright", GetLongOption::NoValue, "Show copyright and license data.", nullptr);

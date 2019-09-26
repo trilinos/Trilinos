@@ -68,7 +68,7 @@ int main()
       std::cout << "There were " << tokens.size() << " tokens in the line\n";
       TokenList::const_iterator I = tokens.begin();
       while (I != tokens.end()) {
-	std::cout << "'" << *I++ << "'\t";
+        std::cout << "'" << *I++ << "'\t";
       }
       std::cout << '\n';
     } else {

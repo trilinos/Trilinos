@@ -429,7 +429,7 @@ GatherSolution_Tpetra(
     this->setName(n);
   }
   else {
-    std::string n = "GatherSolution (Tpetra): "+firstName+" ("+PHX::typeAsString<EvalT>()+") ";
+    std::string n = "GatherSolution (Tpetra): "+firstName+" ("+PHX::print<EvalT>()+") ";
     this->setName(n);
   }
 }

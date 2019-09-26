@@ -85,7 +85,7 @@ namespace panzer
     using panzer::IP;
     using panzer::PureBasis;
     using PHX::MDField;
-    using PHX::typeAsString;
+    using PHX::print;
     using std::invalid_argument;
     using std::logic_error;
     using std::string;
@@ -135,7 +135,7 @@ namespace panzer
       n += "Cont";
     else // if (evalStyle == EvaluatorStyle::EVALUATES)
       n += "Eval";
-    n += ", " + typeAsString<EvalT>() + "):  " + field_.fieldTag().name();
+    n += ", " + print<EvalT>() + "):  " + field_.fieldTag().name();
     this->setName(n);
   } // end of Main Constructor
 
@@ -169,7 +169,7 @@ namespace panzer
     using panzer::IP;
     using panzer::PureBasis;
     using PHX::MDField;
-    using PHX::typeAsString;
+    using PHX::print;
     using std::invalid_argument;
     using std::logic_error;
     using std::string;
@@ -211,7 +211,7 @@ namespace panzer
       n += "Cont";
     else // if (evalStyle == EvaluatorStyle::EVALUATES)
       n += "Eval";
-    n += ", " + typeAsString<EvalT>() + "):  " + field_.fieldTag().name();
+    n += ", " + print<EvalT>() + "):  " + field_.fieldTag().name();
     this->setName(n);
   } // end of Main Constructor
 

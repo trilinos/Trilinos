@@ -53,6 +53,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
       COMM serial mpi
       ARGS "--verbose --filename=orsirr1.hb --precond=none --max-degree=5 --poly-type=Arnoldi"
            "--verbose --filename=orsirr1.hb --precond=none --max-degree=5 --poly-type=Gmres"
+           "--verbose --filename=orsirr1.hb --precond=none --max-degree=5 --poly-type=Roots"
       )
 
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)

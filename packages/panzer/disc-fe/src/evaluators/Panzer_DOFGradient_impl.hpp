@@ -168,7 +168,7 @@ DOFGradient(
   this->addEvaluatedField(dof_gradient);
   this->addDependentField(dof_value);
 
-  std::string n = "DOFGradient: " + dof_gradient.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
+  std::string n = "DOFGradient: " + dof_gradient.fieldTag().name() + " ("+PHX::print<EvalT>()+")";
   this->setName(n);
 }
 
@@ -192,7 +192,7 @@ DOFGradient(const PHX::FieldTag & input,
   this->addEvaluatedField(dof_gradient);
   this->addDependentField(dof_value);
 
-  std::string n = "DOFGradient: " + dof_gradient.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
+  std::string n = "DOFGradient: " + dof_gradient.fieldTag().name() + " ("+PHX::print<EvalT>()+")";
   this->setName(n);
 }
 

@@ -38,6 +38,7 @@
 //
 // ************************************************************************
 //@HEADER
+//
 
 #ifndef BELOS_GMRES_POLY_SOLMGR_HPP
 #define BELOS_GMRES_POLY_SOLMGR_HPP
@@ -90,39 +91,53 @@ class GmresPolySolMgrPolynomialFailure : public BelosError {public:
 /// \ingroup belos_solver_framework
 /// \example BlockGmres/BlockGmresPolyEpetraExFile.cpp
 ///
-/// "Hybrid block GMRES" means that the solver first runs block GMRES.
-/// It stores the resulting coefficients, which form a matrix
-/// polynomial.  It then can reuse this polynomial for subsequent
-/// solves.  This avoids the cost of the inner products and norms in
-/// GMRES.  However, the resulting polynomial is not necessarily as
-/// effective as the equivalent number of GMRES iterations.
-///
-/// We call solvers that take this approach "seed solvers."  Belos
-/// implements both a Block GMRES seed solver (this class) and a
-/// CG-based seed solver (Belos::PCPGSolMgr).
+/// The GMRES polynomial solver manager can perform two types of linear
+/// solves. First the solver runs block GMRES, storing the resulting 
+/// coefficients (or roots), which can be used to form a matrix polynomial.
+/// It then can reuse this polynomial as either a surrogate operator, or
+/// as a preconditioner for an outer solver.
+/// By applying the GMRES polynomial as an operator or preconditioner, one 
+/// avoids the cost of the inner products and norms in GMRES, thus reducing
+/// communication costs.  
+//
+/// The GMRES polynomial can be created in conjunction with any standard preconditioner.
+/// Simply pass the preconditioner to the LinearProblem before calling the GmresPolySolMgr
+/// and your preconditioner will be combined with the polynomial automatically.
 ///
 /// Here is a list of all the parameters that this solver accepts:
-///   - "Convergence Tolerance" (\c MagnitudeType): The level that
+///   - "Polynomial Type" (\c std::string): The desired polynomial type: 
+///      Roots, Arnoldi, or Gmres.  Default: "Roots"
+///   - "Polynomial Tolerance" (\c MagnitudeType): The level that
 ///     residual norms must reach to decide convergence. Default:
 ///     1e-8.
-///   - "Block Size" (\c int): The block size to be used by the
-///     underlying block GMRES solver. Default: 1 (which means don't
-///     use blocks).
-///   - "Num Blocks" (\c int): The restart length; that is, the number
-///     of blocks allocated for the Krylov basis. Default: 300.
-///   - "Maximum Iterations" (\c int): The maximum number of
-///     iterations GMRES is allowed to perform, across all restarts.
-///     Default: 1000.
-///   - "Maximum Restarts" (\c int): The maximum number of restarts
-///     the underlying solver is allowed to perform.  This does
-///     <i>not</i> include the first restart cycle.  Default: 20.
+///   - "Maximum Degree" (\c int): Requested maximum degree for the polynomial. Default: 25
+///   - "Random RHS" (\c bool): to generate the polynomial using a random vector. Default: true
+///   - "Add Roots" (\c bool): to add roots to the polynomial as needed for stability. Default: true
+///   - "Damp Poly" (\c bool): to damp polynomial. Default: false
 ///   - "Orthogonalization" (\c std::string): The desired
-///     orthogonalization method.  Default: "DGKS".
+///     orthogonalization method to create polynomial.  Default: "DGKS".
 ///   - "Verbosity" (Belos::MsgType): A sum of Belos::MsgType values
 ///     specifying what kinds of messages to print.  Default:
 ///     Belos::Errors.
-///   - "Output Style" (Belos::OutputType): The output style.
-///     Default: Belos::General.
+///   - "Outer Solver" (\c std::string): Name of the outer solver in Belos solver factory.
+///   - "Outer Solver Params" (\c Teuchos::parameterList): List of parameters for the outer solver
+///   - "Timer Label" (\c std::string): Label for timers with polynomial solve.
+///
+/// This solver manager provides three different implementations of the same polynomial preconditioner.
+/// The polynomial is the minimum residual polynomial from GMRES.
+/// The "Roots" version is default.  It is the only implementation which provides the option of added 
+/// roots for stability.  These added roots can allow for high-degree polynomials.  
+/// The "Arnoldi" version typically gives similar results to the "Roots" version
+/// but is slightly more expensive to apply. Both of these polynomials can be "damped", which is 
+/// sometimes useful for indefinite or other ill-conditioned problems. 
+/// The "Gmres" version is based on a power-basis implementation
+/// and is only stable for well-conditioned problems and low-degree polynomials. 
+//
+/// For more information on the implementation and formulas, see the following references:
+/// "Roots" version: https://arxiv.org/abs/1806.08020 (Includes explanation of root-adding and damping.)
+/// "Arnoldi" version: https://scholarship.rice.edu/handle/1911/17630
+/// "Gmres" version: https://epubs.siam.org/doi/pdf/10.1137/140968276
+///
 ///
 /// Like all Belos solvers, parameters have relative or "delta"
 /// semantics.  This means the following:
@@ -156,10 +171,19 @@ public:
    *
    * This constructor accepts the LinearProblem to be solved in addition
    * to a parameter list of options for the solver manager. These options include the following:
+   *   - "Polynomial Type" -a \c std::string specifying the type of polynomial: Roots, Arnoldi, or Gmres.  Default: "Roots"
    *   - "Maximum Degree" - a \c int specifying the maximum degree of the polynomial. Default: 25
-   *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS, ICGS, and IMGS. Default: "DGKS"
+   *   - "Random RHS" - a \c bool indicates whether to generate polynomial using a random vector.  Default: true
+   *   - "Add Roots" - a \c bool to add roots to the polynomial as needed for stability. Default: true
+   *   - "Damp Poly" - a \c bool to damp polynomial. Default: false
+   *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization to create the 
+   *                            polynomial:  DGKS, ICGS, and IMGS. Default: "DGKS"
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
-   *   - "Polynomial Tolerance" - a \c MagnitudeType specifying the polynomial tolerance (sometimes) used to generate polynomial. 
+   *   - "Polynomial Tolerance" - a \c MagnitudeType specifying the polynomial tolerance (sometimes) used to 
+   *                            generate polynomial. Default: 1e-8
+   *   - "Outer Solver" -a \c std::string specifying name of outer solver in Belos solver factory.  Default: ""
+   *   - "Outer Solver Params" -a \c Teuchos::ParameterList giving parameters for the outer solver.
+   *   - "Timer Label" -a \c std::string specifying the label on polynomial solve timers.
    */
   GmresPolySolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
     const Teuchos::RCP<Teuchos::ParameterList> &pl );
@@ -292,6 +316,9 @@ private:
   static constexpr const char * outerSolverType_default_ = "";
   static constexpr const char * polyType_default_ = "Arnoldi";
   static constexpr const char * orthoType_default_ = "DGKS";
+  static constexpr bool addRoots_default_ = true;
+  static constexpr bool dampPoly_default_ = false;
+  static constexpr bool randomRHS_default_ = true; 
   static constexpr std::ostream * outputStream_default_ = &std::cout;
 
   // Current solver values.
@@ -300,6 +327,8 @@ private:
   int verbosity_;
   bool hasOuterSolver_;
   bool randomRHS_;
+  bool damp_;
+  bool addRoots_;
   std::string polyType_;
   std::string outerSolverType_;
   std::string orthoType_;
@@ -329,7 +358,9 @@ GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
   numIters_ (0),
   verbosity_ (verbosity_default_),
   hasOuterSolver_ (false),
-  randomRHS_ (true),
+  randomRHS_ (randomRHS_default_),
+  damp_ (dampPoly_default_),
+  addRoots_ (addRoots_default_),
   polyType_ (polyType_default_),
   outerSolverType_ (outerSolverType_default_),
   orthoType_ (orthoType_default_),
@@ -351,7 +382,9 @@ GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   numIters_ (0),
   verbosity_ (verbosity_default_),
   hasOuterSolver_ (false),
-  randomRHS_ (true),
+  randomRHS_ (randomRHS_default_),
+  damp_ (dampPoly_default_),
+  addRoots_ (addRoots_default_),
   polyType_ (polyType_default_),
   outerSolverType_ (outerSolverType_default_),
   orthoType_ (orthoType_default_),
@@ -384,7 +417,7 @@ GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
     // The static_cast is to resolve an issue with older clang versions which
     // would cause the constexpr to link fail. With c++17 the problem is resolved.
     pl->set("Polynomial Type", static_cast<const char *>(polyType_default_),
-      "The type of GMRES polynomial that is used as a preconditioner.");
+      "The type of GMRES polynomial that is used as a preconditioner: Roots, Arnoldi, or Gmres.");
     pl->set("Polynomial Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::polyTol),
       "The relative residual tolerance that used to construct the GMRES polynomial.");
     pl->set("Maximum Degree", static_cast<int>(maxDegree_default_),
@@ -401,6 +434,12 @@ GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
       "The string to use as a prefix for the timer labels.");
     pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
       "The type of orthogonalization to use to generate polynomial: DGKS, ICGS, or IMGS.");
+    pl->set("Random RHS", static_cast<bool>(randomRHS_default_),
+      "Add roots to polynomial for stability.");
+    pl->set("Add Roots", static_cast<bool>(addRoots_default_),
+      "Add roots to polynomial for stability.");
+    pl->set("Damp Poly", static_cast<bool>(dampPoly_default_),
+      "Damp polynomial for ill-conditioned problems.");
     validPL_ = pl;
   }
   return validPL_;
@@ -515,11 +554,27 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Check for maximum polynomial degree
   if (params->isParameter("Random RHS")) {
-    randomRHS_ = params->get("Random RHS",true);
+    randomRHS_ = params->get("Random RHS",randomRHS_default_);
   }
 
   // Update parameter in our list.
   params_->set("Random RHS", randomRHS_);
+  
+  
+  // Check for polynomial damping
+  if (params->isParameter("Damped Poly")) {
+    damp_ = params->get("Damped Poly",dampPoly_default_);
+  }
+  // Update parameter in our list.
+  params_->set("Damped Poly", damp_);
+
+  // Check: Should we add roots for stability if needed?
+  if (params->isParameter("Add Roots")) {
+    addRoots_ = params->get("Add Roots",addRoots_default_);
+  }
+
+  // Update parameter in our list.
+  params_->set("Add Roots", addRoots_);
 
   // Create the timers if we need to.
 #ifdef BELOS_TEUCHOS_TIME_MONITOR

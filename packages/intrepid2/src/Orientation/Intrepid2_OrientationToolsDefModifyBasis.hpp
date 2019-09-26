@@ -112,7 +112,7 @@ namespace Intrepid2 {
     // small meta data modification and it uses shards; let's do this on host
     typedef typename Kokkos::Impl::is_space<SpT>::host_mirror_space::execution_space host_space_type;
     auto elemOrtsHost = Kokkos::create_mirror_view(typename host_space_type::memory_space(), elemOrts);
-    auto elemNodesHost = Kokkos::create_mirror_view(typename host_space_type::memory_space(), elemNodes);
+    auto elemNodesHost = Kokkos::create_mirror_view_and_copy(typename host_space_type::memory_space(), elemNodes);
 
     const ordinal_type numCells = elemNodes.extent(0);
     for (auto cell=0;cell<numCells;++cell) {
@@ -124,14 +124,14 @@ namespace Intrepid2 {
   }
 
   template<typename ortViewType,
-           typename outputViewType,
+           typename OutputViewType,
            typename inputViewType,
            typename o2tViewType,
            typename t2oViewType,
            typename dataViewType>
   struct F_modifyBasisByOrientation {
     ortViewType orts;
-    outputViewType output;
+    OutputViewType output;
     inputViewType input;
     o2tViewType ordinalToTag;
     t2oViewType tagToOrdinal;
@@ -140,7 +140,7 @@ namespace Intrepid2 {
     const ordinal_type cellDim, numVerts, numEdges, numFaces, numPoints, dimBasis;
 
     F_modifyBasisByOrientation(ortViewType orts_,
-                               outputViewType output_,
+                               OutputViewType output_,
                                inputViewType input_,
                                o2tViewType ordinalToTag_,
                                t2oViewType tagToOrdinal_,

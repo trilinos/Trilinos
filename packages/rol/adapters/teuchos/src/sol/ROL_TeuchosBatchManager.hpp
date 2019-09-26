@@ -54,53 +54,53 @@ namespace ROL {
 template<class Real, class Ordinal>
 class TeuchosBatchManager : public BatchManager<Real> {
 private:
-  const ROL::Ptr<const Teuchos::Comm<Ordinal> > comm_;
+  const ROL::Ptr<const Teuchos::Comm<int> > comm_;
 
 public:
-  TeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
+  TeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<int> > &comm)
     : comm_(comm) {}
 
   int batchID(void) {
-    return Teuchos::rank<Ordinal>(*comm_);
+    return Teuchos::rank<int>(*comm_);
   }
 
   int numBatches(void) {
-    return Teuchos::size<Ordinal>(*comm_);
+    return Teuchos::size<int>(*comm_);
   }
 
   void reduceAll(Real* input, Real* output, int dim,
                  const Elementwise::ReductionOp<Real> &r) {
     int nB = this->numBatches();
     std::vector<Real> receiveBuffer(nB);
-    Teuchos::gather<Ordinal,Real>(input,1,&receiveBuffer[0],1,0,*comm_);
+    Teuchos::gather<int,Real>(input,1,&receiveBuffer[0],1,0,*comm_);
     output[0] = r.initialValue();
     for (int i = 0; i < nB; i++) {
       r.reduce(receiveBuffer[i],output[0]);
     }
-    Teuchos::broadcast<Ordinal,Real>(*comm_,0,1,output);
+    Teuchos::broadcast<int,Real>(*comm_,0,1,output);
   }
 
   void minAll(Real* input, Real* output, int dim) {
-    Teuchos::reduceAll<Ordinal,Real>(*comm_,Teuchos::REDUCE_MIN,
+    Teuchos::reduceAll<int,Real>(*comm_,Teuchos::REDUCE_MIN,
       dim, input, output);
   }
 
   void maxAll(Real* input, Real* output, int dim) {
-    Teuchos::reduceAll<Ordinal,Real>(*comm_,Teuchos::REDUCE_MAX,
+    Teuchos::reduceAll<int,Real>(*comm_,Teuchos::REDUCE_MAX,
       dim, input, output);
   }
 
   void sumAll(Real* input, Real* output, int dim) {
-    Teuchos::reduceAll<Ordinal,Real>(*comm_,Teuchos::REDUCE_SUM,
+    Teuchos::reduceAll<int,Real>(*comm_,Teuchos::REDUCE_SUM,
       dim, input, output);
   }
 
   void gatherAll(const Real* send, const int ssize, Real *receive, const int rsize) const {
-    Teuchos::gatherAll<Ordinal,Real>(*comm_,ssize,send,rsize,receive);
+    Teuchos::gatherAll<int,Real>(*comm_,ssize,send,rsize,receive);
   }
 
   void broadcast(Real* input, int cnt, int root) {
-    Teuchos::broadcast<Ordinal,Real>(*comm_,root,cnt,input);
+    Teuchos::broadcast<int,Real>(*comm_,root,cnt,input);
   }
 
   virtual void sumAll(Vector<Real> &input, Vector<Real> &output) {
@@ -109,7 +109,7 @@ public:
   }
 
   void barrier(void) {
-    Teuchos::barrier<Ordinal>(*comm_); 
+    Teuchos::barrier<int>(*comm_); 
   }
 };
 

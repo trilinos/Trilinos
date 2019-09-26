@@ -264,32 +264,53 @@ namespace MueLu {
       if (useKokkos_) {
         BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
         BCcolsKokkos_ = Utilities_kokkos::DetectDirichletCols(*D0_Matrix_,BCrowsKokkos_);
+
+        int BCrowcountLocal = 0;
+        for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
+          if (BCrowsKokkos_(i))
+            BCrowcountLocal += 1;
+#ifdef HAVE_MPI
+        MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCrowcountLocal, BCrowcount_);
+#else
+        BCrowcount_ = BCrowcountLocal;
+#endif
+        int BCcolcountLocal = 0;
+        for (size_t i = 0; i<BCcolsKokkos_.size(); i++)
+          if (BCcolsKokkos_(i))
+            BCcolcountLocal += 1;
+#ifdef HAVE_MPI
+        MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCcolcountLocal, BCcolcount_);
+#else
+        BCcolcount_ = BCcolcountLocal;
+#endif
         if (IsPrint(Statistics2)) {
-          int BCrowcount = 0;
-          for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
-            if (BCrowsKokkos_(i))
-              BCrowcount += 1;
-          int BCcolcount = 0;
-          for (size_t i = 0; i<BCcolsKokkos_.size(); i++)
-            if (BCcolsKokkos_(i))
-              BCcolcount += 1;
-          GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount << " BC rows and " << BCcolcount << " BC columns." << std::endl;
+          GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
         }
       } else
 #endif
         {
           BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
           BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
+          int BCrowcountLocal = 0;
+          for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
+            if (*it)
+              BCrowcountLocal += 1;
+#ifdef HAVE_MPI
+          MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCrowcountLocal, BCrowcount_);
+#else
+          BCrowcount_ = BCrowcountLocal;
+#endif
+          int BCcolcountLocal = 0;
+          for (auto it = BCcols_.begin(); it != BCcols_.end(); ++it)
+            if (*it)
+              BCcolcountLocal += 1;
+#ifdef HAVE_MPI
+          MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCcolcountLocal, BCcolcount_);
+#else
+          BCcolcount_ = BCcolcountLocal;
+#endif
           if (IsPrint(Statistics2)) {
-            int BCrowcount = 0;
-            for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
-              if (*it)
-                BCrowcount += 1;
-            int BCcolcount = 0;
-            for (auto it = BCcols_.begin(); it != BCcols_.end(); ++it)
-              if (*it)
-                BCcolcount += 1;
-            GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount << " BC rows and " << BCcolcount << " BC columns." << std::endl;
+            GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
           }
         }
     }
@@ -786,6 +807,22 @@ namespace MueLu {
         if (!reuse) {
           ParameterList& userParamList = precList22_.sublist("user data");
           userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
+          // If we detected no boundary conditions, the (2,2) problem is singular.
+          // Therefore, if we want to use a direct coarse solver, we need to fix up the nullspace.
+          std::string coarseType = "";
+          if (precList22_.isParameter("coarse: type")) {
+            coarseType = precList22_.get<std::string>("coarse: type");
+            // Transform string to "Abcde" notation
+            std::transform(coarseType.begin(),   coarseType.end(),   coarseType.begin(), ::tolower);
+            std::transform(coarseType.begin(), ++coarseType.begin(), coarseType.begin(), ::toupper);
+          }
+          if (BCrowcount_ == 0 &&
+              (coarseType == "" ||
+               coarseType == "Klu" ||
+               coarseType == "Klu2") &&
+              (!precList22_.isSublist("coarse: params") ||
+               !precList22_.sublist("coarse: params").isParameter("fix nullspace")))
+            precList22_.sublist("coarse: params").set("fix nullspace",true);
           Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_);
         } else {
           RCP<MueLu::Level> level0 = Hierarchy22_->GetLevel(0);
@@ -927,6 +964,15 @@ namespace MueLu {
       D0x_      = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), 1);
     residual_  = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(), 1);
 
+    if (!ImporterH_.is_null() && parameterList_.isSublist("refmaxwell: ImporterH params")){
+      RCP<ParameterList> importerParams = rcpFromRef(parameterList_.sublist("refmaxwell: ImporterH params"));
+      ImporterH_->setDistributorParameters(importerParams);
+    }
+    if (!Importer22_.is_null() && parameterList_.isSublist("refmaxwell: Importer22 params")){
+      RCP<ParameterList> importerParams = rcpFromRef(parameterList_.sublist("refmaxwell: Importer22 params"));
+      Importer22_->setDistributorParameters(importerParams);
+    }
+
 #ifdef HAVE_MUELU_CUDA
     if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStop();
 #endif
@@ -975,6 +1021,57 @@ namespace MueLu {
       if (!A22_.is_null())
         Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A22.mat"), *A22_);
     }
+
+    if (parameterList_.isSublist("matvec params"))
+    {
+      RCP<ParameterList> matvecParams = rcpFromRef(parameterList_.sublist("matvec params"));
+
+      {
+        RCP<const Import> xpImporter = SM_Matrix_->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = SM_Matrix_->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      {
+        RCP<const Import> xpImporter = D0_Matrix_->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = D0_Matrix_->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      {
+        RCP<const Import> xpImporter = D0_T_Matrix_->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = D0_T_Matrix_->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      {
+        RCP<const Import> xpImporter = R11_->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = R11_->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      {
+        RCP<const Import> xpImporter = P11_->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = P11_->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      if (!ImporterH_.is_null())
+        ImporterH_->setDistributorParameters(matvecParams);
+      if (!Importer22_.is_null())
+        Importer22_->setDistributorParameters(matvecParams);
+    }
+
 
     VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
   }

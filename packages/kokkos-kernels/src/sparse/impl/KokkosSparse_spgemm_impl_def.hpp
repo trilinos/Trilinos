@@ -158,7 +158,8 @@ void KokkosSPGEMM
     //first get the max flops for a row, which will be used for max row size.
     //If we did compression in single step, row_mapB[i] points the begining of row i,
     //and new_row_mapB[i] points to the end of row i.
-    if (compression_applied){
+
+    if (compression_applied) {
 		nnz_lno_t maxNumRoughZeros = this->handle->get_spgemm_handle()->compressed_max_row_flops;
 
     	if (compress_in_single_step){

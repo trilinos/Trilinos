@@ -56,6 +56,7 @@ namespace PHX {
   class Layout : public DataLayout {
 
   public:
+    using KokkosLayout = PHX::DataLayout::KokkosLayoutType;
 
     Layout(const std::string& id = "");
 
@@ -63,7 +64,8 @@ namespace PHX {
     //Layout(extent_pack... extents) : m_extents{extents...}
     Layout(const std::string& id, extent_pack... extents) :
       m_identifier(id),
-      m_extents(sizeof...(extents))
+      m_extents(sizeof...(extents)),
+      m_kokkos_layout_type(KokkosLayout::Default)
     {
       static_assert(sizeof...(extents) > 0,
                     "Error - PHX::Layout - rank must be greater than zero!");
@@ -86,6 +88,8 @@ namespace PHX {
       PHX::SetExtentsImpl<extent_pack...>::setExtents(0,m_extents,extents...);
     }
 
+    virtual void setKokkosLayout(const PHX::DataLayout::KokkosLayoutType& klt);
+
     virtual ~Layout() noexcept {}
 
     virtual bool operator==(const DataLayout& src) const override;
@@ -106,6 +110,8 @@ namespace PHX {
 
     virtual void names(std::vector<std::string>& names) const override;
 
+    virtual PHX::DataLayout::KokkosLayoutType kokkosLayout() const override;
+
     virtual std::string identifier() const override;
 
     virtual void print(std::ostream& os, int offset) const override;
@@ -119,7 +125,7 @@ namespace PHX {
 
     std::string m_identifier;
     std::vector<PHX::Device::size_type> m_extents;
-
+    PHX::DataLayout::KokkosLayoutType m_kokkos_layout_type;
   };
 
   std::ostream& operator<<(std::ostream& os, const PHX::Layout& t);

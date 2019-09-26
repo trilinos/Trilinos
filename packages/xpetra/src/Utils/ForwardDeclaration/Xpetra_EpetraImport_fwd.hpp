@@ -48,7 +48,7 @@
 
 namespace Xpetra {
   template<class GO, class NO> class EpetraImportT;
-  typedef EpetraImportT<int, typename Xpetra::Map<int, int>::node_type> EpetraImport;
+  typedef EpetraImportT<int, EpetraNode> EpetraImport;
 }
 
 #ifndef XPETRA_EPETRAIMPORT_SHORT

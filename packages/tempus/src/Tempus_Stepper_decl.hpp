@@ -56,18 +56,11 @@ enum OrderODE {
  *       with ModelEvaluator C using Solver B
  *   - Steppers may maintain their own time history of the solution, e.g.,
  *     BDF steppers.
- *
- * <b> CS Design Considerations</b>
- *   - All input parameters (i.e., ParameterList) can be set by public methods.
- *   - The Stepper ParameterList must be consistent.
- *     - The "set" methods which update parameters in the ParameterList
- *       must update the Stepper ParameterList.
  */
 template<class Scalar>
 class Stepper
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::VerboseObject<Stepper<Scalar> >,
-    virtual public Teuchos::ParameterListAcceptor
+    virtual public Teuchos::VerboseObject<Stepper<Scalar> >
 {
 public:
 
@@ -79,14 +72,10 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() = 0;
 
-    /// Set solver via ParameterList solver name.
-    virtual void setSolver(std::string solverName) = 0;
-    /// Set solver via solver ParameterList.
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null) = 0;
     /// Set solver.
     virtual void setSolver(
-        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) = 0;
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null) = 0;
+
     /// Get solver
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
       getSolver() const = 0;
@@ -94,6 +83,10 @@ public:
     /// Set Observer
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null) = 0;
+
+    /// Get Observer
+    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const = 0;
+
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() = 0;
@@ -111,8 +104,6 @@ public:
     virtual void setInitialGuess(
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess = Teuchos::null) = 0;
 
-    virtual std::string getStepperType() const = 0;
-
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >
       getDefaultStepperState() = 0;
     virtual Scalar getOrder() const = 0;
@@ -120,7 +111,6 @@ public:
     virtual Scalar getOrderMax() const = 0;
     virtual Scalar getInitTimeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const = 0;
-    virtual Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const=0;
 
     virtual bool isExplicit() const = 0;
     virtual bool isImplicit() const = 0;
@@ -129,21 +119,28 @@ public:
     virtual bool isOneStepMethod() const = 0;
     virtual bool isMultiStepMethod() const = 0;
 
+    void setStepperType(std::string s) { stepperType_ = s;}
+    std::string getStepperType() const { return stepperType_; }
+
+    void setUseFSAL(bool a) { useFSAL_ = a; }
+    bool getUseFSAL() const { return useFSAL_; }
+    virtual bool getUseFSALDefault() const { return false; }
+
+    void setICConsistency(std::string s) { ICConsistency_ = s;}
+    std::string getICConsistency() const { return ICConsistency_; }
+    virtual std::string getICConsistencyDefault() const { return "None"; }
+
+    void setICConsistencyCheck(bool c) {ICConsistencyCheck_ = c;}
+    bool getICConsistencyCheck() const { return ICConsistencyCheck_; }
+    virtual bool getICConsistencyCheckDefault() const { return false; }
+
     virtual OrderODE getOrderODE() const = 0;
-
-    virtual void setUseFSAL(bool a) = 0;
-    virtual bool getUseFSAL() const = 0;
-
-    virtual void setICConsistency(std::string s) = 0;
-    virtual std::string getICConsistency() const = 0;
-
-    virtual void setICConsistencyCheck(bool c) = 0;
-    virtual bool getICConsistencyCheck() const = 0;
-
-    void getValidParametersBasic(Teuchos::RCP<Teuchos::ParameterList> pl) const;
   //@}
 
-  virtual void modelWarning() const;
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    virtual std::string description() const { return stepperType_; }
+  //@}
 
   /// \name Functions for Steppers with subSteppers (e.g., OperatorSplit)
   //@{
@@ -151,35 +148,190 @@ public:
       std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > /* models */){}
   //@}
 
-  /// \name Helper functions
-  //@{
-    /// Validate that the model supports explicit ODE evaluation, f(x,t) [=xdot]
-    /** Currently the convention to evaluate f(x,t) is to set xdot=null!
-     *  There is no InArgs support to test if xdot is null, so we set
-     *  xdot=null and hopefully the ModelEvaluator can handle it.
-     */
-    void validExplicitODE(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const;
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
 
-    /// Validate that the model supports explicit second order ODE evaluation, f(x,xdot,t) [=xdotdot]
-    /** Currently the convention to evaluate f(x,xdot,t) is to set xdotdot=null!
-     *  There is no InArgs support to test if xdotdot is null, so we set
-     *  xdotdot=null and hopefully the ModelEvaluator can handle it.
-     */
-    void validSecondOrderExplicitODE(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const;
-
-    /// Validate ME supports implicit ODE/DAE evaluation, f(xdot,x,t) [= 0]
-    void validImplicitODE_DAE(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const;
-
-    /// Validate ME supports 2nd order implicit ODE/DAE evaluation, f(xdotdot,xdot,x,t) [= 0]
-    void validSecondOrderODE_DAE(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const;
-
-    Teuchos::RCP<Teuchos::ParameterList> defaultSolverParameters() const;
-  //@}
-
+private:
+  std::string stepperType_;    //< Name of stepper type
+  bool useFSAL_;               //< Use First-Step-As-Last (FSAL) principle
+  std::string ICConsistency_;  //< Type of consistency to apply to ICs.
+  bool ICConsistencyCheck_;    //< Check if the initial condition is consistent
 };
+
+
+/// \name Helper functions
+//@{
+  /// Provide basic parameters to Steppers.
+  void getValidParametersBasic(
+    Teuchos::RCP<Teuchos::ParameterList> pl, std::string stepperType);
+
+  /// Validate that the model supports explicit ODE evaluation, f(x,t) [=xdot]
+  /** Currently the convention to evaluate f(x,t) is to set xdot=null!
+   *  There is no InArgs support to test if xdot is null, so we set
+   *  xdot=null and hopefully the ModelEvaluator can handle it.
+   */
+  template<class Scalar>
+  void validExplicitODE(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+  {
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
+    typedef Thyra::ModelEvaluatorBase MEB;
+    const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+    const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+    const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                          outArgs.supports(MEB::OUT_ARG_f);
+
+    TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+      model->description() << "can not support an explicit ODE with\n"
+      << "  IN_ARG_x  = " << inArgs.supports(MEB::IN_ARG_x) << "\n"
+      << "  OUT_ARG_f = " << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+      << "Explicit ODE requires:\n"
+      << "  IN_ARG_x  = true\n"
+      << "  OUT_ARG_f = true\n"
+      << "\n"
+      << "NOTE: Currently the convention to evaluate f(x,t) is to set\n"
+      << "xdot=null!  There is no InArgs support to test if xdot is null,\n"
+      << "so we set xdot=null and hope the ModelEvaluator can handle it.\n");
+
+    return;
+  }
+
+
+  /// Validate that the model supports explicit second order ODE evaluation, f(x,xdot,t) [=xdotdot]
+  /** Currently the convention to evaluate f(x,xdot,t) is to set xdotdot=null!
+   *  There is no InArgs support to test if xdotdot is null, so we set
+   *  xdotdot=null and hopefully the ModelEvaluator can handle it.
+   */
+  template<class Scalar>
+  void validSecondOrderExplicitODE(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+  {
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
+    typedef Thyra::ModelEvaluatorBase MEB;
+    const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+    const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+    const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                          inArgs.supports(MEB::IN_ARG_x_dot) and
+                          outArgs.supports(MEB::OUT_ARG_f);
+
+    TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+      model->description() << "can not support an explicit ODE with\n"
+      << "  IN_ARG_x  = " << inArgs.supports(MEB::IN_ARG_x) << "\n"
+      << "  IN_ARG_x_dot  = " << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
+      << "  OUT_ARG_f = " << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+      << "Explicit ODE requires:\n"
+      << "  IN_ARG_x  = true\n"
+      << "  IN_ARG_x_dot  = true\n"
+      << "  OUT_ARG_f = true\n"
+      << "\n"
+      << "NOTE: Currently the convention to evaluate f(x, xdot, t) is to\n"
+      << "set xdotdot=null!  There is no InArgs support to test if xdotdot\n"
+      << "is null, so we set xdotdot=null and hope the ModelEvaluator can\n"
+      << "handle it.\n");
+
+    return;
+  }
+
+
+  /// Validate ME supports implicit ODE/DAE evaluation, f(xdot,x,t) [= 0]
+  template<class Scalar>
+  void validImplicitODE_DAE(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+  {
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
+    typedef Thyra::ModelEvaluatorBase MEB;
+    const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+    const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+    const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                          inArgs.supports(MEB::IN_ARG_x_dot) and
+                          inArgs.supports(MEB::IN_ARG_alpha) and
+                          inArgs.supports(MEB::IN_ARG_beta) and
+                         !inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) and
+                          outArgs.supports(MEB::OUT_ARG_f) and
+                          outArgs.supports(MEB::OUT_ARG_W);
+
+    TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+      model->description() << " can not support an implicit ODE with\n"
+      << "  IN_ARG_x                 = "
+      << inArgs.supports(MEB::IN_ARG_x) << "\n"
+      << "  IN_ARG_x_dot             = "
+      << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
+      << "  IN_ARG_alpha             = "
+      << inArgs.supports(MEB::IN_ARG_alpha) << "\n"
+      << "  IN_ARG_beta              = "
+      << inArgs.supports(MEB::IN_ARG_beta) << "\n"
+      << "  IN_ARG_W_x_dot_dot_coeff = "
+      << inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) << "\n"
+      << "  OUT_ARG_f                = "
+      << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+      << "  OUT_ARG_W                = "
+      << outArgs.supports(MEB::OUT_ARG_W) << "\n"
+      << "Implicit ODE requires:\n"
+      << "  IN_ARG_x                 = true\n"
+      << "  IN_ARG_x_dot             = true\n"
+      << "  IN_ARG_alpha             = true\n"
+      << "  IN_ARG_beta              = true\n"
+      << "  IN_ARG_W_x_dot_dot_coeff = false\n"
+      << "  OUT_ARG_f                = true\n"
+      << "  OUT_ARG_W                = true\n");
+
+    return;
+  }
+
+
+  /// Validate ME supports 2nd order implicit ODE/DAE evaluation, f(xdotdot,xdot,x,t) [= 0]
+  template<class Scalar>
+  void validSecondOrderODE_DAE(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+  {
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
+    typedef Thyra::ModelEvaluatorBase MEB;
+    const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+    const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+    const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                          inArgs.supports(MEB::IN_ARG_x_dot) and
+                          inArgs.supports(MEB::IN_ARG_x_dot_dot) and
+                          inArgs.supports(MEB::IN_ARG_alpha) and
+                          inArgs.supports(MEB::IN_ARG_beta) and
+                          inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) and
+                          outArgs.supports(MEB::OUT_ARG_f) and
+                          outArgs.supports(MEB::OUT_ARG_W);
+
+    TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+      model->description() << " can not support an implicit ODE with\n"
+      << "  IN_ARG_x                 = "
+      << inArgs.supports(MEB::IN_ARG_x) << "\n"
+      << "  IN_ARG_x_dot             = "
+      << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
+      << "  IN_ARG_x_dot_dot         = "
+      << inArgs.supports(MEB::IN_ARG_x_dot_dot) << "\n"
+      << "  IN_ARG_alpha             = "
+      << inArgs.supports(MEB::IN_ARG_alpha) << "\n"
+      << "  IN_ARG_beta              = "
+      << inArgs.supports(MEB::IN_ARG_beta) << "\n"
+      << "  IN_ARG_W_x_dot_dot_coeff = "
+      << inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) << "\n"
+      << "  OUT_ARG_f                = "
+      << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+      << "  OUT_ARG_W                = "
+      << outArgs.supports(MEB::OUT_ARG_W) << "\n"
+      << "Implicit Second Order ODE requires:\n"
+      << "  IN_ARG_x                 = true\n"
+      << "  IN_ARG_x_dot             = true\n"
+      << "  IN_ARG_x_dot_dot         = true\n"
+      << "  IN_ARG_alpha             = true\n"
+      << "  IN_ARG_beta              = true\n"
+      << "  IN_ARG_W_x_dot_dot_coeff = true\n"
+      << "  OUT_ARG_f                = true\n"
+      << "  OUT_ARG_W                = true\n");
+
+    return;
+  }
+
+
+  /// Returns the default solver ParameterList for implicit Steppers.
+  Teuchos::RCP<Teuchos::ParameterList> defaultSolverParameters();
+//@}
+
+
 } // namespace Tempus
 #endif // Tempus_Stepper_decl_hpp

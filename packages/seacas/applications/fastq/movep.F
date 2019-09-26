@@ -55,7 +55,7 @@ C
      &   LINKR, IMOVE, ALPHA, X, Y)
 C***********************************************************************
 C
-C  SUBROUTINE MOVEP = MOVES A POINT, AND REDRAWS ALL LINES DEPENDANT ON
+C  SUBROUTINE MOVEP = MOVES A POINT, AND REDRAWS ALL LINES DEPENDENT ON
 C                     THAT POINT
 C
 C***********************************************************************

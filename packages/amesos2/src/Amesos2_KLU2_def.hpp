@@ -252,15 +252,29 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
            data_.symbolic_, &(data_.common_)) ;
       } //end single_process_optim_check = false
 
+      // To have a test which confirms a throw, we need MPI to throw on all the
+      // ranks. So we delay and broadcast first. Others throws in Amesos2 which
+      // happen on just the root rank would also have the same problem if we
+      // tested them but we decided to fix just this one for the present. This
+      // is the only error/throw we currently have a unit test for.
+      if(data_.numeric_ == nullptr) {
+        info = 1;
+      }
+
       // This is set after numeric factorization complete as pivoting can be used;
       // In this case, a discrepancy between symbolic and numeric nnz total can occur.
-      this->setNnzLU( as<size_t>((data_.numeric_)->lnz) + as<size_t>((data_.numeric_)->unz) );
+      if(info == 0) { // skip if error code so we don't segfault - will throw
+        this->setNnzLU( as<size_t>((data_.numeric_)->lnz) + as<size_t>((data_.numeric_)->unz) );
+      }
     } // end scope
 
   } // end this->root_
 
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::runtime_error,
+      "KLU2 numeric factorization failed");
 
   //global_size_type info_st = as<global_size_type>(info); // unused
   /* TODO : Proper error messages
@@ -331,7 +345,7 @@ KLU2<Matrix,Vector>::solve_impl(
     }
 
     /* All processes should have the same error code */
-    Teuchos::broadcast(*(this->getComm()), 0, &ierr);
+    // Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
   } // end single_process_optim_check && nrhs == 1
   else  // single proc optimizations but nrhs > 1,
@@ -409,7 +423,7 @@ KLU2<Matrix,Vector>::solve_impl(
     } // end root_
 
     /* All processes should have the same error code */
-    Teuchos::broadcast(*(this->getComm()), 0, &ierr);
+    // Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
     // global_size_type ierr_st = as<global_size_type>(ierr); // unused
     // TODO

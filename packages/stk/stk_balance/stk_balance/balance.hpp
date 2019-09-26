@@ -56,7 +56,8 @@ void run_stk_balance_with_settings(const std::string& outputDirectory, const std
 void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
                                 stk::balance::BalanceSettings& graphOptions,
                                 const std::string& exodusFilename,
-                                const std::string& outputFilename);
+                                const std::string& outputFilename,
+                                const std::string& initialDecompMethod);
 void fill_coloring_parts(const stk::mesh::MetaData& meta, stk::mesh::PartVector& coloringParts);
 void fill_coloring_parts_with_topology(const stk::mesh::MetaData& meta, const stk::topology topo, stk::mesh::PartVector& coloringParts);
 std::string construct_coloring_part_name(const int color, const stk::mesh::Part& part);

@@ -548,11 +548,11 @@ namespace {
         Array<Magnitude> norms(numVecs), zeros(numVecs);
         std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
         mvec.norm2(norms);
-        TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+        TEST_COMPARE_ARRAYS(norms,zeros);
         mvec.norm1(norms);
-        TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+        TEST_COMPARE_ARRAYS(norms,zeros);
         mvec.normInf(norms);
-        TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+        TEST_COMPARE_ARRAYS(norms,zeros);
       }
     }
 

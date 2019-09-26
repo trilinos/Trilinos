@@ -396,7 +396,7 @@ namespace Tpetra {
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED 
+    TPETRA_DEPRECATED
     Map (const global_size_t numGlobalElements,
          const size_t numLocalElements,
          const global_ordinal_type indexBase,
@@ -1290,7 +1290,9 @@ namespace Tpetra {
     /// requires a host View) if necessary (only noncontiguous Maps
     /// need this).
 #ifndef SWIG
-    mutable typename decltype (lgMap_)::HostMirror lgMapHost_;
+    mutable Kokkos::View<const GlobalOrdinal*,
+                         Kokkos::LayoutLeft,
+                         Kokkos::HostSpace> lgMapHost_;
 #endif
 
     //! Type of a mapping from global IDs to local IDs.
@@ -1598,13 +1600,9 @@ namespace Tpetra {
         // What we _can_ do here, though, is avoid a deep_copy in case
         // we're not using CUDA, by exploiting host mirrors.
 
-        static_assert (std::is_same<typename decltype (mapOut.lgMapHost_)::array_layout,
-                         typename decltype (mapIn.lgMapHost_)::array_layout>::value,
-          "mapOut.lgMapHost_ and MapIn.lgMapHost_ do not have the same "
-          "array_layout.  Please report this bug to the Tpetra developers.");
-
         // lgMapOut is nonconst, so use it here instead of mapOut.lgMap_.
-        auto lgMapHostOut = Kokkos::create_mirror_view (lgMapOut);
+        auto lgMapHostOut =
+          Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMapOut);
         Kokkos::deep_copy (lgMapHostOut, lgMapOut);
         mapOut.lgMapHost_ = lgMapHostOut;
       }

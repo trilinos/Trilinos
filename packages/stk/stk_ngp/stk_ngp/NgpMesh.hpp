@@ -31,8 +31,8 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef _STK_NGP_MESH_HPP_
-#define _STK_NGP_MESH_HPP_
+#ifndef STK_NGP_MESH_HPP
+#define STK_NGP_MESH_HPP
 
 #include <stk_util/stk_config.h>
 #include "stk_mesh/base/Bucket.hpp"
@@ -109,10 +109,10 @@ inline stk::NgpVector<unsigned> get_bucket_ids(const stk::mesh::BulkData &bulk,
 }
 
 struct StkBucketAdapter {
-    typedef Entities<const stk::mesh::Entity> ConnectedNodes;
-    typedef Entities<const stk::mesh::Entity> ConnectedEntities;
-    typedef Entities<const stk::mesh::ConnectivityOrdinal> ConnectedOrdinals;
-    typedef Entities<const stk::mesh::Permutation> Permutations;
+    using ConnectedNodes    = Entities<const stk::mesh::Entity>;
+    using ConnectedEntities = Entities<const stk::mesh::Entity>;
+    using ConnectedOrdinals = Entities<const stk::mesh::ConnectivityOrdinal>;
+    using Permutations      = Entities<const stk::mesh::Permutation>;
 
     StkBucketAdapter(const stk::mesh::Bucket& bucket)
      : stkBucket(&bucket)
@@ -186,17 +186,18 @@ struct StkMeshAdapterIndex
 
 class StkMeshAdapterUpdater;
 
+using DeviceCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, ngp::MemSpace>;
+
 class StkMeshAdapter
 {
 public:
-    typedef ngp::HostExecSpace MeshExecSpace;
-
-    typedef StkMeshAdapterIndex MeshIndex;
-    typedef StkBucketAdapter BucketType;
-    typedef Entities<const stk::mesh::Entity> ConnectedNodes;
-    typedef Entities<const stk::mesh::Entity> ConnectedEntities;
-    typedef Entities<const stk::mesh::ConnectivityOrdinal> ConnectedOrdinals;
-    typedef Entities<const stk::mesh::Permutation> Permutations;
+    using MeshExecSpace     = ngp::HostExecSpace;
+    using MeshIndex         = StkMeshAdapterIndex;
+    using BucketType        = StkBucketAdapter;
+    using ConnectedNodes    = Entities<const stk::mesh::Entity>;
+    using ConnectedEntities = Entities<const stk::mesh::Entity>;
+    using ConnectedOrdinals = Entities<const stk::mesh::ConnectivityOrdinal>;
+    using Permutations      = Entities<const stk::mesh::Permutation>;
 
     void register_observer();
     void unregister_observer();
@@ -366,9 +367,38 @@ public:
         return bucketAdapters[rank][i];
     }
 
+    DeviceCommMapIndices volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
+    {
+      DeviceCommMapIndices commMap("CommMapIndices", 0);
+      if (bulk->parallel_size() > 1) {
+        const stk::mesh::BucketIndices & stkBktIndices = bulk->volatile_fast_shared_comm_map(rank)[proc];
+        const size_t numEntities = stkBktIndices.ords.size();
+        commMap = DeviceCommMapIndices("CommMapIndices", numEntities);
+
+        size_t stkOrdinalIndex = 0;
+        for (size_t i = 0; i < stkBktIndices.bucket_info.size(); ++i) {
+          const unsigned bucketId = stkBktIndices.bucket_info[i].bucket_id;
+          const unsigned numEntitiesThisBucket = stkBktIndices.bucket_info[i].num_entities_this_bucket;
+          for (size_t n = 0; n < numEntitiesThisBucket; ++n) {
+            const unsigned ordinal = stkBktIndices.ords[stkOrdinalIndex];
+            const stk::mesh::FastMeshIndex stkFastMeshIndex{bucketId, ordinal};
+            commMap[stkOrdinalIndex] = stkFastMeshIndex;
+            ++stkOrdinalIndex;
+          }
+        }
+      }
+
+      return commMap;
+    }
+
+    const stk::mesh::BulkData &get_bulk_on_host() const
+    {
+        return *bulk;
+    }
+
 private:
     const stk::mesh::BulkData *bulk;
-    typedef std::vector<StkBucketAdapter> StkBucketAdapterVector;
+    using StkBucketAdapterVector = std::vector<StkBucketAdapter>;
     mutable std::vector<StkBucketAdapterVector> bucketAdapters;
     mutable size_t modificationCount;
     std::shared_ptr<StkMeshAdapterUpdater> updater;
@@ -405,22 +435,23 @@ inline void StkMeshAdapter::unregister_observer()
     }
 }
 
-typedef Kokkos::View<stk::mesh::EntityKey*, MemSpace> EntityKeyViewType;
-typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
-typedef Kokkos::View<stk::mesh::Entity**, MemSpace> BucketConnectivityType;
-typedef Kokkos::View<unsigned*, MemSpace> UnsignedViewType;
-typedef Kokkos::View<bool*, MemSpace> BoolViewType;
-typedef Kokkos::View<stk::mesh::ConnectivityOrdinal*, MemSpace> OrdinalViewType;
-typedef Kokkos::View<stk::mesh::PartOrdinal*, MemSpace> PartOrdinalViewType;
-typedef Kokkos::View<stk::mesh::Permutation*, MemSpace> PermutationViewType;
+using EntityKeyViewType         = Kokkos::View<stk::mesh::EntityKey*, MemSpace>;
+using EntityViewType            = Kokkos::View<stk::mesh::Entity*, MemSpace>;
+using BucketConnectivityType    = Kokkos::View<stk::mesh::Entity**, MemSpace>;
+using UnsignedViewType          = Kokkos::View<unsigned*, MemSpace>;
+using BoolViewType              = Kokkos::View<bool*, MemSpace>;
+using OrdinalViewType           = Kokkos::View<stk::mesh::ConnectivityOrdinal*, MemSpace>;
+using PartOrdinalViewType       = Kokkos::View<stk::mesh::PartOrdinal*, MemSpace>;
+using PermutationViewType       = Kokkos::View<stk::mesh::Permutation*, MemSpace>;
+using FastSharedCommMapViewType = Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace>;
 
 class StaticMesh;
 
 struct StaticBucket {
-    typedef Entities<const stk::mesh::Entity> ConnectedNodes;
-    typedef Entities<const stk::mesh::Entity> ConnectedEntities;
-    typedef Entities<const stk::mesh::ConnectivityOrdinal> ConnectedOrdinals;
-    typedef Entities<const stk::mesh::Permutation> Permutations;
+    using ConnectedNodes    = Entities<const stk::mesh::Entity>;
+    using ConnectedEntities = Entities<const stk::mesh::Entity>;
+    using ConnectedOrdinals = Entities<const stk::mesh::ConnectivityOrdinal>;
+    using Permutations      = Entities<const stk::mesh::Permutation>;
 
     STK_FUNCTION
     StaticBucket()
@@ -439,7 +470,7 @@ struct StaticBucket {
         hostEntities = Kokkos::create_mirror_view(entities);
         nodeConnectivity = BucketConnectivityType(Kokkos::ViewAllocateWithoutInitializing("BucketConnectivity"+bktIdStr), bucketSize, numNodesPerEntity);
         hostNodeConnectivity = Kokkos::create_mirror_view(nodeConnectivity);
-        nodeOrdinals = OrdinalViewType(Kokkos::ViewAllocateWithoutInitializing("NodeOrdinals"+bktIdStr), numNodesPerEntity);
+        nodeOrdinals = OrdinalViewType(Kokkos::ViewAllocateWithoutInitializing("NodeOrdinals"+bktIdStr), static_cast<size_t>(numNodesPerEntity));
         hostNodeOrdinals = Kokkos::create_mirror_view(nodeOrdinals);
         for(unsigned i=0; i<numNodesPerEntity; ++i)
         {
@@ -550,13 +581,13 @@ struct StaticMeshIndex
 class StaticMesh
 {
 public:
-    typedef ngp::ExecSpace MeshExecSpace;
-    typedef StaticBucket::ConnectedNodes ConnectedNodes;
-    typedef StaticBucket::ConnectedEntities ConnectedEntities;
-    typedef StaticBucket::ConnectedOrdinals ConnectedOrdinals;
-    typedef StaticBucket::Permutations Permutations;
-    typedef StaticMeshIndex MeshIndex;
-    typedef StaticBucket BucketType;
+    using MeshExecSpace     = ngp::ExecSpace;
+    using ConnectedNodes    = StaticBucket::ConnectedNodes;
+    using ConnectedEntities = StaticBucket::ConnectedEntities;
+    using ConnectedOrdinals = StaticBucket::ConnectedOrdinals;
+    using Permutations      = StaticBucket::Permutations;
+    using MeshIndex         = StaticMeshIndex;
+    using BucketType        = StaticBucket;
 
     STK_FUNCTION
     StaticMesh() : bulk(nullptr), spatial_dimension(0) {}
@@ -570,6 +601,8 @@ public:
         copy_bucket_entity_offsets_to_device();
         fill_sparse_connectivities(b);
         copy_sparse_connectivities_to_device();
+        fill_volatile_fast_shared_comm_map(b);
+        copy_volatile_fast_shared_comm_map_to_device();
 
         hostMeshIndices = Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror(Kokkos::ViewAllocateWithoutInitializing("host_mesh_indices"), bulk->get_size_of_entity_index_space());
         const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
@@ -579,6 +612,15 @@ public:
             fill_mesh_indices(*bulk, rank);
         }
         copy_mesh_indices_to_device();
+    }
+
+    void update_buckets() const
+    {
+       //Should this be a throw or a no-op? StaticMesh certainly can't update buckets,
+       //but an app might call this in code that is written for ngp::Mesh (i.e., can
+       //work for either StkMeshAdapter or StaticMesh.
+       //
+       //ThrowRequireMsg(false,"ERROR, update_buckets not supported for ngp::StaticMesh");
     }
 
     STK_FUNCTION
@@ -786,12 +828,25 @@ public:
         return buckets[rank](index);
     }
 
+    STK_FUNCTION
+    DeviceCommMapIndices volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
+    {
+      const size_t dataBegin = volatileFastSharedCommMapOffset[rank][proc];
+      const size_t dataEnd   = volatileFastSharedCommMapOffset[rank][proc+1];
+      DeviceCommMapIndices buffer = Kokkos::subview(volatileFastSharedCommMap[rank], Kokkos::pair<size_t, size_t>(dataBegin, dataEnd));
+      return buffer;
+    }
+
     void clear()
     {
         for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<stk::topology::NUM_RANKS; rank++)
             buckets[rank] = BucketView();
     }
 
+    const stk::mesh::BulkData &get_bulk_on_host() const
+    {
+        return *bulk;
+    }
 
 private:
 
@@ -967,6 +1022,49 @@ private:
         }
     }
 
+    void fill_volatile_fast_shared_comm_map(const stk::mesh::BulkData & bulk_in)
+    {
+      for (stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < stk::topology::ELEM_RANK; ++rank) {
+        std::vector<size_t> sizePerProc(bulk_in.parallel_size(), 0);
+
+        size_t totalSizeForAllProcs = 0;
+        if (bulk_in.parallel_size() > 1) {
+          for (int proc = 0; proc < bulk_in.parallel_size(); ++proc) {
+            const stk::mesh::BucketIndices & stkBktIndices = bulk_in.volatile_fast_shared_comm_map(rank)[proc];
+            sizePerProc[proc] = stkBktIndices.ords.size();
+            totalSizeForAllProcs += stkBktIndices.ords.size();
+          }
+        }
+
+        volatileFastSharedCommMapOffset[rank] = UnsignedViewType(Kokkos::ViewAllocateWithoutInitializing("SharedCommMapOffsets"), sizePerProc.size()+1);
+        hostVolatileFastSharedCommMapOffset[rank] = Kokkos::create_mirror_view(volatileFastSharedCommMapOffset[rank]);
+
+        volatileFastSharedCommMap[rank] = FastSharedCommMapViewType(Kokkos::ViewAllocateWithoutInitializing("SharedCommMap"), totalSizeForAllProcs);
+        hostVolatileFastSharedCommMap[rank] = Kokkos::create_mirror_view(volatileFastSharedCommMap[rank]);
+
+        size_t entryIndex = 0;
+        hostVolatileFastSharedCommMapOffset[rank][0] = 0;
+        for (int proc = 0; proc < bulk_in.parallel_size(); ++proc) {
+          hostVolatileFastSharedCommMapOffset[rank][proc+1] = hostVolatileFastSharedCommMapOffset[rank][proc] + sizePerProc[proc];
+
+          if (bulk_in.parallel_size() > 1) {
+            const stk::mesh::BucketIndices & stkBktIndices = bulk_in.volatile_fast_shared_comm_map(rank)[proc];
+            size_t stkOrdinalIndex = 0;
+            for (size_t i = 0; i < stkBktIndices.bucket_info.size(); ++i) {
+              const unsigned bucketId = stkBktIndices.bucket_info[i].bucket_id;
+              const unsigned numEntitiesThisBucket = stkBktIndices.bucket_info[i].num_entities_this_bucket;
+              for (size_t n = 0; n < numEntitiesThisBucket; ++n) {
+                const unsigned ordinal = stkBktIndices.ords[stkOrdinalIndex++];
+                const stk::mesh::FastMeshIndex stkFastMeshIndex{bucketId, ordinal};
+                hostVolatileFastSharedCommMap[rank][entryIndex++] = stkFastMeshIndex;
+              }
+            }
+          }
+        }
+        ThrowRequireMsg(entryIndex == totalSizeForAllProcs, "Unexpected size for volatile fast shared comm map");
+      }
+    }
+
     void copy_entity_keys_to_device()
     {
         Kokkos::deep_copy(entityKeys, hostEntityKeys);
@@ -1005,13 +1103,17 @@ private:
         }
     }
 
-    const stk::mesh::BulkData &get_bulk_on_host() const
+    void copy_volatile_fast_shared_comm_map_to_device()
     {
-        return *bulk;
+      for (stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < stk::topology::ELEM_RANK; ++rank)
+      {
+        Kokkos::deep_copy(volatileFastSharedCommMapOffset[rank], hostVolatileFastSharedCommMapOffset[rank]);
+        Kokkos::deep_copy(volatileFastSharedCommMap[rank], hostVolatileFastSharedCommMap[rank]);
+      }
     }
 
 
-    typedef Kokkos::View<StaticBucket*, UVMMemSpace> BucketView;
+    using BucketView = Kokkos::View<StaticBucket*, UVMMemSpace>;
     const stk::mesh::BulkData *bulk;
     unsigned spatial_dimension;
 
@@ -1036,6 +1138,12 @@ private:
 
     PermutationViewType sparsePermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
     PermutationViewType::HostMirror hostSparsePermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
+
+    UnsignedViewType volatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
+    UnsignedViewType::HostMirror hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
+
+    FastSharedCommMapViewType volatileFastSharedCommMap[stk::topology::NUM_RANKS];
+    FastSharedCommMapViewType::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
 };
 
 STK_INLINE_FUNCTION

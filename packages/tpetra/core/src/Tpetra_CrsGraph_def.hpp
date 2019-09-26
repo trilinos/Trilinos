@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -888,6 +886,67 @@ namespace Tpetra {
     }
     this->fillComplete_ = true;
     this->checkInternalState ();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const local_graph_type& lclGraph,
+            const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::RCP<const map_type>& domainMap,
+            const Teuchos::RCP<const map_type>& rangeMap,
+            const Teuchos::RCP<const import_type>& importer,
+            const Teuchos::RCP<const export_type>& exporter,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
+    rowMap_ (rowMap),
+    colMap_ (colMap),
+    rangeMap_ (rangeMap.is_null () ? rowMap : rangeMap),
+    domainMap_ (domainMap.is_null () ? rowMap : domainMap),
+    importer_ (importer),
+    exporter_ (exporter),
+    lclGraph_ (lclGraph),
+    nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ()),
+    nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ()),
+    globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ()),
+    globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ()),
+    globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ()),
+    pftype_ (StaticProfile),
+    numAllocForAllRows_ (0),
+    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
+    indicesAreAllocated_ (true),
+    indicesAreLocal_ (true),
+    indicesAreGlobal_ (false),
+    fillComplete_ (false), // not yet, but see below
+    lowerTriangular_ (false),
+    upperTriangular_ (false),
+    indicesAreSorted_ (true),
+    noRedundancies_ (true),
+    haveLocalConstants_ (false),
+    haveGlobalConstants_ (false),
+    sortGhostsAssociatedWithEachProcessor_ (true)
+  {
+    staticAssertions();
+    const char tfecfFuncName[] = "Tpetra::CrsGraph(local_graph_type,"
+      "Map,Map,Map,Map,Import,Export,params): ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (colMap.is_null (), std::runtime_error,
+       "The input column Map must be nonnull.");
+
+    k_lclInds1D_ = lclGraph_.entries;
+    k_rowPtrs_ = lclGraph_.row_map;
+    const bool callComputeGlobalConstants =
+      params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    const bool computeLocalTriangularConstants =
+      params.get () == nullptr ||
+      params->get ("compute local triangular constants", true);
+    if (callComputeGlobalConstants) {
+      this->computeGlobalConstants (computeLocalTriangularConstants);
+    }
+    fillComplete_ = true;
+    checkInternalState ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5137,12 +5196,13 @@ namespace Tpetra {
           } ();
 
           // If there are too many errors, don't bother printing them.
-          constexpr size_t tooManyErrsToPrint = 200; // arbitrary constant
+          size_t tooManyErrsToPrint = ::Tpetra::Details::Behavior::verbosePrintCountThreshold();
           if (lclNumErrs > tooManyErrsToPrint) {
             errStrm << "(Process " << myRank << ") When converting column "
               "indices from global to local, we encountered " << lclNumErrs
               << " indices that do not live in the column Map on this "
-              "process.  That's too many to print." << endl;
+              "process.  That's exceeds the allowable number to print."
+              << "This limit is controllable by TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD." << endl;
           }
           else {
             // Map from local row index, to any global column indices
@@ -8062,8 +8122,6 @@ namespace Tpetra {
 //
 // Must be expanded from within the Tpetra namespace!
 //
-#define TPETRA_CRSGRAPH_GRAPH_INSTANT(LO,GO,NODE) \
-  template class CrsGraph< LO , GO , NODE >;
 
 #define TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
   template<>                                                                        \
@@ -8133,20 +8191,10 @@ namespace Tpetra {
                                                                const Teuchos::RCP<Teuchos::ParameterList>& params);
 
 
-// WARNING: These macros exist only for backwards compatibility.
-// We will remove them at some point.
-#define TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE)
-#define TPETRA_CRSGRAPH_MERGEROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE)
-#define TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE)
-#define TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE)
-
-#define TPETRA_CRSGRAPH_INSTANT(S,LO,GO,NODE)                    \
-  TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE)  \
-  TPETRA_CRSGRAPH_MERGEROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) \
-  TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE)         \
-  TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE)         \
-  TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE)   \
-  TPETRA_CRSGRAPH_EXPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE)   \
+#define TPETRA_CRSGRAPH_INSTANT( LO, GO, NODE ) \
+  template class CrsGraph<LO, GO, NODE>; \
+  TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
+  TPETRA_CRSGRAPH_EXPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
   TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT_TWO(LO,GO,NODE) \
   TPETRA_CRSGRAPH_EXPORT_AND_FILL_COMPLETE_INSTANT_TWO(LO,GO,NODE)
 

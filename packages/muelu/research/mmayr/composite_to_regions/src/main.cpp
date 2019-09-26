@@ -265,6 +265,13 @@ int main_(int argc, char *argv[]) {
 
   Comm->barrier();
 
+  // Manually set smoother parameters on level 0
+  Array<RCP<Teuchos::ParameterList> > smootherParams(1);
+  smootherParams[0] = rcp(new Teuchos::ParameterList);
+  smootherParams[0]->set("smoother: type",    "Jacobi");
+  smootherParams[0]->set("smoother: sweeps",  20);
+  smootherParams[0]->set("smoother: damping", 0.67);
+
   // read xml filename from command line
   Teuchos::CommandLineProcessor clp;
   {
@@ -428,10 +435,10 @@ int main_(int argc, char *argv[]) {
   Teuchos::RCP<Vector> compY = Teuchos::null; // result vector for truly composite calculations
   Teuchos::RCP<Vector> regYComp = Teuchos::null; // result vector in composite layout, but computed via regional operations
 
-  std::vector<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc); // initial guess associated with myRank's ith region in quasiRegional layout
-  std::vector<Teuchos::RCP<Vector> > quasiRegY(maxRegPerProc); // result vector associated with myRank's ith region in quasiRegional layout
-  std::vector<Teuchos::RCP<Vector> > regX(maxRegPerProc); // initial guess associated with myRank's ith region in regional layout
-  std::vector<Teuchos::RCP<Vector> > regY(maxRegPerProc); // result vector associated with myRank's ith region in regional layout
+  Array<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc); // initial guess associated with myRank's ith region in quasiRegional layout
+  Array<Teuchos::RCP<Vector> > quasiRegY(maxRegPerProc); // result vector associated with myRank's ith region in quasiRegional layout
+  Array<Teuchos::RCP<Vector> > regX(maxRegPerProc); // initial guess associated with myRank's ith region in regional layout
+  Array<Teuchos::RCP<Vector> > regY(maxRegPerProc); // result vector associated with myRank's ith region in regional layout
 
   std::vector<LocalOrdinal> intIDs; // LIDs of interface DOFs
   std::vector<std::vector<LocalOrdinal> > regIntIDs(maxRegPerProc); // LIDs of interface DOFs
@@ -455,7 +462,7 @@ int main_(int argc, char *argv[]) {
   Array<std::vector<RCP<Matrix> > > regMatrices; // regional matrices on each level
   Array<std::vector<RCP<Matrix> > > regProlong; // regional prolongators on each level
   Array<std::vector<RCP<Import> > > regRowImporters; // regional row importers on each level
-  Array<std::vector<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
+  Array<Array<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
 
   Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
 
@@ -772,7 +779,8 @@ int main_(int argc, char *argv[]) {
                         regProlong,
                         regRowImporters,
                         regInterfaceScalings,
-                        coarseCompOp);
+                        coarseCompOp,
+                        smootherParams);
   Comm->barrier();
 
   // Run V-cycle
@@ -862,14 +870,14 @@ int main_(int argc, char *argv[]) {
     compositeToRegional(compX, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
         revisedRowMapPerGrp, rowImportPerGrp);
 
-    std::vector<RCP<Vector> > quasiRegB(maxRegPerProc);
-    std::vector<RCP<Vector> > regB(maxRegPerProc);
+    Array<RCP<Vector> > quasiRegB(maxRegPerProc);
+    Array<RCP<Vector> > regB(maxRegPerProc);
     compositeToRegional(compB, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
         revisedRowMapPerGrp, rowImportPerGrp);
 
 //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
 
-    std::vector<RCP<Vector> > regRes(maxRegPerProc);
+    Array<RCP<Vector> > regRes(maxRegPerProc);
     for (int j = 0; j < maxRegPerProc; j++) { // step 1
       regRes[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
     }
@@ -880,9 +888,7 @@ int main_(int argc, char *argv[]) {
 
     // define max iteration counts
     const int maxVCycle = 200;
-    const int maxFineIter = 20;
     const int maxCoarseIter = 100;
-    const double omega = 0.67;
 
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
@@ -929,10 +935,10 @@ int main_(int argc, char *argv[]) {
       /////////////////////////////////////////////////////////////////////////
 
 //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-      vCycle(0, numLevels, maxFineIter, maxCoarseIter, omega, maxRegPerProc, regX, regB,
-             regMatrices,
+      vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
+             regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, coarseCompOp);
+             regInterfaceScalings, smootherParams, coarseCompOp);
     }
 
     ////////////////////////////////////////////////////////////////////////

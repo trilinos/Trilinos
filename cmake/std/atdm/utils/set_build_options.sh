@@ -68,8 +68,8 @@ export ATDM_CONFIG_USE_PTHREADS=OFF
 
 # Process system custom build logic
 export ATDM_CONFIG_CUSTOM_COMPILER_SET=0
-if [ -e ${ATDM_CONFIG_SCRIPT_DIR}/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/custom_builds.sh ]; then
-  source ${ATDM_CONFIG_SCRIPT_DIR}/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/custom_builds.sh
+if [ -e ${ATDM_CONFIG_SYSTEM_DIR}/custom_builds.sh ]; then
+  source ${ATDM_CONFIG_SYSTEM_DIR}/custom_builds.sh
 fi
 
 # NOTE: Currently only the specialization of ATDM_CONFIG_COMPILER from
@@ -289,11 +289,6 @@ export ATDM_CONFIG_PT_PACKAGES=OFF
 if [[ $ATDM_CONFIG_BUILD_NAME == *"-pt" ]] || \
   [[ $ATDM_CONFIG_BUILD_NAME == *"_pt" ]] ; then
   export ATDM_CONFIG_PT_PACKAGES=ON
-fi
-
-# Temporary keyword for turning off global int (#4915, #5384)
-if [[ $ATDM_CONFIG_BUILD_NAME == *"no-global-int"* ]]; then
-  export ATDM_CONFIG_NO_GLOBAL_INT=ON
 fi
 
 export ATDM_CONFIG_FINISHED_SET_BUILD_OPTIONS=1

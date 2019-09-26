@@ -149,7 +149,7 @@ InputConditionsEvaluator(
   this->addEvaluatedField(dx);
   this->addEvaluatedField(dy);
   
-  std::string n = "InputConditions evaluator (" + PHX::typeAsString<ScalarT>()+")";
+  std::string n = "InputConditions evaluator (" + PHX::print<ScalarT>()+")";
   this->setName(n);
 }
 
@@ -226,7 +226,7 @@ HessianTestEvaluator(
   this->addDependentField(y);
   this->addEvaluatedField(result);
   
-  std::string n = "Hessian test evaluator (" + PHX::typeAsString<ScalarT>()+")";
+  std::string n = "Hessian test evaluator (" + PHX::print<ScalarT>()+")";
   this->setName(n);
 }
 

@@ -230,7 +230,7 @@ void testRestrictionProlong_SimVector(MPI_Comm comm, const ROL::Ptr<std::ostream
   // build time stamps
   auto timeStamps_ptr = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>(localNt);
   auto & timeStamps = *timeStamps_ptr;
-  for(size_t k=0; k<localNt; ++k ) {
+  for(int k=0; k<localNt; ++k ) {
     timeStamps[k].t.resize(2);
     timeStamps[k].t.at(0) = k*dt + timeOffset;
     timeStamps[k].t.at(1) = (k+1)*dt + timeOffset;
@@ -432,7 +432,7 @@ void testRestrictionProlong_OptVector(MPI_Comm comm, const ROL::Ptr<std::ostream
   // build time stamps
   auto timeStamps_ptr = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>(localNt);
   auto & timeStamps = *timeStamps_ptr;
-  for(size_t k=0; k<localNt; ++k ) {
+  for(int k=0; k<localNt; ++k ) {
     timeStamps[k].t.resize(2);
     timeStamps[k].t.at(0) = k*dt + timeOffset;
     timeStamps[k].t.at(1) = (k+1)*dt + timeOffset;
@@ -552,9 +552,7 @@ void testRestrictionProlong_OptVector(MPI_Comm comm, const ROL::Ptr<std::ostream
   *outStream << rank << "P_Level 2 = " << printVector_Control(pintOptVec_2) << std::endl;
 
   std::pair<int,int> fneRange = pintOptVec_0_prolong->ownedStepRange();
-  int offset = 0;
   if(fneRange.first==0) {
-    offset = 1;
 
     Real value_prlng = dynamic_cast<ROL::StdVector<Real>&>(*pintOptVec_0_prolong->getVectorPtr(0)).getVector()->at(0);
     Real value_exact = dynamic_cast<ROL::StdVector<Real>&>(*pintOptVec_2->getVectorPtr(0)).getVector()->at(0);

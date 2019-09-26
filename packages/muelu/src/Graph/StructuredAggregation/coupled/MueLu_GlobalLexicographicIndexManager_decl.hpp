@@ -79,8 +79,9 @@ namespace MueLu {
     correspond to nodes. While not strictly necessary, it might be convenient.
 */
 
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class GlobalLexicographicIndexManager : public IndexManager<LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_GLOBALLEXICOGRAPHICINDEXMANAGER_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"

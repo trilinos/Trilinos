@@ -40,9 +40,9 @@
  *
  * entry conditions -
  *   input parameters:
- *	int	exoid			exodus file id
- *	int	start_ent		first entry in elem_map
- *	int	num_ents		number of entries in node_map
+ *      int     exoid                   exodus file id
+ *      int     start_ent               first entry in elem_map
+ *      int     num_ents                number of entries in node_map
  *       int*    elem_map                element numbering map array
  *
  * exit conditions -

@@ -95,6 +95,8 @@ namespace Iohb {
 
     ~DatabaseIO() override;
 
+    const std::string get_format() const override {return "HeartBeat";}
+
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
@@ -183,12 +185,13 @@ namespace Iohb {
     Layout *      layout_{nullptr};
     Layout *      legend_{nullptr};
 
-    std::string tsFormat{"[%H:%M:%S]"};
+    std::string defaultTsFormat{"[%H:%M:%S]"};
+    std::string tsFormat{};
     std::string separator_{", "};
     int         precision_{5};
     int         fieldWidth_{0};
-    bool        showLabels{false};
-    bool        showLegend{true};
+    bool        showLabels{true};
+    bool        showLegend{false};
     bool        appendOutput{false};
     bool        addTimeField{false};
 

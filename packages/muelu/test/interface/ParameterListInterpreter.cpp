@@ -78,8 +78,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
 
-  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+  using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
   // =========================================================================
   // MPI initialization using Teuchos
@@ -119,7 +119,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   matrixParameters.set("nx",         Teuchos::as<GO>(9999));
   matrixParameters.set("matrixType", "Laplace1D");
   RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<GO>("nx"), lib);
-  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), matrixParameters);
+  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), matrixParameters);
 
   std::string prefix;
   if (useKokkos) {

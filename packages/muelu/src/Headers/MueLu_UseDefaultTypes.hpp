@@ -43,9 +43,10 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_USEDEFAULTTYPES_HPP
-#define MUELU_USEDEFAULTTYPES_HPP
 
-#include <Xpetra_UseDefaultTypes.hpp>
+#include <MueLu_Details_DefaultTypes.hpp>
 
-#endif
+typedef MueLu::DefaultScalar Scalar;
+typedef MueLu::DefaultLocalOrdinal LocalOrdinal;
+typedef MueLu::DefaultGlobalOrdinal GlobalOrdinal;
+typedef MueLu::DefaultNode Node;

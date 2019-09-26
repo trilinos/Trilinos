@@ -163,7 +163,7 @@ At this time, you should have all external TPL libraries built and
 installed into `${WHERE_TO_INSTALL}/lib` and `${WHERE_TO_INSTALL}/include`. You are now ready
 to configure the SEACAS portion of the Trilinos cmake build.
 
-The relavant defines for SEACAS are:
+The relevant defines for SEACAS are:
 ```bash
   -D Trilinos_ENABLE_SEACAS:BOOL=ON
   -D TPL_ENABLE_Netcdf:BOOL=ON

@@ -32,11 +32,11 @@
 //
 
 /*******************************************************************
- *	STATS.C: Statistics routines:
+ *      STATS.C: Statistics routines:
  *
- *	newsample(n):	Add a new sample to the mean/average totals.
- *	mean():	        Returns the mean of the samples.
- *	deviation():	Returns the standard deviation of the sample.
+ *      newsample(n):   Add a new sample to the mean/average totals.
+ *      mean():         Returns the mean of the samples.
+ *      deviation():    Returns the standard deviation of the sample.
  *
  ********************************************************************/
 

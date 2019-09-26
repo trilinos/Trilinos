@@ -803,9 +803,6 @@ void create_node_map(INT len_map, INT len_connect, INT *domain_connect, INT *nod
                      INT *loc_num_nodes, INT map_origin)
 {
   INT cnt, i;
-
-  *loc_num_nodes = len_connect;
-
   for (i = 0; i < len_map; i++) {
     node_map[i] = 0;
   }

@@ -46,7 +46,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include <Phalanx_any.hpp>
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 #include <unordered_map>
 #include <map>
 
@@ -151,8 +151,8 @@ namespace phalanx_test {
     using DevLayout = DefaultLayout;
 #endif
 
-    std::cout << "DefaultLayout   = " << PHX::typeAsString<DefaultLayout>() << "\n" << std::endl;
-    std::cout << "DevLayout   = " << PHX::typeAsString<DevLayout>() << "\n" << std::endl;
+    std::cout << "DefaultLayout   = " << PHX::print<DefaultLayout>() << "\n" << std::endl;
+    std::cout << "DevLayout   = " << PHX::print<DevLayout>() << "\n" << std::endl;
 
     Kokkos::View<FadType**,DevLayout,PHX::Device> rho;
     Kokkos::View<FadType**,DevLayout,PHX::Device> P;

@@ -91,6 +91,9 @@ namespace MueLu {
 
     //! Destructor
     virtual ~Amesos2Smoother();
+
+    RCP<const ParameterList> GetValidParameterList() const;
+
     //@}
 
     //! Input

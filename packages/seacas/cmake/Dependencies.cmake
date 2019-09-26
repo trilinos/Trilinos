@@ -8,9 +8,9 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Chaco       libraries/chaco         PT  OPTIONAL
   Aprepro_lib libraries/aprepro_lib   PT  OPTIONAL
   Supes       libraries/supes         PT  OPTIONAL
-  Suplib      libraries/suplib        PT  OPTIONAL
-  SuplibC     libraries/suplib_c      PT  OPTIONAL
   SuplibCpp   libraries/suplib_cpp    PT  OPTIONAL
+  SuplibC     libraries/suplib_c      PT  OPTIONAL
+  Suplib      libraries/suplib        PT  OPTIONAL
   SVDI        libraries/svdi          ST  OPTIONAL
   PLT         libraries/plt           ST  OPTIONAL
   Algebra     applications/algebra    PT  OPTIONAL

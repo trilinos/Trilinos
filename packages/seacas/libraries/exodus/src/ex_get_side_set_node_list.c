@@ -104,7 +104,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
   int err_stat = EX_NOERR;
   int status;
 
-  struct elem_blk_parm *elem_blk_parms = NULL;
+  struct ex__elem_blk_parm *elem_blk_parms = NULL;
 
   /* side to node translation tables -
      These tables are used to look up the side number based on the
@@ -243,7 +243,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* first check if any side sets are specified */
   /* inquire how many side sets have been stored */
@@ -263,7 +263,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
   }
 
   /* Lookup index of side set id in VAR_SS_IDS array */
-  if (ex_id_lkup(exoid, EX_SIDE_SET, side_set_id) <= 0) {
+  if (ex__id_lkup(exoid, EX_SIDE_SET, side_set_id) <= 0) {
     ex_get_err(NULL, NULL, &status);
 
     if (status != 0) {
@@ -381,7 +381,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
     for (i = 0; i < tot_num_ss_elem; i++) {
       elems[i] = i; /* init index array to current position */
     }
-    ex_iqsort64(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
+    ex__iqsort64(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
   }
   else {
     /* Sort side set element list into index array  - non-destructive */
@@ -389,7 +389,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
     for (i = 0; i < tot_num_ss_elem; i++) {
       elems[i] = i; /* init index array to current position */
     }
-    ex_iqsort(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
+    ex__iqsort(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
   }
 
   /* Allocate space for the element block ids */
@@ -409,7 +409,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
   }
 
   /* Allocate space for the element block params */
-  if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct elem_blk_parm)))) {
+  if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct ex__elem_blk_parm)))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to allocate space for element block params "
              "for file id %d",
@@ -429,7 +429,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
       id = ((int *)elem_blk_ids)[i];
     }
 
-    err_stat = ex_int_get_block_param(exoid, id, ndim, &elem_blk_parms[i]);
+    err_stat = ex__get_block_param(exoid, id, ndim, &elem_blk_parms[i]);
     if (err_stat != EX_NOERR) {
       goto cleanup;
     }
@@ -1051,8 +1051,6 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
           get_nodes(exoid, side_set_node_list, node_pos++, connect,
                     connect_offset + hex16_table[side_num][7] - 1);
         }
-        else {
-        }
       }
       else {
         get_nodes(exoid, side_set_node_list, node_pos + 0, connect,
@@ -1079,8 +1077,8 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
           get_nodes(exoid, side_set_node_list, node_pos + 8, connect,
                     connect_offset + hex_table[side_num][8] - 1);
         }
-        break;
       }
+      break;
     }
     default: {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s is an unsupported element type",

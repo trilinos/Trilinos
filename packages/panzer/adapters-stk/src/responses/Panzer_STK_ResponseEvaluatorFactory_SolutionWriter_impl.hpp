@@ -320,7 +320,7 @@ template <typename EvalT>
 bool ResponseEvaluatorFactory_SolutionWriter<EvalT>::
 typeSupported() const
 {
-  if(PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Residual>())
+  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>())
     return true;
 
   return false;

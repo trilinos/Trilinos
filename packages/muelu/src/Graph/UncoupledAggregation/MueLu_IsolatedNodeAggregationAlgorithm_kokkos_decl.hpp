@@ -78,9 +78,9 @@ namespace MueLu {
 
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class IsolatedNodeAggregationAlgorithm_kokkos :
     public MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_SHORT
@@ -104,7 +104,11 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+    void BuildAggregates(const ParameterList& params,
+                         const LWGraph_kokkos& graph,
+                         Aggregates_kokkos& aggregates,
+                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                         LO& numNonAggregatedNodes) const;
     //@}
 
     std::string description() const { return "Phase - (isolated)"; }

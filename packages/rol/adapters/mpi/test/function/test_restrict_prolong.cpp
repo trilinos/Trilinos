@@ -221,7 +221,7 @@ void testRestrictionProlong_SimVector(MPI_Comm comm, const ROL::Ptr<std::ostream
   // build time stamps
   auto timeStamps_ptr = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>(localNt);
   auto & timeStamps = *timeStamps_ptr;
-  for(size_t k=0; k<localNt; ++k ) {
+  for(int k=0; k<localNt; ++k ) {
     timeStamps[k].t.resize(2);
     timeStamps[k].t.at(0) = k*dt + timeOffset;
     timeStamps[k].t.at(1) = (k+1)*dt + timeOffset;
@@ -426,7 +426,7 @@ void testRestrictionProlong_OptVector(MPI_Comm comm, const ROL::Ptr<std::ostream
   // build time stamps
   auto timeStamps_ptr = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>(localNt);
   auto & timeStamps = *timeStamps_ptr;
-  for(size_t k=0; k<localNt; ++k ) {
+  for(int k=0; k<localNt; ++k ) {
     timeStamps[k].t.resize(2);
     timeStamps[k].t.at(0) = k*dt + timeOffset;
     timeStamps[k].t.at(1) = (k+1)*dt + timeOffset;

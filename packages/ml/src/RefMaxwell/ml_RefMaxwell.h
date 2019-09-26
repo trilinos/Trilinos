@@ -31,6 +31,7 @@
 #include "ml_Preconditioner.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 #ifdef HAVE_ML_EPETRAEXT
@@ -236,9 +237,8 @@ namespace ML_Epetra
 
 
 
-    //! Dirichelt Edges
-    int* BCrows;
-    int numBCrows;
+    //! Dirichlet Edges
+    Teuchos::ArrayRCP<int> dirichletEdges11, dirichletEdges22;
     bool HasOnlyDirichletNodes;
 
     //! Vector: Diagonal of reformulated operator
@@ -248,6 +248,9 @@ namespace ML_Epetra
 
     //! (1,1) Block Preconditioner
     ML_Preconditioner * EdgePC;
+    Teuchos::RCP<MultiLevelPreconditioner> EdgePC_sa;
+    Teuchos::ArrayRCP<double> edge_nullspace;
+
     //! (2,2) Block Preconditioner
     //    ML_Preconditioner * NodePC;
     MultiLevelPreconditioner * NodePC; // This is a HAQ
