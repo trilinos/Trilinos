@@ -52,15 +52,14 @@ namespace ROL {
 template<class Real,
          class LO=Tpetra::Map<>::local_ordinal_type,
          class GO=Tpetra::Map<>::global_ordinal_type,
-         class Node=Tpetra::Map<>::node_type,
-         class SO = int > 
-class TpetraTeuchosBatchManager : public TeuchosBatchManager<Real,SO> {
+         class Node=Tpetra::Map<>::node_type > 
+class TpetraTeuchosBatchManager : public TeuchosBatchManager<Real,GO> {
   typedef Tpetra::MultiVector<Real,LO,GO,Node> Tpetra_Vector;
   typedef TpetraMultiVector<Real,LO,GO,Node> OptVector;
 
 public:
-  TpetraTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<SO> > &comm)
-    : TeuchosBatchManager<Real,SO>(comm) {}
+  TpetraTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<int> > &comm)
+    : TeuchosBatchManager<Real,GO>(comm) {}
 
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
     ROL::Ptr<Tpetra_Vector> ivec = dynamic_cast<OptVector&>(input).getVector();

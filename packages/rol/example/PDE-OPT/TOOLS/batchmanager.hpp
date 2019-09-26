@@ -7,17 +7,16 @@
 template<class Real,
          class LO=Tpetra::Map<>::local_ordinal_type,
          class GO=Tpetra::Map<>::global_ordinal_type,
-         class Node=Tpetra::Map<>::node_type,
-         class SO=int> 
-class PDE_OptVector_BatchManager : public ROL::TeuchosBatchManager<Real,SO> {
+         class Node=Tpetra::Map<>::node_type> 
+class PDE_OptVector_BatchManager : public ROL::TeuchosBatchManager<Real,GO> {
 private:
   typedef Tpetra::MultiVector<Real,LO,GO,Node> FieldVector;
   typedef std::vector<Real>                    ParamVector;
   typedef PDE_OptVector<Real,LO,GO,Node>       OptVector;
 
 public:
-  PDE_OptVector_BatchManager(const ROL::Ptr<const Teuchos::Comm<SO> > &comm)
-    : ROL::TeuchosBatchManager<Real,SO>(comm) {}
+  PDE_OptVector_BatchManager(const ROL::Ptr<const Teuchos::Comm<int> > &comm)
+    : ROL::TeuchosBatchManager<Real,GO>(comm) {}
 
   using ROL::TeuchosBatchManager<Real,SO>::sumAll;
   void sumAll(ROL::Vector<Real> &input, ROL::Vector<Real> &output) {
