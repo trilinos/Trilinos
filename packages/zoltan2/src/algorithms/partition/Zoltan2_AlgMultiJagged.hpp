@@ -6787,7 +6787,6 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset( int used_num_ranks,
     // This is the correct implementation, using initial_mj_gnos_ as the 
     // data to be sent.
     ArrayView<const mj_gno_t> sent_gnos(initial_mj_gnos_, num_local_coords_);
-std::cout << " KDDKDD USING THE OLD WAY " << std::endl;
 #else
     // Unfortunately, this HACK is needed to workaround BUGs in SpectrumMPI.
     // Apparently, SpectrumMPI does not communicate UVM memory correctly 
@@ -6813,7 +6812,6 @@ std::cout << " KDDKDD USING THE OLD WAY " << std::endl;
     for (mj_lno_t i = 0; i < num_local_coords_; i++) 
       uvmHackIds[i] = initial_mj_gnos_[i];
     ArrayView<const mj_gno_t> sent_gnos = uvmHackIds();
-std::cout << " KDDKDD USING THE HACKED WAY " << std::endl;
 #endif
 
     distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
