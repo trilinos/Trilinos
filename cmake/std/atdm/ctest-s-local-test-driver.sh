@@ -44,7 +44,7 @@ For example, ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX=Trilinos-atdm-waterman- and
 
 However, if env var:
 
-  ATDM_CHT_FULL_BUILD_NAME=1
+  ATDM_CTEST_S_USE_FULL_BUILD_NAME=1
 
 is set, then <build-name-keysi> must match the full build name
 (e.g. <build-name-keysi>=Trilinos-atdm-waterman_cuda-9.2_fpic_opt) giving the
@@ -168,7 +168,7 @@ ln -sf ${ATDM_TRILINOS_DIR} .
 
 for build_name_body in ${ATDM_ARRAY_OF_BUILDS[@]} ; do
 
-  if [ "${ATDM_CHT_FULL_BUILD_NAME}" == "1" ] ; then
+  if [ "${ATDM_CTEST_S_USE_FULL_BUILD_NAME}" == "1" ] ; then
     build_name="${build_name_body}"
   else
     build_name="${ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX}${build_name_body}"
