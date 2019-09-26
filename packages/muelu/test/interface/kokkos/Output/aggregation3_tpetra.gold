@@ -22,7 +22,7 @@ smoother ->
 Level 1
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0.02, blocksize = 1
@@ -110,7 +110,7 @@ smoother ->
 Level 2
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0.02, blocksize = 1

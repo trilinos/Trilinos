@@ -374,6 +374,7 @@ int main(int argc, char *argv[]) {
     M22->SetFactory("A", A22Fact);
     M22->SetFactory("P", P22Fact);
     M22->SetFactory("R", R22Fact);
+    M22->SetFactory("UnAmalgamationInfo", amalgFact22);
     M22->SetFactory("Aggregates", AggFact22);
     M22->SetFactory("Nullspace", nspFact22);
     M22->SetFactory("Ptent", P22tentFact);
@@ -400,7 +401,7 @@ int main(int argc, char *argv[]) {
     M22->SetFactory("R", R22Fact);
     M22->SetFactory("Aggregates", CoupledAggFact11);
     M22->SetFactory("Nullspace", nspFact22);
-    M11->SetFactory("UnAmalgamationInfo", amalgFact22);
+    M22->SetFactory("UnAmalgamationInfo", amalgFact22);
     M22->SetFactory("Ptent", P22Fact);
     M22->SetFactory("CoarseMap", coarseMapFact22);
     M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager

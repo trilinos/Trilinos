@@ -147,6 +147,7 @@
 
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
@@ -278,6 +279,7 @@ namespace MueLu {
       if (factoryName == "UserPFactory")                          return Build2<UserPFactory>                          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "VariableDofLaplacianFactory")           return Build2<VariableDofLaplacianFactory>           (paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      if (factoryName == "AmalgamationFactory_kokkos")            return Build2<AmalgamationFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory_kokkos")            return Build2<CoalesceDropFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseMapFactory_kokkos")               return Build2<CoarseMapFactory_kokkos>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoordinatesTransferFactory_kokkos")     return Build2<CoordinatesTransferFactory_kokkos>     (paramList, factoryMapIn, factoryManagersIn);

@@ -52,7 +52,7 @@
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
-#include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
@@ -196,7 +196,7 @@ namespace MueLuTests {
     nullSpace->randomize();
     fineLevel.Set("Nullspace", nullSpace);
 
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
 
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
@@ -289,7 +289,7 @@ namespace MueLuTests {
 
     fineLevel.Set("A", A);
 
-    auto amalgFact = rcp(new AmalgamationFactory());
+    auto amalgFact = rcp(new AmalgamationFactory_kokkos());
 
     auto dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
@@ -393,7 +393,7 @@ namespace MueLuTests {
     fineLevel.Set("A", A);
 
 
-    auto amalgFact = rcp(new AmalgamationFactory());
+    auto amalgFact = rcp(new AmalgamationFactory_kokkos());
 
     auto dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
