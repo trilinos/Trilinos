@@ -71,6 +71,7 @@
 #include "MueLu_ZoltanInterface_fwd.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_AmalgamationFactory_kokkos_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 #include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
 #include "MueLu_NullspaceFactory_kokkos_fwd.hpp"

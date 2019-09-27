@@ -8,6 +8,9 @@ typedef MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> 
 #ifdef MUELU_AMALGAMATIONFACTORY_SHORT
 typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AmalgamationFactory;
 #endif
+#ifdef MUELU_AMALGAMATIONFACTORY_KOKKOS_SHORT
+typedef MueLu::AmalgamationFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> AmalgamationFactory_kokkos;
+#endif
 #ifdef MUELU_AMESOS2SMOOTHER_SHORT
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Amesos2Smoother;
 #endif
