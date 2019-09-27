@@ -31,28 +31,28 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <array>
-#include <algorithm>
-#include <stk_mesh/base/Comm.hpp>
-#include <stddef.h>                     // for size_t
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
-#include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_unit_tests/stk_mesh_fixtures/TetFixture.hpp>  // for QuadFixture
-#include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
-#include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
+#include "stk_mesh/base/CreateEdges.hpp"
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for operator&
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_mesh/base/CreateEdges.hpp"
 #include "stk_unit_test_utils/ioUtils.hpp"
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/TetFixture.hpp"  // for QuadFixture
+#include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
+#include <algorithm>
+#include <array>
+#include <stddef.h>                     // for size_t
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
+#include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
 
 //void put_all_faces_in_io_part(stk::mesh::BulkData &mesh, stk::mesh::Selector locally_owned, stk::mesh::Part& face_output_part)
 //{

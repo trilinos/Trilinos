@@ -39,14 +39,15 @@
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <vector>                       // for vector, vector<>::iterator
 #include "mpi.h"                        // for MPI_COMM_WORLD
+
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector
 #include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
 
 
 

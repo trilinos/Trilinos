@@ -37,11 +37,12 @@
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
+
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Types.hpp"      // for EntityIdVector, EntityId
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 namespace stk { namespace mesh { class Part; } }
 

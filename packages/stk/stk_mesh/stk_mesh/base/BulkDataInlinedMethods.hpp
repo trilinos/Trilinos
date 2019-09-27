@@ -78,8 +78,8 @@ bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
   }
   else
   {
-      const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
-      const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+      const EntityKey lhs_key = m_mesh->entity_key(lhs);
+      const EntityKey rhs_key = m_mesh->entity_key(rhs);
       result = lhs_key < rhs_key;
   }
   return result;
@@ -92,8 +92,8 @@ inline EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
 inline
 bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
-  const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs);
   return (lhs_key < rhs_key);
 }
 #endif
@@ -102,30 +102,30 @@ bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
 inline
 bool EntityLess::operator()(const Entity lhs, const EntityKey & rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs);
   return lhs_key < rhs;
 }
 
 inline
 bool EntityLess::operator()( const EntityProc & lhs, const EntityProc & rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey() ;
-  const EntityKey rhs_key = m_mesh->in_index_range(rhs.first) ? m_mesh->entity_key(rhs.first) : EntityKey() ;
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs.first);
   return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
 }
 
 inline
 bool EntityLess::operator()( const EntityProc & lhs, const Entity rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey();
-  const EntityKey rhs_key = m_mesh->in_index_range(rhs)       ? m_mesh->entity_key(rhs)       : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs);
   return lhs_key < rhs_key;
 }
 
 inline
 bool EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
   return lhs_key < rhs ;
 }
 
@@ -722,7 +722,7 @@ inline bool BulkData::in_index_range(Entity entity) const
 
 inline bool BulkData::is_valid(Entity entity) const
 {
-  return (this->in_index_range(entity) && !m_meshModification.is_entity_deleted(entity.local_offset()) );
+  return !m_meshModification.is_entity_deleted(entity.local_offset());
 }
 
 inline const MeshIndex& BulkData::mesh_index(Entity entity) const

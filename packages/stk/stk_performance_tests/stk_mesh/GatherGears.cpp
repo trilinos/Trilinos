@@ -36,9 +36,6 @@
 #include <gtest/gtest.h>
 #include <stk_util/environment/perf_util.hpp>
 
-#include <stk_unit_tests/stk_mesh_fixtures/Gear.hpp>
-#include <stk_unit_tests/stk_mesh_fixtures/GearsFixture.hpp>
-
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -47,6 +44,8 @@
 
 #include <stk_performance_test_includes/calculate_centroid.hpp>
 
+#include "stk_unit_test_utils/stk_mesh_fixtures/Gear.hpp"
+#include "stk_unit_test_utils/stk_mesh_fixtures/GearsFixture.hpp"
 #include <sstream>
 
 namespace stk {
