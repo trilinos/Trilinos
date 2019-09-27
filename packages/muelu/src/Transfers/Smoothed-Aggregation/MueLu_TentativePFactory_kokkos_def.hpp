@@ -53,8 +53,8 @@
 #include "MueLu_TentativePFactory_kokkos_decl.hpp"
 
 #include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
+#include "MueLu_AmalgamationInfo_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
@@ -442,11 +442,11 @@ namespace MueLu {
     std::string nspName = "Nullspace";
     if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
-    auto A             = Get< RCP<Matrix> >           (fineLevel, "A");
-    auto aggregates    = Get< RCP<Aggregates_kokkos> >(fineLevel, "Aggregates");
-    auto amalgInfo     = Get< RCP<AmalgamationInfo> > (fineLevel, "UnAmalgamationInfo");
-    auto fineNullspace = Get< RCP<MultiVector> >      (fineLevel, nspName);
-    auto coarseMap     = Get< RCP<const Map> >        (fineLevel, "CoarseMap");
+    auto A             = Get< RCP<Matrix> >                  (fineLevel, "A");
+    auto aggregates    = Get< RCP<Aggregates_kokkos> >       (fineLevel, "Aggregates");
+    auto amalgInfo     = Get< RCP<AmalgamationInfo_kokkos> > (fineLevel, "UnAmalgamationInfo");
+    auto fineNullspace = Get< RCP<MultiVector> >             (fineLevel, nspName);
+    auto coarseMap     = Get< RCP<const Map> >               (fineLevel, "CoarseMap");
     RCP<RealValuedMultiVector> fineCoords;
     if(bTransferCoordinates_) {
       fineCoords = Get< RCP<RealValuedMultiVector> >(fineLevel, "Coordinates");
@@ -564,8 +564,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-  BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                  RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const {
+  BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
+                  RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
+                  RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
+                  RCP<MultiVector>& coarseNullspace, const int levelID) const {
     auto rowMap = A->getRowMap();
     auto colMap = A->getColMap();
 
@@ -962,8 +964,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-  BuildPcoupled(RCP<Matrix> /* A */, RCP<Aggregates_kokkos> /* aggregates */, RCP<AmalgamationInfo> /* amalgInfo */, RCP<MultiVector> /* fineNullspace */,
-                RCP<const Map> /* coarseMap */, RCP<Matrix>& /* Ptentative */, RCP<MultiVector>& /* coarseNullspace */) const {
+  BuildPcoupled(RCP<Matrix> /* A */, RCP<Aggregates_kokkos> /* aggregates */,
+                RCP<AmalgamationInfo_kokkos> /* amalgInfo */, RCP<MultiVector> /* fineNullspace */,
+                RCP<const Map> /* coarseMap */, RCP<Matrix>& /* Ptentative */,
+                RCP<MultiVector>& /* coarseNullspace */) const {
     throw Exceptions::RuntimeError("MueLu: Construction of coupled tentative P is not implemented");
   }
 

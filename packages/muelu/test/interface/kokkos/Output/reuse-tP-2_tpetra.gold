@@ -25,7 +25,7 @@ Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0.02, blocksize = 1
@@ -162,7 +162,7 @@ Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0.02, blocksize = 1
@@ -330,7 +330,7 @@ Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0.02, blocksize = 1
@@ -418,7 +418,7 @@ Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0.02, blocksize = 1

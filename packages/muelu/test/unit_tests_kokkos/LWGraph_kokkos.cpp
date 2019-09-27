@@ -51,8 +51,8 @@
 
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_AmalgamationInfo_kokkos.hpp"
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 
 namespace MueLuTests {
@@ -61,7 +61,7 @@ namespace MueLuTests {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node> >
   gimmeLWGraph(const Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
-               Teuchos::RCP<MueLu::AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node> >& amalgInfo) {
+               Teuchos::RCP<MueLu::AmalgamationInfo_kokkos<LocalOrdinal, GlobalOrdinal, Node> >& amalgInfo) {
 #   include "MueLu_UseShortNames.hpp"
 
     Level level;
@@ -69,7 +69,7 @@ namespace MueLuTests {
     TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
-    RCP<AmalgamationFactory>        amalgFact = rcp(new AmalgamationFactory());
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
     RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -80,7 +80,7 @@ namespace MueLuTests {
     dropFact->Build(level);
 
     auto graph = level.Get<RCP<LWGraph_kokkos> >("Graph", dropFact.get());
-    amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo", amalgFact.get());
+    amalgInfo = level.Get<RCP<AmalgamationInfo_kokkos> >("UnAmalgamationInfo", amalgFact.get());
     level.Release("UnAmalgamationInfo", amalgFact.get());
     level.Release("Graph",              dropFact.get());
     return graph;
@@ -100,7 +100,7 @@ namespace MueLuTests {
 
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
 
-    RCP<AmalgamationInfo> amalgInfo;
+    RCP<AmalgamationInfo_kokkos> amalgInfo;
     RCP<LWGraph_kokkos> graph = gimmeLWGraph(A, amalgInfo);
 
     const int numRanks = graph->GetComm()->getSize();
@@ -127,7 +127,7 @@ namespace MueLuTests {
 
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
 
-    RCP<AmalgamationInfo> amalgInfo;
+    RCP<AmalgamationInfo_kokkos> amalgInfo;
     RCP<LWGraph_kokkos> graph = gimmeLWGraph(A, amalgInfo);
 
     // const int numRanks = graph->GetComm()->getSize();

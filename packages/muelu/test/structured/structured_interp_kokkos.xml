@@ -8,19 +8,24 @@
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
+    <ParameterList name="myAmalgamationFact">
+      <Parameter name="factory"                             type="string" value="AmalgamationFactory_kokkos"/>
+    </ParameterList>
+
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory_kokkos"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
       <Parameter name="aggregation: drop tol"               type="double" value="0.00"/>
+      <Parameter name="UnAmalgamationInfo"                  type="string" value="myAmalgamationFact"/>
     </ParameterList>
 
     <ParameterList name="myAggregationFact">
-      <Parameter name="factory"                                   type="string" value="StructuredAggregationFactory_kokkos"/>
-      <Parameter name="aggregation: coupling"                     type="string" value="uncoupled"/>
-      <Parameter name="aggregation: output type"                  type="string" value="CrsGraph"/>
-      <Parameter name="aggregation: coarsening order"             type="int"    value="0"/>
-      <Parameter name="aggregation: coarsening rate"              type="string" value="{2}"/>
-      <Parameter name="Graph"                                     type="string" value="myCoalesceDropFact"/>
+      <Parameter name="factory"                             type="string" value="StructuredAggregationFactory_kokkos"/>
+      <Parameter name="aggregation: coupling"               type="string" value="uncoupled"/>
+      <Parameter name="aggregation: output type"            type="string" value="CrsGraph"/>
+      <Parameter name="aggregation: coarsening order"       type="int"    value="0"/>
+      <Parameter name="aggregation: coarsening rate"        type="string" value="{2}"/>
+      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
     </ParameterList>
 
 

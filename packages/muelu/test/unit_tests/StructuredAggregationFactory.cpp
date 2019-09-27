@@ -1118,6 +1118,7 @@ namespace MueLuTests {
     Aggfact->SetFactory("Graph", CDropfact);
     Aggfact->SetFactory("DofsPerNode", CDropfact);
     coarseMapFact->SetFactory("Aggregates", Aggfact);
+    Pfact->SetFactory("UnAmalgamationInfo", AmalgFact);
     Pfact->SetFactory("Aggregates", Aggfact);
     Pfact->SetFactory("CoarseMap", coarseMapFact);
     NSfact->SetFactory("Nullspace", Pfact);
