@@ -41,13 +41,11 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_01.cpp
+/*! \file  example_02.cpp
     \brief Example demonstrating optimzation over a complex field using
            the Rayleigh quotient for a Hermitian matrix as an objective
-
-           Random (complex-valued) initial guesses for \f$z\$f are
-           expected to converge to the eigenvector corresponding to 
-           the minimum eigenvalue.
+           and the constraint that the solution be orthogonal to 
+           the eigenvector corresponding to the minimum eigenvalue
 */
 
 
@@ -55,7 +53,10 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include "ROL_LinearConstraint.hpp"
 #include "ROL_OptimizationSolver.hpp"
+#include "ROL_SingletonVector.hpp"
+
 #include "ROL_ComplexStdVector.hpp"
 #include "HermitianMatrix.hpp"
 #include "RayleighQuotient.hpp"
@@ -86,10 +87,16 @@ int main(int argc, char *argv[]) {
  
   try {
 
-    auto A = HermitianMatrix<RealT>::example_Matrix();
-    auto d = HermitianMatrix<RealT>::example_eigenvalues();
-    auto Z = HermitianMatrix<RealT>::example_eigenvectors();
-    auto N = A.size();
+    auto A   = HermitianMatrix<RealT>::example_Matrix();
+    auto d   = HermitianMatrix<RealT>::example_eigenvalues();
+    auto Z   = HermitianMatrix<RealT>::example_eigenvectors();
+    auto N   = A.size();
+    auto P   = makePtr<OrthogonalProjector<RealT>>(Z[0]);
+    auto v0  = makePtr<ComplexStdVector<RealT>>(N,std::complex<RealT>(0,0));
+    auto z   = makePtr<ComplexStdVector<RealT>>(N);
+    auto obj = makePtr<RayleighQuotient<RealT>>(A);
+    auto con = makePtr<LinearConstraint<RealT>>(P,v0);
+    auto l   = makePtr<ComplexStdVector<RealT>>(1);
 
     os << "Test Matrix A:" << std::endl;
     os << A;
@@ -99,18 +106,15 @@ int main(int argc, char *argv[]) {
                        << d[2] << "," << d[3] << "])" << std::endl;
  
     ParameterList parlist;
-    auto& steplist = parlist.sublist("Step");
-    steplist.set("Type", "Trust Region");
-
-    auto& trlist = steplist.sublist("Trust Region");
-    trlist.set("Subproblem Solver", "Truncated CG");
+//    auto& steplist = parlist.sublist("Step");
+//    steplist.set("Type", "");
+//
+//    auto& trlist = steplist.sublist("Trust Region");
+//    trlist.set("Subproblem Solver", "Truncated CG");
         
-    auto z   = makePtr<ComplexStdVector<RealT>>(N);
-    auto obj = makePtr<RayleighQuotient<RealT>>(A);
-
     z->randomize();
 
-    auto problem = OptimizationProblem<RealT>(obj,z);
+    auto problem = OptimizationProblem<RealT>(obj,z,con,l);
     auto solver  = OptimizationSolver<RealT>(problem,parlist);
     solver.solve(os); 
 
@@ -127,8 +131,9 @@ int main(int argc, char *argv[]) {
     errorFlag += value_error > tol;
 
     os << "rho(z_opt): " << std::setprecision(12) << value_opt << std::endl;
-    os << "Minimum eigenvalue error: " << std::setprecision(12) << value_error << std::endl;
+//    os << "Minimum eigenvalue error: " << std::setprecision(12) << value_error << std::endl;
         
+
   }
   catch (std::logic_error& err) {
     os << err.what() << "\n";
