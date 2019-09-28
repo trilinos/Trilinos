@@ -80,9 +80,7 @@ namespace FROSch {
 +------------------------------+\n";
         }
 
-        if (repeatedMap.is_null()) {
-            repeatedMap = MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap(),1);
-        }
+        if (repeatedMap.is_null()) repeatedMap = this->K_->getRangeMap();
         this->buildOverlappingMatrices(overlap,repeatedMap);
         this->initializeOverlappingOperator();
 
@@ -97,8 +95,6 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(computeTime,"AlgebraicOverlappingOperator::compute");
         FROSCH_ASSERT(this->IsInitialized_,"ERROR: AlgebraicOverlappingOperator has to be initialized before calling compute()");
         this->computeOverlappingOperator();
-
-        this->IsComputed_ = true;
         return 0; // RETURN VALUE!!!
     }
 
@@ -106,7 +102,7 @@ namespace FROSch {
     void AlgebraicOverlappingOperator<SC,LO,GO,NO>::describe(FancyOStream &out,
                                                              const EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(false,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has to be implemented properly...");
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -149,10 +145,11 @@ namespace FROSch {
     ------------------------------------------------------------------------------\n\
      Overlapping subdomains statistics\n\
     ------------------------------------------------------------------------------\n\
-      layer " << 0 << ":        avg / min / max             ---  " << avg << " / " << min << " / " << max << "\n";
+      Layer " << 0 << ":        avg / min / max             ---  " << avg << " / " << min << " / " << max << "\n";
             }
         }
 
+        // Adding Layers of Elements to the overlapping subdomains
         ConstXCrsGraphPtr overlappingGraph = this->OverlappingMatrix_->getCrsGraph();
         for (int i=0; i<overlap; i++) {
             switch (AddingLayersStrategy_) {
@@ -189,10 +186,40 @@ namespace FROSch {
             std::cout << "\
     ------------------------------------------------------------------------------\n";
         }
-
+        
+        // AH 08/28/2019 TODO: It seems that ExtendOverlapByOneLayer_Old is currently the fastest method because the map is sorted. This seems to be better for the direct solver. (At least Klu)
+        if (this->ParameterList_->get("Sort Overlapping Map",true)) {
+            switch (AddingLayersStrategy_) {
+                case LayersFromGraph:
+                    this->OverlappingMap_ = SortMapByGlobalIndex(this->OverlappingMap_);
+                    break;
+                    
+                case LayersFromMatrix:
+                    this->OverlappingMap_ = SortMapByGlobalIndex(this->OverlappingMap_);
+                    break;
+                    
+                case LayersOld:
+                    if (this->Verbose_) std::cout << "FROSch::AlgebraicOverlappingOperator : The overlapping map is already sorted" << std::endl;
+                    break;
+                    
+                default:
+                    FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator : ERROR: Specify a valid strategy for adding layers.");
+                    break;
+            }
+        }
+        
         return 0;
     }
 
+    template <class SC,class LO,class GO,class NO>
+    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::updateLocalOverlappingMatrices()
+    {
+        if (this->IsComputed_) { // already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
+            this->OverlappingMatrix_ = this->K_;
+        }
+        this->OverlappingMatrix_ = ExtractLocalSubdomainMatrix(this->OverlappingMatrix_,this->OverlappingMap_);
+        return 0;
+    }
 }
 
 #endif

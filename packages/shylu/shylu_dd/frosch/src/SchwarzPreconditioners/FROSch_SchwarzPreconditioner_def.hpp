@@ -81,7 +81,6 @@ namespace FROSch {
     {
         return IsComputed_; // TODO: Das hat noch keine Bedeutung
     }
-
 }
 
 #endif

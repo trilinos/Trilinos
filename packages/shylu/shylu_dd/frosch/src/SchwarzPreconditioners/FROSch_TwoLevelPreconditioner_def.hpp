@@ -168,7 +168,11 @@ namespace FROSch {
         /////////////////////////////////////
         if (dirichletBoundaryDofs.is_null()) {
             FROSCH_TIMER_START_LEVELID(determineDirichletRowsTime,"Determine Dirichlet Rows");
-            dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),repeatedMap);
+#ifdef FindOneEntryOnlyRowsGlobal_Matrix
+            GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),repeatedMap);
+#else
+            GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),repeatedMap);
+#endif
         }
 
         ////////////////////////////////////
@@ -213,7 +217,6 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"CoarseOperator Type unkown.");
         }
-
         return ret;
     }
 
@@ -231,7 +234,7 @@ namespace FROSch {
     void TwoLevelPreconditioner<SC,LO,GO,NO>::describe(FancyOStream &out,
                                                        const EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(false,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has to be implemented properly...");
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -246,10 +249,8 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(resetMatrixTime,"TwoLevelPreconditioner::resetMatrix");
         this->K_ = k;
         this->OverlappingOperator_->resetMatrix(this->K_);
-        if (this->ParameterList_->get("TwoLevel",true)) {
-            CoarseOperator_->resetMatrix(this->K_);
-            if (this->UseMultiplicative_) this->MultiplicativeOperator_->resetMatrix(this->K_);
-        }
+        CoarseOperator_->resetMatrix(this->K_);
+        if (this->UseMultiplicative_) this->MultiplicativeOperator_->resetMatrix(this->K_);
         return 0;
     }
 }

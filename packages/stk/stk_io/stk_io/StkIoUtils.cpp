@@ -181,6 +181,9 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
             sideSet = &bulkData.create_sideset(parentPart);
 
         stk::mesh::EntityVector sides = get_sides(bulkData, parentPart);
+        std::vector<stk::mesh::SideSetEntry> newSides;
+        newSides.reserve(sides.size());
+
         for(stk::mesh::Entity side : sides)
         {
             unsigned numElements = bulkData.num_elements(side);
@@ -191,13 +194,12 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
                 bool isOwned = bulkData.bucket(elements[i]).owned();
                 bool isSelected = elementSelector(bulkData.bucket(elements[i]));
                 if(isOwned && isSelected) {
-                    (*sideSet).add(stk::mesh::SideSetEntry{elements[i], ordinals[i]});
+                    newSides.emplace_back(elements[i], ordinals[i]);
                 }
             }
         }
 
-        if(sidesetExists)
-            stk::util::sort_and_unique(*sideSet);
+        sideSet->add(newSides);
     }
 }
 

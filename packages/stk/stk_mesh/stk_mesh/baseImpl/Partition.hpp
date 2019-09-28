@@ -56,7 +56,7 @@ class Partition
 {
 public:
   Partition(BulkData& mesh, BucketRepository *repo, EntityRank rank,
-            const std::vector<PartOrdinal> &key);
+            const PartOrdinal* keyBegin, const PartOrdinal* keyEnd);
 
   virtual ~Partition();
 
@@ -209,8 +209,15 @@ struct PartitionLess {
 inline
 bool partition_key_less( const unsigned * lhs , const unsigned * rhs )
 {
-  const unsigned * const last_lhs = lhs + ( *lhs < *rhs ? *lhs : *rhs );
-  while ( last_lhs != lhs && *lhs == *rhs ) { ++lhs ; ++rhs ; }
+//  const unsigned * const last_lhs = lhs + ( *lhs < *rhs ? *lhs : *rhs );
+//  while ( last_lhs != lhs && *lhs == *rhs ) { ++lhs ; ++rhs ; }
+
+  if (*lhs == *rhs) {
+    const unsigned * const last_lhs = lhs + *lhs;
+    do {
+      ++lhs ; ++rhs ;
+    } while ( last_lhs != lhs && *lhs == *rhs );
+  }
   return *lhs < *rhs ;
 }
 

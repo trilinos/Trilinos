@@ -43,9 +43,9 @@ bool MeshModification::modification_begin(const std::string description)
     return true;
 }
 
-bool MeshModification::modification_end()
+bool MeshModification::modification_end(modification_optimization opt)
 {
-    return this->internal_modification_end( MOD_END_SORT );
+    return this->internal_modification_end( opt );
 }
 
 bool MeshModification::resolve_node_sharing()

@@ -41,13 +41,14 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
-#include <stk_unit_tests/stk_mesh_fixtures/GridFixture.hpp>  // for GridFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <vector>                       // for vector, etc
 #include "mpi.h"                        // for ompi_communicator_t, etc
+
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/GridFixture.hpp"  // for GridFixture
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Bucket; } }
 

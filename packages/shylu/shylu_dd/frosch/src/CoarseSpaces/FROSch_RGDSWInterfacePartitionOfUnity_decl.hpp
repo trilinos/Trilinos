@@ -58,37 +58,37 @@ namespace FROSch {
 
     protected:
 
-        using CommPtr                       = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::CommPtr;
+        using CommPtr                       = typename PartitionOfUnity<SC,LO,GO,NO>::CommPtr;
 
-        using XMap                          = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMap;
-        using XMapPtr                       = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMapPtr;
-        using ConstXMapPtr                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtr;
-        using XMapPtrVecPtr                 = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMapPtrVecPtr;
-        using ConstXMapPtrVecPtr            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
+        using XMap                          = typename PartitionOfUnity<SC,LO,GO,NO>::XMap;
+        using XMapPtr                       = typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr                  = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr                 = typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
 
-        using XMatrix                       = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMatrix;
-        using XMatrixPtr                    = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMatrixPtr;
-        using ConstXMatrixPtr               = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstXMatrixPtr;
+        using XMatrix                       = typename PartitionOfUnity<SC,LO,GO,NO>::XMatrix;
+        using XMatrixPtr                    = typename PartitionOfUnity<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr               = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using XMultiVector                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMultiVector;
-        using ConstXMultiVectorPtr          = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtr;
-        using XMultiVectorPtr               = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtr;
-        using XMultiVectorPtrVecPtr         = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
-        using ConstXMultiVectorPtrVecPtr    = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
+        using XMultiVector                  = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVector;
+        using ConstXMultiVectorPtr          = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using XMultiVectorPtr               = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtr;
+        using XMultiVectorPtrVecPtr         = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+        using ConstXMultiVectorPtrVecPtr    = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
 
-        using ParameterListPtr              = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr;
+        using ParameterListPtr              = typename PartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr;
 
-        using DDInterfacePtr                = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr;
+        using DDInterfacePtr                = typename PartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr;
 
-        using EntitySetPtr                  = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr;
-        using EntitySetPtrVecPtr            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::EntitySetPtrVecPtr;
+        using EntitySetPtr                  = typename PartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr;
+        using EntitySetPtrVecPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::EntitySetPtrVecPtr;
 
-        using InterfaceEntityPtr            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::InterfaceEntityPtr;
+        using InterfaceEntityPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::InterfaceEntityPtr;
 
-        using UN                            = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::UN;
+        using UN                            = typename PartitionOfUnity<SC,LO,GO,NO>::UN;
 
-        using GOVec                         = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::GOVec;
-        using GOVecView                     = typename InterfacePartitionOfUnity<SC,LO,GO,NO>::GOVecView;
+        using GOVec                         = typename PartitionOfUnity<SC,LO,GO,NO>::GOVec;
+        using GOVecView                     = typename PartitionOfUnity<SC,LO,GO,NO>::GOVecView;
 
     public:
 

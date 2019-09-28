@@ -310,6 +310,22 @@ Bucket::~Bucket()
   m_mesh.destroy_bucket_callback(m_entity_rank, *this, m_capacity);
 }
 
+size_t Bucket::memory_size_in_bytes() const
+{
+  size_t bytes = sizeof(Bucket);
+  bytes += impl::capacity_in_bytes(m_entities);
+  bytes += impl::capacity_in_bytes(m_owner_ranks);
+  bytes += m_fixed_node_connectivity.heap_memory_in_bytes();
+  bytes += m_fixed_edge_connectivity.heap_memory_in_bytes();
+  bytes += m_fixed_face_connectivity.heap_memory_in_bytes();
+  bytes += m_fixed_element_connectivity.heap_memory_in_bytes();
+  bytes += m_dynamic_node_connectivity.heap_memory_in_bytes();
+  bytes += m_dynamic_edge_connectivity.heap_memory_in_bytes();
+  bytes += m_dynamic_face_connectivity.heap_memory_in_bytes();
+  bytes += m_dynamic_element_connectivity.heap_memory_in_bytes();
+  bytes += m_dynamic_other_connectivity.heap_memory_in_bytes();
+  return bytes;
+}
 
 void Bucket::change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes)
 {

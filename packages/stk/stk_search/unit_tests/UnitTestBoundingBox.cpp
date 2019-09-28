@@ -34,8 +34,8 @@
 
 #include <gtest/gtest.h>
 
+#include <stk_math/StkVector.hpp>
 #include <stk_search/BoundingBox.hpp>
-#include <stk_math/stk_math/StkVector.hpp>
 
 #include <string>
 #include <iostream>

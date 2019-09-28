@@ -376,6 +376,7 @@ field_data(const FieldType & f, const unsigned bucket_id) {
 inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
   ThrowAssert(&b.mesh() == &f.get_mesh());
   //return true if field and bucket have the same rank and the field is associated with the bucket
+  ThrowAssert(f.get_meta_data_for_field().size() > b.bucket_id());
   return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
 }
 
