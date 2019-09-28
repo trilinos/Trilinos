@@ -171,6 +171,12 @@ namespace FROSch {
         FROSCH_ASSERT(false,"This is not implemented yet.");
         return 0;
     }
+    
+    template <class SC,class LO,class GO,class NO>
+    bool CoarseSpace<SC,LO,GO,NO>::hasUnassembledMaps() const
+    {
+        return UnassembledBasesMaps_.size()>0;
+    }
 
     template <class SC,class LO,class GO,class NO>
     bool CoarseSpace<SC,LO,GO,NO>::hasBasisMap() const

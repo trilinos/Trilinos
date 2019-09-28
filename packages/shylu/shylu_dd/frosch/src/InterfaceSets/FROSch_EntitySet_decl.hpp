@@ -81,6 +81,7 @@ namespace FROSch {
         using UN                            = unsigned;
 
         using GOVec                         = Array<GO>;
+        using GOVecView                     = ArrayView<GO>;
 
         using SCVec                         = Array<SC>;
         using SCVecPtr                      = ArrayRCP<SC>;
@@ -97,6 +98,8 @@ namespace FROSch {
 
         int addEntitySet(EntitySetPtr entitySet);
 
+        EntitySetPtr deepCopy();
+        
         int buildEntityMap(ConstXMapPtr localToGlobalNodesMap);
 
         int findAncestorsInSet(EntitySetPtr entitySet);
@@ -127,6 +130,8 @@ namespace FROSch {
 
         int removeEntity(UN iD);
 
+        int removeNodesWithDofs(GOVecView dirichletBoundaryDofs);
+        
         int removeEmptyEntities();
 
         int sortUnique();

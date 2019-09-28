@@ -41,7 +41,7 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"
 
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/perf_util.hpp>

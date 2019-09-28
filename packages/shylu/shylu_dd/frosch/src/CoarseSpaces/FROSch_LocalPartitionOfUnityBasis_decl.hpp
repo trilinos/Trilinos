@@ -70,7 +70,9 @@ namespace FROSch {
         using XMapPtrVecPtr             = ArrayRCP<XMapPtr>;
 
         using XMultiVector              = MultiVector<SC,LO,GO,NO>;
+        using ConstXMultiVector         = const MultiVector<SC,LO,GO,NO>;
         using XMultiVectorPtr           = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr      = RCP<ConstXMultiVector>;
         using XMultiVectorPtrVecPtr     = ArrayRCP<XMultiVectorPtr>;
         using XMultiVectorPtrVecPtr2D   = ArrayRCP<XMultiVectorPtrVecPtr>;
 
@@ -93,7 +95,7 @@ namespace FROSch {
                                    CommPtr serialComm,
                                    UN dofsPerNode,
                                    ParameterListPtr parameterList,
-                                   XMultiVectorPtr nullSpaceBasis = XMultiVectorPtr(),
+                                   ConstXMultiVectorPtr nullSpaceBasis = XMultiVectorPtr(),
                                    XMultiVectorPtrVecPtr partitionOfUnity = XMultiVectorPtrVecPtr(),
                                    XMapPtrVecPtr partitionOfUnityMaps = XMapPtrVecPtr());
 
@@ -102,7 +104,7 @@ namespace FROSch {
         int addPartitionOfUnity(XMultiVectorPtrVecPtr partitionOfUnity,
                                 XMapPtrVecPtr partitionOfUnityMaps);
 
-        int addGlobalBasis(XMultiVectorPtr nullSpaceBasis);
+        int addGlobalBasis(ConstXMultiVectorPtr nullSpaceBasis);
 
         int buildLocalPartitionOfUnityBasis();
 
@@ -124,7 +126,7 @@ namespace FROSch {
         CoarseSpacePtr LocalPartitionOfUnitySpace_;
 
         XMultiVectorPtrVecPtr PartitionOfUnity_;
-        XMultiVectorPtr NullspaceBasis_;
+        ConstXMultiVectorPtr NullspaceBasis_;
 
         XMapPtrVecPtr PartitionOfUnityMaps_;
 

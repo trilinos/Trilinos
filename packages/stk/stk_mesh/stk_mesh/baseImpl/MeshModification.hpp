@@ -49,7 +49,7 @@ class MeshModification
 {
 public:
     enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
-    enum modification_optimization {MOD_END_SORT };
+    enum modification_optimization {MOD_END_SORT, MOD_END_NO_SORT };
 
     MeshModification(stk::mesh::BulkData& bulkData) : m_bulkData(bulkData), m_entity_states(),
             m_sync_state(MODIFIABLE), m_sync_count(0), m_did_any_shared_entity_change_parts(false)
@@ -70,7 +70,7 @@ public:
 
     bool modification_begin(const std::string description);
 
-    bool modification_end();
+    bool modification_end(modification_optimization opt=MOD_END_SORT);
     bool resolve_node_sharing();
     bool modification_end_after_node_sharing_resolution();
 
