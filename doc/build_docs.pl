@@ -37,7 +37,7 @@ use File::Basename;
 print "\n";
 if(!$skipBuild) {
   print "\nGenerating package documentation ...\n";
-  find (\&buildDocs, $trilinosDir);
+  find ({wanted=>\&buildDocs, preprocess => sub {sort {$a cmp $b} @_}}, $trilinosDir);
   if($build_dir) {
     find (\&copyXML, $trilinosDir);
   }

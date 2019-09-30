@@ -8,10 +8,6 @@ IF(Trilinos_ENABLE_STKTransfer)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_transfer)
 ENDIF()
 
-IF(Trilinos_ENABLE_STKMesh)
-  ADD_SUBDIRECTORY(stk_mesh_fixtures)
-ENDIF()
-
 IF(Trilinos_ENABLE_STKNGP_TEST)
 
     IF(Trilinos_ENABLE_STKMesh)

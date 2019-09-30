@@ -32,24 +32,23 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t
+#include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
+#include <gtest/gtest.h>
 #include <sstream>                      // for ostringstream, etc
+#include <stddef.h>                     // for size_t
 #include <stk_mesh/base/Bucket.hpp>     // for has_superset, Bucket, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/GetBuckets.hpp>  // for get_involved_parts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field_on_mesh
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
-
+#include <stk_unit_test_utils/FaceTestingUtils.hpp>
+#include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <gtest/gtest.h>
 #include <string>                       // for string, basic_string, etc
 #include <vector>                       // for vector, etc
-#include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
-#include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_unit_test_utils/FaceTestingUtils.hpp>
 
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class Part; } }

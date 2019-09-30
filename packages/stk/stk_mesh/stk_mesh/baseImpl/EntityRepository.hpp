@@ -50,7 +50,8 @@ class EntityRepository {
 
 public:
 
-    typedef std::vector<std::pair<EntityKey,Entity> > EntityKeyEntityVector;
+    typedef std::pair<EntityKey,Entity> EntityKeyEntity;
+    typedef std::vector<EntityKeyEntity> EntityKeyEntityVector;
     typedef EntityKeyEntityVector::const_iterator const_iterator;
     typedef EntityKeyEntityVector::iterator iterator;
 
@@ -93,6 +94,8 @@ public:
     void clear_all_cache();
     void clear_cache(EntityRank rank) const;
 
+    size_t heap_memory_in_bytes() const;
+
   private:
     void clear_destroyed_entity_cache(EntityRank rank) const;
     void clear_updated_entity_cache(EntityRank rank) const;
@@ -106,7 +109,7 @@ public:
     mutable std::vector<std::vector<std::pair<EntityKey,EntityKey> > > m_update_cache;
     mutable std::vector<std::vector<EntityKey> > m_destroy_cache;
     mutable unsigned m_maxCreateCacheSize;
-    unsigned m_maxUpdateCacheSize;
+    mutable unsigned m_maxUpdateCacheSize;
 
     //disable copy constructor and assignment operator
     EntityRepository(const EntityRepository &);

@@ -32,15 +32,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, ASSERT_FALSE, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/SelectorFixture.hpp"  // for SelectorFixture
 #include <algorithm>                    // for sort
+#include <gtest/gtest.h>                // for AssertHelper, ASSERT_FALSE, etc
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>  // for SelectorFixture
-#include <vector>                       // for vector
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include <stk_unit_test_utils/BulkDataTester.hpp>
+#include <vector>                       // for vector
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { struct Entity; } }

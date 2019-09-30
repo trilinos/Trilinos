@@ -35,7 +35,7 @@
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stddef.h>                     // for NULL
 #include <sstream>                      // for operator<<, basic_ostream, etc
-#include <stk_mesh/base/Bucket.hpp>     // for Bucket
+#include <vector>
 #include "stk_mesh/base/Entity.hpp"     // for Entity, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 
@@ -48,6 +48,10 @@ struct EntityKeyEntityLess {
 inline bool operator()(const std::pair<EntityKey,Entity>& key_ent_pair, const EntityKey& key) const
 {
   return key_ent_pair.first.m_value < key.m_value;
+}
+inline bool operator()(const EntityKey& key, const std::pair<EntityKey,Entity>& key_ent_pair) const
+{
+  return key.m_value < key_ent_pair.first.m_value;
 }
 };
 
@@ -65,18 +69,6 @@ private:
   const EntityKey& m_key;
 };
 
-struct ToBeDestroyed {
-  ToBeDestroyed(const std::vector<EntityKey>& destroyKeys)
-  : m_keys(destroyKeys)
-  {}
-
-  bool operator()(const std::pair<EntityKey,Entity>& item) const
-  { return std::binary_search(m_keys.begin(), m_keys.end(), item.first); }
-
-private:
-  const std::vector<EntityKey>& m_keys;
-};
-
 EntityRepository::EntityRepository()
  : m_entities(stk::topology::NUM_RANKS),
    m_create_cache(stk::topology::NUM_RANKS),
@@ -89,6 +81,22 @@ EntityRepository::EntityRepository()
 
 EntityRepository::~EntityRepository()
 {
+}
+
+template<typename VecType>
+size_t capacity_in_bytes(const VecType& v)
+{
+  return sizeof(typename VecType::value_type)*v.capacity();
+}
+
+size_t EntityRepository::heap_memory_in_bytes() const
+{
+    size_t bytes = 0;
+    for(auto vec : m_entities) { bytes += capacity_in_bytes(vec); }
+    for(auto vec : m_create_cache) { bytes += capacity_in_bytes(vec); }
+    for(auto vec : m_update_cache) { bytes += capacity_in_bytes(vec); }
+    for(auto vec : m_destroy_cache) { bytes += capacity_in_bytes(vec); }
+    return bytes;
 }
 
 void EntityRepository::clear_all_cache()
@@ -104,10 +112,34 @@ void EntityRepository::clear_destroyed_entity_cache(EntityRank rank) const
     std::vector<EntityKey>& destroy = m_destroy_cache[rank];
     std::sort(destroy.begin(), destroy.end());
     EntityKeyEntityVector& entities = m_entities[rank];
-    EntityKeyEntityVector::iterator newEnd = std::remove_if(entities.begin(), entities.end(), ToBeDestroyed(destroy));
-    entities.resize(newEnd-entities.begin());
-    
+    size_t destroyIdx = 0;
+    EntityKeyEntityVector::iterator start = std::lower_bound(entities.begin(), entities.end(), destroy[0], EntityKeyEntityLess());
+    EntityKeyEntityVector::iterator end = std::upper_bound(entities.begin(), entities.end(), destroy.back(), EntityKeyEntityLess());
+    size_t startIdx = std::distance(entities.begin(), start);
+    size_t endIdx = std::distance(entities.begin(), end);
+    size_t keep = startIdx;
+    for(size_t i=startIdx; i<endIdx; ++i) {
+      if (destroyIdx < destroy.size() && entities[i].first == destroy[destroyIdx]) {
+        ++destroyIdx;
+        continue;
+      }
+      if (i > keep) {
+        entities[keep] = entities[i];
+      }
+      ++keep;
+    }
+    if (endIdx < entities.size()) {
+      size_t len = entities.size() - endIdx;
+      std::memmove(&entities[keep], &entities[endIdx], len*sizeof(EntityKeyEntity));
+      keep += len;
+    }
+    entities.resize(keep);
+
     destroy.clear();
+    size_t num = std::max(m_entities[stk::topology::NODE_RANK].size(),
+                          m_entities[stk::topology::ELEM_RANK].size());
+    unsigned possibleCacheSize = num/1000;
+    m_maxUpdateCacheSize = std::max(m_maxUpdateCacheSize, possibleCacheSize);
   }
 }
 

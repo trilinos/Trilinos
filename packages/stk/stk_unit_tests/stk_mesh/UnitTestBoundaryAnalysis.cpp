@@ -42,11 +42,11 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_unit_tests/stk_mesh_fixtures/GridFixture.hpp>  // for GridFixture
 #include <string>                       // for string
 #include <utility>                      // for pair, operator==
 #include <vector>                       // for vector, vector<>::iterator
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
+
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -55,6 +55,7 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityId, Ordinal, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_faces
+#include "stk_unit_test_utils/stk_mesh_fixtures/GridFixture.hpp"  // for GridFixture
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
 #include "stk_util/util/NamedPair.hpp"
 namespace stk { namespace mesh { class Part; } }

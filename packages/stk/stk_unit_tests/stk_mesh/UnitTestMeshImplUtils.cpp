@@ -32,22 +32,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <stddef.h>                     // for size_t
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/GetEntities.hpp>       // for count_entities
-#include <stk_mesh/base/CreateFaces.hpp>
-#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <gtest/gtest.h>
-#include <vector>                       // for vector, vector<>::iterator
+#include "Setup2Block2HexMesh.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
-#include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_unit_tests/stk_mesh/Setup2Block2HexMesh.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "stk_io/StkMeshIoBroker.hpp"
-#include <stk_unit_test_utils/getOption.h>
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include <gtest/gtest.h>
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
+#include <stk_mesh/base/CreateFaces.hpp>
+#include <stk_mesh/base/GetEntities.hpp>       // for count_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_unit_test_utils/BulkDataTester.hpp>
+#include <stk_unit_test_utils/getOption.h>
+#include <vector>                       // for vector, vector<>::iterator
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;

@@ -49,6 +49,7 @@
 #include "ROL_PD_MeanSemiDeviationFromTarget.hpp"
 #include "ROL_PD_CVaR.hpp"
 #include "ROL_PD_BPOE.hpp"
+#include "ROL_PD_HMCR2.hpp"
 #include "ROL_RiskVector.hpp"
 #include "ROL_RiskBoundConstraint.hpp"
 #include "ROL_RiskLessConstraint.hpp"
@@ -157,6 +158,13 @@ public:
       Real target = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Semi-Deviation From Target").get("Target", 1.0);
       rvf_ = makePtr<PD_MeanSemiDeviationFromTarget<Real>>(coeff, target);
     }
+    else if (name_ == "HMCR") {
+      parlistptr->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+      parlistptr->sublist("SOL").sublist("Risk Measure").set("Name","HMCR");
+      //Real alpha = parlist.sublist("SOL").sublist("Risk Measure").sublist("HMCR").get("Convex Combination Parameter", 1.0);
+      Real beta  = parlist.sublist("SOL").sublist("Risk Measure").sublist("HMCR").get("Confidence Level",             0.9);
+      rvf_ = makePtr<PD_HMCR2<Real>>(beta);
+    }
     else if (name_ == "bPOE") {
       parlistptr->sublist("SOL").set("Stochastic Component Type","Probability");
       parlistptr->sublist("SOL").sublist("Probability").set("Name","bPOE");
@@ -173,15 +181,15 @@ public:
     rvf_->setData(*sampler_, penaltyParam_);
     pd_objective_ = makePtr<StochasticObjective<Real>>(input_->getObjective(),
                                                        rvf_, sampler_, true);
-    // Create progressive hedging bound constraint
+    // Create risk bound constraint
     pd_bound_     = makePtr<RiskBoundConstraint<Real>>(parlistptr,
                                                        input_->getBoundConstraint());
-    // Create progressive hedging constraint
+    // Create riskless constraint
     pd_constraint_ = nullPtr;
     if (input_->getConstraint() != nullPtr) {
       pd_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getConstraint());
     }
-    // Build progressive hedging subproblems
+    // Build primal-dual subproblems
     pd_problem_  = makePtr<OptimizationProblem<Real>>(pd_objective_,
                                                       pd_vector_,
                                                       pd_bound_,

@@ -37,14 +37,15 @@
 #include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_COMM_WORLD
+
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for EntityId, EntityRank
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 
 
