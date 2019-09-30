@@ -9,6 +9,11 @@
 #ifndef Tempus_StepperSubcycling_impl_hpp
 #define Tempus_StepperSubcycling_impl_hpp
 
+#include "Tempus_StepperFactory.hpp"
+#include "Tempus_TimeStepControlStrategyConstant.hpp"
+#include "Tempus_TimeStepControlStrategyBasicVS.hpp"
+#include "Tempus_IntegratorObserverSubcycling.hpp"
+
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
@@ -29,6 +34,9 @@ StepperSubcycling<Scalar>::StepperSubcycling()
 
   this->setObserver(Teuchos::rcp(new StepperSubcyclingObserver<Scalar>()));
   scIntegrator_ = Teuchos::rcp(new IntegratorBasic<Scalar>());
+  scIntegrator_->setTimeStepControl();
+  scIntegrator_->setObserver(
+    Teuchos::rcp(new IntegratorObserverSubcycling<Scalar>()));
 
   RCP<ParameterList> tempusPL = scIntegrator_->getTempusParameterList();
 
@@ -38,6 +46,10 @@ StepperSubcycling<Scalar>::StepperSubcycling()
     RCP<ParameterList> stepperPL = Teuchos::parameterList();
     stepperPL->set("Stepper Type", "Forward Euler");
     tempusPL->set("Default Subcycling Stepper", *stepperPL);
+
+    auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
+    auto stepperFE = sf->createStepperForwardEuler(Teuchos::null,Teuchos::null);
+    setSubcyclingStepper(stepperFE);
   }
 
   // Keep the default SolutionHistory settings:
@@ -89,6 +101,76 @@ void StepperSubcycling<Scalar>::setSubcyclingStepper(
   Teuchos::RCP<Stepper<Scalar> > stepper)
 {
   scIntegrator_->setStepperWStepper(stepper);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::setSubcyclingMinTimeStep(Scalar MinTimeStep)
+{
+  scIntegrator_->getNonConstTimeStepControl()->setMinTimeStep(MinTimeStep);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::setSubcyclingInitTimeStep(Scalar InitTimeStep)
+{
+  scIntegrator_->getNonConstTimeStepControl()->setInitTimeStep(InitTimeStep);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::setSubcyclingMaxTimeStep(Scalar MaxTimeStep)
+{
+  scIntegrator_->getNonConstTimeStepControl()->setMaxTimeStep(MaxTimeStep);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::setSubcyclingStepType(std::string stepType)
+{
+  scIntegrator_->getNonConstTimeStepControl()->setStepType(stepType);
+
+  auto tsc = scIntegrator_->getNonConstTimeStepControl();
+  auto tscStrategy = tsc->getTimeStepControlStrategy();
+  tscStrategy->clearObservers();
+
+  Teuchos::RCP<TimeStepControlStrategy<Scalar> > strategy =
+    Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>());
+  if (stepType == "Variable")
+    strategy = Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>());
+
+  tscStrategy->addStrategy(strategy);
+
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::setSubcyclingMaxFailures(int MaxFailures)
+{
+  scIntegrator_->getNonConstTimeStepControl()->setMaxFailures(MaxFailures);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::
+setSubcyclingMaxConsecFailures(int MaxConsecFailures)
+{
+  scIntegrator_->getNonConstTimeStepControl()->setMaxConsecFailures(MaxConsecFailures);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::
+setSubcyclingScreenOutputIndexInterval(int i)
+{
+  scIntegrator_->setScreenOutputIndexInterval(i);
   this->isInitialized_ = false;
 }
 
@@ -263,23 +345,44 @@ void StepperSubcycling<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
 
-    auto scTSC = Teuchos::rcp_const_cast<TimeStepControl<Scalar> > (
-      scIntegrator_->getTimeStepControl());
-    scTSC->setInitTime (currentState->getTime() );
+    auto scTSC = scIntegrator_->getNonConstTimeStepControl();
+    scTSC->setInitTime (currentState->getTime());
     scTSC->setInitIndex(0);
     scTSC->setFinalTime(workingState->getTime());
+
+    Teuchos::RCP<SolutionStateMetaData<Scalar> > scMD =
+      rcp(new SolutionStateMetaData<Scalar>());
+    scMD->copy(currentState->getMetaData());
+    scMD->setIStep(0);
+    scMD->setNFailures(0);
+    scMD->setNRunningFailures(0);
+    scMD->setNConsecutiveFailures(0);
+    scMD->setOutput(false);
+    scMD->setOutputScreen(false);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!scMD->getIsSynced(), std::logic_error,
+      "Error - StepperSubcycling<Scalar>::takeStep(...)\n"
+      "        Subcycling requires the the solution is synced!\n"
+      "        (i.e., x, xDot, and xDotDot at the same time level.\n");
+
+    auto subcyclingState = rcp(new SolutionState<Scalar>( scMD,
+                                           currentState->getX(),
+                                           currentState->getXDot(),
+                                           currentState->getXDotDot(),
+                                           currentState->getStepperState(),
+                                           currentState->getPhysicsState()));
 
     auto scSH = rcp(new Tempus::SolutionHistory<double>());
     scSH->setName("Subcycling States");
     scSH->setStorageType(Tempus::STORAGE_TYPE_STATIC);
     scSH->setStorageLimit(2);
-    scSH->addState(currentState);
+    scSH->addState(subcyclingState);
 
     scIntegrator_->setSolutionHistory(scSH);
 
     bool pass = scIntegrator_->advanceTime();
 
-    RCP<SolutionState<Scalar> > scWS = scSH->getWorkingState();
+    RCP<SolutionState<Scalar> > scWS = scSH->getCurrentState();
 
     RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > scX = scWS->getX();
@@ -333,6 +436,10 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperSubcycling<Scalar>::getValidParameters() const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    "Error - StepperSubcycling<Scalar>::getValidParameters()\n"
+    "  is not implemented yet.\n");
+
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   getValidParametersBasic(pl, this->getStepperType());
   pl->set<bool>("Use FSAL", true);

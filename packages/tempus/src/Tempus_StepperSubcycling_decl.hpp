@@ -117,7 +117,17 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  virtual void setSubcyclingStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
+  /// \name Functions to set the subcycling stepper.
+  //@{
+    virtual void setSubcyclingStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
+    virtual void setSubcyclingMinTimeStep(Scalar MinTimeStep);
+    virtual void setSubcyclingInitTimeStep(Scalar InitTimeStep);
+    virtual void setSubcyclingMaxTimeStep(Scalar MaxTimeStep);
+    virtual void setSubcyclingStepType(std::string StepType);
+    virtual void setSubcyclingMaxFailures(int MaxFailures);
+    virtual void setSubcyclingMaxConsecFailures(int MaxConsecFailures);
+    virtual void setSubcyclingScreenOutputIndexInterval(int i);
+  //@}
 
   // Temporary until 5908 branch is committed.
   bool isInitialized_ = false;

@@ -121,6 +121,8 @@ public:
     /// Get the TimeStepControl
     virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override
       {return timeStepControl_;}
+    virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override
+      {return timeStepControl_;}
     /// Set the TimeStepControl
     virtual void setTimeStepControl(
       Teuchos::RCP<TimeStepControl<Scalar> > tsc = Teuchos::null);
@@ -158,6 +160,9 @@ public:
 
     //virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const
       //{return integratorTimer_;}
+
+    virtual void setScreenOutputIndexInterval(int i)
+    { integratorPL_->set("Screen Output Index Interval", i); }
   //@}
 
   /// Parse when screen output should be executed

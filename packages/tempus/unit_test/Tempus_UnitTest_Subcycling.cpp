@@ -74,8 +74,8 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
 
   // Full argument list construction.
   auto scIntegrator = Teuchos::rcp(new Tempus::IntegratorBasic<double>());
-  RCP<ParameterList> tempusPL = scIntegrator->getTempusParameterList();
   { // Set default subcycling Stepper to Forward Euler.
+    RCP<ParameterList> tempusPL = scIntegrator->getTempusParameterList();
     tempusPL->sublist("Default Integrator")
                  .set("Stepper Name", "Default Subcycling Stepper");
     RCP<ParameterList> stepperPL = Teuchos::parameterList();
@@ -97,26 +97,8 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(Subcycling, StepperFactory_Construction)
 {
-  // Read params from .xml file
-  auto pList = getParametersFromXmlFile(
-                 "../test/Subcycling/Tempus_Subcycling_VanDerPol.xml");
-  auto tempusPL  = sublist(pList, "Tempus", true);
-  auto stepperPL = sublist(tempusPL, "Demo Stepper", true);
-
-  auto explicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ExplicitModel<double>());
-  auto implicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ImplicitModel<double>());
-  std::vector<RCP<const Thyra::ModelEvaluator<double> > > models;
-  models.push_back(explicitModel);
-  models.push_back(implicitModel);
-
-
-  auto sf = Teuchos::rcp(new StepperFactory<double>());
-
-  // Test using ParameterList.
-  // Passing in model.
-  auto stepper = sf->createMultiSteppers(stepperPL, models);
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
+  //auto model   = rcp(new Tempus_Test::SinCosModel<double>());
+  //testFactoryConstruction("Forward Euler", model);
 }
 #endif // STEPPERFACTORY_CONSTRUCTION
 

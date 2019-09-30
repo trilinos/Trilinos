@@ -34,7 +34,7 @@ public:
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(const TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > sh ,
         Status & integratorStatus) override {
-     for(auto& s : strategies_)  
+     for(auto& s : strategies_)
         s->getNextTimeStep(tsc, sh, integratorStatus);
   }
 
