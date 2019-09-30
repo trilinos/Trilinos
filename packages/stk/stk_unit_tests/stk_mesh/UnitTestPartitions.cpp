@@ -41,9 +41,9 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator&, etc
 #include <stk_mesh/base/Types.hpp>      // for PartOrdinal, BucketVector, etc
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
-#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator, etc
+
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
@@ -51,6 +51,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/SelectorFixture.hpp"  // for SelectorFixture
 
 
 
@@ -665,7 +666,7 @@ TEST( UnitTestPartition, Partition_testGetOrCreateOV)
   parts.push_back(fix.m_meta_data.locally_owned_part().mesh_meta_data_ordinal());
   parts.push_back(fix.m_partA.mesh_meta_data_ordinal() );
   stk::mesh::impl::Partition *partitionA =
-    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts, scratch);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   ASSERT_TRUE(0 != partitionA);
   size_t numEntitiesPerPartition = 3000;
   size_t bucketCapacity = bucket_repository.default_bucket_capacity;
@@ -674,12 +675,12 @@ TEST( UnitTestPartition, Partition_testGetOrCreateOV)
 
   parts.push_back(fix.m_partC.mesh_meta_data_ordinal());
   stk::mesh::impl::Partition *partitionAC =
-    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts, scratch);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   ASSERT_TRUE(0 != partitionAC);
   EXPECT_EQ(0u, partitionAC->num_buckets());
 
   stk::mesh::impl::Partition *partitionAC_again =
-    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts, scratch);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   ASSERT_TRUE(partitionAC == partitionAC_again);
 
   check_bucket_ids_testset_A(bucket_repository);

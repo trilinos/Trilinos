@@ -126,8 +126,13 @@ bool select_bucket_impl(Bucket const& bucket, SelectorNode const* root)
     //       a field selector based on an element field is used to select node buckets the selector will
     //       pick up any node attached to elements that would have been selected.  This is the backwards
     //       compatible behavior that has come to be relied upon by applications (fuego and aero as of 2/27/16)
+    //    3) Field meta-data-vector is not long enough (when bucket is new and
+    //       field-data-manager.allocate_field_data_for_bucket hasn't been called yet.
     //
-    if(bucket.mesh().in_synchronized_state() && bucket.entity_rank() == root->field()->entity_rank()) {
+    if(bucket.mesh().in_synchronized_state() &&
+       bucket.entity_rank() == root->field()->entity_rank() &&
+       root->field()->get_meta_data_for_field().size() > bucket.bucket_id())
+    {
       return field_is_allocated_for_bucket(*root->field(), bucket);
     } else {
       const FieldRestrictionVector& sel_rvec = root->field()->restrictions();

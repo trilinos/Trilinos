@@ -167,7 +167,6 @@ int main(int argc, char *argv[])
 
         RCP<ParameterList> parameterList = getParametersFromXmlFile("ParametersIPOU.xml");
         RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > IPOU(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(RepeatedMap->getComm(),SerialComm,Dimension,1,RepeatedNodesMap,RepeatedDofMaps,parameterList,All,UN(1)));
-        IPOU->removeDirichletNodes();
         IPOU->sortInterface(K);
         IPOU->computePartitionOfUnity();
 

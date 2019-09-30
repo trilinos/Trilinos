@@ -192,6 +192,8 @@ public:
   /** \brief  Number of entities associated with this bucket */
   size_type size() const { return m_size ; }
 
+  size_t memory_size_in_bytes() const;
+
   /** \brief  Capacity of this bucket */
   size_t capacity() const { return m_capacity ; }
 

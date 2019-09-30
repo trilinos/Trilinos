@@ -73,6 +73,7 @@
 #include "MueLu_Utilities.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
@@ -1125,16 +1126,17 @@ namespace MueLu {
       nullSpace->putScalar(SC_ONE);
       fineLevel.Set("Nullspace",nullSpace);
 
-      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-      RCP<Factory> dropFact, UncoupledAggFact, coarseMapFact, TentativePFact, Tfact;
+      RCP<Factory> amalgFact, dropFact, UncoupledAggFact, coarseMapFact, TentativePFact, Tfact;
       if (useKokkos_) {
+        amalgFact = rcp(new AmalgamationFactory_kokkos());
         dropFact = rcp(new CoalesceDropFactory_kokkos());
         UncoupledAggFact = rcp(new UncoupledAggregationFactory_kokkos());
         coarseMapFact = rcp(new CoarseMapFactory_kokkos());
         TentativePFact = rcp(new TentativePFactory_kokkos());
         Tfact = rcp(new CoordinatesTransferFactory_kokkos());
       } else {
+        amalgFact = rcp(new AmalgamationFactory());
         dropFact = rcp(new CoalesceDropFactory());
         UncoupledAggFact = rcp(new UncoupledAggregationFactory());
         coarseMapFact = rcp(new CoarseMapFactory());
@@ -1142,6 +1144,7 @@ namespace MueLu {
         Tfact = rcp(new CoordinatesTransferFactory());
       }
 #else
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
       RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
       RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
       RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());

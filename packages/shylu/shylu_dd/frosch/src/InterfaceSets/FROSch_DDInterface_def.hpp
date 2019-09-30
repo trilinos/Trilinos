@@ -157,25 +157,9 @@ namespace FROSch {
 
         // EntityVector
         for (UN l=0; l<EntitySetVector_.size(); l++) {
-            for (UN i=0; i<EntitySetVector_[l]->getNumEntities(); i++) {
-                UN length = EntitySetVector_[l]->getEntity(i)->getNumNodes();
-                for (UN j=0; j<length; j++) {
-                    UN itmp = length-1-j;
-                    UN k = 0;
-                    while (k<DofsPerNode_) {
-                        GO dofGlobal = EntitySetVector_[l]->getEntity(i)->getGlobalDofID(itmp,k);
-                        if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
-                            EntitySetVector_[l]->getEntity(i)->removeNode(itmp);
-                            break;
-                        }
-                        k++;
-                    }
-                }
-            }
+            EntitySetVector_[l]->removeNodesWithDofs(dirichletBoundaryDofs);
         }
-
         removeEmptyEntities();
-
         for (UN l=0; l<EntitySetVector_.size(); l++) {
             EntitySetVector_[l]->setUniqueIDToFirstGlobalNodeID();
         }
@@ -712,7 +696,7 @@ namespace FROSch {
 
             case CreateOneToOneMap:
                 {
-                    RCP<LowerPIDTieBreak<LO,GO,NO> > lowerPIDTieBreak(new LowerPIDTieBreak<LO,GO,NO>(MpiComm_,NodesMap_));
+                    RCP<LowerPIDTieBreak<LO,GO,NO> > lowerPIDTieBreak(new LowerPIDTieBreak<LO,GO,NO>(MpiComm_,NodesMap_,Dimension_,LevelID_));
                     UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_,true,lowerPIDTieBreak);
                     lowerPIDTieBreak->sendDataToOriginalMap();
                     componentsSubdomains = lowerPIDTieBreak->getComponents();
@@ -727,6 +711,7 @@ namespace FROSch {
         componentsSubdomainsUnique = IntVecVec(NumMyNodes_);
         for (LO i=0; i<NumMyNodes_; i++) {
             sortunique(componentsSubdomains[i]);
+            if (componentsSubdomains[i].size() == 0) componentsSubdomains[i].push_back(MpiComm_->getRank()); // For Tpetra this is empty if the repeatedMap is already unique. In this case, we have to add the local rank. Otherwise, we obtain nodes with multiplicity 0.
             componentsSubdomainsUnique[i] = componentsSubdomains[i];
 //            if (MpiComm_->getRank() == 0) std::cout << MpiComm_->getRank() << ": " << i << " " << componentsSubdomains[i] << std::endl;
         }
@@ -763,7 +748,7 @@ namespace FROSch {
             localComponentIndices[i] = classIterator - componentsSubdomainsUnique.begin();
         }
 
-        LO tmp1 = 0;
+        LO tmp1 = 0; // The interface and interior have multiplicity 0 in our construction
         int *tmp2 = NULL;
         RCP<InterfaceEntity<SC,LO,GO,NO> > interior(new InterfaceEntity<SC,LO,GO,NO>(InteriorType,DofsPerNode_,tmp1,tmp2));
         RCP<InterfaceEntity<SC,LO,GO,NO> > interface(new InterfaceEntity<SC,LO,GO,NO>(InterfaceType,DofsPerNode_,tmp1,tmp2));
@@ -782,6 +767,7 @@ namespace FROSch {
                 }
                 interior->addNode(nodeIDI,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsI,dofsLocal,dofsGlobal);
             } else {
+                FROSCH_ASSERT(componentsMultiplicity[localComponentIndices[i]]>1,"FROSch::DDInterface : ERROR: There cannot be any nodes with multiplicity 0.");
                 LO nodeIDGamma = interface->getNumNodes();
                 LO nodeIDLocal = i;
                 GO nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);
@@ -803,6 +789,7 @@ namespace FROSch {
         Interface_->addEntity(interface);
 
         for (UN i=0; i<componentsSubdomainsUnique.size(); i++) {
+            FROSCH_ASSERT(componentsMultiplicity[i]>0,"FROSch::DDInterface : ERROR: There cannot be any component with multiplicity 0.");
             RCP<InterfaceEntity<SC,LO,GO,NO> > tmpEntity(new InterfaceEntity<SC,LO,GO,NO>(VertexType,DofsPerNode_,componentsMultiplicity[i],&(componentsSubdomainsUnique[i][0])));
             LO nodeIDGamma;
             LO nodeIDLocal;
