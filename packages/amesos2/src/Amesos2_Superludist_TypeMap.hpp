@@ -70,6 +70,11 @@ namespace SLUD {
 
 extern "C" {
 
+  /// use the same function with name space in the macro
+#if defined(AMESOS2_ENABLE_SUPERLUDIST_5_4_0)
+#define USER_FREE(addr) SLUD::superlu_free_dist(addr)
+#endif
+
   // undefine compiler guard in case we also have the sequential
   // SuperLU enabled
 #undef __SUPERLU_SUPERMATRIX

@@ -372,10 +372,14 @@ namespace Amesos2 {
     static void LUstructInit(SLUD::int_t m, SLUD::int_t n,
 			     type_map::LUstruct_t* lu)
     {
+#if defined(AMESOS2_ENABLE_SUPERLUDIST_5_4_0)
+      SLUD::D::LUstructInit(n, lu);
+#else      
 #ifdef HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG
       SLUD::D::LUstructInit(n, lu);
 #else
       SLUD::D::LUstructInit(m, n, lu);
+#endif
 #endif
     }
 
