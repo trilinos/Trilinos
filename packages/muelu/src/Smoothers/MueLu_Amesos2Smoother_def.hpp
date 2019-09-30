@@ -201,7 +201,7 @@ namespace MueLu {
         ArrayView<GO> elements = elements_RCP();
         for (size_t k = 0; k<M; k++)
           elements[k] = Teuchos::as<GO>(k);
-        colMap = MapFactory::Build(rowMap->lib(),M,elements,Teuchos::ScalarTraits<GO>::zero(),rowMap->getComm());
+        colMap = MapFactory::Build(rowMap->lib(),M*rowMap->getComm()->getSize(),elements,Teuchos::ScalarTraits<GO>::zero(),rowMap->getComm());
         importer = ImportFactory::Build(rowMap,colMap);
         NullspaceImp = MultiVectorFactory::Build(colMap, Nullspace->getNumVectors());
         NullspaceImp->doImport(*Nullspace,*importer,Xpetra::INSERT);
