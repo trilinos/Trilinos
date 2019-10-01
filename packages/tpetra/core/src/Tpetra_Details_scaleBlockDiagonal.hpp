@@ -96,12 +96,14 @@ void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, bool doTra
       SerialLU<algo_type>::invoke(A);
 
       if(doTranspose) {
-	// ToDO: Check w/ KJ
+	// Solve U^T
+	SerialTrsm<Side::Left,Uplo::Upper,Trans::Transpose,Diag::NonUnit,algo_type>::invoke(SC_one,A,B);
+	// Solver L^T
+	SerialTrsm<Side::Left,Uplo::Lower,Trans::Transpose,Diag::Unit,algo_type>::invoke(SC_one,A,B);
       }
       else {
 	// Solve L
-	SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,algo_type>::invoke(SC_one,A,B);
-	
+	SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,algo_type>::invoke(SC_one,A,B);	
 	// Solve U
 	SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,algo_type>::invoke(SC_one,A,B);
       }
