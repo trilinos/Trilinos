@@ -248,7 +248,7 @@ namespace Amesos2 {
      */
     if ( this->status_.getNumPreOrder() > 0 ){
       /// These are created by superlu malloc and should be deallocated by superlu free
-#if defined(AMESOS2_ENABLE_SUPERLUDIST_5_4_0)
+#if defined(AMESOS2_ENABLES_SUPERLUDIST_VERSION5_AND_HIGHER)
       SUPERLU_FREE( data_.sizes );
       SUPERLU_FREE( data_.fstVtxSep );
 #else
@@ -276,7 +276,7 @@ namespace Amesos2 {
     if ( this->status_.symbolicFactorizationDone() &&
          !this->status_.numericFactorizationDone() ){
       if ( data_.pslu_freeable.xlsub != NULL ){
-#if defined(AMESOS2_ENABLE_SUPERLUDIST_5_4_0)
+#if defined(AMESOS2_ENABLES_SUPERLUDIST_VERSION5_AND_HIGHER)
         SUPERLU_FREE( data_.pslu_freeable.xlsub );
         SUPERLU_FREE( data_.pslu_freeable.lsub );
 #else
@@ -285,7 +285,7 @@ namespace Amesos2 {
 #endif
       }
       if ( data_.pslu_freeable.xusub != NULL ){
-#if defined(AMESOS2_ENABLE_SUPERLUDIST_5_4_0)
+#if defined(AMESOS2_ENABLES_SUPERLUDIST_VERSION5_AND_HIGHER)
         SUPERLU_FREE( data_.pslu_freeable.xusub );
         SUPERLU_FREE( data_.pslu_freeable.usub );
 #else
@@ -294,7 +294,7 @@ namespace Amesos2 {
 #endif
       }
       if ( data_.pslu_freeable.supno_loc != NULL ){
-#if defined(AMESOS2_ENABLE_SUPERLUDIST_5_4_0)
+#if defined(AMESOS2_ENABLES_SUPERLUDIST_VERSION5_AND_HIGHER)
         SUPERLU_FREE( data_.pslu_freeable.supno_loc );
         SUPERLU_FREE( data_.pslu_freeable.xsup_beg_loc );
         SUPERLU_FREE( data_.pslu_freeable.xsup_end_loc );
@@ -304,7 +304,7 @@ namespace Amesos2 {
         free( data_.pslu_freeable.xsup_end_loc );
 #endif
       }
-#if defined(AMESOS2_ENABLE_SUPERLUDIST_5_4_0)
+#if defined(AMESOS2_ENABLES_SUPERLUDIST_VERSION5_AND_HIGHER)
       SUPERLU_FREE( data_.pslu_freeable.globToLoc );
 #else
       free( data_.pslu_freeable.globToLoc );
@@ -347,7 +347,7 @@ namespace Amesos2 {
       // function again.  These arrays will also be dealloc'd in the
       // deconstructor.
       if( this->status_.getNumPreOrder() > 0 ){
-#if defined(AMESOS2_ENABLE_SUPERLUDIST_5_4_0)
+#if defined(AMESOS2_ENABLES_SUPERLUDIST_VERSION5_AND_HIGHER)
         SUPERLU_FREE( data_.sizes );
         SUPERLU_FREE( data_.fstVtxSep );
 #else

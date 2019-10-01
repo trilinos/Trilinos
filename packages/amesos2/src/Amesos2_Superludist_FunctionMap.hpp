@@ -372,7 +372,9 @@ namespace Amesos2 {
     static void LUstructInit(SLUD::int_t m, SLUD::int_t n,
 			     type_map::LUstruct_t* lu)
     {
-#if defined(AMESOS2_ENABLE_SUPERLUDIST_5_4_0)
+      /// When we make sure that version 5 and higher is used
+      /// we do not perform runtime check of the interface
+#if defined(AMESOS2_ENABLES_SUPERLUDIST_VERSION5_AND_HIGHER)
       SLUD::D::LUstructInit(n, lu);
 #else      
 #ifdef HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG
@@ -545,10 +547,16 @@ namespace Amesos2 {
 
     static void LUstructInit(SLUD::int_t m, SLUD::int_t n, type_map::LUstruct_t* lu)
     {
+      /// When we make sure that version 5 and higher is used
+      /// we do not perform runtime check of the interface
+#if defined(AMESOS2_ENABLES_SUPERLUDIST_VERSION5_AND_HIGHER)
+      SLUD::Z::LUstructInit(n, lu);
+#else
 #ifdef HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG
       SLUD::Z::LUstructInit(n, lu);
 #else
       SLUD::Z::LUstructInit(m, n, lu);
+#endif
 #endif
     }
 
