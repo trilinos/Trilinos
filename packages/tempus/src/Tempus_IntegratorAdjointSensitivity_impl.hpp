@@ -227,7 +227,7 @@ getTime() const
 }
 
 template<class Scalar>
-Scalar
+int 
 IntegratorAdjointSensitivity<Scalar>::
 getIndex() const
 {

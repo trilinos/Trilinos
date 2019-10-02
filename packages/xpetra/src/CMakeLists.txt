@@ -28,7 +28,7 @@ SET(XPETRA_ETI_CPP_SOURCES "")
 ##
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ##
-  ## XPETRA_(Something)_ETI_CLASSES is a list of all class names which ETI 
+  ## XPETRA_(Something)_ETI_CLASSES is a list of all class names which ETI
   ## *.cpp files have to be generated for.
   ##
 
@@ -63,8 +63,8 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     Xpetra_ETI_MULTIVECTOR_SRC)
   LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_MULTIVECTOR_SRC})
-
-  MESSAGE("XPETRA_ETI_CPP_SOURCES=${XPETRA_ETI_CPP_SOURCES}")
+  MESSAGE(STATUS "Xpetra: Enabling ETI")
+#  MESSAGE("XPETRA_ETI_CPP_SOURCES=${XPETRA_ETI_CPP_SOURCES}")
 
   # At this point, XPETRA_ETI_CPP_SOURCES contains the Xpetra classes
   # that will be ETI'd.
@@ -74,7 +74,8 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   SET(SOURCES ${XPETRA_ETI_CPP_SOURCES})
   # grab any hand rolled ETI source files
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
-  
+ELSE()
+  MESSAGE(STATUS "Xpetra: Disabling ETI")
 ENDIF()
 
 ############################################################################################
@@ -104,6 +105,7 @@ ENDIF()
 
 # Create the .hpp file in BUILD/packages/xpetra/src
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockedCrsMatrix   NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockedMap         NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockedMultiVector NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockedVector      NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/CrsGraph           NOSIERRABJAM)

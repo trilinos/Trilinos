@@ -59,7 +59,7 @@ c DATE:                 December 20, 1988
 c
 c TYPE OF SUBPROGRAM:   subroutine
 c
-c USEAGE:               call upcase ( string )
+c USAGE:               call upcase ( string )
 c
 c PARAMETERS:
 c

@@ -66,7 +66,7 @@ TEST(BucketRepositoryTest, createBuckets)
     stk::mesh::impl::EntityRepository entityRepository;
 
     stk::mesh::impl::BucketRepository &bucketRepository = stkMeshBulkData.my_get_bucket_repository();
-    stk::mesh::impl::Partition* partition = bucketRepository.get_or_create_partition(stk::topology::NODE_RANK, parts, scratch);
+    stk::mesh::impl::Partition* partition = bucketRepository.get_or_create_partition(stk::topology::NODE_RANK, parts);
 
     size_t numNodes = 1024;
     for(size_t i=0; i<numNodes; i++)

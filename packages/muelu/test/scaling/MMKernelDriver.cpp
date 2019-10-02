@@ -695,7 +695,7 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
                                                      Browptr,Bcolind,Bvals,false,
                                                      Crowptr,Ccolind,Cvals);
       kh.destroy_spgemm_handle();
-      KCRS::execution_space::fence();
+      typename KCRS::execution_space().fence();
   
       #ifdef USE_DESCRIPTIVE_STATS
       switch (alg_enum) {

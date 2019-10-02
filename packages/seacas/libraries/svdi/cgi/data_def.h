@@ -208,14 +208,14 @@ typedef struct
   int linewidth_min;     /* minimum scaled line width ( >0 ) */
   int linewidth_max;     /* maximum scaled line width ( >0 ) */
   int line_types[5];     /* list of available line types */
-  int line_widths[5];    /* list of availabl scale line widths */
+  int line_widths[5];    /* list of available scale line widths */
 
   /* marker description table */
   int mark_nominal;  /* nominal scaled marker size ( >0 ) */
   int mark_min;      /* minimum scaled marker size ( >0 ) */
   int mark_max;      /* maximum scaled marker size ( >0 ) */
   int mark_types[1]; /* list of available marker types */
-  int mark_sizes[1]; /* list of availabl scale marker sizes */
+  int mark_sizes[1]; /* list of available scale marker sizes */
 
   /* text description table */
   /* fill description table */

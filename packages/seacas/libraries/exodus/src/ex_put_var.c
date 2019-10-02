@@ -319,7 +319,7 @@ int ex_put_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
   }
 
   /* store element variable values */
-  start[0] = --time_step;
+  start[0] = time_step - 1;
   start[1] = 0;
 
   if (var_type == EX_GLOBAL) {
@@ -345,8 +345,8 @@ int ex_put_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
 
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to store %s %" PRId64 " variable %d in file id %d",
-             ex_name_of_object(var_type), obj_id, var_index, exoid);
+             "ERROR: failed to store %s %" PRId64 " variable %d at step %d in file id %d",
+             ex_name_of_object(var_type), obj_id, var_index, time_step, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }

@@ -1,0 +1,40 @@
+<ParameterList name="GDSWCoarseOperator">
+    <ParameterList name="Blocks">
+        <ParameterList name="1">
+            <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
+            <Parameter name="Rotations"                             type="bool"     value="true"/>
+            <ParameterList name="Custom">
+                <Parameter name="Vertices: translations"            type="bool"     value="true"/>
+                <Parameter name="ShortEdges: translations"          type="bool"     value="true"/>
+                <Parameter name="ShortEdges: rotations"             type="bool"     value="true"/>
+                <Parameter name="StraightEdges: translations"       type="bool"     value="true"/>
+                <Parameter name="StraightEdges: rotations"          type="bool"     value="true"/>
+                <Parameter name="Edges: translations"               type="bool"     value="true"/>
+                <Parameter name="Edges: rotations"                  type="bool"     value="true"/>
+                <Parameter name="Faces: translations"               type="bool"     value="true"/>
+                <Parameter name="Faces: rotations"                  type="bool"     value="true"/>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="ExtensionSolver">
+        <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
+        <Parameter name="Solver"                                    type="string"   value="Klu"/>
+    </ParameterList>
+    
+    <ParameterList name="Distribution">
+        <Parameter name="Type"                                      type="string"   value="linear"/>
+        <Parameter name="NumProcs"                                  type="int"      value="1"/>
+        <Parameter name="Factor"                                    type="double"   value="1.0"/>
+        <Parameter name="GatheringSteps"                            type="int"      value="1"/>
+        <ParameterList name="Gathering Communication">
+            <Parameter name="Send type"                             type="string"   value="Send"/>
+        </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="CoarseSolver">
+        <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
+        <Parameter name="Solver"                                    type="string"   value="Klu"/>
+    </ParameterList>
+    
+</ParameterList>

@@ -242,6 +242,7 @@ void ML_Epetra::SetValidAggrParams(Teuchos::ParameterList *PL)
   /* Aggregation and Prolongator Options (Section 6.4.3) */
   setStringToIntegralParameter<int>("aggregation: type", "Uncoupled", "Aggregation algorithm", tuple<std::string>("Uncoupled","Coupled","MIS","Uncoupled-MIS","METIS","ParMETIS","Zoltan","user"),PL);
   setDoubleParameter("aggregation: threshold",0.0,"Dropping for aggregation",PL,dblParam);
+  setDoubleParameter("aggregation: rowsum threshold",-1.0,"Rowsum threshold aggregation",PL,dblParam);
   setDoubleParameter("ML advanced Dirichlet: threshold",1.0e-5,"Dropping for Dirichlet determination. Only used for variable dof and shared node constructors",PL,dblParam);
   setDoubleParameter("variable DOF  amalgamation: threshold",1.8e-9,"Dropping for amalgamation. Only used for variable dof constructor",PL,dblParam);
   setDoubleParameter("aggregation: damping factor",1.3333,"Damping factor for smoothed aggregation",PL,dblParam);
@@ -543,6 +544,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   PL->set("refmaxwell: enable local nodal solver",false);
   PL->set("refmaxwell: global to local nodal transfer matrix",(Epetra_CrsMatrix*)0);
   PL->set("refmaxwell: drop nodal correction",false);//HAQ
+  PL->set("refmaxwell: rowsum threshold",-1.0);
   return PL;
 }
 

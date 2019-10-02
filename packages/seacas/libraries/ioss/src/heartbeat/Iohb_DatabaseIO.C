@@ -92,7 +92,7 @@ namespace {
 
   std::ostream *open_stream(const std::string &filename, bool *needs_delete, bool append_file)
   {
-    // A little wierdness and ambiguity is possible here.  We want to
+    // A little weirdness and ambiguity is possible here.  We want to
     // minimize the number of commands, but maximize the
     // functionality. For example, we want to be able to specify output
     // to existing streams (cout/stdout, cerr/stderr, outputP0), files,

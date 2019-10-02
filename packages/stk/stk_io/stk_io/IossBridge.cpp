@@ -1709,7 +1709,7 @@ namespace stk {
 
       delete_selector_property(nb);
       mesh::Selector *node_select = new mesh::Selector(all_selector);
-      nb->property_add(Ioss::Property(s_internal_selector_name, node_select, false));
+      nb->property_add(Ioss::Property(s_internal_selector_name, node_select));
       nb->property_add(Ioss::Property(base_stk_part_name, getPartName(part)));
 
       // Add locally-owned property...
@@ -1757,7 +1757,7 @@ namespace stk {
 
       delete_selector_property(ns);
       mesh::Selector *select = new mesh::Selector(all_selector);
-      ns->property_add(Ioss::Property(s_internal_selector_name, select, false));
+      ns->property_add(Ioss::Property(s_internal_selector_name, static_cast<void*>(select)));
       ns->property_add(Ioss::Property(base_stk_part_name, getPartName(part)));
 
       if(!isDerivedNodeset) {
@@ -1836,7 +1836,7 @@ namespace stk {
         selector &= bulk.mesh_meta_data().locally_owned_part();
         delete_selector_property(side_block);
         mesh::Selector *select = new mesh::Selector(selector);
-        side_block->property_add(Ioss::Property(s_internal_selector_name, select, false));
+        side_block->property_add(Ioss::Property(s_internal_selector_name, static_cast<void*>(select)));
         side_block->property_add(Ioss::Property(base_stk_part_name, getPartName(part)));
 
         // Add the attribute fields.
@@ -2012,7 +2012,7 @@ namespace stk {
 
         delete_selector_property(eb);
         mesh::Selector *select = new mesh::Selector(selector);
-        eb->property_add(Ioss::Property(s_internal_selector_name, select, false));
+        eb->property_add(Ioss::Property(s_internal_selector_name, static_cast<void*>(select)));
         eb->property_add(Ioss::Property(base_stk_part_name, getPartName(part)));
 
         // Add the attribute fields.
@@ -2063,7 +2063,7 @@ namespace stk {
 
           delete_selector_property(io_cs);
           mesh::Selector *select = new mesh::Selector(selector);
-          io_cs->property_add(Ioss::Property(s_internal_selector_name, select, false));
+          io_cs->property_add(Ioss::Property(s_internal_selector_name, static_cast<void*>(select)));
 
           // Update global node and element count...
           std::vector<size_t> entityCounts;

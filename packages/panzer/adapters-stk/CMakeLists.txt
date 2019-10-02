@@ -8,6 +8,14 @@ ELSE()
    GLOBAL_SET(PANZER_HAVE_IOSS OFF)
 ENDIF()
 
+# Optional Percept dependency
+##########################
+IF(${PACKAGE_NAME}_ENABLE_Percept)
+   GLOBAL_SET(PANZER_HAVE_PERCEPT ON)
+ELSE()
+   GLOBAL_SET(PANZER_HAVE_PERCEPT OFF)
+ENDIF()
+
 # Optional Teko dependency
 ##########################
 IF(${PACKAGE_NAME}_ENABLE_Teko)

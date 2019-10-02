@@ -265,8 +265,10 @@ GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_TEKO ${${PACKAGE_NAME}_ENABLE_Teko})
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - Enabling/disabling of scalar/ordinal types is controlled by Tpetra
 
-IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG OFF)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG OFF)
 
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # <double, int, int>
   # Examples and tests need at least this one, also if Epetra is enabled
   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
@@ -343,10 +345,16 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "<complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
 
   # GO preference: int > long long > long
-  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG
-    (NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT} AND NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONG_LONG}))
-  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT})
-
+  IF(NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT})
+    # No GO=int (first choice for default)
+    IF(NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT})
+      #No GO=long long (second choice), must use long
+      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG ON)
+    ELSE()
+      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG ON)
+    ENDIF()
+  ENDIF()
+    
   # If Tpetra is enabled, determine which Nodes are used
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ${Tpetra_INST_SERIAL})
@@ -373,15 +381,7 @@ ELSE()
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ON)
   ENDIF()
 
-  # With ETI off, can just use int as the default GO
-  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG OFF)
-  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG OFF)
-ENDIF()
-
-IF(${${PACKAGE_NAME}_ENABLE_DEFAULT_GO_LONGLONG})
-  MESSAGE(STATUS "Using long long as the default GlobalOrdinal in MueLu.")
-ELSE()
-  MESSAGE(STATUS "Using int as the default GlobalOrdinal in MueLu.")
+  # With ETI off, free to leave int as the default GO
 ENDIF()
 
 # HAVE_MUELU_COMPLEX=ON iff:

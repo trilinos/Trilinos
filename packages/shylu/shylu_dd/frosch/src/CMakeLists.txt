@@ -61,12 +61,16 @@ APPEND_SET(HEADERS
   Adapters/Thyra_FROSchLinearOp_def.hpp
   CoarseSpaces/FROSch_CoarseSpace_decl.hpp
   CoarseSpaces/FROSch_CoarseSpace_def.hpp
+  CoarseSpaces/FROSch_ConstantPartitionOfUnity_decl.hpp
+  CoarseSpaces/FROSch_ConstantPartitionOfUnity_def.hpp
   CoarseSpaces/FROSch_GDSWInterfacePartitionOfUnity_decl.hpp
   CoarseSpaces/FROSch_GDSWInterfacePartitionOfUnity_def.hpp
   CoarseSpaces/FROSch_InterfacePartitionOfUnity_decl.hpp
   CoarseSpaces/FROSch_InterfacePartitionOfUnity_def.hpp
   CoarseSpaces/FROSch_LocalPartitionOfUnityBasis_decl.hpp
   CoarseSpaces/FROSch_LocalPartitionOfUnityBasis_def.hpp
+  CoarseSpaces/FROSch_PartitionOfUnity_decl.hpp
+  CoarseSpaces/FROSch_PartitionOfUnity_def.hpp
   CoarseSpaces/FROSch_RGDSWInterfacePartitionOfUnity_decl.hpp
   CoarseSpaces/FROSch_RGDSWInterfacePartitionOfUnity_def.hpp
   InterfaceSets/FROSch_DDInterface_decl.hpp

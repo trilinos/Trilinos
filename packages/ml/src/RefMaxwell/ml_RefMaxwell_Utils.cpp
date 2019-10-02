@@ -423,9 +423,10 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   ML_Operator* A_ML = ML_Operator_Create(ml_comm);
   ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&A),A_ML);
 
- /* Pull Teuchos Options */
+  /* Pull Teuchos Options */
   std::string CoarsenType  = List.get("aggregation: type", "Uncoupled");
-  double Threshold    = List.get("aggregation: threshold", 0.0);
+  double Threshold         = List.get("aggregation: threshold", 0.0);
+  double RowSum_Threshold  = List.get("aggregation: rowsum threshold", -1.0);
   int    NodesPerAggr = List.get("aggregation: nodes per aggregate",
                                   ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
   bool UseAux         = List.get("aggregation: aux: enable",false);
@@ -437,6 +438,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   ML_Aggregate_Set_MaxLevels(MLAggr, 2);
   ML_Aggregate_Set_StartLevel(MLAggr, 0);
   ML_Aggregate_Set_Threshold(MLAggr, Threshold);
+  ML_Aggregate_Set_RowSum_Threshold(MLAggr, RowSum_Threshold);
   ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
   MLAggr->cur_level = 0;
   ML_Aggregate_Set_Reuse(MLAggr);

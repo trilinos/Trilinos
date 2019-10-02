@@ -114,6 +114,18 @@ namespace MueLu {
                          Aggregates_kokkos& aggregates,
                          Kokkos::View<unsigned*, memory_space>& aggStat,
                          LO& numNonAggregatedNodes) const;
+
+    void BuildAggregatesRandom(const Teuchos::ParameterList& params,
+                               const LWGraph_kokkos& graph,
+                               Aggregates_kokkos& aggregates,
+                               Kokkos::View<unsigned*, memory_space>& aggStat,
+                               LO& numNonAggregatedNodes) const;
+
+    void BuildAggregatesDeterministic(const Teuchos::ParameterList& params,
+                                      const LWGraph_kokkos& graph,
+                                      Aggregates_kokkos& aggregates,
+                                      Kokkos::View<unsigned*, memory_space>& aggStat,
+                                      LO& numNonAggregatedNodes) const;
     //@}
 
     std::string description() const { return "Phase 2a (secondary)"; }

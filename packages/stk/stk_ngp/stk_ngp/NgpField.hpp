@@ -118,6 +118,10 @@ public:
 
     void clear_sync_state() { }
 
+    void swap(ConstStkFieldAdapter<T> &sf) { }
+
+    void swap(StkFieldAdapter<T> &sf) { }
+
     stk::mesh::EntityRank get_rank() const { return field->entity_rank(); }
 
     unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
@@ -192,6 +196,10 @@ public:
 
     void sync_to_device() { }
 
+    void swap(ConstStkFieldAdapter<T> &sf) { }
+
+    void swap(StkFieldAdapter<T> &sf) { }
+
 #ifdef STK_HIDE_DEPRECATED_CODE
 private:
 #endif
@@ -204,10 +212,6 @@ private:
     void copy_device_to_host(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { };
 private:
 #endif
-
-    void swap_data(ConstStkFieldAdapter<T> &sf) { }
-
-    void swap_data(StkFieldAdapter<T> &sf) { }
 
     bool need_sync_to_host() const { return false; }
 
@@ -379,6 +383,14 @@ public:
 
     const stk::mesh::BulkData& get_bulk() const { return *hostBulk; }
 
+    STK_FUNCTION
+    void swap(StaticField<T> &sf)
+    {
+      swap_views(hostData,   sf.hostData);
+      swap_views(deviceData, sf.deviceData);
+      swap_views(fieldData,  sf.fieldData);
+    }
+
 #ifdef STK_HIDE_DEPRECATED_CODE
 private:
 #endif
@@ -427,14 +439,6 @@ private:
       ViewType tmpView = view2;
       view2 = view1;
       view1 = tmpView;
-    }
-
-    STK_FUNCTION
-    void swap_data(StaticField<T> &sf)
-    {
-      swap_views(hostData,   sf.hostData);
-      swap_views(deviceData, sf.deviceData);
-      swap_views(fieldData,  sf.fieldData);
     }
 
     template <typename ViewType>
@@ -573,6 +577,19 @@ public:
         }
     }
 
+    STK_FUNCTION
+    void swap(ConstStaticField<T> &sf)
+    {
+        swap(sf.staticField);
+    }
+
+    STK_FUNCTION
+    void swap(StaticField<T> &sf)
+    {
+        staticField.swap(sf);
+        constDeviceData = staticField.deviceData;
+    }
+
 #ifdef STK_HIDE_DEPRECATED_CODE
 private:
 #endif
@@ -607,19 +624,6 @@ private:
     void clear_sync_state()
     {
         staticField.clear_sync_state();
-    }
-
-    STK_FUNCTION
-    void swap_data(ConstStaticField<T> &sf)
-    {
-        swap_data(sf.staticField);
-    }
-
-    STK_FUNCTION
-    void swap_data(StaticField<T> &sf)
-    {
-        staticField.swap_data(sf);
-        constDeviceData = staticField.deviceData;
     }
 
 #ifdef KOKKOS_ENABLE_CUDA

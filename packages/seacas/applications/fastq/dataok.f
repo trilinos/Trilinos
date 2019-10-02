@@ -54,7 +54,7 @@ C
      &   LINKL, LINKS, SIZE, ERRCHK, ERR)
 C***********************************************************************
 C
-C  SUBROUTINE FILLOK = CHECKS TO MAKE SURE NONEXISTANT DATA IS NOT
+C  SUBROUTINE FILLOK = CHECKS TO MAKE SURE NONEXISTENT DATA IS NOT
 C                      BEING REFERENCED IN THE REGION DEFINITIONS
 C
 C***********************************************************************
@@ -138,7 +138,7 @@ C
                   ENDIF
                END IF
 C
-C  CHECK TO INSURE AN INTERAL ASSIGNMENT
+C  CHECK TO INSURE AN INTEGRAL ASSIGNMENT
 C
                IF (IABS (KNINT (LL)) .EQ. 0) THEN
                   IF (I3 .LT. 0)J3 = -J3

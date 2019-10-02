@@ -107,6 +107,8 @@ namespace FROSch {
 
         virtual int computeOverlappingOperator();
 
+        virtual int updateLocalOverlappingMatrices() = 0;
+        
         ConstXMatrixPtr OverlappingMatrix_;
 
         ConstXMapPtr OverlappingMap_;

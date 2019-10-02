@@ -31,25 +31,59 @@ using Teuchos::ArrayRCP;
 
 
 // ============================================================================
-int* FindLocalDiricheltAndInflowRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix, int &numBCRows){
-  int *dirichletRows = new int[Matrix.NumMyRows()];
-  numBCRows = 0;
-  for (int i=0; i<Matrix.NumMyRows(); i++) {
+void FindLocalDirichletLikeRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix, const double rowsum_threshold,
+                                                Teuchos::ArrayRCP<int> &dirichletRows11_rcp, Teuchos::ArrayRCP<int> & dirichletRows22_rcp) {
+  int numBCRows11 = 0, numBCRows22 = 0;  
+  Teuchos::ArrayView<int> dirichletRows11 = dirichletRows11_rcp();
+  Teuchos::ArrayView<int> dirichletRows22 = dirichletRows22_rcp();
+
+  enum {IS_NORMAL=0,IS_DIRICHLET,IS_ROWSUM,IS_WEAK_ROWSUM};
+
+  // NOTE: Ignores connections across ranks
+  int Nrows = Matrix.NumMyRows();
+  Teuchos::Array<int> flaggedRows(Nrows,IS_NORMAL);
+
+  for (int i=0; i<Nrows; i++) {
     int numEntries, *cols;
     double *vals;
+    double rowsum = 0.0;
+    double diag_value = 0.0;
+    int GRID = Matrix.GRID(i);
     int ierr = Matrix.ExtractMyRowView(i,numEntries,vals,cols);
     if (ierr == 0) {
       int nz=0;
-      for (int j=0; j<numEntries; j++) if (vals[j] != 0.0) nz++;
-      if (nz == 1) dirichletRows[numBCRows++] = i;
+      for (int j=0; j<numEntries; j++) {
+        rowsum+=vals[j];
+        if (GRID == Matrix.GCID(cols[j])) diag_value = vals[j];
+        if (vals[j] != 0.0) nz++;
+      }
+      if (nz == 1) {
+        dirichletRows11[numBCRows11++] = i;
+        dirichletRows22[numBCRows22++] = i;
+        flaggedRows[i] = IS_DIRICHLET;
+        continue;
+      }
 
       // EXPERIMENTAL: Treat Special Inflow Boundaries as Dirichlet Boundaries
-      if(nz==2) dirichletRows[numBCRows++] = i;
+      if (nz==2) {
+        dirichletRows11[numBCRows11++] = i;
+        dirichletRows22[numBCRows22++] = i;
+        flaggedRows[i] = IS_DIRICHLET;
+        continue;
+      }
+      
+      // EXPERIMENTAL: Flag all rows meeting the rowsum critera as Dirichlet for (1,1) block only
+      if (rowsum_threshold > 0.0 && fabs(rowsum) > fabs(diag_value)*rowsum_threshold) {
+        dirichletRows11[numBCRows11++] = i;
+        flaggedRows[i] = IS_ROWSUM;
+      }
 
     }/*end if*/
-  }/*end fpr*/
-  return dirichletRows;
-}/*end FindLocalDiricheltRowsFromOnesAndZeros*/
+  }/*end for*/
+
+  dirichletRows11_rcp.resize(numBCRows11);
+  dirichletRows22_rcp.resize(numBCRows22);
+}/*end FindLocalDirichletLikeRowsFromOnesAndZeros*/
 
 
 // ================================================ ====== ==== ==== == =
@@ -67,7 +101,7 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
   Ms_Matrix_(&Ms_Matrix),
 #endif
   M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_((Epetra_CrsMatrix*)&M1_Matrix),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
-  BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),
+  HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),
 #ifdef HAVE_ML_IFPACK
   IfSmoother(0),
 #endif
@@ -104,7 +138,7 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
 							      const Teuchos::ParameterList& List,
 							      const bool ComputePrec):
   ML_Preconditioner(),SM_Matrix_(&SM_Matrix),D0_Matrix_(0),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
-  BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),
+  HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),
 #ifdef HAVE_ML_IFPACK
   IfSmoother(0),
 #endif
@@ -204,7 +238,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
   else very_verbose_=verbose_=false;
   aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",true);
   bool disable_addon = List_.get("refmaxwell: disable addon",true);
-
+  double rowsum_threshold = List_.get("refmaxwell: rowsum threshold",-1.0);
 
   /* Nuke everything if we've done this already */
   if(IsComputePreconditionerOK_) DestroyPreconditioner();
@@ -218,31 +252,46 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
   }
 
   /* Find the Dirichlet Rows (using SM_Matrix_) and columns (using D0_Clean_Matrix_) */
-  BCrows=FindLocalDiricheltAndInflowRowsFromOnesAndZeros(*SM_Matrix_,numBCrows);
-  Epetra_IntVector * BCnodes=FindLocalDirichletColumnsFromRows(BCrows,numBCrows,*D0_Clean_Matrix_);
-  int Nn=BCnodes->MyLength();
-  int numBCnodes=0;
-  for(int i=0;i<Nn;i++){
-    if((*BCnodes)[i]) numBCnodes++;
+  dirichletEdges11.resize(SM_Matrix_->NumMyRows()); dirichletEdges22.resize(SM_Matrix_->NumMyRows());
+  FindLocalDirichletLikeRowsFromOnesAndZeros(*SM_Matrix_, rowsum_threshold, dirichletEdges11, dirichletEdges22);
+
+  Epetra_IntVector * BCnodes11=FindLocalDirichletColumnsFromRows(dirichletEdges11.get(),dirichletEdges11.size(),*D0_Clean_Matrix_);
+  int numBCnodes11=0;
+  for(int i=0;i<BCnodes11->MyLength();i++){
+    if((*BCnodes11)[i]) numBCnodes11++;
+  }
+  Teuchos::Array<int> dirichletNodes11(numBCnodes11);
+  int currNode=0;
+  for(int i=0;i<BCnodes11->MyLength();i++){
+    if((*BCnodes11)[i]) dirichletNodes11[currNode++] = i;
   }
 
-  if (print_hierarchy) {
-  std::ofstream outBCrows("BCrows.dat");
-  for(int i=0;i<numBCrows;i++)
-    outBCrows<<BCrows[i]<<"\n";
-  outBCrows.close();
-
-  std::ofstream outBCnodes("BCnodes.dat");
-  for(int i=0;i<Nn;i++ )
-    if ((*BCnodes)[i])
-      outBCnodes<<i<<"\n";
-  outBCnodes.close();
+  Epetra_IntVector * BCnodes22=FindLocalDirichletColumnsFromRows(dirichletEdges22.get(),dirichletEdges22.size(),*D0_Clean_Matrix_);
+  int numBCnodes22=0;
+  for(int i=0;i<BCnodes22->MyLength();i++){
+    if((*BCnodes22)[i]) numBCnodes22++;
   }
-
+  
+  if (print_hierarchy == -1) {
+    std::ofstream outBCnodes11("BCnodes11.dat");
+    for(int i=0;i<BCnodes11->MyLength();i++) {
+      if ((*BCnodes11)[i])
+        outBCnodes11<<i<<"\n";
+    }
+    outBCnodes11.close();
+    std::ofstream outBCnodes22("BCnodes22.dat");
+    for(int i=0;i<BCnodes22->MyLength();i++){
+      if ((*BCnodes22)[i])
+        outBCnodes22<<i<<"\n";
+    }
+    outBCnodes22.close();
+  }
+      
   /* Sanity Check: We have at least some Dirichlet nodes */
-  int HasInterior = numBCnodes != Nn;
+  int Nn = BCnodes22->MyLength();
+  int HasInterior = numBCnodes22 != Nn;
   if(very_verbose_ && !Comm_->MyPID()) {
-    printf("[%d] HasInterior = %d %d/%d\n",Comm_->MyPID(),HasInterior,Nn-numBCnodes,Nn);
+    printf("[%d] HasInterior = %d %d/%d\n",Comm_->MyPID(),HasInterior,Nn-numBCnodes22,Nn);
     printf("Edge Matrix: Unknowns = %d Nonzeros = %d\n",SM_Matrix_->NumGlobalRows(),SM_Matrix_->NumGlobalNonzeros());
   }
   int globalInterior=HasInterior;
@@ -252,10 +301,10 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
     if(!Comm_->MyPID()) printf("WARNING: All nodes are Dirichlet nodes.\n");
   }/*end if*/
 
-  /* Do the Nuking for D0_Matrix_ */
+  /* Do the Nuking for D0_Matrix_ [for (2,2)]*/
   D0_Matrix_ = new Epetra_CrsMatrix(*D0_Clean_Matrix_);
-  Apply_BCsToMatrixRows(BCrows,numBCrows,*D0_Matrix_);
-  Apply_BCsToMatrixColumns(*BCnodes,*D0_Matrix_);
+  Apply_BCsToMatrixRows(dirichletEdges22.get(),dirichletEdges22.size(),*D0_Matrix_);
+  Apply_BCsToMatrixColumns(*BCnodes22,*D0_Matrix_);
   D0_Matrix_->OptimizeStorage();
 
   /* EXPERIMENTAL - Lump M1, if requested */
@@ -285,6 +334,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
     Remove_Zeroed_Rows(*TMT_Matrix_,1e-10);
   }/*end if */
 
+
   /* Build the TMT-Agg Matrix */
   if(aggregate_with_sigma) {
 #ifdef ENABLE_MS_MATRIX
@@ -298,6 +348,9 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
     Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: Aggregating with M1\n");
   }
+  // Nuke Dirichlet / Rowsum rows of TMT_Agg_Matrix
+  Apply_BCsToMatrixRows(dirichletNodes11.data(),dirichletNodes11.size(),*TMT_Agg_Matrix_);
+
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
 
 #ifdef ML_TIMING
@@ -307,9 +360,9 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
   /* Boundary nuke the edge matrices */
   if(!disable_addon) {
 #ifdef ENABLE_MS_MATRIX
-    Apply_OAZToMatrix(BCrows,numBCrows,*Ms_Matrix_);
+    Apply_OAZToMatrix(dirichletEdges22.get(),dirichletEdges22.size(),*Ms_Matrix_);
 #endif
-    Apply_OAZToMatrix(BCrows,numBCrows,*M1_Matrix_);
+    Apply_OAZToMatrix(dirichletEdges22.get(),dirichletEdges22.size(),*M1_Matrix_);
   }
 
   /* DEBUG: Output matrices */
@@ -329,7 +382,8 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
   }
 
   /* Cleanup from the Boundary Conditions */
-  delete BCnodes;
+  delete BCnodes11;
+  delete BCnodes22;
 
 #ifdef HAVE_ML_EPETRAEXT
   /* Fix the solver maps for ML / Epetra compatibility */
@@ -369,9 +423,6 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
   StopTimer(&t_time_curr,&(t_diff[4]));
 #endif
 
-  // BC edges
-  ArrayRCP<int> BCedges_arcp(BCrows,0,numBCrows,false);
-
   /* Build the (1,1) Block Preconditioner */
   std::string solver11=List_.get("refmaxwell: 11solver","edge matrix free");
   Teuchos::ParameterList List11=List_.get("refmaxwell: 11list",dummy);
@@ -379,7 +430,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
   if(solver11=="edge matrix free") {
     if(verbose_ && !Comm_->MyPID()) printf("Using EMFP for edge coarse problem\n");
     //    EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Agg_Matrix_,BCrows,numBCrows,List11,true);
-    EdgePC=new EdgeMatrixFreePreconditioner(Operator11_,rcp(Diagonal_,false),rcp(D0_Matrix_,false),rcp(D0_Clean_Matrix_,false),rcp(TMT_Agg_Matrix_,false),BCedges_arcp,List11,true);
+    EdgePC=new EdgeMatrixFreePreconditioner(Operator11_,rcp(Diagonal_,false),rcp(D0_Matrix_,false),rcp(D0_Clean_Matrix_,false),rcp(TMT_Agg_Matrix_,false),dirichletEdges11,List11,true);
   }
   else if(solver11=="sa") {
     // If we're doing SA on the edge problem, we need to not smooth on level 0 and set the nullspace
@@ -396,7 +447,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
     }
     else {
       // Build the nullspace from the coordinates
-      Epetra_MultiVector *epetra_nullspace = Build_Edge_Nullspace(*D0_Clean_Matrix_,BCedges_arcp,List11,verbose_);
+      Epetra_MultiVector *epetra_nullspace = Build_Edge_Nullspace(*D0_Clean_Matrix_,dirichletEdges11,List11,verbose_);
       int nlocal = epetra_nullspace->MyLength();
       int dim    = epetra_nullspace->NumVectors();
       List11.set("null space: type","pre-computed");
@@ -514,7 +565,6 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   if(TMT_Matrix_) {delete TMT_Matrix_; TMT_Matrix_=0;}
   if(TMT_Agg_Matrix_) {delete TMT_Agg_Matrix_; TMT_Agg_Matrix_=0;}
   if(!disable_addon && lump_m1) {delete M1_Matrix_; M1_Matrix_=0;}
-  if(BCrows) {delete [] BCrows; BCrows=0;numBCrows=0;}
   ML_Set_PrintLevel(output_level);
   if(PreEdgeSmoother)  {delete PreEdgeSmoother; PreEdgeSmoother=0;}
   if(PostEdgeSmoother)  {delete PostEdgeSmoother; PostEdgeSmoother=0;}

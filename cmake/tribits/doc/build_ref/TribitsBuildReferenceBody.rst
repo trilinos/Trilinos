@@ -1923,10 +1923,35 @@ configure time by setting::
 
   -D <fullTestName>_DISABLE=ON
 
-where ``<fulltestName>`` must exactly match the test listed out by ``ctest
--N``.  Of course specific tests can also be excluded from ``ctest`` using the
-``-E`` argument.  This will result in the printing of a line for the excluded
-test when `Trace test addition or exclusion`_ is enabled.
+where ``<fullTestName>`` must exactly match the test listed out by ``ctest
+-N``.  This will result in the printing of a line for the excluded test when
+`Trace test addition or exclusion`_ is enabled and the test wil not be added
+with ``add_test()`` and therefore CTest (and CDash) will never see the
+disabled test.
+
+Another approach to disable a test is the set the ctest property ``DISABLED``
+and print and a message at configure time by setting::
+
+  -D <fullTestName>_SET_DISABLED_AND_MSG="<messageWhyDisabled>"
+
+In this case, the test will still be added with ``add_test()`` and seen by
+CTest, but CTest will not run the test locally but will mark it as "Not Run"
+(and post to CDash as "Not Run" tests with test details "Not Run (Disabled)"
+in processes where tests get posted to CDash).  Also, ``<messageWhyDisabled>``
+will get printed to STDOUT when CMake is run to configure the project and
+``-D<Project>_TRACE_ADD_TEST=ON`` is set.
+
+Also, note that if a test is currently disabled using the ``DISABLED`` option
+in the CMakeLists.txt file, then that ``DISABLE`` property can be removed by
+configuring with::
+
+  -D <fullTestName>_SET_DISABLED_AND_MSG=FALSE
+
+(or any value that CMake evaluates to FALSE like "FALSE", "false", "NO", "no",
+"", etc.).
+
+Also note that other specific defined tests can also be excluded using the
+``ctest -E`` argument.
 
 
 Disabling specific test executable builds
@@ -1941,8 +1966,8 @@ where ``<exeTargetName>`` is the name of the target in the build system.
 
 Note that one should also disable any ctest tests that might use this
 executable as well with ``-D<fullTestName>_DISABLE=ON`` (see above).  This
-will result in the printing of a line for the executable target being
-disabled.
+will result in the printing of a line for the executable target being disabled
+at configure time to CMake STDOUT.
 
 
 Trace test addition or exclusion

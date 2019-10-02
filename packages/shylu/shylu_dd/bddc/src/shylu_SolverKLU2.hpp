@@ -48,13 +48,10 @@
 #include <math.h>
 #include <string.h>
 
+//This includes all required klu2 headers,
+//in namespace ::KLU2
+#include "Amesos2_KLU2.hpp"
 #include "shylu_SolverBaseBDDC.hpp"
-#include "klu2_defaults.hpp"
-#include "klu2_analyze.hpp"
-#include "klu2_factor.hpp"
-#include "klu2_solve.hpp"
-#include "klu2_free_symbolic.hpp"
-#include "klu2_free_numeric.hpp"
 
 namespace bddc {
   
@@ -74,8 +71,8 @@ namespace bddc {
 
   ~SolverKLU2() 
   {
-    klu_free_symbolic<SX, int> (&m_Symbolic, &m_Common);
-    klu_free_numeric<SX, int> (&m_Numeric, &m_Common);
+    ::KLU2::klu_free_symbolic<SX, int> (&m_Symbolic, &m_Common);
+    ::KLU2::klu_free_numeric<SX, int> (&m_Numeric, &m_Common);
   }
 
   int Initialize()
@@ -85,9 +82,9 @@ namespace bddc {
     int* rowBegin = this->m_rowBegin;
     int* columns = this->m_columns;
     SX* values = this->m_values;
-    klu_defaults<SX, int> (&m_Common);
-    m_Symbolic = klu_analyze<SX, int> (numRows, rowBegin, columns, &m_Common);
-    m_Numeric = klu_factor<SX, int> (rowBegin, columns, values, m_Symbolic, 
+    ::KLU2::klu_defaults<SX, int> (&m_Common);
+    m_Symbolic = ::KLU2::klu_analyze<SX, int> (numRows, rowBegin, columns, &m_Common);
+    m_Numeric = ::KLU2::klu_factor<SX, int> (rowBegin, columns, values, m_Symbolic, 
 				     &m_Common);
     return 0;
   }
@@ -104,7 +101,7 @@ namespace bddc {
     int numRows = this->m_numRows;
     if (numRows == 0) return;
     memcpy(Sol, Rhs, numRows*NRHS*sizeof(SX));
-    klu_solve<SX, int> (m_Symbolic, m_Numeric, numRows, NRHS, Sol, &m_Common);
+    ::KLU2::klu_solve<SX, int> (m_Symbolic, m_Numeric, numRows, NRHS, Sol, &m_Common);
   }
   
   bool MyExactSolver() 
@@ -113,9 +110,9 @@ namespace bddc {
   }
   
   private:
-  klu_symbolic<SX, int> *m_Symbolic;
-  klu_numeric<SX, int> *m_Numeric;
-  klu_common<SX, int> m_Common;
+  ::KLU2::klu_symbolic<SX, int> *m_Symbolic;
+  ::KLU2::klu_numeric<SX, int> *m_Numeric;
+  ::KLU2::klu_common<SX, int> m_Common;
 
   };
   

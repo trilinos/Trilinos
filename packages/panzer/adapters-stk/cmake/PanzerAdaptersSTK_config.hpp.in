@@ -9,6 +9,7 @@
 
 #cmakedefine PANZER_STK_DEBUG
 #cmakedefine PANZER_HAVE_IOSS
+#cmakedefine PANZER_HAVE_PERCEPT
 #cmakedefine PANZER_HAVE_TEKO
 #cmakedefine PANZER_HAVE_MUELU
 #cmakedefine PANZER_HAVE_IFPACK2

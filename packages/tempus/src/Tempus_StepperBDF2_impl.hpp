@@ -101,20 +101,17 @@ template<class Scalar>
 void StepperBDF2<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (this->stepperObserver_ == Teuchos::null) {
-      stepperBDF2Observer_ =
-        Teuchos::rcp(new StepperBDF2Observer<Scalar>());
-      this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperBDF2Observer_,true);
-     }
-  } else {
-    this->stepperObserver_ = obs;
-    stepperBDF2Observer_ =
-      Teuchos::rcp_dynamic_cast<StepperBDF2Observer<Scalar> >(this->stepperObserver_,true);
-  }
+
+  if (this->stepperObserver_ == Teuchos::null)
+    this->stepperObserver_  =
+      Teuchos::rcp(new StepperObserverComposite<Scalar>());
+
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
+    obs = Teuchos::rcp(new StepperBDF2Observer<Scalar>());
+
+  this->stepperObserver_->addObserver(
+      Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> > (obs, true) );
+
 }
 
 
@@ -184,7 +181,7 @@ void StepperBDF2<Scalar>::takeStep(
     //IKT, FIXME: add error checking regarding states being consecutive and
     //whether interpolated states are OK to use.
 
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    //this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
@@ -208,9 +205,11 @@ void StepperBDF2<Scalar>::takeStep(
     const Scalar alpha = getAlpha(dt, dtOld);
     const Scalar beta  = getBeta (dt);
 
-    Teuchos::RCP<ImplicitODEParameters<Scalar> > p =
-      Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
-                                                     SOLVE_FOR_X));
+    auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+      timeDer, dt, alpha, beta));
+
+    if (!Teuchos::is_null(stepperBDF2Observer_))
+      stepperBDF2Observer_->observeBeforeSolve(solutionHistory, *this);
 
     const Thyra::SolveStatus<Scalar> sStatus =
       this->solveImplicitODE(x, xDot, time, p);
@@ -223,7 +222,7 @@ void StepperBDF2<Scalar>::takeStep(
 
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(getOrder());
-    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    //this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

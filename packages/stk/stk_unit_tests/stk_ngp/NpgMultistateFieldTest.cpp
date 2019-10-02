@@ -37,6 +37,17 @@ namespace {
 
 class StatedFields : public stk::unit_test_util::MeshFixture
 {
+public:
+    template <typename Field>
+    void test_field_has_value_on_device(const stk::mesh::BulkData& bulk, Field ngpField, double expectedValue)
+    {
+        ngp::Mesh ngpMesh(bulk);
+        ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(), KOKKOS_LAMBDA(ngp::Mesh::MeshIndex entity)
+        {
+            NGP_ThrowRequire(expectedValue == ngpField.get(entity, 0));
+        });
+    }
+
 protected:
     ngp::ConvenientMultistateField<double> create_field_with_num_states(unsigned numStates)
     {
@@ -84,6 +95,7 @@ protected:
         for(stk::mesh::Entity elem : elems)
             EXPECT_EQ(expectedValue, *static_cast<double*>(stk::mesh::field_data(*fieldOfState, elem)));
     }
+
     stk::mesh::Field<double> * stkField;
 
 private:
@@ -157,6 +169,26 @@ TEST_F(StatedFields, incrementingState_fieldsShiftDown)
         ngp::ConstField<double> constNgpField = ngpStatedField.get_field_old_state(static_cast<stk::mesh::FieldState>(stateCount));
         test_field_has_value(constNgpField, stateCount, stateCount-1);
     }
+}
+TEST_F(StatedFields, field_swap)
+{
+    ngp::MultistateField<double> ngpStatedField = create_field_with_num_states(2);
+    verify_can_assign_values_per_state(ngpStatedField);
+
+    stk::mesh::FieldBase* stkField = get_meta().get_field(stk::topology::ELEM_RANK, "myField");
+
+    ngp::Field<double> ngpFieldNew(get_bulk(), *(stkField->field_state(stk::mesh::StateNew)));
+    ngp::Field<double> ngpFieldOld(get_bulk(), *(stkField->field_state(stk::mesh::StateOld)));
+    EXPECT_TRUE(ngpFieldNew.get_ordinal() != ngpFieldOld.get_ordinal());
+
+    test_field_has_value_on_device(get_bulk(), ngpFieldNew, 0);
+    test_field_has_value_on_device(get_bulk(), ngpFieldOld, 1);
+
+    get_bulk().update_field_data_states();
+    ngpFieldNew.swap(ngpFieldOld);
+
+    test_field_has_value_on_device(get_bulk(), ngpFieldNew, 1);
+    test_field_has_value_on_device(get_bulk(), ngpFieldOld, 0);
 }
 TEST_F(StatedFields, gettingFieldData_direct)
 {

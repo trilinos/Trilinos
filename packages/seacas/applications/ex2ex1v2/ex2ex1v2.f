@@ -432,7 +432,7 @@ C Convert sides to nodes
 
         isoff = 0               ! offset into element list for current side set
         nodcnt = 0              ! node count for current side set
-        do 104 i=0,numess-1     ! loop thru ss elem blks
+        do 104 i=0,numess-1     ! loop through ss elem blks
 
           ia(kixnss+i)=nodcnt+1                         ! update index array
 

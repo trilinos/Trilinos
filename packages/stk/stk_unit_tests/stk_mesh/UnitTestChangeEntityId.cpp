@@ -34,9 +34,9 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
 #include <vector>                       // for vector, operator==
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
+
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -46,6 +46,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
 #include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 namespace stk { namespace mesh { class Part; } }
 

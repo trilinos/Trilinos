@@ -61,6 +61,10 @@ public:
     {
         return graphEdges.size();
     }
+    size_t capacity() const
+    {
+        return graphEdges.capacity();
+    }
     void reserve(size_t size)
     {
         graphEdges.reserve(size);
@@ -106,6 +110,19 @@ public:
     void delete_vertex(stk::mesh::impl::LocalId id)
     {
         m_graphEdges.erase(m_graphEdges.begin()+id);
+    }
+
+    size_t heap_memory_in_bytes() const
+    {
+        int allocOverhead = 16;//may not always be 16, but this seems to be common...
+        size_t bytes = 0;
+        for(const GraphEdgesForElement& graphEdgesForElement : m_graphEdges) {
+            bytes += sizeof(GraphEdgesForElement)
+                     + sizeof(GraphEdge)*graphEdgesForElement.capacity()
+                     + allocOverhead;
+        }
+        bytes += (m_graphEdges.capacity()-m_graphEdges.size())*sizeof(GraphEdgesForElement);
+        return bytes;
     }
 
 private:

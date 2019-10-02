@@ -59,7 +59,7 @@ C
       LASTER = SUCESS
 C
 C     The basic strategy is to look for an array in the dictionary
-C     which is immediately preceeded by a void.  If found, a shift
+C     which is immediately preceded by a void.  If found, a shift
 C     is performed, and the void table is updated.
 C
       IVOID = 0

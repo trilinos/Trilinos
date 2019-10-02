@@ -59,7 +59,7 @@ int main(int /* argc */, char *argv[])
 
   int err_count = test_all_elements();
 
-  // Make sure Ioss::NullEntity works.  Not used in IOSS iteself,
+  // Make sure Ioss::NullEntity works.  Not used in IOSS itself,
   // but some clients use it, so need to make sure it compiles
   // correctly.
   std::unique_ptr<Ioss::NullEntity> entity{new Ioss::NullEntity()};

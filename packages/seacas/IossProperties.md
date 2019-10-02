@@ -21,7 +21,7 @@ DECOMPOSITION\_METHOD | {method} | Decompose all input DB using `method`
 PARALLEL\_CONSISTENCY | \[on]/off | On if the client will call Ioss functions consistently on all processors. If off, then the auto-decomp and auto-join cannot be used.
 RETAIN\_FREE\_NODES | \[on]/off | In auto-decomp, will nodes not connected to any elements be retained.
 LOAD\_BALANCE\_THRESHOLD | {real} \[1.4] | CGNS-Structured only -- Load imbalance permitted Load on Proc / Avg Load
-LINE\_DECOMPOSITION | string | a list of comma-separated BC names. Zone with this bc will not be decomposed perpindicular to this surface. If name is `__ordinal_{ijk}` then use {ijk} as ordinal not to decompose.
+LINE\_DECOMPOSITION | string | a list of comma-separated BC names. Zone with this bc will not be decomposed perpendicular to this surface. If name is `__ordinal_{ijk}` then use {ijk} as ordinal not to decompose.
 
 ### Valid values for Decomposition Method
 

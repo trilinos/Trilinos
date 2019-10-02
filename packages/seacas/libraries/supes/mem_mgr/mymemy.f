@@ -40,7 +40,7 @@ C     FORTRAN EXTENSION LIBRARY - ANSI FORTRAN - USER INTERFACE ROUTINE
 C
 C     DESCRIPTION:
 C     This routine requests the operating system to allocate or release
-C     numeric storage. A postive MEMREQ indicates a request for memory,
+C     numeric storage. A positive MEMREQ indicates a request for memory,
 C     while a negative MEMREQ indicates a release. All locations and
 C     sizes are measured in numeric storage units.
 C
