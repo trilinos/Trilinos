@@ -127,6 +127,8 @@ public:
     virtual void setSubcyclingMaxFailures(int MaxFailures);
     virtual void setSubcyclingMaxConsecFailures(int MaxConsecFailures);
     virtual void setSubcyclingScreenOutputIndexInterval(int i);
+    virtual void setSubcyclingTimeStepControlStrategy(
+      Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs);
   //@}
 
   // Temporary until 5908 branch is committed.

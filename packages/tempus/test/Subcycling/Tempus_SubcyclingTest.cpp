@@ -16,6 +16,7 @@
 
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperSubcycling.hpp"
+#include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
@@ -41,7 +42,7 @@ using Tempus::SolutionState;
 // Comment out any of the following tests to exclude from build/run.
 //#define TEST_PARAMETERLIST
 #define TEST_CONSTRUCTING_FROM_DEFAULTS
-//#define TEST_SINCOS
+#define TEST_SINCOS_ADAPT
 
 
 #ifdef TEST_PARAMETERLIST
@@ -109,7 +110,7 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
 {
   double dt = 0.4;
 
-  // Setup the SinCosModel
+  // Setup the SinCosModel ------------------------------------
   auto model = rcp(new SinCosModel<double>());
 
   // Setup Stepper for field solve ----------------------------
@@ -200,64 +201,98 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
 #endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS
+#ifdef TEST_SINCOS_ADAPT
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(Subcycling, SinCos)
+TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
 {
   RCP<Tempus::IntegratorBasic<double> > integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
   std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
   std::vector<double> StepSize;
-  std::vector<double> xErrorNorm;
-  std::vector<double> xDotErrorNorm;
-  const int nTimeStepSizes = 7;
-  double dt = 0.2;
+
+  double dt = 0.05;
+
+  // Setup the SinCosModel
+  const int nTimeStepSizes = 2;
+  std::string output_file_string = "Tempus_Subcycling_SinCos";
+  std::string output_file_name = output_file_string + ".dat";
+  std::string err_out_file_name = output_file_string + "-Error.dat";
   double time = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {
 
-    // Read params from .xml file
-    RCP<ParameterList> pList =
-      getParametersFromXmlFile("Tempus_Subcycling_SinCos.xml");
-
-    //std::ofstream ftmp("PL.txt");
-    //pList->print(ftmp);
-    //ftmp.close();
-
-    // Setup the SinCosModel
-    RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-    //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
-    auto model = rcp(new SinCosModel<double> (scm_pl));
-
     dt /= 2;
 
-    // Setup the Integrator and reset initial time step
-    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-    pl->sublist("Demo Integrator")
-       .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, model);
+    // Setup the SinCosModel ------------------------------------
+    auto model = rcp(new SinCosModel<double>());
 
-    // Initial Conditions
-    // During the Integrator construction, the initial SolutionState
-    // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->initializeSolutionHistory.
-    RCP<Thyra::VectorBase<double> > x0 =
-      model->getNominalValues().get_x()->clone_v();
-    integrator->initializeSolutionHistory(0.0, x0);
+    // Setup Stepper for field solve ----------------------------
+    auto stepper = rcp(new Tempus::StepperSubcycling<double>());
+    auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
+    auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
+    stepper->setSubcyclingStepper(stepperFE);
+
+    stepper->setSubcyclingMinTimeStep      (dt/10.0);
+    stepper->setSubcyclingInitTimeStep     (dt/10.0);
+    stepper->setSubcyclingMaxTimeStep      (dt);
+    stepper->setSubcyclingStepType         ("Variable");
+    stepper->setSubcyclingMaxFailures      (10);
+    stepper->setSubcyclingMaxConsecFailures(5);
+    stepper->setSubcyclingScreenOutputIndexInterval(1);
+
+    // Set variable strategy.
+    auto strategy = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
+    strategy->setMinEta(0.02);
+    strategy->setMaxEta(0.04);
+    stepper->setSubcyclingTimeStepControlStrategy(strategy);
+
+    stepper->initialize();
+
+    // Setup TimeStepControl ------------------------------------
+    auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
+    timeStepControl->setStepType ("Constant");
+    timeStepControl->setInitIndex(0);
+    timeStepControl->setInitTime (0.0);
+    timeStepControl->setFinalTime(1.0);
+    timeStepControl->setMinTimeStep (dt);
+    timeStepControl->setInitTimeStep(dt);
+    timeStepControl->setMaxTimeStep (dt);
+    timeStepControl->initialize();
+
+    // Setup initial condition SolutionState --------------------
+    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
+      stepper->getModel()->getNominalValues();
+    auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+    auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+    icState->setTime    (timeStepControl->getInitTime());
+    icState->setIndex   (timeStepControl->getInitIndex());
+    icState->setTimeStep(0.0);  // dt for ICs are indicated by zero.
+    icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
+
+    // Setup SolutionHistory ------------------------------------
+    auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+    solutionHistory->setName("Forward States");
+    solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
+    solutionHistory->setStorageLimit(2);
+    solutionHistory->addState(icState);
+
+    // Setup Integrator -----------------------------------------
+    integrator = Tempus::integratorBasic<double>();
+    integrator->setStepperWStepper(stepper);
+    integrator->setTimeStepControl(timeStepControl);
+    integrator->setSolutionHistory(solutionHistory);
+    integrator->setScreenOutputIndexInterval(1);
+    //integrator->setObserver(...);
+    integrator->initialize();
+
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
     TEST_ASSERT(integratorStatus)
 
-    // Test PhysicsState
-    RCP<Tempus::PhysicsState<double> > physicsState =
-      integrator->getSolutionHistory()->getCurrentState()->getPhysicsState();
-    TEST_EQUALITY(physicsState->getName(), "Tempus::PhysicsState");
-
     // Test if at 'Final Time'
     time = integrator->getTime();
-    double timeFinal = pl->sublist("Demo Integrator")
-      .sublist("Time Step Control").get<double>("Final Time");
+    double timeFinal = 1.0;
     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
     // Time-integrated solution and the exact solution
@@ -265,63 +300,69 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCos)
     RCP<const Thyra::VectorBase<double> > x_exact =
       model->getExactSolution(time).get_x();
 
-    // Plot sample solution and exact solution
-    if (n == 0) {
-      RCP<const SolutionHistory<double> > solutionHistory =
-        integrator->getSolutionHistory();
-      writeSolution("Tempus_Subcycling_SinCos.dat", solutionHistory);
-
-      auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
-      for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        double time_i = (*solutionHistory)[i]->getTime();
-        auto state = rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
-            model->getExactSolution(time_i).get_x_dot()));
-        state->setTime((*solutionHistory)[i]->getTime());
-        solnHistExact->addState(state);
-      }
-      writeSolution("Tempus_Subcycling_SinCos-Ref.dat", solnHistExact);
-    }
+    //// Plot sample solution and exact solution
+    //if (n == 0) {
+    //  std::ofstream ftmp(output_file_name);
+    //  //Warning: the following assumes serial run
+    //  FILE *gold_file = fopen("Tempus_Subcycling_SinCos_AdaptDt_gold.dat", "r");
+    //  RCP<const SolutionHistory<double> > solutionHistory =
+    //    integrator->getSolutionHistory();
+    //  RCP<const Thyra::VectorBase<double> > x_exact_plot;
+    //  for (int i=0; i<solutionHistory->getNumStates(); i++) {
+    //    char time_gold_char[100];
+    //    fgets(time_gold_char, 100, gold_file);
+    //    double time_gold;
+    //    sscanf(time_gold_char, "%lf", &time_gold);
+    //    RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
+    //    double time_i = solutionState->getTime();
+    //    //Throw error if time does not match time in gold file to specified tolerance
+    //    TEST_FLOATING_EQUALITY( time_i, time_gold, 1.0e-5 );
+    //    RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
+    //    x_exact_plot = model->getExactSolution(time_i).get_x();
+    //    ftmp << time_i << "   "
+    //         << get_ele(*(x_plot), 0) << "   "
+    //         << get_ele(*(x_plot), 1) << "   "
+    //         << get_ele(*(x_exact_plot), 0) << "   "
+    //         << get_ele(*(x_exact_plot), 1) << std::endl;
+    //  }
+    //  ftmp.close();
+    //}
 
     // Store off the final solution and step size
     StepSize.push_back(dt);
     auto solution = Thyra::createMember(model->get_x_space());
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
-    auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
-    solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
       auto solutionExact = Thyra::createMember(model->get_x_space());
       Thyra::copy(*(model->getExactSolution(time).get_x()),solutionExact.ptr());
       solutions.push_back(solutionExact);
-      auto solutionDotExact = Thyra::createMember(model->get_x_space());
-      Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
-                  solutionDotExact.ptr());
-      solutionsDot.push_back(solutionDotExact);
     }
   }
 
   // Check the order and intercept
-  double xSlope = 0.0;
-  double xDotSlope = 0.0;
-  RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
-  double order = stepper->getOrder();
-  writeOrderError("Tempus_Subcycling_SinCos-Error.dat",
-                  stepper, StepSize,
-                  solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+  if (nTimeStepSizes > 1) {
+    double xSlope = 0.0;
+    double xDotSlope = 0.0;
+    std::vector<double> xErrorNorm;
+    std::vector<double> xDotErrorNorm;
+    RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
+    //double order = stepper->getOrder();
+    writeOrderError("Tempus_BDF2_SinCos-Error.dat",
+                    stepper, StepSize,
+                    solutions,    xErrorNorm,    xSlope,
+                    solutionsDot, xDotErrorNorm, xDotSlope);
 
-  TEST_FLOATING_EQUALITY( xSlope,               order, 0.01   );
-  TEST_FLOATING_EQUALITY( xErrorNorm[0],     0.051123, 1.0e-4 );
-  // xDot not yet available for Forward Euler.
-  //TEST_FLOATING_EQUALITY( xDotSlope,            order, 0.01   );
-  //TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.0486418, 1.0e-4 );
+    TEST_FLOATING_EQUALITY( xSlope,                1.00137, 0.01 );
+    //TEST_FLOATING_EQUALITY( xDotSlope,            1.95089, 0.01 );
+    TEST_FLOATING_EQUALITY( xErrorNorm[0],       0.00387948, 1.0e-4 );
+    //TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.000197325, 1.0e-4 );
+  }
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_SINCOS
+#endif // TEST_SINCOS_ADAPT
 
 
 } // namespace Tempus_Test

@@ -176,6 +176,17 @@ setSubcyclingScreenOutputIndexInterval(int i)
 
 
 template<class Scalar>
+void StepperSubcycling<Scalar>::
+setSubcyclingTimeStepControlStrategy(
+  Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs)
+{
+  scIntegrator_->getNonConstTimeStepControl()->getTimeStepControlStrategy()->clearObservers();
+  scIntegrator_->getNonConstTimeStepControl()->setTimeStepControlStrategy(tscs);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
 void StepperSubcycling<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
@@ -353,6 +364,7 @@ void StepperSubcycling<Scalar>::takeStep(
     Teuchos::RCP<SolutionStateMetaData<Scalar> > scMD =
       rcp(new SolutionStateMetaData<Scalar>());
     scMD->copy(currentState->getMetaData());
+    scMD->setDt(scTSC->getInitTimeStep());
     scMD->setIStep(0);
     scMD->setNFailures(0);
     scMD->setNRunningFailures(0);
@@ -375,24 +387,34 @@ void StepperSubcycling<Scalar>::takeStep(
     auto scSH = rcp(new Tempus::SolutionHistory<double>());
     scSH->setName("Subcycling States");
     scSH->setStorageType(Tempus::STORAGE_TYPE_STATIC);
-    scSH->setStorageLimit(2);
+    scSH->setStorageLimit(3);
     scSH->addState(subcyclingState);
 
     scIntegrator_->setSolutionHistory(scSH);
 
     bool pass = scIntegrator_->advanceTime();
 
-    RCP<SolutionState<Scalar> > scWS = scSH->getCurrentState();
+    RCP<SolutionState<Scalar> > scCS = scSH->getCurrentState();
 
-    RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
-    RCP<Thyra::VectorBase<Scalar> > scX = scWS->getX();
-
-    //assign(x.ptr(), scX);
+    RCP<Thyra::VectorBase<Scalar> > x   = workingState->getX();
+    RCP<Thyra::VectorBase<Scalar> > scX = scCS->getX();
     Thyra::V_V(x.ptr(),       *(scX));
+
+    RCP<Thyra::VectorBase<Scalar> > xDot   = workingState->getXDot();
+    if (xDot != Teuchos::null) {
+      RCP<Thyra::VectorBase<Scalar> > scXDot = scCS->getXDot();
+      Thyra::V_V(xDot.ptr(),       *(scXDot));
+    }
+
+    RCP<Thyra::VectorBase<Scalar> > xDotDot   = workingState->getXDotDot();
+    if (xDotDot != Teuchos::null) {
+      RCP<Thyra::VectorBase<Scalar> > scXDotDot = scCS->getXDotDot();
+      Thyra::V_V(xDotDot.ptr(),       *(scXDotDot));
+    }
 
     if (pass == true) workingState->setSolutionStatus(Status::PASSED);
     else              workingState->setSolutionStatus(Status::FAILED);
-    workingState->setOrder(scWS->getOrder());
+    workingState->setOrder(scCS->getOrder());
     scSH->clear();
     stepperSCObserver_->observeEndTakeStep(solutionHistory, *this);
   }
