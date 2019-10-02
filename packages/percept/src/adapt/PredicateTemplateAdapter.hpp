@@ -455,13 +455,9 @@
         SubDimCellData* nodeId_elementOwnderId_ptr = getNodeRegistry().getFromMapPtr(subDimEntity);
         SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
         bool is_empty = nodeId_elementOwnderId_ptr == 0;
-        //bool is_not_empty_but_data_cleared = (!is_empty && nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().size() == 0);
         if (!is_empty)
           {
-            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-            //unsigned nidsz = nodeIds_onSE.size();
-            //for (unsigned i_nid = 0; i_nid < nidsz; i_nid++)
-            //stk::mesh::Entity edge_node = nodeIds_onSE[0];
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnderId);
             if (nodeIds_onSE.size())
               {
                 unsigned mark = nodeIds_onSE.m_mark;

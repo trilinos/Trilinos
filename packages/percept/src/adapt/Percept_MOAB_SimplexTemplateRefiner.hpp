@@ -1,8 +1,12 @@
-// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
-// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
-// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
-// in this software.
-//
+/*--------------------------------------------------------------------*/
+/*    Copyright 2002 - 2008, 2010, 2011 National Technology &         */
+/*    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   */
+/*    of Contract DE-NA0003525 with NTESS, there is a                 */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
+
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -25,10 +29,6 @@
 /*
  * MOAB, a Mesh-Oriented datABase, is a software component for creating,
  * storing and accessing finite element mesh data.
- *
- * Copyright 2007 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Coroporation, the U.S. Government
- * retains certain rights in this software.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,19 +56,11 @@
 #include <vector>
 #include <exception>
 
-#include <boost/tuple/tuple_io.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
-
 #include <percept/Util.hpp>
-
-//p #include "EntityRefiner.hpp"
-//p #include "SimplexTemplateTagAssigner.hpp"
-
-//p #include "moab/Types.hpp" // for MB_DLL_EXPORT
 
 namespace moab {
 
-  typedef boost::tuple<int, int, int, int> TetTupleInt;
+  typedef std::array<int, 4> TetTupleInt;
   //p
   typedef int EntityHandle;
 

@@ -29,11 +29,6 @@
 #include <algorithm>
 #include <iostream>
 
-#ifdef STK_HAVE_TBB
-#include <tbb/scalable_allocator.h>
-#endif
-
-
   namespace percept {
 
 
@@ -47,11 +42,7 @@
 
 #if STK_ADAPT_SUBDIMCELL_KOKKOS_USES_STL_SET
 
-#  ifdef STK_HAVE_TBB
-  typedef std::set<unsigned, std::less<unsigned>, tbb::scalable_allocator<unsigned> > SubDimCell_KOKKOSBaseClass;
-#  else
   typedef std::set<unsigned> SubDimCell_KOKKOSBaseClass;
-#  endif
 
     /// this class represents the set of node id's defining a sub-dimensional entity of an element (like a face or edge)
     template<typename Ids=unsigned, std::size_t N=4, class CompareClass = SubDimCell_KOKKOSCompare<T> >
@@ -86,10 +77,10 @@
 
     /// We assume we don't have any sub-dimensional entities with more than 4 nodes
     template<class T, std::size_t N=4, class CompareClass = SubDimCell_KOKKOSCompare<T> >
-    class SubDimCell_KOKKOS : public std::vector<T> //: public my_array<T,4> //: public boost::array<T,4>
+    class SubDimCell_KOKKOS : public std::vector<T> //: public my_array<T,4> //: public std::array<T,4>
     {
     public:
-      //typedef boost::array<T,4> base_type;
+      //typedef std::array<T,4> base_type;
       typedef std::vector<T> base_type;
 
       SubDimCell_KOKKOS(unsigned n=4) : base_type() { base_type::reserve(n); }

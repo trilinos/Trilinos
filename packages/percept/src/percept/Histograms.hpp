@@ -42,7 +42,7 @@
       {
         m_data = other.m_data;
         m_bar_symbol = other.m_bar_symbol;
-        m_max_column_width = m_max_column_width;
+        m_max_column_width = other.m_max_column_width;
       }
 
       std::vector<T> m_data;

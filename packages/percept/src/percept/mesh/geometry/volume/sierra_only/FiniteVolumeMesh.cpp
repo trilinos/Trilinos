@@ -21,7 +21,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_max, etc
 #include <string>                       // for basic_string, operator<<
 #include <utility>                      // for pair
-#include "boost/unordered/unordered_set.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::iterator
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Entity.hpp"     // for Entity
