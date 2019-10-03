@@ -127,11 +127,11 @@ class ProximitySearchTree_T {
   template<typename DomainBox>
   inline void SearchForOverlap(const DomainBox& searchObject,
                                                     std::vector<int>& returnIndexList,
-                                                    std::vector<RangeBoxType>& returnBoxList);
+                                                    std::vector<RangeBoxType>& returnBoxList) const;
 
   // Find if there is any overlap of the with the given box and the search tree
   template<typename DomainBox>
-  inline bool AnyOverlap(const DomainBox& searchObject);
+  inline bool AnyOverlap(const DomainBox& searchObject) const;
 
   // Check if a tree is empty, thus any search would return no boxes
   bool empty() const {return m_tree.empty();}

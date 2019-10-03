@@ -739,9 +739,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<MV> toScale2 = rcp(new MV(map,2)); toScale2->putScalar(SC_one);
     RCP<MV> toScale5 = rcp(new MV(map,2)); toScale5->putScalar(SC_one);
 
-    Tpetra::Details::inverseScaleBlockDiagonal(*diag1,*toScale1);
-    Tpetra::Details::inverseScaleBlockDiagonal(*diag2,*toScale2);
-    Tpetra::Details::inverseScaleBlockDiagonal(*diag5,*toScale5);
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag1,true,*toScale1);
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag2,false,*toScale2);
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag5,false,*toScale5);
 
     // Check norms
     Array<Mag> norms1(2), norms2(2), norms5(2);

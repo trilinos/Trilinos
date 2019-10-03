@@ -161,12 +161,14 @@ void StepperExplicitRK<Scalar>::setObserver(
      this->stepperObserver_  =
         Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
 
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) ) {
-    obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
+    return;
 
-    this->stepperObserver_->addObserver(
-        Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
-  }
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
+     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
+
+  this->stepperObserver_->addObserver(
+       Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
 
 }
 
