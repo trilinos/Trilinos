@@ -67,13 +67,17 @@
 #include <map>
 #include <string>
 
+#include "Tpetra_Map.hpp"
+using default_lo = Tpetra::Map<>::local_ordinal_type;
+using default_go = Tpetra::Map<>::global_ordinal_type;
+
 namespace Piro {
 
 /** \brief Thyra-based Model Evaluator for Tempus solves
  *  \ingroup Piro_Thyra_solver_grp
  * */
 #ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
+template <typename Scalar, typename LocalOrdinal = default_lo, typename GlobalOrdinal = default_go,
           typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
 #else
 template <typename Scalar>
@@ -246,7 +250,7 @@ private:
 
 /** \brief Non-member constructor function */
 #ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
+template <typename Scalar, typename LocalOrdinal = default_lo, typename GlobalOrdinal = default_go,
           typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
 Teuchos::RCP<TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #else
