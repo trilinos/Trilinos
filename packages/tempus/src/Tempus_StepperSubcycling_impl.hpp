@@ -357,9 +357,11 @@ void StepperSubcycling<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
 
     auto scTSC = scIntegrator_->getNonConstTimeStepControl();
-    scTSC->setInitTime (currentState->getTime());
-    scTSC->setInitIndex(0);
-    scTSC->setFinalTime(workingState->getTime());
+    scTSC->setInitTime   (currentState->getTime());
+    scTSC->setInitIndex  (0);
+    scTSC->setFinalTime  (workingState->getTime());
+    scTSC->setMaxTimeStep(workingState->getTimeStep());
+
 
     Teuchos::RCP<SolutionStateMetaData<Scalar> > scMD =
       rcp(new SolutionStateMetaData<Scalar>());

@@ -19,7 +19,8 @@
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
-#include "../TestModels/VanDerPolModel.hpp"
+#include "../TestModels/VanDerPol_IMEX_ExplicitModel.hpp"
+#include "../TestModels/VanDerPol_IMEX_ImplicitModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 #include <fstream>
@@ -43,6 +44,7 @@ using Tempus::SolutionState;
 //#define TEST_PARAMETERLIST
 #define TEST_CONSTRUCTING_FROM_DEFAULTS
 #define TEST_SINCOS_ADAPT
+#define TEST_VANDERPOL_OPERATOR_SPLIT
 
 
 #ifdef TEST_PARAMETERLIST
@@ -266,7 +268,7 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
     auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
     icState->setTime    (timeStepControl->getInitTime());
     icState->setIndex   (timeStepControl->getInitIndex());
-    icState->setTimeStep(0.0);  // dt for ICs are indicated by zero.
+    icState->setTimeStep(0.0);  // dt for ICs are zero.
     icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
     // Setup SolutionHistory ------------------------------------
@@ -363,6 +365,170 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
   Teuchos::TimeMonitor::summarize();
 }
 #endif // TEST_SINCOS_ADAPT
+
+
+#ifdef TEST_VANDERPOL_OPERATOR_SPLIT
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
+{
+  RCP<Tempus::IntegratorBasic<double> > integrator;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
+  std::vector<double> StepSize;
+  std::vector<double> xErrorNorm;
+  std::vector<double> xDotErrorNorm;
+  const int nTimeStepSizes = 4;  // 8 for Error plot
+  double dt = 0.1;
+  double time = 0.0;
+  for (int n=0; n<nTimeStepSizes; n++) {
+
+    // Set the step size
+    dt /= 2;
+    if (n == nTimeStepSizes-1) dt /= 10.0;
+
+    // Setup the explicit and implicit VanDerPol ModelEvaluators
+    auto tmpModel = rcp(new VanDerPol_IMEX_ExplicitModel<double>());
+    auto pl = Teuchos::rcp_const_cast<Teuchos::ParameterList> (
+      tmpModel->getValidParameters());
+    pl->set("Coeff epsilon", 0.1);
+    auto explicitModel = rcp(new VanDerPol_IMEX_ExplicitModel<double>(pl));
+    auto implicitModel = rcp(new VanDerPol_IMEX_ImplicitModel<double>(pl));
+
+    // Setup Steppers for field solve ---------------------------
+    auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
+
+    // Explicit Subcycling Stepper
+    auto stepperSC = rcp(new Tempus::StepperSubcycling<double>());
+    auto stepperFE = sf->createStepperForwardEuler(explicitModel,Teuchos::null);
+    stepperFE->setUseFSAL(false);
+    stepperSC->setSubcyclingStepper(stepperFE);
+
+    stepperSC->setSubcyclingMinTimeStep      (0.00001);
+    stepperSC->setSubcyclingInitTimeStep     (dt/10.0);
+    stepperSC->setSubcyclingMaxTimeStep      (dt/10.0);
+    stepperSC->setSubcyclingMaxFailures      (10);
+    stepperSC->setSubcyclingMaxConsecFailures(5);
+    stepperSC->setSubcyclingScreenOutputIndexInterval(1);
+    //stepperSC->setSubcyclingStepType         ("Constant");
+    stepperSC->setSubcyclingStepType         ("Variable");
+    auto strategySC = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
+    strategySC->setMinEta(0.000001);
+    strategySC->setMaxEta(0.01);
+    stepperSC->setSubcyclingTimeStepControlStrategy(strategySC);
+    stepperSC->initialize();
+
+    // Implicit Stepper
+    auto stepperBE =
+      sf->createStepperBackwardEuler(implicitModel, Teuchos::null);
+
+    // Operator-Split Stepper
+    auto stepper = rcp(new Tempus::StepperOperatorSplit<double>());
+    stepper->addStepper(stepperSC);
+    stepper->addStepper(stepperBE);
+    stepper->initialize();
+
+    // Setup TimeStepControl ------------------------------------
+    auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
+    timeStepControl->setInitIndex(0);
+    timeStepControl->setInitTime (0.0);
+    //timeStepControl->setFinalIndex(2);
+    timeStepControl->setFinalTime(2.0);
+    timeStepControl->setMinTimeStep (0.000001);
+    timeStepControl->setStepType ("Constant");
+    timeStepControl->setInitTimeStep(dt);
+    timeStepControl->setMaxTimeStep (dt);
+
+    //timeStepControl->setStepType ("Variable");
+    //timeStepControl->setInitTimeStep(dt/2.0);
+    //timeStepControl->setMaxTimeStep (dt);
+    //auto strategy = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
+    //strategy->setMinEta(1.0e-6);
+    //strategy->setMaxEta(5.0);
+    //timeStepControl->getTimeStepControlStrategy()->clearObservers();
+    //timeStepControl->getTimeStepControlStrategy()->addStrategy(strategy);
+
+    timeStepControl->initialize();
+
+    // Setup initial condition SolutionState --------------------
+    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
+      stepper->getModel()->getNominalValues();
+    auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+    auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
+    auto icState = rcp(new Tempus::SolutionState<double>(icX, icXDot));
+    icState->setTime    (timeStepControl->getInitTime());
+    icState->setIndex   (timeStepControl->getInitIndex());
+    icState->setTimeStep(0.0);  // dt for ICs are zero.
+    icState->setOrder   (stepper->getOrder());
+    icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
+
+    // Setup SolutionHistory ------------------------------------
+    auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+    solutionHistory->setName("Forward States");
+    solutionHistory->setStorageType(Tempus::STORAGE_TYPE_UNLIMITED);
+    //solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
+    solutionHistory->setStorageLimit(3);
+    solutionHistory->addState(icState);
+
+    // Setup Integrator -----------------------------------------
+    integrator = Tempus::integratorBasic<double>();
+    integrator->setStepperWStepper(stepper);
+    integrator->setTimeStepControl(timeStepControl);
+    integrator->setSolutionHistory(solutionHistory);
+    integrator->setScreenOutputIndexInterval(1);
+    //integrator->setObserver(...);
+    integrator->initialize();
+
+
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
+
+    // Test if at 'Final Time'
+    time = integrator->getTime();
+    double timeFinal = 2.0;
+    double tol = 100.0 * std::numeric_limits<double>::epsilon();
+    TEST_FLOATING_EQUALITY(time, timeFinal, tol);
+
+    // Store off the final solution and step size
+    StepSize.push_back(dt);
+    auto solution = Thyra::createMember(implicitModel->get_x_space());
+    Thyra::copy(*(integrator->getX()),solution.ptr());
+    solutions.push_back(solution);
+    auto solutionDot = Thyra::createMember(implicitModel->get_x_space());
+    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    solutionsDot.push_back(solutionDot);
+
+    // Output finest temporal solution for plotting
+    // This only works for ONE MPI process
+    if ((n == 0) or (n == nTimeStepSizes-1)) {
+      std::string fname = "Tempus_Subcycling_VanDerPol-Ref.dat";
+      if (n == 0) fname = "Tempus_Subcycling_VanDerPol.dat";
+      RCP<const SolutionHistory<double> > solutionHistory =
+        integrator->getSolutionHistory();
+      writeSolution(fname, solutionHistory);
+      //solutionHistory->printHistory("medium");
+    }
+  }
+
+  // Check the order and intercept
+  double xSlope = 0.0;
+  double xDotSlope = 0.0;
+  RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
+  //double order = stepper->getOrder();
+  writeOrderError("Tempus_Subcycling_VanDerPol-Error.dat",
+                  stepper, StepSize,
+                  solutions,    xErrorNorm,    xSlope,
+                  solutionsDot, xDotErrorNorm, xDotSlope);
+
+  TEST_FLOATING_EQUALITY( xSlope,           1.25708, 0.05 );
+  TEST_FLOATING_EQUALITY( xDotSlope,        1.20230, 0.05 );
+  TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.37156, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 3.11651, 1.0e-4 );
+
+  Teuchos::TimeMonitor::summarize();
+}
+#endif // TEST_VANDERPOL_OPERATOR_SPLIT
 
 
 } // namespace Tempus_Test

@@ -152,6 +152,7 @@ public:
     Scalar rho   = getAmplFactor();
     Scalar sigma = getReductFactor();
     Scalar eta   = computeEta(tsc, solutionHistory);
+    //*out << " eta = " << eta << "\n";
 
     // General rule: only increase/decrease dt once for any given reason.
     if (workingState->getSolutionStatus() == Status::FAILED) {
@@ -308,8 +309,10 @@ public:
           eta = getMinEta();
           return eta;
        }
-       RCP<const Thyra::VectorBase<Scalar> > xOld = (*solutionHistory)[numStates-3]->getX();
-       RCP<const Thyra::VectorBase<Scalar> > x = (*solutionHistory)[numStates-1]->getX();
+       RCP<const Thyra::VectorBase<Scalar> > xOld =
+         solutionHistory->getStateTimeIndexNM2()->getX();
+       RCP<const Thyra::VectorBase<Scalar> > x =
+         solutionHistory->getStateTimeIndexNM1()->getX();
        //IKT: uncomment the following to get some debug output
        //#define VERBOSE_DEBUG_OUTPUT
 #ifdef VERBOSE_DEBUG_OUTPUT
@@ -335,8 +338,9 @@ public:
        //eta = ||x^(n+1)-x^n||/(||x^n||+eps)
        eta = xDiffNorm/(xOldNorm + eps);
 #ifdef VERBOSE_DEBUG_OUTPUT
-       *out << "IKT xDiffNorm, xOldNorm, eta = " << xDiffNorm << ", " << xOldNorm
-          << ", " << eta << "\n";
+       Scalar xNorm    = Thyra::norm(*x);
+       *out << "IKT xDiffNorm, xNorm, xOldNorm, eta = " << xDiffNorm << ", "
+            << xNorm << ", " << xOldNorm << ", " << eta << "\n";
 #endif
        return eta;
     }

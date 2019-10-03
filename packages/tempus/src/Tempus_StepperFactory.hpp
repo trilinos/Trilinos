@@ -238,7 +238,9 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
     auto solver = rcp(new Thyra::NOXNonlinearSolver());
-    solver->setParameterList(defaultSolverParameters());
+    auto solverPL = Tempus::defaultSolverParameters();
+    auto subPL = sublist(solverPL, "NOX");
+    solver->setParameterList(subPL);
     if (stepperPL != Teuchos::null) {
       // Can not validate because of optional Parameters, e.g., 'Solver Name'.
       //stepperPL->validateParametersAndSetDefaults(
@@ -269,7 +271,9 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
     auto solver = rcp(new Thyra::NOXNonlinearSolver());
-    solver->setParameterList(defaultSolverParameters());
+    auto solverPL = Tempus::defaultSolverParameters();
+    auto subPL = sublist(solverPL, "NOX");
+    solver->setParameterList(subPL);
     if (stepperPL != Teuchos::null) {
       std::string solverName = stepperPL->get<std::string>("Solver Name");
       if ( stepperPL->isSublist(solverName) ) {
@@ -289,7 +293,9 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
     auto solver = rcp(new Thyra::NOXNonlinearSolver());
-    solver->setParameterList(defaultSolverParameters());
+    auto solverPL = Tempus::defaultSolverParameters();
+    auto subPL = sublist(solverPL, "NOX");
+    solver->setParameterList(subPL);
     if (stepperPL != Teuchos::null) {
       // Can not validate because of optional Parameters, e.g., 'Solver Name'.
       //stepperPL->validateParametersAndSetDefaults(
