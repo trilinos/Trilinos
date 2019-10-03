@@ -439,7 +439,7 @@ public:
    *
    * <b>Postconditons:</b> <ul>
    * <li> <tt>this->get() == 0</tt>
-   * <li> <tt>this->strength() == RCP_STRENGTH_INVALID</tt>
+   * <li> <tt>this->strength() == RCP_STRONG</tt>
    * <li> <tt>this->is_vali_ptr() == true</tt>
    * <li> <tt>this->strong_count() == 0</tt>
    * <li> <tt>this->weak_count() == 0</tt>
@@ -645,8 +645,6 @@ public:
    *     when <tt>*this</tt> is destroyed if <tt>strong_count()==1</tt>.
    * <li><tt>RCP_WEAK</tt>: Underlying reference-counted object will not be deleted
    *     when <tt>*this</tt> is destroyed if <tt>strong_count() > 0</tt>.
-   * <li><tt>RCP_STRENGTH_INVALID</tt>: <tt>*this</tt> is not strong or weak but
-   *     is null.
    * </ul>
    */
   inline ERCPStrength strength() const;
