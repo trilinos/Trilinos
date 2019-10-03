@@ -367,6 +367,7 @@ void StepperSubcycling<Scalar>::takeStep(
       rcp(new SolutionStateMetaData<Scalar>());
     scMD->copy(currentState->getMetaData());
     scMD->setDt(scTSC->getInitTimeStep());
+    scMD->setOrder(scIntegrator_->getStepper()->getOrder());
     scMD->setIStep(0);
     scMD->setNFailures(0);
     scMD->setNRunningFailures(0);
