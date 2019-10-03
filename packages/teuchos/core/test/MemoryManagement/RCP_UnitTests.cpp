@@ -150,6 +150,27 @@ TEUCHOS_UNIT_TEST( RCP, copy_construct_nonnull )
 }
 
 
+/*
+TEUCHOS_UNIT_TEST( RCP, move_construct_nonnull )
+{
+  RCP<A> a_rcp(new A);
+  RCP<A> b_rcp(std::move(a_rcp));
+  TEST_EQUALITY_CONST(a_rcp.get(), 0);
+  TEST_EQUALITY_CONST(a_rcp.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(a_rcp.strong_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.has_ownership(), false);
+  TEST_INEQUALITY_CONST(b_rcp.get(), 0);
+  TEST_INEQUALITY_CONST(b_rcp.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(b_rcp.strong_count(), 1);
+  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(b_rcp.has_ownership(), true);
+}
+*/
+
+
 TEUCHOS_UNIT_TEST( RCP, assign_self_null )
 {
   RCP<A> a_rcp;
