@@ -826,12 +826,25 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     Tpetra::Details::extractBlockDiagonal(*blockTri,*diag2);
     Tpetra::Details::extractBlockDiagonal(*blockTri,*diag4);
 
-    // Now, let's rescale some vectors
-    RCP<MV> toScale2 = rcp(new MV(map,1)); toScale2->putScalar(SC_one);
-    RCP<MV> toScale4 = rcp(new MV(map,1)); toScale4->putScalar(SC_one);
-
-    Tpetra::Details::inverseScaleBlockDiagonal(*diag2,*toScale2);
-    Tpetra::Details::inverseScaleBlockDiagonal(*diag4,*toScale4);
+    // Make some vectors
+    RCP<MV> toScale2 = rcp(new MV(map,1));
+    RCP<MV> toScale4 = rcp(new MV(map,1)); 
+    auto v2 = toScale2->getDataNonConst(0);
+    auto v4 = toScale4->getDataNonConst(0);
+    for(size_t i=0; i<numLocal; i++){
+      if(i%2 == 0) {
+        v2[i] = SC_one;
+        v4[i] = SC_one;
+      }
+      else {        
+        v2[i] = SC_one+SC_one;
+        v4[i] = SC_one+SC_one;
+      }
+    }    
+    
+    // Scale some vectors
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag2,false,*toScale2);
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag4,false,*toScale4);
 
     // Check norms
     Array<Mag> norms2(1), norms4(1);
@@ -839,8 +852,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     toScale4->norm1(norms4());
 
     Array<Mag> cmp2(1), cmp4(1);
-    cmp2[0] = 0.625*numLocal*numImages;
-    cmp4[0] = 0.625*numLocal*numImages;
+    cmp2[0] = 0.875*numLocal*numImages;
+    cmp4[0] = 0.875*numLocal*numImages;
 
     if (ST::isOrdinal) {
       TEST_COMPARE_ARRAYS(norms2,cmp2);
@@ -908,12 +921,25 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     Tpetra::Details::extractBlockDiagonal(*blockTri,*diag2);
     Tpetra::Details::extractBlockDiagonal(*blockTri,*diag4);
 
-    // Now, let's rescale some vectors
-    RCP<MV> toScale2 = rcp(new MV(map,1)); toScale2->putScalar(SC_one);
-    RCP<MV> toScale4 = rcp(new MV(map,1)); toScale4->putScalar(SC_one);
+    // Make some vectors
+    RCP<MV> toScale2 = rcp(new MV(map,1));
+    RCP<MV> toScale4 = rcp(new MV(map,1)); 
+    auto v2 = toScale2->getDataNonConst(0);
+    auto v4 = toScale4->getDataNonConst(0);
+    for(size_t i=0; i<numLocal; i++){
+      if(i%2 == 0) {
+        v2[i] = SC_one;
+        v4[i] = SC_one;
+      }
+      else {        
+        v2[i] = SC_one+SC_one;
+        v4[i] = SC_one+SC_one;
+      }
+    }    
 
-    Tpetra::Details::inverseScaleBlockDiagonal(*diag2,*toScale2);
-    Tpetra::Details::inverseScaleBlockDiagonal(*diag4,*toScale4);
+    // Now, let's rescale some vectors
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag2,true,*toScale2);
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag4,true,*toScale4);
 
     // Check norms
     Array<Mag> norms2(1), norms4(1);
@@ -921,8 +947,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     toScale4->norm1(norms4());
 
     Array<Mag> cmp2(1), cmp4(1);
-    cmp2[0] = 0.625*numLocal*numImages;
-    cmp4[0] = 0.625*numLocal*numImages;
+    cmp2[0] = numLocal*numImages;
+    cmp4[0] = numLocal*numImages;
 
     if (ST::isOrdinal) {
       TEST_COMPARE_ARRAYS(norms2,cmp2);
