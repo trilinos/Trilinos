@@ -521,6 +521,15 @@ public:
    */
   inline RCP(const RCP<T>& r_ptr);
 
+  /** \brief Move constructor.
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>*this</tt> is an exact copy of <tt>r_ptr</tt> before the call.
+   * <li> <tt>r_ptr</tt> is uninitialized
+   * </ul>
+   */
+  inline RCP(RCP<T>&& r_ptr);
+
   /** \brief Initialize from another <tt>RCP<T2></tt> object (implicit conversion only).
    *
    * This function allows the implicit conversion of smart pointer objects just
@@ -570,6 +579,17 @@ public:
    * Provides the "strong guarantee" in a debug build!
    */
   inline RCP<T>& operator=(const RCP<T>& r_ptr);
+
+  /** \brief Move assign.
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>*this</tt> is an exact copy of <tt>r_ptr</tt> before the call.
+   * <li> <tt>r_ptr</tt> is uninitialized
+   * </ul>
+   *
+   * Provides the "strong guarantee" in a debug build!
+   */
+  inline RCP<T>& operator=(RCP<T>&& r_ptr);
 
   /** \brief Assign to null.
    *
