@@ -106,8 +106,8 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params)
-        // : mtx_(Teuchos::rcp(new Tpetra::Experimental::BlockCrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(graph), params)))
-        // * there is no Tpetra::Experimental::BlockCrsMatrix(graph, params) c'tor.  We throw anyways here so no need to set mtx_.
+        // : mtx_(Teuchos::rcp(new Tpetra::BlockCrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(graph), params)))
+        // * there is no Tpetra::BlockCrsMatrix(graph, params) c'tor.  We throw anyways here so no need to set mtx_.
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }
@@ -118,14 +118,14 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
                          const LocalOrdinal blockSize)
-      : mtx_(Teuchos::rcp(new Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*toTpetra(graph), blockSize))) 
+      : mtx_(Teuchos::rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*toTpetra(graph), blockSize))) 
     { }
 
 
     //! Constructor for a fused import ( not implemented )
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                          const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
                          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
                          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
@@ -138,7 +138,7 @@ namespace Xpetra {
     //! Constructor for a fused export (not implemented(
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                          const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
                          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
                          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
@@ -151,7 +151,7 @@ namespace Xpetra {
     //! Constructor for a fused import ( not implemented )
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                          const Import<LocalOrdinal,GlobalOrdinal,Node> & RowImporter,
                          const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
                          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
@@ -165,7 +165,7 @@ namespace Xpetra {
     //! Constructor for a fused export (not implemented(
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                          const Export<LocalOrdinal,GlobalOrdinal,Node> & RowExporter,
                          const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
                          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
@@ -425,6 +425,13 @@ namespace Xpetra {
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    size_t 
+    TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+    getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const
+    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNumEntriesInGlobalRow"); return mtx_->getNumEntriesInGlobalRow(globalRow); }
+
+
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     size_t TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalMaxNumRowEntries() const
     { XPETRA_MONITOR("TpetraBlockCrsMatrix::getGlobalMaxNumRowEntries"); return mtx_->getGlobalMaxNumRowEntries(); }
 
@@ -576,7 +583,7 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix)
     //  : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode())) 
     { 
-        // This won't compile because there is no Tpetra::Experimental::BlockCrsMatrix::clone() 
+        // This won't compile because there is no Tpetra::BlockCrsMatrix::clone() 
         // so just throwing an error... it'll go away anyhow with deprecations.
         // But seriously, pre ETI how did this ever actually compile!?
         throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function is deprecated.");
@@ -748,13 +755,13 @@ hasMatrix() const
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) 
+TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) 
 : mtx_(mtx)
 {  }
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+RCP<const Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
 TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 getTpetra_BlockCrsMatrix() const
 { 
@@ -764,7 +771,7 @@ getTpetra_BlockCrsMatrix() const
 
 // TODO: remove
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
 TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 getTpetra_BlockCrsMatrixNonConst() const
 { 
@@ -862,7 +869,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     }
 
     //! Constructor for a fused import ( not implemented )
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
@@ -870,7 +877,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     { XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );}
 
     //! Constructor for a fused export (not implemented(
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
@@ -878,7 +885,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     { XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );}
 
     //! Constructor for a fused import ( not implemented )
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Import<LocalOrdinal,GlobalOrdinal,Node> & RowImporter,
                     const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
@@ -887,7 +894,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     { XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );}
 
     //! Constructor for a fused export (not implemented(
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Export<LocalOrdinal,GlobalOrdinal,Node> & RowExporter,
                     const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
@@ -998,6 +1005,9 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
 
+    //! Returns the current number of entries in the (locally owned) global row.
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
+
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     size_t getGlobalMaxNumRowEntries() const { return 0; }
 
@@ -1072,7 +1082,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {}
 
-    void replaceDiag(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {    }
+    void replaceDiag(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) {    }
 
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
     void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
@@ -1124,15 +1134,15 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     bool hasMatrix() const { return false; }
 
     //! TpetraBlockCrsMatrix constructor to wrap a Tpetra::BlockCrsMatrix object
-    TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) {
+    TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Get the underlying Tpetra matrix
-    RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrix() const { return Teuchos::null; }
+    RCP<const Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrix() const { return Teuchos::null; }
 
     //! Get the underlying Tpetra matrix
-    RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return Teuchos::null; }
+    RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return Teuchos::null; }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
@@ -1211,7 +1221,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
 
 
     //! Constructor for a fused import (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
@@ -1219,7 +1229,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     {XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );}
 
     //! Constructor for a fused export (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
@@ -1227,7 +1237,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     {XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );}
 
     //! Constructor for a fused import (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Import<LocalOrdinal,GlobalOrdinal,Node> & RowImporter,
                     const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
@@ -1236,7 +1246,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     {XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );}
 
     //! Constructor for a fused export (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Export<LocalOrdinal,GlobalOrdinal,Node> & RowExporter,
                     const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
@@ -1344,6 +1354,9 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
 
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
+
+    //! Returns the current number of entries in the (locally owned) global row.
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
 
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     size_t getGlobalMaxNumRowEntries() const { return 0; }
@@ -1469,15 +1482,15 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     bool hasMatrix() const { return false; }
 
     //! TpetraBlockCrsMatrix constructor to wrap a Tpetra::BlockCrsMatrix object
-    TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) {
+    TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Get the underlying Tpetra matrix
-    RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrix() const { return Teuchos::null; }
+    RCP<const Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrix() const { return Teuchos::null; }
 
     //! Get the underlying Tpetra matrix
-    RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return Teuchos::null; }
+    RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return Teuchos::null; }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA

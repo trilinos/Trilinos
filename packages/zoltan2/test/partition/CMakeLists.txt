@@ -29,6 +29,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    mj_backwardcompat
+    SOURCES mj_backwardcompat.cpp
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
     fix4785
     SOURCES fix4785.cpp
     COMM serial mpi

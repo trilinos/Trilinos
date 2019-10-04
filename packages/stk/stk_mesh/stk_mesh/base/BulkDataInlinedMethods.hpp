@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -77,8 +78,8 @@ bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
   }
   else
   {
-      const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
-      const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+      const EntityKey lhs_key = m_mesh->entity_key(lhs);
+      const EntityKey rhs_key = m_mesh->entity_key(rhs);
       result = lhs_key < rhs_key;
   }
   return result;
@@ -91,8 +92,8 @@ inline EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
 inline
 bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
-  const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs);
   return (lhs_key < rhs_key);
 }
 #endif
@@ -101,30 +102,30 @@ bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
 inline
 bool EntityLess::operator()(const Entity lhs, const EntityKey & rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs);
   return lhs_key < rhs;
 }
 
 inline
 bool EntityLess::operator()( const EntityProc & lhs, const EntityProc & rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey() ;
-  const EntityKey rhs_key = m_mesh->in_index_range(rhs.first) ? m_mesh->entity_key(rhs.first) : EntityKey() ;
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs.first);
   return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
 }
 
 inline
 bool EntityLess::operator()( const EntityProc & lhs, const Entity rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey();
-  const EntityKey rhs_key = m_mesh->in_index_range(rhs)       ? m_mesh->entity_key(rhs)       : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs);
   return lhs_key < rhs_key;
 }
 
 inline
 bool EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
   return lhs_key < rhs ;
 }
 
@@ -721,7 +722,7 @@ inline bool BulkData::in_index_range(Entity entity) const
 
 inline bool BulkData::is_valid(Entity entity) const
 {
-  return (this->in_index_range(entity) && !m_meshModification.is_entity_deleted(entity.local_offset()) );
+  return !m_meshModification.is_entity_deleted(entity.local_offset());
 }
 
 inline const MeshIndex& BulkData::mesh_index(Entity entity) const

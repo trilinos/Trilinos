@@ -116,7 +116,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
          = buildFieldPattern<Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager> connManager = buildTriMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
@@ -149,7 +149,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
    TEST_EQUALITY(uy_offsets.size(),ux_offsets.size());
 
    if(myRank==0) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),9);
@@ -188,7 +188,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
       }
    }
    else if(myRank==1) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),9);
@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, field_order)
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager> connManager = buildTriMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
 
@@ -340,13 +340,13 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, ghosted_owned_indices)
 
    // build DOF manager
    RCP<panzer::ConnManager> connManager = buildTriMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
 
-   // test UniqueGlobalIndexer
-   RCP<panzer::UniqueGlobalIndexer<int,int> > glbNum = dofManager;
+   // test GlobalIndexer
+   RCP<panzer::GlobalIndexer> glbNum = dofManager;
 
    std::vector<int> owned, ownedAndGhosted;
    glbNum->getOwnedIndices(owned);
@@ -418,14 +418,14 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, multiple_dof_managers)
 
    // build DOF manager
    RCP<panzer::ConnManager> connManager = buildTriMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager_fluids = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager_fluids = rcp(new panzer::DOFManager());
    dofManager_fluids->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager_fluids->addField("ux",patternC2);
    dofManager_fluids->addField("uy",patternC2);
    dofManager_fluids->addField("p",patternC1);
    dofManager_fluids->buildGlobalUnknowns();
 
-   RCP<panzer::DOFManager<int,int> > dofManager_temp = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager_temp = rcp(new panzer::DOFManager());
    dofManager_temp->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager_temp->addField("T",patternC1);
    dofManager_temp->buildGlobalUnknowns(dofManager_fluids->getGeometricFieldPattern());

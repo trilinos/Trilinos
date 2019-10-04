@@ -50,7 +50,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_ResponseEvaluatorFactory.hpp"
 #include "Panzer_LinearObjFactory.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 namespace panzer {
 

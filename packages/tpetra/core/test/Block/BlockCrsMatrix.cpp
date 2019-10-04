@@ -47,7 +47,7 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_BlockVector.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockView.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 
 namespace {
@@ -987,7 +987,7 @@ namespace {
     //pl.set("zero-based indexing",true);
     //pl.set("always use parallel algorithm",true);
     //pl.set("print MatrixMarket header",false);
-    Tpetra::Experimental::blockCrsMatrixWriter(blockMat, "savedBlockMatrix.m", pl);
+    Tpetra::blockCrsMatrixWriter(blockMat, "savedBlockMatrix.m", pl);
   }
 
 
@@ -1911,14 +1911,14 @@ namespace {
 
       auto ipiv = Kokkos::subview (pivots, lclMeshRow, ALL ());
       int info = 0;
-      Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
+      Tpetra::GETF2 (diagBlock, ipiv, info);
       TEST_EQUALITY( info, 0 );
 
       // GETRI needs workspace.  Use host space for now.
       Teuchos::Array<IST> workVec (blockSize);
       Kokkos::View<IST*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
         work (workVec.getRawPtr (), blockSize);
-      Tpetra::Experimental::GETRI (diagBlock, ipiv, work, info);
+      Tpetra::GETRI (diagBlock, ipiv, work, info);
       TEST_EQUALITY( info, 0 );
     }
 
@@ -2108,14 +2108,14 @@ namespace {
       auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());
       auto ipiv = Kokkos::subview (pivots, lclMeshRow, ALL ());
       int info = 0;
-      Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
+      Tpetra::GETF2 (diagBlock, ipiv, info);
       TEST_EQUALITY( info, 0 );
 
       // GETRI needs workspace.  Use host space for now.
       Teuchos::Array<IST> workVec (blockSize);
       Kokkos::View<IST*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
         work (workVec.getRawPtr (), blockSize);
-      Tpetra::Experimental::GETRI (diagBlock, ipiv, work, info);
+      Tpetra::GETRI (diagBlock, ipiv, work, info);
       TEST_EQUALITY( info, 0 );
     }
 
@@ -2174,14 +2174,14 @@ namespace {
       auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());
       auto ipiv = Kokkos::subview (pivots, lclMeshRow, ALL ());
       int info = 0;
-      Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
+      Tpetra::GETF2 (diagBlock, ipiv, info);
       TEST_EQUALITY( info, 0 );
 
       // GETRI needs workspace.  Use host space for now.
       Teuchos::Array<IST> workVec (blockSize);
       Kokkos::View<IST*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
         work (workVec.getRawPtr (), blockSize);
-      Tpetra::Experimental::GETRI (diagBlock, ipiv, work, info);
+      Tpetra::GETRI (diagBlock, ipiv, work, info);
       TEST_EQUALITY( info, 0 );
     }
 
@@ -2338,7 +2338,7 @@ namespace {
     int blockSize = 3;
     RCP<block_matrix_type> blockMatrix;
     try {
-      blockMatrix = Tpetra::Experimental::convertToBlockCrsMatrix(*pointMatrix,blockSize);
+      blockMatrix = Tpetra::convertToBlockCrsMatrix(*pointMatrix,blockSize);
     }
     catch (std::exception& e) {
       lclSuccess = 0;

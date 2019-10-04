@@ -1,5 +1,5 @@
-#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos.hpp"
 
 //----------------------------------------------------------------------------

@@ -64,6 +64,12 @@
 
 #define MAX_INP_LINE 10240
 
+#if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
+#define FALL_THROUGH [[gnu::fallthrough]]
+#else
+#define FALL_THROUGH ((void)0)
+#endif /* __GNUC__ >= 7 */
+
 template <typename INT> void vec_free(std::vector<INT> &V)
 {
   V.clear();

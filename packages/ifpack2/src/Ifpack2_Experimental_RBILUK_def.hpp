@@ -43,8 +43,8 @@
 #ifndef IFPACK2_EXPERIMENTAL_CRSRBILUK_DEF_HPP
 #define IFPACK2_EXPERIMENTAL_CRSRBILUK_DEF_HPP
 
-#include "Tpetra_Experimental_BlockMultiVector.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockMultiVector.hpp"
+#include "Tpetra_BlockView.hpp"
 #include "Ifpack2_OverlappingRowMatrix.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_Utilities.hpp"
@@ -320,16 +320,7 @@ initAllValues (const block_crs_matrix_type& A)
   // NOTE (mfh 27 May 2016) The factorization below occurs entirely on
   // host, so sync to host first.  The const_cast is unfortunate but
   // is our only option to make this correct.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  const_cast<block_crs_matrix_type&> (A).template sync<Kokkos::HostSpace> ();
-  L_block_->template sync<Kokkos::HostSpace> ();
-  U_block_->template sync<Kokkos::HostSpace> ();
-  D_block_->template sync<Kokkos::HostSpace> ();
-  // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
-  L_block_->template modify<Kokkos::HostSpace> ();
-  U_block_->template modify<Kokkos::HostSpace> ();
-  D_block_->template modify<Kokkos::HostSpace> ();
-#else
+
   const_cast<block_crs_matrix_type&> (A).sync_host ();
   L_block_->sync_host ();
   U_block_->sync_host ();
@@ -338,7 +329,6 @@ initAllValues (const block_crs_matrix_type& A)
   L_block_->modify_host ();
   U_block_->modify_host ();
   D_block_->modify_host ();
-#endif
 
   RCP<const map_type> rowMap = L_block_->getRowMap ();
 
@@ -484,21 +474,8 @@ void RBILUK<MatrixType>::compute ()
   if (! A_block_.is_null ()) {
     Teuchos::RCP<block_crs_matrix_type> A_nc =
       Teuchos::rcp_const_cast<block_crs_matrix_type> (A_block_);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    A_nc->template sync<Kokkos::HostSpace> ();
-#else
     A_nc->sync_host ();
-#endif
   }
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  L_block_->template sync<Kokkos::HostSpace> ();
-  U_block_->template sync<Kokkos::HostSpace> ();
-  D_block_->template sync<Kokkos::HostSpace> ();
-  // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
-  L_block_->template modify<Kokkos::HostSpace> ();
-  U_block_->template modify<Kokkos::HostSpace> ();
-  D_block_->template modify<Kokkos::HostSpace> ();
-#else
   L_block_->sync_host ();
   U_block_->sync_host ();
   D_block_->sync_host ();
@@ -506,7 +483,6 @@ void RBILUK<MatrixType>::compute ()
   L_block_->modify_host ();
   U_block_->modify_host ();
   D_block_->modify_host ();
-#endif
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
@@ -576,14 +552,14 @@ void RBILUK<MatrixType>::compute ()
         little_block_type lmat((typename little_block_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
         little_block_type lmatV((typename little_block_type::value_type*) &InV[matOffset],blockSize_,rowStride);
         //lmatV.assign(lmat);
-        Tpetra::Experimental::COPY (lmat, lmatV);
+        Tpetra::COPY (lmat, lmatV);
         InI[j] = colValsL[j];
       }
 
       little_block_type dmat = D_block_->getLocalBlock(local_row, local_row);
       little_block_type dmatV((typename little_block_type::value_type*) &InV[NumL*blockMatSize], blockSize_, rowStride);
       //dmatV.assign(dmat);
-      Tpetra::Experimental::COPY (dmat, dmatV);
+      Tpetra::COPY (dmat, dmatV);
       InI[NumL] = local_row;
 
       const local_ordinal_type * colValsU;
@@ -598,7 +574,7 @@ void RBILUK<MatrixType>::compute ()
         little_block_type umat((typename little_block_type::value_type*) &valsU[blockMatSize*j], blockSize_, rowStride);
         little_block_type umatV((typename little_block_type::value_type*) &InV[matOffset], blockSize_, rowStride);
         //umatV.assign(umat);
-        Tpetra::Experimental::COPY (umat, umatV);
+        Tpetra::COPY (umat, umatV);
         NumU += 1;
       }
       NumIn = NumL+NumU+1;
@@ -624,7 +600,7 @@ void RBILUK<MatrixType>::compute ()
         local_ordinal_type j = InI[jj];
         little_block_type currentVal((typename little_block_type::value_type*) &InV[jj*blockMatSize], blockSize_, rowStride); // current_mults++;
         //multiplier.assign(currentVal);
-        Tpetra::Experimental::COPY (currentVal, multiplier);
+        Tpetra::COPY (currentVal, multiplier);
 
         const little_block_type dmatInverse = D_block_->getLocalBlock(j,j);
         // alpha = 1, beta = 0
@@ -635,12 +611,12 @@ void RBILUK<MatrixType>::compute ()
           KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
           (STS::one (), currentVal, dmatInverse, STS::zero (), matTmp);
 #else
-        Tpetra::Experimental::GEMM ("N", "N", STS::one (), currentVal, dmatInverse,
-                                    STS::zero (), matTmp);
+        Tpetra::GEMM ("N", "N", STS::one (), currentVal, dmatInverse,
+                      STS::zero (), matTmp);
 #endif
         //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.data ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.data ()), reinterpret_cast<impl_scalar_type*> (matTmp.data ()), blockSize_);
         //currentVal.assign(matTmp);
-        Tpetra::Experimental::COPY (matTmp, currentVal);
+        Tpetra::COPY (matTmp, currentVal);
 
         const local_ordinal_type * UUI;
         scalar_type * UUV;
@@ -660,8 +636,8 @@ void RBILUK<MatrixType>::compute ()
           KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
           ( magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), kkval);
 #else
-              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
-                                          STM::one (), kkval);
+              Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
+                            STM::one (), kkval);
 #endif
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.data ()), reinterpret_cast<impl_scalar_type*> (uumat.data ()), reinterpret_cast<impl_scalar_type*> (kkval.data ()), blockSize_, -STM::one(), STM::one());
             }
@@ -681,8 +657,8 @@ void RBILUK<MatrixType>::compute ()
           KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
           (magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), kkval);
 #else
-              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
-                                          STM::one (), kkval);
+              Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
+                            STM::one (), kkval);
 #endif
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(kkval.data ()), blockSize_, -STM::one(), STM::one());
             }
@@ -694,8 +670,8 @@ void RBILUK<MatrixType>::compute ()
           KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
           (magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), diagModBlock);
 #else
-              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
-                                          STM::one (), diagModBlock);
+              Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
+                            STM::one (), diagModBlock);
 #endif
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.data ()), blockSize_, -STM::one(), STM::one());
             }
@@ -708,11 +684,11 @@ void RBILUK<MatrixType>::compute ()
       }
 
       // dmat.assign(dmatV);
-      Tpetra::Experimental::COPY (dmatV, dmat);
+      Tpetra::COPY (dmatV, dmat);
 
       if (this->RelaxValue_ != STM::zero ()) {
         //dmat.update(this->RelaxValue_, diagModBlock);
-        Tpetra::Experimental::AXPY (this->RelaxValue_, diagModBlock, dmat);
+        Tpetra::AXPY (this->RelaxValue_, diagModBlock, dmat);
       }
 
 //      if (STS::magnitude (DV[i]) > STS::magnitude (MaxDiagonalValue)) {
@@ -730,13 +706,13 @@ void RBILUK<MatrixType>::compute ()
           ipiv[k] = 0;
         }
 
-        Tpetra::Experimental::GETF2 (dmat, ipiv, lapackInfo);
+        Tpetra::GETF2 (dmat, ipiv, lapackInfo);
         //lapack.GETRF(blockSize_, blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
           lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
           "lapackInfo = " << lapackInfo << " which indicates an error in the factorization GETRF.");
 
-        Tpetra::Experimental::GETRI (dmat, ipiv, work, lapackInfo);
+        Tpetra::GETRI (dmat, ipiv, work, lapackInfo);
         //lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
           lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
@@ -753,12 +729,12 @@ void RBILUK<MatrixType>::compute ()
           KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
           (STS::one (), dmat, currentVal, STS::zero (), matTmp);
 #else
-        Tpetra::Experimental::GEMM ("N", "N", STS::one (), dmat, currentVal,
+        Tpetra::GEMM ("N", "N", STS::one (), dmat, currentVal,
                                     STS::zero (), matTmp);
 #endif
         //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.data ()), reinterpret_cast<impl_scalar_type*>(currentVal.data ()), reinterpret_cast<impl_scalar_type*>(matTmp.data ()), blockSize_);
         //currentVal.assign(matTmp);
-        Tpetra::Experimental::COPY (matTmp, currentVal);
+        Tpetra::COPY (matTmp, currentVal);
       }
 
       if (NumU) {
@@ -810,7 +786,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type beta) const
 {
   using Teuchos::RCP;
-  typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
+  typedef Tpetra::BlockMultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type> BMV;
   typedef Tpetra::MultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type> MV;
@@ -868,7 +844,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             little_vec_type xval = xBlock.getLocalBlock(local_row,imv);
             little_vec_type cval = cBlock.getLocalBlock(local_row,imv);
             //cval.assign(xval);
-            Tpetra::Experimental::COPY (xval, cval);
+            Tpetra::COPY (xval, cval);
 
             local_ordinal_type NumL;
             const local_ordinal_type * colValsL;
@@ -885,7 +861,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
               little_block_type lij((typename little_block_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
 
               //cval.matvecUpdate(-one, lij, prevVal);
-              Tpetra::Experimental::GEMV (-one, lij, prevVal, cval);
+              Tpetra::GEMV (-one, lij, prevVal, cval);
             }
           }
         }
@@ -903,7 +879,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             little_vec_type rval = rBlock.getLocalBlock(local_row,imv);
             little_vec_type yval = yBlock.getLocalBlock(local_row,imv);
             //yval.assign(rval);
-            Tpetra::Experimental::COPY (rval, yval);
+            Tpetra::COPY (rval, yval);
 
             local_ordinal_type NumU;
             const local_ordinal_type * colValsU;
@@ -920,7 +896,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
               little_block_type uij((typename little_block_type::value_type*) &valsU[matOffset], blockSize_, rowStride);
 
               //yval.matvecUpdate(-one, uij, prevVal);
-              Tpetra::Experimental::GEMV (-one, uij, prevVal, yval);
+              Tpetra::GEMV (-one, uij, prevVal, yval);
             }
           }
         }

@@ -538,7 +538,7 @@ private:
         KokkosKernels::Impl::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, HandleExecSpace>
         (nv+1, lower_count);
         //Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_lno_temp_work_view_t>(lower_count));
-        HandleExecSpace::fence();
+        HandleExecSpace().fence();
         auto lower_total_count = Kokkos::subview(lower_count, nv);
         auto hlower = Kokkos::create_mirror_view (lower_total_count);
         Kokkos::deep_copy (hlower, lower_total_count);

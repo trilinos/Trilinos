@@ -42,14 +42,12 @@
 #ifndef _FROSCH_DDINTERFACE_DECL_HPP
 #define _FROSCH_DDINTERFACE_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 //#define INTERFACE_OUTPUT
-//#define FROSCH_OFFSET_MAPS
 
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_ExportFactory_fwd.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
 
 #include <FROSch_EntitySet_def.hpp>
 #include <FROSch_InterfaceEntity_decl.hpp>
@@ -58,138 +56,170 @@
 
 
 namespace FROSch {
-    
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    enum CommunicationStrategy {CommCrsMatrix,CommCrsGraph,CreateOneToOneMap};
+
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class DDInterface {
-        
+
+    protected:
+
+        using CommPtr                   = RCP<const Comm<int> >;
+
+        using XMap                      = Map<LO,GO,NO>;
+        using XMapPtr                   = RCP<XMap>;
+        using ConstXMapPtr              = RCP<const XMap>;
+        using XMapPtrVecPtr             = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr        = ArrayRCP<ConstXMapPtr>;
+
+        using XMatrix                   = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr                = RCP<XMatrix>;
+        using ConstXMatrixPtr           = RCP<const XMatrix>;
+
+        using XCrsGraph                 = CrsGraph<LO,GO,NO>;
+        using XCrsGraphPtr              = RCP<XCrsGraph>;
+
+        using XMultiVector              = MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr           = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr      = RCP<const XMultiVector>;
+
+        using XImport                   = Import<LO,GO,NO>;
+        using XImportPtr                = RCP<XImport>;
+
+        using XExport                   = Export<LO,GO,NO>;
+        using XExportPtr                = RCP<XExport>;
+
+        using EntitySetPtr              = RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetConstPtr         = const EntitySetPtr;
+        using EntitySetPtrVecPtr        = ArrayRCP<EntitySetPtr>;
+        using EntitySetPtrConstVecPtr   = const EntitySetPtrVecPtr;
+
+        using EntityFlagVecPtr          = ArrayRCP<EntityFlag>;
+
+        using InterfaceEntityPtr        = RCP<InterfaceEntity<SC,LO,GO,NO> >;
+        using InterfaceEntityPtrVecPtr  = ArrayRCP<InterfaceEntityPtr>;
+
+        using UN                        = unsigned;
+        using ConstUN                   = const UN;
+        using UNVecPtr                  = ArrayRCP<UN>;
+
+        using IntVec                    = Array<int>;
+        using IntVecVec                 = Array<IntVec>;
+        using IntVecVecPtr              = ArrayRCP<IntVec>;
+
+        using LOVec                     = Array<LO>;
+        using LOVecPtr                  = ArrayRCP<LO>;
+
+        using GOVec                     = Array<GO>;
+        using ConstGOVecView            = ArrayView<const GO>;
+        using GOVecPtr                  = ArrayRCP<GO>;
+        using GOVecView                 = ArrayView<GO>;
+        using GOVecVec                  = Array<GOVec>;
+        using GOVecVecPtr               = ArrayRCP<GOVec>;
+
+        using SCVec                     = Array<SC>;
+        using SCVecPtr                  = ArrayRCP<SC>;
+
     public:
-        
-        typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
-        
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::RCP<const Map> ConstMapPtr;
-        typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
-        
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        
-        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
-        typedef const EntitySetPtr EntitySetConstPtr;
-        typedef Teuchos::ArrayRCP<EntitySetPtr> EntitySetPtrVecPtr;
-        typedef const EntitySetPtrVecPtr EntitySetPtrConstVecPtr;
-        
-        typedef Teuchos::ArrayRCP<EntityFlag> EntityFlagVecPtr;
-        
-        typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
-        typedef Teuchos::ArrayRCP<InterfaceEntityPtr> InterfaceEntityPtrVecPtr;
-        
-        typedef unsigned UN;
-        typedef Teuchos::ArrayRCP<UN> UNVecPtr;
-        
-        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
-        
-        typedef Teuchos::Array<GO> GOVec;
-        typedef Teuchos::ArrayView<const GO> ConstGOVecView;
-        typedef Teuchos::ArrayRCP<GO> GOVecPtr;
-        typedef Teuchos::ArrayView<GO> GOVecView;
-        typedef Teuchos::Array<GOVec> GOVecVec;
-        typedef Teuchos::ArrayRCP<GOVec> GOVecVecPtr;
-        
-        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        
-        
+
         DDInterface(UN dimension,
                     UN dofsPerNode,
-                    MapPtr localToGlobalMap);
-        
+                    ConstXMapPtr localToGlobalMap,
+                    Verbosity verbosity = All,
+                    UN levelID = 1,
+                    CommunicationStrategy commStrategy = CommCrsGraph);
+
         ~DDInterface();
-        
-        int resetGlobalDofs(MapPtrVecPtr dofsMaps);
-        
+
+        int resetGlobalDofs(ConstXMapPtrVecPtr dofsMaps);
+
         int removeDirichletNodes(GOVecView dirichletBoundaryDofs);
-        
-        int divideUnconnectedEntities(CrsMatrixPtr matrix);
-        
-        int flagEntities(MultiVectorPtr nodeList = Teuchos::null);
-        
+
+        int divideUnconnectedEntities(ConstXMatrixPtr matrix);
+
+        int flagEntities(ConstXMultiVectorPtr nodeList = null);
+
         int removeEmptyEntities();
-        
-        int sortVerticesEdgesFaces(MultiVectorPtr nodeList = Teuchos::null);
-        
+
+        int sortVerticesEdgesFaces(ConstXMultiVectorPtr nodeList = null);
+
+        int buildEntityMaps(bool buildVerticesMap = true,
+                            bool buildShortEdgesMap = true,
+                            bool buildStraightEdgesMap = true,
+                            bool buildEdgesMap = true,
+                            bool buildFacesMap = true,
+                            bool buildCoarseNodesMap = false);
+
         int buildEntityHierarchy();
-        
+
         int computeDistancesToCoarseNodes(UN dimension,
-                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          ConstXMultiVectorPtr &nodeList = null,
                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
-        
+
         //! This function extracts those entities which are to be used to build a connectivity graph on the subdomain
         //! level. By default, we identify all entities with multiplicity 2. Afterwards, the corresponding entities can
         //! be obtained using the function getConnectivityEntities().
         //! If short or straight edges should be omitted, the function flagEntities() has to be called in advance.
-        int identifyConnectivityEntities(UNVecPtr multiplicities = Teuchos::null,
-                                         EntityFlagVecPtr flags = Teuchos::null);
-        
+        int identifyConnectivityEntities(UNVecPtr multiplicities = null,
+                                         EntityFlagVecPtr flags = null);
+
         UN getDimension() const;
-        
+
         UN getDofsPerNode() const;
-        
+
         LO getNumMyNodes() const;
-        
+
         //
         // Remove the references below?
         //
-        
+
         EntitySetConstPtr & getVertices() const;
-        
+
         EntitySetConstPtr & getShortEdges() const;
-        
+
         EntitySetConstPtr & getStraightEdges() const;
-        
+
         EntitySetConstPtr & getEdges() const;
-        
+
         EntitySetConstPtr & getFaces() const;
-        
+
         EntitySetConstPtr & getInterface() const;
-        
+
         EntitySetConstPtr & getInterior() const;
-        
+
         EntitySetConstPtr & getCoarseNodes() const;
-        
+
         EntitySetPtrConstVecPtr & getEntitySetVector() const;
-        
+
         //! This function returns those entities which are to be used to build a connectivity graph on the subdomain
         //! level. They have to identified first using the function identifyConnectivityEntities().
         EntitySetConstPtr & getConnectivityEntities() const;
-        
-        ConstMapPtr getNodesMap() const;
-        
-        
+
+        ConstXMapPtr getNodesMap() const;
+
+
     protected:
-#ifdef FROSCH_OFFSET_MAPS
-        int communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
-                                       GOVecVec &componentsSubdomainsUnique,
-                                       UN priorDofsPerNode = 0);
-#else
-        int communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
-                                       GOVecVec &componentsSubdomainsUnique);
-#endif
-        int identifyLocalComponents(GOVecVecPtr &componentsSubdomains,
-                                    GOVecVec &componentsSubdomainsUnique);
-        
-        
+
+        int communicateLocalComponents(IntVecVecPtr &componentsSubdomains,
+                                       IntVecVec &componentsSubdomainsUnique,
+                                       CommunicationStrategy commStrategy = CommCrsGraph);
+
+        int identifyLocalComponents(IntVecVecPtr &componentsSubdomains,
+                                    IntVecVec &componentsSubdomainsUnique);
+
+
         CommPtr MpiComm_;
-        
+
         UN Dimension_;
         UN DofsPerNode_;
         LO NumMyNodes_;
-        
+
         EntitySetPtr Vertices_;
         EntitySetPtr ShortEdges_;
         EntitySetPtr StraightEdges_;
@@ -200,11 +230,17 @@ namespace FROSch {
         EntitySetPtr CoarseNodes_;
         EntitySetPtr ConnectivityEntities_;
         EntitySetPtrVecPtr EntitySetVector_;
-        
-        MapPtr NodesMap_;
-        MapPtr UniqueNodesMap_;
+
+        ConstXMapPtr NodesMap_;
+        ConstXMapPtr UniqueNodesMap_;
+
+        bool Verbose_;
+
+        Verbosity Verbosity_;
+
+        ConstUN LevelID_;
     };
-    
+
 }
 
 #endif

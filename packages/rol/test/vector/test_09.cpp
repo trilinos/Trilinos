@@ -156,7 +156,7 @@ int main( int argc, char* argv[] ) {
     *outStream << "Throw exception on mismatched dimension : ";
 
     try { test_single_1.value(*y); }
-    catch( std::logic_error size_mismatch ) { passed_test_2 = true;  }
+    catch( std::logic_error& size_mismatch ) { passed_test_2 = true;  }
 
     if( passed_test_2 ) { *outStream << "Works!" << std::endl; }
     else { 
@@ -170,7 +170,7 @@ int main( int argc, char* argv[] ) {
     *outStream << "Throw exception on mismatched type : ";
 
     try { test_single_1.value(*y); }
-    catch( std::logic_error dim_mismatch ) { passed_test_3 = true;  }
+    catch( std::logic_error& dim_mismatch ) { passed_test_3 = true;  }
 
     if( passed_test_3 ) { *outStream << "Works!" << std::endl; }
     else { 
@@ -220,7 +220,7 @@ int main( int argc, char* argv[] ) {
     }
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

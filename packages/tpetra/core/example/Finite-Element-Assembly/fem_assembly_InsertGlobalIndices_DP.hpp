@@ -46,14 +46,13 @@
 #include <iomanip>
 #include <sstream>
 
-#include <Tpetra_Core.hpp>
-#include <Tpetra_Version.hpp>
-#include <Tpetra_FEMultiVector.hpp>
-#include <MatrixMarket_Tpetra.hpp>
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_FancyOStream.hpp>
-#include <Tpetra_Assembly_Helpers.hpp>
+#include "Tpetra_Core.hpp"
+#include "Tpetra_FEMultiVector.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Tpetra_Assembly_Helpers.hpp"
 
 #include "fem_assembly_typedefs.hpp"
 #include "fem_assembly_MeshDatabase.hpp"
@@ -69,7 +68,7 @@ int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >&
 
 
 
-int executeInsertGlobalIndicesDP(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+int executeInsertGlobalIndicesDP(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                  const struct CmdLineOpts & opts)
 {
   using Teuchos::RCP;
@@ -93,13 +92,13 @@ int executeInsertGlobalIndicesDP(const Teuchos::RCP<const Teuchos::Comm<int> >& 
 
 
 
-int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                   const struct CmdLineOpts& opts)
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
 
-  const global_ordinal_t GO_INVALID = Teuchos::OrdinalTraits<global_ordinal_t>::invalid();
+  const global_ordinal_type GO_INVALID = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();
 
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
@@ -129,7 +128,8 @@ int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >&
   // Build Tpetra Maps
   // -----------------
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
-  RCP<const map_t> row_map = rcp(new map_t(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
+  RCP<const map_type> row_map =
+    rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
 
   if(opts.verbose) row_map->describe(out);
 
@@ -147,10 +147,10 @@ int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >&
   RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
-  RCP<graph_t> crs_graph = rcp(new graph_t(row_map, 0));
+  RCP<crs_graph_type> crs_graph = rcp(new crs_graph_type(row_map, 0));
 
   // Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
-  Teuchos::Array<global_ordinal_t> global_ids_in_row(4);
+  Teuchos::Array<global_ordinal_type> global_ids_in_row(4);
 
   // for each element in the mesh...
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
@@ -223,19 +223,14 @@ int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >&
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
   RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
 
-  RCP<matrix_t> crs_matrix = rcp(new matrix_t(crs_graph));
-  RCP<fe_multivector_t> rhs =
-    rcp (new fe_multivector_t(domain_map, crs_graph->getImporter(), 1));
+  RCP<crs_matrix_type> crs_matrix = rcp(new crs_matrix_type(crs_graph));
+  RCP<fe_multivector_type> rhs =
+    rcp (new fe_multivector_type(domain_map, crs_graph->getImporter(), 1));
 
-  scalar_2d_array_t element_matrix;
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  Kokkos::resize(element_matrix, 4, 4);
-#else
-  Kokkos::resize(element_matrix, 4);
-#endif
+  Kokkos::View<Scalar[4][4], execution_space> element_matrix ("element_matrix");
   Teuchos::Array<Scalar> element_rhs(4);
 
-  Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
+  Teuchos::Array<global_ordinal_type> column_global_ids(4);     // global column ids list
   Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
   // Loop over elements
@@ -258,7 +253,7 @@ int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >&
     // Note: hardcoded 4 here because we're using quads.
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     {
-      global_ordinal_t global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
+      global_ordinal_type global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
 
       for(size_t col_idx=0; col_idx<4; col_idx++)
       {
@@ -293,7 +288,7 @@ int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >&
   if(opts.saveMM)
   {
     std::ofstream ofs("crsMatrix_InsertGlobalIndices_DP.out", std::ofstream::out);
-    Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix);
+    Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparse(ofs, crs_matrix);
     ofs.close();
   }
 

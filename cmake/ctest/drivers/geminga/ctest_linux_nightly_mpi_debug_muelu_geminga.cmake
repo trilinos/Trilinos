@@ -70,7 +70,7 @@ SET(BUILD_NAME_DETAILS DEFAULT)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
-SET(CTEST_MEMORYCHECK_COMMAND /home/aprokop/local/opt/valgrind-3.10.1/bin/valgrind)
+SET(CTEST_MEMORYCHECK_COMMAND /usr/local/bin/valgrind)
 SET(CTEST_DO_MEMORY_TESTING FALSE)
 
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)

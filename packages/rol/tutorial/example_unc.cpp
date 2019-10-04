@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
 
     *outStream << "x_opt = [" << (*x_ptr)[0] << ", " << (*x_ptr)[1] << "]" << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

@@ -44,72 +44,77 @@
 
 #include <FROSch_SchwarzPreconditioner_def.hpp>
 
-namespace FROSch {
-    
 
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
-    class OneLevelPreconditioner : public SchwarzPreconditioner<SC,LO,GO,NO> {
+namespace FROSch {
+
+    using namespace Teuchos;
+    using namespace Xpetra;
     
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+    class OneLevelPreconditioner : public SchwarzPreconditioner<SC,LO,GO,NO> {
+
+    protected:
+
+        using XMapPtr                           = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr                      = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMapPtr;
+
+        using XMatrixPtr                        = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMatrixPtr;
+
+        using XMultiVector                      = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMultiVector;
+
+        using ParameterListPtr                  = typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr;
+
+        using SumOperatorPtr                    = typename SchwarzPreconditioner<SC,LO,GO,NO>::SumOperatorPtr;
+        using MultiplicativeOperatorPtr         = typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiplicativeOperatorPtr;
+        using OverlappingOperatorPtr            = typename SchwarzPreconditioner<SC,LO,GO,NO>::OverlappingOperatorPtr;
+        using AlgebraicOverlappingOperatorPtr   = typename SchwarzPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingOperatorPtr;
+
     public:
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVector MultiVector;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::SumOperatorPtr SumOperatorPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiplicativeOperatorPtr MultiplicativeOperatorPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::OverlappingOperatorPtr OverlappingOperatorPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingOperatorPtr AlgebraicOverlappingOperatorPtr;
-        
-        
-        OneLevelPreconditioner(CrsMatrixPtr k,
+
+        OneLevelPreconditioner(ConstXMatrixPtr k,
                                ParameterListPtr parameterList);
-        
+
         virtual int initialize(bool useDefaultParameters = true);
-        
+
         virtual int initialize(int overlap = -1,
                                bool buildRepeatedMap = false);
-        
+
         virtual int initialize(int overlap,
-                               MapPtr repeatedMap);
-        
+                               ConstXMapPtr repeatedMap);
+
         virtual int compute();
-        
-        virtual void apply(const MultiVector &x,
-                          MultiVector &y,
-                          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                          SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                          SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
-        
-        virtual ConstMapPtr getDomainMap() const;
-        
-        virtual ConstMapPtr getRangeMap() const;
-        
-        virtual void describe(Teuchos::FancyOStream &out,
-                              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-        
+
+        virtual void apply(const XMultiVector &x,
+                           XMultiVector &y,
+                           ETransp mode=NO_TRANS,
+                           SC alpha=ScalarTraits<SC>::one(),
+                           SC beta=ScalarTraits<SC>::zero()) const;
+
+        virtual ConstXMapPtr getDomainMap() const;
+
+        virtual ConstXMapPtr getRangeMap() const;
+
+        virtual void describe(FancyOStream &out,
+                              const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
+
         virtual std::string description() const;
-        
-        virtual int resetMatrix(CrsMatrixPtr &k);
-        
+
+        virtual int resetMatrix(ConstXMatrixPtr &k);
+
     protected:
-        
-        CrsMatrixPtr K_;
-        
+
+        ConstXMatrixPtr K_;
+
         SumOperatorPtr SumOperator_;
         MultiplicativeOperatorPtr MultiplicativeOperator_;
         OverlappingOperatorPtr OverlappingOperator_;
         bool UseMultiplicative_;
     };
-    
+
 }
 
 #endif

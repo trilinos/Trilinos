@@ -57,8 +57,8 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   MKL             "cmake/TPLs/"    EX
   yaml-cpp        "cmake/TPLs/"    EX
   Peano           "cmake/TPLs/"    EX
-  CUDA            "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"    ST
-  CUSPARSE        "cmake/TPLs/"    ST
+  CUDA            "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"    PT
+  CUSPARSE        "cmake/TPLs/"    PT
   Thrust          "cmake/TPLs/"    ST
   Cusp            "cmake/TPLs/"    ST
   TBB             "cmake/TPLs/"    EX
@@ -162,6 +162,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   QUO             "cmake/TPLs/"    EX
   ViennaCL        "cmake/TPLs/"    EX
   Avatar          "cmake/TPLs/"    EX
+  mlpack          "cmake/TPLs/"    EX
   pebbl           "cmake/TPLs/"    EX
   MAGMASparse     "cmake/TPLs/"    EX
   Check           "cmake/TPLs/"    EX

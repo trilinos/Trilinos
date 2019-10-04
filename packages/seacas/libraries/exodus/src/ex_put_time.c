@@ -34,12 +34,10 @@
  */
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
-#include <assert.h>
-#include <stddef.h> // for size_t
-#include <stdio.h>
+#include "exodusII_int.h" // for EX_FATAL, ex__comp_ws, etc
 
 /*!
+\ingroup ResultsData
 
 The function ex_put_time() writes the time value for a specified time
 step.
@@ -79,17 +77,17 @@ error = ex_put_time (exoid, n, &time_value);
 
 int ex_put_time(int exoid, int time_step, const void *time_value)
 {
-  int                  status;
-  int                  varid;
-  size_t               start[1];
-  char                 errmsg[MAX_ERR_LENGTH];
-  struct ex_file_item *file = NULL;
+  int                   status;
+  int                   varid;
+  size_t                start[1];
+  char                  errmsg[MAX_ERR_LENGTH];
+  struct ex__file_item *file = NULL;
 
   EX_FUNC_ENTER();
 
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
-  file  = ex_find_file_item(exoid);
+  file  = ex__find_file_item(exoid);
   varid = file->time_varid;
   if (varid < 0) {
     /* inquire previously defined variable */
@@ -105,7 +103,7 @@ int ex_put_time(int exoid, int time_step, const void *time_value)
   /* store time value */
   start[0] = --time_step;
 
-  if (ex_comp_ws(exoid) == 4) {
+  if (ex__comp_ws(exoid) == 4) {
     status = nc_put_var1_float(exoid, varid, start, time_value);
   }
   else {

@@ -62,10 +62,10 @@ class GatherSolution_BlockedTpetra<panzer::Traits::Hessian,TRAITS,S,LO,GO,NodeT>
 
 public:
 
-   GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
+   GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer)
      : gidIndexer_(indexer) {}
 
-   GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */,
+   GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & /* indexer */,
                                 const Teuchos::ParameterList& /* p */) {}
 
   void postRegistrationSetup(typename TRAITS::SetupData /* d */,
@@ -92,7 +92,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,GO> > gidIndexer_;
+  Teuchos::RCP<const BlockedDOFManager> gidIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 

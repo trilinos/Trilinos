@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -891,6 +889,67 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const local_graph_type& lclGraph,
+            const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::RCP<const map_type>& domainMap,
+            const Teuchos::RCP<const map_type>& rangeMap,
+            const Teuchos::RCP<const import_type>& importer,
+            const Teuchos::RCP<const export_type>& exporter,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
+    rowMap_ (rowMap),
+    colMap_ (colMap),
+    rangeMap_ (rangeMap.is_null () ? rowMap : rangeMap),
+    domainMap_ (domainMap.is_null () ? rowMap : domainMap),
+    importer_ (importer),
+    exporter_ (exporter),
+    lclGraph_ (lclGraph),
+    nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ()),
+    nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ()),
+    globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ()),
+    globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ()),
+    globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ()),
+    pftype_ (StaticProfile),
+    numAllocForAllRows_ (0),
+    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
+    indicesAreAllocated_ (true),
+    indicesAreLocal_ (true),
+    indicesAreGlobal_ (false),
+    fillComplete_ (false), // not yet, but see below
+    lowerTriangular_ (false),
+    upperTriangular_ (false),
+    indicesAreSorted_ (true),
+    noRedundancies_ (true),
+    haveLocalConstants_ (false),
+    haveGlobalConstants_ (false),
+    sortGhostsAssociatedWithEachProcessor_ (true)
+  {
+    staticAssertions();
+    const char tfecfFuncName[] = "Tpetra::CrsGraph(local_graph_type,"
+      "Map,Map,Map,Map,Import,Export,params): ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (colMap.is_null (), std::runtime_error,
+       "The input column Map must be nonnull.");
+
+    k_lclInds1D_ = lclGraph_.entries;
+    k_rowPtrs_ = lclGraph_.row_map;
+    const bool callComputeGlobalConstants =
+      params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    const bool computeLocalTriangularConstants =
+      params.get () == nullptr ||
+      params->get ("compute local triangular constants", true);
+    if (callComputeGlobalConstants) {
+      this->computeGlobalConstants (computeLocalTriangularConstants);
+    }
+    fillComplete_ = true;
+    checkInternalState ();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Teuchos::ParameterList>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getValidParameters () const
@@ -1031,7 +1090,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const
   {
-    return rowMap_.is_null () ? Teuchos::null : rowMap_->getNode ();
+    return Teuchos::null;
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -2353,23 +2412,22 @@ namespace Tpetra {
                    const Teuchos::ArrayView<const LocalOrdinal>& indices,
                    std::function<void(const size_t, const size_t, const size_t)> fun) const
   {
+#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "findLocalIndices: ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        this->getProfileType() != StaticProfile,
-        std::runtime_error,
-        "findLocalIndices requires the graph have StaticProfile");
-
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->getProfileType() != StaticProfile, std::runtime_error,
+       "findLocalIndices requires that the graph have StaticProfile.");
+#endif // HAVE_TPETRA_DEBUG
     using LO = LocalOrdinal;
-    using Kokkos::View;
-    using Kokkos::MemoryUnmanaged;
-    using inp_view_type = View<const LO*, execution_space, MemoryUnmanaged>;
+    using inp_view_type = Kokkos::View<const LO*, Kokkos::HostSpace,
+      Kokkos::MemoryUnmanaged>;
     inp_view_type inputInds(indices.getRawPtr(), indices.size());
 
     size_t numFound = 0;
     LO lclRow = rowInfo.localRow;
     if (this->isLocallyIndexed())
     {
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_lclInds1D_, inputInds, fun);
     }
     else if (this->isGloballyIndexed())
@@ -2378,7 +2436,7 @@ namespace Tpetra {
         return Teuchos::OrdinalTraits<size_t>::invalid();
       const auto& colMap = *(this->colMap_);
       auto map = [&](LO const lclInd){return colMap.getGlobalElement(lclInd);};
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_gblInds1D_, inputInds, map, fun);
     }
     return numFound;
@@ -2414,12 +2472,12 @@ namespace Tpetra {
         return invalidCount;
       const auto& colMap = *(this->colMap_);
       auto map = [&](GO const gblInd){return colMap.getLocalElement(gblInd);};
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_lclInds1D_, inputInds, map, fun);
     }
     else if (this->isGloballyIndexed())
     {
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_gblInds1D_, inputInds, fun);
     }
     return numFound;
@@ -4911,7 +4969,7 @@ namespace Tpetra {
         // Make sure that the GPU can see any updates made on host.
         // This code only reads the local graph, so we don't need a
         // fence afterwards.
-        execution_space::fence ();
+        execution_space().fence ();
 
         // mfh 01 May 2018: See GitHub Issue #2658.
         constexpr bool ignoreMapsForTriStruct = true;
@@ -4933,7 +4991,7 @@ namespace Tpetra {
       // Make sure that the GPU can see any updates made on host.
       // This code only reads the local graph, so we don't need a
       // fence afterwards.
-      execution_space::fence ();
+      execution_space().fence ();
 
       auto ptr = this->lclGraph_.row_map;
       const LO lclNumRows = ptr.extent(0) == 0 ?
@@ -5138,12 +5196,13 @@ namespace Tpetra {
           } ();
 
           // If there are too many errors, don't bother printing them.
-          constexpr size_t tooManyErrsToPrint = 200; // arbitrary constant
+          size_t tooManyErrsToPrint = ::Tpetra::Details::Behavior::verbosePrintCountThreshold();
           if (lclNumErrs > tooManyErrsToPrint) {
             errStrm << "(Process " << myRank << ") When converting column "
               "indices from global to local, we encountered " << lclNumErrs
               << " indices that do not live in the column Map on this "
-              "process.  That's too many to print." << endl;
+              "process.  That's exceeds the allowable number to print."
+              << "This limit is controllable by TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD." << endl;
           }
           else {
             // Map from local row index, to any global column indices
@@ -6148,7 +6207,7 @@ namespace Tpetra {
 
     // We may be accessing UVM data on host below, so ensure that the
     // device is done accessing it.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     const map_type& rowMap = * (this->getRowMap ());
     const map_type* const colMapPtr = this->colMap_.getRawPtr ();
@@ -6311,7 +6370,7 @@ namespace Tpetra {
 
     // We may have accessed UVM data on host above, so ensure that the
     // device sees these changes.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (errCount != 0, std::logic_error, "Packing encountered "
@@ -6372,7 +6431,7 @@ namespace Tpetra {
 
     // We may be accessing UVM data on host below, so ensure that the
     // device is done accessing it.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     const map_type& rowMap = * (this->getRowMap ());
     const map_type* const colMapPtr = this->colMap_.getRawPtr ();
@@ -6471,7 +6530,7 @@ namespace Tpetra {
     // The graph may store its data in UVM memory, so make sure that
     // any device kernels are done modifying the graph's data before
     // reading the data.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     errCount = 0;
     Kokkos::parallel_scan
@@ -8063,8 +8122,6 @@ namespace Tpetra {
 //
 // Must be expanded from within the Tpetra namespace!
 //
-#define TPETRA_CRSGRAPH_GRAPH_INSTANT(LO,GO,NODE) \
-  template class CrsGraph< LO , GO , NODE >;
 
 #define TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
   template<>                                                                        \
@@ -8134,20 +8191,10 @@ namespace Tpetra {
                                                                const Teuchos::RCP<Teuchos::ParameterList>& params);
 
 
-// WARNING: These macros exist only for backwards compatibility.
-// We will remove them at some point.
-#define TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE)
-#define TPETRA_CRSGRAPH_MERGEROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE)
-#define TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE)
-#define TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE)
-
-#define TPETRA_CRSGRAPH_INSTANT(S,LO,GO,NODE)                    \
-  TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE)  \
-  TPETRA_CRSGRAPH_MERGEROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) \
-  TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE)         \
-  TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE)         \
-  TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE)   \
-  TPETRA_CRSGRAPH_EXPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE)   \
+#define TPETRA_CRSGRAPH_INSTANT( LO, GO, NODE ) \
+  template class CrsGraph<LO, GO, NODE>; \
+  TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
+  TPETRA_CRSGRAPH_EXPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
   TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT_TWO(LO,GO,NODE) \
   TPETRA_CRSGRAPH_EXPORT_AND_FILL_COMPLETE_INSTANT_TWO(LO,GO,NODE)
 

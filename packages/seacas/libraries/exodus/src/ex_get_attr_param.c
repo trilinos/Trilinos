@@ -50,9 +50,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
 
 /*!
  * \undoc retrieves the number of attributes.
@@ -70,14 +67,14 @@ int ex_get_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, i
   size_t lnum_attr_per_entry;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* Determine index of obj_id in vobjids array */
   if (obj_type == EX_NODAL) {
     obj_id_ndx = 0;
   }
   else {
-    obj_id_ndx = ex_id_lkup(exoid, obj_type, obj_id);
+    obj_id_ndx = ex__id_lkup(exoid, obj_type, obj_id);
     if (obj_id_ndx <= 0) {
       ex_get_err(NULL, NULL, &status);
 

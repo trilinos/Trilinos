@@ -280,8 +280,8 @@ void Amesos2Wrapper<MatrixType>::initialize ()
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
-  typedef Tpetra::Import<local_ordinal_type,
-    global_ordinal_type, node_type> import_type;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
 
   const std::string timerName ("Ifpack2::Amesos2Wrapper::initialize");
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
@@ -311,29 +311,33 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     {
       // The matrix that Amesos2 will build the preconditioner on must be a Tpetra::Crs matrix.
       // If A_local isn't, then we build one.
-      RCP<const crs_matrix_type> A_local_crs =
-        rcp_dynamic_cast<const crs_matrix_type> (A_local);
+      A_local_crs_ = rcp_dynamic_cast<const crs_matrix_type> (A_local);
 
-      if (A_local_crs.is_null ()) {
-        // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
-        // number of elements in each row of A_local, so that we can
-        // create A_local_crs_nc using static profile.  The code below is
-        // correct but potentially slow.
+      if (A_local_crs_.is_null ()) {
+        local_ordinal_type numRows = A_local->getNodeNumRows();
+        Array<size_t> entriesPerRow(numRows);
+        for(local_ordinal_type i = 0; i < numRows; i++)
+        {
+          entriesPerRow[i] = A_local->getNumEntriesInLocalRow(i);
+        }
         RCP<crs_matrix_type> A_local_crs_nc =
           rcp (new crs_matrix_type (A_local->getRowMap (),
-                                    A_local->getColMap (), 0));
-        // FIXME (mfh 24 Jan 2014) This Import approach will only work
-        // if A_ has a one-to-one row Map.  This is generally the case
-        // with matrices given to Ifpack2.
-        //
-        // Source and destination Maps are the same in this case.
-        // That way, the Import just implements a copy.
-        import_type import (A_local->getRowMap (), A_local->getRowMap ());
-        A_local_crs_nc->doImport (*A_local, import, Tpetra::REPLACE);
+                                    A_local->getColMap (),
+                                    entriesPerRow()));
+        // copy entries into A_local_crs
+        Teuchos::Array<local_ordinal_type> indices(A_local->getNodeMaxNumRowEntries());
+        Teuchos::Array<scalar_type> values(A_local->getNodeMaxNumRowEntries());
+        for(local_ordinal_type i = 0; i < numRows; i++)
+        {
+          size_t numEntries = 0;
+          A_local->getLocalRowCopy(i, indices(), values(), numEntries);
+          ArrayView<const local_ordinal_type> indicesInsert(indices.data(), numEntries);
+          ArrayView<const scalar_type> valuesInsert(values.data(), numEntries);
+          A_local_crs_nc->insertLocalValues(i, indicesInsert, valuesInsert);
+        }
         A_local_crs_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());
-        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+        A_local_crs_ = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
-      A_local_crs_ = A_local_crs;
     }
 
     // FIXME (10 Dec 2013, 25 Aug 2015) It shouldn't be necessary to
@@ -461,13 +465,9 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     // when computing the output.  Otherwise, alias X_temp to X.
     RCP<const MV> X_temp;
     {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
-      auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-#else
       auto X_lcl_host = X.getLocalViewHost ();
       auto Y_lcl_host = Y.getLocalViewHost ();
-#endif
+
       if (X_lcl_host.data () == Y_lcl_host.data ()) {
         X_temp = rcp (new MV (X, Teuchos::Copy));
       } else {

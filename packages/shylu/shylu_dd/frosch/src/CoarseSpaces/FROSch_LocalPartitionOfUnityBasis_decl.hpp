@@ -42,8 +42,6 @@
 #ifndef _FROSCH_PARTITIONOFUNITYBASIS_DECL_hpp
 #define _FROSCH_PARTITIONOFUNITYBASIS_DECL_hpp
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 
@@ -51,82 +49,89 @@
 
 #include "FROSch_Tools_def.hpp"
 
+
 namespace FROSch {
 
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+    using namespace Teuchos;
+    using namespace Xpetra;
+    
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class LocalPartitionOfUnityBasis {
-        
+
+    protected:
+
+        using CommPtr                   = RCP<const Comm<int> >;
+
+        using XMap                      = Map<LO,GO,NO>;
+        using XMapPtr                   = RCP<XMap>;
+        using XMapPtrVecPtr             = ArrayRCP<XMapPtr>;
+
+        using XMultiVector              = MultiVector<SC,LO,GO,NO>;
+        using ConstXMultiVector         = const MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr           = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr      = RCP<ConstXMultiVector>;
+        using XMultiVectorPtrVecPtr     = ArrayRCP<XMultiVectorPtr>;
+        using XMultiVectorPtrVecPtr2D   = ArrayRCP<XMultiVectorPtrVecPtr>;
+
+        using ParameterListPtr          = RCP<ParameterList>;
+
+        using CoarseSpacePtr            = RCP<CoarseSpace<SC,LO,GO,NO> >;
+
+        using UN                        = unsigned;
+        using UNVecPtr                  = ArrayRCP<UN>;
+
+        using LOVecPtr                  = ArrayRCP<LO>;
+        using LOVecPtr2D                = ArrayRCP<LOVecPtr>;
+
+        using BoolVecPtr                = ArrayRCP<bool>;
+        using BoolVecPtr2D              = ArrayRCP<BoolVecPtr>;
+
     public:
 
-        typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
-        
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        typedef Teuchos::ArrayRCP<MultiVectorPtr> MultiVectorPtrVecPtr;
-        typedef Teuchos::ArrayRCP<MultiVectorPtrVecPtr> MultiVectorPtrVecPtr2D;                
-        
-        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
-        
-        typedef Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> > CoarseSpacePtr;
-        
-        typedef unsigned UN;
-        typedef Teuchos::ArrayRCP<UN> UNVecPtr;
-        
-        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
-        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;
-        
-        typedef Teuchos::ArrayRCP<bool> BoolVecPtr;
-        typedef Teuchos::ArrayRCP<BoolVecPtr> BoolVecPtr2D;
-
-        
         LocalPartitionOfUnityBasis(CommPtr mpiComm,
                                    CommPtr serialComm,
                                    UN dofsPerNode,
                                    ParameterListPtr parameterList,
-                                   MultiVectorPtr nullSpaceBasis = MultiVectorPtr(),
-                                   MultiVectorPtrVecPtr partitionOfUnity = MultiVectorPtrVecPtr(),
-                                   MapPtrVecPtr partitionOfUnityMaps = MapPtrVecPtr());
-        
+                                   ConstXMultiVectorPtr nullSpaceBasis = XMultiVectorPtr(),
+                                   XMultiVectorPtrVecPtr partitionOfUnity = XMultiVectorPtrVecPtr(),
+                                   XMapPtrVecPtr partitionOfUnityMaps = XMapPtrVecPtr());
+
 //        virtual ~LocalPartitionOfUnityBasis();
-        
-        int addPartitionOfUnity(MultiVectorPtrVecPtr partitionOfUnity,
-                                MapPtrVecPtr partitionOfUnityMaps);
-        
-        int addGlobalBasis(MultiVectorPtr nullSpaceBasis);
-        
+
+        int addPartitionOfUnity(XMultiVectorPtrVecPtr partitionOfUnity,
+                                XMapPtrVecPtr partitionOfUnityMaps);
+
+        int addGlobalBasis(ConstXMultiVectorPtr nullSpaceBasis);
+
         int buildLocalPartitionOfUnityBasis();
-        
-        MultiVectorPtrVecPtr getPartitionOfUnity() const;
-        
-        MultiVectorPtr getNullspaceBasis() const;
-        
+
+        XMultiVectorPtrVecPtr getPartitionOfUnity() const;
+
+        XMultiVectorPtr getNullspaceBasis() const;
+
         CoarseSpacePtr getLocalPartitionOfUnitySpace() const;
-        
+
     protected:
-        
+
         CommPtr MpiComm_;
         CommPtr SerialComm_;
-        
+
         UN DofsPerNode_;
-        
+
         ParameterListPtr ParameterList_;
-        
+
         CoarseSpacePtr LocalPartitionOfUnitySpace_;
-        
-        MultiVectorPtrVecPtr PartitionOfUnity_;
-        MultiVectorPtr NullspaceBasis_;
-                
-        MapPtrVecPtr PartitionOfUnityMaps_;
-        
+
+        XMultiVectorPtrVecPtr PartitionOfUnity_;
+        ConstXMultiVectorPtr NullspaceBasis_;
+
+        XMapPtrVecPtr PartitionOfUnityMaps_;
+
     };
-    
+
 }
 
 #endif

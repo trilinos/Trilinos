@@ -284,7 +284,7 @@ int main_(int argc, char **argv) {
 
   local_matrix_type A = kernel_construct<scalar_type, local_ordinal_type, device_type>(n);
 
-  execution_space::fence();
+  execution_space().fence();
   Kokkos::Impl::Timer timer;
 
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -302,7 +302,7 @@ int main_(int argc, char **argv) {
 
   double kernel_time = timer.seconds();
 
-  execution_space::fence();
+  execution_space().fence();
 
   printf("kernel_coalesce_drop: %.2e (s)\n", kernel_time / loop);
 

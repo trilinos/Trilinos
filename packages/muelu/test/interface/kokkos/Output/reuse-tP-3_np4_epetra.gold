@@ -67,7 +67,6 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
-structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -79,7 +78,6 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
-repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 800   [default]
 repartition: target rows per proc = 0   [default]
 repartition: min rows per thread = 0   [default]
@@ -93,7 +91,6 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
-repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0
@@ -184,7 +181,6 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
-structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -196,7 +192,6 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
-repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 800   [default]
 repartition: target rows per proc = 0   [default]
 repartition: min rows per thread = 0   [default]
@@ -210,7 +205,6 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
-repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0
@@ -302,7 +296,6 @@ Transferring coordinates
 Reusing coordinates
 write start = -1   [default]
 write end = -1   [default]
-structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -381,7 +374,6 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
-structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -393,7 +385,6 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
-repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 800   [default]
 repartition: target rows per proc = 0   [default]
 repartition: min rows per thread = 0   [default]
@@ -407,7 +398,6 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
-repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0

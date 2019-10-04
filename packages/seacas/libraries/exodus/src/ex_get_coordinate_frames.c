@@ -71,9 +71,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include <assert.h>       // for assert
-#include <stddef.h>       // for size_t
-#include <stdio.h>
 
 /*!
  * Coordinate frames are stored in the database as a series of three
@@ -136,7 +133,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
   size_t count = 0; /* number vars to put in varput   */
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* get the dimensions */
   assert(nframes != NULL);
@@ -194,7 +191,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if (ex_comp_ws(exoid) == 4) {
+    if (ex__comp_ws(exoid) == 4) {
       status = nc_get_var_float(exoid, varids, pt_coordinates);
     }
     else {

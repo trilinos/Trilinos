@@ -100,15 +100,16 @@ namespace Ioss {
 
     // Create a field named 'name' that contains values of type 'type'
     // in a storage format of type 'storage'.  There are 'value_count'
-    // items in the field.
+    // items in the field. If `value_count==0`, then the correct size
+    // will be set when the field is added to a `GroupingEntity`
     Field(std::string name, BasicType type, const std::string &storage, RoleType role,
-          size_t value_count, size_t index = 0);
+          size_t value_count = 0, size_t index = 0);
 
     Field(std::string name, BasicType type, const std::string &storage, int copies, RoleType role,
-          size_t value_count, size_t index = 0);
+          size_t value_count = 0, size_t index = 0);
 
     Field(std::string name, BasicType type, const VariableType *storage, RoleType role,
-          size_t value_count, size_t index = 0);
+          size_t value_count = 0, size_t index = 0);
 
     // Create a field from another field.
     Field(const Field & /*from*/);

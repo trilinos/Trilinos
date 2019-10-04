@@ -93,4 +93,30 @@ TEST_F(BalanceCommandLineWithOutputDir, parseSmDefaultOption_smDefaultSet)
     test_command_line(stk::balance::SM_DEFAULTS);
 }
 
+TEST(BalanceOutputDirectory, checkOutputFileFromInputFileWithoutPath)
+{
+  const std::string inputFile = "input.e";
+  const std::string outputDirectory = "/home/code/results";
+
+  std::string outputFilename = stk::balance::construct_output_file_name(outputDirectory, inputFile);
+  EXPECT_EQ("/home/code/results/input.e", outputFilename);
+}
+
+TEST(BalanceOutputDirectory, checkOutputFileFromInputFileAndOutputDirectoryWithExtraBackslash)
+{
+  const std::string inputFile = "input.e";
+  const std::string outputDirectory = "/home/code/results/";
+
+  std::string outputFilename = stk::balance::construct_output_file_name(outputDirectory, inputFile);
+  EXPECT_EQ("/home/code/results//input.e", outputFilename);
+}
+
+TEST(BalanceOutputDirectory, checkOutputFileFromInputFileWithPath)
+{
+  const std::string inputFile = "/another/directory/input.e";
+  const std::string outputDirectory = "/home/code/results";
+
+  std::string outputFilename = stk::balance::construct_output_file_name(outputDirectory, inputFile);
+  EXPECT_EQ("/home/code/results/input.e", outputFilename);
+}
 }

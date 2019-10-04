@@ -1,10 +1,11 @@
-#---------------------------------------------------------------
-#    Copyright 2006, 2007 Sandia Corporation.
-#    Under the terms of Contract DE-AC04-94AL85000, there is a
-#    non-exclusive license for use of this work by or on behalf
-#    of the U.S. Government.  Export of this program may require
-#    a license from the United States Government.
-#---------------------------------------------------------------
+#--------------------------------------------------------------------
+#    Copyright 2002 - 2008, 2010, 2011 National Technology &         
+#    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   
+#    of Contract DE-NA0003525 with NTESS, there is a                 
+#    non-exclusive license for use of this work by or on behalf      
+#    of the U.S. Government.  Export of this program may require     
+#    a license from the United States Government.                    
+#--------------------------------------------------------------------
 
 #
 # The signature for Boost.build rules is described here:
@@ -40,10 +41,10 @@ project votd
   : requirements
     $(sierra-warnings)
      <define>SIERRA_PARALLEL_MPI
-     <include>$(stk_unit_test_utils-root)/..
+     <include>$(stk_unit_test_utils-root)
   : usage-requirements
      <define>SIERRA_PARALLEL_MPI
-     <include>$(stk_unit_test_utils-root)/..
+     <include>$(stk_unit_test_utils-root)
   : build-dir $(stk_unit_test_utils-builddir)
   ;
 
@@ -116,7 +117,7 @@ install install-user-src ;
 explicit install-user-include ;
 install install-user-include
   : [ glob
-      $(stk_unit_test_utils-root): *.hpp *.h
+      $(stk_unit_test_utils-root)/stk_unit_test_utils: *.hpp *.h
     ]
   : <location>$(install-root)/stk/stk_unit_test_utils/include
   ;
@@ -125,6 +126,7 @@ explicit install-user-lib ;
 install install-user-lib
   : stk_unit_test_utils
     stk_unit_main
+    stk_mesh_fixtures
     comparisonUtils
   : <location>$(install-root)/stk/stk_unit_test_utils/lib
   ;
@@ -138,7 +140,7 @@ alias install-exe-targets : ;
 lib stk_unit_test_utils
   :
     [ ifdevbuild
-      [ glob $(stk_unit_test_utils-root)/*.cpp ]
+      [ glob $(stk_unit_test_utils-root)/stk_unit_test_utils/*.cpp ]
       /sierra/stk_io//stk_io
       /sierra/stk_ngp_test//stk_ngp_test
       /tpl/gtest//gtest
@@ -154,15 +156,35 @@ lib stk_unit_test_utils
     ]
   :
   :
-    <include>$(stk_unit_test_utils-root)/..
+  ;
+
+lib stk_mesh_fixtures
+  :
+    [ ifdevbuild
+      [ glob $(stk_unit_test_utils-root)/stk_unit_test_utils/stk_mesh_fixtures/*.cpp ]
+    ]
+    stk_unit_test_utils      
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_util//stk_util_parallel
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_io//stk_io
+    /tpl/trilinos//shards
+    /mpi//mpi
+  : 
+    [ ifuserbuild
+      <file>$(stk_unit_test_utils-root)/lib/libstk_mesh_fixtures.a
+    ]
+  :
+  :
   ;
 
 lib stk_unit_main
   :
     [ ifdevbuild
-      [ glob $(stk_unit_test_utils-root)/unit_main_lib/*.cpp ]
-      stk_unit_test_utils
+      [ glob $(stk_unit_test_utils-root)/stk_unit_test_utils/unit_main_lib/*.cpp ]
     ]
+    stk_unit_test_utils
   : 
     [ ifuserbuild
       <file>$(stk_unit_test_utils-root)/lib/libstk_unit_main.a
@@ -174,7 +196,7 @@ lib stk_unit_main
 lib comparisonUtils
   :
     [ ifdevbuild
-      $(stk_unit_test_utils-root)/comparison/stringAndNumberComparisons.cpp
+      $(stk_unit_test_utils-root)/stk_unit_test_utils/comparison/stringAndNumberComparisons.cpp
     ]   
   :
     [ ifuserbuild

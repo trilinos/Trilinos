@@ -13,13 +13,11 @@ namespace Tacho {
     /// ===========
     template<typename ArgUplo>
     struct Chol<ArgUplo,Algo::Internal> {
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename ViewTypeA>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(SchedulerType &sched,
-             MemberType &member,
+      invoke(MemberType &member,
              const ViewTypeA &A) {
         typedef typename ViewTypeA::non_const_value_type value_type;
         

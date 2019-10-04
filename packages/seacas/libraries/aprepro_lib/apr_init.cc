@@ -357,8 +357,8 @@ namespace SEAMS {
       {"PHI",   1.61803398874989484820},  /* golden ratio               */
       {"TAU",   6.28318530717958623200},  /* 2*PI see Tau Manifesto, http://tauday.com */
       {"PI",    3.14159265358979323846},  /* pi                         */
-      {"PI_2",  1.57079632679489661923},  /* pi / 2			 */
-      {"SQRT2", 1.41421356237309504880},  /* square root of 2		 */
+      {"PI_2",  1.57079632679489661923},  /* pi / 2                      */
+      {"SQRT2", 1.41421356237309504880},  /* square root of 2            */
       {"TRUE",  1},
       {"FALSE", 0},
       {nullptr, 0}
@@ -368,8 +368,8 @@ namespace SEAMS {
   svar_init svariables[] = {{"_FORMAT", "%.10g"}, /* Default output format */
                             {nullptr, nullptr}};
   /* NOTE: The current comment is stored in "_C_"
-   *	 Since it can be changed by user on command line, we
-   *	 initialize is differently than the other string variables.
+   *     Since it can be changed by user on command line, we
+   *     initialize is differently than the other string variables.
    */
 
 #define internal_init_table(functions, func_type, sym_type)                                        \

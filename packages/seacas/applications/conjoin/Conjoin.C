@@ -160,7 +160,7 @@ namespace {
   std::string format_time(double seconds);
   int         get_width(size_t max_value);
 
-  ex_entity_type exodus_object_type(Excn::ObjectType &conjoin_type)
+  ex_entity_type exodus_object_type(const Excn::ObjectType &conjoin_type)
   {
     switch (conjoin_type) {
     case Excn::EBLK: return EX_ELEM_BLOCK;
@@ -772,8 +772,10 @@ int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */
     field_width   = 5;
   }
 
-  int element_width  = get_width(global.count(Excn::ELEM));
-  int step_width     = get_width(num_time_steps);
+  int element_width = get_width(global.count(Excn::ELEM));
+  int step_width    = get_width(num_time_steps);
+  step_width += step_width / 3; // For commas -- 1,234,456
+
   int part_width     = get_width(part_count + 1);
   int loc_step_width = 0;
   for (auto &global_time : global_times) {
@@ -782,6 +784,7 @@ int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */
     }
   }
   loc_step_width = get_width(loc_step_width);
+  loc_step_width += loc_step_width / 3;
 
   size_t time_step_out = 0;
   for (size_t time_step = 0; time_step < num_time_steps; time_step++) {
@@ -910,11 +913,12 @@ int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */
       fmt::print(stderr, "{}", time_stamp(tsFormat));
     }
 
-    fmt::print(stderr,
-               "Step {:{}}/{}, time {:.4e} (Part {:{}}/{}, step {:{}})   Active Elem: {:{}}",
-               time_step + 1, step_width, num_time_steps, time_val, p + 1, part_width, part_count,
-               global_times[time_step].localStepNumber + 1, loc_step_width,
-               local_mesh[p].count(Excn::ELEM), element_width);
+    fmt::print(
+        stderr,
+        "Step {:{}n}/{:n},  time {:.4e}  (Part {:{}}/{},  step {:{}n})   Active Elem: {:{}n}",
+        time_step + 1, step_width, num_time_steps, time_val, p + 1, part_width, part_count,
+        global_times[time_step].localStepNumber + 1, loc_step_width,
+        local_mesh[p].count(Excn::ELEM), element_width);
 
     double cur_time            = seacas_timer();
     double elapsed             = cur_time - start_time;
@@ -940,8 +944,8 @@ int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */
 
 namespace {
   template <typename T>
-  void get_put_qa(int id, int id_out, const std::vector<TimeStepMap<T>> &global_times,
-                  Excn::SystemInterface &interface)
+  void get_put_qa(int id, int id_out, const std::vector<TimeStepMap<T>> & /*global_times*/,
+                  Excn::SystemInterface & /*interface*/)
   {
     // NOTE: Assuming info and QA records for all parts
     int error = 0;
@@ -966,10 +970,10 @@ namespace {
     for (size_t i=0; i < global_times.size(); i++) {
       std::ostringstream os;
       fmt::print(os, "Step {:2}, time {:.4e} (Part {}, step {})  File: {}",
-		 i+1, global_times[i].timeValue,
-		 global_times[i].partNumber+1,
-		 global_times[i].localStepNumber+1,
-		 interface.inputFiles_[global_times[i].partNumber]);
+                 i+1, global_times[i].timeValue,
+                 global_times[i].partNumber+1,
+                 global_times[i].localStepNumber+1,
+                 interface.inputFiles_[global_times[i].partNumber]);
 
       copy_string(info_records[num_info_records+1+i], os.str(), MAX_LINE_LENGTH + 1);
     }
@@ -2199,8 +2203,8 @@ namespace {
               nset.nodeOrderMap[i] = global_pos - 1;
             }
 #if 0
-	    if (debug_level & 32)
-	      nset.dump_order();
+            if (debug_level & 32)
+              nset.dump_order();
 #endif
           }
         }

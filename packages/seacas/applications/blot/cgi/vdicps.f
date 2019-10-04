@@ -90,7 +90,7 @@ C                   attribute values, the color table, and current
 C                   position are set to appropriate defaults for the
 C                   device.  All necessary input device initialization
 C                   is done.  The screen is cleared or paper advanced
-C                   if necessary to guarentee a blank view surface for
+C                   if necessary to guarantee a blank view surface for
 C                   drawing on.
 C
 C                   ASPECT specifies the ratio of the X dimension to the
@@ -463,7 +463,7 @@ C       color is on
 C
 C       define some kind of color table
 C
-        DO 120 IC=0,7
+        DO IC=0,7
         COLDEF(1)=0.
         COLDEF(2)=0.
         COLDEF(3)=0.
@@ -487,7 +487,7 @@ C
           COLDEF(2)=1.
           COLDEF(3)=1.
         END IF
-          DO 115 IK=0,255,8
+          DO IK=0,255,8
           DUMMY(1) = IC+IK
           CALL VDSTCO(1,DUMMY,COLDEF,0)
           IF(IC.EQ.0) THEN
@@ -495,8 +495,8 @@ C
             COLDEF(2)=0.2
             COLDEF(3)=0.2
           END IF
-  115     CONTINUE
-  120   CONTINUE
+       end do
+      end do
       END IF
       VECTOR(1)=7.
       VECTOR(2)=0.
@@ -804,25 +804,25 @@ C
 
 C Strip off any leading blanks
       ISTART = 0
-      DO 10 I=1,LENGTH
-       IF(NAME(I:I) .NE. ' ')THEN
-         ISTART = I
-         GOTO 11
-       ENDIF
-10    CONTINUE
-11    CONTINUE
+      DO I=1,LENGTH
+         IF(NAME(I:I) .NE. ' ')THEN
+            ISTART = I
+            GOTO 11
+         ENDIF
+      end do
+ 11   CONTINUE
 
 C Strip off trailing blanks
       IEND = 0
       IF(ISTART.GT.0)THEN
-        DO 20 I=LENGTH,1,-1
-         IF(NAME(I:I) .NE. ' ')THEN
-           IEND = I
-           GOTO 21
-         ENDIF
-20      CONTINUE
+         DO I=LENGTH,1,-1
+            IF(NAME(I:I) .NE. ' ')THEN
+               IEND = I
+               GOTO 21
+            ENDIF
+         end do
       ENDIF
-21    CONTINUE
+ 21   CONTINUE
       PSTNAM=NAME(ISTART:IEND)
       RETURN
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -1013,9 +1013,9 @@ C           (7)=CHARACTER BOX X
 C
       INTEGER I
 C
-      DO 100 I=1,7
+      DO I=1,7
          ATTARR(I)=VECTOR(I)
-  100 CONTINUE
+      end do
 C
       RETURN
       END
@@ -1671,7 +1671,7 @@ C                   buffers if necessary.  Also prepare the device to
 C                   operate in alphanumeric (as opposed to graphic)
 C                   mode.  This is necessary on some devices so that
 C                   alphanumeric data from FORTRAN I/O won't be
-C                   misinterpretted as graphic data.
+C                   misinterpreted as graphic data.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
@@ -1799,9 +1799,9 @@ C CHECK FOR VALID INDEXES.
             CALL VBERRH(724,5)
             GOTO 100
          END IF
-           CLRARY(1,I)=PCOLS(1,INDEXN)
-           CLRARY(2,I)=PCOLS(2,INDEXN)
-           CLRARY(3,I)=PCOLS(3,INDEXN)
+         CLRARY(1,I)=PCOLS(1,INDEXN)
+         CLRARY(2,I)=PCOLS(2,INDEXN)
+         CLRARY(3,I)=PCOLS(3,INDEXN)
   100    CONTINUE
 C
   999 RETURN
@@ -2434,9 +2434,9 @@ C MOVE TO FIRST POINT
       CALL VIMOVA(XARRAY(1),YARRAY(1))
 C
 C CALL VDLINA TO DRAW POINTS FROM 1ST POINT TO NTH POINT
-      DO 100 I=2,NPTS
+      DO I=2,NPTS
         CALL VILINA(XARRAY(I),YARRAY(I))
-100   CONTINUE
+      end do
 C
 C THEN DRAW A LINE TO THE FIRST POINT TO CLOSE THE POLYGON
       CALL VILINA(XARRAY(1),YARRAY(1))
@@ -2577,7 +2577,7 @@ C
 c      CALL VDSTCS(VECTOR(6))
       CALL VDSTFC(NINT(VECTOR(1)))
       CALL PSTBUF(0,' ')
-  380 KEMPTY=0
+      KEMPTY=0
 C
       RETURN
       END
@@ -3153,7 +3153,7 @@ C                   only to text primitives.
 C                   All devices must support at least a single device
 C                   dependent value that is the default.  If an
 C                   unsupported value is specified, set to the largest
-C                   suported character size that does not exceed the
+C                   supported character size that does not exceed the
 C                   specified size.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
@@ -3272,7 +3272,7 @@ C
 C CONVERT LINE-WIDTH TO NDC
       LW=WIDTH*.005
 C
-C CONVERT WIDTH TO DEVICE COORDINATES AND ADD A DIGIT; NEED IT TO HUNDRETHS
+C CONVERT WIDTH TO DEVICE COORDINATES AND ADD A DIGIT; NEED IT TO HUNDREDTHS
       ILW=NINT(XSCALE*LW*10.)
 C     A LINEWIDTH OF ZERO WORKS ONLY PART OF THE TIME
       IF(ILW.LT.10) ILW=10
@@ -3296,7 +3296,7 @@ C
       CALL VBSTLS(LINSTY)
   999 RETURN
       END
-      SUBROUTINE VDIQES(ESCPCD,SUPPRT)
+      SUBROUTINE VDIQES(ESCPCD,SUPPORT)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
 C VDIQES           -Inquire Escape.
@@ -3312,18 +3312,18 @@ C                   function specified.  Range 0,1,2.
 C
 C NARRATIVE        -An integer value indicating 2=hardware supported,
 C                   1=software supported, 0=unsupported is returned in
-C                   SUPPRT for the escape function ESCPCD.
+C                   SUPPORT for the escape function ESCPCD.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
-      INTEGER ESCPCD,SUPPRT
+      INTEGER ESCPCD,SUPPORT
       IF (ESCPCD.EQ.2100) THEN
-         SUPPRT=2
+         SUPPORT=2
       ELSEIF ((ESCPCD.GE.2101).AND.(ESCPCD.LE.2110)) THEN
-         SUPPRT=2
+         SUPPORT=2
 C ELSE THERE IS NO SUPPORT OF ANY OTHER ESCAPE CODES
       ELSE
-         SUPPRT=0
+         SUPPORT=0
       END IF
       RETURN
       END
@@ -3672,7 +3672,7 @@ C
         KPSTBG=0
         KPSTCI=0
         IONCE=1
-   20   IF(ARG.EQ.' ' .and. bltans .eq. ' ') THEN
+        IF(ARG.EQ.' ' .and. bltans .eq. ' ') THEN
           WRITE(*,10)
    10     FORMAT(/,' This VDI PostScript driver has seven options.',/,
      &     '     1. black & white, no polygon fill',/,

@@ -112,7 +112,7 @@ C
       IF (N2 .EQ. NODE) THEN
          GOTO 140
       ELSEIF (KOUNT1 .GT. NLOOP (1) + 1) THEN
-         CALL MESAGE ('** PROLEMS WITH LOOP CLOSING IN COLAPS **')
+         CALL MESAGE ('** PROBLEMS WITH LOOP CLOSING IN COLAPS **')
          ERR = .TRUE.
          GOTO 140
       ENDIF

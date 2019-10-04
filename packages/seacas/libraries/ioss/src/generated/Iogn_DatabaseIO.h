@@ -96,6 +96,8 @@ namespace Iogn {
 
     ~DatabaseIO() override;
 
+    const std::string get_format() const override {return "Generated";}
+
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
@@ -138,8 +140,9 @@ namespace Iogn {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-                               void *data, size_t data_size) const override
+    int64_t get_field_internal(const Ioss::StructuredBlock * /* sb */,
+                               const Ioss::Field & /* field */, void * /* data */,
+                               size_t /* data_size */) const override
     {
       return -1;
     }
@@ -182,8 +185,9 @@ namespace Iogn {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-                               void *data, size_t data_size) const override
+    int64_t put_field_internal(const Ioss::StructuredBlock * /* sb */,
+                               const Ioss::Field & /* field */, void * /* data */,
+                               size_t /* data_size */) const override
     {
       return -1;
     }

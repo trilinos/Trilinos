@@ -401,8 +401,8 @@ int main(int argc, char *argv[])
     case 'T': exit(4);
     case 'u': quote = 0; break;
     case 'V': printf("getopt (enhanced) 1.1.4\n"); exit(0);
-    case '?':
-    case ':': parse_error(NULL);
+    case '?':                                       /* fall through */
+    case ':': parse_error(NULL); /* fall through */ /* exits */
     default: parse_error("internal error, contact the author.");
     }
 

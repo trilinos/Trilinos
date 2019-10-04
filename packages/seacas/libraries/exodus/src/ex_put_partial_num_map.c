@@ -53,10 +53,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
 
 /*!
  * writes a map; this is a vector of integers of length number of mesh
@@ -77,7 +73,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   const char *vmap;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   switch (map_type) {
   case EX_NODE_MAP:
@@ -121,7 +117,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   }
 
   /* Check for duplicate map id entry */
-  status = ex_id_lkup(exoid, map_type, map_id);
+  status = ex__id_lkup(exoid, map_type, map_id);
   if (status == -EX_LOOKUPFAIL) { /* did not find the map id */
     map_exists = 0;               /* Map is being defined */
   }
@@ -141,10 +137,10 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
 
     /* Keep track of the total number of maps defined using a
        counter stored in a linked list keyed by exoid.  NOTE:
-       ex_get_file_item is used to find the number of element maps for a
+       ex__get_file_item is used to find the number of element maps for a
        specific file and returns that value.
     */
-    cur_num_maps = ex_get_file_item(exoid, ex_get_counter_list(map_type));
+    cur_num_maps = ex__get_file_item(exoid, ex__get_counter_list(map_type));
     if (cur_num_maps >= (int)num_maps) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: exceeded number of %ss (%" ST_ZU ") specified in file id %d",
@@ -153,12 +149,12 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    /*   NOTE: ex_inc_file_item  is used to find the number of element maps
+    /*   NOTE: ex__inc_file_item  is used to find the number of element maps
          for a specific file and returns that value incremented. */
-    cur_num_maps = ex_inc_file_item(exoid, ex_get_counter_list(map_type));
+    cur_num_maps = ex__inc_file_item(exoid, ex__get_counter_list(map_type));
   }
   else {
-    map_ndx      = ex_id_lkup(exoid, map_type, map_id);
+    map_ndx      = ex__id_lkup(exoid, map_type, map_id);
     cur_num_maps = map_ndx - 1;
   }
 

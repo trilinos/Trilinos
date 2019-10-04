@@ -199,7 +199,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   // comparing graph values, in order to ensure that changes made on
   // device are visible on host.
   A->fillComplete();
-  execution_space::fence ();
+  execution_space().fence ();
 
   auto loc_num_errs = 0;
 

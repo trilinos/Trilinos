@@ -344,8 +344,10 @@ void Ioss::Map::set_default(size_t count, size_t offset)
   set_is_sequential(true);
 }
 
+#ifndef DOXYGEN_SKIP_THIS
 template void Ioss::Map::reverse_map_data(int *data, size_t count) const;
 template void Ioss::Map::reverse_map_data(int64_t *data, size_t count) const;
+#endif
 
 template <typename INT> void Ioss::Map::reverse_map_data(INT *data, size_t count) const
 {
@@ -375,8 +377,10 @@ void Ioss::Map::reverse_map_data(void *data, const Ioss::Field &field, size_t co
   }
 }
 
+#ifndef DOXYGEN_SKIP_THIS
 template void Ioss::Map::map_data(int *data, size_t count) const;
 template void Ioss::Map::map_data(int64_t *data, size_t count) const;
+#endif
 
 template <typename INT> void Ioss::Map::map_data(INT *data, size_t count) const
 {
@@ -405,8 +409,10 @@ void Ioss::Map::map_data(void *data, const Ioss::Field &field, size_t count) con
   }
 }
 
+#ifndef DOXYGEN_SKIP_THIS
 template void Ioss::Map::map_implicit_data(int *data, size_t count, size_t offset) const;
 template void Ioss::Map::map_implicit_data(int64_t *data, size_t count, size_t offset) const;
+#endif
 
 template <typename INT>
 void Ioss::Map::map_implicit_data(INT *ids, size_t count, size_t offset) const

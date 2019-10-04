@@ -71,8 +71,8 @@ uninitialized_view(const std::string& name, const size_t& size)
 template<class RowPtr, class Indices, class Values, class Padding>
 void
 pad_crs_arrays(
-    RowPtr& row_ptr_beg,
-    RowPtr& row_ptr_end,
+               const RowPtr& row_ptr_beg,
+               const RowPtr& row_ptr_end,
     Indices& indices,
     Values& values,
     const Padding& padding)
@@ -191,12 +191,17 @@ insert_crs_indices(
     IndexMap&& map,
     std::function<void(size_t const, size_t const, size_t const)> cb)
 {
-  using offset_type = typename std::decay<decltype (row_ptrs[0])>::type;
-  using ordinal_type = typename std::decay<decltype (cur_indices[0])>::type;
-
   if (new_indices.size() == 0) {
     return 0;
   }
+
+  if (cur_indices.size() == 0) {
+    // No room to insert new indices
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+
+  using offset_type = typename std::decay<decltype (row_ptrs[0])>::type;
+  using ordinal_type = typename std::decay<decltype (cur_indices[0])>::type;
 
   const offset_type start = row_ptrs[row];
   offset_type end = start + static_cast<offset_type> (num_assigned);
@@ -236,6 +241,7 @@ size_t
 find_crs_indices(
     typename Pointers::value_type const row,
     Pointers const& row_ptrs,
+    const size_t curNumEntries,
     Indices1 const& cur_indices,
     Indices2 const& new_indices,
     IndexMap&& map,
@@ -247,8 +253,8 @@ find_crs_indices(
   using ordinal = typename Indices1::value_type;
   auto invalid_ordinal = Teuchos::OrdinalTraits<ordinal>::invalid();
 
-  auto const start = row_ptrs[row];
-  auto const end = row_ptrs[row + 1];
+  const size_t start = static_cast<size_t> (row_ptrs[row]);
+  const size_t end = start + curNumEntries;
   size_t num_found = 0;
   for (size_t k = 0; k < new_indices.size(); k++)
   {
@@ -295,8 +301,8 @@ find_crs_indices(
 template<class RowPtr, class Indices, class Padding>
 void
 padCrsArrays(
-    RowPtr& rowPtrBeg,
-    RowPtr& rowPtrEnd,
+             const RowPtr& rowPtrBeg,
+             const RowPtr& rowPtrEnd,
     Indices& indices,
     const Padding& padding)
 {
@@ -309,8 +315,8 @@ padCrsArrays(
 template<class RowPtr, class Indices, class Values, class Padding>
 void
 padCrsArrays(
-    RowPtr& rowPtrBeg,
-    RowPtr& rowPtrEnd,
+             const RowPtr& rowPtrBeg,
+             const RowPtr& rowPtrEnd,
     Indices& indices,
     Values& values,
     const Padding& padding)
@@ -438,6 +444,7 @@ size_t
 findCrsIndices(
     typename Pointers::value_type const row,
     Pointers const& rowPtrs,
+    const size_t curNumEntries,
     Indices1 const& curIndices,
     Indices2 const& newIndices,
     Callback&& cb)
@@ -447,7 +454,7 @@ findCrsIndices(
     "Expected views to have same value type");
   // Provide a unit map for the more general find_crs_indices
   using ordinal = typename Indices2::value_type;
-  auto numFound = impl::find_crs_indices(row, rowPtrs, curIndices, newIndices,
+  auto numFound = impl::find_crs_indices(row, rowPtrs, curNumEntries, curIndices, newIndices,
     [=](ordinal ind){ return ind; }, cb);
   return numFound;
 }
@@ -457,12 +464,13 @@ size_t
 findCrsIndices(
     typename Pointers::value_type const row,
     Pointers const& rowPtrs,
+    const size_t curNumEntries,
     Indices1 const& curIndices,
     Indices2 const& newIndices,
     IndexMap&& map,
     Callback&& cb)
 {
-  return impl::find_crs_indices(row, rowPtrs, curIndices, newIndices, map, cb);
+  return impl::find_crs_indices(row, rowPtrs, curNumEntries, curIndices, newIndices, map, cb);
 }
 
 } // namespace Details

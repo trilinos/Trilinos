@@ -19,7 +19,7 @@ Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -32,9 +32,9 @@ filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
+BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 2a (secondary))
+BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
@@ -42,6 +42,7 @@ aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
 aggregation: enable phase 1 = 1   [default]
 aggregation: phase 1 algorithm = Serial   [default]
+aggregation: deterministic = 0   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -72,6 +73,7 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -96,7 +98,7 @@ Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -109,9 +111,9 @@ filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
+BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 2a (secondary))
+BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
@@ -119,6 +121,7 @@ aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
 aggregation: enable phase 1 = 1   [default]
 aggregation: phase 1 algorithm = Serial   [default]
+aggregation: deterministic = 0   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -152,6 +155,7 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -176,7 +180,7 @@ Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -189,9 +193,9 @@ filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
+BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 2a (secondary))
+BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
@@ -199,6 +203,7 @@ aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
 aggregation: enable phase 1 = 1   [default]
 aggregation: phase 1 algorithm = Serial   [default]
+aggregation: deterministic = 0   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -232,6 +237,7 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -256,7 +262,7 @@ Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -269,9 +275,9 @@ filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
+BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 2a (secondary))
+BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
@@ -279,6 +285,7 @@ aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
 aggregation: enable phase 1 = 1   [default]
 aggregation: phase 1 algorithm = Serial   [default]
+aggregation: deterministic = 0   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -312,6 +319,7 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -324,6 +332,8 @@ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 smoother -> 
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 
 
 --------------------------------------------------------------------------------

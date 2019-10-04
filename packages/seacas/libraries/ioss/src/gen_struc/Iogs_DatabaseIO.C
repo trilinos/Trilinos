@@ -85,8 +85,8 @@ namespace {
   }
 
   template <typename INT>
-  void fill_transient_data(const Ioss::GroupingEntity *entity, size_t component_count, double *data,
-                           INT *ids, size_t count, double offset = 0.0)
+  void fill_transient_data(size_t component_count, double *data, INT *ids, size_t count,
+                           double offset = 0.0)
   {
     if (component_count == 1) {
       for (size_t i = 0; i < count; i++) {
@@ -107,14 +107,12 @@ namespace {
   {
     const Ioss::Field &ids = entity->get_fieldref("ids");
     if (ids.is_type(Ioss::Field::INTEGER)) {
-      fill_transient_data(entity, field.raw_storage()->component_count(),
-                          reinterpret_cast<double *>(data), reinterpret_cast<int *>(id_data), count,
-                          offset);
+      fill_transient_data(field.raw_storage()->component_count(), reinterpret_cast<double *>(data),
+                          reinterpret_cast<int *>(id_data), count, offset);
     }
     else {
-      fill_transient_data(entity, field.raw_storage()->component_count(),
-                          reinterpret_cast<double *>(data), reinterpret_cast<int64_t *>(id_data),
-                          count, offset);
+      fill_transient_data(field.raw_storage()->component_count(), reinterpret_cast<double *>(data),
+                          reinterpret_cast<int64_t *>(id_data), count, offset);
     }
   }
 
@@ -157,11 +155,16 @@ namespace Iogs {
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "Generated mesh option is only valid for input mesh.";
+      errmsg << "ERROR: Structured Generated mesh option is only valid for input mesh.";
       IOSS_ERROR(errmsg);
     }
     if (props.exists("USE_CONSTANT_DF")) {
       m_useVariableDf = false;
+    }
+    if (util().parallel_size() > 1) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Structured Generated mesh option is not valid for parallel yet.";
+      IOSS_ERROR(errmsg);
     }
   }
 
@@ -338,7 +341,7 @@ namespace Iogs {
     size_t  entity_count = ef_blk->entity_count();
     if (num_to_get != entity_count) {
       std::ostringstream errmsg;
-      errmsg << "Partial field input not implemented for side blocks";
+      errmsg << "ERROR: Partial field input not implemented for side blocks";
       IOSS_ERROR(errmsg);
     }
 

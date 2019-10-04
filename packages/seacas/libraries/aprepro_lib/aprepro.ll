@@ -4,23 +4,23 @@
  * Copyright (c) 2014-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,7 +32,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 
@@ -44,7 +44,7 @@
 #include <stack>
 #include <stdio.h>
 #include <string.h>
-#include <fcntl.h> 
+#include <fcntl.h>
 #include <unistd.h>
 
 #include "apr_scanner.h"
@@ -69,7 +69,7 @@ typedef SEAMS::Parser::token_type token_type;
    extern void  conv_string(const char *string);
    void yyerror(const char *s);
  }
- 
+
 int file_must_exist = 0; /* Global used by include/conditional include */
 
 /* Global variables used by the looping mechanism */
@@ -99,7 +99,7 @@ std::string history_string;
 size_t hist_start = 0;
 
 #define YY_USER_ACTION curr_index += yyleng;
- 
+
 %}
 /*** Flex Declarations and Options ***/
 
@@ -116,7 +116,7 @@ size_t hist_start = 0;
 /* enables the use of start condition stacks */
 %option stack
 
-qstring	\"[^\"\n]*[\"\n]
+qstring \"[^\"\n]*[\"\n]
 mlstring \'[^\']*[\']
 D     [0-9]
 E     [Ee][+-]?{D}+
@@ -140,24 +140,24 @@ integer {D}+({E})?
 <INITIAL>{
   "{VERBATIM(ON)}"   { BEGIN(VERBATIM);  }
   {WS}"{ECHO}" |
-  {WS}"{ECHO(ON)}"	    { echo = true;	}
+  {WS}"{ECHO(ON)}"          { echo = true;      }
   {WS}"{NOECHO}" |
-  {WS}"{ECHO(OFF)}"	    { echo = false;	}
+  {WS}"{ECHO(OFF)}"         { echo = false;     }
 
-  {WS}"{IMMUTABLE(ON)}"	    { aprepro.stateImmutable = true;	}
-  {WS}"{IMMUTABLE(OFF)}"	    { aprepro.stateImmutable = aprepro.ap_options.immutable; }
+  {WS}"{IMMUTABLE(ON)}"     { aprepro.stateImmutable = true;    }
+  {WS}"{IMMUTABLE(OFF)}"            { aprepro.stateImmutable = aprepro.ap_options.immutable; }
 
   {WS}"{"[Ll]"oop"{WS}"(" {
     BEGIN(GET_LOOP_VAR);
-    if (aprepro.ap_options.debugging) 
+    if (aprepro.ap_options.debugging)
       std::cerr << "DEBUG LOOP - Found loop begin test " << yytext << " in file "
-		<< aprepro.ap_file_list.top().name << "\n";
+                << aprepro.ap_file_list.top().name << "\n";
   }
 }
 
 <GET_LOOP_VAR>{
   {number}")".*"\n" |
-	    {integer}")}".*"\n" {
+            {integer}")}".*"\n" {
     /* Loop control defined by integer */
     char *pt = strchr(yytext, ')');
     *pt = '\0';
@@ -171,10 +171,10 @@ integer {D}+({E})?
       SEAMS::file_rec new_file(temp_f, 0, true, (int)yylval->val);
       aprepro.ap_file_list.push(new_file);
 
-      if (aprepro.ap_options.debugging) 
-	std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
-		  << " in file " << aprepro.ap_file_list.top().name
-		  << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+      if (aprepro.ap_options.debugging)
+        std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
+                  << " in file " << aprepro.ap_file_list.top().name
+                  << " at line " << aprepro.ap_file_list.top().lineno << "\n";
 
       tmp_file = new std::fstream(temp_f, std::ios::out);
       loop_lvl++;
@@ -196,21 +196,21 @@ integer {D}+({E})?
       s = aprepro.getsym(yytext);
 
       if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
-	BEGIN(LOOP_SKIP);
+        BEGIN(LOOP_SKIP);
       }
       else { /* Value defined and != 0. */
-	temp_f = get_temp_filename();
-	SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
-	aprepro.ap_file_list.push(new_file);
-				
-	if (aprepro.ap_options.debugging) 
-	  std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
-		    << " in file " << aprepro.ap_file_list.top().name
-		    << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+        temp_f = get_temp_filename();
+        SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
+        aprepro.ap_file_list.push(new_file);
 
-	tmp_file = new std::fstream(temp_f, std::ios::out);
-	loop_lvl++;
-	BEGIN(LOOP);
+        if (aprepro.ap_options.debugging)
+          std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
+                    << " in file " << aprepro.ap_file_list.top().name
+                    << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+
+        tmp_file = new std::fstream(temp_f, std::ios::out);
+        loop_lvl++;
+        BEGIN(LOOP);
       }
     }
     aprepro.ap_file_list.top().lineno++;
@@ -233,7 +233,7 @@ integer {D}+({E})?
         yy_push_state(VERBATIM);
 
       aprepro.isCollectingLoop = false;
-				     
+
       yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
       yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
       curr_index = 0;
@@ -329,15 +329,15 @@ integer {D}+({E})?
     switch_case_run = true;
     BEGIN(INITIAL);
     switch_skip_to_endcase = false;
-    if (aprepro.ap_options.debugging) 
+    if (aprepro.ap_options.debugging)
       fprintf (stderr, "DEBUG SWITCH: 'default' code executing at line %d\n",
-	       aprepro.ap_file_list.top().lineno);
-  } 
+               aprepro.ap_file_list.top().lineno);
+  }
   else {
-    if (aprepro.ap_options.debugging) 
+    if (aprepro.ap_options.debugging)
       fprintf (stderr, "DEBUG SWITCH: 'default' not executing since a previous case already ran at line %d\n",
-	       aprepro.ap_file_list.top().lineno);
-    
+               aprepro.ap_file_list.top().lineno);
+
     /* Need to skip all code until end of case */
     BEGIN(END_CASE_SKIP);
   }
@@ -365,9 +365,9 @@ integer {D}+({E})?
    * where they would eat up any leading whitespace on
    * a line.
    */
-  {WS}"{"[Ii]"fdef"{WS}"(" { 
+  {WS}"{"[Ii]"fdef"{WS}"(" {
     // Used to avoid undefined variable warnings in old ifdef/ifndef construct
-    aprepro.inIfdefGetvar = true; 
+    aprepro.inIfdefGetvar = true;
     unput('(');
     unput('f');
     unput('e');
@@ -380,7 +380,7 @@ integer {D}+({E})?
 
   {WS}"{"[Ii]"fndef"{WS}"(" {
     // Used to avoid undefined variable warnings in old ifdef/ifndef construct
-    aprepro.inIfdefGetvar = true; 
+    aprepro.inIfdefGetvar = true;
     unput('(');
     unput('f');
     unput('e');
@@ -404,23 +404,23 @@ integer {D}+({E})?
    *       endif found.
    */
   {WS}"{"[Ee]"nd"[Ii]"f}".*"\n"     {
-    aprepro.ap_file_list.top().lineno++;  
+    aprepro.ap_file_list.top().lineno++;
     if (--if_skip_level == 0)
       BEGIN(IF_SKIP);
   }
 
-  {WS}"{"[Ii]"fdef"{WS}"(".*"\n"  { 
-    aprepro.ap_file_list.top().lineno++;  
+  {WS}"{"[Ii]"fdef"{WS}"(".*"\n"  {
+    aprepro.ap_file_list.top().lineno++;
     if_skip_level++;
   }
 
   {WS}"{"[Ii]"f"{WS}"(".*"\n"  {
-    aprepro.ap_file_list.top().lineno++;  
+    aprepro.ap_file_list.top().lineno++;
     if_skip_level++;
   }
 
   {WS}"{"[Ii]"fndef"{WS}"(".*"\n" {
-    aprepro.ap_file_list.top().lineno++;  
+    aprepro.ap_file_list.top().lineno++;
     if_skip_level++;
   }
 
@@ -434,36 +434,36 @@ integer {D}+({E})?
    * skip the entire block up and including the endif.
    * The (IF_WHILE_SKIP) start condition handles this skipping.
    */
-  {WS}"{"[Ii]"fdef"{WS}"("  { 
-    if (aprepro.ap_options.debugging) 
+  {WS}"{"[Ii]"fdef"{WS}"("  {
+    if (aprepro.ap_options.debugging)
       fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
-	       aprepro.ap_file_list.top().lineno);
+               aprepro.ap_file_list.top().lineno);
     if_skip_level = 1;
     BEGIN(IF_WHILE_SKIP);
   }
 
   {WS}"{"[Ii]"f"{WS}"("  {
-    if (aprepro.ap_options.debugging) 
+    if (aprepro.ap_options.debugging)
       fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
-	       aprepro.ap_file_list.top().lineno);
+               aprepro.ap_file_list.top().lineno);
     if_skip_level = 1;
     BEGIN(IF_WHILE_SKIP);
   }
 
   {WS}"{"[Ii]"fndef"{WS}"(" {
-    if (aprepro.ap_options.debugging) 
+    if (aprepro.ap_options.debugging)
       fprintf (stderr, "DEBUG IF: 'ifndef'  found while skipping at line %d\n",
-	       aprepro.ap_file_list.top().lineno);
+               aprepro.ap_file_list.top().lineno);
     if_skip_level = 1;
     BEGIN(IF_WHILE_SKIP);
   }
 }
 
-{WS}"{"[Ee]"lse}".*"\n"  { 
-  aprepro.ap_file_list.top().lineno++; 
-  if (aprepro.ap_options.debugging) 
+{WS}"{"[Ee]"lse}".*"\n"  {
+  aprepro.ap_file_list.top().lineno++;
+  if (aprepro.ap_options.debugging)
     fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
-	     if_lvl, aprepro.ap_file_list.top().lineno);
+             if_lvl, aprepro.ap_file_list.top().lineno);
   if(YY_START == VERBATIM) {
     if(echo) ECHO;
   }
@@ -481,8 +481,8 @@ integer {D}+({E})?
     BEGIN(IF_SKIP);
     if_state[if_lvl] = IF_SKIP;
   }
-  
-  /* If neither is true, this is a nested 
+
+  /* If neither is true, this is a nested
      if that should be skipped */
 }
 
@@ -492,12 +492,12 @@ integer {D}+({E})?
      * just skip this block; otherwise see if condition is
      * true and execute this block
      */
-    if (aprepro.ap_options.debugging) 
+    if (aprepro.ap_options.debugging)
       fprintf (stderr, "DEBUG IF: 'elseif'   at level = %d at line %d\n",
-	       if_lvl, aprepro.ap_file_list.top().lineno);
+               if_lvl, aprepro.ap_file_list.top().lineno);
 
     if (if_case_run[if_lvl]) { /* A previous else/elseif has run */
-      aprepro.ap_file_list.top().lineno++; 
+      aprepro.ap_file_list.top().lineno++;
       /* Already in IF_SKIP, so don't need to change state */
     } else {
       /* Need to check the elseif condition; push back and parse */
@@ -528,8 +528,8 @@ integer {D}+({E})?
       if (if_state[if_lvl] == IF_SKIP ||
           if_state[if_lvl] == INITIAL)
             BEGIN(INITIAL);
-			   /* If neither is true, this is a nested 
-			      if that should be skipped */
+                           /* If neither is true, this is a nested
+                              if that should be skipped */
       if (aprepro.ap_options.debugging)
         printf ("DEBUG IF: 'endif'  at level = %d at line %d\n",
                 if_lvl, aprepro.ap_file_list.top().lineno);
@@ -541,18 +541,18 @@ integer {D}+({E})?
     }
   }
 
-<INITIAL>{WS}"{"[Ii]"nclude"{WS}"("           { BEGIN(GET_FILENAME); 
+<INITIAL>{WS}"{"[Ii]"nclude"{WS}"("           { BEGIN(GET_FILENAME);
                              file_must_exist = true; }
 <INITIAL>{WS}"{"[Cc]"include"{WS}"("          { BEGIN(GET_FILENAME);
                              file_must_exist = false; }
 <GET_FILENAME>.+")"{WS}"}"{NL}* {
-  BEGIN(INITIAL); 
+  BEGIN(INITIAL);
   {
     symrec *s;
     int quoted = 0;
     char *pt = strchr(yytext, ')');
     *pt = '\0';
-    /* Check to see if surrounded by double quote */ 
+    /* Check to see if surrounded by double quote */
     if ((pt = strchr(yytext, '"')) != nullptr) {
       yytext++;
       quoted = 1;
@@ -561,42 +561,42 @@ integer {D}+({E})?
       *pt = '\0';
       quoted = 1;
     }
-    
+
     if (quoted == 0) {
       /* See if this is an aprepro variable referring to a name */
       s = aprepro.getsym(yytext);
       if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
-	pt = yytext;
+        pt = yytext;
       } else {
-	pt = (char*)s->value.svar.c_str();
+        pt = (char*)s->value.svar.c_str();
       }
     } else {
       pt = yytext;
     }
-    
+
     add_include_file(pt, file_must_exist);
-    
+
     if(!aprepro.doIncludeSubstitution)
       yy_push_state(VERBATIM);
-    
+
     aprepro.ap_file_list.top().lineno++;
   }
 }
 
-<PARSING>{integer}  |        
-<PARSING>{number}	   { sscanf (yytext, "%lf", &yylval->val);
+<PARSING>{integer}  |
+<PARSING>{number}          { sscanf (yytext, "%lf", &yylval->val);
                        return(token::NUM); }
 
 <PARSING>{WS}          ; // Empty rule
 
 <PARSING>{id} {
            symrec *s;
-			     s = aprepro.getsym(yytext);
-			     if (s == nullptr)
-			       s = aprepro.putsym (yytext, SEAMS::Aprepro::SYMBOL_TYPE::UNDEFINED_VARIABLE, 0);
-			     yylval->tptr = s;
-			     return((token::yytokentype)s->type);
-			   }
+                             s = aprepro.getsym(yytext);
+                             if (s == nullptr)
+                               s = aprepro.putsym (yytext, SEAMS::Aprepro::SYMBOL_TYPE::UNDEFINED_VARIABLE, 0);
+                             yylval->tptr = s;
+                             return((token::yytokentype)s->type);
+                           }
 <PARSING>"="               return(token::EQUAL);
 <PARSING>"+="              return(token::EQ_PLUS);
 <PARSING>"-="              return(token::EQ_MINUS);
@@ -609,8 +609,8 @@ integer {D}+({E})?
 <PARSING>"+"               return(token::PLU);
 <PARSING>"-"               return(token::SUB);
 <PARSING>"*"               return(token::TIM);
-<PARSING>"~"		   return(token::TIM);		/* ~ is same as multiply */
-<PARSING>"//"		   return(token::CONCAT);	/* String concatenation */
+<PARSING>"~"               return(token::TIM);          /* ~ is same as multiply */
+<PARSING>"//"              return(token::CONCAT);       /* String concatenation */
 <PARSING>"/"               return(token::DIV);
 <PARSING>"%"               return(token::MOD);
 <PARSING>"^"               return(token::POW);
@@ -633,17 +633,17 @@ integer {D}+({E})?
 <PARSING>"!"               return(token::NOT);
 <PARSING>"["               return(token::LBRACK);
 <PARSING>"]"               return(token::RBRACK);
-<PARSING>{qstring}	   {
+<PARSING>{qstring}         {
            char *pt = strrchr(yytext, '"');
-			     *pt = '\0';
+                             *pt = '\0';
                              new_string(yytext+1, &yylval->string);
-			     return token::QSTRING; }
+                             return token::QSTRING; }
 
-<PARSING>{mlstring}	   {
+<PARSING>{mlstring}        {
            char *pt = strrchr(yytext, '\'');
-			     *pt = '\0';
+                             *pt = '\0';
                              new_string(yytext+1, &yylval->string);
-			     return token::QSTRING; }
+                             return token::QSTRING; }
 
 <PARSING>"}" {
   // Add to the history string
@@ -666,8 +666,8 @@ integer {D}+({E})?
     if(aprepro.ap_options.keep_history &&
             (aprepro.ap_file_list.top().name != "_string_"))
     {
-      if (curr_index > (size_t)yyleng) 
-	hist_start = curr_index - yyleng;
+      if (curr_index > (size_t)yyleng)
+        hist_start = curr_index - yyleng;
       else
         hist_start = 0;
     }
@@ -681,14 +681,14 @@ integer {D}+({E})?
 [Qq][Uu][Ii][Tt] {
   if (aprepro.ap_options.end_on_exit) {
     if (echo) ECHO;
-    return((token::yytokentype)-1);  
+    return((token::yytokentype)-1);
   }
-  else 
+  else
     if (echo) ECHO;
 }
 
 
-\$			   { if (echo) ECHO; }
+\$                         { if (echo) ECHO; }
 
 
 {id} |
@@ -1065,7 +1065,8 @@ integer {D}+({E})?
     }
 
     // Don't do it if the file is the one used by execute and rescan.
-    if (aprepro.ap_file_list.top().name == "_string_") {
+    if (aprepro.ap_file_list.top().name == "_string_" ||
+	aprepro.ap_file_list.top().name == "standard input") {
       return;
     }
 
@@ -1077,10 +1078,18 @@ integer {D}+({E})?
 
     // Go back in the stream to where we started keeping history.
     yyin->seekg(hist_start);
+    if (!yyin->good()) {
+      yyerror("Stream state bad in `save_history_string` seekg");
+      return;
+    }
 
     // Read everything up to this point again and save it.
     auto tmp = new char[len + 1];
     yyin->read(tmp, len);
+    if (!yyin->good()) {
+      yyerror("Stream state bad in `save_history_string` read");
+      return;
+    }
     tmp[len] = '\0';
 
     history_string = tmp;

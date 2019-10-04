@@ -12,7 +12,7 @@ KOKKOSKERNELS_SPACES ?= $(KOKKOS_DEVICES),HostSpace
 KOKKOSKERNELS_ORDINALS ?= int,int64_t
 KOKKOSKERNELS_OFFSETS ?= int,size_t
 
-# mkl, blas, yaml
+# mkl, blas, yaml, magma
 KOKKOSKERNELS_ENABLE_TPLS ?= ""
 
 # eti-only
@@ -23,6 +23,7 @@ KOKKOSKERNELS_INTERNAL_ENABLE_BLAS := $(strip $(shell echo $(KOKKOSKERNELS_ENABL
 KOKKOSKERNELS_INTERNAL_ENABLE_MKL := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "mkl" | wc -l))
 KOKKOSKERNELS_INTERNAL_ENABLE_CUSPARSE := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "cusparse" | wc -l))
 KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "cublas" | wc -l))
+KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "magma" | wc -l))
 
 YAML_PATH ?= ${HOME}/yaml-cpp/install
 YAML_LIBS ?= -L${YAML_PATH}/lib -lyaml-cpp
@@ -32,6 +33,8 @@ BLAS_LIBS ?= -L${BLAS_PATH}/lib64 $(BLAS_LIBRARIES) -lgfortran -lgomp
 
 MKL_PATH ?= ${SEMS_INTEL_ROOT}/mkl
 MKL_LIBS ?= -L${MKL_PATH}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl -L${MKL_PATH}/../compiler/lib/intel64
+
+MAGMA_PATH     ?= ${MAGMADIR}
 
 default-kokkos-kernels: kokkoskernels-build-lib
 	echo "Start Build"
@@ -77,17 +80,30 @@ tmp := $(shell echo "\#define KOKKOSKERNELS_CONFIG_H_" >> KokkosKernels_config.t
 
 # default mangling scheme with a single under score
 KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#_
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
+  MAGMA_FORTRAN_MANGLING = ADD_
+endif
+
 KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_DOUBLE_UNDERSCORES := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle__" | wc -l))
 ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_DOUBLE_UNDERSCORES), 1)
   KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#__
+  ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
+    $(error MAGMA does not prefer Fortran mangling with double underscore)
+  endif
 else
   KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_SINGLE_UNDERSCORE := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle_" | wc -l))
   ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_SINGLE_UNDERSCORE), 1)
     KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#_
+	ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
+      MAGMA_FORTRAN_MANGLING = ADD_
+    endif
   else 
     KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_NO_UNDERSCORE := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle" | wc -l))
     ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_NO_UNDERSCORE), 1)
       KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#
+      ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
+        MAGMA_FORTRAN_MANGLING = NOCHANGE
+      endif
     endif
   endif
 endif
@@ -306,6 +322,16 @@ ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS}, 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_ENABLE_TPL_CUBLAS" >> KokkosKernels_config.tmp )
 endif
 
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
+  KOKKOS_INTERNAL_NVCC_PATH := $(shell which nvcc)
+  CUDA_PATH ?= $(KOKKOS_INTERNAL_NVCC_PATH:/bin/nvcc=)
+  KOKKOSKERNELS_CPPFLAGS += -D${MAGMA_FORTRAN_MANGLING} -I${MAGMA_PATH}/include -I${MAGMA_PATH}/sparse/include -I${CUDA_PATH}/include
+  KOKKOSKERNELS_LDFLAGS += -L${MAGMA_PATH}/lib -L${CUDA_PATH}/lib64
+  KOKKOSKERNELS_LIBS += -lmagma_sparse -lmagma -lcublas -lcudart -lcusparse -fopenmp
+
+  tmp := $(shell echo "\#define KOKKOSKERNELS_ENABLE_TPL_MAGMA" >> KokkosKernels_config.tmp )
+endif
+
   tmp := $(shell echo "\#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)" >> KokkosKernels_config.tmp )
   tmp := $(shell echo "\#if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)" >> KokkosKernels_config.tmp )  
   tmp := $(shell echo "\#define KOKKOSKERNELS_ENABLE_TPL_BLAS" >> KokkosKernels_config.tmp )
@@ -435,6 +461,10 @@ ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS}, 1)
   KOKKOSKERNELS_INTERNAL_SRC_BLAS += ${KOKKOSKERNELS_PATH}/src/impl/tpls/KokkosBlas_Cuda_tpl.cpp
 endif
 
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
+  KOKKOSKERNELS_INTERNAL_SRC_BLAS += ${KOKKOSKERNELS_PATH}/src/impl/tpls/KokkosBlas_Cuda_tpl.cpp
+endif
+
 KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS=0
 ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_BLAS}, 1)
   KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS=1
@@ -456,15 +486,24 @@ endif
 
 DEPFLAGS = -M
 
+CP = cp
+
 ifeq ($(KOKKOS_OS),CYGWIN)
   COPY_FLAG = -u
 endif
 ifeq ($(KOKKOS_OS),Linux)
   COPY_FLAG = -u
 endif
-ifeq ($(KOKKOS_OS),Darwin)
-  COPY_FLAG =
-endif
+#ifeq ($(KOKKOS_OS),Darwin)
+  # If using Homebrew on OSX with the 'coreutils' package installed
+  # we have a gnu version of cp which has the -u option
+#  ifeq (,$(wildcard "/usr/local/opt/coreutils/libexec/gnubin/cp"))
+#    CP = /usr/local/opt/coreutils/libexec/gnubin/cp
+#    COPY_FLAG = -u
+#  else
+#    COPY_FLAG =
+#  endif
+#endif
 
 KOKKOSKERNELS_INTERNAL_SRC_BLAS_NODIR = $(notdir $(KOKKOSKERNELS_INTERNAL_SRC_BLAS))
 KOKKOSKERNELS_INTERNAL_SRC_SPARSE_NODIR = $(notdir $(KOKKOSKERNELS_INTERNAL_SRC_SPARSE))

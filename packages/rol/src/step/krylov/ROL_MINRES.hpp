@@ -46,7 +46,6 @@
 #define ROL_MINRES_HPP
 
 #include <array>
-
 #include "ROL_Krylov.hpp"
 #include "ROL_VectorClone.hpp"
 

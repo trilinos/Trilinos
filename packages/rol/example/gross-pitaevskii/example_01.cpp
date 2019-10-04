@@ -68,6 +68,8 @@
 */
 
 #include "example_01.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_CompositeStep.hpp"
 
 typedef double RealT;
 
@@ -155,7 +157,11 @@ int main(int argc, char **argv) {
     parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist.sublist("Status Test").set("Iteration Limit",100);
-    ROL::Algorithm<RealT> algo(stepname, parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::CompositeStep<RealT>>(parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     // Run algorithm.
     algo.run(psi, g, lam, c, obj, constr, true, *outStream);

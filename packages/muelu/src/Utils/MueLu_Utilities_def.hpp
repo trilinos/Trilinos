@@ -177,10 +177,10 @@ namespace MueLu {
       try {
         const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>& tmp_ECrsMtx = dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>&>(*crsOp.getCrsMatrix());
         return *tmp_ECrsMtx.getEpetra_CrsMatrix();
-      } catch (std::bad_cast) {
+      } catch (std::bad_cast&) {
         throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
       }
-    } catch (std::bad_cast) {
+    } catch (std::bad_cast&) {
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
     }
   }
@@ -192,10 +192,10 @@ namespace MueLu {
       try {
         Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>& tmp_ECrsMtx = dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>&>(*crsOp.getCrsMatrix());
         return *tmp_ECrsMtx.getEpetra_CrsMatrixNonConst();
-      } catch (std::bad_cast) {
+      } catch (std::bad_cast&) {
         throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
       }
-    } catch (std::bad_cast) {
+    } catch (std::bad_cast&) {
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
     }
   }
@@ -276,10 +276,10 @@ namespace MueLu {
       try {
         const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmp_ECrsMtx = dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*crsOp.getCrsMatrix());
         return *tmp_ECrsMtx.getTpetra_CrsMatrix();
-      } catch (std::bad_cast) {
+      } catch (std::bad_cast&) {
         throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed");
       }
-    } catch (std::bad_cast) {
+    } catch (std::bad_cast&) {
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
     }
   }
@@ -291,10 +291,10 @@ namespace MueLu {
       try {
         Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmp_ECrsMtx = dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*crsOp.getCrsMatrix());
         return *tmp_ECrsMtx.getTpetra_CrsMatrixNonConst();
-      } catch (std::bad_cast) {
+      } catch (std::bad_cast&) {
         throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed");
       }
-    } catch (std::bad_cast) {
+    } catch (std::bad_cast&) {
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
     }
   }
@@ -490,7 +490,16 @@ namespace MueLu {
 
         RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
         Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label); //more than meets the eye
-        A = transposer.createTranspose(params);
+
+        {
+          using Teuchos::ParameterList;
+          using Teuchos::rcp;
+          RCP<ParameterList> transposeParams = params.is_null () ?
+            rcp (new ParameterList) :
+            rcp (new ParameterList (*params));
+          transposeParams->set ("sort", false);
+          A = transposer.createTranspose (transposeParams);
+        }
 
         RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AA   = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A) );
         RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >       AAA  = rcp_implicit_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(AA);
@@ -540,7 +549,7 @@ namespace MueLu {
         Xscalar = rcp_dynamic_cast<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(X);
       return Xscalar;
   }
-  
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> >

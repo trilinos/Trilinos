@@ -117,6 +117,7 @@
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_ReorderBlockAFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_ScaledNullspaceFactory.hpp"
 #include "MueLu_SegregatedAFactory.hpp"
 #include "MueLu_SemiCoarsenPFactory.hpp"
 #include "MueLu_SchurComplementFactory.hpp"
@@ -146,6 +147,7 @@
 
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
@@ -179,7 +181,10 @@ namespace MueLu {
 
 
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class FactoryFactory : public BaseClass {
 #undef MUELU_FACTORYFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -256,6 +261,7 @@ namespace MueLu {
       if (factoryName == "RebalanceTransferFactory")              return Build2<RebalanceTransferFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ReorderBlockAFactory")                  return Build2<ReorderBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RepartitionInterface")                  return Build2<RepartitionInterface>                  (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ScaledNullspaceFactory")                return Build2<ScaledNullspaceFactory>                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SegregatedAFactory")                    return Build2<SegregatedAFactory>                    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SemiCoarsenPFactory")                   return Build2<SemiCoarsenPFactory>                   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "StructuredAggregationFactory")          return Build2<StructuredAggregationFactory>          (paramList, factoryMapIn, factoryManagersIn);
@@ -273,6 +279,7 @@ namespace MueLu {
       if (factoryName == "UserPFactory")                          return Build2<UserPFactory>                          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "VariableDofLaplacianFactory")           return Build2<VariableDofLaplacianFactory>           (paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      if (factoryName == "AmalgamationFactory_kokkos")            return Build2<AmalgamationFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory_kokkos")            return Build2<CoalesceDropFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseMapFactory_kokkos")               return Build2<CoarseMapFactory_kokkos>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoordinatesTransferFactory_kokkos")     return Build2<CoordinatesTransferFactory_kokkos>     (paramList, factoryMapIn, factoryManagersIn);

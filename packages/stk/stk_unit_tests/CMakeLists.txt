@@ -11,7 +11,6 @@ ENDIF()
 IF(Trilinos_ENABLE_STKNGP_TEST)
 
     IF(Trilinos_ENABLE_STKMesh)
-    ADD_SUBDIRECTORY(stk_mesh_fixtures)
     TRIBITS_ADD_TEST_DIRECTORIES(stk_mesh)
     ENDIF()
     

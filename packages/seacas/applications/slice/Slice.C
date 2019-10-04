@@ -53,8 +53,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <locale>
 #include <map>
 #include <numeric>
@@ -174,13 +172,6 @@ namespace {
     return common_nodes;
   }
 #endif
-
-  struct my_numpunct : std::numpunct<char>
-  {
-  protected:
-    char        do_thousands_sep() const override { return ','; }
-    std::string do_grouping() const override { return "\3"; }
-  };
 } // namespace
 // ========================================================================
 
@@ -971,7 +962,7 @@ namespace {
       for (size_t j = 0; j < element_count; j++) {
         size_t p = elem_to_proc[offset + j];
 #if 0
-	map[p].push_back(ids[j]);
+        map[p].push_back(ids[j]);
 #else
         map[p].push_back(offset + j + 1);
 #endif

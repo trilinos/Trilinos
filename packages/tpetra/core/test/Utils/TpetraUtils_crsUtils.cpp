@@ -110,11 +110,11 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
     num_row*(num_packets_per_lid(0) + num_packets_per_lid(num_row-1))/2;
 
   Kokkos::UnorderedMap<ordinal_type,ordinal_type,device_type> padding(import_lids.size());
-  execution_space::fence();
+  execution_space().fence();
   for (size_type i=0; i<import_lids.size(); i++){
     padding.insert(import_lids(i), num_packets_per_lid(i));
   }
-  execution_space::fence();
+  execution_space().fence();
   TEST_ASSERT(!padding.failed_insert());
 
   padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
@@ -184,11 +184,11 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_2)
   num_packets_per_lid(1) = 5;
 
   Kokkos::UnorderedMap<ordinal_type,ordinal_type,device_type> padding(import_lids.size());
-  execution_space::fence();
+  execution_space().fence();
   for (size_type i=0; i<import_lids.size(); i++){
     padding.insert(import_lids(i), num_packets_per_lid(i));
   }
-  execution_space::fence();
+  execution_space().fence();
   TEST_ASSERT(!padding.failed_insert());
   padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
 
@@ -312,12 +312,13 @@ TEUCHOS_UNIT_TEST( TpetraUtils, findIndices )
   {
     vector<int> row_ptrs{0, 4};
     vector<int> cur_indices{3, 6, 9, 12};
+    const size_t cur_num_entries = 4;
     vector<int> new_indices{3, 6, 9, 12, 12, 9, 3, 6, 0, 2};
     vector<int> in_values(new_indices.size(), 1);
     vector<int> values(cur_indices.size(), 0);
     vector<int> expected_values{2, 2, 2, 2};
     auto num_found =
-      findCrsIndices(0, row_ptrs, cur_indices, new_indices,
+      findCrsIndices(0, row_ptrs, cur_num_entries, cur_indices, new_indices,
         [&](const size_t k, const size_t start, const size_t offset){
           values[start+offset] += in_values[k];
         });

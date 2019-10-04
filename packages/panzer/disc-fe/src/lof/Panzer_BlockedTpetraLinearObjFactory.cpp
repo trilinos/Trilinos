@@ -48,4 +48,4 @@
 
 #include "Panzer_NodeType.hpp"
 
-template class panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>;
+template class panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>;

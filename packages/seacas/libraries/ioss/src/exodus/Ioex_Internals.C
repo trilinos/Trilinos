@@ -702,10 +702,10 @@ int Internals::initialize_state_file(Mesh &mesh, const ex_var_params &var_params
       return (EX_FATAL);
     }
 
-    struct ex_file_item *file = ex_find_file_item(exodusFilePtr);
-    file->time_varid          = varid;
+    struct ex__file_item *file = ex__find_file_item(exodusFilePtr);
+    file->time_varid           = varid;
 
-    ex_compress_variable(exodusFilePtr, varid, 2);
+    ex__compress_variable(exodusFilePtr, varid, 2);
   } // Exit redefine mode
 
   if (var_params.num_edge > 0) {
@@ -967,6 +967,7 @@ int Internals::write_meta_data(Mesh &mesh)
 
 void Internals::get_global_counts(Mesh &mesh)
 {
+  PAR_UNUSED(mesh);
 #if defined(SEACAS_HAVE_MPI)
   std::vector<int64_t> counts;
   std::vector<int64_t> global_counts;
@@ -1209,11 +1210,11 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
     return (EX_FATAL);
   }
   {
-    struct ex_file_item *file = ex_find_file_item(exodusFilePtr);
-    file->time_varid          = varid;
+    struct ex__file_item *file = ex__find_file_item(exodusFilePtr);
+    file->time_varid           = varid;
   }
 
-  ex_compress_variable(exodusFilePtr, varid, 2);
+  ex__compress_variable(exodusFilePtr, varid, 2);
 
   if (mesh.nodeblocks[0].entityCount > 0) {
     status = nc_def_dim(exodusFilePtr, DIM_NUM_NODES, mesh.nodeblocks[0].entityCount, &numnoddim);
@@ -1242,7 +1243,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
       }
       return (EX_FATAL);
     }
-    ex_compress_variable(exodusFilePtr, varid, 1);
+    ex__compress_variable(exodusFilePtr, varid, 1);
   }
 
   if (mesh.nodeblocks[0].attributeCount > 0) {
@@ -1320,7 +1321,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
       }
       return (EX_FATAL);
     }
-    ex_compress_variable(exodusFilePtr, varid, 1);
+    ex__compress_variable(exodusFilePtr, varid, 1);
   }
 
   size_t face_count = 0;
@@ -1493,7 +1494,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
     }
 
     // Output the file version
-    int ierr = ex_put_nemesis_version(exodusFilePtr);
+    int ierr = ex__put_nemesis_version(exodusFilePtr);
     if (ierr < 0) {
       return (ierr);
     }
@@ -1743,7 +1744,7 @@ int Internals::put_metadata(const std::vector<ElemBlock> &blocks, bool count_onl
 
   // Iterate over blocks ...
   for (size_t iblk = 0; iblk < num_elem_blk; iblk++) {
-    ex_inc_file_item(exodusFilePtr, ex_get_counter_list(EX_ELEM_BLOCK));
+    ex__inc_file_item(exodusFilePtr, ex__get_counter_list(EX_ELEM_BLOCK));
 
     if (blocks[iblk].entityCount == 0) {
       continue;
@@ -1800,7 +1801,7 @@ int Internals::put_metadata(const std::vector<ElemBlock> &blocks, bool count_onl
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
-      ex_compress_variable(exodusFilePtr, connid, 1);
+      ex__compress_variable(exodusFilePtr, connid, 1);
 
       // store element type as attribute of connectivity variable
       status = nc_put_att_text(exodusFilePtr, connid, ATT_NAME_ELB,
@@ -1900,15 +1901,15 @@ int Internals::put_metadata(const std::vector<ElemBlock> &blocks, bool count_onl
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
-      ex_compress_variable(exodusFilePtr, varid, 2);
+      ex__compress_variable(exodusFilePtr, varid, 2);
 
 #if defined(PARALLEL_AWARE_EXODUS)
       // There is currently a bug in netcdf-4.5.1-devel and earlier
       // for partial parallel output of strided arrays in collective
-      // mode for netcdf-4-based output.  If the number of attribues >
+      // mode for netcdf-4-based output.  If the number of attributes >
       // 1 and in parallel mode, set the mode to independent.
       if (blocks[iblk].attributeCount > 1) {
-        struct ex_file_item *file = ex_find_file_item(exodusFilePtr);
+        struct ex__file_item *file = ex__find_file_item(exodusFilePtr);
         if (file->is_parallel && file->is_hdf5) {
           nc_var_par_access(exodusFilePtr, varid, NC_INDEPENDENT);
         }
@@ -1978,7 +1979,7 @@ int Internals::put_metadata(const std::vector<FaceBlock> &blocks, bool count_onl
 
   // Iterate over blocks ...
   for (size_t iblk = 0; iblk < num_face_blk; iblk++) {
-    ex_inc_file_item(exodusFilePtr, ex_get_counter_list(EX_FACE_BLOCK));
+    ex__inc_file_item(exodusFilePtr, ex__get_counter_list(EX_FACE_BLOCK));
 
     if (blocks[iblk].entityCount == 0) {
       continue;
@@ -2136,7 +2137,7 @@ int Internals::put_metadata(const std::vector<EdgeBlock> &blocks, bool count_onl
 
   // Iterate over blocks ...
   for (size_t iblk = 0; iblk < num_edge_blk; iblk++) {
-    ex_inc_file_item(exodusFilePtr, ex_get_counter_list(EX_EDGE_BLOCK));
+    ex__inc_file_item(exodusFilePtr, ex__get_counter_list(EX_EDGE_BLOCK));
 
     if (blocks[iblk].entityCount == 0) {
       continue;
@@ -2671,9 +2672,9 @@ int Internals::put_metadata(const std::vector<NodeSet> &nodesets, bool count_onl
 
   for (int i = 0; i < num_node_sets; i++) {
 
-    //  NOTE: ex_inc_file_item is used to find the number of node sets
+    //  NOTE: ex__inc_file_item is used to find the number of node sets
     // for a specific file and returns that value incremented.
-    int cur_num_node_sets = ex_inc_file_item(exodusFilePtr, ex_get_counter_list(EX_NODE_SET));
+    int cur_num_node_sets = ex__inc_file_item(exodusFilePtr, ex__get_counter_list(EX_NODE_SET));
 
     if (nodesets[i].entityCount == 0) {
       continue;
@@ -2718,7 +2719,7 @@ int Internals::put_metadata(const std::vector<NodeSet> &nodesets, bool count_onl
       }
       return (EX_FATAL);
     }
-    ex_compress_variable(exodusFilePtr, varid, 1);
+    ex__compress_variable(exodusFilePtr, varid, 1);
 
     // Create variable for distribution factors if required
     if (nodesets[i].dfCount > 0) {
@@ -2751,7 +2752,7 @@ int Internals::put_metadata(const std::vector<NodeSet> &nodesets, bool count_onl
         return (EX_FATAL);
       }
 
-      ex_compress_variable(exodusFilePtr, varid, 2);
+      ex__compress_variable(exodusFilePtr, varid, 2);
     }
     if (nodesets[i].attributeCount > 0) {
       int numattrdim;
@@ -2846,9 +2847,9 @@ int Internals::put_metadata(const std::vector<EdgeSet> &edgesets, bool count_onl
 
   for (int i = 0; i < num_edge_sets; i++) {
 
-    //  NOTE: ex_inc_file_item is used to find the number of edge sets
+    //  NOTE: ex__inc_file_item is used to find the number of edge sets
     // for a specific file and returns that value incremented.
-    int cur_num_edge_sets = ex_inc_file_item(exodusFilePtr, ex_get_counter_list(EX_EDGE_SET));
+    int cur_num_edge_sets = ex__inc_file_item(exodusFilePtr, ex__get_counter_list(EX_EDGE_SET));
 
     if (edgesets[i].entityCount == 0) {
       continue;
@@ -3037,9 +3038,9 @@ int Internals::put_metadata(const std::vector<FaceSet> &facesets, bool count_onl
 
   for (int i = 0; i < num_face_sets; i++) {
 
-    //  NOTE: ex_inc_file_item is used to find the number of face sets
+    //  NOTE: ex__inc_file_item is used to find the number of face sets
     // for a specific file and returns that value incremented.
-    int cur_num_face_sets = ex_inc_file_item(exodusFilePtr, ex_get_counter_list(EX_FACE_SET));
+    int cur_num_face_sets = ex__inc_file_item(exodusFilePtr, ex__get_counter_list(EX_FACE_SET));
 
     if (facesets[i].entityCount == 0) {
       continue;
@@ -3225,9 +3226,9 @@ int Internals::put_metadata(const std::vector<ElemSet> &elemsets, bool count_onl
 
   for (int i = 0; i < num_elem_sets; i++) {
 
-    //  NOTE: ex_inc_file_item is used to find the number of elem sets
+    //  NOTE: ex__inc_file_item is used to find the number of elem sets
     // for a specific file and returns that value incremented.
-    int cur_num_elem_sets = ex_inc_file_item(exodusFilePtr, ex_get_counter_list(EX_ELEM_SET));
+    int cur_num_elem_sets = ex__inc_file_item(exodusFilePtr, ex__get_counter_list(EX_ELEM_SET));
 
     if (elemsets[i].entityCount == 0) {
       continue;
@@ -3508,9 +3509,9 @@ int Internals::put_metadata(const std::vector<SideSet> &sidesets, bool count_onl
 
   for (int i = 0; i < num_side_sets; i++) {
 
-    //  NOTE: ex_inc_file_item is used to find the number of side sets
+    //  NOTE: ex__inc_file_item is used to find the number of side sets
     // for a specific file and returns that value incremented.
-    int cur_num_side_sets = ex_inc_file_item(exodusFilePtr, ex_get_counter_list(EX_SIDE_SET));
+    int cur_num_side_sets = ex__inc_file_item(exodusFilePtr, ex__get_counter_list(EX_SIDE_SET));
 
     if (sidesets[i].entityCount == 0) {
       continue;
@@ -3554,7 +3555,7 @@ int Internals::put_metadata(const std::vector<SideSet> &sidesets, bool count_onl
       }
       return (EX_FATAL);
     }
-    ex_compress_variable(exodusFilePtr, varid, 1);
+    ex__compress_variable(exodusFilePtr, varid, 1);
 
     // create side list variable for side set
     status =
@@ -3573,7 +3574,7 @@ int Internals::put_metadata(const std::vector<SideSet> &sidesets, bool count_onl
       }
       return (EX_FATAL);
     }
-    ex_compress_variable(exodusFilePtr, varid, 1);
+    ex__compress_variable(exodusFilePtr, varid, 1);
 
     // Create variable for distribution factors if required
     if (sidesets[i].dfCount > 0) {
@@ -3615,7 +3616,7 @@ int Internals::put_metadata(const std::vector<SideSet> &sidesets, bool count_onl
         return (EX_FATAL);
       }
     }
-    ex_compress_variable(exodusFilePtr, varid, 2);
+    ex__compress_variable(exodusFilePtr, varid, 2);
   }
   return (EX_NOERR);
 }
@@ -3692,7 +3693,7 @@ namespace {
         return (EX_FATAL);
       }
     }
-    ex_compress_variable(exodusFilePtr, *varid, 1);
+    ex__compress_variable(exodusFilePtr, *varid, 1);
     return (EX_NOERR);
   }
 
@@ -3723,7 +3724,7 @@ namespace {
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
-      ex_compress_variable(exodusFilePtr, varid, 1);
+      ex__compress_variable(exodusFilePtr, varid, 1);
     }
     return (EX_NOERR);
   }
@@ -3757,7 +3758,7 @@ namespace {
           ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
           return (EX_FATAL);
         }
-        ex_compress_variable(exodusFilePtr, varid, 1);
+        ex__compress_variable(exodusFilePtr, varid, 1);
         i++;
       }
     }
@@ -3844,7 +3845,7 @@ namespace {
             ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
             return (EX_FATAL);
           }
-          ex_compress_variable(exodusFilePtr, varid, 2);
+          ex__compress_variable(exodusFilePtr, varid, 2);
         }
 
         if (dimension > 1) {
@@ -3857,7 +3858,7 @@ namespace {
             ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
             return (EX_FATAL);
           }
-          ex_compress_variable(exodusFilePtr, varid, 2);
+          ex__compress_variable(exodusFilePtr, varid, 2);
         }
 
         if (dimension > 2) {
@@ -3870,7 +3871,7 @@ namespace {
             ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
             return (EX_FATAL);
           }
-          ex_compress_variable(exodusFilePtr, varid, 2);
+          ex__compress_variable(exodusFilePtr, varid, 2);
         }
       }
       else {

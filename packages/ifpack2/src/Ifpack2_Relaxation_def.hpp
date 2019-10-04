@@ -46,8 +46,8 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockView.hpp"
 #include "Ifpack2_Utilities.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_transform_MultiVector.hpp"
@@ -561,13 +561,9 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       RCP<const MV> Xcopy;
       // FIXME (mfh 12 Sep 2014) This test for aliasing is incomplete.
       {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-        auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
-        auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-#else
         auto X_lcl_host = X.getLocalViewHost ();
         auto Y_lcl_host = Y.getLocalViewHost ();
-#endif
+
         if (X_lcl_host.data () == Y_lcl_host.data ()) {
           Xcopy = rcp (new MV (X, Teuchos::Copy));
         } else {
@@ -766,12 +762,12 @@ public:
     auto ipiv = Kokkos::subview(iwrk_, i, Kokkos::ALL());
     auto work = Kokkos::subview(rwrk_, i, Kokkos::ALL());
     int info = 0;
-    Tpetra::Experimental::GETF2(D_cur, ipiv, info);
+    Tpetra::GETF2(D_cur, ipiv, info);
     if (info) {
       ++jinfo;
       return;
     }
-    Tpetra::Experimental::GETRI(D_cur, ipiv, work, info);
+    Tpetra::GETRI(D_cur, ipiv, work, info);
     if (info) ++jinfo;
   }
 
@@ -1424,7 +1420,7 @@ ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type,
                                      global_ordinal_type,
                                      node_type>& Y) const
 {
-  using Tpetra::Experimental::BlockMultiVector;
+  using Tpetra::BlockMultiVector;
   using BMV = BlockMultiVector<scalar_type, local_ordinal_type,
                                global_ordinal_type, node_type>;
 
@@ -1760,7 +1756,7 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
+  typedef Tpetra::BlockMultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type> BMV;
   typedef Tpetra::MultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type> MV;
@@ -2464,7 +2460,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
+  typedef Tpetra::BlockMultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type> BMV;
   typedef Tpetra::MultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type> MV;

@@ -207,7 +207,7 @@ namespace MueLu {
 #else
     if (defaultVals != "") {
         // If no validator available: issue a warning and set parameter value to false in the output list
-        *out << "Warning: MueLu_ENABLE_ML=OFF. No ML default values available." << std::endl;
+        *out << "Warning: MueLu_ENABLE_ML=OFF and/or MueLu_ENABLE_Epetra=OFF. No ML default values available." << std::endl;
     }
 #endif // HAVE_MUELU_ML
 
@@ -236,7 +236,7 @@ namespace MueLu {
                                    "ERROR: ML's Teuchos::ParameterList contains incorrect parameter!");
 #else
         // If no validator available: issue a warning and set parameter value to false in the output list
-        *out << "Warning: MueLu_ENABLE_ML=OFF. The parameter list cannot be validated." << std::endl;
+        *out << "Warning: MueLu_ENABLE_ML=OFF and/or MueLu_ENABLE_Epetra=OFF. The parameter list cannot be validated." << std::endl;
         paramList.set("ML validate parameter list", false);
 
 #endif // HAVE_MUELU_ML

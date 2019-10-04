@@ -40,24 +40,19 @@
 
 namespace Ioss {
 
-  int SerializeIO::s_owner = -1;
-
-  int SerializeIO::s_rank = -1;
-
-  int SerializeIO::s_size = -1;
-
-  int SerializeIO::s_groupSize = -1;
-
-  int SerializeIO::s_groupRank = -1;
-
+  int SerializeIO::s_owner       = -1;
+  int SerializeIO::s_rank        = -1;
+  int SerializeIO::s_size        = -1;
+  int SerializeIO::s_groupSize   = -1;
+  int SerializeIO::s_groupRank   = -1;
   int SerializeIO::s_groupFactor = 0;
 
 #if defined(IOSS_THREADSAFE)
   std::mutex SerializeIO::m_;
 #endif
 
-  SerializeIO::SerializeIO(const DatabaseIO *database_io, int manual_owner_processor)
-      : m_databaseIO(database_io), m_activeFallThru(true), m_manualOwner(-1)
+  SerializeIO::SerializeIO(const DatabaseIO *database_io)
+      : m_databaseIO(database_io), m_activeFallThru(true)
 
   {
     if (m_databaseIO->using_parallel_io()) {
@@ -65,7 +60,6 @@ namespace Ioss {
     }
     IOSS_FUNC_ENTER(m_);
 
-    m_activeFallThru               = s_owner != -1;
     const Ioss::ParallelUtils util = m_databaseIO->util();
     if (s_rank == -1) {
       s_rank = util.parallel_rank();
@@ -76,40 +70,17 @@ namespace Ioss {
       }
     }
 
-    m_manualOwner = (manual_owner_processor == -1 || s_groupFactor == 0)
-                        ? -1
-                        : manual_owner_processor / s_groupFactor;
-
-    if (m_activeFallThru) {
-      if (m_manualOwner != -1 && m_manualOwner != s_owner) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "Attempting to replace manual ownership from {} to {}", s_owner,
-                   m_manualOwner);
-        IOSS_ERROR(errmsg);
-      }
-    }
-
-    else if (s_groupFactor > 0) {
-      if (m_manualOwner == -1) {
-#ifdef SEACAS_HAVE_MPI
+    m_activeFallThru = s_owner != -1;
+    if (!m_activeFallThru) {
+      if (s_groupFactor > 0) {
         do {
-          MPI_Barrier(util.communicator());
+          util.barrier();
         } while (++s_owner != s_groupRank);
-#endif
-        m_databaseIO->openDatabase();
+        m_databaseIO->openDatabase__();
       }
       else {
-        if (s_owner != -1 && m_manualOwner != s_owner) {
-          std::ostringstream errmsg;
-          fmt::print(errmsg, "Attempting to replace manual ownership from {} to {}", s_owner,
-                     m_manualOwner);
-          IOSS_ERROR(errmsg);
-        }
-        s_owner = m_manualOwner;
+        s_owner = s_groupRank;
       }
-    }
-    else {
-      s_owner = s_groupRank;
     }
   }
 
@@ -120,31 +91,19 @@ namespace Ioss {
     }
     try {
       IOSS_FUNC_ENTER(m_);
-      if (m_activeFallThru) {
-        ;
-      }
-      else if (s_groupFactor > 0) {
-        if (m_manualOwner == -1) {
-          m_databaseIO->closeDatabase();
-#ifdef SEACAS_HAVE_MPI
+      if (!m_activeFallThru) {
+        if (s_groupFactor > 0) {
+          m_databaseIO->closeDatabase__();
           s_owner                        = s_groupRank;
           const Ioss::ParallelUtils util = m_databaseIO->util();
           do {
-            MPI_Barrier(util.communicator());
+            util.barrier();
           } while (++s_owner != s_groupSize);
-#endif
           s_owner = -1;
         }
         else {
-          if (s_owner == s_groupRank) {
-            m_databaseIO->closeDatabase();
-          }
           s_owner = -1;
         }
-      }
-
-      else {
-        s_owner = -1;
       }
     }
     catch (...) {

@@ -77,6 +77,25 @@ namespace {
 
   std::string uppercase(const std::string &my_name);
 
+  template <typename T> size_t get_variable_count(const std::vector<T> &entities)
+  {
+    Ioss::NameList names;
+    for (auto ent : entities) {
+      ent->field_describe(Ioss::Field::TRANSIENT, &names);
+    }
+    Ioss::Utils::uniquify(names);
+    return names.size();
+  }
+
+  template <typename T> int64_t get_entity_count(const std::vector<T> &entities)
+  {
+    int64_t count = 0;
+    for (auto ent : entities) {
+      count += ent->entity_count();
+    }
+    return count;
+  }
+
   void check_for_duplicate_names(const Ioss::Region *region, const Ioss::GroupingEntity *entity)
   {
     const std::string &name = entity->name();
@@ -423,85 +442,97 @@ namespace Ioss {
   /** \brief Print a summary of entities in the region.
    *
    *  \param[in,out] strm The output stream to use for printing.
-   *  \param[in] do_transient Include output of TRANSIENT variables.
+   *  \param[in]     do_transient deprecated and ignored
    */
-  void Region::output_summary(std::ostream &strm, bool do_transient)
+  void Region::output_summary(std::ostream &strm, bool /* do_transient */)
   {
-    IOSS_FUNC_ENTER(m_);
+    int64_t total_cells       = get_entity_count(get_structured_blocks());
+    int64_t total_fs_faces    = get_entity_count(get_facesets());
+    int64_t total_ns_nodes    = get_entity_count(get_nodesets());
+    int64_t total_es_edges    = get_entity_count(get_edgesets());
+    int64_t total_es_elements = get_entity_count(get_elementsets());
 
-    int64_t total_cells       = 0;
-    int64_t total_fs_faces    = 0;
-    int64_t total_ns_nodes    = 0;
-    int64_t total_es_edges    = 0;
-    int64_t total_es_elements = 0;
-    int64_t total_sides       = 0;
-
-    {
-      const Ioss::StructuredBlockContainer &sbs = get_structured_blocks();
-      for (auto sb : sbs) {
-        int64_t num_cell = sb->get_property("cell_count").get_int();
-        total_cells += num_cell;
-      }
-
-      const Ioss::NodeSetContainer &nss = get_nodesets();
-      for (auto ns : nss) {
-        int64_t count = ns->entity_count();
-        total_ns_nodes += count;
-      }
-
-      const auto &ess = get_edgesets();
-      for (auto es : ess) {
-        int64_t count = es->entity_count();
-        total_es_edges += count;
-      }
-
-      const auto &fss = get_facesets();
-      for (auto fs : fss) {
-        int64_t count = fs->entity_count();
-        total_fs_faces += count;
-      }
-
-      const auto &els = get_elementsets();
-      for (auto es : els) {
-        int64_t count = es->entity_count();
-        total_es_elements += count;
-      }
-
-      const Ioss::SideSetContainer &sss = get_sidesets();
-      for (auto fs : sss) {
-        const Ioss::SideBlockContainer &fbs = fs->get_side_blocks();
-        for (auto fb : fbs) {
-          int64_t num_side = fb->entity_count();
-          total_sides += num_side;
-        }
-      }
+    int64_t                       total_sides = 0;
+    const Ioss::SideSetContainer &sss         = get_sidesets();
+    for (auto fs : sss) {
+      total_sides += get_entity_count(fs->get_side_blocks());
     }
+
+    int64_t total_nodes    = get_property("node_count").get_int();
+    int64_t total_elements = get_property("element_count").get_int();
+    auto    max_entity = std::max({total_sides, total_es_elements, total_fs_faces, total_es_edges,
+                                total_ns_nodes, total_cells, total_nodes, total_elements});
+
+    int64_t num_ts = get_property("state_count").get_int();
+    auto    max_sb = std::max(
+        {get_property("spatial_dimension").get_int(), get_property("node_block_count").get_int(),
+         get_property("edge_block_count").get_int(), get_property("face_block_count").get_int(),
+         get_property("element_block_count").get_int(),
+         get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
+         get_property("edge_set_count").get_int(), get_property("face_set_count").get_int(),
+         get_property("element_set_count").get_int(), get_property("side_set_count").get_int(),
+         num_ts});
+
+    size_t num_glo_vars = field_count(Ioss::Field::TRANSIENT);
+    size_t num_nod_vars = get_variable_count(get_node_blocks());
+    size_t num_edg_vars = get_variable_count(get_edge_blocks());
+    size_t num_fac_vars = get_variable_count(get_face_blocks());
+    size_t num_ele_vars = get_variable_count(get_element_blocks());
+    size_t num_str_vars = get_variable_count(get_structured_blocks());
+    size_t num_ns_vars  = get_variable_count(get_nodesets());
+    size_t num_es_vars  = get_variable_count(get_edgesets());
+    size_t num_fs_vars  = get_variable_count(get_facesets());
+    size_t num_els_vars = get_variable_count(get_elementsets());
+
+    size_t                       num_ss_vars = 0;
+    const Ioss::SideSetContainer fss         = get_sidesets();
+    for (auto fs : fss) {
+      num_ss_vars += get_variable_count(fs->get_side_blocks());
+    }
+
+    auto max_vr   = std::max({num_glo_vars, num_nod_vars, num_ele_vars, num_str_vars, num_ns_vars});
+    int  vr_width = Ioss::Utils::number_width(max_vr, true) + 2;
+    int  num_width = Ioss::Utils::number_width(max_entity, true) + 2;
+    int  sb_width  = Ioss::Utils::number_width(max_sb, true) + 2;
 
     fmt::print(
         strm,
         "\n Database: {0}\n"
-        " Mesh Type = {1}\n\n"
-        " Number of spatial dimensions = {2:10n}\n"
-        " Number of node blocks        = {7:10n}\t"
-        " Number of nodes              = {3:14n}\n"
-        " Number of edge blocks        = {8:10n}\t"
-        " Number of edges              = {4:14n}\n"
-        " Number of face blocks        = {9:10n}\t"
-        " Number of faces              = {5:14n}\n"
-        " Number of element blocks     = {10:10n}\t"
-        " Number of elements           = {6:14n}\n"
-        " Number of structured blocks  = {11:10n}\t"
-        " Number of cells              = {17:14n}\n"
-        " Number of node sets          = {12:10n}\t"
-        " Length of node list          = {18:14n}\n"
-        " Number of edge sets          = {13:10n}\t"
-        " Length of edge list          = {19:14n}\n"
-        " Number of face sets          = {14:10n}\t"
-        " Length of face list          = {20:14n}\n"
-        " Number of element sets       = {15:10n}\t"
-        " Length of element list       = {21:14n}\n"
-        " Number of element side sets  = {16:10n}\t"
-        " Length of element sides      = {22:14n}\n\n",
+        " Mesh Type = {1}, {39}\n\n"
+        " Number of spatial dimensions = {2:{24}n}\t"
+        "                           {38:{23}s}\t"
+        " Number of global variables     = {26:{25}n}\n"
+        " Number of node blocks        = {7:{24}n}\t"
+        " Number of nodes         = {3:{23}n}\t"
+        " Number of nodal variables      = {27:{25}n}\n"
+        " Number of edge blocks        = {8:{24}n}\t"
+        " Number of edges         = {4:{23}n}\t"
+        " Number of edge variables       = {33:{25}n}\n"
+        " Number of face blocks        = {9:{24}n}\t"
+        " Number of faces         = {5:{23}n}\t"
+        " Number of face variables       = {34:{25}n}\n"
+        " Number of element blocks     = {10:{24}n}\t"
+        " Number of elements      = {6:{23}n}\t"
+        " Number of element variables    = {28:{25}n}\n"
+        " Number of structured blocks  = {11:{24}n}\t"
+        " Number of cells         = {17:{23}n}\t"
+        " Number of structured variables = {29:{25}n}\n"
+        " Number of node sets          = {12:{24}n}\t"
+        " Length of node list     = {18:{23}n}\t"
+        " Number of nodeset variables    = {30:{25}n}\n"
+        " Number of edge sets          = {13:{24}n}\t"
+        " Length of edge list     = {19:{23}n}\t"
+        " Number of edgeset variables    = {35:{25}n}\n"
+        " Number of face sets          = {14:{24}n}\t"
+        " Length of face list     = {20:{23}n}\t"
+        " Number of faceset variables    = {36:{25}n}\n"
+        " Number of element sets       = {15:{24}n}\t"
+        " Length of element list  = {21:{23}n}\t"
+        " Number of elementset variables = {37:{25}n}\n"
+        " Number of element side sets  = {16:{24}n}\t"
+        " Length of element sides = {22:{23}n}\t"
+        " Number of sideset variables    = {31:{25}n}\n\n"
+        " Number of time steps         = {32:{24}n}\n",
         get_database()->get_filename(), mesh_type_string(),
         get_property("spatial_dimension").get_int(), get_property("node_count").get_int(),
         get_property("edge_count").get_int(), get_property("face_count").get_int(),
@@ -511,63 +542,10 @@ namespace Ioss {
         get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
         get_property("edge_set_count").get_int(), get_property("face_set_count").get_int(),
         get_property("element_set_count").get_int(), get_property("side_set_count").get_int(),
-        total_cells, total_ns_nodes, total_es_edges, total_fs_faces, total_es_elements,
-        total_sides);
-
-    if (do_transient && get_property("state_count").get_int() > 0) {
-      fmt::print(strm, " Number of global variables       = {:10n}\n", field_count());
-      {
-        Ioss::NameList names;
-        nodeBlocks[0]->field_describe(Ioss::Field::TRANSIENT, &names);
-        fmt::print(strm, " Number of nodal variables        = {:10n}\n", names.size());
-      }
-
-      {
-        const Ioss::ElementBlockContainer &blocks = get_element_blocks();
-        Ioss::NameList                     names;
-        for (auto block : blocks) {
-          block->field_describe(Ioss::Field::TRANSIENT, &names);
-        }
-        Ioss::Utils::uniquify(names);
-        fmt::print(strm, " Number of element variables      = {:10n}\n", names.size());
-      }
-
-      {
-        const Ioss::StructuredBlockContainer &blocks = get_structured_blocks();
-        Ioss::NameList                        names;
-        for (auto block : blocks) {
-          block->field_describe(Ioss::Field::TRANSIENT, &names);
-        }
-        Ioss::Utils::uniquify(names);
-        fmt::print(strm, " Number of structured block vars  = {:10n}\n", names.size());
-      }
-
-      {
-        const Ioss::NodeSetContainer &blocks = get_nodesets();
-        Ioss::NameList                names;
-        for (auto block : blocks) {
-          block->field_describe(Ioss::Field::TRANSIENT, &names);
-        }
-        Ioss::Utils::uniquify(names);
-        fmt::print(strm, " Number of nodeset variables      = {:10n}\n", names.size());
-      }
-
-      {
-        Ioss::NameList               names;
-        const Ioss::SideSetContainer fss = get_sidesets();
-        for (auto fs : fss) {
-          const Ioss::SideBlockContainer &fbs = fs->get_side_blocks();
-          for (auto fb : fbs) {
-            fb->field_describe(Ioss::Field::TRANSIENT, &names);
-          }
-        }
-
-        Ioss::Utils::uniquify(names);
-        fmt::print(" Number of sideset variables      = {:10n}\n", names.size());
-      }
-      fmt::print(strm, "\n Number of database time steps    = {:10n}\n",
-                 get_property("state_count").get_int());
-    }
+        total_cells, total_ns_nodes, total_es_edges, total_fs_faces, total_es_elements, total_sides,
+        num_width, sb_width, vr_width, num_glo_vars, num_nod_vars, num_ele_vars, num_str_vars,
+        num_ns_vars, num_ss_vars, num_ts, num_edg_vars, num_fac_vars, num_es_vars, num_fs_vars,
+        num_els_vars, " ", get_database()->get_format());
   }
 
   /** \brief Set the Region and the associated DatabaseIO to the given State.
@@ -767,7 +745,7 @@ namespace Ioss {
       // Check that time is increasing...
       if (!warning_output) {
         fmt::print(IOSS_WARNING,
-                   "IOSS WARNING: Current time {} is not greater than previous time {} in\n{}\n. "
+                   "IOSS WARNING: Current time {} is not greater than previous time {} in\n\t{}.\n"
                    "This may cause problems in applications that assume monotonically increasing "
                    "time values.\n",
                    time, stateTimes.back(), get_database()->get_filename());

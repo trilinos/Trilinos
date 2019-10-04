@@ -236,7 +236,7 @@ namespace MueLu {
       RCP<const tRowMatrix> tA;
       try {
         tA = Utilities::Op2NonConstTpetraRow(A_);
-      } catch (Exceptions::BadCast) {
+      } catch (Exceptions::BadCast&) {
         isTRowMatrix = false;
       }
 
@@ -433,10 +433,26 @@ namespace MueLu {
       for(size_t k = 0; k < Teuchos::as<size_t>(TVertLineIdSmoo.size()); k++) {
         if(maxPart < TVertLineIdSmoo[k]) maxPart = TVertLineIdSmoo[k];
       }
-
       size_t numLocalRows = A_->getNodeNumRows();
+
       TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineIdSmoo.size() != 0, Exceptions::RuntimeError,
         "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIdsSmoo.");
+
+      //actualDofsPerNode is the actual number of matrix rows per mesh element.
+      //It is encoded in either the MueLu Level, or in the Xpetra matrix block size.
+      //This value is needed by Ifpack2 to do decoupled block relaxation.
+      int actualDofsPerNode = numLocalRows / TVertLineIdSmoo.size();
+      LO matrixBlockSize = A_->GetFixedBlockSize();
+      if(matrixBlockSize > 1 && actualDofsPerNode > 1)
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(actualDofsPerNode != A_->GetFixedBlockSize(), Exceptions::RuntimeError,
+            "MueLu::Ifpack2Smoother::Setup(): A is a block matrix but its block size and DOFs/node from partitioner disagree");
+      }
+      else if(matrixBlockSize > 1)
+      {
+        actualDofsPerNode = A_->GetFixedBlockSize();
+      }
+      myparamList.set("partitioner: PDE equations", actualDofsPerNode);
 
       if (numLocalRows == Teuchos::as<size_t>(TVertLineIdSmoo.size())) {
         myparamList.set("partitioner: type","user");

@@ -74,7 +74,10 @@ namespace MueLu {
   //
   // See also: FactoryManager
   //
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_HIERARCHYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -89,6 +92,7 @@ namespace MueLu {
         verbosity_              (Medium),
         doPRrebalance_          (MasterList::getDefault<bool>("repartition: rebalance P and R")),
         implicitTranspose_      (MasterList::getDefault<bool>("transpose: use implicit")),
+        fuseProlongationAndUpdate_ (MasterList::getDefault<bool>("fuse prolongation and update")),
         graphOutputLevel_(-1) { }
 
     //!
@@ -186,6 +190,7 @@ namespace MueLu {
 
       H.SetPRrebalance(doPRrebalance_);
       H.SetImplicitTranspose(implicitTranspose_);
+      H.SetFuseProlongationAndUpdate(fuseProlongationAndUpdate_);
 
       H.Clear();
 
@@ -241,6 +246,8 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
+      if (!matvecParams_.is_null())
+        H.SetMatvecParams(matvecParams_);
       // FIXME: Should allow specification of NumVectors on parameterlist
       H.AllocateLevelMultiVectors(1);
       H.describe(H.GetOStream(Runtime0), verbosity_);
@@ -308,6 +315,7 @@ namespace MueLu {
     MsgType               verbosity_;
     bool                  doPRrebalance_;
     bool                  implicitTranspose_;
+    bool                  fuseProlongationAndUpdate_;
     int                   graphOutputLevel_;
     Teuchos::Array<int>   matricesToPrint_;
     Teuchos::Array<int>   prolongatorsToPrint_;
@@ -315,6 +323,7 @@ namespace MueLu {
     Teuchos::Array<int>   nullspaceToPrint_;
     Teuchos::Array<int>   coordinatesToPrint_;
     Teuchos::Array<int>   elementToNodeMapsToPrint_;
+    Teuchos::RCP<Teuchos::ParameterList> matvecParams_;
 
     std::map<int, std::vector<keep_pair> > keep_;
 
@@ -344,7 +353,7 @@ namespace MueLu {
             if (!M.is_null()) {
               Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
             }
-          }	  
+          }
 	  else if (L->IsAvailable(name)) {
 	    // Try nofactory
             RCP<T> M = L->template Get< RCP<T> >(name);

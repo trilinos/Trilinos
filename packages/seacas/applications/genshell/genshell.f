@@ -345,7 +345,7 @@ C     --Write the coordinates
       CALL MDRSRV ('ZN3', KZN3, NUMNP3)
 
 C     -- Since we only read quads, NUMATR should be 0.  For a shell, we
-C     have 1 atribute (thickness)
+C     have 1 attribute (thickness)
 
       CALL MDLONG ('ATRIB', KATRIB, NUMEL3)
 

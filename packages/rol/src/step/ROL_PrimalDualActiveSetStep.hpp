@@ -46,7 +46,7 @@
 
 #include "ROL_Step.hpp"
 #include "ROL_Vector.hpp"
-#include "ROL_Krylov.hpp"
+#include "ROL_KrylovFactory.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Types.hpp"

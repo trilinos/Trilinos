@@ -44,52 +44,65 @@
 
 #include <FROSch_OverlappingOperator_def.hpp>
 
+
 namespace FROSch {
     
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    enum AddingLayersStrategy {LayersFromMatrix=0,LayersFromGraph=1,LayersOld=2};
+
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class AlgebraicOverlappingOperator : public OverlappingOperator<SC,LO,GO,NO> {
-        
+
+    protected:
+
+        using CommPtr               = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
+
+        using XMapPtr               = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr          = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
+
+        using XMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
+
+        using ConstXCrsGraphPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstXCrsGraphPtr;
+
+        using ParameterListPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
+
     public:
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-        
-        
-        AlgebraicOverlappingOperator(CrsMatrixPtr k,
+
+        AlgebraicOverlappingOperator(ConstXMatrixPtr k,
                                      ParameterListPtr parameterList);
-        
+
         virtual int initialize()
         {
             FROSCH_ASSERT(false,"AlgebraicOverlappingOperator cannot be built without input parameters.");
             return 0;
         };
-        
+
         int initialize(int overlap,
-                       MapPtr repeatedMap = Teuchos::null);
-        
+                       ConstXMapPtr repeatedMap = null);
+
         int compute();
-        
-        void describe(Teuchos::FancyOStream &out,
-                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-        
+
+        void describe(FancyOStream &out,
+                      const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
+
         std::string description() const;
-        
-    private:
-        
-        int setUpAlgebraicOverlappingOperator();
-        
+
+    protected:
+
         int buildOverlappingMatrices(int overlap,
-                                     MapPtr repeatedMap);
+                                     ConstXMapPtr repeatedMap);
+        
+        virtual int updateLocalOverlappingMatrices();
+
+        AddingLayersStrategy AddingLayersStrategy_;
     };
-    
+
 }
 
 #endif

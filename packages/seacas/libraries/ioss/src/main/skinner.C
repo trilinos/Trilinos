@@ -31,14 +31,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <algorithm>
-#include <chrono>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <functional>
-#include <iomanip>
-#include <iostream>
 #include <numeric>
 #include <string>
 #include <utility>
@@ -49,6 +47,7 @@
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_ElementBlock.h"
+#include "Ioss_ElementTopology.h"
 #include "Ioss_FaceGenerator.h"
 #include "Ioss_FileInfo.h"
 #include "Ioss_IOFactory.h"
@@ -56,6 +55,7 @@
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_Utils.h"
 
 #include <cassert>
@@ -65,16 +65,9 @@
 // ========================================================================
 
 namespace {
-  struct my_numpunct : std::numpunct<char>
-  {
-  protected:
-    char        do_thousands_sep() const override { return ','; }
-    std::string do_grouping() const override { return "\3"; }
-  };
-
   template <typename INT> void skinner(Skinner::Interface &interface, INT /*dummy*/);
   std::string                  codename;
-  std::string                  version = "0.9";
+  std::string                  version = "0.99";
 } // namespace
 
 int main(int argc, char *argv[])
@@ -82,6 +75,7 @@ int main(int argc, char *argv[])
   int my_rank = 0;
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
+  ON_BLOCK_EXIT(MPI_Finalize);
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
 
@@ -90,9 +84,6 @@ int main(int argc, char *argv[])
   Skinner::Interface interface;
   bool               success = interface.parse_options(argc, argv);
   if (!success) {
-#ifdef SEACAS_HAVE_MPI
-    MPI_Finalize();
-#endif
     return EXIT_FAILURE;
   }
 
@@ -106,6 +97,7 @@ int main(int argc, char *argv[])
     }
   }
 
+  double begin = Ioss::Utils::timer();
   try {
     if (interface.ints_64_bit()) {
       skinner(interface, static_cast<int64_t>(0));
@@ -118,35 +110,29 @@ int main(int argc, char *argv[])
     fmt::print(stderr, "\n{}\n\nskinner terminated due to exception\n", e.what());
     exit(EXIT_FAILURE);
   }
+#ifdef SEACAS_HAVE_MPI
+  Ioss::ParallelUtils parallel(MPI_COMM_WORLD);
+  parallel.barrier();
+#endif
+  double end = Ioss::Utils::timer();
 
   if (my_rank == 0) {
+    fmt::print("\n\tTotal Execution time = {} seconds\n", end - begin);
     fmt::print("\n{} execution successful.\n\n", codename);
   }
-#ifdef SEACAS_HAVE_MPI
-  MPI_Finalize();
-#endif
   return EXIT_SUCCESS;
 }
 
 namespace {
+  Ioss::PropertyManager set_properties(Skinner::Interface &interface);
+
   template <typename INT> void skinner(Skinner::Interface &interface, INT /*dummy*/)
   {
     std::string inpfile    = interface.input_filename();
     std::string input_type = interface.input_type();
 
-    Ioss::PropertyManager properties;
-    if (interface.ints_64_bit()) {
-      properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
-      properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
-    }
+    Ioss::PropertyManager properties = set_properties(interface);
 
-    if (interface.debug) {
-      properties.add(Ioss::Property("LOGGING", 1));
-    }
-
-    if (!interface.decomp_method.empty()) {
-      properties.add(Ioss::Property("DECOMPOSITION_METHOD", interface.decomp_method));
-    }
     //========================================================================
     // INPUT ...
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
@@ -163,101 +149,45 @@ namespace {
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
-    region.output_summary(std::cerr, false);
+    int my_rank = region.get_database()->util().parallel_rank();
 
-    Ioss::FaceGenerator face_generator(region);
-#ifdef SEACAS_HAVE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    auto start = std::chrono::steady_clock::now();
-    face_generator.generate_faces((INT)0);
-#ifdef SEACAS_HAVE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    auto duration = std::chrono::steady_clock::now() - start;
-
-    Ioss::FaceUnorderedSet &faces = face_generator.faces();
-
-    // Faces have been generated at this point.
-    // Categorize (boundary/interior)
-    size_t interior  = 0;
-    size_t boundary  = 0;
-    size_t error     = 0;
-    size_t pboundary = 0;
-
-    for (auto &face : faces) {
-      if (face.elementCount_ == 2) {
-        interior++;
-        if (face.sharedWithProc_ != -1) {
-          pboundary++;
-        }
-      }
-      else if (face.elementCount_ == 1) {
-        boundary++;
-      }
-      else {
-        error++;
-      }
-    }
-
-#ifdef SEACAS_HAVE_MPI
-    Ioss::Int64Vector counts(3), global(3);
-    counts[0] = interior;
-    counts[1] = boundary;
-    counts[2] = pboundary;
-    region.get_database()->util().global_count(counts, global);
-    interior  = global[0];
-    boundary  = global[1];
-    pboundary = global[2];
-#endif
-
-    size_t my_rank = region.get_database()->parallel_rank();
     if (my_rank == 0) {
-      fmt::print(
-          "Face count = {:n}\tInterior = {:n}\tBoundary = {:n}\tShared = {:n}\tError = {:n}\n"
-          "Total Time = {} ms\t{} faces/second\n\n",
-          interior + boundary - pboundary / 2, interior - pboundary / 2, boundary, pboundary, error,
-          std::chrono::duration<double, std::milli>(duration).count(),
-          (interior + boundary - pboundary / 2) / std::chrono::duration<double>(duration).count());
-
-      fmt::print("Hash Statistics: Bucket Count = {:n}\tLoad Factor = {}\n", faces.bucket_count(),
-                 faces.load_factor());
-      size_t numel = region.get_property("element_count").get_int();
-      fmt::print("Faces/Element ratio = {}\n", static_cast<double>(faces.size()) / numel);
+      region.output_summary(std::cerr, false);
     }
+
+    // Generate the faces...
+    Ioss::FaceGenerator face_generator(region);
+    face_generator.generate_faces((INT)0, true);
 
     if (interface.no_output()) {
       return;
     }
 
     // Get vector of all boundary faces which will be output as the skin...
-    std::vector<Ioss::Face> boundary_faces;
-    boundary_faces.reserve(boundary);
-    for (auto &face : faces) {
-      if (face.elementCount_ == 1) {
-        boundary_faces.push_back(face);
+    std::map<std::string, std::vector<Ioss::Face>> boundary_faces;
+    const Ioss::ElementBlockContainer &            ebs = region.get_element_blocks();
+    for (auto eb : ebs) {
+      const std::string &name     = eb->name();
+      auto &             boundary = boundary_faces[name];
+      auto &             faces    = face_generator.faces(name);
+      for (auto &face : faces) {
+        if (face.elementCount_ == 1) {
+          boundary.push_back(face);
+        }
       }
     }
 
     // Iterate the boundary faces and determine which nodes are referenced...
-    size_t           node_count = region.get_property("node_count").get_int();
-    std::vector<int> ref_nodes(node_count);
-    size_t           quad = 0;
-    size_t           tri  = 0;
-    for (const auto &face : boundary_faces) {
-      size_t face_node_count = 0;
-      for (auto &gnode : face.connectivity_) {
-        if (gnode > 0) {
-          face_node_count++;
-          auto node       = region.get_database()->node_global_to_local(gnode, true) - 1;
-          ref_nodes[node] = 1;
+    size_t           my_node_count = region.get_property("node_count").get_int();
+    std::vector<int> ref_nodes(my_node_count);
+    for (const auto &boundaries : boundary_faces) {
+      for (const auto &face : boundaries.second) {
+        for (auto &gnode : face.connectivity_) {
+          if (gnode > 0) {
+            auto node       = region.get_database()->node_global_to_local(gnode, true) - 1;
+            ref_nodes[node] = 1;
+          }
         }
-      }
-      if (face_node_count == 3) {
-        tri++;
-      }
-      else if (face_node_count == 4) {
-        quad++;
       }
     }
 
@@ -272,8 +202,13 @@ namespace {
     std::vector<INT> ids;
     nb->get_field_data("ids", ids);
 
+
+    std::vector<int> owner;
+    nb->get_field_data("owning_processor", owner);
+
     std::vector<INT>    ref_ids(ref_count);
     std::vector<double> coord_out(3 * ref_count);
+    std::vector<int>    owner_out(ref_count);
 
     size_t j = 0;
     for (size_t i = 0; i < ref_nodes.size(); i++) {
@@ -281,28 +216,13 @@ namespace {
         coord_out[3 * j + 0] = coord_in[3 * i + 0];
         coord_out[3 * j + 1] = coord_in[3 * i + 1];
         coord_out[3 * j + 2] = coord_in[3 * i + 2];
+        owner_out[j]         = owner[i];
         ref_ids[j++]         = ids[i];
       }
     }
-
-    // Create output file...
-    if (interface.compression_level > 0 || interface.shuffle) {
-      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
-      properties.add(Ioss::Property("COMPRESSION_LEVEL", interface.compression_level));
-      properties.add(Ioss::Property("COMPRESSION_SHUFFLE", interface.shuffle));
-    }
-
-    if (interface.compose_output != "none") {
-      properties.add(Ioss::Property("COMPOSE_RESULTS", "YES"));
-      properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
-      if (interface.compose_output != "default") {
-        properties.add(Ioss::Property("PARALLEL_IO_MODE", interface.compose_output));
-      }
-    }
-
-    if (interface.netcdf4_) {
-      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
-    }
+    Ioss::Utils::clear(coord_in);
+    Ioss::Utils::clear(ids);
+    Ioss::Utils::clear(owner);
 
     std::string       file = interface.output_filename();
     std::string       type = interface.output_type();
@@ -321,71 +241,128 @@ namespace {
 
     Ioss::NodeBlock *nbo =
         new Ioss::NodeBlock(output_region.get_database(), "nodeblock_1", ref_count, 3);
+
+    // Count number of nodes owned by this processor (owner_out[i] == myProcessor);
+    size_t owned = std::count_if(owner_out.begin(), owner_out.end(),
+                                 [my_rank](int i) { return i == my_rank; });
+    nbo->property_add(Ioss::Property("locally_owned_count", (INT)owned));
+
     output_region.add(nbo);
 
-    Ioss::ElementBlock *quadblock = nullptr;
-    Ioss::ElementBlock *triblock  = nullptr;
-    if (quad > 0) {
-      quadblock = new Ioss::ElementBlock(output_region.get_database(), "quad", "shell", quad);
-      output_region.add(quadblock);
-    }
+    // Output element blocks: will have a "skin" block for each input element block.
+    //
+    // NOTE: currently only handle a single skin face topology per
+    // input element block. Eventually may need to handle the case
+    // where there are two skin face topologies per input element
+    // block (wedge -> tri and quad).
 
-    if (tri > 0) {
-      triblock = new Ioss::ElementBlock(output_region.get_database(), "tri", "trishell", tri);
-      output_region.add(triblock);
+    // Count faces per element block and create output element block...
+    for (auto eb : ebs) {
+      const std::string &name      = eb->name();
+      auto &             boundary  = boundary_faces[name];
+      auto               face_topo = eb->topology()->face_type(0);
+      std::string        topo      = "shell";
+      if (face_topo == nullptr) {
+	std::ostringstream errmsg;
+	fmt::print(errmsg, "ERROR: Block '{}' with topology '{}' does not have"
+		   " a unique face topology.\nThis is not supported at this time.\n",
+		   name, eb->topology()->name());
+	IOSS_ERROR(errmsg);
+      }
+      if (face_topo->name() == "tri3") {
+        topo = "trishell";
+      }
+      auto block =
+          new Ioss::ElementBlock(output_region.get_database(), name, topo, boundary.size());
+      output_region.add(block);
     }
-
     output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
     output_region.begin_mode(Ioss::STATE_MODEL);
     nbo->put_field_data("ids", ref_ids);
+    nbo->put_field_data("owning_processor", owner_out);
     nbo->put_field_data("mesh_model_coordinates", coord_out);
+    Ioss::Utils::clear(coord_out);
+    Ioss::Utils::clear(owner_out);
+    Ioss::Utils::clear(ref_ids);
 
-    std::vector<INT> quad_conn;
-    std::vector<INT> quad_ids;
-    std::vector<INT> tri_conn;
-    std::vector<INT> tri_ids;
-    quad_conn.reserve(4 * quad);
-    quad_ids.reserve(quad);
-    tri_conn.reserve(3 * tri);
-    tri_ids.reserve(tri);
+    bool use_face_hash_ids = interface.useFaceHashIds_;
+    INT  fid               = 0;
+    for (auto eb : ebs) {
+      const std::string &name       = eb->name();
+      auto &             boundary   = boundary_faces[name];
+      auto *             block      = output_region.get_element_block(name);
+      size_t             node_count = block->topology()->number_corner_nodes();
 
-    bool use_face_ids = !interface.ignoreFaceIds_;
-    INT  fid          = 1;
-    for (auto &face : boundary_faces) {
-      if (use_face_ids) {
-        fid = face.id_;
-        if (fid < 0) {
-          fid = -fid;
+      std::vector<INT> conn;
+      std::vector<INT> elids;
+      conn.reserve(node_count * boundary.size());
+      elids.reserve(boundary.size());
+
+      for (auto &face : boundary) {
+        if (use_face_hash_ids) {
+          fid = face.hashId_;
+          if (fid < 0) { // Due to (unsigned)size_t -> (signed)INT conversion
+            fid = -fid;
+          }
         }
-      }
-      else {
-        fid++;
-      }
-
-      if (face.connectivity_[3] != 0) {
-        for (int i = 0; i < 4; i++) {
-          quad_conn.push_back(face.connectivity_[i]);
+        else {
+          fid = face.element[0];
         }
-        quad_ids.push_back(fid);
-      }
-      else {
-        for (int i = 0; i < 3; i++) {
-          tri_conn.push_back(face.connectivity_[i]);
+
+        for (size_t i = 0; i < node_count; i++) {
+          conn.push_back(face.connectivity_[i]);
         }
-        tri_ids.push_back(fid);
+        elids.push_back(fid);
       }
+      block->put_field_data("ids", elids);
+      block->put_field_data("connectivity", conn);
     }
-
-    if (quad > 0) {
-      quadblock->put_field_data("ids", quad_ids);
-      quadblock->put_field_data("connectivity", quad_conn);
-    }
-    if (tri > 0) {
-      triblock->put_field_data("ids", tri_ids);
-      triblock->put_field_data("connectivity", tri_conn);
-    }
-
     output_region.end_mode(Ioss::STATE_MODEL);
+    if (my_rank == 0) {
+      output_region.output_summary(std::cerr, false);
+    }
+  }
+
+  Ioss::PropertyManager set_properties(Skinner::Interface &interface)
+  {
+    Ioss::PropertyManager properties;
+    if (interface.ints_64_bit()) {
+      properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
+      properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
+    }
+
+    if (interface.debug) {
+      properties.add(Ioss::Property("LOGGING", 1));
+    }
+
+    if (!interface.decomp_method.empty()) {
+      properties.add(Ioss::Property("DECOMPOSITION_METHOD", interface.decomp_method));
+    }
+
+    if (interface.compression_level > 0 || interface.shuffle) {
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+      properties.add(Ioss::Property("COMPRESSION_LEVEL", interface.compression_level));
+      properties.add(Ioss::Property("COMPRESSION_SHUFFLE", interface.shuffle));
+    }
+
+    if (interface.compose_output == "default") {
+      properties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
+      properties.add(Ioss::Property("COMPOSE_RESTART", "NO"));
+    }
+    else if (interface.compose_output == "external") {
+      properties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
+      properties.add(Ioss::Property("COMPOSE_RESTART", "NO"));
+    }
+    else if (interface.compose_output != "none") {
+      properties.add(Ioss::Property("COMPOSE_RESULTS", "YES"));
+      properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
+    }
+
+    if (interface.netcdf4_) {
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+    }
+
+    return properties;
   }
 } // namespace

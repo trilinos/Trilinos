@@ -57,7 +57,7 @@ HEADER
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_Relaxation.hpp>
 #include <Tpetra_RowMatrix.hpp>
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
+#include <Tpetra_BlockMultiVector.hpp>
 
 namespace { // (anonmous)
 
@@ -194,13 +194,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test2, Scalar, LocalOrdinal
 
   TEST_INEQUALITY(&x, &y); // vector x and y are different
   // Vectors x and y point to the same data.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  TEST_EQUALITY(x.template getLocalView<Kokkos::HostSpace> ().data (),
-                y.template getLocalView<Kokkos::HostSpace> ().data ());
-#else
   TEST_EQUALITY(x.getLocalViewHost ().data (),
                 y.getLocalViewHost ().data ());
-#endif
 
   prec.apply(x, y);
 
@@ -796,8 +791,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix,
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
   using std::endl;
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+  typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
   typedef Tpetra::CrsGraph<LO,GO,Node> crs_graph_type;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -895,10 +890,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrs
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
   using std::endl;
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LO,GO,Node> crs_graph_type;
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
   typedef Ifpack2::Relaxation<row_matrix_type> prec_type;
   int lclSuccess = 1;
@@ -1007,9 +1002,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrs
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
   out << "Ifpack2::Version(): " << Ifpack2::Version () << std::endl;

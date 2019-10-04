@@ -126,6 +126,7 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
 bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &value,
                                           bool sync_parallel) const
 {
+  PAR_UNUSED(sync_parallel);
 #ifdef SEACAS_HAVE_MPI
   char *            result_string = nullptr;
   std::vector<char> broadcast_string;
@@ -190,8 +191,9 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, int &value,
 
 bool Ioss::ParallelUtils::get_environment(const std::string &name, bool sync_parallel) const
 {
-// Return true if 'name' defined, no matter what the value.
-// Return false if 'name' not defined.
+  // Return true if 'name' defined, no matter what the value.
+  // Return false if 'name' not defined.
+  PAR_UNUSED(sync_parallel);
 #ifdef SEACAS_HAVE_MPI
   char *result_string = nullptr;
   int   string_length = 0;
@@ -284,6 +286,7 @@ void Ioss::ParallelUtils::hwm_memory_stats(int64_t &min, int64_t &max, int64_t &
 // Used by some applications for uniquely identifying an entity.
 int64_t Ioss::ParallelUtils::generate_guid(size_t id, int rank) const
 {
+  PAR_UNUSED(rank);
 #ifdef SEACAS_HAVE_MPI
   static size_t lpow2 = 0;
   if (lpow2 == 0) {
@@ -300,6 +303,8 @@ int64_t Ioss::ParallelUtils::generate_guid(size_t id, int rank) const
 
 void Ioss::ParallelUtils::attribute_reduction(const int length, char buffer[]) const
 {
+  PAR_UNUSED(length);
+  PAR_UNUSED(buffer);
 #ifdef SEACAS_HAVE_MPI
   if (1 < parallel_size()) {
     static_assert(sizeof(char) == 1, "");
@@ -315,6 +320,13 @@ void Ioss::ParallelUtils::attribute_reduction(const int length, char buffer[]) c
 
     std::memcpy(buffer, TOPTR(recv_buf), length);
   }
+#endif
+}
+
+void Ioss::ParallelUtils::barrier() const
+{
+#ifdef SEACAS_HAVE_MPI
+  MPI_Barrier(communicator_);
 #endif
 }
 
@@ -396,6 +408,7 @@ template double Ioss::ParallelUtils::global_minmax(double, Ioss::ParallelUtils::
 template <typename T>
 T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax which) const
 {
+  PAR_UNUSED(which);
   T minmax = local_minmax;
 
 #ifdef SEACAS_HAVE_MPI
@@ -436,6 +449,8 @@ template void Ioss::ParallelUtils::all_gather(int, std::vector<int> &) const;
 template void Ioss::ParallelUtils::all_gather(int64_t, std::vector<int64_t> &) const;
 /// \relates Ioss::ParallelUtils::all_gather
 template void Ioss::ParallelUtils::all_gather(std::vector<int> &, std::vector<int> &) const;
+/// \relates Ioss::ParallelUtils::all_gather
+template void Ioss::ParallelUtils::all_gather(std::vector<int64_t> &, std::vector<int64_t> &) const;
 
 template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T> &result) const
 {
@@ -506,14 +521,15 @@ void Ioss::ParallelUtils::all_gather(std::vector<T> &my_values, std::vector<T> &
 
 void Ioss::ParallelUtils::progress(const std::string &output) const
 {
+  static double begin = Utils::timer();
+
   int64_t MiB = 1024 * 1024;
   int64_t min = 0, max = 0, avg = 0;
   memory_stats(min, max, avg);
 
   if (parallel_rank() == 0) {
-    auto                          now  = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff = now - initial_time;
-    fmt::print(stderr, "  [{:.3f}] ({}MiB  {}MiB  {}MiB)\t{}\n", diff.count(), min / MiB, max / MiB,
+    double diff = Utils::timer() - begin;
+    fmt::print(stderr, "  [{:.3f}] ({}MiB  {}MiB  {}MiB)\t{}\n", diff, min / MiB, max / MiB,
                avg / MiB, output);
   }
 }
@@ -561,6 +577,7 @@ template <typename T>
 int Ioss::ParallelUtils::gather(int num_vals, int size_per_val, std::vector<T> &my_values,
                                 std::vector<T> &result) const
 {
+  PAR_UNUSED(size_per_val);
 #ifdef SEACAS_HAVE_MPI
   std::vector<int> vals_per_proc;
   gather(num_vals, vals_per_proc);

@@ -66,11 +66,10 @@ class WorksetDescriptor;
  * \param[out] partitions Set of local mesh partitions for given region of mesh_info
  *
  */
-template<typename LO, typename GO>
 void
-generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
+generateLocalMeshPartitions(const panzer::LocalMeshInfo & mesh_info,
                             const panzer::WorksetDescriptor & description,
-                            std::vector<panzer::LocalMeshPartition<LO,GO> > & partitions);
+                            std::vector<panzer::LocalMeshPartition> & partitions);
 
 namespace partitioning_utilities
 {
@@ -82,11 +81,10 @@ namespace partitioning_utilities
  * \param[out] child_info Child which will be generated
  *
  */
-template<typename LO, typename GO>
 void
-setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
-                      const std::vector<LO> & owned_parent_cells,
-                      panzer::LocalMeshInfoBase<LO,GO> & child_info);
+setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
+                      const std::vector<panzer::LocalOrdinal> & owned_parent_cells,
+                      panzer::LocalMeshInfoBase & child_info);
 }
 
 }

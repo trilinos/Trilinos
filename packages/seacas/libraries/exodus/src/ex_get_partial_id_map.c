@@ -35,12 +35,22 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
 
-/*
- * reads the id map
+/*!
+ * \ingroup ModelDescription
+ *
+ * reads the a portion of the values of the id map for the entity type specified by `map_type`
+ * The beginning location of the read is a `start_entity_num` which is 1-based. The read will
+ * return `num_entities` values starting at that location.  Requirements are:
+ * - `start_entity_num > 0`
+ * - `start_entity_num + num_entities - 1 <= num_entity` which is the number of entities of
+ * specified type (e.g. elements)
+ *
+ * \param      exoid            exodus file id
+ * \param      map_type         type (edge block, face block, edge set, ... )
+ * \param      start_entity_num index of first entity in block to read (1-based)
+ * \param      num_entities     number of entries to read in this block/set
+ * \param      map              the values read are returned here.
  */
 
 int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_entity_num,
@@ -56,7 +66,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   const char *tname;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   switch (map_type) {
   case EX_NODE_MAP:
@@ -95,6 +105,14 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d", tname,
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+
+  if (start_entity_num < 1) {
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: start index (%" PRId64 ") must be greater than 0 in file id %d",
+             start_entity_num, exoid);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

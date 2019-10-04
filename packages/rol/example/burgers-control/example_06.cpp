@@ -47,6 +47,8 @@
 */
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
 
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 //#include "ROL_HMCRObjective.hpp"
@@ -239,7 +241,11 @@ int main(int argc, char *argv[]) {
     std::string filename = "input.xml";
     auto parlist = ROL::getParametersFromXmlFile( filename );
     // DEFINE ALGORITHM
-    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
     // RUN OPTIMIZATION
     z.zero();
     algo.run(z, g, *obj, print0, *outStream0);
@@ -256,7 +262,7 @@ int main(int argc, char *argv[]) {
     *outStream0 << "\n";
     *outStream0 << "Scalar Parameter: " << z.getStatistic(0) << "\n";
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

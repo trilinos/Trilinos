@@ -57,9 +57,12 @@
                 
                 <ParameterList name="Distribution">
                     <Parameter name="Type"                                      type="string"   value="linear"/>
-                    <Parameter name="GatheringSteps"                            type="int"      value="1"/>
                     <Parameter name="NumProcs"                                  type="int"      value="1"/>
                     <Parameter name="Factor"                                    type="double"   value="1.0"/>
+                    <Parameter name="GatheringSteps"                            type="int"      value="1"/>
+                    <ParameterList name="Gathering Communication">
+                        <Parameter name="Send type"                             type="string"   value="Send"/>
+                    </ParameterList>
                 </ParameterList>
                 
                 <ParameterList name="CoarseSolver">

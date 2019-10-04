@@ -55,11 +55,8 @@ namespace Ioss {
   class Face
   {
   public:
-    Face() : id_(0), elementCount_(0), sharedWithProc_(-1) {}
-    Face(size_t id, std::array<size_t, 4> conn)
-        : id_(id), elementCount_(0), sharedWithProc_(-1), connectivity_(std::move(conn))
-    {
-    }
+    Face() = default;
+    Face(size_t id, std::array<size_t, 4> conn) : hashId_(id), connectivity_(std::move(conn)) {}
 
     void add_element(size_t element_id) const
     {
@@ -67,26 +64,39 @@ namespace Ioss {
       element[elementCount_++] = element_id;
     }
 
-    size_t                id_;
-    mutable size_t        element[2]{};
-    mutable int           elementCount_; // Should be max of 2 solid elements...
-    mutable int           sharedWithProc_;
+    size_t hashId_{0};
+    // NOTE: Not used at all by `Face` or `FaceGenerator` class, but are used by
+    // skinner to give a consistent element id in cases where there
+    // is a hash collision (face.id).
+
+    // NOTE: For interior faces, this will not be the same value for each
+    // face where the `hashId_` *will* be consistent for interior faces.
+    // Should only use this as an id if `elementCount_` is 1.
+
+    // NOTE: This could be used to do parallel or block boundary
+    // collision since it is calculated as 10*element_id + local_face,
+    // you could recover element_id and local_face and then set up
+    // parallel communication maps.  May need to save the proc it is
+    // shared with also (which is available in git history)
+
+    mutable size_t element[2]{};
+    mutable int    elementCount_{0}; // Should be max of 2 solid elements...
     std::array<size_t, 4> connectivity_{};
   };
 
   struct FaceHash
   {
-    size_t operator()(const Face &face) const { return face.id_; }
+    size_t operator()(const Face &face) const { return face.hashId_; }
   };
 
   struct FaceEqual
   {
     bool operator()(const Face &left, const Face &right) const
     {
-      if (left.id_ != right.id_) {
+      if (left.hashId_ != right.hashId_) {
         return false;
       }
-      // Hash (id_) is equal
+      // Hash (hashId_) is equal
       // Check whether same vertices (can be in different order)
       for (auto lvert : left.connectivity_) {
         if (std::find(right.connectivity_.cbegin(), right.connectivity_.cend(), lvert) ==
@@ -113,12 +123,14 @@ namespace Ioss {
   public:
     explicit FaceGenerator(Ioss::Region &region);
 
-    template <typename INT> void generate_faces(INT /*dummy*/);
-    FaceUnorderedSet &           faces() { return faces_; }
+    template <typename INT> void generate_faces(INT /*dummy*/, bool block_by_block = false);
+    FaceUnorderedSet &           faces(const std::string &name = "ALL") { return faces_[name]; }
 
   private:
-    Ioss::Region &   region_;
-    FaceUnorderedSet faces_;
+    template <typename INT> void            generate_block_faces(INT /*dummy*/);
+    template <typename INT> void            generate_model_faces(INT /*dummy*/);
+    Ioss::Region &                          region_;
+    std::map<std::string, FaceUnorderedSet> faces_;
   };
 } // namespace Ioss
 

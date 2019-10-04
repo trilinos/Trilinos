@@ -44,8 +44,6 @@
 #include <cstdlib>
 #include <exception>
 #include <fmt/ostream.h>
-#include <iomanip>
-#include <iostream>
 #include <limits>
 #include <numeric>
 #include <set>
@@ -55,6 +53,8 @@
 #include <vector>
 
 #include "copy_string_cpp.h"
+// Enable SMART_ASSERT even in Release mode...
+#define SMART_ASSERT_DEBUG_MODE 1
 #include "smart_assert.h"
 
 #include <exodusII.h>
@@ -127,13 +127,6 @@ using ExodusIdVector = std::vector<ex_entity_id>;
 
 extern double seacas_timer();
 namespace {
-  struct my_numpunct : std::numpunct<char>
-  {
-  protected:
-    char        do_thousands_sep() const override { return ','; }
-    std::string do_grouping() const override { return "\3"; }
-  };
-
   unsigned int debug_level = 0;
   const double FILL_VALUE  = FLT_MAX;
   int          rank        = 0;
@@ -172,7 +165,7 @@ namespace {
     SMART_ASSERT(vec.capacity() == 0);
   }
 
-  ex_entity_type exodus_object_type(Excn::ObjectType &epu_type)
+  ex_entity_type exodus_object_type(const Excn::ObjectType &epu_type)
   {
     switch (epu_type) {
     case Excn::EBLK: return EX_ELEM_BLOCK;
@@ -461,7 +454,7 @@ int main(int argc, char *argv[])
         // Rule of thumb -- number of subcycles = cube_root(processor_count);
         // if that value > max_open_file, then use square root.
         // if that is still too large, just do no subcycles... and implement
-        // a recursive subcycling capabilty at some point...
+        // a recursive subcycling capability at some point...
         int sub_cycle_count = (int)(std::pow(processor_count, 1.0 / 3) + 0.9);
         if (((processor_count + sub_cycle_count - 1) / sub_cycle_count) > max_open_file) {
           sub_cycle_count = (int)std::sqrt(processor_count);
@@ -2565,6 +2558,7 @@ namespace {
 
             // The node ids are in local space -- map to global; bring df along (if any).
             for (size_t iset = 0; iset < size; iset++) {
+              SMART_ASSERT(ns_nodes[iset] > 0)(p)(ns)(iset)(ns_nodes[iset]);
               size_t global_node         = local_node_to_global[p][ns_nodes[iset] - 1] + 1;
               glob_ns_nodes[global_node] = 1;
               glob_ns_df[global_node]    = ns_df[iset];
@@ -2625,8 +2619,8 @@ namespace {
               nset.nodeOrderMap[i] = global_pos - 1;
             }
 #if 0
-	    if (debug_level & 32)
-	      nset.dump_order();
+            if (debug_level & 32)
+              nset.dump_order();
 #endif
           }
         }
@@ -2835,7 +2829,9 @@ namespace {
 
           // The element ids are in local space -- map to global
           for (size_t i = 0; i < size; i++) {
-            size_t local_elem             = glob_ssets[ss].elems[off + i];
+            size_t local_elem = glob_ssets[ss].elems[off + i];
+            SMART_ASSERT(local_elem > 0)(p)(ss)(i)(local_elem);
+            SMART_ASSERT(glob_ssets[ss].sides[off + i] > 0 && glob_ssets[ss].sides[off + i] <= 6);
             size_t global_elem            = local_element_to_global[p][local_elem - 1];
             glob_ssets[ss].elems[off + i] = global_elem + 1;
           }
@@ -3147,13 +3143,10 @@ namespace {
     osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 
     if (GetVersionEx(&osvi)) {
+      DWORD             build = osvi.dwBuildNumber & 0xFFFF;
       std::stringstream str;
-      str << " ";
-      str << osvi.dwMajorVersion << "." << osvi.dwMinorVersion;
-      str << " ";
-      str << osvi.szCSDVersion;
-      DWORD build = osvi.dwBuildNumber & 0xFFFF;
-      str << " (Build " << build << ")";
+      fmt::print(str, " {}.{} {} (Build {})", osvi.dwMajorVersion, osvi.dwMinorVersion,
+                 osvi.szCSDVersion, build);
       os += str.str();
     }
     info += os;
@@ -3263,9 +3256,7 @@ namespace {
     else {
       suffix = "s";
     }
-    std::ostringstream os;
-    os << std::showpoint << std::setprecision(3) << seconds << suffix;
-    return os.str();
+    return fmt::format("{:.3}{}", seconds, suffix);
   }
 
   int get_width(int max_value)

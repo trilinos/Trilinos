@@ -228,8 +228,8 @@ namespace {
     }
 
     int   ws = 0, comp_ws = 8;
-    float dum = 0.0;
-    int   err = ex_open(file_name.c_str(), EX_READ, &comp_ws, &ws, &dum);
+    float dumb = 0.0;
+    int   err  = ex_open(file_name.c_str(), EX_READ, &comp_ws, &ws, &dumb);
     if (err < 0) {
       Error(fmt::format("Couldn't open file \"{}\".\n", file_name));
       return 0;
@@ -1125,6 +1125,7 @@ bool Invalid_Values(const double *values, size_t count)
 bool Equal_Values(const double *values, size_t count, double *value)
 {
   SMART_ASSERT(values != nullptr);
+  *value = values[0];
   return (std::adjacent_find(values, values + count, std::not_equal_to<double>()) ==
           values + count);
 }

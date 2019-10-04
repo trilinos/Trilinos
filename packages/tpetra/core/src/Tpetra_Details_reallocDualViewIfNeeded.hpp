@@ -77,7 +77,7 @@ namespace Details {
 ///
 /// \return Whether we actually reallocated.  If we did reallocate,
 ///   the function promises to fence before returning.  "Fence" means
-///   <tt>DeviceType::execution_space::fence()</tt>.
+///   <tt>DeviceType::execution_space().fence()</tt>.
 template<class ValueType, class DeviceType>
 bool
 reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
@@ -100,22 +100,22 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
   }
   else if (curSize < newSize) { // too small; need to reallocate
     if (needFenceBeforeRealloc) {
-      execution_space::fence ();
+      execution_space().fence ();
     }
     dv = dual_view_type (); // free first, in order to save memory
     // If current size is 0, the DualView's Views likely lack a label.
     dv = dual_view_type (curSize == 0 ? newLabel : dv.d_view.label (), newSize);
-    execution_space::fence ();
+    execution_space().fence ();
     return true; // we did reallocate
   }
   else {
     if (newSize == 0) { // special case: realloc to 0 means always do it
       if (needFenceBeforeRealloc) {
-        execution_space::fence ();
+        execution_space().fence ();
       }
       // If current size is 0, the DualView's Views likely lack a label.
       dv = dual_view_type (curSize == 0 ? newLabel : dv.d_view.label (), 0);
-      execution_space::fence ();
+      execution_space().fence ();
       return true; // we did reallocate
     }
     // Instead of writing curSize >= tooBigFactor * newSize, express
@@ -125,12 +125,12 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
       // The allocation is much too big, so free it and reallocate
       // to the new, smaller size.
       if (needFenceBeforeRealloc) {
-        execution_space::fence ();
+        execution_space().fence ();
       }
       dv = dual_view_type (); // free first, in order to save memory
       // If current size is 0, the DualView's Views likely lack a label.
       dv = dual_view_type (curSize == 0 ? newLabel : dv.d_view.label (), newSize);
-      execution_space::fence ();
+      execution_space().fence ();
       return true; // we did reallocate
     }
     else {

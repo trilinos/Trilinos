@@ -8,40 +8,39 @@
 #include "KokkosBatched_Vector.hpp"
 
 namespace KokkosBatched {
-  namespace Experimental {
-    ///
-    /// This add tiny values on diagonals so the absolute values of diagonals become larger
-    ///
 
-    ///
-    /// Serial AddRadial
-    ///
+  ///
+  /// This add tiny values on diagonals so the absolute values of diagonals become larger
+  ///
 
-    struct SerialAddRadial {
-      template<typename ScalarType,
-               typename AViewType>
-      KOKKOS_INLINE_FUNCTION
-      static int
-      invoke(const ScalarType tiny,
-             const AViewType &A);
-    };
+  ///
+  /// Serial AddRadial
+  ///
 
-    ///
-    /// Team Set
-    ///
+  struct SerialAddRadial {
+    template<typename ScalarType,
+             typename AViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const ScalarType tiny,
+           const AViewType &A);
+  };
 
-    template<typename MemberType>
-    struct TeamAddRadial {
-      template<typename ScalarType,
-               typename AViewType>
-      KOKKOS_INLINE_FUNCTION
-      static int
-      invoke(const MemberType &member,
-             const ScalarType tiny,
-             const AViewType &A);
-    };
+  ///
+  /// Team Set
+  ///
 
-  }
+  template<typename MemberType>
+  struct TeamAddRadial {
+    template<typename ScalarType,
+             typename AViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member,
+           const ScalarType tiny,
+           const AViewType &A);
+  };
+
 }
 
 

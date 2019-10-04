@@ -59,7 +59,7 @@ C   --
 C   --Parameters:
 C   --   AXIS - IN - the axis to scale ('X' or 'Y')
 C   --   TIMPLT - IN - true if time plot Y data versus X-Y data
-C   --   MAXPTS - IN - the maximun number of points on a curve (PLTVAL length)
+C   --   MAXPTS - IN - the maximum number of points on a curve (PLTVAL length)
 C   --   NPTS - IN - the number of points on each curve
 C   --   NSPVAR, NEPVAR - IN - the starting and ending plot variable
 C   --      indices for min/max calculation (PLTVAL index, /TPVARS/ index)

@@ -43,7 +43,7 @@
 #include "PanzerAdaptersSTK_config.hpp"
 
 #include "Panzer_STK_Utilities.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 #include "Kokkos_DynRankView.hpp"
 
@@ -51,8 +51,7 @@
 
 namespace panzer_stk {
 
-template <typename GlobalOrdinal>
-static void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,
+static void gather_in_block(const std::string & blockId, const panzer::GlobalIndexer& dofMngr,
                             const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
                             std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > & fc);
 
@@ -82,21 +81,12 @@ void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> 
    }
 }
 
-template <typename GlobalOrdinal>
-void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
+void write_solution_data(const panzer::GlobalIndexer& dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
 {
    write_solution_data(dofMngr,mesh,*x(0),prefix,postfix);
 }
 
-template 
-void write_solution_data<int>(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix);
-#ifdef PANZER_HAVE_LONG_LONG_INT
-template
-void write_solution_data<panzer::Ordinal64>(const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix);
-#endif
-
-template <typename GlobalOrdinal>
-void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
+void write_solution_data(const panzer::GlobalIndexer& dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
 {
    typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
@@ -122,16 +112,7 @@ void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & 
    }
 }
 
-template
-void write_solution_data<int>(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix);
-#ifdef PANZER_HAVE_LONG_LONG_INT
-template
-void write_solution_data<panzer::Ordinal64>(const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix);
-#endif
-
-
-template <typename GlobalOrdinal>
-void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,
+void gather_in_block(const std::string & blockId, const panzer::GlobalIndexer& dofMngr,
                      const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
                      std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > & fc)
 {
@@ -147,7 +128,7 @@ void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalInde
 
       // gather operation for each cell in workset
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-         std::vector<GlobalOrdinal> GIDs;
+         std::vector<panzer::GlobalOrdinal> GIDs;
          std::vector<int> LIDs;
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
       

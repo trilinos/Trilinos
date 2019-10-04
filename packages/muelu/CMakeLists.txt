@@ -265,8 +265,10 @@ GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_TEKO ${${PACKAGE_NAME}_ENABLE_Teko})
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - Enabling/disabling of scalar/ordinal types is controlled by Tpetra
 
-IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG OFF)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG OFF)
 
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # <double, int, int>
   # Examples and tests need at least this one, also if Epetra is enabled
   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
@@ -342,6 +344,17 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "<double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
   MESSAGE(STATUS "<complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
 
+  # GO preference: int > long long > long
+  IF(NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT})
+    # No GO=int (first choice for default)
+    IF(NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT})
+      #No GO=long long (second choice), must use long
+      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG ON)
+    ELSE()
+      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG ON)
+    ENDIF()
+  ENDIF()
+    
   # If Tpetra is enabled, determine which Nodes are used
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ${Tpetra_INST_SERIAL})
@@ -367,6 +380,8 @@ ELSE()
     # If Epetra only is active, only activate SerialNode by default
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ON)
   ENDIF()
+
+  # With ETI off, free to leave int as the default GO
 ENDIF()
 
 # HAVE_MUELU_COMPLEX=ON iff:

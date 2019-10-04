@@ -42,8 +42,6 @@
 #ifndef _FROSCH_SCHWARZOPERATOR_DECL_HPP
 #define _FROSCH_SCHWARZOPERATOR_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_TripleMatrixMultiply.hpp>
 #include <Xpetra_Export.hpp>
@@ -66,145 +64,163 @@
 
 
 namespace FROSch {
-    
-    class Solver;
-    
-    template <class SC = Xpetra::Operator<>::scalar_type,
-              class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-              class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-              class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
-    class SchwarzOperator : public Xpetra::Operator<SC,LO,GO,NO> {
-        
-    public:
-        
-        typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
-        
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::RCP<const Map> ConstMapPtr;
-        typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
-        typedef Teuchos::ArrayRCP<MapPtrVecPtr> MapPtrVecPtr2D;
-        
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        typedef Teuchos::ArrayRCP<MultiVectorPtr> MultiVectorPtrVecPtr;
-        
-        typedef Xpetra::Import<LO,GO,NO> Importer;
-        typedef Teuchos::RCP<Importer> ImporterPtr;
-        
-        typedef Xpetra::Export<LO,GO,NO> Exporter;
-        typedef Teuchos::RCP<Exporter> ExporterPtr;
-        typedef Teuchos::ArrayRCP<ExporterPtr> ExporterPtrVecPtr;
 
-        typedef Teuchos::ParameterList ParameterList;
-        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
-        
-        typedef Teuchos::RCP<DDInterface<SC,LO,GO,NO> > DDInterfacePtr;
-        
-        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
-        typedef Teuchos::ArrayRCP<EntitySetPtr> EntitySetPtrVecPtr;
-        typedef const EntitySetPtrVecPtr EntitySetPtrConstVecPtr;
-        
-        typedef Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> > CoarseSpacePtr;
-        typedef Teuchos::ArrayRCP<CoarseSpacePtr>  CoarseSpacePtrVecPtr;
-        
-        typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
-        
-        typedef Teuchos::RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > InterfacePartitionOfUnityPtr;
-        
-        typedef Teuchos::RCP<LocalPartitionOfUnityBasis<SC,LO,GO,NO> > LocalPartitionOfUnityBasisPtr;
-        
-        typedef Teuchos::RCP<SchwarzOperator<SC,LO,GO,NO> > SchwarzOperatorPtr;
-        typedef Teuchos::Array<SchwarzOperatorPtr> SchwarzOperatorPtrVec;
-        typedef Teuchos::ArrayRCP<SchwarzOperatorPtr> SchwarzOperatorPtrVecPtr;
-        
-        typedef Teuchos::RCP<SubdomainSolver<SC,LO,GO,NO> > SubdomainSolverPtr;
-        
-        typedef unsigned UN;
-        typedef Teuchos::Array<UN> UNVec;
-        typedef Teuchos::ArrayRCP<UN> UNVecPtr;
-        
-        typedef Teuchos::Array<LO> LOVec;
-        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
-        typedef Teuchos::ArrayView<LO> LOVecView;
-        typedef Teuchos::ArrayView<const LO> ConstLOVecView;
-        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;        
-        
-        typedef Teuchos::Array<GO> GOVec;
-        typedef Teuchos::ArrayRCP<GO> GOVecPtr;
-        typedef Teuchos::ArrayView<GO> GOVecView;
-        typedef Teuchos::ArrayView<const GO> ConstGOVecView;
-        typedef Teuchos::Array<GOVec> GOVec2D;
-        typedef Teuchos::ArrayRCP<GOVecPtr> GOVecPtr2D;
-        
-        typedef Teuchos::Array<SC> SCVec;
-        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<const SC> ConstSCVecPtr;
-        typedef Teuchos::ArrayView<const SC> ConstSCVecView;
-        
-        typedef Teuchos::Array<bool> BoolVec;
-        typedef Teuchos::ArrayRCP<bool> BoolVecPtr;
-        
-        
-        SchwarzOperator(CommPtr comm);
-        
-        SchwarzOperator(CrsMatrixPtr k,
-                        ParameterListPtr parameterList);
-        
-        virtual ~SchwarzOperator();
-        
-        virtual int initialize() = 0;
-        
-        virtual int compute() = 0;
-        
-        // Y = alpha * A^mode * X + beta * Y
-        virtual void apply(const MultiVector &x,
-                          MultiVector &y,
-                          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                          SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                          SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
-        
-        virtual void apply(const MultiVector &x,
-                          MultiVector &y,
-                          bool usePreconditionerOnly,
-                          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                          SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                          SC beta=Teuchos::ScalarTraits<SC>::zero()) const = 0;
-        
-        virtual ConstMapPtr getDomainMap() const;
-        
-        virtual ConstMapPtr getRangeMap() const;
-        
-        virtual void describe(Teuchos::FancyOStream &out,
-                              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
-        
-        virtual std::string description() const = 0;
-        
-        bool isInitialized() const;
-        
-        bool isComputed() const;
-        
-        int resetMatrix(CrsMatrixPtr &k);
-        
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    class Solver;
+
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+    class SchwarzOperator : public Operator<SC,LO,GO,NO> {
+
     protected:
-        
+
+        using CommPtr                           = RCP<const Comm<int> >;
+
+        using XMap                              = Map<LO,GO,NO>;
+        using XMapPtr                           = RCP<XMap>;
+        using ConstXMapPtr                      = RCP<const XMap>;
+        using XMapPtrVecPtr                     = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr                = ArrayRCP<ConstXMapPtr>;
+        using XMapPtrVecPtr2D                   = ArrayRCP<XMapPtrVecPtr>;
+        using ConstXMapPtrVecPtr2D              = ArrayRCP<ConstXMapPtrVecPtr>;
+
+        using XMatrix                           = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr                        = RCP<XMatrix>;
+        using ConstXMatrixPtr                   = RCP<const XMatrix>;
+
+        using XCrsGraph                         = CrsGraph<LO,GO,NO>;
+        using GraphPtr                          = RCP<XCrsGraph>;
+        using ConstXCrsGraphPtr                 = RCP<const XCrsGraph>;
+
+        using XMultiVector                      = MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr                   = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr              = RCP<const XMultiVector>;
+        using XMultiVectorPtrVecPtr             = ArrayRCP<XMultiVectorPtr>;
+        using ConstXMultiVectorPtrVecPtr        = ArrayRCP<ConstXMultiVectorPtr>;
+
+        using XImport                           = Import<LO,GO,NO>;
+        using XImportPtr                        = RCP<XImport>;
+        using XImportPtrVecPtr                  = ArrayRCP<XImportPtr>;
+
+        using XExport                           = Export<LO,GO,NO>;
+        using XExportPtr                        = RCP<XExport>;
+        using XExportPtrVecPtr                  = ArrayRCP<XExportPtr>;
+
+        using ParameterListPtr                  = RCP<ParameterList>;
+
+        using DDInterfacePtr                    = RCP<DDInterface<SC,LO,GO,NO> >;
+
+        using EntitySetPtr                      = RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetPtrVecPtr                = ArrayRCP<EntitySetPtr>;
+        using EntitySetPtrConstVecPtr           = const EntitySetPtrVecPtr;
+
+        using CoarseSpacePtr                    = RCP<CoarseSpace<SC,LO,GO,NO> >;
+        using CoarseSpacePtrVecPtr              = ArrayRCP<CoarseSpacePtr>;
+
+        using InterfaceEntityPtr                = RCP<InterfaceEntity<SC,LO,GO,NO> >;
+
+        using PartitionOfUnityPtr               = RCP<PartitionOfUnity<SC,LO,GO,NO> >;
+        using InterfacePartitionOfUnityPtr      = RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> >;
+
+        using LocalPartitionOfUnityBasisPtr     = RCP<LocalPartitionOfUnityBasis<SC,LO,GO,NO> >;
+
+        using SchwarzOperatorPtr                = RCP<SchwarzOperator<SC,LO,GO,NO> >;
+        using SchwarzOperatorPtrVec             = Array<SchwarzOperatorPtr>;
+        using SchwarzOperatorPtrVecPtr          = ArrayRCP<SchwarzOperatorPtr>;
+
+        using SubdomainSolverPtr                = RCP<SubdomainSolver<SC,LO,GO,NO> >;
+
+        using DofOrderingVecPtr                 = ArrayRCP<DofOrdering>;
+
+        using UN                                = unsigned;
+        using ConstUN                           = const UN;
+        using UNVec                             = Array<UN>;
+        using UNVecPtr                          = ArrayRCP<UN>;
+
+        using LOVec                             = Array<LO>;
+        using LOVecPtr                          = ArrayRCP<LO>;
+        using LOVecView                         = ArrayView<LO>;
+        using ConstLOVecView                    = ArrayView<const LO>;
+        using LOVecPtr2D                        = ArrayRCP<LOVecPtr>;
+
+        using GOVec                             = Array<GO>;
+        using GOVecPtr                          = ArrayRCP<GO>;
+        using GOVecView                         = ArrayView<GO>;
+        using ConstGOVecView                    = ArrayView<const GO>;
+        using GOVec2D                           = Array<GOVec>;
+        using GOVecPtr2D                        = ArrayRCP<GOVecPtr>;
+
+        using SCVec                             = Array<SC>;
+        using SCVecPtr                          = ArrayRCP<SC>;
+        using ConstSCVecPtr                     = ArrayRCP<const SC>;
+        using ConstSCVecView                    = ArrayView<const SC>;
+
+        using BoolVec                           = Array<bool>;
+        using BoolVecPtr                        = ArrayRCP<bool>;
+
+    public:
+
+        SchwarzOperator(CommPtr comm);
+
+        SchwarzOperator(ConstXMatrixPtr k,
+                        ParameterListPtr parameterList);
+
+        virtual ~SchwarzOperator();
+
+        virtual int initialize() = 0;
+
+        virtual int compute() = 0;
+
+        // Y = alpha * A^mode * X + beta * Y
+        virtual void apply(const XMultiVector &x,
+                           XMultiVector &y,
+                           ETransp mode=NO_TRANS,
+                           SC alpha=ScalarTraits<SC>::one(),
+                           SC beta=ScalarTraits<SC>::zero()) const;
+
+        virtual void apply(const XMultiVector &x,
+                           XMultiVector &y,
+                           bool usePreconditionerOnly,
+                           ETransp mode=NO_TRANS,
+                           SC alpha=ScalarTraits<SC>::one(),
+                           SC beta=ScalarTraits<SC>::zero()) const = 0;
+
+        virtual ConstXMapPtr getDomainMap() const;
+
+        virtual ConstXMapPtr getRangeMap() const;
+
+        virtual void describe(FancyOStream &out,
+                              const EVerbosityLevel verbLevel=Describable::verbLevel_default) const = 0;
+
+        virtual std::string description() const = 0;
+
+        bool isInitialized() const;
+
+        bool isComputed() const;
+
+        int resetMatrix(ConstXMatrixPtr &k);
+
+    protected:
+
         CommPtr MpiComm_;
         CommPtr SerialComm_;
-        
-        CrsMatrixPtr K_;
-        
+
+        ConstXMatrixPtr K_;
+
         ParameterListPtr ParameterList_;
-        
+
         bool Verbose_;
-        
+
         bool IsInitialized_;
         bool IsComputed_;
-        
+
+        ConstUN LevelID_;
     };
-    
+
 }
 
 #endif

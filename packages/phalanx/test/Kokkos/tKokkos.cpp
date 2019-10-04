@@ -44,7 +44,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 #include <Phalanx_any.hpp>
 #include <unordered_map>
 #include <map>
@@ -129,15 +129,15 @@ namespace phalanx_test {
     Kokkos::deep_copy(P, host_P);
     Kokkos::deep_copy(T, host_T);
 
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     Kokkos::parallel_for(num_cells, ComputeRho<double,PHX::Device>(rho, P, T, k));  
  
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     
     Kokkos::deep_copy(host_rho, rho);
 
-    PHX::Device::fence();
+    typename PHX::Device().fence();
    
     double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
 
@@ -233,15 +233,15 @@ namespace phalanx_test {
     Kokkos::deep_copy(T, host_T);
     Kokkos::deep_copy(k, host_k);
 
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     Kokkos::parallel_for(num_cells, ComputeRho2<FadType,PHX::Device>(rho, P, T, k));  
  
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     
     Kokkos::deep_copy(host_rho, rho);
 
-    PHX::Device::fence();
+    typename PHX::Device().fence();
    
     double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
 
@@ -421,13 +421,13 @@ namespace phalanx_test {
     // Initialize: Team parallel over cells and qp
     Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space,typename InitializeView<double,execution_space>::DataParallelTag>(num_cells,num_ip,1),
                          InitializeView<double,execution_space>(T,4.0));
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     Kokkos::parallel_for(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     Kokkos::View<double**,PHX::Device>::HostMirror host_rho = Kokkos::create_mirror_view(rho);
     Kokkos::deep_copy(host_rho,rho);
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     
     double tol = std::numeric_limits<double>::epsilon() * 100.0;
     for (int i=0; i< num_cells; i++)
@@ -472,7 +472,7 @@ namespace phalanx_test {
     Kokkos::wait(policy);
 
     Kokkos::deep_copy(host_rho,rho);
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     
     for (int i=0; i< num_cells; i++)
       for (int j=0; j< num_ip; j++)
@@ -863,13 +863,13 @@ namespace phalanx_test {
     static_assert(std::is_same<scalar_view_layout,DefaultDevLayout>::value,"ERROR: Layout Inconsistency!");
     static_assert(std::is_same<fad_view_layout,DefaultFadLayout>::value,"ERROR: Layout Inconsistency!");
 
-    std::cout << "\n\nscalar_view_layout = " << PHX::typeAsString<scalar_view_layout>() << std::endl;
-    std::cout << "scalar_dev_layout  = " << PHX::typeAsString<scalar_dev_layout>() << std::endl;
-    std::cout << "DefaultDevLayout   = " << PHX::typeAsString<DefaultDevLayout>() << "\n" << std::endl;
+    std::cout << "\n\nscalar_view_layout = " << PHX::print<scalar_view_layout>() << std::endl;
+    std::cout << "scalar_dev_layout  = " << PHX::print<scalar_dev_layout>() << std::endl;
+    std::cout << "DefaultDevLayout   = " << PHX::print<DefaultDevLayout>() << "\n" << std::endl;
 
-    std::cout << "fad_view_layout    = " << PHX::typeAsString<fad_view_layout>() << std::endl;
-    std::cout << "fad_dev_layout     = " << PHX::typeAsString<fad_dev_layout>() << std::endl;
-    std::cout << "DefaultFadLayout   = " << PHX::typeAsString<DefaultFadLayout>() << "\n" << std::endl;
+    std::cout << "fad_view_layout    = " << PHX::print<fad_view_layout>() << std::endl;
+    std::cout << "fad_dev_layout     = " << PHX::print<fad_dev_layout>() << std::endl;
+    std::cout << "DefaultFadLayout   = " << PHX::print<DefaultFadLayout>() << "\n" << std::endl;
 
     // Tests for assignments from static View to DynRankView
     Kokkos::View<FadType**,typename PHX::DevLayout<FadType>::type,PHX::Device> static_a("static_a",100,8,64);

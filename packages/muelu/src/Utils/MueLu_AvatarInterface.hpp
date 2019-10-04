@@ -77,6 +77,8 @@ namespace MueLu {
 
     AvatarInterface(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList& inParams):comm_(comm),params_(inParams){};
 
+    ~AvatarInterface(){Cleanup();}
+
     Teuchos::RCP<const Teuchos::ParameterList> GetValidParameterList() const;
 
     // Sets the input parameters for the AvatarInterface

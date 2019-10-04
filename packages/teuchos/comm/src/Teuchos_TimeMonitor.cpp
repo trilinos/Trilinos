@@ -1488,7 +1488,7 @@ namespace Teuchos {
     stackedTimer_ = t;
   }
 
-  const Teuchos::RCP<Teuchos::StackedTimer>&
+  Teuchos::RCP<Teuchos::StackedTimer>
   TimeMonitor::getStackedTimer()
   {
     return stackedTimer_;

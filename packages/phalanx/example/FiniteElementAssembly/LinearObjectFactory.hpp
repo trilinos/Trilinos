@@ -83,7 +83,7 @@ namespace phx_example {
           
           Kokkos::parallel_reduce(Kokkos::RangePolicy<exec_t,TagFillNodeSet>(0,gids_.extent(0)),
                                   *this, failed_insert_count);
-          exec_t::fence();
+          exec_t().fence();
           
         } while ( failed_insert_count ); 
       }
@@ -91,7 +91,7 @@ namespace phx_example {
       // Build the offsets using exclusive scan of row_count_ into row_offsets_.
       // This also handles the final total in the 'row_count + 1' position.
       Kokkos::parallel_scan(Kokkos::RangePolicy<exec_t,TagComputeRowOffsets>(0,num_dofs_),*this);      
-      exec_t::fence();
+      exec_t().fence();
 
       // Fill the graph values
       Kokkos::deep_copy(num_matrix_entries_,matrix_size_);
@@ -100,7 +100,7 @@ namespace phx_example {
       graph_.row_map = row_offsets_;
       graph_.entries = Kokkos::StaticCrsGraph<int,Kokkos::LayoutLeft,PHX::Device>::entries_type("graph_entries",num_matrix_entries_);
       Kokkos::parallel_for(Kokkos::RangePolicy<exec_t,TagFillGraphEntries>(0,global_node_set_.capacity()), *this );
-      exec_t::fence();
+      exec_t().fence();
       
       // Free memory for temporaries
       matrix_size_ = Kokkos::View<size_t,PHX::Device>();

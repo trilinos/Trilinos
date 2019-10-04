@@ -145,8 +145,7 @@ public:
     Real dt = timeStamp.t.at(1)-timeStamp.t.at(0);
     if( timeStamp.k>0 ) {
       hv.set(v);
-      hv.axpy(-1.0, *(target_->get(timeStamp.k-1)) );
-      hv.scale(0.5*dt);
+      hv.scale(dt/2.0);
     }
     else hv.zero();
   }
@@ -167,34 +166,43 @@ public:
   }
 
   virtual void hessVec_un_un( V& hv, const V& v, const V& uo, const V& un, 
-                              const V& z, const TS& timeStamp ) const {
+                              const V& z, const TS& timeStamp ) const override {
+    Real dt = timeStamp.t.at(1)-timeStamp.t.at(0);
     hv.set(v);
-    hv.scale(0.5*(timeStamp.t.at(1)-timeStamp.t.at(0)));
+    hv.scale(dt/2.0);
   }
 
   virtual void hessVec_un_z( V& hv, const V& v, const V& uo, const V& un, 
-                             const V& z, const TS& timeStamp ) const {
+                             const V& z, const TS& timeStamp ) const override {
     hv.zero();
   }
 
   virtual void hessVec_z_uo( V& hv, const V& v, const V& uo, const V& un, 
-                              const V& z, const TS& timeStamp ) const {
+                              const V& z, const TS& timeStamp ) const override {
     hv.zero();
   }
 
   virtual void hessVec_z_un( V& hv, const V& v, const V& uo, const V& un, 
-                              const V& z, const TS& timeStamp ) const {
+                              const V& z, const TS& timeStamp ) const override {
     hv.zero();
   }
 
   virtual void hessVec_z_z( V& hv, const V& v, const V& uo, const V& un, 
-                             const V& z, const TS& timeStamp ) const {
+                             const V& z, const TS& timeStamp ) const override {
+    Real dt = timeStamp.t.at(1)-timeStamp.t.at(0);
     hv.set(v);
-    hv.scale(alpha_*(timeStamp.t.at(1)-timeStamp.t.at(0)));
+    hv.scale(alpha_*dt);
   }
 
 }; // DynamicTrackingObjective
 
+
+template<typename Real>
+inline Ptr<DynamicObjective<Real>> 
+make_DynamicTrackingObjective( const Ptr<PartitionedVector<Real>>& target, Real alpha=0.0 ) {
+  Ptr<DynamicObjective<Real>> obj = makePtr<DynamicTrackingObjective<Real>>(target,alpha);
+  return obj;
+}
 
 } // namespace ROL
 

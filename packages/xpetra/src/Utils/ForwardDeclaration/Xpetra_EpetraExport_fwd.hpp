@@ -48,7 +48,7 @@
 
 namespace Xpetra {
   template<class GO, class NO> class EpetraExportT;
-  typedef EpetraExportT<int, typename Xpetra::Map<int, int>::node_type> EpetraExport;
+  typedef EpetraExportT<int, EpetraNode> EpetraExport;
 }
 
 #ifndef XPETRA_EPETRAEXPORT_SHORT

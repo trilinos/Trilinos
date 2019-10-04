@@ -46,11 +46,10 @@
 #include <iomanip>
 #include <sstream>
 
-#include <Tpetra_Core.hpp>
-#include <Tpetra_Version.hpp>
-#include <MatrixMarket_Tpetra.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_FancyOStream.hpp>
+#include "Tpetra_Core.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 #include "fem_assembly_typedefs.hpp"
 #include "fem_assembly_MeshDatabase.hpp"
@@ -96,7 +95,7 @@ int executeTotalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
 
-  const global_ordinal_t GO_INVALID = Teuchos::OrdinalTraits<global_ordinal_t>::invalid();
+  const global_ordinal_type GO_INVALID = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();
 
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
@@ -126,7 +125,10 @@ int executeTotalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   // Build Tpetra Maps
   // -----------------
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
-  RCP<const map_t> row_map = rcp(new map_t(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
+  RCP<const map_type> row_map = rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
+  RCP<const map_type> owned_element_map = rcp(new map_type(GO_INVALID, mesh.getOwnedElementGlobalIDs(), 0, comm));
+  RCP<const map_type> ghost_element_map = rcp(new map_type(GO_INVALID, mesh.getGhostElementGlobalIDs(), 0, comm));
+  RCP<const import_type> elementImporter = rcp(new import_type(owned_element_map,ghost_element_map));
 
   if(opts.verbose) row_map->describe(out);
 
@@ -145,10 +147,10 @@ int executeTotalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
-  RCP<graph_t> crs_graph = rcp(new graph_t(row_map, 0));
+  RCP<crs_graph_type> crs_graph = rcp(new crs_graph_type(row_map, 0));
 
   // Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
-  Teuchos::Array<global_ordinal_t> global_ids_in_row(4);
+  Teuchos::Array<global_ordinal_type> global_ids_in_row(4);
 
   // Insert node contributions for every OWNED element:
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
@@ -205,6 +207,15 @@ int executeTotalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   // Print out the crs_graph in detail...
   if(opts.verbose) crs_graph->describe(out, Teuchos::VERB_EXTREME);
 
+  // Simulated Ghosting of Material State
+  // -------------------
+  {
+    GhostState state(elementImporter,opts.numStateDoublesPerElement);
+    TimeMonitor timer(*TimeMonitor::getNewTimer("3.1) Ghosting Material State (Matrix)"));
+    state.doGhost();
+
+  }  
+
   // Matrix Fill
   // -------------------
   // In this example, we're using a simple stencil of values for the stiffness matrix:
@@ -244,20 +255,15 @@ int executeTotalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   // Similarly to the Graph construction above, we loop over both local and global
   // elements and insert rows for only the locally owned rows.
   //
-  RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
+  RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.2) ElementLoop  (Matrix)")));
 
-  RCP<matrix_t> crs_matrix = rcp(new matrix_t(crs_graph));
-  RCP<multivector_t> rhs = rcp(new multivector_t(crs_graph->getRowMap(), 1));
+  RCP<crs_matrix_type> crs_matrix = rcp(new crs_matrix_type(crs_graph));
+  RCP<multivector_type> rhs = rcp(new multivector_type(crs_graph->getRowMap(), 1));
 
-  scalar_2d_array_t element_matrix;
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  Kokkos::resize(element_matrix, 4, 4);
-#else
-  Kokkos::resize(element_matrix, 4);
-#endif
+  Kokkos::View<Scalar[4][4], execution_space> element_matrix ("element_matrix");
   Teuchos::Array<Scalar> element_rhs(4);
 
-  Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
+  Teuchos::Array<global_ordinal_type> column_global_ids(4);     // global column ids list
   Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
   // Loop over owned elements:
@@ -279,7 +285,7 @@ int executeTotalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
     //   Note: hardcoded 4 here because we're using quads.
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     {
-      global_ordinal_t global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
+      global_ordinal_type global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
       if(mesh.nodeIsOwned(global_row_id))
       {
         for(size_t col_idx=0; col_idx<4; col_idx++)
@@ -307,7 +313,7 @@ int executeTotalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
 
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     {
-      global_ordinal_t global_row_id = ghost_element_to_node_ids(element_gidx, element_node_idx);
+      global_ordinal_type global_row_id = ghost_element_to_node_ids(element_gidx, element_node_idx);
       if(mesh.nodeIsOwned(global_row_id))
       {
         for(size_t col_idx=0; col_idx<4; col_idx++)
@@ -335,8 +341,8 @@ int executeTotalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   // Save crs_matrix as a MatrixMarket file.
   if(opts.saveMM)
   {
-    std::ofstream ofs("crsMatrix_TotalElementLoop_DP.out", std::ofstream::out);
-    Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix);
+    std::ofstream ofs("crsCrs_Matrix_TypeotalElementLoop_DP.out", std::ofstream::out);
+    Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparse(ofs, crs_matrix);
     ofs.close();
   }
 

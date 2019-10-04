@@ -47,13 +47,13 @@
 
 namespace ROL {
 
-template <class Real>
+template <class Real, class Key=std::vector<Real>>
 class SampledScalar {
 private:
   // Storage
-  std::map<std::vector<Real>, int>          indices_;
-  std::vector<bool>                         flags_;
-  std::vector<Real>                         scalars_;
+  std::map<Key, int> indices_;
+  std::vector<bool>  flags_;
+  std::vector<Real>  scalars_;
   int maxIndex_;
 
   // Update flags
@@ -61,7 +61,7 @@ private:
 
   void reset(const bool flag = true) {
     if ( flag ) {
-      typename std::map<std::vector<Real>, int>::iterator it;
+      typename std::map<Key, int>::iterator it;
       for (it = indices_.begin(); it != indices_.end(); ++it) {
         flags_[it->second] = false;
       }
@@ -87,14 +87,12 @@ public:
 
   /** \brief Return vector corresponding to input parameter.
   */
-  bool get(Real &x,
-           const std::vector<Real> &param) {
+  bool get(Real &x, const Key &param) {
     int count = indices_.count(param);
     bool flag = false;
     int index = maxIndex_;
     if (count) {
-      typename std::map<std::vector<Real>, int>::iterator it
-        = indices_.find(param);
+      typename std::map<Key, int>::iterator it = indices_.find(param);
       index = it->second;
       flag  = flags_[index];
       if (flag) {
@@ -102,8 +100,7 @@ public:
       }
     }
     else {
-      indices_.insert(
-        std::pair<std::vector<Real>, int>(param, index));
+      indices_.insert(std::pair<Key, int>(param, index));
       flags_.push_back(false);
       scalars_.push_back(static_cast<Real>(0)); 
       maxIndex_++;
@@ -113,20 +110,17 @@ public:
 
   /** \brief Set vector corresponding to input parameter.
   */
-  void set(const Real &x,
-           const std::vector<Real> &param) {
+  void set(const Real &x, const Key &param) {
     int count = indices_.count(param);
     int index = maxIndex_;
     if (count) {
-      typename std::map<std::vector<Real>, int>::iterator it
-        = indices_.find(param);
+      typename std::map<Key, int>::iterator it = indices_.find(param);
       index = it->second;
       flags_[index] = true;
       scalars_[index] = x;
     }
     else {
-      indices_.insert(
-        std::pair<std::vector<Real>, int>(param, index));
+      indices_.insert(std::pair<Key, int>(param, index));
       flags_.push_back(true);
       scalars_.push_back(x); 
       maxIndex_++;

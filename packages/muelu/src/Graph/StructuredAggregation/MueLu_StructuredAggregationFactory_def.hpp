@@ -187,17 +187,17 @@ namespace MueLu {
     if(currentLevel.GetLevelID() == 0) {
       // On level 0, data is provided by applications and has no associated factory.
       numDimensions = currentLevel.Get<int>("numDimensions", NoFactory::get());
+      lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
       if(coupled) {
         gFineNodesPerDir = currentLevel.Get<Array<GO> >("gNodesPerDim", NoFactory::get());
       }
-      lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
     } else {
       // On level > 0, data is provided directly by generating factories.
       numDimensions = Get<int>(currentLevel, "numDimensions");
+      lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
       if(coupled) {
         gFineNodesPerDir = Get<Array<GO> >(currentLevel, "gNodesPerDim");
       }
-      lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
     }
 
 
@@ -214,7 +214,7 @@ namespace MueLu {
     Teuchos::Array<LO> coarseRate;
     try {
       coarseRate = Teuchos::fromStringToArray<LO>(coarseningRate);
-    } catch(const Teuchos::InvalidArrayStringRepresentation e) {
+    } catch(const Teuchos::InvalidArrayStringRepresentation& e) {
       GetOStream(Errors,-1) << " *** \"aggregation: coarsening rate\" must be a string convertible into an array! *** "
                             << std::endl;
       throw e;

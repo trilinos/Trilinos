@@ -42,7 +42,7 @@
 */
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockView.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_BLAS.hpp"
@@ -152,7 +152,7 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute our factorization
-    Tpetra::Experimental::GETF2<block_type,int_vec_type>(A,ipiv,info);
+    Tpetra::GETF2<block_type,int_vec_type>(A,ipiv,info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the two solutions
@@ -179,7 +179,7 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute our solution
-    Tpetra::Experimental::GETRS<block_type,int_vec_type,scalar_vec_type>("n",A,ipiv,rhs,info);
+    Tpetra::GETRS<block_type,int_vec_type,scalar_vec_type>("n",A,ipiv,rhs,info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the solutions
@@ -189,7 +189,7 @@ namespace {
 
     // Compute the inverse
     scalar_vec_type work("work",3);
-    Tpetra::Experimental::GETRI<block_type,int_vec_type,scalar_vec_type>(A,ipiv,work,info);
+    Tpetra::GETRI<block_type,int_vec_type,scalar_vec_type>(A,ipiv,work,info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute the true inverse
@@ -251,7 +251,7 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute our factorization
-    Tpetra::Experimental::GETF2<block_type,int_vec_type>(A,ipiv,info);
+    Tpetra::GETF2<block_type,int_vec_type>(A,ipiv,info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the two solutions
@@ -278,7 +278,7 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute our solution
-    Tpetra::Experimental::GETRS<block_type,int_vec_type,scalar_vec_type>("n",A,ipiv,rhs,info);
+    Tpetra::GETRS<block_type,int_vec_type,scalar_vec_type>("n",A,ipiv,rhs,info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the solutions
@@ -288,7 +288,7 @@ namespace {
 
     // Compute the inverse
     scalar_vec_type work("work",3);
-    Tpetra::Experimental::GETRI<block_type,int_vec_type,scalar_vec_type>(A,ipiv,work,info);
+    Tpetra::GETRI<block_type,int_vec_type,scalar_vec_type>(A,ipiv,work,info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute the true inverse
@@ -330,7 +330,7 @@ namespace {
       vec_type b (b_view.getRawPtr (), blockSize);
       piv_type ipiv (ipivPool.getRawPtr (), blockSize);
 
-      Tpetra::Experimental::FILL (A, zero); // assign zero to each entry
+      Tpetra::FILL (A, zero); // assign zero to each entry
       for (LO i = 0; i < blockSize; ++i) {
         A(i,i) = one;
         b(i) = static_cast<IST> (i + 1);
@@ -340,11 +340,11 @@ namespace {
 
       int info = 0;
       std::cerr << "Factor A for blockSize = " << blockSize << std::endl;
-      Tpetra::Experimental::GETF2 (A, ipiv, info);
+      Tpetra::GETF2 (A, ipiv, info);
       TEST_EQUALITY_CONST( info, 0 );
       if (info == 0) {
         std::cerr << "Solve: blockSize = " << blockSize << std::endl;
-        Tpetra::Experimental::GETRS ("N", A, ipiv, x, info);
+        Tpetra::GETRS ("N", A, ipiv, x, info);
       }
       std::cerr << "Done with factor and solve" << std::endl;
 
@@ -389,7 +389,7 @@ namespace {
       block_type A (blockPool (0, blockSize*blockSize).getRawPtr (), blockSize, blockSize);
 
       // Fill A with the identity matrix.
-      Tpetra::Experimental::FILL (A, zero); // assign zero to each entry
+      Tpetra::FILL (A, zero); // assign zero to each entry
       for (LO i = 0; i < blockSize; ++i) {
         A(i,i) = one;
       }
@@ -588,8 +588,8 @@ namespace {
         curVecVal += one;
       }
 
-      Tpetra::Experimental::SCAL (two, A1);
-      Tpetra::Experimental::SCAL (three, x1);
+      Tpetra::SCAL (two, A1);
+      Tpetra::SCAL (three, x1);
 
       for (LO j = 0; j < blkSize; ++j) {
         for (LO i = 0; i < blkSize; ++i) {
@@ -667,8 +667,8 @@ namespace {
         curVecVal += one;
       }
 
-      Tpetra::Experimental::COPY (A1, A3);
-      Tpetra::Experimental::COPY (x1, x3);
+      Tpetra::COPY (A1, A3);
+      Tpetra::COPY (x1, x3);
 
       bool blksEq = true;
       for (LO j = 0; j < blkSize; ++j) {
@@ -744,8 +744,8 @@ namespace {
 
       const IST alpha = five;
 
-      Tpetra::Experimental::AXPY (alpha, A1, A3); // A3 := A3 + alpha*A1
-      Tpetra::Experimental::AXPY (alpha, x1, x3); // x3 := x3 + alpha*x1
+      Tpetra::AXPY (alpha, A1, A3); // A3 := A3 + alpha*A1
+      Tpetra::AXPY (alpha, x1, x3); // x3 := x3 + alpha*x1
 
       for (LO j = 0; j < blkSize; ++j) {
         for (LO i = 0; i < blkSize; ++i) {

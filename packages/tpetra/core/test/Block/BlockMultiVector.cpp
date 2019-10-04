@@ -451,8 +451,12 @@ namespace {
       X_overlap(i) = static_cast<Scalar> (i+1);
     }
 
-    import_type import (rcpFromRef (meshMap), rcpFromRef (overlappingMeshMap));
-    Y.doImport (X, import, Tpetra::REPLACE);
+    { // BlockMultiVector relies on the point multivector infrastructure
+      const auto pointMehsMap = BMV::makePointMap(meshMap, blockSize);
+      const auto pointOverlappingMeshMap = BMV::makePointMap(overlappingMeshMap, blockSize);
+      import_type pointImport (rcpFromRef (pointMehsMap), rcpFromRef (pointOverlappingMeshMap));
+      Y.getMultiVectorView().doImport (X.getMultiVectorView(), pointImport, Tpetra::REPLACE);
+    }
 
     little_vec_type Y_overlap = Y.getLocalBlock (overlappingMeshMap.getLocalElement (overlappingMeshMap.getMinGlobalIndex ()), colToModify);
 

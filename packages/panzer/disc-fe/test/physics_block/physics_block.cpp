@@ -57,7 +57,7 @@
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_ClosureModel_Factory.hpp"
-#include "UnitTest_UniqueGlobalIndexer.hpp"
+#include "UnitTest_GlobalIndexer.hpp"
 
 namespace panzer_test_utils {
 
@@ -208,8 +208,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(physics_block, nontemplate_evaluator_builders)
   {
 
-    Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > ugi 
-          = Teuchos::rcp(new panzer::unit_test::UniqueGlobalIndexer(0,1));
+    Teuchos::RCP<panzer::GlobalIndexer> ugi 
+          = Teuchos::rcp(new panzer::unit_test::GlobalIndexer(0,1));
     Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
 
@@ -247,8 +247,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(physics_block, templated_evaluator_builders)
   {
 
-    Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > ugi 
-          = Teuchos::rcp(new panzer::unit_test::UniqueGlobalIndexer(0,1));
+    Teuchos::RCP<panzer::GlobalIndexer> ugi 
+          = Teuchos::rcp(new panzer::unit_test::GlobalIndexer(0,1));
     Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
 

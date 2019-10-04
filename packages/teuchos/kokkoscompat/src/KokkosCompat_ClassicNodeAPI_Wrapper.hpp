@@ -63,7 +63,7 @@ public:
   static TEUCHOS_DEPRECATED Teuchos::ParameterList getDefaultParameters ();
 
   void TEUCHOS_DEPRECATED sync () const {
-    execution_space::fence ();
+    execution_space().fence ();
   }
 #endif // !TEUCHOS_HIDE_DEPRECATED_CODE
 

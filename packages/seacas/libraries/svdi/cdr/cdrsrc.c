@@ -317,7 +317,7 @@ unsigned *string, *nuchar;
   if (*n > cdrcom_.KCPW) {
     return;
   }
-  *nuchar = (*string >> (cdrcom_.KWRDSZ - *n * cdrcom_.KBYTEL) & ~(~0 << cdrcom_.KBYTEL));
+  *nuchar = (*string >> (cdrcom_.KWRDSZ - *n * cdrcom_.KBYTEL) & ~(~0u << cdrcom_.KBYTEL));
 }
 
 /*  *** CDR1PK ***
@@ -344,7 +344,7 @@ unsigned *inchar, *buffer;
     return;
   }
   temp    = *inchar << (i = cdrcom_.KWRDSZ - (*n * cdrcom_.KBYTEL));
-  mask    = ~(~0 << cdrcom_.KBYTEL) << i;
+  mask    = ~(~0u << cdrcom_.KBYTEL) << i;
   *buffer = ((mask & temp) | (~mask & *buffer));
 }
 /*  *** CDR2CM ***
@@ -402,13 +402,13 @@ unsigned *next, ibuf[];
     /* word overflow - break into parts */
 
     temp      = *next >> (i = *iwidth + *ibitlc - cdrcom_.KWRDSZ);
-    mask      = ~0 << (cdrcom_.KWRDSZ - *ibitlc);
+    mask      = ~0u << (cdrcom_.KWRDSZ - *ibitlc);
     ibuf[idx] = ((~mask & temp) | (mask & ibuf[idx]));
     *ibitlc   = i;
     (*iword)++;
     idx++;
     temp      = *next << (i = cdrcom_.KWRDSZ - *ibitlc);
-    mask      = ~0 << i;
+    mask      = ~0u << i;
     ibuf[idx] = ((mask & temp) | (~mask & ibuf[idx]));
   }
   else {
@@ -416,7 +416,7 @@ unsigned *next, ibuf[];
     /* it fits all in one word */
 
     temp      = *next << (i = cdrcom_.KWRDSZ - *ibitlc - *iwidth);
-    mask      = ~(~0 << *iwidth) << i;
+    mask      = ~(~0u << *iwidth) << i;
     ibuf[idx] = ((mask & temp) | (~mask & ibuf[idx]));
     *ibitlc += *iwidth;
   }
@@ -509,7 +509,7 @@ unsigned ibuf[], *next;
     *(p_temp + 2) = ctemp;
 #endif
     temp    = temp << (i = *iwidth + *ibitlc - cdrcom_.KWRDSZ);
-    mask    = ~(~0 << (cdrcom_.KWRDSZ - *ibitlc)) << i;
+    mask    = ~(~0u << (cdrcom_.KWRDSZ - *ibitlc)) << i;
     *next   = (mask & temp);
     *ibitlc = i;
     (*iword)++;
@@ -526,7 +526,7 @@ unsigned ibuf[], *next;
     *(p_temp + 2) = ctemp;
 #endif
     temp  = temp >> (cdrcom_.KWRDSZ - *ibitlc);
-    mask  = ~(~0 << *ibitlc);
+    mask  = ~(~0u << *ibitlc);
     *next = ((mask & temp) | *next);
   }
   else {
@@ -545,7 +545,7 @@ unsigned ibuf[], *next;
     *(p_temp + 2) = ctemp;
 #endif
     temp  = temp >> (cdrcom_.KWRDSZ - *ibitlc - *iwidth);
-    mask  = ~(~0 << *iwidth);
+    mask  = ~(~0u << *iwidth);
     *next = mask & temp;
     *ibitlc += *iwidth;
   }
@@ -1121,7 +1121,7 @@ unsigned *string, *nuchar;
   if (*n > cdrcom_.KCPW) {
     return;
   }
-  *nuchar = (*string >> (cdrcom_.KWRDSZ - *n * cdrcom_.KBYTEL) & ~(~0 << (*n * cdrcom_.KBYTEL)));
+  *nuchar = (*string >> (cdrcom_.KWRDSZ - *n * cdrcom_.KBYTEL) & ~(~0u << (*n * cdrcom_.KBYTEL)));
 }
 /*  *** CDRTBK ***
     Generate a traceback.  This is a dummy routine to satisfy

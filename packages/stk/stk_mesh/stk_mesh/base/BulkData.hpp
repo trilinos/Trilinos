@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -159,6 +160,7 @@ public:
   enum GhostingId { SHARED = 0, AURA = 1 };
   enum EntitySharing : char { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
   enum AutomaticAuraOption { NO_AUTO_AURA, AUTO_AURA };
+  using ModEndOptimization = impl::MeshModification::modification_optimization;
 
   /** \brief  Construct mesh bulk data manager conformal to the given
    *          \ref stk::mesh::MetaData "meta data manager" and will
@@ -167,18 +169,6 @@ public:
    *  - The maximum number of entities per bucket may be supplied.
    *  - The bulk data is in the synchronized or "locked" state.
    */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 5 2019
-  STK_DEPRECATED BulkData(   MetaData & mesh_meta_data
-            , ParallelMachine parallel
-            , enum AutomaticAuraOption auto_aura_option
-#ifdef SIERRA_MIGRATION
-            , bool add_fmwk_data
-#endif
-            , ConnectivityMap const* arg_connectivity_map_no_longer_used_and_soon_to_be_deprecated
-            , FieldDataManager *field_dataManager
-            , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
-            );
-#endif
   BulkData(   MetaData & mesh_meta_data
             , ParallelMachine parallel
             , enum AutomaticAuraOption auto_aura_option = AUTO_AURA
@@ -204,10 +194,6 @@ public:
 
   /** \brief  Rank of the parallel machine's local processor */
   int parallel_rank()   const { return m_parallel.parallel_rank() ; }
-
-#ifndef STK_HIDE_DEPRECATED_CODE //Delete after April 5 2019
-  STK_DEPRECATED const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
-#endif
 
   //------------------------------------
   /** \brief  Bulk data has two states:
@@ -265,10 +251,10 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
 
-  bool modification_end()
+  bool modification_end(ModEndOptimization modEndOpt = ModEndOptimization::MOD_END_SORT)
   {
       notifier.notify_started_modification_end();
-      return m_meshModification.modification_end();
+      return m_meshModification.modification_end(modEndOpt);
   }
 
   void sort_entities(const stk::mesh::EntitySorterBase& sorter);
@@ -412,6 +398,11 @@ public:
       const PARTVECTOR & add_parts ,
       const PARTVECTOR & remove_parts = PARTVECTOR());
 
+  template<typename PARTVECTOR>
+  void change_entity_parts( const EntityVector& entities,
+      const PARTVECTOR & add_parts ,
+      const PARTVECTOR & remove_parts = PARTVECTOR());
+
   /** \brief Change part-membership of the specified entities by adding
    * and/or removing parts for each entity.
    *
@@ -519,15 +510,9 @@ public:
       const RelationIdentifier local_id,
       Permutation permutation = stk::mesh::Permutation::INVALID_PERMUTATION);
 
-#ifndef STK_HIDE_DEPRECATED_CODE // delete after March 14, 2019
-  STK_DEPRECATED void declare_relation( Entity e_from ,
-      Entity e_to ,
-      const RelationIdentifier local_id,
-      Permutation permutation,
-      OrdinalVector& ordinal_scratch,
-      PartVector& part_scratch);
-#endif
-
+  void declare_relation( Entity e_from ,
+                         const EntityVector& to_entities);
+ 
   //it's ugly to have 3 scratch-space vectors in the API, but for now
   //it is a big performance improvement. TODO: improve the internals to remove
   //the need for these vectors.
@@ -628,6 +613,7 @@ public:
   bool in_receive_custom_ghost( EntityKey key ) const;
   bool in_send_ghost( EntityKey key) const;         // CLEANUP: only used for testing
   bool in_send_ghost( EntityKey key , int proc ) const;         // CLEANUP: only used for testing
+  bool in_send_ghost( const Ghosting & ghosting, EntityKey key, int proc) const;
   bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;     // CLEANUP: used only by modification_end_for_entity_creation
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;     // CLEANUP: can be moved protected
   void shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const; // CLEANUP: only used by aero
@@ -812,6 +798,8 @@ public:
    */
   void allocate_field_data();
 
+  void reallocate_field_data(stk::mesh::FieldBase & field);
+
   const std::string & get_last_modification_description() const { return m_lastModificationDescription; }
 
   void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer) const;
@@ -844,6 +832,7 @@ public:
   void clear_sidesets();
   void clear_sideset(const stk::mesh::Part &part);
   std::vector<SideSet *> get_sidesets();
+  std::vector<const SideSet *> get_sidesets() const;
   void synchronize_sideset_sync_count();
 
   void clone_solo_side_id_generator(const stk::mesh::BulkData &oldBulk);
@@ -896,7 +885,6 @@ protected: //functions
 
   void internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs); // Mod Mark
 
-  bool in_send_ghost( const Ghosting & ghosting, EntityKey key, int proc) const;
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
   void conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghosting &ghosting,
@@ -981,6 +969,11 @@ protected: //functions
   void internal_verify_and_change_entity_parts( Entity entity,
                                                 const PARTVECTOR & add_parts ,
                                                 const PARTVECTOR & remove_parts); // Mod Mark
+
+  template<typename PARTVECTOR>
+  void internal_verify_and_change_entity_parts( const EntityVector& entities,
+                                                const PARTVECTOR & add_parts ,
+                                                const PARTVECTOR & remove_parts);
 
   void internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(stk::mesh::Entity entity,
                                                                                stk::mesh::Entity e_to,
@@ -1534,7 +1527,7 @@ private: // data
   std::shared_ptr<stk::mesh::MeshDiagnosticObserver> m_meshDiagnosticObserver;
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
   std::shared_ptr<stk::mesh::ElemElemGraphUpdater> m_elemElemGraphUpdater;
-  stk::mesh::impl::SideSetImpl<std::string> m_sideSetData;
+  stk::mesh::impl::SideSetImpl<unsigned> m_sideSetData;
 
 protected:
   stk::mesh::impl::SoloSideIdGenerator m_soloSideIdGenerator;

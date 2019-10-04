@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
     ROL::OptimizationSolver<RealT> solver(problem,*pl_rol);
     solver.solve(*outStream);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

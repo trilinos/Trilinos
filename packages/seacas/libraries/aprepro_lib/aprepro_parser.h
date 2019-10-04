@@ -164,9 +164,9 @@ namespace SEAMS {
     union semantic_type {
 #line 89 "aprepro.yy" // lalr1.cc:417
 
-      double         val;    /* For returning numbers.		*/
-      struct symrec *tptr;   /* For returning symbol-table pointers	*/
-      char *         string; /* For returning quoted strings		*/
+      double         val;    /* For returning numbers.          */
+      struct symrec *tptr;   /* For returning symbol-table pointers     */
+      char *         string; /* For returning quoted strings            */
       struct array * arrval; /* For returning arrays                 */
 
 #line 184 "aprepro_parser.h" // lalr1.cc:417

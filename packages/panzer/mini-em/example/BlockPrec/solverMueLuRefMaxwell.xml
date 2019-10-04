@@ -31,12 +31,10 @@
       <ParameterList name="Inverse Factory Library">
         <ParameterList name="Maxwell">
           <Parameter name="Type" type="string" value="Full Maxwell Preconditioner"/>
-          <Parameter name="Use refMaxwell" type="bool" value="true"/>
           <Parameter name="Use as preconditioner" type="bool" value="false"/>
           <Parameter name="Debug" type="bool" value="false"/>
           <Parameter name="Dump" type="bool" value="false"/>
-          <Parameter name="Use discrete gradient" type="bool" value="true"/>
-          <Parameter name="Solve lower triangular" type="bool" value="true"/>
+          <Parameter name="Use discrete curl" type="bool" value="true"/>
 
           <ParameterList name="Q_B Solve">
             <Parameter name="Type" type="string" value="Belos"/>
@@ -72,9 +70,9 @@
           </ParameterList>
 
           <!-- <ParameterList name="Q_B Preconditioner"> -->
-          <!--   <Parameter name="Prec Type" type="string" value="MueLu-Tpetra"/> -->
+          <!--   <Parameter name="Prec Type" type="string" value="MueLu"/> -->
           <!--   <ParameterList name="Prec Types"> -->
-          <!--     <ParameterList name="MueLu-Tpetra"> -->
+          <!--     <ParameterList name="MueLu"> -->
           <!--       <Parameter name="verbosity" type="string" value="high"/> -->
           <!--       <Parameter name="hierarchy label" type="string" value="Q_B"/> -->
           <!--       <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/> -->
@@ -143,9 +141,9 @@
           </ParameterList>
 
           <ParameterList name="S_E Preconditioner">
-            <Parameter name="Type" type="string" value="MueLuRefMaxwell-Tpetra"/>
+            <Parameter name="Type" type="string" value="MueLuRefMaxwell"/>
             <ParameterList name="Preconditioner Types">
-              <ParameterList name="MueLuRefMaxwell-Tpetra">
+              <ParameterList name="MueLuRefMaxwell">
                 <Parameter name="parameterlist: syntax" type="string" value="muelu"/>
                 <Parameter name="verbosity" type="string" value="extreme"/>
                 <Parameter name="refmaxwell: use as preconditioner" type="bool" value="true"/>
@@ -164,7 +162,8 @@
                 <!-- <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/> -->
                 <!-- <ParameterList name="smoother: params"> -->
                 <!--   <Parameter name="chebyshev: degree" type="int" value="2"/> -->
-                <!--   <Parameter name="chebyshev: ratio eigenvalue" type="double" value="3.0"/> -->
+                <!--   <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/> -->
+                <!--   <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/> -->
                 <!-- </ParameterList> -->
 
                 <Parameter name="smoother: pre type" type="string" value="RELAXATION"/>
@@ -195,7 +194,8 @@
                   <!-- <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/> -->
                   <!-- <ParameterList name="smoother: params"> -->
                   <!--   <Parameter name="chebyshev: degree" type="int" value="2"/> -->
-                  <!--   <Parameter name="chebyshev: ratio eigenvalue" type="double" value="3.0"/> -->
+                  <!--   <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/> -->
+                  <!--   <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/> -->
                   <!-- </ParameterList> -->
 
                   <Parameter name="smoother: pre type" type="string" value="RELAXATION"/>
@@ -238,7 +238,8 @@
                   <!-- <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/> -->
                   <!-- <ParameterList name="smoother: params"> -->
                   <!--   <Parameter name="chebyshev: degree" type="int" value="2"/> -->
-                  <!--   <Parameter name="chebyshev: ratio eigenvalue" type="double" value="3.0"/> -->
+                  <!--   <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/> -->
+                  <!--   <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/> -->
                   <!-- </ParameterList> -->
 
                   <Parameter name="smoother: pre type" type="string" value="RELAXATION"/>

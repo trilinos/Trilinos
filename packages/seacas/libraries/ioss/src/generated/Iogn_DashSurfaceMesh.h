@@ -33,6 +33,7 @@
 #ifndef IOSS_Iogn_DashSurfaceMesh_h
 #define IOSS_Iogn_DashSurfaceMesh_h
 
+#include <Ioss_Beam2.h>
 #include <Ioss_Hex8.h>
 #include <Ioss_Shell4.h>
 #include <cstddef>                        // for size_t
@@ -54,13 +55,14 @@ namespace Iogn {
     int procId;
   };
 
-  enum Topology { Shell4 = 4, Hex8 = 8 };
+  enum Topology { Beam2 = 2, Shell4 = 4, Hex8 = 8 };
 
   inline std::string getTopologyName(Topology topology)
   {
     switch (topology) {
     case Shell4: return std::string(Ioss::Shell4::name);
     case Hex8: return std::string(Ioss::Hex8::name);
+    case Beam2: return std::string(Ioss::Beam2::name);
     }
     throw std::exception();
   }

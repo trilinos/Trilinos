@@ -33,10 +33,9 @@
 #include <Ioss_CodeTypes.h>
 #include <algorithm>
 #include <cgns/Iocgns_StructuredZoneData.h>
+#include <fmt/color.h>
 #include <fmt/ostream.h>
 #include <tokenize.h>
-
-#define OUTPUT std::cerr
 
 namespace {
   struct Range
@@ -186,8 +185,7 @@ namespace {
     assert(zgc.is_valid());
   }
 
-  void propogate_zgc(Iocgns::StructuredZoneData *parent, Iocgns::StructuredZoneData *child,
-                     int ordinal, int rank)
+  void propogate_zgc(Iocgns::StructuredZoneData *parent, Iocgns::StructuredZoneData *child)
   {
     for (auto zgc : parent->m_zoneConnectivity) {
       if (!zgc.is_from_decomp() || zgc_overlaps(child, zgc)) {
@@ -264,7 +262,7 @@ namespace Iocgns {
   // Split this StructuredZone along the largest ordinal
   // into two children and return the created zones.
   std::pair<StructuredZoneData *, StructuredZoneData *>
-  StructuredZoneData::split(int zone_id, double avg_work, double balance, int rank)
+  StructuredZoneData::split(int zone_id, double avg_work, int rank, bool verbose)
   {
     assert(is_active());
     double ratio = avg_work / work();
@@ -315,7 +313,7 @@ namespace Iocgns {
 
     m_child1->m_name             = m_name + "_c1";
     m_child1->m_ordinal          = m_ordinal;
-    m_child1->m_ordinal[ordinal] = m_child1->m_ordinal[ordinal] * ratio;
+    m_child1->m_ordinal[ordinal] = m_ordinal[ordinal] * ratio + 0.5;
     if (m_child1->m_ordinal[ordinal] == 0) {
       m_child1->m_ordinal[ordinal] = 1;
     }
@@ -342,34 +340,38 @@ namespace Iocgns {
     m_child2->m_splitOrdinal = ordinal;
     m_child2->m_sibling      = m_child1;
 
-#if IOSS_DEBUG_OUTPUT
-    if (rank == 0) {
-      fmt::print(OUTPUT,
-                 "\nSplit Zone {} ({}) Adam {} ({}) with intervals {} {} {}, work = {}, offset {} "
-                 "{} {} along ordinal {} with ratio {}\n"
-                 "\tChild 1: Zone {} ({}) Adam {} ({}) with intervals {} {} {}, work = {}, offset "
+    if (rank == 0 && verbose) {
+      fmt::print(
+          stderr, fg(fmt::color::cyan),
+          "\nSplit Zone {} ({}) Adam {} ({}) with intervals {:>12},\twork = {:12n}, offset {} "
+          "{} {}, ordinal {}, ratio {:.3f}\n",
+          m_name, m_zone, m_adam->m_name, m_adam->m_zone,
+          fmt::format("{} {} {}", m_ordinal[0], m_ordinal[1], m_ordinal[2]), work(), m_offset[0],
+          m_offset[1], m_offset[2], ordinal, ratio);
+
+      fmt::print(stderr,
+                 "\tChild 1: Zone {} ({}) with intervals {:>12},\twork = {:12n}, offset "
                  "{} {} {}\n"
-                 "\tChild 2: Zone {} ({}) Adam {} ({}) with intervals {} {} {}, work = {}, offset "
+                 "\tChild 2: Zone {} ({}) with intervals {:>12},\twork = {:12n}, offset "
                  "{} {} {}\n",
-                 m_name, m_zone, m_adam->m_name, m_adam->m_zone, m_ordinal[0], m_ordinal[1],
-                 m_ordinal[2], work(), m_offset[0], m_offset[1], m_offset[2], ordinal, ratio,
-                 m_child1->m_name, m_child1->m_zone, m_child1->m_adam->m_name,
-                 m_child1->m_adam->m_zone, m_child1->m_ordinal[0], m_child1->m_ordinal[1],
-                 m_child1->m_ordinal[2], m_child1->work(), m_child1->m_offset[0],
-                 m_child1->m_offset[1], m_child1->m_offset[2], m_child2->m_name, m_child2->m_zone,
-                 m_child2->m_adam->m_name, m_child2->m_adam->m_zone, m_child2->m_ordinal[0],
-                 m_child2->m_ordinal[1], m_child2->m_ordinal[2], m_child2->work(),
-                 m_child2->m_offset[0], m_child2->m_offset[1], m_child2->m_offset[2]);
+                 m_child1->m_name, m_child1->m_zone,
+                 fmt::format("{} {} {}", m_child1->m_ordinal[0], m_child1->m_ordinal[1],
+                             m_child1->m_ordinal[2]),
+                 m_child1->work(), m_child1->m_offset[0], m_child1->m_offset[1],
+                 m_child1->m_offset[2], m_child2->m_name, m_child2->m_zone,
+                 fmt::format("{} {} {}", m_child2->m_ordinal[0], m_child2->m_ordinal[1],
+                             m_child2->m_ordinal[2]),
+                 m_child2->work(), m_child2->m_offset[0], m_child2->m_offset[1],
+                 m_child2->m_offset[2]);
     }
-#endif
 
     // Add ZoneGridConnectivity instance to account for split...
     add_proc_split_zgc(this, m_child1, m_child2, ordinal);
 
     // Propagate parent ZoneGridConnectivities to appropriate children.
     // Split if needed...
-    propogate_zgc(this, m_child1, ordinal, rank);
-    propogate_zgc(this, m_child2, ordinal, rank);
+    propogate_zgc(this, m_child1);
+    propogate_zgc(this, m_child2);
 
     return std::make_pair(m_child1, m_child2);
   }

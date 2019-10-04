@@ -58,7 +58,7 @@
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 
 #include "CartesianConnManager.hpp"
 
@@ -70,7 +70,7 @@ using Teuchos::rcpFromRef;
 namespace panzer {
 namespace unit_test {
 
-using Triplet = CartesianConnManager::Triplet<panzer::Ordinal64>;
+using Triplet = CartesianConnManager::Triplet<panzer::GlobalOrdinal>;
 
 RCP<const panzer::FieldPattern> buildFieldPattern(RCP<Intrepid2::Basis<PHX::Device,double,double> > basis)
 {
@@ -90,7 +90,7 @@ std::string getElementBlock(const Triplet & element,
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 {
   typedef CartesianConnManager CCM;
-  typedef panzer::DOFManager<int,Ordinal64> DOFManager;
+  typedef panzer::DOFManager DOFManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -103,8 +103,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
   //int rank = comm.getRank(); // processor rank
 
   // mesh description
-  Ordinal64 nx = 8, ny = 4;//, nz = 4;
-  //Ordinal64 nx = 4, ny = 3;//, nz = 4;
+  panzer::GlobalOrdinal nx = 8, ny = 4;//, nz = 4;
+  //panzer::GlobalOrdinal nx = 4, ny = 3;//, nz = 4;
   int px = np, py = 1;//, pz = 1; // npx1 processor grids
   int bx =  1, by = 1;//, bz = 1; // 1x2 blocks
 
@@ -147,19 +147,19 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 
     std::string eblock    = getElementBlock(element,*connManager);
 
-    std::vector<Ordinal64> gids;
+    std::vector<panzer::GlobalOrdinal> gids;
     dofManager->getElementGIDs(localElmtId,   gids);
 
-    std::set<Ordinal64> s_gids;
+    std::set<panzer::GlobalOrdinal> s_gids;
     s_gids.insert(gids.begin(),gids.end());
  
     // ensure that the expected number of GIDs are produced
     TEST_EQUALITY(s_gids.size(),gids.size());
   }
 
-  std::vector<Ordinal64> indices;
+  std::vector<panzer::GlobalOrdinal> indices;
   dofManager->getOwnedIndices(indices);
-  std::set<Ordinal64> s_indices;
+  std::set<panzer::GlobalOrdinal> s_indices;
   s_indices.insert(indices.begin(),indices.end());
   TEST_EQUALITY(s_indices.size(),indices.size()); // these should be the same
 
@@ -169,9 +169,9 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 
   TEST_EQUALITY(totalCount,(nx*poly_U+1)*(ny*poly_U+1)+(nx*poly_P+1)*(ny*poly_P+1))
 
-  std::vector<Ordinal64> ghosted_indices;
+  std::vector<panzer::GlobalOrdinal> ghosted_indices;
   dofManager->getOwnedAndGhostedIndices(ghosted_indices);
-  std::set<Ordinal64> s_ghosted_indices;
+  std::set<panzer::GlobalOrdinal> s_ghosted_indices;
   s_ghosted_indices.insert(ghosted_indices.begin(),ghosted_indices.end());
 
   TEST_ASSERT(s_ghosted_indices.size()>=s_indices.size()); // should have more ghosted indices then owned indices
@@ -182,7 +182,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
 {
   using CCM = CartesianConnManager;
-  using DOFManager = panzer::DOFManager<int,Ordinal64>;
+  using DOFManager = panzer::DOFManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -195,8 +195,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
   //int rank = comm.getRank(); // processor rank
 
   // mesh description
-  Ordinal64 nx = 8, ny = 4;//, nz = 4;
-  //Ordinal64 nx = 4, ny = 3;//, nz = 4;
+  panzer::GlobalOrdinal nx = 8, ny = 4;//, nz = 4;
+  //panzer::GlobalOrdinal nx = 4, ny = 3;//, nz = 4;
   int px = np, py = 1;//, pz = 1; // npx1 processor grids
   int bx =  1, by = 2;//, bz = 1; // 1x2 blocks
 
@@ -247,7 +247,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
     std::string eblock_px = getElementBlock(Triplet(element.x+1,element.y,element.z),*connManager);
     std::string eblock_py = getElementBlock(Triplet(element.x,element.y+1,element.z),*connManager);
 
-    std::vector<Ordinal64> gids, gids_px, gids_py;
+    std::vector<panzer::GlobalOrdinal> gids, gids_px, gids_py;
 
     dofManager->getElementGIDs(localElmtId,   gids);
     dofManager->getElementGIDs(localElmtId_px,gids_px);
@@ -281,7 +281,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
 {
   using CCM = CartesianConnManager;
-  using DOFManager = panzer::DOFManager<int,Ordinal64>;
+  using DOFManager = panzer::DOFManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -294,8 +294,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
   int rank = comm.getRank(); // processor rank
 
   // mesh description
-  Ordinal64 nx = 10, ny = 7;//, nz = 4;
-  //Ordinal64 nx = 4, ny = 3;//, nz = 4;
+  panzer::GlobalOrdinal nx = 10, ny = 7;//, nz = 4;
+  //panzer::GlobalOrdinal nx = 4, ny = 3;//, nz = 4;
   int px = np, py = 1;//, pz = 1; // npx1 processor grids
   int bx =  1, by = 2;//, bz = 1; // 1x2 blocks
 
@@ -387,7 +387,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
     std::string eblock_px = getElementBlock(Triplet(element.x+1,element.y,element.z),*connManager);
     std::string eblock_py = getElementBlock(Triplet(element.x,element.y+1,element.z),*connManager);
 
-    std::vector<Ordinal64> gids, gids_px, gids_py;
+    std::vector<panzer::GlobalOrdinal> gids, gids_px, gids_py;
 
     dofManager->getElementGIDs(localElmtId,   gids);
     dofManager->getElementGIDs(localElmtId_px,gids_px);
@@ -395,7 +395,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
 
     // check that GIDs are all unique within an element
     {
-      std::set<Ordinal64> s_gids, s_gids_px, s_gids_py;
+      std::set<panzer::GlobalOrdinal> s_gids, s_gids_px, s_gids_py;
       s_gids.insert(gids.begin(),gids.end());
       s_gids_px.insert(gids_px.begin(),gids_px.end());
       s_gids_py.insert(gids_py.begin(),gids_py.end());
@@ -413,7 +413,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
 
       TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
 
-      std::vector<Ordinal64> gid_sub, gid_sub_px;
+      std::vector<panzer::GlobalOrdinal> gid_sub, gid_sub_px;
       for(std::size_t i=0;i<offsets.first.size();i++) {
         gid_sub.push_back(gids[offsets.first[i]]);
         gid_sub_px.push_back(gids_px[offsets_n.first[i]]);
@@ -434,7 +434,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
 
       TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
 
-      std::vector<Ordinal64> gid_sub, gid_sub_py;
+      std::vector<panzer::GlobalOrdinal> gid_sub, gid_sub_py;
       for(std::size_t i=0;i<offsets.first.size();i++) {
         gid_sub.push_back(gids[offsets.first[i]]);
         gid_sub_py.push_back(gids_py[offsets_n.first[i]]);
@@ -470,13 +470,13 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
     TEST_ASSERT(localElmtId_l>=0);
     TEST_ASSERT(localElmtId_r>=0);
 
-    std::vector<Ordinal64> gids_l, gids_r;
+    std::vector<panzer::GlobalOrdinal> gids_l, gids_r;
     dofManager->getElementGIDs(   localElmtId_l,   gids_l);
     dofManager->getElementGIDs(   localElmtId_r,   gids_r);
 
     // check that GIDs are all unique within an element
     {
-      std::set<Ordinal64> s_gids_l, s_gids_r;
+      std::set<panzer::GlobalOrdinal> s_gids_l, s_gids_r;
       s_gids_l.insert(gids_l.begin(),gids_l.end());
       s_gids_r.insert(gids_r.begin(),gids_r.end());
  
@@ -494,7 +494,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
     TEST_EQUALITY(offsets_l.first.size(),offsets_r.first.size());
 
     out << "Elements L/R " << localElmtId_l << " " << localElmtId_r << std::endl;
-    std::vector<Ordinal64> gid_sub_l, gid_sub_r;
+    std::vector<panzer::GlobalOrdinal> gid_sub_l, gid_sub_r;
     for(std::size_t i=0;i<offsets_l.first.size();i++) {
       gid_sub_l.push_back(gids_l[offsets_l.first[i]]);
       gid_sub_r.push_back(gids_r[offsets_r.first[i]]);
@@ -510,7 +510,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
 
     // recieve right, check 
     if(rank!=np-1) {
-      std::vector<Ordinal64> gid_remote(gid_sub_r.size(),-1);
+      std::vector<panzer::GlobalOrdinal> gid_remote(gid_sub_r.size(),-1);
       Teuchos::receive(comm,rank+1,Teuchos::as<int>(gid_sub_r.size()),&gid_remote[0]);
 
       for(std::size_t i=0;i<gid_sub_r.size();i++)

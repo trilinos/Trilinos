@@ -2399,9 +2399,9 @@ void yyFlexLexer::LexerOutput(const char *buf, int size) { (void)yyout->write(bu
 /* yy_get_next_buffer - try to read in a new buffer
  *
  * Returns a code representing an action:
- *	EOB_ACT_LAST_MATCH -
- *	EOB_ACT_CONTINUE_SCAN - continue scanning from current position
- *	EOB_ACT_END_OF_FILE - end of file
+ *      EOB_ACT_LAST_MATCH -
+ *      EOB_ACT_CONTINUE_SCAN - continue scanning from current position
+ *      EOB_ACT_END_OF_FILE - end of file
  */
 /* %if-c-only */
 /* %endif */
@@ -2561,7 +2561,7 @@ yy_state_type yyFlexLexer::yy_get_previous_state()
 /* yy_try_NUL_trans - try to make a transition on the NUL character
  *
  * synopsis
- *	next_state = yy_try_NUL_trans( current_state );
+ *      next_state = yy_try_NUL_trans( current_state );
  */
 /* %if-c-only */
 /* %endif */
@@ -2733,8 +2733,8 @@ void yyFlexLexer::yy_switch_to_buffer(YY_BUFFER_STATE new_buffer)
 
   /* TODO. We should be able to replace this entire function body
    * with
-   *		yypop_buffer_state();
-   *		yypush_buffer_state(new_buffer);
+   *            yypop_buffer_state();
+   *            yypush_buffer_state(new_buffer);
    */
   yyensure_buffer_stack();
   if (YY_CURRENT_BUFFER == new_buffer)
@@ -3204,8 +3204,6 @@ namespace SEAMS {
     // output stream.
     if (aprepro.ap_options.keep_history) {
       aprepro.add_history(history_string, buf);
-      history_string.clear();
-      hist_start = 0;
     }
 
     aprepro.outputStream.top()->write(buf, size);
@@ -3256,8 +3254,6 @@ namespace SEAMS {
   int Scanner::yywrap()
   {
     // Clear the history string.
-    history_string.clear();
-    hist_start = 0;
     curr_index = 0;
 
     // If we are using the string interactive method, we want to return to
@@ -3524,7 +3520,8 @@ namespace SEAMS {
     }
 
     // Don't do it if the file is the one used by execute and rescan.
-    if (aprepro.ap_file_list.top().name == "_string_") {
+    if (aprepro.ap_file_list.top().name == "_string_" ||
+	aprepro.ap_file_list.top().name == "standard input") {
       return;
     }
 
@@ -3536,10 +3533,17 @@ namespace SEAMS {
 
     // Go back in the stream to where we started keeping history.
     yyin->seekg(hist_start);
-
+    if (!yyin->good()) {
+      yyerror("Stream state bad in `save_history_string` seekg");
+      return;
+    }
     // Read everything up to this point again and save it.
     auto tmp = new char[len + 1];
     yyin->read(tmp, len);
+    if (!yyin->good()) {
+      yyerror("Stream state bad in `save_history_string` read");
+      return;
+    }
     tmp[len] = '\0';
 
     history_string = tmp;

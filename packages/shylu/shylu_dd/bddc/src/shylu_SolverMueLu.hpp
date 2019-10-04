@@ -113,7 +113,7 @@ public:
     initializeCoordinates(numNodes, xCoords, yCoords, zCoords, Comm);
     initializeNullspace(numRows, Comm);
     // MueLu preconditioner
-    Teuchos::ArrayRCP<size_t> count(numRows, 0); 
+    Teuchos::Array<size_t> count(numRows, 0); 
     const LO* rowBegin = this->m_rowBegin;
     const LO* columns = this->m_columns;
     const double* values = reinterpret_cast<const double*>(this->m_values);
@@ -122,7 +122,7 @@ public:
     }
     LO numTerms(0);
     RCP<const Map> rowMap = m_inNullspace->getMap();
-    RCP<CrsMatrix> A = rcp( new CrsMatrix(rowMap, rowMap, count) );
+    RCP<CrsMatrix> A = rcp( new CrsMatrix(rowMap, rowMap, count()) );
     for (LO i=0; i<numRows; i++) {
       A->insertLocalValues
 	(i, Teuchos::ArrayView<const LO>(&columns[numTerms], count[i]),

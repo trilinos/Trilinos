@@ -173,7 +173,7 @@ DOFDiv(const Teuchos::ParameterList & p) :
   this->addEvaluatedField(dof_div);
   this->addDependentField(dof_value);
 
-  std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
+  std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::print<EvalT>()+")";
   this->setName(n);
 }
 
@@ -198,7 +198,7 @@ DOFDiv(const PHX::FieldTag & input,
   this->addEvaluatedField(dof_div);
   this->addDependentField(dof_value);
 
-  std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
+  std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::print<EvalT>()+")";
   this->setName(n);
 }
 
@@ -271,7 +271,7 @@ DOFDiv(const Teuchos::ParameterList & p) :
   this->addEvaluatedField(dof_div);
   this->addDependentField(dof_value);
 
-  std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::typeAsString<panzer::Traits::Jacobian>()+")";
+  std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::print<panzer::Traits::Jacobian>()+")";
   this->setName(n);
 }
 
@@ -298,7 +298,7 @@ DOFDiv(const PHX::FieldTag & input,
   this->addEvaluatedField(dof_div);
   this->addDependentField(dof_value);
 
-  std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::typeAsString<panzer::Traits::Jacobian>()+")";
+  std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::print<panzer::Traits::Jacobian>()+")";
   this->setName(n);
 }
 

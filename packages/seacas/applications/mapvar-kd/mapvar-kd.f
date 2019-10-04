@@ -500,7 +500,7 @@ C
          CALL MDEROR(NOUT)
          CALL ERROR('MAPVAR',
      &              'MEMORY MANAGER ERROR',
-     &              'JUST BEFOR INTERPOLATION LOOP',
+     &              'JUST BEFORE INTERPOLATION LOOP',
      &              0,' ',0,' ',' ',1)
       END IF
 C
@@ -560,13 +560,13 @@ C
         INSUB  = 1
         ICOMPL = 1
         IF (IM .GT. 1)THEN
-          IDBBM1 = IA(NMAP-5+IMOFF)
+          IDBBM1 = IA(NMAP-5)
           IF (IDBLKB .EQ. IDBBM1)THEN
             INSUB = 2
           END IF
         END IF
         IF (IM .LT. IMP)THEN
-          IDBBP1 = IA(NMAP+1+IMOFF)
+          IDBBP1 = IA(NMAP+1)
           IF (IDBLKB .EQ. IDBBP1)THEN
             ICOMPL = 0
           END IF
@@ -1557,7 +1557,7 @@ C NRSS=number of    real search scratch (=10)
 C
       DATA TOL,EPS,STRLMT,ITERMX/0.01,0.01,20.,20/
 C
-C TOL=difference in isoparametric coords after newton iteration (dont change)
+C TOL=difference in isoparametric coords after newton iteration (don't change)
 C EPS=tolerance used in checking if point is within element or coincident
 C     with a node
 C STRLMT=tolerance for isoparametric coords to lie within an element

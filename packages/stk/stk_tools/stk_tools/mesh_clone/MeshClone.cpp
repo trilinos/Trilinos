@@ -335,6 +335,31 @@ void copy_side_entities(const stk::mesh::BulkData &inputBulk, stk::mesh::Selecto
     }
 }
 
+void copy_sidesets(const stk::mesh::BulkData & inputBulk, stk::mesh::Selector inputSelector, stk::mesh::BulkData & outputBulk)
+{
+  stk::mesh::MetaData & outputMeta = outputBulk.mesh_meta_data();
+
+  std::vector<const stk::mesh::SideSet *> inputSideSets = inputBulk.get_sidesets();
+  for (const stk::mesh::SideSet * inputSideSet : inputSideSets) {
+    const std::string & partName = inputSideSet->get_name();
+    const stk::mesh::Part * outputPart = outputMeta.get_part(partName);
+    ThrowRequire(outputPart != nullptr);
+
+    stk::mesh::SideSet & outputSideSet = outputBulk.create_sideset(*outputPart, inputSideSet->is_from_input());
+
+    for (const stk::mesh::SideSetEntry & inputEntry : *inputSideSet) {
+        const stk::mesh::Entity inputElement = inputEntry.element;
+        const stk::mesh::ConnectivityOrdinal inputOrdinal = inputEntry.side;
+
+        if (inputSelector(inputBulk.bucket(inputElement))) {
+            stk::mesh::Entity outputEntity = outputBulk.get_entity(inputBulk.entity_key(inputElement));
+            ThrowRequire(outputBulk.is_valid(outputEntity));
+            outputSideSet.add(outputEntity, inputOrdinal);
+        }
+    }
+  }
+}
+
 void create_entities_of_rank(const stk::mesh::BulkData& inputBulk, const stk::mesh::Selector& inputSelector, stk::mesh::EntityRank rank, stk::mesh::BulkData& outputBulk)
 {
     for(const stk::mesh::Bucket* bucket : inputBulk.get_buckets(rank, inputSelector))
@@ -367,12 +392,18 @@ void copy_selected(const stk::mesh::BulkData& inputBulk, const stk::mesh::Select
     copy_relations(inputBulk, inputSelector, stk::topology::ELEM_RANK, stk::topology::NODE_RANK, outputBulk);
     outputBulk.modification_end();
 
-    if(inputBulk.has_face_adjacent_element_graph())
+    if(inputBulk.has_face_adjacent_element_graph()) {
         outputBulk.initialize_face_adjacent_element_graph();
+    }
 
     outputBulk.modification_begin();
     create_entities_of_rank(inputBulk, inputSelector, stk::topology::EDGE_RANK, outputBulk);
-    copy_side_entities(inputBulk, inputSelector, outputBulk);
+
+    if(inputBulk.mesh_meta_data().side_rank() != stk::topology::EDGE_RANK) {
+      copy_side_entities(inputBulk, inputSelector, outputBulk);
+    }
+
+    copy_sidesets(inputBulk, inputSelector, outputBulk);
     create_entities_for_remaining_ranks(inputBulk, inputSelector, outputBulk);
 
     copy_relations(inputBulk, inputSelector, stk::topology::ELEM_RANK, stk::topology::FACE_RANK, outputBulk);
@@ -382,7 +413,6 @@ void copy_selected(const stk::mesh::BulkData& inputBulk, const stk::mesh::Select
     copy_relations(inputBulk, inputSelector, stk::topology::EDGE_RANK, stk::topology::NODE_RANK, outputBulk);
     copy_relations_for_remaining_ranks(inputBulk, inputSelector, outputBulk);
     outputBulk.modification_end();
-
 }
 
 void copy_bulk(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector inputSelector, stk::mesh::BulkData &outputBulk)
@@ -392,8 +422,6 @@ void copy_bulk(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector inputSe
     outputBulk.modification_end();
 
     outputBulk.set_large_ids_flag(inputBulk.supports_large_ids());
-//    if(inputBulk.has_face_adjacent_element_graph())
-//        outputBulk.initialize_face_adjacent_element_graph();
 }
 
 void copy_meta_with_io_attributes(const stk::mesh::MetaData &inputMeta, stk::mesh::MetaData &outputMeta)

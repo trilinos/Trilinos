@@ -51,8 +51,7 @@
 
 namespace panzer
 {
-template<typename LO, typename GO>
-struct LocalMeshInfo;
+  struct LocalMeshInfo;
 }
 
 namespace panzer_stk {
@@ -103,7 +102,7 @@ private:
    // This needs to be set at the start, but is currently setup only if the
    // workset descriptor requiers it
    /// Alternative form of mesh
-   mutable Teuchos::RCP<const panzer::LocalMeshInfo<int,panzer::Ordinal64> > mesh_info_;
+   mutable Teuchos::RCP<const panzer::LocalMeshInfo> mesh_info_;
 
 
 };

@@ -44,17 +44,23 @@
 
 #include <FROSch_GDSWInterfacePartitionOfUnity_decl.hpp>
 
+
 namespace FROSch {
-    
+
+    using namespace Teuchos;
+    using namespace Xpetra;
+
     template <class SC,class LO,class GO,class NO>
     GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::GDSWInterfacePartitionOfUnity(CommPtr mpiComm,
                                                                               CommPtr serialComm,
                                                                               UN dimension,
                                                                               UN dofsPerNode,
-                                                                              MapPtr nodesMap,
-                                                                              MapPtrVecPtr dofsMaps,
-                                                                              ParameterListPtr parameterList) :
-    InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList),
+                                                                              ConstXMapPtr nodesMap,
+                                                                              ConstXMapPtrVecPtr dofsMaps,
+                                                                              ParameterListPtr parameterList,
+                                                                              Verbosity verbosity,
+                                                                              UN levelID) :
+    InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
     UseVertices_ (false),
     UseShortEdges_ (false),
     UseStraightEdges_ (false),
@@ -66,6 +72,7 @@ namespace FROSch {
     Edges_ (),
     Faces_ ()
     {
+        FROSCH_TIMER_START_LEVELID(gDSWInterfacePartitionOfUnityTime,"GDSWInterfacePartitionOfUnity::GDSWInterfacePartitionOfUnity");
         if (!this->ParameterList_->get("Type","Full").compare("Full")) {
             UseVertices_ = true;
             UseShortEdges_ = true;
@@ -116,220 +123,177 @@ namespace FROSch {
             UseStraightEdges_ = this->ParameterList_->sublist("Custom").get("Vertices",false);
             UseEdges_ = this->ParameterList_->sublist("Custom").get("Vertices",false);
             UseFaces_ = this->ParameterList_->sublist("Custom").get("Vertices",false);
+        } else {
+            FROSCH_ASSERT(false,"FROSch::GDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
         }
-        this->LocalPartitionOfUnity_ = MultiVectorPtrVecPtr(5);
-        this->PartitionOfUnityMaps_ = MapPtrVecPtr(5);
+        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(5);
+        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(5);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::~GDSWInterfacePartitionOfUnity()
     {
-        
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs,
-                                                                         MultiVectorPtr nodeList)
+                                                                         ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(removeDirichletNodesTime,"GDSWInterfacePartitionOfUnity::removeDirichletNodes");
         if (!dirichletBoundaryDofs.is_null()) {
             GOVec tmpDirichletBoundaryDofs(dirichletBoundaryDofs());
-            sortunique(tmpDirichletBoundaryDofs);            
+            sortunique(tmpDirichletBoundaryDofs);
             this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs());
             this->DDInterface_->sortVerticesEdgesFaces(nodeList);
         }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(CrsMatrixPtr matrix,
-                                                                  MultiVectorPtr nodeList)
+    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(ConstXMatrixPtr matrix,
+                                                                  ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(sortInterfaceTime,"GDSWInterfacePartitionOfUnity::sortInterface");
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
-            this->DDInterface_->divideUnconnectedEntities(matrix);
+            if (matrix.is_null()) {
+                if (this->Verbose_) std::cout << "FROSch::GDSWInterfacePartitionOfUnity : WARNING: divideUnconnectedEntities() cannot be performed without the matrix." << std::endl;
+            } else this->DDInterface_->divideUnconnectedEntities(matrix);
         }
         this->DDInterface_->sortVerticesEdgesFaces(nodeList);
-        
+
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity()
+    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstXMultiVectorPtr nodeList)
     {
+        FROSCH_TIMER_START_LEVELID(computePartitionOfUnityTime,"GDSWInterfacePartitionOfUnity::computePartitionOfUnity");
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();
         UN numInterfaceDofs = dofsPerNode*this->DDInterface_->getInterface()->getEntity(0)->getNumNodes();
-                
+
+        this->DDInterface_->buildEntityMaps(UseVertices_,
+                                            UseShortEdges_,
+                                            UseStraightEdges_,
+                                            UseEdges_,
+                                            UseFaces_,
+                                            false);
+
         // Maps
-        LO numVerticesGlobal;
         if (UseVertices_) {
             Vertices_ = this->DDInterface_->getVertices();
-            Vertices_->buildEntityMap(this->DDInterface_->getNodesMap());
             this->PartitionOfUnityMaps_[0] = Vertices_->getEntityMap();
-            
-            numVerticesGlobal = Vertices_->getEntityMap()->getMaxAllGlobalIndex();
-            if (Vertices_->getEntityMap()->lib()==Xpetra::UseEpetra || Vertices_->getEntityMap()->getGlobalNumElements()>0) {
-                numVerticesGlobal += 1;
-            }
-        } else {
-            numVerticesGlobal = -1;
         }
-        if (numVerticesGlobal < 0) numVerticesGlobal = 0;
-        
-        LO numShortEdgesGlobal;
+
         if (UseShortEdges_) {
             ShortEdges_ = this->DDInterface_->getShortEdges();
-            ShortEdges_->buildEntityMap(this->DDInterface_->getNodesMap());
             this->PartitionOfUnityMaps_[1] = ShortEdges_->getEntityMap();
-            
-            numShortEdgesGlobal = ShortEdges_->getEntityMap()->getMaxAllGlobalIndex();
-            if (ShortEdges_->getEntityMap()->lib()==Xpetra::UseEpetra || ShortEdges_->getEntityMap()->getGlobalNumElements()>0) {
-                numShortEdgesGlobal += 1;
-            }
-        } else {
-            numShortEdgesGlobal = -1;
         }
-        if (numShortEdgesGlobal < 0) numShortEdgesGlobal = 0;
-        
-        LO numStraightEdgesGlobal;
+
         if (UseStraightEdges_) {
             StraightEdges_ = this->DDInterface_->getStraightEdges();
-            StraightEdges_->buildEntityMap(this->DDInterface_->getNodesMap());
             this->PartitionOfUnityMaps_[2] = StraightEdges_->getEntityMap();
-            
-            numStraightEdgesGlobal = StraightEdges_->getEntityMap()->getMaxAllGlobalIndex();
-            if (StraightEdges_->getEntityMap()->lib()==Xpetra::UseEpetra || StraightEdges_->getEntityMap()->getGlobalNumElements()>0) {
-                numStraightEdgesGlobal += 1;
-            }
-        } else {
-            numStraightEdgesGlobal = -1;
         }
-        if (numStraightEdgesGlobal < 0) numStraightEdgesGlobal = 0;
-        
-        LO numEdgesGlobal;
+
         if (UseEdges_) {
             Edges_ = this->DDInterface_->getEdges();
-            Edges_->buildEntityMap(this->DDInterface_->getNodesMap());
             this->PartitionOfUnityMaps_[3] = Edges_->getEntityMap();
-            
-            numEdgesGlobal = Edges_->getEntityMap()->getMaxAllGlobalIndex();
-            if (Edges_->getEntityMap()->lib()==Xpetra::UseEpetra || Edges_->getEntityMap()->getGlobalNumElements()>0) {
-                numEdgesGlobal += 1;
-            }
-        } else {
-            numEdgesGlobal = -1;
         }
-        if (numEdgesGlobal < 0) numEdgesGlobal = 0;
-        
-        LO numFacesGlobal;
+
         if (UseFaces_) {
             Faces_ = this->DDInterface_->getFaces();
-            Faces_->buildEntityMap(this->DDInterface_->getNodesMap());
             this->PartitionOfUnityMaps_[4] = Faces_->getEntityMap();
-            
-            numFacesGlobal = Faces_->getEntityMap()->getMaxAllGlobalIndex();
-            if (Faces_->getEntityMap()->lib()==Xpetra::UseEpetra || Faces_->getEntityMap()->getGlobalNumElements()>0) {
-                numFacesGlobal += 1;
-            }
-        } else {
-            numFacesGlobal = -1;
         }
-        if (numFacesGlobal < 0) numFacesGlobal = 0;
-        
+
         if (this->Verbose_) {
-            std::cout << "-----------------------------------------------\n";
-            std::cout << " GDSW Interface Partition Of Unity (GDSW IPOU) \n";
-            std::cout << "-----------------------------------------------\n";
-            std::cout << std::boolalpha;
-            std::cout << " \tUse Vertices\t\t--\t" << UseVertices_ << "\n";
-            std::cout << " \tUse Short Edges\t\t--\t" << UseShortEdges_ << "\n";
-            std::cout << " \tUse Straight Edges\t--\t" << UseStraightEdges_ << "\n";
-            std::cout << " \tUse Edges\t\t--\t" << UseEdges_ << "\n";
-            std::cout << " \tUse Faces\t\t--\t" << UseFaces_ << "\n";
-            std::cout << std::noboolalpha;
-            std::cout << "-----------------------------------------------\n";
-            std::cout << " \t# Vertices\t\t--\t" << numVerticesGlobal << "\n";
-            std::cout << " \t# Short Edges\t\t--\t" << numShortEdgesGlobal << "\n";
-            std::cout << " \t# Straight Edges\t--\t" << numStraightEdgesGlobal << "\n";
-            std::cout << " \t# Edges\t\t\t--\t" << numEdgesGlobal << "\n";
-            std::cout << " \t# Faces\t\t\t--\t" << numFacesGlobal << "\n";
-            std::cout << "-----------------------------------------------\n";
+            std::cout << std::boolalpha << "\n\
+    ------------------------------------------------------------------------------\n\
+     GDSW Interface Partition Of Unity (GDSW IPOU)\n\
+    ------------------------------------------------------------------------------\n\
+      Vertices                                    --- " << UseVertices_ << "\n\
+      ShortEdges                                  --- " << UseShortEdges_ << "\n\
+      StraightEdges                               --- " << UseStraightEdges_ << "\n\
+      Edges                                       --- " << UseEdges_ << "\n\
+      Faces                                       --- " << UseFaces_ << "\n\
+    ------------------------------------------------------------------------------\n" << std::noboolalpha;
         }
-        
+
         // Build Partition Of Unity Vectors
-        MapPtr serialInterfaceMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->DDInterface_->getNodesMap()->lib(),numInterfaceDofs,0,this->SerialComm_);
-        
+        XMapPtr serialInterfaceMap = MapFactory<LO,GO,NO>::Build(this->DDInterface_->getNodesMap()->lib(),numInterfaceDofs,0,this->SerialComm_);
+
         if (UseVertices_ && Vertices_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Vertices_->getNumEntities());
-            
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Vertices_->getNumEntities());
+
             for (UN i=0; i<Vertices_->getNumEntities(); i++) {
                 for (UN j=0; j<Vertices_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(Vertices_->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                        tmpVector->replaceLocalValue(Vertices_->getEntity(i)->getGammaDofID(j,k),i,ScalarTraits<SC>::one());
                     }
                 }
             }
-            
+
             this->LocalPartitionOfUnity_[0] = tmpVector;
         }
-        
+
         if (UseShortEdges_ && ShortEdges_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,ShortEdges_->getNumEntities());
-            
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,ShortEdges_->getNumEntities());
+
             for (UN i=0; i<ShortEdges_->getNumEntities(); i++) {
                 for (UN j=0; j<ShortEdges_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(ShortEdges_->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                        tmpVector->replaceLocalValue(ShortEdges_->getEntity(i)->getGammaDofID(j,k),i,ScalarTraits<SC>::one());
                     }
                 }
             }
-            
+
             this->LocalPartitionOfUnity_[1] = tmpVector;
         }
-        
+
         if (UseStraightEdges_ && StraightEdges_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,StraightEdges_->getNumEntities());
-            
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,StraightEdges_->getNumEntities());
+
             for (UN i=0; i<StraightEdges_->getNumEntities(); i++) {
                 for (UN j=0; j<StraightEdges_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(StraightEdges_->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                        tmpVector->replaceLocalValue(StraightEdges_->getEntity(i)->getGammaDofID(j,k),i,ScalarTraits<SC>::one());
                     }
                 }
             }
             this->LocalPartitionOfUnity_[2] = tmpVector;
         }
-        
+
         if (UseEdges_ && Edges_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Edges_->getNumEntities());
-            
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Edges_->getNumEntities());
+
             for (UN i=0; i<Edges_->getNumEntities(); i++) {
                 for (UN j=0; j<Edges_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(Edges_->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                        tmpVector->replaceLocalValue(Edges_->getEntity(i)->getGammaDofID(j,k),i,ScalarTraits<SC>::one());
                     }
                 }
             }
-            
+
             this->LocalPartitionOfUnity_[3] = tmpVector;
         }
-        
+
         if (UseFaces_ && Faces_->getNumEntities()>0) {
-            MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Faces_->getNumEntities());
-            
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Faces_->getNumEntities());
+
             for (UN i=0; i<Faces_->getNumEntities(); i++) {
                 for (UN j=0; j<Faces_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(Faces_->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                        tmpVector->replaceLocalValue(Faces_->getEntity(i)->getGammaDofID(j,k),i,ScalarTraits<SC>::one());
                     }
                 }
             }
-            
+
             this->LocalPartitionOfUnity_[4] = tmpVector;
         }
-        
+
         return 0;
     }
-    
+
 }
 
 #endif

@@ -1,7 +1,5 @@
 #include "stk_tools/mesh_tools/DisconnectBlocksImpl.hpp"
-#include "stk_mesh/base/SkinMeshUtil.hpp"
 #include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 #include "stk_io/IossBridge.hpp"
 #include "stk_util/parallel/CommSparse.hpp"
 #include <map>
@@ -15,42 +13,18 @@ bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part)
 {
   const bool isElementPart = (part.primary_entity_rank() == stk::topology::ELEM_RANK);
   const bool isIoPart      = stk::io::has_io_part_attribute(part);
-  const bool hasPartId     = (part.id() > 0);
-  return (isElementPart && isIoPart && hasPartId);
+  return (isElementPart && isIoPart);
 }
 
-int64_t get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element)
+unsigned get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element)
 {
   const stk::mesh::PartVector & elementParts = bulk.bucket(element).supersets();
   for (stk::mesh::Part * part : elementParts) {
     if (is_block(bulk, *part)) {
-      return part->id();
+      return part->mesh_meta_data_ordinal();
     }
   }
   return -1;
-}
-
-void get_nodes_for_element_side(const stk::mesh::BulkData & bulk,
-                                stk::mesh::Entity element,
-                                stk::mesh::ConnectivityOrdinal sideOrdinal,
-                                std::vector<stk::mesh::Entity> & sideNodes)
-{
-  const stk::mesh::Entity * elemNodes = bulk.begin_nodes(element);
-  const stk::topology elemTopology = bulk.bucket(element).topology();
-  const stk::topology sideTopology = elemTopology.side_topology(sideOrdinal);
-  sideNodes.resize(sideTopology.num_nodes());
-  elemTopology.side_nodes(elemNodes, sideOrdinal, sideNodes.data());
-}
-
-void get_node_ordinals_for_element_side(const stk::mesh::BulkData & bulk,
-                                        stk::mesh::Entity element,
-                                        stk::mesh::ConnectivityOrdinal sideOrdinal,
-                                        std::vector<stk::mesh::ConnectivityOrdinal> & sideNodeOrdinals)
-{
-  const stk::topology elemTopology = bulk.bucket(element).topology();
-  const stk::topology sideTopology = elemTopology.side_topology(sideOrdinal);
-  sideNodeOrdinals.resize(sideTopology.num_nodes());
-  elemTopology.side_node_ordinals(sideOrdinal, sideNodeOrdinals.data());
 }
 
 void add_nodes_to_disconnect(const stk::mesh::BulkData & bulk,
@@ -60,14 +34,11 @@ void add_nodes_to_disconnect(const stk::mesh::BulkData & bulk,
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   std::vector<stk::mesh::Entity> sideNodes;
 
-  const stk::mesh::Part * firstBlock  = blockPair.first;
-  const stk::mesh::Part * secondBlock = blockPair.second;
-  if (firstBlock->id() > secondBlock->id()) {
-    firstBlock = blockPair.second;
-    secondBlock = blockPair.first;
-  }
+  const stk::mesh::Part & firstBlock  = *blockPair.first;
+  const stk::mesh::Part & secondBlock = *blockPair.second;
+  ThrowAssert(secondBlock.mesh_meta_data_ordinal() > firstBlock.mesh_meta_data_ordinal());
 
-  stk::mesh::Selector boundaryBetweenBlocks = *firstBlock & *secondBlock & (meta.locally_owned_part() | meta.globally_shared_part());
+  stk::mesh::Selector boundaryBetweenBlocks = firstBlock & secondBlock & (meta.locally_owned_part() | meta.globally_shared_part());
 
   const stk::mesh::BucketVector & nodesOnBoundaryBetweenBlocks = bulk.get_buckets(stk::topology::NODE_RANK, boundaryBetweenBlocks);
   for (const stk::mesh::Bucket * bucket : nodesOnBoundaryBetweenBlocks) {
@@ -77,7 +48,7 @@ void add_nodes_to_disconnect(const stk::mesh::BulkData & bulk,
       bool needToCloneNode = false;
       for (unsigned i = 0; i < numElems; ++i) {
         const stk::mesh::Bucket & elemBucket = bulk.bucket(elems[i]);
-        if (elemBucket.member(*secondBlock) && elemBucket.owned()) {
+        if (elemBucket.member(secondBlock) && elemBucket.owned()) {
           needToCloneNode = true;
           break;
         }
@@ -97,7 +68,6 @@ void create_new_duplicate_node_IDs(stk::mesh::BulkData & bulk, NodeMapType & nod
   size_t newNodeIdx = 0;
   for (auto & nodeMapEntry : nodeMap) {
     nodeMapEntry.second.newNodeId = newNodeIDs[newNodeIdx++];
-//    std::cout << "[p" << bulk.parallel_rank() << "] Creating node ID " << nodeMapEntry.second.newNodeId << " for old node " << bulk.entity_key(nodeMapEntry.first.parentNode) << " (state=" << bulk.state(nodeMapEntry.first.parentNode) << ")" << std::endl;
   }
 }
 
@@ -112,7 +82,7 @@ void communicate_shared_node_information(stk::mesh::BulkData & bulk, NodeMapType
       const stk::mesh::Entity node = nodeMapEntry.first.parentNode;
       if (!bulk.bucket(node).shared()) continue;
 
-      const stk::mesh::Part * blockToDisconnect = nodeMapEntry.first.disconnectedBlock;
+      const stk::mesh::Part & blockToDisconnect = nodeMapEntry.first.disconnectedBlock;
       const stk::mesh::EntityId newNodeId = nodeMapEntry.second.newNodeId;
 
       const stk::mesh::Entity * elems = bulk.begin_elements(node);
@@ -120,7 +90,7 @@ void communicate_shared_node_information(stk::mesh::BulkData & bulk, NodeMapType
       bool needToCommunicate = false;
       for (unsigned i = 0; i < numElems; ++i) {
         const stk::mesh::Bucket & elemBucket = bulk.bucket(elems[i]);
-        if (elemBucket.member(*blockToDisconnect) && elemBucket.owned()) {
+        if (elemBucket.member(blockToDisconnect) && elemBucket.owned()) {
           needToCommunicate = true;
           break;
         }
@@ -132,7 +102,7 @@ void communicate_shared_node_information(stk::mesh::BulkData & bulk, NodeMapType
         for (const int proc : sharingProcs) {
           stk::CommBuffer& procBuff = commSparse.send_buffer(proc);
           procBuff.pack<stk::mesh::EntityId>(bulk.identifier(node));
-          procBuff.pack<stk::mesh::PartOrdinal>(blockToDisconnect->mesh_meta_data_ordinal());
+          procBuff.pack<stk::mesh::PartOrdinal>(blockToDisconnect.mesh_meta_data_ordinal());
           procBuff.pack<stk::mesh::EntityId>(newNodeId);
         }
       }
@@ -157,7 +127,7 @@ void communicate_shared_node_information(stk::mesh::BulkData & bulk, NodeMapType
       procBuff.unpack<stk::mesh::PartOrdinal>(blockToDisconnectOrdinal);
       procBuff.unpack<stk::mesh::EntityId>(newNodeId);
 
-      NodeMapKey nodeMapKey(bulk.get_entity(stk::topology::NODE_RANK, parentNodeId), &meta.get_part(blockToDisconnectOrdinal));
+      NodeMapKey nodeMapKey(bulk.get_entity(stk::topology::NODE_RANK, parentNodeId), meta.get_part(blockToDisconnectOrdinal));
       const auto & nodeMapIt = nodeMap.find(nodeMapKey);
       if (nodeMapIt != nodeMap.end()) {
         NodeMapValue & newNodeData = nodeMapIt->second;
@@ -201,39 +171,19 @@ std::vector<BlockPairType> get_block_pairs_to_disconnect(const stk::mesh::BulkDa
   return std::move(blockPairsToDisconnect);
 }
 
-std::vector<SideSetType> get_sidesets_to_disconnect(stk::mesh::BulkData & bulk,
-                                                    const std::vector<BlockPairType> & blockPairsToDisconnect)
-{
-  std::vector<SideSetType> sideSetsToDisconnect;
-  sideSetsToDisconnect.resize(blockPairsToDisconnect.size());
-  for (size_t i = 0; i < blockPairsToDisconnect.size(); ++i) {
-    stk::mesh::Selector blockPair = *blockPairsToDisconnect[i].first | *blockPairsToDisconnect[i].second;
-    sideSetsToDisconnect[i] = stk::mesh::SkinMeshUtil::get_interior_sideset(bulk, blockPair);
-  }
-  return std::move(sideSetsToDisconnect);
-}
-
 void disconnect_elements(stk::mesh::BulkData & bulk,
                          const BlockPairType & blockPair,
                          NodeMapType & nodeMap)
 {
-  const stk::mesh::Part * firstBlock  = blockPair.first;
-  const stk::mesh::Part * secondBlock = blockPair.second;
-  if (firstBlock->id() > secondBlock->id()) {
-    firstBlock = blockPair.second;
-    secondBlock = blockPair.first;
-  }
+  const stk::mesh::Part & blockToDisconnect = *blockPair.second;
 
   for (auto nodeMapEntryIt = nodeMap.begin(); nodeMapEntryIt != nodeMap.end(); ) {
-    if (nodeMapEntryIt->first.disconnectedBlock == secondBlock) {
+    if (nodeMapEntryIt->first.disconnectedBlock == blockToDisconnect) {
       const stk::mesh::Entity node = nodeMapEntryIt->first.parentNode;
       const std::vector<stk::mesh::Entity> connectedElems(bulk.begin_elements(node), bulk.end_elements(node));
 
       for (stk::mesh::Entity elem : connectedElems) {
-//        std::cout << "[p" << bulk.parallel_rank() << "] Considering " << bulk.entity_key(elem) << " for disconnect" << std::endl;
-        if (bulk.bucket(elem).member(*secondBlock)) {
-//          std::cout << "[p" << bulk.parallel_rank() << "]   Considering node " << bulk.entity_key(node) << " for disconnect" << std::endl;
-
+        if (bulk.bucket(elem).member(blockToDisconnect)) {
           stk::mesh::EntityId newNodeId = nodeMapEntryIt->second.newNodeId;
           stk::mesh::Entity newNode = bulk.declare_node(newNodeId);
           bulk.copy_entity_fields(node, newNode);
@@ -241,8 +191,6 @@ void disconnect_elements(stk::mesh::BulkData & bulk,
           for (int sharingProc : nodeMapEntryIt->second.sharingProcs) {
             bulk.add_node_sharing(newNode, sharingProc);
           }
-
-//          std::cout << "[p" << bulk.parallel_rank() << "]     Swapping " << bulk.entity_key(node) << " to " << bulk.entity_key(newNode) << " on " << bulk.entity_key(elem) << std::endl;
 
           unsigned numNodes = bulk.num_connectivity(elem, stk::topology::NODE_RANK);
           const stk::mesh::Entity * elemNodes = bulk.begin(elem, stk::topology::NODE_RANK);
@@ -256,17 +204,6 @@ void disconnect_elements(stk::mesh::BulkData & bulk,
 
           if (bulk.num_elements(node) == 0) {
             bulk.destroy_entity(node);
-//            bool success = bulk.destroy_entity(node);
-//            if (success) {
-//              std::cout << "[p" << bulk.parallel_rank() << "]     Deleting " << bulk.entity_key(node) << std::endl;
-//            }
-//            else {
-//              std::cout << "[p" << bulk.parallel_rank() << "]     Failed to delete " << bulk.entity_key(node) << std::endl;
-//              const unsigned numElems = bulk.num_elements(node);
-//              const unsigned numFaces = bulk.num_faces(node);
-//              std::cout << "[p" << bulk.parallel_rank() << "]     Num connected elements = " << numElems << std::endl;
-//              std::cout << "[p" << bulk.parallel_rank() << "]     Num connected faces    = " << numFaces << std::endl;
-//            }
           }
         }
       }

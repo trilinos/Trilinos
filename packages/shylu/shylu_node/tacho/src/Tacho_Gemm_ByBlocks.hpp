@@ -15,27 +15,26 @@ namespace Tacho {
 
     template<>
     struct Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::ByBlocks> {
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename ScalarType,
                typename MatrixOfDenseBlocksType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(SchedulerType &sched,
-             MemberType &member,
+      invoke(MemberType &member,
              const ScalarType alpha,
              const MatrixOfDenseBlocksType &A,
              const MatrixOfDenseBlocksType &B,
              const ScalarType beta,
              const MatrixOfDenseBlocksType &C) {
-        typedef SchedulerType scheduler_type;
         typedef ScalarType scalar_type;
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
+        typedef typename dense_block_type::scheduler_type scheduler_type;
         typedef typename dense_block_type::future_type future_type;
 
         typedef typename std::conditional
           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
           Algo::External,Algo::Internal>::type GemmAlgoType;
+        auto &sched = member.scheduler();
 
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
             const ordinal_type pend = A.extent(0);
@@ -51,12 +50,12 @@ namespace Tacho {
 
                   const future_type dep[3] = { aa.future(), bb.future(), cc.future() };
                   future_type f =
-                    Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 3), Kokkos::TaskPriority::High),
+                    Kokkos::task_spawn(Kokkos::TaskTeam(sched, sched.when_all(dep, 3), Kokkos::TaskPriority::High),
                                        TaskFunctor_Gemm
                                        <scheduler_type,scalar_type,dense_block_type,
                                        Trans::ConjTranspose,Trans::NoTranspose,
                                        GemmAlgoType>
-                                       (sched, alpha, aa, bb, beta_select, cc));
+                                       (alpha, aa, bb, beta_select, cc));
                   TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
                   cc.set_future(f);
                 }
@@ -70,28 +69,27 @@ namespace Tacho {
 
     template<>
     struct Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::ByBlocks> {
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename ScalarType,
                typename MatrixOfDenseBlocksType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(SchedulerType &sched,
-             MemberType &member,
+      invoke(MemberType &member,
              const ScalarType alpha,
              const MatrixOfDenseBlocksType &A,
              const MatrixOfDenseBlocksType &B,
              const ScalarType beta,
              const MatrixOfDenseBlocksType &C) {
-        typedef SchedulerType scheduler_type;
         typedef ScalarType scalar_type;
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
+        typedef typename dense_block_type::scheduler_type scheduler_type;
         typedef typename dense_block_type::future_type future_type;
 
         typedef typename std::conditional
           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
           Algo::External,Algo::Internal>::type GemmAlgoType;
 
+        auto &sched = member.scheduler();
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
             const ordinal_type pend = A.extent(1);
             for (ordinal_type p=0;p<pend;++p) {
@@ -106,12 +104,12 @@ namespace Tacho {
 
                   const future_type dep[3] = { aa.future(), bb.future(), cc.future() };
                   future_type f =
-                    Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 3), Kokkos::TaskPriority::High),
+                    Kokkos::task_spawn(Kokkos::TaskTeam(sched, sched.when_all(dep, 3), Kokkos::TaskPriority::High),
                                        TaskFunctor_Gemm
                                        <scheduler_type,scalar_type,dense_block_type,
                                        Trans::NoTranspose,Trans::NoTranspose,
                                        GemmAlgoType>
-                                       (sched, alpha, aa, bb, beta_select, cc));
+                                       (alpha, aa, bb, beta_select, cc));
                   TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
                   cc.set_future(f);
                 }

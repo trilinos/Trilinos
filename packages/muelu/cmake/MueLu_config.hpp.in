@@ -100,6 +100,8 @@
 #endif
 
 
+#cmakedefine HAVE_MUELU_MLPACK
+
 #cmakedefine HAVE_MUELU_CUSPARSE
 
 #cmakedefine HAVE_MUELU_MAGMASPARSE
@@ -109,6 +111,9 @@
 #cmakedefine HAVE_MUELU_PTHREAD
 #cmakedefine HAVE_MUELU_OPENMP
 #cmakedefine HAVE_MUELU_CUDA
+
+#cmakedefine HAVE_MUELU_DEFAULT_GO_LONGLONG
+#cmakedefine HAVE_MUELU_DEFAULT_GO_LONG
 
 /*
  If deprecated warnings are on, and the compiler supports them, then

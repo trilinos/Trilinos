@@ -1067,7 +1067,7 @@ C     --Write the node sets
           call expcns (ndbout, ia(kidns), ia(knnns), ia(kndnps),
      &      ia(kixnns), ia(kixdns), ia(kltnns), a(kfacns), ierr)
         else
-C ... This strangness is due to bug in gfortran compiler
+C ... This strangeness is due to bug in gfortran compiler
 C     which was optimizing out the setting of ia(kidns) and ia(indnps).
 C     since they are the same as ia(knnns) and ia(kixnns), just use
 C     those values.  Bug is in gfortran-4.8 up to 5.0?

@@ -7,7 +7,7 @@
 #include <stk_simd_view/simd_while.hpp>
 #include <cmath>
 #include <algorithm>
-#include <StkSimdViewFixture.hpp>
+#include "StkSimdViewFixture.hpp"
 
 
 template <typename ArrayStyle, typename Real, typename Layout>

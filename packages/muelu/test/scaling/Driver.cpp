@@ -103,6 +103,7 @@
 
 #ifdef HAVE_MUELU_AMGX
 #include <MueLu_AMGXOperator.hpp>
+#include <MueLu_AMGX_Setup.hpp>
 #endif
 #ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
@@ -117,7 +118,6 @@
 #ifdef HAVE_MUELU_EPETRA
 #include "Xpetra_EpetraMultiVector.hpp"
 #endif
-
 
 
 /*********************************************************************/
@@ -237,7 +237,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   int         numVectors        = 1;                  clp.setOption("multivector",           &numVectors,        "number of rhs to solve simultaneously");
   bool        scaleResidualHist = true;               clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
-  bool        solvePreconditioned = true;             clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+  bool        solvePreconditioned = true;             clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");  
+  bool        useStackedTimer   = false;              clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
+
 #ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                    clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
@@ -245,8 +247,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool profileSetup = false;                          clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   bool profileSolve = false;                          clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #else
-  bool profileSetup = false;   
-  bool profileSolve = false;   
+  bool profileSetup = false;
+  bool profileSolve = false;
 #endif
   int  cacheSize = 0;                                 clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
 #ifdef HAVE_MPI
@@ -287,6 +289,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     out << "WARNING: CG will not work with COMPLEX scalars, switching to GMRES"<<std::endl;
   }
 
+#ifdef HAVE_MUELU_AMGX
+//Initialize AMGX
+MueLu::MueLu_AMGX_initialize();
+MueLu::MueLu_AMGX_initialize_plugins();
+#endif
+
   bool isDriver = paramList.isSublist("Run1");
   if (isDriver) {
     // update galeriParameters with the values from the XML file
@@ -325,7 +333,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
 
   comm->barrier();
-  Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+  if(useStackedTimer)
+    stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
 
@@ -351,7 +363,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int numReruns = 1;
   if (paramList.isParameter("number of reruns"))
     numReruns = paramList.get<int>("number of reruns");
-   
+
   for (int rerunCount = 1; rerunCount <= numReruns; rerunCount++) {
     bool stop = false;
     ParameterList mueluList, runList;
@@ -400,6 +412,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       solveType = dsolveType;
       tol       = dtol;
 
+
       if (isDriver) {
         if (runList.isParameter("filename")) {
           // Redirect all output into a filename We have to redirect all output,
@@ -421,18 +434,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       Teuchos::FancyOStream& out2 = *fancy2;
       out2.setOutputToRootOnly(0);
-
-
-
       out2 << galeriStream.str();
 
       // =========================================================================
       // Preconditioner construction
       // =========================================================================
       bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
-      bool useML   = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");  
+      bool useML   = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");
 #ifdef HAVE_MPI
-      if(provideNodeComm && !useAMGX && !useML) {        
+      if(provideNodeComm && !useAMGX && !useML) {
         Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
         userParamList.set("Node Comm",nodeComm);
       }
@@ -449,16 +459,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // Build the preconditioner numRebuilds+1 times
         MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
         PreconditionerSetup(A,coordinates,nullspace,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
-        
+
         comm->barrier();
         tm = Teuchos::null;
       }
-      catch(const std::exception& e) { 
+      catch(const std::exception& e) {
         out2<<"MueLu_Driver: preconditioner setup crashed w/ message:"<<e.what()<<std::endl;
         H=Teuchos::null; Prec=Teuchos::null;
         preconditionerOK = false;
       }
-      
+
       // =========================================================================
       // System solution (Ax = b)
       // =========================================================================
@@ -470,15 +480,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             H->Write(writeMatricesOPT, writeMatricesOPT);
             tm = Teuchos::null;
           }
-          
+
           // Solve the system numResolves+1 times
           SystemSolve(A,X,B,H,Prec,out2,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
-          
+
           comm->barrier();
         }
-        catch(const std::exception& e) { 
+        catch(const std::exception& e) {
           out2<<"MueLu_Driver: solver crashed w/ message:"<<e.what()<<std::endl;
-        }       
+        }
       }
       else {
         out2<<"MueLu_Driver: Not solving system due to crash in preconditioner setup"<<std::endl;
@@ -502,11 +512,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         const std::string filter = "";
 
-        std::ios_base::fmtflags ff(out2.flags());
-        if (timingsFormat == "table-fixed") out2 << std::fixed;
-        else                                out2 << std::scientific;
-        TimeMonitor::report(comm.ptr(), out, filter, reportParams);
-        out2 << std::setiosflags(ff);
+        if (useStackedTimer) {
+          Teuchos::StackedTimer::OutputOptions options;
+          options.output_fraction = options.output_histogram = options.output_minmax = true;
+          stacked_timer->report(out2, comm, options);
+        }
+        else {
+          std::ios_base::fmtflags ff(out2.flags());
+          if (timingsFormat == "table-fixed") out2 << std::fixed;
+          else                                out2 << std::scientific;
+          TimeMonitor::report(comm.ptr(), out, filter, reportParams);
+          out2 << std::setiosflags(ff);
+        }
       }
 
       TimeMonitor::clearCounters();
@@ -534,6 +551,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
 
   }//end reruns
+
+#ifdef HAVE_MUELU_AMGX
+// Finalize AMGX
+MueLu::MueLu_AMGX_finalize_plugins();
+MueLu::MueLu_AMGX_finalize();
+#endif
 
   return EXIT_SUCCESS;
 }

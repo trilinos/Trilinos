@@ -22,16 +22,33 @@ namespace Tempus_Test {
  *  a physics counter.
  */
 template<class Scalar>
-class PhysicsStateTest_StepperForwardEuler
-  : virtual public Tempus::StepperForwardEuler<Scalar>
+class StepperPhysicsStateTest
+  : virtual public Tempus::StepperExplicit<Scalar>
 {
 public:
 
   /// Constructor
-  PhysicsStateTest_StepperForwardEuler(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null)
-    : Tempus::StepperForwardEuler<Scalar>(appModel, pList) {}
+  StepperPhysicsStateTest(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+  {
+    this->setStepperType(        this->description());
+    this->setUseFSAL(            this->getUseFSALDefault());
+    this->setICConsistency(      this->getICConsistencyDefault());
+    this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+
+    this->setModel(appModel);
+  }
+
+  void setObserver(Teuchos::RCP<Tempus::StepperObserver<Scalar> > /*obs*/) {}
+  virtual Teuchos::RCP<Tempus::StepperObserver<Scalar> > getObserver() const
+  { return Teuchos::null; }
+  void initialize() {}
+  Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState()
+  { return Teuchos::null; }
+  Scalar getOrder() const {return 1.0;}
+  Scalar getOrderMin() const {return 1.0;}
+  Scalar getOrderMax() const {return 1.0;}
+  Tempus::OrderODE getOrderODE() const {return Tempus::FIRST_ORDER_ODE;}
 
   /// Take the specified timestep, dt, and return true if successful.
   virtual void takeStep(
@@ -39,9 +56,8 @@ public:
 {
   using Teuchos::RCP;
 
-  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperForwardEuler::takeStep()");
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperPhysicsStateTest::takeStep()");
   {
-    this->stepperFEObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<Tempus::SolutionState<Scalar> > currentState =
       solutionHistory->getCurrentState();
 
@@ -58,8 +74,6 @@ public:
     if (this->inArgs_.supports(MEB::IN_ARG_x_dot))
       this->inArgs_.set_x_dot(Teuchos::null);
     this->outArgs_.set_f(currentState->getXDot());
-
-    this->stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
 
     this->appModel_->evalModel(this->inArgs_,this->outArgs_);
 
@@ -79,9 +93,13 @@ public:
 
     workingState->setSolutionStatus(Tempus::Status::PASSED);
     workingState->setOrder(this->getOrder());
-    this->stepperFEObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
+}
+
+Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const
+{
+  return Teuchos::null;
 }
 
 };

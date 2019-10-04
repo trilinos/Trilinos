@@ -42,90 +42,86 @@
 #ifndef _FROSCH_INTERFACEPARTITIONOFUNITY_DECL_HPP
 #define _FROSCH_INTERFACEPARTITIONOFUNITY_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
+#include <FROSch_PartitionOfUnity_def.hpp>
 
-#include <FROSch_DDInterface_def.hpp>
 
 namespace FROSch {
-    
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
-    class InterfacePartitionOfUnity {
-        
+
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+    class InterfacePartitionOfUnity : public PartitionOfUnity<SC,LO,GO,NO> {
+
+    protected:
+
+        using CommPtr                       = typename PartitionOfUnity<SC,LO,GO,NO>::CommPtr;
+
+        using XMap                          = typename PartitionOfUnity<SC,LO,GO,NO>::XMap;
+        using XMapPtr                       = typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr                  = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr                 = typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
+
+        using XMatrix                       = typename PartitionOfUnity<SC,LO,GO,NO>::XMatrix;
+        using XMatrixPtr                    = typename PartitionOfUnity<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr               = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMatrixPtr;
+
+        using XMultiVector                  = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVector;
+        using ConstXMultiVectorPtr          = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using XMultiVectorPtr               = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtr;
+        using XMultiVectorPtrVecPtr         = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+        using ConstXMultiVectorPtrVecPtr    = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
+
+        using ParameterListPtr              = typename PartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr;
+
+        using DDInterfacePtr                = typename PartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr;
+        using ConstDDInterfacePtr           = typename PartitionOfUnity<SC,LO,GO,NO>::ConstDDInterfacePtr;
+
+        using EntitySetPtr                  = typename PartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr;
+        using EntitySetPtrVecPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::EntitySetPtrVecPtr;
+
+        using InterfaceEntityPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::InterfaceEntityPtr;
+
+        using UN                            = typename PartitionOfUnity<SC,LO,GO,NO>::UN;
+        using ConstUN                       = typename PartitionOfUnity<SC,LO,GO,NO>::ConstUN;
+
+        using GOVec                         = typename PartitionOfUnity<SC,LO,GO,NO>::GOVec;
+        using GOVecView                     = typename PartitionOfUnity<SC,LO,GO,NO>::GOVecView;
+
+        using SCVecPtr                      = typename PartitionOfUnity<SC,LO,GO,NO>::SCVecPtr;
+
     public:
-        
-        typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
 
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
-        
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<const MultiVector> ConstMultiVectorPtr;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        typedef Teuchos::ArrayRCP<MultiVectorPtr> MultiVectorPtrVecPtr;
-        typedef Teuchos::ArrayRCP<ConstMultiVectorPtr> ConstMultiVectorPtrVecPtr;
-
-        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
-        
-        typedef Teuchos::RCP<DDInterface<SC,LO,GO,NO> > DDInterfacePtr;
-        typedef Teuchos::RCP<const DDInterface<SC,LO,GO,NO> > ConstDDInterfacePtr;
-        
-        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
-        
-        typedef unsigned UN;
-        
-        typedef Teuchos::Array<GO> GOVec;
-        typedef Teuchos::ArrayView<GO> GOVecView;
-        
-        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-
-        
         InterfacePartitionOfUnity(CommPtr mpiComm,
                                   CommPtr serialComm,
                                   UN dimension,
                                   UN dofsPerNode,
-                                  MapPtr nodesMap,
-                                  MapPtrVecPtr dofsMaps,
-                                  ParameterListPtr parameterList);
-        
-        virtual ~InterfacePartitionOfUnity();
-        
-        virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs = Teuchos::null,
-                                         MultiVectorPtr nodeList = Teuchos::null) = 0;
-        
-        virtual int sortInterface(CrsMatrixPtr matrix,
-                                  MultiVectorPtr nodeList = Teuchos::null) = 0;
-        
-        virtual int computePartitionOfUnity() = 0;
-        
-        MultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
-        
-        MapPtrVecPtr getPartitionOfUnityMaps() const;
-        
+                                  ConstXMapPtr nodesMap,
+                                  ConstXMapPtrVecPtr dofsMaps,
+                                  ParameterListPtr parameterList,
+                                  Verbosity verbosity = All,
+                                  UN levelID = 1);
+
+        virtual ~InterfacePartitionOfUnity();        
+
+        virtual int sortInterface(ConstXMatrixPtr matrix = null,
+                                  ConstXMultiVectorPtr nodeList = null) = 0;
+
         ConstDDInterfacePtr getDDInterface() const;
         
+        DDInterfacePtr getDDInterfaceNonConst() const;
+        
+        virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null) = 0;
+
     protected:
-        
-        CommPtr MpiComm_;
-        CommPtr SerialComm_;
-        
+
         DDInterfacePtr DDInterface_;
-        
-        ParameterListPtr ParameterList_;
-        
-        MultiVectorPtrVecPtr LocalPartitionOfUnity_;
-        
-        MapPtrVecPtr PartitionOfUnityMaps_;
-        
-        bool Verbose_;
     };
-    
+
 }
 
 #endif

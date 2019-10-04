@@ -151,25 +151,26 @@ using Teuchos::TimeMonitor;
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-typedef Sacado::Fad::SFad<double,3>                             Fad3; //# ind. vars fixed at 3
-typedef Intrepid::FunctionSpaceTools                            IntrepidFSTools;
-typedef Intrepid::RealSpaceTools<double>                        IntrepidRSTools;
-typedef Intrepid::CellTools<double>                             IntrepidCTools;
+typedef Sacado::Fad::SFad<double,3>             Fad3; //# ind. vars fixed at 3
+typedef Intrepid::FunctionSpaceTools            IntrepidFSTools;
+typedef Intrepid::RealSpaceTools<double>        IntrepidRSTools;
+typedef Intrepid::CellTools<double>             IntrepidCTools;
 //Tpetra typedefs
-typedef Tpetra::Map<>::node_type                                Node;
-typedef double                                                  ST;
-typedef int                                                     Ordinal;
-typedef Tpetra::Map<Ordinal,Ordinal,Node>                       Map;
-typedef Tpetra::Export<Ordinal,Ordinal,Node>                    export_type;
-typedef Tpetra::Import<Ordinal,Ordinal,Node>                    import_type;
-typedef Teuchos::ArrayView<Ordinal>::size_type                  size_type;
-typedef Tpetra::CrsMatrix<ST, Ordinal, Ordinal, Node>           sparse_matrix_type;
-typedef Tpetra::CrsGraph<Ordinal, Ordinal, Node>                sparse_graph_type;
-typedef Tpetra::MultiVector<ST, Ordinal, Ordinal, Node>         MV;
-typedef Tpetra::Vector<ST, Ordinal, Ordinal, Node>              vector_type;
-typedef Tpetra::Operator<ST, Ordinal, Ordinal, Node>            OP;
-typedef Belos::MultiVecTraits<ST, MV>                           MVT;
-typedef Belos::OperatorTraits<ST, MV, OP>                       OPT;
+typedef Tpetra::Map<>::node_type                Node;
+typedef double                                  ST;
+typedef int                                     Ordinal;
+typedef Tpetra::Map<>::global_ordinal_type      GlobalOrdinal;
+typedef Tpetra::Map<>                           Map;
+typedef Tpetra::Export<>                        export_type;
+typedef Tpetra::Import<>                        import_type;
+typedef Teuchos::ArrayView<Ordinal>::size_type  size_type;
+typedef Tpetra::CrsMatrix<ST>                   sparse_matrix_type;
+typedef Tpetra::CrsGraph<>                      sparse_graph_type;
+typedef Tpetra::MultiVector<ST>                 MV;
+typedef Tpetra::Vector<ST>                      vector_type;
+typedef Tpetra::Operator<ST>                    OP;
+typedef Belos::MultiVecTraits<ST, MV>           MVT;
+typedef Belos::OperatorTraits<ST, MV, OP>       OPT;
 
 
 
@@ -691,7 +692,7 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
     //timer for building global maps
     RCP<Teuchos::Time> timerBuildGlobalMaps = TimeMonitor::getNewTimer("Build global maps: Total Time");
-    Teuchos::Array<int> ownedGIDs;
+    Teuchos::Array<GlobalOrdinal> ownedGIDs;
     RCP<const Map > globalMapGT;
     {
     TimeMonitor timerBuildGlobalMapsL(*timerBuildGlobalMaps);
@@ -724,7 +725,7 @@ int main(int argc, char *argv[]) {
 /********************* BUILD MAPS FOR OVERLAPPED SOLUTION *************************/
 /**********************************************************************************/
     RCP<Teuchos::Time> timerBuildOverlapMaps = TimeMonitor::getNewTimer("Build overlapped maps: Total Time");
-    Teuchos::Array<int> overlappedGIDs;
+    Teuchos::Array<GlobalOrdinal> overlappedGIDs;
     RCP<const Map > overlappedMapGT;
     RCP<const export_type> exporterT;
     {
@@ -816,9 +817,9 @@ int main(int argc, char *argv[]) {
             for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
 
               int localCol  = elemToNode(cell, cellCol);
-              int globalCol = globalNodeIds[localCol];
+              GlobalOrdinal globalCol = globalNodeIds[localCol];
               //create ArrayView globalCol object for Tpetra
-              Teuchos::ArrayView<int> globalColAV = Teuchos::arrayView(&globalCol, 1);
+              Teuchos::ArrayView<const GlobalOrdinal> globalColAV = Teuchos::arrayView(&globalCol, 1);
 
               //Update Tpetra overlap Graph
               overlappedGraphT->insertGlobalIndices(globalRowT, globalColAV);
@@ -1129,7 +1130,7 @@ int main(int argc, char *argv[]) {
       for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
 
         int localRow  = elemToNode(cell, cellRow);
-        int globalRow = globalNodeIds[localRow];
+        GlobalOrdinal globalRow = globalNodeIds[localRow];
         double sourceTermContribution =  worksetRHS(worksetCellOrdinal, cellRow);
         Teuchos::ArrayView<double> sourceTermContributionAV = Teuchos::arrayView(&sourceTermContribution, 1);
 
@@ -1139,8 +1140,8 @@ int main(int argc, char *argv[]) {
         for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
 
           int localCol  = elemToNode(cell, cellCol);
-          int globalCol = globalNodeIds[localCol];
-          Teuchos::ArrayView<int> globalColAV = Teuchos::arrayView(&globalCol, 1);
+          GlobalOrdinal globalCol = globalNodeIds[localCol];
+          Teuchos::ArrayView<GlobalOrdinal> globalColAV = Teuchos::arrayView(&globalCol, 1);
           double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
           Teuchos::ArrayView<double> operatorMatrixContributionAV = Teuchos::arrayView(&operatorMatrixContribution, 1);
 
@@ -1227,9 +1228,9 @@ int main(int argc, char *argv[]) {
    // create the exporter from this proc's column map to global 1-1 column map
    RCP<const export_type > ExporterT = rcp(new export_type(ColMapT, globalMapT));
    // create a vector of global column indices that we will export to
-   RCP<Tpetra::Vector<int, Ordinal, Ordinal, Node> > globColsToZeroT = rcp(new Tpetra::Vector<int, Ordinal, Ordinal, Node>(globalMapT));
+   RCP<Tpetra::Vector<int> > globColsToZeroT = rcp(new Tpetra::Vector<int>(globalMapT));
    // create a vector of local column indices that we will export from
-   RCP<Tpetra::Vector<int, Ordinal, Ordinal, Node> > myColsToZeroT = rcp(new Tpetra::Vector<int, Ordinal, Ordinal, Node>(ColMapT));
+   RCP<Tpetra::Vector<int> > myColsToZeroT = rcp(new Tpetra::Vector<int>(ColMapT));
    myColsToZeroT->putScalar(0);
    // flag all local columns corresponding to the local rows specified
    for (int i=0; i < numBCNodes; i++){

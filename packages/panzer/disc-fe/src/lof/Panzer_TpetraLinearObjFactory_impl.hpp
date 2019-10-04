@@ -47,7 +47,7 @@
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.                 
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 // Thyra
 #include "Thyra_TpetraVectorSpace.hpp"
@@ -69,7 +69,7 @@ using Teuchos::RCP;
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                       const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & gidProvider)
+                       const Teuchos::RCP<const GlobalIndexer> & gidProvider)
    : comm_(comm), gidProvider_(gidProvider)
 { 
    hasColProvider_ = colGidProvider_!=Teuchos::null;
@@ -82,8 +82,8 @@ TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                       const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & gidProvider,
-                       const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & colGidProvider)
+                       const Teuchos::RCP<const GlobalIndexer> & gidProvider,
+                       const Teuchos::RCP<const GlobalIndexer> & colGidProvider)
    : comm_(comm), gidProvider_(gidProvider), colGidProvider_(colGidProvider)
 { 
    hasColProvider_ = colGidProvider_!=Teuchos::null;
@@ -669,7 +669,7 @@ buildGhostedGraph() const
    std::vector<std::string> elementBlockIds;   
    gidProvider_->getElementBlockIds(elementBlockIds);
 
-   const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> >
+   const Teuchos::RCP<const GlobalIndexer>
      colGidProvider = hasColProvider_ ? colGidProvider_ : gidProvider_;
    const Teuchos::RCP<const ConnManager> conn_mgr = colGidProvider->getConnManager();
    const bool han = conn_mgr.is_null() ? false : conn_mgr->hasAssociatedNeighbors();

@@ -175,9 +175,11 @@ public:
     virtual void setOutputTimes(std::vector<Scalar> OutputTimes)
       { outputTimes_ = OutputTimes;
         std::ostringstream ss;
-        std::copy(OutputTimes.begin(), OutputTimes.end()-1,
+        if (!outputTimes_.empty())
+          { std::copy(OutputTimes.begin(), OutputTimes.end()-1,
                   std::ostream_iterator<Scalar>(ss, ","));
-        ss << OutputTimes.back();
+            ss << OutputTimes.back();
+	  }
         tscPL_->set<std::string>("Output Time List", ss.str());
       }
     virtual void setMaxFailures(int MaxFailures)
@@ -186,6 +188,10 @@ public:
       { tscPL_->set<int>
         ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
     virtual void setNumTimeSteps(int numTimeSteps);
+    virtual void setOutputIndexInterval(int OutputIndexInterval)
+      { tscPL_->set<int>("Output Index Interval",OutputIndexInterval); }
+    virtual void setOutputTimeInterval(double OutputTimeInterval)
+      { tscPL_->set<double>("Output Time Interval",OutputTimeInterval); }
   //@}
 
 protected:

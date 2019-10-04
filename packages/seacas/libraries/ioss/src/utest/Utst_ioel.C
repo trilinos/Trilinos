@@ -52,14 +52,14 @@ static void test_aliases(const Ioss::NameList &elements);
 static bool test_element(const std::string &type);
 // ========================================================================
 
-int main(int argc, char *argv[])
+int main(int /* argc */, char *argv[])
 {
   Ioss::StorageInitializer initialize_storage;
   Ioss::Initializer        initialize_topologies;
 
   int err_count = test_all_elements();
 
-  // Make sure Ioss::NullEntity works.  Not used in IOSS iteself,
+  // Make sure Ioss::NullEntity works.  Not used in IOSS itself,
   // but some clients use it, so need to make sure it compiles
   // correctly.
   std::unique_ptr<Ioss::NullEntity> entity{new Ioss::NullEntity()};
@@ -306,12 +306,12 @@ bool test_element(const std::string &type)
   //             Center nodes follow.
   // So:
   //
-  //                        2		x
-  //    3----6----2        / \		x
-  //    |         |       /   \		x
-  //    7         5      5     4	x
-  //    |         |     /       \	x
-  //    0----4----1    0----3----1	x
+  //                        2           x
+  //    3----6----2        / \          x
+  //    |         |       /   \         x
+  //    7         5      5     4        x
+  //    |         |     /       \       x
+  //    0----4----1    0----3----1      x
   //
   if (element->parametric_dimension() == 3) {
     for (int i = 1; i <= nf; i++) {

@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -91,9 +91,9 @@ void PHX::DagManager<Traits>::
 requireField(const PHX::FieldTag& t)
 {
   FTPredRef pred(t);
-  std::vector< Teuchos::RCP<PHX::FieldTag> >::iterator i = 
+  std::vector< Teuchos::RCP<PHX::FieldTag> >::iterator i =
     std::find_if(required_fields_.begin(), required_fields_.end(), pred);
-  
+
   if (i == required_fields_.end())
     required_fields_.push_back(t.clone());
 }
@@ -115,7 +115,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
   // insert evaluated fields into map, check for multiple evaluators
   // that provide the same field.
   nodes_.push_back(PHX::DagNode<Traits>(static_cast<int>(nodes_.size()),p));
-  const std::vector<Teuchos::RCP<PHX::FieldTag>>& evaluatedFields = 
+  const std::vector<Teuchos::RCP<PHX::FieldTag>>& evaluatedFields =
     p->evaluatedFields();
   for (auto i=evaluatedFields.cbegin(); i != evaluatedFields.cend(); ++i) {
     auto check = field_to_node_index_.insert(std::make_pair((*i)->identifier(), static_cast<int>(nodes_.size()-1)));
@@ -123,15 +123,15 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
       TEUCHOS_TEST_FOR_EXCEPTION(check.second == false,
 				 PHX::multiple_evaluator_for_field_exception,
 				 *this
-				 << "\n\nError: PHX::DagManager::registerEvaluator() - The field \"" 
-				 << (*i)->identifier() 
-				 << "\" that is evaluated by the evaluator named \"" 
-				 << p->getName() 
-				 << "\" is already evaluated by another registered evaluator named \"" 
+				 << "\n\nError: PHX::DagManager::registerEvaluator() - The field \""
+				 << (*i)->identifier()
+				 << "\" that is evaluated by the evaluator named \""
+				 << p->getName()
+				 << "\" is already evaluated by another registered evaluator named \""
 				 << (nodes_[field_to_node_index_[(*i)->identifier()]]).get()->getName()
 				 << "\"."
-				 // << " Printing evaluators:\n" << *p << "\n" 
-				 // << (evaluators_[field_to_index_[(*i)->identifier()]]) 
+				 // << " Printing evaluators:\n" << *p << "\n"
+				 // << (evaluators_[field_to_index_[(*i)->identifier()]])
 				 << std::endl);
     }
   }
@@ -169,7 +169,7 @@ sortAndOrderEvaluators()
 #ifdef PHX_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Phalanx::SortAndOrderEvaluators"));
 #endif
-  
+
   // *************************
   // Color all nodes white, reset the discovery and final times
   // *************************
@@ -215,18 +215,18 @@ sortAndOrderEvaluators()
 
         if (write_graphviz_file_on_error_)
           this->writeGraphvizFileNew(graphviz_filename_for_errors_, true, true);
-      
+
         TEUCHOS_TEST_FOR_EXCEPTION(node_index_it == field_to_node_index_.end(),
                                    PHX::missing_evaluator_exception,
                                    *this
                                    << "\n\nERROR: The required field \""
-                                   << req_field->identifier() 
+                                   << req_field->identifier()
 				 << "\" does not have an evaluator. Current "
                                    << "list of Evaluators are printed above this "
                                    << "error message.\n");
       }
     }
-    
+
     auto& node = nodes_[node_index_it->second];
     if (node.color() == PHX::Color::WHITE)
       dfsVisit(node,time);
@@ -280,7 +280,7 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
   // graph.  So we have to do it here when we know we actually will
   // use the node.
   {
-    const auto& req_fields = node.get()->dependentFields(); 
+    const auto& req_fields = node.get()->dependentFields();
     for (const auto& field : req_fields) {
 
       // Look in evalauted fields
@@ -293,20 +293,20 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
 
           if (write_graphviz_file_on_error_)
             this->writeGraphvizFileNew(graphviz_filename_for_errors_, true, true);
-          
+
           TEUCHOS_TEST_FOR_EXCEPTION(node_index_it == field_to_node_index_.end(),
                                      PHX::missing_evaluator_exception,
                                      *this
                                      << "\n\nERROR: The required field \""
-                                     << field->identifier() 
+                                     << field->identifier()
                                      << "\" does not have an evaluator. Current "
                                      << "list of Evaluators are printed above this "
                                      << "error message.\n\n"
                                      << "\nPlease inspect the DagManager output above, or \n"
                                      << "visually inspect the error graph that was dumped by \n"
-                                     << "running the graphviz dot program on the file\n" 
+                                     << "running the graphviz dot program on the file\n"
                                      << graphviz_filename_for_errors_ << ": \n\n"
-                                     << "dot -Tjpg -o error.jpg " 
+                                     << "dot -Tjpg -o error.jpg "
                                      << graphviz_filename_for_errors_ << "\n\n"
                                      << "The above command generates a jpg file, \"error.jpg\"\n"
                                      << "that you can view in any web browser/graphics program.\n");
@@ -326,20 +326,20 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
         }
       }
     }
-    
+
     // For "contributed" fields, if an evaluator exists that also
     // "evalautes" this field, then we assume that the evaluator that
     // "evalautes" the field performs the initialization of the field
     // for the contributions. So the contributed fields must have a
     // dependency on the evalauted field evaluator.
-    const auto& contrib_fields = node.get()->contributedFields(); 
+    const auto& contrib_fields = node.get()->contributedFields();
     for (const auto& cfield : contrib_fields) {
       const auto& evaluated_field_search = field_to_node_index_.find(cfield->identifier());
       if (evaluated_field_search != field_to_node_index_.end()) {
         node.addAdjacency(evaluated_field_search->second);
       }
     }
-    
+
   }
 
   for (auto& adj_node_index : node.adjacencies()) {
@@ -355,7 +355,7 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
       this->printEvaluator(*(adj_node.get()),os_adj_node);
       std::ostringstream os_node;
       this->printEvaluator(*(node.get()),os_node);
-      
+
       if (write_graphviz_file_on_error_)
 	this->writeGraphvizFileNew(graphviz_filename_for_errors_, true, true);
 
@@ -364,15 +364,15 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
 				 *this
 				 << "\n\nERROR: In constructing the directed acyclic graph from \n"
 				 << "the node dependencies, a circular dependency has been \n"
-				 << "identified. The dependence is injected in going from node:\n\n" 
-				 << os_adj_node.str() 
-				 << "\n back to node\n\n" 
-				 << os_node.str() 
+				 << "identified. The dependence is injected in going from node:\n\n"
+				 << os_adj_node.str()
+				 << "\n back to node\n\n"
+				 << os_node.str()
 				 << "\nPlease inspect the DagManager output above, or \n"
 				 << "visually inspect the error graph that was dumped by \n"
-				 << "running the graphviz dot program on the file\n" 
+				 << "running the graphviz dot program on the file\n"
 				 << graphviz_filename_for_errors_ << ": \n\n"
-				 << "dot -Tjpg -o error.jpg " 
+				 << "dot -Tjpg -o error.jpg "
 				 << graphviz_filename_for_errors_<< "\n\n"
 				 << "The above command generates a jpg file, \"error.jpg\"\n"
 				 << "that you can view in any web browser/graphics program.\n");
@@ -391,14 +391,14 @@ printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const
 {
   os << "Name=" << e.getName() << "\n";
   os << "  *Evaluated Fields:\n";
-  for (const auto& f : e.evaluatedFields()) 
+  for (const auto& f : e.evaluatedFields())
     os << "    " << f->identifier() << "\n";
   os << "  *Contributed Fields:\n";
-  for (const auto& f : e.contributedFields()) 
+  for (const auto& f : e.contributedFields())
     os << "    " << f->identifier() << "\n";
   os << "  *Dependent Fields:\n";
   if (e.dependentFields().size() > 0) {
-    for (const auto& f : e.dependentFields()) 
+    for (const auto& f : e.dependentFields())
       os << "    " << f->identifier() << "\n";
   }
   else {
@@ -431,7 +431,7 @@ void PHX::DagManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
-    
+
 #ifdef PHX_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor Time(*evalTimers[topoSortEvalIndex[n]]);
 #endif
@@ -443,12 +443,12 @@ evaluateFields(typename Traits::EvalData d)
                                  << std::endl;
     }
 #endif
-    
+
     using clock = std::chrono::steady_clock;
     std::chrono::time_point<clock> start = clock::now();
-      
+
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
-    
+
     nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);
 
 #ifdef PHX_DEBUG
@@ -474,7 +474,7 @@ namespace PHX {
     // The EvalData may be pass by reference. Remove the reference so
     // that we copy by value to device.
     const typename std::remove_reference<typename Traits::EvalData>::type data_;
-    
+
     RunDeviceDag(const Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device>& evaluators,
                  typename Traits::EvalData data) :
       evaluators_(evaluators),
@@ -490,9 +490,9 @@ namespace PHX {
 	team.team_barrier();
       }
     }
-   
+
   };
-  
+
 }
 
 //=======================================================================
@@ -532,7 +532,7 @@ evaluateFieldsTaskParallel(const int& work_size,
   // Requested the ability to query policy for required sizes of calls
   // to spawn and wait_all. For now hard code to something
   // reasonable!?!
-  const unsigned required_memory = 1000000; 
+  const unsigned required_memory = 1000000;
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
     // const auto& node = nodes_[topoSortEvalIndex[n]];
     // const auto& adjacencies = node.adjacencies();
@@ -545,7 +545,7 @@ evaluateFieldsTaskParallel(const int& work_size,
   std::vector<Kokkos::Future<void,PHX::exec_space>> node_futures_(nodes_.size());
 
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
-    
+
     auto& node = nodes_[topoSortEvalIndex[n]];
     const auto& adjacencies = node.adjacencies();
 
@@ -602,7 +602,7 @@ writeGraphvizFile(const std::string filename,
 		  bool writeDependentFields,
 		  bool ) const
 {
-  writeGraphvizFileNew(filename,writeEvaluatedFields,writeDependentFields);    
+  writeGraphvizFileNew(filename,writeEvaluatedFields,writeDependentFields);
 }
 
 //=======================================================================
@@ -614,7 +614,7 @@ writeGraphvizFileNew(const std::string filename,
 {
   std::ofstream ofs;
   ofs.open(filename.c_str());
-  
+
   ofs << "digraph G {\n";
 
   // This can be called from inside a DFS during an error, so we can't
@@ -635,9 +635,9 @@ writeGraphvizFileNew(const std::string filename,
       // If failed to find, look in contributed fields
       auto contrib_field_search = contributed_field_to_node_index_.find(req_field->identifier());
       if (contrib_field_search == contributed_field_to_node_index_.end()) {
-        ofs << missing_node_index 
-            << " ["  << "fontcolor=\"red\"" << ", label=\"  ** MISSING EVALUATOR **\\n    " 
-            << req_field->identifier() << "    **** MISSING ****\"]\n";     
+        ofs << missing_node_index
+            << " ["  << "fontcolor=\"red\"" << ", label=\"  ** MISSING EVALUATOR **\\n    "
+            << req_field->identifier() << "    **** MISSING ****\"]\n";
         missing_node_index += 1;
       }
     }
@@ -673,7 +673,7 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
     std::vector<std::string> dependent_field_labels;
 
     // Dependent field adjacencies
-    const auto& req_fields = node.get()->dependentFields(); 
+    const auto& req_fields = node.get()->dependentFields();
     for (const auto& field : req_fields) {
       // Look in evaluated fields
       auto node_index_it = field_to_node_index_.find(field->identifier());
@@ -709,7 +709,7 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
     // "evalautes" the field performs the initialization of the field
     // for the contributions. So the contributed fields must have a
     // dependency on the evalauted field evaluator.
-    const auto& contrib_fields = node.get()->contributedFields(); 
+    const auto& contrib_fields = node.get()->contributedFields();
     for (const auto& cfield : contrib_fields) {
       const auto& evaluated_field_search = field_to_node_index_.find(cfield->identifier());
       if (evaluated_field_search != field_to_node_index_.end()) {
@@ -718,12 +718,12 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
     }
 
     // Write the node
-    ofs << node.index() 
-	<< " [fontcolor=\"" << font_color 
+    ofs << node.index()
+	<< " [fontcolor=\"" << font_color
 	<< "\", label=\"" << node.get()->getName();
     if (writeEvaluatedFields) {
       ofs << "\\n   Evaluates:";
-      const auto& eval_fields = node.get()->evaluatedFields(); 
+      const auto& eval_fields = node.get()->evaluatedFields();
       for (const auto& field : eval_fields)
 	ofs << "\\n      " << field->identifier();
     }
@@ -767,7 +767,7 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
 
 //=======================================================================
 template<typename Traits>
-const std::vector<Teuchos::RCP<PHX::FieldTag>>& 
+const std::vector<Teuchos::RCP<PHX::FieldTag>>&
 PHX::DagManager<Traits>::getFieldTags()
 {
   return fields_;
@@ -782,7 +782,7 @@ bool PHX::DagManager<Traits>::sortingCalled() const
 
 //=======================================================================
 template<typename Traits>
-const std::vector<int>& 
+const std::vector<int>&
 PHX::DagManager<Traits>::getEvaluatorInternalOrdering() const
 {return topoSortEvalIndex;}
 
@@ -824,7 +824,7 @@ void PHX::DagManager<Traits>::print(std::ostream& os) const
   os << "\nDetails:\n";
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
     os << "Evaluator[" << topoSortEvalIndex[n] << "]: ";
-    this->printEvaluator(*(nodes_[topoSortEvalIndex[n]].get()),os);    
+    this->printEvaluator(*(nodes_[topoSortEvalIndex[n]].get()),os);
   }
   os << "** Finished Provider Evaluation Order" << std::endl;
 
@@ -854,7 +854,7 @@ analyzeGraph(double& speedup, double& parallelizability) const
     for (const auto& adj_node_index : adjacencies) {
       t_data_ready = std::max(t_data_ready, nodes_[adj_node_index].finishTime());
     }
-    const_cast<PHX::DagNode<Traits>&>(node).setStartTime(t_data_ready); 
+    const_cast<PHX::DagNode<Traits>&>(node).setStartTime(t_data_ready);
     const_cast<PHX::DagNode<Traits>&>(node).setFinishTime(t_data_ready + node.executionTime());
 
   }
@@ -873,10 +873,55 @@ analyzeGraph(double& speedup, double& parallelizability) const
 
 //=======================================================================
 template<typename Traits>
-std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& 
+std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>&
 PHX::DagManager<Traits>::getEvaluatorsBindingField(const PHX::FieldTag& ft)
 {
   return field_to_evaluators_binding_[ft.identifier()];
+}
+
+//=======================================================================
+template<typename Traits>
+const std::unordered_map<std::string,std::pair<int,int>>&
+PHX::DagManager<Traits>::getFieldUseRange()
+{
+  // Initialize the fields just outside valid range for debugging
+  for (const auto& f : fields_)
+    field_use_range_[f->identifier()] = std::make_pair(topoSortEvalIndex.size(),-1);
+
+  for (int idx=0; idx < static_cast<int>(topoSortEvalIndex.size()); ++idx) {
+    const auto& evaluator = nodes_[topoSortEvalIndex[idx]].getNonConst();
+
+    // Evaluated fields
+    for (const auto& f : evaluator->evaluatedFields()) {
+      auto& range = field_use_range_[f->identifier()];
+      range.first = std::min(range.first,idx);
+      range.second = std::max(range.first,idx);
+    }
+    // Contributed fields
+    for (const auto& f : evaluator->contributedFields()) {
+      auto& range = field_use_range_[f->identifier()];
+      range.first = std::min(range.first,idx);
+      range.second = std::max(range.first,idx);
+    }
+    // Dependent fields
+    for (const auto& f : evaluator->dependentFields()) {
+      auto& range = field_use_range_[f->identifier()];
+      range.first = std::min(range.first,idx);
+      range.second = std::max(range.first,idx);
+    }
+  }
+
+#ifdef PHX_DEBUG
+  for (const auto& f : field_use_range_) {
+    TEUCHOS_TEST_FOR_EXCEPTION(f.second.first > f.second.first,
+                               std::logic_error,
+                               "ERROR - PHX::DagManager::getFieldUseRange() - the field "
+                               << f.first << " has an invalid use range of [" << f.second.first << ","
+                               << f.second.second << "].");
+  }
+#endif
+
+  return field_use_range_;
 }
 
 //=======================================================================
@@ -893,7 +938,7 @@ template<typename Traits>
 void PHX::DagManager<Traits>::createEvaluatorBindingFieldMap()
 {
   field_to_evaluators_binding_.clear();
-  
+
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
     const auto& node = nodes_[topoSortEvalIndex[n]];
     Teuchos::RCP<PHX::Evaluator<Traits>> e = node.getNonConst();

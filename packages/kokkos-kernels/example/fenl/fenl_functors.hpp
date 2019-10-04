@@ -151,7 +151,7 @@ public:
         Kokkos::parallel_for( "kokkos-kernels/example/fenl: NodeNodeGraph" , elem_node_id.extent(0) , *this );
       }
 
-      execution_space::fence();
+      execution_space().fence();
       results.ratio = (double)node_node_set.size() / (double)node_node_set.span();
       results.fill_node_set = wall_clock.seconds();
       //--------------------------------
@@ -178,14 +178,14 @@ public:
       //--------------------------------
       // Fill graph's entries from the (node,node) set.
 
-      execution_space::fence();
+      execution_space().fence();
       results.scan_node_count = wall_clock.seconds();
 
       wall_clock.reset();
       phase = FILL_GRAPH_ENTRIES ;
       Kokkos::parallel_for( node_node_set.span() , *this );
 
-      execution_space::fence();
+      execution_space().fence();
       results.fill_graph_entries = wall_clock.seconds();
 
       //--------------------------------
@@ -202,7 +202,7 @@ public:
 
       Kokkos::parallel_for( node_count , *this );
 
-      execution_space::fence();
+      execution_space().fence();
       results.sort_graph_entries = wall_clock.seconds();
 
       //--------------------------------
@@ -212,7 +212,7 @@ public:
       elem_graph = ElemGraphType("elem_graph", elem_node_id.extent(0) );
       Kokkos::parallel_for( elem_node_id.extent(0) , *this );
 
-      execution_space::fence();
+      execution_space().fence();
       results.fill_element_graph = wall_clock.seconds();
     }
 
@@ -502,7 +502,7 @@ public:
       Kokkos::deep_copy( row_count , 0u );
       Kokkos::parallel_for( elem_node_id.extent(0) , *this );
 
-      execution_space::fence();
+      execution_space().fence();
 
       //--------------------------------
       // Done with the temporary sets and arrays
@@ -516,7 +516,7 @@ public:
       phase = SORT_GRAPH_ENTRIES ;
       Kokkos::parallel_for( residual.extent(0) , *this );
 
-      execution_space::fence();
+      execution_space().fence();
 
       phase = GATHER_FILL ;
     }

@@ -64,8 +64,14 @@ int main(int argc, char *argv[])
         aprepro.add_variable(var, value, true); // Make it immutable
       }
       else {
-        double dval = std::stod(value);
-        aprepro.add_variable(var, dval, true);
+        try {
+          double dval = std::stod(value);
+          aprepro.add_variable(var, dval, true);
+        }
+        catch (std::exception &e) {
+          // If cannot convert to double; make it a string variable...
+          aprepro.add_variable(var, value, true); // Make it immutable
+        }
       }
     }
     else {

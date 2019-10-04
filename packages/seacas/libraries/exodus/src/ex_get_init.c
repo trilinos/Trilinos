@@ -47,7 +47,7 @@
  *       int*    num_elem                number of elements
  *       int*    num_elem_blk            number of element blocks
  *       int*    num_node_sets           number of node sets
- *       int*    num_side_sets           numver of side sets
+ *       int*    num_side_sets           number of side sets
  *
  * revision history -
  *          David Thompson  - Moved to exginix.c (exgini.c now a special case)
@@ -57,9 +57,9 @@
 
 #include "exodusII.h" // for ex_init_params, void_int, etc
 #include "exodusII_int.h"
-#include <stdint.h> // for int64_t
 
 /*!
+  \ingroup ModelDescription
 
 The function ex_get_init() reads the initializationinitialization
 parameters from an opened exodus file.
@@ -106,7 +106,7 @@ int ex_get_init(int exoid, char *title, void_int *num_dim, void_int *num_nodes, 
   int            errval;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   info.title[0] = '\0';
   errval        = ex_get_init_ext(exoid, &info);

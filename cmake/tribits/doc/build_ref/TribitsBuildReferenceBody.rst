@@ -1923,10 +1923,35 @@ configure time by setting::
 
   -D <fullTestName>_DISABLE=ON
 
-where ``<fulltestName>`` must exactly match the test listed out by ``ctest
--N``.  Of course specific tests can also be excluded from ``ctest`` using the
-``-E`` argument.  This will result in the printing of a line for the excluded
-test when `Trace test addition or exclusion`_ is enabled.
+where ``<fullTestName>`` must exactly match the test listed out by ``ctest
+-N``.  This will result in the printing of a line for the excluded test when
+`Trace test addition or exclusion`_ is enabled and the test wil not be added
+with ``add_test()`` and therefore CTest (and CDash) will never see the
+disabled test.
+
+Another approach to disable a test is the set the ctest property ``DISABLED``
+and print and a message at configure time by setting::
+
+  -D <fullTestName>_SET_DISABLED_AND_MSG="<messageWhyDisabled>"
+
+In this case, the test will still be added with ``add_test()`` and seen by
+CTest, but CTest will not run the test locally but will mark it as "Not Run"
+(and post to CDash as "Not Run" tests with test details "Not Run (Disabled)"
+in processes where tests get posted to CDash).  Also, ``<messageWhyDisabled>``
+will get printed to STDOUT when CMake is run to configure the project and
+``-D<Project>_TRACE_ADD_TEST=ON`` is set.
+
+Also, note that if a test is currently disabled using the ``DISABLED`` option
+in the CMakeLists.txt file, then that ``DISABLE`` property can be removed by
+configuring with::
+
+  -D <fullTestName>_SET_DISABLED_AND_MSG=FALSE
+
+(or any value that CMake evaluates to FALSE like "FALSE", "false", "NO", "no",
+"", etc.).
+
+Also note that other specific defined tests can also be excluded using the
+``ctest -E`` argument.
 
 
 Disabling specific test executable builds
@@ -1941,8 +1966,8 @@ where ``<exeTargetName>`` is the name of the target in the build system.
 
 Note that one should also disable any ctest tests that might use this
 executable as well with ``-D<fullTestName>_DISABLE=ON`` (see above).  This
-will result in the printing of a line for the executable target being
-disabled.
+will result in the printing of a line for the executable target being disabled
+at configure time to CMake STDOUT.
 
 
 Trace test addition or exclusion
@@ -3345,6 +3370,58 @@ and run the custom install target::
 
 This will ensure that every package that builds correctly will get installed.
 (The default 'install' target aborts on the first file install failure.)
+
+
+Installation Testing
+====================
+
+The CMake project <Project> has built-in support for testing an installation
+of itself using its own tests and examples.  The way it works is to configure,
+build, and install just the libraries and header files using::
+
+  $ mkdir BUILD_LIBS
+  $ cd BUILD_LIBS/
+
+  $ cmake \
+    -DCMAKE_INSTLAL_PREFIX=<install-dir> \
+    -D<Project>_ENABLE_ALL_PACKAGES=ON \
+    -D<Project>_ENABLE_TESTS=OFF \
+    [other options] \
+    <projectDir>
+
+  $ make -j16 install   # or ninja -j16
+
+and then create a different build directory to configure and build just the
+tests and examples (not the libraries) against the pre-installed libraries and
+header files using::
+
+  $ mkdir BUILD_TESTS
+  $ cd BUILD_TESTS/
+
+  $ cmake \
+    -D<Project>_ENABLE_ALL_PACKAGES=ON \
+    -D<Project>_ENABLE_TESTS=ON \
+    -D<Project>_ENABLE_INSTALLATION_TESTING=ON \
+    -D<Project>_INSTALLATION_DIR=<install-dir> \
+    [other options] \
+    <projectDir>
+
+  $ make -j16  # or ninja -j16
+
+  $ ctest -j16
+
+If that second project builds and all the tests pass, then the project was
+installed correctly.  This uses the project's own tests and examples to test
+the installation of the project.  The library source and header files are
+unused in the second project build.  In fact, you can delete them and ensure
+that they are not used in the build and testing of the tests and examples!
+
+This can also be used for testing backward compatibility of the project (or
+perhaps for a subset of packages).  In this case, build and install the
+libraries and header files for a newer version of the project and then
+configure, build, and run the tests and examples for an older version of the
+project sources pointing to the installed header files and libraries from the
+newer version.
 
 
 Packaging

@@ -35,14 +35,12 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_QA, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <string.h> // for strlen, NULL
 
 /*!
+\ingroup Utilities
 
 The function ex_put_qa() writes the QA records to the database. Each
-QA record contains four MAX_STR_LENGTH-byte character
+QA record contains four #MAX_STR_LENGTH byte character
 strings. The character strings are:
 
  -  the analysis code name
@@ -100,7 +98,7 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
   EX_FUNC_ENTER();
   int rootid = exoid & EX_FILE_ID_MASK;
 
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* only do this if there are records */
 
@@ -169,7 +167,7 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
       }
 
       /*   leave define mode  */
-      if ((status = ex_leavedef(rootid, __func__)) != NC_NOERR) {
+      if ((status = ex__leavedef(rootid, __func__)) != NC_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -205,7 +203,7 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
         }
       }
     }
-    else if (ex_is_parallel(rootid)) {
+    else if (ex__is_parallel(rootid)) {
       /* In case we are in a collective mode, all processors need to call */
       const char dummy[] = " ";
       for (i = 0; i < num_qa_records; i++) {
@@ -221,6 +219,6 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex_leavedef(rootid, __func__);
+  ex__leavedef(rootid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

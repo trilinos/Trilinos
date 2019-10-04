@@ -154,7 +154,7 @@ public:
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
 
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
 
 
@@ -219,7 +219,7 @@ public:
     typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
 
     typedef typename col_view_t_::HostMirror col_host_view_t; //Host view type
@@ -228,7 +228,7 @@ public:
     col_nnz_view_t h_c_adj = Kokkos::create_mirror_view (col_entries);
     Kokkos::deep_copy (h_c_xadj, col_map);
     Kokkos::deep_copy (h_c_adj, col_entries);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
 
     Kokkos::Impl::Timer timer;
@@ -304,7 +304,7 @@ public:
     typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     //create a ban color array to keep track of
     //which colors have been taking by the neighbor vertices.
@@ -544,7 +544,7 @@ public:
     typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     typedef typename col_view_t_::HostMirror col_host_view_t; //Host view type
     typedef typename lno_colnnz_view_t_::HostMirror col_nnz_view_t; //Host view type
@@ -552,7 +552,7 @@ public:
     col_nnz_view_t h_c_adj = Kokkos::create_mirror_view (col_entries);
     Kokkos::deep_copy (h_c_xadj, col_map);
     Kokkos::deep_copy (h_c_adj, col_entries);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
 
     //create a ban color array to keep track of
@@ -969,7 +969,7 @@ public:
             current_vertexListLength);
       }
 
-      MyExecSpace::fence();
+      MyExecSpace().fence();
 
       if (this->_ticToc){
         t = timer.seconds();
@@ -1000,7 +1000,7 @@ public:
             pps_work_view);
       }
 
-      MyExecSpace::fence();
+      MyExecSpace().fence();
 
       if (_ticToc){
         t = timer.seconds();
@@ -1050,7 +1050,7 @@ public:
 
 
     	}
-    	MyExecSpace::fence();
+    	MyExecSpace().fence();
     	if (_ticToc){
     		t = timer.seconds();
     		total += t;
@@ -1249,13 +1249,13 @@ private:
         single_dim_index_host_view_type h_numUncolored(&numUncolored);
         Kokkos::deep_copy (next_iteration_recolorListLength_, h_numUncolored);
 
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
         Kokkos::parallel_scan ("KokkosGraph::GraphColoring::PrefixSum",
             my_exec_space(0, current_vertexListLength_),
             parallel_prefix_sum<nnz_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
 
-        MyExecSpace::fence();
+        MyExecSpace().fence();
         Kokkos::parallel_for ("KokkosGraph::GraphColoring::CreateNewWorkArray",
             my_exec_space(0, current_vertexListLength_),
             create_new_work_array<nnz_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
@@ -2626,6 +2626,7 @@ public:
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const int node) const {
+      typedef typename std::remove_reference< decltype( newFrontierSize_() ) >::type atomic_incr_type;
       int myScore = score_(node);
       int numNeighs = xadj_(node + 1) - xadj_(node);
       for(int neigh = 0; neigh < numNeighs; ++neigh) {
@@ -2639,7 +2640,7 @@ public:
       }
       if(dependency_(node) == 0) {
         const size_type newFrontierIdx
-          = Kokkos::atomic_fetch_add(&newFrontierSize_(), 1);
+          = Kokkos::atomic_fetch_add(&newFrontierSize_(), atomic_incr_type(1));
         newFrontier_(newFrontierIdx) = node;
       }
     }
@@ -2672,6 +2673,7 @@ public:
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const size_type frontierIdx) const {
+      typedef typename std::remove_reference< decltype( newFrontierSize_() ) >::type atomic_incr_type;
       size_type frontierNode = frontier_(frontierIdx);
       int* bannedColors = new int[maxColors_];
       for(size_type colorIdx= 0; colorIdx < maxColors_; ++colorIdx) {
@@ -2690,7 +2692,7 @@ public:
           // dependency(myAdj(neigh)) = dependency(myAdj(neigh)) - 1;
           if(myDependency - 1 == 0) {
             const size_type newFrontierIdx
-              = Kokkos::atomic_fetch_add(&newFrontierSize_(), 1);
+              = Kokkos::atomic_fetch_add(&newFrontierSize_(), atomic_incr_type(1));
             newFrontier_(newFrontierIdx) = adj_(neigh);
           }
         }
@@ -2733,6 +2735,7 @@ public:
     KOKKOS_INLINE_FUNCTION
     void operator() (const size_type frontierIdx) const {
 
+      typedef typename std::remove_reference< decltype( newFrontierSize_() ) >::type atomic_incr_type;
       size_type frontierNode = frontier_(frontierIdx);
       // Initialize bit array to all bits = 0
       unsigned long long bannedColors = 0;
@@ -2757,7 +2760,7 @@ public:
               Kokkos::atomic_fetch_add(&dependency_(adj_(neigh)), -1);
             if(myDependency - 1 == 0) {
               const size_type newFrontierIdx
-                = Kokkos::atomic_fetch_add(&newFrontierSize_(), 1);
+                = Kokkos::atomic_fetch_add(&newFrontierSize_(), atomic_incr_type(1));
               newFrontier_(newFrontierIdx) = adj_(neigh);
             }
           }
@@ -2922,7 +2925,7 @@ public:
         my_exec_space (0, num_work_edges),
         init_work_arrays(edge_conflict_indices, edge_conflict_marker)
     );
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     //std::cout << "nv:" << this->nv << " init_work_arrays" << std::endl;
 
     double inittime = 0;
@@ -2958,7 +2961,7 @@ public:
           )
       );
 
-      MyExecSpace::fence();
+      MyExecSpace().fence();
       //std::cout << "nv:" << this->nv << " i:" << i <<  " halfedge_mark_conflicts" << std::endl;
 
       if (tictoc){
@@ -2982,7 +2985,7 @@ public:
               edge_conflict_marker
           ),num_conflict_reduction);
 
-      MyExecSpace::fence();
+      MyExecSpace().fence();
 
       /*
       std::cout << "nv:" << this->nv
@@ -3017,13 +3020,13 @@ public:
               my_exec_space(0, num_work_edges),
               parallel_prefix_sum(edge_conflict_indices, edge_conflict_marker, pps)
           );
-          MyExecSpace::fence();
+          MyExecSpace().fence();
 
           //write the edge indices to new worklist.
           Kokkos::parallel_for ("KokkosGraph::GraphColoring::CreateNewWorkArray",
               my_exec_space(0, num_work_edges),
               create_new_work_array(edge_conflict_indices, edge_conflict_marker, pps, new_edge_conflict_indices));
-          MyExecSpace::fence();
+          MyExecSpace().fence();
         }
         else {
           //create new worklist
@@ -3031,7 +3034,7 @@ public:
           Kokkos::parallel_for ("KokkosGraph::GraphColoring::CreateNewWorkArrayAtomic",
               my_exec_space(0, num_work_edges),
               atomic_create_new_work_array(new_index, edge_conflict_indices, edge_conflict_marker, new_edge_conflict_indices));
-          MyExecSpace::fence();
+          MyExecSpace().fence();
         }
 
         //swap old and new worklist
@@ -3057,7 +3060,7 @@ public:
           )
       );
 
-      MyExecSpace::fence();
+      MyExecSpace().fence();
 
       if (tictoc){
         ban_time += timer->seconds();

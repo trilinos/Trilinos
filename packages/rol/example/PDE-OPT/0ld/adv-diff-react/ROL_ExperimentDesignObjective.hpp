@@ -44,6 +44,7 @@
 #ifndef ROL_EXPERIMENTDESIGN_OBJECTIVE_H
 #define ROL_EXPERIMENTDESIGN_OBJECTIVE_H
 
+#include "ROL_ConjugateGradients.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Vector.hpp"
 

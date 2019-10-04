@@ -6,14 +6,6 @@
 
           <ParameterList name="S_E Preconditioner">
             <ParameterList name="Preconditioner Types">
-              <ParameterList name="MueLuRefMaxwell-Tpetra">
-
-                <ParameterList name="refmaxwell: 11list">
-                  <Parameter name="number of equations" type="int" value="2"/>
-                </ParameterList>
-
-              </ParameterList>
-
               <ParameterList name="MueLuRefMaxwell">
 
                 <ParameterList name="refmaxwell: 11list">
@@ -21,6 +13,7 @@
                 </ParameterList>
 
               </ParameterList>
+
             </ParameterList>
           </ParameterList>
 

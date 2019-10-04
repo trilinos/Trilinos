@@ -68,6 +68,12 @@
 #include <utility>
 #include <vector>
 
+#if defined SEACAS_HAVE_DATAWARP
+extern "C" {
+#include <datawarp.h>
+}
+#endif
+
 namespace {
   auto initial_time = std::chrono::high_resolution_clock::now();
 
@@ -218,6 +224,8 @@ namespace Ioss {
       }
     }
 
+    check_setDW();
+
     if (!is_input()) {
       // Create full path to the output file at this point if it doesn't
       // exist...
@@ -261,6 +269,118 @@ namespace Ioss {
     fieldSeparator = separator;
   }
 
+  /**
+   * Check whether user wants to use Cray DataWarp.  It will be enabled if:
+   * the `DW_JOB_STRIPED` or `DW_JOB_PRIVATE` environment variable
+   * is set by the queuing system during runtime and the IOSS property
+   * `ENABLE_DATAWARP` set to `YES`.
+   *
+   * We currently only want output files to be directed to BB.
+   */
+  void DatabaseIO::check_setDW() const
+  {
+    if (!is_input()) {
+      bool set_dw = false;
+      Utils::check_set_bool_property(properties, "ENABLE_DATAWARP", set_dw);
+      if (set_dw) {
+        std::string bb_path;
+        // Selected via `#DW jobdw type=scratch access_mode=striped`
+        util().get_environment("DW_JOB_STRIPED", bb_path, isParallel);
+
+        if (bb_path.empty()) { // See if using `private` mode...
+          // Selected via `#DW jobdw type=scratch access_mode=private`
+          util().get_environment("DW_JOB_PRIVATE", bb_path, isParallel);
+        }
+        if (!bb_path.empty()) {
+          usingDataWarp = true;
+          dwPath        = bb_path;
+          if (myProcessor == 0) {
+            fmt::print(stderr, "\nDataWarp Burst Buffer Enabled.  Path = `{}`\n\n", dwPath);
+          }
+        }
+        else {
+          if (myProcessor == 0) {
+            fmt::print(IOSS_WARNING,
+                       "\nWARNING: DataWarp enabled via Ioss property `ENABLE_DATAWARP`, but\n"
+                       "         burst buffer path was not specified via `DW_JOB_STRIPED` or "
+                       "`DW_JOB_PRIVATE`\n"
+                       "         environment variables (typically set by queuing system)\n"
+                       "         DataWarp will *NOT* be enabled, but job will still run.\n\n");
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * In this wrapper function we check if user intends to use Cray
+   * DataWarp(aka DW), which provides ability to use NVMe based flash
+   * storage available across all compute nodes accessible via high
+   * speed NIC.
+   */
+  void DatabaseIO::openDW(const std::string &filename) const
+  {
+    set_pfsname(filename); // Name on permanent-file-store
+    if (using_dw()) {      // We are about to write to a output database in BB
+      Ioss::FileInfo path{filename};
+      Ioss::FileInfo bb_file{get_dwPath() + path.tailname()};
+      if (bb_file.exists() &&
+          !bb_file.is_writable()) { // already existing file which has been closed
+        // If we can't write to the file on the BB, then it is a file which
+        // is being staged by datawarp system over to the permanent filesystem.
+        // Wait until staging has finished...
+        // stage wait returns 0 = success, -ENOENT or -errno
+#if defined SEACAS_HAVE_DATAWARP
+        int dwret = dw_wait_file_stage(bb_file.filename().c_str());
+        if (dwret < 0) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR: failed waiting for file stage `{}`: {}\n", bb_file.filename(),
+                     std::strerror(-dwret));
+          IOSS_ERROR(errmsg);
+        }
+#else
+        // Used to debug DataWarp logic on systems without DataWarp...
+        fmt::print(stderr, "DW: (FAKE) dw_wait_file_stage({});\n", bb_file.filename());
+#endif
+      }
+      set_dwname(bb_file.filename());
+    }
+    else {
+      set_dwname(filename);
+    }
+  }
+
+  /** \brief This function gets called inside closeDatabase__(), which checks if Cray Datawarp (DW)
+   * is in use, if so, we want to call a stageout before actual close of this file.
+   */
+  void DatabaseIO::closeDW() const
+  {
+    if (using_dw()) {
+      if (!using_parallel_io() || (using_parallel_io() && myProcessor == 0)) {
+#if defined SEACAS_HAVE_DATAWARP
+        int ret =
+            dw_stage_file_out(get_dwname().c_str(), get_pfsname().c_str(), DW_STAGE_IMMEDIATE);
+        if (ret < 0) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR: file staging of `{}` to `{}` failed at close: {}\n",
+                     get_dwname(), get_pfsname(), std::strerror(-ret));
+          IOSS_ERROR(errmsg);
+        }
+#else
+        fmt::print(stderr, "\nDW: (FAKE) dw_stage_file_out({}, {}, DW_STAGE_IMMEDIATE);\n",
+                   get_dwname(), get_pfsname());
+#endif
+      }
+      if (using_parallel_io()) {
+        util().barrier();
+      }
+    }
+  }
+
+  void DatabaseIO::openDatabase__() const { openDW(get_filename()); }
+
+  void DatabaseIO::closeDatabase__() const { closeDW(); }
+
   IfDatabaseExistsBehavior DatabaseIO::open_create_behavior() const
   {
     IfDatabaseExistsBehavior exists = DB_OVERWRITE;
@@ -276,39 +396,31 @@ namespace Ioss {
     std::ostringstream errmsg;
 
     if (myProcessor == 0) {
-      Ioss::FileInfo file = Ioss::FileInfo(filename);
-      std::string    path = file.pathname();
+      Ioss::FileInfo file      = Ioss::FileInfo(filename);
+      std::string    path      = file.pathname();
+      std::string    path_root = path[0] == '/' ? "/" : "";
 
-      const int mode = 0777; // Users umask will be applied to this.
+      auto comps = tokenize(path, "/");
+      for (const auto &comp : comps) {
+        path_root += comp;
 
-      auto iter = path.cbegin();
-      while (iter != path.cend() && !error_found) {
-        iter                  = std::find(iter, path.cend(), '/');
-        std::string path_root = std::string(path.cbegin(), iter);
-
-        if (iter != path.cend()) {
-          ++iter; // Skip past the '/'
-        }
-
-        if (path_root.empty()) { // Path started with '/'
-          continue;
-        }
-
-        struct stat st
-        {
-        };
+        struct stat st;
         if (stat(path_root.c_str(), &st) != 0) {
+          const int mode = 0777; // Users umask will be applied to this.
           if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
-            fmt::print(errmsg, "ERROR: Cannot create directory '{}' : {}\n", path_root,
+            fmt::print(errmsg, "ERROR: Cannot create directory '{}': {}\n", path_root,
                        std::strerror(errno));
             error_found = true;
+            break;
           }
         }
         else if (!S_ISDIR(st.st_mode)) {
           errno = ENOTDIR;
           fmt::print(errmsg, "ERROR: Path '{}' is not a directory.\n", path_root);
           error_found = true;
+          break;
         }
+        path_root += "/";
       }
     }
     else {
@@ -342,6 +454,12 @@ namespace Ioss {
       }
       else {
         decodedFilename = get_filename();
+      }
+
+      openDW(decodedFilename);
+      if (using_dw()) {
+        // Note that if using_dw(), then we need to set the decodedFilename to the BB name.
+        decodedFilename = get_dwname();
       }
     }
     return decodedFilename;
@@ -621,7 +739,7 @@ namespace Ioss {
           }
         }
         else {
-          // homogenous sides.
+          // homogeneous sides.
           side_topo.insert(std::make_pair(elem_type, side_type));
           all_sphere = false;
         }
@@ -1073,7 +1191,7 @@ namespace {
       if (util.parallel_size() > 1) {
         fmt::print(strm, "\tTot: {} (ms)\n", total);
       }
-      std::cerr << strm.str();
+      fmt::print(stderr, "{}", strm.str());
     }
   }
 
@@ -1115,15 +1233,13 @@ namespace {
           fmt::print(strm, " T:{:8d}", total);
         }
         fmt::print(strm, "\t{}/{}\n", name, field.get_name());
-        std::cerr << strm.str();
+        fmt::print(stderr, "{}", strm.str());
       }
     }
     else {
-#ifdef SEACAS_HAVE_MPI
       if (!single_proc_only) {
-        MPI_Barrier(util.communicator());
+        util.barrier();
       }
-#endif
       if (util.parallel_rank() == 0 || single_proc_only) {
         auto                          time_now = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff     = time_now - initial_time;

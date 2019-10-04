@@ -100,13 +100,8 @@ namespace Belos {
       ///
       /// \param comm [in] Communicator over which to distribute the
       ///   sparse matrices.
-      /// \param node [in] Kokkos Node instance to use for creating
-      ///   sparse matrices.  (Nonconst by Kokkos and Tpetra
-      ///   convention.)
-      HarwellBoeingReader (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                           const Teuchos::RCP<node_type>& node) :
+      HarwellBoeingReader (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
         comm_ (comm),
-        node_ (node)
       {}
 
       //! Read the sparse matrix from the file with the given name.
@@ -172,8 +167,6 @@ namespace Belos {
     private:
       //! Communicator over which to distribute the sparse matrices.
       Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-      //! Kokkos Node instance to use for creating sparse matrices.
-      Teuchos::RCP<node_type> node_;
 
       /// \brief Convert the Harwell-Boeing data to a Tpetra::CrsMatrix.
       ///
@@ -280,10 +273,9 @@ namespace Belos {
       ///   On output, missing parameters will be filled in with their
       ///   default values.
       ProblemMaker (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                    const Teuchos::RCP<node_type>& node,
                     const Teuchos::RCP<Teuchos::FancyOStream>& out,
                     const Teuchos::RCP<Teuchos::ParameterList> plist) :
-        comm_ (comm), node_ (node), out_ (out), tolerant_ (false), debug_ (false)
+        comm_ (comm), out_ (out), tolerant_ (false), debug_ (false)
       {
         setParameterList (plist);
       }
@@ -300,12 +292,10 @@ namespace Belos {
       /// \param tolerant [in] Whether to parse files tolerantly.
       /// \param debug [in] Whether to print copious debugging output.
       ProblemMaker (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                    const Teuchos::RCP<node_type>& node,
                     const Teuchos::RCP<Teuchos::FancyOStream>& out,
                     const bool tolerant,
                     const bool debug) :
         comm_ (comm),
-        node_ (node),
         out_ (out),
         tolerant_ (tolerant),
         debug_ (debug)
@@ -659,8 +649,6 @@ namespace Belos {
     private:
       //! Communicator over which to distribute sparse matrices and dense vectors.
       Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-      //! Kokkos Node instance to use for creating Tpetra objects.
-      Teuchos::RCP<node_type> node_;
       //! Output stream for indented verbose output.
       Teuchos::RCP<Teuchos::FancyOStream> out_;
       //! Whether to parse files tolerantly.

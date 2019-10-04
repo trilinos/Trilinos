@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,19 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
-#include <stddef.h>                     // for size_t, NULL
-#include <iosfwd>                       // for ostringstream, ostream
-#include <set>                          // for set, etc
-#include <stdexcept>                    // for logic_error, runtime_error
-#include <stk_mesh/base/EntityCommDatabase.hpp>  // for pack_entity_info, etc
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field_on_mesh
-#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture, etc
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <string>                       // for string
-#include <utility>                      // for pair, make_pair
-#include <vector>                       // for vector, etc
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::iterator
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
@@ -56,13 +44,26 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting, operator<<
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, PartVector, etc
-#include "stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
+#include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/FixtureNodeSharing.hpp"
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
+#include "stk_util/parallel/CommSparse.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
-#include "stk_util/parallel/CommSparse.hpp"
+#include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
+#include <iosfwd>                       // for ostringstream, ostream
+#include <set>                          // for set, etc
+#include <stddef.h>                     // for size_t, NULL
+#include <stdexcept>                    // for logic_error, runtime_error
+#include <stk_mesh/base/EntityCommDatabase.hpp>  // for pack_entity_info, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field_on_mesh
 #include <stk_unit_test_utils/BulkDataTester.hpp>
+#include <string>                       // for string
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector, etc
 namespace stk { namespace mesh { class Part; } }
 
 

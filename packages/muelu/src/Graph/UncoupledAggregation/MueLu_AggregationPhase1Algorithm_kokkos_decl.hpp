@@ -83,15 +83,17 @@ namespace MueLu {
     Only nodes with state READY are changed to AGGREGATED. Nodes with other states are not touched.
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class AggregationPhase1Algorithm_kokkos :
     public MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
+    using memory_space = typename LWGraph_kokkos::memory_space;
+
     //! @name Constructors/Destructors.
     //@{
 
@@ -109,15 +111,28 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+    void BuildAggregates(const Teuchos::ParameterList& params,
+                         const LWGraph_kokkos& graph,
+                         Aggregates_kokkos& aggregates,
+                         Kokkos::View<unsigned*, memory_space>& aggStat,
+                         LO& numNonAggregatedNodes) const;
 
     void BuildAggregatesSerial(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-      std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
-      LO minNodesPerAggregate, LO maxNodesPerAggregate,
-      LO maxNeighAlreadySelected, std::string& orderingStr) const;
+                               std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
+                               LO minNodesPerAggregate, LO maxNodesPerAggregate,
+                               LO maxNeighAlreadySelected, std::string& orderingStr) const;
 
-    void BuildAggregatesDistance2(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-        std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes, LO maxAggSize) const;
+    void BuildAggregatesDistance2(const LO maxAggSize,
+                                  const LWGraph_kokkos& graph,
+                                  Aggregates_kokkos& aggregates,
+                                  Kokkos::View<unsigned*, memory_space>& aggStat,
+                                  LO& numNonAggregatedNodes) const;
+
+    void BuildAggregatesDeterministic(const LO maxAggSize,
+                                      const LWGraph_kokkos& graph,
+                                      Aggregates_kokkos& aggregates,
+                                      Kokkos::View<unsigned*, memory_space>& aggStat,
+                                      LO& numNonAggregatedNodes) const;
     //@}
 
     std::string description() const { return "Phase 1 (main)"; }
@@ -125,7 +140,7 @@ namespace MueLu {
     enum struct Algorithm
     {
       Serial,
-      Distance2 
+      Distance2
     };
 
     static Algorithm algorithmFromName(const std::string& name)

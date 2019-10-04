@@ -47,6 +47,7 @@
 #include "Tpetra_Core.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tpetra_Details_determineLocalTriangularStructure.hpp"
+#include "KokkosSparse_trsv.hpp"
 
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
 # include "shylu_hts.hpp"
@@ -189,13 +190,9 @@ public:
     (void)alpha;
     (void)beta;
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    const auto& X_view = X.template getLocalView<Kokkos::HostSpace> ();
-    const auto& Y_view = Y.template getLocalView<Kokkos::HostSpace> ();
-#else
     const auto& X_view = X.getLocalViewHost ();
     const auto& Y_view = Y.getLocalViewHost ();
-#endif
+
     // Only does something if #rhs > current capacity.
     HTST::reset_max_nrhs(Timpl_.get(), X_view.extent(1));
     // Switch alpha and beta because of HTS's opposite convention.
@@ -432,7 +429,7 @@ initialize ()
     decltype(val)                           newval ("val", val.extent (0));
 
     // FIXME: The code below assumes UVM
-    crs_matrix_type::execution_space::fence();
+    typename crs_matrix_type::execution_space().fence();
     newptr(0) = 0;
     for (local_ordinal_type row = 0, rowStart = 0; row < numRows; ++row) {
       auto A_r = Alocal.row(numRows-1 - row);
@@ -445,7 +442,7 @@ initialize ()
       rowStart += numEnt;
       newptr(row+1) = rowStart;
     }
-    crs_matrix_type::execution_space::fence();
+    typename crs_matrix_type::execution_space().fence();
 
     // Reverse maps
     using map_type = typename crs_matrix_type::map_type;

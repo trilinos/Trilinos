@@ -99,10 +99,10 @@ namespace MueLu {
     array. These matrices are dense, but have small size (NSDim x NSDim).
     */
 
-  template<class Scalar = double,
-           class LocalOrdinal = int,
-           class GlobalOrdinal = LocalOrdinal,
-           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class Constraint : public BaseClass {
 #undef MUELU_CONSTRAINT_SHORT
 #include "MueLu_UseShortNames.hpp"

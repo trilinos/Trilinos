@@ -254,7 +254,7 @@ static void makecv2v(int  nvtxs,     /* number of vertices in graph */
 )
 
 {
-  int sum; /* cumulative offests into vals array */
+  int sum; /* cumulative offsets into vals array */
   int i;   /* loop counter */
 
   /* First find number of vtxs associated with each coarse graph vtx. */

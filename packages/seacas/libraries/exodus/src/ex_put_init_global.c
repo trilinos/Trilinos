@@ -59,10 +59,12 @@
 /*****************************************************************************/
 
 #include <exodusII.h>     // for ex_err, etc
-#include <exodusII_int.h> // for ex_leavedef, EX_FATAL, etc
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <exodusII_int.h> // for ex__leavedef, EX_FATAL, etc
 
+/*!
+ * \ingroup ModelDescription
+ * \undoc
+ */
 int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int64_t num_elem_blks_g,
                        int64_t num_node_sets_g, int64_t num_side_sets_g)
 {
@@ -74,7 +76,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
 
   /*-----------------------------Execution begins-----------------------------*/
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_DB) {
     int_type = NC_INT64;
@@ -90,7 +92,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
   }
 
   /* Output the file version */
-  if ((status = ex_put_nemesis_version(exoid)) < 0) {
+  if ((status = ex__put_nemesis_version(exoid)) < 0) {
     EX_FUNC_LEAVE(status);
   }
 
@@ -100,7 +102,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
              DIM_NUM_NODES_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     /* Leave define mode before returning */
-    ex_leavedef(exoid, __func__);
+    ex__leavedef(exoid, __func__);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -111,7 +113,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
              DIM_NUM_ELEMS_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     /* Leave define mode before returning */
-    ex_leavedef(exoid, __func__);
+    ex__leavedef(exoid, __func__);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -126,7 +128,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
              DIM_NUM_ELBLK_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     /* Leave define mode before returning */
-    ex_leavedef(exoid, __func__);
+    ex__leavedef(exoid, __func__);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -138,7 +140,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
              VAR_ELBLK_IDS_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     /* Leave define mode before returning */
-    ex_leavedef(exoid, __func__);
+    ex__leavedef(exoid, __func__);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -150,7 +152,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
              VAR_ELBLK_CNT_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     /* Leave define mode before returning */
-    ex_leavedef(exoid, __func__);
+    ex__leavedef(exoid, __func__);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -166,7 +168,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
                DIM_NUM_NS_GLOBAL, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex_leavedef(exoid, __func__);
+      ex__leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -179,7 +181,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
       ex_err_fn(exoid, __func__, errmsg, status);
 
       /* Leave define mode before returning */
-      ex_leavedef(exoid, __func__);
+      ex__leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -192,7 +194,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
                VAR_NS_NODE_CNT_GLOBAL, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex_leavedef(exoid, __func__);
+      ex__leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -208,7 +210,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
                VAR_NS_DF_CNT_GLOBAL, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex_leavedef(exoid, __func__);
+      ex__leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -226,7 +228,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
                DIM_NUM_SS_GLOBAL, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex_leavedef(exoid, __func__);
+      ex__leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -239,7 +241,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
       ex_err_fn(exoid, __func__, errmsg, status);
 
       /* Leave define mode before returning */
-      ex_leavedef(exoid, __func__);
+      ex__leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -256,7 +258,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
       ex_err_fn(exoid, __func__, errmsg, status);
 
       /* Leave define mode before returning */
-      ex_leavedef(exoid, __func__);
+      ex__leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -273,7 +275,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
       ex_err_fn(exoid, __func__, errmsg, status);
 
       /* Leave define mode before returning */
-      ex_leavedef(exoid, __func__);
+      ex__leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -281,7 +283,7 @@ int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int6
   } /* End "if (num_side_sets_g > 0)" */
 
   /* End define mode */
-  if (ex_leavedef(exoid, __func__) != EX_NOERR) {
+  if (ex__leavedef(exoid, __func__) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

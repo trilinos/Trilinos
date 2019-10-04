@@ -27,6 +27,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
   APPEND_SET(HEADERS 
     vector/ROL_PinTVector.hpp
+    vector/ROL_PinTCommunicators.hpp
+    vector/ROL_PinTVectorCommunication.hpp
+    vector/ROL_PinTVectorCommunication_StdVector.hpp
 )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)

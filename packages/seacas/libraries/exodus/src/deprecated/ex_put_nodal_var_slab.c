@@ -56,7 +56,6 @@
 /*****************************************************************************/
 /*****************************************************************************/
 #include "exodusII.h" // for ex_put_partial_var, etc
-#include <stdint.h>   // for int64_t
 
 /*
  * writes the values of a single nodal variable for a single time step to
@@ -65,6 +64,7 @@
  */
 
 /*!
+ * \ingroup ResultsData
  * \deprecated Use ex_put_partial_var()(exoid, time_step, EX_NODAL, nodal_var_index, 1, start_pos,
  num_vals, nodal_var_vals) instead.
  */

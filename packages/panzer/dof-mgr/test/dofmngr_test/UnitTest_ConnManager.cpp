@@ -74,7 +74,7 @@ ConnManager::ConnManager(int rank,int procCount)
    }
 }
 
-  void GLOBAL_CONN(std::vector<std::vector<panzer::Ordinal64> > & conn,
+  void GLOBAL_CONN(std::vector<std::vector<panzer::GlobalOrdinal> > & conn,
                         int le,int a,int b,int c,int d)
 { conn[le].push_back(a); conn[le].push_back(b); conn[le].push_back(c); conn[le].push_back(d); }
 

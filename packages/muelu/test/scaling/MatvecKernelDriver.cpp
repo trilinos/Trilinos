@@ -69,6 +69,11 @@
 #include "Xpetra_TpetraMultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "KokkosSparse_spmv.hpp"
+#endif
+
+#if defined(HAVE_MUELU_CUSPARSE)
+#include "cusparse.h"
 #endif
 
 // =========================================================================
@@ -153,8 +158,8 @@ public:
     c_lno_view_t Arowptr = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
-      
-    // type conversion 
+
+    // type conversion
     Arowptr_int = int_array_type("Arowptr", Arowptr.extent(0));
     // copy the ordinals into the local view (type conversion)
     copy_view(Arowptr,Arowptr_int);
@@ -166,14 +171,14 @@ public:
     vals   = reinterpret_cast<Scalar*>(Avals.data());
     cols   = const_cast<int*>(reinterpret_cast<const int*>(Acolind.data()));
     rowptr = reinterpret_cast<int*>(Arowptr_int.data());
-    
+
     auto X_lcl = X.template getLocalView<device_type> ();
     auto Y_lcl = Y.template getLocalView<device_type> ();
     x = reinterpret_cast<Scalar*>(X_lcl.data());
     y = reinterpret_cast<Scalar*>(Y_lcl.data());
-    
+
     magma_init ();
-    int device; 
+    int device;
     magma_getdevice( &device );
     magma_queue_create( device, &queue );
 
@@ -184,18 +189,18 @@ public:
     magma_dev_y    = {Magma_DENSE};
 
     //
-    magma_dvset_dev (m, 1,         // assume mx1 size  
+    magma_dvset_dev (m, 1,         // assume mx1 size
                      x,            // ptr to data on the device
                      &magma_dev_x, // magma vector to populate
                      queue);
-    
-    magma_dvset_dev (m, 1,         // assume mx1 size  
+
+    magma_dvset_dev (m, 1,         // assume mx1 size
                      y,            // ptr to data on the device
                      &magma_dev_y, // magma vector to populate
                      queue);
     magma_dcsrset( m, n, rowptr, cols, vals, &magma_Acrs, queue );
     magma_dmtransfer( magma_Acrs, &magma_dev_Acrs, Magma_DEV, Magma_DEV, queue );
-   
+
   }
 
   ~MagmaSparse_SpmV_Pack()
@@ -228,7 +233,7 @@ private:
   int * rowptr   = nullptr; // copied
   Scalar * x     = nullptr; // aliased
   Scalar * y     = nullptr; // aliased
-  
+
   // handles to the copied data
   int_array_type Arowptr_int;
 };
@@ -284,8 +289,8 @@ public:
     c_lno_view_t Arowptr = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
-      
-     
+
+
     Arowptr_cusparse = cusparse_int_type("Arowptr", Arowptr.extent(0));
     Acolind_cusparse = cusparse_int_type("Acolind", Acolind.extent(0));
     // copy the ordinals into the local view (type conversion)
@@ -299,12 +304,12 @@ public:
     vals   = reinterpret_cast<Scalar*>(Avals.data());
     cols   = reinterpret_cast<int*>(Acolind_cusparse.data());
     rowptr = reinterpret_cast<int*>(Arowptr_cusparse.data());
-    
+
     auto X_lcl = X.template getLocalView<device_type> ();
     auto Y_lcl = Y.template getLocalView<device_type> ();
     x = reinterpret_cast<Scalar*>(X_lcl.data());
     y = reinterpret_cast<Scalar*>(Y_lcl.data());
-    
+
     /* Get handle to the CUBLAS context */
     cublasStatus_t cublasStatus;
     cublasStatus = cublasCreate(&cublasHandle);
@@ -323,12 +328,12 @@ public:
     cusparseSetMatType(descrA,CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(descrA,CUSPARSE_INDEX_BASE_ZERO);
   }
- 
+
   ~CuSparse_SpmV_Pack () {
     cusparseDestroy(cusparseHandle);
     cublasDestroy(cublasHandle);
   }
-  
+
   cusparseStatus_t spmv(const Scalar alpha, const Scalar beta) {
     // compute: y = alpha*Ax + beta*y
     //cusparseDcsrmv(cusparseHandle_t handle,
@@ -336,14 +341,14 @@ public:
     //               int m,
     //               int n,
     //               int nnz,
-    //               const double *alpha, 
+    //               const double *alpha,
     //               // CUSPARSE_MATRIX_TYPE_GENERAL
-    //               const cusparseMatDescr_t descrA, 
-    //               const double *csrValA, 
+    //               const cusparseMatDescr_t descrA,
+    //               const double *csrValA,
     //               const int    *csrRowPtrA,
     //               const int    *csrColIndA,
     //               const double *x,
-    //               const double *beta, 
+    //               const double *beta,
     //                     double *y)
     cusparseStatus_t rc;
     rc = cusparseDcsrmv(
@@ -368,7 +373,7 @@ private:
 
   // CUSPARSE_OPERATION_NON_TRANSPOSE
   // CUSPARSE_OPERATION_TRANSPOSE
-  // CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE 
+  // CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE
   cusparseOperation_t transA = CUSPARSE_OPERATION_NON_TRANSPOSE;
   int m = -1;
   int n = -1;
@@ -378,7 +383,7 @@ private:
   int * rowptr   = nullptr; // copied
   Scalar * x     = nullptr; // aliased
   Scalar * y     = nullptr; // aliased
-  
+
   // handles to the copied data
   cusparse_int_type Arowptr_cusparse;
   cusparse_int_type Acolind_cusparse;
@@ -413,7 +418,7 @@ std::string mkl_error(sparse_status_t code) {
 }
 
 struct matrix_descr mkl_descr;
-   
+
 void MV_MKL(sparse_matrix_t & AMKL, double * x, double * y) {
   //sparse_status_t mkl_sparse_d_mv (sparse_operation_t operation, double alpha, const sparse_matrix_t A, struct matrix_descr descr, const double *x, double beta, double *y);
 
@@ -430,7 +435,7 @@ void MV_MKL(sparse_matrix_t & AMKL, double * x, double * y) {
 #if defined(HAVE_MUELU_TPETRA)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
-  A.apply(x,y); 
+  A.apply(x,y);
 }
 
 
@@ -509,7 +514,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     #if ! defined(HAVE_MUELU_MAGMASPARSE)
       do_magmasparse = false;
     #endif
-    
+
     clp.setOption("mkl",      "nomkl",      &do_mkl,        "Evaluate MKL");
     clp.setOption("tpetra",   "notpetra",   &do_tpetra,     "Evaluate Tpetra");
     clp.setOption("kk",       "nokk",       &do_kk,         "Evaluate KokkosKernels");
@@ -526,7 +531,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     RCP<MultiVector> nullspace, x, b;
     RCP<Matrix> A;
     RCP<const Map> map;
-   
+
     switch (clp.parse(argc,argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -565,7 +570,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     // simple hack to randomize order of experiments
     enum class Experiments { MKL=0, TPETRA, KK, CUSPARSE, MAGMASPARSE };
-    const char * const experiment_id_to_string[] = { 
+    const char * const experiment_id_to_string[] = {
         "MKL        ",
         "Tpetra     ",
         "KK         ",
@@ -573,7 +578,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         "MagmaSparse"};
     std::vector<Experiments> my_experiments;
     // add the experiments we will run
-  
+
     #ifdef HAVE_MUELU_MKL
     if (do_mkl) my_experiments.push_back(Experiments::MKL);   // MKL
     #endif
@@ -581,7 +586,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     #ifdef HAVE_MUELU_CUSPARSE
     if (do_cusparse) my_experiments.push_back(Experiments::CUSPARSE);   // CuSparse
     #endif
- 
+
     #ifdef HAVE_MUELU_MAGMASPARSE
     if (do_magmasparse) my_experiments.push_back(Experiments::MAGMASPARSE);   // MagmaSparse
     #endif
@@ -652,7 +657,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       l_permutes = At->getGraph()->getImporter()->getNumPermuteIDs();
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM,1,&l_permutes,&g_permutes);
     }
-    if(!comm->getRank()) printf("DEBUG: A's importer has %d total permutes globally\n",(int)g_permutes);     
+    if(!comm->getRank()) printf("DEBUG: A's importer has %d total permutes globally\n",(int)g_permutes);
 
   #if defined(HAVE_MUELU_CUSPARSE)
     typedef CuSparse_SpmV_Pack<SC,LO,GO,Node> CuSparse_thing_t;
@@ -662,7 +667,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   #if defined(HAVE_MUELU_MAGMASPARSE)
     typedef MagmaSparse_SpmV_Pack<SC,LO,GO,Node> MagmaSparse_thing_t;
     MagmaSparse_thing_t magmasparse_spmv(*At, xt, yt);
-  #endif 
+  #endif
   #if defined(HAVE_MUELU_MKL)
     // typedefs shared among other TPLs
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
@@ -679,16 +684,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     c_lno_view_t Arowptr = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
-    
+
     // MKL specific things
     sparse_matrix_t mkl_A;
-    typedef typename Kokkos::View<MKL_INT*,typename lno_nnz_view_t::array_layout,typename lno_nnz_view_t::device_type> mkl_int_type;    
-     
+    typedef typename Kokkos::View<MKL_INT*,typename lno_nnz_view_t::array_layout,typename lno_nnz_view_t::device_type> mkl_int_type;
+
     mkl_int_type ArowptrMKL("Arowptr", Arowptr.extent(0));
     mkl_int_type AcolindMKL("Acolind", Acolind.extent(0));
     copy_view(Arowptr,ArowptrMKL);
     copy_view(Acolind,AcolindMKL);
-    double * mkl_xdouble = nullptr
+    double * mkl_xdouble = nullptr;
     double * mkl_ydouble = nullptr;
     mkl_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 
@@ -747,7 +752,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
 
     for (int i=0; i<nrepeat; i++) {
-      
+
       // randomize the experiments
       if (comm->getRank() == 0 ) {
         std::shuffle(my_experiments.begin(), my_experiments.end(), random_source);
@@ -763,11 +768,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         switch (experiment_id) {
 
         #ifdef HAVE_MUELU_MKL
-        // MKL 
+        // MKL
         case Experiments::MKL:
         {
-            TimeMonitor t(*TimeMonitor::getNewTimer("MV MKL: Total"));            
-            MV_MKL(AMKL,xdouble,ydouble);
+            TimeMonitor t(*TimeMonitor::getNewTimer("MV MKL: Total"));
+            MV_MKL(mkl_A,mkl_xdouble,mkl_ydouble);
         }
           break;
         #endif
@@ -790,7 +795,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         #endif
 
         #ifdef HAVE_MUELU_CUSPARSE
-        // MKL 
+        // MKL
         case Experiments::CUSPARSE:
         {
            const Scalar alpha = 1.0;
@@ -832,9 +837,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           y_norms[0] = -1;
           y->norm2(y_norms);
           const auto y_err =  y_norms[0];
- 
+
           y->putScalar(Teuchos::ScalarTraits<Scalar>::nan());;
-         
+
           y_norms[0] = -1;
           y_baseline->norm2(y_norms);
           const auto y_baseline_norm2 = y_norms[0];
@@ -843,9 +848,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           yt.norm2(y_norms);
           const auto y_mv_norm2_next_itr = y_norms[0];
 
-          std::cout << "ExperimentID: " << experiment_id_to_string[(int) experiment_id] << ", ||y-y_hat||_2 = " 
+          std::cout << "ExperimentID: " << experiment_id_to_string[(int) experiment_id] << ", ||y-y_hat||_2 = "
                     << std::setprecision(std::numeric_limits<Scalar>::digits10 + 1)
-                    << std::scientific << y_err 
+                    << std::scientific << y_err
                     << ", ||y||_2 = " << y_norm2
                     << ", ||y_baseline||_2 = " << y_baseline_norm2
                     << ", ||y_ptr|| == ||y_mv||:  " << std::boolalpha << (y_mv_norm2 == y_norm2)
@@ -868,8 +873,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
     }
 
-#if defined(HAVE_MUELU_MKL) 
-    mkl_sparse_destroy(AMKL);
+#if defined(HAVE_MUELU_MKL)
+    mkl_sparse_destroy(mkl_A);
 #endif
 
     success = true;

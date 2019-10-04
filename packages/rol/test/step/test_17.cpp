@@ -83,8 +83,8 @@ int main(int argc, char *argv[]) {
     ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_CANTILEVERBEAM);
 
     // Get Dimension of Problem
-    int dim = x0->dimension(); 
-    parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
+    // int dim = x0->dimension(); 
+    // parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
     // Check Derivatives
     optProblem->check(*outStream);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 //    RealT tol = static_cast<RealT>(1e-3)*std::max(z[0]->norm(),static_cast<RealT>(1));
 //    errorFlag += ((err < tol) ? 0 : 1);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try

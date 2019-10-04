@@ -37,11 +37,11 @@ c This is a test program for the Fortran binding of the EXODUS II
 c database write routines.
 c
 
-c	history -
-c	Original L.A. Schoof
-c	02/25/93 V.R. Yarberry - Added error checks for file creation.
-c	03/04/93 V.R. Yarberry - Fixed bug in expvtt test, ebids was not passed
-c	08/31/93 VRY - updated to match API version 2.00
+c       history -
+c       Original L.A. Schoof
+c       02/25/93 V.R. Yarberry - Added error checks for file creation.
+c       03/04/93 V.R. Yarberry - Fixed bug in expvtt test, ebids was not passed
+c       08/31/93 VRY - updated to match API version 2.00
 c
       include 'exodusII.inc'
 
@@ -83,7 +83,7 @@ c
 c  create EXODUS II files
 c
       exoid = excre ("test.exo",
-     1	 	     EXCLOB, cpu_word_size, io_word_size, ierr)
+     1               EXCLOB, cpu_word_size, io_word_size, ierr)
       write (iout,'("after excre for test.exo, id: ", i4)') exoid
       write (iout,'("  cpu word size: ",i4," io word size: ",i4)')
      1                  cpu_word_size, io_word_size
@@ -344,14 +344,14 @@ c
 
       cname = "quad"
       call expelb (exoid,ebids(1),cname,num_elem_in_block(1),
-     1		num_nodes_per_elem(1),numattr(1),ierr)
+     1          num_nodes_per_elem(1),numattr(1),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
       call expnam (exoid,EXEBLK,ebids(1),blk_names(1), ierr)
       write (iout, '("after expnam, error = ", i4)' ) ierr
 
       call expelb (exoid,ebids(2),cname,num_elem_in_block(2),
-     1		num_nodes_per_elem(2),numattr(2),ierr)
+     1          num_nodes_per_elem(2),numattr(2),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
       call expnam (exoid,EXEBLK,ebids(2),blk_names(2), ierr)
@@ -359,7 +359,7 @@ c
 
       cname = "hex"
       call expelb (exoid,ebids(3),cname,num_elem_in_block(3),
-     1		num_nodes_per_elem(3),numattr(3),ierr)
+     1          num_nodes_per_elem(3),numattr(3),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
       call expnam (exoid,EXEBLK,ebids(3),blk_names(3), ierr)
@@ -367,7 +367,7 @@ c
 
       cname = "tetra"
       call expelb (exoid,ebids(4),cname,num_elem_in_block(4),
-     1		num_nodes_per_elem(4),numattr(4),ierr)
+     1          num_nodes_per_elem(4),numattr(4),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
       call expnam (exoid,EXEBLK,ebids(4),blk_names(4), ierr)
@@ -375,7 +375,7 @@ c
 
       cname = "circle"
       call expelb (exoid,ebids(5),cname,num_elem_in_block(5),
-     1		num_nodes_per_elem(5),numattr(5),ierr)
+     1          num_nodes_per_elem(5),numattr(5),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
       call expnam (exoid,EXEBLK,ebids(5),blk_names(5), ierr)
@@ -383,7 +383,7 @@ c
 
       cname = "sphere"
       call expelb (exoid,ebids(6),cname,num_elem_in_block(6),
-     1		num_nodes_per_elem(6),numattr(6),ierr)
+     1          num_nodes_per_elem(6),numattr(6),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
       call expnam (exoid,EXEBLK,ebids(6),blk_names(6), ierr)
@@ -391,7 +391,7 @@ c
 
       cname = "wedge"
       call expelb (exoid,ebids(7),cname,num_elem_in_block(7),
-     1		num_nodes_per_elem(7),numattr(7),ierr)
+     1          num_nodes_per_elem(7),numattr(7),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
       call expnam (exoid,EXEBLK,ebids(7),blk_names(7), ierr)
@@ -843,7 +843,7 @@ c     side_list(3) = 3
 c     side_list(4) = 4
 
       call excn2s(exoid, num_elem_per_set, num_nodes_per_set, elem_ind,
-     1		node_ind, elem_list, node_list, side_list, ierr)
+     1          node_ind, elem_list, node_list, side_list, ierr)
       write (iout, '("after excn2s, error = ", i4)' ) ierr
 
       num_df_per_set(1) = 4
@@ -1027,9 +1027,9 @@ c             write(iout,*)'elem_var_val(',m,'): ',elem_var_vals(m)
 
 80          continue
 
-	    if (k .eq. 1 .and. j .eq. 3) then
-		continue	! skip element block 3, variable 1
-	    else
+            if (k .eq. 1 .and. j .eq. 3) then
+                continue        ! skip element block 3, variable 1
+            else
               call expev (exoid, whole_time_step, k, ebids(j),
      1                  num_elem_in_block(j), elem_var_vals, ierr)
               write (iout, '("after expev, error = ", i4)' ) ierr

@@ -189,6 +189,10 @@ void IOShell::Interface::enroll_options()
                   "\t\tElements assigned randomly to processors in a way that preserves balance\n"
                   "\t\t(do *not* use for a real run)",
                   nullptr);
+  options_.enroll(
+      "add_processor_id_field", Ioss::GetLongOption::NoValue,
+      "For CGNS, add a cell-centered field whose value is the processor id of that cell", nullptr);
+
   options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
                   "Number of processors that can perform simultaneous IO operations in "
                   "a parallel run; 0 to disable",
@@ -196,7 +200,7 @@ void IOShell::Interface::enroll_options()
 #endif
 
   options_.enroll("file_per_state", Ioss::GetLongOption::NoValue,
-                  "put transient data for each timestep in separate file (EXPERMENTAL)", nullptr);
+                  "put transient data for each timestep in separate file (EXPERIMENTAL)", nullptr);
 
   options_.enroll("reverse", Ioss::GetLongOption::NoValue,
                   "define CGNS zones in reverse order. Used for testing (TEST)", nullptr);
@@ -262,7 +266,7 @@ void IOShell::Interface::enroll_options()
                   nullptr);
 
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
-                  "Method used to split sidesets into homogenous blocks\n"
+                  "Method used to split sidesets into homogeneous blocks\n"
                   "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
                   "TOPOLOGY");
 
@@ -356,6 +360,8 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   }
 
 #if defined(PARALLEL_AWARE_EXODUS)
+  add_processor_id_field = (options_.retrieve("add_processor_id_field") != nullptr);
+
   if (options_.retrieve("rcb") != nullptr) {
     decomp_method = "RCB";
   }

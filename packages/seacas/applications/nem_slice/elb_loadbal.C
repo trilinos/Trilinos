@@ -35,11 +35,11 @@
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Functions contained in this file:
- *	generate_loadbal()
- *	generate_maps()
- *	nodal_dist()
- *	elemental_dist()
- *	ilog2i()
+ *      generate_loadbal()
+ *      generate_maps()
+ *      nodal_dist()
+ *      elemental_dist()
+ *      ilog2i()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 #include <cassert> // for assert
 #include <cfloat>  // for FLT_MAX
@@ -764,7 +764,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   /* Free up coordinates if used */
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
-    case 1: free(y_node_ptr); y_node_ptr = nullptr; /* fall through */
+    case 1:
+      free(y_node_ptr);
+      y_node_ptr = nullptr;
+      FALL_THROUGH;
     case 2: free(z_node_ptr); z_node_ptr = nullptr;
     }
   }
@@ -945,14 +948,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
 cleanup:
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
-    case 1:
-      if (y_node_ptr) {
-        free(y_node_ptr); /* fall through */
-      }
-    case 2:
-      if (z_node_ptr) {
-        free(z_node_ptr);
-      }
+    case 1: free(y_node_ptr); FALL_THROUGH;
+    case 2: free(z_node_ptr);
     }
   }
 
@@ -2051,13 +2048,13 @@ namespace {
         }
 
 #if 0
-	/* Old method -- can use for verification by uncommenting this if block  */
-	{
-	  int tst_fv1, tst_lv1;
-	  find_first_last(pcnt2, size, procs, &tst_fv1, &tst_lv1);
-	  assert(tst_fv1 == fv1);
-	  assert(tst_lv1 == lv1);
-	}
+        /* Old method -- can use for verification by uncommenting this if block  */
+        {
+          int tst_fv1, tst_lv1;
+          find_first_last(pcnt2, size, procs, &tst_fv1, &tst_lv1);
+          assert(tst_fv1 == fv1);
+          assert(tst_lv1 == lv1);
+        }
 #endif
 
         if (fv1 >= 0) {

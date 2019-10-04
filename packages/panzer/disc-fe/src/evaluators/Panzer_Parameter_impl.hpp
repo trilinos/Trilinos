@@ -77,7 +77,7 @@ template<typename EvalT, typename TRAITS>
 void Parameter<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  //std::cout << "ROGER ParamValue = " << param->getValue() << std::endl;
+  //std::cout << "Parameter::evalauteFields() ParamValue = " << param->getValue() << std::endl;
 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;

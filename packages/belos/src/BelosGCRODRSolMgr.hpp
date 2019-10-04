@@ -2070,7 +2070,7 @@ int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs1(int m,
   // Magnitude of harmonic Ritz values
   std::vector<MagnitudeType> w(m);
 
-  // Sorted order of harmonic Ritz values, also used for DGEEV
+  // Sorted order of harmonic Ritz values, also used for GEEV
   std::vector<int> iperm(m);
 
   // Output info
@@ -2097,7 +2097,7 @@ int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs1(int m,
   const int ldvl = 1;
   ScalarType* vl = 0;
 
-  // Size of workspace and workspace for DGEEV
+  // Size of workspace and workspace for GEEV
   int lwork = -1;
   std::vector<ScalarType> work(1);
   std::vector<MagnitudeType> rwork(2*m);

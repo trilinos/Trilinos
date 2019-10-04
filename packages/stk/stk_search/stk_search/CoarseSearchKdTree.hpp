@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -38,8 +39,9 @@
 #include <omp.h>
 #endif
 
-#include "stk_util/environment/WallTime.hpp"
 #include "stk_search/KDTree_BoundingBox.hpp"
+#include "stk_util/environment/Env.hpp"
+#include "stk_util/environment/WallTime.hpp"
 #include <stk_search/CommonSearchUtil.hpp>
 #include <stk_search/Sphere.hpp>
 
@@ -142,10 +144,7 @@ namespace stk {
 #endif
 
       if(communicateRangeBoxInfo) {
-        std::vector <std::pair<DomainIdentifier,RangeIdentifier> > tmp;
-        tmp.reserve(searchResults.size());
-        stk::search::communicateVector(comm, searchResults, tmp, communicateRangeBoxInfo);
-        searchResults=tmp;
+        stk::search::communicateVector(comm, searchResults, communicateRangeBoxInfo);
         std::sort(searchResults.begin(), searchResults.end());
       }
     }
@@ -167,17 +166,18 @@ namespace stk {
       MPI_Comm_rank(comm, &proc_id);
       MPI_Comm_size(comm, &num_procs);
 
+#ifdef _OPENMP
+      std::vector<std::vector<std::pair<DomainIdentifier, RangeIdentifier> > >
+        threadLocalSearchResults( omp_get_max_threads() );
+#endif
+
+      {
       std::vector<stk::search::Box<RBoxNumType> > rangeBoxes( local_range.size() );
 
       std::vector<RangeIdentifier> rangeGhostIdentifiers;
 
       stk::search::ComputeRangeWithGhostsForCoarseSearch(local_domain, local_range,
                                             num_procs, rangeBoxes, rangeGhostIdentifiers, comm);
-
-#ifdef _OPENMP
-      std::vector<std::vector<std::pair<DomainIdentifier, RangeIdentifier> > >
-        threadLocalSearchResults( omp_get_max_threads() );
-#endif
 
       if ((local_domain.size() > 0) && (rangeBoxes.size() > 0)) {
 
@@ -207,6 +207,7 @@ namespace stk {
           //
           //  Loop over all boxAs in group1 and search them against those objects in group2
           //
+          interList.reserve((numBoxDomain*3)/2);
 #ifdef _OPENMP
 #pragma omp for
 #endif
@@ -223,15 +224,12 @@ namespace stk {
           }
         }
       }
+      }
 #ifdef _OPENMP
       stk::search::ConcatenateThreadLists(threadLocalSearchResults, searchResults);
 #endif
-
       if(communicateRangeBoxInfo) {
-        std::vector <std::pair<DomainIdentifier,RangeIdentifier> > tmp;
-        tmp.reserve(searchResults.size());
-        stk::search::communicateVector(comm, searchResults, tmp, communicateRangeBoxInfo);
-        searchResults=tmp;
+        stk::search::communicateVector(comm, searchResults, communicateRangeBoxInfo);
         std::sort(searchResults.begin(), searchResults.end());
       }
     }

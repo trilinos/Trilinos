@@ -52,44 +52,37 @@ namespace panzer
 
 namespace
 {
-
-template<typename LO, typename GO>
-void
-convertMeshPartitionToWorkset(const panzer::LocalMeshPartition<LO,GO> & partition,
-                              const panzer::WorksetNeeds & needs,
-                              panzer::Workset & workset)
-{
-  workset.setup(partition, needs);
-
-  workset.num_cells = partition.num_owned_cells + partition.num_ghstd_cells + partition.num_virtual_cells;
-  workset.subcell_dim = -1;
-
-}
-
+  void
+  convertMeshPartitionToWorkset(const panzer::LocalMeshPartition & partition,
+                                const panzer::WorksetNeeds & needs,
+                                panzer::Workset & workset)
+  {
+    workset.setup(partition, needs);
+    workset.num_cells = partition.num_owned_cells + partition.num_ghstd_cells + partition.num_virtual_cells;
+    workset.subcell_dim = -1;
+  } 
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
-buildPartitionedWorksets(const panzer::LocalMeshInfo<int,panzer::Ordinal64> & mesh_info,
+buildPartitionedWorksets(const panzer::LocalMeshInfo & mesh_info,
                          const panzer::WorksetDescriptor & description,
                          const panzer::WorksetNeeds & needs)
 {
-
   Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>());
 
   // Make sure it makes sense to partition
   TEUCHOS_ASSERT(description.requiresPartitioning());
 
   // Each partition represents a chunk of the mesh
-  std::vector<panzer::LocalMeshPartition<int,panzer::Ordinal64> > partitions;
-  panzer::generateLocalMeshPartitions<int,panzer::Ordinal64>(mesh_info, description, partitions);
+  std::vector<panzer::LocalMeshPartition> partitions;
+  panzer::generateLocalMeshPartitions(mesh_info, description, partitions);
 
   for(const auto & partition : partitions){
     worksets->push_back(panzer::Workset());
-    convertMeshPartitionToWorkset<int,panzer::Ordinal64>(partition, needs, worksets->back());
+    convertMeshPartitionToWorkset(partition, needs, worksets->back());
   }
 
   return worksets;
-
 }
 
 }

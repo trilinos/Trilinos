@@ -52,8 +52,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
@@ -77,8 +77,8 @@
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
-ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                              const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                              const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                               const Teuchos::ParameterList& p,
                               bool /* useDiscreteAdjoint */)
   : rowIndexers_(rIndexers) 
@@ -213,8 +213,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
-ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                              const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                              const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                               const Teuchos::ParameterList& p,
                               bool /* useDiscreteAdjoint */)
   : rowIndexers_(rIndexers) 
@@ -351,8 +351,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
-ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                              const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                              const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                               const Teuchos::ParameterList& p,
                               bool useDiscreteAdjoint)
   : rowIndexers_(rIndexers) 

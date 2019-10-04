@@ -61,7 +61,7 @@ createMatrix(const Teuchos::RCP<const typename CrsMatrixType::map_type>& map)
   using GO = typename CrsMatrixType::global_ordinal_type;
 
   // Create a Tpetra::Matrix using the Map, with dynamic allocation.
-  RCP<CrsMatrixType> A(new CrsMatrixType(map, 0));
+  RCP<CrsMatrixType> A(new CrsMatrixType(map, 3));
 
   // Add rows one at a time.  Off diagonal values will always be -1.
   const scalar_type two    = static_cast<scalar_type>( 2.0);

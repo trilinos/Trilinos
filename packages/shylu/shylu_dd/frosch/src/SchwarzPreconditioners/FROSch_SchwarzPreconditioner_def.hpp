@@ -44,8 +44,12 @@
 
 #include <FROSch_SchwarzPreconditioner_decl.hpp>
 
+
 namespace FROSch {
-    
+
+    using namespace Teuchos;
+    using namespace Xpetra;
+
     template <class SC,class LO,class GO,class NO>
     SchwarzPreconditioner<SC,LO,GO,NO>::SchwarzPreconditioner(ParameterListPtr parameterList,
                                                               CommPtr comm) :
@@ -54,29 +58,29 @@ namespace FROSch {
     UseTranspose_ (false),
     IsInitialized_ (false),
     IsComputed_ (false),
-    Verbose_ (comm->getRank()==0)
+    Verbose_ (comm->getRank()==0),
+    LevelID_ (ParameterList_->get("Level ID",UN(1)))
     {
-    
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     SchwarzPreconditioner<SC,LO,GO,NO>::~SchwarzPreconditioner()
     {
-    
+
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     bool SchwarzPreconditioner<SC,LO,GO,NO>::isInitialized() const
     {
         return IsInitialized_; // TODO: Das hat noch keine Bedeutung
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     bool SchwarzPreconditioner<SC,LO,GO,NO>::isComputed() const
     {
         return IsComputed_; // TODO: Das hat noch keine Bedeutung
     }
-    
 }
 
 #endif

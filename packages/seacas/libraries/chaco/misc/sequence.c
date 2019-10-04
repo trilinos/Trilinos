@@ -78,7 +78,8 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
   int               old_lan_conv_mode;        /* value of LANCZOS_CONVERGENCE_MODE */
   int               i;                        /* loop counters */
   FILE *            orderfile = NULL;
-  void              mergesort(), eigensolve(), free_edgeslist(), y2x();
+  void              ch_mergesort(double *vals, int nvals, int *indices, int *space);
+  void              eigensolve(), free_edgeslist(), y2x();
   void              make_subvector(), make_subgraph(), remake_graph();
   void              make_maps2();
   double            find_maxdeg(), seconds();
@@ -188,7 +189,7 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
       if (using_vwgts) {
         y2x(yvecs, 1, subnvtxs, subvwsqrt);
       }
-      mergesort(&(yvecs[1][1]), subnvtxs, subperm, space);
+      ch_mergesort(&(yvecs[1][1]), subnvtxs, subperm, space);
     }
 
     if (ncomps > 1) {

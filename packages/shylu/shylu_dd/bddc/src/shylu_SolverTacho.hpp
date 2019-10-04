@@ -58,7 +58,12 @@ namespace bddc {
   class SolverTacho : public SolverBase<SX> 
   {
   public:
-    typedef Tacho::Solver<SX,Kokkos::DefaultHostExecutionSpace> solver_type;
+    template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
+
+    typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
+    typedef TaskSchedulerType<host_exec_space> scheduler_type;
+
+    typedef Tacho::Solver<SX,scheduler_type> solver_type;
 
     typedef Tacho::ordinal_type ordinal_type;
     typedef Tacho::size_type size_type;

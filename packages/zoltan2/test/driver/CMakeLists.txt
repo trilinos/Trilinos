@@ -128,6 +128,17 @@ TRIBITS_ADD_TEST(
 )
 
 # MultiJagged Tests
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME multijaggedVwgt2Test
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/multijaggedVwgt2Test.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
 IF (${PROJECT_NAME}_ENABLE_Galeri)
   TRIBITS_ADD_TEST(
     test_driver
@@ -159,6 +170,17 @@ TRIBITS_ADD_TEST(
     COMM serial mpi
     ARGS
     "./driverinputs/multiJaggedTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME mjTestPremigrate
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/multiJaggedPremigrateTest.xml"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )

@@ -23,10 +23,9 @@ Level 1
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -38,10 +37,12 @@ filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1
 
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
+BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 2a (secondary))
+BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
@@ -49,6 +50,7 @@ aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
 aggregation: enable phase 1 = 1   [default]
 aggregation: phase 1 algorithm = Serial   [default]
+aggregation: deterministic = 0   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -65,6 +67,12 @@ Build (MueLu::CoarseMapFactory_kokkos)
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -151,10 +159,9 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -166,10 +173,12 @@ filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1
 
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
+BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 2a (secondary))
+BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
@@ -177,6 +186,7 @@ aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
 aggregation: enable phase 1 = 1   [default]
 aggregation: phase 1 algorithm = Serial   [default]
+aggregation: deterministic = 0   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -193,6 +203,12 @@ Build (MueLu::CoarseMapFactory_kokkos)
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -262,7 +278,9 @@ keep smoother data = 0   [default]
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 presmoother -> 
- [empty list]
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 
 
 --------------------------------------------------------------------------------
@@ -308,6 +326,26 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
+Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Build (MueLu::CoalesceDropFactory_kokkos)
+Build (MueLu::AmalgamationFactory_kokkos)
+[empty list]
+
+algorithm = "classical": threshold = 0, blocksize = 1
+aggregation: drop tol = 0   [default]
+aggregation: Dirichlet threshold = 0   [default]
+aggregation: drop scheme = classical   [default]
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+lightweight wrap = 1
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
 Using original prolongator
 repartition: rebalance P and R = 0
 repartition: rebalance Nullspace = 1   [default]
@@ -377,10 +415,9 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -392,10 +429,12 @@ filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1
 
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
+BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 2a (secondary))
+BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
@@ -403,6 +442,7 @@ aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
 aggregation: enable phase 1 = 1   [default]
 aggregation: phase 1 algorithm = Serial   [default]
+aggregation: deterministic = 0   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -419,6 +459,12 @@ Build (MueLu::CoarseMapFactory_kokkos)
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -487,7 +533,9 @@ keep smoother data = 0   [default]
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 presmoother -> 
- [empty list]
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 
 
 --------------------------------------------------------------------------------

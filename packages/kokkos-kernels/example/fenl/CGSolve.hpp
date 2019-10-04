@@ -122,7 +122,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
       timer.reset();
       /* import p    */  import( pAll );
       /* Ap = A * p  */  KokkosSparse::spmv( "N", 1.0, A , pAll, 0.0, Ap);
-      execution_space::fence();
+      execution_space().fence();
       matvec_time += timer.seconds();
 
       const double pAp_dot = Kokkos::Example::all_reduce( KokkosBlas::dot( p , Ap ) , import.comm );
@@ -141,7 +141,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
       ++iteration ;
     }
 
-    execution_space::fence();
+    execution_space().fence();
     iter_time = wall_clock.seconds();
   }
 };

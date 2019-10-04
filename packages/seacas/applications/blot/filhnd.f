@@ -75,7 +75,7 @@ c DATE:                 December 20, 1988
 c
 c TYPE OF SUBPROGRAM:   subroutine
 c
-c USEAGE:               call filhnd (unit , fil1, ecodei, ecodeo,
+c USAGE:               call filhnd (unit , fil1, ecodei, ecodeo,
 c                                    type, fform, facces, frecl, *)
 c
 c PARAMETERS:
@@ -156,7 +156,7 @@ c           Name of the file to open.  If ! = ' ', then filhnd calls
 c           the SUPES routine EXNAME to get the filename associated
 c           with the specified unit number.
 c
-c           if unit <= 0, then all other paramaters are ignored.
+c           if unit <= 0, then all other parameters are ignored.
 c
 c
 c        declarations

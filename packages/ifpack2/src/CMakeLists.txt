@@ -199,6 +199,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     BlockRelaxation
     BorderedOperator
     Chebyshev
+    Container
     BandedContainer
     DenseContainer
     Diagonal
@@ -369,5 +370,5 @@ TRIBITS_ADD_LIBRARY(
 #
 # Make a trivial change here if you want CMake to run, due to changes
 # you make to files in Ifpack2.  Here is another such change.
-# Behold, I make another change, and another.
+# Behold, I make another change, and another, and another.
 #

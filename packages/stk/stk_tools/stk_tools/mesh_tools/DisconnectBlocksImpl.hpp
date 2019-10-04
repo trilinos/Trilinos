@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -48,13 +49,13 @@ namespace impl {
 
 struct NodeMapKey
 {
-  NodeMapKey(stk::mesh::Entity _parentNode, const stk::mesh::Part * _disconnectedBlock)
+  NodeMapKey(stk::mesh::Entity _parentNode, const stk::mesh::Part & _disconnectedBlock)
     : parentNode(_parentNode),
       disconnectedBlock(_disconnectedBlock) {}
   ~NodeMapKey() = default;
 
   stk::mesh::Entity parentNode;
-  const stk::mesh::Part * disconnectedBlock;
+  const stk::mesh::Part & disconnectedBlock;
 };
 
 struct NodeMapValue
@@ -76,7 +77,7 @@ public:
     if (lhs.parentNode != rhs.parentNode) {
       return (lhs.parentNode < rhs.parentNode);
     }
-    return (lhs.disconnectedBlock->mesh_meta_data_ordinal() < rhs.disconnectedBlock->mesh_meta_data_ordinal());
+    return (lhs.disconnectedBlock.mesh_meta_data_ordinal() < rhs.disconnectedBlock.mesh_meta_data_ordinal());
   }
 };
 
@@ -86,17 +87,7 @@ using SideSetType = std::vector<stk::mesh::SideSetEntry>;
 
 bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part);
 
-int64_t get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
-
-void get_nodes_for_element_side(const stk::mesh::BulkData & bulk,
-                                stk::mesh::Entity element,
-                                stk::mesh::ConnectivityOrdinal sideOrdinal,
-                                std::vector<stk::mesh::Entity> & sideNodes);
-
-void get_node_ordinals_for_element_side(const stk::mesh::BulkData & bulk,
-                                        stk::mesh::Entity element,
-                                        stk::mesh::ConnectivityOrdinal sideOrdinal,
-                                        std::vector<stk::mesh::ConnectivityOrdinal> & sideNodeOrdinals);
+unsigned get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
 
 void add_nodes_to_disconnect(const stk::mesh::BulkData & bulk,
                              const BlockPairType & blockPair,
@@ -109,9 +100,6 @@ void communicate_shared_node_information(stk::mesh::BulkData & bulk, NodeMapType
 void get_all_blocks_in_mesh(const stk::mesh::BulkData & bulk, stk::mesh::PartVector & blocksInMesh);
 
 std::vector<BlockPairType> get_block_pairs_to_disconnect(const stk::mesh::BulkData & bulk);
-
-std::vector<SideSetType> get_sidesets_to_disconnect(stk::mesh::BulkData & bulk,
-                                                    const std::vector<BlockPairType> & blockPairsToDisconnect);
 
 void disconnect_elements(stk::mesh::BulkData & bulk,
                          const BlockPairType & blockPair,

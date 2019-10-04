@@ -44,24 +44,27 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Export.hpp"
-#include "Tpetra_Import.hpp"
+#include "Tpetra_Details_computeOffsets.hpp"
+#include "Tpetra_Details_shortSort.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 namespace Tpetra {
 
 template<class Scalar,
-     class LocalOrdinal,
-     class GlobalOrdinal,
-     class Node>
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node>
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix,const std::string & label)
-  : origMatrix_(origMatrix), label_(label) {}
+RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix,
+                     const std::string& label)
+  : origMatrix_ (origMatrix), label_ (label)
+{}
 
 template<class Scalar,
-     class LocalOrdinal,
-     class GlobalOrdinal,
-     class Node>
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node>
 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 createTranspose (const Teuchos::RCP<Teuchos::ParameterList> &params)
@@ -71,15 +74,16 @@ createTranspose (const Teuchos::RCP<Teuchos::ParameterList> &params)
   RCP<crs_matrix_type> transMatrixWithSharedRows = createTransposeLocal (params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix = std::string("Tpetra ")+ label_ + std::string(": ");
+  const std::string prefix = std::string ("Tpetra ") + label_ + ": ";
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Transpose TAFC"))));
+  TimeMonitor MM (*TimeMonitor::getNewTimer (prefix + "Transpose TAFC"));
 #endif
 
   // If transMatrixWithSharedRows has an exporter, that's what we
   // want.  If it doesn't, the rows aren't actually shared, and we're
   // done!
-  RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter =
+  using export_type = Export<LocalOrdinal, GlobalOrdinal, Node>;
+  RCP<const export_type> exporter =
     transMatrixWithSharedRows->getGraph ()->getExporter ();
   if (exporter.is_null ()) {
     return transMatrixWithSharedRows;
@@ -87,11 +91,16 @@ createTranspose (const Teuchos::RCP<Teuchos::ParameterList> &params)
   else {
     Teuchos::ParameterList labelList;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    labelList.set("Timer Label",label_);
+    labelList.set("Timer Label", label_);
 #endif
-    if(!params.is_null()) labelList.set("compute global constants",params->get("compute global constants",true));
+    if(! params.is_null ()) {
+      const char paramName[] = "compute global constants";
+      labelList.set (paramName, params->get (paramName, true));
+    }
     // Use the Export object to do a fused Export and fillComplete.
-    return exportAndFillCompleteCrsMatrix<crs_matrix_type> (transMatrixWithSharedRows, *exporter,Teuchos::null,Teuchos::null,Teuchos::rcp(&labelList,false));
+    return exportAndFillCompleteCrsMatrix<crs_matrix_type>
+      (transMatrixWithSharedRows, *exporter, Teuchos::null,
+       Teuchos::null, Teuchos::rcpFromRef (labelList));
   }
 }
 
@@ -106,7 +115,7 @@ template<class Scalar,
          class Node>
 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList> &params)
+createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -114,170 +123,160 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList> &params)
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Tpetra::Import<LO, GO, Node> import_type;
-  typedef Tpetra::Export<LO, GO, Node> export_type;
+  using LO = LocalOrdinal;
+  using GO = GlobalOrdinal;
+  using IST = typename CrsMatrix<Scalar, LO, GO, Node>::impl_scalar_type;
+  using import_type = Tpetra::Import<LO, GO, Node>;
+  using export_type = Tpetra::Export<LO, GO, Node>;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix = std::string("Tpetra ")+ label_ + std::string(": ");
+  std::string prefix = std::string("Tpetra ") + label_ + ": ";
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Transpose Local"))));
+  TimeMonitor MM (*TimeMonitor::getNewTimer (prefix + "Transpose Local"));
 #endif
 
-  // Prebuild the importers and exporters the no-communication way,
-  // flipping the importers and exporters around.
-  RCP<const import_type> myImport;
-  RCP<const export_type> myExport;
-  if (! origMatrix_->getGraph ()->getImporter ().is_null ()) {
-    myExport = rcp (new export_type (*origMatrix_->getGraph ()->getImporter ()));
-  }
-  if (! origMatrix_->getGraph ()->getExporter ().is_null ()) {
-    myImport = rcp (new import_type (*origMatrix_->getGraph ()->getExporter ()));
-  }
+  const bool sort = [&] () {
+    constexpr bool sortDefault = true; // see #4607 discussion
+    const char sortParamName[] = "sort";
+    return params.get () == nullptr ? sortDefault :
+      params->get (sortParamName, sortDefault);
+  } ();
 
-  //
-  // This transpose is based upon the approach in EpetraExt.
-  //
-
-  size_t numLocalCols = origMatrix_->getNodeNumCols();
-  size_t numLocalRows = origMatrix_->getNodeNumRows();
-  size_t numLocalNnz  = origMatrix_->getNodeNumEntries();
+  const LO lclNumCols (origMatrix_->getNodeNumCols ());
+  const LO lclNumRows (origMatrix_->getNodeNumRows ());
+  const size_t nnz (origMatrix_->getNodeNumEntries ());
 
   RCP<const crs_matrix_type> crsMatrix =
     rcp_dynamic_cast<const crs_matrix_type> (origMatrix_);
-
-  RCP<crs_matrix_type> transMatrixWithSharedRows;
-  if (crsMatrix != Teuchos::null) {
-    // The matrix is a CrsMatrix
-    using local_matrix_type = typename crs_matrix_type::local_matrix_type;
-    using row_map_type = typename local_matrix_type::row_map_type::non_const_type;
-    using index_type = typename local_matrix_type::index_type::non_const_type;
-    using values_type = typename local_matrix_type::values_type::non_const_type;
-    using execution_space = typename local_matrix_type::execution_space;
-
-    // Determine how many nonzeros there are per row in the transpose.
-    auto lclMatrix = crsMatrix->getLocalMatrix();
-    auto lclGraph  = lclMatrix.graph;
-
-    using range_type = Kokkos::RangePolicy<LO,execution_space>;
-
-    // Determine how many nonzeros there are per row in the transpose.
-    row_map_type t_rows("transpose_rows", numLocalCols+1);
-    Kokkos::parallel_for("compute_number_of_indices_per_column", range_type(0, numLocalRows),
-      KOKKOS_LAMBDA(const LO row) {
-        auto rowView = lclGraph.rowConst(row);
-        auto length  = rowView.length;
-
-        for (decltype(length) colID = 0; colID < length; colID++) {
-          auto col = rowView(colID);
-          Kokkos::atomic_fetch_add(&t_rows[col], 1);
-        }
-    });
-
-    // Compute offsets
-    Kokkos::parallel_scan("compute_transpose_row_offsets", range_type(0, numLocalCols+1),
-      KOKKOS_LAMBDA(const LO i, LO& update, const bool& final_pass) {
-        const LO val = t_rows(i);
-        if (final_pass)
-          t_rows(i) = update;
-        update += val;
-      });
-
-    row_map_type offsets("transpose_row_offsets_aux", numLocalCols+1);
-    Kokkos::deep_copy(offsets, t_rows);
-
-    index_type  t_cols("transpose_cols", numLocalNnz);
-    values_type t_vals("transpose_vals", numLocalNnz);
-    Kokkos::parallel_for("compute_transposed_rows", range_type(0, numLocalRows),
-      KOKKOS_LAMBDA(const LO row) {
-        auto rowView = lclMatrix.rowConst(row);
-        auto length  = rowView.length;
-
-        for (decltype(length) colID = 0; colID < length; colID++) {
-          auto col = rowView.colidx(colID);
-
-          LO insert_pos = Kokkos::atomic_fetch_add(&offsets[col], 1);
-
-          t_cols[insert_pos] = row;
-          t_vals[insert_pos] = rowView.value(colID);
-        }
-    });
-
-    local_matrix_type lclTransposeMatrix("transpose", numLocalCols, numLocalRows, numLocalNnz, t_vals, t_rows, t_cols);
-
-    transMatrixWithSharedRows =
-        rcp (new crs_matrix_type (lclTransposeMatrix,
-                                  origMatrix_->getColMap (), origMatrix_->getRowMap (),
-                                  origMatrix_->getRangeMap (), origMatrix_->getDomainMap ()));
-  } else {
-    // FIXME: are we ever here? There is no RowMatrix constructor, we seem to
-    // be working only with CrsMatrices
-
-    // Determine how many nonzeros there are per row in the transpose.
-    Array<size_t> CurrentStart(numLocalCols,0);
-    ArrayView<const LO> localIndices;
-    ArrayView<const Scalar> localValues;
-    // RowMatrix path
-    for (size_t i=0; i<numLocalRows; ++i) {
-      const size_t numEntriesInRow = origMatrix_->getNumEntriesInLocalRow(i);
-      origMatrix_->getLocalRowView(i, localIndices, localValues);
-      for (size_t j=0; j<numEntriesInRow; ++j) {
-        ++CurrentStart[ localIndices[j] ];
+  if (crsMatrix.is_null ()) {
+    auto rowMap = origMatrix_->getRowMap ();
+    if (rowMap->isOneToOne ()) {
+      Teuchos::Array<size_t> numEntPerRow (lclNumRows);
+      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+        numEntPerRow[lclRow] = origMatrix_->getNumEntriesInLocalRow (lclRow);
       }
+      auto colMap = origMatrix_->getColMap ();
+
+      RCP<crs_matrix_type> crsMatrix_nc =
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+        rcp (new crs_matrix_type (rowMap, colMap, numEntPerRow (),
+                                  Tpetra::StaticProfile));
+#else
+        rcp (new crs_matrix_type (rowMap, colMap, numEntPerRow ()));
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+      // When source & target Maps are same, Import just copies.
+      import_type imp (rowMap, rowMap);
+      crsMatrix_nc->doImport (*origMatrix_, imp, Tpetra::REPLACE);
+      crsMatrix_nc->fillComplete (origMatrix_->getDomainMap (),
+                                  origMatrix_->getRangeMap ());
+      crsMatrix = crsMatrix_nc;
     }
-
-    // create temporary row-major storage for the transposed matrix
-
-    ArrayRCP<size_t> rowptr_rcp(numLocalCols+1);
-    ArrayRCP<LO>     colind_rcp(numLocalNnz);
-    ArrayRCP<Scalar> values_rcp(numLocalNnz);
-
-    // Since ArrayRCP's are slow...
-    ArrayView<size_t> TransRowptr = rowptr_rcp();
-    ArrayView<LO>     TransColind = colind_rcp();
-    ArrayView<Scalar> TransValues = values_rcp();
-
-    // Scansum the TransRowptr; reset CurrentStart
-    TransRowptr[0]=0;
-    for (size_t i=1; i<numLocalCols+1; ++i) TransRowptr[i]  = CurrentStart[i-1] + TransRowptr[i-1];
-    for (size_t i=0; i<numLocalCols;   ++i) CurrentStart[i] = TransRowptr[i];
-
-    // populate the row-major storage so that the data for the transposed
-    // matrix is easy to access
-    for (size_t i=0; i<numLocalRows; ++i) {
-      const size_t numEntriesInRow = origMatrix_->getNumEntriesInLocalRow (i);
-      origMatrix_->getLocalRowView(i, localIndices, localValues);
-
-      for (size_t j=0; j<numEntriesInRow; ++j) {
-        size_t idx = CurrentStart[localIndices[j]];
-        TransColind[idx] = Teuchos::as<LO>(i);
-        TransValues[idx] = localValues[j];
-        ++CurrentStart[localIndices[j]];
-      }
-    } //for (size_t i=0; i<numLocalRows; ++i)
-
-    // Allocate and populate temporary matrix with rows not uniquely owned
-    transMatrixWithSharedRows =
-        rcp (new crs_matrix_type (origMatrix_->getColMap (),
-                                  origMatrix_->getRowMap (), 0));
-    transMatrixWithSharedRows->setAllValues (rowptr_rcp, colind_rcp, values_rcp);
-
-    // Call ESFC & return
-    Teuchos::ParameterList eParams;
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    eParams.set("Timer Label",label_);
-#endif
-    if (!params.is_null())
-      eParams.set("compute global constants", params->get("compute global constants", true));
-
-    transMatrixWithSharedRows->expertStaticFillComplete (origMatrix_->getRangeMap (),
-                                                         origMatrix_->getDomainMap (),
-                                                         myImport, myExport,rcp(&eParams,false));
-
+    else {
+      TEUCHOS_ASSERT( false ); // not implemented (it wasn't before)
+    }
   }
 
-  return transMatrixWithSharedRows;
+  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+  using local_graph_type = typename crs_matrix_type::local_graph_type;
+  using offset_type = typename local_graph_type::size_type;
+  using row_map_type = typename local_matrix_type::row_map_type::non_const_type;
+  using index_type = typename local_matrix_type::index_type::non_const_type;
+  using values_type = typename local_matrix_type::values_type::non_const_type;
+  using execution_space = typename local_matrix_type::execution_space;
+
+  local_matrix_type lclMatrix = crsMatrix->getLocalMatrix ();
+  local_graph_type lclGraph = lclMatrix.graph;
+
+  // Determine how many nonzeros there are per row in the transpose.
+  using DT = typename crs_matrix_type::device_type;
+  Kokkos::View<LO*, DT> t_counts ("transpose row counts", lclNumCols);
+  using range_type = Kokkos::RangePolicy<LO, execution_space>;
+  Kokkos::parallel_for
+    ("Compute row counts of local transpose",
+     range_type (0, lclNumRows),
+     KOKKOS_LAMBDA (const LO row) {
+      auto rowView = lclGraph.rowConst(row);
+      const LO length  = rowView.length;
+
+      for (LO colID = 0; colID < length; ++colID) {
+        const LO col = rowView(colID);
+        Kokkos::atomic_fetch_add (&t_counts[col], LO (1));
+      }
+    });
+
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
+  row_map_type t_offsets
+    (view_alloc ("transpose ptr", WithoutInitializing), lclNumCols + 1);
+
+  // TODO (mfh 10 Jul 2019): This returns the sum of all counts,
+  // which could be useful for checking nnz.
+  (void) Details::computeOffsetsFromCounts (t_offsets, t_counts);
+
+  index_type t_cols
+    (view_alloc ("transpose lcl ind", WithoutInitializing), nnz);
+  values_type t_vals
+    (view_alloc ("transpose val", WithoutInitializing), nnz);
+  Kokkos::parallel_for
+    ("Compute local transpose",
+     range_type (0, lclNumRows),
+     KOKKOS_LAMBDA (const LO row) {
+      auto rowView = lclMatrix.rowConst(row);
+      const LO length  = rowView.length;
+
+      for (LO colID = 0; colID < length; colID++) {
+        const LO col = rowView.colidx(colID);
+        const offset_type beg = t_offsets[col];
+        const LO old_count =
+          Kokkos::atomic_fetch_sub (&t_counts[col], LO (1));
+        const LO len (t_offsets[col+1] - beg);
+        const offset_type insert_pos = beg + (len - old_count);
+        t_cols[insert_pos] = row;
+        t_vals[insert_pos] = rowView.value(colID);
+      }
+    });
+
+  // Invariant: At this point, all entries of t_counts are zero.
+  // This means we can use it to store new post-merge counts.
+
+  if (sort) {
+    // NOTE (mfh 11 Jul 2019) Merging is unnecessary: above
+    // parallel_for visits each row of the original matrix once, so
+    // there can be no duplicate column indices in the transpose.
+    using Details::shellSortKeysAndValues;
+    Kokkos::parallel_for
+      ("Sort rows of local transpose",
+       range_type (0, lclNumCols),
+       KOKKOS_LAMBDA (const LO lclCol) {
+        const offset_type beg = t_offsets[lclCol];
+        const LO len (t_offsets[lclCol+1] - t_offsets[lclCol]);
+
+        LO* cols_beg = t_cols.data () + beg;
+        IST* vals_beg = t_vals.data () + beg;
+        shellSortKeysAndValues (cols_beg, vals_beg, len);
+      });
+  }
+
+  local_matrix_type lclTransposeMatrix ("transpose", lclNumCols,
+                                        lclNumRows, nnz,
+                                        t_vals, t_offsets, t_cols);
+
+  // Prebuild the importers and exporters the no-communication way,
+  // flipping the importers and exporters around.
+  const auto origExport = origMatrix_->getGraph ()->getExporter ();
+  RCP<const import_type> myImport = origExport.is_null () ?
+    Teuchos::null : rcp (new import_type (*origExport));
+  const auto origImport = origMatrix_->getGraph ()->getImporter ();
+  RCP<const export_type> myExport = origImport.is_null () ?
+    Teuchos::null : rcp (new export_type (*origImport));
+
+  return rcp (new crs_matrix_type (lclTransposeMatrix,
+                                   origMatrix_->getColMap (),
+                                   origMatrix_->getRowMap (),
+                                   origMatrix_->getRangeMap (),
+                                   origMatrix_->getDomainMap (),
+                                   myImport, myExport));
 }
 //
 // Explicit instantiation macro

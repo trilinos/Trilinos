@@ -50,7 +50,6 @@ C=======================================================================
 
       IF (LENGTH.LE.0) THEN
          WRITE (6,*) ' Cannot allocate a segment of length zero.'
-         CALL CPUTBK(.FALSE.)
       END IF
 
       LR = LENGTH + MOD(LENGTH,2)

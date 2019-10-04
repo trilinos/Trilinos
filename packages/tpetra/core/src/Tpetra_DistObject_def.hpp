@@ -589,16 +589,18 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
 
-      auto permToLIDs = (revOp == DoForward) ?
+      using const_lo_dv_type =
+        Kokkos::DualView<const local_ordinal_type*, buffer_device_type>;
+      const_lo_dv_type permToLIDs = (revOp == DoForward) ?
         transfer.getPermuteToLIDs_dv () :
         transfer.getPermuteFromLIDs_dv ();
-      auto permFromLIDs = (revOp == DoForward) ?
+      const_lo_dv_type permFromLIDs = (revOp == DoForward) ?
         transfer.getPermuteFromLIDs_dv () :
         transfer.getPermuteToLIDs_dv ();
-      auto remoteLIDs = (revOp == DoForward) ?
+      const_lo_dv_type remoteLIDs = (revOp == DoForward) ?
         transfer.getRemoteLIDs_dv () :
         transfer.getExportLIDs_dv ();
-      auto exportLIDs = (revOp == DoForward) ?
+      const_lo_dv_type exportLIDs = (revOp == DoForward) ?
         transfer.getExportLIDs_dv () :
         transfer.getRemoteLIDs_dv ();
       doTransferNew (src, CM, numSameIDs, permToLIDs, permFromLIDs,
@@ -1054,7 +1056,7 @@ namespace Tpetra {
             else {
               distor.doPostsAndWaits (numExp_h, 1, numImp_h);
             }
-            DES::fence (); // just in case UVM doesn't behave right
+            DES().fence (); // just in case UVM doesn't behave right
 
             if (verbose) {
               std::ostringstream os;
@@ -1090,7 +1092,7 @@ namespace Tpetra {
             else {
               distor.doPostsAndWaits (numExp_d, 1, numImp_d);
             }
-            DES::fence (); // just in case UVM doesn't behave right
+            DES().fence (); // just in case UVM doesn't behave right
 
             if (verbose) {
               std::ostringstream os;

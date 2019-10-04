@@ -55,10 +55,16 @@ echo "Using waterman compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
 
-if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
-  [[ "${ATDM_CONFIG_CUDA_RDC}" == "ON" ]] ; then
-  export ATDM_CONFIG_BUILD_COUNT=32
-  export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=16
+if   [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] \
+  && [[ "${ATDM_CONFIG_CUDA_RDC}" == "ON" ]] \
+  ; then
+  if [[ "${ATDM_CONFIG_BUILD_TYPE}" == *"DEBUG" ]] ;then
+    export ATDM_CONFIG_BUILD_COUNT=20
+    export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=10
+  else
+    export ATDM_CONFIG_BUILD_COUNT=32
+    export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=16
+  fi
   # When CUDA+RDC is enabled, using all 64 cores to build and link results in
   # build errors as described in #4502.
 else
@@ -112,6 +118,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   export ATDM_CONFIG_USE_CUDA=ON
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+  export KOKKOS_NUM_DEVICES=2
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
   # Avoids timeouts due to not running on separate GPUs (see #2446)
 else

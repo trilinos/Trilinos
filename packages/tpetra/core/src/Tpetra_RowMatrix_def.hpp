@@ -217,9 +217,9 @@ namespace Tpetra {
       // Construct the result matrix C.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
       if (constructorSublist.is_null ()) {
-        C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile));
+        C = rcp (new crs_matrix_type (C_rowMap, 0, ProfileType(StaticProfile+1) /* DynamicProfile */));
       } else {
-        C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile,
+        C = rcp (new crs_matrix_type (C_rowMap, 0, ProfileType(StaticProfile+1) /* DynamicProfile */,
                                       constructorSublist));
       }
 #else

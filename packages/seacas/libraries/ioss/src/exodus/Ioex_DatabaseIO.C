@@ -315,7 +315,7 @@ namespace Ioex {
       double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
       ex_close(exodusFilePtr);
-
+      closeDW();
       if (do_timer && isParallel) {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
@@ -616,7 +616,7 @@ namespace Ioex {
   // common
   size_t DatabaseIO::handle_block_ids(const Ioss::EntityBlock *eb, ex_entity_type map_type,
                                       Ioss::Map &entity_map, void *ids, size_t num_to_get,
-                                      size_t offset, size_t count) const
+                                      size_t offset) const
   {
     /*!
      * NOTE: "element" is generic for "element", "face", or "edge"
@@ -1642,11 +1642,19 @@ namespace Ioex {
     // finished. Hopefully the netcdf no-fsync fix along with this fix
     // results in negligible impact on runtime with more syncs.
 
+    // Need to be able to handle a flushInterval == 1 to force flush
+    // every time step even in a serial run.
+    // The default setting for flushInterval is 1, but in the past, 
+    // it was not checked for serial runs.  Now, set the default to -1
+    // and if that is the value and serial, then do the time-based
+    // check; otherwise, use flushInterval setting...
+    
     bool do_flush = true;
-    if (flushInterval != 1) {
-      if (flushInterval == 0 || state % flushInterval != 0) {
-        do_flush = false;
-      }
+    if (flushInterval == 1) {
+      do_flush = true;
+    }
+    else if (flushInterval == 0) {
+      do_flush = false;
     }
     else if (dbUsage == Ioss::WRITE_HISTORY || !isParallel) {
       assert(myProcessor == 0);
@@ -1659,6 +1667,13 @@ namespace Ioex {
         do_flush = false;
       }
     }
+    
+    if (!do_flush && flushInterval > 0) {
+      if (state % flushInterval == 0) {
+        do_flush = true;
+      }
+    }
+
     if (do_flush) {
       flush_database__();
     }
@@ -2181,6 +2196,10 @@ namespace {
   void check_variable_consistency(const ex_var_params &exo_params, int my_processor,
                                   const std::string &filename, const Ioss::ParallelUtils &util)
   {
+    PAR_UNUSED(exo_params);
+    PAR_UNUSED(my_processor);
+    PAR_UNUSED(filename);
+    PAR_UNUSED(util);
 #ifdef SEACAS_HAVE_MPI
     const int        num_types = 10;
     std::vector<int> var_counts(num_types);

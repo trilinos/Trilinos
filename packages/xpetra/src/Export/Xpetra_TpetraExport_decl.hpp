@@ -72,9 +72,9 @@ toXpetra(const RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>>& exp
 
 
 
-template<class LocalOrdinal  = Export<>::local_ordinal_type,
-         class GlobalOrdinal = typename Export<LocalOrdinal>::global_ordinal_type,
-         class Node          = typename Export<LocalOrdinal, GlobalOrdinal>::node_type>
+template<class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node>
 class TpetraExport
     : public Export<LocalOrdinal, GlobalOrdinal, Node>
 {
@@ -153,6 +153,9 @@ class TpetraExport
 
     //! The target Map used to construct this Export.
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> getTargetMap() const;
+
+    //! Set distributor parameters.
+    void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const;
 
 
     //@}

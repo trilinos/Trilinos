@@ -354,7 +354,7 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 
       // Check for correct connectivity for all local elements
       if (print) output << "Checking for correct connectivity for all local elements." << std::endl;
-      panzer::Ordinal64 * conn;
+      panzer::GlobalOrdinal * conn;
       for (size_t localElementId = 0; localElementId < ownedElementCount; ++localElementId) {
         conn = connManager.getConnectivity(localElementId);
         for (int i = 0; i < connectivitySize[localElementId]; ++i) {

@@ -42,81 +42,89 @@
 #ifndef _FROSCH_GDSWINTERFACEPARTITIONOFUNITY_DECL_HPP
 #define _FROSCH_GDSWINTERFACEPARTITIONOFUNITY_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 #include <FROSch_InterfacePartitionOfUnity_def.hpp>
 
+
 namespace FROSch {
-    
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class GDSWInterfacePartitionOfUnity : public InterfacePartitionOfUnity<SC,LO,GO,NO> {
-        
+
+    protected:
+
+        using CommPtr                       = typename PartitionOfUnity<SC,LO,GO,NO>::CommPtr;
+
+        using XMap                          = typename PartitionOfUnity<SC,LO,GO,NO>::XMap ;
+        using XMapPtr                       = typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr                  = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr                 = typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
+
+        using XMatrix                       = typename PartitionOfUnity<SC,LO,GO,NO>::XMatrix;
+        using XMatrixPtr                    = typename PartitionOfUnity<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr               = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMatrixPtr;
+
+        using XMultiVector                  = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVector;
+        using XMultiVectorPtr               = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtr;
+        using ConstXMultiVectorPtr          = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using XMultiVectorPtrVecPtr         = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+        using ConstXMultiVectorPtrVecPtr    = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
+
+        using ParameterListPtr              = typename PartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr;
+
+        using DDInterfacePtr                = typename PartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr;
+
+        using EntitySetPtr                  = typename PartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr;
+
+        using UN                            = typename PartitionOfUnity<SC,LO,GO,NO>::UN;
+
+        using GOVec                         = typename PartitionOfUnity<SC,LO,GO,NO>::GOVec;
+        using GOVecView                     = typename PartitionOfUnity<SC,LO,GO,NO>::GOVecView;
+
     public:
-        
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::CommPtr CommPtr;
 
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::Map Map;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
-        
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::CrsMatrix CrsMatrix;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-        
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVector MultiVector;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMultiVectorPtr ConstMultiVectorPtr;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMultiVectorPtrVecPtr ConstMultiVectorPtrVecPtr;
-
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-        
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr DDInterfacePtr;
-        
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
-        
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::UN UN;
-
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::GOVec GOVec;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::GOVecView GOVecView;
-        
-        
         GDSWInterfacePartitionOfUnity(CommPtr mpiComm,
                                       CommPtr serialComm,
                                       UN dimension,
                                       UN dofsPerNode,
-                                      MapPtr nodesMap,
-                                      MapPtrVecPtr dofsMaps,
-                                      ParameterListPtr parameterList);
-        
+                                      ConstXMapPtr nodesMap,
+                                      ConstXMapPtrVecPtr dofsMaps,
+                                      ParameterListPtr parameterList,
+                                      Verbosity verbosity = All,
+                                      UN levelID = 1);
+
         virtual ~GDSWInterfacePartitionOfUnity();
         
         virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs,
-                                         MultiVectorPtr nodeList);
-        
-        virtual int sortInterface(CrsMatrixPtr matrix,
-                                  MultiVectorPtr nodeList);
-        
-        virtual int computePartitionOfUnity();
-        
+                                         ConstXMultiVectorPtr nodeList = null);
+
+        virtual int sortInterface(ConstXMatrixPtr matrix = null,
+                                  ConstXMultiVectorPtr nodeList = null);
+
+        virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null);
+
     protected:
-        
+
         bool UseVertices_;
         bool UseShortEdges_;
         bool UseStraightEdges_;
         bool UseEdges_;
         bool UseFaces_;
-        
+
         EntitySetPtr Vertices_;
         EntitySetPtr ShortEdges_;
         EntitySetPtr StraightEdges_;
         EntitySetPtr Edges_;
         EntitySetPtr Faces_;
-        
+
     };
-    
+
 }
 
 #endif

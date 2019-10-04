@@ -58,10 +58,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ST_ZU, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for free, malloc
-#include <sys/types.h> // for int64_t
 
 /*!
   \ingroup ResultsData
@@ -86,15 +82,14 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   const char *varobstat;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   switch (var_type) {
   case EX_GLOBAL:
-    status = ex_get_glob_var_time_int(exoid, var_index, beg_time_step, end_time_step, var_vals);
+    status = ex__get_glob_var_time(exoid, var_index, beg_time_step, end_time_step, var_vals);
     EX_FUNC_LEAVE(status);
   case EX_NODAL:
-    status =
-        ex_get_nodal_var_time_int(exoid, var_index, id, beg_time_step, end_time_step, var_vals);
+    status = ex__get_nodal_var_time(exoid, var_index, id, beg_time_step, end_time_step, var_vals);
     EX_FUNC_LEAVE(status);
   case EX_EDGE_BLOCK:
     varobjids = VAR_ID_ED_BLK;
@@ -143,8 +138,8 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   /* find what object the entry is in */
 
   /* first, find out how many objects there are */
-  status = ex_get_dimension(exoid, ex_dim_num_objects(var_type), ex_name_of_object(var_type),
-                            &num_obj, &dimid, __func__);
+  status = ex__get_dimension(exoid, ex__dim_num_objects(var_type), ex_name_of_object(var_type),
+                             &num_obj, &dimid, __func__);
   if (status != NC_NOERR) {
     EX_FUNC_LEAVE(status);
   }
@@ -198,7 +193,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
 
   i = 0;
   if (stat_vals[i] != 0) {
-    if ((status = nc_inq_dimid(exoid, ex_dim_num_entries_in_object(var_type, i + 1), &dimid)) !=
+    if ((status = nc_inq_dimid(exoid, ex__dim_num_entries_in_object(var_type, i + 1), &dimid)) !=
         NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate number of entries in %" ST_ZU "th %s in file id %d", i,
@@ -222,7 +217,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
 
   while (numel <= id) {
     if (stat_vals[++i] != 0) {
-      if ((status = nc_inq_dimid(exoid, ex_dim_num_entries_in_object(var_type, i + 1), &dimid)) !=
+      if ((status = nc_inq_dimid(exoid, ex__dim_num_entries_in_object(var_type, i + 1), &dimid)) !=
           NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to locate number of entries in %" ST_ZU "th %s in file id %d", i,
@@ -246,7 +241,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   offset = id - (numel - num_entries_this_obj);
 
   /* inquire previously defined variable */
-  if ((status = nc_inq_varid(exoid, ex_name_var_of_object(var_type, var_index, i + 1), &varid)) !=
+  if ((status = nc_inq_varid(exoid, ex__name_var_of_object(var_type, var_index, i + 1), &varid)) !=
       NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate variable %" ST_ZU " for %dth %s in file id %d", i, var_index,
@@ -303,7 +298,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   count[0] = end_time_step - beg_time_step + 1;
   count[1] = 1;
 
-  if (ex_comp_ws(exoid) == 4) {
+  if (ex__comp_ws(exoid) == 4) {
     status = nc_get_vara_float(exoid, varid, start, count, var_vals);
   }
   else {

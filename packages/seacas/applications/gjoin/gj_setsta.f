@@ -39,7 +39,7 @@ C=======================================================================
 C   --*** SETSTA *** (GJOIN) Set status of items
 C   --   Written by Amy Gilkey - revised 02/23/88
 C   --   Revised by Greg Sjaardema -
-C   --      06/12/90 - Delete multiple occurances of ID in list
+C   --      06/12/90 - Delete multiple occurrences of ID in list
 C   --
 C   --SETSTA sets the status of a list of items from user-supplied
 C   --instructions.

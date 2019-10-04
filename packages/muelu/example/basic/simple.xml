@@ -1,0 +1,90 @@
+<ParameterList name="MueLu">
+
+  <!--
+      For a generic symmetric scalar problem, these are the recommended settings for MueLu.
+  -->
+
+  <!-- ===========  GENERAL ================ -->
+  <Parameter        name="verbosity"                            type="string"   value="low"/>
+
+  <Parameter        name="coarse: max size"                     type="int"      value="1000"/>
+  <Parameter        name="coarse: type"                         type="string"   value="Klu2"/>
+
+  <Parameter        name="cycle type"                           type="string"   value="V"/>
+
+  <!-- Options are 'sa' (smoothed aggregation) and 'unsmoothed' -->
+  <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
+
+  <!-- reduces setup cost for symmetric problems -->
+  <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
+
+  <!-- start of default values for general options (can be omitted) -->
+  <Parameter        name="max levels"                	        type="int"      value="10"/>
+  <Parameter        name="number of equations"                  type="int"      value="1"/>
+  <Parameter        name="sa: use filtered matrix"              type="bool"     value="true"/>
+  <!-- end of default values -->
+
+  <!-- ===========  AGGREGATION  =========== -->
+  <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
+  <Parameter        name="aggregation: drop scheme"             type="string"   value="classical"/>
+  <!-- Uncomment the next line to enable dropping of weak connections, which can help AMG convergence
+       for anisotropic problems.  The exact value is problem dependent. -->
+  <!-- <Parameter        name="aggregation: drop tol"                type="double"   value="0.02"/> -->
+
+  <!-- Aggregates visualization using paraview -->
+  <!-- <Parameter        name="aggregation: export visualization data" type="bool"   value="true"/> -->
+  <!-- <Parameter        name="aggregation: output filename"           type="string" value="aggs.proc=%PROCID.level=%LEVELID.vtk"/> -->
+  <!-- <Parameter        name="aggregation: output file: agg style"    type="string" value="Convex Hulls"/> -->
+
+  <!-- ===========  SMOOTHING  =========== -->
+  <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
+  <ParameterList    name="smoother: params">
+    <Parameter      name="relaxation: type"                     type="string"   value="Jacobi"/>
+    <Parameter      name="relaxation: sweeps"                   type="int"      value="1"/>
+    <Parameter      name="relaxation: damping factor"           type="double"   value="0.8"/>
+  </ParameterList>
+
+  <!-- Use the following block instead for Gauss-Seidel smoothing -->
+  <!-- <Parameter        name="smoother: pre type"                   type="string"   value="RELAXATION"/> -->
+  <!-- <ParameterList    name="smoother: pre params"> -->
+  <!--   <Parameter      name="relaxation: type"                     type="string"   value="Gauss-Seidel"/> -->
+  <!--   <Parameter      name="relaxation: sweeps"                   type="int"      value="1"/> -->
+  <!--   <Parameter      name="relaxation: damping factor"           type="double"   value="1.0"/> -->
+  <!--   <Parameter      name="relaxation: backward mode"            type="bool"     value="false"/> -->
+  <!-- </ParameterList> -->
+  <!-- <Parameter        name="smoother: post type"                  type="string"   value="RELAXATION"/> -->
+  <!-- <ParameterList    name="smoother: post params"> -->
+  <!--   <Parameter      name="relaxation: type"                     type="string"   value="Gauss-Seidel"/> -->
+  <!--   <Parameter      name="relaxation: sweeps"                   type="int"      value="1"/> -->
+  <!--   <Parameter      name="relaxation: damping factor"           type="double"   value="1.0"/> -->
+  <!--   <Parameter      name="relaxation: backward mode"            type="bool"     value="true"/> -->
+  <!-- </ParameterList> -->
+
+  <!-- Use the following block instead for Chebyshev smoothing -->
+  <!-- <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/> -->
+  <!-- <ParameterList    name="smoother: params"> -->
+  <!--   <Parameter      name="chebyshev: degree"                    type="int"      value="2"/> -->
+  <!--   <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="7"/> -->
+  <!--   <Parameter      name="chebyshev: min eigenvalue"            type="double"   value="1.0"/> -->
+  <!--   <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/> -->
+  <!-- </ParameterList> -->
+
+  <!-- ===========  REPARTITIONING  =========== -->
+  <!-- <Parameter        name="repartition: enable"                  type="bool"     value="true"/> -->
+  <!-- <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/> -->
+  <!-- <Parameter        name="repartition: start level"             type="int"      value="2"/> -->
+  <!-- <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/> -->
+  <!-- <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/> -->
+  <!-- <Parameter        name="repartition: remap parts"             type="bool"     value="false"/> -->
+  <!-- <Parameter name="repartition: remap parts"                type="bool"     value="true"/> -->
+  <!-- <Parameter name="repartition: rebalance P and R"          type="bool"     value="false"/> -->
+  <!-- <ParameterList name="repartition: params"> -->
+  <!--   <Parameter name="algorithm" type="string" value="multijagged"/> -->
+  <!-- </ParameterList> -->
+
+
+  <!-- for runs on with OpenMP or Cuda backend, enable -->
+  <Parameter        name="use kokkos refactor"                  type="bool"     value="false"/>
+
+
+</ParameterList>

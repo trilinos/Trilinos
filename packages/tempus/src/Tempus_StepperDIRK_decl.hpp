@@ -13,7 +13,7 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperDIRKObserver.hpp"
+#include "Tempus_StepperRKObserverComposite.hpp"
 
 
 namespace Tempus {
@@ -88,42 +88,16 @@ class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-   /** \brief Default constructor.
-   *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
-   *  - Requires subsequent setModel() and initialize() calls before calling
-   *    takeStep().
-  */
-  StepperDIRK();
-
-  /// Constructor to specialize Stepper parameters.
-  StepperDIRK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    Teuchos::RCP<Teuchos::ParameterList> pList);
-
-  /// Constructor to use default Stepper parameters.
-  StepperDIRK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType = "SDIRK 2 Stage 2nd order");
-
-  /// Constructor for StepperFactory.
-  StepperDIRK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
-
   /// \name Basic stepper methods
   //@{
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    virtual void setTableau(std::string stepperType);
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
+    { return tableau_; }
 
-    virtual void setTableau(
-      Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
-
-    virtual void setTableau(
-      Teuchos::RCP<const RKButcherTableau<Scalar> > DIRK_ButcherTableau);
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperObserver_; }
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -132,20 +106,26 @@ public:
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
+    /// Set parameter so that the initial guess is reset at the beginning of each timestep.
+    virtual void setResetInitialGuess(bool reset_guess)
+      { resetGuess_ = reset_guess; }
+    virtual bool getResetInitialGuess() const
+      { return resetGuess_; }
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >getDefaultStepperState();
-    virtual Scalar getOrder()    const{return DIRK_ButcherTableau_->order();}
-    virtual Scalar getOrderMin() const{return DIRK_ButcherTableau_->orderMin();}
-    virtual Scalar getOrderMax() const{return DIRK_ButcherTableau_->orderMax();}
+    virtual Scalar getOrder()    const{return tableau_->order();}
+    virtual Scalar getOrderMin() const{return tableau_->orderMin();}
+    virtual Scalar getOrderMax() const{return tableau_->orderMax();}
 
     virtual bool isExplicit() const
     {
-      const int numStages = DIRK_ButcherTableau_->numStages();
-      Teuchos::SerialDenseMatrix<int,Scalar> A = DIRK_ButcherTableau_->A();
+      const int numStages = tableau_->numStages();
+      Teuchos::SerialDenseMatrix<int,Scalar> A = tableau_->A();
       bool isExplicit = false;
       for (int i=0; i<numStages; ++i) if (A(i,i) == 0.0) isExplicit = true;
       return isExplicit;
@@ -157,50 +137,73 @@ public:
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
 
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
+
+    void getValidParametersBasicDIRK(
+      Teuchos::RCP<Teuchos::ParameterList> pl) const;
+
+    virtual std::string getDescription() const = 0;
   //@}
 
   /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const
   {
-    const Teuchos::SerialDenseMatrix<int,Scalar> & A=DIRK_ButcherTableau_->A();
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A=tableau_->A();
     return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
   }
   /// Return beta  = d(x)/dx.
   virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
-  /// \name ParameterList methods
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const;
-  //@}
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  /// \name Accessors methods
+  //@{
+    /** \brief Use embedded if avialable. */
+    virtual void setUseEmbedded(bool a) { useEmbedded_ = a; }
+    virtual bool getUseEmbedded() const { return useEmbedded_; }
+    virtual bool getUseEmbeddedDefault() const { return false; }
+  //@}
+
+
 protected:
 
-  Teuchos::RCP<const RKButcherTableau<Scalar> >          DIRK_ButcherTableau_;
+  /// Default setup for constructor.
+  virtual void setupDefault();
+
+  /// Setup for constructor.
+  virtual void setup(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& wrapperModel,
+    const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess);
+
+  virtual void setupTableau() = 0;
+
+  Teuchos::RCP<RKButcherTableau<Scalar> >                tableau_;
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperDIRKObserver<Scalar> >             stepperDIRKObserver_;
-
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
+  Teuchos::RCP<StepperRKObserverComposite<Scalar> >        stepperObserver_;
 
   // For Embedded RK
+  bool useEmbedded_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
 
+  bool resetGuess_ = true;
 };
 
 

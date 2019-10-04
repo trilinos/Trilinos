@@ -22,7 +22,7 @@ smoother ->
 Level 1
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -37,9 +37,9 @@ lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
+BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesDeterministic (Phase 2a (secondary))
+BuildAggregatesDeterministic (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
@@ -47,6 +47,7 @@ aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
 aggregation: enable phase 1 = 1   [default]
 aggregation: phase 1 algorithm = Serial   [default]
+aggregation: deterministic = 1   [unused]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -108,7 +109,7 @@ smoother ->
 Level 2
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -123,9 +124,9 @@ lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
+BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesDeterministic (Phase 2a (secondary))
+BuildAggregatesDeterministic (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
@@ -133,6 +134,7 @@ aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
 aggregation: enable phase 1 = 1   [default]
 aggregation: phase 1 algorithm = Serial   [default]
+aggregation: deterministic = 1   [unused]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -191,7 +193,7 @@ smoother ->
 Level 3
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -206,9 +208,9 @@ lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
+BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesDeterministic (Phase 2a (secondary))
+BuildAggregatesDeterministic (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
@@ -216,6 +218,7 @@ aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
 aggregation: enable phase 1 = 1   [default]
 aggregation: phase 1 algorithm = Serial   [default]
+aggregation: deterministic = 1   [unused]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -261,7 +264,9 @@ keep smoother data = 0   [default]
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 presmoother -> 
- [empty list]
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 
 
 --------------------------------------------------------------------------------
@@ -275,14 +280,14 @@ Cycle type          = V
 level  rows   nnz    nnz/row  c ratio  procs
   0  10000  49600  4.96                  1  
   1  1700   14928  8.78     5.88         1  
-  2  192    1674   8.72     8.85         1  
-  3  24     190    7.92     8.00         1  
+  2  192    1682   8.76     8.85         1  
+  3  24     200    8.33     8.00         1  
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [10000, 10000], Global nnz: 49600}
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [1700, 1700], Global nnz: 14928}
 
-Smoother (level 2) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [192, 192], Global nnz: 1674}
+Smoother (level 2) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [192, 192], Global nnz: 1682}
 
 Smoother (level 3) pre  : <Direct> solver interface
 Smoother (level 3) post : no smoother

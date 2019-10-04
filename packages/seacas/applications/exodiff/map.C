@@ -143,7 +143,7 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
   fmt::print("******************  elmts  ******************** \n");
   {for (size_t i = 0; i < num_elmts; ++i)
       fmt::print("{})\t{}\t{}\t{}\t{}\n"
-		 i, x2[id[i]], y2[id[i]], z2[id[i]], id[i]);}
+                 i, x2[id[i]], y2[id[i]], z2[id[i]], id[i]);}
   fmt::print("******************  elmts  ******************** \n");
 #endif
   //  Load and get nodal coordinates for first file.
@@ -451,7 +451,7 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
   fmt::print("******************  elmts  ******************** \n");
   {for (size_t i = 0; i < num_elmts; ++i)
       fmt::print("{})\t{}\t{}\t{}\t{}\n"
-		 i, x2[id[i]], y2[id[i]], z2[id[i]], id[i]);}
+                 i, x2[id[i]], y2[id[i]], z2[id[i]], id[i]);}
   fmt::print("******************  elmts  ******************** \n");
 #endif
   //  Load and get nodal coordinates for first file.

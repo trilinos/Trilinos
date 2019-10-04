@@ -51,7 +51,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include <stdio.h>
 
 /*!
  * writes out the entity numbering map to the database; this allows
@@ -72,7 +71,7 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
   const char *vmap;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   switch (map_type) {
   case EX_NODE_MAP:
@@ -137,10 +136,10 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
       }
       goto error_ret; /* exit define mode and return */
     }
-    ex_compress_variable(exoid, mapid, 1);
+    ex__compress_variable(exoid, mapid, 1);
 
     /* leave define mode  */
-    if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
+    if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -164,6 +163,6 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex_leavedef(exoid, __func__);
+  ex__leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

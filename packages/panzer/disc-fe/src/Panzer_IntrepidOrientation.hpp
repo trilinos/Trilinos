@@ -48,7 +48,7 @@
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 namespace panzer {
 
@@ -57,11 +57,11 @@ namespace panzer {
                            panzer::ConnManager & connMgr);
 
   /** Build an orientation container from a global indexer and a field.
-   * Underneath this does several dynamic casts to determine the type of UniqueGlobalIndexer
+   * Underneath this does several dynamic casts to determine the type of GlobalIndexer
    * object that has been passed in.
    */
   Teuchos::RCP<std::vector<Intrepid2::Orientation> > 
-  buildIntrepidOrientation(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer);
+  buildIntrepidOrientation(const Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer);
 }
 
 #endif

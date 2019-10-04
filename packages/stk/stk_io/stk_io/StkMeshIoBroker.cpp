@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -162,17 +163,6 @@ StkMeshIoBroker::StkMeshIoBroker()
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm, const stk::mesh::ConnectivityMap * /*connectivity_map*/)
-: m_communicator(comm),
-  m_activeMeshIndex(0),
-  m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
-  m_autoLoadAttributes(true)
-{
-    Ioss::Init::Initializer::initialize_ioss();
-}
-#endif
 
 StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
 : m_communicator(comm),
@@ -533,20 +523,26 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
     return index_of_output_file;
 }
 
-
-void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
-{
-    validate_output_file_index(output_file_index);
+void StkMeshIoBroker::update_sidesets() {
     if (m_bulkData->was_mesh_modified_since_sideset_creation()) {
-        std::vector<std::shared_ptr<SidesetUpdater>> updaters = m_bulkData->get_observer_type<SidesetUpdater>();
+        std::vector<std::shared_ptr<SidesetUpdater> > updaters = m_bulkData->get_observer_type<SidesetUpdater>();
         ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
         std::vector<size_t> values;
         updaters[0]->fill_values_to_reduce(values);
         std::vector<size_t> maxValues(values);
-        if(stk::parallel_machine_size(m_communicator) > 1)
+
+        if (stk::parallel_machine_size(m_communicator) > 1) {
             stk::all_reduce_max(m_communicator, values.data(), maxValues.data(), maxValues.size());
+        }
+
         updaters[0]->set_reduced_values(maxValues);
     }
+}
+
+void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
+{
+    validate_output_file_index(output_file_index);
+    update_sidesets();
     m_outputFiles[output_file_index]->write_output_mesh(*m_bulkData, attributeFieldOrderingByPartOrdinal);
 }
 
@@ -588,6 +584,7 @@ int StkMeshIoBroker::process_output_request(size_t output_file_index, double tim
 void StkMeshIoBroker::begin_output_step(size_t output_file_index, double time)
 {
     validate_output_file_index(output_file_index);
+    update_sidesets();
     m_outputFiles[output_file_index]->begin_output_step(time, *m_bulkData, attributeFieldOrderingByPartOrdinal);
 }
 

@@ -886,18 +886,18 @@ void create_reverse_map(
         multiply_shift_for_scale,
         division_shift_for_bucket);
     Kokkos::parallel_for ("KokkosKernels::Common::ReverseMapScaleInit",my_exec_space (0, num_forward_elements) , rmi);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(tmp_reverse_size + 1, tmp_color_xadj);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     Kokkos::parallel_for ("KokkosKernels::Common::StridedCopy",my_exec_space (0, num_reverse_elements + 1) , StridedCopy<reverse_array_type, reverse_array_type>(tmp_color_xadj, reverse_map_xadj, scale_size));
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     Fill_Reverse_Scale_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj,
         multiply_shift_for_scale, division_shift_for_bucket);
     Kokkos::parallel_for ("KokkosKernels::Common::FillReverseMap",my_exec_space (0, num_forward_elements) , frm);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
   else
   //atomic implementation.
@@ -907,17 +907,17 @@ void create_reverse_map(
     Reverse_Map_Init<forward_array_type, reverse_array_type> rmi(forward_map, reverse_map_xadj);
 
     Kokkos::parallel_for ("KokkosKernels::Common::ReverseMapInit",my_exec_space (0, num_forward_elements) , rmi);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     //print_1Dview(reverse_map_xadj);
 
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(num_reverse_elements + 1, reverse_map_xadj);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     Kokkos::deep_copy (tmp_color_xadj, reverse_map_xadj);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     Fill_Reverse_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj);
     Kokkos::parallel_for ("KokkosKernels::Common::FillReverseMap",my_exec_space (0, num_forward_elements) , frm);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
 }
 
@@ -1155,7 +1155,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(
     Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeAndGetLowerDiagonalEdgeList::S0",
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
         fse/*, num_symmetric_edges*/);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
   }
 
@@ -1163,7 +1163,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(
   exclusive_parallel_prefix_sum<out_lno_nnz_view_t, MyExecSpace>(
       num_rows_to_symmetrize + 1,
       pre_pps_);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   auto d_sym_edge_size = Kokkos::subview(pre_pps_, num_rows_to_symmetrize);
   auto h_sym_edge_size = Kokkos::create_mirror_view (d_sym_edge_size);
@@ -1179,7 +1179,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(
 
   sym_srcs = out_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("sym_srcs"), num_symmetric_edges);
   sym_dsts_ = out_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("sym_dsts_"), num_symmetric_edges);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   {
 
     hashmap_t umap (nnz);
@@ -1214,10 +1214,10 @@ void symmetrize_and_get_lower_diagonal_edge_list(
     Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeAndGetLowerDiagonalEdgeList::S1",
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
         FSCH);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
 
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
 }
 
@@ -1299,7 +1299,7 @@ void symmetrize_graph_symbolic_hashmap(
     Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeGraphSymbolicHashMap::S0",
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
         fse/*, num_symmetric_edges*/);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
 
 
@@ -1307,7 +1307,7 @@ void symmetrize_graph_symbolic_hashmap(
   exclusive_parallel_prefix_sum<out_lno_row_view_t, MyExecSpace>(
       num_rows_to_symmetrize + 1,
       pre_pps_);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
 
   //out_lno_row_view_t d_sym_edge_size = Kokkos::subview(pre_pps_, num_rows_to_symmetrize, num_rows_to_symmetrize );
@@ -1318,7 +1318,7 @@ void symmetrize_graph_symbolic_hashmap(
 
 
   sym_adj = out_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("sym_adj"), num_symmetric_edges);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   sym_xadj = out_lno_row_view_t(Kokkos::ViewAllocateWithoutInitializing("sym_xadj"), num_rows_to_symmetrize + 1);
   Kokkos::deep_copy(sym_xadj, pre_pps_);
   {
@@ -1355,10 +1355,10 @@ void symmetrize_graph_symbolic_hashmap(
     Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeGraphSymbolicHashMap::S1",
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
         FSCH);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
 
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
 }
 
@@ -1605,7 +1605,7 @@ bool isSame(size_t num_elements, view_type1 view1, view_type2 view2){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   int issame = 1;
   Kokkos::parallel_reduce( "KokkosKernels::Common::isSame", my_exec_space(0,num_elements), IsEqualFunctor<view_type1, view_type2>(view1, view2), issame);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   return issame;
 }
 
@@ -1773,16 +1773,16 @@ void transpose_matrix(
 
   Kokkos::Impl::Timer timer1;
   Kokkos::parallel_for( "KokkosKernels::Common::TransposeMatrix::S0",  tcp_t(num_rows / team_row_work_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   Kokkos::deep_copy(tmp_row_view, t_xadj);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   timer1.reset();
   Kokkos::parallel_for( "KokkosKernels::Common::TransposeMatrix::S1",  tfp_t(num_rows / team_row_work_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 }
 
 template <typename in_row_view_t,
@@ -1851,16 +1851,16 @@ void transpose_graph2(
 
   Kokkos::Impl::Timer timer1;
   Kokkos::parallel_for( "KokkosKernels::Common::TransposeGraph2::S0",  tcp_t(num_rows  , Kokkos::AUTO_t(), vector_size), tm);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   Kokkos::deep_copy(tmp_row_view, t_xadj);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   timer1.reset();
   Kokkos::parallel_for( "KokkosKernels::Common::TransposeGraph::S1",  tfp_t(num_rows , Kokkos::AUTO_t(), vector_size), tm);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
 
 }
@@ -1913,7 +1913,7 @@ void init_view_withscalar(typename in_row_view_t::size_type num_elements, in_row
 
   Kokkos::Impl::Timer timer1;
   Kokkos::parallel_for( "KokkosKernels::Common::InitViewWithScalar",  tcp_t(num_elements / chunk_size + 1 , team_size, vector_size), tm);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 }
 
 
