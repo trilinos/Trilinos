@@ -205,12 +205,18 @@ void LineMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */, int xB
    int myXElems_end  = myXElems_start+sizeAndStartX.second;
    int totalXElems = nXElems_*xBlocks_;
 
-   double deltaX = (xf_-x0_)/double(totalXElems);
+   double deltaX = (xf_-x0_)/static_cast<double>(totalXElems);
+   double modX0 = std::abs(x0_);
 
    // build the nodes
    std::vector<double> coord(1,0.0);
    for(int nx=myXElems_start;nx<myXElems_end+1;++nx) {
-      coord[0] = double(nx)*deltaX+x0_;
+      /*double y = static_cast<double>(nx)*deltaX;
+      double modY = std::abs(y);
+      coord[0] = y+x0_;
+      if ((x0_*y < 0.0) && (std::abs(modY-modX0) < std::numeric_limits<double>::epsilon()*modX0)) coord[0]=0.0;
+      std::cout << "y = " << y << std::endl;*/
+      coord[0] = this->getMeshCoord(nx, deltaX, x0_);
       mesh.addNode(nx+1,coord);
    }
 
