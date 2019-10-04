@@ -333,7 +333,7 @@ SolutionHistory<Scalar>::getStateTimeIndexNM2() const
 {
   const int m   = history_->size();
   TEUCHOS_TEST_FOR_EXCEPTION( (m < 3), std::out_of_range,
-    "Error - getStateTimeIndexNM1() Not enough states in "
+    "Error - getStateTimeIndexNM2() Not enough states in "
     << "SolutionHistory!\n");
   const int n   = (*history_)[m-1]->getIndex();
   const int nm2 = (*history_)[m-3]->getIndex();
@@ -341,7 +341,7 @@ SolutionHistory<Scalar>::getStateTimeIndexNM2() const
   // Assume states n and nm2 are one away from each other.
   // May need to do a search otherwise.
   TEUCHOS_TEST_FOR_EXCEPTION( (nm2 != n-2), std::out_of_range,
-    "Error - getStateTimeIndexNM1() Timestep index n-2 is not in "
+    "Error - getStateTimeIndexNM2() Timestep index n-2 is not in "
     << "SolutionHistory!\n"
     << "    (n)th   index = " << n << "\n"
     << "    (n-2)th index = " << nm2 << "\n");
