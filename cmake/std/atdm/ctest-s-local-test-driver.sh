@@ -59,11 +59,11 @@ Trilinos-atdm-<system_name>-gnu-openmp-opt).
 
 To select the default env to load instead of 'default', use:
 
-  env ATDM_CHT_DEFAULT_ENV=<system_name>-default \\
+  env ATDM_CTEST_S_DEFAULT_ENV=<system_name>-default \\
   ./ctest-s-local-test-driver.sh <build-name-1> >build-name-2> ...
 
 (For example, this is needed for the 'cee-rhel6' system to set
-ATDM_CHT_DEFAULT_ENV=cee-rhel6-default, otherwise the 'sems-rhel6' env will be
+ATDM_CTEST_S_DEFAULT_ENV=cee-rhel6-default, otherwise the 'sems-rhel6' env will be
 selected.)
 
 To control the list of packages tests, not rebuild from scratch, and not
@@ -127,15 +127,15 @@ fi
 # Load a default env for the system
 #
 
-if [ "$ATDM_CHT_DEFAULT_ENV" == "" ] ; then
-  ATDM_CHT_DEFAULT_ENV=default
+if [ "$ATDM_CTEST_S_DEFAULT_ENV" == "" ] ; then
+  ATDM_CTEST_S_DEFAULT_ENV=default
 fi
-#echo "ATDM_CHT_DEFAULT_ENV = ${ATDM_CHT_DEFAULT_ENV}"
+#echo "ATDM_CTEST_S_DEFAULT_ENV = ${ATDM_CTEST_S_DEFAULT_ENV}"
 
 echo
 echo "Load some env to get python, cmake, etc ..."
 echo
-source $STD_ATDM_DIR/load-env.sh ${ATDM_CHT_DEFAULT_ENV}
+source $STD_ATDM_DIR/load-env.sh ${ATDM_CTEST_S_DEFAULT_ENV}
 # NOTE: Above, it does not matter which env you load.  Any of them will
 # provide the right python, cmake, etc.
 
