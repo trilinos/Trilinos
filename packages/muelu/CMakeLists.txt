@@ -109,6 +109,9 @@ IF (NOT Xpetra_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "MueLu Tpetra support requires Xpetra Tpetra support")
 ENDIF()
 
+# Need to do this because Xpetra_ENABLE_Epetra might have been disabled after
+# HAVE_MUELU_EPETRA was first set automatically
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 
 # Disable Ifpack2 if Tpetra is off
 IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
