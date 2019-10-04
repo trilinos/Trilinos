@@ -339,9 +339,16 @@ void StepperIMEX_RK_Partition<Scalar>::setObserver(
      obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
 
     // Check that this casts to prevent a runtime error if it doesn't
-  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null)
+  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
     this->stepperObserver_->addObserver(
          Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
+  } else {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,0,"setObserver");
+    *out << "Tempus::StepperIMEX_RK_Partition::setObserver: Warning: An observer has been provided that";
+    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
+    *out << " In the future, this will result in a runtime error!" << std::endl;
+  }
 }
 
 
