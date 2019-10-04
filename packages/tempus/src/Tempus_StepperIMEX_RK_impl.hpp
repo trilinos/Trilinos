@@ -343,8 +343,10 @@ void StepperIMEX_RK<Scalar>::setObserver(
   if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
      obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
 
-  this->stepperObserver_->addObserver(
-       Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
+    // Check that this casts to prevent a runtime error if it doesn't
+  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null)
+    this->stepperObserver_->addObserver(
+         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
 
 }
 
