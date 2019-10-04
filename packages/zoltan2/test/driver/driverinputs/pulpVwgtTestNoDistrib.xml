@@ -37,7 +37,7 @@
  ////////////////////////////////////////////////////////////////////////////////
  /////////////////////////////////////////////////////////////////////////////-->
 
-<ParameterList name="pulpVwgtTest">
+<ParameterList name="pulpVwgtTestNoDistrib">
   
   <ParameterList name="InputParameters">
     <Parameter name="input path" type="string" value="."/>
@@ -64,7 +64,7 @@
       <ParameterList name="metriccheck1">
         <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="weight" type="int" value="0"/>
-        <Parameter name="upper" type="double" value="1.10"/>
+        <Parameter name="upper" type="double" value="1.25"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

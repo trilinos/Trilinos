@@ -227,6 +227,10 @@ public:
       "maximum load over average load",
       Environment::getAnyDoubleValidator());
 
+    pl.set("pulp_imbalance", 1.1, "multiweight imbalance tolerance, ratio of "
+      "maximum load over average load",
+      Environment::getAnyDoubleValidator());
+
     // bool parameter
     pl.set("pulp_lp_init", false, "perform label propagation-based "
       "initialization", Environment::getBoolValidator() );
@@ -252,8 +256,9 @@ private:
 
   void buildModel(modelFlag_t &flags);
 
-  void scale_weights(size_t n, StridedData<lno_t, scalar_t> &fwgts,
-                     int *iwgts);
+  void scale_weights( size_t n, int nWgt,
+                      ArrayView<StridedData<lno_t, scalar_t> > &fwgts, 
+                      int *iwgts);
 
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
@@ -332,6 +337,10 @@ void AlgPuLP<Adapter>::partition(
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
   size_t nVtx = model->getVertexList(vtxIDs, vwgts);
   int nVwgts = model->getNumWeightsPerVertex();
+
+
+#ifndef HAVE_ZOLTAN2_MPI
+  // PuLP current only supports a single vertex weight
   if (nVwgts > 1) {
     std::cerr << "Warning:  NumWeightsPerVertex is " << nVwgts 
               << " but PuLP allows only one weight. "
@@ -342,11 +351,20 @@ void AlgPuLP<Adapter>::partition(
   int* vertex_weights = NULL;
   long vertex_weights_sum = 0;
   if (nVwgts) {
+    nVwgts = 1;
     vertex_weights = new int[nVtx];
-    scale_weights(nVtx, vwgts[0], vertex_weights);
+    scale_weights(nVtx, nVwgts, vwgts, vertex_weights);
     for (int i = 0; i < num_verts; ++i)
       vertex_weights_sum += vertex_weights[i];
   }
+#else
+  // XtraPuLP supports an arbitrary number of vertex weights
+  int* vertex_weights = NULL;
+  if (nVwgts) {
+    vertex_weights = new int[nVtx*nVwgts];
+    scale_weights(nVtx, nVwgts, vwgts, vertex_weights);
+  }
+#endif
 
   // Get edge info
   ArrayView<const gno_t> adjs;
@@ -356,15 +374,32 @@ void AlgPuLP<Adapter>::partition(
   int nEwgts = model->getNumWeightsPerEdge();
   if (nEwgts > 1) {
     std::cerr << "Warning:  NumWeightsPerEdge is " << nEwgts 
-              << " but PuLP allows only one weight. "
+              << " but PuLP/XtraPuLP allows only one weight. "
               << " Zoltan2 will use only the first weight per edge."
               << std::endl;
   }
 
   int* edge_weights = NULL;
   if (nEwgts) {
+    nEwgts = 1;
     edge_weights = new int[nEdge]; 
-    scale_weights(nEdge, ewgts[0], edge_weights);
+    scale_weights(nEdge, nEwgts, ewgts, edge_weights);
+    if (!nVwgts) {
+      // For XtraPulp, we need to fill vertex_weights array if we have
+      // any edge weights.
+      vertex_weights = new int[nVtx];
+      nVwgts = 1;
+      for (size_t i = 0; i < nVtx; ++i) {
+        vertex_weights[i] = 1;
+      }
+    }
+  } else if (nVwgts) {
+    // For XtraPulp, we need to fill edge_weights array if we have
+    // any vertex weights.
+    edge_weights = new int[nEdge];
+    for (size_t i = 0; i < nEdge; ++i) {
+      edge_weights[i] = 1;
+    }
   }
 
 #ifndef HAVE_ZOLTAN2_MPI
@@ -403,7 +438,7 @@ void AlgPuLP<Adapter>::partition(
   create_xtrapulp_dist_graph(&g, num_verts_global, num_edges_global, 
                           (unsigned long)num_verts, (unsigned long)num_edges, 
                           out_edges, out_offsets, global_ids, verts_per_rank,
-                          vertex_weights, edge_weights);
+                          nVwgts, vertex_weights, edge_weights);
 #endif
 
 
@@ -462,11 +497,15 @@ void AlgPuLP<Adapter>::partition(
     // TODO: read in current parts
     // for (int i = 0; i < num_verts; ++i)
     //   parts[i] = something;
+    std::string errStr = "repartitioning within (Xtra)PuLP is ";
+    errStr            += "currently unsupported.";
+    throw std::runtime_error(errStr);
   }
 
   // Now grab vertex and edge imbalances, defaults at 10%
   double vert_imbalance = 1.1;
   double edge_imbalance = 1.1;
+  double imbalance = 1.1;
 
   pe = pl.getEntryPtr("pulp_vert_imbalance");
   if (pe) vert_imbalance = pe->getValue<double>(&vert_imbalance);
@@ -474,13 +513,17 @@ void AlgPuLP<Adapter>::partition(
   if (pe) {
     edge_imbalance = pe->getValue<double>(&edge_imbalance);
     // if manually set edge imbalance, add do_edge_bal flag to true
-    do_edge_bal = 1;
+    do_edge_bal = true;
   }
+  pe = pl.getEntryPtr("pulp_imbalance");
+  if (pe) imbalance = pe->getValue<double>(&imbalance);
 
   if (vert_imbalance < 1.0)
     throw std::runtime_error("pulp_vert_imbalance must be '1.0' or greater.");
   if (edge_imbalance < 1.0)
     throw std::runtime_error("pulp_edge_imbalance must be '1.0' or greater.");
+  if (imbalance < 1.0)
+    throw std::runtime_error("pulp_imbalance must be '1.0' or greater.");
 
   // verbose output?  
   // TODO: fully implement verbose flag throughout PuLP
@@ -492,31 +535,48 @@ void AlgPuLP<Adapter>::partition(
   pe = pl.getEntryPtr("pulp_seed");
   if (pe) pulp_seed = pe->getValue(&pulp_seed);
 
+
+  if (verbose_output) {
+    printf("procid: %d, n: %i, m: %li, vb: %f, eb: %f, imb: %f, p: %i\n",
+      problemComm->getRank(), 
+      num_verts, num_edges, 
+      vert_imbalance, edge_imbalance, imbalance, num_parts);
+  }
+
+  // Call partitioning; result returned in parts array
+#ifndef HAVE_ZOLTAN2_MPI
   // Create PuLP's partitioning data structure
   pulp_part_control_t ppc = {vert_imbalance, edge_imbalance,
     do_lp_init, do_bfs_init, do_repart,
     do_edge_bal, do_maxcut_min,
     verbose_output, pulp_seed};
 
-
-  if (verbose_output) {
-    printf("procid: %d, n: %i, m: %li, vb: %f, eb: %f, p: %i\n",
-      problemComm->getRank(), 
-      num_verts, num_edges, vert_imbalance, edge_imbalance, num_parts);
-  }
-
-  // Call partitioning; result returned in parts array
-#ifndef HAVE_ZOLTAN2_MPI
   ierr = pulp_run(&g, &ppc, parts, num_parts);  
 
   env->globalInputAssertion(__FILE__, __LINE__, "pulp_run", 
     !ierr, BASIC_ASSERTION, problemComm);
 #else
+  // Create XtraPuLP's partitioning data structure
+  double* constraints = NULL;
+  if (nVwgts > 0) {
+    constraints = new double[nVwgts];
+    for (int i = 0; i < nVwgts; ++i) {
+      constraints[i] = imbalance;
+    }
+  } 
+
+  pulp_part_control_t ppc = {
+      vert_imbalance, edge_imbalance, 
+      constraints, nVwgts, 
+      do_lp_init, do_bfs_init, do_repart, 
+      do_edge_bal, do_maxcut_min,
+      verbose_output, pulp_seed};
+
   ierr = xtrapulp_run(&g, &ppc, parts, num_parts);
+
   env->globalInputAssertion(__FILE__, __LINE__, "xtrapulp_run", 
     !ierr, BASIC_ASSERTION, problemComm);
 #endif
-
 
 
   // Load answer into the solution if necessary
@@ -552,59 +612,73 @@ void AlgPuLP<Adapter>::partition(
 // Note that we use ceil() instead of round() to avoid
 // rounding to zero weights.
 // Based on Zoltan's scale_round_weights, mode 1
+//
+// Modified from scale_weights() in Zoltan2_AlgParMETIS.hpp
 template <typename Adapter>
 void AlgPuLP<Adapter>::scale_weights(
-  size_t n,
-  StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> &fwgts,
+  size_t n, int nWgt,
+  ArrayView<StridedData<typename Adapter::lno_t, 
+                        typename Adapter::scalar_t> > &fwgts,
   int *iwgts
 )
 {
   const double INT_EPSILON = 1e-5;
-  const double MAX_NUM = 1e9;
 
-  int nonint = 0;
-  double sum_wgt = 0.0;
-  double max_wgt = 0.0;
+  int *nonint_local = new int[nWgt+nWgt]; 
+  int *nonint = nonint_local + nWgt;
+
+  double *sum_wgt_local = new double[nWgt*4];
+  double *max_wgt_local = sum_wgt_local + nWgt;
+  double *sum_wgt = max_wgt_local + nWgt;
+  double *max_wgt = sum_wgt + nWgt;
+
+  for (int i = 0; i < nWgt; i++) {
+    nonint_local[i] = 0;
+    sum_wgt_local[i] = 0.0;
+    max_wgt_local[i] = 0.0; 
+  }
 
   // Compute local sums of the weights 
   // Check whether all weights are integers
-  for (size_t i = 0; i < n; i++) {
-    double fw = double(fwgts[i]);
-    if (!nonint){
-      int tmp = (int) floor(fw + .5); /* Nearest int */
-      if (fabs((double)tmp-fw) > INT_EPSILON) {
-        nonint = 1;
+  for (int j = 0; j < nWgt; j++) {
+    for (size_t i = 0; i < n; i++) {
+      double fw = double(fwgts[j][i]);
+      if (!nonint_local[j]) {
+        int tmp = (int) floor(fw + .5); /* Nearest int */
+        if (fabs((double)tmp-fw) > INT_EPSILON) {
+          nonint_local[j] = 1;
+        }
       }
+      sum_wgt_local[j] += fw;
+      if (fw > max_wgt_local[j]) max_wgt_local[j] = fw;
     }
-    sum_wgt += fw;
-    if (fw > max_wgt) max_wgt = fw;
   }
 
-  // Get agreement across processors
-  double gmax_wgt;
-  double ltmp[2], gtmp[2];
-  ltmp[0] = nonint;
-  ltmp[1] = sum_wgt;
-  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, 2,
-                                 ltmp, gtmp);
-  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_MAX, 1,
-                                 &max_wgt, &gmax_wgt);
-  nonint = gtmp[0];
-  sum_wgt = gtmp[1];
-  max_wgt = gmax_wgt;
+  Teuchos::reduceAll<int,int> (*problemComm, Teuchos::REDUCE_MAX, nWgt,
+                              nonint_local,  nonint);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, nWgt,
+                                 sum_wgt_local, sum_wgt);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_MAX, nWgt,
+                                 max_wgt_local, max_wgt);
 
-  // Scaling needed if weights are not integers or weights' 
-  // range is not sufficient
-  double scale = 1.0;
-  if (nonint || (max_wgt <= INT_EPSILON) || (sum_wgt > MAX_NUM)) {
-    /* Calculate scale factor */
-    if (sum_wgt != 0.0) scale = MAX_NUM/sum_wgt;
+  const double max_wgt_sum = double(std::numeric_limits<int>::max()/8);
+  for (int j = 0; j < nWgt; j++) {
+    double scale = 1.;
+
+    // Scaling needed if weights are not integers or weights' 
+    // range is not sufficient
+    if (nonint[j] || (max_wgt[j]<=INT_EPSILON) || (sum_wgt[j]>max_wgt_sum)) {
+      /* Calculate scale factor */
+      if (sum_wgt[j] != 0.) scale = max_wgt_sum/sum_wgt[j];
+    }
+
+    /* Convert weights to positive integers using the computed scale factor */
+    for (size_t i = 0; i < n; i++)
+      iwgts[i*nWgt+j] = (int) ceil(double(fwgts[j][i])*scale);
   }
 
-  /* Convert weights to positive integers using the computed scale factor */
-  for (size_t i = 0; i < n; i++)
-    iwgts[i] = (int) ceil(double(fwgts[i])*scale);
-
+  delete [] nonint_local;
+  delete [] sum_wgt_local;
 }
 
 
