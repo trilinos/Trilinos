@@ -50,6 +50,7 @@
 
 #if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
 
+#include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_CoarseMapFactory.hpp>
 #include <MueLu_CoupledAggregationFactory.hpp>
@@ -229,21 +230,13 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
   Rfact_         = rcp( new GenericRFactory             );
   Acfact_        = rcp( new RAPFactory                  );
   Acshift_       = rcp( new RAPShiftFactory             );
+  Amalgfact_     = rcp( new AmalgamationFactory         );
   Dropfact_      = rcp( new CoalesceDropFactory         );
   Aggfact_       = rcp( new CoupledAggregationFactory   );
   UCaggfact_     = rcp( new UncoupledAggregationFactory );
   CoarseMapfact_ = rcp( new CoarseMapFactory            );
   Manager_       = rcp( new FactoryManager              );
-  if(isSymmetric_==true) {
-    Manager_   -> SetFactory("P", Pfact_);
-    Manager_   -> SetFactory("R", TransPfact_);
-  }
-  else {
-    Manager_   -> SetFactory("P", PgPfact_);
-    Manager_   -> SetFactory("R", Rfact_);
-    solverType_ = 10;
-  }
-  Manager_   -> SetFactory("Ptent", TentPfact_);
+  Manager_   -> SetFactory("UnAmalgamationInfo", Amalgfact_);
   Teuchos::ParameterList params;
   params.set("lightweight wrap",true);
   params.set("aggregation: drop scheme","classical");
@@ -256,6 +249,16 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
     Manager_   -> SetFactory("Aggregates", UCaggfact_ );
   }
   Manager_     -> SetFactory("CoarseMap", CoarseMapfact_);
+  Manager_     -> SetFactory("Ptent", TentPfact_);
+  if(isSymmetric_==true) {
+    Manager_   -> SetFactory("P", Pfact_);
+    Manager_   -> SetFactory("R", TransPfact_);
+  }
+  else {
+    Manager_   -> SetFactory("P", PgPfact_);
+    Manager_   -> SetFactory("R", Rfact_);
+    solverType_ = 10;
+  }
 
   // choose smoother
   if(Smoother_=="jacobi") {

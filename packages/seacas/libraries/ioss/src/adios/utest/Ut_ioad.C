@@ -432,7 +432,7 @@ void create_phantom(Ioss::DatabaseIO *db)
     // Exodus seems to always save TRANSIENT fields as `REAL`, so for the tests to pass
     // we only use this type.
     Ioss::Field field(field_name, Ioss::Field::BasicType::REAL, "scalar",
-                      Ioss::Field::RoleType::TRANSIENT, node_count);
+                      Ioss::Field::RoleType::TRANSIENT);
     node_block->field_add(field);
   }
   // Add coordinate frames

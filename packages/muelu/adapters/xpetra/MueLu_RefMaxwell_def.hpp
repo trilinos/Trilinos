@@ -73,6 +73,7 @@
 #include "MueLu_Utilities.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
@@ -264,32 +265,53 @@ namespace MueLu {
       if (useKokkos_) {
         BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
         BCcolsKokkos_ = Utilities_kokkos::DetectDirichletCols(*D0_Matrix_,BCrowsKokkos_);
+
+        int BCrowcountLocal = 0;
+        for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
+          if (BCrowsKokkos_(i))
+            BCrowcountLocal += 1;
+#ifdef HAVE_MPI
+        MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCrowcountLocal, BCrowcount_);
+#else
+        BCrowcount_ = BCrowcountLocal;
+#endif
+        int BCcolcountLocal = 0;
+        for (size_t i = 0; i<BCcolsKokkos_.size(); i++)
+          if (BCcolsKokkos_(i))
+            BCcolcountLocal += 1;
+#ifdef HAVE_MPI
+        MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCcolcountLocal, BCcolcount_);
+#else
+        BCcolcount_ = BCcolcountLocal;
+#endif
         if (IsPrint(Statistics2)) {
-          int BCrowcount = 0;
-          for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
-            if (BCrowsKokkos_(i))
-              BCrowcount += 1;
-          int BCcolcount = 0;
-          for (size_t i = 0; i<BCcolsKokkos_.size(); i++)
-            if (BCcolsKokkos_(i))
-              BCcolcount += 1;
-          GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount << " BC rows and " << BCcolcount << " BC columns." << std::endl;
+          GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
         }
       } else
 #endif
         {
           BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
           BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
+          int BCrowcountLocal = 0;
+          for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
+            if (*it)
+              BCrowcountLocal += 1;
+#ifdef HAVE_MPI
+          MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCrowcountLocal, BCrowcount_);
+#else
+          BCrowcount_ = BCrowcountLocal;
+#endif
+          int BCcolcountLocal = 0;
+          for (auto it = BCcols_.begin(); it != BCcols_.end(); ++it)
+            if (*it)
+              BCcolcountLocal += 1;
+#ifdef HAVE_MPI
+          MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCcolcountLocal, BCcolcount_);
+#else
+          BCcolcount_ = BCcolcountLocal;
+#endif
           if (IsPrint(Statistics2)) {
-            int BCrowcount = 0;
-            for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
-              if (*it)
-                BCrowcount += 1;
-            int BCcolcount = 0;
-            for (auto it = BCcols_.begin(); it != BCcols_.end(); ++it)
-              if (*it)
-                BCcolcount += 1;
-            GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount << " BC rows and " << BCcolcount << " BC columns." << std::endl;
+            GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
           }
         }
     }
@@ -786,6 +808,22 @@ namespace MueLu {
         if (!reuse) {
           ParameterList& userParamList = precList22_.sublist("user data");
           userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
+          // If we detected no boundary conditions, the (2,2) problem is singular.
+          // Therefore, if we want to use a direct coarse solver, we need to fix up the nullspace.
+          std::string coarseType = "";
+          if (precList22_.isParameter("coarse: type")) {
+            coarseType = precList22_.get<std::string>("coarse: type");
+            // Transform string to "Abcde" notation
+            std::transform(coarseType.begin(),   coarseType.end(),   coarseType.begin(), ::tolower);
+            std::transform(coarseType.begin(), ++coarseType.begin(), coarseType.begin(), ::toupper);
+          }
+          if (BCrowcount_ == 0 &&
+              (coarseType == "" ||
+               coarseType == "Klu" ||
+               coarseType == "Klu2") &&
+              (!precList22_.isSublist("coarse: params") ||
+               !precList22_.sublist("coarse: params").isParameter("fix nullspace")))
+            precList22_.sublist("coarse: params").set("fix nullspace",true);
           Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_);
         } else {
           RCP<MueLu::Level> level0 = Hierarchy22_->GetLevel(0);
@@ -1088,16 +1126,17 @@ namespace MueLu {
       nullSpace->putScalar(SC_ONE);
       fineLevel.Set("Nullspace",nullSpace);
 
-      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-      RCP<Factory> dropFact, UncoupledAggFact, coarseMapFact, TentativePFact, Tfact;
+      RCP<Factory> amalgFact, dropFact, UncoupledAggFact, coarseMapFact, TentativePFact, Tfact;
       if (useKokkos_) {
+        amalgFact = rcp(new AmalgamationFactory_kokkos());
         dropFact = rcp(new CoalesceDropFactory_kokkos());
         UncoupledAggFact = rcp(new UncoupledAggregationFactory_kokkos());
         coarseMapFact = rcp(new CoarseMapFactory_kokkos());
         TentativePFact = rcp(new TentativePFactory_kokkos());
         Tfact = rcp(new CoordinatesTransferFactory_kokkos());
       } else {
+        amalgFact = rcp(new AmalgamationFactory());
         dropFact = rcp(new CoalesceDropFactory());
         UncoupledAggFact = rcp(new UncoupledAggregationFactory());
         coarseMapFact = rcp(new CoarseMapFactory());
@@ -1105,6 +1144,7 @@ namespace MueLu {
         Tfact = rcp(new CoordinatesTransferFactory());
       }
 #else
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
       RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
       RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
       RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());

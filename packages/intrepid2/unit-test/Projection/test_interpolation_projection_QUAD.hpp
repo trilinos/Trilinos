@@ -112,7 +112,6 @@ template<typename ValueType, typename DeviceSpaceType>
 int InterpolationProjectionQuad(const bool verbose) {
 
   typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ordinal_type,DeviceSpaceType> DynRankViewInt;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
   Teuchos::RCP<std::ostream> outStream;

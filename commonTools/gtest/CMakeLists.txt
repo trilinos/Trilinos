@@ -1,21 +1,9 @@
-#
-# A) Define the package
-#
-
 TRIBITS_PACKAGE(Gtest)
 
-#
-# B) Set up package-specific options
-#
+SET(${PACKAGE_NAME}_SKIP_INSTALL FALSE CACHE BOOL
+  "Set to TRUE to skip the install of Gtest header and library")
 
-# 
-# Disable Gtest's use of pthread.
-#
 ADD_DEFINITIONS(-DGTEST_HAS_PTHREAD=0)
-
-#
-# C) Add the libraries, tests, and examples
-#
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -27,17 +15,18 @@ APPEND_SET(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/gtest/gtest-all.cc
   )
 
+IF (${PACKAGE_NAME}_SKIP_INSTALL)
+  SET(Gtest_NO_INSTALL_LIB_OR_HEADERS_ARG NO_INSTALL_LIB_OR_HEADERS CACHE INTERNAL "") 
+ELSE()
+  SET(Gtest_NO_INSTALL_LIB_OR_HEADERS_ARG CACHE INTERNAL "")
+ENDIF()
+
 TRIBITS_ADD_LIBRARY(
   gtest
-  NOINSTALLHEADERS ${HEADERS}
+  HEADERS ${HEADERS}
+  HEADERS_INSTALL_SUBDIR gtest
   SOURCES ${SOURCES}
+  ${Gtest_NO_INSTALL_LIB_OR_HEADERS_ARG}
   )
-
-#install gtest header into the correct subdir.
-INSTALL(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/gtest/)
-
-#
-# D) Do standard postprocessing
-#
 
 TRIBITS_PACKAGE_POSTPROCESS()

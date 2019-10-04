@@ -76,7 +76,7 @@ c$$$          INCR = 2
 c$$$        ELSE IF (NLINK .EQ. 8 .OR. NLINK .EQ. 9) THEN
 c$$$          INCR = 3
 c$$$        END IF
-c$$$C   --Sidesets on 'side' of shell mesh (orignal 2d sidesets) - lines 2 nodes
+c$$$C   --Sidesets on 'side' of shell mesh (original 2d sidesets) - lines 2 nodes
 c$$$        DO 10 NL = 1, LESSNO, INCR
 c$$$          LNTMP = LTNES3(NL)
 c$$$          LTNES3(NL) = LTNES3(NL+1)

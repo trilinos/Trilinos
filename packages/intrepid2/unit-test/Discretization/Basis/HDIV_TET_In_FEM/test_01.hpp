@@ -673,6 +673,38 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
+  
+  *outStream
+  << "\n"
+  << "===============================================================================\n"
+  << "| TEST 5: Function Space is Correct                                           |\n"
+  << "===============================================================================\n";
+  
+  try {
+    const ordinal_type order = std::min(4, maxOrder);
+    TetBasisType tetBasis(order, POINTTYPE_EQUISPACED);
+    
+    const EFunctionSpace fs = tetBasis.getFunctionSpace();
+    
+    if (fs != FUNCTION_SPACE_HDIV)
+    {
+      *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
+      
+      // Output the multi-index of the value where the error is:
+      *outStream << " Expected a function space of FUNCTION_SPACE_HDIV (enum value " << FUNCTION_SPACE_HDIV << "),";
+      *outStream << " but got " << fs << "\n";
+      if (fs == FUNCTION_SPACE_MAX)
+      {
+        *outStream << "Note that this matches the default value defined by superclass, FUNCTION_SPACE_MAX.  Likely the subclass has failed to set the superclass functionSpace_ field.\n";
+      }
+      errorFlag++;
+    }
+  } catch (std::logic_error err){
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  }
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

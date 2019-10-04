@@ -144,7 +144,7 @@ C
          end do
       end do
 C
-C Branch on coplanar data vs truely 3-d data
+C Branch on coplanar data vs truly 3-d data
 C
       IF (ICOP .EQ. 1)THEN
 C

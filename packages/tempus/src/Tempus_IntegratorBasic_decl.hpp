@@ -89,7 +89,7 @@ public:
     virtual Scalar getTime() const override
     {return solutionHistory_->getCurrentTime();}
     /// Get current index
-    virtual Scalar getIndex() const override
+    virtual int getIndex() const override
     {return solutionHistory_->getCurrentIndex();}
     /// Get Status
     virtual Status getStatus() const override

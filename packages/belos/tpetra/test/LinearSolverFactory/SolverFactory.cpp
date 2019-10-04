@@ -34,18 +34,19 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include "BelosSolverFactory.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
+#include <vector>
+#include <string>
 
 // mfh 12 Oct 2017: Test that the Tpetra specialization of
 // Belos::SolverFactory builds and runs without throwing.
@@ -189,9 +190,76 @@ testSolver (Teuchos::FancyOStream& out,
   solver->solve ();
 }
 
+template<class SC, class LO, class GO, class NT>
+void
+testCreatingSolver (Teuchos::FancyOStream& out,
+                    bool& success,
+                    const std::string& solverName)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::TypeNameTraits;
+  using std::endl;
+  using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
+  using OP = Tpetra::Operator<SC, LO, GO, NT>;
+
+  Teuchos::OSTab tab0 (out);
+  out << "Test Belos solver \"" << solverName
+      << "\" for Tpetra <SC=" << TypeNameTraits<SC>::name ()
+      << ", LO=" << TypeNameTraits<LO>::name ()
+      << ", GO=" << TypeNameTraits<GO>::name ()
+      << ", NT=" << TypeNameTraits<NT>::name ()
+      << ">" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  Belos::SolverFactory<SC, MV, OP> factory;
+  RCP<Belos::SolverManager<SC, MV, OP> > solver;
+  TEST_NOTHROW( solver = factory.create (solverName, Teuchos::null) );
+  TEST_ASSERT( ! solver.is_null () );
+}
+
 //
-// The actual unit test.
+// The actual unit tests start here.
 //
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateSolvers, SC, LO, GO, NT )
+{
+  using std::endl;
+
+  out << "Test Belos::SolverFactory with Tpetra for all solvers" << endl;
+  Teuchos::OSTab tab1 (out);
+  const std::vector<std::string> solverNames {{
+    "BICGSTAB",
+    "BLOCK CG",
+    "BLOCK GMRES",
+    "TPETRA CG PIPELINE",
+    "TPETRA CG SINGLE REDUCE",
+    "FIXED POINT",
+    "GCRODR",
+    "TPETRA GMRES PIPELINE",
+    "HYBRID BLOCK GMRES", // GmresPoly
+    "TPETRA GMRES SINGLE REDUCE",
+    "LSQR",
+    "MINRES",
+    "PCPG",
+    "PSEUDOBLOCK CG",
+    "PSEUDOBLOCK GMRES",
+    "PSEUDOBLOCK TFQMR",
+    "TFQMR"
+  }};
+
+  for (const std::string& solverName : solverNames) {
+    const bool isComplex = Teuchos::ScalarTraits<SC>::isComplex;
+    if (isComplex && (solverName == "LSQR" || solverName == "PCPG")) {
+      continue; // solver not implemented for complex Scalar types
+    }
+    testCreatingSolver<SC, LO, GO, NT> (out, success, solverName);
+    if (! success) {
+      return;
+    }
+  }
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT )
 {
   using Teuchos::Comm;
@@ -262,6 +330,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 // Macro that instantiates the unit test
 #define LCLINST( SC, LO, GO, NT ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( SolverFactory, CreateSolvers, SC, LO, GO, NT ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( SolverFactory, CreateAndSolve, SC, LO, GO, NT )
 
 // Tpetra's ETI will instantiate the unit test for all enabled type

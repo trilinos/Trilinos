@@ -923,7 +923,7 @@ C
             CALL MESAGE (' ')
             CALL MESAGE ('****************************************')
             CALL MESAGE ('*      NO ELEMENTS IN DATABASE         *')
-            CALL MESAGE ('*     NO FILE WRITTING POSSIBLE        *')
+            CALL MESAGE ('*     NO FILE WRITING POSSIBLE        *')
             CALL MESAGE ('****************************************')
             CALL MESAGE (' ')
             GOTO 100
@@ -960,7 +960,7 @@ C
             CALL MESAGE (' ')
             CALL MESAGE ('****************************************')
             CALL MESAGE ('*      NO ELEMENTS IN DATABASE         *')
-            CALL MESAGE ('*     NO FILE WRITTING POSSIBLE        *')
+            CALL MESAGE ('*     NO FILE WRITING POSSIBLE        *')
             CALL MESAGE ('****************************************')
             CALL MESAGE (' ')
             GOTO 100
@@ -1005,7 +1005,7 @@ C
             CALL MESAGE (' ')
             CALL MESAGE ('****************************************')
             CALL MESAGE ('*      NO ELEMENTS IN DATABASE         *')
-            CALL MESAGE ('*     NO FILE WRITTING POSSIBLE        *')
+            CALL MESAGE ('*     NO FILE WRITING POSSIBLE        *')
             CALL MESAGE ('****************************************')
             CALL MESAGE (' ')
             GOTO 100

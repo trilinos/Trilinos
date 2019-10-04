@@ -112,7 +112,7 @@ C
       IF ((N1 .EQ. NODE2) .AND. (KOUNT .GT. 1)) THEN
          GOTO 140
       ELSEIF (KOUNT .GT. NLOOP (1) + 1) THEN
-         CALL MESAGE ('** PROLEMS WITH LOOP CLOSING IN PCROSS **')
+         CALL MESAGE ('** PROBLEMS WITH LOOP CLOSING IN PCROSS **')
          ERR = .TRUE.
          GOTO 140
       ENDIF

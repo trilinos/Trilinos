@@ -67,15 +67,14 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
 
+#include "SetupKeyholeMesh.hpp"
 #include "stk_unit_test_utils/ElemGraphTestUtils.hpp"
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
-#include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
-
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_unit_tests/stk_mesh_fixtures/heterogeneous_mesh.hpp>
-#include <stk_unit_tests/stk_mesh_fixtures/degenerate_mesh.hpp>
 
 #include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
+#include <stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_test_utils/stk_mesh_fixtures/degenerate_mesh.hpp>
+#include <stk_unit_test_utils/stk_mesh_fixtures/heterogeneous_mesh.hpp>
 
 class BulkDataElementGraphTester : public stk::mesh::BulkData
 {

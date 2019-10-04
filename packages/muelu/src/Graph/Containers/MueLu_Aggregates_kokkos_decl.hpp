@@ -61,7 +61,7 @@
 
 #include "MueLu_BaseClass.hpp"
 
-#include "MueLu_LWGraph_kokkos_fwd.hpp"
+#include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_IndexManager_kokkos.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
@@ -106,15 +106,18 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   class Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public BaseClass {
   public:
-    typedef LocalOrdinal                                             local_ordinal_type;
-    typedef GlobalOrdinal                                            global_ordinal_type;
-    typedef typename DeviceType::execution_space                     execution_space;
-    typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
-    typedef DeviceType                                               device_type;
+    // For some reason we seem intent on having these declared before pulling the short names in
+    // I am not sure why but I will keep things as it is for now
+    // If you need to define a type that depend on a short name please do it further down after
+    // the header has been included!
+    using local_ordinal_type  = LocalOrdinal;
+    using global_ordinal_type = GlobalOrdinal;
+    using execution_space     = typename DeviceType::execution_space;
+    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
+    using device_type         = DeviceType;
+    using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
 
-    typedef Kokkos::View<LocalOrdinal*, DeviceType>                  aggregates_sizes_type;
-    typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space> local_graph_type;
+    using aggregates_sizes_type = Kokkos::View<LocalOrdinal*, DeviceType>;
 
   private:
     // For compatibility
@@ -124,7 +127,10 @@ namespace MueLu {
 
   public:
 
-  public:
+    // Defining types that require the short names included above
+    using local_graph_type = typename LWGraph_kokkos::local_graph_type;
+    using colors_view_type = Kokkos::View<typename local_graph_type::entries_type::data_type,
+                                          typename local_graph_type::device_type::memory_space>;
 
     /*! @brief Standard constructor for Aggregates structure
      *
@@ -147,10 +153,38 @@ namespace MueLu {
      */
     virtual ~Aggregates_kokkos() { }
 
-    ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
-    KOKKOS_INLINE_FUNCTION LO GetNumAggregates() const {
-      return numAggregates_;
-    }
+    //! @name Set/Get Methods for specific aggregation data
+    //@{
+
+    /*! @brief Get the index manager used by structured aggregation algorithms.
+        This has to be done by the aggregation factory.
+    */
+    RCP<IndexManager_kokkos>& GetIndexManager() { return geoData_; }
+
+    /*! @brief Set the index manager used by structured aggregation algorithms.
+        This has to be done by the aggregation factory.
+    */
+    void SetIndexManager(RCP<IndexManager_kokkos> & geoData) { geoData_ = geoData; }
+
+    /*! @brief Get a distance 2 coloring of the underlying graph.
+        The coloring is computed and set during Phase1 of aggregation.
+    */
+    colors_view_type& GetGraphColors() { return graphColors_; }
+
+    /*! @brief Set a distance 2 coloring of the underlying graph.
+        The coloring is computed and set during Phase1 of aggregation.
+    */
+    void SetGraphColors(colors_view_type graphColors) { graphColors_ = graphColors; }
+
+    /*! @brief Get the number of colors needed by the distance 2 coloring.
+    */
+    LO GetGraphNumColors() { return graphNumColors_; }
+
+    /*! @brief Set the number of colors needed by the distance 2 coloring.
+    */
+    void SetGraphNumColors(const LO graphNumColors) { graphNumColors_ = graphNumColors; }
+
+    //@}
 
     /*! @brief Set number of local aggregates on current processor.
 
@@ -158,17 +192,10 @@ namespace MueLu {
     */
     void SetNumAggregates(LO nAggregates) { numAggregates_ = nAggregates; }
 
-    /*! @brief Get the index manager used by structured aggregation algorithms.
-
-        This has to be done by the aggregation factory.
-    */
-    RCP<IndexManager_kokkos>& GetIndexManager() { return geoData_; }
-
-    /*! @brief Get the index manager used by structured aggregation algorithms.
-
-        This has to be done by the aggregation factory.
-    */
-    void SetIndexManager(RCP<IndexManager_kokkos> & geoData) { geoData_ = geoData; }
+    ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
+    KOKKOS_INLINE_FUNCTION LO GetNumAggregates() const {
+      return numAggregates_;
+    }
 
     //! @brief Record whether aggregates include DOFs from other processes.
     KOKKOS_INLINE_FUNCTION void AggregatesCrossProcessors(const bool& flag) {
@@ -261,6 +288,16 @@ namespace MueLu {
      *  on a problem.
      */
     RCP<IndexManager_kokkos> geoData_;
+
+    /*! graphColors_ stores a view that assigns a color to each node in the graph
+     *  These colors are used to parallelize the aggregation process in UncoupledAggregation
+     */
+    colors_view_type graphColors_;
+
+    /*! graphNumColors_ stores the number of colors that are needed to perform a distance 2
+     *  coloring of the underlying graph.
+     */
+    LO graphNumColors_;
 
     Kokkos::View<bool*, DeviceType> isRoot_;
 

@@ -107,43 +107,6 @@ namespace {
   const std::string SEP() { return std::string("@"); } // Separator for attribute offset storage
   const char *      complex_suffix[] = {".re", ".im"};
 
-  int get_parallel_io_mode(const Ioss::PropertyManager &properties)
-  {
-    static int par_mode         = 0;
-    static int par_mode_default = EX_PNETCDF; // Default...
-    //    static int par_mode_default = EX_MPIIO;
-    //    static int par_mode_default = EX_MPIPOSIX;
-
-    if (par_mode == 0) {
-      if (properties.exists("PARALLEL_IO_MODE")) {
-        std::string mode_name = properties.get("PARALLEL_IO_MODE").get_string();
-        Ioss::Utils::fixup_name(mode_name);
-        if (mode_name == "pnetcdf") {
-          par_mode = EX_PNETCDF;
-        }
-        else if (mode_name == "mpiposix") {
-          par_mode = EX_MPIPOSIX;
-        }
-        else if (mode_name == "mpiio") {
-          par_mode = EX_MPIIO;
-        }
-        else {
-          std::ostringstream errmsg;
-          fmt::print(errmsg,
-                     "ERROR: Unrecognized parallel io mode setting '{}' in the Ioss property "
-                     "PARALLEL_IO_MODE."
-                     "  Valid values are 'pnetcdf', 'mpiposix', or 'mpiio'",
-                     mode_name);
-          IOSS_ERROR(errmsg);
-        }
-      }
-      else {
-        par_mode = par_mode_default;
-      }
-    }
-    return par_mode;
-  }
-
   void get_connectivity_data(int exoid, void *data, ex_entity_type type, ex_entity_id id,
                              int position, int int_size_api)
   {
@@ -320,15 +283,17 @@ namespace Iopx {
 
         std::string open_create = is_input() ? "open input" : "create output";
         if (write_message || error_msg != nullptr) {
-          // See which processors could not open/create the file...
-          std::ostringstream errmsg;
-          fmt::print(errmsg, "ERROR: Unable to {} exodus database file '{}' on processors:\n\t",
-                     open_create, get_filename());
+          std::vector<size_t> procs;
           for (int i = 0; i < util().parallel_size(); i++) {
             if (status[i] < 0) {
-              fmt::print(errmsg, "{}, ", i);
+              procs.push_back(i);
             }
           }
+          std::string error_list = Ioss::Utils::format_id_list(procs, "--");
+          // See which processors could not open/create the file...
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR: Unable to {} exodus database file '{}' on processors:\n\t{}",
+                     open_create, get_filename(), error_list);
           if (error_msg != nullptr) {
             *error_msg = errmsg.str();
           }
@@ -338,11 +303,7 @@ namespace Iopx {
           }
         }
         if (bad_count != nullptr) {
-          for (int i = 0; i < util().parallel_size(); i++) {
-            if (status[i] < 0) {
-              (*bad_count)++;
-            }
-          }
+          *bad_count = std::count_if(status.begin(), status.end(), [](int i) { return i < 0; });
         }
         if (abort_if_error) {
           std::ostringstream errmsg;
@@ -398,10 +359,9 @@ namespace Iopx {
     Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
     double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
-    int par_mode    = get_parallel_io_mode(properties);
     int app_opt_val = ex_opts(EX_VERBOSE);
-    exodusFilePtr   = ex_open_par(filename.c_str(), EX_READ | par_mode | mode, &cpu_word_size,
-                                &io_word_size, &version, util().communicator(), info);
+    exodusFilePtr   = ex_open_par(filename.c_str(), EX_READ | mode, &cpu_word_size, &io_word_size,
+                                &version, util().communicator(), info);
 
     if (do_timer) {
       double t_end    = Ioss::Utils::timer();
@@ -473,8 +433,6 @@ namespace Iopx {
     }
 #endif
 
-    int par_mode = get_parallel_io_mode(properties);
-
     MPI_Info info        = MPI_INFO_NULL;
     int      app_opt_val = ex_opts(EX_VERBOSE);
     Ioss::DatabaseIO::openDatabase__();
@@ -493,8 +451,8 @@ namespace Iopx {
     double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
     if (fileExists) {
-      exodusFilePtr = ex_open_par(filename.c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
-                                  &io_word_size, &version, util().communicator(), info);
+      exodusFilePtr = ex_open_par(filename.c_str(), EX_WRITE | mode, &cpu_word_size, &io_word_size,
+                                  &version, util().communicator(), info);
     }
     else {
       // If the first write for this file, create it...
@@ -511,8 +469,8 @@ namespace Iopx {
           mode |= EX_ALL_INT64_DB;
         }
       }
-      exodusFilePtr = ex_create_par(filename.c_str(), mode | par_mode, &cpu_word_size,
-                                    &dbRealWordSize, util().communicator(), info);
+      exodusFilePtr = ex_create_par(filename.c_str(), mode, &cpu_word_size, &dbRealWordSize,
+                                    util().communicator(), info);
     }
 
     if (do_timer) {
@@ -638,38 +596,8 @@ namespace Iopx {
 
     m_groupCount[EX_SIDE_SET] = info.num_side_sets;
 
-    if (nodeCount == 0) {
-      fmt::print(IOSS_WARNING, "No nodes were found in the model, file '{}'\n", get_filename());
-    }
-    else if (nodeCount < 0) {
-      // NOTE: Code will not continue past this call...
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Negative node count was found in the model\n"
-                 "       File: '{}'.\n",
-                 get_filename());
-      IOSS_ERROR(errmsg);
-    }
-
-    if (elementCount == 0) {
-      fmt::print(IOSS_WARNING, "No elements were found in the model, file: '{}'\n", get_filename());
-    }
-
-    if (elementCount < 0) {
-      // NOTE: Code will not continue past this call...
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Negative element count was found in the model, file: '{}'",
-                 get_filename());
-      IOSS_ERROR(errmsg);
-    }
-
-    if (elementCount > 0 && m_groupCount[EX_ELEM_BLOCK] <= 0) {
-      // NOTE: Code will not continue past this call...
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: No element blocks were found in the model, file: '{}'",
-                 get_filename());
-      IOSS_ERROR(errmsg);
-    }
+    // Checks: node, element, blocks > 0; warning if == 0; error if < 0
+    check_valid_values();
 
     Ioss::Region *this_region = get_region();
 
@@ -757,7 +685,7 @@ namespace Iopx {
     // on the database.  Output a warning message if there is
     // potentially corrupt data on the database...
 
-    // Check whether user or application wants to limite the times even further...
+    // Check whether user or application wants to limit the times even further...
     // One use case is that job is restarting at a time prior to what has been
     // written to the results file, so want to start appending after
     // restart time instead of at end time on database.
@@ -1060,15 +988,13 @@ namespace Iopx {
         if (block.num_faces_per_entry > 0 && rank_offset < 1) {
           std::string storage = "Real["+std::to_string(block.num_faces_per_entry)+"]";
           io_block->field_add(Ioss::Field("connectivity_face",
-                                          io_block->field_int_type(), storage, Ioss::Field::MESH,
-                                          block.num_entry));
+                                          io_block->field_int_type(), storage, Ioss::Field::MESH));
         }
         // X -> Edge?
         if (block.num_edges_per_entry > 0 && rank_offset < 2) {
           std::string storage = "Real["+std::to_string(block.num_edges_per_entry)+"]";
           io_block->field_add(Ioss::Field("connectivity_edge",
-                                          io_block->field_int_type(), storage, Ioss::Field::MESH,
-                                          block.num_entry));
+                                          io_block->field_int_type(), storage, Ioss::Field::MESH));
         }
 #endif
 
@@ -1181,7 +1107,7 @@ namespace Iopx {
   {
     // This function creates all sidesets (surfaces) for a
     // model.  Note that a sideset contains 1 or more sideblocks
-    // which are homogenous (same topology). In serial execution,
+    // which are homogeneous (same topology). In serial execution,
     // this is fairly straightforward since there are no null sets and
     // we have all the information we need. (...except see below for
     // surface evolution).
@@ -1224,7 +1150,7 @@ namespace Iopx {
 
       // Create sidesets for each entry in the fs_set... These are the
       // sidesets which were probably written by a previous run of the
-      // IO system and are already split into homogenous pieces...
+      // IO system and are already split into homogeneous pieces...
       {
         for (auto &fs_name : fs_set) {
           auto *side_set = new Ioss::SideSet(this, fs_name);
@@ -1558,12 +1484,12 @@ namespace Iopx {
               storage += std::to_string(side_topo->number_nodes());
               storage += "]";
               side_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage,
-                                                Ioss::Field::MESH, my_side_count));
+                                                Ioss::Field::MESH));
             }
 
             if (side_set_name == "universal_sideset") {
               side_block->field_add(Ioss::Field("side_ids", side_block->field_int_type(), "scalar",
-                                                Ioss::Field::MESH, my_side_count));
+                                                Ioss::Field::MESH));
             }
 
             int num_attr = 0;
@@ -4575,4 +4501,67 @@ void DatabaseIO::output_node_map() const
   }
 }
 
+void DatabaseIO::check_valid_values() const
+{
+  std::vector<int64_t> counts{nodeCount, elementCount, m_groupCount[EX_ELEM_BLOCK]};
+  std::vector<int64_t> all_counts;
+  util().all_gather(counts, all_counts);
+  // Get minimum value in `all_counts`. If >0, then don't need to check further...
+  auto min_val = *std::min_element(all_counts.begin(), all_counts.end());
+
+  if (myProcessor == 0) {
+    size_t proc_count = all_counts.size() / 3;
+
+    if (min_val < 0) {
+      static std::array<std::string, 3> label{"node", "element", "element block"};
+      // Error on one or more of the counts...
+      for (size_t j = 0; j < 3; j++) {
+        std::vector<size_t> bad_proc;
+        for (size_t i = 0; i < proc_count; i++) {
+          if (all_counts[3 * i + j] < 0) {
+            bad_proc.push_back(i);
+          }
+        }
+
+        if (!bad_proc.empty()) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR: Negative {} count on {} processor{}:\n\t{}\n\n", label[j],
+                     bad_proc.size(), bad_proc.size() > 1 ? "s" : "",
+                     Ioss::Utils::format_id_list(bad_proc, ":"));
+          IOSS_ERROR(errmsg);
+        }
+      }
+    }
+
+    // Now check for warning (count == 0)
+    if (min_val <= 0) {
+      static std::array<std::string, 3> label{"nodes or elements", "elements", "element blocks"};
+      // Possible warning on one or more of the counts...
+      // Note that it is possible to have nodes on a processor with no elements,
+      // but not possible to have elements if no nodes...
+      for (size_t j = 0; j < 3; j++) {
+        std::vector<size_t> bad_proc;
+        for (size_t i = 0; i < proc_count; i++) {
+          if (all_counts[3 * i + j] == 0) {
+            bad_proc.push_back(i);
+          }
+        }
+
+        if (!bad_proc.empty()) {
+          fmt::print(IOSS_WARNING, "WARNING: No {} on processor{}:\n\t{}\n\n", label[j],
+                     bad_proc.size() > 1 ? "s" : "", Ioss::Utils::format_id_list(bad_proc, ":"));
+          if (j == 0) {
+            break;
+          }
+        }
+      }
+    }
+  }
+  else { // All other processors; need to abort if negative count
+    if (min_val < 0) {
+      std::ostringstream errmsg;
+      IOSS_ERROR(errmsg);
+    }
+  }
+}
 } // namespace Iopx

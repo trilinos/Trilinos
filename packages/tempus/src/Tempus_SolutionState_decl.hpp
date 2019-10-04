@@ -126,7 +126,7 @@ public:
         return metaData_nc_; }
 
     virtual Scalar getTime()     const {return metaData_->getTime();}
-    virtual Scalar getIndex()    const {return metaData_->getIStep();}
+    virtual int getIndex()    const {return metaData_->getIStep();}
     virtual Scalar getTimeStep() const {return metaData_->getDt();}
     virtual Scalar getOrder()    const {return metaData_->getOrder();}
     virtual Scalar getNRunningFailures() const

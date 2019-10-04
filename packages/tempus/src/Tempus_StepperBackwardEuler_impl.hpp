@@ -25,85 +25,78 @@ template<class Scalar> class StepperFactory;
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler()
 {
-  this->setParameterList(Teuchos::null);
-  this->modelWarning();
+  this->setStepperType(        "Backward Euler");
+  this->setUseFSAL(            this->getUseFSALDefault());
+  this->setICConsistency(      this->getICConsistencyDefault());
+  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setZeroInitialGuess(   false);
+
+  this->setObserver();
 }
 
 
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  Teuchos::RCP<Teuchos::ParameterList> pList)
-{
-  this->setParameterList(pList);
+  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  bool useFSAL,
+  std::string ICConsistency,
+  bool ICConsistencyCheck,
+  bool zeroInitialGuess)
 
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
+{
+  this->setStepperType(        "Backward Euler");
+  this->setUseFSAL(            useFSAL);
+  this->setICConsistency(      ICConsistency);
+  this->setICConsistencyCheck( ICConsistencyCheck);
+  this->setZeroInitialGuess(   zeroInitialGuess);
+
+  this->setObserver(obs);
+
+  if (appModel != Teuchos::null) {
+
     this->setModel(appModel);
+    this->setSolver(solver);
     this->initialize();
   }
 }
 
 
-/** \brief Set the predictor to a pre-defined predictor in the ParameterList.
- *  The predictor is set to predictorName sublist in the Stepper's
- *  ParameterList.  The predictorName sublist should already be defined
- *  in the Stepper's ParameterList.  Otherwise it will fail.
- */
+/// Set the predictor to a Stepper with default settings.
 template<class Scalar>
-void StepperBackwardEuler<Scalar>::setPredictor(std::string predictorName)
+void StepperBackwardEuler<Scalar>::setPredictor(std::string predictorType)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
+  if (predictorType == "None") {
+    predictorStepper_ = Teuchos::null;
+    return;
+  }
 
-  RCP<ParameterList> predPL =
-    Teuchos::sublist(this->stepperPL_, predictorName, true);
-  this->stepperPL_->set("Predictor Name", predictorName);
-  if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->wrapperModel_->getAppModel() == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperBackwardEuler::setPredictor()\n");
+
+  using Teuchos::RCP;
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
+  predictorStepper_ =
+    sf->createStepper(predictorType, this->wrapperModel_->getAppModel());
 }
 
 
-/** \brief Set the predictor to the supplied Parameter sublist.
- *  This adds a new predictor Parameter sublist to the Stepper's ParameterList.
- *  If the predictor sublist is null, it tests if the predictor is set in
- *  the Stepper's ParameterList.
- */
+/// Set the predictor.
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::setPredictor(
-  Teuchos::RCP<Teuchos::ParameterList> predPL)
+  Teuchos::RCP<Stepper<Scalar> > predictorStepper)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->wrapperModel_->getAppModel() == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperBackwardEuler::setPredictor()\n");
 
-  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
-  std::string predictorName =
-    stepperPL->get<std::string>("Predictor Name","None");
-  if (is_null(predPL)) {
-    if (predictorName != "None") {
-      predPL = Teuchos::sublist(stepperPL, predictorName, true);
-      RCP<StepperFactory<Scalar> > sf =
-        Teuchos::rcp(new StepperFactory<Scalar>());
-      predictorStepper_ =
-        sf->createStepper(predPL, this->wrapperModel_->getAppModel());
-    }
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION( predictorName == predPL->name(),
-      std::logic_error,
-         "Error - Trying to add a predictor that is already in ParameterList!\n"
-      << "  Stepper Type = " << stepperPL->get<std::string>("Stepper Type")
-      << "\n" << "  Predictor Name  = "<<predictorName<<"\n");
-    predictorName = predPL->name();
-    stepperPL->set("Predictor Name", predictorName);
-    stepperPL->set(predictorName, *predPL);           // Add sublist
-    if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
-    RCP<StepperFactory<Scalar> > sf =
-      Teuchos::rcp(new StepperFactory<Scalar>());
-    predictorStepper_ =
-      sf->createStepper(predPL, this->wrapperModel_->getAppModel());
-  }
+  predictorStepper_ = predictorStepper;
+  predictorStepper_->setModel(this->wrapperModel_->getAppModel());
+  predictorStepper_->initialize();
 }
 
 
@@ -117,13 +110,13 @@ void StepperBackwardEuler<Scalar>::setObserver(
       stepperBEObserver_ =
         Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>());
       this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperBEObserver_);
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperBEObserver_,true);
     }
   } else {
     this->stepperObserver_ = obs;
     stepperBEObserver_ =
       Teuchos::rcp_dynamic_cast<StepperBackwardEulerObserver<Scalar> >
-        (this->stepperObserver_);
+        (this->stepperObserver_,true);
   }
 }
 
@@ -135,11 +128,6 @@ void StepperBackwardEuler<Scalar>::initialize()
     this->wrapperModel_ == Teuchos::null, std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
     "StepperBackwardEuler::initialize()\n");
-
-  this->setParameterList(this->stepperPL_);
-  this->setSolver();
-  this->setPredictor();
-  this->setObserver();
 }
 
 
@@ -207,9 +195,8 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
     const Scalar alpha = Scalar(1.0)/dt;
     const Scalar beta  = Scalar(1.0);
-    Teuchos::RCP<ImplicitODEParameters<Scalar> > p =
-      Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
-                                                     SOLVE_FOR_X));
+    auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+      timeDer, dt, alpha, beta));
 
     if (!Teuchos::is_null(stepperBEObserver_))
       stepperBEObserver_->observeBeforeSolve(solutionHistory, *this);
@@ -260,16 +247,8 @@ StepperBackwardEuler<Scalar>::
 getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
-    rcp(new StepperState<Scalar>(description()));
+    rcp(new StepperState<Scalar>(this->getStepperType()));
   return stepperState;
-}
-
-
-template<class Scalar>
-std::string StepperBackwardEuler<Scalar>::description() const
-{
-  std::string name = "Backward Euler";
-  return(name);
 }
 
 
@@ -278,38 +257,8 @@ void StepperBackwardEuler<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
-  out << description() << "::describe:" << std::endl
+  out << this->getStepperType() << "::describe:" << std::endl
       << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
-}
-
-
-template <class Scalar>
-void StepperBackwardEuler<Scalar>::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& pList)
-{
-  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
-  if (pList == Teuchos::null) {
-    // Create default parameters if null, otherwise keep current parameters.
-    if (stepperPL == Teuchos::null) stepperPL = this->getDefaultParameters();
-  } else {
-    stepperPL = pList;
-  }
-  if (!(stepperPL->isParameter("Solver Name"))) {
-    stepperPL->set<std::string>("Solver Name", "Default Solver");
-    Teuchos::RCP<Teuchos::ParameterList> solverPL =
-      this->defaultSolverParameters();
-    stepperPL->set("Default Solver", *solverPL);
-  }
-  // Can not validate because of optional Parameters (e.g., Solver Name).
-  // stepperPL->validateParametersAndSetDefaults(*this->getValidParameters());
-
-  std::string stepperType = stepperPL->get<std::string>("Stepper Type");
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Backward Euler",
-    std::logic_error,
-       "Error - Stepper Type is not 'Backward Euler'!\n"
-    << "  Stepper Type = "<<stepperPL->get<std::string>("Stepper Type")<<"\n");
-
-  this->stepperPL_ = stepperPL;
 }
 
 
@@ -318,51 +267,14 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperBackwardEuler<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", this->description());
-  this->getValidParametersBasic(pl);
-  pl->set<bool>       ("Zero Initial Guess", false);
-  pl->set<std::string>("Solver Name", "",
-    "Name of ParameterList containing the solver specifications.");
-
-  return pl;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperBackwardEuler<Scalar>::getDefaultParameters() const
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-  using Teuchos::rcp_const_cast;
-
-  RCP<ParameterList> pl =
-    rcp_const_cast<ParameterList>(this->getValidParameters());
-
+  getValidParametersBasic(pl, this->getStepperType());
   pl->set<std::string>("Solver Name", "Default Solver");
-  RCP<ParameterList> solverPL = this->defaultSolverParameters();
+  pl->set<bool>       ("Zero Initial Guess", false);
+  pl->set<std::string>("Predictor Stepper Type", "None");
+  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 
   return pl;
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperBackwardEuler<Scalar>::getNonconstParameterList()
-{
-  return(this->stepperPL_);
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperBackwardEuler<Scalar>::unsetParameterList()
-{
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
-  this->stepperPL_ = Teuchos::null;
-  return(temp_plist);
 }
 
 

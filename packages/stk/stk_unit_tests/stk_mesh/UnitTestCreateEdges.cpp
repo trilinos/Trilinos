@@ -32,31 +32,30 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <stddef.h>                     // for size_t
-#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
-#include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
-#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
-#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <string>                       // for string
-#include <vector>                       // for vector, vector<>::iterator
+#include "Setup2Block2HexMesh.hpp"  // for setup2Block2HexMesh
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FEMHelpers.hpp"  // for declare_element
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for operator!, Selector
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
+#include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
+#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_unit_test_utils/BulkDataTester.hpp>
-#include "stk_unit_tests/stk_mesh/Setup2Block2HexMesh.hpp"  // for setup2Block2HexMesh
+#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
+#include <string>                       // for string
+#include <vector>                       // for vector, vector<>::iterator
 
 using stk::mesh::MetaData;
 

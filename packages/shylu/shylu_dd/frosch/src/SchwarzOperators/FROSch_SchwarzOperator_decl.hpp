@@ -104,6 +104,7 @@ namespace FROSch {
 
         using XImport                           = Import<LO,GO,NO>;
         using XImportPtr                        = RCP<XImport>;
+        using XImportPtrVecPtr                  = ArrayRCP<XImportPtr>;
 
         using XExport                           = Export<LO,GO,NO>;
         using XExportPtr                        = RCP<XExport>;
@@ -122,6 +123,7 @@ namespace FROSch {
 
         using InterfaceEntityPtr                = RCP<InterfaceEntity<SC,LO,GO,NO> >;
 
+        using PartitionOfUnityPtr               = RCP<PartitionOfUnity<SC,LO,GO,NO> >;
         using InterfacePartitionOfUnityPtr      = RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> >;
 
         using LocalPartitionOfUnityBasisPtr     = RCP<LocalPartitionOfUnityBasis<SC,LO,GO,NO> >;
@@ -135,6 +137,7 @@ namespace FROSch {
         using DofOrderingVecPtr                 = ArrayRCP<DofOrdering>;
 
         using UN                                = unsigned;
+        using ConstUN                           = const UN;
         using UNVec                             = Array<UN>;
         using UNVecPtr                          = ArrayRCP<UN>;
 
@@ -215,7 +218,7 @@ namespace FROSch {
         bool IsInitialized_;
         bool IsComputed_;
 
-        UN LevelID_;
+        ConstUN LevelID_;
     };
 
 }

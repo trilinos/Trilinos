@@ -392,12 +392,17 @@ void copy_selected(const stk::mesh::BulkData& inputBulk, const stk::mesh::Select
     copy_relations(inputBulk, inputSelector, stk::topology::ELEM_RANK, stk::topology::NODE_RANK, outputBulk);
     outputBulk.modification_end();
 
-    if(inputBulk.has_face_adjacent_element_graph())
+    if(inputBulk.has_face_adjacent_element_graph()) {
         outputBulk.initialize_face_adjacent_element_graph();
+    }
 
     outputBulk.modification_begin();
     create_entities_of_rank(inputBulk, inputSelector, stk::topology::EDGE_RANK, outputBulk);
-    copy_side_entities(inputBulk, inputSelector, outputBulk);
+
+    if(inputBulk.mesh_meta_data().side_rank() != stk::topology::EDGE_RANK) {
+      copy_side_entities(inputBulk, inputSelector, outputBulk);
+    }
+
     copy_sidesets(inputBulk, inputSelector, outputBulk);
     create_entities_for_remaining_ranks(inputBulk, inputSelector, outputBulk);
 

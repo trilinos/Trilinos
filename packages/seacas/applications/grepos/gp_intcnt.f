@@ -34,7 +34,7 @@ C=======================================================================
       INTEGER FUNCTION INTCNT (INT, LIST, LLIST)
 C=======================================================================
 
-C   --*** INTCNT *** (GJOIN) Returns the number of occurances in list
+C   --*** INTCNT *** (GJOIN) Returns the number of occurrences in list
 C   --   Written by Amy Gilkey - revised 09/29/87
 C   --
 C   --INTCNT returns the number of times an integer is found in a list.

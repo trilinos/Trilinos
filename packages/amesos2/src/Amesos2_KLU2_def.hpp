@@ -345,7 +345,7 @@ KLU2<Matrix,Vector>::solve_impl(
     }
 
     /* All processes should have the same error code */
-    Teuchos::broadcast(*(this->getComm()), 0, &ierr);
+    // Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
   } // end single_process_optim_check && nrhs == 1
   else  // single proc optimizations but nrhs > 1,
@@ -423,7 +423,7 @@ KLU2<Matrix,Vector>::solve_impl(
     } // end root_
 
     /* All processes should have the same error code */
-    Teuchos::broadcast(*(this->getComm()), 0, &ierr);
+    // Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
     // global_size_type ierr_st = as<global_size_type>(ierr); // unused
     // TODO

@@ -74,6 +74,7 @@ INCLUDE(PrintVar)
 #     [HOSTTYPE <hosttype0> <hosttype1> ...]
 #     [XHOSTTYPE <hosttype0> <hosttype1> ...]
 #     [EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...]
+#     [DISABLED <messageWhyDisabled>]
 #     [FINAL_PASS_REGULAR_EXPRESSION <regex> |
 #       FINAL_FAIL_REGULAR_EXPRESSION <regex>]
 #     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
@@ -290,6 +291,12 @@ INCLUDE(PrintVar)
 #     If specified, gives the names of CMake variables that must evaluate to
 #     true, or the test will not be added (see `TRIBITS_ADD_TEST()`_).
 #
+#   ``DISABLED <messageWhyDisabled>``
+#
+#     If ``<messageWhyDisabled>`` is non-empty and does not evaluate to FALSE
+#     by CMake, then the test will be added by ctest but the ``DISABLED`` test
+#     property will be set (see `TRIBITS_ADD_TEST()`_).
+#
 #   ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.
 #
 #     If passed in, the listed environment variables will be set before
@@ -473,7 +480,7 @@ INCLUDE(PrintVar)
 #     If specified, the test command will be assumed to pass if the string
 #     expression "Final Result: PASSED" is found in the output for the test.
 #     This as the result of directly passing in ``PASS_REGULAR_EXPRESSION
-#     "Final Result: PASSED"``.
+#     "End Result: TEST PASSED"``.
 #
 #   ``FAIL_REGULAR_EXPRESSION "<regex>"``
 #
@@ -826,7 +833,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   #
   # A) Parse the overall arguments and figure out how many tests
-  # comands we will have
+  # commands we will have
   #
 
   # Allow for a maximum of 20 (0 through 19) test commands
@@ -844,7 +851,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
      #options
      "FAIL_FAST;RUN_SERIAL;SKIP_CLEAN_OVERALL_WORKING_DIRECTORY"
      # one_value_keywords
-     ""
+     "DISABLED"
      # multi_value_keywords
      "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
      ${ARGN}
@@ -897,6 +904,9 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   IF (DISABLE_THIS_TEST)
     RETURN()
   ENDIF()
+
+  TRIBITS_SET_DISABLED_AND_MSG(${TEST_NAME} "${PARSE_DISABLED}"
+    SET_DISABLED_AND_MSG)  # Adds the test but sets DISABLED test prop!
 
   #
   # C) Determine if we will add the serial or MPI tests based on input COMM
@@ -1384,6 +1394,10 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
         PROCESSORS "${MAX_NUM_PROCESSORS_USED}")
     ENDIF()
 
+    IF (SET_DISABLED_AND_MSG)
+      TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES DISABLED ON)
+    ENDIF()
+
     IF (PARSE_FINAL_PASS_REGULAR_EXPRESSION)
       TRIBITS_SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         PASS_REGULAR_EXPRESSION "${PARSE_FINAL_PASS_REGULAR_EXPRESSION}" )
@@ -1408,7 +1422,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
     TRIBITS_PRIVATE_ADD_TEST_PRINT_ADDED(${TEST_NAME}
       "${PARSE_CATEGORIES}"  "${MAX_NUM_MPI_PROCS_USED_TO_PRINT}"
-      "${MAX_NUM_PROCESSORS_USED}"  "${TIMEOUT_USED}" )
+      "${MAX_NUM_PROCESSORS_USED}"  "${TIMEOUT_USED}"
+      "${SET_DISABLED_AND_MSG}")
 
     #
     # F.2) Write the cmake -P script

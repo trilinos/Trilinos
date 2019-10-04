@@ -59,7 +59,7 @@ C
      &   TIME1, BATCH, VERSN)
 C***********************************************************************
 C
-C  SUBROUTINE FEXIT = GRACEFULL FASTQ EXIT
+C  SUBROUTINE FEXIT = GRACEFUL FASTQ EXIT
 C
 C***********************************************************************
 C

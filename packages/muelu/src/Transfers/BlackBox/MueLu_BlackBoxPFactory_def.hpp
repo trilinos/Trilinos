@@ -187,7 +187,7 @@ namespace MueLu {
       Teuchos::Array<LO> crates;
       try {
         crates = Teuchos::fromStringToArray<LO>(coarsenRate);
-      } catch(const Teuchos::InvalidArrayStringRepresentation e) {
+      } catch(const Teuchos::InvalidArrayStringRepresentation& e) {
         GetOStream(Errors,-1) << " *** Coarsen must be a string convertible into an array! *** "
                               << std::endl;
         throw e;

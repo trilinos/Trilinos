@@ -88,7 +88,7 @@ c initialize unit to file descriptor table (cdrunx)
 C initialize graphics output filename to blank (cdrcm2)
       data kgname/' '/
 
-C followin initializations done just to force common block symbol
+C following initializations done just to force common block symbol
 C to object file on some compilers...
       data onode /.true./
       data kidsiz /0/

@@ -142,7 +142,7 @@ C     Loop from 1 to number of element blocks
             itmp = isetarr(ia(knumscr), ielbo, nelbo)
           end if
         end do
-C ... Wrap this call to handle character*(1) vs character*(mxstln) wierdness
+C ... Wrap this call to handle character*(1) vs character*(mxstln) weirdness
         call blkout(ndbout, ia(kidscr), c(knamscr), ia(knumscr),
      *    ia(klnkscr), ia(knatscr))
         call mddel('IDSCR')

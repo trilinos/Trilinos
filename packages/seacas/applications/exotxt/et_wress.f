@@ -62,7 +62,7 @@ C                      distribution factor for each set.
 C   --   LTEESS - IN - array containing the elements for all side
 C                      sets. Internal element IDS are used in this list
 C   --   LTSESS - IN - array containing the sides for all side sets
-C   --   FACESS - IN - aray containing dist factors for all side sets
+C   --   FACESS - IN - array containing dist factors for all side sets
 C   --   NNESS  - IN - the number of nodes for each side set
 C   --   IXNESS - IN - index into LTNESS - the 1st node for each side set
 C   --   LTNESS - IN - array of nodes for all side sets

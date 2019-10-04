@@ -236,7 +236,7 @@ namespace MueLu {
       RCP<const tRowMatrix> tA;
       try {
         tA = Utilities::Op2NonConstTpetraRow(A_);
-      } catch (Exceptions::BadCast) {
+      } catch (Exceptions::BadCast&) {
         isTRowMatrix = false;
       }
 

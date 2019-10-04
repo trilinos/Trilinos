@@ -49,6 +49,8 @@
 
 #include <vector>
 
+#include "ROL_Ptr.hpp"
+
 /** @ingroup dynamic_group
     \class ROL::TimeStamp
     \brief Contains local time step information.

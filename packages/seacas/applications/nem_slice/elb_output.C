@@ -39,8 +39,8 @@
 #include "elb_err.h"  // for Gen_Error, error_lev
 #include "elb_output.h"
 #include "elb_util.h" // for gds_qsort, qsort2, in_list, etc
+#include "fmt/chrono.h"
 #include "fmt/ostream.h"
-#include "fmt/time.h"
 #include "scopeguard.h"
 #include <copy_string_cpp.h>
 #include <cstddef>    // for size_t, nullptr

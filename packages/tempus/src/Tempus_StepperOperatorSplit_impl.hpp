@@ -19,42 +19,47 @@ namespace Tempus {
 
 template<class Scalar>
 StepperOperatorSplit<Scalar>::StepperOperatorSplit()
-  : stepperPL_(Teuchos::null), OpSpSolnHistory_(Teuchos::null),
-    stepperOSObserver_(Teuchos::null)
+  : OpSpSolnHistory_(Teuchos::null)
 {
-  this->setParameterList(Teuchos::null);
+  this->setStepperType(        "Operator Split");
+  this->setUseFSAL(            this->getUseFSALDefault());
+  this->setICConsistency(      this->getICConsistencyDefault());
+  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
 
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,this->description());
-  *out << "Warning -- Constructing " << this->description()
-       << " without ModelEvaluators!\n"
-       << "  - Can reset ParameterList with setParameterList().\n"
-       << "  - Requires subsequent addStepper()/createSubSteppers()\n"
-       << "    and initialize() calls before calling takeStep().\n"
-       << std::endl;
+  this->setOrder   (1);
+  this->setOrderMin(1);
+  this->setOrderMax(1);
+
+  this->setObserver();
 }
 
 template<class Scalar>
 StepperOperatorSplit<Scalar>::StepperOperatorSplit(
   std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
-  Teuchos::RCP<Teuchos::ParameterList> pList)
-  : stepperPL_(Teuchos::null), OpSpSolnHistory_(Teuchos::null),
-    stepperOSObserver_(Teuchos::null)
+  std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList,
+  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  bool useFSAL,
+  std::string ICConsistency,
+  bool ICConsistencyCheck,
+  int order,
+  int orderMin,
+  int orderMax)
+    : OpSpSolnHistory_(Teuchos::null)
 {
-  this->setParameterList(pList);
+  this->setStepperType(        "Operator Split");
+  this->setUseFSAL(            useFSAL);
+  this->setICConsistency(      ICConsistency);
+  this->setICConsistencyCheck( ICConsistencyCheck);
 
-  if (appModels.empty()) {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,this->description());
-    *out << "Warning -- Constructing " << this->description()
-         << " without ModelEvaluators!\n"
-         << "  - Can reset ParameterList with setParameterList().\n"
-         << "  - Requires subsequent addStepper()/createSubSteppers\n"
-         << "    and initialize() calls before calling takeStep().\n"
-         << std::endl;
-  }
-  else {
-    this->createSubSteppers(appModels);
+  this->setSubStepperList(subStepperList);
+  this->setOrder   (order);
+  this->setOrderMin(orderMin);
+  this->setOrderMax(orderMax);
+
+  this->setObserver(obs);
+
+  if ( !(appModels.empty()) ) {
+    this->setModels(appModels);
     this->initialize();
   }
 }
@@ -107,27 +112,6 @@ StepperOperatorSplit<Scalar>::getModel()
 }
 
 template<class Scalar>
-void StepperOperatorSplit<Scalar>::setSolver(std::string /* solverName */)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::setSolver()");
-  *out << "Warning -- No solver to set for StepperOperatorSplit, "
-       << "because it is a Stepper of Steppers.\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
-void StepperOperatorSplit<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> /* solverPL */)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::setSolver()");
-  *out << "Warning -- No solver to set for StepperOperatorSplit "
-       << "because it is a Stepper of Steppers.\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
 void StepperOperatorSplit<Scalar>::setSolver(
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > /* solver */)
 {
@@ -150,64 +134,63 @@ void StepperOperatorSplit<Scalar>::setObserver(
      }
   } else {
     stepperOSObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs);
+      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs, true);
   }
 }
 
 template<class Scalar>
-void StepperOperatorSplit<Scalar>::createSubSteppers(
-  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels)
+void StepperOperatorSplit<Scalar>::setSubStepperList(
+  std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
-  // Parse Stepper List String
-  std::vector<std::string> stepperListStr;
-  stepperListStr.clear();
-  std::string str = stepperPL_->get<std::string>("Stepper List");
-  std::string delimiters(",");
-  // Skip delimiters at the beginning
-  std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-  // Find the first delimiter
-  std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
-  while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
-    std::string token = str.substr(lastPos,pos-lastPos);
-    // Strip single quotes
-    std::string::size_type beg = token.find_first_of("'") + 1;
-    std::string::size_type end = token.find_last_of ("'");
-    stepperListStr.push_back(token.substr(beg,end-beg));
+  subStepperList_ = subStepperList;
 
-    lastPos = str.find_first_not_of(delimiters, pos); // Skip delimiters
-    pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
-  }
+  typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::iterator
+    subStepperIter = subStepperList_.begin();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(stepperListStr.size() != appModels.size(),
-    std::logic_error, "Error - Number of models and Steppers do not match!\n"
-    << "  There are " << appModels.size() << " models.\n"
-    << "  There are " << stepperListStr.size() << " steppers.\n"
-    << "    " << str << "\n");
-
-  RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
-  typename
-    std::vector<RCP<const Thyra::ModelEvaluator<Scalar> > >::iterator
-      aMI = appModels.begin();
-  typename std::vector<std::string>::iterator sLSI = stepperListStr.begin();
-
-  for (; aMI<appModels.end() || sLSI<stepperListStr.end(); aMI++, sLSI++) {
-    RCP<ParameterList> subStepperPL = Teuchos::sublist(stepperPL_,*sLSI,true);
-    bool useFSAL = subStepperPL->template get<bool>("Use FSAL",false);
-    auto subStepper = sf->createStepper(subStepperPL, *aMI);
+  for (; subStepperIter<subStepperList_.end(); subStepperIter++) {
+    auto subStepper = *(subStepperIter);
+    bool useFSAL = subStepper->getUseFSAL();
     if (useFSAL) {
       Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::createSubSteppers()");
-      *out << "Warning -- subStepper = "
-           << subStepper->getStepperType() << " has \n"
+      *out << "Warning -- subStepper = '"
+           << subStepper->getStepperType() << "' has \n"
            << "  subStepper->getUseFSAL() = " << useFSAL << ".\n"
            << "  subSteppers usually can not use the FSAL priniciple with\n"
            << "  operator splitting.  Proceeding with it set to true.\n"
            << std::endl;
     }
-    addStepper(subStepper, useFSAL);
+  }
+}
+
+template<class Scalar>
+void StepperOperatorSplit<Scalar>::setModels(
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(subStepperList_.size() != appModels.size(),
+    std::logic_error, "Error - Number of models and Steppers do not match!\n"
+    << "  There are " << appModels.size() << " models.\n"
+    << "  There are " << subStepperList_.size() << " steppers.\n");
+
+  typename std::vector<RCP<const Thyra::ModelEvaluator<Scalar> > >::iterator
+    appModelIter = appModels.begin();
+
+  typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::iterator
+    subStepperIter = subStepperList_.begin();
+
+  for (; appModelIter<appModels.end() || subStepperIter<subStepperList_.end();
+       appModelIter++, subStepperIter++)
+  {
+    auto appModel = *(appModelIter);
+    auto subStepper = *(subStepperIter);
+    subStepper->setModel(appModel);
+    subStepper->initialize();
   }
 }
 
@@ -231,8 +214,6 @@ void StepperOperatorSplit<Scalar>::initialize()
     tempState_ = rcp(new SolutionState<Scalar>(
       model, this->getDefaultStepperState()));
   }
-  this->setParameterList(this->stepperPL_);
-  this->setObserver();
 
   if (!isOneStepMethod() ) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -240,7 +221,7 @@ void StepperOperatorSplit<Scalar>::initialize()
     typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::const_iterator
       subStepperIter = subStepperList_.begin();
     for (; subStepperIter < subStepperList_.end(); subStepperIter++) {
-      *out << "SubStepper, " << (*subStepperIter)->description()
+      *out << "SubStepper, " << (*subStepperIter)->getStepperType()
            << ", isOneStepMethod = " << (*subStepperIter)->isOneStepMethod()
            << std::endl;
     }
@@ -306,7 +287,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
         pass = false;
         Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
         Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::takeStep()");
-        *out << "SubStepper, " << (*subStepperIter)->description()
+        *out << "SubStepper, " << (*subStepperIter)->getStepperType()
              << ", failed!" << std::endl;
         break;
       }
@@ -337,16 +318,8 @@ Teuchos::RCP<Tempus::StepperState<Scalar> > StepperOperatorSplit<Scalar>::
 getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
-    rcp(new StepperState<Scalar>(description()));
+    rcp(new StepperState<Scalar>(this->getStepperType()));
   return stepperState;
-}
-
-
-template<class Scalar>
-std::string StepperOperatorSplit<Scalar>::description() const
-{
-  std::string name = "Operator Split";
-  return(name);
 }
 
 
@@ -355,30 +328,7 @@ void StepperOperatorSplit<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
-  out << description() << "::describe:" << std::endl;
-}
-
-
-template <class Scalar>
-void StepperOperatorSplit<Scalar>::setParameterList(
-  const Teuchos::RCP<Teuchos::ParameterList> & pList)
-{
-  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
-  if (pList == Teuchos::null) {
-    // Create default parameters if null, otherwise keep current parameters.
-    if (stepperPL == Teuchos::null) stepperPL = this->getDefaultParameters();
-  } else {
-    stepperPL = pList;
-  }
-  // Can not validate because of optional Parameters, e.g. operators.
-  //stepperPL->validateParametersAndSetDefaults(*this->getValidParameters());
-
-  std::string stepperType = stepperPL->get<std::string>("Stepper Type");
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Operator Split", std::logic_error,
-       "Error - Stepper Type is not 'Operator Split'!\n"
-    << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
-
-  this->stepperPL_ = stepperPL;
+  out << this->getStepperType() << "::describe:" << std::endl;
 }
 
 
@@ -387,10 +337,7 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperOperatorSplit<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", "Operator Split",
-    "'Stepper Type' must be 'Operator Split'.");
-  this->getValidParametersBasic(pl);
+  getValidParametersBasic(pl, this->getStepperType());
   pl->set<int>   ("Minimum Order", 1,
     "Minimum Operator-split order.  (default = 1)\n");
   pl->set<int>   ("Order", 1,
@@ -402,39 +349,6 @@ StepperOperatorSplit<Scalar>::getValidParameters() const
     "Comma deliminated list of single quoted Steppers, e.g., \"'Operator 1', 'Operator 2'\".");
 
   return pl;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperOperatorSplit<Scalar>::getDefaultParameters() const
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-  using Teuchos::rcp_const_cast;
-
-  RCP<ParameterList> pl =
-    rcp_const_cast<ParameterList>(this->getValidParameters());
-
-  return pl;
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperOperatorSplit<Scalar>::getNonconstParameterList()
-{
-  return(stepperPL_);
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperOperatorSplit<Scalar>::unsetParameterList()
-{
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
-  stepperPL_ = Teuchos::null;
-  return(temp_plist);
 }
 
 

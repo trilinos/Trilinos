@@ -126,176 +126,214 @@ namespace Thyra {
         thyra_precOp = rcp_dynamic_cast<LinearOpBase<SC> >(defaultPrec->getNonconstUnspecifiedPrecOp(), true);
 
         // Abstract SchwarzPreconditioner
-        RCP<SchwarzPreconditioner<SC,LO,GO,NO> > SchwarzPreconditioner;
-
-        FROSCH_ASSERT(paramList_->isParameter("FROSch Preconditioner Type"),"FROSch Preconditioner Type is not defined!");
-
-        if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("AlgebraicOverlappingPreconditioner")) {
-            // Extract the repeated map
-            ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
-
-            RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > AOP(new AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>(A,paramList_));
-
-            AOP->initialize(paramList_->get("Overlap",1),
-                            repeatedMap);
-
-            SchwarzPreconditioner = AOP;
-        } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("GDSWPreconditioner")) {
-            // Extract the repeated map
-            ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
-
-            // Extract the coordinate list
-            ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
-
-            // Extract the dof ordering
-            DofOrdering dofOrdering = NodeWise;
-            if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
-                dofOrdering = NodeWise;
-            } else if (!paramList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
-                dofOrdering = DimensionWise;
-            } else if (!paramList_->get("DofOrdering","NodeWise").compare("Custom")) {
-                dofOrdering = Custom;
-            } else {
-                FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
-            }
-
-            RCP<GDSWPreconditioner<SC,LO,GO,NO> > GP(new GDSWPreconditioner<SC,LO,GO,NO>(A,paramList_));
-
-            GP->initialize(paramList_->get("Dimension",3),
-                           paramList_->get("DofsPerNode",1),
-                           dofOrdering,
-                           paramList_->get("Overlap",1),
-                           repeatedMap,
-                           coordinatesList);
-
-            SchwarzPreconditioner = GP;
-        } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("OneLevelPreconditioner")) {
-            // Extract the repeated map
-            ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
-
-            RCP<OneLevelPreconditioner<SC,LO,GO,NO> > OLP(new OneLevelPreconditioner<SC,LO,GO,NO>(A,paramList_));
-
-            OLP->initialize(paramList_->get("Overlap",1),
-                            repeatedMap);
-
-            SchwarzPreconditioner = OLP;
-        } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("RGDSWPreconditioner")) {
-            // Extract the repeated map
-            ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
-
-            // Extract the coordinate list
-            ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
-
-            // Extract the dof ordering
-            DofOrdering dofOrdering = NodeWise;
-            if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
-                dofOrdering = NodeWise;
-            } else if (!paramList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
-                dofOrdering = DimensionWise;
-            } else if (!paramList_->get("DofOrdering","NodeWise").compare("Custom")) {
-                dofOrdering = Custom;
-            } else {
-                FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
-            }
-
-            RCP<RGDSWPreconditioner<SC,LO,GO,NO> > RGP(new RGDSWPreconditioner<SC,LO,GO,NO>(A,paramList_));
-
-            RGP->initialize(paramList_->get("Dimension",3),
-                            paramList_->get("DofsPerNode",1),
-                            dofOrdering,
-                            paramList_->get("Overlap",1),
-                            repeatedMap,
-                            coordinatesList);
-
-            SchwarzPreconditioner = RGP;
-        } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelPreconditioner")) {
-            // Extract the repeated map
-            ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
-
-            // Extract the null space
-            ConstXMultiVectorPtr nullSpaceBasis = extractNullSpace(comm,underlyingLib);
-
-            // Extract the coordinate list
-            ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
-
-            // Extract the dof ordering
-            DofOrdering dofOrdering = NodeWise;
-            if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
-                dofOrdering = NodeWise;
-            } else if (!paramList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
-                dofOrdering = DimensionWise;
-            } else if (!paramList_->get("DofOrdering","NodeWise").compare("Custom")) {
-                dofOrdering = Custom;
-            } else {
-                FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
-            }
-
-            RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TLP(new TwoLevelPreconditioner<SC,LO,GO,NO>(A,paramList_));
-
-            TLP->initialize(paramList_->get("Dimension",3),
-                            paramList_->get("DofsPerNode",1),
-                            paramList_->get("Overlap",1),
-                            nullSpaceBasis,
-                            coordinatesList,
-                            dofOrdering,
-                            repeatedMap);
-
-            SchwarzPreconditioner = TLP;
-        } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
-            ConstXMapPtrVecPtr repeatedMaps = null;
-            UNVecPtr dofsPerNodeVector;
-            DofOrderingVecPtr dofOrderings;
-
-            FROSCH_ASSERT(paramList_->isParameter("DofsPerNode Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofsPerNode Vector.");
-            FROSCH_ASSERT(paramList_->isParameter("DofOrdering Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofOrdering Vector.");
-            if (paramList_->isParameter("Repeated Map Vector")) {
-                XMapPtrVecPtr repeatedMapsTmp = ExtractVectorFromParameterList<XMapPtr>(*paramList_,"Repeated Map Vector");
-                if (!repeatedMapsTmp.is_null()) {
-                    repeatedMaps.resize(repeatedMapsTmp.size());
-                    for (unsigned i=0; i<repeatedMaps.size(); i++) {
-                        repeatedMaps[i] = repeatedMapsTmp[i].getConst();
-                    }
+        RCP<SchwarzPreconditioner<SC,LO,GO,NO> > SchwarzPreconditioner = null;
+        
+        const bool startingOver = (thyra_precOp.is_null() || !paramList_->isParameter("Recycling") || !paramList_->get("Recycling",true));
+        
+        if (startingOver) {
+            FROSCH_ASSERT(paramList_->isParameter("FROSch Preconditioner Type"),"FROSch Preconditioner Type is not defined!");
+            
+            if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("AlgebraicOverlappingPreconditioner")) {
+                // Extract the repeated map
+                ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
+                
+                RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > AOP(new AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>(A,paramList_));
+                
+                AOP->initialize(paramList_->get("Overlap",1),
+                                repeatedMap);
+                
+                SchwarzPreconditioner = AOP;
+            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("GDSWPreconditioner")) {
+                // Extract the repeated map
+                ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
+                
+                // Extract the coordinate list
+                ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
+                
+                // Extract the dof ordering
+                DofOrdering dofOrdering = NodeWise;
+                if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
+                    dofOrdering = NodeWise;
+                } else if (!paramList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
+                    dofOrdering = DimensionWise;
+                } else if (!paramList_->get("DofOrdering","NodeWise").compare("Custom")) {
+                    dofOrdering = Custom;
+                } else {
+                    FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
                 }
-                FROSCH_ASSERT(!repeatedMaps.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMaps.is_null()");
-
-                dofsPerNodeVector = ExtractVectorFromParameterList<UN>(*paramList_,"DofsPerNode Vector");
-                dofOrderings = ExtractVectorFromParameterList<DofOrdering>(*paramList_,"DofOrdering Vector");
+                
+                RCP<GDSWPreconditioner<SC,LO,GO,NO> > GP(new GDSWPreconditioner<SC,LO,GO,NO>(A,paramList_));
+                
+                GP->initialize(paramList_->get("Dimension",3),
+                               paramList_->get("DofsPerNode",1),
+                               dofOrdering,
+                               paramList_->get("Overlap",1),
+                               repeatedMap,
+                               coordinatesList);
+                
+                SchwarzPreconditioner = GP;
+            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("RGDSWPreconditioner")) {
+                // Extract the repeated map
+                ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
+                
+                // Extract the coordinate list
+                ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
+                
+                // Extract the dof ordering
+                DofOrdering dofOrdering = NodeWise;
+                if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
+                    dofOrdering = NodeWise;
+                } else if (!paramList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
+                    dofOrdering = DimensionWise;
+                } else if (!paramList_->get("DofOrdering","NodeWise").compare("Custom")) {
+                    dofOrdering = Custom;
+                } else {
+                    FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
+                }
+                
+                RCP<RGDSWPreconditioner<SC,LO,GO,NO> > RGP(new RGDSWPreconditioner<SC,LO,GO,NO>(A,paramList_));
+                
+                RGP->initialize(paramList_->get("Dimension",3),
+                                paramList_->get("DofsPerNode",1),
+                                dofOrdering,
+                                paramList_->get("Overlap",1),
+                                repeatedMap,
+                                coordinatesList);
+                
+                SchwarzPreconditioner = RGP;
+            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("OneLevelPreconditioner")) {
+                // Extract the repeated map
+                ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
+                
+                RCP<OneLevelPreconditioner<SC,LO,GO,NO> > OLP(new OneLevelPreconditioner<SC,LO,GO,NO>(A,paramList_));
+                
+                OLP->initialize(paramList_->get("Overlap",1),
+                                repeatedMap);
+                
+                SchwarzPreconditioner = OLP;
+            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelPreconditioner")) {
+                // Extract the repeated map
+                ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
+                
+                // Extract the null space
+                ConstXMultiVectorPtr nullSpaceBasis = extractNullSpace(comm,underlyingLib);
+                
+                // Extract the coordinate list
+                ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
+                
+                // Extract the dof ordering
+                DofOrdering dofOrdering = NodeWise;
+                if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
+                    dofOrdering = NodeWise;
+                } else if (!paramList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
+                    dofOrdering = DimensionWise;
+                } else if (!paramList_->get("DofOrdering","NodeWise").compare("Custom")) {
+                    dofOrdering = Custom;
+                } else {
+                    FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
+                }
+                
+                RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TLP(new TwoLevelPreconditioner<SC,LO,GO,NO>(A,paramList_));
+                
+                TLP->initialize(paramList_->get("Dimension",3),
+                                paramList_->get("DofsPerNode",1),
+                                paramList_->get("Overlap",1),
+                                nullSpaceBasis,
+                                coordinatesList,
+                                dofOrdering,
+                                repeatedMap);
+                
+                SchwarzPreconditioner = TLP;
+            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
+                ConstXMapPtrVecPtr repeatedMaps = null;
+                UNVecPtr dofsPerNodeVector;
+                DofOrderingVecPtr dofOrderings;
+                
+                FROSCH_ASSERT(paramList_->isParameter("DofsPerNode Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofsPerNode Vector.");
+                FROSCH_ASSERT(paramList_->isParameter("DofOrdering Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofOrdering Vector.");
+                if (paramList_->isParameter("Repeated Map Vector")) {
+                    XMapPtrVecPtr repeatedMapsTmp = ExtractVectorFromParameterList<XMapPtr>(*paramList_,"Repeated Map Vector");
+                    if (!repeatedMapsTmp.is_null()) {
+                        repeatedMaps.resize(repeatedMapsTmp.size());
+                        for (unsigned i=0; i<repeatedMaps.size(); i++) {
+                            repeatedMaps[i] = repeatedMapsTmp[i].getConst();
+                        }
+                    }
+                    FROSCH_ASSERT(!repeatedMaps.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMaps.is_null()");
+                    
+                    dofsPerNodeVector = ExtractVectorFromParameterList<UN>(*paramList_,"DofsPerNode Vector");
+                    dofOrderings = ExtractVectorFromParameterList<DofOrdering>(*paramList_,"DofOrdering Vector");
+                } else {
+                    FROSCH_ASSERT(false,"Currently, TwoLevelBlockPreconditioner cannot be constructed without Repeated Maps.");
+                }
+                
+                FROSCH_ASSERT(repeatedMaps.size()==dofsPerNodeVector.size(),"RepeatedMaps.size()!=dofsPerNodeVector.size()");
+                FROSCH_ASSERT(repeatedMaps.size()==dofOrderings.size(),"RepeatedMaps.size()!=dofOrderings.size()");
+                
+                RCP<TwoLevelBlockPreconditioner<SC,LO,GO,NO> > TLBP(new TwoLevelBlockPreconditioner<SC,LO,GO,NO>(A,paramList_));
+                
+                TLBP->initialize(paramList_->get("Dimension",3),
+                                 dofsPerNodeVector,
+                                 dofOrderings,
+                                 paramList_->get("Overlap",1),
+                                 repeatedMaps);
+                
+                SchwarzPreconditioner = TLBP;
             } else {
-                FROSCH_ASSERT(false,"Currently, TwoLevelBlockPreconditioner cannot be constructed without Repeated Maps.");
+                FROSCH_ASSERT(false,"Thyra::FROSchFactory : ERROR: Preconditioner Type is unknown.");
             }
-
-            FROSCH_ASSERT(repeatedMaps.size()==dofsPerNodeVector.size(),"RepeatedMaps.size()!=dofsPerNodeVector.size()");
-            FROSCH_ASSERT(repeatedMaps.size()==dofOrderings.size(),"RepeatedMaps.size()!=dofOrderings.size()");
-
-            RCP<TwoLevelBlockPreconditioner<SC,LO,GO,NO> > TLBP(new TwoLevelBlockPreconditioner<SC,LO,GO,NO>(A,paramList_));
-
-            TLBP->initialize(paramList_->get("Dimension",3),
-                             dofsPerNodeVector,
-                             dofOrderings,
-                             paramList_->get("Overlap",1),
-                             repeatedMaps);
-
-            SchwarzPreconditioner = TLBP;
+            
+            SchwarzPreconditioner->compute();
+            //-----------------------------------------------
+            
+            LinearOpBasePtr thyraPrecOp = null;
+            //FROSCh_XpetraOP
+            ConstVectorSpaceBasePtr thyraRangeSpace  = ThyraUtils<SC,LO,GO,NO>::toThyra(SchwarzPreconditioner->getRangeMap());
+            ConstVectorSpaceBasePtr thyraDomainSpace = ThyraUtils<SC,LO,GO,NO>::toThyra(SchwarzPreconditioner->getDomainMap());
+            
+            RCP<Operator<SC,LO,GO,NO> > xpOp = rcp_dynamic_cast<Operator<SC,LO,GO,NO> >(SchwarzPreconditioner);
+            
+            thyraPrecOp = fROSchLinearOp<SC,LO,GO,NO>(thyraRangeSpace,thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
+            
+            TEUCHOS_TEST_FOR_EXCEPT(is_null(thyraPrecOp));
+            
+            //Set SchwarzPreconditioner
+            defaultPrec->initializeUnspecified(thyraPrecOp);            
         } else {
-            FROSCH_ASSERT(false,"FROSch Preconditioner Type is unknown.");
+            // cast to SchwarzPreconditioner
+            RCP<FROSchLinearOp<SC,LO,GO,NO> > fROSch_LinearOp = rcp_dynamic_cast<FROSchLinearOp<SC,LO,GO,NO> >(thyra_precOp,true);
+            RCP<Operator<SC,LO,GO,NO> > xpetraOp = fROSch_LinearOp->getXpetraOperator();
+            
+            if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("AlgebraicOverlappingPreconditioner")) {
+                RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > AOP = rcp_dynamic_cast<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                AOP->resetMatrix(A);
+                SchwarzPreconditioner = AOP;
+            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("GDSWPreconditioner")) {
+                RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > GP = rcp_dynamic_cast<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                GP->resetMatrix(A);
+                SchwarzPreconditioner = GP;
+            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("RGDSWPreconditioner")) {
+                RCP<OneLevelPreconditioner<SC,LO,GO,NO> > RGP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                RGP->resetMatrix(A);
+                SchwarzPreconditioner = RGP;
+            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("OneLevelPreconditioner")) {
+                RCP<OneLevelPreconditioner<SC,LO,GO,NO> > OLP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                OLP->resetMatrix(A);
+                SchwarzPreconditioner = OLP;
+            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelPreconditioner")) {
+                RCP<OneLevelPreconditioner<SC,LO,GO,NO> > TLP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                TLP->resetMatrix(A);
+                SchwarzPreconditioner = TLP;
+            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
+                RCP<OneLevelPreconditioner<SC,LO,GO,NO> > TLBP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                TLBP->resetMatrix(A);
+                SchwarzPreconditioner = TLBP;
+            } else {
+                FROSCH_ASSERT(false,"Thyra::FROSchFactory : ERROR: Preconditioner Type is unknown.");
+            }
+            // recompute SchwarzPreconditioner
+            SchwarzPreconditioner->compute();
         }
-
-        SchwarzPreconditioner->compute();
-        //-----------------------------------------------
-
-        LinearOpBasePtr thyraPrecOp = null;
-        //FROSCh_XpetraOP
-        ConstVectorSpaceBasePtr thyraRangeSpace  = ThyraUtils<SC,LO,GO,NO>::toThyra(SchwarzPreconditioner->getRangeMap());
-        ConstVectorSpaceBasePtr thyraDomainSpace = ThyraUtils<SC,LO,GO,NO>::toThyra(SchwarzPreconditioner->getDomainMap());
-
-        RCP<Operator<SC,LO,GO,NO> > xpOp = rcp_dynamic_cast<Operator<SC,LO,GO,NO> >(SchwarzPreconditioner);
-
-        thyraPrecOp = fROSchLinearOp<SC,LO,GO,NO>(thyraRangeSpace,thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
-
-        TEUCHOS_TEST_FOR_EXCEPT(is_null(thyraPrecOp));
-
-        //Set SchwarzPreconditioner
-        defaultPrec->initializeUnspecified(thyraPrecOp);
     }
 
     //-------------------------------------------------------------

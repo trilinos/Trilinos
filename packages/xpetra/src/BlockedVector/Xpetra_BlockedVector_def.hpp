@@ -50,8 +50,12 @@
 #include "Xpetra_BlockedVector_decl.hpp"
 
 #include "Xpetra_BlockedMultiVector.hpp"
+#include "Xpetra_Exceptions.hpp"
+
+
 
 namespace Xpetra {
+
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

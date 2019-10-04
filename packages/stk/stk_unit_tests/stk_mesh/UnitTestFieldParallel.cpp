@@ -34,17 +34,6 @@
 
 #include <stk_util/stk_config.h>
 #if defined ( STK_HAS_MPI )
-#include <stddef.h>                     // for size_t
-#include <algorithm>                    // for max, min
-#include <iostream>                     // for basic_ostream::operator<<
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/FieldParallel.hpp>  // for parallel_max, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for count_entities
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <gtest/gtest.h>
-#include <vector>                       // for vector
-#include "gtest/gtest.h"                // for EXPECT_EQ
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/CoordinateSystems.hpp"  // for Cartesian
@@ -54,9 +43,20 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId, etc
-#include "stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
+#include "gtest/gtest.h"                // for EXPECT_EQ
+#include <algorithm>                    // for max, min
+#include <gtest/gtest.h>
+#include <iostream>                     // for basic_ostream::operator<<
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/FieldParallel.hpp>  // for parallel_max, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
+#include <vector>                       // for vector
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk { namespace mesh { class FieldBase; } }
