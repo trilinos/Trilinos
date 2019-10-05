@@ -25,16 +25,17 @@ namespace Tempus {
  *
  *  This TimeStepControlStrategy primarily tries to maintain a
  *  certain level of change in the solution ill-respective of the
- *  error involved, e.g., the solution should change by 1% every
+ *  error involved, e.g., the solution should change between 1% and
+ *  3% (\f$\eta_{min}=0.01\f$ and \f$\eta_{max}=0.03\f$) every
  *  time step.  The relative solution change is measured by
  *  \f[
  *    \eta_{n-1} = \frac{|| x_{n-1} - x_{n-2} ||}{ || x_{n-2} || + \epsilon }
  *  \f]
- *  where \f$\epsilon\f$ is a small constant to ensure that \f$\eta_n\f$
+ *  where \f$\epsilon\f$ is a small constant to ensure that \f$\eta_{n-1}\f$
  *  remains finite.  The user can select the desired relative
- *  change in the solution by choosing a range for \f$\eta_n\f$
+ *  change in the solution by choosing a range for \f$\eta_{n-1}\f$
  *  \f[
- *    \eta_{min} < \eta_n < \eta_{max}
+ *    \eta_{min} < \eta_{n-1} < \eta_{max}
  *  \f]
  *  If the solution change is outside this range, an amplification
  *  (\f$\rho\f$) or reduction factor (\f$\sigma\f$) is applied to
@@ -151,6 +152,7 @@ public:
     Scalar rho   = getAmplFactor();
     Scalar sigma = getReductFactor();
     Scalar eta   = computeEta(tsc, solutionHistory);
+    //*out << " eta = " << eta << "\n";
 
     // General rule: only increase/decrease dt once for any given reason.
     if (workingState->getSolutionStatus() == Status::FAILED) {
@@ -285,6 +287,15 @@ public:
     virtual Scalar getMaxEta() const
       { return tscsPL_->get<double>("Maximum Value Monitoring Function"); }
 
+    virtual void setAmplFactor(Scalar rho)
+      { tscsPL_->set<double>("Amplification Factor", rho); }
+    virtual void setReductFactor(Scalar sigma)
+      { tscsPL_->set<double>("Reduction Factor", sigma); }
+    virtual void setMinEta(Scalar minEta)
+      { tscsPL_->set<double>("Minimum Value Monitoring Function", minEta); }
+    virtual void setMaxEta(Scalar maxEta)
+      { tscsPL_->set<double>("Maximum Value Monitoring Function", maxEta); }
+
     Scalar computeEta(const TimeStepControl<Scalar> tsc,
           const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory)
     {
@@ -298,8 +309,10 @@ public:
           eta = getMinEta();
           return eta;
        }
-       RCP<const Thyra::VectorBase<Scalar> > xOld = (*solutionHistory)[numStates-3]->getX();
-       RCP<const Thyra::VectorBase<Scalar> > x = (*solutionHistory)[numStates-1]->getX();
+       RCP<const Thyra::VectorBase<Scalar> > xOld =
+         solutionHistory->getStateTimeIndexNM2()->getX();
+       RCP<const Thyra::VectorBase<Scalar> > x =
+         solutionHistory->getStateTimeIndexNM1()->getX();
        //IKT: uncomment the following to get some debug output
        //#define VERBOSE_DEBUG_OUTPUT
 #ifdef VERBOSE_DEBUG_OUTPUT
@@ -325,8 +338,9 @@ public:
        //eta = ||x^(n+1)-x^n||/(||x^n||+eps)
        eta = xDiffNorm/(xOldNorm + eps);
 #ifdef VERBOSE_DEBUG_OUTPUT
-       *out << "IKT xDiffNorm, xOldNorm, eta = " << xDiffNorm << ", " << xOldNorm
-          << ", " << eta << "\n";
+       Scalar xNorm    = Thyra::norm(*x);
+       *out << "IKT xDiffNorm, xNorm, xOldNorm, eta = " << xDiffNorm << ", "
+            << xNorm << ", " << xOldNorm << ", " << eta << "\n";
 #endif
        return eta;
     }
