@@ -85,6 +85,7 @@ public:
     virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const = 0;
     /// Returns the TimeStepControl for this Integrator
     virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const = 0;
+    virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() = 0;
     /// Returns the IntegratorTimer_ for this Integrator
     virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const = 0;
     virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const = 0;

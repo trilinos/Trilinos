@@ -223,6 +223,44 @@ public:
    }
 };
 
+/** Match coordinates for a 3D wedge. The wedge must be meshed such
+    that it is mirrored across the xz or yz plane. The index is the
+    index that is compared. If the mirror plane is xz, then
+    index0=1. If the mirror plane is yz, then index0=0. A mirror plane
+    of xz is specified as "wx" in the string parser. A mirror pland of
+    yz is specified as "wy" in the string parser.
+  */
+class WedgeMatcher {
+   double error_;
+   /// index to compare - 0 for wy, 1 for wx
+   int index0_;
+public:
+   WedgeMatcher(int index0) : error_(1e-8),index0_(index0) {}
+   WedgeMatcher(int index0,double error) : error_(error),index0_(index0) {}
+   WedgeMatcher(int index0,const std::vector<std::string> & /* params */)
+     : error_(1e-8), index0_(index0)
+   {}
+   WedgeMatcher(const WedgeMatcher & cm) = default;
+
+   bool operator()(const Teuchos::Tuple<double,3> & a,
+                   const Teuchos::Tuple<double,3> & b) const
+   {
+     return ( (std::fabs(a[index0_]+b[index0_])<error_) &&
+              (std::fabs(a[1-index0_]-b[1-index0_])<error_) &&
+	      (std::fabs(a[2]-b[2])<error_) );
+   }
+
+   std::string getString() const
+   {
+      std::stringstream ss;
+      if (index0_ == 0)
+	ss << "wy-coord <tol=" << error_ << ">";
+      else
+	ss << "wx-coord <tol=" << error_ << ">";
+      return ss.str();
+   }
+};
+
 } // end panzer_stk
 
 #endif

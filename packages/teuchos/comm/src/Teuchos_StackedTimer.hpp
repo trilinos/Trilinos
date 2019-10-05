@@ -16,6 +16,8 @@
 #include <cassert>
 #include <chrono>
 #include <climits>
+#include <cstdlib> // for std::getenv
+#include <iostream>
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
 namespace Kokkos {
@@ -427,11 +429,17 @@ public:
     * @param [in] start_top_timer Automatically start the top level timer. If set to false, the user will have to start it manually.
     */
   explicit StackedTimer(const char *name, const bool start_base_timer = true)
-    : timer_(0,name,nullptr,false)
+    : timer_(0,name,nullptr,false),
+      enable_verbose_(false),
+      verbose_ostream_(Teuchos::rcpFromRef(std::cout))
   {
     top_ = &timer_;
     if (start_base_timer)
       this->startBaseTimer();
+
+    auto check_verbose = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMERS");
+    if (check_verbose != nullptr)
+      enable_verbose_ = true;
   }
 
   /**
@@ -470,6 +478,8 @@ public:
       ::Kokkos::Profiling::pushRegion(name);
     }
 #endif
+    if (enable_verbose_)
+      *verbose_ostream_ << "STARTING: " << name << std::endl;
   }
 
   /**
@@ -488,6 +498,8 @@ public:
       ::Kokkos::Profiling::popRegion();
     }
 #endif
+    if (enable_verbose_)
+      *verbose_ostream_ << "STOPPING: " << name << std::endl;
   }
 
   /**
@@ -586,6 +598,12 @@ public:
   void report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
 
 
+  // If set to true, print timer start/stop to verbose ostream.
+  void enableVerbose(const bool enable_verbose);
+
+  // Set the ostream for verbose mode(defaults to std::cout).
+  void setVerboseOstream(const Teuchos::RCP<std::ostream>& os);
+
 protected:
   /// Current level running
   LevelTimer *top_;
@@ -624,6 +642,12 @@ protected:
       stddev_(0),
       histogram_(0){}
   } alignments_;
+
+  /// If set to true, prints to the debug ostream. At construction, default value is set from environment variable.
+  bool enable_verbose_;
+
+  /// For debugging, this is the ostream used for printing.
+  Teuchos::RCP<std::ostream> verbose_ostream_;
 
   /**
     * Flatten the timers into a single array
