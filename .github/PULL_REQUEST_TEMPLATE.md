@@ -20,11 +20,11 @@ Replace <teamName> below with the appropriate Trilinos package/team name.
 -->
 @trilinos/<teamName>
 
-## Description
-<!--- Please describe your changes in detail. -->
-
-## Motivation and Context
-<!--- Why is this change required?  What problem does it solve? -->
+## Motivation
+<!--- 
+Why is this change required?  What problem does it solve? Please link to a github 
+issue that describes the problem/issue/bug this PR solves.
+-->
 
 <!---
 If applicable, let us know how this merge request is related to any other open
@@ -42,34 +42,20 @@ issues or pull requests:
 * Composed of 
 -->
 
-## How Has This Been Tested?
-<!---
-Please describe in detail how you tested your changes.  Include details of your
-testing environment and the tests you ran to see how your change affects other
-areas of the code.  Consider including configure, build, and test log files.
--->
 
+## Stakeholder Feedback
 <!--- 
-## Screenshots
-Not obligatory, but is there anything pertinent that we should see?
- -->
-
-<!---
-Go over all the following points, and put an `x` in all the boxes that apply.
-If you are unsure about any of these, please ask&mdash;we are here to help.
+If a github issue includes feedback from the relevant stakeholder(s), please link it.  
+If the stakeholder(s) communicated that feedback through a different medium, please note that you did so.
 -->
 
-## Checklist
+## Testing
+<!---
+Please confirm that any classes or functions in the Trilinos library that this PR touches are 
+exercised by at least one test in Trilinos.  Please specify which test that is.  For untestable 
+changes (e.g. changes to the nightly testing system) or changes to Trilinos tests, please say "N/A".
 
-- [ ] My commit messages mention the appropriate GitHub issue numbers.
-- [ ] My code follows the code style of the affected package(s).
-- [ ] My change requires a change to the documentation.
-- [ ] I have updated the documentation accordingly.
-- [ ] I have read the [code contribution guidelines](../blob/master/CONTRIBUTING.md) for this project.
-- [ ] I have added tests to cover my changes.
-- [ ] All new and existing tests passed.
-- [ ] No new compiler warnings were introduced.
-- [ ] These changes break backwards compatibility.
+-->
 
 <!--- 
 ## Additional Information

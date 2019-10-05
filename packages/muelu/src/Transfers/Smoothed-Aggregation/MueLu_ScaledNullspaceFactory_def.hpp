@@ -117,7 +117,7 @@ namespace MueLu {
     RCP<MultiVector> blockDiagonal = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
     
     Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractBlockDiagonal(*A,*blockDiagonal);
-    Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::inverseScaleBlockDiagonal(*blockDiagonal,*nullspace);
+    Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::inverseScaleBlockDiagonal(*blockDiagonal,true,*nullspace);
 
     // provide "Scaled Nullspace" variable on current level (used by TentativePFactory)
     Set(currentLevel, "Scaled Nullspace", nullspace);
