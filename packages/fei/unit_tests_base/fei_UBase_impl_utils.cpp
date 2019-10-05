@@ -160,7 +160,7 @@ TEUCHOS_UNIT_TEST(impl_utils, create_col_to_row_map)
   fei::impl_utils::create_col_to_row_map(fm, crmap);
 
   if (crmap.size() != 4) {
-    FEI_COUT << "ERROR, crmap.size()=="<<crmap.size()<<", expected 4."<<FEI_ENDL;
+    out << "ERROR, crmap.size()=="<<crmap.size()<<", expected 4."<<FEI_ENDL;
     throw std::runtime_error("create_col_to_row_map failed 1");
   }
 
@@ -171,7 +171,7 @@ TEUCHOS_UNIT_TEST(impl_utils, create_col_to_row_map)
   for(; mm.first!=mm.second; ++mm.first) ++num;
 
   if (num != 2) {
-    FEI_COUT << "ERROR, size of equal_range(1)=="<<num<<", expected 2."<<FEI_ENDL;
+    out << "ERROR, size of equal_range(1)=="<<num<<", expected 2."<<FEI_ENDL;
     throw std::runtime_error("create_col_to_row_map failed 2");
   }
 }
