@@ -28,7 +28,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     energy-transient-blocked.xml
     energy-neumann.xml
     energy-ss-blocked-tp.xml
-meshmotion.xml
+    meshmotion.xml
+    periodic_wedge.xml
+    periodic_wedge.pam
   EXEDEPS main_driver
   )
 
@@ -100,5 +102,14 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
       ARGS  --i=energy-transient-blocked.xml
       PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
       XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
+    )
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_Pamgen)
+  TRIBITS_ADD_ADVANCED_TEST(
+    periodic_wedge
+    TEST_0 EXEC main_driver
+      ARGS  --i=periodic_wedge.xml
+      PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     )
 ENDIF()
