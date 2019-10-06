@@ -140,7 +140,9 @@ int main(int argc, char *argv[]) {
 #endif
 
 #ifdef HAVE_PIRO_MUELU
-      Stratimikos::enableMueLu<int, int>(linearSolverBuilder);
+      using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
+      using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
+      Stratimikos::enableMueLu<local_ordinal_type, global_ordinal_type>(linearSolverBuilder);
 #endif
 
       const Teuchos::RCP<Teuchos::ParameterList> stratList = Piro::extractStratimikosParams(piroParams);

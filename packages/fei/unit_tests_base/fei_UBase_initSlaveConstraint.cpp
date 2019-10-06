@@ -119,7 +119,7 @@ TEUCHOS_UNIT_TEST(fei_UBase, slaveMatrix)
 								  weights,
 								  rhsValue);
 								  
-	    FEI_COUT << " Initialized Slave constraint with ierr = " << ierr << FEI_ENDL;
+	    out << " Initialized Slave constraint with ierr = " << ierr << FEI_ENDL;
 		
 		delete [] fieldIDs;
 		delete [] nodeTypes;
@@ -128,22 +128,22 @@ TEUCHOS_UNIT_TEST(fei_UBase, slaveMatrix)
 	}
 	
 	// Initialization is complete
-	if(verbose)FEI_COUT << "Started init_complete"  << FEI_ENDL;
+	if(verbose)out << "Started init_complete"  << FEI_ENDL;
 	TEUCHOS_TEST_EQUALITY(0, matrixGraph->initComplete(), out, success);
-	if(verbose)FEI_COUT << "Finished init_complete"  << FEI_ENDL;
+	if(verbose)out << "Finished init_complete"  << FEI_ENDL;
 	
    // Set up linear system
    // Create StiffnesMatrix, DisplacementVector, and ForceVector based on matrixGraph
 
-  if (verbose)  FEI_COUT << "Factory create Matrices start " << FEI_ENDL;
+  if (verbose)  out << "Factory create Matrices start " << FEI_ENDL;
   fei::SharedPtr<fei::Vector> DisplacementVector = factory->createVector(matrixGraph, true);
-  if (verbose)  FEI_COUT << "Factory create DisplacementVector ended " << FEI_ENDL;
+  if (verbose)  out << "Factory create DisplacementVector ended " << FEI_ENDL;
   fei::SharedPtr<fei::Vector> ForceVector  = factory->createVector(matrixGraph);
-  if (verbose)  FEI_COUT << "Factory create ForceVector ended " << FEI_ENDL;
+  if (verbose)  out << "Factory create ForceVector ended " << FEI_ENDL;
   fei::SharedPtr<fei::LinearSystem> LinSys = factory->createLinearSystem(matrixGraph);
-  if (verbose)  FEI_COUT << "Factory create LinSys ended " << FEI_ENDL;
+  if (verbose)  out << "Factory create LinSys ended " << FEI_ENDL;
   fei::SharedPtr<fei::Matrix> StiffnesMatrix = factory->createMatrix(matrixGraph);
-  if (verbose)  FEI_COUT << "Factory create StiffnesMatrix ended " << FEI_ENDL;
+  if (verbose)  out << "Factory create StiffnesMatrix ended " << FEI_ENDL;
 
 
 	factory.reset();
