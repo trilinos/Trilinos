@@ -77,12 +77,8 @@ public:
   }
  
   Eigen3Vector( int dim, bool zeroOut=false ) : dim_(dim) {
-    if( zeroOut ) {
-      vec_ = ROL::makePtr<EV>(dim_);
-    }
-    else {
-      vec_ = ROL::makePtr<EV>(dim_);
-    }
+    vec_ = ROL::makePtr<EV>(dim_);
+    if( zeroOut ) vec_->setZero();
   }
 
   void applyUnary( const UF &f ) {
@@ -108,7 +104,8 @@ public:
   }
 
   ROL::Ptr<V> basis( const int i ) const {
-    auto data = ROL::makePtr<EV>(dim_,true);
+    auto data = ROL::makePtr<EV>(dim_);
+    data->setZero();
     (*data)(i) = static_cast<Real>(1.0);
     return ROL::makePtr<Eigen3Vector>(data);
   }

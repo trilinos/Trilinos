@@ -95,10 +95,10 @@ namespace FROSch {
 
     protected:
 
-        int setUpAlgebraicOverlappingOperator();
-
         int buildOverlappingMatrices(int overlap,
                                      ConstXMapPtr repeatedMap);
+        
+        virtual int updateLocalOverlappingMatrices();
 
         AddingLayersStrategy AddingLayersStrategy_;
     };

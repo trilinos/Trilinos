@@ -51,7 +51,7 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_IndexManager_kokkos.hpp"
@@ -130,7 +130,7 @@ namespace MueLuTests {
     currentLevel.Set("Nullspace",nullSpace);
 
 
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory_kokkos> StructuredAggFact = rcp(new StructuredAggregationFactory_kokkos());
@@ -217,7 +217,7 @@ namespace MueLuTests {
     currentLevel.Set("Nullspace",nullSpace);
 
 
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory_kokkos> StructuredAggFact = rcp(new StructuredAggregationFactory_kokkos());
@@ -310,7 +310,7 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
 
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory_kokkos> StructuredAggFact = rcp(new StructuredAggregationFactory_kokkos());

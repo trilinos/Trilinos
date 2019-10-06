@@ -84,7 +84,7 @@ C
                FY = 0.
                SL = 0.
 C
-C  LOOP THRU ALL LINES CONNECTED TO NODE
+C  LOOP THROUGH ALL LINES CONNECTED TO NODE
 C
                CALL GETLXN (MXND, LXN, NODE, LINES, KOUNT, ERR)
                IF (ERR) RETURN

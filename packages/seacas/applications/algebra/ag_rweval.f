@@ -145,7 +145,7 @@ C     Check for errors
 
 C ****************************************************************
 C     Calculate the zoom mesh, if any
-C     numeql - count number of occurrances of logical in a list
+C     numeql - count number of occurrences of logical in a list
 C ****************************************************************
 
       IF ((NUMEQL (.TRUE., NELBLK, A(KVISEB)) .LT. NELBLK)
@@ -187,7 +187,7 @@ C        Indices of the zoomed elements
         END IF
 
         CALL NUM2IX (NELBLK, A(KNELB), A(KIXELB))
-C        A(KIXELB) - stores a cummulative count of the number of elements
+C        A(KIXELB) - stores a cumulative count of the number of elements
 C                    in each element block
 C        A(KIXELB+0)= 0
 C        A(KIXELB+1)= num_elem_blk1
@@ -301,7 +301,7 @@ C                    are the location of the 1st dist factor for each set
 C           KLTNNS -  Returned array containing the nodes for all node sets
 C                     Internal node IDs
           CALL MDRSRV ('LTNNPS', KLTNNS, LNPSNL)
-C           KFACNS - Returned array containing the distribtion factors
+C           KFACNS - Returned array containing the distribution factors
 C                    for all node sets
           CALL MDRSRV ('FACNPS', KFACNS, LNPSNL)
           CALL MDSTAT(NERR,MEM)
@@ -386,7 +386,7 @@ C                    sets. Internal element IDS are used in this list
           CALL MDRSRV ('LTEESS', KLTESS, LESSEL)
 C           LTSESS - Returned array containing the sides for all side sets
           CALL MDRSRV ('LTSESS', KLTSSS, LESSEL)
-C           FACESS - Returned aray containing dist factors for all side sets
+C           FACESS - Returned array containing dist factors for all side sets
           CALL MDRSRV ('FACESS', KFACSS, LESSDF)
 C           LTNNN - array of number of nodes for each side in a side set
           CALL MDRSRV ('LTNNN', KLTNNN, LESSEL)
@@ -556,7 +556,7 @@ C                    are the location of the 1st dist factor for each set
 C           KLTNNS -  Returned array containing the nodes for all node sets
 C                     Internal node IDs
           CALL MDRSRV ('LTNNPS', KLTNNS, LNPSNL)
-C           KFACNS - Returned array containing the distribtion factors
+C           KFACNS - Returned array containing the distribution factors
 C                    for all node sets
           CALL MDRSRV ('FACNPS', KFACNS, LNPSNL)
           CALL MDSTAT (NERR, MEM)
@@ -618,7 +618,7 @@ C              sets. Internal element IDS are used in this list
           CALL MDRSRV ('LTEESS', KLTESS, LESSEL)
 C          LTSESS - Returned array containing the sides for all side sets
           CALL MDRSRV ('LTSESS', KLTSSS, LESSEL)
-C          FACESS - Returned aray containing dist factors for all side sets
+C          FACESS - Returned array containing dist factors for all side sets
           CALL MDRSRV ('FACESS', KFACSS, LESSDF)
           CALL MDSTAT (NERR, MEM)
           IF (NERR .GT. 0) THEN

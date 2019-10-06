@@ -37,8 +37,6 @@
 #include <cstring>
 #include <ctime>
 #include <exception>
-#include <iomanip>
-#include <iostream>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -147,12 +145,6 @@ namespace {
     }
   }
 
-  struct my_numpunct : std::numpunct<char>
-  {
-  protected:
-    char        do_thousands_sep() const override { return ','; }
-    std::string do_grouping() const override { return "\3"; }
-  };
 } // namespace
 
 namespace {

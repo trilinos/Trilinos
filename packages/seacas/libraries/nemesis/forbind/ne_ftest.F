@@ -59,7 +59,7 @@ C local variables
 
 C now let's get going...
 
-C I don't care about input arguements, so the file name will be ne_test.nemI
+C I don't care about input arguments, so the file name will be ne_test.nemI
       FNAME = 'ne_test.nemI'
 C and set the debug flag to 0
       DBG_FLAG = 0

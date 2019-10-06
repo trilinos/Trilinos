@@ -124,7 +124,7 @@ c  text path
       integer CTPRIT, CTPLFT, CTPUP, CTPDWN
       parameter(CTPRIT=0, CTPLFT=1, CTPUP=2, CTPDWN=3)
 
-c  text horizonal alignment
+c  text horizontal alignment
       integer CTALFT, CTACTR, CTARIT, CTANH, CTACOH
       parameter(CTALFT=0, CTACTR=1, CTARIT=2, CTANH=3, CTACOH=4)
 
@@ -341,7 +341,7 @@ c  text path
       integer CTPRIT, CTPLFT, CTPUP, CTPDWN
       parameter(CTPRIT=0, CTPLFT=1, CTPUP=2, CTPDWN=3)
 
-c  text horizonal alignment
+c  text horizontal alignment
       integer CTALFT, CTACTR, CTARIT, CTANH, CTACOH
       parameter(CTALFT=0, CTACTR=1, CTARIT=2, CTANH=3, CTACOH=4)
 

@@ -75,7 +75,6 @@ namespace MueLu {
                   Aggregates_kokkos& aggregates,
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                   LO& numNonAggregatedNodes) const {
-    Monitor m(*this, "BuildAggregates");
 
     using memory_space = typename LWGraph_kokkos::memory_space;
 
@@ -102,15 +101,18 @@ namespace MueLu {
     {
       if(params.get<bool>("aggregation: deterministic"))
       {
+        Monitor m(*this, "BuildAggregatesDeterministic");
         BuildAggregatesDeterministic(maxNodesPerAggregate, graph,
                                      aggregates, aggStat, numNonAggregatedNodes);
       } else {
+        Monitor m(*this, "BuildAggregatesRandom");
         BuildAggregatesDistance2(maxNodesPerAggregate, graph,
                                  aggregates, aggStat, numNonAggregatedNodes);
       }
     }
     else
     {
+      Monitor m(*this, "BuildAggregatesSerial");
       typename Kokkos::View<unsigned*, memory_space>::HostMirror aggStatHost
         = Kokkos::create_mirror(aggStat);
       Kokkos::deep_copy(aggStatHost, aggStat);

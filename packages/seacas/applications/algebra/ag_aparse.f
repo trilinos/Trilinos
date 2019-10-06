@@ -61,7 +61,7 @@ C   --   RFIELD - OUT - the numeric fields
       CHARACTER*(*) CFIELD(*)
       REAL          RFIELD(*)
 
-      CHARACTER*32 CONVER
+      CHARACTER*32 CONVERT
       CHARACTER CH
 
 C   --Initialize fields
@@ -125,11 +125,11 @@ C         --Convert number string and store
                CFIELD(NUMFLD) = LINE(ILEFT:IRIGHT)
                ITYPE(NUMFLD) = 0
 
-               CONVER = ' '
+               CONVERT = ' '
                IJUST = 32 - (IRIGHT - ILEFT + 1) + 1
-               CONVER(IJUST:32) = LINE(ILEFT:IRIGHT)
+               CONVERT(IJUST:32) = LINE(ILEFT:IRIGHT)
 
-               READ (CONVER, '(F32.0)', IOSTAT=ITRANS) RNUM
+               READ (CONVERT, '(F32.0)', IOSTAT=ITRANS) RNUM
                IF (ITRANS .EQ. 0) THEN
                   RFIELD(NUMFLD) = RNUM
                   ITYPE(NUMFLD) = 1

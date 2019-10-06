@@ -849,12 +849,12 @@ template <typename INT> std::string ExoII_Read<INT>::Open_File(const char *fname
     return "exodiff: ERROR: No file name to open!";
   }
   int   ws = 0, comp_ws = 8;
-  float dum  = 0.0;
+  float dumb = 0.0;
   int   mode = EX_READ;
   if (sizeof(INT) == 8) {
     mode |= EX_ALL_INT64_API;
   }
-  int err = ex_open(file_name.c_str(), mode, &comp_ws, &ws, &dum);
+  int err = ex_open(file_name.c_str(), mode, &comp_ws, &ws, &dumb);
   if (err < 0) {
     std::ostringstream oss;
     fmt::print(oss, "exodiff: ERROR: Couldn't open file \"{}\".", file_name);

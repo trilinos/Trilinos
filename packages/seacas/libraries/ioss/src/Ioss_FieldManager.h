@@ -78,7 +78,6 @@ namespace Ioss {
     size_t count() const;
 
   private:
-    // Disallow copying; don't implement...
     FieldMapType fields;
 #if defined(IOSS_THREADSAFE)
     mutable std::mutex m_;

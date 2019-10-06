@@ -38,12 +38,13 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator|
-#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture::BOX, etc
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, etc
+
 #include "stk_mesh/base/Relation.hpp"
 #include "stk_mesh/base/Types.hpp"      // for EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture::BOX, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 

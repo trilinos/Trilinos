@@ -61,7 +61,7 @@ C-----------------------------------------------------------------------
 C
 C  CALLING ARGUMENTS:
 C
-C     NUMPTS INTEGER   NUMBER OF POINTS TO BE SEACHED
+C     NUMPTS INTEGER   NUMBER OF POINTS TO BE SEARCHED
 C     IND    INTEGER   ORDER INDEX
 C     IRNK2  INTEGER   RANK
 C     IUP    INTEGER   SCRACTH (NBLKSZ LONG)

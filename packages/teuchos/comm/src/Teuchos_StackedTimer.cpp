@@ -530,4 +530,10 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
   }
 }
 
+void StackedTimer::enableVerbose(const bool enable_verbose)
+{enable_verbose_ = enable_verbose;}
+
+void StackedTimer::setVerboseOstream(const Teuchos::RCP<std::ostream>& os)
+{verbose_ostream_ = os;}
+
 } //namespace Teuchos

@@ -59,7 +59,7 @@ namespace ROL {
 
 template <class Real>
 class BranchHelper_PEBBL {
-private:
+protected:
   Ptr<const Vector<Real>> getVector(const Vector<Real> &xs ) const {
     try {
       return dynamic_cast<const PartitionedVector<Real>&>(xs).get(0);
@@ -85,13 +85,14 @@ public:
   //int getIndex(const Vector<Real> &x) const {
   int getIndex(const Vector<Real> &x, const Vector<Real> &lam,
                Objective<Real> &obj, Constraint<Real> &con) const {
-    return getMyIndex(*getVector(x),lam,obj,con);
-    //return getMyIndex(*xp);
+    return getMyIndex(x,lam,obj,con);
+    //return getMyIndex(*getVector(x),lam,obj,con);
   }
 
   void getNumFrac(int &nfrac, Real &integralityMeasure,
                   const Vector<Real> &x) const {
-    getMyNumFrac(nfrac, integralityMeasure, *getVector(x));
+    getMyNumFrac(nfrac, integralityMeasure, x);
+    //getMyNumFrac(nfrac, integralityMeasure, *getVector(x));
   }
 
   virtual Ptr<Transform_PEBBL<Real>> createTransform(void) const = 0;

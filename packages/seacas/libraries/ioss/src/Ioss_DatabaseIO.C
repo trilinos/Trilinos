@@ -371,11 +371,9 @@ namespace Ioss {
                    get_dwname(), get_pfsname());
 #endif
       }
-#ifdef SEACAS_HAVE_MPI
       if (using_parallel_io()) {
-        MPI_Barrier(util().communicator());
+        util().barrier();
       }
-#endif
     }
   }
 
@@ -741,7 +739,7 @@ namespace Ioss {
           }
         }
         else {
-          // homogenous sides.
+          // homogeneous sides.
           side_topo.insert(std::make_pair(elem_type, side_type));
           all_sphere = false;
         }
@@ -1239,11 +1237,9 @@ namespace {
       }
     }
     else {
-#ifdef SEACAS_HAVE_MPI
       if (!single_proc_only) {
-        MPI_Barrier(util.communicator());
+        util.barrier();
       }
-#endif
       if (util.parallel_rank() == 0 || single_proc_only) {
         auto                          time_now = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff     = time_now - initial_time;

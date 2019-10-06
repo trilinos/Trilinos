@@ -78,8 +78,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    int     nCDofTrunc;
 #endif
    int     iend, bdry_blk, *bdry_array;
-   double  epsilon, *col_val, *tmp_vect = NULL;
-   double  dcompare1, dcompare2, *new_val=NULL, *diagonal=NULL;
+   double  epsilon, rowsum_threshold, *col_val, *tmp_vect = NULL;
+   double  dcompare1, dcompare2, rowsum, *new_val=NULL, *diagonal=NULL;
    double  *nullspace_vect=NULL, *new_null=NULL, *work=NULL, *qr_tmp=NULL;
    double  /*largest,*/ thesign, dtemp;
    char    *col_entered;
@@ -95,6 +95,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    int NumBlockRows;
    /*ms*/
    char *true_bdry;
+   int diag_idx;
+#ifdef ML_ROWSUM_DEBUG
+   int num_points_reset_for_rowsum=0;   
+#endif
 #ifdef ML_AGGR_INAGGR
    char fname[80];
    FILE *fp;
@@ -125,6 +129,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    diff_level = ml_ag->begin_level - ml_ag->cur_level;
    if ( diff_level == 0 ) ml_ag->curr_threshold = ml_ag->threshold;
    epsilon = ml_ag->curr_threshold;
+   rowsum_threshold = ml_ag->rowsum_threshold;
    ml_ag->curr_threshold *= 0.5;
 
    if ( mypid == 0 && printflag  < ML_Get_PrintLevel())
@@ -133,6 +138,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 	      ml_ag->cur_level);
        printf("ML_Aggregate_CoarsenUncoupled : current eps = %e\n",
 	      epsilon);
+       if(rowsum_threshold > 0.0) {
+          printf("ML_Aggregate_CoarsenUncoupled : current rowsum eps = %e\n",
+                 rowsum_threshold);
+       }
      }
    epsilon = epsilon * epsilon;
 
@@ -211,24 +220,42 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      if ( m > maxnnz_per_row ) Amatrix->max_nz_per_row = m;
      if ( m < minnnz_per_row && m>0 ) Amatrix->min_nz_per_row = m;
 
+     rowsum = 0;
+     diag_idx=0;
      for (j = 0; j < m; j++)
-     {
-       jnode = col_ind[j];
-	   if ( jnode != i && jnode < Nrows && epsilon > 0.0 )
        {
-          dcompare1 = col_val[j] * col_val[j];
-          if ( dcompare1 > 0.0 )
-          {
-             dcompare2 = diagonal[i] * diagonal[jnode];
-             dcompare1 = ML_dabs( dcompare1 );
-             dcompare2 = ML_dabs( dcompare2 );
-             if ( dcompare1 >= epsilon * dcompare2 )
-                mat_indx[nz_cnt++] = col_ind[j];
-		 }
+         jnode = col_ind[j];
+         rowsum += col_val[j];
+         if(jnode ==i) diag_idx=j;
+
+         if ( jnode != i && jnode < Nrows && epsilon > 0.0 )
+           {             
+             dcompare1 = col_val[j] * col_val[j];
+             if ( dcompare1 > 0.0 )
+               {
+                 dcompare2 = diagonal[i] * diagonal[jnode];
+                 dcompare1 = ML_dabs( dcompare1 );
+                 dcompare2 = ML_dabs( dcompare2 );
+                 if ( dcompare1 >= epsilon * dcompare2 )
+                   mat_indx[nz_cnt++] = col_ind[j];
+               }
+           }
+         else if ( jnode != i && jnode < Nrows && col_val[j] != 0.0)
+           mat_indx[nz_cnt++] = col_ind[j];
        }
-	   else if ( jnode != i && jnode < Nrows && col_val[j] != 0.0)
-          mat_indx[nz_cnt++] = col_ind[j];
-	 }
+
+     /* Reaction-diffusion dropping.  If the rowsum is sufficiently than the diagonal, then
+        we should be in a reaction-limited regime at this node and can afford to drpp *all* 
+        connections, effectively turning this guy into a Dirichlet unknown.  We trust that
+        the smoother is sufficient for these unknowns - CMS 7/23/19 */
+     if(rowsum_threshold > 0.0 && fabs(rowsum) > fabs(diagonal[i]) * rowsum_threshold) {
+#ifdef ML_ROWSUM_DEBUG
+       num_points_reset_for_rowsum++;
+#endif
+       mat_indx[itmp]=col_ind[diag_idx];
+       nz_cnt = itmp;
+     }
+
      mat_indx[i+1] = nz_cnt;
      /* JJH 6/28/06
      printf("(%d) nz_cnt - itmp = %d, m = %d\n",i,nz_cnt-itmp,m);
@@ -346,6 +373,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      if ( mypid == 0 && printflag  < ML_Get_PrintLevel())
        printf("Aggregation(UVB) : Amalgamated matrix done \n");
    }
+#ifdef ML_ROWSUM_DEBUG
+   printf("ML_ROWSUM_DEBUG: # points reset via rowsum = %d\n",num_points_reset_for_rowsum);
+#endif
 
    StopTimer(&t0,&delta2);
 

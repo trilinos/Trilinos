@@ -55,7 +55,7 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 
-#include "MueLu_AmalgamationInfo_fwd.hpp"
+#include "MueLu_AmalgamationInfo_kokkos_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_LWGraph_kokkos_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -130,15 +130,15 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   class CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public SingleLevelFactoryBase {
   public:
-    typedef LocalOrdinal                                             local_ordinal_type;
-    typedef GlobalOrdinal                                            global_ordinal_type;
-    typedef typename DeviceType::execution_space                     execution_space;
-    typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
+    using local_ordinal_type  = LocalOrdinal;
+    using global_ordinal_type = GlobalOrdinal;
+    using execution_space     = typename DeviceType::execution_space;
+    using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
+    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
 
   private:
     // For compatibility
-    typedef node_type                                           Node;
+    using Node                = node_type;
 #undef MUELU_COALESCEDROPFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
 

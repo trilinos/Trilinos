@@ -39,12 +39,13 @@
 #include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
 #include <vector>                       // for vector, vector<>::iterator
 #include "mpi.h"                        // for MPI_COMM_WORLD
+
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 
 using stk::mesh::MetaData;
 

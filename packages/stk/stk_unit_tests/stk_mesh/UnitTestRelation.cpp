@@ -35,16 +35,17 @@
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <gtest/gtest.h>
 #include <string>                       // for string
 #include <vector>                       // for vector, vector<>::iterator
+
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/RingFixture.hpp"  // for RingFixture
 namespace stk { namespace mesh { class Ghosting; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Relation; } }

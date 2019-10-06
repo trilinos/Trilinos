@@ -1127,6 +1127,43 @@ template void BulkData::internal_verify_and_change_entity_parts(Entity, const Pa
 template void BulkData::internal_verify_and_change_entity_parts(Entity, const ConstPartVector&, const ConstPartVector&);
 
 template<typename PARTVECTOR>
+void BulkData::internal_verify_and_change_entity_parts( const EntityVector& entities,
+                                                        const PARTVECTOR & add_parts ,
+                                                        const PARTVECTOR & remove_parts)
+{
+    require_ok_to_modify();
+
+    OrdinalVector addPartsAndSupersets;
+    OrdinalVector removePartsAndSubsetsMinusPartsInAddPartsList;
+    OrdinalVector scratchOrdinalVec, scratchSpace;
+
+    for(Entity entity : entities) {
+#ifdef SIERRA_MIGRATION
+      if(!m_add_fmwk_data)
+      {
+          require_entity_owner(entity, parallel_rank());
+      }
+#endif //SIERRA_MIGRATION
+
+      addPartsAndSupersets.clear();
+      fill_add_parts_and_supersets(add_parts, addPartsAndSupersets);
+
+      fill_remove_parts_and_subsets_minus_parts_in_add_parts_list(remove_parts,
+                                                        addPartsAndSupersets,
+                                                        bucket(entity),
+                                                        removePartsAndSubsetsMinusPartsInAddPartsList);
+
+      internal_change_entity_parts(entity,
+                                   addPartsAndSupersets,
+                                   removePartsAndSubsetsMinusPartsInAddPartsList,
+                                   scratchOrdinalVec, scratchSpace);
+    }
+}
+
+template void BulkData::internal_verify_and_change_entity_parts(const EntityVector&, const PartVector&, const PartVector&);
+template void BulkData::internal_verify_and_change_entity_parts(const EntityVector&, const ConstPartVector&, const ConstPartVector&);
+
+template<typename PARTVECTOR>
 Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                  const PARTVECTOR & parts )
 {
@@ -2381,6 +2418,25 @@ void BulkData::declare_relation( Entity e_from ,
 {
   OrdinalVector ordinal_scratch, scratch2, scratch3;
   internal_declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, scratch2, scratch3);
+}
+
+void BulkData::declare_relation( Entity e_from , const std::vector<Entity>& to_entities)
+{
+#ifndef NDEBUG
+  stk::topology topo = bucket(e_from).topology();
+  ThrowAssertMsg(!to_entities.empty(), "ERROR, BulkData::declare_relation given empty to_entities vector.");
+  EntityRank rank = entity_rank(to_entities[0]);
+  ThrowAssertMsg(to_entities.size() == topo.num_sub_topology(rank), "ERROR, BulkData::declare_relation given wrong number of downward relations.");
+  for(unsigned i=1; i<to_entities.size(); ++i) {
+    ThrowAssertMsg(entity_rank(to_entities[i]) == rank, "ERROR, BulkData::declare_relation: downward relations must all have the same rank.");
+  }
+#endif
+
+  OrdinalVector scratch1, scratch2, scratch3;
+  for(unsigned i=0; i<to_entities.size(); ++i) {
+    internal_declare_relation(e_from, to_entities[i], static_cast<RelationIdentifier>(i),
+                              INVALID_PERMUTATION, scratch1, scratch2, scratch3);
+  }
 }
 
 void BulkData::declare_relation( Entity e_from ,
@@ -5598,6 +5654,23 @@ void BulkData::change_entity_parts( Entity entity,
 template void BulkData::change_entity_parts(Entity, const PartVector&, const PartVector&);
 template void BulkData::change_entity_parts(Entity, const ConstPartVector&, const ConstPartVector&);
 
+template<typename PARTVECTOR>
+void BulkData::change_entity_parts( const EntityVector& entities,
+    const PARTVECTOR & add_parts ,
+    const PARTVECTOR & remove_parts)
+{
+    bool stkMeshRunningUnderFramework = m_add_fmwk_data;
+    if(!stkMeshRunningUnderFramework)
+    {
+        internal_throw_error_if_manipulating_internal_part_memberships(add_parts);
+        internal_throw_error_if_manipulating_internal_part_memberships(remove_parts);
+    }
+    internal_verify_and_change_entity_parts(entities, add_parts, remove_parts);
+} 
+  
+template void BulkData::change_entity_parts(const EntityVector&, const PartVector&, const PartVector&);
+template void BulkData::change_entity_parts(const EntityVector&, const ConstPartVector&, const ConstPartVector&);
+
 void BulkData::batch_change_entity_parts( const stk::mesh::EntityVector& entities,
                           const std::vector<PartVector>& add_parts,
                           const std::vector<PartVector>& remove_parts)
@@ -5732,7 +5805,7 @@ void BulkData::internal_change_entity_parts(
     }
 }
 
-void BulkData::internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList, OrdinalVector& scratchSpace)
+void BulkData::internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList, OrdinalVector& /*scratchSpace*/)
 {
     const MeshIndex &meshIndex = mesh_index(entity);
     Bucket *bucketOld = meshIndex.bucket;
@@ -5744,12 +5817,12 @@ void BulkData::internal_move_entity_to_new_bucket(stk::mesh::Entity entity, cons
             m_meshModification.set_shared_entity_changed_parts();
         }
 
-        m_bucket_repository.change_entity_part_membership(meshIndex, newBucketPartList, scratchSpace);
+        m_bucket_repository.change_entity_part_membership(meshIndex, newBucketPartList);
     }
     else
     {
         EntityRank rank = entity_rank(entity);
-        m_bucket_repository.add_entity_with_part_memberships(entity, rank, newBucketPartList, scratchSpace);
+        m_bucket_repository.add_entity_with_part_memberships(entity, rank, newBucketPartList);
     }
 
     notifier.notify_local_buckets_changed(entity_rank(entity));

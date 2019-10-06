@@ -94,6 +94,7 @@ public:
     virtual void remove_field_data_for_entity(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &allFields) = 0;
     virtual void initialize_entity_field_data(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &fields) = 0;
     virtual void swap_fields(const int field1, const int field2) = 0;
+    virtual size_t heap_memory_in_bytes() const = 0;
 };
 
 class DefaultFieldDataManager : public FieldDataManager
@@ -139,6 +140,19 @@ public:
     void remove_field_data_for_entity(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &allFields) override;
     void initialize_entity_field_data(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &fields) override;
     void swap_fields(const int field1, const int field2) override { }
+
+    size_t heap_memory_in_bytes() const
+    {
+       size_t bytes = 0;
+       for(const std::vector<unsigned char*>& fdata : m_field_raw_data) {
+           bytes += impl::capacity_in_bytes(fdata);
+       }
+       bytes += impl::capacity_in_bytes(m_num_bytes_allocated_per_field);
+       for(const size_t & nBytes : m_num_bytes_allocated_per_field) {
+           bytes += nBytes;
+       }
+       return bytes;
+    }
 
 private:
     void allocate_new_field_meta_data(const EntityRank rank, const unsigned bucketId, const std::vector<FieldBase*>& allFields);
@@ -205,6 +219,18 @@ public:
     const std::vector<size_t> &get_num_bytes_allocated_per_field_array() const {return m_num_bytes_allocated_per_field;}
     const std::vector<size_t> &get_num_bytes_used_per_field_array() const {return m_num_bytes_used_per_field;}
     size_t get_extra_capacity() const { return m_extra_capacity; }
+
+    size_t heap_memory_in_bytes() const
+    {
+       size_t bytes = 0;
+       bytes += impl::capacity_in_bytes(m_field_raw_data);
+       bytes += impl::capacity_in_bytes(m_num_bytes_allocated_per_field);
+       bytes += impl::capacity_in_bytes(m_num_bytes_used_per_field);
+       for(const std::vector<size_t>& data : m_num_entities_in_field_for_bucket) {
+           bytes += impl::capacity_in_bytes(data);
+       }
+       return bytes;
+    }
 
 private:
     void clear_bucket_field_data(const EntityRank rm_rank, const unsigned rm_bucket_id, const std::vector<FieldBase*>  &all_fields);

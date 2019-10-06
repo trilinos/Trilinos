@@ -26,16 +26,14 @@ void StepperExplicitRK<Scalar>::setupDefault()
   this->setUseEmbedded(        this->getUseEmbeddedDefault());
 
   this->stepperObserver_ =
-    Teuchos::rcp(new StepperObserverComposite<Scalar>());
-  this->stepperExplicitRKObserver_ =
-    Teuchos::rcp(new StepperExplicitRKObserverComposite<Scalar>());
+    Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
 }
 
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setup(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >& obs,
+  const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
@@ -47,9 +45,7 @@ void StepperExplicitRK<Scalar>::setup(
   this->setUseEmbedded(        useEmbedded);
 
   this->stepperObserver_ =
-    Teuchos::rcp(new StepperObserverComposite<Scalar>());
-  this->stepperExplicitRKObserver_ =
-    Teuchos::rcp(new StepperExplicitRKObserverComposite<Scalar>());
+    Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
   this->setObserver(obs);
 
   if (appModel != Teuchos::null) {
@@ -160,19 +156,29 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null ) {
-    stepperObserver_->addObserver(obs);
-    auto ERKObs =
-      Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> > (obs);
-    if (ERKObs!=Teuchos::null) stepperExplicitRKObserver_->addObserver(ERKObs);
+
+  if (this->stepperObserver_ == Teuchos::null)
+     this->stepperObserver_  =
+        Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
+
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
+    return;
+
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
+     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
+
+  // Check that this casts to prevent a runtime error if it doesn't
+  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
+    this->stepperObserver_->addObserver(
+         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
   } else {
-    if (stepperExplicitRKObserver_->empty()) {
-      auto ERKObs = Teuchos::rcp(new StepperExplicitRKObserver<Scalar>());
-      stepperExplicitRKObserver_->addObserver(ERKObs);
-      stepperObserver_->addObserver(
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> > (ERKObs, true));
-    }
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,0,"setObserver");
+    *out << "Tempus::StepperExplicit_RK::setObserver: Warning: An observer has been provided that";
+    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
+    *out << " In the future, this will result in a runtime error!" << std::endl;
   }
+
 }
 
 
@@ -189,8 +195,8 @@ void StepperExplicitRK<Scalar>::initialize()
 
   this->setObserver();
 
-  TEUCHOS_TEST_FOR_EXCEPTION( this->stepperObserver_->empty() ||
-    this->stepperExplicitRKObserver_->empty(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( this->stepperObserver_->getSize() < 1 
+    , std::logic_error,
     "Error - Composite Observer is empty!\n");
 
   // Initialize the stage vectors
@@ -256,8 +262,14 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i=0; i < numStages; ++i) {
-      if (!Teuchos::is_null(stepperExplicitRKObserver_))
-        stepperExplicitRKObserver_->observeBeginStage(solutionHistory, *this);
+        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+
+        // ???: is it a good idea to leave this (no-op) here?
+        this->stepperObserver_
+            ->observeBeforeImplicitExplicitly(solutionHistory, *this);
+
+        // ???: is it a good idea to leave this (no-op) here?
+        this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 
       if ( i == 0 && this->getUseFSAL() &&
            workingState->getNConsecutiveFailures() == 0 ) {
@@ -276,18 +288,17 @@ void StepperExplicitRK<Scalar>::takeStep(
         }
         const Scalar ts = time + c(i)*dt;
 
-        if (!Teuchos::is_null(stepperExplicitRKObserver_))
-          stepperExplicitRKObserver_->observeBeforeExplicit(solutionHistory,
-                                                            *this);
+        // ???: is it a good idea to leave this (no-op) here?
+        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
 
+        this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
         auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
 
         // Evaluate xDot = f(x,t).
         this->evaluateExplicitODE(stageXDot_[i], stageX_, ts, p);
       }
 
-      if (!Teuchos::is_null(stepperExplicitRKObserver_))
-        stepperExplicitRKObserver_->observeEndStage(solutionHistory, *this);
+      this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: x_n = x_n-1 + Sum{ b(i) * dt*f(i) }

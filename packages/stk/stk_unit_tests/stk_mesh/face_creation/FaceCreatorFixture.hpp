@@ -34,9 +34,11 @@
 #ifndef FACECREATORFIXTURE_HPP_
 #define FACECREATORFIXTURE_HPP_
 
+#include "stk_mesh/base/Comm.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
 #include <gtest/gtest.h>
-#include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
+#include <stk_unit_test_utils/MeshFixture.hpp>
 
 class FaceCreatorFixture : public stk::unit_test_util::MeshFixture
 {

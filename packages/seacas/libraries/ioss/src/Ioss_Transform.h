@@ -41,17 +41,8 @@
 
 namespace Ioss {
   class Field;
-} // namespace Ioss
-namespace Ioss {
   class VariableType;
-} // namespace Ioss
-namespace Iotr {
-  class Factory;
-} // namespace Iotr
 
-namespace Ioss {
-} // namespace Ioss
-namespace Ioss {
   class Transform
   {
   public:
@@ -74,6 +65,7 @@ namespace Ioss {
 } // namespace Ioss
 
 namespace Iotr {
+  class Factory;
   using FactoryMap = std::map<std::string, Factory *, std::less<std::string>>;
 
   class Factory

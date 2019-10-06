@@ -54,7 +54,7 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos_decl.hpp"
 
-#include "MueLu_AmalgamationInfo.hpp"
+#include "MueLu_AmalgamationInfo_kokkos.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
@@ -494,7 +494,7 @@ namespace MueLu {
     auto A         = Get< RCP<Matrix> >(currentLevel, "A");
     LO   blkSize   = A->GetFixedBlockSize();
 
-    auto amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
+    auto amalInfo = Get< RCP<AmalgamationInfo_kokkos> >(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
 

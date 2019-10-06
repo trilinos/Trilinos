@@ -142,11 +142,12 @@ namespace FROSch {
                       const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
         std::string description() const; // @suppress("Type cannot be resolved")
+        
+        virtual int resetMatrix(ConstXMatrixPtr &k);
 
     protected:
 
-        RGDSWCoarseOperatorPtr CoarseLevelOperator_;
-
+        RGDSWCoarseOperatorPtr CoarseOperator_;
     };
 
 }

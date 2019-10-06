@@ -67,7 +67,7 @@ namespace FROSch {
     InterfaceEntity<SC,LO,GO,NO>::InterfaceEntity(EntityType type,
                                                   UN dofsPerNode,
                                                   UN multiplicity,
-                                                  int *subdomains,
+                                                  const int *subdomains,
                                                   EntityFlag flag) :
     Type_ (type),
     Flag_ (flag),

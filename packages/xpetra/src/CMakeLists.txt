@@ -63,8 +63,8 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     Xpetra_ETI_MULTIVECTOR_SRC)
   LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_MULTIVECTOR_SRC})
-
-  MESSAGE("XPETRA_ETI_CPP_SOURCES=${XPETRA_ETI_CPP_SOURCES}")
+  MESSAGE(STATUS "Xpetra: Enabling ETI")
+#  MESSAGE("XPETRA_ETI_CPP_SOURCES=${XPETRA_ETI_CPP_SOURCES}")
 
   # At this point, XPETRA_ETI_CPP_SOURCES contains the Xpetra classes
   # that will be ETI'd.
@@ -74,7 +74,8 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   SET(SOURCES ${XPETRA_ETI_CPP_SOURCES})
   # grab any hand rolled ETI source files
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
-
+ELSE()
+  MESSAGE(STATUS "Xpetra: Disabling ETI")
 ENDIF()
 
 ############################################################################################

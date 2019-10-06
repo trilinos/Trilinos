@@ -124,7 +124,7 @@ namespace FROSch {
         InterfaceEntity(EntityType type,
                         UN dofsPerNode,
                         UN multiplicity,
-                        int *subdomains,
+                        const int *subdomains,
                         EntityFlag flag = DefaultFlag);
 
         ~InterfaceEntity();
