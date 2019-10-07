@@ -206,7 +206,6 @@ void LineMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */, int xB
    int totalXElems = nXElems_*xBlocks_;
 
    double deltaX = (xf_-x0_)/static_cast<double>(totalXElems);
-   double modX0 = std::abs(x0_);
 
    // build the nodes
    std::vector<double> coord(1,0.0);
