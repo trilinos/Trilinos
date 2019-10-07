@@ -86,11 +86,46 @@ public:
       return false;  // Coordinates not available in this machine
     }
 
-    /*! \brief return the number of ranks.
+    /*! \brief getNumRanks function 
+     *  return the number of ranks.
      */
     int getNumRanks() const { return numRanks; }
 
-    virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops){
+    /*! \brief getHopCount function
+     *  set hops between rank1 and rank2
+     *  return true if coordinates are available 
+     */
+    virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) {
+      return false;
+    }
+
+    /*! \brief getNumUniqueGroups function
+     *  return the number of unique Dragonfly network groups in provided 
+     *  allocation.
+     *
+     *  Equals the length of group_count member data, if available,
+     *  otherwise we consider the whole allocation to be one group.
+     */
+    virtual part_t getNumUniqueGroups() const {
+      return 1;
+    }
+
+    /*! \brief getGroupCount function
+     *  return the number of ranks in each group (RCA X-dim, e.g. first dim)
+     *
+     *  Ex, 4 ranks with coord (3, 1, 1) and 8 ranks with coord (5, 2, 4), 
+     *  will produce
+     *  grp_count = [0, 0, 0, 4, 0, 8, 0, ...] 
+     *  which is trimmed and returned as
+     *  grp_count = [4, 8]
+     *
+     *
+     *  (Currently only for Zoltan2_MachineDragonflyRCA, and used for 
+     *  MultiJagged's first cut in "algorithms/partition/Zoltan2_TaskMapper.hpp"
+     *  thru "problems/Zoltan2_MappingProblem.hpp".
+     *  return true if group_count is available
+     */
+    virtual bool getGroupCount(part_t *grp_count) const {
       return false;
     }
 
