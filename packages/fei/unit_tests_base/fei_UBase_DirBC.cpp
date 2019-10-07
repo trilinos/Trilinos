@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST(DirBC, DirBCManager_finalizeBCEqns)
 #endif
 
   if (numProcs > 1) {
-    FEI_COUT << "skipping test of fei::DirichletBCManager::finalizeBCEqn, which only"
+    out << "skipping test of fei::DirichletBCManager::finalizeBCEqn, which only"
      << " runs on 1 proc." << FEI_ENDL;
     return;
   }

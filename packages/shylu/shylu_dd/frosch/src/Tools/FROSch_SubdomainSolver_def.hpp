@@ -361,7 +361,7 @@ namespace FROSch {
         FROSCH_TIMER_START(applyTime,"SubdomainSolver::apply");
         FROSCH_ASSERT(IsComputed_,"!IsComputed_.");
 
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
+#if defined(HAVE_SHYLU_DDFROSCH_AMESOS) && defined(HAVE_SHYLU_DDFROSCH_EPETRA)
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
             const EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorX = dynamic_cast<const EpetraMultiVectorT<GO,NO> *>(&x);
