@@ -120,7 +120,8 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
           MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 32-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_INT")
         ELSE()
           # Epetra was enabled but only implicitly; give a warning but turn off Xpetra's Epetra support
-          MESSAGE(WARNING "32-bit global indices are enabled in Epetra but not Tpetra. Since Epetra was not enabled explicitly by user, **DISABLING EPETRA SUPPORT** in Xpetra and its downstream."
+          MESSAGE(WARNING "32-bit global indices are enabled in Epetra but not Tpetra. Since Epetra was not enabled explicitly by user, **DISABLING EPETRA SUPPORT** in Xpetra,"
+            " and downstream packages that use Epetra through Xpetra. Packages using Epetra directly will not be affected"
             " To make this warning go away, set -DTpetra_INST_INT_INT=ON to enable 32-bit global indices and Epetra support, OR set -DXpetra_ENABLE_Epetra=OFF if you don't need Epetra.")
           DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_Epetra OFF)
           DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_EpetraExt OFF)
