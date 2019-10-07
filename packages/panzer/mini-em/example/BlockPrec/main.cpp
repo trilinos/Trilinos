@@ -248,9 +248,20 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         mesh_factory->setParameterList(pl);
         // build mesh
         mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
-        //get dt
-        if (dt <=0.)
+        // get dt
+        if (dt <= 0.)
           dt = input_pl->get<double>("dt");
+      } else if (mesh_pl.get<std::string>("Source") ==  "Pamgen Mesh") { // Pamgen mesh generator
+        Teuchos::ParameterList & pamgen_pl = mesh_pl.sublist("Pamgen Mesh");
+        Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList(pamgen_pl.sublist("Pamgen Parameters")));
+        pl->set("File Type","Pamgen");
+        mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory());
+        mesh_factory->setParameterList(pl);
+        // build mesh
+        mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+        // get dt
+        if (dt <= 0.)
+          dt = pamgen_pl.get<double>("dt");
       } else if (mesh_pl.get<std::string>("Source") == "Inline Mesh") { // Inline mesh generator
         // set mesh factory parameters
         Teuchos::ParameterList & inline_gen_pl = mesh_pl.sublist("Inline Mesh");
@@ -285,7 +296,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
 
         // set dt
-        if (dt <=0.) {
+        if (dt <= 0.) {
           if (inline_gen_pl.isType<double>("dt"))
             dt = inline_gen_pl.get<double>("dt");
           else {
