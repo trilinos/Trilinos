@@ -401,6 +401,7 @@ int main(int narg, char *arg[]){
         //hopper[2] = 24;
         part_t *machineDimensions = NULL;
         //machineDimensions = hopper;
+
         Zoltan2::coordinateTaskMapperInterface<part_t, zscalar_t, zscalar_t>(
                 tcomm,
                 procDim,
@@ -422,7 +423,7 @@ int main(int narg, char *arg[]){
                 partArray,
                 machineDimensions, rank_per_node, divide_prime
                 );
-
+        
         if (tcomm->getRank() == 0){
             std::cout << "PASS" << std::endl;
         }

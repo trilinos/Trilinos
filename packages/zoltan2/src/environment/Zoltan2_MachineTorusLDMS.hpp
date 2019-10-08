@@ -6,8 +6,9 @@
 
 namespace Zoltan2{
 
-/*! \brief A Default MachineRepresentation Class for testing only
- *  A more correct machine representation should be used for task mapping.
+/*! \brief A Default MachineRepresentation Class
+ *
+ *  Work In Progress, use another Machine Type.
  */
 
 template <typename nNo_t, typename nCoord_t>
@@ -26,10 +27,12 @@ public:
    */
 
   MachineRepresentation(const Comm<int> &comm):
-    networkDim(0), numProcs(comm.getSize()), myRank(comm.getRank()),
+    networkDim(0), 
+    numProcs(comm.getSize()), 
+    myRank(comm.getRank()),
     procCoords(NULL)
   {
-    // WIll need this constructor to be specific to RAAMP (MD).
+    // Will need this constructor to be specific to RAAMP (MD).
     // Will need a default constructor using, e.g., GeometricGenerator
     // or nothing at all, for when RAAMP is not available as TPL.
     //
@@ -45,32 +48,37 @@ public:
 
     // Call initializer for RAAMP data object (AG)
 
-    //get network dimension.
-    //TODO change.
+    // get network dimension.
+    // TODO change.
     // Call RAAMP Data Object to get the network dimension (AG)
     networkDim = 3;
 
     //allocate memory for processor coordinates.
     procCoords = new nCoord_t *[networkDim];
-    for (int i = 0; i < networkDim; ++i){
+    for (int i = 0; i < networkDim; ++i) {
       procCoords[i] = new nCoord_t [numProcs];
       memset (procCoords[i], 0, sizeof(nCoord_t) * numProcs);
     }
-    //obtain the coordinate of the processor.
+    // Obtain the coordinate of the processor.
     this->getMyCoordinate(/*nCoord_t &xyz[networkDim]*/);
-    // copy xyz into appropriate spot in procCoords. (MD)  // KDD I agree with this
+    // Copy xyz into appropriate spot in procCoords. (MD)  
+    // KDD I agree with this
 
-    //reduceAll the coordinates of each processor.
+    // reduceAll the coordinates of each processor.
     this->gatherMachineCoordinates();
   }
 
 
   /*! \brief Constructor MachineRepresentation Class
-   *  \param comm_ Communication object.
+   *  \param comm_ RCP Communication object.
    */
   MachineRepresentation(const RCP<Comm<int> > &comm_):
-    networkDim(0), numProcs(comm_->getSize()), procCoords(0), comm(comm_){
-    // WIll need this constructor to be specific to RAAMP (MD).
+    networkDim(0), 
+    numProcs(comm_->getSize()), 
+    procCoords(0), 
+    comm(comm_) 
+  {
+    // Will need this constructor to be specific to RAAMP (MD).
     // Will need a default constructor using, e.g., GeometricGenerator
     // or nothing at all, for when RAAMP is not available as TPL.
     //
@@ -86,22 +94,22 @@ public:
 
     // Call initializer for RAAMP data object (AG)
 
-    //get network dimension.
-    //TODO change.
+    // get network dimension.
+    // TODO change.
     // Call RAAMP Data Object to get the network dimension (AG)
     networkDim = 3;
 
-    //allocate memory for processor coordinates.
+    // Allocate memory for processor coordinates.
     procCoords = new nCoord_t *[networkDim];
-    for (int i = 0; i < networkDim; ++i){
+    for (int i = 0; i < networkDim; ++i) {
       procCoords[i] = new nCoord_t [numProcs];
       memset (procCoords[i], 0, sizeof(nCoord_t) * numProcs);
     }
-    //obtain the coordinate of the processor.
+    // Obtain the coordinate of the processor.
     this->getMyCoordinate(/*nCoord_t &xyz[networkDim]*/);
-    // copy xyz into appropriate spot in procCoords. (MD)  // KDD I Agree.
+    // Copy xyz into appropriate spot in procCoords. (MD)  // KDD I Agree.
 
-    //reduceAll the coordinates of each processor.
+    // reduceAll the coordinates of each processor.
     this->gatherMachineCoordinates();
   }
 
@@ -109,8 +117,9 @@ public:
   /*! \brief getMyCoordinate function
    *  stores the coordinate of the current processor in procCoords[*][rank]
    */
-  void getMyCoordinate(/* nCoord_t &xyz[networkDim]*/){  // KDD Enable the argument rather
-                               // KDD than writing into array here
+  void getMyCoordinate(/* nCoord_t &xyz[networkDim]*/) {  
+    // KDD Enable the argument rather
+    // KDD than writing into array here
 
     // Call RAAMP system to get coordinates and store in xyz (MD)
     // What is the RAAMP call?  (AG)
@@ -129,7 +138,7 @@ public:
     int slice = int (pow( double(numProcs), double(1.0 / networkDim)) + 0.5 );
 
     int m = myRank;
-    for (int i = 0; i < networkDim; ++i){
+    for (int i = 0; i < networkDim; ++i) {
       procCoords[i][myRank] = m / int(pow(slice, double(networkDim - i - 1)));
       m = m % int(pow(double(slice), double(networkDim - i - 1)));
     }
@@ -142,10 +151,10 @@ public:
   /*! \brief gatherMachineCoordinates function
    *  reduces and stores all machine coordinates.
    */
-  void gatherMachineCoordinates(){  // KDD Should be private
+  void gatherMachineCoordinates() {  // KDD Should be private
     nCoord_t *tmpVect = new nCoord_t [numProcs];
 
-    for (int i = 0; i < networkDim; ++i){
+    for (int i = 0; i < networkDim; ++i) {
       reduceAll<int, nCoord_t>(
           *comm,
           Teuchos::REDUCE_SUM,
@@ -163,7 +172,7 @@ public:
    * free memory in procCoords.
    */
   virtual ~MachineRepresentation() {
-    for (int i = 0; i < networkDim; ++i){
+    for (int i = 0; i < networkDim; ++i) {
       delete [] procCoords[i];
     }
     delete [] procCoords;
@@ -181,7 +190,8 @@ public:
   /*! \brief getProcDim function
    * returns the coordinates of processors in two dimensional array.
    */
-  nCoord_t** getProcCoords() const{  // KDD Make clear that returning a View; maybe return ArrayView
+  nCoord_t** getProcCoords() const{  
+    // KDD Make clear that returning a View; maybe return ArrayView
     return procCoords;
   }
 
