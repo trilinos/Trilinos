@@ -90,7 +90,86 @@ TEUCHOS_UNIT_TEST( DeallocNull, free )
 }
 
 
-TEUCHOS_UNIT_TEST( RCP, assignSelf_null )
+TEUCHOS_UNIT_TEST( RCP, construct_default )
+{
+  RCP<A> a_rcp;
+  TEST_EQUALITY_CONST(a_rcp.get(), 0);
+  TEST_EQUALITY_CONST(a_rcp.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(a_rcp.strong_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.has_ownership(), false);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, construct_nonull )
+{
+  RCP<A> a_rcp(new A);
+  TEST_INEQUALITY_CONST(a_rcp.get(), 0);
+  TEST_INEQUALITY_CONST(a_rcp.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(a_rcp.strong_count(), 1);
+  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.has_ownership(), true);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, copy_construct_null )
+{
+  RCP<A> a_rcp;
+  RCP<A> b_rcp(a_rcp);
+  TEST_EQUALITY_CONST(a_rcp.get(), 0);
+  TEST_EQUALITY_CONST(a_rcp.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(a_rcp.strong_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.has_ownership(), false);
+  TEST_EQUALITY_CONST(b_rcp.get(), 0);
+  TEST_EQUALITY_CONST(b_rcp.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(b_rcp.strong_count(), 0);
+  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(b_rcp.has_ownership(), false);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, copy_construct_nonnull )
+{
+  RCP<A> a_rcp(new A);
+  RCP<A> b_rcp(a_rcp);
+  TEST_EQUALITY(b_rcp.get(), a_rcp.get());
+  TEST_EQUALITY(b_rcp.getRawPtr(), a_rcp.getRawPtr());
+  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(a_rcp.strong_count(), 2);
+  TEST_EQUALITY_CONST(b_rcp.strong_count(), 2);
+  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.has_ownership(), true);
+  TEST_EQUALITY_CONST(b_rcp.has_ownership(), true);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, move_construct_nonnull )
+{
+  RCP<A> a_rcp(new A);
+  RCP<A> b_rcp(std::move(a_rcp));
+  TEST_EQUALITY_CONST(a_rcp.get(), 0);
+  TEST_EQUALITY_CONST(a_rcp.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(a_rcp.strong_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.has_ownership(), false);
+  TEST_INEQUALITY_CONST(b_rcp.get(), 0);
+  TEST_INEQUALITY_CONST(b_rcp.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(b_rcp.strong_count(), 1);
+  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(b_rcp.has_ownership(), true);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, assign_self_null )
 {
   RCP<A> a_rcp;
   a_rcp = a_rcp;
@@ -98,13 +177,51 @@ TEUCHOS_UNIT_TEST( RCP, assignSelf_null )
 }
 
 
-TEUCHOS_UNIT_TEST( RCP, assignSelf_nonnull )
+TEUCHOS_UNIT_TEST( RCP, copy_assign_self_nonnull )
 {
   RCP<A> a_rcp(new A);
   A *a_raw_ptr = a_rcp.getRawPtr();
   a_rcp = a_rcp;
   TEST_ASSERT(nonnull(a_rcp));
   TEST_EQUALITY(a_rcp.getRawPtr(), a_raw_ptr);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, copy_assign_nonnull )
+{
+  RCP<A> a_rcp(new A);
+  RCP<A> b_rcp;
+  b_rcp = a_rcp;
+  TEST_EQUALITY(b_rcp.get(), a_rcp.get());
+  TEST_EQUALITY(b_rcp.getRawPtr(), a_rcp.getRawPtr());
+  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(a_rcp.strong_count(), 2);
+  TEST_EQUALITY_CONST(b_rcp.strong_count(), 2);
+  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.has_ownership(), true);
+  TEST_EQUALITY_CONST(b_rcp.has_ownership(), true);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, move_assign_nonnull )
+{
+  RCP<A> a_rcp(new A);
+  RCP<A> b_rcp;
+  b_rcp = std::move(a_rcp);
+  TEST_EQUALITY_CONST(a_rcp.get(), 0);
+  TEST_EQUALITY_CONST(a_rcp.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(a_rcp.strong_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(a_rcp.has_ownership(), false);
+  TEST_INEQUALITY_CONST(b_rcp.get(), 0);
+  TEST_INEQUALITY_CONST(b_rcp.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(b_rcp.strong_count(), 1);
+  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
+  TEST_EQUALITY_CONST(b_rcp.has_ownership(), true);
 }
 
 

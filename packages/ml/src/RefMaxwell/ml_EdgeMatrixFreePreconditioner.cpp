@@ -147,6 +147,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool /*
     /* Setup Preconditioner on Coarse Matrix */
     ListCoarse=List_.get("edge matrix free: coarse",dummy);
     CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,ListCoarse);
+
     if(!CoarsePC) ML_CHK_ERR(-2);
 
     /* Clean Up */
@@ -198,9 +199,10 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: Coarsening coordinates\n");
 
     /* Use the nodal prolongator to generate coarse coordinates at the aggregated nodes */
-    CoarseXcoord_.resize(P->invec_leng);
-    CoarseYcoord_.resize(P->invec_leng);
-    if(dim==3) CoarseZcoord_.resize(P->invec_leng);
+    // Note: ML requires a non-null pointer even if we're out of nodes, so we're sure to allocate *something* here
+    CoarseXcoord_.resize(std::max(P->invec_leng,1));
+    CoarseYcoord_.resize(std::max(P->invec_leng,1));
+    if(dim==3) CoarseZcoord_.resize(std::max(P->invec_leng,1));
 
     /* Matvec with the *transpose* of P */
     // Note: sCSR_trans_matvec can never return anything other than true (in the current implementation)
@@ -360,6 +362,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   R->num_rigid=R->num_PDEs=dim;
   ML_2matmult_block(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
 #endif
+
 
   /* Wrap to Epetra-land */
   //  Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix);

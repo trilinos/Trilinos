@@ -494,9 +494,10 @@ the `checkin-test-atdm.sh` script is run and will set these as the defaults
 ## ctest-s-local-test-driver.sh
 
 When one wants to run local builds to test a branch and submit results to
-CDash so that they are archived and for others to see, then a simple way to
-that is to use the provided `ctest-s-local-test-driver.sh` script.  This
-script uses the CTest -S Jenkins driver system in the directory
+CDash (so that they are archived and for others to see), then a simple way to
+that is to use the provided
+[`ctest-s-local-test-driver.sh`](https://github.com/trilinos/Trilinos/blob/develop/cmake/std/atdm/ctest-s-local-test-driver.sh)
+script.  This script uses the CTest -S Jenkins driver system in the directory
 `Trilinos/cmake/ctest/drivers/atdm/` and the specific Jenkins driver files in
 the directory
 
@@ -513,22 +514,40 @@ $ cd <some_base_build_dir>/
 $ ln -s <some_base_dir>/Trilinos/cmake/std/atdm/ctest-s-local-test-driver.sh .
 ````
 
-Then run any of the build names (e.g. `gnu-opt-debug`) listed in the variable
-`ATDM_CONFIG_ALL_SUPPORTED_BUILDS` in the file
-`cmake/std/atdm/<system_name>/all_supported_builds.sh` (or `all` for all of
-the defined builds) for the system as:
+Then one can run any of the builds with defined driver files listed under:
+
+```
+    Trilinos/cmake/ctest/drivers/atdm/<system_name>/drivers/
+      <full-build-name-1>.sh
+      <full-build-name-2>.sh
+      ...
+```
+
+using:
 
 ```
 $ env \
     Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+    ATDM_CTEST_S_USE_FULL_BUILD_NAME=1 \
   ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
 ```
 
-That will submit results to the Trilinos CDash project to the "Experimental"
-CDash Group (the CDash group can not be changed).  This will automatically
-allocate nodes and run just like it was running as a Jenkins job so the
-details of how this is done are completely taken care of by the existing setup
-for the current system.
+(Or leave out `Trilinos_PACKAGES` to test all of the ATDM packages.)  That
+will submit results to the Trilinos CDash project to the "Experimental" Group
+(the CDash group cannot be changed).  This will automatically allocate nodes
+and run just like it was running as a Jenkins job so the details of how this
+is done are completely taken care of by the existing setup for the current
+system.
+
+To run all of the supported builds listed in the variable
+`ATDM_CONFIG_ALL_SUPPORTED_BUILDS` in the file
+`cmake/std/atdm/<system_name>/all_supported_builds.sh`, use:
+
+```
+$ env \
+    Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+  ./ctest-s-local-test-driver.sh all
+```
 
 One can examine the progress of the builds and tests locally by looking at the
 generated files:
@@ -537,9 +556,8 @@ generated files:
   <some_base_build_dir>/<full_build_name>/smart-jenkins-driver.out
 ```
 
-(e.g. `<full_build_name>` = `Trilinos-atdm-<system_name>-gnu-opt-debug`) and
-also examine the generated `*.xml` configure, build, and test files created
-under:
+and also examine the generated `*.xml` configure, build, and test files
+created under:
 
 ```
   <some_base_build_dir>/<full_build_name>/SRC_AND_BUILD/BUILD/Testing/
@@ -556,10 +574,28 @@ $ env \
   ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
 ```
 
-See
+One can also do run local installs using:
+
+```
+$ env \
+    Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+    ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX=install \
+    CTEST_DO_INSTALL=ON \
+  ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
+```
+
+That will install the enabled Trilinos packages under:
+
+```
+  <full-build-name>/SRC_AND_BUILD/BUILD/install/
+```
+
+For more details, see the help documentation in the scirpt itself
+[`ctest-s-local-test-driver.sh`](https://github.com/trilinos/Trilinos/blob/develop/cmake/std/atdm/ctest-s-local-test-driver.sh). Also,
+see
 [TRIBITS_CTEST_DRIVER()](https://tribits.org/doc/TribitsDevelopersGuide.html#determining-what-testing-related-actions-are-performed-tribits-ctest-driver)
 for a description of all of the options that can be set as env vars to, for
-example, skip configure, skip the build, skip running tests, etc.
+example, skip the configure, skip the build, skip running tests, etc.
 
 
 ## Specific instructions for each system

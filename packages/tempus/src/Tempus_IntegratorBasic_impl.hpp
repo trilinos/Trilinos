@@ -72,7 +72,7 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 
 template<class Scalar>
 void IntegratorBasic<Scalar>::setStepper(
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model)
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;

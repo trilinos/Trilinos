@@ -371,6 +371,36 @@ PeriodicBC_Parser::buildMatcher(const std::string & buildStr) const
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
    }
 
+   if(s_matcher=="wx-coord") {
+     panzer_stk::WedgeMatcher matcher(1,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(s_matcher=="wy-coord") {
+     panzer_stk::WedgeMatcher matcher(0,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(s_matcher=="wx-edge") {
+     panzer_stk::WedgeMatcher matcher(1,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
+   }
+
+   if(s_matcher=="wy-edge") {
+     panzer_stk::WedgeMatcher matcher(0,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
+   }
+
+   if(s_matcher=="wx-face") {
+     panzer_stk::WedgeMatcher matcher(1,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
+   }
+
+   if(s_matcher=="wy-face") {
+     panzer_stk::WedgeMatcher matcher(0,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
+   }
+
    if(s_matcher=="(xy)z-quarter-coord") {
      panzer_stk::QuarterPlaneMatcher matcher(0,1,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);

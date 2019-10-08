@@ -168,6 +168,8 @@ public:
   /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override
     { return integrator_->getTimeStepControl(); }
+  virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override
+    { return integrator_->getNonConstTimeStepControl(); }
   /// Set the TimeStepControl
   virtual void setTimeStepControl(
     Teuchos::RCP<TimeStepControl<Scalar> > tsc = Teuchos::null)
