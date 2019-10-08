@@ -15,8 +15,11 @@
 #include "MLAPI_DistributedMatrix.h"
 #include "MLAPI_Krylov.h"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 #include "EpetraExt_CrsMatrixIn.h"
+#include "EpetraExt_VectorIn.h"
+#include "Epetra_Vector.h"
 
 using namespace Teuchos;
 using namespace MLAPI;
@@ -31,6 +34,18 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
+  Teuchos::CommandLineProcessor clp;
+  std::string matrixFile;        clp.setOption("matrix", &matrixFile, "Matrix to solve");
+  std::string rhsFile;           clp.setOption("rhs",    &rhsFile,    "RHS to solve");
+  int AdditionalCandidates=1;    clp.setOption("numvecs",&AdditionalCandidates,    "Number of additional adaptive candidate vectors");
+  int NumPDEs=1;                 clp.setOption("numpdes",&NumPDEs,    "Number of PDE equations");
+  clp.recogniseAllOptions(true);
+  switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+  }
 
   try {
 
@@ -38,13 +53,19 @@ int main(int argc, char *argv[])
     Init();
 
     RCP<Operator> A;
-    if(argc == 2){
+    RCP<Epetra_Vector> rhsE;
+    if(!matrixFile.empty()) {
       Epetra_CrsMatrix * temp;
-      EpetraExt::MatrixMarketFileToCrsMatrix(argv[1],GetEpetra_Comm(),temp);
+      EpetraExt::MatrixMarketFileToCrsMatrix(matrixFile.c_str(),GetEpetra_Comm(),temp);
       temp->FillComplete();
       Space DomainSpace(temp->DomainMap());
       Space RangeSpace(temp->RangeMap());
       A = rcp(new Operator(DomainSpace,RangeSpace,temp));
+      if(!rhsFile.empty()) {
+        Epetra_Vector * tempV;
+        EpetraExt::MatrixMarketFileToVector(rhsFile.c_str(),temp->RowMap(),tempV);
+        rhsE = rcp(tempV);
+      }
     }
     else { 
       int NX = 1000;
@@ -77,15 +98,16 @@ int main(int argc, char *argv[])
     }// end else
     
 
-    int NumPDEEqns = 2;
     int MaxLevels = 10;
 
     Teuchos::ParameterList List;
-    List.set("additional candidates", 2);
+    List.set("additional candidates", AdditionalCandidates);
+    List.set("PDE equations",NumPDEs);
     List.set("use default null space", true);
     List.set("krylov: type", "cg");
+    SetPrintLevel(10);
     RCP<MultiLevelAdaptiveSA> Prec;
-    Prec=rcp(new MultiLevelAdaptiveSA(*A, List, NumPDEEqns, MaxLevels));
+    Prec=rcp(new MultiLevelAdaptiveSA(*A, List, NumPDEs, MaxLevels));
 
     // =============================================================== //
     // setup the hierarchy:                                            //
@@ -95,14 +117,21 @@ int main(int argc, char *argv[])
     // =============================================================== //
 
     bool UseDefaultNullSpace = true;
-    int AdditionalCandidates = 1;
     Prec->AdaptCompute(UseDefaultNullSpace, AdditionalCandidates);
 
     MultiVector LHS(A->GetDomainSpace());
     MultiVector RHS(A->GetRangeSpace());
 
-    LHS.Random();
-    RHS = 0.0;
+
+    if(!rhsE.is_null()) {
+      for(int i=0; i<rhsE->MyLength(); i++)
+        RHS(i,0) = (*rhsE)[i];
+      LHS = 0.0;
+    }
+    else {
+      LHS.Random();
+      RHS = 0.0;
+    }
 
     Krylov(*A, LHS, RHS, *Prec, List);
 
