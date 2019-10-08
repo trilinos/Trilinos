@@ -80,7 +80,7 @@ void FindLocalDirichletLikeRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix,
 
     }/*end if*/
   }/*end for*/
-
+  //  printf("[%2d] Dirichlet Rows Detected 11 %5d/%5d 22 %5d/%5d\n",Matrix.Comm().MyPID(),numBCRows11,Nrows,numBCRows22,Nrows);
   dirichletRows11_rcp.resize(numBCRows11);
   dirichletRows22_rcp.resize(numBCRows22);
 }/*end FindLocalDirichletLikeRowsFromOnesAndZeros*/
@@ -255,7 +255,8 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
   dirichletEdges11.resize(SM_Matrix_->NumMyRows()); dirichletEdges22.resize(SM_Matrix_->NumMyRows());
   FindLocalDirichletLikeRowsFromOnesAndZeros(*SM_Matrix_, rowsum_threshold, dirichletEdges11, dirichletEdges22);
 
-  Epetra_IntVector * BCnodes11=FindLocalDirichletColumnsFromRows(dirichletEdges11.get(),dirichletEdges11.size(),*D0_Clean_Matrix_);
+  // We want Dirichlet *domains* for the (1,1) boundary conditions
+  Epetra_IntVector * BCnodes11=FindLocalDirichletDomainsFromRows(dirichletEdges11.get(),dirichletEdges11.size(),*D0_Clean_Matrix_);
   int numBCnodes11=0;
   for(int i=0;i<BCnodes11->MyLength();i++){
     if((*BCnodes11)[i]) numBCnodes11++;
@@ -266,6 +267,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
     if((*BCnodes11)[i]) dirichletNodes11[currNode++] = i;
   }
 
+  // We want Dirichlet *columns* for the (2,2) boundary conditions
   Epetra_IntVector * BCnodes22=FindLocalDirichletColumnsFromRows(dirichletEdges22.get(),dirichletEdges22.size(),*D0_Clean_Matrix_);
   int numBCnodes22=0;
   for(int i=0;i<BCnodes22->MyLength();i++){
