@@ -11,7 +11,7 @@ ParameterLists
 # Overlap Determination Graph #
 ###############################
 ## Epetra
-IF(ShyLU_DDFROSch_ENABLE_Epetra AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Graph_DIM2_DPN1_EPETRA
@@ -82,7 +82,7 @@ NUM_MPI_PROCS 8
 # Overlap Determination Matrix #
 ################################
 ## Epetra
-IF(ShyLU_DDFROSch_ENABLE_Epetra AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Matrix_DIM2_DPN1_EPETRA
@@ -153,7 +153,7 @@ NUM_MPI_PROCS 8
 # Overlap Determination Old #
 #############################
 ## Epetra
-IF(ShyLU_DDFROSch_ENABLE_Epetra AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Old_DIM2_DPN1_EPETRA
