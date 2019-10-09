@@ -47,26 +47,6 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 # NOTE: Use as many build processes and there are cores by default.
 
 module purge
-module load sparc-dev/cuda-gcc
-
-#The above module sets these:
-#BOOST_ROOT=/projects/sparc/tpls/cts1-p100/boost-1.65.1/cts1-p100_gcc-6.3.1_cuda-9.2.88
-#CBLAS_ROOT=/projects/global/toss3/compilers/intel/intel_2017/compilers_and_libraries_2017.1.132/linux
-#CGNS_ROOT=/projects/sparc/tpls/cts1-p100/cgns-develop/cts1-p100_gcc-6.3.1_cuda-9.2.88_openmpi-2.1.1
-#COMPILER_ROOT=/opt/rh/devtoolset-7/root/usr
-#EUCLID_ROOT=/projects/sparc/tpls/cts1-p100/euclid-develop/cts1-p100_gcc-6.3.1_cuda-9.2.88_openmpi-2.1.1
-#HDF5_ROOT=/projects/sparc/tpls/cts1-p100/hdf5-1.8.20/cts1-p100_gcc-6.3.1_cuda-9.2.88_openmpi-2.1.1
-#METIS_ROOT=/projects/sparc/tpls/cts1-p100/parmetis-4.0.3/cts1-p100_gcc-6.3.1_cuda-9.2.88_openmpi-2.1.1
-#MODULEPATH_ROOT=/usr/share/modulefiles
-#MPI_ROOT=/opt/openmpi/2.1/gnu
-#MPIROOT=/opt/openmpi/2.1/gnu
-#NETCDF_ROOT=/projects/sparc/tpls/cts1-p100/netcdf-4.6.1/cts1-p100_gcc-6.3.1_cuda-9.2.88_openmpi-2.1.1
-#PARMETIS_ROOT=/projects/sparc/tpls/cts1-p100/parmetis-4.0.3/cts1-p100_gcc-6.3.1_cuda-9.2.88_openmpi-2.1.1
-#PNETCDF_ROOT=/projects/sparc/tpls/cts1-p100/pnetcdf-1.10.0/cts1-p100_gcc-6.3.1_cuda-9.2.88_openmpi-2.1.1
-#SEMS_MODULEFILES_ROOT=/projects/sems/modulefiles
-#SGM_ROOT=/projects/sparc/tpls/cts1-p100/sgm-develop/cts1-p100_gcc-6.3.1_cuda-9.2.88_openmpi-2.1.1
-#SUPERLUDIST_ROOT=/projects/sparc/tpls/cts1-p100/superlu_dist-4.2/cts1-p100_gcc-6.3.1_cuda-9.2.88_openmpi-2.1.1
-
 
 # Warning options requested by Gemma team (which should hopefully also take
 # care of warnings required by the other ATDM APPs as well).  See #3178 and
@@ -88,6 +68,7 @@ fi
 echo $ATDM_CONFIG_COMPILER
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1" ]] ; then
+  module load sparc-dev/cuda-9.2.88_gcc-6.3.1_openmpi-2.1.1
   unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
   unset OMP_PROC_BIND
   unset OMP_PLACES
@@ -103,7 +84,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1" ]] ; then
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
   export ATDM_CONFIG_MPI_EXEC=mpirun
 
-#TODO jfrye: what should these be for cuda build?
+  #TODO jfrye: what should these be for cuda build?
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
 
@@ -113,7 +94,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1" ]] ; then
       echo "No nvcc_wrapper found"
       return
   fi
-# some Trilinos tests require this to run correctly
+  # some Trilinos tests require this to run correctly
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
   export KOKKOS_NUM_DEVICES=2
@@ -141,9 +122,9 @@ fi
 # modules change them!
 
 # Use updated Ninja and CMake
-#module load sems-env
-#module load atdm-env
-#module load atdm-ninja_fortran/1.7.2
+module load sems-env
+module load atdm-env
+module load atdm-ninja_fortran/1.7.2
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 
@@ -199,7 +180,7 @@ if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
   export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist.a
 fi
 
-env|sort|grep ROOT
+#env|sort|grep ROOT
 
 # Finished!
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
