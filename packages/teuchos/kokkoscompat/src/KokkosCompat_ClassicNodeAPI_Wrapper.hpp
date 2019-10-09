@@ -44,7 +44,7 @@ public:
   /// release.  This Node type is safe to use.
   static constexpr bool classic = false;
 
-#if defined(TPETRA_ENABLE_DEPRECATED_CODE) || !defined(TEUCHOS_HIDE_DEPRECATED_CODE)
+#if !defined(TEUCHOS_HIDE_DEPRECATED_CODE)
   /// \brief Constructor (that takes a Teuchos::ParameterList).
   ///
   /// \param [in/out] params List of Node configuration parameters.

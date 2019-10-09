@@ -115,11 +115,13 @@ namespace {
   //
   // UNIT TESTS
   //
+
+  /*
+  //BMK 10-2019: clone() for Tpetra Maps is deprecated
+  //TODO: implement clone() that doesn't rely on any deprecated
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Cloner, MapCloneTpetra, LO, GO, N2 )
   {
-    //BMK 10-2019: clone() for Tpetra Maps is deprecated
-    //TODO: remove test or implement clone() that doesn't rely on deprecated
-#if defined(HAVE_XPETRA_TPETRA) && defined(TPETRA_ENABLE_DEPRECATED_CODE)
+#if defined(HAVE_XPETRA_TPETRA)
     typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
 
     // create a comm
@@ -142,6 +144,7 @@ namespace {
     TEST_EQUALITY_CONST(map1->isSameAs(*map1b),     true);
 #endif
   }
+  */
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Cloner, MapCloneEpetra, LO, GO, N2 )
   {
@@ -359,7 +362,7 @@ namespace {
   typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
 #endif
 
-
+  /*
 #if defined(HAVE_XPETRA_TPETRA)
 #ifdef HAVE_TPETRA_INST_INT_INT
         TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, int, NodeType )
@@ -372,6 +375,7 @@ namespace {
         TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, LongLong, NodeType )
 #endif
 #endif
+*/
 
 #if defined(HAVE_XPETRA_EPETRA)
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES

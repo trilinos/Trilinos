@@ -68,18 +68,15 @@ Declarations for the class Xpetra::Matrix.
 */
 namespace Xpetra {
 
+  /*
   template <class LocalOrdinal, class GlobalOrdinal, class Node1, class Node2>
   RCP<Map<LocalOrdinal,GlobalOrdinal,Node2> > clone(const Map<LocalOrdinal,GlobalOrdinal,Node1>& map, const RCP<Node2>& node2) {
     if (map.lib() == UseEpetra)
       throw std::invalid_argument("Map::clone() functionality is only available for Tpetra");
-#if defined(HAVE_XPETRA_TPETRA) && defined(TPETRA_ENABLE_DEPRECATED_CODE)
-    RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node1> > tMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node1> >(rcpFromRef(map));
-
-    return tMap->clone(node2);
-#else
+    //Removed because deprecated!
     return Teuchos::null;
-#endif
   }
+  */
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node1, class Node2>
   RCP<Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node1>& matrix, const RCP<Node2>& node2) {
