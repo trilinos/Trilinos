@@ -15,16 +15,16 @@
 #fi
 
 #TODO: jfrye 
-#if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
-#  unset ATDM_CONFIG_KOKKOS_ARCH
-#else
-#  echo
-#  echo "***"
-#  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on doom builds"
-#  echo "*** remove '$ATDM_CONFIG_KOKKOS_ARCH' from JOB_NAME=$JOB_NAME"
-#  echo "***"
-#  return
-#fi
+if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
+  ATDM_CONFIG_KOKKOS_ARCH="BDW,Pascal60"
+else
+  echo
+  echo "***"
+  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on doom builds"
+  echo "*** remove '$ATDM_CONFIG_KOKKOS_ARCH' from JOB_NAME=$JOB_NAME"
+  echo "***"
+  return
+fi
 
 echo "Using doom compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
@@ -79,9 +79,13 @@ if [[ "${ATDM_CONFIG_ENABLE_STRONG_WARNINGS}" == "" ]] ; then
   export ATDM_CONFIG_ENABLE_STRONG_WARNINGS=1
 fi
 
+echo $ATDM_CONFIG_COMPILER
+
 if [[ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ]] ; then
   ATDM_CONFIG_COMPILER="CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1"
 fi
+
+echo $ATDM_CONFIG_COMPILER
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1" ]] ; then
   unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
@@ -137,9 +141,9 @@ fi
 # modules change them!
 
 # Use updated Ninja and CMake
-module load sems-env
-module load atdm-env
-module load atdm-ninja_fortran/1.7.2
+#module load sems-env
+#module load atdm-env
+#module load atdm-ninja_fortran/1.7.2
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 
