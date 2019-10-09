@@ -1156,7 +1156,6 @@ template<class ScalarType, class MV, class OP>
 bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
   typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestGenResNorm_t;
   typedef Belos::StatusTestImpResNorm<ScalarType,MV,OP>  StatusTestImpResNorm_t;
 
@@ -1215,22 +1214,9 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   }
 
   if (nonnull(userConvStatusTest_) ) {
-    // Check if this is a single residual test
-    Teuchos::RCP<StatusTestResNorm_t> tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(userConvStatusTest_);
-    // If the residual status test is a single test, put in the vector
-    if (tmpResTest != Teuchos::null) {
-      // Override the overall convergence test with the users convergence test
-      convTest_ = Teuchos::rcp(
-        new StatusTestCombo_t( comboType_, convTest_, userConvStatusTest_ ) );
-      // brief output style not compatible with more general combinations
-      //outputStyle_ = Belos::General;
-      // NOTE: Above, you have to run the other convergence tests also because
-      // the logic in this class depends on it.  This is very unfortunate.
-    }
-    else{
-      // Check if the residual test is a combination of several StatusTestResNorm objects.
-      Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(userConvStatusTest_);
-      TEUCHOS_TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"PseudoBlockGmresSolMgr::checkStatusTest():  test must be Belos::StatusTest[MaxIters|ResNorm|Combo].");
+    // Check if this is a combination of several StatusTestResNorm objects
+    Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(userConvStatusTest_);
+    if (tmpComboTest != Teuchos::null) {
       std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = tmpComboTest->getStatusTests();
       comboType_ = tmpComboTest->getComboType();
       int numResTests_ = tmpVec.size();
@@ -1240,6 +1226,15 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
       for (int j=1; j<numResTests_; ++j) {
 	      tmpConvTest->addStatusTest(tmpVec[j]);
       }
+    }
+    else{
+      // Override the overall convergence test with the users convergence test
+      convTest_ = Teuchos::rcp(
+        new StatusTestCombo_t( comboType_, convTest_, userConvStatusTest_ ) );
+      // brief output style not compatible with more general combinations
+      //outputStyle_ = Belos::General;
+      // NOTE: Above, you have to run the other convergence tests also because
+      // the logic in this class depends on it.  This is very unfortunate.
     }
   }
 
