@@ -453,27 +453,6 @@ private:
   // when MJ decides whether to migrate, the minimum imbalance for migration.
   double minimum_migration_imbalance;
 
-  // Nonuniform first level partitioning
-  // (Currently available only for sequential_task_partitioning):
-  // Used for Dragonfly task mapping by partitioning Dragonfly RCA
-  // machine coordinates and application coordinates.
-  // An optimization that completely partitions the most important machine dimension
-  // first (i.e. the Dragonfly group coordinate, or RCA's x coordinate). The standard
-  // MJ alg follows after the nonuniform first level partitioning.
-  //
-  // Ex. (first level partitioning): If we have 120 elements,
-  // num_first_level_parts = 3, first_level_distribution = [4, 10, 6], then
-  // part sizes after first level will be [24, 60, 36]. Standard uniform MJ
-  // continues for all subsequent levels.
-
-  // If used, number of parts requested for a nonuniform
-  // first level partitioning
-  mj_part_t num_first_level_parts;
-
-  // If used, the requested distribution of parts for the
-  // nonuniform first level partitioning
-  Kokkos::View<mj_part_t*, Kokkos::HostSpace> first_level_distribution;
-
   mj_part_t total_num_cut ;           // how many cuts will be totally
   mj_part_t total_num_part;           // how many parts will be totally
 
@@ -1097,20 +1076,6 @@ public:
    * parts each should be divided during partitioning.
    * \param partition_along_longest_dim  DOCWORK: Documentation
    * \param divide_to_prime_first_ DOCWORK: Documentation
-   *  Nonuniform first level partitioning (Currently available only for sequential_task_partitioning):
-   *  Currently used for Dragonfly task mapping by partitioning Dragonfly RCA
-   *  machine coordinates and application coordinates.
-   *  An optimization that completely partitions the most important machine dimension
-   *  first (i.e. the Dragonfly group coordinate, or RCA's x coordinate). The standard
-   *  MJ alg follows after the nonuniform first level partitioning.
-   *  \param num_first_level_parts_: the number of parts after the first level of
-   *  partitioning (may be nonuniform)
-   *  \param first_level_distribution_: a view containing the distribution of
-   *  elements in each part after the first cut (used for nonuniform first cuts)
-   *  Ex. (first level partitioning): If we have 120 elements,
-   *  num_first_level_parts = 3, first_level_distribution = [4, 10, 6], then
-   *  part sizes after first level will be [24, 60, 36]. Standard uniform MJ
-   *  continues for all subsequent levels.
    */
   void sequential_task_partitioning(
     const RCP<const Environment> &env,
@@ -1127,10 +1092,7 @@ public:
     const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & part_no_array,
     bool partition_along_longest_dim,
     int num_ranks_per_node,
-    bool divide_to_prime_first_,
-    mj_part_t num_first_level_parts_ = 1,
-    const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & first_level_distribution_
-      = Kokkos::View<mj_part_t *, Kokkos::HostSpace>());
+    bool divide_to_prime_first_);
 
 #ifdef KOKKOS_ENABLE_CUDA
   public:
@@ -1196,13 +1158,6 @@ public:
    * future_num_part_in_parts vector.
    * \param obtained_part_index holds the amount of shift in the
    * next_future_num_parts_in_parts for the output parts.
-   * Nonuniform first level partitioning:
-   * \param num_target_first_level_parts is the number of parts requested
-   * after the first level of partitioning (resulting parts may be imbalanced)
-   * \param target_first_level_dist is an array requesting the distribution of
-   * elements in each part after the first cut (used for nonuniform first cuts)
-   * Ex. If we have num_first_level_parts = 3, first_level_dist = [4, 10, 6], then
-   * target_part_weights will be [.20, .70, 1.00] * global_weight
    */
   void mj_get_initial_cut_coords_target_weights(
     mj_scalar_t min_coord,
@@ -1214,10 +1169,7 @@ public:
     std::vector <mj_part_t> *future_num_part_in_parts,
     std::vector <mj_part_t> *next_future_num_parts_in_parts,
     mj_part_t concurrent_current_part,
-    mj_part_t obtained_part_index,
-    mj_part_t num_target_first_level_parts = 1,
-    const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & target_first_level_dist =
-      Kokkos::View<mj_part_t *, Kokkos::HostSpace>());
+    mj_part_t obtained_part_index);
 
   /*! \brief Function that calculates the new coordinates for the cut lines.
    * Function is called inside the parallel region.
@@ -1457,7 +1409,6 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::AlgMJ():
   mj_keep_part_boxes(false),
   check_migrate_avoid_migration_option(0), migration_type(0),
   minimum_migration_imbalance(0.30),
-  num_first_level_parts(1),
   total_num_cut(0), total_num_part(0), max_num_part_along_dim(0),
   max_num_cut_along_dim(0),
   max_num_total_part_along_dim(0),
@@ -1495,25 +1446,7 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::AlgMJ():
  * \param partition_along_longest_dim DOCWORK: Documentation
  * \param num_ranks_per_node DOCWORK: Documentation
  * \param divide_to_prime_first_ DOCWORK: Documentation
- *
- *  Nonuniform first level partitioning:
- *  Currently used for Dragonfly task mapping by partitioning Dragonfly RCA
- *  machine coordinates and application coordinates.
- *  An optimization that completely partitions the most important machine
- *  dimension first (i.e. the Dragonfly group coordinate, or RCA's x
- *  coordinate). The standard MJ alg follows after the nonuniform first level
- *  partitioning.
- *
- * \param num_target_first_level_parts: the number of parts requested after
- * the first level of partitioning (resulting parts may be imbalanced)
- * \param first_level_dist: an array requesting the distribution of elements
- * in each part after the first cut (used for nonuniform first cuts)
- *
- *  Ex. (first level partitioning): If we have 120 elements,
- *  num_first_level_parts = 3, first_level_distribution = [4, 10, 6], then
- *  part sizes after first level will be [24, 60, 36]. Standard uniform MJ
- *  continues for all subsequent levels.
-*/
+ */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
   typename mj_part_t, typename mj_node_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
@@ -1532,9 +1465,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & part_no_array_,
   bool partition_along_longest_dim,
   int num_ranks_per_node,
-  bool divide_to_prime_first_,
-  mj_part_t num_first_level_parts_,
-  const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & first_level_distribution_)
+  bool divide_to_prime_first_)
 {
   this->mj_env = env;
   const RCP<Comm<int> > commN;
@@ -1551,13 +1482,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   this->num_global_parts = num_target_part;
   this->part_no_array = part_no_array_;
   this->recursion_depth = rd;
-
-  // If nonuniform first level partitioning, the requested num of parts and the
-  // requested distribution of elements for each part
-  this->num_first_level_parts = num_first_level_parts_;
-
-  this->first_level_distribution = first_level_distribution_;
-
   this->coord_dim = coord_dim_;
   this->num_local_coords = num_total_coords;
 
@@ -1605,6 +1529,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     local_coordinate_permutations(i) = local_inital_adjList_output_adjlist(i);
   });
 
+
   mj_part_t current_num_parts = 1;
 
   Kokkos::View<mj_scalar_t *, device_t> current_cut_coordinates =
@@ -1634,7 +1559,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   Kokkos::View<size_t*, device_t>
     view_total_reduction_size("view_total_reduction_size", 1);
 
-  for(int rd = 0; rd < this->recursion_depth; ++rd) {
+  for(int i = 0; i < this->recursion_depth; ++i) {
 
     auto local_new_coordinate_permutations =
       this->new_coordinate_permutations;
@@ -1659,7 +1584,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
         next_future_num_parts_in_parts,
         future_num_parts,
         current_num_parts,
-        rd,
+        i,
         t1,
         t2, num_ranks_per_node);
 
@@ -1674,7 +1599,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     }
 
     //convert i to string to be used for debugging purposes.
-    std::string istring = std::to_string(rd);
+    std::string istring = std::to_string(i);
 
     // alloc Memory to point the indices
     // of the parts in the permutation array.
@@ -1695,7 +1620,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     mj_part_t obtained_part_index = 0;
 
     // get the coordinate axis along which the partitioning will be done.
-    int coordInd = rd % this->coord_dim;
+    int coordInd = i % this->coord_dim;
 
     Kokkos::View<mj_scalar_t *, device_t> mj_current_dim_coords =
       Kokkos::subview(this->mj_coordinates, Kokkos::ALL, coordInd);
@@ -1712,6 +1637,19 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       current_work_part += current_concurrent_num_parts) {
 
       mj_part_t actual_work_part_count = 0;
+
+      for(int coord_traverse_ind = 0;
+        coord_traverse_ind < this->coord_dim; ++coord_traverse_ind) {
+        // MD:same for all coordinates, but I will still use this for now.
+
+        Kokkos::View<mj_scalar_t *, device_t> coords =
+          Kokkos::subview(this->mj_coordinates, Kokkos::ALL, coord_traverse_ind);
+
+        this->mj_get_local_min_max_coord_totW(
+          current_work_part,
+          current_concurrent_num_parts,
+          coords);
+      }
 
       // initialization for 1D partitioning.
       // get the min and max coordinates of each part
@@ -1733,15 +1671,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
             this->process_local_min_max_coord_total_weight;
           for(int coord_traverse_ind = 0;
             coord_traverse_ind < this->coord_dim; ++coord_traverse_ind) {
-
-            Kokkos::View<mj_scalar_t *, device_t> coords =
-              Kokkos::subview(this->mj_coordinates, Kokkos::ALL, coord_traverse_ind);
-
-            this->mj_get_local_min_max_coord_totW(
-              current_work_part,
-              current_concurrent_num_parts,
-              coords);
-
             coord_dimension_range_sorted[coord_traverse_ind].id =
               coord_traverse_ind;
             coord_dimension_range_sorted[coord_traverse_ind].signbit = 1;
@@ -1762,6 +1691,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
           uqSignsort(this->coord_dim, p_coord_dimension_range_sorted);
           coordInd = p_coord_dimension_range_sorted[this->coord_dim - 1].id;
+          mj_current_dim_coords =
+            Kokkos::subview(this->mj_coordinates, Kokkos::ALL, coordInd);
+
           auto set_min = coord_dim_mins[coordInd];
           auto set_max = coord_dim_maxs[coordInd];
           Kokkos::parallel_for(
@@ -1771,17 +1703,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
             local_process_local_min_max_coord_total_weight(
               kk + current_concurrent_num_parts) = set_max;
           });
-
-          mj_current_dim_coords =
-            Kokkos::subview(this->mj_coordinates, Kokkos::ALL, coordInd);
-        }
-        else {
-            Kokkos::View<mj_scalar_t *, device_t> coords =
-              Kokkos::subview(this->mj_coordinates, Kokkos::ALL, coordInd);
-            this->mj_get_local_min_max_coord_totW(
-              current_work_part,
-              current_concurrent_num_parts,
-              coords);
         }
       }
 
@@ -1802,8 +1723,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
         mj_part_t total_incomplete_cut_count = 0;
 
         //Compute weight ratios for parts & cuts:
-        //e.g., 0.25  0.25 0.5   0.5  0.75  0.75  1.0
-        //      part0 cut0 part1 cut1 part2 cut2  part3
+        //e.g., 0.25  0.25  0.5    0.5  0.75 0.75  1
+        //part0  cut0  part1 cut1 part2 cut2 part3
         mj_part_t concurrent_part_cut_shift = 0;
         mj_part_t concurrent_part_part_shift = 0;
         for(int kk = 0; kk < current_concurrent_num_parts; ++kk) {
@@ -1844,25 +1765,18 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
             this->incomplete_cut_count(kk) = partition_count - 1;
 
-            // When num_first_level_parts != 1 we have
-            // nonuniform partitioning on the first level, providing
-            // requested number of parts (num_first_level_parts) and
-            // requested distribution in parts (first_level_distribution)
-
-            // Get the target part weights given a desired distribution
+            // get the target weights of the parts.
             this->mj_get_initial_cut_coords_target_weights(
-                min_coordinate,
-                max_coordinate,
-                partition_count - 1,
-                global_total_weight,
-                usedCutCoordinate,
-                current_target_part_weights,
-                future_num_part_in_parts,
-                next_future_num_parts_in_parts,
-                concurrent_current_part_index,
-                obtained_part_index,
-                rd == 0 ? this->num_first_level_parts : 1,
-                this->first_level_distribution);
+              min_coordinate,
+              max_coordinate,
+              partition_count - 1,
+              global_total_weight,
+              usedCutCoordinate,
+              current_target_part_weights,
+              future_num_part_in_parts,
+              next_future_num_parts_in_parts,
+              concurrent_current_part_index,
+              obtained_part_index);
 
             mj_lno_t coordinate_end_index =
               host_part_xadj(concurrent_current_part_index);
@@ -1895,7 +1809,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
         // Determine cut lines for k parts here.
         this->mj_env->timerStart(MACRO_TIMERS,
           mj_timer_base_string + "mj_1D_part()");
-
         this->mj_1D_part(
           mj_current_dim_coords,
           used_imbalance,
@@ -2011,7 +1924,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
               Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_lno_t>
               (0, part_size), KOKKOS_LAMBDA (mj_lno_t n) {
               local_new_coordinate_permutations(n+coordinate_begin) =
-                local_coordinate_permutations(n+coordinate_begin);
+                local_new_coordinate_permutations(n+coordinate_begin);
             });
           }
 
@@ -2067,7 +1980,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
         }
       }
     }
-
     // end of this partitioning dimension
     // set the current num parts for next dim partitioning
     current_num_parts = output_part_count_in_dimension;
@@ -2171,54 +2083,19 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   } else {
     mj_part_t future_num_parts = this->num_global_parts;
 
-    // If using nonuniform first level partitioning.
-    // initial value max_num_part_along_dim == num_first_level_parts
-    if (this->first_level_distribution.size() != 0 &&
-        this->num_first_level_parts > 1) {
-      this->max_num_part_along_dim = this->num_first_level_parts;
-    }
-
     // we need to calculate the part numbers now, to determine
     // the maximum along the dimensions.
-    for(int rd = 0; rd < this->recursion_depth; ++rd) {
-      mj_part_t maxNoPartAlongI = 0;
-      mj_part_t nfutureNumParts = 0;
+    for(int i = 0; i < this->recursion_depth; ++i) {
+      mj_part_t maxNoPartAlongI = this->get_part_count(
+        future_num_parts, 1.0f / (this->recursion_depth - i));
 
-      // Nonuniform first level partitioning sets part specificiations for
-      // rd == 0 only, given requested num of parts and distribution in parts
-      // for the first level.
-      if (rd == 0 &&
-          this->first_level_distribution.size() != 0 &&
-          this->num_first_level_parts > 1) {
-
-        maxNoPartAlongI = this->num_first_level_parts;
-        this->max_num_part_along_dim = this->num_first_level_parts;
-
-        mj_part_t sum_first_level_dist = 0;
-        mj_part_t max_part = 0;
-
-        // Cumulative sum of distribution of parts and size of largest part
-        for (int i = 0; i < this->num_first_level_parts; ++i) {
-          sum_first_level_dist += this->first_level_distribution(i);
-          if (this->first_level_distribution(i) > max_part)
-            max_part = this->first_level_distribution(i);
-        }
-
-        // Total parts in largest nonuniform superpart from
-        // first level partitioning
-        nfutureNumParts =
-          this->num_global_parts * max_part / sum_first_level_dist;
+      if(maxNoPartAlongI > this->max_num_part_along_dim) {
+        this->max_num_part_along_dim = maxNoPartAlongI;
       }
-      // Standard uniform partitioning this level
-      else {
-        maxNoPartAlongI = this->get_part_count(future_num_parts,
-          1.0f / (this->recursion_depth - rd));
-        if (maxNoPartAlongI > this->max_num_part_along_dim)
-          this->max_num_part_along_dim = maxNoPartAlongI;
-        nfutureNumParts = future_num_parts / maxNoPartAlongI;
-        if (future_num_parts % maxNoPartAlongI) {
-                ++nfutureNumParts;
-        }
+
+      mj_part_t nfutureNumParts = future_num_parts / maxNoPartAlongI;
+      if(future_num_parts % maxNoPartAlongI) {
+        ++nfutureNumParts;
       }
       future_num_parts = nfutureNumParts;
     }
@@ -2233,6 +2110,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       //estimate reduceAll Count here.
       //we find the upperbound instead.
       size_t p = 1;
+
       for(int i = 0; i < this->recursion_depth; ++i) {
         this->total_dim_num_reduce_all += p;
         p *= this->max_num_part_along_dim;
@@ -2330,44 +2208,16 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       this->part_no_array(current_iteration);
 
     if(current_part_no_array < 1) {
-      std::cout << "Current recursive iteration: " << current_iteration <<
-        " part_no_array[" << current_iteration << "] is given as:" <<
-        current_part_no_array << std::endl;
-      std::terminate();
+      std::cout << "i:" << current_iteration <<
+        " p is given as:" << current_part_no_array << std::endl;
+        std::terminate();
     }
     if(current_part_no_array == 1) {
       return current_num_parts;
     }
-
-    // If using part_no_array, ensure compatibility with num_first_level_parts.
-    if (this->first_level_distribution.size() != 0 &&
-      current_iteration == 0 &&
-      current_part_no_array != this->num_first_level_parts) {
-      std::cout << "Current recursive iteration: " << current_iteration
-        << " part_no_array[" << current_iteration << "] is given as: " <<
-        current_part_no_array << " and contradicts num_first_level_parts: " <<
-        this->num_first_level_parts << std::endl;
-      std::terminate();
-    }
-
     for(mj_part_t ii = 0; ii < current_num_parts; ++ii) {
       num_partitioning_in_current_dim.push_back(current_part_no_array);
     }
-
-/*
-    std::cout << "\n\nme: " << this->myRank << " current_iteration: " <<
-      current_iteration << " current_num_parts: " <<
-      current_num_parts << "\n\n";
-
-    std::cout << "\n\nnum_partitioning_in_current_dim[0]: " <<
-      num_partitioning_in_current_dim[0] << "\n\n";
-
-    std::cout << "\n\nfuture_num_parts: " << future_num_parts
-     << " num_partitioning_in_current_dim[0]: " <<
-     num_partitioning_in_current_dim[0] << " " <<
-     future_num_parts / num_partitioning_in_current_dim[0] << "\n\n";
-*/
-
     future_num_parts /= num_partitioning_in_current_dim[0];
     output_num_parts = current_num_parts *
       num_partitioning_in_current_dim[0];
@@ -2411,130 +2261,85 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       if(num_partitions_in_current_dim > this->max_num_part_along_dim) {
         std::cerr << "ERROR: maxPartNo calculation is wrong."
           " num_partitions_in_current_dim: "
-          << num_partitions_in_current_dim <<  " this->max_num_part_along_dim: "
+          << num_partitions_in_current_dim <<  "this->max_num_part_along_dim:"
           << this->max_num_part_along_dim <<
-          " this->recursion_depth: " << this->recursion_depth <<
+          " this->recursion_depth:" << this->recursion_depth <<
           " current_iteration:" << current_iteration <<
-          " future_num_parts_of_part_ii: " << future_num_parts_of_part_ii <<
+          " future_num_parts_of_part_ii:" << future_num_parts_of_part_ii <<
           " might need to fix max part no calculation for "
-          "largest_prime_first partitioning." <<
+          "largest_prime_first partitioning" <<
           std::endl;
         std::terminate();
       }
       // add this number to vector_num_partitioning_in_current_dim vector.
-      // num_partitioning_in_current_dim.push_back(num_partitions_in_current_dim);
-      // mj_part_t largest_prime_factor = num_partitions_in_current_dim;
-
-      // Update part num arrays when on current_iteration == 0 and
-      // using nonuniform first level partitioning
-      // with requested num parts (num_first_level_parts) and
-      // a requested distribution in parts (first_level_distribution).
-      if (current_iteration == 0 &&
-          this->first_level_distribution.size() != 0 &&
-          this->num_first_level_parts > 1) {
-        // Only 1 current part to begin and partitions into
-        // num_first_level_parts many parts
-        num_partitioning_in_current_dim.push_back(this->num_first_level_parts);
-
-        // The output number of parts from first level partitioning
-        output_num_parts = this->num_first_level_parts;
-
-        // Remaining parts left to partition for all future levels
-        future_num_parts /= this->num_first_level_parts;
-
-        mj_part_t max_part = 0;
-        mj_part_t sum_first_level_dist = 0;
-
-        // Cumulative sum of distribution of first level parts
-        // and size of largest first level part
-        for (int i = 0; i < this->num_first_level_parts; ++i) {
-          sum_first_level_dist += this->first_level_distribution(i);
-
-          if (this->first_level_distribution(i) > max_part)
-            max_part = this->first_level_distribution(i);
-        }
-
-        // Maximum # of remaining parts left to partition for all future levels
-        future_num_parts = this->num_global_parts * max_part / sum_first_level_dist;
-
-        // Number of parts remaining left to partition for each future_part
-        // The sum must exactly equal global_num_parts
-        for (int i = 0; i < this->num_first_level_parts; ++i) {
-          next_future_num_parts_in_parts->push_back(this->first_level_distribution(i) *
-              this->num_global_parts / sum_first_level_dist);
-        }
-      }
-      else if (this->divide_to_prime_first) {
-        // Add this number to num_partitioning_in_current_dim vector.
-        num_partitioning_in_current_dim.push_back(num_partitions_in_current_dim);
-
-        mj_part_t largest_prime_factor = num_partitions_in_current_dim;
-
+      num_partitioning_in_current_dim.push_back(
+        num_partitions_in_current_dim);
+      mj_part_t largest_prime_factor = num_partitions_in_current_dim;
+      if(this->divide_to_prime_first) {
         //increase the output number of parts.
         output_num_parts += num_partitions_in_current_dim;
-
-        if (future_num_parts_of_part_ii == atomic_part_count ||
-            future_num_parts_of_part_ii % atomic_part_count != 0) {
+        if(future_num_parts_of_part_ii == atomic_part_count ||
+          future_num_parts_of_part_ii % atomic_part_count != 0) {
           atomic_part_count = 1;
         }
+        largest_prime_factor = this->find_largest_prime_factor(
+          future_num_parts_of_part_ii / atomic_part_count);
 
-        largest_prime_factor =
-          this->find_largest_prime_factor(future_num_parts_of_part_ii / atomic_part_count);
-
-        // We divide to  num_partitions_in_current_dim. But we adjust the weights
-        // based on largest prime/ if num_partitions_in_current_dim = 2,
-        // largest prime = 5 --> we divide to 2 parts with weights 3x and 2x.
+        // we divide to  num_partitions_in_current_dim. But we adjust the
+        // weights based on largest prime/
+        // if num_partitions_in_current_dim = 2, largest prime = 5 --> we
+        // divide to 2 parts with weights 3x and 2x.
         // if the largest prime is less than part count, we use the part count
         // so that we divide uniformly.
-        if (largest_prime_factor < num_partitions_in_current_dim) {
+        if(largest_prime_factor < num_partitions_in_current_dim) {
           largest_prime_factor = num_partitions_in_current_dim;
         }
         //ideal number of future partitions for each part.
         mj_part_t ideal_num_future_parts_in_part =
-          (future_num_parts_of_part_ii / atomic_part_count) / largest_prime_factor;
-        //if num_partitions_in_current_dim = 2, largest prime = 5 then ideal weight is 2x
-        mj_part_t ideal_prime_scale = largest_prime_factor / num_partitions_in_current_dim;
+          (future_num_parts_of_part_ii / atomic_part_count) /
+          largest_prime_factor;
+        // if num_partitions_in_current_dim = 2, largest prime = 5 then ideal
+        // weight is 2x
+        mj_part_t ideal_prime_scale = largest_prime_factor /
+          num_partitions_in_current_dim;
 
-/*
-        std::cout << "\ncurrent num part: " << ii
-          << " largest_prime_factor: " << largest_prime_factor
-          << " To Partition: " << future_num_parts_of_part_ii << "\n\n";
-*/
-
-        for (mj_part_t iii = 0; iii < num_partitions_in_current_dim; ++iii) {
-          //if num_partitions_in_current_dim = 2, largest prime = 5 then ideal weight is 2x
+        // std::cout << "current num part:" << ii << " largest_prime_factor:"
+        // << largest_prime_factor << " To Partition:" <<
+        // future_num_parts_of_part_ii << " ";
+        for(mj_part_t iii = 0; iii < num_partitions_in_current_dim; ++iii) {
+          // if num_partitions_in_current_dim = 2,
+          // largest prime = 5 then ideal weight is 2x
           mj_part_t my_ideal_primescale = ideal_prime_scale;
-          //left over weighs. Left side is adjusted to be 3x, right side stays as 2x
-          if (iii < (largest_prime_factor) % num_partitions_in_current_dim) {
+          // left over weighs. Left side is adjusted to be 3x,
+          // right side stays as 2x
+          if(iii < (largest_prime_factor) % num_partitions_in_current_dim) {
             ++my_ideal_primescale;
           }
           //scale with 'x';
           mj_part_t num_future_parts_for_part_iii =
             ideal_num_future_parts_in_part * my_ideal_primescale;
-
-           //if there is a remainder in the part increase the part weight.
-          if (iii < (future_num_parts_of_part_ii / atomic_part_count) % largest_prime_factor) {
+          //if there is a remainder in the part increase the part weight.
+          if(iii < (future_num_parts_of_part_ii /
+            atomic_part_count) % largest_prime_factor) {
             //if not uniform, add 1 for the extra parts.
             ++num_future_parts_for_part_iii;
           }
 
-          next_future_num_parts_in_parts->push_back(num_future_parts_for_part_iii * atomic_part_count);
+          next_future_num_parts_in_parts->push_back(
+            num_future_parts_for_part_iii * atomic_part_count);
 
-          //if part boxes are stored, initialize the box of the parts as the ancestor.
-          if (this->mj_keep_part_boxes) {
+          // if part boxes are stored, initialize the box of the parts as
+          // the ancestor.
+          if(this->mj_keep_part_boxes) {
             output_part_boxes->push_back((*input_part_boxes)[ii]);
           }
-
           //set num future_num_parts to maximum in this part.
-          if (num_future_parts_for_part_iii > future_num_parts)
+          if(num_future_parts_for_part_iii > future_num_parts) {
             future_num_parts = num_future_parts_for_part_iii;
-
+          }
         }
       }
       else {
-        // Add this number to num_partitioning_in_current_dim vector.
-        num_partitioning_in_current_dim.push_back(num_partitions_in_current_dim);
-
         //increase the output number of parts.
         output_num_parts += num_partitions_in_current_dim;
 
@@ -3029,15 +2834,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
  * future_num_part_in_parts vector.
  * \param obtained_part_index holds the amount of shift in the
  * next_future_num_parts_in_parts for the output parts.
- *
- * Nonuniform first level partitioning:
- * \param num_target_first_level_parts is the number of parts requested
- * after the first level of partitioning (resulting parts may be imbalanced)
- * \param target_first_level_dist is an array requesting the distribution of
- * elements in each part after the first cut (used for nonuniform first cuts)
- *
- * Ex. If we have num_first_level_parts = 3, first_level_dist = [4, 10, 6], then
- * target_part_weights will be [.20, .70, 1.00] * global_weight
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
   typename mj_part_t, typename mj_node_t>
@@ -3054,85 +2850,60 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   std::vector <mj_part_t> *future_num_part_in_parts, //the vecto
   std::vector <mj_part_t> *next_future_num_parts_in_parts,
   mj_part_t concurrent_current_part,
-  mj_part_t obtained_part_index,
-  mj_part_t num_target_first_level_parts,
-  const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & target_first_level_dist)
+  mj_part_t obtained_part_index)
 {
   mj_scalar_t coord_range = max_coord - min_coord;
 
-  // We decided we could keep some std::vectors around for now. Eventually
-  // it would be nice to have everything just as views with some being device
-  // and some host. This particular case needs a bit of work to get setup
-  // in a cleaner way so not going to mess with it at the moment.
-
-  bool bUniformTargetWeights =
-    num_target_first_level_parts <= 1 && this->mj_uniform_parts(0);
-
-  if(!bUniformTargetWeights) {
-    bool bValidNonUniformTargetWeights =
-      (num_target_first_level_parts > 1 && target_first_level_dist.size() != 0);
-    if(!bValidNonUniformTargetWeights) {
-      std::cerr << "MJ does not support non uniform part weights beyond the first partition" << std::endl;
-      std::terminate();
+  if(this->mj_uniform_parts(0)) {
+    // We decided we could keep some std::vectors around for now. Eventually
+    // it would be nice to have everything just as views with some being device
+    // and some host. This particular case needs a bit of work to get setup
+    // in a cleaner way so not going to mess with it at the moment.
+    Kokkos::View<mj_part_t*, device_t> device_num_in_parts(
+      "device_num_in_parts", num_cuts);
+    typename decltype(device_num_in_parts)::HostMirror
+      host_num_in_parts = Kokkos::create_mirror_view(device_num_in_parts);
+    mj_part_t cumulative = 0;
+    for(mj_part_t i = 0; i < num_cuts; ++i) {
+      cumulative += (*next_future_num_parts_in_parts)[i + obtained_part_index];
+      host_num_in_parts(i) = cumulative;
     }
-  }
+    Kokkos::deep_copy(device_num_in_parts, host_num_in_parts);
 
-  Kokkos::View<mj_part_t*, device_t> device_cumulative(
-    "device_cumulative", num_cuts);
-  typename decltype(device_cumulative)::HostMirror
-    host_cumulative = Kokkos::create_mirror_view(device_cumulative);
-
-  mj_part_t cumulative = 0;
-
-  if(bUniformTargetWeights) {
-    // How many total future parts the part will be partitioned into.
+    // how many total future parts the part will be partitioned into.
     mj_scalar_t total_future_part_count_in_part =
       mj_scalar_t((*future_num_part_in_parts)[concurrent_current_part]);
-
-    // How much each part should weigh in ideal case.
+    // how much each part should weigh in ideal case.
     mj_scalar_t unit_part_weight =
       global_weight / total_future_part_count_in_part;
 
-    for(mj_part_t i = 0; i < num_cuts; ++i) {
-      cumulative += unit_part_weight * (*next_future_num_parts_in_parts)[i + obtained_part_index];
-      host_cumulative(i) = cumulative;
+    Kokkos::parallel_for("Write num in parts",
+      Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_part_t>
+      (0, num_cuts), KOKKOS_LAMBDA(mj_part_t cut) {
+        // set target part weight.
+        current_target_part_weights(cut) =
+          device_num_in_parts(cut) * unit_part_weight;
+        initial_cut_coords(cut) = min_coord +
+          (coord_range * device_num_in_parts(cut)) /
+          total_future_part_count_in_part;
+        current_target_part_weights(num_cuts) = 1;
+    });
+
+    // round the target part weights.
+    if(mj_uniform_weights(0)) {
+      Kokkos::parallel_for(
+        Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_part_t>
+          (0, num_cuts + 1),
+        KOKKOS_LAMBDA (mj_part_t i) {
+        current_target_part_weights(i) =
+          long(current_target_part_weights(i) + 0.5);
+      });
     }
   }
   else {
-    // Sum of entries in the first level partition distribution vector
-    mj_scalar_t sum_target_first_level_dist = 0.0;
-    for (int i = 0; i < num_target_first_level_parts; ++i) {
-      sum_target_first_level_dist += target_first_level_dist(i);
-    }
-
-    for(mj_part_t i = 0; i < num_cuts; ++i) {
-      cumulative += global_weight * target_first_level_dist(i) /
-        sum_target_first_level_dist;
-      host_cumulative(i) = cumulative;
-    }
+    std::cerr << "MJ does not support non uniform part weights" << std::endl;
+    std::terminate();
   }
-
-  Kokkos::deep_copy(device_cumulative, host_cumulative);
-
-  Kokkos::parallel_for("Write num in parts",
-    Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_part_t>
-    (0, num_cuts), KOKKOS_LAMBDA(mj_part_t cut) {
-      // set target part weight.
-      current_target_part_weights(cut) = device_cumulative(cut);
-      initial_cut_coords(cut) = min_coord +
-        (coord_range * device_cumulative(cut)) / global_weight;
-      // set this multiple times but here for device handling
-      current_target_part_weights(num_cuts) = global_weight;
-  });
-
-  // round the target part weights.
-  Kokkos::parallel_for(
-    Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_part_t>
-      (0, num_cuts + 1),
-    KOKKOS_LAMBDA (mj_part_t i) {
-    current_target_part_weights(i) =
-      long(current_target_part_weights(i) + 0.5);
-  });
 }
 
 /*! \brief Function that calculates the new coordinates for the cut lines.
@@ -4803,9 +4574,7 @@ mj_create_new_partitions(
 
   // just need parts - on the cuts will be handled in a separate serial
   // call after this.
-#ifndef KOKKOS_ENABLE_CUDA
   array_t * reduce_array = new array_t[static_cast<size_t>(num_parts)];
-#endif
 
   ReduceArrayFunctor<policy_t, mj_scalar_t, mj_part_t, mj_lno_t,
     typename mj_node_t::device_type, array_t>teamFunctor(
@@ -4828,9 +4597,14 @@ mj_create_new_partitions(
 #endif
 
 #ifndef KOKKOS_ENABLE_CUDA
+  // Move it from global memory to device memory
+  typename decltype(local_point_counts)::HostMirror host_part_count =
+      Kokkos::create_mirror_view(local_point_counts);
   for(mj_part_t part = 0; part < num_parts; ++part) {
-    local_point_counts(part) = reduce_array[part];
+    host_part_count(part) = reduce_array[part];
   }
+  Kokkos::deep_copy(local_point_counts, host_part_count);
+
   delete [] reduce_array;
 #endif
 
@@ -4947,9 +4721,7 @@ mj_create_new_partitions(
 
 #ifdef KOKKOS_ENABLE_CUDA
 
-  // This is the fastest so far - just straight atomic writes for CUDA
-  // However this is not a deterministic result since it is atomic.
-  // The final result will be deterministic.
+  // This is the fastest so far - just straight atomic writes
   Kokkos::parallel_for(
     Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_lno_t> (
     coordinate_begin_index, coordinate_end_index),
@@ -5557,7 +5329,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
   // this is the portion of the memory where each stores its local number.
   // this information is needed by other processors.
-  mj_gno_t *my_local_point_counts_in_each_part =
+  mj_gno_t *my_local_point_counts_in_each_art =
     num_local_points_in_each_part_to_reduce_sum + this->myRank * num_parts;
 
   // initialize the array with 0's.
@@ -5582,7 +5354,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
   // copy the local num parts to the last portion of array, so that this portion
   // will represent the global num points in each part after the reduction.
-  memcpy (my_local_point_counts_in_each_part, my_local_points_to_reduce_sum,
+  memcpy (my_local_point_counts_in_each_art, my_local_points_to_reduce_sum,
     sizeof(mj_gno_t) * (num_parts) );
 
   // reduceAll operation.
@@ -5598,7 +5370,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       num_points_in_all_processor_parts);
   }
   Z2_THROW_OUTSIDE_ERROR(*(this->mj_env))
-
   delete [] num_local_points_in_each_part_to_reduce_sum;
 }
 
@@ -5761,6 +5532,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   mj_part_t &out_part_index,
   mj_part_t &output_part_numbering_begin_index,
   int * coordinate_destinations) {
+
   mj_gno_t *global_num_points_in_parts =
     num_points_in_all_processor_parts + num_procs * num_parts;
   mj_part_t *num_procs_assigned_to_each_part = new mj_part_t[num_parts];
@@ -6234,8 +6006,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   std::vector<mj_part_t> &out_part_indices,
   mj_part_t &output_part_numbering_begin_index,
   int *coordinate_destinations) {
-
   out_num_part = 0;
+
   mj_gno_t *global_num_points_in_parts =
     num_points_in_all_processor_parts + num_procs * num_parts;
   out_part_indices.clear();
@@ -6286,7 +6058,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   uqsort<mj_part_t, mj_gno_t>(num_parts, sort_item_point_counts_in_parts);
 
   // assigning parts to the processors
-  // traverse the part with decreasing order of load.
+  // traverse the part win decreasing order of load.
   // first assign the heaviest part.
   for(mj_part_t j = 0; j < num_parts; ++j) {
     // sorted with increasing order, traverse inverse.
@@ -6297,6 +6069,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
     // assigned processors
     mj_part_t assigned_proc = -1;
+
+    // if not fit best processor.
+    mj_part_t best_proc_to_assign = 0;
 
     // sort processors with increasing number of points in this part.
     for(mj_part_t ii = 0; ii < num_procs; ++ii) {
@@ -6322,25 +6097,22 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // traverse all processors with decreasing load.
     for(mj_part_t iii = num_procs - 1; iii >= 0; --iii) {
       mj_part_t ii = sort_item_num_points_of_proc_in_part_i[iii].id;
-      if(assigned_proc == -1 ||
-        (space_in_each_processor[ii] > space_in_each_processor[assigned_proc])) {
+      mj_lno_t left_space = space_in_each_processor[ii] - load;
+      //if enought space, assign to this part.
+      if(left_space >= 0 ) {
         assigned_proc = ii;
+        break;
       }
-      else if(space_in_each_processor[ii] == space_in_each_processor[assigned_proc]) {
-        if(ii < assigned_proc) {
-          // ties go to lower proc
-          // not necessary for a valid result but allows testing to compare
-          // MPI results and have parts numbers assigned to the same boxes.
-          // We don't break here because we may have more ties still to check.
-          // The indeterminate state before this is due to Cuda using
-          // atomics to refill the permutation array. So non-cuda runs don't
-          // actualy need this since they will always have the same pattern.
-          assigned_proc = ii;
-        }
+      //if space is not enough, store the best candidate part.
+      if(space_in_each_processor[best_proc_to_assign] <
+        space_in_each_processor[ii]) {
+        best_proc_to_assign = ii;
       }
-      else {
-        break; // now we can break - we have our part and no more ties.
-      }
+    }
+
+    // if none had enough space, then assign it to best part.
+    if(assigned_proc == -1) {
+      assigned_proc = best_proc_to_assign;
     }
 
     if(num_parts_proc_assigned[assigned_proc]++ == 0) {
@@ -7077,8 +6849,8 @@ bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   this->create_sub_communicator(processor_ranks_for_subcomm);
 
   processor_ranks_for_subcomm.clear();
-
   // fill the new permutation arrays.
+
   this->fill_permutation_array(output_num_parts, input_num_parts);
 
   return true;
@@ -7141,6 +6913,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       mj_part_t> (0, no_cuts), KOKKOS_LAMBDA (mj_part_t i) {
       // the left to be put on the left of the cut.
       mj_scalar_t left_weight = used_local_cut_line_weight_to_left(i);
+      // cout << "i:" << i << " left_weight:" << left_weight << endl;
       if(left_weight > local_sEpsilon) {
         // the weight of thread ii on cut.
         mj_scalar_t thread_ii_weight_on_cut =
@@ -7153,6 +6926,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
         else {
           local_thread_cut_line_weight_to_put_left(i) = left_weight;
         }
+        left_weight -= thread_ii_weight_on_cut;
       }
       else {
         local_thread_cut_line_weight_to_put_left(i) = 0;
@@ -7160,29 +6934,27 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     });
 
     if(no_cuts > 0) {
-      auto local_least_signifiance = least_signifiance;
-      auto local_significance_mul = significance_mul;
-      Kokkos::parallel_for(
-        Kokkos::RangePolicy<typename mj_node_t::execution_space, int>
-        (0, 1), KOKKOS_LAMBDA (int dummy) {
-        // this is a special case. If cutlines share the same coordinate,
-        // their weights are equal.
-        // we need to adjust the ratio for that.
-        for(mj_part_t i = no_cuts - 1; i > 0 ; --i) {
-          mj_scalar_t cut1 = current_concurrent_cut_coordinate(i-1);
-          mj_scalar_t cut2 = current_concurrent_cut_coordinate(i);
-          mj_scalar_t delta = cut2 - cut1;
-          mj_scalar_t abs_delta = (delta > 0) ? delta : -delta;
-          if(abs_delta < local_sEpsilon) {
-            local_thread_cut_line_weight_to_put_left(i) -=
-              local_thread_cut_line_weight_to_put_left(i - 1);
-          }
-          local_thread_cut_line_weight_to_put_left(i) =
-            static_cast<long long>((local_thread_cut_line_weight_to_put_left(i) +
-            local_least_signifiance) * local_significance_mul) /
-            static_cast<mj_scalar_t>(local_significance_mul);
+      typename decltype(thread_cut_line_weight_to_put_left)::HostMirror
+        host_thread_cut_line_weight_to_put_left =
+          Kokkos::create_mirror_view(thread_cut_line_weight_to_put_left);
+      Kokkos::deep_copy(host_thread_cut_line_weight_to_put_left,
+        thread_cut_line_weight_to_put_left);
+      // this is a special case. If cutlines share the same coordinate,
+      // their weights are equal.
+      // we need to adjust the ratio for that.
+      for(mj_part_t i = no_cuts - 1; i > 0 ; --i) {
+        if(std::abs(current_concurrent_cut_coordinate(i) -
+          current_concurrent_cut_coordinate(i-1)) < this->sEpsilon) {
+          host_thread_cut_line_weight_to_put_left(i) -=
+            host_thread_cut_line_weight_to_put_left(i - 1);
         }
-      });
+        host_thread_cut_line_weight_to_put_left(i) =
+          static_cast<long long>((host_thread_cut_line_weight_to_put_left(i) +
+          least_signifiance) * significance_mul) /
+          static_cast<mj_scalar_t>(significance_mul);
+      }
+      Kokkos::deep_copy(thread_cut_line_weight_to_put_left,
+        host_thread_cut_line_weight_to_put_left);
     }
   }
 
@@ -7234,7 +7006,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   for(mj_part_t i = 1; i < no_cuts ; ++i) {
     // if cuts share the same cut coordinates
     // set the cutmap accordingly.
-    if(std::abs(host_current_concurrent_cut_coordinate(i) -
+    if(std::abs(current_concurrent_cut_coordinate(i) -
       host_current_concurrent_cut_coordinate(i-1)) < this->sEpsilon) {
       cut_map[i] = cut_map[i-1];
     }
@@ -7793,6 +7565,18 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   Kokkos::View<mj_part_t *, device_t> & result_assigned_part_ids_,
   Kokkos::View<mj_gno_t*, device_t> & result_mj_gnos_)
 {
+  // Log to verify UVM off on status
+  // std::cout << "Memory Space: " << mj_node_t::memory_space::name()
+  //           << "  Execution Space: " << mj_node_t::execution_space::name()
+  //           << std::endl;
+
+#ifdef print_debug
+  if(comm->getRank() == 0) {
+    std::cout << "size of gno:" << sizeof(mj_gno_t) << std::endl;
+    std::cout << "size of lno:" << sizeof(mj_lno_t) << std::endl;
+    std::cout << "size of mj_scalar_t:" << sizeof(mj_scalar_t) << std::endl;
+  }
+#endif
 
   // see comment above for Zoltan2_AlgMJ_TrackCallsCounter
   int execute_counter = Zoltan2_AlgMJ_TrackCallsCounter::get_counter_AlgMJ();
@@ -7833,14 +7617,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   // We keep the problemComm as it is, while comm changes after each migration.
   this->comm = this->mj_problemComm->duplicate();
 
-#ifdef print_debug
-  if(comm->getRank() == 0) {
-    std::cout << "size of gno:" << sizeof(mj_gno_t) << std::endl;
-    std::cout << "size of lno:" << sizeof(mj_lno_t) << std::endl;
-    std::cout << "size of mj_scalar_t:" << sizeof(mj_scalar_t) << std::endl;
-  }
-#endif
-
   // initially there is a single partition
   mj_part_t current_num_parts = 1;
   Kokkos::View<mj_scalar_t *, device_t> current_cut_coordinates =
@@ -7878,7 +7654,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     view_total_reduction_size("view_total_reduction_size", 1);
 
   for(int i = 0; i < this->recursion_depth; ++i) {
-
     // convert i to string to be used for debugging purposes.
     std::string istring = std::to_string(i);
 
@@ -7998,6 +7773,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
       // 1D partitioning
       if(bDoingWork) {
+
         // obtain global Min max of the part.
         this->mj_get_global_min_max_coord_totW(
           current_concurrent_num_parts,
@@ -8024,7 +7800,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
             mj_scalar_t max_coordinate =
               host_global_min_max_coord_total_weight(
                 kk + current_concurrent_num_parts);
-
             mj_scalar_t global_total_weight =
               host_global_min_max_coord_total_weight(
                 kk + 2 * current_concurrent_num_parts);
@@ -8536,20 +8311,6 @@ private:
   // target part weight sizes.
   Kokkos::View<mj_scalar_t**, device_t> mj_part_sizes;
 
-  // Nonuniform first level partitioning
-  // Currently used for Dragonfly task mapping by partitioning Dragonfly RCA
-  // machine coordinates and application coordinates.
-  // An optimization that completely partitions the most important machine
-  // dimension first (i.e. the Dragonfly group coordinate, or RCA's x
-  // coordinate). The standard MJ alg follows after the nonuniform first level
-  // partitioning.
-  // If used, number of parts for the first level partitioning
-  mj_part_t num_first_level_parts;
-
-  // If used, the distribution of parts for the nonuniform
-  // first level partitioning
-  Kokkos::View<mj_part_t*, Kokkos::HostSpace> first_level_distribution;
-
   // if partitioning can distribute points on same coordiante to
   // different parts.
   bool distribute_points_on_cut_lines;
@@ -8628,7 +8389,6 @@ public:
       num_local_coords(0),
       num_global_coords(0),
       num_weights_per_coord(0),
-      num_first_level_parts(1),
       distribute_points_on_cut_lines(true),
       max_concurrent_part_calculation(1),
       check_migrate_avoid_migration_option(0),
@@ -8750,17 +8510,14 @@ public:
     // match. The empty case would otherwise not compile.
     // If they don't match the internal code handles allocating the new view
     // and copying the elements. See the test Zoltan2_mj_int_coordinates.
-    template<class dst_t, class src_t> // version for same types
-    typename std::enable_if<std::is_same<typename dst_t::value_type,
-      typename src_t::value_type>::value>::type
-    assign_if_same(dst_t & dst, const src_t & src) {
-      dst = src;
+    template<class matching_t>
+    void assign_if_same(matching_t & mj_view, matching_t adapter_view) {
+      mj_view = adapter_view;
     }
-    template<class dst_t, class src_t> // version for different types
-    typename std::enable_if<!std::is_same<typename dst_t::value_type,
-      typename src_t::value_type>::value>::type
-    assign_if_same(dst_t & dst, const src_t & src) {
-      // do nothing - handled manually
+    template<class mj_view_t, class adapter_view_t>
+    void assign_if_same(mj_view_t & mj_view, adapter_view_t adapter_view) {
+      // empty case - can't compile assign because types mismatch
+      // we will do manual copy - test Zoltan2_mj_int_coordinates is an example.
     }
 };
 
@@ -8790,10 +8547,10 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
 {
   mj_env_->timerStart(MACRO_TIMERS,
     timer_base_string + "PreMigration DistributorPlanCreating");
-
+  
   int myRank = mj_problemComm_->getRank();
   int worldSize = mj_problemComm_->getSize();
-
+  
   mj_part_t groupsize = worldSize / used_num_ranks;
 
   std::vector<mj_part_t> group_begins(used_num_ranks + 1, 0);
@@ -8812,7 +8569,7 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
       am_i_a_receiver = true;
     }
   }
-
+  
   ArrayView<const mj_part_t> idView(&(group_begins[0]), used_num_ranks );
   result_problemComm_ = mj_problemComm_->createSubcommunicator(idView);
 
@@ -9119,7 +8876,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     }
 
     //now the results are reordered. but if premigration occured,
-    //then we need to send these ids to actual owners again.
+    //then we need to send these ids to actual owners again. 
     if(is_pre_migrated) {
       this->mj_env->timerStart(MACRO_TIMERS, timer_base_string +
         "PostMigration DistributorPlanCreating");

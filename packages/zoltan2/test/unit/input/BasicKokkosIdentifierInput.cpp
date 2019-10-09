@@ -58,7 +58,6 @@ int main(int narg, char *arg[]) {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
-  typedef typename Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t>::weight_layout_t Layout;
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -68,15 +67,20 @@ int main(int narg, char *arg[]) {
   zlno_t numLocalIds = 10;
   const int nWeights = 2;
 
-  Kokkos::View<zgno_t *> myIds("myIds", numLocalIds);
+  Kokkos::View<zgno_t *, typename znode_t::device_type>
+    myIds(Kokkos::ViewAllocateWithoutInitializing("myIds"), numLocalIds);
   zgno_t myFirstId = rank * numLocalIds * numLocalIds;
-  Kokkos::View<zscalar_t **, Layout> weights("weights", numLocalIds, nWeights);
+  Kokkos::View<zscalar_t **, typename znode_t::device_type>
+    weights(Kokkos::ViewAllocateWithoutInitializing("weights"),
+    numLocalIds, nWeights);
 
-  for (zlno_t i = 0; i < numLocalIds; i++) {
+  Kokkos::parallel_for(
+    Kokkos::RangePolicy<typename znode_t::execution_space,
+    zlno_t> (0, numLocalIds), KOKKOS_LAMBDA (zlno_t i) {
     myIds(i) = zgno_t(myFirstId + i);
     weights(i, 0) = 1.0;
     weights(i, 1) = (nprocs - rank) / (i + 1);
-  }
+  });
 
   Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t> ia(myIds, weights);
 
@@ -87,26 +91,34 @@ int main(int narg, char *arg[]) {
     fail = 5;
   }
 
-  Kokkos::View<zgno_t *> globalIdsIn;
-  Kokkos::View<zscalar_t *> weightsIn[nWeights];
+  Kokkos::View<const zgno_t *, typename znode_t::device_type> globalIdsIn;
+  Kokkos::View<zscalar_t **, typename znode_t::device_type> weightsIn;
 
   ia.getIDsKokkosView(globalIdsIn);
 
-  for (int w = 0; !fail && w < nWeights; w++) {
-    ia.getWeightsKokkosView(weightsIn[w], w);
-  }
+  ia.getWeightsKokkosView(weightsIn);
 
-  Kokkos::View<zscalar_t *> w0 = weightsIn[0];
-  Kokkos::View<zscalar_t *> w1 = weightsIn[1];
+  typename decltype(globalIdsIn)::HostMirror host_globalIdsIn =
+    Kokkos::create_mirror_view(globalIdsIn);
+  Kokkos::deep_copy(host_globalIdsIn, globalIdsIn);
+  typename decltype(weightsIn)::HostMirror host_weightsIn =
+    Kokkos::create_mirror_view(weightsIn);
+  Kokkos::deep_copy(host_weightsIn, weightsIn);
+  typename decltype(weights)::HostMirror host_weights =
+    Kokkos::create_mirror_view(weights);
+  Kokkos::deep_copy(host_weights, weights);
+
+  auto host_w0 = Kokkos::subview(host_weightsIn, Kokkos::ALL, 0);
+  auto host_w1 = Kokkos::subview(host_weightsIn, Kokkos::ALL, 1);
 
   for (zlno_t i = 0; !fail && i < numLocalIds; i++){
-    if (globalIdsIn(i) != zgno_t(myFirstId + i)) {
+    if (host_globalIdsIn(i) != zgno_t(myFirstId + i)) {
       fail = 8;
     }
-    if (!fail && w0(i) != 1.0) {
+    if (!fail && host_w0(i) != 1.0) {
       fail = 9;
     }
-    if (!fail && w1(i) != weights(i, 1)) {
+    if (!fail && host_w1(i) != host_weights(i, 1)) {
       fail = 10;
     }
   }
