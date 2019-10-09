@@ -6,13 +6,11 @@
 #
 ################################################################################
 
-# NOTE: The custom_builds.sh script in this directory sets the exact compilers
-# used so no need for dealing with different varients of compilers here.
-
-#if [[ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ]] ; then
-#  # Abort, no compiler was selected!
-#  return
-#fi
+if   [[ "$ATDM_CONFIG_COMPILER" == "CUDA" ]] \
+  || [[ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ]] \
+  ; then
+  ATDM_CONFIG_COMPILER="CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1"
+fi
 
 #TODO: jfrye 
 if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
@@ -48,24 +46,10 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 
 module purge
 
-# Warning options requested by Gemma team (which should hopefully also take
-# care of warnings required by the other ATDM APPs as well).  See #3178 and
-# #4221
-ATDM_CONFIG_GNU_CXX_WARNINGS="-Wall -Wextra"
-ATDM_CONFIG_INTEL_CXX_WARNINGS="-Wall -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses -Wpointer-sign -Wreorder -Wreturn-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings"
-
 # For now, turn on warnings by default:
 if [[ "${ATDM_CONFIG_ENABLE_STRONG_WARNINGS}" == "" ]] ; then
   export ATDM_CONFIG_ENABLE_STRONG_WARNINGS=1
 fi
-
-echo $ATDM_CONFIG_COMPILER
-
-if [[ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ]] ; then
-  ATDM_CONFIG_COMPILER="CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1"
-fi
-
-echo $ATDM_CONFIG_COMPILER
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1" ]] ; then
   module load sparc-dev/cuda-9.2.88_gcc-6.3.1_openmpi-2.1.1
@@ -78,16 +62,12 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1" ]] ; then
   export MPICC=`which mpicc`
   export MPICXX=`which mpicxx`
   export MPIF90=`which mpif90`
-  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
-    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
-  fi
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
   export ATDM_CONFIG_MPI_EXEC=mpirun
 
   #TODO jfrye: what should these be for cuda build?
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
-
 
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
   if [ ! -x "$OMPI_CXX" ]; then
@@ -121,7 +101,7 @@ fi
 # to be safe.  Also, we need to set OMP_* env vars here because the SPARC
 # modules change them!
 
-# Use updated Ninja and CMake
+# Use updated Ninja (not provided by sparc-dev module above)
 module load sems-env
 module load atdm-env
 module load atdm-ninja_fortran/1.7.2
@@ -134,13 +114,6 @@ export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
 # up to only find static libs by default!
 
 # BLAS and LAPACK
-
-#export ATDM_CONFIG_BLAS_LIBS="-L${ATDM_CONFIG_MKL_ROOT}/mkl/lib/intel64;-L${ATDM_CONFIG_MKL_ROOT}/lib/intel64;-lmkl_intel_lp64;-lmkl_intel_thread;-lmkl_core;-liomp5"
-#export ATDM_CONFIG_LAPACK_LIBS="-L${ATDM_CONFIG_MKL_ROOT}/mkl/lib/intel64"
-
-# NOTE: The above does not work.  For some reason, the library 'iomp5' can't
-# be found at runtime.  Instead, you have to explicitly list out the library
-# files in order as shown below.  Very sad.
 
 atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${ATDM_CONFIG_MKL_ROOT}/mkl/lib/intel64 .so \
   mkl_intel_lp64 mkl_intel_thread mkl_core
