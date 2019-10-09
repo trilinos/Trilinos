@@ -1082,27 +1082,33 @@ int* ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(const Epetra_CrsMatrix & 
 // ======================================================================
  //! Finds Dirichlet the local Dirichlet columns, given the local Dirichlet rows
 Epetra_IntVector * ML_Epetra::FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix){
-  const Epetra_Map & ColMap = Matrix.ColMap();
-  int indexBase = ColMap.IndexBase();
-  Epetra_Map* mapPtr = 0;
+  Epetra_IntVector *ColsToZero= new Epetra_IntVector(Matrix.ColMap());
+  ColsToZero->PutValue(0);  
+  // for each local column j in a local dirichlet row, set myColsToZero[j]=1
+  for (int i=0; i < numBCRows; i++) {
+    int numEntries;
+    double *vals;
+    int *cols;
+    Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
+    for (int j=0; j < numEntries; j++)
+      (*ColsToZero)[ cols[j] ] = 1;
+  }/*end for*/
 
-  if(Matrix.RowMap().GlobalIndicesInt())
-    mapPtr = new Epetra_Map((int) Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
-  else if(Matrix.RowMap().GlobalIndicesLongLong())
-    mapPtr = new Epetra_Map(Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
-  else
-    assert(false);
+  if(Matrix.Importer()) {
+    // Bounce back to a Domain vector and then back to make sure that cols Dirichlet'd somewhere
+    // are flagged on the domain map Dirichlet'd everywhere
+    Epetra_IntVector DomainsToZero(Matrix.DomainMap());
+    DomainsToZero.Export(*ColsToZero,*Matrix.Importer(),Add);
+    ColsToZero->Import(DomainsToZero,*Matrix.Importer(),Insert);
+  }
+  return ColsToZero;
+}/*end FindLocalDirichletColumnsFromRows*/
 
-  Epetra_Map& globalMap = *mapPtr;
-
-  // create the exporter from this proc's column map to global 1-1 column map
-  Epetra_Export Exporter(ColMap,globalMap);
-
-  // create a vector of global column indices that we will export to
-  Epetra_IntVector globColsToZero(globalMap);
-  // create a vector of local column indices that we will export from
-  Epetra_IntVector *myColsToZero= new Epetra_IntVector(ColMap);
-  myColsToZero->PutValue(0);
+// ======================================================================
+//! Finds Dirichlet the local Dirichlet domains, given the local Dirichlet rows
+Epetra_IntVector * ML_Epetra::FindLocalDirichletDomainsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix){
+  Epetra_IntVector *ColsToZero= new Epetra_IntVector(Matrix.ColMap());
+  ColsToZero->PutValue(0);
 
   // for each local column j in a local dirichlet row, set myColsToZero[j]=1
   for (int i=0; i < numBCRows; i++) {
@@ -1111,18 +1117,22 @@ Epetra_IntVector * ML_Epetra::FindLocalDirichletColumnsFromRows(const int *diric
     int *cols;
     Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
     for (int j=0; j < numEntries; j++)
-      (*myColsToZero)[ cols[j] ] = 1;
+      (*ColsToZero)[ cols[j] ] = 1;
   }/*end for*/
 
-  // export to the global column map
-  globColsToZero.Export(*myColsToZero,Exporter,Add);
-  // now import from the global column map to the local column map
-  myColsToZero->Import(globColsToZero,Exporter,Insert);
+  if(Matrix.Importer()) {
+    // Bounce back to a Domain vector to make sure that cols Dirichlet'd somewhere
+    // are flagged on the domain map Dirichlet'd everywhere
+    Epetra_IntVector * DomainsToZero = new Epetra_IntVector(Matrix.DomainMap());
+    DomainsToZero->Export(*ColsToZero,*Matrix.Importer(),Add);
+    delete ColsToZero;
+    return DomainsToZero;
+  }
+  else {
+    return ColsToZero;
+  }
 
-  delete mapPtr;
-
-  return myColsToZero;
-}/*end FindLocalDirichletColumnsFromRows*/
+}/*end FindLocalDirichletDomainsFromRows*/
 
 
   // ======================================================================
@@ -1182,10 +1192,16 @@ void ML_Epetra::Apply_BCsToMatrixRows(const int *dirichletRows, int numBCRows, c
     int numEntries;
     double *vals;
     int *cols;
-    Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
-    for (int j=0; j < numEntries; j++)
-      vals[j] = 0.0;
+    int ierr = Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
+    if(ierr == 0) {
+      for (int j=0; j < numEntries; j++)
+	vals[j] = 0.0;
+    }
+    else {
+      printf("[%d] ExtractMyRowView failed for row %d (actually have %d rows with %d alleged dirichlets)\n",Matrix.Comm().MyPID(),dirichletRows[i],Matrix.NumMyRows(),numBCRows);
+    }
   }/*end for*/
+
 }/*end Apply_BCsToMatrixRows*/
 
 
