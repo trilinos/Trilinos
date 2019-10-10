@@ -2067,6 +2067,14 @@ ComputePreconditioner(const bool CheckPreconditioner)
      RowSumThreshold = List_.get("aggregation: rowsum threshold", RowSumThreshold);
      ML_Aggregate_Set_RowSum_Threshold(agg_,RowSumThreshold);
 
+     bool DoQR = true;
+     DoQR = List_.get("aggregation: do qr",DoQR);
+     ML_Aggregate_Set_Do_QR(agg_,(int)DoQR);
+
+     bool CoarsenPartialDirichletDofs = true;
+     CoarsenPartialDirichletDofs = List_.get("aggregation: coarsen partial dirichlet dofs",CoarsenPartialDirichletDofs);
+     ML_Aggregate_Set_Coarsen_Partial_Dirichlet_Dofs(agg_,(int)CoarsenPartialDirichletDofs);
+
      int MaxCoarseSize = 128;
      if (List_.isSublist("coarse: list")) {
        ParameterList &coarseList = List_.sublist("coarse: list");

@@ -105,7 +105,9 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->semicoarsen_levels         = -1;
    (*ag)->semicoarsen_coordinate     = 'z';
 /*cms*/
-   (*ag)->rowsum_threshold           = -1.0; /* defaults to off */
+   (*ag)->rowsum_threshold              = -1.0; /* defaults to off */
+   (*ag)->do_qr                         = 1;    /* defaults to on */
+   (*ag)->coarsen_partial_dirichlet_dofs= 1;    /* defaults to on */
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
@@ -690,15 +692,26 @@ int ML_Aggregate_Set_RowSum_Threshold( ML_Aggregate *ag, double epsilon )
 }
 
 /* ------------------------------------------------------------------------- */
-
-int ML_Aggregate_Reset_RowSum_Threshold( ML_Aggregate *ag )
+int ML_Aggregate_Set_Do_QR(ML_Aggregate *ag, int flag )
 {
    if ( ag->ML_id != ML_ID_AGGRE )
    {
-      printf("ML_Aggregate_Reset_RowSum_Threshold : wrong object. \n");
+      printf("ML_Aggregate_Set_Do_QR : wrong object. \n");
       exit(-1);
    }
-   ag->rowsum_threshold = -1.0;
+   ag->do_qr = flag;
+   return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+int ML_Aggregate_Set_Coarsen_Partial_Dirichlet_Dofs(ML_Aggregate *ag, int flag )
+{
+   if ( ag->ML_id != ML_ID_AGGRE )
+   {
+      printf("ML_Aggregate_Set_Coarsen_Partial_Dirichlet_Dofs : wrong object. \n");
+      exit(-1);
+   }
+   ag->coarsen_partial_dirichlet_dofs = flag;
    return 0;
 }
 

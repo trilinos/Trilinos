@@ -257,6 +257,8 @@ void ML_Epetra::SetValidAggrParams(Teuchos::ParameterList *PL)
   /* Highly experimental */
   PL->set("aggregation: respect materials",false);
   PL->set("aggregation: material type",(int*)0);
+  PL->set("aggregation: do qr",true);
+  PL->set("aggregation: aggregation: coarsen partial dirichlet dofs",true);
 
 }//SetValidAggrParams()
 
@@ -536,6 +538,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
 
   /* RefMaxwell Options - Unsupported */
   PL->set("refmaxwell: aggregate with sigma",false);
+  PL->set("refmaxwell: use nodal dirichlet aggregation",false);
   PL->set("refmaxwell: lump m1",false);
   PL->set("refmaxwell: disable addon",false);
   PL->set("refmaxwell: normalize prolongator",false);
