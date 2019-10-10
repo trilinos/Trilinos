@@ -342,7 +342,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           return EXIT_FAILURE;
       else if (solver == ML_REFMAXWELL) {
         updateParams("solverMLRefMaxwell.xml", lin_solver_pl, comm, out);
-        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
       } else if (solver == MUELU_REFMAXWELL) {
         if (linAlgebra == linAlgTpetra) {
           updateParams("solverMueLuRefMaxwell.xml", lin_solver_pl, comm, out);
@@ -373,10 +372,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           if (dim == 2)
             updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
         }
-        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
       }
     } else
       updateParams(xml, lin_solver_pl, comm, out);
+    if (lin_solver_pl->sublist("Preconditioner Types").isSublist("Teko") &&
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").isSublist("Inverse Factory Library") &&
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").isSublist("Maxwell"))
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
     lin_solver_pl->print(*out);
 
     // The curl-curl term needs to be scaled by dt, the RefMaxwell augmentation needs 1/dt
