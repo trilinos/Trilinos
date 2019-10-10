@@ -1220,9 +1220,9 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
       std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = tmpComboTest->getStatusTests();
       comboType_ = tmpComboTest->getComboType();
       const int numResTests = static_cast<int>(tmpVec.size());
-      auto newConvTest =
-        Teuchos::rcp(new StatusTestCombo_t(comboType_, convTest_, tmpVec[0]));
-      for (int j = 1; j < numResTests; ++j) {
+      auto newConvTest = Teuchos::rcp(new StatusTestCombo_t(comboType_));
+      newConvTest->addStatusTest(convTest_);
+      for (int j = 0; j < numResTests; ++j) {
         newConvTest->addStatusTest(tmpVec[j]);
       }
       convTest_ = newConvTest;
