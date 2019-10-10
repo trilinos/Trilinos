@@ -1219,13 +1219,13 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
     if (tmpComboTest != Teuchos::null) {
       std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = tmpComboTest->getStatusTests();
       comboType_ = tmpComboTest->getComboType();
-      int numResTests_ = tmpVec.size();
-      convTest_ = Teuchos::rcp(
-        new StatusTestCombo_t( comboType_, convTest_, tmpVec[0] ) );
-      Teuchos::RCP<StatusTestCombo_t> tmpConvTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(convTest_);
-      for (int j=1; j<numResTests_; ++j) {
-	      tmpConvTest->addStatusTest(tmpVec[j]);
+      const int numResTests = static_cast<int>(tmpVec.size());
+      auto newConvTest = 
+        Teuchos::rcp(new StatusTestCombo_t(comboType_, convTest_, tmpVec[0]));
+      for (int j = 1; j < numResTests; ++j) {
+        newConvTest->addStatusTest(tmpVec[j]);
       }
+      convTest_ = newConvTest;      
     }
     else{
       // Override the overall convergence test with the users convergence test
