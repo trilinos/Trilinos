@@ -13,6 +13,7 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_IntegratorObserverSubcycling.hpp"
 
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperSubcycling.hpp"
@@ -128,6 +129,9 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
   stepper->setSubcyclingMaxFailures      (10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
+  stepper->setSubcyclingIntegratorObserver(
+    Teuchos::rcp(new Tempus::IntegratorObserverSubcycling<double>()));
+  stepper->setSubcyclingPrintDtChanges   (true);
 
   stepper->initialize();
 
@@ -163,7 +167,7 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
   integrator->setStepperWStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
-  integrator->setScreenOutputIndexInterval(1);
+  integrator->setScreenOutputIndexInterval(10);
   //integrator->setObserver(...);
   integrator->initialize();
 
@@ -241,6 +245,9 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
     stepper->setSubcyclingMaxFailures      (10);
     stepper->setSubcyclingMaxConsecFailures(5);
     stepper->setSubcyclingScreenOutputIndexInterval(1);
+    //stepper->setSubcyclingIntegratorObserver(
+    //  Teuchos::rcp(new Tempus::IntegratorObserverSubcycling<double>()));
+    //stepper->setSubcyclingPrintDtChanges   (true);
 
     // Set variable strategy.
     auto strategy = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
@@ -283,7 +290,7 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
     integrator->setStepperWStepper(stepper);
     integrator->setTimeStepControl(timeStepControl);
     integrator->setSolutionHistory(solutionHistory);
-    integrator->setScreenOutputIndexInterval(1);
+    integrator->setScreenOutputIndexInterval(10);
     //integrator->setObserver(...);
     integrator->initialize();
 
@@ -410,6 +417,10 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     stepperSC->setSubcyclingMaxFailures      (10);
     stepperSC->setSubcyclingMaxConsecFailures(5);
     stepperSC->setSubcyclingScreenOutputIndexInterval(1);
+    //stepper->setSubcyclingIntegratorObserver(
+    //  Teuchos::rcp(new Tempus::IntegratorObserverSubcycling<double>()));
+    //stepperSC->setSubcyclingPrintDtChanges   (true);
+
     //stepperSC->setSubcyclingStepType         ("Constant");
     stepperSC->setSubcyclingStepType         ("Variable");
     auto strategySC = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
@@ -475,7 +486,7 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     integrator->setStepperWStepper(stepper);
     integrator->setTimeStepControl(timeStepControl);
     integrator->setSolutionHistory(solutionHistory);
-    integrator->setScreenOutputIndexInterval(1);
+    integrator->setScreenOutputIndexInterval(10);
     //integrator->setObserver(...);
     integrator->initialize();
 

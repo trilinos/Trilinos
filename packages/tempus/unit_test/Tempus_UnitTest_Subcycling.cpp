@@ -74,15 +74,9 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
 
   // Full argument list construction.
   auto scIntegrator = Teuchos::rcp(new Tempus::IntegratorBasic<double>());
-  { // Set default subcycling Stepper to Forward Euler.
-    RCP<ParameterList> tempusPL = scIntegrator->getTempusParameterList();
-    tempusPL->sublist("Default Integrator")
-                 .set("Stepper Name", "Default Subcycling Stepper");
-    RCP<ParameterList> stepperPL = Teuchos::parameterList();
-    stepperPL->set("Stepper Type", "Forward Euler");
-    tempusPL->set("Default Subcycling Stepper", *stepperPL);
-  }
-  scIntegrator->setParameterList(Teuchos::null);
+  auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
+  scIntegrator->setStepperWStepper(stepperFE);
+  scIntegrator->initialize();
 
   stepper = rcp(new Tempus::StepperSubcycling<double>(
     model, obs, scIntegrator, useFSAL, ICConsistency, ICConsistencyCheck));
