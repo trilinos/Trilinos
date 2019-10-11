@@ -313,11 +313,11 @@ void CubeTetMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,int 
 
    // build the nodes
    for(int nx=myXElems_start;nx<myXElems_end+1;++nx) {
-      coord[0] = double(nx)*deltaX+x0_;
+      coord[0] = this->getMeshCoord(nx, deltaX, x0_);
       for(int ny=myYElems_start;ny<myYElems_end+1;++ny) {
-         coord[1] = double(ny)*deltaY+y0_;
+         coord[1] = this->getMeshCoord(ny, deltaY, y0_);
          for(int nz=myZElems_start;nz<myZElems_end+1;++nz) {
-            coord[2] = double(nz)*deltaZ+z0_;
+            coord[2] = this->getMeshCoord(nz, deltaZ, z0_);
 
             mesh.addNode(nz*(totalYElems+1)*(totalXElems+1)+ny*(totalXElems+1)+nx+1,coord);
          }

@@ -124,6 +124,15 @@ public:
      }
    }
 
+   double getMeshCoord(const int nx, const double deltaX, const double x0) const {
+      double x = static_cast<double>(nx)*deltaX;
+      double modX = std::abs(x);
+      double modX0 = std::abs(x0);
+      double val = x+x0;
+      if ((x0*x < 0.0) && (std::abs(modX-modX0) < std::numeric_limits<double>::epsilon()*modX0)) val=0.0;
+      return (val);
+   }
+
 protected:
    // vector of periodic boundary condition objects
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCVec_; 
