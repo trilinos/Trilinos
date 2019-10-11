@@ -40,7 +40,7 @@ BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesSerial (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
 aggregation: max selected neighbors = 0   [default]
@@ -129,7 +129,7 @@ BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesSerial (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
 aggregation: max selected neighbors = 0   [default]

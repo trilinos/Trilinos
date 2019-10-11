@@ -85,112 +85,112 @@ namespace MueLu {
       if (aggStat[i] == AGGREGATED || aggStat[i] == IGNORED)
         continue;
 
-       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);
+      ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);
 
-       // We don't want a singleton. So lets see if there is an unaggregated
-       // neighbor that we can also put with this point.
-       bool isNewAggregate = false;
-       bool failedToAggregate = true;
-       for (int j = 0; j < neighOfINode.size(); j++) {
-         LO neigh = neighOfINode[j];
+      // We don't want a singleton. So lets see if there is an unaggregated
+      // neighbor that we can also put with this point.
+      bool isNewAggregate = false;
+      bool failedToAggregate = true;
+      for (int j = 0; j < neighOfINode.size(); j++) {
+        LO neigh = neighOfINode[j];
 
-          if (neigh != i && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY) {
-            isNewAggregate = true;
+        if (neigh != i && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY) {
+          isNewAggregate = true;
 
-            aggStat     [neigh] = AGGREGATED;
-            vertex2AggId[neigh] = numLocalAggregates;
-            procWinner  [neigh] = myRank;
+          aggStat     [neigh] = AGGREGATED;
+          vertex2AggId[neigh] = numLocalAggregates;
+          procWinner  [neigh] = myRank;
 
-            numNonAggregatedNodes--;
-          }
-       }
+          numNonAggregatedNodes--;
+        }
+      }
 
-       if (isNewAggregate) {
-         // Create new aggregate (not singleton)
-         aggStat     [i] = AGGREGATED;
-         procWinner  [i] = myRank;
-         numNonAggregatedNodes--;
-         aggregates.SetIsRoot(i);
-         vertex2AggId[i] = numLocalAggregates++;
+      if (isNewAggregate) {
+        // Create new aggregate (not singleton)
+        aggStat     [i] = AGGREGATED;
+        procWinner  [i] = myRank;
+        numNonAggregatedNodes--;
+        aggregates.SetIsRoot(i);
+        vertex2AggId[i] = numLocalAggregates++;
 
-         failedToAggregate = false;
-       } else {
-         // We do not want a singleton, but there are no non-aggregated
-         // neighbors. Lets see if we can connect to any other aggregates
-         // NOTE: This is very similar to phase 2b, but simplier: we stop with
-         // the first found aggregate
-         int j = 0;
-         for (; j < neighOfINode.size(); j++) {
-           LO neigh = neighOfINode[j];
+        failedToAggregate = false;
+      } else {
+        // We do not want a singleton, but there are no non-aggregated
+        // neighbors. Lets see if we can connect to any other aggregates
+        // NOTE: This is very similar to phase 2b, but simplier: we stop with
+        // the first found aggregate
+        int j = 0;
+        for (; j < neighOfINode.size(); j++) {
+          LO neigh = neighOfINode[j];
 
-           // We don't check (neigh != rootCandidate), as it is covered by checking (aggStat[neigh] == AGGREGATED)
-           if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED)
-             break;
-         }
+          // We don't check (neigh != rootCandidate), as it is covered by checking (aggStat[neigh] == AGGREGATED)
+          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED)
+            break;
+        }
 
-         if (j < neighOfINode.size()) {
-           // Assign to an adjacent aggregate
-           vertex2AggId[i] = vertex2AggId[neighOfINode[j]];
-           numNonAggregatedNodes--;   
-           failedToAggregate = false;
-         } 
-       }
+        if (j < neighOfINode.size()) {
+          // Assign to an adjacent aggregate
+          vertex2AggId[i] = vertex2AggId[neighOfINode[j]];
+          numNonAggregatedNodes--;
+          failedToAggregate = false;
+        }
+      }
 
-       if (failedToAggregate && makeNonAdjAggs) {
-         //  it we are still didn't find an aggregate home for i (i.e., we have
-         //  a potential singleton), we are desperate. Basically, we seek to 
-         //  group i with any other local point to form an aggregate (even if
-         //  it is not a neighbor of i. Either we find a vertex that is already
-         //  aggregated or not aggregated.
-         //    1) if found vertex is aggregated, then assign i to this aggregate
-         //    2) if found vertex is not aggregated, create new aggregate
-         
-            
-         for (LO ii = 0; ii < numRows; ii++) { // look for anyone else
-           if ( (ii != i) && (aggStat[ii] != IGNORED) ) {
-             failedToAggregate = false;       // found someone so start
-             aggStat[i]   = AGGREGATED;  // marking i as aggregated
-             procWinner[i]= myRank;
+      if (failedToAggregate && makeNonAdjAggs) {
+        //  it we are still didn't find an aggregate home for i (i.e., we have
+        //  a potential singleton), we are desperate. Basically, we seek to
+        //  group i with any other local point to form an aggregate (even if
+        //  it is not a neighbor of i. Either we find a vertex that is already
+        //  aggregated or not aggregated.
+        //    1) if found vertex is aggregated, then assign i to this aggregate
+        //    2) if found vertex is not aggregated, create new aggregate
 
-             if (aggStat[ii] == AGGREGATED)
-               vertex2AggId[i] = vertex2AggId[ii];
-             else {
-               vertex2AggId[i]  = numLocalAggregates;
-               vertex2AggId[ii] = numLocalAggregates;
-               aggStat     [ii] = AGGREGATED;
-               procWinner  [ii] = myRank;
-               numNonAggregatedNodes--;   // acounts for ii now being aggregated
-               aggregates.SetIsRoot(i);
-               numLocalAggregates++;
-             }
-             numNonAggregatedNodes--;   // accounts for i now being aggregated
-             break;
-           } //if ( (ii != i) && (aggStat[ii] != IGNORED ...
-         } //for (LO ii = 0; ...
-       }
-       if (failedToAggregate) {
-         if (error_on_isolated) {
-           // Error on this isolated node, as the user has requested
-           std::ostringstream oss;
-           oss<<"MueLu::AggregationPhase3Algorithm::BuildAggregates: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). "<<std::endl;
-           oss<<"If this error is being generated at level 0, this is due to an initial partitioning problem in your matrix."<<std::endl;
-           oss<<"If this error is being generated at any other level, try turning on repartitioning, which may fix this problem."<<std::endl;
-           throw Exceptions::RuntimeError(oss.str());
-         } else {
-           // Create new aggregate (singleton)
-           this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
 
-           aggregates.SetIsRoot(i);
-           vertex2AggId[i] = numLocalAggregates++;
-           numNonAggregatedNodes--;
-         }
-       }
+        for (LO ii = 0; ii < numRows; ii++) { // look for anyone else
+          if ( (ii != i) && (aggStat[ii] != IGNORED) ) {
+            failedToAggregate = false;       // found someone so start
+            aggStat[i]   = AGGREGATED;  // marking i as aggregated
+            procWinner[i]= myRank;
 
-       // One way or another, the node is aggregated (possibly into a singleton)
-       aggStat   [i] = AGGREGATED;
-       procWinner[i] = myRank;
+            if (aggStat[ii] == AGGREGATED)
+              vertex2AggId[i] = vertex2AggId[ii];
+            else {
+              vertex2AggId[i]  = numLocalAggregates;
+              vertex2AggId[ii] = numLocalAggregates;
+              aggStat     [ii] = AGGREGATED;
+              procWinner  [ii] = myRank;
+              numNonAggregatedNodes--;   // acounts for ii now being aggregated
+              aggregates.SetIsRoot(i);
+              numLocalAggregates++;
+            }
+            numNonAggregatedNodes--;   // accounts for i now being aggregated
+            break;
+          } //if ( (ii != i) && (aggStat[ii] != IGNORED ...
+        } //for (LO ii = 0; ...
+      }
+      if (failedToAggregate) {
+        if (error_on_isolated) {
+          // Error on this isolated node, as the user has requested
+          std::ostringstream oss;
+          oss<<"MueLu::AggregationPhase3Algorithm::BuildAggregates: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). "<<std::endl;
+          oss<<"If this error is being generated at level 0, this is due to an initial partitioning problem in your matrix."<<std::endl;
+          oss<<"If this error is being generated at any other level, try turning on repartitioning, which may fix this problem."<<std::endl;
+          throw Exceptions::RuntimeError(oss.str());
+        } else {
+          // Create new aggregate (singleton)
+          this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
 
-     }
+          aggregates.SetIsRoot(i);
+          vertex2AggId[i] = numLocalAggregates++;
+          numNonAggregatedNodes--;
+        }
+      }
+
+      // One way or another, the node is aggregated (possibly into a singleton)
+      aggStat   [i] = AGGREGATED;
+      procWinner[i] = myRank;
+
+    } // loop over numRows
 
     // update aggregate object
     aggregates.SetNumAggregates(numLocalAggregates);
