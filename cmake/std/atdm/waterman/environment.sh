@@ -119,7 +119,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
   export KOKKOS_NUM_DEVICES=2
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
   # Avoids timeouts due to not running on separate GPUs (see #2446)
 else
   echo
