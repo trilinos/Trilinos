@@ -191,7 +191,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-7.2.0" ]] ; then
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
   export KOKKOS_NUM_DEVICES=2
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
   # ABove avoids timeouts due to not running on separate GPUs (see #2446)
 
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1_GNU-7.2.0" ]] ; then
@@ -210,7 +210,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1_GNU-7.2.0" ]] ; then
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
   export KOKKOS_NUM_DEVICES=2
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
   # ABove avoids timeouts due to not running on separate GPUs (see #2446)
 
 fi
