@@ -29,7 +29,7 @@ function load_spack_tpl_modules() {
   module load spack-parallel-netcdf/1.11.0-${compiler_dash_version}-${mpi_dash_version}
   module load spack-parmetis/4.0.3-${compiler_dash_version}-${mpi_dash_version}
   module load spack-cgns/snl-atdm-${compiler_dash_version}-${mpi_dash_version}
-  module load spack-superlu-dist/6.1.0-${compiler_dash_version}-${mpi_dash_version}
+  module load spack-superlu-dist/5.4.0-${compiler_dash_version}-${mpi_dash_version}
 
 }
 
