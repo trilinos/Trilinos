@@ -60,6 +60,8 @@
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Monitor.hpp"
 
+// #include "Kokkos_Core.hpp"
+
 namespace MueLu {
 
   // Try to stick unaggregated nodes into a neighboring aggregate if they are
@@ -69,20 +71,31 @@ namespace MueLu {
   BuildAggregates(const ParameterList& params,
                   const LWGraph_kokkos& graph,
                   Aggregates_kokkos& aggregates,
-                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggstat,
+                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                   LO& numNonAggregatedNodes) const {
-    Monitor m(*this, "BuildAggregates");
 
-    using memory_space = typename LWGraph_kokkos::memory_space;
-
-    typename Kokkos::View<unsigned*, memory_space>::HostMirror aggstatHost
-      = Kokkos::create_mirror(aggstat);
-    Kokkos::deep_copy(aggstatHost, aggstat);
-    std::vector<unsigned> aggStat;
-    aggStat.resize(aggstatHost.extent(0));
-    for(size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
-      aggStat[idx] = aggstatHost(idx);
+    // So far we only have the non-deterministic version of the algorithm...
+    if(params.get<bool>("aggregation: deterministic")) {
+      Monitor m(*this, "BuildAggregatesDeterministic");
+      BuildAggregatesRandom(params, graph, aggregates, aggStat, numNonAggregatedNodes);
+    } else {
+      Monitor m(*this, "BuildAggregatesRandom");
+      BuildAggregatesRandom(params, graph, aggregates, aggStat, numNonAggregatedNodes);
     }
+
+  }
+
+  // Try to stick unaggregated nodes into a neighboring aggregate if they are
+  // not already too big. Otherwise, make a new aggregate
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregationPhase3Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  BuildAggregatesRandom(const ParameterList& params,
+                        const LWGraph_kokkos& graph,
+                        Aggregates_kokkos& aggregates,
+                        Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                        LO& numNonAggregatedNodes) const {
+    using memory_space    = typename LWGraph_kokkos::memory_space;
+    using execution_space = typename LWGraph_kokkos::execution_space;
 
     bool makeNonAdjAggs = false;
     bool error_on_isolated = false;
@@ -94,129 +107,130 @@ namespace MueLu {
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
-    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    auto vertex2AggId  = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
+    auto procWinner    = aggregates.GetProcWinner()  ->template getLocalView<memory_space>();
+    auto colors        = aggregates.GetGraphColors();
+    const LO numColors = aggregates.GetGraphNumColors();
 
-    LO numLocalAggregates = aggregates.GetNumAggregates();
+    Kokkos::View<LO, memory_space> numAggregates("numAggregates");
+    Kokkos::deep_copy(numAggregates, aggregates.GetNumAggregates());
 
-    for (LO i = 0; i < numRows; i++) {
-      if (aggStat[i] == AGGREGATED || aggStat[i] == IGNORED)
-        continue;
+    Kokkos::View<unsigned*, memory_space> aggStatOld("Initial aggregation status", aggStat.extent(0));
+    Kokkos::deep_copy(aggStatOld, aggStat);
+    Kokkos::View<LO, memory_space> numNonAggregated("numNonAggregated");
+    Kokkos::deep_copy(numNonAggregated, numNonAggregatedNodes);
+    for(int color = 1; color < numColors + 1; ++color) {
+      Kokkos::parallel_for("Aggregation Phase 3: aggregates clean-up",
+                           Kokkos::RangePolicy<execution_space>(0, numRows),
+                           KOKKOS_LAMBDA(const LO nodeIdx) {
+                             // Check if node has already been treated?
+                             if( (colors(nodeIdx) != color) ||
+                                 (aggStatOld(nodeIdx) == AGGREGATED) ||
+                                 (aggStatOld(nodeIdx) == IGNORED) ){ return; }
 
-      auto neighOfINode = graph.getNeighborVertices(i);
+                             // Grab node neighbors
+                             auto neighbors = graph.getNeighborVertices(nodeIdx);
+                             LO neighIdx;
 
-      // We don't want a singleton. So lets see if there is an unaggregated
-      // neighbor that we can also put with this point.
-      bool isNewAggregate = false;
-      bool failedToAggregate = true;
-      for (int j = 0; j < as<int>(neighOfINode.length); j++) {
-        LO neigh = neighOfINode(j);
+                             // We don't want a singleton.
+                             // So lets see if any neighbors can be used to form a new aggregate?
+                             bool isNewAggregate    = false;
+                             for(int neigh = 0; neigh < neighbors.length; ++neigh) {
+                               neighIdx = neighbors(neigh);
 
-        if (neigh != i && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY) {
-          isNewAggregate = true;
+                               if((neighIdx != nodeIdx) &&
+                                  graph.isLocalNeighborVertex(neighIdx) &&
+                                  (aggStatOld(neighIdx) == READY)) {
+                                 isNewAggregate = true;
+                                 break;
+                               }
+                             }
 
-          aggStat     [neigh] = AGGREGATED;
-          vertex2AggId[neigh] = numLocalAggregates;
-          procWinner  [neigh] = myRank;
+                             // We can form a new non singleton aggregate!
+                             if(isNewAggregate) {
+                               // If this is the aggregate root
+                               // we need to process the nodes in the aggregate
+                               const LO aggId = Kokkos::atomic_fetch_add(&numAggregates(), 1);
+                               aggStat(nodeIdx)         = AGGREGATED;
+                               procWinner(nodeIdx, 0)   = myRank;
+                               vertex2AggId(nodeIdx, 0) = aggId;
+                               // aggregates.SetIsRoot(nodeIdx);
+                               Kokkos::atomic_decrement(&numNonAggregated());
+                               for(int neigh = 0; neigh < neighbors.length; ++neigh) {
+                                 neighIdx = neighbors(neigh);
+                                 if((neighIdx != nodeIdx) &&
+                                    graph.isLocalNeighborVertex(neighIdx) &&
+                                    (aggStatOld(neighIdx) == READY)) {
+                                   aggStat(neighIdx)         = AGGREGATED;
+                                   procWinner(neighIdx, 0)   = myRank;
+                                   vertex2AggId(neighIdx, 0) = aggId;
+                                   Kokkos::atomic_decrement(&numNonAggregated());
+                                 }
+                               }
+                               return;
+                             }
 
-          numNonAggregatedNodes--;
-        }
-      }
+                             // Getting a little desperate!
+                             // Let us try to aggregate into a neighboring aggregate
+                             for(int neigh = 0; neigh < neighbors.length; ++neigh) {
+                               neighIdx = neighbors(neigh);
+                               if (graph.isLocalNeighborVertex(neighIdx) &&
+                                   (aggStatOld(neighIdx) == AGGREGATED)) {
+                                 aggStat(nodeIdx)         = AGGREGATED;
+                                 procWinner(nodeIdx, 0)   = myRank;
+                                 vertex2AggId(nodeIdx, 0) = vertex2AggId(neighIdx, 0);
+                                 Kokkos::atomic_decrement(&numNonAggregated());
+                                 return;
+                               }
+                             }
 
-      if (isNewAggregate) {
-        // Create new aggregate (not singleton)
-        aggStat     [i] = AGGREGATED;
-        procWinner  [i] = myRank;
-        numNonAggregatedNodes--;
-        aggregates.SetIsRoot(i);
-        vertex2AggId[i] = numLocalAggregates++;
+                             // Getting quite desperate!
+                             // Let us try to make a non contiguous aggregate
+                             if(makeNonAdjAggs) {
+                               for(LO otherNodeIdx = 0; otherNodeIdx < numRows; ++otherNodeIdx) {
+                                 if((otherNodeIdx != nodeIdx) &&
+                                    (aggStatOld(otherNodeIdx) == AGGREGATED)) {
+                                   aggStat(nodeIdx)         = AGGREGATED;
+                                   procWinner(nodeIdx, 0)   = myRank;
+                                   vertex2AggId(nodeIdx, 0) = vertex2AggId(otherNodeIdx, 0);
+                                   Kokkos::atomic_decrement(&numNonAggregated());
+                                   return;
+                                 }
+                               }
+                             }
 
-        failedToAggregate = false;
-      } else {
-        // We do not want a singleton, but there are no non-aggregated
-        // neighbors. Lets see if we can connect to any other aggregates
-        // NOTE: This is very similar to phase 2b, but simpler: we stop with
-        // the first found aggregate
-        int j = 0;
-        for (; j < as<int>(neighOfINode.length); j++) {
-          LO neigh = neighOfINode(j);
+                             // Total deperation!
+                             // Let us make a singleton
+                             if(!error_on_isolated) {
+                               const LO aggId = Kokkos::atomic_fetch_add(&numAggregates(), 1);
+                               aggStat(nodeIdx)         = AGGREGATED;
+                               procWinner(nodeIdx, 0)   = myRank;
+                               vertex2AggId(nodeIdx, 0) = aggId;
+                               Kokkos::atomic_decrement(&numNonAggregated());
+                             }
+                           });
+      // LBV on 09/27/19: here we could copy numNonAggregated to host
+      // and check for it to be equal to 0 in which case we can stop
+      // looping over the different colors...
+      Kokkos::deep_copy(aggStatOld, aggStat);
+    } // loop over colors
 
-          // We don't check (neigh != rootCandidate), as it is covered by checking (aggStat[neigh] == AGGREGATED)
-          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED)
-            break;
-        }
-
-        if (j < as<int>(neighOfINode.length)) {
-          // Assign to an adjacent aggregate
-          vertex2AggId[i] = vertex2AggId[neighOfINode(j)];
-          numNonAggregatedNodes--;
-          failedToAggregate = false;
-        }
-      }
-
-      if (failedToAggregate && makeNonAdjAggs) {
-        //  it we are still didn't find an aggregate home for i (i.e., we have
-        //  a potential singleton), we are desperate. Basically, we seek to
-        //  group i with any other local point to form an aggregate (even if
-        //  it is not a neighbor of i. Either we find a vertex that is already
-        //  aggregated or not aggregated.
-        //    1) if found vertex is aggregated, then assign i to this aggregate
-        //    2) if found vertex is not aggregated, create new aggregate
-
-
-        for (LO ii = 0; ii < numRows; ii++) { // look for anyone else
-          if ( (ii != i) && (aggStat[ii] != IGNORED) ) {
-            failedToAggregate = false;       // found someone so start
-            aggStat[i]   = AGGREGATED;  // marking i as aggregated
-            procWinner[i]= myRank;
-
-            if (aggStat[ii] == AGGREGATED)
-              vertex2AggId[i] = vertex2AggId[ii];
-            else {
-              vertex2AggId[i]  = numLocalAggregates;
-              vertex2AggId[ii] = numLocalAggregates;
-              aggStat     [ii] = AGGREGATED;
-              procWinner  [ii] = myRank;
-              numNonAggregatedNodes--;   // acounts for ii now being aggregated
-              aggregates.SetIsRoot(i);
-              numLocalAggregates++;
-            }
-            numNonAggregatedNodes--;   // accounts for i now being aggregated
-            break;
-          } //if ( (ii != i) && (aggStat[ii] != IGNORED ...
-        } //for (LO ii = 0; ...
-      }
-      if (failedToAggregate) {
-        if (error_on_isolated) {
+    auto numNonAggregated_h = Kokkos::create_mirror_view(numNonAggregated);
+    Kokkos::deep_copy(numNonAggregated_h, numNonAggregated);
+    numNonAggregatedNodes = numNonAggregated_h();
+    if( (error_on_isolated) && (numNonAggregatedNodes > 0) ) {
           // Error on this isolated node, as the user has requested
           std::ostringstream oss;
           oss<<"MueLu::AggregationPhase3Algorithm::BuildAggregates: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). "<<std::endl;
           oss<<"If this error is being generated at level 0, this is due to an initial partitioning problem in your matrix."<<std::endl;
           oss<<"If this error is being generated at any other level, try turning on repartitioning, which may fix this problem."<<std::endl;
           throw Exceptions::RuntimeError(oss.str());
-        } else {
-          // Create new aggregate (singleton)
-          this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
-
-          aggregates.SetIsRoot(i);
-          vertex2AggId[i] = numLocalAggregates++;
-          numNonAggregatedNodes--;
-        }
-      }
-
-      // One way or another, the node is aggregated (possibly into a singleton)
-      aggStat   [i] = AGGREGATED;
-      procWinner[i] = myRank;
-
     }
-
-    for(size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
-      aggstatHost(idx) = aggStat[idx];
-    }
-    Kokkos::deep_copy(aggstat, aggstatHost);
 
     // update aggregate object
-    aggregates.SetNumAggregates(numLocalAggregates);
+    auto numAggregates_h = Kokkos::create_mirror_view(numAggregates);
+    Kokkos::deep_copy(numAggregates_h, numAggregates);
+    aggregates.SetNumAggregates(numAggregates_h());
   }
 
 } // end namespace

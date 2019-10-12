@@ -168,7 +168,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const AViewType &A,
            const BViewType &B) {
-      return TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(member,
+      return TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(member,
                                                                       ArgDiag::use_unit_diag,
                                                                       B.extent(0), B.extent(1),
                                                                       alpha, 
@@ -188,7 +188,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const AViewType &A,
            const BViewType &B) {
-      return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(member,
+      return TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(member,
                                                                     ArgDiag::use_unit_diag,
                                                                     B.extent(0), B.extent(1),
                                                                     alpha, 
@@ -214,7 +214,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const AViewType &A,
            const BViewType &B) {
-      return TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(member,
+      return TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(member,
                                                                       ArgDiag::use_unit_diag,
                                                                       B.extent(0), B.extent(1),
                                                                       alpha, 
@@ -234,7 +234,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const AViewType &A,
            const BViewType &B) {
-      return TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(member, 
+      return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(member, 
                                                                     ArgDiag::use_unit_diag,
                                                                     B.extent(0), B.extent(1),
                                                                     alpha, 
