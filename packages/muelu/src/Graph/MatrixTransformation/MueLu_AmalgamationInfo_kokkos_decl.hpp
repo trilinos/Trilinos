@@ -64,7 +64,7 @@
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationInfo_kokkos_fwd.hpp"
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
+#include "MueLu_Aggregates_kokkos.hpp"
 
 namespace MueLu {
 
@@ -86,8 +86,11 @@ namespace MueLu {
 
   public:
 
-    AmalgamationInfo_kokkos(RCP<Array<LO> > rowTranslation,
-                            RCP<Array<LO> > colTranslation,
+    using execution_space = typename LWGraph_kokkos::execution_space;
+    using memory_space    = typename LWGraph_kokkos::memory_space;
+
+    AmalgamationInfo_kokkos(Kokkos::View<LO*, memory_space> rowTranslation,
+                            Kokkos::View<LO*, memory_space> colTranslation,
                             RCP<const Map> nodeRowMap,
                             RCP<const Map> nodeColMap,
                             RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > const &columnMap,
@@ -125,21 +128,21 @@ namespace MueLu {
      * The getColTranslation routine, e.g., is used for the MergeRows routine in CoalesceDropFactory.
      */
     //@{
-    RCP<Array<LO> > getRowTranslation() const { return rowTranslation_; }
-    RCP<Array<LO> > getColTranslation() const { return colTranslation_; }
+    Kokkos::View<LO*, memory_space> getRowTranslation() const { return rowTranslation_; }
+    Kokkos::View<LO*, memory_space> getColTranslation() const { return colTranslation_; }
     //@}
 
     /*! @brief UnamalgamateAggregates
 
        Puts all dofs for aggregate \c i in aggToRowMap[\c i].  Also calculate aggregate sizes.
     */
-    void UnamalgamateAggregates(const Aggregates_kokkos& aggregates, Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const;
-    void UnamalgamateAggregatesLO(const Aggregates_kokkos& aggregates, Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<LO>& aggToRowMap) const;
+    void UnamalgamateAggregates(const Aggregates_kokkos& aggregates, Kokkos::View<LO*, memory_space>& aggStart, Kokkos::View<GO*, memory_space>& aggToRowMap) const;
+    void UnamalgamateAggregatesLO(const Aggregates_kokkos& aggregates, Kokkos::View<LO*, memory_space>& aggStart, Kokkos::View<LO*, memory_space>& aggToRowMap) const;
 
     /*! @brief ComputeUnamalgamatedImportDofMap
      * build overlapping dof row map from aggregates needed for overlapping null space
      */
-    Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates_kokkos& aggregates) const;
+    RCP<Map> ComputeUnamalgamatedImportDofMap(const Aggregates_kokkos& aggregates) const;
 
     /*! @brief ComputeGlobalDOF
      * return global dof id associated with global node id gNodeID and dof index k
@@ -170,8 +173,8 @@ namespace MueLu {
     //@{
 
     // arrays containing local node ids given local dof ids
-    RCP<Array<LO> > rowTranslation_;
-    RCP<Array<LO> > colTranslation_;
+    Kokkos::View<LO*, memory_space> rowTranslation_;
+    Kokkos::View<LO*, memory_space> colTranslation_;
 
     // node row and column map of graph (built from row and column map of A)
     RCP<const Map> nodeRowMap_;
@@ -179,7 +182,7 @@ namespace MueLu {
 
     //! @brief DOF map (really column map of A)
     // keep an RCP on the column map to make sure that the map is still valid when it is used
-    Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > columnMap_;
+    RCP<const Map> columnMap_;
 
     //@}
 

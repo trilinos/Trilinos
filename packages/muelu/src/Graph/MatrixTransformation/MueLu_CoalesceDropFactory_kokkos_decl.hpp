@@ -133,6 +133,7 @@ namespace MueLu {
     using local_ordinal_type  = LocalOrdinal;
     using global_ordinal_type = GlobalOrdinal;
     using execution_space     = typename DeviceType::execution_space;
+    using memory_space        = typename DeviceType::memory_space;
     using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
     using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
 

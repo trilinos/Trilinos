@@ -112,12 +112,7 @@ namespace MueLu {
     // the header has been included!
     using local_ordinal_type  = LocalOrdinal;
     using global_ordinal_type = GlobalOrdinal;
-    using execution_space     = typename DeviceType::execution_space;
     using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
-    using device_type         = DeviceType;
-    using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
-
-    using aggregates_sizes_type = Kokkos::View<LocalOrdinal*, DeviceType>;
 
   private:
     // For compatibility
@@ -128,9 +123,14 @@ namespace MueLu {
   public:
 
     // Defining types that require the short names included above
-    using local_graph_type = typename LWGraph_kokkos::local_graph_type;
-    using colors_view_type = Kokkos::View<typename local_graph_type::entries_type::data_type,
-                                          typename local_graph_type::device_type::memory_space>;
+    using local_graph_type      = typename LWGraph_kokkos::local_graph_type;
+    using device_type           = typename local_graph_type::device_type;
+    using execution_space       = typename device_type::execution_space;
+    using memory_space          = typename device_type::memory_space;
+    using range_type            = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
+    using colors_view_type      = Kokkos::View<typename local_graph_type::entries_type::data_type,
+                                               memory_space>;
+    using aggregates_sizes_type = Kokkos::View<LocalOrdinal*, memory_space>;
 
     /*! @brief Standard constructor for Aggregates structure
      *
