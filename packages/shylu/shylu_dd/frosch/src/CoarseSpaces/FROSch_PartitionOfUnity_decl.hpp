@@ -90,6 +90,8 @@ namespace FROSch {
         using ConstUN                       = const UN;
         
         using LOVec                         = Array<LO>;
+        using LOVecPtr                      = ArrayRCP<LO>;
+        using LOVecPtr2D                    = ArrayRCP<LOVecPtr>;
         
         using GOVec                         = Array<GO>;
         using GOVecView                     = ArrayView<GO>;
