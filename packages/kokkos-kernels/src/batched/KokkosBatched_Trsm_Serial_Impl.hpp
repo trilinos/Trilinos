@@ -365,7 +365,7 @@ namespace KokkosBatched {
     invoke(const ScalarType alpha,
            const AViewType &A,
            const BViewType &B) {
-      return SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(ArgDiag::use_unit_diag,
+      return SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(ArgDiag::use_unit_diag,
                                                                         B.extent(0), B.extent(1),
                                                                         alpha, 
                                                                         A.data(), A.stride_1(), A.stride_0(),
@@ -383,7 +383,7 @@ namespace KokkosBatched {
     invoke(const ScalarType alpha,
            const AViewType &A,
            const BViewType &B) {
-      return SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(ArgDiag::use_unit_diag,
+      return SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(ArgDiag::use_unit_diag,
                                                                       B.extent(0), B.extent(1),
                                                                       alpha, 
                                                                       A.data(), A.stride_1(), A.stride_0(),
@@ -459,7 +459,7 @@ namespace KokkosBatched {
     invoke(const ScalarType alpha,
            const AViewType &A,
            const BViewType &B) {
-      return SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(ArgDiag::use_unit_diag,
+      return SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(ArgDiag::use_unit_diag,
                                                                         B.extent(0), B.extent(1),
                                                                         alpha, 
                                                                         A.data(), A.stride_1(), A.stride_0(),
@@ -477,7 +477,7 @@ namespace KokkosBatched {
     invoke(const ScalarType alpha,
            const AViewType &A,
            const BViewType &B) {
-      return SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(ArgDiag::use_unit_diag,
+      return SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(ArgDiag::use_unit_diag,
                                                                       B.extent(0), B.extent(1),
                                                                       alpha, 
                                                                       A.data(), A.stride_1(), A.stride_0(),

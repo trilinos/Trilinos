@@ -64,9 +64,14 @@
 /* Enable workarounds for Purify builds */
 #cmakedefine HAVE_ZOLTAN2_PURIFY
 
-/* define if we have TopoManager installed*/
+/* define if we have TopoManager installed */
 #cmakedefine HAVE_ZOLTAN2_TOPOMANAGER
 
-/* define if we have RCALIB installed*/
+/* define if we have RCALIB installed */
 #cmakedefine HAVE_ZOLTAN2_RCALIB
 
+/* define if we set Enable_MACHINE_DRAGONFLY:BOOL=ON */
+#cmakedefine ZOLTAN2_MACHINE_DRAGONFLY
+
+/* define if we set Enable_MACHINE_TORUS:BOOL=ON */
+#cmakedefine ZOLTAN2_MACHINE_TORUS

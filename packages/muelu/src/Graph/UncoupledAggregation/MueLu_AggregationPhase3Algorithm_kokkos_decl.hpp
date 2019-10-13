@@ -56,7 +56,7 @@
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_LWGraph_kokkos.hpp"
+#include "MueLu_LWGraph_kokkos_fwd.hpp"
 
 namespace MueLu {
   /*!
@@ -85,6 +85,7 @@ namespace MueLu {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
+    using memory_space    = typename LWGraph_kokkos::memory_space;
     //! @name Constructors/Destructors.
     //@{
 
@@ -105,8 +106,14 @@ namespace MueLu {
     void BuildAggregates(const ParameterList& params,
                          const LWGraph_kokkos& graph,
                          Aggregates_kokkos& aggregates,
-                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                         Kokkos::View<unsigned*, memory_space>& aggStat,
                          LO& numNonAggregatedNodes) const;
+
+    void BuildAggregatesRandom(const ParameterList& params,
+                               const LWGraph_kokkos& graph,
+                               Aggregates_kokkos& aggregates,
+                               Kokkos::View<unsigned*, memory_space>& aggStat,
+                               LO& numNonAggregatedNodes) const;
     //@}
 
     std::string description() const { return "Phase 3 (cleanup)"; }

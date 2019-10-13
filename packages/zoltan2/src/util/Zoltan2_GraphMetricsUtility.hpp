@@ -100,8 +100,8 @@ void globalWeightedByPart(
     ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > > &metrics,
     ArrayRCP<typename Adapter::scalar_t> &globalSums,
     bool bMessages = true,
-    const RCP <const MachineRep> machine = Teuchos::null)
-{
+    const RCP <const MachineRep> machine = Teuchos::null) { 
+
   env->timerStart(MACRO_TIMERS, "globalWeightedByPart");
 
   // Note we used to have with hops as a separate method but decided to combine
@@ -120,7 +120,8 @@ void globalWeightedByPart(
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
 
-  typedef typename Zoltan2::GraphModel<typename Adapter::base_adapter_t>::input_t t_input_t;
+  typedef typename Zoltan2::GraphModel<typename Adapter::base_adapter_t>::input_t 
+    t_input_t;
 
   lno_t localNumVertices = graph->getLocalNumVertices();
   lno_t localNumEdges = graph->getLocalNumEdges();
@@ -165,6 +166,7 @@ void globalWeightedByPart(
     typedef Zoltan2_Directory_Simple<gno_t,lno_t,part_t> directory_t;
     int debug_level = 0;
     directory_t directory(comm, bUseLocalIDs, debug_level);
+
     if (localNumVertices)
       directory.update(localNumVertices, &Ids[0], NULL, &parts[0],
         NULL, directory_t::Update_Mode::Replace);
@@ -186,6 +188,7 @@ void globalWeightedByPart(
     // else everything is local.
     // we need a globalid to local index conversion.
     // this does not exists till this point, so we need to create one.
+
     for (lno_t i = 0; i < localNumVertices; ++i){
       //at the local index i, we have the global index Ids[i].
       //so write i, to Ids[i] index of the vector.
@@ -202,6 +205,7 @@ void globalWeightedByPart(
 
   RCP<const Teuchos::Comm<int> > tcomm = comm;
 
+  env->timerStart(MACRO_TIMERS, "Communication Graph Create");
   {
     const bool bUseLocalIDs = false;  // Local IDs not needed
     int debug_level = 0;
@@ -258,19 +262,21 @@ void globalWeightedByPart(
       scalar_t sum_weights; // the sum of weights
     };
 
-    //get the vertices in each part in my part.
+    // get the vertices in each part in my part.
     std::vector <lno_t> part_begins(numParts, -1);
     std::vector <lno_t> part_nexts(localNumVertices, -1);
-
-    //cluster vertices according to their parts.
-    //create local part graph.
+ 
+    // cluster vertices according to their parts.
+    // create local part graph.
     for (lno_t i = 0; i < localNumVertices; ++i){
       part_t ap = parts[i];
       part_nexts[i] = part_begins[ap];
       part_begins[ap] = i;
     }
 
-    for (int weight_index = -1; weight_index < numWeightPerEdge ; ++weight_index) {
+    for (int weight_index = -1; 
+         weight_index < numWeightPerEdge; ++weight_index) {
+
       std::vector<part_t> part_data(numParts); // will resize to lower as needed
       std::vector<std::vector<part_info>> user_data(numParts); // also to resize
       int count_total_entries = 0;
@@ -288,7 +294,7 @@ void globalWeightedByPart(
           // now get the neightbors of v.
           for (offset_t j = offsets[v]; j < offsets[v+1]; ++j){
 
-            //get the part of the second vertex.
+            // get the part of the second vertex.
             part_t ep = e_parts[j];
 
             // TODO: Can we skip condition (i==ep)
@@ -310,7 +316,8 @@ void globalWeightedByPart(
         // now get the part list.
         for (lno_t j = 0; j < num_neighbor_parts; ++j) {
           part_t neighbor_part = part_neighbors[j];
-          part_neighbor_weights_ordered[j] = part_neighbor_weights[neighbor_part];
+          part_neighbor_weights_ordered[j] = 
+            part_neighbor_weights[neighbor_part];
           part_neighbor_weights[neighbor_part] = 0;
         }
 
@@ -321,9 +328,12 @@ void globalWeightedByPart(
           // have update called just once so we collect the values and then
           // do all of the update at the end.
           part_data[count_total_entries] = i; // set up for directory
-          std::vector<part_info> & add_user_data = user_data[count_total_entries];
+          std::vector<part_info> & add_user_data = 
+            user_data[count_total_entries];
           ++count_total_entries;
+
           add_user_data.resize(num_neighbor_parts);
+
           for(int n = 0; n < num_neighbor_parts; ++n) {
             part_info & add_data = add_user_data[n];
             add_data.target_part = part_neighbors[n];
@@ -331,7 +341,7 @@ void globalWeightedByPart(
           }
         }
       }
-
+ 
       scalar_t max_edge_cut = 0;
       scalar_t total_edge_cut = 0;
       part_t max_message = 0;
@@ -368,9 +378,16 @@ void globalWeightedByPart(
           directory_t;
         directory_t directory(comm, bUseLocalIDs, debug_level);
 
-        // update
-        directory.update(count_total_entries, &part_data[0], NULL, &user_data[0],
-          NULL, directory_t::Update_Mode::AggregateAdd);
+        if(count_total_entries) {
+          // update
+          directory.update(count_total_entries, &part_data[0], 
+                           NULL, &user_data[0],
+            NULL, directory_t::Update_Mode::AggregateAdd);
+        }
+        else {
+          directory.update(count_total_entries, NULL, NULL, NULL,
+            NULL, directory_t::Update_Mode::AggregateAdd);
+        }
 
         // get my local_parts (parts managed on this directory)
         directory.get_locally_managed_gids(local_parts);
@@ -440,22 +457,32 @@ void globalWeightedByPart(
       scalar_t g_max_weighted_hop_count = 0;
 
       try{
-        Teuchos::reduceAll<int, scalar_t>(*comm,Teuchos::REDUCE_MAX,1,&max_edge_cut,&g_max_edge_cut);
-        Teuchos::reduceAll<int, part_t>(*comm,Teuchos::REDUCE_MAX,1,&max_message,&g_max_message);
+        Teuchos::reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_MAX, 1, 
+                                          &max_edge_cut, &g_max_edge_cut);
+        Teuchos::reduceAll<int, part_t>(*comm, Teuchos::REDUCE_MAX, 1, 
+                                        &max_message, &g_max_message);
 
-        Teuchos::reduceAll<int, scalar_t>(*comm,Teuchos::REDUCE_SUM,1,&total_edge_cut,&g_total_edge_cut);
-        Teuchos::reduceAll<int, part_t>(*comm,Teuchos::REDUCE_SUM,1,&total_message,&g_total_message);
+        Teuchos::reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM, 1, 
+                                          &total_edge_cut, &g_total_edge_cut);
+        Teuchos::reduceAll<int, part_t>(*comm, Teuchos::REDUCE_SUM, 1, 
+                                        &total_message, &g_total_message);
 
         if(bHops) {
-          Teuchos::reduceAll<int, part_t>(*comm,Teuchos::REDUCE_MAX,1,&max_hop_count,&g_max_hop_count);
-          Teuchos::reduceAll<int, scalar_t>(*comm,Teuchos::REDUCE_MAX,1,&max_weighted_hop_count,&g_max_weighted_hop_count);
+          Teuchos::reduceAll<int, part_t>(*comm, Teuchos::REDUCE_MAX, 1, 
+                                          &max_hop_count, &g_max_hop_count);
+          Teuchos::reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_MAX, 1, 
+                                            &max_weighted_hop_count,
+                                            &g_max_weighted_hop_count);
 
-          Teuchos::reduceAll<int, part_t>(*comm,Teuchos::REDUCE_SUM,1,&total_hop_count,&g_total_hop_count);
-          Teuchos::reduceAll<int, scalar_t>(*comm,Teuchos::REDUCE_SUM,1,&total_weighted_hop_count,&g_total_weighted_hop_count);
+          Teuchos::reduceAll<int, part_t>(*comm, Teuchos::REDUCE_SUM, 1, 
+                                          &total_hop_count, &g_total_hop_count);
+          Teuchos::reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM, 1,
+                                            &total_weighted_hop_count,
+                                            &g_total_weighted_hop_count);
         }
       }
       Z2_THROW_OUTSIDE_ERROR(*env);
-
+ 
       if (weight_index == -1){
         metrics[next]->setName("edge cuts");
       }
@@ -485,8 +512,10 @@ void globalWeightedByPart(
         std::ostringstream oss;
         oss << "weighted hops" << weight_index;
         metrics[next]->setName( oss.str());
-        metrics[next]->setMetricValue("global maximum", g_max_weighted_hop_count);
-        metrics[next]->setMetricValue("global sum", g_total_weighted_hop_count);
+        metrics[next]->
+          setMetricValue("global maximum", g_max_weighted_hop_count);
+        metrics[next]->
+          setMetricValue("global sum", g_total_weighted_hop_count);
         next++;
       }
     }
@@ -496,11 +525,14 @@ void globalWeightedByPart(
 
   env->debug(DETAILED_STATUS, "Exiting globalWeightedByPart");
 }
+
 /*! \brief Print out header info for graph metrics.
  */
 template <typename scalar_t, typename part_t>
-void printGraphMetricsHeader(std::ostream &os, part_t targetNumParts, part_t numParts )
-{
+void printGraphMetricsHeader(std::ostream &os, 
+                             part_t targetNumParts, 
+                             part_t numParts) {
+
   os << "Graph Metrics:  (" << numParts << " parts)";
   os << std::endl;
   if (targetNumParts != numParts) {
@@ -512,8 +544,12 @@ void printGraphMetricsHeader(std::ostream &os, part_t targetNumParts, part_t num
 /*! \brief Print out list of graph metrics.
  */
 template <typename scalar_t, typename part_t>
-void printGraphMetrics(std::ostream &os, part_t targetNumParts, part_t numParts, const ArrayView<RCP<BaseClassMetrics<scalar_t> > > &infoList)
-{
+void printGraphMetrics(std::ostream &os, 
+                       part_t targetNumParts, 
+                       part_t numParts, 
+                       const ArrayView<RCP<BaseClassMetrics<scalar_t> > > 
+                         &infoList) {
+
   printGraphMetricsHeader<scalar_t, part_t>(os, targetNumParts, numParts);
   for (int i=0; i < infoList.size(); i++) {
     if (infoList[i]->getName() != METRICS_UNSET_STRING) {
@@ -526,8 +562,11 @@ void printGraphMetrics(std::ostream &os, part_t targetNumParts, part_t numParts,
 /*! \brief Print out header and a single graph metric.
  */
 template <typename scalar_t, typename part_t>
-void printGraphMetrics(std::ostream &os, part_t targetNumParts, part_t numParts, RCP<BaseClassMetrics<scalar_t>> metricValue)
-{
+void printGraphMetrics(std::ostream &os, 
+                       part_t targetNumParts, 
+                       part_t numParts, 
+                       RCP<BaseClassMetrics<scalar_t>> metricValue) {
+
   printGraphMetricsHeader<scalar_t, part_t>(os, targetNumParts, numParts);
   metricValue->printLine(os);
 }

@@ -296,9 +296,11 @@ namespace ML_Epetra{
   //! Returns the local column numbers of the local rows passed in.
   Epetra_IntVector * LocalRowstoColumns(int *Rows, int numRows,const Epetra_CrsMatrix & Matrix);
 
-
-    //! Finds Dirichlet the local Dirichlet columns, given the local Dirichlet rows
+  //! Finds Dirichlet the local Dirichlet columns, given the local Dirichlet rows
   Epetra_IntVector * FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix);
+
+  //! Finds Dirichlet the local Dirichlet domains, given the local Dirichlet rows
+  Epetra_IntVector * FindLocalDirichletDomainsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix);
 
   //! Drops a 1 on the diagonal of zero'd our rows
   void Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix, double tol=0.0);

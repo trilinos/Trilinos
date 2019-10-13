@@ -331,6 +331,11 @@ public:
             ThisNS(i,j) = 1.0;
 
       SetNullSpace(ThisNS);
+      if (GetPrintLevel()) {
+        std::cout << "number of PDE equations = " << GetNumPDEEqns() << std::endl;
+        std::cout << "null space dimension    = " << ThisNS.GetNumVectors() << std::endl;
+      }
+
     }
 
     MultiVector NextNS;     // contains the next-level null space
