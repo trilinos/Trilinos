@@ -46,8 +46,8 @@ public:
     // clear all observer from the composite observer list
     void clearObservers();
 
-    // Size of composite observer list
-    bool empty();
+    // get the number of RK stepper observers present in the composite
+    std::size_t getSize() const { return observers_.size(); }
   //@}
 
 private:

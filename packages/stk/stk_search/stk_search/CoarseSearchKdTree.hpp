@@ -144,10 +144,7 @@ namespace stk {
 #endif
 
       if(communicateRangeBoxInfo) {
-        std::vector <std::pair<DomainIdentifier,RangeIdentifier> > tmp;
-        tmp.reserve(searchResults.size());
-        stk::search::communicateVector(comm, searchResults, tmp, communicateRangeBoxInfo);
-        searchResults=tmp;
+        stk::search::communicateVector(comm, searchResults, communicateRangeBoxInfo);
         std::sort(searchResults.begin(), searchResults.end());
       }
     }
@@ -169,17 +166,18 @@ namespace stk {
       MPI_Comm_rank(comm, &proc_id);
       MPI_Comm_size(comm, &num_procs);
 
+#ifdef _OPENMP
+      std::vector<std::vector<std::pair<DomainIdentifier, RangeIdentifier> > >
+        threadLocalSearchResults( omp_get_max_threads() );
+#endif
+
+      {
       std::vector<stk::search::Box<RBoxNumType> > rangeBoxes( local_range.size() );
 
       std::vector<RangeIdentifier> rangeGhostIdentifiers;
 
       stk::search::ComputeRangeWithGhostsForCoarseSearch(local_domain, local_range,
                                             num_procs, rangeBoxes, rangeGhostIdentifiers, comm);
-
-#ifdef _OPENMP
-      std::vector<std::vector<std::pair<DomainIdentifier, RangeIdentifier> > >
-        threadLocalSearchResults( omp_get_max_threads() );
-#endif
 
       if ((local_domain.size() > 0) && (rangeBoxes.size() > 0)) {
 
@@ -209,6 +207,7 @@ namespace stk {
           //
           //  Loop over all boxAs in group1 and search them against those objects in group2
           //
+          interList.reserve((numBoxDomain*3)/2);
 #ifdef _OPENMP
 #pragma omp for
 #endif
@@ -225,15 +224,12 @@ namespace stk {
           }
         }
       }
+      }
 #ifdef _OPENMP
       stk::search::ConcatenateThreadLists(threadLocalSearchResults, searchResults);
 #endif
-
       if(communicateRangeBoxInfo) {
-        std::vector <std::pair<DomainIdentifier,RangeIdentifier> > tmp;
-        tmp.reserve(searchResults.size());
-        stk::search::communicateVector(comm, searchResults, tmp, communicateRangeBoxInfo);
-        searchResults=tmp;
+        stk::search::communicateVector(comm, searchResults, communicateRangeBoxInfo);
         std::sort(searchResults.begin(), searchResults.end());
       }
     }

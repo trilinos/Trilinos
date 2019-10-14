@@ -134,7 +134,7 @@ void StepperOperatorSplit<Scalar>::setObserver(
      }
   } else {
     stepperOSObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs);
+      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs, true);
   }
 }
 

@@ -52,6 +52,10 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_Map.hpp"
+
+using default_lo = Tpetra::Map<>::local_ordinal_type;
+using default_go = Tpetra::Map<>::global_ordinal_type;
 
 namespace Piro {
 
@@ -75,7 +79,7 @@ public:
    *
    *  For Epetra-based models, additional options are available in Piro::Epetra::SolverFactory.
    */
-  template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
+  template <typename Scalar, typename LocalOrdinal = default_lo, typename GlobalOrdinal = default_go,
           typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
@@ -83,7 +87,7 @@ public:
       const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer = Teuchos::null);
 
-  template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
+  template <typename Scalar, typename LocalOrdinal = default_lo, typename GlobalOrdinal = default_go,
           typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,

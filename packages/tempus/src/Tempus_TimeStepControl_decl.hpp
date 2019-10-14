@@ -50,9 +50,6 @@ public:
   /// Constructor
   TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
-  /// This is a copy constructor
-  TimeStepControl(const TimeStepControl<Scalar>& tsc);
-
   /// Destructor
   virtual ~TimeStepControl() {}
 
@@ -188,6 +185,13 @@ public:
       { tscPL_->set<int>
         ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
     virtual void setNumTimeSteps(int numTimeSteps);
+    virtual void setOutputIndexInterval(int OutputIndexInterval)
+      { tscPL_->set<int>("Output Index Interval",OutputIndexInterval); }
+    virtual void setOutputTimeInterval(double OutputTimeInterval)
+      { tscPL_->set<double>("Output Time Interval",OutputTimeInterval); }
+    virtual void setPrintDtChanges(bool printDtChanges)
+      { printDtChanges_ = printDtChanges; }
+    virtual bool getPrintDtChanges() const { return printDtChanges_; }
   //@}
 
 protected:
@@ -201,6 +205,8 @@ protected:
   Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
 
   Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> stepControlStrategy_;
+
+  bool printDtChanges_;
 
 };
 } // namespace Tempus

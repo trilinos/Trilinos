@@ -52,6 +52,7 @@ template<class Real>
 class ElasticityData : public Elasticity <Real> {
 
 private:
+  using GO = typename Tpetra::Map<>::global_ordinal_type;
 
 public:
 
@@ -66,7 +67,7 @@ ElasticityData(const ROL::Ptr<const Teuchos::Comm<int> > &comm,
 	this->AssembleSystemGraph();
 	this->AssembleSystemMats();
 	//Setup DBC information, do not specify any bc sides, use coordinates to determine the BC instead
-	std::vector<int> dbc_side {};
+	std::vector<GO> dbc_side {};
 	this->SetUpMyDBCInfo(true, dbc_side);
 	//Setup all loads 
     	this->process_loading_information(parlist);

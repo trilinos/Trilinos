@@ -2063,6 +2063,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
      Threshold = List_.get("aggregation: threshold", Threshold);
      ML_Aggregate_Set_Threshold(agg_,Threshold);
 
+     double RowSumThreshold = -1.0;
+     RowSumThreshold = List_.get("aggregation: rowsum threshold", RowSumThreshold);
+     ML_Aggregate_Set_RowSum_Threshold(agg_,RowSumThreshold);
+
      int MaxCoarseSize = 128;
      if (List_.isSublist("coarse: list")) {
        ParameterList &coarseList = List_.sublist("coarse: list");

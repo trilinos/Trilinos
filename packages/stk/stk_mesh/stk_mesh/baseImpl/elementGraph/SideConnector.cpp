@@ -60,8 +60,12 @@ void SideNodeConnector::connect_side_to_nodes(stk::mesh::Entity sideEntity, stk:
 
 void declare_relations_to_nodes(stk::mesh::BulkData &bulk, stk::mesh::Entity sideEntity, const stk::mesh::EntityVector &sideNodes)
 {
-    for(size_t i = 0; i < sideNodes.size(); i++)
-        bulk.declare_relation(sideEntity, sideNodes[i], i);
+    stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
+    stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+    for(size_t i = 0; i < sideNodes.size(); i++) {
+        bulk.declare_relation(sideEntity, sideNodes[i], i, perm,
+                              scratch1, scratch2, scratch3);
+    }
 }
 
 void SideNodeConnector::connect_side_to_elements_nodes(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)

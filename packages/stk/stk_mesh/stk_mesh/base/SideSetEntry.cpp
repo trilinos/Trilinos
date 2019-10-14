@@ -35,6 +35,12 @@ namespace mesh
         add(SideSetEntry{element, side});
     }
 
+    void SideSet::add(const std::vector<SideSetEntry>& entries)
+    {
+        m_data.insert(m_data.end(), entries.begin(), entries.end());
+        stk::util::sort_and_unique(m_data);
+    }
+
     bool SideSet::contains(const SideSetEntry& entry) const
     {
         std::vector<SideSetEntry>::const_iterator beginIter = begin();
@@ -133,7 +139,7 @@ namespace mesh
 
     void remove_element_entries_from_sidesets(BulkData& mesh, const Entity entity, std::set<const stk::mesh::Part*> *touchedSidesetParts)
     {
-      if (mesh.entity_rank(entity) == stk::topology::ELEMENT_RANK)
+      if (mesh.entity_rank(entity) == stk::topology::ELEMENT_RANK && mesh.num_sides(entity) > 0)
       {
         std::vector<SideSet* > sidesets = mesh.get_sidesets();
         for (stk::mesh::SideSet* sideset : sidesets)

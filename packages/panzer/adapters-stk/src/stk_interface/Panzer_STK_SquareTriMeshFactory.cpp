@@ -296,9 +296,9 @@ void SquareTriMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */, i
 
    // build the nodes
    for(int nx=myXElems_start;nx<myXElems_end+1;++nx) {
-      coord[0] = double(nx)*deltaX+x0_;
+      coord[0] = this->getMeshCoord(nx, deltaX, x0_);
       for(int ny=myYElems_start;ny<myYElems_end+1;++ny) {
-         coord[1] = double(ny)*deltaY+y0_;
+         coord[1] = this->getMeshCoord(ny, deltaY, y0_);
 
          mesh.addNode(ny*(totalXElems+1)+nx+1,coord);
       }

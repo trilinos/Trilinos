@@ -125,6 +125,8 @@
 
 // Region MG headers
 #include "SetupRegionHierarchy_def.hpp"
+#include "SetupRegionMatrix_def.hpp"
+#include "SetupRegionVector_def.hpp"
 
 #include "Driver_Structured_Interface.hpp"
 
@@ -165,12 +167,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string convergenceLog     = "residual_norm.txt"; clp.setOption("convergence-log",       &convergenceLog,    "file in which the convergence history of the linear solver is stored");
   int         maxIts             = 200;                 clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   std::string smootherType       = "Jacobi";            clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
-  int         smootherIts        =  20;                 clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
+  int         smootherIts        = 2;                   clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
   double      smootherDamp       = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
   double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
-  bool        directCoarseSolver = true;                clp.setOption("direct-coarse-solver", "amg-coarse-solver", &directCoarseSolver, "Type of solver for composite coarse level operator");
+  std::string coarseSolverType   = "direct";            clp.setOption("coarseSolverType",      &coarseSolverType,  "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
   std::string unstructured       = "{}";                clp.setOption("unstructured",          &unstructured,   "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
   std::string coarseAmgXmlFile   = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,  "Read parameters for AMG as coarse level solve from this xml file.");
 #ifdef HAVE_MUELU_TPETRA
@@ -1216,6 +1218,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<LO> rNodesPerDim(3);
   Array<GO> quasiRegionGIDs(numLocalRegionNodes*numDofsPerNode);
   Array<GO> regionGIDs(numLocalRegionNodes*numDofsPerNode);
+  Array<GO> quasiRegionCoordGIDs(numLocalRegionNodes);
 
   rNodesPerDim[0] = lNodesPerDim[0];
   rNodesPerDim[1] = lNodesPerDim[1];
@@ -1260,6 +1263,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if( (regionIJK[0] == 0 && leftBC   == 0) ||
         (regionIJK[1] == 0 && frontBC  == 0) ||
         (regionIJK[2] == 0 && bottomBC == 0) ) {
+      quasiRegionCoordGIDs[nodeRegionIdx] = receiveGIDs[interfaceCount];
       for(int dof = 0; dof < numDofsPerNode; ++dof) {
         quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof] =
           receiveGIDs[interfaceCount]*numDofsPerNode + dof;
@@ -1270,6 +1274,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       compositeIdx = (regionIJK[2] + bottomBC - 1)*lNodesPerDim[1]*lNodesPerDim[0]
         + (regionIJK[1] + frontBC  - 1)*lNodesPerDim[0]
         + (regionIJK[0] + leftBC - 1);
+      quasiRegionCoordGIDs[nodeRegionIdx] = nodeMap->getGlobalElement(compositeIdx);
       for(int dof = 0; dof < numDofsPerNode; ++dof) {
         quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof]
           = dofMap->getGlobalElement(compositeIdx*numDofsPerNode + dof);
@@ -1283,6 +1288,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
   // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
+  // std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
 
   // In our very particular case we know that a node is at most shared by 4 regions.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
@@ -1347,6 +1353,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                                                                  dofMap->getComm());
   revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
 
+  // Build objects needed to construct the region coordinates
+  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > quasiRegCoordMap = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          quasiRegionCoordGIDs(),
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > regCoordMap = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          numLocalRegionNodes,
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+
   comm->barrier();
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.2 - Build Region Importers")));
@@ -1356,6 +1376,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::vector<RCP<Import> > colImportPerGrp(maxRegPerProc);
   rowImportPerGrp[0] = ImportFactory::Build(dofMap, rowMapPerGrp[0]);
   colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
+  RCP<Import> coordImporter = ImportFactory::Build(nodeMap, quasiRegCoordMap);
 
   comm->barrier();
   tmLocal = Teuchos::null;
@@ -1407,10 +1428,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   regionNullspace[0]->replaceMap(revisedRowMapPerGrp[0]);
 
   // create region coordinates vector
-  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(rowMapPerGrp[0],
-                                                                               numDimensions);
-  regionCoordinates[0]->doImport(*coordinates, *rowImportPerGrp[0], Xpetra::INSERT);
-  regionCoordinates[0]->replaceMap(revisedRowMapPerGrp[0]);
+  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap,
+                                                                               coordinates->getNumVectors());
+  regionCoordinates[0]->doImport(*coordinates, *coordImporter, Xpetra::INSERT);
+  regionCoordinates[0]->replaceMap(regCoordMap);
 
   using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -1436,7 +1457,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<Array<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
   Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
   RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
-  coarseSolverData->set<bool>("use direct solver", directCoarseSolver);
+  coarseSolverData->set<std::string>("coarse solver type", coarseSolverType);
   coarseSolverData->set<std::string>("amg xml file", coarseAmgXmlFile);
   RCP<ParameterList> hierarchyData = rcp(new ParameterList());
 
@@ -1515,6 +1536,41 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Array<RCP<Vector> > regB(maxRegPerProc);
     compositeToRegional(B, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
                         revisedRowMapPerGrp, rowImportPerGrp);
+#ifdef DUMP_LOCALX_AND_A
+    FILE *fp;
+    char str[80];
+    sprintf(str,"theMatrix.%d",myRank);
+    fp = fopen(str,"w");
+    fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+    LO numNzs = 0;
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) {
+      ArrayView<const LO> AAcols;
+      ArrayView<const SC> AAvals;
+      regionGrpMats[0]->getLocalRowView(kkk, AAcols, AAvals);
+      const int *Acols    = AAcols.getRawPtr();
+      const SC  *Avals = AAvals.getRawPtr();
+      numNzs += AAvals.size();
+    }
+    fprintf(fp, "%d %d %d\n",regionGrpMats[0]->getNodeNumRows(),regionGrpMats[0]->getNodeNumRows(),numNzs);
+
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) {
+      ArrayView<const LO> AAcols;
+      ArrayView<const SC> AAvals;
+      regionGrpMats[0]->getLocalRowView(kkk, AAcols, AAvals);
+      const int *Acols    = AAcols.getRawPtr();
+      const SC  *Avals = AAvals.getRawPtr();
+      LO RowLeng = AAvals.size();
+      for (LO kk = 0; kk < RowLeng; kk++) {
+          fprintf(fp, "%d %d %22.16e\n",kkk+1,Acols[kk]+1,Avals[kk]);
+      }
+    }
+    fclose(fp);
+    sprintf(str,"theX.%d",myRank);
+    fp = fopen(str,"w");
+    ArrayRCP<SC> lX= regX[0]->getDataNonConst(0);
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) fprintf(fp, "%22.16e\n",lX[kkk]);
+    fclose(fp);
+#endif
 
     //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
 

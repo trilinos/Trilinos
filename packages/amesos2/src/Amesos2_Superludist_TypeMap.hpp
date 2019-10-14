@@ -70,6 +70,9 @@ namespace SLUD {
 
 extern "C" {
 
+  /// use the same function with name space in the macro
+#define USER_FREE(addr) SLUD::superlu_free_dist(addr)
+
   // undefine compiler guard in case we also have the sequential
   // SuperLU enabled
 #undef __SUPERLU_SUPERMATRIX
@@ -78,6 +81,7 @@ extern "C" {
 #if SUPERLU_DIST_MAJOR_VERSION > 4
   typedef superlu_dist_options_t   amesos2_superlu_dist_options_t;
   typedef superlu_dist_mem_usage_t amesos2_superlu_dist_mem_usage_t;
+#define AMESOS2_ENABLES_SUPERLUDIST_VERSION5_AND_HIGHER 1
 #else
   typedef superlu_options_t        amesos2_superlu_dist_options_t;
   typedef mem_usage_t              amesos2_superlu_dist_mem_usage_t;

@@ -10,7 +10,7 @@
 #include "stk_unit_test_utils/MeshFixture.hpp"
 #include "stk_unit_test_utils/TextMesh.hpp"
 #include "stk_unit_test_utils/getOption.h"
-#include "stk_unit_tests/stk_mesh_fixtures/heterogeneous_mesh.hpp"
+#include "stk_unit_test_utils/stk_mesh_fixtures/heterogeneous_mesh.hpp"
 #include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/Parallel.hpp"
 #include <stk_balance/balance.hpp>

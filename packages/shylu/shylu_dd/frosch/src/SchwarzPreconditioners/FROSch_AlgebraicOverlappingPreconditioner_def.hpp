@@ -56,13 +56,13 @@ namespace FROSch {
     SchwarzPreconditioner<SC,LO,GO,NO> (parameterList,k->getRangeMap()->getComm()),
     K_ (k),
     SumOperator_ (new SumOperator<SC,LO,GO,NO>(k->getRangeMap()->getComm())),
-    FirstLevelOperator_ ()
+    OverlappingOperator_ ()
     {
         FROSCH_TIMER_START_LEVELID(algebraicOverlappingPreconditionerTime,"AlgebraicOverlappingPreconditioner::AlgebraicOverlappingPreconditioner");
         // Set the LevelID in the sublist
-        parameterList->sublist("GDSWCoarseOperator").set("Level ID",this->LevelID_);
-        FirstLevelOperator_.reset(new AlgebraicOverlappingOperator<SC,LO,GO,NO>(k,sublist(parameterList,"AlgebraicOverlappingOperator")));
-        SumOperator_->addOperator(FirstLevelOperator_);
+        parameterList->sublist("AlgebraicOverlappingOperator").set("Level ID",this->LevelID_);
+        OverlappingOperator_.reset(new AlgebraicOverlappingOperator<SC,LO,GO,NO>(k,sublist(parameterList,"AlgebraicOverlappingOperator")));
+        SumOperator_->addOperator(OverlappingOperator_);
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -76,14 +76,14 @@ namespace FROSch {
                                                                     ConstXMapPtr repeatedMap)
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"AlgebraicOverlappingPreconditioner::initialize");
-        return FirstLevelOperator_->initialize(overlap,repeatedMap);
+        return OverlappingOperator_->initialize(overlap,repeatedMap);
     }
 
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::compute()
     {
         FROSCH_TIMER_START_LEVELID(computeTime,"AlgebraicOverlappingPreconditioner::compute");
-        return FirstLevelOperator_->compute();
+        return OverlappingOperator_->compute();
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -122,6 +122,14 @@ namespace FROSch {
         return "Algebraic Overlapping Preconditioner";
     }
 
+    template <class SC,class LO,class GO,class NO>
+    int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr &k)
+    {
+        FROSCH_TIMER_START_LEVELID(resetMatrixTime,"TwoLevelPreconditioner::resetMatrix");
+        this->K_ = k;
+        OverlappingOperator_->resetMatrix(this->K_);
+        return 0;
+    }
 }
 
 #endif
