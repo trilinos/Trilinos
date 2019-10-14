@@ -63,7 +63,6 @@
 #include <set>
 #include <string>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <tokenize.h>
 #include <utility>
 #include <vector>
@@ -112,8 +111,8 @@ namespace {
   double my_max(double x1, double x2) { return x1 > x2 ? x1 : x2; }
 
   template <typename INT>
-  void calc_bounding_box(size_t ndim, size_t node_count, std::vector<double> coordinates,
-                         std::vector<INT> connectivity, double &xmin, double &ymin, double &zmin,
+  void calc_bounding_box(size_t ndim, size_t node_count, std::vector<double> &coordinates,
+                         std::vector<INT> &connectivity, double &xmin, double &ymin, double &zmin,
                          double &xmax, double &ymax, double &zmax)
   {
     std::vector<int> elem_block_nodes(node_count);
@@ -262,9 +261,7 @@ namespace Ioss {
     if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
       properties.erase("FIELD_SUFFIX_SEPARATOR");
     }
-    char tmp[2];
-    tmp[0] = separator;
-    tmp[1] = 0;
+    char tmp[2] = {separator, '\0'};
     properties.add(Property("FIELD_SUFFIX_SEPARATOR", tmp));
     fieldSeparator = separator;
   }
@@ -390,6 +387,13 @@ namespace Ioss {
     return exists;
   }
 
+#if defined(_MSC_VER)
+#include <direct.h>
+#ifndef S_ISDIR
+#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
+#endif
+#endif
+
   void DatabaseIO::create_path(const std::string &filename) const
   {
     bool               error_found = false;
@@ -407,7 +411,11 @@ namespace Ioss {
         struct stat st;
         if (stat(path_root.c_str(), &st) != 0) {
           const int mode = 0777; // Users umask will be applied to this.
+#ifdef _MSC_VER
+          if (mkdir(path_root.c_str()) != 0 && errno != EEXIST) {
+#else
           if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
+#endif
             fmt::print(errmsg, "ERROR: Cannot create directory '{}': {}\n", path_root,
                        std::strerror(errno));
             error_found = true;
@@ -880,8 +888,7 @@ namespace Ioss {
         std::vector<int> entity_processor;
         css->get_field_data("entity_processor", entity_processor);
         proc_node.reserve(entity_processor.size() / 2);
-        size_t j = 0;
-        for (size_t i = 0; i < entity_processor.size(); j++, i += 2) {
+        for (size_t i = 0; i < entity_processor.size(); i += 2) {
           proc_node.emplace_back(entity_processor[i + 1], entity_processor[i]);
         }
       }

@@ -160,7 +160,7 @@ namespace tsl {
     using truncated_hash_type = std::uint_least32_t;
 
     /**
-     * Helper class that store a truncated hash if StoreHash is true and nothing otherwise.
+     * Helper class that stores a truncated hash if StoreHash is true and nothing otherwise.
      */
     template <bool StoreHash> class hopscotch_bucket_hash
     {
@@ -178,9 +178,9 @@ namespace tsl {
     template <> class hopscotch_bucket_hash<true>
     {
     public:
-      bool bucket_hash_equal(std::size_t hash) const noexcept
+      bool bucket_hash_equal(std::size_t my_hash) const noexcept
       {
-        return m_hash == truncated_hash_type(hash);
+        return m_hash == truncated_hash_type(my_hash);
       }
 
       truncated_hash_type truncated_bucket_hash() const noexcept { return m_hash; }
@@ -188,7 +188,7 @@ namespace tsl {
     protected:
       void copy_hash(const hopscotch_bucket_hash &bucket) noexcept { m_hash = bucket.m_hash; }
 
-      void set_hash(truncated_hash_type hash) noexcept { m_hash = hash; }
+      void set_hash(truncated_hash_type my_hash) noexcept { m_hash = my_hash; }
 
     private:
       truncated_hash_type m_hash;
@@ -326,14 +326,14 @@ namespace tsl {
       }
 
       template <typename... Args>
-      void set_value_of_empty_bucket(truncated_hash_type hash, Args &&... value_type_args)
+      void set_value_of_empty_bucket(truncated_hash_type my_hash, Args &&... value_type_args)
       {
         tsl_hh_assert(empty());
 
         ::new (static_cast<void *>(std::addressof(m_value)))
             value_type(std::forward<Args>(value_type_args)...);
         set_empty(false);
-        this->set_hash(hash);
+        this->set_hash(my_hash);
       }
 
       void swap_value_into_empty_bucket(hopscotch_bucket &empty_bucket)
@@ -368,19 +368,9 @@ namespace tsl {
         tsl_hh_assert(empty());
       }
 
-      static std::size_t max_size() noexcept
+      static truncated_hash_type truncate_hash(std::size_t my_hash) noexcept
       {
-        if (StoreHash) {
-          return std::numeric_limits<typename bucket_hash::hash_type>::max();
-        }
-        else {
-          return std::numeric_limits<std::size_t>::max();
-        }
-      }
-
-      static truncated_hash_type truncate_hash(std::size_t hash) noexcept
-      {
-        return truncated_hash_type(hash);
+        return truncated_hash_type(my_hash);
       }
 
     private:
@@ -514,12 +504,19 @@ namespace tsl {
 
         hopscotch_iterator() noexcept {}
 
-        hopscotch_iterator(const hopscotch_iterator<false> &other) noexcept
+        // Copy constructor from iterator to const_iterator.
+        template <bool TIsConst = IsConst, typename std::enable_if<TIsConst>::type * = nullptr>
+        hopscotch_iterator(const hopscotch_iterator<!TIsConst> &other) noexcept
             : m_buckets_iterator(other.m_buckets_iterator),
               m_buckets_end_iterator(other.m_buckets_end_iterator),
               m_overflow_iterator(other.m_overflow_iterator)
         {
         }
+
+        hopscotch_iterator(const hopscotch_iterator &other) = default;
+        hopscotch_iterator(hopscotch_iterator &&other)      = default;
+        hopscotch_iterator &operator=(const hopscotch_iterator &other) = default;
+        hopscotch_iterator &operator=(hopscotch_iterator &&other) = default;
 
         const typename hopscotch_hash::key_type &key() const
         {
@@ -603,11 +600,10 @@ namespace tsl {
     public:
       template <class OC                                                     = OverflowContainer,
                 typename std::enable_if<!has_key_compare<OC>::value>::type * = nullptr>
-      hopscotch_hash(size_type bucket_count, const Hash &hash, const KeyEqual &equal,
+      hopscotch_hash(size_type bucket_count, const Hash &my_hash, const KeyEqual &equal,
                      const Allocator &alloc, float max_load_factor)
-          : Hash(hash), KeyEqual(equal), GrowthPolicy(bucket_count), m_buckets(alloc),
-            m_overflow_elements(alloc), m_first_or_empty_bucket(static_empty_bucket_ptr()),
-            m_nb_elements(0)
+          : Hash(my_hash), KeyEqual(equal), GrowthPolicy(bucket_count), m_buckets_data(alloc),
+            m_overflow_elements(alloc), m_buckets(static_empty_bucket_ptr()), m_nb_elements(0)
       {
         if (bucket_count > max_bucket_count()) {
           throw std::length_error("The map exceeds its maxmimum size.");
@@ -617,9 +613,9 @@ namespace tsl {
           static_assert(NeighborhoodSize - 1 > 0, "");
 
           // Can't directly construct with the appropriate size in the initializer
-          // as m_buckets(bucket_count, alloc) is not supported by GCC 4.8
-          m_buckets.resize(bucket_count + NeighborhoodSize - 1);
-          m_first_or_empty_bucket = m_buckets.data();
+          // as m_buckets_data(bucket_count, alloc) is not supported by GCC 4.8
+          m_buckets_data.resize(bucket_count + NeighborhoodSize - 1);
+          m_buckets = m_buckets_data.data();
         }
 
         this->max_load_factor(max_load_factor);
@@ -634,12 +630,11 @@ namespace tsl {
 
       template <class OC                                                    = OverflowContainer,
                 typename std::enable_if<has_key_compare<OC>::value>::type * = nullptr>
-      hopscotch_hash(size_type bucket_count, const Hash &hash, const KeyEqual &equal,
+      hopscotch_hash(size_type bucket_count, const Hash &my_hash, const KeyEqual &equal,
                      const Allocator &alloc, float max_load_factor,
                      const typename OC::key_compare &comp)
-          : Hash(hash), KeyEqual(equal), GrowthPolicy(bucket_count), m_buckets(alloc),
-            m_overflow_elements(comp, alloc), m_first_or_empty_bucket(static_empty_bucket_ptr()),
-            m_nb_elements(0)
+          : Hash(my_hash), KeyEqual(equal), GrowthPolicy(bucket_count), m_buckets_data(alloc),
+            m_overflow_elements(comp, alloc), m_buckets(static_empty_bucket_ptr()), m_nb_elements(0)
       {
 
         if (bucket_count > max_bucket_count()) {
@@ -650,9 +645,9 @@ namespace tsl {
           static_assert(NeighborhoodSize - 1 > 0, "");
 
           // Can't directly construct with the appropriate size in the initializer
-          // as m_buckets(bucket_count, alloc) is not supported by GCC 4.8
-          m_buckets.resize(bucket_count + NeighborhoodSize - 1);
-          m_first_or_empty_bucket = m_buckets.data();
+          // as m_buckets_data(bucket_count, alloc) is not supported by GCC 4.8
+          m_buckets_data.resize(bucket_count + NeighborhoodSize - 1);
+          m_buckets = m_buckets_data.data();
         }
 
         this->max_load_factor(max_load_factor);
@@ -666,10 +661,9 @@ namespace tsl {
       }
 
       hopscotch_hash(const hopscotch_hash &other)
-          : Hash(other), KeyEqual(other), GrowthPolicy(other), m_buckets(other.m_buckets),
+          : Hash(other), KeyEqual(other), GrowthPolicy(other), m_buckets_data(other.m_buckets_data),
             m_overflow_elements(other.m_overflow_elements),
-            m_first_or_empty_bucket(m_buckets.empty() ? static_empty_bucket_ptr()
-                                                      : m_buckets.data()),
+            m_buckets(m_buckets_data.empty() ? static_empty_bucket_ptr() : m_buckets_data.data()),
             m_nb_elements(other.m_nb_elements), m_max_load_factor(other.m_max_load_factor),
             m_max_load_threshold_rehash(other.m_max_load_threshold_rehash),
             m_min_load_threshold_rehash(other.m_min_load_threshold_rehash)
@@ -684,18 +678,17 @@ namespace tsl {
           : Hash(std::move(static_cast<Hash &>(other))),
             KeyEqual(std::move(static_cast<KeyEqual &>(other))),
             GrowthPolicy(std::move(static_cast<GrowthPolicy &>(other))),
-            m_buckets(std::move(other.m_buckets)),
+            m_buckets_data(std::move(other.m_buckets_data)),
             m_overflow_elements(std::move(other.m_overflow_elements)),
-            m_first_or_empty_bucket(m_buckets.empty() ? static_empty_bucket_ptr()
-                                                      : m_buckets.data()),
+            m_buckets(m_buckets_data.empty() ? static_empty_bucket_ptr() : m_buckets_data.data()),
             m_nb_elements(other.m_nb_elements), m_max_load_factor(other.m_max_load_factor),
             m_max_load_threshold_rehash(other.m_max_load_threshold_rehash),
             m_min_load_threshold_rehash(other.m_min_load_threshold_rehash)
       {
         other.GrowthPolicy::clear();
-        other.m_buckets.clear();
+        other.m_buckets_data.clear();
         other.m_overflow_elements.clear();
-        other.m_first_or_empty_bucket     = static_empty_bucket_ptr();
+        other.m_buckets                   = static_empty_bucket_ptr();
         other.m_nb_elements               = 0;
         other.m_max_load_threshold_rehash = 0;
         other.m_min_load_threshold_rehash = 0;
@@ -708,10 +701,9 @@ namespace tsl {
           KeyEqual::    operator=(other);
           GrowthPolicy::operator=(other);
 
-          m_buckets           = other.m_buckets;
+          m_buckets_data      = other.m_buckets_data;
           m_overflow_elements = other.m_overflow_elements;
-          m_first_or_empty_bucket =
-              m_buckets.empty() ? static_empty_bucket_ptr() : m_buckets.data();
+          m_buckets = m_buckets_data.empty() ? static_empty_bucket_ptr() : m_buckets_data.data();
           m_nb_elements               = other.m_nb_elements;
           m_max_load_factor           = other.m_max_load_factor;
           m_max_load_threshold_rehash = other.m_max_load_threshold_rehash;
@@ -729,43 +721,44 @@ namespace tsl {
         return *this;
       }
 
-      allocator_type get_allocator() const { return m_buckets.get_allocator(); }
+      allocator_type get_allocator() const { return m_buckets_data.get_allocator(); }
 
       /*
        * Iterators
        */
       iterator begin() noexcept
       {
-        auto begin = m_buckets.begin();
-        while (begin != m_buckets.end() && begin->empty()) {
+        auto begin = m_buckets_data.begin();
+        while (begin != m_buckets_data.end() && begin->empty()) {
           ++begin;
         }
 
-        return iterator(begin, m_buckets.end(), m_overflow_elements.begin());
+        return iterator(begin, m_buckets_data.end(), m_overflow_elements.begin());
       }
 
       const_iterator begin() const noexcept { return cbegin(); }
 
       const_iterator cbegin() const noexcept
       {
-        auto begin = m_buckets.cbegin();
-        while (begin != m_buckets.cend() && begin->empty()) {
+        auto begin = m_buckets_data.cbegin();
+        while (begin != m_buckets_data.cend() && begin->empty()) {
           ++begin;
         }
 
-        return const_iterator(begin, m_buckets.cend(), m_overflow_elements.cbegin());
+        return const_iterator(begin, m_buckets_data.cend(), m_overflow_elements.cbegin());
       }
 
       iterator end() noexcept
       {
-        return iterator(m_buckets.end(), m_buckets.end(), m_overflow_elements.end());
+        return iterator(m_buckets_data.end(), m_buckets_data.end(), m_overflow_elements.end());
       }
 
       const_iterator end() const noexcept { return cend(); }
 
       const_iterator cend() const noexcept
       {
-        return const_iterator(m_buckets.cend(), m_buckets.cend(), m_overflow_elements.cend());
+        return const_iterator(m_buckets_data.cend(), m_buckets_data.cend(),
+                              m_overflow_elements.cend());
       }
 
       /*
@@ -775,14 +768,14 @@ namespace tsl {
 
       size_type size() const noexcept { return m_nb_elements; }
 
-      size_type max_size() const noexcept { return hopscotch_bucket::max_size(); }
+      size_type max_size() const noexcept { return m_buckets_data.max_size(); }
 
       /*
        * Modifiers
        */
       void clear() noexcept
       {
-        for (auto &bucket : m_buckets) {
+        for (auto &bucket : m_buckets_data) {
           bucket.clear();
         }
 
@@ -932,15 +925,15 @@ namespace tsl {
         const std::size_t ibucket_for_hash = bucket_for_hash(hash_key(pos.key()));
 
         if (pos.m_buckets_iterator != pos.m_buckets_end_iterator) {
-          auto it_bucket =
-              m_buckets.begin() + std::distance(m_buckets.cbegin(), pos.m_buckets_iterator);
+          auto it_bucket = m_buckets_data.begin() +
+                           std::distance(m_buckets_data.cbegin(), pos.m_buckets_iterator);
           erase_from_bucket(*it_bucket, ibucket_for_hash);
 
-          return ++iterator(it_bucket, m_buckets.end(), m_overflow_elements.begin());
+          return ++iterator(it_bucket, m_buckets_data.end(), m_overflow_elements.begin());
         }
         else {
           auto it_next_overflow = erase_from_overflow(pos.m_overflow_iterator, ibucket_for_hash);
-          return iterator(m_buckets.end(), m_buckets.end(), it_next_overflow);
+          return iterator(m_buckets_data.end(), m_buckets_data.end(), it_next_overflow);
         }
       }
 
@@ -960,19 +953,19 @@ namespace tsl {
 
       template <class K> size_type erase(const K &key) { return erase(key, hash_key(key)); }
 
-      template <class K> size_type erase(const K &key, std::size_t hash)
+      template <class K> size_type erase(const K &key, std::size_t my_hash)
       {
-        const std::size_t ibucket_for_hash = bucket_for_hash(hash);
+        const std::size_t ibucket_for_hash = bucket_for_hash(my_hash);
 
         hopscotch_bucket *bucket_found =
-            find_in_buckets(key, hash, m_first_or_empty_bucket + ibucket_for_hash);
+            find_in_buckets(key, my_hash, m_buckets + ibucket_for_hash);
         if (bucket_found != nullptr) {
           erase_from_bucket(*bucket_found, ibucket_for_hash);
 
           return 1;
         }
 
-        if ((m_first_or_empty_bucket + ibucket_for_hash)->has_overflow()) {
+        if (m_buckets[ibucket_for_hash].has_overflow()) {
           auto it_overflow = find_in_overflow(key);
           if (it_overflow != m_overflow_elements.end()) {
             erase_from_overflow(it_overflow, ibucket_for_hash);
@@ -991,9 +984,9 @@ namespace tsl {
         swap(static_cast<Hash &>(*this), static_cast<Hash &>(other));
         swap(static_cast<KeyEqual &>(*this), static_cast<KeyEqual &>(other));
         swap(static_cast<GrowthPolicy &>(*this), static_cast<GrowthPolicy &>(other));
-        swap(m_buckets, other.m_buckets);
+        swap(m_buckets_data, other.m_buckets_data);
         swap(m_overflow_elements, other.m_overflow_elements);
-        swap(m_first_or_empty_bucket, other.m_first_or_empty_bucket);
+        swap(m_buckets, other.m_buckets);
         swap(m_nb_elements, other.m_nb_elements);
         swap(m_max_load_factor, other.m_max_load_factor);
         swap(m_max_load_threshold_rehash, other.m_max_load_threshold_rehash);
@@ -1012,10 +1005,10 @@ namespace tsl {
 
       template <class K, class U = ValueSelect,
                 typename std::enable_if<has_mapped_type<U>::value>::type * = nullptr>
-      typename U::value_type &at(const K &key, std::size_t hash)
+      typename U::value_type &at(const K &key, std::size_t my_hash)
       {
         return const_cast<typename U::value_type &>(
-            static_cast<const hopscotch_hash *>(this)->at(key, hash));
+            static_cast<const hopscotch_hash *>(this)->at(key, my_hash));
       }
 
       template <class K, class U = ValueSelect,
@@ -1027,12 +1020,11 @@ namespace tsl {
 
       template <class K, class U = ValueSelect,
                 typename std::enable_if<has_mapped_type<U>::value>::type * = nullptr>
-      const typename U::value_type &at(const K &key, std::size_t hash) const
+      const typename U::value_type &at(const K &key, std::size_t my_hash) const
       {
         using T = typename U::value_type;
 
-        const T *value =
-            find_value_impl(key, hash, m_first_or_empty_bucket + bucket_for_hash(hash));
+        const T *value = find_value_impl(key, my_hash, m_buckets + bucket_for_hash(my_hash));
         if (value == nullptr) {
           throw std::out_of_range("Couldn't find key.");
         }
@@ -1047,32 +1039,32 @@ namespace tsl {
       {
         using T = typename U::value_type;
 
-        const std::size_t hash             = hash_key(key);
-        const std::size_t ibucket_for_hash = bucket_for_hash(hash);
+        const std::size_t my_hash          = hash_key(key);
+        const std::size_t ibucket_for_hash = bucket_for_hash(my_hash);
 
-        T *value = find_value_impl(key, hash, m_first_or_empty_bucket + ibucket_for_hash);
+        T *value = find_value_impl(key, my_hash, m_buckets + ibucket_for_hash);
         if (value != nullptr) {
           return *value;
         }
         else {
-          return insert_impl(ibucket_for_hash, hash, std::piecewise_construct,
-                             std::forward_as_tuple(std::forward<K>(key)), std::forward_as_tuple())
+          return insert_value(ibucket_for_hash, my_hash, std::piecewise_construct,
+                              std::forward_as_tuple(std::forward<K>(key)), std::forward_as_tuple())
               .first.value();
         }
       }
 
       template <class K> size_type count(const K &key) const { return count(key, hash_key(key)); }
 
-      template <class K> size_type count(const K &key, std::size_t hash) const
+      template <class K> size_type count(const K &key, std::size_t my_hash) const
       {
-        return count_impl(key, hash, m_first_or_empty_bucket + bucket_for_hash(hash));
+        return count_impl(key, my_hash, m_buckets + bucket_for_hash(my_hash));
       }
 
       template <class K> iterator find(const K &key) { return find(key, hash_key(key)); }
 
-      template <class K> iterator find(const K &key, std::size_t hash)
+      template <class K> iterator find(const K &key, std::size_t my_hash)
       {
-        return find_impl(key, hash, m_first_or_empty_bucket + bucket_for_hash(hash));
+        return find_impl(key, my_hash, m_buckets + bucket_for_hash(my_hash));
       }
 
       template <class K> const_iterator find(const K &key) const
@@ -1080,9 +1072,16 @@ namespace tsl {
         return find(key, hash_key(key));
       }
 
-      template <class K> const_iterator find(const K &key, std::size_t hash) const
+      template <class K> const_iterator find(const K &key, std::size_t my_hash) const
       {
-        return find_impl(key, hash, m_first_or_empty_bucket + bucket_for_hash(hash));
+        return find_impl(key, my_hash, m_buckets + bucket_for_hash(my_hash));
+      }
+
+      template <class K> bool contains(const K &key) const { return contains(key, hash_key(key)); }
+
+      template <class K> bool contains(const K &key, std::size_t my_hash) const
+      {
+        return count(key, my_hash) != 0;
       }
 
       template <class K> std::pair<iterator, iterator> equal_range(const K &key)
@@ -1090,9 +1089,10 @@ namespace tsl {
         return equal_range(key, hash_key(key));
       }
 
-      template <class K> std::pair<iterator, iterator> equal_range(const K &key, std::size_t hash)
+      template <class K>
+      std::pair<iterator, iterator> equal_range(const K &key, std::size_t my_hash)
       {
-        iterator it = find(key, hash);
+        iterator it = find(key, my_hash);
         return std::make_pair(it, (it == end()) ? it : std::next(it));
       }
 
@@ -1102,9 +1102,9 @@ namespace tsl {
       }
 
       template <class K>
-      std::pair<const_iterator, const_iterator> equal_range(const K &key, std::size_t hash) const
+      std::pair<const_iterator, const_iterator> equal_range(const K &key, std::size_t my_hash) const
       {
-        const_iterator it = find(key, hash);
+        const_iterator it = find(key, my_hash);
         return std::make_pair(it, (it == cend()) ? it : std::next(it));
       }
 
@@ -1118,17 +1118,17 @@ namespace tsl {
          * is a little bigger than the real number of buckets when not empty. We could use some of
          * the buckets at the beginning, but it is faster this way as we avoid extra checks.
          */
-        if (m_buckets.empty()) {
+        if (m_buckets_data.empty()) {
           return 0;
         }
 
-        return m_buckets.size() - NeighborhoodSize + 1;
+        return m_buckets_data.size() - NeighborhoodSize + 1;
       }
 
       size_type max_bucket_count() const
       {
         const std::size_t max_bucket_count =
-            std::min(GrowthPolicy::max_bucket_count(), m_buckets.max_size());
+            std::min(GrowthPolicy::max_bucket_count(), m_buckets_data.max_size());
         return max_bucket_count - NeighborhoodSize + 1;
       }
 
@@ -1178,13 +1178,14 @@ namespace tsl {
       {
         if (pos.m_buckets_iterator != pos.m_buckets_end_iterator) {
           // Get a non-const iterator
-          auto it = m_buckets.begin() + std::distance(m_buckets.cbegin(), pos.m_buckets_iterator);
-          return iterator(it, m_buckets.end(), m_overflow_elements.begin());
+          auto it = m_buckets_data.begin() +
+                    std::distance(m_buckets_data.cbegin(), pos.m_buckets_iterator);
+          return iterator(it, m_buckets_data.end(), m_overflow_elements.begin());
         }
         else {
           // Get a non-const iterator
           auto it = mutable_overflow_iterator(pos.m_overflow_iterator);
-          return iterator(m_buckets.end(), m_buckets.end(), it);
+          return iterator(m_buckets_data.end(), m_buckets_data.end(), it);
         }
       }
 
@@ -1205,10 +1206,10 @@ namespace tsl {
         return KeyEqual::operator()(key1, key2);
       }
 
-      std::size_t bucket_for_hash(std::size_t hash) const
+      std::size_t bucket_for_hash(std::size_t my_hash) const
       {
-        const std::size_t bucket = GrowthPolicy::bucket_for_hash(hash);
-        tsl_hh_assert(bucket < m_buckets.size() || (bucket == 0 && m_buckets.empty()));
+        const std::size_t bucket = GrowthPolicy::bucket_for_hash(my_hash);
+        tsl_hh_assert(bucket < m_buckets_data.size() || (bucket == 0 && m_buckets_data.empty()));
 
         return bucket;
       }
@@ -1233,42 +1234,43 @@ namespace tsl {
 
         try {
           const bool use_stored_hash = USE_STORED_HASH_ON_REHASH(new_map.bucket_count());
-          for (auto it_bucket = m_buckets.begin(); it_bucket != m_buckets.end(); ++it_bucket) {
+          for (auto it_bucket = m_buckets_data.begin(); it_bucket != m_buckets_data.end();
+               ++it_bucket) {
             if (it_bucket->empty()) {
               continue;
             }
 
-            const std::size_t hash = use_stored_hash
-                                         ? it_bucket->truncated_bucket_hash()
-                                         : new_map.hash_key(KeySelect()(it_bucket->value()));
-            const std::size_t ibucket_for_hash = new_map.bucket_for_hash(hash);
+            const std::size_t my_hash = use_stored_hash
+                                            ? it_bucket->truncated_bucket_hash()
+                                            : new_map.hash_key(KeySelect()(it_bucket->value()));
+            const std::size_t ibucket_for_hash = new_map.bucket_for_hash(my_hash);
 
-            new_map.insert_impl(ibucket_for_hash, hash, std::move(it_bucket->value()));
+            new_map.insert_value(ibucket_for_hash, my_hash, std::move(it_bucket->value()));
 
-            erase_from_bucket(*it_bucket, bucket_for_hash(hash));
+            erase_from_bucket(*it_bucket, bucket_for_hash(my_hash));
           }
         }
         /*
-         * The call to insert_impl may throw an exception if an element is added to the overflow
+         * The call to insert_value may throw an exception if an element is added to the overflow
          * list. Rollback the elements in this case.
          */
         catch (...) {
           m_overflow_elements.swap(new_map.m_overflow_elements);
 
           const bool use_stored_hash = USE_STORED_HASH_ON_REHASH(new_map.bucket_count());
-          for (auto it_bucket = new_map.m_buckets.begin(); it_bucket != new_map.m_buckets.end();
-               ++it_bucket) {
+          for (auto it_bucket = new_map.m_buckets_data.begin();
+               it_bucket != new_map.m_buckets_data.end(); ++it_bucket) {
             if (it_bucket->empty()) {
               continue;
             }
 
-            const std::size_t hash = use_stored_hash ? it_bucket->truncated_bucket_hash()
-                                                     : hash_key(KeySelect()(it_bucket->value()));
-            const std::size_t ibucket_for_hash = bucket_for_hash(hash);
+            const std::size_t my_hash = use_stored_hash ? it_bucket->truncated_bucket_hash()
+                                                        : hash_key(KeySelect()(it_bucket->value()));
+            const std::size_t ibucket_for_hash = bucket_for_hash(my_hash);
 
             // The elements we insert were not in the overflow list before the switch.
             // They will not be go in the overflow list if we rollback the switch.
-            insert_impl(ibucket_for_hash, hash, std::move(it_bucket->value()));
+            insert_value(ibucket_for_hash, my_hash, std::move(it_bucket->value()));
           }
 
           throw;
@@ -1286,23 +1288,24 @@ namespace tsl {
         hopscotch_hash new_map = new_hopscotch_hash(count_);
 
         const bool use_stored_hash = USE_STORED_HASH_ON_REHASH(new_map.bucket_count());
-        for (const hopscotch_bucket &bucket : m_buckets) {
+        for (const hopscotch_bucket &bucket : m_buckets_data) {
           if (bucket.empty()) {
             continue;
           }
 
-          const std::size_t hash = use_stored_hash ? bucket.truncated_bucket_hash()
-                                                   : new_map.hash_key(KeySelect()(bucket.value()));
-          const std::size_t ibucket_for_hash = new_map.bucket_for_hash(hash);
+          const std::size_t my_hash = use_stored_hash
+                                          ? bucket.truncated_bucket_hash()
+                                          : new_map.hash_key(KeySelect()(bucket.value()));
+          const std::size_t ibucket_for_hash = new_map.bucket_for_hash(my_hash);
 
-          new_map.insert_impl(ibucket_for_hash, hash, bucket.value());
+          new_map.insert_value(ibucket_for_hash, my_hash, bucket.value());
         }
 
         for (const value_type &value : m_overflow_elements) {
-          const std::size_t hash             = new_map.hash_key(KeySelect()(value));
-          const std::size_t ibucket_for_hash = new_map.bucket_for_hash(hash);
+          const std::size_t my_hash          = new_map.hash_key(KeySelect()(value));
+          const std::size_t ibucket_for_hash = new_map.bucket_for_hash(my_hash);
 
-          new_map.insert_impl(ibucket_for_hash, hash, value);
+          new_map.insert_value(ibucket_for_hash, my_hash, value);
         }
 
         new_map.swap(*this);
@@ -1352,7 +1355,8 @@ namespace tsl {
       void erase_from_bucket(hopscotch_bucket &bucket_for_value,
                              std::size_t       ibucket_for_hash) noexcept
       {
-        const std::size_t ibucket_for_value = std::distance(m_buckets.data(), &bucket_for_value);
+        const std::size_t ibucket_for_value =
+            std::distance(m_buckets_data.data(), &bucket_for_value);
         tsl_hh_assert(ibucket_for_value >= ibucket_for_hash);
 
         bucket_for_value.remove_value();
@@ -1373,54 +1377,53 @@ namespace tsl {
       template <typename P, class... Args>
       std::pair<iterator, bool> try_emplace_impl(P &&key, Args &&... args_value)
       {
-        const std::size_t hash             = hash_key(key);
-        const std::size_t ibucket_for_hash = bucket_for_hash(hash);
+        const std::size_t my_hash          = hash_key(key);
+        const std::size_t ibucket_for_hash = bucket_for_hash(my_hash);
 
         // Check if already presents
-        auto it_find = find_impl(key, hash, m_first_or_empty_bucket + ibucket_for_hash);
+        auto it_find = find_impl(key, my_hash, m_buckets + ibucket_for_hash);
         if (it_find != end()) {
           return std::make_pair(it_find, false);
         }
 
-        return insert_impl(ibucket_for_hash, hash, std::piecewise_construct,
-                           std::forward_as_tuple(std::forward<P>(key)),
-                           std::forward_as_tuple(std::forward<Args>(args_value)...));
+        return insert_value(ibucket_for_hash, my_hash, std::piecewise_construct,
+                            std::forward_as_tuple(std::forward<P>(key)),
+                            std::forward_as_tuple(std::forward<Args>(args_value)...));
       }
 
       template <typename P> std::pair<iterator, bool> insert_impl(P &&value)
       {
-        const std::size_t hash             = hash_key(KeySelect()(value));
-        const std::size_t ibucket_for_hash = bucket_for_hash(hash);
+        const std::size_t my_hash          = hash_key(KeySelect()(value));
+        const std::size_t ibucket_for_hash = bucket_for_hash(my_hash);
 
         // Check if already presents
-        auto it_find =
-            find_impl(KeySelect()(value), hash, m_first_or_empty_bucket + ibucket_for_hash);
+        auto it_find = find_impl(KeySelect()(value), my_hash, m_buckets + ibucket_for_hash);
         if (it_find != end()) {
           return std::make_pair(it_find, false);
         }
 
-        return insert_impl(ibucket_for_hash, hash, std::forward<P>(value));
+        return insert_value(ibucket_for_hash, my_hash, std::forward<P>(value));
       }
 
       template <typename... Args>
-      std::pair<iterator, bool> insert_impl(std::size_t ibucket_for_hash, std::size_t hash,
-                                            Args &&... value_type_args)
+      std::pair<iterator, bool> insert_value(std::size_t ibucket_for_hash, std::size_t my_hash,
+                                             Args &&... value_type_args)
       {
         if ((m_nb_elements - m_overflow_elements.size()) >= m_max_load_threshold_rehash) {
           rehash(GrowthPolicy::next_bucket_count());
-          ibucket_for_hash = bucket_for_hash(hash);
+          ibucket_for_hash = bucket_for_hash(my_hash);
         }
 
         std::size_t ibucket_empty = find_empty_bucket(ibucket_for_hash);
-        if (ibucket_empty < m_buckets.size()) {
+        if (ibucket_empty < m_buckets_data.size()) {
           do {
             tsl_hh_assert(ibucket_empty >= ibucket_for_hash);
 
             // Empty bucket is in range of NeighborhoodSize, use it
             if (ibucket_empty - ibucket_for_hash < NeighborhoodSize) {
-              auto it = insert_in_bucket(ibucket_empty, ibucket_for_hash, hash,
+              auto it = insert_in_bucket(ibucket_empty, ibucket_for_hash, my_hash,
                                          std::forward<Args>(value_type_args)...);
-              return std::make_pair(iterator(it, m_buckets.end(), m_overflow_elements.begin()),
+              return std::make_pair(iterator(it, m_buckets_data.end(), m_overflow_elements.begin()),
                                     true);
             }
           }
@@ -1433,18 +1436,18 @@ namespace tsl {
         if (size() < m_min_load_threshold_rehash ||
             !will_neighborhood_change_on_rehash(ibucket_for_hash)) {
           auto it = insert_in_overflow(ibucket_for_hash, std::forward<Args>(value_type_args)...);
-          return std::make_pair(iterator(m_buckets.end(), m_buckets.end(), it), true);
+          return std::make_pair(iterator(m_buckets_data.end(), m_buckets_data.end(), it), true);
         }
 
         rehash(GrowthPolicy::next_bucket_count());
-        ibucket_for_hash = bucket_for_hash(hash);
+        ibucket_for_hash = bucket_for_hash(my_hash);
 
-        return insert_impl(ibucket_for_hash, hash, std::forward<Args>(value_type_args)...);
+        return insert_value(ibucket_for_hash, my_hash, std::forward<Args>(value_type_args)...);
       }
 
       /*
        * Return true if a rehash will change the position of a key-value in the neighborhood of
-       * ibucket_neighborhood_check. In this case a rehash is needed instead of putting the value in
+       * ibucket_neighborhood_check. In this case a rehash is needed instead of puting the value in
        * overflow list.
        */
       bool will_neighborhood_change_on_rehash(size_t ibucket_neighborhood_check) const
@@ -1454,14 +1457,15 @@ namespace tsl {
 
         const bool use_stored_hash = USE_STORED_HASH_ON_REHASH(expand_bucket_count);
         for (size_t ibucket = ibucket_neighborhood_check;
-             ibucket < m_buckets.size() &&
+             ibucket < m_buckets_data.size() &&
              (ibucket - ibucket_neighborhood_check) < NeighborhoodSize;
              ++ibucket) {
           tsl_hh_assert(!m_buckets[ibucket].empty());
 
-          const size_t hash = use_stored_hash ? m_buckets[ibucket].truncated_bucket_hash()
-                                              : hash_key(KeySelect()(m_buckets[ibucket].value()));
-          if (bucket_for_hash(hash) != expand_growth_policy.bucket_for_hash(hash)) {
+          const size_t my_hash = use_stored_hash
+                                     ? m_buckets[ibucket].truncated_bucket_hash()
+                                     : hash_key(KeySelect()(m_buckets[ibucket].value()));
+          if (bucket_for_hash(my_hash) != expand_growth_policy.bucket_for_hash(my_hash)) {
             return true;
           }
         }
@@ -1470,20 +1474,20 @@ namespace tsl {
       }
 
       /*
-       * Return the index of an empty bucket in m_buckets.
-       * If none, the returned index equals m_buckets.size()
+       * Return the index of an empty bucket in m_buckets_data.
+       * If none, the returned index equals m_buckets_data.size()
        */
       std::size_t find_empty_bucket(std::size_t ibucket_start) const
       {
         const std::size_t limit =
-            std::min(ibucket_start + MAX_PROBES_FOR_EMPTY_BUCKET, m_buckets.size());
+            std::min(ibucket_start + MAX_PROBES_FOR_EMPTY_BUCKET, m_buckets_data.size());
         for (; ibucket_start < limit; ibucket_start++) {
           if (m_buckets[ibucket_start].empty()) {
             return ibucket_start;
           }
         }
 
-        return m_buckets.size();
+        return m_buckets_data.size();
       }
 
       /*
@@ -1493,18 +1497,18 @@ namespace tsl {
        */
       template <typename... Args>
       iterator_buckets insert_in_bucket(std::size_t ibucket_empty, std::size_t ibucket_for_hash,
-                                        std::size_t hash, Args &&... value_type_args)
+                                        std::size_t my_hash, Args &&... value_type_args)
       {
         tsl_hh_assert(ibucket_empty >= ibucket_for_hash);
         tsl_hh_assert(m_buckets[ibucket_empty].empty());
-        m_buckets[ibucket_empty].set_value_of_empty_bucket(hopscotch_bucket::truncate_hash(hash),
+        m_buckets[ibucket_empty].set_value_of_empty_bucket(hopscotch_bucket::truncate_hash(my_hash),
                                                            std::forward<Args>(value_type_args)...);
 
         tsl_hh_assert(!m_buckets[ibucket_for_hash].empty());
         m_buckets[ibucket_for_hash].toggle_neighbor_presence(ibucket_empty - ibucket_for_hash);
         m_nb_elements++;
 
-        return m_buckets.begin() + ibucket_empty;
+        return m_buckets_data.begin() + ibucket_empty;
       }
 
       template <class... Args, class U = OverflowContainer,
@@ -1578,11 +1582,12 @@ namespace tsl {
 
       template <class K, class U = ValueSelect,
                 typename std::enable_if<has_mapped_type<U>::value>::type * = nullptr>
-      typename U::value_type *find_value_impl(const K &key, std::size_t hash,
+      typename U::value_type *find_value_impl(const K &key, std::size_t my_hash,
                                               hopscotch_bucket *bucket_for_hash)
       {
         return const_cast<typename U::value_type *>(
-            static_cast<const hopscotch_hash *>(this)->find_value_impl(key, hash, bucket_for_hash));
+            static_cast<const hopscotch_hash *>(this)->find_value_impl(key, my_hash,
+                                                                       bucket_for_hash));
       }
 
       /*
@@ -1593,10 +1598,10 @@ namespace tsl {
        */
       template <class K, class U = ValueSelect,
                 typename std::enable_if<has_mapped_type<U>::value>::type * = nullptr>
-      const typename U::value_type *find_value_impl(const K &key, std::size_t hash,
+      const typename U::value_type *find_value_impl(const K &key, std::size_t my_hash,
                                                     const hopscotch_bucket *bucket_for_hash) const
       {
-        const hopscotch_bucket *bucket_found = find_in_buckets(key, hash, bucket_for_hash);
+        const hopscotch_bucket *bucket_found = find_in_buckets(key, my_hash, bucket_for_hash);
         if (bucket_found != nullptr) {
           return std::addressof(ValueSelect()(bucket_found->value()));
         }
@@ -1612,10 +1617,10 @@ namespace tsl {
       }
 
       template <class K>
-      size_type count_impl(const K &key, std::size_t hash,
+      size_type count_impl(const K &key, std::size_t my_hash,
                            const hopscotch_bucket *bucket_for_hash) const
       {
-        if (find_in_buckets(key, hash, bucket_for_hash) != nullptr) {
+        if (find_in_buckets(key, my_hash, bucket_for_hash) != nullptr) {
           return 1;
         }
         else if (bucket_for_hash->has_overflow() &&
@@ -1628,44 +1633,47 @@ namespace tsl {
       }
 
       template <class K>
-      iterator find_impl(const K &key, std::size_t hash, hopscotch_bucket *bucket_for_hash)
+      iterator find_impl(const K &key, std::size_t my_hash, hopscotch_bucket *bucket_for_hash)
       {
-        hopscotch_bucket *bucket_found = find_in_buckets(key, hash, bucket_for_hash);
+        hopscotch_bucket *bucket_found = find_in_buckets(key, my_hash, bucket_for_hash);
         if (bucket_found != nullptr) {
-          return iterator(m_buckets.begin() + std::distance(m_buckets.data(), bucket_found),
-                          m_buckets.end(), m_overflow_elements.begin());
+          return iterator(m_buckets_data.begin() +
+                              std::distance(m_buckets_data.data(), bucket_found),
+                          m_buckets_data.end(), m_overflow_elements.begin());
         }
 
         if (!bucket_for_hash->has_overflow()) {
           return end();
         }
 
-        return iterator(m_buckets.end(), m_buckets.end(), find_in_overflow(key));
+        return iterator(m_buckets_data.end(), m_buckets_data.end(), find_in_overflow(key));
       }
 
       template <class K>
-      const_iterator find_impl(const K &key, std::size_t hash,
+      const_iterator find_impl(const K &key, std::size_t my_hash,
                                const hopscotch_bucket *bucket_for_hash) const
       {
-        const hopscotch_bucket *bucket_found = find_in_buckets(key, hash, bucket_for_hash);
+        const hopscotch_bucket *bucket_found = find_in_buckets(key, my_hash, bucket_for_hash);
         if (bucket_found != nullptr) {
-          return const_iterator(m_buckets.cbegin() + std::distance(m_buckets.data(), bucket_found),
-                                m_buckets.cend(), m_overflow_elements.cbegin());
+          return const_iterator(m_buckets_data.cbegin() +
+                                    std::distance(m_buckets_data.data(), bucket_found),
+                                m_buckets_data.cend(), m_overflow_elements.cbegin());
         }
 
         if (!bucket_for_hash->has_overflow()) {
           return cend();
         }
 
-        return const_iterator(m_buckets.cend(), m_buckets.cend(), find_in_overflow(key));
+        return const_iterator(m_buckets_data.cend(), m_buckets_data.cend(), find_in_overflow(key));
       }
 
       template <class K>
-      hopscotch_bucket *find_in_buckets(const K &key, std::size_t hash,
+      hopscotch_bucket *find_in_buckets(const K &key, std::size_t my_hash,
                                         hopscotch_bucket *bucket_for_hash)
       {
         const hopscotch_bucket *bucket_found =
-            static_cast<const hopscotch_hash *>(this)->find_in_buckets(key, hash, bucket_for_hash);
+            static_cast<const hopscotch_hash *>(this)->find_in_buckets(key, my_hash,
+                                                                       bucket_for_hash);
         return const_cast<hopscotch_bucket *>(bucket_found);
       }
 
@@ -1673,10 +1681,10 @@ namespace tsl {
        * Return a pointer to the bucket which has the value, nullptr otherwise.
        */
       template <class K>
-      const hopscotch_bucket *find_in_buckets(const K &key, std::size_t hash,
+      const hopscotch_bucket *find_in_buckets(const K &key, std::size_t my_hash,
                                               const hopscotch_bucket *bucket_for_hash) const
       {
-        (void)hash; // Avoid warning of unused variable when StoreHash is false;
+        (void)my_hash; // Avoid warning of unused variable when StoreHash is false;
 
         // TODO Try to optimize the function.
         // I tried to use ffs and  __builtin_ffs functions but I could not reduce the time the
@@ -1689,7 +1697,7 @@ namespace tsl {
             // anythin. If StoreHash is false, bucket_hash_equal is a no-op. Avoiding the call is
             // there to help GCC optimizes `hash` parameter away, it seems to not be able to do
             // without this hint.
-            if ((!StoreHash || bucket_for_hash->bucket_hash_equal(hash)) &&
+            if ((!StoreHash || bucket_for_hash->bucket_hash_equal(my_hash)) &&
                 compare_keys(KeySelect()(bucket_for_hash->value()), key)) {
               return bucket_for_hash;
             }
@@ -1752,13 +1760,30 @@ namespace tsl {
       }
 
     public:
-      static const size_type DEFAULT_INIT_BUCKETS_SIZE = 16;
+      static const size_type DEFAULT_INIT_BUCKETS_SIZE = 0;
       static constexpr float DEFAULT_MAX_LOAD_FACTOR   = (NeighborhoodSize <= 30) ? 0.8f : 0.9f;
 
     private:
       static const std::size_t MAX_PROBES_FOR_EMPTY_BUCKET = 12 * NeighborhoodSize;
       static constexpr float   MIN_LOAD_FACTOR_FOR_REHASH  = 0.1f;
 
+      /**
+       * We can only use the hash on rehash if the size of the hash type is the same as the stored
+       * one or if we use a power of two modulo. In the case of the power of two modulo, we just
+       * mask the least significant bytes, we just have to check that the truncated_hash_type didn't
+       * truncated too much bytes.
+       */
+      template <
+          class T                                                                      = size_type,
+          typename std::enable_if<std::is_same<T, truncated_hash_type>::value>::type * = nullptr>
+      static bool USE_STORED_HASH_ON_REHASH(size_type /*bucket_count*/)
+      {
+        return StoreHash;
+      }
+
+      template <
+          class T                                                                       = size_type,
+          typename std::enable_if<!std::is_same<T, truncated_hash_type>::value>::type * = nullptr>
       static bool USE_STORED_HASH_ON_REHASH(size_type bucket_count)
       {
         (void)bucket_count;
@@ -1781,15 +1806,18 @@ namespace tsl {
       }
 
     private:
-      buckets_container_type  m_buckets;
+      buckets_container_type  m_buckets_data;
       overflow_container_type m_overflow_elements;
 
       /**
-       * Points to m_buckets.data() if !m_buckets.empty() otherwise points to
-       * static_empty_bucket_ptr. This variable is useful to avoid the cost of checking if m_buckets
-       * is empty when trying to find an element.
+       * Points to m_buckets_data.data() if !m_buckets_data.empty() otherwise points to
+       * static_empty_bucket_ptr. This variable is useful to avoid the cost of checking if
+       * m_buckets_data is empty when trying to find an element.
+       *
+       * TODO Remove m_buckets_data and only use a pointer+size instead of a pointer+vector to save
+       * some space in the hopscotch_hash object.
        */
-      hopscotch_bucket *m_first_or_empty_bucket;
+      hopscotch_bucket *m_buckets;
 
       size_type m_nb_elements;
 
@@ -1803,7 +1831,7 @@ namespace tsl {
       /**
        * Min size of the hash table before a rehash can occurs automatically (except if
        * m_max_load_threshold_rehash os reached). If the neighborhood of a bucket is full before the
-       * min is reached, the elements are put into m_overflow_elements.
+       * min is reacher, the elements are put into m_overflow_elements.
        */
       size_type m_min_load_threshold_rehash;
     };

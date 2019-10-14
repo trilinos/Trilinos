@@ -47,12 +47,22 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <sys/select.h>
 #include <tokenize.h>
 #include <vector>
 
 #ifndef _WIN32
+#include <sys/ioctl.h>
 #include <sys/utsname.h>
+#endif
+
+#ifndef _POSIX_SOURCE
+#define _POSIX_SOURCE
+#endif
+#include <cstdio>
+
+#if defined(_MSC_VER)
+#include <io.h>
+#define isatty _isatty
 #endif
 
 // For memory utilities...
@@ -480,9 +490,7 @@ namespace {
     // the 'N' in the Real[N] field.  Dividing 'which_names.size()' by
     // 'N' will give the number of components in the inner field.
 
-    char suffix[2];
-    suffix[0] = suffix_separator;
-    suffix[1] = 0;
+    char suffix[2] = {suffix_separator, '\0'};
 
     std::vector<std::string> tokens =
         Ioss::tokenize(names[which_names[which_names.size() - 1]], suffix);
@@ -1247,12 +1255,10 @@ namespace {
   std::string two_letter_hash(const char *symbol)
   {
     const int    HASHSIZE = 673; // Largest prime less than 676 (26*26)
-    char         word[3];
     unsigned int hashval;
-    unsigned int g;
     for (hashval = 0; *symbol != '\0'; symbol++) {
-      hashval = (hashval << 4) + *symbol;
-      g       = hashval & 0xf0000000;
+      hashval        = (hashval << 4) + *symbol;
+      unsigned int g = hashval & 0xf0000000;
       if (g != 0) {
         hashval = hashval ^ (g >> 24);
         hashval = hashval ^ g;
@@ -1261,9 +1267,7 @@ namespace {
 
     // Convert to base-26 'number'
     hashval %= HASHSIZE;
-    word[0] = char(hashval / 26) + 'a';
-    word[1] = char(hashval % 26) + 'a';
-    word[2] = '\0';
+    char word[3] = {char(hashval / 26 + 'a'), char(hashval % 26 + 'a'), '\0'};
     return (std::string(word));
   }
 } // namespace
@@ -1287,52 +1291,15 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
   if (component_count <= 1) {
     comp_len = 0;
   }
-  else if (component_count < 100) {
-    comp_len = 3;
-  }
-  else if (component_count < 1000) {
-    comp_len = 4; //   _000
-  }
-  else if (component_count < 10000) {
-    comp_len = 5; //  _0000
-  }
-  else if (component_count < 100000) {
-    comp_len = 6; // _00000
-  }
   else {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "Variable '{}' has {:n} components which is larger than the current maximum"
-               " of 100,000. Please contact developer.",
-               name, component_count);
-    IOSS_ERROR(errmsg);
+    comp_len = number_width(component_count) + 1; // _00000
   }
 
   if (copies <= 1) {
     copy_len = 0;
   }
-  else if (copies < 10) {
-    copy_len = 2;
-  }
-  else if (copies < 100) {
-    copy_len = 3;
-  }
-  else if (copies < 1000) {
-    copy_len = 4; //   _000
-  }
-  else if (copies < 10000) {
-    copy_len = 5; //  _0000
-  }
-  else if (copies < 100000) {
-    copy_len = 6; // _00000
-  }
   else {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "Variable '{}' has {:n} copies which is larger than the current maximum"
-               " of 100,000. Please contact developer.",
-               name, copies);
-    IOSS_ERROR(errmsg);
+    copy_len = number_width(copies) + 1; // _00000
   }
 
   size_t maxlen = max_var_len - comp_len - copy_len;
@@ -1429,6 +1396,23 @@ int Ioss::Utils::log_power_2(uint64_t value)
   value |= value >> 16;
   value |= value >> 32;
   return tab64[(((value - (value >> 1)) * 0x07EDD5E59A4E28C2)) >> 58];
+}
+
+int Ioss::Utils::term_width()
+{
+  int cols = 100;
+  if (isatty(fileno(stdout))) {
+#ifdef TIOCGSIZE
+    struct ttysize ts;
+    ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
+    cols = ts.ts_cols;
+#elif defined(TIOCGWINSZ)
+    struct winsize ts;
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
+    cols = ts.ws_col;
+#endif /* TIOCGSIZE */
+  }
+  return cols;
 }
 
 void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_region,
@@ -1838,10 +1822,14 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     region.end_state(istep);
     output_region.end_state(ostep);
     if (options.delay > 0.0) {
+#ifndef _MSC_VER
       struct timespec delay;
       delay.tv_sec  = (int)options.delay;
       delay.tv_nsec = (options.delay - delay.tv_sec) * 1000000000L;
       nanosleep(&delay, nullptr);
+#else
+      Sleep((int)(options.delay * 1000));
+#endif
     }
   }
   if (options.debug && rank == 0) {

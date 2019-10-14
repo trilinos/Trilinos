@@ -109,7 +109,7 @@ int ex_get_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, v
   if (start_node_num + num_nodes > num_nod) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: start index (%" PRId64 ") + node count (%" PRId64
-             ") is larger than total number of nodes (%" ST_ZU ") in file id %d",
+             ") is larger than total number of nodes (%zu) in file id %d",
              start_node_num, num_nodes, num_nod, exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);

@@ -448,10 +448,10 @@ namespace {
     fmt::print("\n");
   }
   void describe_decomposition(std::vector<Iocgns::StructuredZoneData *> &zones,
-                              size_t orig_zone_count, const Interface &interface)
+                              size_t orig_zone_count, const Interface &interFace)
   {
-    size_t proc_count = interface.proc_count;
-    bool   verbose    = interface.verbose;
+    size_t proc_count = interFace.proc_count;
+    bool   verbose    = interFace.verbose;
 
     // ========================================================================
     // Output information about decomposition...
@@ -491,7 +491,7 @@ namespace {
       }
     }
 
-    if (interface.zone_proc_assignment) {
+    if (interFace.zone_proc_assignment) {
       // Output Zone->Processor assignment info
       fmt::print("\n");
       for (const auto adam_zone : zones) {
@@ -546,7 +546,7 @@ namespace {
           "\nWork per processor:\n\tMinimum = {:n}, Maximum = {:n}, Median = {:n}, Ratio = {}\n\n",
           min_work, max_work, median, (double)(max_work) / min_work);
     }
-    if (interface.work_per_processor) {
+    if (interFace.work_per_processor) {
       if (min_work == max_work) {
         fmt::print("\nWork on all processors is {:n}\n\n", min_work);
       }
@@ -589,12 +589,12 @@ namespace {
     }
 
     // Output Histogram...
-    if (interface.histogram) {
+    if (interFace.histogram) {
       output_histogram(proc_work, (size_t)avg_work, median);
     }
 
     // Communication Information (proc X communicates with proc Z)
-    if (interface.communication_map) {
+    if (interFace.communication_map) {
       output_communications(zones, proc_count);
     }
 
@@ -632,13 +632,13 @@ int main(int argc, char *argv[])
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
-  Interface interface;
-  bool      success = interface.parse_options(argc, argv);
+  Interface interFace;
+  bool      success = interFace.parse_options(argc, argv);
   if (!success) {
     exit(EXIT_FAILURE);
   }
 
-  std::string in_type = interface.filetype;
+  std::string in_type = interFace.filetype;
 
   codename   = argv[0];
   size_t ind = codename.find_last_of('/', codename.size());
@@ -649,10 +649,10 @@ int main(int argc, char *argv[])
   Ioss::Init::Initializer io;
 
   Ioss::PropertyManager properties;
-  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(in_type, interface.filename, Ioss::READ_RESTART,
+  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(in_type, interFace.filename, Ioss::READ_RESTART,
                                                   (MPI_Comm)MPI_COMM_WORLD, properties);
   if (dbi == nullptr || !dbi->ok()) {
-    fmt::print("\nERROR: Could not open database '{}' of type '{}'\n", interface.filename, in_type);
+    fmt::print("\nERROR: Could not open database '{}' of type '{}'\n", interFace.filename, in_type);
     std::exit(EXIT_FAILURE);
   }
 
@@ -674,30 +674,35 @@ int main(int argc, char *argv[])
     size_t zone = iblock->get_property("zone").get_int();
 
     zones.push_back(new Iocgns::StructuredZoneData(iblock->name(), zone, ni, nj, nk));
-    if (interface.ordinal >= 0) {
-      zones.back()->m_lineOrdinal = interface.ordinal;
+    if (interFace.ordinal >= 0) {
+      zones.back()->m_lineOrdinal = interFace.ordinal;
     }
     zones.back()->m_zoneConnectivity = iblock->m_zoneConnectivity;
   }
 
   if (in_type == "cgns") {
-    Iocgns::Utils::set_line_decomposition(dbi->get_file_pointer(), interface.line_decomposition,
-                                          zones, 0, interface.verbose);
+    Iocgns::Utils::set_line_decomposition(dbi->get_file_pointer(), interFace.line_decomposition,
+                                          zones, 0, interFace.verbose);
   }
 
   region.output_summary(std::cout, false);
 
   size_t orig_zone_count = zones.size();
-  Iocgns::Utils::decompose_model(zones, interface.proc_count, 0, interface.load_balance,
-                                 interface.verbose);
-  update_zgc_data(zones, interface.proc_count);
+  Iocgns::Utils::decompose_model(zones, interFace.proc_count, 0, interFace.load_balance,
+                                 interFace.verbose);
+  update_zgc_data(zones, interFace.proc_count);
 
-  describe_decomposition(zones, orig_zone_count, interface);
+  describe_decomposition(zones, orig_zone_count, interFace);
 
-  validate_decomposition(zones, interface.proc_count);
+  validate_decomposition(zones, interFace.proc_count);
 
   cleanup(zones);
 }
+
+#if defined(_MSC_VER)
+#include <io.h>
+#define isatty _isatty
+#endif
 
 namespace {
   int term_width(void)

@@ -245,7 +245,7 @@ namespace tsl {
      * by a series of multiplications, substractions and shifts.
      *
      * The 'hash % 5' could become something like 'hash - (hash * 0xCCCCCCCD) >> 34) * 5' in a 64
-     * bits environment.
+     * bits environement.
      */
     class prime_growth_policy
     {

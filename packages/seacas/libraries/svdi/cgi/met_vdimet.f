@@ -2673,7 +2673,8 @@ C
       DATA ISECUR/33282,1,0/
 C
 C
-      ZERO = 0
+      RZERO= 0
+      ZERO(1) = 0
       XPAD = 0
       YPAD = 0
 c

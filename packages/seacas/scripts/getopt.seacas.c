@@ -43,7 +43,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <getopt.h>
+#ifdef _MSC_VER
+#include "XGetopt.h"
+#else
+#include "getopt.h" // for getopt
+#endif
 
 /* NON_OPT is the code that is returned when a non-option is found in '+'
    mode */

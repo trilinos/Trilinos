@@ -62,7 +62,7 @@
 // ========================================================================
 namespace {
   bool file_info(const std::string &inpfile, const std::string &input_type,
-                 SystemInterface &interface);
+                 SystemInterface &interFace);
 
   void output_names(const std::string &type, const Ioss::NameList &fields,
                     Ioss::GroupingEntity *entity)
@@ -102,17 +102,17 @@ int main(int argc, char *argv[])
     SystemInterface::show_version();
     Ioss::Init::Initializer io;
 
-    SystemInterface interface;
-    ok = interface.parse_options(argc, argv);
+    SystemInterface interFace;
+    ok = interFace.parse_options(argc, argv);
 
     if (ok) {
-      std::string in_file     = interface.input_file();
-      std::string output_file = interface.output_file();
+      std::string in_file     = interFace.input_file();
+      std::string output_file = interFace.output_file();
 
       fmt::print("Input:    '{}', Type: {}\n", in_file, in_type);
       fmt::print("Output:   '{}', Type: matlab script\n\n", output_file);
 
-      ok = file_info(in_file, in_type, interface);
+      ok = file_info(in_file, in_type, interFace);
     }
     std::string success = ok ? "successful" : "unsuccessful";
     fmt::print("\n{} execution {}.\n", codename, success);
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 
 namespace {
   bool file_info(const std::string &inpfile, const std::string &input_type,
-                 SystemInterface &interface)
+                 SystemInterface &interFace)
   {
     //========================================================================
     // INPUT ...
@@ -142,14 +142,14 @@ namespace {
       return false;
     }
 
-    dbi->set_field_separator(interface.field_suffix());
+    dbi->set_field_separator(interFace.field_suffix());
     dbi->set_lower_case_variable_names(false);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
 
-    if (interface.list_vars()) {
-      StringIdVector types_to_list = interface.vars_to_list();
+    if (interFace.list_vars()) {
+      StringIdVector types_to_list = interFace.vars_to_list();
       for (auto types : types_to_list) {
         std::string type = types.first;
 
@@ -169,7 +169,7 @@ namespace {
     }
 
     Ioss::NameList fields;
-    StringIdVector global_vars = interface.global_var_names();
+    StringIdVector global_vars = interFace.global_var_names();
     if (!global_vars.empty()) {
       if (global_vars[0].first == "all") {
         region.field_describe(Ioss::Field::TRANSIENT, &fields);
@@ -201,7 +201,7 @@ namespace {
     }
 
     std::ofstream out_stream;
-    out_stream.open(interface.output_file().c_str());
+    out_stream.open(interFace.output_file().c_str());
 
     out_stream.setf(std::ios::scientific);
     out_stream.setf(std::ios::showpoint);
@@ -240,8 +240,8 @@ namespace {
     int st_min = 1;
     int st_max = num_steps;
 
-    double tmin = interface.minimum_time();
-    double tmax = interface.maximum_time();
+    double tmin = interFace.minimum_time();
+    double tmax = interFace.maximum_time();
     if (tmax == -1.0) {
       tmax = region.get_max_time().second;
     }

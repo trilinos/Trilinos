@@ -53,6 +53,7 @@
 #ifndef S_ISREG
 #define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
 #define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
+#define isatty _isatty
 #endif
 #ifndef open
 #define open _open
@@ -1346,7 +1347,7 @@ static char *hist_save(char *p)
 
   if (nl) {
     if ((s = (char *)malloc(len)) != 0) {
-      copy_string(s, p, len - 1);
+      copy_string(s, p, len);
       s[len - 1] = 0;
     }
   }

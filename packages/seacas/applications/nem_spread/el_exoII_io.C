@@ -903,7 +903,7 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
     size_t itotal_nodes = globals.Num_Internal_Nodes[iproc] + globals.Num_Border_Nodes[iproc] +
                           globals.Num_External_Nodes[iproc];
 
-    /* Allocate permament storage for the coordinates */
+    /* Allocate permanent storage for the coordinates */
     if (itotal_nodes > 0) {
       globals.Coor[iproc] =
           (T **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Dim, itotal_nodes, sizeof(T));
@@ -1077,7 +1077,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
      */
     find_elem_block(proc_elem_blk, iproc, Proc_Ids[iproc]);
 
-    /* Allocate Permament integer arrays, which have lengths equal to the
+    /* Allocate Permanent integer arrays, which have lengths equal to the
      * number of element blocks defined on the processor.  This is done with a
      * single malloc call.  Initialize this space to zero.
      */
@@ -1925,7 +1925,7 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
 
   /*
    * Create a map from the current processor's element block number to the
-   * 'global' element block number, globals.GElem_Blks.  This is a permament Global
+   * 'global' element block number, globals.GElem_Blks.  This is a permanent Global
    * Map.
    */
   globals.GElem_Blks[iproc] =
@@ -2217,12 +2217,12 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
   }   /* END "for (i = 0; i < globals.Num_Node_Set; i++)" */
 
   /*--------------------------------------------------------------------------*/
-  /*             WRITE PERMAMENT ARRAYS FOR NODE SET INFO                     */
+  /*             WRITE PERMANENT ARRAYS FOR NODE SET INFO                     */
   /*--------------------------------------------------------------------------*/
 
   for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
 
-    /* Allocate Permament Arrays for node sets in one long malloc */
+    /* Allocate Permanent Arrays for node sets in one long malloc */
     if (globals.Num_Node_Set > 0) {
 
       /*
@@ -2261,7 +2261,7 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
     }
 
     /*
-     * Fill in the permament node set arrays which have length,
+     * Fill in the permanent node set arrays which have length,
      * globals.Proc_Num_Node_Sets, the total number of node sets defined on the
      * current processor.
      */
@@ -2805,7 +2805,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
   /*-------------------------------------------------------------------------*/
 
   /*
-   * Allocate storage for permament side set integer info vectors using one
+   * Allocate storage for permanent side set integer info vectors using one
    * long malloc statement.
    */
   for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
