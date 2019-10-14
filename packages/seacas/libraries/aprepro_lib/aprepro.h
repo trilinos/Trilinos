@@ -51,6 +51,11 @@
 #define math_errhandling MATH_ERRNO
 #endif
 
+#if defined(_MSC_VER)
+#include <io.h>
+#define isatty _isatty
+#endif
+
 /** The SEAMS namespace is used to encapsulate the three parser classes
  * SEAMS::Parser, SEAMS::Scanner and SEAMS::Aprepro */
 namespace SEAMS {

@@ -57,11 +57,11 @@ public:
   void Set_Max_Names(int size);
 
   // Program parameters.
-  Tolerance coord_tol{ABSOLUTE, 1.0e-6, 0.0};
-  Tolerance time_tol{RELATIVE, 1.0e-6, 1.0e-15};
-  Tolerance final_time_tol{RELATIVE, 0.0, 0.0};
-  Tolerance default_tol{RELATIVE, 1.0e-6, 0.0};
-  Tolerance ss_df_tol{RELATIVE, 1.0e-6, 0.0};
+  Tolerance coord_tol{ABSOLUTE_, 1.0e-6, 0.0};
+  Tolerance time_tol{RELATIVE_, 1.0e-6, 1.0e-15};
+  Tolerance final_time_tol{RELATIVE_, 0.0, 0.0};
+  Tolerance default_tol{RELATIVE_, 1.0e-6, 0.0};
+  Tolerance ss_df_tol{RELATIVE_, 1.0e-6, 0.0};
 
   // These should correspond to the values specified during parsing of
   // coordinate tolerance.
@@ -73,31 +73,31 @@ public:
 
   std::pair<int, int> explicit_steps; // Only compare these two steps (db1:db2) if nonzero.
 
-  int max_number_of_names{DEFAULT_MAX_NUMBER_OF_NAMES};
+  size_t max_number_of_names{DEFAULT_MAX_NUMBER_OF_NAMES};
   int max_warnings{100};
 
   std::vector<std::string> glob_var_names;
-  Tolerance                glob_var_default{RELATIVE, 1.0e-6, 0.0};
+  Tolerance                glob_var_default{RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   glob_var;
 
   std::vector<std::string> node_var_names;
-  Tolerance                node_var_default{RELATIVE, 1.0e-6, 0.0};
+  Tolerance                node_var_default{RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   node_var;
 
   std::vector<std::string> elmt_var_names;
-  Tolerance                elmt_var_default{RELATIVE, 1.0e-6, 0.0};
+  Tolerance                elmt_var_default{RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   elmt_var;
 
   std::vector<std::string> elmt_att_names;
-  Tolerance                elmt_att_default{RELATIVE, 1.0e-6, 0.0};
+  Tolerance                elmt_att_default{RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   elmt_att;
 
   std::vector<std::string> ns_var_names;
-  Tolerance                ns_var_default{RELATIVE, 1.0e-6, 0.0};
+  Tolerance                ns_var_default{RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   ns_var;
 
   std::vector<std::string> ss_var_names;
-  Tolerance                ss_var_default{RELATIVE, 1.0e-6, 0.0};
+  Tolerance                ss_var_default{RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   ss_var;
 
   // time step exclusion data
@@ -111,7 +111,7 @@ public:
   bool quiet_flag{false};     // By default, warnings and other info is produced
   bool show_all_diffs{false}; // Be default, show only maximum diff for each variable;
                               // if set, show all diff that exceeds tolerance.
-  TOLERANCE_TYPE_enum output_type{ABSOLUTE};  // By default, output file diffs are absolute.
+  TOLERANCE_TYPE_enum output_type{ABSOLUTE_}; // By default, output file diffs are absolute.
   MAP_TYPE_enum       map_flag{USE_FILE_IDS}; // By default, no searching is done to match
                                               // nodes & elements.
   bool nsmap_flag{true};                      // By default, nodeset nodelist match is off
@@ -159,5 +159,5 @@ private:
   GetLongOption options_; //!< Options parsing
 };
 
-extern SystemInterface interface;
+extern SystemInterface interFace;
 #endif

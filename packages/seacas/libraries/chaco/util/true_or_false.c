@@ -33,12 +33,4 @@
  *
  */
 
-char *true_or_false(int flag)
-{
-  if (flag) {
-    return ("True");
-  }
-  else {
-    return ("False");
-  }
-}
+char *true_or_false(int flag) { return flag ? "True" : "False"; }

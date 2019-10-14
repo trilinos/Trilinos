@@ -48,6 +48,7 @@
 #include <cstdlib>          // for exit, free, malloc
 #include <cstring>          // for strlen, memset, etc
 #include <ctime>            // for asctime, localtime, time, etc
+#include <numeric>
 #include <vector>           // for vector
 template <typename INT> struct ELEM_COMM_MAP;
 template <typename INT> struct NODE_COMM_MAP;
@@ -104,8 +105,8 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
                                           INT *Num_Elems_In_EB)
 {
   /* Performance metrics. */
-  unsigned long bytes_out      = 0;
-  double        total_out_time = 0.0, tt1;
+  size_t bytes_out      = 0;
+  double total_out_time = 0.0, tt1;
 
   int error;
   /****************************BEGIN EXECUTION*********************************/
@@ -220,14 +221,14 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
    * elemental communication map that stores information for all
    * processors.
    */
-  int                             ecomm_cnt = 0;
+  INT                             ecomm_cnt = 0;
   std::vector<INT>                e_comm_ids;
   std::vector<INT>                e_comm_ecnts;
   std::vector<ELEM_COMM_MAP<INT>> e_comm_map;
 
   if (globals.Num_E_Comm_Maps[iproc] > 0) {
     ecomm_cnt = 1;
-    int itemp = globals.E_Comm_Map[iproc]->proc_ids[0];
+    INT itemp = globals.E_Comm_Map[iproc]->proc_ids[0];
 
     /* First find the count */
     for (size_t i1 = 1; i1 < globals.E_Comm_Map[iproc]->elem_cnt; i1++) {
@@ -261,7 +262,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     itemp = 0;
 
     /* Allocate memory for the maps */
-    for (int i1 = 0; i1 < ecomm_cnt; i1++) {
+    for (INT i1 = 0; i1 < ecomm_cnt; i1++) {
       e_comm_map[i1].proc_ids = (INT *)malloc(3 * (e_comm_map[i1].elem_cnt) * sizeof(INT));
       if (!(e_comm_map[i1].proc_ids)) {
         fmt::print(stderr, "[{}]: ERROR, insufficient memory!\n", __func__);
@@ -337,24 +338,12 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   PIO_Time_Array[2] = (second() - tt1);
   total_out_time += PIO_Time_Array[2];
 
-  /*
-   * The Nemesis node maps are lists of internal, border and external
-   * FEM node numbers. These are output as local node numbers.
-   */
-  INT *nem_node_mapi =
-      (INT *)array_alloc(__FILE__, __LINE__, 1, itotal_nodes + itotal_elems, sizeof(INT));
-  INT *nem_node_mapb = nem_node_mapi + globals.Num_Internal_Nodes[iproc];
-  INT *nem_node_mape = nem_node_mapb + globals.Num_Border_Nodes[iproc];
-
-  for (size_t i1 = 0; i1 < itotal_nodes; i1++) {
-    nem_node_mapi[i1] = i1 + 1;
-  }
 
   /* Convert Elem_Map to local element numbering */
   reverse_map(globals.Elem_Map[iproc], 0, itotal_elems, &globals.GElems[iproc][0], (INT *)nullptr,
               &globals.Elem_Map[iproc][0]);
   /* Convert element IDs in the comm map to local numbering */
-  for (int i0 = 0; i0 < ecomm_cnt; i0++) {
+  for (INT i0 = 0; i0 < ecomm_cnt; i0++) {
     reverse_map(e_comm_map[i0].elem_ids, 0, e_comm_map[i0].elem_cnt, &globals.GElems[iproc][0],
                 (INT *)nullptr, e_comm_map[i0].elem_ids);
   }
@@ -374,7 +363,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   gds_iqsort(globals.GNodes[iproc], loc_index, itotal_nodes);
 
   /* Convert nodal IDs in the comm map to local numbering */
-  for (int i0 = 0; i0 < ncomm_cnt; i0++) {
+  for (INT i0 = 0; i0 < ncomm_cnt; i0++) {
     reverse_map(n_comm_map[i0].node_ids, 0, n_comm_map[i0].node_cnt, &globals.GNodes[iproc][0],
                 loc_index, n_comm_map[i0].node_ids);
   }
@@ -386,7 +375,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     bytes_out += 2 * globals.Num_External_Nodes[iproc] * sizeof(INT);
     tt1 = second();
 
-    for (int i1 = 0; i1 < ncomm_cnt; i1++) {
+    for (INT i1 = 0; i1 < ncomm_cnt; i1++) {
       if (ex_put_node_cmap(mesh_exoid, n_comm_ids[i1], n_comm_map[i1].node_ids,
                            n_comm_map[i1].proc_ids, proc_for) < 0) {
         fmt::print(stderr, "[{}]: ERROR, unable to output nodal comm map!\n", __func__);
@@ -403,7 +392,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     bytes_out += 3 * (globals.E_Comm_Map[iproc]->elem_cnt) * sizeof(INT);
     tt1 = second();
 
-    for (int i1 = 0; i1 < ecomm_cnt; i1++) {
+    for (INT i1 = 0; i1 < ecomm_cnt; i1++) {
       if (ex_put_elem_cmap(mesh_exoid, e_comm_ids[i1], e_comm_map[i1].elem_ids,
                            e_comm_map[i1].side_ids, e_comm_map[i1].proc_ids, proc_for) < 0) {
         fmt::print(stderr, "[{}]: ERROR, unable to output elemental comm map!\n", __func__);
@@ -500,7 +489,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       fmt::print("Number of QA records: {}\n", globals.Num_QA_Recs);
       if (Debug_Flag >= 6) {
         fmt::print("QA Records:\n");
-        for (int i1 = 0; i1 < 4 * (globals.Num_QA_Recs); i1++) {
+        for (INT i1 = 0; i1 < 4 * (globals.Num_QA_Recs); i1++) {
           fmt::print("\t{}\n", globals.QA_Record[i1]);
         }
       }
@@ -508,7 +497,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   }
 
   /* Output the QA and Info records */
-  for (int i1 = 0; i1 < 4 * globals.Num_QA_Recs; i1++) {
+  for (INT i1 = 0; i1 < 4 * globals.Num_QA_Recs; i1++) {
     bytes_out += (MAX_STR_LENGTH + MAX_LINE_LENGTH) * sizeof(char);
   }
 
@@ -635,6 +624,17 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   bytes_out += itotal_nodes * sizeof(INT);
   tt1 = second();
 
+  /*
+   * The Nemesis node maps are lists of internal, border and external
+   * FEM node numbers. These are output as local node numbers.
+   */
+  INT *nem_node_mapi =
+      (INT *)array_alloc(__FILE__, __LINE__, 1, itotal_nodes, sizeof(INT));
+  INT *nem_node_mapb = nem_node_mapi + globals.Num_Internal_Nodes[iproc];
+  INT *nem_node_mape = nem_node_mapb + globals.Num_Border_Nodes[iproc];
+
+  std::iota(nem_node_mapi, nem_node_mapi + itotal_nodes, (INT)1);
+
   if (ex_put_processor_node_maps(mesh_exoid, nem_node_mapi, nem_node_mapb, nem_node_mape,
                                  proc_for) < 0) {
     fmt::print(stderr, "[{}]: ERROR, could not write Nemesis nodal number map!\n", __func__);
@@ -695,14 +695,14 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       exit(1);
     }
 
-    for (int i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
+    for (INT i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
       memset(EB_Types[i1], '\0', (MAX_STR_LENGTH + 1));
     }
 
-    int cnt = 0;
-    for (int i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
+    INT cnt = 0;
+    for (INT i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
       bool ifound = false;
-      for (int i2 = 0; i2 < globals.Proc_Num_Elem_Blk[iproc]; i2++) {
+      for (INT i2 = 0; i2 < globals.Proc_Num_Elem_Blk[iproc]; i2++) {
         if (globals.Proc_Elem_Blk_Ids[iproc][i2] == Elem_Blk_Ids[i1]) {
           ifound = true;
           break;
@@ -714,7 +714,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
        * processor.
        */
       if (!ifound) {
-        int iblk                                  = globals.Proc_Num_Elem_Blk[iproc] + cnt;
+        INT iblk                                  = globals.Proc_Num_Elem_Blk[iproc] + cnt;
         globals.Proc_Elem_Blk_Ids[iproc][iblk]    = Elem_Blk_Ids[i1];
         globals.Proc_Num_Elem_In_Blk[iproc][iblk] = 0;
         globals.Proc_Nodes_Per_Elem[iproc][iblk]  = 0;
@@ -724,12 +724,12 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     }
 
     /* Output the elemental block(s). */
-    for (int i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
+    for (INT i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
 
       ex_entity_id iglobal_blk = Elem_Blk_Ids[i1];
 
       /* Find the local element block index */
-      int ilocal;
+      INT ilocal;
       for (ilocal = 0; ilocal < globals.Num_Elem_Blk; ilocal++) {
         if (globals.Proc_Elem_Blk_Ids[iproc][ilocal] == iglobal_blk) {
           break;
@@ -764,12 +764,12 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     safe_free(reinterpret_cast<void **>(&EB_Types));
 
     /* Output attribute names for each element block */
-    for (int i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
+    for (INT i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
 
       ex_entity_id iglobal_blk = Elem_Blk_Ids[i1];
 
       /* Find the local element block index */
-      int ilocal;
+      INT ilocal;
       for (ilocal = 0; ilocal < globals.Num_Elem_Blk; ilocal++) {
         if (globals.Proc_Elem_Blk_Ids[iproc][ilocal] == iglobal_blk) {
           break;
@@ -871,12 +871,12 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     total_out_time += PIO_Time_Array[12];
     safe_free((void **)&iElem_Map);
 
-    for (int i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
+    for (INT i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
 
       ex_entity_id iglobal_blk = Elem_Blk_Ids[i1];
 
       /* Find the local element block index */
-      int ilocal;
+      INT ilocal;
       for (ilocal = 0; ilocal < globals.Num_Elem_Blk; ilocal++) {
         if (globals.Proc_Elem_Blk_Ids[iproc][ilocal] == iglobal_blk) {
           break;
@@ -893,7 +893,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       if (ilocal < globals.Proc_Num_Elem_Blk[iproc]) {
         /* Find the first index into the connectivity for this block */
         size_t iIndex0 = 0;
-        for (int i2 = 0; i2 < ilocal; i2++) {
+        for (INT i2 = 0; i2 < ilocal; i2++) {
           iIndex0 +=
               globals.Proc_Num_Elem_In_Blk[iproc][i2] * globals.Proc_Nodes_Per_Elem[iproc][i2];
         }
@@ -932,7 +932,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
           /* Find the first index into the attribute list for this block */
           size_t iIndex1 = 0;
-          for (int i2 = 0; i2 < ilocal; i2++) {
+          for (INT i2 = 0; i2 < ilocal; i2++) {
             iIndex1 += globals.Proc_Num_Attr[iproc][i2] * globals.Proc_Num_Elem_In_Blk[iproc][i2];
           }
 
@@ -963,7 +963,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
    * dummy set is output for this value.
    */
   INT iMaxLen = 0;
-  for (int i1 = 0; i1 < globals.Proc_Num_Node_Sets[iproc]; i1++) {
+  for (INT i1 = 0; i1 < globals.Proc_Num_Node_Sets[iproc]; i1++) {
     iMaxLen = PEX_MAX(globals.Proc_NS_Count[iproc][i1], iMaxLen);
   }
 
@@ -984,9 +984,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
   /* Fill in the information for the nullptr node sets */
   size_t cnt = 0;
-  for (int i1 = 0; i1 < globals.Num_Node_Set; i1++) {
+  for (INT i1 = 0; i1 < globals.Num_Node_Set; i1++) {
     bool ifound = false;
-    for (int i2 = 0; i2 < globals.Proc_Num_Node_Sets[iproc]; i2++) {
+    for (INT i2 = 0; i2 < globals.Proc_Num_Node_Sets[iproc]; i2++) {
       if (globals.Proc_NS_Ids[iproc][i2] == Node_Set_Ids[i1]) {
         ifound = true;
         break;
@@ -1005,7 +1005,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   if (globals.Num_Node_Set > 0) {
     size_t dcount = 0;
     size_t ncount = 0;
-    for (int i1 = 0; i1 < globals.Num_Node_Set; i1++) {
+    for (INT i1 = 0; i1 < globals.Num_Node_Set; i1++) {
       dcount += globals.Proc_NS_DF_Count[iproc][i1];
       ncount += globals.Proc_NS_Count[iproc][i1];
     }
@@ -1020,10 +1020,10 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
     ncount = 0;
     dcount = 0;
-    for (int i1 = 0; i1 < globals.Num_Node_Set; i1++) {
+    for (INT i1 = 0; i1 < globals.Num_Node_Set; i1++) {
 
       /* Find the local ID */
-      int i2 = 0;
+      INT i2 = 0;
       for (i2 = 0; i2 < globals.Num_Node_Set; i2++) {
         if (globals.Proc_NS_Ids[iproc][i2] == Node_Set_Ids[i1]) {
           break;
@@ -1035,7 +1035,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       conc_df[i1]    = globals.Proc_NS_DF_Count[iproc][i2];
 
       conc_nind[i1] = ncount;
-      for (int i3 = 0; i3 < globals.Proc_NS_Count[iproc][i2]; i3++) {
+      for (INT i3 = 0; i3 < globals.Proc_NS_Count[iproc][i2]; i3++) {
         conc_nlist[ncount++] = proc_local_ns[globals.Proc_NS_Pointers[iproc][i2] + i3];
       }
 
@@ -1078,9 +1078,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
   /* Set up the null side sets */
   cnt = 0;
-  for (int i1 = 0; i1 < globals.Num_Side_Set; i1++) {
+  for (INT i1 = 0; i1 < globals.Num_Side_Set; i1++) {
     bool ifound = false;
-    for (int i2 = 0; i2 < globals.Proc_Num_Side_Sets[iproc]; i2++) {
+    for (INT i2 = 0; i2 < globals.Proc_Num_Side_Sets[iproc]; i2++) {
       if (globals.Proc_SS_Ids[iproc][i2] == Side_Set_Ids[i1]) {
         ifound = true;
         break;
@@ -1108,9 +1108,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
   tt1 = second();
   if (globals.Num_Side_Set > 0) {
-    int df_count = 0;
-    int el_count = 0;
-    for (int i1 = 0; i1 < globals.Num_Side_Set; i1++) {
+    size_t df_count = 0;
+    size_t el_count = 0;
+    for (INT i1 = 0; i1 < globals.Num_Side_Set; i1++) {
       df_count += globals.Proc_SS_DF_Count[iproc][i1];
       el_count += globals.Proc_SS_Elem_Count[iproc][i1];
     }
@@ -1127,10 +1127,10 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     /* Fill in the arrays ... */
     df_count = 0;
     el_count = 0;
-    for (int i1 = 0; i1 < globals.Num_Side_Set; i1++) {
+    for (INT i1 = 0; i1 < globals.Num_Side_Set; i1++) {
 
       /* Find the local ID of this side set */
-      int i2 = 0;
+      INT i2 = 0;
       for (i2 = 0; i2 < globals.Num_Side_Set; i2++) {
         if (globals.Proc_SS_Ids[iproc][i2] == Side_Set_Ids[i1]) {
           break;

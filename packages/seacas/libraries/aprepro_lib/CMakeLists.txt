@@ -105,7 +105,8 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
    endif()
 endif()
 
-if(${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
+# Currently doesn't run on windows due to use of sed...
+if (${CMAKE_PROJECT_NAME}_ENABLE_TESTS AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   add_executable(aprepro_test_app apr_test.cc)
   target_link_libraries(aprepro_test_app aprepro_lib)
 

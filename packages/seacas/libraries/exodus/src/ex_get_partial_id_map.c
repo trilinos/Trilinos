@@ -119,7 +119,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   if (start_entity_num + num_entities - 1 > num_entries) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: start index (%" PRId64 ") + entity count (%" PRId64
-             ") is larger than total number of entities (%" ST_ZU ") in file id %d",
+             ") is larger than total number of entities (%zu) in file id %d",
              start_entity_num, num_entities, num_entries, exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);

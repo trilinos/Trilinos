@@ -130,15 +130,16 @@ namespace Ioss {
     Ioss::IJK_t m_donorOffset{};   // ijk triplet with offset of the donor zone.  Used to convert
                                    // donorRangeBeg and End global indices to local indices
 
+    size_t m_ownerGUID{}; // globally-unique id of owner
+    size_t m_donorGUID{}; // globally-unique id of donor
+
     // NOTE: Shared nodes are "owned" by the zone with the lowest zone id.
-    int    m_ownerZone{};        // "id" of zone that owns this connection
-    int    m_donorZone{};        // "id" of zone that is donor (or other side) of this connection
-    size_t m_ownerGUID{};        // globally-unique id of owner
-    size_t m_donorGUID{};        // globally-unique id of donor
-    int    m_ownerProcessor{-1}; // processor that owns the owner zone
-    int    m_donorProcessor{-1}; // processor that owns the donor zone
-    bool   m_sameRange{false};   // True if owner and donor range should always match...(special use
-                                 // during decomp)
+    int  m_ownerZone{};        // "id" of zone that owns this connection
+    int  m_donorZone{};        // "id" of zone that is donor (or other side) of this connection
+    int  m_ownerProcessor{-1}; // processor that owns the owner zone
+    int  m_donorProcessor{-1}; // processor that owns the donor zone
+    bool m_sameRange{false};   // True if owner and donor range should always match...(special use
+                               // during decomp)
     // True if it is the "lower" zone id in the connection. Uses adam unless both have same adam.
     bool m_ownsSharedNodes{false}; // Deprecate soon
 

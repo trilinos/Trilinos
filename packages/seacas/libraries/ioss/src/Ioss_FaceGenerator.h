@@ -49,6 +49,7 @@
 
 #include <utility>
 
+
 namespace Ioss {
   class Region;
 
@@ -122,9 +123,16 @@ namespace Ioss {
   {
   public:
     explicit FaceGenerator(Ioss::Region &region);
+    ~FaceGenerator()
+      {
+	std::cout << "FaceEqual Calls: " << fequal << "\t" << secondary << "\n";
+      }
 
     template <typename INT> void generate_faces(INT /*dummy*/, bool block_by_block = false);
     FaceUnorderedSet &           faces(const std::string &name = "ALL") { return faces_[name]; }
+
+    static size_t fequal;
+    static size_t secondary;
 
   private:
     template <typename INT> void            generate_block_faces(INT /*dummy*/);
@@ -132,6 +140,7 @@ namespace Ioss {
     Ioss::Region &                          region_;
     std::map<std::string, FaceUnorderedSet> faces_;
   };
+
 } // namespace Ioss
 
 #endif

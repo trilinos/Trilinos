@@ -44,8 +44,8 @@
 #include <cstdio>           // for stderr, nullptr, etc
 #include <cstdlib>          // for exit, free, malloc
 #include <string>
-#include <unistd.h> // for sysconf, _SC_OPEN_MAX
-#include <vector>   // for vector
+#include <unistd.h>
+#include <vector> // for vector
 
 namespace {
   int get_free_descriptor_count();
@@ -1100,14 +1100,14 @@ namespace {
 /* Returns maximum number of files that one process can have open
  * at one time. (POSIX)
  */
-#if defined(__PUMAGON__)
-    int fdmax = FOPEN_MAX;
-#else
+#ifndef _MSC_VER
     int fdmax = sysconf(_SC_OPEN_MAX);
     if (fdmax == -1) {
       /* POSIX indication that there is no limit on open files... */
       fdmax = INT_MAX;
     }
+#else
+    int fdmax = _getmaxstdio();
 #endif
     /* File descriptors are assigned in order (0,1,2,3,...) on a per-process
      * basis.

@@ -91,17 +91,6 @@
 extern "C" {
 #endif
 
-/* A format string for outputting size_t ... */
-#if defined(__STDC_VERSION__)
-#if (__STDC_VERSION__ >= 199901L)
-#define ST_ZU "zu"
-#else
-#define ST_ZU "lu"
-#endif
-#else
-#define ST_ZU "lu"
-#endif
-
 /**
  * \defgroup Internal Internal Functions and Defines
  * \internal
@@ -121,7 +110,7 @@ extern "C" {
 #define EX_FILE_ID_MASK (0xffff0000) /**< Must match FILE_ID_MASK in NetCDF nc4internal.h */
 #define EX_GRP_ID_MASK (0x0000ffff)  /**< Must match GRP_ID_MASK in NetCDF nc4internal.h */
 
-void ex__reset_error_status();
+void ex__reset_error_status(void);
 
 #if defined(EXODUS_THREADSAFE)
 #if !defined(exerrval)

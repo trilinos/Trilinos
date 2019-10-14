@@ -19,7 +19,8 @@ TRIBITS_ADD_EXECUTABLE(
 
 install_executable(aprepro)
 
-if(${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
+# Currently doesn't run on windows due to use of sed...
+if (${CMAKE_PROJECT_NAME}_ENABLE_TESTS AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_unit_test
