@@ -52,8 +52,8 @@ namespace Ioss {
     const double *plane_1_3_point() const;
 
   private:
-    int64_t             id_;
     std::vector<double> pointList_;
+    int64_t             id_;
     char                tag_;
   };
 } // namespace Ioss

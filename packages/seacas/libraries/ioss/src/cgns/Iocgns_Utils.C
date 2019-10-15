@@ -1802,7 +1802,7 @@ void Iocgns::Utils::finalize_database(int cgns_file_ptr, const std::vector<doubl
     std::vector<char> names(32 * timesteps.size(), ' ');
     for (size_t state = 0; state < timesteps.size(); state++) {
       // This name is the "postfix" or common portion of all FlowSolution names...
-      std::string name = base_type + std::to_string(state + 1);
+      std::string name = fmt::format("{}{:05}", base_type, state + 1);
       Ioss::Utils::copy_string(&names[state * 32], name, 32);
       for (size_t i = name.size(); i < 32; i++) {
         names[state * 32 + i] = ' ';

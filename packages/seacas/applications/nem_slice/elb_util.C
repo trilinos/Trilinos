@@ -297,17 +297,17 @@ namespace {
   {
     size_t i, j;
     size_t ndx = 0;
-    INT    small;
+    INT    small_val;
     INT    tmp;
 
     if (N <= 1) {
       return;
     }
-    small = v[0];
+    small_val = v[0];
     for (i = 1; i < N; i++) {
-      if (v[i] < small) {
-        small = v[i];
-        ndx   = i;
+      if (v[i] < small_val) {
+        small_val = v[i];
+        ndx       = i;
       }
     }
     /* Put smallest value in slot 0 */
@@ -319,33 +319,6 @@ namespace {
         v[j] = v[j - 1];
       }
       v[j] = tmp;
-    }
-  }
-
-  template <typename INT> inline void SWAP(INT r, INT s)
-  {
-    INT t = r;
-    r     = s;
-    s     = t;
-  }
-
-  template <typename INT> void siftDown(INT *a, INT *b, size_t start, size_t end)
-  {
-    size_t root = start;
-
-    while (root * 2 + 1 < end) {
-      size_t child = 2 * root + 1;
-      if ((child + 1 < end) && (a[child] < a[child + 1])) {
-        child += 1;
-      }
-      if (a[root] < a[child]) {
-        SWAP(a[child], a[root]);
-        SWAP(b[child], b[root]);
-        root = child;
-      }
-      else {
-        return;
-      }
     }
   }
 
@@ -696,27 +669,27 @@ namespace {
         ndx = i;
       }
     }
-    /* Put smallest value in slot 0 */
+    /* Put small_valest value in slot 0 */
     swap4(v1, v2, v3, v4, 0, ndx);
 
     for (size_t i = 1; i < N; i++) {
-      INT    small1 = v1[i];
-      INT    small2 = v2[i];
-      INT    small3 = v3[i];
-      INT    small4 = v4[i];
+      INT    small_val1 = v1[i];
+      INT    small_val2 = v2[i];
+      INT    small_val3 = v3[i];
+      INT    small_val4 = v4[i];
       size_t j;
-      for (j = i; is_less_than4(small1, small2, small3, small4, v1[j - 1], v2[j - 1], v3[j - 1],
-                                v4[j - 1]);
+      for (j = i; is_less_than4(small_val1, small_val2, small_val3, small_val4, v1[j - 1],
+                                v2[j - 1], v3[j - 1], v4[j - 1]);
            j--) {
         v1[j] = v1[j - 1];
         v2[j] = v2[j - 1];
         v3[j] = v3[j - 1];
         v4[j] = v4[j - 1];
       }
-      v1[j] = small1;
-      v2[j] = small2;
-      v3[j] = small3;
-      v4[j] = small4;
+      v1[j] = small_val1;
+      v2[j] = small_val2;
+      v3[j] = small_val3;
+      v4[j] = small_val4;
     }
   }
 
@@ -817,19 +790,19 @@ namespace {
       }
     }
 
-    /* Put smallest value in slot 0 */
+    /* Put small_valest value in slot 0 */
     swap2(v1, v2, 0, ndx);
 
     for (size_t i = 1; i < N; i++) {
-      INT    small1 = v1[i];
-      INT    small2 = v2[i];
+      INT    small_val1 = v1[i];
+      INT    small_val2 = v2[i];
       size_t j;
-      for (j = i; is_less_than2(small1, small2, v1[j - 1], v2[j - 1]); j--) {
+      for (j = i; is_less_than2(small_val1, small_val2, v1[j - 1], v2[j - 1]); j--) {
         v1[j] = v1[j - 1];
         v2[j] = v2[j - 1];
       }
-      v1[j] = small1;
-      v2[j] = small2;
+      v1[j] = small_val1;
+      v2[j] = small_val2;
     }
   }
 } // namespace
@@ -873,25 +846,6 @@ template <typename INT> void qsort2(INT *v1, INT *v2, size_t N)
     assert(is_less_than2v(v1, v2, i - 1, i));
   }
 #endif
-}
-
-template void                sort2(ssize_t N, int *v1, int *v2);
-template void                sort2(ssize_t N, int64_t *v1, int64_t *v2);
-template <typename INT> void sort2(ssize_t count, INT ra[], INT rb[])
-{
-  if (count <= 1) {
-    return;
-  }
-  /* heapify */
-  for (ssize_t start = (count - 2) / 2; start >= 0; start--) {
-    siftDown(ra, rb, start, count);
-  }
-
-  for (size_t end = count - 1; end > 0; end--) {
-    SWAP(ra[end], ra[0]);
-    SWAP(rb[end], rb[0]);
-    siftDown(ra, rb, 0, end);
-  }
 }
 
 template void                sort3(ssize_t count, int ra[], int rb[], int rc[]);

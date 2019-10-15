@@ -37,7 +37,7 @@
 #include <vector>
 
 namespace Excn {
-  enum InOut { IN = 1, OUT = 2 };
+  enum InOut { IN_ = 1, OUT_ = 2 };
 
   using IntVector = std::vector<int>;
 
@@ -50,12 +50,12 @@ namespace Excn {
                    otype == GLOBAL);
     }
 
-    int count(InOut in_out = IN) const
+    int count(InOut in_out = IN_) const
     {
       int ret_val = 0;
       switch (in_out) {
-      case IN: ret_val = index_.size() - (addStatus ? 1 : 0); break;
-      case OUT: ret_val = outputCount; break;
+      case IN_: ret_val = index_.size() - (addStatus ? 1 : 0); break;
+      case OUT_: ret_val = outputCount; break;
       }
       return ret_val;
     }

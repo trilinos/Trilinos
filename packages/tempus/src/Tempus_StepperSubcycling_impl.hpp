@@ -13,6 +13,7 @@
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 #include "Tempus_IntegratorObserverSubcycling.hpp"
+#include "Tempus_IntegratorObserverNoOp.hpp"
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -36,7 +37,9 @@ StepperSubcycling<Scalar>::StepperSubcycling()
   scIntegrator_ = Teuchos::rcp(new IntegratorBasic<Scalar>());
   scIntegrator_->setTimeStepControl();
   scIntegrator_->setObserver(
-    Teuchos::rcp(new IntegratorObserverSubcycling<Scalar>()));
+    Teuchos::rcp(new IntegratorObserverNoOp<Scalar>()));
+
+  this->setSubcyclingPrintDtChanges(false);
 
   RCP<ParameterList> tempusPL = scIntegrator_->getTempusParameterList();
 
@@ -88,6 +91,7 @@ StepperSubcycling<Scalar>::StepperSubcycling(
 
   this->setObserver(obs);
   scIntegrator_ = scIntegrator;
+  this->setSubcyclingPrintDtChanges(false);
 
   if (appModel != Teuchos::null) {
     this->setModel(appModel);
@@ -177,11 +181,38 @@ setSubcyclingScreenOutputIndexInterval(int i)
 
 template<class Scalar>
 void StepperSubcycling<Scalar>::
+setSubcyclingScreenOutputIndexList(std::string s)
+{
+  scIntegrator_->setScreenOutputIndexList(s);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::
 setSubcyclingTimeStepControlStrategy(
   Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs)
 {
   scIntegrator_->getNonConstTimeStepControl()->getTimeStepControlStrategy()->clearObservers();
   scIntegrator_->getNonConstTimeStepControl()->setTimeStepControlStrategy(tscs);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::setSubcyclingIntegratorObserver(
+  Teuchos::RCP<IntegratorObserver<Scalar> > obs)
+{
+  scIntegrator_->setObserver(obs);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::setSubcyclingPrintDtChanges(
+  bool printDtChanges)
+{
+  scIntegrator_->getNonConstTimeStepControl()->setPrintDtChanges(printDtChanges);
   this->isInitialized_ = false;
 }
 
@@ -361,7 +392,6 @@ void StepperSubcycling<Scalar>::takeStep(
     scTSC->setInitIndex  (0);
     scTSC->setFinalTime  (workingState->getTime());
     scTSC->setMaxTimeStep(workingState->getTimeStep());
-
 
     Teuchos::RCP<SolutionStateMetaData<Scalar> > scMD =
       rcp(new SolutionStateMetaData<Scalar>());

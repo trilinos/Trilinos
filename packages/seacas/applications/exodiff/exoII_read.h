@@ -80,8 +80,8 @@ public:
   int                Dimension() const { return dimension; }
   size_t             Num_Nodes() const { return num_nodes; }
   size_t             Num_Elmts() const { return num_elmts; }
-  int                Num_Node_Sets() const { return num_node_sets; }
-  int                Num_Side_Sets() const { return num_side_sets; }
+  size_t             Num_Node_Sets() const { return num_node_sets; }
+  size_t             Num_Side_Sets() const { return num_side_sets; }
 
   // Times:
 
@@ -90,12 +90,12 @@ public:
 
   // Variables:
 
-  int                             Num_Global_Vars() const { return global_vars.size(); }
-  int                             Num_Nodal_Vars() const { return nodal_vars.size(); }
-  int                             Num_Elmt_Vars() const { return elmt_vars.size(); }
-  int                             Num_Elmt_Atts() const { return elmt_atts.size(); }
-  int                             Num_NS_Vars() const { return ns_vars.size(); }
-  int                             Num_SS_Vars() const { return ss_vars.size(); }
+  size_t                          Num_Global_Vars() const { return global_vars.size(); }
+  size_t                          Num_Nodal_Vars() const { return nodal_vars.size(); }
+  size_t                          Num_Elmt_Vars() const { return elmt_vars.size(); }
+  size_t                          Num_Elmt_Atts() const { return elmt_atts.size(); }
+  size_t                          Num_NS_Vars() const { return ns_vars.size(); }
+  size_t                          Num_SS_Vars() const { return ss_vars.size(); }
   const std::vector<std::string> &Global_Var_Names() const { return global_vars; }
   const std::vector<std::string> &Nodal_Var_Names() const { return nodal_vars; }
   const std::vector<std::string> &Elmt_Var_Names() const { return elmt_vars; }
@@ -110,7 +110,7 @@ public:
   const std::string &             SS_Var_Name(int index) const;
 
   // Element blocks:
-  int Num_Elmt_Blocks() const { return num_elmt_blocks; }
+  size_t Num_Elmt_Blocks() const { return num_elmt_blocks; }
 
   std::string Load_Elmt_Block_Description(size_t block_index) const;
   std::string Load_Elmt_Block_Descriptions() const;      // Loads all blocks.
@@ -196,32 +196,32 @@ public:
 
 protected:
   std::string file_name;
-  int         file_id; // Exodus file id; also used to determine if file is open.
+  int         file_id{-1}; // Exodus file id; also used to determine if file is open.
 
   // GENESIS info:
 
   std::string              title;
   std::vector<std::string> coord_names;
-  size_t                   num_nodes;
-  size_t                   dimension;
-  size_t                   num_elmts;
-  size_t                   num_elmt_blocks;
-  size_t                   num_node_sets;
-  size_t                   num_side_sets;
-  float                    db_version;
-  float                    api_version;
-  int                      io_word_size; // Note: The "compute word size" is always 8.
+  size_t                   num_nodes{0};
+  int                      dimension{0};
+  size_t                   num_elmts{0};
+  size_t                   num_elmt_blocks{0};
+  size_t                   num_node_sets{0};
+  size_t                   num_side_sets{0};
+  float                    db_version{0.0};
+  float                    api_version{0.0};
+  int                      io_word_size{0}; // Note: The "compute word size" is always 8.
 
-  Exo_Block<INT> *eblocks; // Array.
-  Node_Set<INT> * nsets;   // Array.
-  Side_Set<INT> * ssets;   // Array.
+  Exo_Block<INT> *eblocks{nullptr}; // Array.
+  Node_Set<INT> * nsets{nullptr};   // Array.
+  Side_Set<INT> * ssets{nullptr};   // Array.
 
-  double *nodes; // Matrix;  dimension by num_nodes (row major form).
+  double *nodes{nullptr}; // Matrix;  dimension by num_nodes (row major form).
                  //          I.e., all x's then all y's, etc.
 
-  INT *node_map;   // Array; num_nodes long when filled.
-  INT *elmt_map;   // Array; num_elmts long when filled.
-  INT *elmt_order; // Array; num_elmts long when filled.
+  INT *node_map{nullptr};   // Array; num_nodes long when filled.
+  INT *elmt_map{nullptr};   // Array; num_elmts long when filled.
+  INT *elmt_order{nullptr}; // Array; num_elmts long when filled.
 
   // RESULTS info:
 
@@ -232,14 +232,14 @@ protected:
   std::vector<std::string> ns_vars;
   std::vector<std::string> ss_vars;
 
-  int     num_times;
-  double *times;
+  int      num_times{0};
+  double *times{nullptr};
 
-  int      cur_time;    // Current timestep number of the results (0 means none).
-  double **results;     // Array of pointers (to arrays of results data);
+  int      cur_time{0};    // Current timestep number of the results (0 means none).
+  double **results{nullptr};     // Array of pointers (to arrays of results data);
                         // length is number of nodal variables.
-  double *global_vals;  // Array of global variables for the current timestep.
-  double *global_vals2; // Array of global variables used if interpolating.
+  double *global_vals{nullptr};  // Array of global variables for the current timestep.
+  double *global_vals2{nullptr}; // Array of global variables used if interpolating.
 
   // Internal methods:
 

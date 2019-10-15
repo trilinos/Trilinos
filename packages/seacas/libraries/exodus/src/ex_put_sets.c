@@ -262,7 +262,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
           }
         }
         else {
-          /* resuse dimid from entry lists */
+          /* reuse dimid from entry lists */
           if ((status = nc_def_dim(exoid, numdfptr, sets[i].num_distribution_factor, &dimid)) !=
               NC_NOERR) {
             snprintf(errmsg, MAX_ERR_LENGTH,

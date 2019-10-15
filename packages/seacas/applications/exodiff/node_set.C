@@ -137,7 +137,7 @@ template <typename INT> void Node_Set<INT>::load_nodes(const INT *node_map) cons
     for (size_t i = 0; i < numEntity; i++) {
       nodeIndex[i] = i;
     }
-    if (interface.nsmap_flag) {
+    if (interFace.nsmap_flag) {
       index_qsort(nodes, nodeIndex, numEntity);
     }
   }

@@ -154,9 +154,9 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
 
   // Cannot ignore the comparisons, so make sure the coord_tol_type
   // is not -1 which is "ignore"
-  TOLERANCE_TYPE_enum save_tolerance_type = interface.coord_tol.type;
-  if (save_tolerance_type == IGNORE) {
-    interface.coord_tol.type = ABSOLUTE;
+  TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
+  if (save_tolerance_type == IGNORE_) {
+    interFace.coord_tol.type = ABSOLUTE_;
   }
 
   // Match elmts in first file to their corresponding elmts in second.
@@ -199,7 +199,7 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
       }
 
       // Locate midpoint in sorted array.
-      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, num_elmts, dim, interface.ignore_dups);
+      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, num_elmts, dim, interFace.ignore_dups);
 
       if (sort_idx < 0) {
         Error(fmt::format("Files are different (couldn't match element {} from block {} from first "
@@ -249,15 +249,15 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
             double y2_val = dim > 1 ? y2_f[conn2[ln2] - 1] : 0.0;
             double z2_val = dim > 2 ? z2_f[conn2[ln2] - 1] : 0.0;
 
-            if (!interface.coord_tol.Diff(x1_val, x2_val) &&
-                !interface.coord_tol.Diff(y1_val, y2_val) &&
-                !interface.coord_tol.Diff(z1_val, z2_val)) {
+            if (!interFace.coord_tol.Diff(x1_val, x2_val) &&
+                !interFace.coord_tol.Diff(y1_val, y2_val) &&
+                !interFace.coord_tol.Diff(z1_val, z2_val)) {
               // assert that if this node has been given a map
               // previously, that it agrees with the latest
               // assignment.
               if (node_map[conn1[ln1] - 1] >= 0 && node_map[conn1[ln1] - 1] != conn2[ln2] - 1) {
 
-                if (!interface.ignore_dups) {
+                if (!interFace.ignore_dups) {
                   // Node in file 1.
                   INT    node1 = conn1[ln1];
                   double x1a   = x1_f[node1 - 1];
@@ -276,9 +276,9 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
                   double y2b = dim >= 2 ? y2_f[n2 - 1] : 0.0;
                   double z2b = dim >= 3 ? z2_f[n2 - 1] : 0.0;
 
-                  SMART_ASSERT(!interface.coord_tol.Diff(x2a, x2b) &&
-                               !interface.coord_tol.Diff(y2a, y2b) &&
-                               !interface.coord_tol.Diff(z2a, z2b));
+                  SMART_ASSERT(!interFace.coord_tol.Diff(x2a, x2b) &&
+                               !interFace.coord_tol.Diff(y2a, y2b) &&
+                               !interFace.coord_tol.Diff(z2a, z2b));
                   Error(fmt::format("No unique node mapping possible.\n"
                                     "\tFile 1, Node {:n} at ({}, {}, {}) maps to both:\n"
                                     "\tFile 2, Node {:n} at ({}, {}, {}) and\n"
@@ -318,8 +318,8 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
                          y_val, z_val);
             }
             fmt::print(out, "Coordinates compared using tolerance: {} ({}), floor: {}\n",
-                       interface.coord_tol.value, interface.coord_tol.typestr(),
-                       interface.coord_tol.floor);
+                       interFace.coord_tol.value, interFace.coord_tol.typestr(),
+                       interFace.coord_tol.floor);
             ERR_OUT(out);
             exit(1);
           }
@@ -357,7 +357,7 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
   }
   delete[] id;
 
-  interface.coord_tol.type = save_tolerance_type;
+  interFace.coord_tol.type = save_tolerance_type;
 }
 
 template <typename INT>
@@ -462,9 +462,9 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
 
   // Cannot ignore the comparisons, so make sure the coord_tol_type
   // is not -1 which is "ignore"
-  TOLERANCE_TYPE_enum save_tolerance_type = interface.coord_tol.type;
-  if (save_tolerance_type == IGNORE) {
-    interface.coord_tol.type = ABSOLUTE;
+  TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
+  if (save_tolerance_type == IGNORE_) {
+    interFace.coord_tol.type = ABSOLUTE_;
   }
 
   // Match elmts in first file to their corresponding elmts in second.
@@ -509,14 +509,14 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
       }
 
       // Locate midpoint in sorted array.
-      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, num_elmts2, dim, interface.ignore_dups);
+      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, num_elmts2, dim, interFace.ignore_dups);
       if (sort_idx < 0) {
         unmatched++;
-        if (first && interface.show_unmatched) {
+        if (first && interFace.show_unmatched) {
           fmt::print("exodiff: Doing Partial Comparison: No Match for (b.e):\n");
         }
         first = false;
-        if (interface.show_unmatched) {
+        if (interFace.show_unmatched) {
           fmt::print("{}.{}, ", file1.Block_Id(b), (i + 1));
         }
       }
@@ -561,9 +561,9 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
             double y2_val = dim > 1 ? y2_f[conn2[ln2] - 1] : 0.0;
             double z2_val = dim > 2 ? z2_f[conn2[ln2] - 1] : 0.0;
 
-            if (!interface.coord_tol.Diff(x1_val, x2_val) &&
-                !interface.coord_tol.Diff(y1_val, y2_val) &&
-                !interface.coord_tol.Diff(z1_val, z2_val)) {
+            if (!interFace.coord_tol.Diff(x1_val, x2_val) &&
+                !interFace.coord_tol.Diff(y1_val, y2_val) &&
+                !interFace.coord_tol.Diff(z1_val, z2_val)) {
               node_map[conn1[ln1] - 1] = conn2[ln2] - 1;
               found                    = 1;
               break;
@@ -593,8 +593,8 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
                          y_val, z_val);
             }
             fmt::print(out, "Coordinates compared using tolerance: {} ({}), floor: {}\n",
-                       interface.coord_tol.value, interface.coord_tol.typestr(),
-                       interface.coord_tol.floor);
+                       interFace.coord_tol.value, interFace.coord_tol.typestr(),
+                       interFace.coord_tol.floor);
             ERR_OUT(out);
             exit(1);
           }
@@ -640,7 +640,7 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
   }
   delete[] id2;
 
-  interface.coord_tol.type = save_tolerance_type;
+  interFace.coord_tol.type = save_tolerance_type;
 }
 
 namespace {
@@ -805,9 +805,9 @@ namespace {
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
-    TOLERANCE_TYPE_enum save_tolerance_type = interface.coord_tol.type;
-    if (save_tolerance_type == IGNORE) {
-      interface.coord_tol.type = ABSOLUTE;
+    TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
+    if (save_tolerance_type == IGNORE_) {
+      interFace.coord_tol.type = ABSOLUTE_;
     }
 
     // Find unmapped nodes in file2; count the unmapped nodes in file_1.
@@ -871,12 +871,12 @@ namespace {
       for (j = 0; j < count_2; j++) {
         if (mapped_2[j] >= 0) {
           size_t id_2 = mapped_2[j];
-          if ((dim == 1 && !interface.coord_tol.Diff(x1_f[id_1], x2_f[id_2])) ||
-              (dim == 2 && !interface.coord_tol.Diff(x1_f[id_1], x2_f[id_2]) &&
-               !interface.coord_tol.Diff(y1_f[id_1], y2_f[id_2])) ||
-              (dim == 3 && !interface.coord_tol.Diff(x1_f[id_1], x2_f[id_2]) &&
-               !interface.coord_tol.Diff(y1_f[id_1], y2_f[id_2]) &&
-               !interface.coord_tol.Diff(z1_f[id_1], z2_f[id_2]))) {
+          if ((dim == 1 && !interFace.coord_tol.Diff(x1_f[id_1], x2_f[id_2])) ||
+              (dim == 2 && !interFace.coord_tol.Diff(x1_f[id_1], x2_f[id_2]) &&
+               !interFace.coord_tol.Diff(y1_f[id_1], y2_f[id_2])) ||
+              (dim == 3 && !interFace.coord_tol.Diff(x1_f[id_1], x2_f[id_2]) &&
+               !interFace.coord_tol.Diff(y1_f[id_1], y2_f[id_2]) &&
+               !interFace.coord_tol.Diff(z1_f[id_1], z2_f[id_2]))) {
             node_map[id_1] = id_2;
             mapped_2[j]    = -1;
             matched++;
@@ -893,7 +893,7 @@ namespace {
                         count_1 - matched));
       exit(1);
     }
-    interface.coord_tol.type = save_tolerance_type;
+    interFace.coord_tol.type = save_tolerance_type;
   }
 
   template <typename INT>
@@ -905,9 +905,9 @@ namespace {
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
-    TOLERANCE_TYPE_enum save_tolerance_type = interface.coord_tol.type;
-    if (save_tolerance_type == IGNORE) {
-      interface.coord_tol.type = ABSOLUTE;
+    TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
+    if (save_tolerance_type == IGNORE_) {
+      interFace.coord_tol.type = ABSOLUTE_;
     }
 
     // Find the index such that x0 > x[0,1,...,low-1] and x0 >= x[low]
@@ -926,13 +926,13 @@ namespace {
 
     INT i = low == N ? N - 1 : low; // Make sure index falls within array bounds.
 
-    if (i == 0 && interface.coord_tol.Diff(x[id[i]], x0)) {
+    if (i == 0 && interFace.coord_tol.Diff(x[id[i]], x0)) {
       // Could not find an index within tolerance on x coordinate.
       return -1;
     }
 
     // Drop to first index before which the tolerance fails.
-    while (i > 0 && !interface.coord_tol.Diff(x[id[i - 1]], x0)) {
+    while (i > 0 && !interFace.coord_tol.Diff(x[id[i - 1]], x0)) {
       --i;
     }
 
@@ -941,9 +941,9 @@ namespace {
 
     INT index = -1;
     do {
-      if (dim == 1 || (dim == 2 && !interface.coord_tol.Diff(y[id[i]], y0)) ||
-          (dim == 3 && !interface.coord_tol.Diff(y[id[i]], y0) &&
-           !interface.coord_tol.Diff(z[id[i]], z0))) {
+      if (dim == 1 || (dim == 2 && !interFace.coord_tol.Diff(y[id[i]], y0)) ||
+          (dim == 3 && !interFace.coord_tol.Diff(y[id[i]], y0) &&
+           !interFace.coord_tol.Diff(z[id[i]], z0))) {
         if (index >= 0) {
           if (ignore_dups) {
             return index;
@@ -967,9 +967,9 @@ namespace {
 
         index = i;
       }
-    } while (++i < (INT)N && !interface.coord_tol.Diff(x[id[i]], x0));
+    } while (++i < (INT)N && !interFace.coord_tol.Diff(x[id[i]], x0));
 
-    interface.coord_tol.type = save_tolerance_type;
+    interFace.coord_tol.type = save_tolerance_type;
     return index;
   }
 
@@ -1124,7 +1124,7 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
   int  warn_count = 0;
 
   if (node_map != nullptr) {
-    if (!interface.dump_mapping) {
+    if (!interFace.dump_mapping) {
       // There is a map between file1 and file2, but all nodes are
       // used in both files.
       for (size_t i = 0; i < num_nodes1; i++) {
@@ -1138,7 +1138,7 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
                        i + 1, node_id_map1[i], node_id_map2[node_map[i]]);
             diff = true;
             warn_count++;
-            if (warn_count >= interface.max_warnings) {
+            if (warn_count >= interFace.max_warnings) {
               fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
               break;
             }
@@ -1160,7 +1160,7 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
               i + 1, node_id_map1[i], node_id_map2[i]);
           diff = true;
           warn_count++;
-          if (warn_count >= interface.max_warnings) {
+          if (warn_count >= interFace.max_warnings) {
             fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
             break;
           }
@@ -1171,7 +1171,7 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
 
   warn_count = 0;
   if (elmt_map != nullptr) {
-    if (!interface.dump_mapping) {
+    if (!interFace.dump_mapping) {
       // There is a map between file1 and file2, but all elements are
       // used in both files.
       for (size_t i = 0; i < num_elmts1; i++) {
@@ -1185,7 +1185,7 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
                        i + 1, elem_id_map1[i], elem_id_map2[elmt_map[i]]);
             diff = true;
             warn_count++;
-            if (warn_count >= interface.max_warnings) {
+            if (warn_count >= interFace.max_warnings) {
               fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
               break;
             }
@@ -1207,7 +1207,7 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
                      i + 1, elem_id_map1[i], elem_id_map2[i]);
           diff = true;
           warn_count++;
-          if (warn_count >= interface.max_warnings) {
+          if (warn_count >= interFace.max_warnings) {
             fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
             break;
           }

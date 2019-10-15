@@ -612,7 +612,7 @@ namespace Ioss {
     /*!
      * `bbName` is a temporary swizzled name which resides inside Burst Buffer namespace.
      * This is a private trivial mapped name vs original `DBFilename` (which resides in
-     * permament storage backed by parallel filesystem.
+     * permanent storage backed by parallel filesystem.
      * `dwPath` is global BB mountpoint for current job with requested capacity via SLURM \c \#DW
      * directive. `usingDataWarp`  -- a boolean, for convenience of use so that we don't have to do
      * getenv() calls to see if BB present.
@@ -620,12 +620,10 @@ namespace Ioss {
     mutable std::string bbName{};
     mutable std::string pfsName{};
     mutable std::string dwPath{};
-    mutable bool        usingDataWarp{false};
 
     mutable Ioss::State dbState{STATE_INVALID};
 
-    bool isParallel{false}; //!< true if running in parallel
-    int  myProcessor{0};    //!< number of processor this database is for
+    int myProcessor{0}; //!< number of processor this database is for
 
     int64_t nodeCount{0};
     int64_t elementCount{0};
@@ -653,13 +651,6 @@ namespace Ioss {
 
     mutable int overlayCount{0};
 
-    /*! EXPERIMENTAL If this is true, then each state (timestep)
-     *  output will be directed to a separate file.  Currently this is
-     *  only implemented for the exodus (parallel or serial, single
-     *  file or fpp) database type.
-     */
-    mutable bool filePerState{false};
-
     /*! Scale the time read/written from/to the file by the specified
       scaleFactor.  If the datbase times are 0.1, 0.2, 0.3 and the
       scaleFactor is 20, then the application will think that the
@@ -672,9 +663,20 @@ namespace Ioss {
 
     Ioss::SurfaceSplitType splitType{SPLIT_BY_TOPOLOGIES};
     Ioss::DatabaseUsage    dbUsage;
+
     mutable Ioss::DataSize dbIntSizeAPI{USE_INT32_API};
-    mutable bool           lowerCaseVariableNames{true};
-    bool                   usingParallelIO{false};
+
+    /*! EXPERIMENTAL If this is true, then each state (timestep)
+     *  output will be directed to a separate file.  Currently this is
+     *  only implemented for the exodus (parallel or serial, single
+     *  file or fpp) database type.
+     */
+    mutable bool filePerState{false};
+    mutable bool usingDataWarp{false};
+    bool         isParallel{false}; //!< true if running in parallel
+
+    mutable bool lowerCaseVariableNames{true};
+    bool         usingParallelIO{false};
 
     // List of element blocks that should be omitted or included from
     // this model.  Surfaces will take this into account while

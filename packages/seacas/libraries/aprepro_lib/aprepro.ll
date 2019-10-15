@@ -64,9 +64,6 @@ typedef SEAMS::Parser::token_type token_type;
 #define show(x)   *(aprepro->infoStream) << "<" << x << ">" << std::flush;
  namespace SEAMS {
    extern bool echo;
-   extern const char *get_temp_filename(void);
-   extern char *pathopen(const char *file);
-   extern void  conv_string(const char *string);
    void yyerror(const char *s);
  }
 

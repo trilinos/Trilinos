@@ -105,6 +105,7 @@ namespace Ioss {
     const std::string tailname() const;  //!< basename() + extension()
     const std::string extension() const; //!< file extension.
     const std::string pathname() const;  //!< directory path, no filename
+    const std::string realpath() const;  //!< canonicalized absolute path
 
     void set_filename(const std::string &name);
     void set_filename(const char *name);

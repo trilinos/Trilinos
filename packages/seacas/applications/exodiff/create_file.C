@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "ED_SystemInterface.h" // for SystemInterface, interface
+#include "ED_SystemInterface.h" // for SystemInterface, interFace
 #include "Tolerance.h"          // for Tolerance, etc
 #include "exo_entity.h"         // for Exo_Entity, EXOTYPE
 #include "exodusII.h"
@@ -69,35 +69,35 @@ template <typename INT>
 void Build_Variable_Names(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool *diff_found)
 {
   // Build (and compare) global variable names.
-  build_variable_names("global", interface.glob_var_names, interface.glob_var,
-                       interface.glob_var_default, interface.glob_var_do_all_flag,
+  build_variable_names("global", interFace.glob_var_names, interFace.glob_var,
+                       interFace.glob_var_default, interFace.glob_var_do_all_flag,
                        file1.Global_Var_Names(), file2.Global_Var_Names(), diff_found);
 
   // Build (and compare) nodal variable names.
-  build_variable_names("nodal", interface.node_var_names, interface.node_var,
-                       interface.node_var_default, interface.node_var_do_all_flag,
+  build_variable_names("nodal", interFace.node_var_names, interFace.node_var,
+                       interFace.node_var_default, interFace.node_var_do_all_flag,
                        file1.Nodal_Var_Names(), file2.Nodal_Var_Names(), diff_found);
 
   // Build (and compare) element variable names.
-  build_variable_names("element", interface.elmt_var_names, interface.elmt_var,
-                       interface.elmt_var_default, interface.elmt_var_do_all_flag,
+  build_variable_names("element", interFace.elmt_var_names, interFace.elmt_var,
+                       interFace.elmt_var_default, interFace.elmt_var_do_all_flag,
                        file1.Elmt_Var_Names(), file2.Elmt_Var_Names(), diff_found);
 
   // Build (and compare) element variable names.
-  if (!interface.ignore_attributes) {
-    build_variable_names("element attribute", interface.elmt_att_names, interface.elmt_att,
-                         interface.elmt_att_default, interface.elmt_att_do_all_flag,
+  if (!interFace.ignore_attributes) {
+    build_variable_names("element attribute", interFace.elmt_att_names, interFace.elmt_att,
+                         interFace.elmt_att_default, interFace.elmt_att_do_all_flag,
                          file1.Elmt_Att_Names(), file2.Elmt_Att_Names(), diff_found);
   }
 
   // Build (and compare) nodeset variable names.
-  build_variable_names("nodeset", interface.ns_var_names, interface.ns_var,
-                       interface.ns_var_default, interface.ns_var_do_all_flag, file1.NS_Var_Names(),
+  build_variable_names("nodeset", interFace.ns_var_names, interFace.ns_var,
+                       interFace.ns_var_default, interFace.ns_var_do_all_flag, file1.NS_Var_Names(),
                        file2.NS_Var_Names(), diff_found);
 
   // Build (and compare) sideset variable names.
-  build_variable_names("sideset", interface.ss_var_names, interface.ss_var,
-                       interface.ss_var_default, interface.ss_var_do_all_flag, file1.SS_Var_Names(),
+  build_variable_names("sideset", interFace.ss_var_names, interFace.ss_var,
+                       interFace.ss_var_default, interFace.ss_var_do_all_flag, file1.SS_Var_Names(),
                        file2.SS_Var_Names(), diff_found);
 }
 
@@ -113,7 +113,7 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
   //                            output summary, variable names, check compatibility
   // quiet_flag == true     --> don't output summary information
 
-  SMART_ASSERT(!interface.summary_flag);
+  SMART_ASSERT(!interFace.summary_flag);
   //========================================================================
   // From here on down, have two input files and possibly 1 output file...
   // Create output file.
@@ -136,28 +136,28 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
     ex_copy(file1.File_ID(), out_file_id);
   }
 
-  if (!interface.quiet_flag) {
+  if (!interFace.quiet_flag) {
     if (out_file_id >= 0) { // The files are to be differenced .. just list names.
-      if (interface.coord_tol.type != IGNORE) {
-        fmt::print("Coordinates:  tol: {:8g} {}, floor: {:8g}\n", interface.coord_tol.value,
-                   interface.coord_tol.typestr(), interface.coord_tol.floor);
+      if (interFace.coord_tol.type != IGNORE_) {
+        fmt::print("Coordinates:  tol: {:8g} {}, floor: {:8g}\n", interFace.coord_tol.value,
+                   interFace.coord_tol.typestr(), interFace.coord_tol.floor);
       }
       else {
         fmt::print("Locations of nodes will not be considered.\n");
       }
-      if (interface.time_tol.type != IGNORE) {
-        fmt::print("Time step values:  tol: {:8g} {}, floor: {:8g}\n", interface.time_tol.value,
-                   interface.time_tol.typestr(), interface.time_tol.floor);
+      if (interFace.time_tol.type != IGNORE_) {
+        fmt::print("Time step values:  tol: {:8g} {}, floor: {:8g}\n", interFace.time_tol.value,
+                   interFace.time_tol.typestr(), interFace.time_tol.floor);
       }
       else {
         fmt::print("Time step time values will not be differenced.\n");
       }
-      output_diff_names("Global", interface.glob_var_names);
-      output_diff_names("Nodal", interface.node_var_names);
-      output_diff_names("Element", interface.elmt_var_names);
-      output_diff_names("Element Attribute", interface.elmt_att_names);
-      output_diff_names("Nodeset", interface.ns_var_names);
-      output_diff_names("Sideset", interface.ss_var_names);
+      output_diff_names("Global", interFace.glob_var_names);
+      output_diff_names("Nodal", interFace.node_var_names);
+      output_diff_names("Element", interFace.elmt_var_names);
+      output_diff_names("Element Attribute", interFace.elmt_att_names);
+      output_diff_names("Nodeset", interFace.ns_var_names);
+      output_diff_names("Sideset", interFace.ss_var_names);
     }
     else { // The files are to be compared .. echo additional info.
       if (Tolerance::use_old_floor) {
@@ -165,10 +165,10 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
         fmt::print(info, "INFO: Using old definition of floor tolerance. |a-b|<floor.\n\n");
         DIFF_OUT(info, fmt::color::yellow);
       }
-      if (interface.coord_tol.type != IGNORE) {
+      if (interFace.coord_tol.type != IGNORE_) {
         fmt::print("\nNodal coordinates will be compared .. tol: {:8g} ({}), floor: {:8g}\n",
-                   interface.coord_tol.value, interface.coord_tol.typestr(),
-                   interface.coord_tol.floor);
+                   interFace.coord_tol.value, interFace.coord_tol.typestr(),
+                   interFace.coord_tol.floor);
       }
       else {
         std::ostringstream info;
@@ -176,10 +176,10 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
         DIFF_OUT(info, fmt::color::yellow);
       }
 
-      if (interface.time_tol.type != IGNORE) {
+      if (interFace.time_tol.type != IGNORE_) {
         fmt::print("Time step values will be compared  .. tol: {:8g} ({}), floor: {:8g}\n",
-                   interface.time_tol.value, interface.time_tol.typestr(),
-                   interface.time_tol.floor);
+                   interFace.time_tol.value, interFace.time_tol.typestr(),
+                   interFace.time_tol.floor);
       }
       else {
         std::ostringstream info;
@@ -187,31 +187,31 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
         DIFF_OUT(info, fmt::color::yellow);
       }
 
-      output_compare_names("Global", interface.glob_var_names, interface.glob_var,
+      output_compare_names("Global", interFace.glob_var_names, interFace.glob_var,
                            file1.Num_Global_Vars(), file2.Num_Global_Vars());
 
-      output_compare_names("Nodal", interface.node_var_names, interface.node_var,
+      output_compare_names("Nodal", interFace.node_var_names, interFace.node_var,
                            file1.Num_Nodal_Vars(), file2.Num_Nodal_Vars());
 
-      output_compare_names("Element", interface.elmt_var_names, interface.elmt_var,
+      output_compare_names("Element", interFace.elmt_var_names, interFace.elmt_var,
                            file1.Num_Elmt_Vars(), file2.Num_Elmt_Vars());
 
-      output_compare_names("Element Attribute", interface.elmt_att_names, interface.elmt_att,
+      output_compare_names("Element Attribute", interFace.elmt_att_names, interFace.elmt_att,
                            file1.Num_Elmt_Atts(), file2.Num_Elmt_Atts());
 
-      output_compare_names("Nodeset", interface.ns_var_names, interface.ns_var, file1.Num_NS_Vars(),
+      output_compare_names("Nodeset", interFace.ns_var_names, interFace.ns_var, file1.Num_NS_Vars(),
                            file2.Num_NS_Vars());
 
-      output_compare_names("Sideset", interface.ss_var_names, interface.ss_var, file1.Num_SS_Vars(),
+      output_compare_names("Sideset", interFace.ss_var_names, interFace.ss_var, file1.Num_SS_Vars(),
                            file2.Num_SS_Vars());
-      if (!interface.ignore_sideset_df && interface.ss_df_tol.type != IGNORE &&
+      if (!interFace.ignore_sideset_df && interFace.ss_df_tol.type != IGNORE_ &&
           file1.Num_Side_Sets() > 0 && file2.Num_Side_Sets() > 0) {
         fmt::print(
             "Sideset Distribution Factors will be compared .. tol: {:8g} ({}), floor: {:8g}\n",
-            interface.ss_df_tol.value, interface.ss_df_tol.typestr(), interface.ss_df_tol.floor);
+            interFace.ss_df_tol.value, interFace.ss_df_tol.typestr(), interFace.ss_df_tol.floor);
       }
       else {
-        if (interface.ignore_sideset_df || interface.ss_df_tol.type == IGNORE) {
+        if (interFace.ignore_sideset_df || interFace.ss_df_tol.type == IGNORE_) {
           std::ostringstream info;
           fmt::print(info, "Sideset Distribution Factors will not be compared.\n");
           DIFF_OUT(info, fmt::color::yellow);
@@ -224,33 +224,33 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
   }
 
   std::vector<int> truth_tab;
-  build_truth_table(EX_ELEM_BLOCK, "Element Block", interface.elmt_var_names,
+  build_truth_table(EX_ELEM_BLOCK, "Element Block", interFace.elmt_var_names,
                     file1.Num_Elmt_Blocks(), file1, file2, file1.Elmt_Var_Names(),
-                    file2.Elmt_Var_Names(), truth_tab, interface.quiet_flag, diff_found);
+                    file2.Elmt_Var_Names(), truth_tab, interFace.quiet_flag, diff_found);
 
   std::vector<int> ns_truth_tab;
-  build_truth_table(EX_NODE_SET, "Nodeset", interface.ns_var_names, file1.Num_Node_Sets(), file1,
+  build_truth_table(EX_NODE_SET, "Nodeset", interFace.ns_var_names, file1.Num_Node_Sets(), file1,
                     file2, file1.NS_Var_Names(), file2.NS_Var_Names(), ns_truth_tab,
-                    interface.quiet_flag, diff_found);
+                    interFace.quiet_flag, diff_found);
 
   std::vector<int> ss_truth_tab;
-  build_truth_table(EX_SIDE_SET, "Sideset", interface.ss_var_names, file1.Num_Side_Sets(), file1,
+  build_truth_table(EX_SIDE_SET, "Sideset", interFace.ss_var_names, file1.Num_Side_Sets(), file1,
                     file2, file1.SS_Var_Names(), file2.SS_Var_Names(), ss_truth_tab,
-                    interface.quiet_flag, diff_found);
+                    interFace.quiet_flag, diff_found);
 
   // Put out the concatenated variable parameters here and then
   // put out the names....
   if (out_file_id >= 0) {
-    ex_put_all_var_param(out_file_id, interface.glob_var_names.size(),
-                         interface.node_var_names.size(), interface.elmt_var_names.size(),
-                         truth_tab.data(), interface.ns_var_names.size(), ns_truth_tab.data(),
-                         interface.ss_var_names.size(), ss_truth_tab.data());
+    ex_put_all_var_param(out_file_id, interFace.glob_var_names.size(),
+                         interFace.node_var_names.size(), interFace.elmt_var_names.size(),
+                         truth_tab.data(), interFace.ns_var_names.size(), ns_truth_tab.data(),
+                         interFace.ss_var_names.size(), ss_truth_tab.data());
 
-    output_exodus_names(out_file_id, EX_GLOBAL, interface.glob_var_names);
-    output_exodus_names(out_file_id, EX_NODAL, interface.node_var_names);
-    output_exodus_names(out_file_id, EX_ELEM_BLOCK, interface.elmt_var_names);
-    output_exodus_names(out_file_id, EX_NODE_SET, interface.ns_var_names);
-    output_exodus_names(out_file_id, EX_SIDE_SET, interface.ss_var_names);
+    output_exodus_names(out_file_id, EX_GLOBAL, interFace.glob_var_names);
+    output_exodus_names(out_file_id, EX_NODAL, interFace.node_var_names);
+    output_exodus_names(out_file_id, EX_ELEM_BLOCK, interFace.elmt_var_names);
+    output_exodus_names(out_file_id, EX_NODE_SET, interFace.ns_var_names);
+    output_exodus_names(out_file_id, EX_SIDE_SET, interFace.ss_var_names);
   }
   return out_file_id;
 }
@@ -324,15 +324,15 @@ namespace {
       int name_length = var_names1.size();
       for (n = 0; n < name_length; ++n) {
         const std::string &name = var_names1[n];
-        if (!interface.summary_flag &&
-            find_string(var_names2, name, interface.nocase_var_names) < 0) {
-          if (find_string(x_list, name, interface.nocase_var_names) < 0) {
-            if (interface.allowNameMismatch) {
+        if (!interFace.summary_flag &&
+            find_string(var_names2, name, interFace.nocase_var_names) < 0) {
+          if (find_string(x_list, name, interFace.nocase_var_names) < 0) {
+            if (interFace.allowNameMismatch) {
               x_list.push_back(name);
             }
             else {
               *diff_found = true;
-              if (!interface.quiet_flag) {
+              if (!interFace.quiet_flag) {
                 std::ostringstream diff;
                 fmt::print(diff,
                            "exodiff: DIFFERENCE .. The {} variable \"{}\" is in the first file but "
@@ -344,23 +344,23 @@ namespace {
             }
           }
         }
-        if (find_string(names, name, interface.nocase_var_names) < 0 &&
-            find_string(x_list, name, interface.nocase_var_names) < 0) {
+        if (find_string(names, name, interFace.nocase_var_names) < 0 &&
+            find_string(x_list, name, interFace.nocase_var_names) < 0) {
           int idx = names.size();
           names.push_back(name);
           tols[idx] = default_tol;
         }
       }
 
-      if (!interface.noSymmetricNameCheck) {
+      if (!interFace.noSymmetricNameCheck) {
         name_length = var_names2.size();
         for (n = 0; n < name_length; ++n) {
           const std::string &name = var_names2[n];
-          if (!interface.summary_flag &&
-              find_string(var_names1, name, interface.nocase_var_names) < 0) {
-            if (find_string(x_list, name, interface.nocase_var_names) < 0) {
+          if (!interFace.summary_flag &&
+              find_string(var_names1, name, interFace.nocase_var_names) < 0) {
+            if (find_string(x_list, name, interFace.nocase_var_names) < 0) {
               *diff_found = true;
-              if (!interface.quiet_flag) {
+              if (!interFace.quiet_flag) {
                 std::ostringstream diff;
                 fmt::print(diff,
                            "exodiff: DIFFERENCE .. The {} variable \"{}\" is in the second file "
@@ -371,8 +371,8 @@ namespace {
               continue;
             }
           }
-          SMART_ASSERT(find_string(names, name, interface.nocase_var_names) >= 0 ||
-                       find_string(x_list, name, interface.nocase_var_names) >= 0);
+          SMART_ASSERT(find_string(names, name, interFace.nocase_var_names) >= 0 ||
+                       find_string(x_list, name, interFace.nocase_var_names) >= 0);
         }
       }
     }
@@ -385,16 +385,16 @@ namespace {
         continue;
       }
 
-      int idx = find_string(var_names1, name, interface.nocase_var_names);
+      int idx = find_string(var_names1, name, interFace.nocase_var_names);
       if (idx >= 0) {
-        if (interface.summary_flag ||
-            find_string(var_names2, name, interface.nocase_var_names) >= 0) {
+        if (interFace.summary_flag ||
+            find_string(var_names2, name, interFace.nocase_var_names) >= 0) {
           tols[tmp_list.size()] = tols[n];
           tmp_list.push_back(var_names1[idx]);
         }
         else {
           *diff_found = true;
-          if (!interface.quiet_flag) {
+          if (!interFace.quiet_flag) {
             std::ostringstream diff;
             fmt::print(diff,
                        "exodiff: DIFFERENCE .. The {} variable \"{}\" is not in the second file.\n",
@@ -405,7 +405,7 @@ namespace {
       }
       else {
         *diff_found = true;
-        if (!interface.quiet_flag) {
+        if (!interFace.quiet_flag) {
           std::ostringstream diff;
           fmt::print(
               diff,
@@ -436,7 +436,7 @@ namespace {
       for (size_t b = 0; b < num_entity; ++b) {
         Exo_Entity *set1 = file1.Get_Entity_by_Index(type, b);
         Exo_Entity *set2 = nullptr;
-        if (interface.by_name) {
+        if (interFace.by_name) {
           set2 = file2.Get_Entity_by_Name(type, set1->Name());
         }
         else {
@@ -444,7 +444,7 @@ namespace {
         }
 
         if (set2 == nullptr) {
-          if (interface.map_flag != PARTIAL) {
+          if (interFace.map_flag != PARTIAL) {
             *diff_found = true;
             std::ostringstream diff;
             fmt::print(diff,
@@ -457,8 +457,8 @@ namespace {
 
         for (int out_idx = 0; out_idx < num_vars; ++out_idx) {
           const std::string &name = names[out_idx];
-          int                idx1 = find_string(var_names1, name, interface.nocase_var_names);
-          int                idx2 = find_string(var_names2, name, interface.nocase_var_names);
+          int                idx1 = find_string(var_names1, name, interFace.nocase_var_names);
+          int                idx2 = find_string(var_names2, name, interFace.nocase_var_names);
           if (idx1 < 0 || idx2 < 0) {
             Error(fmt::format("Unable to find variable named '{}' on database.\n", name));
             exit(1);
