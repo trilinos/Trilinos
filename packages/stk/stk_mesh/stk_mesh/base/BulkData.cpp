@@ -1050,7 +1050,7 @@ const EntityCommListInfo& find_entity(const BulkData& mesh,
 void BulkData::entity_comm_list_insert(Entity node)
 {
   stk::mesh::EntityKey key = entity_key(node);
-  EntityCommListInfoVector::const_iterator lb_itr = std::lower_bound(m_entity_comm_list.begin(), m_entity_comm_list.end(), key);
+  EntityCommListInfoVector::iterator lb_itr = std::lower_bound(m_entity_comm_list.begin(), m_entity_comm_list.end(), key);
   if(lb_itr == m_entity_comm_list.end() || lb_itr->key != key)
   {
     const EntityComm* entity_comm = m_entity_comm_map.entity_comm(key);
@@ -4749,14 +4749,6 @@ void BulkData::internal_resolve_parallel_create(const std::vector<stk::mesh::Ent
       std::vector<Entity> shared_modified;
 
       internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(rank, shared_modified);
-
-      if(rank == stk::topology::NODE_RANK) {
-        for(stk::mesh::Entity n : shared_modified){
-          if(identifier(n) == 5) {
-            std::cout << "here " << std::endl;
-          }
-        }
-      }
 
       // ------------------------------------------------------------
       // Claim ownership on all shared_modified entities that I own
