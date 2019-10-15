@@ -33,3 +33,6 @@ mesh surface 13
 #{endloop}
 
 Sideset 1 add curve 4, 5, 6, 7
+
+block 1 add surface all
+block 1 element type quad
