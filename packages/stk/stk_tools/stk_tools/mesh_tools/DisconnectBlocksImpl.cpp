@@ -168,7 +168,7 @@ std::vector<BlockPairType> get_block_pairs_to_disconnect(const stk::mesh::BulkDa
     }
   }
 
-  return std::move(blockPairsToDisconnect);
+  return blockPairsToDisconnect;
 }
 
 void disconnect_elements(stk::mesh::BulkData & bulk,
