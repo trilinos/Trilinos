@@ -87,13 +87,14 @@ private:
   bool insideControlDomain(const std::vector<Real> &x) const {
     bool val = true;
     if (example_==1) {
+      const Real eps = std::sqrt(ROL::ROL_EPSILON<Real>());
       Real xnorm(0);
       const int d = x.size();
       for (int i = 0; i < d; ++i) {
         xnorm += x[i]*x[i];
       }
       xnorm = std::sqrt(xnorm);
-      val = (xnorm <= outerAnnulusRadius_ && xnorm >= innerAnnulusRadius_);
+      val = (xnorm <= outerAnnulusRadius_+eps && xnorm >= innerAnnulusRadius_-eps);
     }
     return val;
   }

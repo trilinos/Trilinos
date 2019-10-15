@@ -60,6 +60,7 @@
 #include "ROL_Ptr.hpp"
 
 #include "../../TOOLS/meshmanager.hpp"
+#include "../../TOOLS/meshreader.hpp"
 #include "../../TOOLS/assembler.hpp"
 
 #include "pde_helmholtz_real.hpp"
@@ -69,22 +70,16 @@
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
-  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  ROL::Ptr<std::ostream> outStream;
-  ROL::nullstream bhs; // outputs nothing
-
   /*** Initialize communicator. ***/
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv);
+  ROL::Ptr<const Teuchos::Comm<int>> comm
     = Tpetra::getDefaultComm();
+
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  const int numProcs = (comm->getSize() > 1) ? comm->getSize() : 0;
   const int myRank = comm->getRank();
-  if ((iprint > 0) && (myRank == 0)) {
-    outStream = ROL::makePtrFromRef(std::cout);
-  }
-  else {
-    outStream = ROL::makePtrFromRef(bhs);
-  }
+  ROL::Ptr<std::ostream> outStream = ROL::makeStreamPtr( std::cout, (argc > 1) && (myRank==0) );
+
   int errorFlag  = 0;
 
   // *** Example body.
@@ -95,10 +90,16 @@ int main(int argc, char *argv[]) {
     std::string filename = "input_ex01.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    int example = parlist->sublist("Problem").get("Example",1);
 
     /*** Initialize main data structure. ***/
-    ROL::Ptr<MeshManager<RealT>> meshMgr
-      = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
+    ROL::Ptr<MeshManager<RealT>> meshMgr;
+    if (example==1) {
+      meshMgr = ROL::makePtr<MeshReader<RealT>>(*parlist, numProcs);
+    }
+    else {
+      meshMgr = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
+    }
     // Initialize PDE describing real components of the Helmholtz equation.
     ROL::Ptr<PDE_Helmholtz_Real<RealT>> pde_real
       = ROL::makePtr<PDE_Helmholtz_Real<RealT>>(*parlist);

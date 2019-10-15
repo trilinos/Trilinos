@@ -19,6 +19,8 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     SOURCE_FILES
       input_ex01.xml
       sample_script.m
+      mesh/helmholtz-mesh-0.e
+      mesh/helmholtz-mesh.jou
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
