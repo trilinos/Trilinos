@@ -320,37 +320,105 @@ namespace FROSch {
         }
 
         SC x,y,z,rx,ry,rz;
+        SCVec rx0(3,0.0),ry0(3,0.0),rz0(3,0.0),errx(3,0.0),erry(3,0.0),errz(3,0.0);
         for (UN i=0; i<entitySet->getNumEntities(); i++) {
+            // Compute values for the first node to check if rotation is constant
+            x = nodeList->getData(0)[entitySet->getEntity(i)->getLocalNodeID(0)];
+            y = nodeList->getData(1)[entitySet->getEntity(i)->getLocalNodeID(0)];
+            
+            rx0[0] = y;
+            ry0[0] = -x;
+            if (dimension == 3) {
+                z = nodeList->getData(2)[entitySet->getEntity(i)->getLocalNodeID(0)];
+                
+                rz0[0] = 0;
+                
+                rx0[1] = -z;
+                ry0[1] = 0;
+                rz0[1] = x;
+                
+                rx0[2] = 0;
+                ry0[2] = z;
+                rz0[2] = -y;
+            }
             for (UN j=0; j<entitySet->getEntity(i)->getNumNodes(); j++) {
                 x = nodeList->getData(0)[entitySet->getEntity(i)->getLocalNodeID(j)];
                 y = nodeList->getData(1)[entitySet->getEntity(i)->getLocalNodeID(j)];
 
-                // Rotation 1
-                rx = y;
+                ////////////////
+                // Rotation 1 //
+                ////////////////
+                rx = y; 
                 ry = -x;
-                rz = 0;
                 rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
                 rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
+                
+                // Compute difference (Euclidean norm of error to constant function)
+                errx[0] += (rx0[0]-rx)*(rx0[0]-rx);
+                erry[0] += (ry0[0]-ry)*(ry0[0]-ry);
+                
                 if (dimension == 3) {
                     z = nodeList->getData(2)[entitySet->getEntity(i)->getLocalNodeID(j)];
-
+                    
+                    rz = 0;
                     rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
+                    
+                    // Compute difference (Euclidean norm of error to constant function)
+                    errz[0] += (rz0[0]-rz)*(rz0[0]-rz);
 
-                    // Rotation 2
+                    ////////////////
+                    // Rotation 2 //
+                    ////////////////
                     rx = -z;
                     ry = 0;
                     rz = x;
                     rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
                     rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
                     rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
+                    
+                    // Compute difference (Euclidean norm of error to constant function)
+                    errx[1] += (rx0[1]-rx)*(rx0[1]-rx);
+                    erry[1] += (ry0[1]-ry)*(ry0[1]-ry);
+                    errz[1] += (rz0[1]-rz)*(rz0[1]-rz);
 
-                    // Rotation 3
+                    ////////////////
+                    // Rotation 3 //
+                    ////////////////
                     rx = 0;
                     ry = z;
                     rz = -y;
                     rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
                     rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
                     rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
+                    
+                    // Compute difference (Euclidean norm of error to constant function)
+                    errx[2] += (rx0[2]-rx)*(rx0[2]-rx);
+                    erry[2] += (ry0[2]-ry)*(ry0[2]-ry);
+                    errz[2] += (rz0[2]-rz)*(rz0[2]-rz);
+                }
+                
+                // If error to constant function is almost zero => scale rotation with zero
+                SC err;
+                switch (dimension) {
+                    case 2:
+                        err = errx[0]+erry[0];
+                        err = ScalarTraits<SC>::squareroot(err);
+                        if (std::fabs(err)<1.0e-12) {
+                            rotations[0]->scale(ScalarTraits<SC>::zero());
+                        }
+                        break;
+                    case 3:
+                        for (UN j=0; j<3; j++) {
+                            err = errx[j]+erry[j]+errz[j];
+                            err = ScalarTraits<SC>::squareroot(err);
+                            if (std::fabs(err)<1.0e-12) {
+                                rotations[j]->scale(ScalarTraits<SC>::zero());
+                            }
+                        }
+                        break;
+                    default:
+                        FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator : ERROR: The dimension is neither 1 nor 2 nor 3!");
+                        break;
                 }
             }
         }
