@@ -1026,7 +1026,7 @@ int main(int argc, char *argv[]) {
   //TODO JJH 8-June-2016 need to populate edge and elem seed nodes
 
   //seed points for block relaxation
-  ArrayRCP<global_ordinal_type> nodeSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> nodeSeeds(Pn_numNodes,INVALID_LO);
   //unknowns at mesh nodes
   oidx=0;
   for(int i=0;i<P1_numNodes;i++) {
@@ -1038,13 +1038,13 @@ int main(int argc, char *argv[]) {
   int numNodeSeeds = oidx;
 
   //unknowns on edges
-  ArrayRCP<global_ordinal_type> edgeSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> edgeSeeds(Pn_numNodes,INVALID_LO);
   for (size_t i=0; i<Pn_edgeNodes.size(); ++i)
     edgeSeeds[Pn_edgeNodes[i]] = i;
   int numEdgeSeeds = Pn_edgeNodes.size();
 
   //unknowns in cell interiors
-  ArrayRCP<global_ordinal_type> cellSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> cellSeeds(Pn_numNodes,INVALID_LO);
   for (size_t i=0; i<Pn_cellNodes.size(); ++i)
     cellSeeds[Pn_cellNodes[i]] = i;
   int numCellSeeds = Pn_cellNodes.size();
