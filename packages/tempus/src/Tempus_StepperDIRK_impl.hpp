@@ -91,11 +91,22 @@ void StepperDIRK<Scalar>::setObserver(
     this->stepperObserver_  =
       Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
 
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) ) {
-    obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
+    return;
 
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
+     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
+
+  // Check that this casts to prevent a runtime error if it doesn't
+  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
     this->stepperObserver_->addObserver(
-        Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
+         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
+  } else {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,0,"setObserver");
+    *out << "Tempus::StepperIMEX_RK::setObserver: Warning: An observer has been provided that";
+    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
+    *out << " In the future, this will result in a runtime error!" << std::endl;
   }
 
 }

@@ -74,6 +74,8 @@ template<class Real>
 class PoissonData {
 
 private:
+  using GO = typename Tpetra::Map<>::global_ordinal_type;
+
   ROL::Ptr<MeshManager<Real> > meshMgr_;
   ROL::Ptr<DofManager<Real> >  dofMgr_;
   std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
@@ -104,8 +106,8 @@ private:
   ROL::Ptr<Tpetra::MultiVector<> > matB_dirichlet_;
   ROL::Ptr<Tpetra::MultiVector<> > matB_overlap_;
 
-  Teuchos::Array<int> myCellIds_;
-  Teuchos::Array<int> myDirichletDofs_;
+  Teuchos::Array<GO> myCellIds_;
+  Teuchos::Array<GO> myDirichletDofs_;
 
   ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_;
   ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_trans_;
@@ -115,9 +117,9 @@ private:
   int numNodesPerCell_;
   int numCubPoints_;
 
-  int totalNumCells_;
-  int totalNumDofs_;
-  int numCells_;
+  GO totalNumCells_;
+  GO totalNumDofs_;
+  GO numCells_;
 
   ROL::Ptr<Intrepid::FieldContainer<Real> > cubPoints_;
   ROL::Ptr<Intrepid::FieldContainer<Real> > cubWeights_;
@@ -216,9 +218,9 @@ public:
 
     // Partition the cells in the mesh.  We use a basic quasi-equinumerous partitioning,
     // where the remainder, if any, is assigned to the last processor.
-    Teuchos::Array<int> myGlobIds_;
-    Teuchos::Array<int> cellOffsets_(numProcs_, 0);
-    int cellsPerProc = totalNumCells_ / numProcs_;
+    Teuchos::Array<GO> myGlobIds_;
+    Teuchos::Array<GO> cellOffsets_(numProcs_, 0);
+    GO cellsPerProc = totalNumCells_ / numProcs_;
     numCells_ = cellsPerProc;
     switch(cellSplit) {
       case 0:
@@ -246,7 +248,7 @@ public:
         }
         break;
     }
-    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    Intrepid::FieldContainer<GO> &cellDofs = *(dofMgr_->getCellDofs());
     int numLocalDofs = cellDofs.dimension(1);
     *outStream << "Cell offsets across processors: " << cellOffsets_ << std::endl;
     for (int i=0; i<numCells_; ++i) {
@@ -266,7 +268,7 @@ public:
           myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, comm);
         to build the overlap map.
     **/
-    myUniqueMap_ = Tpetra::createOneToOne<int,int>(myOverlapMap_);
+    myUniqueMap_ = Tpetra::createOneToOne(myOverlapMap_);
     //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
 
     /****************************************************/
@@ -327,8 +329,8 @@ public:
 
     // Geometric definition of the cells in the mesh, based on the cell-to-node map and the domain partition.
     Intrepid::FieldContainer<Real> &nodes = *meshMgr_->getNodes();
-    Intrepid::FieldContainer<int>  &ctn   = *meshMgr_->getCellToNodeMap();
-    for (int i=0; i<numCells_; ++i) {
+    Intrepid::FieldContainer<GO>  &ctn   = *meshMgr_->getCellToNodeMap();
+    for (GO i=0; i<numCells_; ++i) {
       for (int j=0; j<numNodesPerCell_; ++j) {
         for (int k=0; k<spaceDim_; ++k) {
           (*cellNodes_)(i, j, k) = nodes(ctn(myCellIds_[i],j), k);
@@ -366,7 +368,7 @@ public:
     Intrepid::FunctionSpaceTools::multiplyMeasure<Real>(*gradPhysicalWeighted_,              // multiply with weighted measure
                                                         *cellWeightedMeasure_,
                                                         *gradPhysical_);
-    for (int i=0; i<numCells_; ++i) {                                                        // evaluate conductivity kappa at cubature points
+    for (GO i=0; i<numCells_; ++i) {                                                        // evaluate conductivity kappa at cubature points
       for (int j=0; j<numCubPoints_; ++j) {
         (*kappa_)(i, j) = funcKappa((*cubPointsPhysical_)(i, j, 0),
                                     (*cubPointsPhysical_)(i, j, 1),
@@ -405,7 +407,7 @@ public:
 //                                                  *valPhysicalWeighted_,
 //                                                  Intrepid::COMP_CPP);
 //
-    for (int i=0; i<numCells_; ++i) {                                                        // evaluate advection adv at cubature points
+    for (GO i=0; i<numCells_; ++i) {                                                        // evaluate advection adv at cubature points
       for (int j=0; j<numCubPoints_; ++j) {
         for (int k=0; k<spaceDim_; ++k) {
           std::vector<Real> adv(spaceDim_, 0);
@@ -426,7 +428,7 @@ public:
                                                   Intrepid::COMP_CPP);
 
     Intrepid::RealSpaceTools<Real>::add(*pdeMats_, *gradgradMats_, *advgradvalMats_);        // add diffusion and advection matrices
-    for (int i=0; i<numCells_; ++i) {                                                        // evaluate functions at these points
+    for (GO i=0; i<numCells_; ++i) {                                                        // evaluate functions at these points
       for (int j=0; j<numCubPoints_; ++j) {
         (*dataF_)(i, j) = funcRHS((*cubPointsPhysical_)(i, j, 0),
                                   (*cubPointsPhysical_)(i, j, 1),
@@ -443,7 +445,7 @@ public:
                                                   *dofPoints_,
                                                   *cellNodes_,
                                                   cellType_);
-    for (int i=0; i<numCells_; ++i) {                                                        // evaluate functions at these points
+    for (GO i=0; i<numCells_; ++i) {                                                        // evaluate functions at these points
       for (int j=0; j<lfs; ++j) {
         (*dataUd_)(i, j) = funcTarget((*dofPointsPhysical_)(i, j, 0), (*dofPointsPhysical_)(i, j, 1));
       }
@@ -454,7 +456,7 @@ public:
     const std::vector<Real> x = {0.25, 0.50, 0.75, 0.25, 0.50, 0.75, 0.25, 0.50, 0.75};
     const std::vector<Real> y = {0.25, 0.25, 0.25, 0.50, 0.50, 0.50, 0.75, 0.75, 0.75};
     for (int k=0; k<nz; ++k) {
-      for (int i=0; i<numCells_; ++i) {
+      for (GO i=0; i<numCells_; ++i) {
         for (int j=0; j<numCubPoints_; ++j) {
           (*dataB_)(i, j) = funcControl((*cubPointsPhysical_)(i, j, 0),
                                         (*cubPointsPhysical_)(i, j, 1),
@@ -477,9 +479,17 @@ public:
     /****************************************/
 
     // Assemble graph.
-    matGraph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueMap_, 0);
-    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
-    for (int i=0; i<numCells_; ++i) {
+    Teuchos::ArrayRCP<const GO> cellDofsArrayRCP = cellDofs.getData();
+    Teuchos::Array<size_t> graphEntriesPerRow(myUniqueMap_->getNodeNumElements());
+    for (GO i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs; ++j) {
+        GO gid = cellDofs(myCellIds_[i],j);
+        if(myUniqueMap_->isNodeGlobalElement(gid))
+          graphEntriesPerRow[myUniqueMap_->getLocalElement(gid)] += numLocalDofs;
+      }
+    }
+    matGraph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueMap_, graphEntriesPerRow());
+    for (GO i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
         matGraph_->insertGlobalIndices(cellDofs(myCellIds_[i],j), cellDofsArrayRCP(myCellIds_[i]*numLocalDofs, numLocalDofs));
       }
@@ -491,7 +501,7 @@ public:
     matA_ = ROL::makePtr<Tpetra::CrsMatrix<>>(matGraph_);
     int numLocalMatEntries = numLocalDofs*numLocalDofs;
     Teuchos::ArrayRCP<const Real> pdeArrayRCP = pdeMats_->getData();
-    for (int i=0; i<numCells_; ++i) {
+    for (GO i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
         matA_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
                                    cellDofsArrayRCP(myCellIds_[i]*numLocalDofs, numLocalDofs),
@@ -504,7 +514,7 @@ public:
     matB_ = ROL::makePtr<Tpetra::MultiVector<>>(matA_->getRangeMap(), nz, true);
     matB_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapMap_, nz, true);
     for (int k=0; k<nz; ++k) {// assembly over number of control sources
-      for (int i=0; i<numCells_; ++i) {// assembly on the overlap map
+      for (GO i=0; i<numCells_; ++i) {// assembly on the overlap map
         for (int j=0; j<numLocalDofs; ++j) {
           matB_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
                                             k,
@@ -541,7 +551,7 @@ public:
     // vecF_ requires assembly using vecF_overlap_ and redistribution
     vecF_ = ROL::makePtr<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     vecF_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapMap_, 1, true);
-    for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
+    for (GO i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
       for (int j=0; j<numLocalDofs; ++j) {
         vecF_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
                                           0,
@@ -552,7 +562,7 @@ public:
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
     // vecUd_ does not require assembly
     vecUd_ = ROL::makePtr<Tpetra::MultiVector<>>(matA_->getDomainMap(), 1, true);
-    for (int i=0; i<numCells_; ++i) {
+    for (GO i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
         if (vecUd_->getMap()->isNodeGlobalElement(cellDofs(myCellIds_[i],j))) {
           vecUd_->replaceGlobalValue(cellDofs(myCellIds_[i],j),
@@ -607,12 +617,12 @@ public:
     vecF_dirichlet_ = ROL::makePtr<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     Tpetra::deep_copy(*matB_dirichlet_, *matB_);
     Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
-    ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
-    std::vector<std::vector<Intrepid::FieldContainer<int> > > &dss = *dirichletSideSets;
-    Teuchos::Array<int> mySortedCellIds_(myCellIds_);
+    ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<GO> > > > dirichletSideSets = meshMgr_->getSideSets();
+    std::vector<std::vector<Intrepid::FieldContainer<GO> > > &dss = *dirichletSideSets;
+    Teuchos::Array<GO> mySortedCellIds_(myCellIds_);
     std::sort(mySortedCellIds_.begin(), mySortedCellIds_.end());
     mySortedCellIds_.erase( std::unique(mySortedCellIds_.begin(), mySortedCellIds_.end()), mySortedCellIds_.end() );
-    std::vector<Teuchos::Array<int> > myDirichletCellIds_(dss[0].size());
+    std::vector<Teuchos::Array<GO> > myDirichletCellIds_(dss[0].size());
     for (int i=0; i<static_cast<int>(dss[0].size()); ++i) {
       if (i != 1) {  // exclude right boundary of the square domain (pure Neumann)
         for (int j=0; j<dss[0][i].dimension(0); ++j) {
@@ -622,9 +632,9 @@ public:
         }
       }
     }
-    Intrepid::FieldContainer<int>  &cte      = *(meshMgr_->getCellToEdgeMap());
-    Intrepid::FieldContainer<int>  &nodeDofs = *(dofMgr_->getNodeDofs());
-    Intrepid::FieldContainer<int>  &edgeDofs = *(dofMgr_->getEdgeDofs());
+    Intrepid::FieldContainer<GO>  &cte      = *(meshMgr_->getCellToEdgeMap());
+    Intrepid::FieldContainer<GO>  &nodeDofs = *(dofMgr_->getNodeDofs());
+    Intrepid::FieldContainer<GO>  &edgeDofs = *(dofMgr_->getEdgeDofs());
     std::vector<std::vector<int> > dofTags = (basisPtrs_[0])->getAllDofTags();
     int numDofsPerNode = 0;
     int numDofsPerEdge = 0;
@@ -656,7 +666,7 @@ public:
     for (int i=0; i<myDirichletDofs_.size(); ++i) {
       if (myUniqueMap_->isNodeGlobalElement(myDirichletDofs_[i])) {
         size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(myDirichletDofs_[i]);
-        Teuchos::Array<int> indices(numRowEntries, 0);    
+        Teuchos::Array<GO> indices(numRowEntries, 0);    
         Teuchos::Array<Real> values(numRowEntries, 0);
         Teuchos::Array<Real> canonicalValues(numRowEntries, 0);    
         Teuchos::Array<Real> zeroValues(numRowEntries, 0);    
@@ -691,12 +701,12 @@ public:
     // Construct solver using Amesos2 factory.
     try{
       solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_);
-    } catch (std::invalid_argument e) {
+    } catch (std::invalid_argument& e) {
       std::cout << e.what() << std::endl;
     }
     try{
       solverA_trans_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_trans_);
-    } catch (std::invalid_argument e) {
+    } catch (std::invalid_argument& e) {
       std::cout << e.what() << std::endl;
     }
     solverA_->numericFactorization();
@@ -712,9 +722,9 @@ public:
 
 
   void updateF(const std::vector<Real> &param) {
-    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    Intrepid::FieldContainer<GO> &cellDofs = *(dofMgr_->getCellDofs());
     int numLocalDofs = cellDofs.dimension(1);
-    for (int i=0; i<numCells_; ++i) {                                                        // evaluate RHS function at cubature points
+    for (GO i=0; i<numCells_; ++i) {                                                        // evaluate RHS function at cubature points
       for (int j=0; j<numCubPoints_; ++j) {
         (*dataF_)(i, j) = funcRHS((*cubPointsPhysical_)(i, j, 0),
                                   (*cubPointsPhysical_)(i, j, 1),
@@ -729,7 +739,7 @@ public:
     // vecF_ requires assembly using vecF_overlap_ and redistribution
     vecF_ = ROL::makePtr<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     vecF_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapMap_, 1, true);
-    for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
+    for (GO i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
       for (int j=0; j<numLocalDofs; ++j) {
         vecF_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
                                           0,
@@ -740,7 +750,7 @@ public:
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
 
     Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
-    for (int i=0; i<myDirichletDofs_.size(); ++i) {
+    for (int i=0; i < static_cast<int>(myDirichletDofs_.size()); ++i) {
       if (myUniqueMap_->isNodeGlobalElement(myDirichletDofs_[i])) {
         vecF_dirichlet_->replaceGlobalValue(myDirichletDofs_[i], 0, 0);
       }
@@ -751,11 +761,11 @@ public:
   void updateA(const std::vector<Real> &param) {
     const Real one(1);
 
-    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+    Intrepid::FieldContainer<GO> &cellDofs = *(dofMgr_->getCellDofs());
+    Teuchos::ArrayRCP<const GO> cellDofsArrayRCP = cellDofs.getData();
     int numLocalDofs = cellDofs.dimension(1);
 
-    for (int i=0; i<numCells_; ++i) {                                                        // evaluate conductivity kappa at cubature points
+    for (GO i=0; i<numCells_; ++i) {                                                        // evaluate conductivity kappa at cubature points
       for (int j=0; j<numCubPoints_; ++j) {
         (*kappa_)(i, j) = funcKappa((*cubPointsPhysical_)(i, j, 0),
                                     (*cubPointsPhysical_)(i, j, 1),
@@ -769,7 +779,7 @@ public:
                                                   *kappaGradPhysical_,
                                                   *gradPhysicalWeighted_,
                                                   Intrepid::COMP_CPP);
-    for (int i=0; i<numCells_; ++i) {                                                        // evaluate advection adv at cubature points
+    for (GO i=0; i<numCells_; ++i) {                                                        // evaluate advection adv at cubature points
       for (int j=0; j<numCubPoints_; ++j) {
         for (int k=0; k<spaceDim_; ++k) {
           std::vector<Real> adv(spaceDim_, 0);
@@ -795,7 +805,7 @@ public:
     Teuchos::ArrayRCP<const Real> pdeArrayRCP = pdeMats_->getData();
     matA_->resumeFill();
     matA_->setAllToScalar(0);
-    for (int i=0; i<numCells_; ++i) {
+    for (GO i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
         matA_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
                                    cellDofsArrayRCP(myCellIds_[i]*numLocalDofs, numLocalDofs),
@@ -806,10 +816,10 @@ public:
 
     matA_dirichlet_ = ROL::makePtr<Tpetra::CrsMatrix<>>(*matA_, Teuchos::DataAccess::Copy);
     matA_dirichlet_->resumeFill();
-    for (int i=0; i<myDirichletDofs_.size(); ++i) {
+    for (int i=0; i < static_cast<int>(myDirichletDofs_.size()); ++i) {
       if (myUniqueMap_->isNodeGlobalElement(myDirichletDofs_[i])) {
         size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(myDirichletDofs_[i]);
-        Teuchos::Array<int> indices(numRowEntries, 0);
+        Teuchos::Array<GO> indices(numRowEntries, 0);
         Teuchos::Array<Real> values(numRowEntries, 0);
         Teuchos::Array<Real> canonicalValues(numRowEntries, 0);
         matA_dirichlet_->getGlobalRowCopy(myDirichletDofs_[i], indices, values, numRowEntries);
@@ -829,12 +839,12 @@ public:
     // Construct solver using Amesos2 factory.
     try{
       solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_);
-    } catch (std::invalid_argument e) {
+    } catch (std::invalid_argument& e) {
       std::cout << e.what() << std::endl;
     }
     try{
       solverA_trans_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_trans_);
-    } catch (std::invalid_argument e) {
+    } catch (std::invalid_argument& e) {
       std::cout << e.what() << std::endl;
     }
     solverA_->numericFactorization();
@@ -1011,9 +1021,9 @@ public:
 
   void printMeshData(std::ostream &outStream) const {
     ROL::Ptr<Intrepid::FieldContainer<Real> > nodesPtr = meshMgr_->getNodes();
-    ROL::Ptr<Intrepid::FieldContainer<int> >  cellToNodeMapPtr = meshMgr_->getCellToNodeMap();
+    ROL::Ptr<Intrepid::FieldContainer<GO> >  cellToNodeMapPtr = meshMgr_->getCellToNodeMap();
     Intrepid::FieldContainer<Real>  &nodes = *nodesPtr;
-    Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
+    Intrepid::FieldContainer<GO>   &cellToNodeMap = *cellToNodeMapPtr;
     outStream << "Number of nodes = " << meshMgr_->getNumNodes() << std::endl;
     outStream << "Number of cells = " << meshMgr_->getNumCells() << std::endl;
     outStream << "Number of edges = " << meshMgr_->getNumEdges() << std::endl;

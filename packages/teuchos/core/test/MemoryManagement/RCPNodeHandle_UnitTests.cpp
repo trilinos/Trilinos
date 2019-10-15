@@ -544,6 +544,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, copyConstruct, T )
 {
   RCPNodeHandle nodeRef1(basicRCPNodeHandle<T>(true));
   RCPNodeHandle nodeRef2(nodeRef1);
+  TEST_EQUALITY( nodeRef1.node_ptr(), nodeRef2.node_ptr() );
+  TEST_EQUALITY_CONST( nodeRef1.same_node(nodeRef2), true );
   TEST_EQUALITY_CONST( nodeRef1.count(), 2 );
   TEST_EQUALITY_CONST( nodeRef2.count(), 2 );
   TEST_EQUALITY_CONST( nodeRef1.has_ownership(), true );
@@ -551,7 +553,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, copyConstruct, T )
 }
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, assignmentOperator, T )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, moveConstruct, T )
+{
+  RCPNodeHandle nodeRef1(basicRCPNodeHandle<T>(true));
+  RCPNodeHandle nodeRef2(std::move(nodeRef1));
+  TEST_EQUALITY_CONST( nodeRef1.node_ptr(), 0 );
+  TEST_INEQUALITY_CONST( nodeRef2.node_ptr(), 0 );
+  TEST_EQUALITY_CONST( nodeRef1.same_node(nodeRef2), false );
+  TEST_EQUALITY_CONST( nodeRef1.count(), 0 );
+  TEST_EQUALITY_CONST( nodeRef2.count(), 1 );
+  TEST_EQUALITY_CONST( nodeRef1.has_ownership(), false );
+  TEST_EQUALITY_CONST( nodeRef2.has_ownership(), true );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, copyAssignmentOperator, T )
 {
   RCPNodeHandle nodeRef1(basicRCPNodeHandle<T>(true));
   RCPNodeHandle nodeRef2;
@@ -559,6 +575,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, assignmentOperator, T )
   TEST_EQUALITY_CONST( nodeRef1.count(), 2 );
   TEST_EQUALITY_CONST( nodeRef2.count(), 2 );
   TEST_EQUALITY_CONST( nodeRef1.has_ownership(), true );
+  TEST_EQUALITY_CONST( nodeRef2.has_ownership(), true );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, moveAssignmentOperator, T )
+{
+  RCPNodeHandle nodeRef1(basicRCPNodeHandle<T>(true));
+  RCPNodeHandle nodeRef2;
+  nodeRef2 = std::move(nodeRef1);
+  TEST_EQUALITY_CONST( nodeRef1.node_ptr(), 0 );
+  TEST_INEQUALITY_CONST( nodeRef2.node_ptr(), 0 );
+  TEST_EQUALITY_CONST( nodeRef1.same_node(nodeRef2), false );
+  TEST_EQUALITY_CONST( nodeRef1.count(), 0 );
+  TEST_EQUALITY_CONST( nodeRef2.count(), 1 );
+  TEST_EQUALITY_CONST( nodeRef1.has_ownership(), false );
   TEST_EQUALITY_CONST( nodeRef2.has_ownership(), true );
 }
 
@@ -701,7 +732,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_failed_const, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, weakPtr_basic_1, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, weakPtr_basic_2, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, copyConstruct, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, assignmentOperator, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, moveConstruct, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, copyAssignmentOperator, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, moveAssignmentOperator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, extraData_basic, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, extraData_basic_const, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, extraData_failed, T ) \

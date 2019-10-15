@@ -415,7 +415,7 @@ class TpetraVector<Scalar, int, int, EpetraNode>
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 
-    using dual_view_type = typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+    using dual_view_type = typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type;
 
     typename dual_view_type::t_host_um getHostLocalView() const
     {

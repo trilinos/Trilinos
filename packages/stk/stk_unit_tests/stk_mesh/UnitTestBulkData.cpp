@@ -48,20 +48,15 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 
-#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture, etc
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
-#include <stk_util/parallel/CommSparse.hpp>  // for Reduce, ReduceSum, etc
-#include <gtest/gtest.h>
-#include <string>                       // for string, basic_string, etc
-#include <stk_unit_tests/stk_mesh/UnitTestRingFixture.hpp>  // for test_shift_ring
-#include <stk_unit_tests/stk_mesh/Setup8Quad4ProcMesh.hpp>
-#include <stk_unit_test_utils/getOption.h>
-#include <utility>                      // for pair
-#include <vector>                       // for vector, etc
+#include "Setup8Quad4ProcMesh.hpp"
+#include "UnitTestCEO2Elem.hpp"
+#include "UnitTestCEO3Elem.hpp"
+#include "UnitTestCEO4ElemEdge.hpp"
+#include "UnitTestCEO4ElemRotate.hpp"
+#include "UnitTestCEO8Elem.hpp"
+#include "UnitTestCEOCommonUtils.hpp"
+#include "UnitTestRingFixture.hpp"  // for test_shift_ring
+#include "stk_io/StkMeshIoBroker.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -71,26 +66,31 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Relation.hpp"
-#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
-#include <stk_mesh/base/FieldBLAS.hpp>  // for stk::mesh::field_fill
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/RingFixture.hpp"  // for RingFixture
 #include "stk_util/util/PairIter.hpp"   // for PairIter
-#include "stk_io/StkMeshIoBroker.hpp"
+#include <gtest/gtest.h>
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include <stk_mesh/base/FieldBLAS.hpp>  // for stk::mesh::field_fill
+#include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
-#include "UnitTestCEOCommonUtils.hpp"
-#include "UnitTestCEO2Elem.hpp"
-#include "UnitTestCEO3Elem.hpp"
-#include "UnitTestCEO4ElemEdge.hpp"
-#include "UnitTestCEO4ElemRotate.hpp"
-#include "UnitTestCEO8Elem.hpp"
-#include <stk_mesh/base/MeshUtils.hpp>
+#include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/ioUtils.hpp>
+#include <stk_util/parallel/CommSparse.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
+#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
+#include <string>                       // for string, basic_string, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector, etc
 
 namespace stk
 {

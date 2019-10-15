@@ -160,6 +160,7 @@ public:
   enum GhostingId { SHARED = 0, AURA = 1 };
   enum EntitySharing : char { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
   enum AutomaticAuraOption { NO_AUTO_AURA, AUTO_AURA };
+  using ModEndOptimization = impl::MeshModification::modification_optimization;
 
   /** \brief  Construct mesh bulk data manager conformal to the given
    *          \ref stk::mesh::MetaData "meta data manager" and will
@@ -250,10 +251,10 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
 
-  bool modification_end()
+  bool modification_end(ModEndOptimization modEndOpt = ModEndOptimization::MOD_END_SORT)
   {
       notifier.notify_started_modification_end();
-      return m_meshModification.modification_end();
+      return m_meshModification.modification_end(modEndOpt);
   }
 
   void sort_entities(const stk::mesh::EntitySorterBase& sorter);
@@ -397,6 +398,11 @@ public:
       const PARTVECTOR & add_parts ,
       const PARTVECTOR & remove_parts = PARTVECTOR());
 
+  template<typename PARTVECTOR>
+  void change_entity_parts( const EntityVector& entities,
+      const PARTVECTOR & add_parts ,
+      const PARTVECTOR & remove_parts = PARTVECTOR());
+
   /** \brief Change part-membership of the specified entities by adding
    * and/or removing parts for each entity.
    *
@@ -504,6 +510,9 @@ public:
       const RelationIdentifier local_id,
       Permutation permutation = stk::mesh::Permutation::INVALID_PERMUTATION);
 
+  void declare_relation( Entity e_from ,
+                         const EntityVector& to_entities);
+ 
   //it's ugly to have 3 scratch-space vectors in the API, but for now
   //it is a big performance improvement. TODO: improve the internals to remove
   //the need for these vectors.
@@ -960,6 +969,11 @@ protected: //functions
   void internal_verify_and_change_entity_parts( Entity entity,
                                                 const PARTVECTOR & add_parts ,
                                                 const PARTVECTOR & remove_parts); // Mod Mark
+
+  template<typename PARTVECTOR>
+  void internal_verify_and_change_entity_parts( const EntityVector& entities,
+                                                const PARTVECTOR & add_parts ,
+                                                const PARTVECTOR & remove_parts);
 
   void internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(stk::mesh::Entity entity,
                                                                                stk::mesh::Entity e_to,

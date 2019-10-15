@@ -477,12 +477,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   if(verbose) ML_Set_PrintLevel(10);
   NumAggregates = ML_Aggregate_Coarsen(MLAggr,A_ML, &P, ml_comm);
   if(verbose) ML_Set_PrintLevel(printlevel);
-
-  if (NumAggregates == 0){
-    std::cerr << "Found 0 aggregates, perhaps the problem is too small." << std::endl;
-    ML_CHK_ERR(-2);
-  }/*end if*/
-  else if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);
+  if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);
 
   if(verbose){
     int globalAggs=0;

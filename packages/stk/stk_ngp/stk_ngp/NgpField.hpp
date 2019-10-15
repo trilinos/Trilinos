@@ -118,6 +118,10 @@ public:
 
     void clear_sync_state() { }
 
+    void swap(ConstStkFieldAdapter<T> &sf) { }
+
+    void swap(StkFieldAdapter<T> &sf) { }
+
     stk::mesh::EntityRank get_rank() const { return field->entity_rank(); }
 
     unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
@@ -192,6 +196,10 @@ public:
 
     void sync_to_device() { }
 
+    void swap(ConstStkFieldAdapter<T> &sf) { }
+
+    void swap(StkFieldAdapter<T> &sf) { }
+
 #ifdef STK_HIDE_DEPRECATED_CODE
 private:
 #endif
@@ -204,10 +212,6 @@ private:
     void copy_device_to_host(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { };
 private:
 #endif
-
-    void swap(ConstStkFieldAdapter<T> &sf) { }
-
-    void swap(StkFieldAdapter<T> &sf) { }
 
     bool need_sync_to_host() const { return false; }
 

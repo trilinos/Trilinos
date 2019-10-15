@@ -73,6 +73,8 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   const int myRank = Teuchos::rank(*comm);
 
   Teuchos::StackedTimer timer("My New Timer");
+  timer.enableVerbose(true);
+  timer.setVerboseOstream(Teuchos::rcpFromRef(std::cout));
   timer.start("Total Time");
   {
     for (int i=0; i < 10; ++i) {

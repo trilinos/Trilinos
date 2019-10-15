@@ -700,7 +700,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
         for(int cell=0;cell<num_cells;++cell){
           Scalar norm = (in_node_coordinates(cell,subcell_index,0) - in_node_coordinates(cell,other_subcell_index,0));
-          side_normals(cell,0,0) = norm / fabs(norm);
+          side_normals(cell,0,0) = norm / fabs(norm+std::numeric_limits<typename Sacado::ScalarType<Scalar>::type>::min());
         }
 
       } else {

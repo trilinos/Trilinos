@@ -33,19 +33,18 @@
 // 
 
 #include <gtest/gtest.h>
+#include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/perf_util.hpp>
-#include <stk_util/stk_util/environment/CPUTime.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>
-
+#include "stk_unit_test_utils/stk_mesh_fixtures/SelectorFixture.hpp"
 #include <stdexcept>
+#include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/base/Part.hpp>
+#include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/Types.hpp>
 
 namespace {
 

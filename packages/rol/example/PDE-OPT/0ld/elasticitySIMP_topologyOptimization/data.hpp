@@ -52,6 +52,7 @@
 template<class Real>
 class ElasticitySIMPOperators : public ElasticitySIMP <Real> {
 private:
+  using GO = typename Tpetra::Map<>::global_ordinal_type;
 
   Real volFrac_;
 
@@ -65,7 +66,7 @@ public:
     this->SetUpLocalIntrepidArrays();
     this->ComputeLocalSystemMats(true);
 //Setup DBC information, do not specify any bc sides, use coordinates to determine the BC instead
-    std::vector<int> dbc_side {};
+    std::vector<GO> dbc_side {};
     this->SetUpMyDBCInfo(true, dbc_side);
     this->process_loading_information(parlist);
 //With new modification on boundary traction, ComputeLocalForceVec should go after SetUpMyBCInfo and process_loading_information

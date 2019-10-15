@@ -622,7 +622,8 @@ public:
 
   // Inverse scaling by a block-diagonal matrix
   static void inverseScaleBlockDiagonal(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & blockDiagonal,
-                                 Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & toBeScaled) {
+					bool doTranspose,
+					Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & toBeScaled) {
                             
     const UnderlyingLib lib = blockDiagonal.getMap()->lib();
 
@@ -634,7 +635,7 @@ public:
 #ifdef HAVE_XPETRA_TPETRA
         const Tpetra::MultiVector<SC,LO,GO,NO> & Dt = Xpetra::toTpetra(blockDiagonal);
         Tpetra::MultiVector<SC,LO,GO,NO> &       St = Xpetra::toTpetra(toBeScaled);
-        Tpetra::Details::inverseScaleBlockDiagonal(Dt,St);
+        Tpetra::Details::inverseScaleBlockDiagonal(Dt,doTranspose,St);
 #endif // HAVE_XPETRA_TPETRA
       }
   }
