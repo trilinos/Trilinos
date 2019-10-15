@@ -271,8 +271,8 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
     auto solver = rcp(new Thyra::NOXNonlinearSolver());
-    auto solverPL = Tempus::defaultSolverParameters();
-    auto subPL = sublist(solverPL, "NOX");
+    auto defaultSolverPL = Tempus::defaultSolverParameters();
+    auto subPL = sublist(defaultSolverPL, "NOX");
     solver->setParameterList(subPL);
     if (stepperPL != Teuchos::null) {
       std::string solverName = stepperPL->get<std::string>("Solver Name");
