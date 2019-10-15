@@ -85,7 +85,7 @@ int ex_get_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
   if (start_node_num + num_nodes > num_nod) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: start index (%" PRId64 ") + node count (%" PRId64
-             ") is larger than total number of nodes (%" ST_ZU ") in file id %d",
+             ") is larger than total number of nodes (%zu) in file id %d",
              start_node_num, num_nodes, num_nod, exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -98,7 +98,7 @@ int ex_get_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
 
   if (component > num_dim) {
     snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: Component (%d) is larger than number of dimensions (%" ST_ZU ") in file id %d",
+             "ERROR: Component (%d) is larger than number of dimensions (%zu) in file id %d",
              component, num_dim, exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);

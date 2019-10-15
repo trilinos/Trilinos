@@ -84,9 +84,7 @@ namespace Ioss {
 
   protected:
     Scalar();
-
-  private:
-    Scalar(const Scalar &);
+    Scalar(const Scalar &) = delete;
   };
 
   MAKE_CLASS(Vector_2D);

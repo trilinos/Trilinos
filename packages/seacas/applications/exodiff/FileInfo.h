@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -29,7 +29,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
 #ifndef FileInfo_h
 #define FileInfo_h
@@ -58,11 +57,11 @@ public:
   FileInfo();
 
   //! Create object referring to file with name \a filename
-  //! \param filename name of file
+  //! \param my_filename name of file
   explicit FileInfo(std::string my_filename);
 
   //! Create object referring to file with name \a filename
-  //! \param filename name of file
+  //! \param my_filename name of file
   explicit FileInfo(const char *my_filename);
 
   //! Copy constructor
@@ -70,7 +69,7 @@ public:
 
   //! Constructor
   //! \param dirpath Directory Path
-  //! \param filename base filename
+  //! \param my_filename base filename
   FileInfo(const std::string &dirpath, const std::string &my_filename);
 
   ~FileInfo();
@@ -107,8 +106,8 @@ public:
   bool remove_file();
 
 private:
-  std::string filename_;
-  bool        exists_{};   //<! this is used frequently, check on creation
-  bool        readable_{}; //<! this is used frequently, check on creation
+  std::string filename_{};
+  bool        exists_{false};   ///< this is used frequently, check on creation
+  bool        readable_{false}; ///< this is used frequently, check on creation
 };
 #endif

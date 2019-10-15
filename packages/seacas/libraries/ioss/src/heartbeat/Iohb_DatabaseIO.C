@@ -40,7 +40,7 @@
 #include <heartbeat/Iohb_Layout.h>
 #include <iostream>
 #include <string>
-#include <sys/select.h>
+
 #include <vector>
 
 #include "Ioss_DBUsage.h"

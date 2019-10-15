@@ -55,8 +55,7 @@ public:
      volatile const Scalar errorRel = metaData->getErrorRel();
      int order = metaData->getOrder();
      Scalar dt = metaData->getDt();
-     bool printChanges = solutionHistory->getVerbLevel() !=
-        Teuchos::as<int>(Teuchos::VERB_NONE);
+     //bool printDtChanges = tsc.getPrintDtChanges();
 
      Teuchos::RCP<Teuchos::FancyOStream> out = tsc.getOStream();
      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
