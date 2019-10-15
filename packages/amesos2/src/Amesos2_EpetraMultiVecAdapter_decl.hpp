@@ -63,6 +63,7 @@
 #include <Epetra_MultiVector.h>
 
 #include "Amesos2_MultiVecAdapter_decl.hpp"
+#include "Amesos2_Kokkos_View_Copy_Assign.hpp"
 
 namespace Amesos2 {
 
@@ -178,11 +179,33 @@ namespace Amesos2 {
     void get1dCopy( const Teuchos::ArrayView<scalar_t>& A,
                     size_t lda,
                     Teuchos::Ptr<
-                    const Tpetra::Map<local_ordinal_t,
-                    global_ordinal_t,
-                    node_t> > distribution_map,
+                      const Tpetra::Map<local_ordinal_t,
+                      global_ordinal_t,
+                      node_t> > distribution_map,
         EDistribution distribution) const;
 
+    template<typename KV>
+    void get1dCopy_kokkos_view( KV & A,
+                    size_t lda,
+                    Teuchos::Ptr<
+                      const Tpetra::Map<local_ordinal_t,
+                      global_ordinal_t,
+                      node_t> > distribution_map,
+                    EDistribution distribution) const {
+      Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Serial> host_new_data;
+      get1dCopy_kokkos_view_host(host_new_data, lda, distribution_map, distribution);
+      // will assign or deep copy depending on memory space of the solver
+      deep_copy_or_assign_view(A, host_new_data);
+    }
+
+    void get1dCopy_kokkos_view_host(
+                    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial> & new_data,
+                    size_t lda,
+                    Teuchos::Ptr<
+                      const Tpetra::Map<local_ordinal_t,
+                      global_ordinal_t,
+                      node_t> > distribution_map,
+                    EDistribution) const;
 
     /**
      * \brief Extracts a 1 dimensional view of this multi-vector's data
@@ -222,7 +245,43 @@ namespace Amesos2 {
                     node_t> > source_map,
         EDistribution distribution );
 
+    template<typename KV>
+    void put1dData_kokkos_view(
+                    KV & new_data,
+                    size_t lda,
+                      Teuchos::Ptr<
+                      const Tpetra::Map<local_ordinal_t,
+                      global_ordinal_t,
+                      node_t> > source_map,
+                    EDistribution distribution ) {
+      // Convert to Host Space
+      // MDM-TODO decide later about any further improvements - we are designating
+      // Epetra low priority right now so just getting clean compile and run right now.
+      // Note we might like this to be HostMirror and avoid the copy on serial
+      // but there are some awkward issues with the templating since, unlike
+      // Tpetra, this class is not templated except for the get and put methods.
+      // Note that we might just put the whole thing in the header and
+      // avoid the secondary put1dData_kokkos_view_host call which is not that
+      // long. But that brings in some headers that would be undesirable.
+      // Note that Amesos2_MultiVecAdapter_def.hpp includes
+      // Amesos2_TpetraMultiVecAdapter_def.hpp which is a templated class unlike
+      // this one and structrured differently. So there the put1dData_kokkos_view
+      // templated call can link for ETI.
+      Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial> host_new_data(
+        Kokkos::ViewAllocateWithoutInitializing("host_new_data"),
+        new_data.extent(0), new_data.extent(1));
+      Kokkos::deep_copy(host_new_data, new_data);
+      put1dData_kokkos_view_host(host_new_data, lda, source_map, distribution);
+    }
 
+    void put1dData_kokkos_view_host(
+                    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial> & new_data,
+                    size_t lda,
+                    Teuchos::Ptr<
+                    const Tpetra::Map<local_ordinal_t,
+                    global_ordinal_t,
+                    node_t> > source_map,
+        EDistribution distribution );
 
     /// Get a short description of this adapter class
     std::string description() const;

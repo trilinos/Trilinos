@@ -100,112 +100,31 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
     EXEDEPS Solver_Test
     )
 
-
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test
+    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
 
 IF (Kokkos_ENABLE_Cuda)
 
-  # Note the awkward naming issue - if Cuda is not enabled then we use tacho_test.xml for Host
-  # If Cuda is enabled, we use tacho_host_test.xml. Needs reworking.
-
+  # If Cuda is enabled we run a 2nd test which has TachoSolver built on Host
+  # This is so we can run Tacho on host and Cuda side by side.
+  # But note that when Cuda is disabled, above test is TachoSolver<Host>, when Cuda is enabled, above test is TachoSolver<Cuda>
+  # Perhaps we will eliminate this version.
   TRIBITS_ADD_TEST(
     Solver_Test
-    NAME Tacho_Solver_Test_Default_To_Host
-    ARGS "--xml-params=tacho_host_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Default"
+    NAME Tacho_Solver_Host_Test
+    ARGS "--xml-params=tacho_host_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1
     COMM serial mpi
     )
 
-
-  TRIBITS_ADD_TEST(
-    Solver_Test
-    NAME Tacho_Solver_Test_Host_To_Host
-    ARGS "--xml-params=tacho_host_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Host"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-    Solver_Test
-    NAME Tacho_Solver_Test_CudaUVM_To_Host
-    ARGS "--xml-params=tacho_host_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=CudaUVM"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-
-  TRIBITS_ADD_TEST(
-    Solver_Test
-    NAME Tacho_Solver_Test_Cuda_To_Host
-    ARGS "--xml-params=tacho_host_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Cuda"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-    Solver_Test
-    NAME Tacho_Solver_Test_Default_To_Cuda
-    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Default"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-    Solver_Test
-    NAME Tacho_Solver_Test_Host_To_Cuda
-    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Host"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-
-  TRIBITS_ADD_TEST(
-    Solver_Test
-    NAME Tacho_Solver_Test_CudaUVM_To_Cuda
-    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=CudaUVM"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-
-  TRIBITS_ADD_TEST(
-    Solver_Test
-    NAME Tacho_Solver_Test_Cuda_To_Cuda
-    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Cuda"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-ELSE()
-
-  # Note the awkward naming issue - if Cuda is not enabled then we use tacho_test.xml for Host
-  # If Cuda is enabled, we use tacho_host_test.xml. Needs reworking.
-  TRIBITS_ADD_TEST(
-    Solver_Test
-    NAME Tacho_Solver_Test_Host_To_Host
-    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Host"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-    Solver_Test
-    NAME Tacho_Solver_Test_Default_To_Host
-    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --test-src-memory-space-name=Default"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-ENDIF()
+ENDIF() # Kokkos_ENABLE_Cuda
 
 ENDIF()
 

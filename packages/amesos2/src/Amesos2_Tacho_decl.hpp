@@ -266,8 +266,6 @@ private:
 
   // numeric is on device
   device_value_type_array device_nzvals_view_;
-  device_size_type_array device_row_ptr_view_;
-  device_ordinal_type_array device_cols_view_;
 
   // symbolic is done on host for Tacho so store these versions as well
   host_size_type_array host_row_ptr_view_;

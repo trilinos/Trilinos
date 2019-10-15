@@ -50,16 +50,16 @@
           Tpetra::MultiVector class.
 */
 
-#ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DECL_HPP
-#define AMESOS2_TPETRA_MULTIVEC_ADAPTER_DECL_HPP
+#ifndef AMESOS2_KOKKOS_MULTIVEC_ADAPTER_DECL_HPP
+#define AMESOS2_KOKKOS_MULTIVEC_ADAPTER_DECL_HPP
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_Vector_decl.hpp>
+#include <Tpetra_Core.hpp>
 
 #include "Amesos2_MultiVecAdapter_decl.hpp"
+#include "Amesos2_Kokkos_View_Copy_Assign.hpp"
 
 namespace Amesos2 {
 
@@ -69,33 +69,25 @@ namespace Amesos2 {
    * \ingroup amesos2_multivec_adapters
    */
   template< typename Scalar,
-            typename LocalOrdinal,
-            typename GlobalOrdinal,
-            class    Node >
-  class MultiVecAdapter<Tpetra::MultiVector<Scalar,
-                                            LocalOrdinal,
-                                            GlobalOrdinal,
-                                            Node> >
+            typename ExecutionSpace >
+  class MultiVecAdapter<Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> >
   {
   public:
     // public type definitions
-    typedef Tpetra::MultiVector<Scalar,
-                                LocalOrdinal,
-                                GlobalOrdinal,
-                                Node>       multivec_t;
-    typedef Scalar                          scalar_t;
-    typedef LocalOrdinal                    local_ordinal_t;
-    typedef GlobalOrdinal                   global_ordinal_t;
-    typedef Node                            node_t;
-    typedef Tpetra::global_size_t           global_size_t;
+    typedef Tpetra::Map<>::node_type                                      node_t;
+    typedef Kokkos::View<Scalar**,Kokkos::LayoutLeft, ExecutionSpace> multivec_t;
+    typedef int                                                  local_ordinal_t;
+    typedef Tpetra::Map<>::global_ordinal_type                  global_ordinal_t;
+    typedef size_t                                                 global_size_t;
+    typedef Scalar                                                      scalar_t;
 
-    typedef typename node_t::device_type::execution_space              execution_space_t;
-    typedef Kokkos::View<scalar_t**, Kokkos::LayoutLeft, execution_space_t> kokkos_view_t;
+    typedef Kokkos::View<scalar_t**, Kokkos::LayoutLeft, ExecutionSpace> kokkos_view_t;
 
     friend Teuchos::RCP<MultiVecAdapter<multivec_t> > createMultiVecAdapter<> (Teuchos::RCP<multivec_t>);
     friend Teuchos::RCP<const MultiVecAdapter<multivec_t> > createConstMultiVecAdapter<> (Teuchos::RCP<const multivec_t>);
 
     static const char* name;
+
 
   protected:
     // Do not allow direct construction of MultiVecAdapter's.  Only
@@ -117,7 +109,6 @@ namespace Amesos2 {
     ~MultiVecAdapter()
     { }
 
-
     /// Checks whether this multivector is local to the calling node.
     bool isLocallyIndexed() const
     {
@@ -130,48 +121,50 @@ namespace Amesos2 {
     // TODO
     bool isGloballyIndexed() const;
 
-
     Teuchos::RCP<const Tpetra::Map<
                          local_ordinal_t,
                          global_ordinal_t,
                          node_t > >
     getMap() const
     {
-      return mv_->getMap();
+   //   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "getMap() not implemented for Kokkos CrsMatrix.");
+      return Teuchos::null;
+      //return mv_->getMap();
     }
 
     /// Returns the Teuchos::Comm object associated with this multi-vector
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
     {
-      return mv_->getMap()->getComm();
+      return Tpetra::getDefaultComm(); // serial
+
+      // return getMap()->getComm();
     }
 
     /// Get the length of vectors local to the calling node
     size_t getLocalLength() const
     {
-      return Teuchos::as<size_t>(mv_->getLocalLength());
+      return mv_->extent(0);
     }
 
 
     /// Get the number of vectors on this node
     size_t getLocalNumVectors() const
     {
-      return mv_->getNumVectors();
+      return mv_->extent(1);
     }
 
 
     /// Get the length of vectors in the global space
     global_size_t getGlobalLength() const
     {
-      return mv_->getGlobalLength();
-      //return getMap()->getMaxAllGlobalIndex() + 1;
+      return mv_->extent(0);
     }
 
 
     /// Get the number of global vectors
     global_size_t getGlobalNumVectors() const
     {
-      return Teuchos::as<global_size_t>(mv_->getNumVectors());
+      return mv_->extent(1);
     }
 
 
@@ -188,24 +181,8 @@ namespace Amesos2 {
       return mv_->isConstantStride();
     }
 
-
-    /// Const vector access
-    Teuchos::RCP<const Tpetra::Vector<scalar_t,local_ordinal_t,global_ordinal_t,node_t> >
-    getVector( size_t j ) const
-    {
-      return mv_->getVector(j);
-    }
-
-
-    /// Nonconst vector access
-    Teuchos::RCP<Tpetra::Vector<scalar_t,local_ordinal_t,global_ordinal_t,node_t> >
-    getVectorNonConst( size_t j )
-    {
-      return mv_->getVectorNonConst(j);
-    }
-
     /// Return pointer to vector when number of vectors == 1 and single MPI process
-    typename multivec_t::impl_scalar_type * getMVPointer_impl() const;
+    Scalar * getMVPointer_impl() const;
 
     /**
      * \brief Copies the multivector's data into the user-provided vector.
@@ -236,21 +213,25 @@ namespace Amesos2 {
      *  and the number of vectors in \c this.
      */
     void
-    get1dCopy (const Teuchos::ArrayView<scalar_t>& av,
-               size_t lda,
-               Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,
-                                              global_ordinal_t,
-                                              node_t> > distribution_map,
-                                              EDistribution distribution) const;
+    get1dCopy ( const Teuchos::ArrayView<scalar_t>& av,
+                size_t lda,
+                Teuchos::Ptr<
+                  const Tpetra::Map<local_ordinal_t,
+                  global_ordinal_t,
+                  node_t> > distribution_map,
+                EDistribution distribution) const;
 
     template<typename KV>
     void
-    get1dCopy_kokkos_view (KV& v,
-               size_t lda,
-               Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,
-                                              global_ordinal_t,
-                                              node_t> > distribution_map,
-                                              EDistribution distribution) const;
+    get1dCopy_kokkos_view (KV& kokkos_view,
+                size_t lda,
+                Teuchos::Ptr<
+                  const Tpetra::Map<local_ordinal_t,
+                  global_ordinal_t,
+                  node_t> > distribution_map,
+                EDistribution distribution) const {
+      deep_copy_or_assign_view(kokkos_view, *mv_);
+    }
 
     /**
      * \brief Extracts a 1 dimensional view of this MultiVector's data
@@ -278,20 +259,30 @@ namespace Amesos2 {
      */
     void
     put1dData (const Teuchos::ArrayView<const scalar_t>& new_data,
-               size_t lda,
-               Teuchos::Ptr< const Tpetra::Map<local_ordinal_t,
-                                        global_ordinal_t,
-                                        node_t> > source_map,
-                                        EDistribution distribution );
+              size_t lda,
+              Teuchos::Ptr<
+                const Tpetra::Map<local_ordinal_t,
+                global_ordinal_t,
+                node_t> > distribution_map,
+              EDistribution) const;
 
     template<typename KV>
     void
     put1dData_kokkos_view (KV& kokkos_new_data,
-               size_t lda,
-               Teuchos::Ptr< const Tpetra::Map<local_ordinal_t,
-                                        global_ordinal_t,
-                                        node_t> > source_map,
-                                        EDistribution distribution );
+              size_t lda,
+              Teuchos::Ptr<
+                const Tpetra::Map<local_ordinal_t,
+                global_ordinal_t,
+                node_t> > distribution_map,
+              EDistribution) const {
+      // in optimal memory matching the get just obtained a ptr to the
+      // view and now will again do nothing.
+      // The problem with this is that right now, for non-matched memory
+      // the get step is doing an unecessary copy (copying from the Kokkos::View)
+      // when all it needs is uninitialized memory space. Need to add some API
+      // logic so the solver can know at the high level if the views will match.
+      deep_copy_or_assign_view(*mv_, kokkos_new_data);
+    }
 
 
     //! Get a short description of this adapter class
@@ -304,6 +295,7 @@ namespace Amesos2 {
               Teuchos::Describable::verbLevel_default) const;
 
   private:
+
     //! The multivector which this adapter wraps
     Teuchos::RCP<multivec_t> mv_;
 
@@ -328,9 +320,10 @@ namespace Amesos2 {
     /// necessarily be one-to-one, but the solver's output data must
     /// (presumably) always be one-to-one.
     mutable Teuchos::RCP<import_type> importer_;
+
   }; // end class MultiVecAdapter<Tpetra::MultiVector>
 
 } // end namespace Amesos2
 
 
-#endif // AMESOS2_TPETRA_MULTIVEC_ADAPTER_DECL_HPP
+#endif // AMESOS2_KOKKOS_MULTIVEC_ADAPTER_DECL_HPP

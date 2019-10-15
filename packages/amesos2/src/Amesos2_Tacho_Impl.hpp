@@ -131,7 +131,6 @@ namespace Amesos2 {
 #define AMESOS2_TACHO_LOCAL_INSTANT(S,LO,GO,N)                        \
   template class Amesos2::TACHO_SOLVER_NAME<Tpetra::CrsMatrix<S, LO, GO, N>,      \
                                       Tpetra::MultiVector<S, LO, GO,  N> >;
-
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
 #if defined(HAVE_TPETRA_INST_SERIAL) && !defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -378,3 +377,6 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #undef NODETYPE
 #endif
 
+
+#define KOKKOS_IMPL_SOLVER_NAME TACHO_SOLVER_NAME
+#include "Amesos2_Kokkos_Impl.hpp"

@@ -46,7 +46,7 @@
 #define AMESOS2_MULTIVECADAPTER_DEF_HPP
 
 #include "Amesos2_TpetraMultiVecAdapter_def.hpp"
-// EpetraMultiVecAdapter_def.hpp not included because the specialization is not a template
+#include "Amesos2_KokkosMultiVecAdapter_def.hpp" // MDM - Decide about this ....
 
 #include "Amesos2_Util.hpp"     // for getDistributionMap
 
@@ -108,7 +108,7 @@ namespace Amesos2{
                                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                                        EDistribution distribution )
     {
-      mv->get1dCopy_kokkos_view (kokkos_view, ldx, distribution_map, distribution);
+      mv->get1dCopy_kokkos_view(kokkos_view, ldx, distribution_map, distribution);
     }
 
     /*
@@ -148,7 +148,7 @@ namespace Amesos2{
     void diff_type_get_copy_kokkos_view<MV,KV>::
     apply (const Teuchos::Ptr<const MV>& mv,
            KV& kokkos_view,
-           const size_t& ldx,
+           const size_t ldx,
            Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
            EDistribution distribution )
     {
@@ -261,7 +261,7 @@ namespace Amesos2{
     {
       // Dispatch to the copy function appropriate for the type
       if_then_else<is_same<typename MV::scalar_t,typename KV::value_type>::value,
-        same_type_get_copy_kokkos_view<MV,KV>, // MDM-TODO Temp change this back to same_type
+        same_type_get_copy_kokkos_view<MV,KV>,
         diff_type_get_copy_kokkos_view<MV,KV> >::type::apply (mv, kokkos_vals, ldx, distribution_map, distribution);
     }
 
@@ -334,7 +334,7 @@ namespace Amesos2{
                                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                                        EDistribution distribution )
     {
-      mv->template put1dData_kokkos_view<KV>(kokkos_data, ldx, distribution_map, distribution);
+      mv->put1dData_kokkos_view(kokkos_data, ldx, distribution_map, distribution);
     }
 
     /*
@@ -393,7 +393,7 @@ namespace Amesos2{
         matrix_kokkos_data.data()[n] = Teuchos::as<mv_scalar_t>(kokkos_data.data()[n]);
       });
 
-      mv->template put1dData_kokkos_view<matrix_kokkos_view_t> (matrix_kokkos_data, ldx, distribution_map, distribution);
+      mv->put1dData_kokkos_view(matrix_kokkos_data, ldx, distribution_map, distribution);
     }
 
     /** \internal

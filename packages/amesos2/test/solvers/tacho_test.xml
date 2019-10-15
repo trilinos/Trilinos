@@ -41,6 +41,41 @@
           <Parameter name="GlobalOrdinal" type="string" value="long int"/>
         </ParameterList>
       </ParameterList>
+
+      <!-- Next test Kokkos objects -->
+      <ParameterList name="kokkos">
+        <!-- these `run*' sublist names are arbitrary -->
+        <ParameterList name="run_serial_float">
+          <Parameter name="Scalar" type="string" value="float"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="serial"/>
+        </ParameterList>
+        <ParameterList name="run_cuda_float">
+          <Parameter name="Scalar" type="string" value="float"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cuda"/>
+        </ParameterList>
+        <ParameterList name="run_cudauvmoff_float">
+          <Parameter name="Scalar" type="string" value="float"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cudauvmoff"/>
+        </ParameterList>
+        <ParameterList name="run_serial_double">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="serial"/>
+        </ParameterList>
+        <ParameterList name="run_cuda_double">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cuda"/>
+        </ParameterList>
+        <ParameterList name="run_cudauvmoff_double">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cudauvmoff"/>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="solver_params">
       </ParameterList>
   </ParameterList> <!-- end Tacho -->

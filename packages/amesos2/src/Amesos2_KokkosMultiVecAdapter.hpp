@@ -41,13 +41,13 @@
 //
 // @HEADER
 
+#ifndef AMESOS2_KOKKOS_MULTIVEC_ADAPTER_HPP
+#define AMESOS2_KOKKOS_MULTIVEC_ADAPTER_HPP
 
-#ifndef AMESOS2_CONCRETEMATRIXADAPTER_DEF_HPP
-#define AMESOS2_CONCRETEMATRIXADAPTER_DEF_HPP
+#include "Amesos2_KokkosMultiVecAdapter_decl.hpp"
 
-#include "Amesos2_AbstractConcreteMatrixAdapter_def.hpp"
-
-#include "Amesos2_TpetraCrsMatrix_MatrixAdapter_def.hpp"
-#include "Amesos2_KokkosCrsMatrix_MatrixAdapter_def.hpp"
-
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#  include "Amesos2_KokkosMultiVecAdapter_def.hpp"
 #endif
+
+#endif  // AMESOS2_KOKKOS_MULTIVEC_ADAPTER_HPP

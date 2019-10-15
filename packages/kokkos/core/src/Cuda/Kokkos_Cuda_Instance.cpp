@@ -849,6 +849,7 @@ void CudaUVMOff::fence() const {
 #endif
 
 const char* Cuda::name() { return "Cuda"; }
+const char* CudaUVMOff::name() { return "CudaUVMOff"; }
 
 cudaStream_t Cuda::cuda_stream() const { return m_space_instance->m_stream ; }
 int          Cuda::cuda_device() const { return m_space_instance->m_cudaDev ; }

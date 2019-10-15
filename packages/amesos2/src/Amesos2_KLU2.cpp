@@ -400,4 +400,8 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #undef NODETYPE
 #endif
 
+
+#define KOKKOS_IMPL_SOLVER_NAME KLU2
+#include "Amesos2_Kokkos_Impl.hpp"
+
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION

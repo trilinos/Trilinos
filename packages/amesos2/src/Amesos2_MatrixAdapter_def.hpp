@@ -158,6 +158,9 @@ namespace Amesos2 {
   typename MatrixAdapter<Matrix>::global_size_t
   MatrixAdapter<Matrix>::getRowIndexBase() const
   {
+    if(row_map_ == Teuchos::null) {
+      return 0; // MDM-TODO Fix override call - should be taking care of this
+    }
     return row_map_->getIndexBase();
   }
 
@@ -165,6 +168,9 @@ namespace Amesos2 {
   typename MatrixAdapter<Matrix>::global_size_t
   MatrixAdapter<Matrix>::getColumnIndexBase() const
   {
+    if(col_map_ == Teuchos::null) {
+      return 0; // MDM-TODO Fix override call - should be taking care of this
+    }
     return col_map_->getIndexBase();
   }
 
@@ -234,6 +240,26 @@ namespace Amesos2 {
     return static_cast<const adapter_t*>(this)->getSparseValues();
   }
 
+  template < class Matrix >
+  template < class KV >
+  void MatrixAdapter<Matrix>::returnRowPtr_kokkos_view(KV & view) const
+  {
+    return static_cast<const adapter_t*>(this)->getSparseRowPtr_kokkos_view(view);
+  }
+
+  template < class Matrix >
+  template < class KV >
+  void MatrixAdapter<Matrix>::returnColInd_kokkos_view(KV & view) const
+  {
+    return static_cast<const adapter_t*>(this)->getSparseColInd_kokkos_view(view);
+  }
+
+  template < class Matrix >
+  template < class KV >
+  void MatrixAdapter<Matrix>::returnValues_kokkos_view(KV & view) const
+  {
+    return static_cast<const adapter_t*>(this)->getSparseValues_kokkos_view(view);
+  }
 
   /******************************
    * Private method definitions *

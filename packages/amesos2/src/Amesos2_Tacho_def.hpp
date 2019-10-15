@@ -102,84 +102,10 @@ int
 TACHO_SOLVER_NAME<Matrix,Vector>::symbolicFactorization_impl()
 {
   int status = 0;
-
   if ( this->root_ ) {
     if(do_optimization()) {
-      // MDM-TODO some of these comments are about to become resolved so return
-      // and remove as necessary.
-      /*
-          A couple of things to resolve/discuss here:
-
-            (1) Do we want to try and do a direct view when the types match?
-                If we do, then we need something that compiles for non-matching.
-                I think that forces us to have a force cast - something like below.
-
-            (2) Is this a problem for complex? Basker prevents optimization for
-                complex but I wasn't sure if that necessary.
-
-            (3) Can I safely read the size and index types directly without using
-                std::remove_pointer to determine the regular type.
-
-      */
-
-      typedef typename Matrix::execution_space m_exec_space;
-
-      // first create a View in the matrix mem space as efficiently as possible,
-      // either directly, or by copy if types mismatch
-      typedef typename MatrixAdapter<Matrix>::spmtx_ptr_t row_ptr_t;
-      row_ptr_t sp_rowptr = this->matrixA_->returnRowPtr();
-      TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
-          std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null");
-      Kokkos::View<size_type*, m_exec_space> row_ptr_view_src;
-      if(std::is_same<size_type, typename std::remove_pointer<row_ptr_t>::type>::value) {
-        // they match so get the view in matrix space and then copy or assign to us
-        Kokkos::View<size_type*, m_exec_space> src_row_ptr((size_type*)sp_rowptr, this->globalNumRows_ + 1);
-        deep_copy_or_assign_view(host_row_ptr_view_, src_row_ptr);
-      }
-      else {
-        // they don't match so we'll need to loop - first make the view in matrix space
-        // but with the dst type, copy the types, then send to the copy manager
-        Kokkos::View<size_type*, m_exec_space> src_row_ptr(
-          Kokkos::ViewAllocateWithoutInitializing("src_row_ptr"), this->globalNumRows_ + 1);
-
-        // now copy in the matrix exec space
-        Kokkos::parallel_for(Kokkos::RangePolicy<m_exec_space, global_size_type>
-          (0, this->globalNumRows_ + 1), KOKKOS_LAMBDA (global_size_type n) {
-          src_row_ptr(n) = static_cast<size_type>(sp_rowptr[n]);
-        });
-        deep_copy_or_assign_view(host_row_ptr_view_, src_row_ptr);
-      }
-
-      // do the same procedure as above, but for cols
-      typedef typename MatrixAdapter<Matrix>::spmtx_idx_t col_ind_t;
-      col_ind_t sp_colind = this->matrixA_->returnColInd();
-      TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
-          std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null");
-      if(std::is_same<ordinal_type, typename std::remove_pointer<col_ind_t>::type>::value) {
-        // they match so get the view in matrix space and then copy or assign to us
-        Kokkos::View<ordinal_type*, m_exec_space> src_cols((ordinal_type*)sp_colind, this->globalNumNonZeros_);
-        deep_copy_or_assign_view(host_cols_view_, src_cols);
-      }
-      else {
-        // they don't match so we'll need to loop - first make the view in matrix space
-        // but with the dst type, copy the types, then send to the copy manager
-        Kokkos::View<ordinal_type*, m_exec_space> src_cols(
-          Kokkos::ViewAllocateWithoutInitializing("src_cols"), this->globalNumNonZeros_);
-
-        // now copy in the matrix exec space
-        Kokkos::parallel_for(Kokkos::RangePolicy<m_exec_space, global_size_type>
-          (0, this->globalNumNonZeros_), KOKKOS_LAMBDA (global_size_type n) {
-          src_cols(n) = static_cast<ordinal_type>(sp_colind[n]);
-        });
-        deep_copy_or_assign_view(host_cols_view_, src_cols);
-      }
-    }
-    else {
-      // if both are host, then this will act like a host mirror and just point
-      // to itself. But if the src was on Cuda (UVM off) then this will do a
-      // a deep copy to prepare for the symbolic
-      deep_copy_or_assign_view(host_row_ptr_view_, device_row_ptr_view_);
-      deep_copy_or_assign_view(host_cols_view_, device_cols_view_);
+      this->matrixA_->returnRowPtr_kokkos_view(host_row_ptr_view_);
+      this->matrixA_->returnColInd_kokkos_view(host_cols_view_);
     }
 
     // TODO: Confirm param options
@@ -188,7 +114,6 @@ TACHO_SOLVER_NAME<Matrix,Vector>::symbolicFactorization_impl()
     // Symbolic factorization currently must be done on host
     data_.solver.analyze(this->globalNumCols_, host_row_ptr_view_, host_cols_view_);
   }
-
   return status;
 }
 
@@ -198,28 +123,12 @@ int
 TACHO_SOLVER_NAME<Matrix,Vector>::numericFactorization_impl()
 {
   int status = 0;
-
   if ( this->root_ ) {
-    device_value_type_array values;
-
     if(do_optimization()) {
-      // in the optimized case we read the values directly from the matrix
-      typename MatrixAdapter<Matrix>::spmtx_vals_t sp_values = this->matrixA_->returnValues();
-      TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_values returned null");
-      // this type should always be ok for float/double because Tacho solver
-      // is templated to value_type to guarantee a match here.
-      values = device_value_type_array(sp_values, this->globalNumNonZeros_);
+     this->matrixA_->returnValues_kokkos_view(device_nzvals_view_);
     }
-    else
-    {
-      // Non optimized case used the arrays set up in loadA_impl
-      values = this->device_nzvals_view_;
-    }
-
-    data_.solver.factorize(values);
+    data_.solver.factorize(device_nzvals_view_);
   }
-
   return status;
 }
 
@@ -233,15 +142,21 @@ TACHO_SOLVER_NAME<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  // if we did match the source we don't allocate
-  if(xValues_.extent(0) < ld_rhs || xValues_.extent(1) < nrhs) {
-    // allocate x because the solve expects it
-    xValues_ = device_solve_array_t(
-      Kokkos::ViewAllocateWithoutInitializing("xValues"), ld_rhs, nrhs);
-  }
-
   // don't allocate b since it's handled by the copy manager and might just be
   // be assigned, not copied anyways.
+
+  // also don't allocate x since we will also use do_get to allocate this if
+  // necessary. However for the situation where we can write the solution
+  // directly to the MV without copying, we use do_get to obtain the ptr and then
+  // do_put will check if the view is the same and do nothing. This allows the
+  // system to still work if a copy is needed, in which case do_put will
+  // write a copy back in.
+  // MDM-TODO However right now when assignment is not possible and a deep_copy
+  // will occur, this do_get for x is going to copy values we don't care about.
+  // So we need some kind of method at this higher level to say whether
+  // deep_copy is necessary. Then we should do the following:
+  // If deep_copy is needed: Skip x do_get and call x do_put
+  // If deep_copy is not needed: Call x do_det and skip x do_put.
 
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
@@ -250,6 +165,10 @@ TACHO_SOLVER_NAME<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<
 #endif
     Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
                              device_solve_array_t>::do_get(B, this->bValues_,
+                                               as<size_t>(ld_rhs),
+                                               ROOTED, this->rowIndexBase_);
+    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+                             device_solve_array_t>::do_get(X, this->xValues_,
                                                as<size_t>(ld_rhs),
                                                ROOTED, this->rowIndexBase_);
   }
@@ -289,6 +208,9 @@ TACHO_SOLVER_NAME<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
+    // This will do nothing is if the target view matches the src view, which
+    // can be the case if the memory spaces match.
+    // MDM-TODO See comments above for do_get.
     Util::template put_1d_data_helper_kokkos_view<
       MultiVecAdapter<Vector>,device_solve_array_t>::do_put(X, xValues_,
                                         as<size_t>(ld_rhs),
@@ -361,21 +283,20 @@ TACHO_SOLVER_NAME<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
     // Note views are allocated but eventually we should remove this.
     // The internal copy manager will decide if we can assign or deep_copy
-    // and then allocate if necessary. However I don't have working Tacho GPU
-    // right now for multiple ranks. So this code won't use the copy manager
-    // yet. Therefore allocate here to have it working at least for non-GPU
-    // parallel builds with more than 1 rank/
-    // Only the root image needs storage allocated
+    // and then allocate if necessary. However the GPU solvers are serial right
+    // now so I didn't complete refactoring the matrix code for the parallel
+    // case. If we added that later, we should have it hooked up to the copy
+    // manager and then these allocations can go away.
     if( this->root_ ) {
       device_nzvals_view_ = device_value_type_array(
         Kokkos::ViewAllocateWithoutInitializing("nzvals"), this->globalNumNonZeros_);
-      device_cols_view_ = device_ordinal_type_array(
+      host_cols_view_ = host_ordinal_type_array(
         Kokkos::ViewAllocateWithoutInitializing("colind"), this->globalNumNonZeros_);
-      device_row_ptr_view_ = device_size_type_array(
+      host_row_ptr_view_ = host_size_type_array(
         Kokkos::ViewAllocateWithoutInitializing("rowptr"), this->globalNumRows_ + 1);
     }
 
-    size_type nnz_ret = 0;
+   // size_type nnz_ret = 0;
     {
   #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
@@ -385,15 +306,20 @@ TACHO_SOLVER_NAME<Matrix,Vector>::loadA_impl(EPhase current_phase)
                           std::runtime_error,
                           "Row and column maps have different indexbase ");
 
+
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        "Temporary disabled - planning a refactor.");
+/*
       Util::get_crs_helper_kokkos_view<
       MatrixAdapter<Matrix>,device_value_type_array,device_ordinal_type_array,device_size_type_array>::do_get(
                                                       this->matrixA_.ptr(),
                                                       device_nzvals_view_,
-                                                      device_cols_view_,
-                                                      device_row_ptr_view_,
+                                                      host_cols_view_,
+                                                      host_row_ptr_view_,
                                                       nnz_ret,
                                                       ROOTED, ARBITRARY,
                                                       this->columnIndexBase_);
+*/
     }
   }
 

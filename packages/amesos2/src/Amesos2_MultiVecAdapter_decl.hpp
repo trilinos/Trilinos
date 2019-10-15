@@ -269,7 +269,7 @@ namespace Amesos2 {
     struct diff_type_get_copy_kokkos_view {
       static void apply(const Teuchos::Ptr<const MV>& mv,
                         KV& kokkos_view,
-                        const size_t& ldx,
+                        const size_t ldx,
                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                         EDistribution distribution );
     };
@@ -415,6 +415,7 @@ namespace Amesos2 {
 } // end namespace Amesos2
 
 #include "Amesos2_TpetraMultiVecAdapter_decl.hpp"
+#include "Amesos2_KokkosMultiVecAdapter_decl.hpp"
 #ifdef HAVE_AMESOS2_EPETRA
 #  include "Amesos2_EpetraMultiVecAdapter_decl.hpp"
 #endif
