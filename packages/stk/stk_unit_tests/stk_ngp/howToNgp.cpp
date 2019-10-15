@@ -1053,14 +1053,10 @@ NGP_TEST_F(NgpHowTo, ReuseNgpFieldNewFieldManager)
     // Reassign the FieldManager, which will blow away the internal ngp::Field instances
     fieldManager = ngp::FieldManager(get_bulk());
 
-#ifdef KOKKOS_ENABLE_CUDA
-    // On the GPU, the new ngp::Field instances will get the initial values from the stk Fields
-    const double expectedValue = initialValue;
-#else
-    // On the CPU, the new ngp::Field instances are just wrappers around stk Fields, so the values
-    // assigned above will persist.
+    //When the ngp::Field instances are blown away, their field-data values should first
+    //be sync'd back to host. Which means that when the other field-manager re-copies the
+    //field to device, it should still have the same values that were set on device above...
     const double expectedValue = specialValue;
-#endif
 
     check_field_on_device(get_bulk(), ngpMesh, fieldManager, stkField.mesh_meta_data_ordinal(), expectedValue);
 }
