@@ -1748,7 +1748,7 @@ void Assembler<Real>::assembleQoIHessian11(ROL::Ptr<Tpetra::CrsMatrix<>> &H11,
                                      const ROL::Ptr<const Tpetra::MultiVector<>> &z,
                                      const ROL::Ptr<const std::vector<Real>> & z_param) {
   #ifdef ROL_TIMERS
-    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQoIHessian11);
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian11);
   #endif
   try {
     // Get u_coeff from u and z_coeff from z
@@ -1779,7 +1779,7 @@ void Assembler<Real>::assembleQoIHessian12(ROL::Ptr<Tpetra::CrsMatrix<>> &H12,
                                      const ROL::Ptr<const Tpetra::MultiVector<>> &z,
                                      const ROL::Ptr<const std::vector<Real>> & z_param) {
   #ifdef ROL_TIMERS
-    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQoIHessian12);
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian12);
   #endif
   try {
     // Get u_coeff from u and z_coeff from z
@@ -1810,7 +1810,7 @@ void Assembler<Real>::assembleQoIHessian21(ROL::Ptr<Tpetra::CrsMatrix<>> &H21,
                                      const ROL::Ptr<const Tpetra::MultiVector<>> &z,
                                      const ROL::Ptr<const std::vector<Real>> & z_param) {
   #ifdef ROL_TIMERS
-    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQoIHessian21);
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian21);
   #endif
   try {
     // Get u_coeff from u and z_coeff from z
@@ -1841,7 +1841,7 @@ void Assembler<Real>::assembleQoIHessian22(ROL::Ptr<Tpetra::CrsMatrix<>> &H22,
                                      const ROL::Ptr<const Tpetra::MultiVector<>> &z,
                                      const ROL::Ptr<const std::vector<Real>> & z_param) {
   #ifdef ROL_TIMERS
-    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQoIHessian22);
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian22);
   #endif
   try {
     // Get u_coeff from u and z_coeff from z
