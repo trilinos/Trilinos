@@ -64,7 +64,7 @@ ENDIF()
 
 IF ((NOT ${KDD_INT_LONG}) AND (NOT ${KDD_INT_LONG_LONG}))
   IF ("${${PROJECT_NAME}_ENABLE_STKBalance}" STREQUAL "")
-    # STKBalance was enabled but only implicitly (as a dependence of STK);
+    # STKBalance may be enabled but only implicitly (as a dependence of STK);
     # give a warning but turn off STKBalance support
     MESSAGE(WARNING "int global indices are enabled in Trilinos. "
                     "Because STKBalance requires long or long long "
@@ -74,7 +74,7 @@ IF ((NOT ${KDD_INT_LONG}) AND (NOT ${KDD_INT_LONG_LONG}))
                     "set Tpetra_INST_INT_INT=ON or "
                     "Tpetra_INST_INT_UNSIGNED=ON)." )
     SET(${PROJECT_NAME}_ENABLE_STKBalance OFF)
-  ELSE()
+  ELSEIF (${${PROJECT_NAME}_ENABLE_STKBalance})
     # STKBalance was explicitly enabled by the user, so error out
     MESSAGE(FATAL_ERROR 
             "STKBalance requires long or long long global indices, "
