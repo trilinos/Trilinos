@@ -14,12 +14,13 @@ endif()
 
 #########################################################################
 # STKBalance does not work with GO=INT or GO=UNSIGNED
-# Warn and disable it if it was set as a dependence of STK
+# Note and disable it if it was set as a dependence of STK
 # Error out if it was explicitly requested by user
 
-IF ("${Tpetra_ENABLE_DEPRECATED_CODE}" STREQUAL "OFF")  # Remove this test when
-                                                        # Tpetra DEPRECATED
-                                                        # code is removed
+IF ((NOT ("${Tpetra_ENABLE_DEPRECATED_CODE}" STREQUAL "")) # Remove this test
+    AND                                                    # when removing
+    (NOT Tpetra_ENABLE_DEPRECATED_CODE))                   # Tpetra DEPRECATED
+                                                           # code 
   SET(KDD_ENABLE_DEPRECATED OFF)  # Remove this line when DEPRECATED is removed
   SET(KDD_INT_INT OFF)     # Current default
 ELSE() # Remove this "else" section when Tpetra DEPRECATED code is removed
@@ -65,16 +66,16 @@ ENDIF()
 IF ((NOT ${KDD_INT_LONG}) AND (NOT ${KDD_INT_LONG_LONG}))
   IF ("${${PROJECT_NAME}_ENABLE_STKBalance}" STREQUAL "")
     # STKBalance may be enabled but only implicitly (as a dependence of STK);
-    # give a warning but turn off STKBalance support
-    MESSAGE(WARNING "int global indices are enabled in Trilinos. "
-                    "Because STKBalance requires long or long long "
-                    "global indices, STKBalance will be disabled.  "
-                    "To make this warning go away, do not request "
-                    "int global indices in Trilinos (that is,  do not "
-                    "set Tpetra_INST_INT_INT=ON or "
-                    "Tpetra_INST_INT_UNSIGNED=ON)." )
+    # give a message but turn off STKBalance support
+    MESSAGE("NOTE:  int global indices are enabled in Trilinos. "
+            "Because STKBalance requires long or long long "
+            "global indices, STKBalance will be disabled.  "
+            "To make this warning go away, do not request "
+            "int global indices in Trilinos (that is,  do not "
+            "set Tpetra_INST_INT_INT=ON or "
+            "Tpetra_INST_INT_UNSIGNED=ON)." )
     SET(${PROJECT_NAME}_ENABLE_STKBalance OFF)
-  ELSEIF (${${PROJECT_NAME}_ENABLE_STKBalance})
+  ELSEIF (${PROJECT_NAME}_ENABLE_STKBalance)
     # STKBalance was explicitly enabled by the user, so error out
     MESSAGE(FATAL_ERROR 
             "STKBalance requires long or long long global indices, "
