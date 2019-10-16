@@ -205,8 +205,7 @@ ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
 ## MUELU_ETI_CPP_SOURCES collects all filenames of the MueLu ETI *.cpp files
 ## These are later added to the gloabl list of source files (SOURCES)
 ##
-SET(MUELU_ETI_CPP_SOURCES_SLGN "")
-SET(MUELU_ETI_CPP_SOURCES_LGN "")
+SET(MUELU_ETI_CPP_SOURCES "")
 
 ##
 ## only build ETI *.cpp files if ETI is enabled.
@@ -234,7 +233,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_SC_LO_GO_NO_SRC
     0)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES_SLGN ${MueLu_ETI_SC_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
   
   MUELU_PROCESS_ETI_TEMPLATE(
     "Utils/ExplicitInstantiation"
@@ -242,7 +241,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_LO_GO_NO_SRC
     1)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES_LGN ${MueLu_ETI_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
 ENDIF()
 
 ELSE() # do not split cpp files
@@ -298,8 +297,7 @@ ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
 ## MUELU_ETI_CPP_SOURCES collects all filenames of the MueLu ETI *.cpp files
 ## These are later added to the gloabl list of source files (SOURCES)
 ##
-SET(MUELU_ETI_CPP_SOURCES_SLGN "")
-SET(MUELU_ETI_CPP_SOURCES_LGN "")
+SET(MUELU_ETI_CPP_SOURCES "")
 
 ##
 ## only build ETI *.cpp files if ETI is enabled.
@@ -326,14 +324,14 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_SC_LO_GO_NO_SRC)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES_SLGN ${MueLu_ETI_SC_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
   
   MUELU_PROCESS_ETI_TEMPLATE(
     "${MUELU_LO_GO_NO_ETI_CLASSES}"
     Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_LO_GO_NO_SRC)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES_LGN ${MueLu_ETI_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
 ENDIF()
 
 ENDIF() # split ETI files
@@ -354,32 +352,9 @@ LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 
 
 ###############################################
-SET(SOURCES ${MUELU_ETI_CPP_SOURCES_SLGN})
+SET(SOURCES ${MUELU_ETI_CPP_SOURCES})
 APPEND_GLOB(SOURCES */*.cpp)
-LIST(REMOVE_ITEM SOURCES ${DIR}/Graph/Containers/MueLu_LinkedList.cpp)
-SET(SOURCES_LGN ${MUELU_ETI_CPP_SOURCES_LGN})
-APPEND_GLOB(SOURCES_LGN ${DIR}/Graph/Containers/MueLu_LinkedList.cpp)
-
-#APPEND_GLOB(SOURCES ${MUELU_ETI_CPP_SOURCES})  # append ETI cpp sources (if any)
-
-## TODO are the following lines necessary???
-#APPEND_GLOB(SOURCES */*/*.cpp) -> ExplicitInstantiation files must be included only if explicit instantiation is enabled
-# JHU 2019-Apr-12 None of the following directories have *.cpp files.
-#APPEND_GLOB(SOURCES Smoothers/BlockedSmoothers/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/BlackBox/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/BlockedTransfers/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Energy-Minimization/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Energy-Minimization/Solvers/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/GeneralGeometric/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Geometric-Interpolation/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
-#APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
-
-#MESSAGE("ETI_SOURCES = ${MUELU_ETI_CPP_SOURCES}")
-#MESSAGE("SOURCES = ${SOURCES}")
+APPEND_GLOB(SOURCES ${DIR}/Graph/Containers/MueLu_LinkedList.cpp)
 
 #
 # Explicit instantiation
@@ -448,8 +423,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
 LIST(REMOVE_ITEM SOURCES ${SOURCES_INTERFACE})
-LIST(REMOVE_ITEM SOURCES_LGN ${SOURCES_INTERFACE})
-
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
@@ -468,38 +441,7 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  muelu_lgn
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES_LGN}
-  )
-
-TRIBITS_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS muelu_lgn
   )
-
-
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
