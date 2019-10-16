@@ -24,7 +24,6 @@ SET(ATDM_SE_PACKAGE_DISABLES
   Trios
   FEI
   TriKota
-  Intrepid
   STKClassic
   STKSearchUtil
   STKUnit_tests
@@ -77,6 +76,7 @@ SET(ATDM_SE_PACKAGE_TEST_DISABLES
   Pamgen
   Ifpack
   ML
+  Intrepid
   )
 
 #
