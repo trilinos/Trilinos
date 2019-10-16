@@ -46,7 +46,12 @@
 #include "elb_inp.h"
 #include "elb_util.h" // for strip_string, token_compare, etc
 #include "fmt/ostream.h"
+#ifdef _MSC_VER
+#include "XGetopt.h"
+#include <unistd.h>
+#else
 #include "getopt.h" // for getopt
+#endif
 #include "scopeguard.h"
 #include <cstddef> // for size_t
 #ifndef _XOPEN_SOURCE
@@ -194,8 +199,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     case 'w':
       /* Weighting options */
       sub_opt = optarg;
+#ifdef _MSC_VER
+      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      exit(1);
+#else
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (::getsubopt(&sub_opt, (char *const *)weight_subopts, &value)) {
+        switch (getsubopt(&sub_opt, (char *const *)weight_subopts, &value)) {
         case READ_EXO:
           if (value == nullptr) {
             ctemp =
@@ -341,10 +350,10 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           Gen_Error(0, ctemp);
           return 0;
 
-        } /* End "switch(::getsubopt(&sub_opt, weight_subopts, &value))" */
+        } /* End "switch(getsubopt(&sub_opt, weight_subopts, &value))" */
 
       } /* End "while(*sub_opt != '\0')" */
-
+#endif
       break; /* End "case 'w'" */
 
     case 'a':
@@ -385,10 +394,14 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
+#ifdef _MSC_VER
+      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      exit(1);
+#else
       while (sub_opt != nullptr && *sub_opt != '\0') {
 
         /* Switch over the machine description */
-        switch (::getsubopt(&sub_opt, (char *const *)mach_subopts, &value)) {
+        switch (getsubopt(&sub_opt, (char *const *)mach_subopts, &value)) {
         case HCUBE:
         case HYPERCUBE:
           if (machine->type < 0) {
@@ -474,10 +487,10 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         default: Gen_Error(0, "FATAL: unknown machine type"); return 0;
 
-        } /* End "switch(::getsubopt(&sub_opt, mach_subopts, &value))" */
+        } /* End "switch(getsubopt(&sub_opt, mach_subopts, &value))" */
 
       } /* End "while(*sub_opt != '\0')" */
-
+#endif
       break; /* End "case 'm'" */
 
     case 'l':
@@ -486,8 +499,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
+#ifdef _MSC_VER
+      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      exit(1);
+#else
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (::getsubopt(&sub_opt, (char *const *)lb_subopts, &value)) {
+        switch (getsubopt(&sub_opt, (char *const *)lb_subopts, &value)) {
         case MULTIKL: lb->type = MULTIKL; break;
 
         case SPECTRAL: lb->type = SPECTRAL; break;
@@ -564,10 +581,10 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           Gen_Error(0, ctemp);
           return 0;
 
-        } /* End "switch(::getsubopt(&sup_opt, mach_subopts, &value))" */
+        } /* End "switch(getsubopt(&sup_opt, mach_subopts, &value))" */
 
       } /* End "while(*sup_opt != '\0')" */
-
+#endif
       break; /* End "case 'l'" */
 
     case 'S': prob->no_sph = 1; break;
@@ -578,8 +595,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
+#ifdef _MSC_VER
+      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      exit(1);
+#else
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (::getsubopt(&sub_opt, (char *const *)solve_subopts, &value)) {
+        switch (getsubopt(&sub_opt, (char *const *)solve_subopts, &value)) {
         case TOLER:
           if (value == nullptr) {
             fmt::print(stderr, "FATAL: tolerance specification requires \
@@ -619,10 +640,10 @@ value\n");
 
         default: fmt::print(stderr, "FATAL: unknown solver option\n"); return 0;
 
-        } /* End "switch(::getsubopt(&sub_opt, solve_subopts, &value))" */
+        } /* End "switch(getsubopt(&sub_opt, solve_subopts, &value))" */
 
       } /* End "while(sub_opt != '\0')" */
-
+#endif
       break; /* End "case 's'" */
 
     case 'g':
@@ -656,7 +677,6 @@ value\n");
     } /* End "switch(opt_let)" */
 
   } /* End "while((opt_let=getopt(argc, argv, "i")) != EOF)" */
-
   /* Get the input file name, if specified on the command line */
   if ((argc - optind) >= 1) {
     exoII_inp_file = argv[optind];

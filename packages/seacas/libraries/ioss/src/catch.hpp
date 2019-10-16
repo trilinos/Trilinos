@@ -2179,7 +2179,7 @@ namespace Catch {
             m_result( result )
         {}
 
-        // We don't actually need a virtual destructor, but many static analysers
+        // We don't actually need a virtual destructor, but many static analyzers
         // complain if it's not here :-(
         virtual ~ITransientExpression();
 

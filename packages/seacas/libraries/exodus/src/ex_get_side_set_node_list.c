@@ -64,8 +64,8 @@ static int check_valid_side(size_t side_num, size_t max_sides, char *topology, i
 
   if (side_num + 1 < 1 || side_num + 1 > max_sides) {
     char errmsg[MAX_ERR_LENGTH];
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid %s edge number %" ST_ZU " in file id %d",
-             topology, side_num + 1, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid %s edge number %zu in file id %d", topology,
+             side_num + 1, exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     err_stat = EX_FATAL;
   }
@@ -511,8 +511,8 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
     if (node_ctr != num_df) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "Warning: In side set %" PRId64 " the distribution factor count (%" PRId64
-               ") does not match the side set node list length (%" ST_ZU
-               "). These should match and this may indicate a corrupt database in file %d",
+               ") does not match the side set node list length (%zu). These should match and this "
+               "may indicate a corrupt database in file %d",
                side_set_id, num_df, node_ctr, exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_MSG);
       err_stat = EX_WARN;

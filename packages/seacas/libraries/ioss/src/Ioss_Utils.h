@@ -203,7 +203,7 @@ namespace Ioss {
       if (number == 0) {
         return 1;
       }
-      int width = std::floor(std::log10(number)) + 1;
+      int width = int(std::floor(std::log10(number))) + 1;
       if (use_commas) {
         width += ((width - 1) / 3);
       }
@@ -246,6 +246,8 @@ namespace Ioss {
 #endif
       return true;
     }
+
+    static int term_width();
 
     static int log_power_2(uint64_t value);
 

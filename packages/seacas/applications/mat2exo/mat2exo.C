@@ -39,7 +39,7 @@
    rmnaeth. August 8, 2003
 
    modified by D. Todd Griffith on 12/09/2005
-   * modifcations include:
+   * modifications include:
    1) writes global, nodal and element variable names
    2) writes global, nodal and elemnent variable results
    3) writes complete set of time steps (previous version

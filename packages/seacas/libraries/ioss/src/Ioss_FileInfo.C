@@ -35,8 +35,21 @@
 #include <Ioss_Utils.h>
 #include <cstddef>
 #include <string>
-#include <sys/select.h>
+
+#ifndef _MSC_VER
 #include <sys/unistd.h>
+#else
+#include <io.h>
+#define access _access
+#define R_OK 4 /* Test for read permission.  */
+#define W_OK 2 /* Test for write permission.  */
+#define X_OK 1 /* execute permission - unsupported in windows*/
+#define F_OK 0 /* Test for existence.  */
+#ifndef S_ISREG
+#define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
+#define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
+#endif
+#endif
 
 #ifdef SEACAS_HAVE_MPI
 #include <numeric>
@@ -165,13 +178,14 @@ namespace Ioss {
   //: Returns TRUE if we are pointing to a symbolic link
   bool FileInfo::is_symlink() const
   {
+#ifndef _MSC_VER
     struct stat s
     {
     };
     if (lstat(filename_.c_str(), &s) == 0) {
       return S_ISLNK(s.st_mode);
     }
-
+#endif
     return false;
   }
 
@@ -293,6 +307,23 @@ namespace Ioss {
     }
 
     return tail;
+  }
+
+  const std::string FileInfo::realpath() const
+  {
+#ifdef _MSC_VER
+    char *path = _fullpath(nullptr, filename_.c_str(), _MAX_PATH);
+#else
+    char *path = ::realpath(filename_.c_str(), nullptr);
+#endif
+    if (path != nullptr) {
+      std::string temp(path);
+      free(path);
+      return temp;
+    }
+    {
+      return filename_;
+    }
   }
 
   bool FileInfo::remove_file()

@@ -78,6 +78,12 @@
 #endif
 #include <stdio.h> /* sprintf */
 
+#ifdef _MSC_VER
+#include <io.h>
+#include <sys/ioctl.h>
+#define isatty _isatty
+#endif
+
 static char *copy_string(char *dest, char const *source, long int elements)
 {
   char *d;
