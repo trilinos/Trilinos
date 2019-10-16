@@ -317,7 +317,7 @@ IF(Kokkos_ENABLE_Pthread)
   )
 ENDIF()
 
-IF(Kokkos_ENABLE_OpenMP)
+IF(Kokkos_ENABLE_OPENMP)
   IF(KOKKOS_SEPARATE_TESTS)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       UnitTest_OpenMP_Atomics

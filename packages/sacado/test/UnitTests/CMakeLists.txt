@@ -74,7 +74,7 @@ IF (Sacado_ENABLE_TeuchosCore)
 
   IF (Sacado_ENABLE_KokkosCore)
 
-    IF (Kokkos_ENABLE_Serial)
+    IF (Kokkos_ENABLE_SERIAL)
       IF (Sacado_ENABLE_TeuchosKokkosComm)
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
           Fad_Kokkos_CommTests_Serial
@@ -113,7 +113,7 @@ IF (Sacado_ENABLE_TeuchosCore)
         )
     ENDIF ()
 
-    IF (Kokkos_ENABLE_Pthread)
+    IF (Kokkos_ENABLE_PTHREAD)
       IF (Sacado_ENABLE_TeuchosKokkosComm)
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
           Fad_Kokkos_CommTests_Threads
@@ -155,7 +155,7 @@ IF (Sacado_ENABLE_TeuchosCore)
         )
     ENDIF()
 
-    IF (Kokkos_ENABLE_OpenMP)
+    IF (Kokkos_ENABLE_OPENMP)
       IF (Sacado_ENABLE_TeuchosKokkosComm)
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
           Fad_Kokkos_CommTests_OpenMP
@@ -197,7 +197,7 @@ IF (Sacado_ENABLE_TeuchosCore)
         )
     ENDIF()
 
-    IF (Kokkos_ENABLE_Cuda)
+    IF (Kokkos_ENABLE_CUDA)
       IF (Sacado_ENABLE_TeuchosKokkosComm)
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
           Fad_Kokkos_CommTests_Cuda
