@@ -179,7 +179,7 @@ int main(void)
     eigtol = EIGEN_TOLERANCE;
     seed   = RANDOM_SEED;
 
-    interface(nvtxs, start, adjacency, vwgts, ewgts, x, y, z, outassignptr, outfileptr, assignment,
+    INTERFACE(nvtxs, start, adjacency, vwgts, ewgts, x, y, z, outassignptr, outfileptr, assignment,
               architecture, ndims_tot, mesh_dims, goal, global_method, local_method, rqi_flag, vmax,
               ndims, eigtol, seed);
 

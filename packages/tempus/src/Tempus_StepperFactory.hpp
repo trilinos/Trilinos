@@ -23,6 +23,7 @@
 #include "Tempus_StepperLeapfrog.hpp"
 #include "Tempus_StepperOperatorSplit.hpp"
 #include "Tempus_StepperTrapezoidal.hpp"
+#include "Tempus_StepperSubcycling.hpp"
 
 #include "NOX_Thyra.H"
 
@@ -237,7 +238,9 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
     auto solver = rcp(new Thyra::NOXNonlinearSolver());
-    solver->setParameterList(defaultSolverParameters());
+    auto solverPL = Tempus::defaultSolverParameters();
+    auto subPL = sublist(solverPL, "NOX");
+    solver->setParameterList(subPL);
     if (stepperPL != Teuchos::null) {
       // Can not validate because of optional Parameters, e.g., 'Solver Name'.
       //stepperPL->validateParametersAndSetDefaults(
@@ -268,7 +271,9 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
     auto solver = rcp(new Thyra::NOXNonlinearSolver());
-    solver->setParameterList(defaultSolverParameters());
+    auto defaultSolverPL = Tempus::defaultSolverParameters();
+    auto subPL = sublist(defaultSolverPL, "NOX");
+    solver->setParameterList(subPL);
     if (stepperPL != Teuchos::null) {
       std::string solverName = stepperPL->get<std::string>("Solver Name");
       if ( stepperPL->isSublist(solverName) ) {
@@ -288,7 +293,9 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
     auto solver = rcp(new Thyra::NOXNonlinearSolver());
-    solver->setParameterList(defaultSolverParameters());
+    auto solverPL = Tempus::defaultSolverParameters();
+    auto subPL = sublist(solverPL, "NOX");
+    solver->setParameterList(subPL);
     if (stepperPL != Teuchos::null) {
       // Can not validate because of optional Parameters, e.g., 'Solver Name'.
       //stepperPL->validateParametersAndSetDefaults(
@@ -382,6 +389,33 @@ public:
 
   // ---------------------------------------------------------------------------
   // Create individual Steppers.
+
+  Teuchos::RCP<StepperSubcycling<Scalar> >
+  createStepperSubcycling(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    auto stepper = Teuchos::rcp(new StepperSubcycling<Scalar>());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(stepperPL != Teuchos::null, std::logic_error,
+      "Error - Construction of StepperSubcycling with a ParameterList\n"
+      "is not implemented yet!\n");
+
+    if (stepperPL != Teuchos::null) {
+      setStepperValues(stepper, stepperPL);
+      //setStepperSubcyclingValues(stepper, stepperPL);
+    }
+    //else {
+    //  integrator->setTempusParameterList(Teuchos::null);
+    //}
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
 
   Teuchos::RCP<StepperIMEX_RK_Partition<Scalar> >
   createStepperIMEX_RK_Partition(
@@ -1240,6 +1274,8 @@ private:
       return createStepperIMEX_RK_Partition(model, stepperType, stepperPL);
     else if (stepperType == "Leapfrog")
       return createStepperLeapfrog(model, stepperPL);
+    else if (stepperType == "Subcycling")
+      return createStepperSubcycling(model, stepperPL);
     else {
       Teuchos::RCP<Teuchos::FancyOStream> out =
         Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -1370,9 +1406,9 @@ private:
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
     auto stepper = Teuchos::rcp(new StepperOperatorSplit<Scalar>());
-    setStepperValues(stepper, stepperPL);
 
     if (stepperPL != Teuchos::null) {
+      setStepperValues(stepper, stepperPL);
       stepper->setOrderMin(stepperPL->get<int>("Minimum Order", 1));
       stepper->setOrder   (stepperPL->get<int>("Order", 1));
       stepper->setOrderMax(stepperPL->get<int>("Maximum Order", 1));

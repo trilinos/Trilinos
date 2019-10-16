@@ -50,12 +50,12 @@ int main(int argc, char *argv[])
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
-  Info::Interface interface;
-  interface.parse_options(argc, argv);
+  Info::Interface interFace;
+  interFace.parse_options(argc, argv);
 
   Ioss::Init::Initializer io;
 
-  if (interface.show_config()) {
+  if (interFace.show_config()) {
     Ioss::IOFactory::show_configuration();
     exit(EXIT_SUCCESS);
   }
@@ -66,11 +66,11 @@ int main(int argc, char *argv[])
     codename = codename.substr(ind + 1, codename.size());
   }
 
-  if (interface.list_groups()) {
-    Ioss::io_info_group_info(interface);
+  if (interFace.list_groups()) {
+    Ioss::io_info_group_info(interFace);
   }
   else {
-    Ioss::io_info_file_info(interface);
+    Ioss::io_info_file_info(interFace);
   }
 
   fmt::print("\n{} execution successful.\n", codename);

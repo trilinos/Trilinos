@@ -720,8 +720,8 @@ namespace SEAMS {
                               << "}\t(immutable)" << '\n';
               }
               else if (ptr->type == Parser::token::SVAR) {
-                if (index(ptr->value.svar.c_str(), '\n') != nullptr ||
-                    index(ptr->value.svar.c_str(), '"') != nullptr) {
+                if (strchr(ptr->value.svar.c_str(), '\n') != nullptr ||
+                    strchr(ptr->value.svar.c_str(), '"') != nullptr) {
                   (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name
                                 << "\t= '" << ptr->value.svar << "'}" << '\n';
                 }
@@ -731,8 +731,8 @@ namespace SEAMS {
                 }
               }
               else if (ptr->type == Parser::token::IMMSVAR) {
-                if (index(ptr->value.svar.c_str(), '\n') != nullptr ||
-                    index(ptr->value.svar.c_str(), '"') != nullptr) {
+                if (strchr(ptr->value.svar.c_str(), '\n') != nullptr ||
+                    strchr(ptr->value.svar.c_str(), '"') != nullptr) {
                   (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name
                                 << "\t= '" << ptr->value.svar << "'}\t(immutable)" << '\n';
                 }

@@ -121,20 +121,20 @@ namespace {
   {
     size_t i, j;
     size_t ndx = 0;
-    INT    small;
+    INT    low;
     INT    tmp;
 
     if (N == 0) {
       return;
     }
-    small = v[iv[0]];
+    low = v[iv[0]];
     for (i = 1; i < N; i++) {
-      if (v[iv[i]] < small) {
-        small = v[iv[i]];
-        ndx   = i;
+      if (v[iv[i]] < low) {
+        low = v[iv[i]];
+        ndx = i;
       }
     }
-    /* Put smallest value in slot 0 */
+    /* Put lowest value in slot 0 */
     GDS_SWAP(iv, 0, ndx);
 
     for (i = 1; i < N; i++) {
@@ -148,7 +148,7 @@ namespace {
 
   /*
    * Sort the values in 'v' using the index array 'iv'.
-   * The values in 'v' will be unchanged, but the smallest
+   * The values in 'v' will be unchanged, but the lowest
    * value will be v[iv[0]] and the largest v[iv[N-1]]
    *
    * The 'iv' array should be initialized 0..N-1 on entry.
@@ -205,20 +205,20 @@ namespace {
   {
     size_t i, j;
     size_t ndx = 0;
-    INT    small;
+    INT    low;
     INT    tmp;
 
     if (N <= 1) {
       return;
     }
-    small = v[0];
+    low = v[0];
     for (i = 1; i < N; i++) {
-      if (v[i] < small) {
-        small = v[i];
-        ndx   = i;
+      if (v[i] < low) {
+        low = v[i];
+        ndx = i;
       }
     }
-    /* Put smallest value in slot 0 */
+    /* Put lowest value in slot 0 */
     GDS_SWAP(v, 0, ndx);
 
     for (i = 1; i < N; i++) {

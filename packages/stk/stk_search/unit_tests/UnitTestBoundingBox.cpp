@@ -271,77 +271,175 @@ TEST( stk_search_bounding_box, min_max_center)
 
 }
 
-TEST( stk_search_bounding_box, intersects)
+template <typename T1, typename T2>
+void CheckIntersections(T1 obj1, T2 obj2, bool expectedResult) {
+    using stk::search::intersects;
+    EXPECT_EQ(intersects(obj1, obj2), expectedResult);
+    EXPECT_EQ(intersects(obj2, obj1), expectedResult);
+}
+
+
+TEST( stk_search_bounding_box, intersects_point_point)
+{
+  typedef stk::search::Point<double> Point;
+
+
+  Point a(0,0,0);
+  Point b(0,0,0);
+  Point c(1,0,0);
+  CheckIntersections(a, b, true);
+  CheckIntersections(a, c, false);
+}
+
+
+TEST( stk_search_bounding_box, intersects_point_sphere)
 {
   typedef stk::search::Sphere<double> Sphere;
+  typedef stk::search::Point<double> Point;
+
+  Point a(0,0,0);
+  Sphere b(Point(0,0,0),1);
+  Point c(2, 0, 0);
+
+  CheckIntersections(a, b, true);
+  CheckIntersections(a, c, false);
+}
+
+TEST( stk_search_bounding_box, intersects_point_box)
+{
   typedef stk::search::Box<double> Box;
   typedef stk::search::Point<double> Point;
 
+
+  Point a(0.5,0.5,0.5);
+  Box b(Point(0,0,0),Point(1,1,1));
+  Point c(2, 0, 0);
+
+  CheckIntersections(a, b, true);
+  CheckIntersections(a, c, false);
+}
+
+
+TEST( stk_search_bounding_box, intersects_sphere_sphere)
+{
+  typedef stk::search::Sphere<double> Sphere;
+
   using stk::search::intersects;
 
-  //Point,Point
-  {
-    Point a(0,0,0);
-    Point b(0,0,0);
-    EXPECT_TRUE( intersects(a,b) );
-    a[0] = 1;
-    EXPECT_FALSE( intersects(a,b) );
-  }
+  Sphere a(Point(0,0,0),2);
+  Sphere b(Point(1,1,1),2);
+  Sphere c(Point(-3, -3, -3), 2);
 
-  //Point,Sphere
-  {
-    Point a(0,0,0);
-    Sphere b(Point(0,0,0),1);
-    EXPECT_TRUE( intersects(a,b) );
-    EXPECT_TRUE( intersects(b,a) );
-    a[0] = 2;
-    EXPECT_FALSE( intersects(a,b) );
-    EXPECT_FALSE( intersects(b,a) );
-  }
+  CheckIntersections(a, b, true);
+  CheckIntersections(a, c, false);
 
-  //Point,Box
-  {
-    Point a(0.5,0.5,0.5);
-    Box b(Point(0,0,0),Point(1,1,1));
-    EXPECT_TRUE( intersects(a,b) );
-    EXPECT_TRUE( intersects(b,a) );
-    a[0] = 2;
-    EXPECT_FALSE( intersects(a,b) );
-    EXPECT_FALSE( intersects(b,a) );
-  }
+}
 
-  //Sphere,Sphere
-  {
-    Sphere a(Point(0,0,0),2);
-    Sphere b(Point(1,1,1),2);
-    EXPECT_TRUE( intersects(a,b) );
-    EXPECT_TRUE( intersects(b,a) );
-    a.set_center(Point(-3,-3,-3));
-    EXPECT_FALSE( intersects(a,b) );
-    EXPECT_FALSE( intersects(b,a) );
-  }
 
-  //Sphere,Box
-  {
-    Sphere a(Point(0,0,0),1);
-    Box b(Point(.3,.3,.3),Point(2,2,2));
-    EXPECT_TRUE( intersects(a,b) );
-    EXPECT_TRUE( intersects(b,a) );
-    b.set_min_corner(Point(.9,.9,.9));
-    EXPECT_FALSE( intersects(a,b) );
-    EXPECT_FALSE( intersects(b,a) );
-  }
+TEST( stk_search_bounding_box, intersects_sphere_box)
+{
+  typedef stk::search::Sphere<double> Sphere;
+  typedef stk::search::Box<double> Box;
+  using stk::search::intersects;
 
-  //Box,Box
-  {
-    Box a(Point(0,0,0),Point(1.5,1.5,1.5));
-    Box b(Point(1,1,1),Point(3,3,3));
-    EXPECT_TRUE( intersects(a,b) );
-    EXPECT_TRUE( intersects(b,a) );
-    b.set_min_corner(Point(2,1,1));
-    EXPECT_FALSE( intersects(a,b) );
-    EXPECT_FALSE( intersects(b,a) );
-  }
+  Box unitBox(Point(1, 1, 1), Point(2, 2, 2));
+  Box nullSetBox;
+
+  Sphere wayLeft           (Point(-5, 1.5, 1.5), 0.5);
+  Sphere wayRight          (Point( 5, 1.5, 1.5), 0.5);
+  Sphere diagonallyOutside1(Point(0.5, 0.5, 0.5), 0.8);
+  Sphere diagonallyInside1 (Point(0.5, 0.5, 0.5), 0.9);
+  Sphere diagonallyOutside2(Point(2.5, 2.5, 2.5), 0.8);
+  Sphere diagonallyInside2 (Point(2.5, 2.5, 2.5), 0.9);
+  Sphere justOutsideLeft   (Point(0.5, 1.5, 1.5), 0.4999999);
+  Sphere justTouchingLeft  (Point(0.5, 1.5, 1.5), 0.5);
+  Sphere justTouchingRight (Point(2.5, 1.5, 1.5), 0.5);
+  Sphere justOutsideRight  (Point(2.5, 1.5, 1.5), 0.4999999);
+  Sphere encompassing      (Point(4, 3, 1), 20);
+  Sphere inside            (Point(1.1, 1.2, 1.3), 0.01); 
+
+  CheckIntersections(unitBox, wayLeft,            false);
+  CheckIntersections(unitBox, wayRight,           false);
+  CheckIntersections(unitBox, diagonallyOutside1, false);
+  CheckIntersections(unitBox, diagonallyInside1,  true);
+  CheckIntersections(unitBox, diagonallyOutside2, false);
+  CheckIntersections(unitBox, diagonallyInside2,  true);
+  CheckIntersections(unitBox, justOutsideLeft,    false);
+  CheckIntersections(unitBox, justTouchingLeft,   true);
+  CheckIntersections(unitBox, justTouchingRight,  true);
+  CheckIntersections(unitBox, justOutsideRight,   false);
+  CheckIntersections(unitBox, encompassing,       true);
+  CheckIntersections(unitBox, inside,             true);
+
+  CheckIntersections(nullSetBox, wayLeft,            false);
+  CheckIntersections(nullSetBox, wayRight,           false);
+  CheckIntersections(nullSetBox, diagonallyOutside1, false);
+  CheckIntersections(nullSetBox, diagonallyInside1,  false);
+  CheckIntersections(nullSetBox, diagonallyOutside2, false);
+  CheckIntersections(nullSetBox, diagonallyInside2,  false);
+  CheckIntersections(nullSetBox, justOutsideLeft,    false);
+  CheckIntersections(nullSetBox, justTouchingLeft,   false);
+  CheckIntersections(nullSetBox, justTouchingRight,  false);
+  CheckIntersections(nullSetBox, justOutsideRight,   false);
+  CheckIntersections(nullSetBox, encompassing,       false);
+  CheckIntersections(nullSetBox, inside,             false);
+
+}
+
+TEST( stk_search_bounding_box, intersects_box_box)
+{
+  typedef stk::search::Box<double> Box;
+  using stk::search::intersects;
+
+  Box unitBox(Point(1, 1, 1), Point(2, 2, 2));
+  Box nullSetBox;
+
+  Box wayLeft          (Point(-5, 1, 1), Point(-4, 2, 2));
+  Box wayRight         (Point( 5, 1, 1), Point( 6, 2, 2));
+  Box diagonallyOutside(Point(0.5, 0.5, 0.5), Point(0.9, 0.9, 0.9));
+  Box diagonallyInside (Point(0.5, 0.5, 0.5), Point(1.1, 1.1, 1.1));
+  Box justOutsideLeft  (Point(0, 1, 1), Point(0.999999, 2, 2));
+  Box justTouchingLeft (Point(0, 1, 1), Point(1, 2, 2));
+  Box justTouchingRight(Point(2, 1, 1), Point(3, 2, 2));
+  Box justOutsideRight (Point(2.000001, 1, 1), Point(3, 2, 2));
+  Box encompassing     (Point(-7, -8, -9), Point(10, 11, 12));
+  Box inside           (Point(1.1, 1.2, 1.3), Point(1.4, 1.5, 1.6)); 
+  Box alsoNull;
+
+  CheckIntersections(unitBox, wayLeft,           false);
+  CheckIntersections(unitBox, wayRight,          false);
+  CheckIntersections(unitBox, diagonallyOutside, false);
+  CheckIntersections(unitBox, diagonallyInside,  true);
+  CheckIntersections(unitBox, justOutsideLeft,   false);
+  CheckIntersections(unitBox, justTouchingLeft,  true);
+  CheckIntersections(unitBox, justTouchingRight, true);
+  CheckIntersections(unitBox, justOutsideRight,  false);
+  CheckIntersections(unitBox, encompassing,      true);
+  CheckIntersections(unitBox, inside,            true);
+  CheckIntersections(unitBox, alsoNull,          false);
+
+  CheckIntersections(nullSetBox, wayLeft,           false);
+  CheckIntersections(nullSetBox, wayRight,          false);
+  CheckIntersections(nullSetBox, diagonallyOutside, false);
+  CheckIntersections(nullSetBox, diagonallyInside,  false);
+  CheckIntersections(nullSetBox, justOutsideLeft,   false);
+  CheckIntersections(nullSetBox, justTouchingLeft,  false);
+  CheckIntersections(nullSetBox, justTouchingRight, false);
+  CheckIntersections(nullSetBox, justOutsideRight,  false);
+  CheckIntersections(nullSetBox, encompassing,      false);
+  CheckIntersections(nullSetBox, inside,            false);
+  CheckIntersections(nullSetBox, alsoNull,          false);
+}
+
+TEST( stk_search_bounding_box, read_box_as_written) {
+  std::stringstream ss;
+  stk::search::Box<float> box({0,0,0}, {1,1,1});
+  stk::search::Box<float> readBox, readBox2;
+  ss << box << "\n" << box << "\n";
+  ss >> readBox >> readBox2;
+
+  EXPECT_EQ(box, readBox );
+  EXPECT_EQ(box, readBox2 );
 }
 
 

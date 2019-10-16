@@ -73,6 +73,8 @@ template<class Real>
 class DensityFilter {
 
 private:
+  using GO = typename Tpetra::Map<>::global_ordinal_type;
+
   ROL::Ptr<MeshManager<Real> > meshMgr_;
   ROL::Ptr<DofManager<Real> >  dofMgr_;
   std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
@@ -93,7 +95,7 @@ private:
   ROL::Ptr<Tpetra::CrsMatrix<> >    matB_trans_;
   ROL::Ptr<Tpetra::MultiVector<> >  vecCellVolumes_;
 
-  Teuchos::Array<int> myCellIds_;
+  Teuchos::Array<GO> myCellIds_;
   Teuchos::Array<Real> myCellVolumes_;
 
   ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_;
@@ -103,9 +105,9 @@ private:
   int numNodesPerCell_;
   int numCubPoints_;
 
-  int totalNumCells_;
-  int totalNumDofs_;
-  int numCells_;
+  GO totalNumCells_;
+  GO totalNumDofs_;
+  GO numCells_;
 
   ROL::Ptr<Intrepid::FieldContainer<Real> > cubPoints_;
   ROL::Ptr<Intrepid::FieldContainer<Real> > cubWeights_;
@@ -195,9 +197,9 @@ public:
 
     // Partition the cells in the mesh.  We use a basic quasi-equinumerous partitioning,
     // where the remainder, if any, is assigned to the last processor.
-    Teuchos::Array<int> myGlobIds_;
-    Teuchos::Array<int> cellOffsets_(numProcs_, 0);
-    int cellsPerProc = totalNumCells_ / numProcs_;
+    Teuchos::Array<GO> myGlobIds_;
+    Teuchos::Array<GO> cellOffsets_(numProcs_, 0);
+    GO cellsPerProc = totalNumCells_ / numProcs_;
     numCells_ = cellsPerProc;
     switch(cellSplit) {
       case 0:
@@ -225,10 +227,10 @@ public:
         }
         break;
     }
-    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    Intrepid::FieldContainer<GO> &cellDofs = *(dofMgr_->getCellDofs());
     int numLocalDofs = cellDofs.dimension(1);
     *outStream << "Cell offsets across processors: " << cellOffsets_ << std::endl;
-    for (int i=0; i<numCells_; ++i) {
+    for (GO i=0; i<numCells_; ++i) {
       myCellIds_.push_back(cellOffsets_[myRank_]+i);
       for (int j=0; j<numLocalDofs; ++j) {
         myGlobIds_.push_back( cellDofs(cellOffsets_[myRank_]+i,j) );
@@ -245,7 +247,7 @@ public:
           myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, comm);
         to build the overlap map.
     **/
-    myUniqueMap_ = Tpetra::createOneToOne<int,int>(myOverlapMap_);
+    myUniqueMap_ = Tpetra::createOneToOne(myOverlapMap_);
     //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
 
     myBColumnMap_ = ROL::makePtr<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
@@ -296,8 +298,8 @@ public:
 
     // Geometric definition of the cells in the mesh, based on the cell-to-node map and the domain partition.
     Intrepid::FieldContainer<Real> &nodes = *meshMgr_->getNodes();
-    Intrepid::FieldContainer<int>  &ctn   = *meshMgr_->getCellToNodeMap();
-    for (int i=0; i<numCells_; ++i) {
+    Intrepid::FieldContainer<GO>  &ctn   = *meshMgr_->getCellToNodeMap();
+    for (GO i=0; i<numCells_; ++i) {
       for (int j=0; j<numNodesPerCell_; ++j) {
         for (int k=0; k<spaceDim_; ++k) {
           (*cellNodes_)(i, j, k) = nodes(ctn(myCellIds_[i],j), k);
@@ -379,7 +381,7 @@ public:
 
     // Assemble graphs.
     matAGraph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueMap_, 0);
-    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+    Teuchos::ArrayRCP<const GO> cellDofsArrayRCP = cellDofs.getData();
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
         matAGraph_->insertGlobalIndices(cellDofs(myCellIds_[i],j), cellDofsArrayRCP(myCellIds_[i]*numLocalDofs, numLocalDofs));
@@ -387,7 +389,7 @@ public:
     }
     matAGraph_->fillComplete();
     matBGraph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueMap_, myBColumnMap_, 0);
-    Teuchos::ArrayRCP<const int> cellIdsArrayRCP = Teuchos::arcpFromArray(myCellIds_);
+    Teuchos::ArrayRCP<const GO> cellIdsArrayRCP = Teuchos::arcpFromArray(myCellIds_);
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
         matBGraph_->insertGlobalIndices(cellDofs(myCellIds_[i],j), cellIdsArrayRCP(i, 1));
@@ -438,7 +440,7 @@ public:
     // Construct solver using Amesos2 factory.
     try{
       solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_);
-    } catch (std::invalid_argument e) {
+    } catch (std::invalid_argument& e) {
       std::cout << e.what() << std::endl;
     }
     solverA_->numericFactorization();

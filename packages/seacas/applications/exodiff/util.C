@@ -38,6 +38,11 @@
 #include <iostream>
 #include <unistd.h>
 
+#if defined(_MSC_VER)
+#include <io.h>
+#define isatty _isatty
+#endif
+
 char **get_name_array(int size, int length)
 {
   char **names = nullptr;

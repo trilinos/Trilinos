@@ -1081,7 +1081,7 @@ namespace Iocgns {
 
     if (!m_zoneSharedMap.empty()) {
       for (auto &node : file_conn) {
-        std::unordered_map<cgsize_t, cgsize_t>::const_iterator alias =
+        ZoneSharedMap::const_iterator alias =
             m_zoneSharedMap.find(node - 1);
         if (alias != m_zoneSharedMap.end()) {
           node = (*alias).second + 1;

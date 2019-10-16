@@ -52,12 +52,10 @@
 #include <cstring>
 #include <unistd.h> // for getopt, optarg, optind
 
-#if defined(__STRICT_ANSI__)
-#include <getopt.h>
-#endif
-
-#if defined(__STRICT_ANSI__)
-#include <getopt.h>
+#ifdef _MSC_VER
+#include "XGetopt.h"
+#else
+#include "getopt.h" // for getopt
 #endif
 
 extern int read_mesh_file_name(const char *filename);

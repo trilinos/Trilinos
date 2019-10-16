@@ -810,28 +810,62 @@ public:
     bind();
   }
 
+  //! Move constructor
+  RCPNodeHandle (RCPNodeHandle&& node_ref)
+    : node_ (node_ref.node_), strength_ (node_ref.strength_)
+  {
+    node_ref.node_ = 0;
+    node_ref.strength_ = RCP_STRONG;
+  }
+
   //! Swap the contents of \c node_ref with \c *this.
   void swap (RCPNodeHandle& node_ref) {
     std::swap (node_ref.node_, node_);
     std::swap (node_ref.strength_, strength_);
   }
 
-  /// \brief Assignment operator.
+
+
+  /// \brief Null assignment.
+  ///
+  /// This method satisfies the strong exception guarantee: It either
+  /// returns successfully, or throws an exception without modifying
+  /// any user-visible state.
+  RCPNodeHandle& operator= (ENull) {
+    unbind(); // May throw in some cases
+    node_ = 0;
+    strength_ = RCP_STRONG;
+    return *this;
+  }
+
+  /// \brief Copy assignment operator.
   ///
   /// This method satisfies the strong exception guarantee: It either
   /// returns successfully, or throws an exception without modifying
   /// any user-visible state.
   RCPNodeHandle& operator= (const RCPNodeHandle& node_ref) {
-    // Assignment to self check: Note, We don't need to do an assigment to
-    // self check here because such a check is already done in the RCP and
-    // ArrayRCP classes.
-    // Take care of this's existing node and object
+    // NOTE: Don't need to check assignment to self since user-facing classes
+    // do that!
     unbind(); // May throw in some cases
-    // Assign the new node
     node_ = node_ref.node_;
     strength_ = node_ref.strength_;
     bind();
-    // Return
+    return *this;
+  }
+
+  /// \brief Move assignment operator.
+  ///
+  /// This method satisfies the strong exception guarantee: It either
+  /// returns successfully, or throws an exception without modifying
+  /// any user-visible state.
+  RCPNodeHandle& operator= (RCPNodeHandle&& node_ref) {
+    // NOTE: Don't need to check assignment to self since user-facing classes
+    // do that!
+    unbind(); // May throw in some cases
+    node_ = node_ref.node_;
+    strength_ = node_ref.strength_;
+    node_ref.node_ = 0;
+    node_ref.strength_ = RCP_STRONG;
     return *this;
   }
 
@@ -1045,7 +1079,6 @@ private:
         }
       }
     }
-
   void unbindOneStrong();
   void unbindOneTotal();
 };
