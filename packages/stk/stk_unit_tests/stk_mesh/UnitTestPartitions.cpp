@@ -68,7 +68,6 @@ struct ReversePartition
 
       std::reverse(b.m_entities.begin(), b.m_entities.begin()+b.size());
       //std::reverse(b.m_relations.begin(), b.m_relations.end());
-      std::reverse(b.m_owner_ranks.begin(), b.m_owner_ranks.begin()+b.size());
 
       const unsigned n = b.size();
       for ( unsigned i = 0 ; i < n ; ++i)

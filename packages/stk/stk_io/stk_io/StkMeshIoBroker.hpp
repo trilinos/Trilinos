@@ -76,8 +76,6 @@ namespace Ioss { class DatabaseIO; }
 namespace stk {
   namespace io {
     
-    static std::string CoordinateFieldName("coordinates");
-
     struct QaRecord
     {
         std::string name;

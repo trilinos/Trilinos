@@ -128,7 +128,7 @@ public:
    */
   void reset_buffers();
 
-  ~CommNeighbors();
+  virtual ~CommNeighbors();
 
   const std::vector<int>& send_procs() const { return m_send_procs; }
   const std::vector<int>& recv_procs() const { return m_recv_procs; }

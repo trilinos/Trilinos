@@ -208,7 +208,7 @@ TEST( UnitTestMetaData, testEntityRepository )
   const stk::mesh::EntityCommInfo comm_info( ghost.ordinal() , 0 );
 
   ASSERT_FALSE(bulk.my_entity_comm_map_erase(bulk.entity_key(elem), comm_info));
-  ASSERT_TRUE(bulk.my_entity_comm_map_insert(elem, comm_info));
+  ASSERT_TRUE(bulk.my_entity_comm_map_insert(elem, comm_info).second);
 }
 
 TEST( UnitTestMetaData, noEntityTypes )
