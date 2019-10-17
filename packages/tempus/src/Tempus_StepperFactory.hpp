@@ -1216,14 +1216,15 @@ private:
       return createStepperERK_5Stage3rdOrderKandG(model, stepperPL);
     else if (stepperType == "RK Explicit 3 Stage 3rd order" )
       return createStepperERK_3Stage3rdOrder(model, stepperPL);
-    else if (stepperType == "RK Explicit 3 Stage 3rd order TVD" )
+    else if (stepperType == "RK Explicit 3 Stage 3rd order TVD" ||
+             stepperType == "SSPERK33")
       return createStepperERK_3Stage3rdOrderTVD(model, stepperPL);
     else if (stepperType == "RK Explicit 3 Stage 3rd order by Heun" )
       return createStepperERK_3Stage3rdOrderHeun(model, stepperPL);
     else if (stepperType == "RK Explicit Midpoint" )
       return createStepperERK_Midpoint(model, stepperPL);
     else if (stepperType == "RK Explicit Trapezoidal" ||
-             stepperType == "Heuns Method" || stepperType = "SSPERK22")
+             stepperType == "Heuns Method" || stepperType == "SSPERK22")
       return createStepperERK_Trapezoidal(model, stepperPL, stepperType);
     else if (stepperType == "Bogacki-Shampine 3(2) Pair" )
       return createStepperERK_BogackiShampine32(model, stepperPL);

@@ -872,6 +872,7 @@ class StepperERK_3Stage3rdOrderTVD :
   {
     std::ostringstream Description;
     Description << this->getStepperType() << "\n"
+                  << "This Stepper is known as 'RK Explicit 3 Stage 3rd order TVD' or 'SSPERK33'.\n"
                   << "Sigal Gottlieb and Chi-Wang Shu\n"
                   << "`Total Variation Diminishing Runge-Kutta Schemes'\n"
                   << "Mathematics of Computation\n"
