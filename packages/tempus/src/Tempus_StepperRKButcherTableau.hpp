@@ -2474,6 +2474,115 @@ protected:
 
 
 // ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Diagonally-Implicit RK Butcher Tableau
+ *
+ *  The tableau (stage=2, order=2) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  1/4  & 1/4  & \\
+ *                         3/4  & 1/2  & 1/4 \\   \hline
+ *                              & 1/2  & 1/2  \end{array}
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+template<class Scalar>
+class StepperSDIRK_SSPDIRK22 :
+  virtual public StepperDIRK<Scalar>
+{
+  public:
+  StepperSDIRK_SSPDIRK22()
+  {
+    this->setStepperType("SSPDIRK22");
+    this->setupTableau();
+    this->setupDefault();
+  }
+
+  StepperSDIRK_SSPDIRK22(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess)
+  {
+    this->setStepperType("SSPDIRK22");
+    this->setupTableau();
+    this->setup(appModel, obs, solver, useFSAL, ICConsistency,
+                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+
+  std::string getDescription() const
+  {
+    std::ostringstream Description;
+    Description << this->getStepperType() << "\n"
+      << "Strong Stability Preserving Diagonally-Implicit RK (stage=2, order=2)\n"
+      << "SSP-Coef = 4\n"
+      << "c =     [ 1/4   3/4 ]'\n"
+      << "A =     [ 1/4       ]\n"
+      << "        [ 1/2   1/4 ]\n"
+      << "b     = [ 1/2   1/2 ]\n" << std::endl;
+    return Description.str();
+  }
+
+  virtual bool getICConsistencyCheckDefault() const { return false; }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    this->getValidParametersBasicDIRK(pl);
+    pl->set<bool>("Initial Condition Consistency Check",
+                  this->getICConsistencyCheckDefault());
+    return pl;
+  }
+
+protected:
+
+  void setupTableau()
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 2;
+    const int order     = 2;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    const Scalar one       = ST::one();
+    const Scalar zero      = ST::zero();
+    const Scalar onehalf   = one/(2*one);
+    const Scalar onefourth = one/(4*one);
+
+    // Fill A:
+    A(0,0) = A(1,1) = onefourth;
+    A(0,1) = zero;
+    A(1,0) = onehalf;
+
+    // Fill b:
+    b(0) = b(1) = onehalf;
+
+    // Fill c:
+    c(0) = A(0,0);
+    c(1) = A(1,0) + A(1,1);
+
+    this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      this->getStepperType(),A,b,c,order,order,order));
+  }
+};
+
+
+// ----------------------------------------------------------------------------
 /** \brief RK Implicit 1 Stage 1st order Radau IA
  *
  *  The tableau (order = 1) is
