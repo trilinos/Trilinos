@@ -54,6 +54,7 @@
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_mesh/base/Field.hpp"
+#include <stk_unit_test_utils/MeshFixture.hpp>
 
 namespace {
 
@@ -341,5 +342,40 @@ TEST( StkMeshIoBroker, large_mesh_test )
   catch(...) {
     ASSERT_TRUE(ok);
   }
+}
+
+class StkIoFixture : public stk::unit_test_util::MeshFixture
+{
+protected:
+    void setup_mesh(const std::string & meshSpec, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        setup_empty_mesh(auraOption);
+
+//        stk::mesh::Field<int> & field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "nodal_field");
+//        const int initValue = 0;
+//        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &initValue);
+
+        stk::io::fill_mesh(meshSpec, get_bulk());
+    }
+};
+
+TEST_F(StkIoFixture, customCoordinateName)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA);
+    const std::string meshName = "meshWithCoordinates.g";
+    stk::io::write_mesh(meshName, get_bulk());
+
+    stk::mesh::MetaData meta(3);
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+    meta.set_coordinate_field_name("custom_coordinates");
+
+    stk::io::fill_mesh(meshName, bulk);
+
+    const stk::mesh::FieldBase * coordField = meta.coordinate_field();
+    EXPECT_EQ("custom_coordinates", coordField->name());
+
+    unlink(meshName.c_str());
 }
 
