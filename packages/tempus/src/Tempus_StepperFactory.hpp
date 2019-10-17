@@ -808,6 +808,22 @@ public:
     return stepper;
   }
 
+  Teuchos::RCP<StepperERK_SSPERK54<Scalar> >
+  createStepperERK_SSPERK54(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    auto stepper = Teuchos::rcp(new StepperERK_SSPERK54<Scalar>());
+    setStepperRKValues(stepper, stepperPL);
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
   Teuchos::RCP<StepperERK_3Stage3rdOrderHeun<Scalar> >
   createStepperERK_3Stage3rdOrderHeun(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
@@ -1226,6 +1242,8 @@ private:
     else if (stepperType == "RK Explicit Trapezoidal" ||
              stepperType == "Heuns Method" || stepperType == "SSPERK22")
       return createStepperERK_Trapezoidal(model, stepperPL, stepperType);
+    else if (stepperType == "SSPERK54" )
+      return createStepperERK_SSPERK54(model, stepperPL);
     else if (stepperType == "Bogacki-Shampine 3(2) Pair" )
       return createStepperERK_BogackiShampine32(model, stepperPL);
     else if (stepperType == "Merson 4(5) Pair" )

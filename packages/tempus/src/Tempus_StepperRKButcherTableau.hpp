@@ -1201,6 +1201,134 @@ protected:
 
 
 // ----------------------------------------------------------------------------
+/** \brief Strong Stability Preserving Explicit RK Butcher Tableau
+ *
+ *  The tableau (stage=5, order=4) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *
+ *  \f]
+ *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
+ *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.
+ *              World Scientific Press, London (2011)
+ *               
+ *
+ */
+template<class Scalar>
+class StepperERK_SSPERK54 :
+  virtual public StepperExplicitRK<Scalar>
+{
+  public:
+  StepperERK_SSPERK54()
+  {
+    this->setStepperType("SSPERK54");
+    this->setupTableau();
+    this->setupDefault();
+  }
+
+  StepperERK_SSPERK54(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded)
+  {
+    this->setStepperType("SSPERK54");
+    this->setupTableau();
+    this->setup(appModel, obs, useFSAL, ICConsistency,
+                ICConsistencyCheck, useEmbedded);
+  }
+
+  std::string getDescription() const
+  {
+    std::ostringstream Description;
+    Description << this->getStepperType() << "\n"
+                << "Strong Stability Preserving Explicit RK (stage=5, order=4)\n"
+                << std::endl;
+    return Description.str();
+  }
+
+protected:
+
+  void setupTableau()
+  {
+
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 5;
+    const int order     = 4;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    //typedef Teuchos::ScalarTraits<Scalar> ST;
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    //const Scalar onehalf = one/(2*one);
+    //const Scalar onefourth = one/(4*one);
+    //const Scalar onesixth = one/(6*one);
+    //const Scalar foursixth = 4*one/(6*one);
+
+    //int NumStages = 3;
+    //Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    //Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    //Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    // Fill A:
+    A(0,0) = A(0,1) =  A(0,2) = A(0,3) = A(0,4) = zero;
+
+    A(1,0) = as<Scalar>(0.391752226571889);
+    A(1,1) = A(1,2) = A(1,3) = A(0,4) = zero;
+
+    A(2,0) = as<Scalar>(0.217669096261169);
+    A(2,1) = as<Scalar>(0.368410593050372);
+    A(2,2) = A(2,3) = A(2,4) = zero;
+
+    A(3,0) = as<Scalar>(0.082692086657811);
+    A(3,1) = as<Scalar>(0.139958502191896);
+    A(3,2) = as<Scalar>(0.251891774271693);
+    A(3,3) = A(2,4) = zero;
+
+    A(4,0) = as<Scalar>(0.067966283637115);
+    A(4,1) = as<Scalar>(0.115034698504632);
+    A(4,2) = as<Scalar>(0.207034898597385);
+    A(4,3) = as<Scalar>(0.544974750228520);
+    A(4,4) = zero;
+
+    //A(0,0) =      zero; A(0,1) =      zero; A(0,2) = zero;
+    //A(1,0) =       one; A(1,1) =      zero; A(1,2) = zero;
+    //A(2,0) = onefourth; A(2,1) = onefourth; A(2,2) = zero;
+
+    // Fill b:
+    b(0) = as<Scalar>(0.146811876084786);
+    b(1) = as<Scalar>(0.248482909444976);
+    b(2) = as<Scalar>(0.104258830331980);
+    b(3) = as<Scalar>(0.274438900901350);
+    b(4) = as<Scalar>(0.226007483236908);
+    //b(0) = onesixth; b(1) = onesixth; b(2) = foursixth;
+
+    // fill c:
+    c(0) = zero;
+    c(1) = A(1,0);
+    c(2) = A(2,0) + A(2,1);
+    c(3) = A(3,0) + A(3,1) + A(3,1);
+    c(4) = A(4,0) + A(4,1) + A(4,2) + A(4,3);
+    //c(0) = zero; c(1) = one; c(2) = onehalf;
+
+    //int order = 3;
+
+    this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      this->getStepperType(),A,b,c,order,order,order));
+  }
+};
+
+
+// ----------------------------------------------------------------------------
 /** \brief General Explicit Runge-Kutta Butcher Tableau
  *
  *  The format of the Butcher Tableau parameter list is
