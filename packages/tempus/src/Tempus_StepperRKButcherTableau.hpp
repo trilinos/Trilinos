@@ -1159,7 +1159,7 @@ class StepperERK_Trapezoidal :
   {
     std::ostringstream Description;
     Description << this->getStepperType() << "\n"
-                << "This Stepper is known as 'RK Explicit Trapezoidal' or 'Heuns Method'.\n"
+                << "This Stepper is known as 'RK Explicit Trapezoidal' or 'Heuns Method' or 'SSPERK22'.\n"
                 << "c = [  0   1  ]'\n"
                 << "A = [  0      ]\n"
                 << "    [  1   0  ]\n"

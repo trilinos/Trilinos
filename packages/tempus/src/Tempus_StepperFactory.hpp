@@ -1223,7 +1223,7 @@ private:
     else if (stepperType == "RK Explicit Midpoint" )
       return createStepperERK_Midpoint(model, stepperPL);
     else if (stepperType == "RK Explicit Trapezoidal" ||
-             stepperType == "Heuns Method" )
+             stepperType == "Heuns Method" || stepperType = "SSPERK22")
       return createStepperERK_Trapezoidal(model, stepperPL, stepperType);
     else if (stepperType == "Bogacki-Shampine 3(2) Pair" )
       return createStepperERK_BogackiShampine32(model, stepperPL);
