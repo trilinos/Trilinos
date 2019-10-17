@@ -127,12 +127,13 @@ namespace MueLu {
       list = newList;
     }
 
-    parameterList_         = list;
-    disable_addon_         = list.get("refmaxwell: disable addon",MasterList::getDefault<bool>("refmaxwell: disable addon"));
-    mode_                  = list.get("refmaxwell: mode",MasterList::getDefault<std::string>("refmaxwell: mode"));
-    use_as_preconditioner_ = list.get("refmaxwell: use as preconditioner",MasterList::getDefault<bool>("refmaxwell: use as preconditioner"));
-    dump_matrices_         = list.get("refmaxwell: dump matrices",MasterList::getDefault<bool>("refmaxwell: dump matrices"));
-    implicitTranspose_     = list.get("transpose: use implicit",MasterList::getDefault<bool>("transpose: use implicit"));
+    parameterList_             = list;
+    disable_addon_             = list.get("refmaxwell: disable addon",MasterList::getDefault<bool>("refmaxwell: disable addon"));
+    mode_                      = list.get("refmaxwell: mode",MasterList::getDefault<std::string>("refmaxwell: mode"));
+    use_as_preconditioner_     = list.get("refmaxwell: use as preconditioner",MasterList::getDefault<bool>("refmaxwell: use as preconditioner"));
+    dump_matrices_             = list.get("refmaxwell: dump matrices",MasterList::getDefault<bool>("refmaxwell: dump matrices"));
+    implicitTranspose_         = list.get("transpose: use implicit",MasterList::getDefault<bool>("transpose: use implicit"));
+    fuseProlongationAndUpdate_ = list.get("fuse prolongation and update",MasterList::getDefault<bool>("fuse prolongation and update"));
 
     if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
@@ -1822,19 +1823,31 @@ namespace MueLu {
       P11x_.swap(P11xTmp_);
     }
 
-    { // prolongate (1,1) block
-      Teuchos::TimeMonitor tmP11(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: prolongation coarse (1,1)"));
-      P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
-    }
+    if (fuseProlongationAndUpdate_) {
+      { // prolongate (1,1) block
+        Teuchos::TimeMonitor tmP11(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: prolongation coarse (1,1) (fused)"));
+        P11_->apply(*P11x_,X,Teuchos::NO_TRANS,one,one);
+      }
 
-    { // prolongate (2,2) block
-      Teuchos::TimeMonitor tmD0(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: prolongation (2,2)"));
-      D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS,one,one);
-    }
+      { // prolongate (2,2) block
+        Teuchos::TimeMonitor tmD0(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: prolongation (2,2) (fused)"));
+        D0_Matrix_->apply(*D0x_,X,Teuchos::NO_TRANS,one,one);
+      }
+    } else {
+      { // prolongate (1,1) block
+        Teuchos::TimeMonitor tmP11(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: prolongation coarse (1,1) (unfused)"));
+        P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
+      }
 
-    { // update current solution
-      Teuchos::TimeMonitor tmUpdate(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: update"));
-      X.update(one, *residual_, one);
+      { // prolongate (2,2) block
+        Teuchos::TimeMonitor tmD0(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: prolongation (2,2) (unfused)"));
+        D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS,one,one);
+      }
+
+      { // update current solution
+        Teuchos::TimeMonitor tmUpdate(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: update"));
+        X.update(one, *residual_, one);
+      }
     }
 
     if (!ImporterH_.is_null()) {
