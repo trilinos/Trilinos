@@ -396,30 +396,30 @@ namespace FROSch {
                     erry[2] += (ry0[2]-ry)*(ry0[2]-ry);
                     errz[2] += (rz0[2]-rz)*(rz0[2]-rz);
                 }
-                
-                // If error to constant function is almost zero => scale rotation with zero
-                SC err;
-                switch (dimension) {
-                    case 2:
-                        err = errx[0]+erry[0];
+            }
+            
+            // If error to constant function is almost zero => scale rotation with zero
+            SC err;
+            switch (dimension) {
+                case 2:
+                    err = errx[0]+erry[0];
+                    err = ScalarTraits<SC>::squareroot(err);
+                    if (std::fabs(err)<1.0e-12) {
+                        rotations[0]->scale(ScalarTraits<SC>::zero());
+                    }
+                    break;
+                case 3:
+                    for (UN j=0; j<3; j++) {
+                        err = errx[j]+erry[j]+errz[j];
                         err = ScalarTraits<SC>::squareroot(err);
                         if (std::fabs(err)<1.0e-12) {
-                            rotations[0]->scale(ScalarTraits<SC>::zero());
+                            rotations[j]->scale(ScalarTraits<SC>::zero());
                         }
-                        break;
-                    case 3:
-                        for (UN j=0; j<3; j++) {
-                            err = errx[j]+erry[j]+errz[j];
-                            err = ScalarTraits<SC>::squareroot(err);
-                            if (std::fabs(err)<1.0e-12) {
-                                rotations[j]->scale(ScalarTraits<SC>::zero());
-                            }
-                        }
-                        break;
-                    default:
-                        FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator : ERROR: The dimension is neither 1 nor 2 nor 3!");
-                        break;
-                }
+                    }
+                    break;
+                default:
+                    FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator : ERROR: The dimension is neither 1 nor 2 nor 3!");
+                    break;
             }
         }
         return rotations;
