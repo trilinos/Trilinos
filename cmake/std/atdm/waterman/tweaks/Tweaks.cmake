@@ -10,4 +10,9 @@ IF (ATDM_NODE_TYPE STREQUAL "CUDA")
   # Disable known falure for ROL CUDA builds (#3543)
   ATDM_SET_ENABLE(ROL_test_elementwise_TpetraMultiVector_MPI_4_DISABLE ON)
 
+  # Disable the build of SEACAS 'explore' for all cuda+rdc builds for now (#6008)
+  IF (ATDM_CUDA_RDC)
+    ATDM_SET_ENABLE(explore_EXE_DISABLE ON)
+  ENDIF()
+
 ENDIF()
