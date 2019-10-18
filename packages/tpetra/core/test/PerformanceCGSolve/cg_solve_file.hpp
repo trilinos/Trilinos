@@ -366,16 +366,10 @@ int run (int argc, char *argv[])
   if (nsize < 0) {
     typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
     b = reader_type::readVectorFile (filename_vector, map->getComm (),
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                                     map->getNode (),
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                      map);
   } else {
     typedef Tpetra::Utils::MatrixGenerator<crs_matrix_type> gen_type;
     b = gen_type::generate_miniFE_vector (nsize, map->getComm ()
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                                          , map->getNode ()
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                          );
   }
 

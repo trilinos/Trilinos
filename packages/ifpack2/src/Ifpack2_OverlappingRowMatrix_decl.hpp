@@ -99,10 +99,6 @@ public:
   //! The communicator over which the matrix is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  //! The matrix's Node instance.
-  virtual TPETRA_DEPRECATED Teuchos::RCP<node_type> getNode() const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! The Map that describes the distribution of rows over processes.
   virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >

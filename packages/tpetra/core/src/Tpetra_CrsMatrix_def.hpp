@@ -210,42 +210,6 @@ namespace Tpetra {
     checkInternalState ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-             const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
-             const ProfileType pftype,
-             const Teuchos::RCP<Teuchos::ParameterList>& params) :
-    dist_object_type (rowMap),
-    storageStatus_ (pftype == StaticProfile ?
-                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
-                    ::Tpetra::Details::STORAGE_2D),
-    fillComplete_ (false),
-    frobNorm_ (-STM::one ())
-  {
-    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
-      "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
-    Teuchos::RCP<crs_graph_type> graph;
-    try {
-      graph = Teuchos::rcp (new crs_graph_type (rowMap, numEntPerRowToAlloc (),
-                                                pftype, params));
-    }
-    catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
-         "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]) threw "
-         "an exception: " << e.what ());
-    }
-    // myGraph_ not null means that the matrix owns the graph.  That's
-    // different than the const CrsGraph constructor, where the matrix
-    // does _not_ own the graph.
-    myGraph_ = graph;
-    staticGraph_ = graph;
-    resumeFill (params);
-    checkInternalState ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -334,44 +298,6 @@ namespace Tpetra {
     checkInternalState ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-             const Teuchos::RCP<const map_type>& colMap,
-             const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
-             const ProfileType pftype,
-             const Teuchos::RCP<Teuchos::ParameterList>& params) :
-    dist_object_type (rowMap),
-    storageStatus_ (pftype == StaticProfile ?
-                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
-                    ::Tpetra::Details::STORAGE_2D),
-    fillComplete_ (false),
-    frobNorm_ (-STM::one ())
-  {
-    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
-      "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
-    Teuchos::RCP<crs_graph_type> graph;
-    try {
-      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
-                                                numEntPerRowToAlloc (),
-                                                pftype, params));
-    }
-    catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
-         "RCP<const Map>, ArrayView<const size_t>, ProfileType[, "
-         "RCP<ParameterList>]) threw an exception: " << e.what ());
-    }
-    // myGraph_ not null means that the matrix owns the graph.  That's
-    // different than the const CrsGraph constructor, where the matrix
-    // does _not_ own the graph.
-    myGraph_ = graph;
-    staticGraph_ = graph;
-    resumeFill (params);
-    checkInternalState ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -888,15 +814,6 @@ namespace Tpetra {
     return getCrsGraphRef ().getComm ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  TPETRA_DEPRECATED
-  Teuchos::RCP<Node>
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getNode () const {
-    return Teuchos::null;
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   ProfileType
@@ -989,39 +906,6 @@ namespace Tpetra {
     return getCrsGraphRef ().getNodeNumCols ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  global_size_t TPETRA_DEPRECATED
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getGlobalNumDiags () const {
-    return this->getGlobalNumDiagsImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t TPETRA_DEPRECATED
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getNodeNumDiags () const {
-    return this->getNodeNumDiagsImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  global_size_t
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getGlobalNumDiagsImpl () const {
-    const crs_graph_type& G = this->getCrsGraphRef ();
-    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
-    return dynamic_cast<const HDM&> (G).getGlobalNumDiagsImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getNodeNumDiagsImpl () const {
-    const crs_graph_type& G = this->getCrsGraphRef ();
-    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
-    return dynamic_cast<const HDM&> (G).getNodeNumDiagsImpl ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
@@ -1135,39 +1019,6 @@ namespace Tpetra {
       lclMatrix_->getLocalMatrix ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool TPETRA_DEPRECATED
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isLowerTriangular () const {
-    return this->isLowerTriangularImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool TPETRA_DEPRECATED
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isUpperTriangular () const {
-    return this->isUpperTriangularImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isLowerTriangularImpl () const {
-    const crs_graph_type& G = this->getCrsGraphRef ();
-    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
-    return dynamic_cast<const HDM&> (G).isLowerTriangularImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isUpperTriangularImpl () const {
-    const crs_graph_type& G = this->getCrsGraphRef ();
-    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
-    return dynamic_cast<const HDM&> (G).isUpperTriangularImpl ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -6979,11 +6830,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  copyAndPermuteNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   copyAndPermute
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject& srcObj,
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
@@ -7059,11 +6906,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  packAndPrepareNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   packAndPrepare
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject& source,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
    Kokkos::DualView<char*, buffer_device_type>& exports,
@@ -7867,11 +7710,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  unpackAndCombineNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   unpackAndCombine
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
    Kokkos::DualView<char*, buffer_device_type> imports,
    Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
@@ -8535,23 +8374,14 @@ namespace Tpetra {
     }
     else { // the row Maps of A and B are not the same
       // Construct the result matrix C.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      if (constructorSublist.is_null ()) {
-        C = rcp (new crs_matrix_type (C_rowMap, 0, ProfileType(StaticProfile+1) /*DynamicProfile*/));
-      } else {
-        C = rcp (new crs_matrix_type (C_rowMap, 0, ProfileType(StaticProfile+1) /*DynamicProfile*/,
-                                      constructorSublist));
-      }
-#else
-      // true: !A_rowMap->isSameAs (*B_rowMap)
+// true: !A_rowMap->isSameAs (*B_rowMap)
       TEUCHOS_TEST_FOR_EXCEPTION(true,
                                  std::invalid_argument,
                                  "Tpetra::CrsMatrix::add: The row maps must be the same for statically "
                                  "allocated matrices in order to be sure that there is sufficient space "
                                  "to do the addition");
 
-#endif
-    }
+}
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,

@@ -178,17 +178,7 @@ namespace Tpetra {
 
       bool isOneToOne (const Teuchos::Comm<int>& comm) const override;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*       TPETRA_DEPRECATED
-      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
-      {
-        typedef ReplicatedDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-        return new Dir2 (cloneMap);
-      }
-#endif
-
-      //! @name Implementation of Teuchos::Describable.
+//! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.
@@ -236,17 +226,7 @@ namespace Tpetra {
         return true;
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*       TPETRA_DEPRECATED
-      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
-      {
-        typedef ContiguousUniformDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-        return new Dir2 (cloneMap);
-      }
-#endif
-
-      //! @name Implementation of Teuchos::Describable.
+//! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.
@@ -284,24 +264,7 @@ namespace Tpetra {
         return true;
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*       TPETRA_DEPRECATED
-      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
-      {
-        typedef DistributedContiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-        Dir2* dir = new Dir2 (cloneMap);
-        try {
-          dir->allMinGIDs_ = allMinGIDs_;
-        } catch (std::exception& e) {
-          delete dir; // clean up just in case assignment throws (it shouldn't)
-          throw;
-        }
-        return dir;
-      }
-#endif
-
-      //! @name Implementation of Teuchos::Describable.
+//! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.
@@ -366,39 +329,7 @@ namespace Tpetra {
 
       bool isOneToOne (const Teuchos::Comm<int>& comm) const override;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>* TPETRA_DEPRECATED
-      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
-      {
-        using Teuchos::RCP;
-        typedef DistributedNoncontiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-        typedef ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2> output_map_type;
-        Dir2* dir = new Dir2 (cloneMap);
-
-        // This method returns a raw pointer.  Thus, take care to
-        // check whether intermediate operations succeed, so that we
-        // don't leak memory if they don't.
-        RCP<const output_map_type> outDirMap;
-        try {
-          outDirMap = directoryMap_->template clone<Node2> (cloneMap.getNode ());
-        }
-        catch (...) {
-          outDirMap = Teuchos::null; // deallocate
-          throw;
-        }
-
-        dir->directoryMap_ = outDirMap;
-        dir->PIDs_ = PIDs_;
-        dir->LIDs_ = LIDs_;
-        dir->lidToPidTable_ = lidToPidTable_;
-        dir->lidToLidTable_ = lidToLidTable_;
-        dir->useHashTables_ = useHashTables_;
-        return dir;
-      }
-#endif
-
-      //! @name Implementation of Teuchos::Describable.
+//! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.

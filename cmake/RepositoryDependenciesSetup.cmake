@@ -17,44 +17,28 @@ endif()
 # Note and disable it if it was set as a dependence of STK
 # Error out if it was explicitly requested by user
 
-IF ((NOT ("${Tpetra_ENABLE_DEPRECATED_CODE}" STREQUAL "")) # Remove this test
-    AND                                                    # when removing
-    (NOT Tpetra_ENABLE_DEPRECATED_CODE))                   # Tpetra DEPRECATED
-                                                           # code 
-  SET(KDD_ENABLE_DEPRECATED OFF)  # Remove this line when DEPRECATED is removed
-  SET(KDD_INT_INT OFF)     # Current default
-ELSE() # Remove this "else" section when Tpetra DEPRECATED code is removed
-  SET(KDD_ENABLE_DEPRECATED ON)   # Remove this line when DEPRECATED is removed
-  SET(KDD_INT_INT ON)      # Deprecated default
-ENDIF()
-
+SET(KDD_INT_INT OFF)     # Current default
 SET(KDD_INT_UNSIGNED OFF)  # Current default
 SET(KDD_INT_LONG OFF)      # Current default
 SET(KDD_INT_LONG_LONG ON)  # Current default
 
 IF (NOT ("${Tpetra_INST_INT_INT}" STREQUAL ""))
   SET(KDD_INT_INT ${Tpetra_INST_INT_INT})
-  if (${KDD_INT_INT}                      # Keep this test but
-      AND (NOT ${KDD_ENABLE_DEPRECATED})) # remove this test when DEPRECATED
-                                          # is removed
+  if (${KDD_INT_INT})
     SET(KDD_INT_LONG_LONG OFF)
   ENDIF()
 ENDIF()
 
 IF(NOT ("${Tpetra_INST_INT_UNSIGNED}" STREQUAL ""))
   SET(KDD_INT_UNSIGNED ${Tpetra_INST_INT_UNSIGNED})
-  if (${KDD_INT_UNSIGNED}                 # Keep this test but
-      AND (NOT ${KDD_ENABLE_DEPRECATED})) # remove this test when DEPRECATED
-                                          # is removed
+  if (${KDD_INT_UNSIGNED})
     SET(KDD_INT_LONG_LONG OFF)
   ENDIF()
 ENDIF()
 
 IF(NOT ("${Tpetra_INST_INT_LONG}" STREQUAL ""))
   SET(KDD_INT_LONG ${Tpetra_INST_INT_LONG})
-  if (${KDD_INT_LONG}                     # Keep this test but
-      AND (NOT ${KDD_ENABLE_DEPRECATED})) # remove this test when DEPRECATED
-                                          # is removed
+  if (${KDD_INT_LONG})
     SET(KDD_INT_LONG_LONG OFF)
   ENDIF()
 ENDIF()

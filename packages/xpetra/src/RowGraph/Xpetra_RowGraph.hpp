@@ -82,10 +82,6 @@ namespace Xpetra {
     //! Returns the communicator.
     virtual const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const = 0;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Returns the underlying node.
-    virtual Teuchos::RCP< Node > getNode() const = 0;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Returns the Map that describes the row distribution in this graph.
     virtual const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const = 0;

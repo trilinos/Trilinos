@@ -76,11 +76,7 @@ namespace Xpetra {
     if (pt == Xpetra::StaticProfile)
       return Tpetra::StaticProfile;
     if (pt == Xpetra::DynamicProfile)
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      return Tpetra::DynamicProfile;
-#else
-      return Tpetra::StaticProfile;  // Tpetra supports only StaticProfile
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
+return Tpetra::StaticProfile;  // Tpetra supports only StaticProfile
 
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown ProfileType");
 

@@ -231,15 +231,6 @@ OverlappingRowMatrix<MatrixType>::getComm () const
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-TPETRA_DEPRECATED 
-Teuchos::RCP<typename MatrixType::node_type>
-OverlappingRowMatrix<MatrixType>::getNode () const
-{
-  return Teuchos::null;
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class MatrixType>

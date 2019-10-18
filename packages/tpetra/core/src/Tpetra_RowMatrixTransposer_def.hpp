@@ -158,12 +158,7 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
       auto colMap = origMatrix_->getColMap ();
 
       RCP<crs_matrix_type> crsMatrix_nc =
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        rcp (new crs_matrix_type (rowMap, colMap, numEntPerRow (),
-                                  Tpetra::StaticProfile));
-#else
-        rcp (new crs_matrix_type (rowMap, colMap, numEntPerRow ()));
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
+rcp (new crs_matrix_type (rowMap, colMap, numEntPerRow ()));
 
       // When source & target Maps are same, Import just copies.
       import_type imp (rowMap, rowMap);

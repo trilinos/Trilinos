@@ -88,24 +88,6 @@ namespace {
     return Teuchos::rcp(new Teuchos::SerialComm<int>());
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  // Get an instance of the given Kokkos Node type.
-  //
-  // \warning This function is NOT reentrant, and therefore NOT thread safe.
-  template <class Node>
-  Teuchos::RCP<Node> getNode () {
-    //static Teuchos::RCP<Node> node_ = Teuchos::null; // Defaults to null
-    //if (node_.is_null ()) {
-    //  Teuchos::ParameterList pl;
-    //  pl.set<int> ("Num Threads", 0);
-    //  pl.set<int> ("Verbose", 1);
-    //  node_ = Teuchos::rcp (new Node (pl));
-    //}
-    //return node_;
-    Teuchos::ParameterList pl;
-    return Teuchos::rcp (new Node (pl));
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //
   // UNIT TESTS
