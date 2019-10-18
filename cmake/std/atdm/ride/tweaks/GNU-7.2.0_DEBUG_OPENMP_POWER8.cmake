@@ -24,5 +24,3 @@ ATDM_SET_CACHE(KokkosKernels_sparse_serial_MPI_1_EXTRA_ARGS
 # Disable entire test that is timing out (or nearly timing out) at 10 minutes
 # in debug-openmp build (#3168)
 ATDM_SET_ENABLE(KokkosKernels_sparse_openmp_MPI_1_DISABLE ON)
-
-INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ALL_COMMON_TWEAKS.cmake")
