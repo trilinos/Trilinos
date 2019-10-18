@@ -55,7 +55,6 @@
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
 
-#include <Xpetra_Cloner.hpp>
 #include <MueLu_SmootherCloner.hpp>
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
