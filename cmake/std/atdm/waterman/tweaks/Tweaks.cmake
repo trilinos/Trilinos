@@ -1,6 +1,23 @@
+#
+# Disables across multiple builds on 'waterman'
+#
+
 # Disable known failures for SPARC Trilinos configuration (#3632)
 ATDM_SET_ENABLE(PanzerAdaptersIOSS_tIOSSConnManager2_MPI_2_DISABLE ON)
 ATDM_SET_ENABLE(PanzerAdaptersIOSS_tIOSSConnManager3_MPI_3_DISABLE ON)
+
+IF (Trilinos_ENABLE_DEBUG)
+
+  # Disable Tempus tests that started timing out in debug builds when
+  # Trilinos_ENABLE_DEBUG=ON was set PR #5970 (#6009)
+  ATDM_SET_ENABLE(Tempus_BackwardEuler_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(Tempus_DIRK_ASA_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(Tempus_ExplicitRK_ASA_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(Tempus_HHTAlpha_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(Tempus_IMEX_RK_Combined_FSA_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(Tempus_Newmark_MPI_1_DISABLE ON)
+
+ENDIF()
 
 IF (ATDM_NODE_TYPE STREQUAL "CUDA")
 
