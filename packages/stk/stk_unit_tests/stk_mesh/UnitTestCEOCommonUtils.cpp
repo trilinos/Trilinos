@@ -158,9 +158,10 @@ bool check_state(const stk::unit_test_util::BulkDataTester & mesh, const EntityK
         oss << "check_state(): Must provide one processor with STATE_GHOSTED_FROM_FROM check." << std::endl;
         break;   //need to break otherwise following call can segfault
       }
-      bool entityIsInvalid = mesh.get_entity(entityKey) == Entity();
+      stk::mesh::Entity thisEntity = mesh.get_entity(entityKey);
+      bool entityIsInvalid = !mesh.is_valid(thisEntity);
       bool inGhost = mesh.in_ghost(mesh.aura_ghosting() , entityKey , expectedProcs[0] );
-      const int owner_rank_directly_from_comm_map = mesh.my_entity_comm_map().owner_rank(entityKey);
+      const int owner_rank = mesh.parallel_owner_rank(thisEntity);
 
       if ( entityIsInvalid && inGhost )
       {
@@ -168,7 +169,7 @@ bool check_state(const stk::unit_test_util::BulkDataTester & mesh, const EntityK
       }
       else if ( entityIsInvalid && !inGhost )
       {
-        oss << "check_state(): Entity " << entityKey << " was not ghosted from proc " << owner_rank_directly_from_comm_map << "." << std::endl;
+        oss << "check_state(): Entity " << entityKey << " was not ghosted from proc " << owner_rank << "." << std::endl;
         break;
       }
       if (!mesh.in_receive_ghost( mesh.aura_ghosting() , entityKey )) {
@@ -176,9 +177,9 @@ bool check_state(const stk::unit_test_util::BulkDataTester & mesh, const EntityK
             << "               been ghosted from proc " << expectedProcs[0] << "." << std::endl;
       }
       else {
-        const int owner_rank = mesh.my_internal_entity_comm_map_owner(entityKey);
-        if (owner_rank != expectedProcs[0]) {
-          oss << "check_state(): Entity " << entityKey << " was ghosted from proc " << owner_rank << std::endl
+        const int this_owner_rank = mesh.my_internal_entity_comm_map_owner(entityKey);
+        if (this_owner_rank != expectedProcs[0]) {
+          oss << "check_state(): Entity " << entityKey << " was ghosted from proc " << this_owner_rank << std::endl
               << "               when it should have been ghosted from proc " << expectedProcs[0] << "." << std::endl;
         }
       }
@@ -186,10 +187,11 @@ bool check_state(const stk::unit_test_util::BulkDataTester & mesh, const EntityK
     }
     case STATE_NOT_GHOSTED_FROM:
     {
-      bool entityIsInvalid = mesh.get_entity(entityKey) == Entity();
-      const int owner_rank_directly_from_comm_map = mesh.my_entity_comm_map().owner_rank(entityKey);
+      stk::mesh::Entity thisEntity = mesh.get_entity(entityKey);
+      bool entityIsInvalid = !mesh.is_valid(thisEntity);
+      const int owner_rank = mesh.parallel_owner_rank(thisEntity);
 
-      if ( entityIsInvalid && owner_rank_directly_from_comm_map == stk::mesh::InvalidProcessRank)
+      if ( entityIsInvalid && owner_rank == stk::mesh::InvalidProcessRank)
       {
         break;
       }
@@ -209,8 +211,8 @@ bool check_state(const stk::unit_test_util::BulkDataTester & mesh, const EntityK
         oss << "check_state(): Cannot provide processors with STATE_NOT_GHOSTED_FROM_FROM check." << std::endl;
       }
       if (mesh.in_receive_ghost( mesh.aura_ghosting() , entityKey )) {
-        const int owner_rank = mesh.my_internal_entity_comm_map_owner(entityKey);
-        oss << "check_state(): Entity " << entityKey << " was ghosted from proc " << owner_rank << std::endl
+        const int this_owner_rank = mesh.my_internal_entity_comm_map_owner(entityKey);
+        oss << "check_state(): Entity " << entityKey << " was ghosted from proc " << this_owner_rank << std::endl
             << "               when it shouldn't have been ghosted." << std::endl;
       }
       break;

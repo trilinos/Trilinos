@@ -88,32 +88,6 @@ void find_topologies_in_part_and_subsets_of_same_rank(const Part & part, EntityR
   }
 }
 
-//----------------------------------------------------------------------
-
-stk::mesh::FieldBase* try_to_find_coord_field(const stk::mesh::MetaData& meta)
-{
-  //attempt to initialize the coordinate-field pointer, trying a couple
-  //of commonly-used names. It is expected that the client code will initialize
-  //the coordinates field using set_coordinate_field, but this is an
-  //attempt to be helpful for existing client codes which aren't yet calling that.
-
-  stk::mesh::FieldBase* coord_field = meta.get_field(stk::topology::NODE_RANK, "mesh_model_coordinates");
-  if (coord_field == NULL) {
-    coord_field = meta.get_field(stk::topology::NODE_RANK, "mesh_model_coordinates_0");
-  }
-  if (coord_field == NULL) {
-    coord_field = meta.get_field(stk::topology::NODE_RANK, "model_coordinates");
-  }
-  if (coord_field == NULL) {
-    coord_field = meta.get_field(stk::topology::NODE_RANK, "model_coordinates_0");
-  }
-  if (coord_field == NULL) {
-    coord_field = meta.get_field(stk::topology::NODE_RANK, "coordinates");
-  }
-
-  return coord_field;
-}
-
 } // namespace
 
 void MetaData::assign_topology(Part& part, stk::topology stkTopo)
@@ -257,7 +231,9 @@ MetaData::MetaData()
 
 //----------------------------------------------------------------------
 
-void MetaData::initialize(size_t spatial_dimension, const std::vector<std::string> &rank_names)
+void MetaData::initialize(size_t spatial_dimension,
+                          const std::vector<std::string> &rank_names,
+                          const std::string &coordinate_field_name)
 {
   ThrowErrorMsgIf( !m_entity_rank_names.empty(), "already initialized");
   ThrowErrorMsgIf( spatial_dimension == 0, "Min spatial dimension is 1");
@@ -274,6 +250,10 @@ void MetaData::initialize(size_t spatial_dimension, const std::vector<std::strin
   }
 
   m_spatial_dimension = spatial_dimension;
+
+  if (!coordinate_field_name.empty()) {
+    m_coord_field_name = coordinate_field_name;
+  }
 
   internal_declare_known_cell_topology_parts();
 }
@@ -299,13 +279,73 @@ EntityRank MetaData::entity_rank( const std::string &name ) const
   return entity_rank;
 }
 
-FieldBase const* MetaData::coordinate_field() const
+void
+MetaData::set_coordinate_field_name(const std::string & coordFieldName)
 {
-  if (m_coord_field == NULL) {
-    m_coord_field = try_to_find_coord_field(*this);
+  m_coord_field_name = coordFieldName;
+}
+
+std::string
+MetaData::coordinate_field_name() const
+{
+  if (!m_coord_field_name.empty()) {
+    return m_coord_field_name;
+  }
+  else {
+    return "coordinates";  // Default if nothing set by the user
+  }
+}
+
+void
+MetaData::set_coordinate_field(FieldBase* coord_field)
+{
+  m_coord_field = coord_field;
+  m_coord_field_name = m_coord_field->name();
+}
+
+stk::mesh::FieldBase* try_to_find_coord_field(const stk::mesh::MetaData& meta)
+{
+  //attempt to initialize the coordinate-field pointer, trying a couple
+  //of commonly-used names. It is expected that the client code will initialize
+  //the coordinates field using set_coordinate_field, but this is an
+  //attempt to be helpful for existing client codes which aren't yet calling that.
+
+  stk::mesh::FieldBase* coord_field = meta.get_field(stk::topology::NODE_RANK, "mesh_model_coordinates");
+
+  if (coord_field == nullptr) {
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "mesh_model_coordinates_0");
+  }
+  if (coord_field == nullptr) {
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "model_coordinates");
+  }
+  if (coord_field == nullptr) {
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "model_coordinates_0");
+  }
+  if (coord_field == nullptr) {
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "coordinates");
+  }
+  if (coord_field == nullptr) {
+    coord_field = meta.get_field(stk::topology::NODE_RANK, meta.coordinate_field_name());
   }
 
-  ThrowErrorMsgIf( m_coord_field == NULL,
+  return coord_field;
+}
+
+FieldBase const* MetaData::coordinate_field() const
+{
+  if (m_coord_field == nullptr) {
+    if (!m_coord_field_name.empty()) {
+      m_coord_field = get_field(stk::topology::NODE_RANK, m_coord_field_name);
+    }
+    else {
+      m_coord_field = try_to_find_coord_field(*this);
+      if (m_coord_field != nullptr) {
+        m_coord_field_name = m_coord_field->name();
+      }
+    }
+  }
+
+  ThrowErrorMsgIf( m_coord_field == nullptr,
                    "MetaData::coordinate_field: Coordinate field has not been defined" );
 
   return m_coord_field;
