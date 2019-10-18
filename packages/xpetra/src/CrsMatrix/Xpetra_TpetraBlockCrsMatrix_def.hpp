@@ -576,19 +576,6 @@ namespace Xpetra {
         mtx_->setObjectLabel(objectLabel);
     }
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    //! Deep copy constructor
-    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix)
-    //  : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode())) 
-    { 
-        // This won't compile because there is no Tpetra::BlockCrsMatrix::clone() 
-        // so just throwing an error... it'll go away anyhow with deprecations.
-        // But seriously, pre ETI how did this ever actually compile!?
-        throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function is deprecated.");
-    }
-#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1117,16 +1104,6 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     {}
 
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    // INST_INT_INT specialization variant
-    template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
-    XPETRA_DEPRECATED 
-    clone(const RCP<Node2> &node2) const 
-    { 
-      return Teuchos::null; 
-    }
-#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
 
@@ -1465,16 +1442,6 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     {}
 
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    // INST_INT_LONG_LONG specialization variation
-    template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
-    XPETRA_DEPRECATED 
-    clone(const RCP<Node2> &node2) const 
-    { 
-      return Teuchos::null; 
-    }
-#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
 

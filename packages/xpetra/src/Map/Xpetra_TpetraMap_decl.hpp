@@ -206,14 +206,7 @@ namespace Xpetra {
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > removeEmptyProcesses () const;
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const {
-      return toXpetraNonConst(map_->clone(node2));
-    }
-#endif
-
-    //@}
+//@}
 
     //! @name Xpetra specific
     //@{

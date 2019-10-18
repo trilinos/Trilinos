@@ -451,25 +451,7 @@ namespace Xpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getCrsMatrix() const {  return matrixData_; }
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template <class Node2>
-  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const {
-#ifdef HAVE_XPETRA_TPETRA
-    RCP<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tMatrix =
-        Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrixData_);
-    if (tMatrix == Teuchos::null)
-      throw Xpetra::Exceptions::RuntimeError("clone() functionality is only available for Tpetra");
-
-    return RCP<CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(tMatrix->clone(node2)));
-    // TODO: inherit strided maps/views ?
-#else
-    return Teuchos::null;
-#endif
-  }
-#endif
-
-  // Default view is created after fillComplete()
+// Default view is created after fillComplete()
   // Because ColMap might not be available before fillComplete().
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CreateDefaultView() {

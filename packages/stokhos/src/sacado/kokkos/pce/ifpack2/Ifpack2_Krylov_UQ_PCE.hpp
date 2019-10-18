@@ -51,20 +51,4 @@
 // Ifpack2 includes
 #include "Ifpack2_Krylov.hpp"
 
-#ifdef HAVE_IFPACK2_DEPRECATED_CODE
-
-namespace Ifpack2 {
-namespace DeprecatedAndMayDisappearAtAnyTime {
-
-  //! Specialization of BelosScalarType to PCE types
-  template <typename S>
-  struct BelosScalarType< Sacado::UQ::PCE<S> > {
-    typedef typename S::value_type type;
-  };
-
-}
-}
-
-#endif
-
 #endif // IFPACK2_KRYLOV_MP_VECTOR_HPP

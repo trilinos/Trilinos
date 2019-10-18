@@ -333,14 +333,6 @@ namespace Xpetra {
     void setObjectLabel( const std::string &objectLabel );
 
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    //! Deep copy constructor
-    // This probably never compiled but also never got called... 
-    // We're leaving this in the decl file for now as part of the ETI work
-    // just to maintain status-quo but it'll go away anyhow with deprecations
-    // soon.
-    TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix);
-#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices 
@@ -388,16 +380,6 @@ namespace Xpetra {
     void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);    
 
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
-    XPETRA_DEPRECATED 
-    clone(const RCP<Node2> &node2) const
-    {
-      return RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
-        (new TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(mtx_->clone(node2)));
-    }
-#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
 
