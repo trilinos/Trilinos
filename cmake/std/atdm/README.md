@@ -1314,35 +1314,41 @@ IF (Trilinos_ENABLE_DEBUG)
   ...
 ENDIF()
 
-IF (ATDM_NODE_TYPE STREQUAL "CUDA")
+IF (ATDM_COMPILER STREQUAL "GNU-7.2.0")  # See <system_name>/enviornment.sh
+  # Disables for all non-CUDA GNU 7.2.0 builds
+  ...
+ENDIF()
 
+IF (ATDM_NODE_TYPE STREQUAL "SERIAL")
+  # Disable tests for all SERIAL builds for this system
+  ...
+ELSEIF (ATDM_NODE_TYPE STREQUAL "OPENMP")
+  # Disable tests for all OpenMP builds for this system
+  ...
+ELEIF (ATDM_NODE_TYPE STREQUAL "CUDA")
   # Disable tests for all CUDA builds for this system
   ...
-
   IF (Trilinos_ENABLE_DEBUG)
     # Disable tests for all CUDA debug builds for this system
     ...
   ENDIF()
-
   IF (ATDM_CUDA_RDC and Trilinos_ENABLE_DEBUG)
     # Disable tests for all CUDA, RDC, debug builds for this system
     ...
   ENDIF()
-
 ENDIF()
 ```
 
-Any variable that has been set in the `ATDMDevEnvSettings.cmake` file before
-these tweak files are included can be used in logic in these files.  But the
-recommended variables to include in if-logic include the CMake variables
-`ATDM_COMPILER` (uppercase), `ATDM_KOKKOS_ARCH_JOB_NAME_KEYS` (uppercase
-seprated by `_`), `ATDM_NODE_TYPE` (values `CUDA`, `OPENMP`, `SERIAL`),
-`ATDM_CUDA_RDC` (`ON`/`OFF`), `ATDM_FPIC` (`ON`/`OFF`), `ATDM_COMPLEX`
-(`ON`/`OFF`), `ATDM_SHARED_LIBS` (`ON`/`OFF`), `ATDM_CMAKE_BUILD_TYPE` (values
-`DEBUG`, `RELEASE`, and `RELEASE-DEBUG`), `Trilinos_ENABLE_DEBUG`
-(`ON`/`OFF`), and `ATDM_PT_PACKAGES (`ON`/`OFF`)`.  No other variables should
-be used in if-logic in these files as those variables may change in the
-future.
+Any CMake variable that has been set in the `ATDMDevEnvSettings.cmake` file
+before these tweak files are included can be used in if-logic but the
+recommended variables are `ATDM_COMPILER` (uppercase),
+`ATDM_KOKKOS_ARCH_JOB_NAME_KEYS` (uppercase seprated by `_`), `ATDM_NODE_TYPE`
+(values `CUDA`, `OPENMP`, `SERIAL`), `ATDM_CUDA_RDC` (`ON`/`OFF`), `ATDM_FPIC`
+(`ON`/`OFF`), `ATDM_COMPLEX` (`ON`/`OFF`), `ATDM_SHARED_LIBS` (`ON`/`OFF`),
+`ATDM_CMAKE_BUILD_TYPE` (values `DEBUG`, `RELEASE`, and `RELEASE-DEBUG`),
+`Trilinos_ENABLE_DEBUG` (`ON`/`OFF`), and `ATDM_PT_PACKAGES` (`ON`/`OFF`).  No
+other variables should be used in if-logic in these files as other variables
+may change in the future.
 
 
 ### Disable a test for builds on all platforms
