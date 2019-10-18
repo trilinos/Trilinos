@@ -24,3 +24,8 @@ ATDM_SET_CACHE(KokkosKernels_sparse_serial_MPI_1_EXTRA_ARGS
 # Disable entire test that is timing out (or nearly timing out) at 10 minutes
 # in debug-openmp build (#3168)
 ATDM_SET_ENABLE(KokkosKernels_sparse_openmp_MPI_1_DISABLE ON)
+
+# Disable Intrepid2 tests that started timing out when
+# Trilinos_ENABLE_DEBUG=ON was set (#6020)
+ATDM_SET_ENABLE(Intrepid2_unit-test_Projection_Serial_Test_Convergence_TET_MPI_1_DISABLE ON)
+ATDM_SET_ENABLE(Intrepid2_unit-test_Projection_Serial_Test_InterpolationProjection_HEX_MPI_1_DISABLE ON)
