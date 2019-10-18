@@ -138,9 +138,10 @@ public:
 		<< A->getNumEntriesInLocalRow(i) << std::endl;
     }
     */
+    paramList->set("Nullspace", m_inNullspace);
+    paramList->set("Coordinates", m_inCoords);
     m_mueLuPreconditioner = 
-      MueLu::CreateTpetraPreconditioner((RCP<Operator>)A, *paramList, 
-					m_inCoords, m_inNullspace);
+      MueLu::CreateTpetraPreconditioner((RCP<Operator>)A, *paramList);
     m_rhsVec = rcp( new MV(rowMap, 1) );
     m_solVec = rcp( new MV(rowMap, 1) );
     return 0;
