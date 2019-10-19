@@ -1265,19 +1265,7 @@ protected:
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-
-    //typedef Teuchos::ScalarTraits<Scalar> ST;
-    const Scalar one = ST::one();
     const Scalar zero = ST::zero();
-    //const Scalar onehalf = one/(2*one);
-    //const Scalar onefourth = one/(4*one);
-    //const Scalar onesixth = one/(6*one);
-    //const Scalar foursixth = 4*one/(6*one);
-
-    //int NumStages = 3;
-    //Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
-    //Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
-    //Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
 
     // Fill A:
     A(0,0) = A(0,1) =  A(0,2) = A(0,3) = A(0,4) = zero;
@@ -1300,17 +1288,12 @@ protected:
     A(4,3) = as<Scalar>(0.544974750228520);
     A(4,4) = zero;
 
-    //A(0,0) =      zero; A(0,1) =      zero; A(0,2) = zero;
-    //A(1,0) =       one; A(1,1) =      zero; A(1,2) = zero;
-    //A(2,0) = onefourth; A(2,1) = onefourth; A(2,2) = zero;
-
     // Fill b:
     b(0) = as<Scalar>(0.146811876084786);
     b(1) = as<Scalar>(0.248482909444976);
     b(2) = as<Scalar>(0.104258830331980);
     b(3) = as<Scalar>(0.274438900901350);
     b(4) = as<Scalar>(0.226007483236908);
-    //b(0) = onesixth; b(1) = onesixth; b(2) = foursixth;
 
     // fill c:
     c(0) = zero;
@@ -1318,9 +1301,6 @@ protected:
     c(2) = A(2,0) + A(2,1);
     c(3) = A(3,0) + A(3,1) + A(3,1);
     c(4) = A(4,0) + A(4,1) + A(4,2) + A(4,3);
-    //c(0) = zero; c(1) = one; c(2) = onehalf;
-
-    //int order = 3;
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
@@ -2784,7 +2764,6 @@ protected:
 
     const Scalar one      = ST::one();
     const Scalar zero     = ST::zero();
-    const Scalar onethird = one/(3*one);
     const Scalar onehalf = one/(2*one);
     const Scalar rootthree = std::sqrt(3);
 

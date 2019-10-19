@@ -795,9 +795,11 @@ public:
   Teuchos::RCP<StepperERK_3Stage3rdOrderTVD<Scalar> >
   createStepperERK_3Stage3rdOrderTVD(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL,
+    const std::string stepperType)
   {
     auto stepper = Teuchos::rcp(new StepperERK_3Stage3rdOrderTVD<Scalar>());
+    stepper->setStepperType(stepperType);
     setStepperRKValues(stepper, stepperPL);
 
     if (model != Teuchos::null) {
@@ -1311,7 +1313,7 @@ private:
       return createStepperERK_3Stage3rdOrder(model, stepperPL);
     else if (stepperType == "RK Explicit 3 Stage 3rd order TVD" ||
              stepperType == "SSPERK33")
-      return createStepperERK_3Stage3rdOrderTVD(model, stepperPL);
+      return createStepperERK_3Stage3rdOrderTVD(model, stepperPL, stepperType);
     else if (stepperType == "RK Explicit 3 Stage 3rd order by Heun" )
       return createStepperERK_3Stage3rdOrderHeun(model, stepperPL);
     else if (stepperType == "RK Explicit Midpoint" )
@@ -1412,6 +1414,8 @@ private:
       << "    'RK Explicit Trapezoidal' or 'Heuns Method'\n"
       << "    'Bogacki-Shampine 3(2) Pair'\n"
       << "    'SSPERK22'\n"
+      << "    'SSPERK33'\n"
+      << "    'SSPERK54'\n"
       << "    'General ERK'\n"
       << "  Implicit Runge-Kutta Methods:\n"
       << "    'RK Backward Euler'\n"
