@@ -1028,6 +1028,25 @@ public:
     return stepper;
   }
 
+  Teuchos::RCP<StepperSDIRK_SSPDIRK33<Scalar> >
+  createStepperSDIRK_SSPDIRK33(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    auto stepper = Teuchos::rcp(new StepperSDIRK_SSPDIRK33<Scalar>());
+    setStepperDIRKValues(stepper, stepperPL);
+    //if (stepperPL != Teuchos::null)
+      //stepper->setGamma(stepperPL->get<double>("gamma", 0.2928932188134524));
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      setStepperSolverValues(stepper, stepperPL);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
 
   Teuchos::RCP<StepperSDIRK_2Stage3rdOrder<Scalar> >
   createStepperSDIRK_2Stage3rdOrder(
@@ -1318,6 +1337,8 @@ private:
       return createStepperSDIRK_SSPDIRK32(model, stepperPL);
     else if (stepperType == "SSPDIRK23" )
       return createStepperSDIRK_SSPDIRK23(model, stepperPL);
+    else if (stepperType == "SSPDIRK33" )
+      return createStepperSDIRK_SSPDIRK33(model, stepperPL);
     else if (stepperType == "SDIRK 2 Stage 3rd order" )
       return createStepperSDIRK_2Stage3rdOrder(model, stepperPL);
     else if (stepperType == "EDIRK 2 Stage 3rd order" )
