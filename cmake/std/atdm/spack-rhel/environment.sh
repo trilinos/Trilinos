@@ -26,10 +26,15 @@ function load_spack_tpl_modules() {
   module load spack-metis/5.1.0-${compiler_dash_version}
   module load spack-hdf5/1.8.21-${compiler_dash_version}-${mpi_dash_version}
   module load spack-netcdf/4.4.1-${compiler_dash_version}-${mpi_dash_version}
-  module load spack-parallel-netcdf/1.11.0-${compiler_dash_version}-${mpi_dash_version}
   module load spack-parmetis/4.0.3-${compiler_dash_version}-${mpi_dash_version}
   module load spack-cgns/snl-atdm-${compiler_dash_version}-${mpi_dash_version}
   module load spack-superlu-dist/5.4.0-${compiler_dash_version}-${mpi_dash_version}
+
+  # NOTE: Above, we don't need to explicilty load the module for
+  # sparc-parallel-netcdf because it is implicitly enabled by loading the
+  # module for spack-netcdf.  And we not want to explicitly load any modules
+  # for packages that we have not set the explicit versions on as that breaks
+  # when we upgarde spack (and spack uses a new version).
 
 }
 
