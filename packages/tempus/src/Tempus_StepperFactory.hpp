@@ -1331,7 +1331,7 @@ private:
       return createStepperDIRK_BackwardEuler(model, stepperPL);
     else if (stepperType == "SDIRK 2 Stage 2nd order" )
       return createStepperSDIRK_2Stage2ndOrder(model, stepperPL);
-    else if (stepperType == "SPDIRK22" )
+    else if (stepperType == "SSPDIRK22" )
       return createStepperSDIRK_SSPDIRK22(model, stepperPL);
     else if (stepperType == "SSPDIRK32" )
       return createStepperSDIRK_SSPDIRK32(model, stepperPL);
@@ -1411,6 +1411,7 @@ private:
       << "    'RK Explicit Midpoint'\n"
       << "    'RK Explicit Trapezoidal' or 'Heuns Method'\n"
       << "    'Bogacki-Shampine 3(2) Pair'\n"
+      << "    'SSPERK22'\n"
       << "    'General ERK'\n"
       << "  Implicit Runge-Kutta Methods:\n"
       << "    'RK Backward Euler'\n"
@@ -1424,6 +1425,10 @@ private:
       << "    'SDIRK 3 Stage 4th order'\n"
       << "    'SDIRK 5 Stage 4th order'\n"
       << "    'SDIRK 5 Stage 5th order'\n"
+      << "    'SSPDIRK22'\n"
+      << "    'SSPDIRK32'\n"
+      << "    'SSPDIRK23'\n"
+      << "    'SSPDIRK33'\n"
       << "    'SDIRK 2(1) Pair'\n"
       << "    'RK Trapezoidal Rule' or 'RK Crank-Nicolson'\n"
       << "    'General DIRK'\n"
