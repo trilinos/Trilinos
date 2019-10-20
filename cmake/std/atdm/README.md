@@ -1083,7 +1083,8 @@ contains the following files:
   arbitrary sets of packages.
 
 * **ATDMDisables.cmake**: Disables a bunch of Trilinos packages and
-  subpackages not used by ATDM application customers.  This file gets included
+  subpackages not used by ATDM application customers, disables of test suites
+  and individual tests across various builds, etc..  This file gets included
   automatically in `ATDMDevEnv.cmake` (so you don't need to list it in local
   configures of Trilinos).  But this file is also included in the outer `ctest
   -S` driver script code for ATDM builds of Trilinos which is needed for
@@ -1361,7 +1362,7 @@ one can accomplish this by adding a (conditional) `ATDM_SET_ENABLE()`
 statement for each test disable directly to the file:
 
 ```
-  Trilinos/cmake/std/atdm/ATDMDevEnvSettings.cmake
+  Trilinos/cmake/std/atdm/ATDMDisables.cmake
 ```
 
 For example, Trilinos commit [5e52db03ff](https://github.com/trilinos/Trilinos/commit/5e52db03ff33acb5b9a0be7ba7507a8bb0de6e30) added the CMake code:
@@ -1373,7 +1374,7 @@ IF (ATDM_NODE_TYPE STREQUAL "OPENMP")
 ENDIF()
 ```
 
-to the file `ATDMDevEnvSettings.cmake` to disable the test
+to the file `ATDMDisables.cmake` to disable the test
 `MueLu_UnitTestsTpetra_MPI_4` for all OpenMP builds across all platforms.
 (Note that that disable was later removed in Trilinos commit
 [62fa6663a6](https://github.com/trilinos/Trilinos/commit/62fa6663a6d5a757d786ac87752c3e2074d28414)
