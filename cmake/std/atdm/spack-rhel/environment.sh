@@ -130,8 +130,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-2.1.2" ]; then
 
 elif [ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]; then
 
+  module load spack-gcc/4.9.3  # Need to find gfortran and for llvm to find the right gcc!
   module load spack-llvm/5.0.1
-  module load spack-gcc/4.9.3  # Need to find gfortran
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
