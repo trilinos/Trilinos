@@ -68,6 +68,13 @@ IF (NOT ATDM_ENABLE_SPARC_SETTINGS)
   # at a time in an orderly fashion.
 ENDIF()
 
+# Disable MueLu for all cuda+complex builds for now since there are build
+# errors in the MueLu library that takes out everything downstream that
+# depends on MueLu (see #4599).
+IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
+  ATDM_SET_ENABLE(Trilinos_ENABLE_MueLu OFF)
+ENDIF()
+
 
 #
 # C) SE Package test disables
@@ -185,13 +192,6 @@ ENDFOREACH()
 # Issue #3638
 ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
 
-# Disable MueLu for all cuda+complex builds for now since there are build
-# errors in the MueLu library that takes out everything downstream that
-# depends on MueLu (see #4599).
-IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
-  ATDM_SET_ENABLE(Trilinos_ENABLE_MueLu OFF)
-ENDIF()
-
 # Disable Zoltan2_XpetraEpertraMatrix exec that does not build with no global
 # int instatiation (see #5411)
 ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_EXE_DISABLE ON)
@@ -213,6 +213,37 @@ ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManage
 ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_MPI_4_DISABLE ON)
 
 IF ("${ATDM_CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
+
   ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-4_DISABLE ON)
   ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedPoissonExample-ConvTest-Hex-Order-3_DISABLE ON)
+
+ENDIF()
+
+IF (ATDM_NODE_TYPE STREQUAL "CUDA")
+
+  # Disable ROL tests that don't work with CUDA builds (see #3543, #6124)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_0ld_adv-diff-react_example_01_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_0ld_adv-diff-react_example_02_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_0ld_poisson_example_01_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_0ld_stefan-boltzmann_example_03_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_navier-stokes_example_01_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_navier-stokes_example_02_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_nonlinear-elliptic_example_01_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_nonlinear-elliptic_example_02_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_obstacle_example_01_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_stefan-boltzmann_example_01_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_stefan-boltzmann_example_03_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_topo-opt_poisson_example_01_MPI_4_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_test_elementwise_TpetraMultiVector_MPI_4_DISABLE ON)
+
+  # Disable Zoltan tests (see #3749)
+  ATDM_SET_ENABLE(TrilinosCouplings_Example_Maxwell_MueLu_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(TrilinosCouplings_Example_Maxwell_MueLu_MPI_4_DISABLE ON)
+
+  # Disable Zoltan tests (see #4042)
+  ATDM_SET_ENABLE(Zoltan_ch_ewgt_zoltan_parallel_DISABLE ON)
+  ATDM_SET_ENABLE(Zoltan_ch_grid20x19_zoltan_parallel_DISABLE ON)
+  ATDM_SET_ENABLE(Zoltan_ch_nograph_zoltan_parallel_DISABLE ON)
+  ATDM_SET_ENABLE(Zoltan_ch_simple_zoltan_parallel_DISABLE ON)
+
 ENDIF()
