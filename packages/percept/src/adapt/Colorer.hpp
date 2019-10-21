@@ -26,37 +26,16 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
-#define STK_ADAPT_COLORER_STORED_ENTITYID 0
-
-#define STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR 1
-
-/// define only one of these to be 1
-#define STK_ADAPT_COLORER_SET_TYPE_BOOST 1
-
-#if STK_ADAPT_COLORER_SET_TYPE_BOOST
-#include <boost/unordered_set.hpp>
-#endif
-
+#include <unordered_set>
 
   namespace percept {
 
-#if STK_ADAPT_COLORER_STORED_ENTITYID
-    typedef stk::mesh::EntityId ColorerStoredEntity;
-#else
     typedef stk::mesh::Entity ColorerStoredEntity;
-#endif
 
-#if STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
     typedef std::vector<ColorerStoredEntity> ColorerSetType;
-#endif
 
-#if STK_ADAPT_COLORER_SET_TYPE_BOOST
-#  if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
-    typedef boost::unordered_set<ColorerStoredEntity> ColorerSetType;
-#  endif
-    typedef boost::unordered_set<stk::mesh::EntityId> ColorerNodeSetType;
-    typedef boost::unordered_set<stk::mesh::EntityId> ColorerElementSetType;
-#endif
+    typedef std::unordered_set<stk::mesh::EntityId> ColorerNodeSetType;
+    typedef std::unordered_set<stk::mesh::EntityId> ColorerElementSetType;
 
     class Colorer
     {

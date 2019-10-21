@@ -22,7 +22,7 @@
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-
+#include <stk_mesh/base/MetaData.hpp>
 
 #include <stk_mesh/base/TopologyDimensions.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
@@ -45,6 +45,7 @@
     {
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
+
       stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_c = nullptr; // gcc 4.8 hack
       stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_s = nullptr; // gcc 4.8 hack
       put_field_on_mesh( m_coordinates_field , universal, init_c);

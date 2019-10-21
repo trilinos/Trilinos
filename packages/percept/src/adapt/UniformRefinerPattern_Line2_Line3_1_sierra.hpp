@@ -72,7 +72,7 @@
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef boost::array<stk::mesh::EntityId,3> quadratic_type;
+        typedef std::array<stk::mesh::EntityId,3> quadratic_type;
         static vector<quadratic_type> elems(1);
 
         CellTopology cell_topo(cell_topo_data);

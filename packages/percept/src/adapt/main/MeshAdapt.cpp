@@ -6,6 +6,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <numeric>
 #include <sys/stat.h>
 
 #include <adapt/main/MeshAdapt.hpp>
@@ -210,7 +211,7 @@ namespace percept {
     bool isInt = false;
     {
       try {
-        i = boost::lexical_cast<int>(s);
+        i = std::stoi(s);
         (void)i;
         isInt = true;
       }
