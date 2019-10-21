@@ -162,17 +162,17 @@ public:
       // Default is identity transform.
     }
 
-#if defined(STK_HAVE_BOOST)
-    TransformHelper(const boost::array<double, 3> & trans_arg)
-      : m_transform_type(TRANSLATION)
-      , m_translation(3,0)
-    {
-        m_translation[0] = trans_arg[0];
-        m_translation[1] = trans_arg[1];
-        m_translation[2] = trans_arg[2];
-    }
-#endif
-
+//#if defined(STK_HAVE_BOOST)
+//    TransformHelper(const boost::array<double, 3> & trans_arg)
+//      : m_transform_type(TRANSLATION)
+//      , m_translation(3,0)
+//    {
+//        m_translation[0] = trans_arg[0];
+//        m_translation[1] = trans_arg[1];
+//        m_translation[2] = trans_arg[2];
+//    }
+//#endif
+//
     TransformHelper(double angle, const double axis[3])
       : m_transform_type(ROTATIONAL)
       , m_translation(3,0)
@@ -522,7 +522,7 @@ private:
         break;
     }
 
-    stk::search::coarse_search(side_1_vector, side_2_vector, stk::search::BOOST_RTREE, parallel, search_results);
+    stk::search::coarse_search(side_1_vector, side_2_vector, stk::search::KDTREE, parallel, search_results);
 
     m_search_results.insert(m_search_results.end(), search_results.begin(), search_results.end());
   }

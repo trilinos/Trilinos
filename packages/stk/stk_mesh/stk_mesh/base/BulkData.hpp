@@ -626,6 +626,7 @@ public:
 
   // Comm-related convenience methods
 
+  bool is_communicated_with_proc(Entity entity, int proc) const;
   void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
   void comm_procs( const Ghosting & ghost , EntityKey key, std::vector<int> & procs ) const;
   void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const;
@@ -1036,14 +1037,19 @@ protected: //functions
   void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank,
                                       const stk::mesh::Selector *only_consider_second_element_from_this_selector); // Mod Mark
 
-  void internal_resolve_shared_modify_delete(stk::mesh::EntityVector & entitiesNoLongerShared) // Mod Mark
+  void internal_resolve_shared_modify_delete(stk::mesh::EntityVector & entitiesNoLongerShared)
   {
       m_meshModification.internal_resolve_shared_modify_delete(entitiesNoLongerShared);
   }
 
+  void filter_upward_ghost_relations(const Entity entity, std::function<void(Entity)> filter);
+  EntityVector get_upward_send_ghost_relations(const Entity entity);
+  EntityVector get_upward_recv_ghost_relations(const Entity entity);
+  void add_entity_to_same_ghosting(Entity entity, Entity connectedGhost);
   void update_comm_list_based_on_changes_in_comm_map();
 
-  void internal_resolve_ghosted_modify_delete(); // Mod Mark
+  void internal_resolve_formerly_shared_entities(const stk::mesh::EntityVector& entitiesNoLongerShared);
+  void internal_resolve_ghosted_modify_delete(const stk::mesh::EntityVector& entitiesNoLongerShared);
   void internal_resolve_shared_part_membership_for_element_death(); // Mod Mark
 
   void remove_unneeded_induced_parts(stk::mesh::Entity entity, const EntityCommInfoVector& entity_comm_info,

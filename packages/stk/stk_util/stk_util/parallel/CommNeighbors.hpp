@@ -74,6 +74,10 @@
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
 
+#ifdef STK_DISABLE_MPI_NEIGHBOR_COMM
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+
 #endif
 
 //------------------------------------------------------------------------
