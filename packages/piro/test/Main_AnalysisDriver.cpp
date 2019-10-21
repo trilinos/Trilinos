@@ -57,6 +57,10 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 
 #include "Piro_ConfigDefs.hpp"
+#ifdef HAVE_PIRO_OPTIPACK
+#include "OptiPack_Config.h"
+#endif
+
 
 int main(int argc, char *argv[]) {
 
