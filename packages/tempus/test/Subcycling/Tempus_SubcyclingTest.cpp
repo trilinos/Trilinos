@@ -515,9 +515,7 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     if ((n == 0) or (n == nTimeStepSizes-1)) {
       std::string fname = "Tempus_Subcycling_VanDerPol-Ref.dat";
       if (n == 0) fname = "Tempus_Subcycling_VanDerPol.dat";
-      RCP<const SolutionHistory<double> > solutionHistory =
-        integrator->getSolutionHistory();
-      writeSolution(fname, solutionHistory);
+      writeSolution(fname, integrator->getSolutionHistory());
       //solutionHistory->printHistory("medium");
     }
   }
