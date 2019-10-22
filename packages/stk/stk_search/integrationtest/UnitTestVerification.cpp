@@ -64,19 +64,6 @@ int numProcessors()
     return stk::parallel_machine_size(comm);
 }
 
-TEST(Verification, OverlappingSpheres_BOOST_RTREE)
-{
-    if (numProcessors() > 1) {
-        return;
-    }
-
-    double distanceBetweenSphereCenters = 0.5;
-    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
-    runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
-
-    ASSERT_EQ(1u, boxIdPairResults.size());
-}
-
 TEST(Verification, OverlappingSpheres_KDTREE)
 {
     if (numProcessors() > 1) {
@@ -90,15 +77,6 @@ TEST(Verification, OverlappingSpheres_KDTREE)
     ASSERT_EQ(1u, boxIdPairResults.size());
 }
 
-TEST(Verification, NonOverlappingSpheres_BOOST_RTREE)
-{
-    double distanceBetweenSphereCenters = 2.0;
-    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
-    runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
-
-    ASSERT_EQ(0u, boxIdPairResults.size());
-}
-
 TEST(Verification, NonOverlappingSpheres_KDTREE)
 {
     double distanceBetweenSphereCenters = 2.0;
@@ -106,19 +84,6 @@ TEST(Verification, NonOverlappingSpheres_KDTREE)
     runTwoSpheresTest(stk::search::KDTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(0u, boxIdPairResults.size());
-}
-
-TEST(Verification, JustEdgeOverlappingSpheres_BOOST_RTREE)
-{
-    if (numProcessors() > 1) {
-        return;
-    }
-
-    double distanceBetweenSphereCenters = 0.999999999;
-    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
-    runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
-
-    ASSERT_EQ(1u, boxIdPairResults.size());
 }
 
 TEST(Verification, JustEdgeOverlappingSpheres_KDTREE)
@@ -132,15 +97,6 @@ TEST(Verification, JustEdgeOverlappingSpheres_KDTREE)
     runTwoSpheresTest(stk::search::KDTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(1u, boxIdPairResults.size());
-}
-
-TEST(Verification, NotQuiteEdgeOverlappingSpheres_BOOST_RTREE)
-{
-    double distanceBetweenSphereCenters = 1.0000000001;
-    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
-    runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
-
-    ASSERT_EQ(0u, boxIdPairResults.size());
 }
 
 TEST(Verification, NotQuiteEdgeOverlappingSpheres_KDTREE)
@@ -195,39 +151,11 @@ void runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMethod searchMeth
     }
 }
 
-TEST(Verification, SphereOverlappingEightSurroundingSpheres_BOOST_RTREE)
-{
-    const double radius = 0.708;
-    const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::BOOST_RTREE, radius, numExpectedResults);
-}
-
 TEST(Verification, SphereOverlappingEightSurroundingSpheres_KDTREE)
 {
     const double radius = 0.708;
     const unsigned numExpectedResults = 8;
     runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::KDTREE, radius, numExpectedResults);
-}
-
-TEST(Verification, SphereOverlappingNoSurroundingPoints_BOOST_RTREE)
-{
-    const double radius = 0.99;
-    const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
-}
-
-TEST(Verification, SphereOverlappingFourSurroundingPoints_BOOST_RTREE)
-{
-    const double radius = 1.41;
-    const unsigned numExpectedResults = 4;
-    runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
-}
-
-TEST(Verification, SphereOverlappingEightSurroundingPoints_BOOST_RTREE)
-{
-    const double radius = 1.42;
-    const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, SphereOverlappingNoSurroundingPoints_KDTREE)
@@ -251,25 +179,11 @@ TEST(Verification, SphereOverlappingEightSurroundingPoints_KDTREE)
     runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::KDTREE, radius, numExpectedResults);
 }
 
-TEST(Verification, SphereOverlappingFourOfEightSurroundingSpheres_BOOST_RTREE)
-{
-    const double radius = 0.706;
-    const unsigned numExpectedResults = 4;
-    runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::BOOST_RTREE, radius, numExpectedResults);
-}
-
 TEST(Verification, SphereOverlappingFourOfEightSurroundingSpheres_KDTREE)
 {
     const double radius = 0.706;
     const unsigned numExpectedResults = 4;
     runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::KDTREE, radius, numExpectedResults);
-}
-
-TEST(Verification, BoxOverlappingNoSurroundingPoints_BOOST_RTREE)
-{
-    const double radius = 0.99;
-    const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, BoxOverlappingNoSurroundingPoints_KDTREE)
@@ -279,32 +193,11 @@ TEST(Verification, BoxOverlappingNoSurroundingPoints_KDTREE)
     runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::KDTREE, radius, numExpectedResults);
 }
 
-TEST(Verification, BoxOverlappingEightSurroundingPoints_BOOST_RTREE)
-{
-    const double radius = 1.01;
-    const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
-}
-
 TEST(Verification, BoxOverlappingEightSurroundingPoints_KDTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
     runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::KDTREE, radius, numExpectedResults);
-}
-
-TEST(Verification, PointOverlappingNoSurroundingBoxes_BOOST_RTREE)
-{
-    const double radius = 0.99;
-    const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
-}
-
-TEST(Verification, PointOverlappingEightSurroundingBoxes_BOOST_RTREE)
-{
-    const double radius = 1.01;
-    const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, PointOverlappingNoSurroundingBoxes_KDTREE)
@@ -387,29 +280,14 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
     ASSERT_EQ(numExpectedResults, boxIdPairResults.size()) << "on proc id " << procId;
 }
 
-TEST(Verification, LineOfSpheres_BOOST_RTREE)
-{
-    runLineOfBoundingBoxes<Sphere>(stk::search::BOOST_RTREE, xDim);
-}
-
 TEST(Verification, LineOfSpheres_KDTREE)
 {
     runLineOfBoundingBoxes<Sphere>(stk::search::KDTREE, xDim);
 }
 
-TEST(Verification, LineOfBoxes_BOOST_RTREE)
-{
-    runLineOfBoundingBoxes<StkBox>(stk::search::BOOST_RTREE, yDim);
-}
-
 TEST(Verification, LineOfBoxes_KDTREE)
 {
     runLineOfBoundingBoxes<StkBox>(stk::search::KDTREE, yDim);
-}
-
-TEST(Verification, LineOfSpheresZDimension_BOOST_RTREE)
-{
-    runLineOfBoundingBoxes<Sphere>(stk::search::BOOST_RTREE, zDim);
 }
 
 TEST(Verification, LineOfSpheresZDimension_KDTREE)

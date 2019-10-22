@@ -92,7 +92,7 @@ void write_metrics_for_overlapping_BB(int myId, const stk::balance::internal::Bo
     stk::balance::internal::BoxVectorWithStkId local_range = local_domain;
 
     stk::balance::internal::StkSearchResults searchResults;
-    stk::search::coarse_search(local_domain, local_range, stk::search::BOOST_RTREE, MPI_COMM_WORLD, searchResults);
+    stk::search::coarse_search(local_domain, local_range, stk::search::KDTREE, MPI_COMM_WORLD, searchResults);
 
     std::ostringstream os;
     double dx = coordMaxOnProc[0] - coordMinOnProc[0];
@@ -350,7 +350,7 @@ void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weigh
 
         stk::balance::internal::StkSearchResults searchResults;
         try {
-            stk::search::coarse_search(local_domain, local_range, stk::search::BOOST_RTREE, MPI_COMM_WORLD, searchResults);
+            stk::search::coarse_search(local_domain, local_range, stk::search::KDTREE, MPI_COMM_WORLD, searchResults);
         }
         catch(std::exception& e)
         {

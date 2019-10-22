@@ -42,7 +42,7 @@ namespace
 typedef stk::search::Box<double> Box;
 typedef stk::search::IdentProc<int, int> Id;
 void assertPairInResults(Id a, Id b, const std::vector<std::pair<Id, Id> > &searchResults);
-TEST(StkSearchHowTo, useBoostRtreeSearch)
+TEST(StkSearchHowTo, useKdtreeSearch)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int myProcId = stk::parallel_machine_rank(comm);
@@ -54,7 +54,7 @@ TEST(StkSearchHowTo, useBoostRtreeSearch)
     secondList.push_back(std::make_pair(unitBox, secondId));
 
     std::vector<std::pair<Id, Id> > searchResults;
-    stk::search::coarse_search(firstList, secondList, stk::search::BOOST_RTREE, comm, searchResults);
+    stk::search::coarse_search(firstList, secondList, stk::search::KDTREE, comm, searchResults);
 
     int numProc = stk::parallel_machine_size(comm);
     for(int procId = 0; procId < numProc; procId++)
@@ -79,7 +79,7 @@ TEST(StkSearchHowTo, useSphereAndPointBoundingVolumes)
     secondList.push_back(std::make_pair(point, secondId));
 
     std::vector<std::pair<Id, Id> > searchResults;
-    stk::search::coarse_search(firstList, secondList, stk::search::BOOST_RTREE, comm, searchResults);
+    stk::search::coarse_search(firstList, secondList, stk::search::KDTREE, comm, searchResults);
 
     int numProc = stk::parallel_machine_size(comm);
     for(int procId = 0; procId < numProc; procId++)

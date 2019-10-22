@@ -102,7 +102,7 @@ public :
                     const std::string &name,
                     stk::ParallelMachine pm,
                     const double expansion_factor = 1.5,
-                    const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE);
+                    const stk::search::SearchMethod search_method = stk::search::KDTREE);
   virtual ~ReducedDependencyGeometricTransfer(){};
   void coarse_search() override;
   void communication() override;
