@@ -36,10 +36,34 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     Driver
     SOURCES Driver.cpp
     COMM serial mpi
+    CATEGORIES BASIC PERFORMANCE
     )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME SetupSolve_Performance_1
+    COMM mpi
+    ARGS "--stacked-timer --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Belos converged"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME SetupSolve_Performance_4
+    COMM mpi
+    ARGS "--stacked-timer --nx=240 --ny=240 --nz=120 --matrixType=Laplace3D"
+    NUM_MPI_PROCS 4
+    PASS_REGULAR_EXPRESSION "Belos converged"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
     SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml
+    CATEGORIES BASIC PERFORMANCE
    )
 
  TRIBITS_ADD_EXECUTABLE(
@@ -64,7 +88,30 @@ TRIBITS_ADD_EXECUTABLE(
   MatrixMatrixMultiply
   SOURCES MatrixMatrixMultiply.cpp
   COMM mpi
+  CATEGORIES BASIC PERFORMANCE
   )
+
+TRIBITS_ADD_TEST(
+  MatrixMatrixMultiply
+  NAME MatrixMultiply_Performance_1
+  COMM mpi
+  ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES PERFORMANCE
+)
+
+TRIBITS_ADD_TEST(
+  MatrixMatrixMultiply
+  NAME MatrixMultiply_Performance_4
+  COMM mpi
+  ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES PERFORMANCE
+)
 
 # not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
 IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)

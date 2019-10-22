@@ -73,8 +73,10 @@ SET(CTEST_TEST_TYPE Experimental)
 SET(Trilinos_TRACK  Experimental)  # Set the CDash track to Nightly
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
-
-SET(Trilinos_PACKAGES Tpetra)
+SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES FALSE)
+SET(Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES TRUE)
+SET(Trilinos_PACKAGES "Tpetra;Galeri;MueLu")
+SET(Trilinos_EXCLUDE_PACKAGES "Sacado;RTOp;Stratimikos;Shards;TrilinosSS;Epetra")
 
 # If true, this option yields faster builds. In that case, however, it won't disable any upstream package that fails to compile.
 SET(Trilinos_CTEST_DO_ALL_AT_ONCE TRUE)
@@ -82,8 +84,12 @@ SET(Trilinos_CTEST_DO_ALL_AT_ONCE TRUE)
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
   "-DTrilinos_TEST_CATEGORIES:STRING=PERFORMANCE"
-  "-DMPI_EXEC_MAX_NUMPROCS=36"
-  "-DMPI_EXEC_DEFAULT_NUMPROCS=36"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
+  "-DXpetra_ENABLE_Experimental:BOOL=ON"
+  "-DMueLu_ENABLE_Experimental:BOOL=ON"
+  "-DMueLu_ENABLE_TESTS=ON"
+  "-DMPI_EXEC_MAX_NUMPROCS=28"
+  "-DMPI_EXEC_DEFAULT_NUMPROCS=28"
 )
 
 #
