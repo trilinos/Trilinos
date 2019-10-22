@@ -714,7 +714,16 @@ namespace MueLu {
 
             LO nnz = indices.size(), rownnz = 0;
             if (threshold != STS::zero()) {
+              // DJS: Let's pre compute aij - aiiajj for all entries in the column,
+              // and store in vector of std::pairs<colID,aij-aiijj> and then 
+              // sort them on aij-aiijj, which will give us the split points.  Grab a random number,
+              // pick the split from that and then drop all of the stuff which is past the split.
+              // NOTE: We want to drop all values below the split and keep all values above it.
+              // NOTE: Please always keep the diagonal :)
+              // For Monte Carlo: We also need some means of RNG seed control.  Add an RNG seed option to Trilinos Couplings example and then
+              //      use that RNG here.
               for (LO colID = 0; colID < nnz; colID++) {
+
                 LO col = indices[colID];
 
                 if (row == col) {
