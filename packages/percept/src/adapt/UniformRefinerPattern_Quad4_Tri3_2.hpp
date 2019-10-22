@@ -66,7 +66,7 @@
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
+        typedef std::array<stk::mesh::EntityId, 3> tri_tuple_type;
         static vector<tri_tuple_type> elems(2);
 
         CellTopology cell_topo(cell_topo_data);
@@ -91,8 +91,8 @@
             }
 
           unsigned istart = indxMinVal;
-          elems[0] = tri_tuple_type(VERT_N((0 + istart) % 4), VERT_N((1 + istart) % 4), VERT_N((2 + istart) % 4));
-          elems[1] = tri_tuple_type(VERT_N((0 + istart) % 4), VERT_N((2 + istart) % 4), VERT_N((3 + istart) % 4));
+          elems[0] = {VERT_N((0 + istart) % 4), VERT_N((1 + istart) % 4), VERT_N((2 + istart) % 4)};
+          elems[1] = {VERT_N((0 + istart) % 4), VERT_N((2 + istart) % 4), VERT_N((3 + istart) % 4)};
         }
 
         bool use_declare_element_side = UniformRefinerPatternBase::USE_DECLARE_ELEMENT_SIDE &&  m_primaryEntityRank == eMesh.side_rank();
@@ -105,9 +105,9 @@
 
             // 3 nodes of the new quads
             stk::mesh::Entity nodes[3] = {
-              eMesh.createOrGetNode(elems[ielem].get<0>()),
-              eMesh.createOrGetNode(elems[ielem].get<1>()),
-              eMesh.createOrGetNode(elems[ielem].get<2>()) };
+              eMesh.createOrGetNode(elems[ielem][0]),
+              eMesh.createOrGetNode(elems[ielem][1]),
+              eMesh.createOrGetNode(elems[ielem][2]) };
 
             create_side_element(eMesh, use_declare_element_side, nodes, 3, newElement);
 

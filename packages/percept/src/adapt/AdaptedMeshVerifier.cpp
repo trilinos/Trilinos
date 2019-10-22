@@ -315,12 +315,12 @@ namespace percept
     std::string stol = eMesh.getProperty("AdaptedMeshVerifier::checkParentChildVol::edgeTol");
     if (stol.length())
       {
-        edgeTol = boost::lexical_cast<double>(stol);
+        edgeTol = std::stod(stol);
       }
     stol = eMesh.getProperty("AdaptedMeshVerifier::checkParentChildVol::volumeTol");
     if (stol.length())
       {
-        volumeTol = boost::lexical_cast<double>(stol);
+        volumeTol = std::stod(stol);
       }
     bool badVol = false;
     bool badNode = false;

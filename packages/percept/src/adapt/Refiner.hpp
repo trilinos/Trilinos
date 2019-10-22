@@ -26,9 +26,6 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 
-#include <boost/tuple/tuple_io.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
-
 #include <percept/stk_mesh.hpp>
 #include <percept/ProgressMeter.hpp>
 #include <adapt/UniformRefinerPattern.hpp>

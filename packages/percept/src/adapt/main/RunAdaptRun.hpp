@@ -16,7 +16,9 @@
 #include <sstream>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <set>
+#include <sstream>
 
 #if HAVE_YAML
 #include <percept/YamlUtils.hpp>
@@ -96,7 +98,7 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
                                  ErrorFieldType * error_field_no_ft, ErrorFieldType * error_field)
 {
 #if STK_PERCEPT_LITE==0
-  boost::shared_ptr<STKMeshTransfer> mesh_transfer =
+  std::shared_ptr<STKMeshTransfer> mesh_transfer =
     buildSTKMeshTransfer<STKMeshTransfer>(*(eMesh_no_ft.get_bulk_data()),
 			 eMesh_no_ft.get_coordinates_field(),
 			 error_field_no_ft,
@@ -286,6 +288,7 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
               YamlUtils::emit(fout, node);
             }
         }
+
     }
 #endif
   private:
@@ -613,6 +616,7 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
           &eMesh_error.get_fem_meta_data()->declare_field<ErrorFieldType>(stk::topology::ELEMENT_RANK, rar.m_error_indicator_field);
         stk::mesh::FieldTraits<ErrorFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
         stk::mesh::put_field_on_mesh( *from_error_field , eMesh_error.get_fem_meta_data()->universal_part(), 1, init_np);
+
         eMesh_error.add_input_field(from_error_field);
 
         eMesh_error.commit();
@@ -668,7 +672,7 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
           if (part->primary_entity_rank() != stk::topology::ELEMENT_RANK
               || stk::mesh::is_auto_declared_part(*part)) continue;
 
-          stk::topology stk_topo = stk::mesh::get_topology(eMesh.get_fem_meta_data()->get_cell_topology(*part));
+          stk::topology stk_topo = eMesh.get_fem_meta_data()->get_topology(*part);
 
           if (stk_topo == stk::topology::WEDGE_6) {
             rar.m_wedge_block_names.push_back(part->name());

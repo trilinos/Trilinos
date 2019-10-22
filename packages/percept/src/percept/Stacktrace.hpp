@@ -17,10 +17,9 @@
 #include <cxxabi.h>
 #endif
 
-#include <boost/lexical_cast.hpp>
-
 #include <string>
 #include <iostream>
+#include <sstream>
 
 namespace percept {
 
@@ -39,8 +38,6 @@ namespace percept {
 #else
 #  define STACKTRACE_POS() do { } while(0)
 #endif
-  //#define STACKTRACE_POS_I(i) do { Stacktrace::s_position = i + boost::lexical_cast<int>(__LINE__); } while(0)
-  //#define STACKTRACE_POS() STACKTRACE_POS_I(0)
 
 class Stacktrace {
 public:

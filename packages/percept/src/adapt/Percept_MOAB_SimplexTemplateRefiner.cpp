@@ -17,8 +17,6 @@
 #include <string>
 #include <stdexcept>
 
-#include <boost/lexical_cast.hpp>
-
 #include <adapt/Percept_MOAB_SimplexTemplateRefiner.hpp>
 
 #include <percept/Util.hpp>
@@ -39,13 +37,11 @@ static double MBTetParametric[]    = { 0., 0., 0.,   1., 0., 0.,   0., 1., 0.,  
 #  define MB_TESSELLATOR_INCR_SUBCASE_COUNT(cs,sc)
 #endif // MB_DEBUG_TESSELLATOR
 
-#define PERCEPT_DEBUG 0
-
 namespace moab {
 
   static void error(int i)
   {
-    std::string ii =  "Percept_MOAB_SimplexTemplateRefiner:: err # "+ boost::lexical_cast<std::string>(i);
+    std::string ii =  "Percept_MOAB_SimplexTemplateRefiner:: err # "+ std::to_string(i);
     throw std::logic_error("test");
   }
 
@@ -220,9 +216,6 @@ namespace moab {
     //  edge_length2[ei] = 0.;
 
 
-    if (PERCEPT_DEBUG)
-      std::cout << "tmp PM edge_code= " << edge_code << std::endl;
-
     if ( ! edge_code )
       {
         // No edges to subdivide
@@ -278,9 +271,6 @@ namespace moab {
     double permlen[6]; // permuted edge lengths
     int C = SimplexTemplateRefiner::template_index[edge_code][0];
     int P = SimplexTemplateRefiner::template_index[edge_code][1];
-
-    if (PERCEPT_DEBUG)
-      std::cout << "tmp PM C,P= " << C << " " << P << std::endl;
 
     // 1. Permute the tetrahedron into our canonical configuration
     for ( int i = 0; i < 14; ++ i )
@@ -1523,8 +1513,6 @@ namespace moab {
         output_perm.pop();
         output_sign.pop();
 
-        if (PERCEPT_DEBUG)
-          std::cout << "tmp PM case= " << C << " edge_code= " << edge_code << " ntets= " << ntets << std::endl;
         int t;
         if ( sgn > 0 )
           {
@@ -1538,15 +1526,12 @@ namespace moab {
                                         permuted_coords[perm[tets[3]]], permuted_tags[perm[tets[3]]], permuted_hash[perm[tets[3]]]
                                         );
 #endif
-                TetTupleInt nt = TetTupleInt(permuted_local_ids[perm[tets[0]]],
-                                             permuted_local_ids[perm[tets[1]]],
-                                             permuted_local_ids[perm[tets[2]]],
-                                             permuted_local_ids[perm[tets[3]]]);
+                TetTupleInt nt = {permuted_local_ids[perm[tets[0]]],
+                                  permuted_local_ids[perm[tets[1]]],
+                                  permuted_local_ids[perm[tets[2]]],
+                                  permuted_local_ids[perm[tets[3]]]};
 
                 new_tets.push_back(nt);
-
-                if (PERCEPT_DEBUG)
-                  std::cout << "tmp PM new tet= " << nt << std::endl;
 
                 tets += 4;
               }
@@ -1565,16 +1550,13 @@ namespace moab {
                                         permuted_coords[perm[tets[3]]], permuted_tags[perm[tets[3]]], permuted_hash[perm[tets[3]]]
                                         );
 #endif
-                TetTupleInt nt = TetTupleInt(permuted_local_ids[perm[tets[1]]],
-                                             permuted_local_ids[perm[tets[0]]],
-                                             permuted_local_ids[perm[tets[2]]],
-                                             permuted_local_ids[perm[tets[3]]]);
+                TetTupleInt nt = {permuted_local_ids[perm[tets[1]]],
+                                  permuted_local_ids[perm[tets[0]]],
+                                  permuted_local_ids[perm[tets[2]]],
+                                  permuted_local_ids[perm[tets[3]]]};
 
                 new_tets.push_back(nt);
 
-
-                if (PERCEPT_DEBUG)
-                  std::cout << "tmp PM new tet= " << nt << std::endl;
 
                 tets += 4;
               }

@@ -25,7 +25,7 @@ namespace percept
   typedef stk::transfer::GeometricTransfer< class LinInterp< class GPFromMesh, class GPToMesh > > GPSTKMeshTransfer;
 
   inline
-  boost::shared_ptr<GPSTKMeshTransfer>
+  std::shared_ptr<GPSTKMeshTransfer>
   buildGPSTKMeshTransfer(PerceptMesh& fromMesh,
                        const stk::mesh::PartVector& fromParts,
                        const std::vector<stk::mesh::FieldBase *>& fromFields,
@@ -45,17 +45,17 @@ namespace percept
       transferType = TWOD_AXI_TO_THREED;
     }
 
-    boost::shared_ptr<GPFromMesh >
+    std::shared_ptr<GPFromMesh >
       from_mesh (new GPFromMesh(fromMesh, fromParts, fromFields));
 
-    boost::shared_ptr<GPToMesh >
+    std::shared_ptr<GPToMesh >
       to_mesh (new GPToMesh(toMesh, toParts, toFields, transferType));
 
 #if 0
-    boost::shared_ptr<GPSTKMeshTransfer>
+    std::shared_ptr<GPSTKMeshTransfer>
       mesh_transfer(new GPSTKMeshTransfer(from_mesh, to_mesh, transfer_name, 1.5, stk::search::OCTREE));
 #else
-    boost::shared_ptr<GPSTKMeshTransfer>
+    std::shared_ptr<GPSTKMeshTransfer>
       mesh_transfer(new GPSTKMeshTransfer(from_mesh, to_mesh, transfer_name));
 #endif
 

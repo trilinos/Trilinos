@@ -54,7 +54,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
       dst.insert(dst.end(), src.begin(), src.end());
     }
 
-    typedef boost::array<double,3> Coord;
+    typedef std::array<double,3> Coord;
     typedef GeneralFunction< Coord, Coord > VectorFieldGeneralFunction;
     class Transform : public VectorFieldGeneralFunction
     {
@@ -129,7 +129,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
      *
      *  Then use sweep to create a hex mesh (this example breaks a quad to create two Tri's, then creates a mixed hex/wedge mesh)
      *
-     *  boost::array< double, 3> dir = {0,0,1};
+     *  std::array< double, 3> dir = {0,0,1};
      *  std::vector<Transform *> xforms(1,  &TransformDir( dir ) );
      *
      *  // break one of the quads into tris
@@ -139,7 +139,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
      *  tp2.dump();
      *
      *  // sweep to make a hex mesh
-     *  boost::array< double, 3> dir1 = {0,0,2.345};
+     *  std::array< double, 3> dir1 = {0,0,2.345};
      *  xforms[0] = &TransformDir(dir1);
      *  tp2.sweep( SweepMesher::ET_Quad4, SweepMesher::ET_Hex8, xforms);
      *
@@ -399,7 +399,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
         std::vector<Transform *> xforms(npoints-1);
         for (unsigned i = 0; i < npoints-1; i++)
           {
-            boost::array< double, 3> dir;
+            std::array< double, 3> dir;
             dir[0] = path[i+1][0]-path[i][0];
             dir[1] = path[i+1][1]-path[i][1];
             dir[2] = path[i+1][2]-path[i][2];
