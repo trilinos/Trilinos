@@ -423,51 +423,7 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 ATDM_SET_ENABLE(TPL_ENABLE_Matio OFF)
 
 #
-# G) Package and Test Disables
-#
-# There are some package tests that have to be disabled for a braod set of
-# builds for example, if all openmp builds are failing a certain test then it
-# makes more sense to disbale it once in this file instead of in every openmp
-# buid's tweaks file
-#
-
-# Issue #3638
-ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
-
-# Disable MueLu for all cuda+complex builds for now since there are build
-# errors in the MueLu library that takes out everything downstream that
-# depends on MueLu (see #4599).
-IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
-  ATDM_SET_ENABLE(Trilinos_ENABLE_MueLu OFF)
-ENDIF()
-
-# Disable Zoltan2_XpetraEpertraMatrix exec that does not build with no global
-# int instatiation (see #5411)
-ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_EXE_DISABLE ON)
-ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_MPI_4_DISABLE ON)
-
-# Disable Piro_ThyraSolver exec that does not build with no global int
-# instantiation (see #5412)
-ATDM_SET_ENABLE(Piro_ThyraSolver_EXE_DISABLE ON)
-ATDM_SET_ENABLE(Piro_ThyraSolver_MPI_4_DISABLE ON)
-
-# Disable Piro_AnalysisDriverTpetra exec that will not build with no global
-# int instantiation (see #5446)
-ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_EXE_DISABLE ON)
-ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_MPI_4_DISABLE ON)
-
-# Disable ROL test exec that will not buld with no global int instantiation
-# (see #5447)
-ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_EXE_DISABLE ON)
-ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_MPI_4_DISABLE ON)
-
-IF ("${ATDM_CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
-  ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-4_DISABLE ON)
-  ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedPoissonExample-ConvTest-Hex-Order-3_DISABLE ON)
-ENDIF()
-
-#
-# H) ATDM env config install hooks
+# G) ATDM env config install hooks
 #
 # Install just enough to allow loading the exact matching env and nothing
 # else!
