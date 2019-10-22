@@ -424,21 +424,16 @@ inline void do_kdtree_search(std::vector< std::pair<FloatBox, Identifier> >& loc
     stk::search::coarse_search(local_domain, local_range, stk::search::KDTREE, comm, searchResults);
 }
 
-enum NewSearchMethod { BOOST_RTREE, KDTREE };
+enum NewSearchMethod { KDTREE };
 inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
 {
-    if ( method == BOOST_RTREE )
-    {
-        return stk::search::BOOST_RTREE;
-    }
-
     if ( method == KDTREE )
     {
       return stk::search::KDTREE;
     }
 
     ThrowRequireMsg(false, __FUNCTION__ << ", Unknown algorithm mysteriously specified");
-    return stk::search::BOOST_RTREE;
+    return stk::search::KDTREE;
 }
 
 template <typename Identifier>
@@ -447,10 +442,6 @@ inline void coarse_search_new(std::vector< std::pair<FloatBox, Identifier> >& lo
     if ( algorithm == KDTREE )
     {
         do_kdtree_search(local_domain, local_range, comm, searchResults);
-    }
-    else if ( algorithm == BOOST_RTREE )
-    {
-        stk::search::coarse_search(local_domain, local_range, stk::search::BOOST_RTREE, comm, searchResults);
     }
     else
     {
