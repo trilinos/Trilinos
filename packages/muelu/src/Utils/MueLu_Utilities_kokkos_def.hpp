@@ -345,7 +345,7 @@ namespace MueLu {
 
 
   template <class SC, class LO, class GO, class NO>
-  Kokkos::View<const bool*, typename NO::device_type>
+  Kokkos::View<bool*, typename NO::device_type>
   DetectDirichletRows(const Xpetra::Matrix<SC,LO,GO,NO>& A,
                       const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol,
                       const bool count_twos_as_dirichlet) {
@@ -395,14 +395,14 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Kokkos::View<const bool*, typename Node::device_type>
+  Kokkos::View<bool*, typename Node::device_type>
   Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& tol, const bool count_twos_as_dirichlet) {
     return MueLu::DetectDirichletRows<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, tol, count_twos_as_dirichlet);
   }
 
   template <class Node>
-  Kokkos::View<const bool*, typename Node::device_type>
+  Kokkos::View<bool*, typename Node::device_type>
   Utilities_kokkos<double,int,int,Node>::
   DetectDirichletRows(const Xpetra::Matrix<double,int,int,Node>& A, const typename Teuchos::ScalarTraits<double>::magnitudeType& tol, const bool count_twos_as_dirichlet) {
     return MueLu::DetectDirichletRows<double,int,int,Node>(A, tol,count_twos_as_dirichlet);
@@ -410,7 +410,7 @@ namespace MueLu {
 
 
   template <class SC, class LO, class GO, class NO>
-  Kokkos::View<const bool*, typename NO::device_type>
+  Kokkos::View<bool*, typename NO::device_type>
   DetectDirichletCols(const Xpetra::Matrix<SC,LO,GO,NO>& A,
                       const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows) {
     using ATS        = Kokkos::ArithTraits<SC>;
@@ -462,7 +462,7 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Kokkos::View<const bool*, typename Node::device_type>
+  Kokkos::View<bool*, typename Node::device_type>
   Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DetectDirichletCols(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
                       const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows) {
@@ -470,7 +470,7 @@ namespace MueLu {
   }
 
   template <class Node>
-  Kokkos::View<const bool*, typename Node::device_type>
+  Kokkos::View<bool*, typename Node::device_type>
   Utilities_kokkos<double,int,int,Node>::
   DetectDirichletCols(const Xpetra::Matrix<double,int,int,Node>& A,
                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
