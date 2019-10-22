@@ -75,8 +75,10 @@ struct ex__obj_stats *exoII_nm  = 0;
 static char  ret_string[10 * (MAX_VAR_NAME_LENGTH + 1)];
 static char *cur_string = &ret_string[0];
 
+#ifndef _MSC_VER
 #if NC_HAS_HDF5
 extern int H5get_libversion(unsigned *, unsigned *, unsigned *);
+#endif
 #endif
 
 #if NC_HAS_PNETCDF
@@ -113,12 +115,14 @@ void ex_print_config(void)
 #if NC_HAS_CDF5
   fprintf(stderr, "\t\tCDF5 enabled\n");
 #endif
+#ifndef _MSC_VER
 #if NC_HAS_HDF5
   {
     unsigned major, minor, release;
     H5get_libversion(&major, &minor, &release);
     fprintf(stderr, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
   }
+#endif
 #endif
 #if NC_HAS_PARALLEL
   fprintf(stderr, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");

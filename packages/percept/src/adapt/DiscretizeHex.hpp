@@ -15,13 +15,13 @@
 
 namespace percept {
 
-  typedef boost::array<unsigned, 4> hex_to_tet_tuple_type_local;
-  typedef boost::array<unsigned, 5> hex_to_pyr_tuple_type_local;
-  typedef boost::array<stk::mesh::EntityId, 4> hex_to_tet_tuple_type;
-  typedef boost::array<stk::mesh::EntityId, 5> hex_to_pyr_tuple_type;
+  typedef std::array<unsigned, 4> hex_to_tet_tuple_type_local;
+  typedef std::array<unsigned, 5> hex_to_pyr_tuple_type_local;
+  typedef std::array<stk::mesh::EntityId, 4> hex_to_tet_tuple_type;
+  typedef std::array<stk::mesh::EntityId, 5> hex_to_pyr_tuple_type;
 
-  typedef boost::array<unsigned, 8> hex_to_hex_tuple_type_local;
-  typedef boost::array<stk::mesh::EntityId, 8> hex_to_hex_tuple_type;
+  typedef std::array<unsigned, 8> hex_to_hex_tuple_type_local;
+  typedef std::array<stk::mesh::EntityId, 8> hex_to_hex_tuple_type;
 
   /**
    *
@@ -252,7 +252,7 @@ namespace percept {
               if (elems_tri.size() == 0 && elems_quad.size() == 0)
                 {
                   VERIFY_OP_ON(num_quad_edge_marks, ==, 0, "hmm");
-                  elems_quad.push_back(quad_to_quad_tuple_type_local(0,1,2,3));
+                  elems_quad.push_back({0,1,2,3});
                 }
               if (m_debug)
                 {
@@ -274,10 +274,10 @@ namespace percept {
 
                   hex_to_pyr_tuple_type_local hp;
                   // reverse order to get proper volume
-                  hp[3] = elems_quad[iquad].get<0>();
-                  hp[2] = elems_quad[iquad].get<1>();
-                  hp[1] = elems_quad[iquad].get<2>();
-                  hp[0] = elems_quad[iquad].get<3>();
+                  hp[3] = elems_quad[iquad][0];
+                  hp[2] = elems_quad[iquad][1];
+                  hp[1] = elems_quad[iquad][2];
+                  hp[0] = elems_quad[iquad][3];
                   for (unsigned ii=0; ii < 4; ++ii)
                     {
                       int hpii = quad_local_nodes[hp[ii]];
@@ -296,9 +296,9 @@ namespace percept {
                     }
                   hex_to_tet_tuple_type_local ht;
                   // reverse order to get proper volume
-                  ht[2] = elems_tri[itri].get<0>();
-                  ht[1] = elems_tri[itri].get<1>();
-                  ht[0] = elems_tri[itri].get<2>();
+                  ht[2] = elems_tri[itri][0];
+                  ht[1] = elems_tri[itri][1];
+                  ht[0] = elems_tri[itri][2];
                   for (unsigned ii=0; ii < 3; ++ii)
                     {
                       int htii = quad_local_nodes[ht[ii]];

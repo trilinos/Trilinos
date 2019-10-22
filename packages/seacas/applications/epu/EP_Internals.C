@@ -111,7 +111,7 @@ namespace {
 bool Excn::is_path_absolute(const std::string &path)
 {
 #ifdef _WIN32
-  return !PathIsRelativeA(path.c_str());
+  return path[0] == '\\' || path[1] == ':';
 #else
   return path[0] == '/';
 #endif
@@ -1157,7 +1157,14 @@ namespace {
     else {
       // Have ex_entity_id (long long), need ints...
       std::vector<int> int_ids(ids.size());
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
       int_ids.assign(ids.begin(), ids.end());
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
       status = nc_put_var_int(exoid, var_id, &int_ids[0]);
     }
 

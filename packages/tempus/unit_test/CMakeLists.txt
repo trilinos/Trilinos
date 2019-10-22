@@ -7,3 +7,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  UnitTest_Subcycling
+  SOURCES Tempus_UnitTest_Subcycling.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )

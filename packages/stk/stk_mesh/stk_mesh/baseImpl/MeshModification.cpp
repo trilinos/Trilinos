@@ -232,7 +232,7 @@ void MeshModification::internal_resolve_shared_modify_delete(stk::mesh::EntityVe
 
         Entity entity = i->comm_info.entity;
         EntityKey key = i->comm_info.key;
-        int owner = i->comm_info.owner;
+        const int owner = m_bulkData.parallel_owner_rank(entity);
         const bool locally_destroyed = !m_bulkData.is_valid(entity);
         bool remote_owner_destroyed = false;
 

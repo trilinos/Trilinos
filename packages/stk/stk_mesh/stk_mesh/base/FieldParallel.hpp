@@ -95,62 +95,68 @@ inline bool find_proc_before_index(const EntityCommInfoVector& infovec, int proc
     return false;
 }
 
+struct InfoRankLess {
+  bool operator()(const EntityCommListInfo& info, EntityRank rank) const
+  { return info.bucket->entity_rank() < rank; }
+  bool operator()(EntityRank rank, const EntityCommListInfo& info) const
+  { return rank < info.bucket->entity_rank(); }
+};
+
 inline void communicate_field_data(
   const BulkData                        & mesh ,
   const std::vector< const FieldBase *> & fields )
 {
-  if ( fields.empty() ) { return; }
-
   const int parallel_size = mesh.parallel_size();
-  const int parallel_rank = mesh.parallel_rank();
+  if ( fields.empty() || parallel_size == 1) { return; }
 
-  const std::vector<const FieldBase *>::const_iterator fe = fields.end();
-  const std::vector<const FieldBase *>::const_iterator fb = fields.begin();
-        std::vector<const FieldBase *>::const_iterator fi ;
+  const int numFields = fields.size();
 
   std::vector<std::vector<unsigned char> > send_data(parallel_size);
   std::vector<std::vector<unsigned char> > recv_data(parallel_size);
 
   const EntityCommListInfoVector &comm_info_vec = mesh.internal_comm_list();
-  size_t comm_info_vec_size = comm_info_vec.size();
 
   std::vector<unsigned> send_sizes(parallel_size, 0);
   std::vector<unsigned> recv_sizes(parallel_size, 0);
 
+  std::vector<std::pair<int,int> > fieldRange(fields.size(), std::make_pair(-1,-1));
+  for(int fi=0; fi<numFields; ++fi) {
+    EntityRank fieldRank = fields[fi]->entity_rank();
+    EntityCommListInfoVector::const_iterator startIter = std::lower_bound(comm_info_vec.begin(), comm_info_vec.end(), fieldRank, InfoRankLess());
+    EntityCommListInfoVector::const_iterator endIter = std::upper_bound(startIter, comm_info_vec.end(), fieldRank, InfoRankLess());
+    fieldRange[fi].first = std::distance(comm_info_vec.begin(), startIter);
+    fieldRange[fi].second = std::distance(comm_info_vec.begin(), endIter);
+  }
+
   //this first loop calculates send_sizes and recv_sizes.
-  for(fi = fb; fi != fe; ++fi)
+  for(int fi=0; fi<numFields; ++fi)
   {
-      const FieldBase & f = **fi;
-      for(size_t i = 0; i<comm_info_vec_size; ++i)
+      const FieldBase & f = *fields[fi];
+      for(int i = fieldRange[fi].first; i<fieldRange[fi].second; ++i)
       {
           const Bucket* bucket = comm_info_vec[i].bucket;
 
-          int owner = comm_info_vec[i].owner;
-          const bool owned = (owner == parallel_rank);
-
           unsigned e_size = 0;
 
-          if(is_matching_rank(f, *bucket))
-          {
-              const unsigned bucketId = bucket->bucket_id();
-              unsigned size = field_bytes_per_entity(f, bucketId);
-              e_size += size;
-          }
+          const unsigned bucketId = bucket->bucket_id();
+          const unsigned size = field_bytes_per_entity(f, bucketId);
+          e_size += size;
 
           if(e_size == 0)
           {
               continue;
           }
 
+          const bool owned = bucket->owned();
           if(owned)
           {
               const EntityCommInfoVector& infovec = comm_info_vec[i].entity_comm->comm_map;
-              size_t infovec_size = infovec.size();
-              for(size_t j=0; j<infovec_size; ++j)
+              const int infovec_size = infovec.size();
+              for(int j=0; j<infovec_size; ++j)
               {
-                  int proc = infovec[j].proc;
+                  const int proc = infovec[j].proc;
 
-                  bool proc_already_found = find_proc_before_index(infovec, proc, j); 
+                  const bool proc_already_found = j>0 && find_proc_before_index(infovec, proc, j); 
                   if (!proc_already_found) {
                       send_sizes[proc] += e_size;
                   }
@@ -158,6 +164,8 @@ inline void communicate_field_data(
           }
           else
           {
+              const int owner = mesh.parallel_owner_rank(comm_info_vec[i].entity);
+
               recv_sizes[owner] += e_size;
           }
       }
@@ -182,22 +190,20 @@ inline void communicate_field_data(
   std::vector<unsigned char> field_data(max_len);
   unsigned char* field_data_ptr = field_data.data();
 
-  for(fi = fb; fi != fe; ++fi)
+  for(int fi=0; fi<numFields; ++fi)
   {
-      const FieldBase & f = **fi;
-      for(size_t i = 0; i<comm_info_vec_size; ++i)
+      const FieldBase & f = *fields[fi];
+      for(int i = fieldRange[fi].first; i<fieldRange[fi].second; ++i)
       {
           const Bucket* bucket = comm_info_vec[i].bucket;
 
-          int owner = comm_info_vec[i].owner;
-          const bool owned = (owner == parallel_rank);
+          const bool owned = bucket->owned();
 
           unsigned e_size = 0;
 
-          if(is_matching_rank(f, *bucket))
           {
               const unsigned bucketId = bucket->bucket_id();
-              unsigned size = field_bytes_per_entity(f, bucketId);
+              const unsigned size = field_bytes_per_entity(f, bucketId);
               if (owned && size > 0)
               {
                   unsigned char * ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, comm_info_vec[i].bucket_ordinal, size));
@@ -214,15 +220,15 @@ inline void communicate_field_data(
           if(owned)
           {
               const EntityCommInfoVector& infovec = comm_info_vec[i].entity_comm->comm_map;
-              size_t infovec_size = infovec.size();
-              for(size_t j=0; j<infovec_size; ++j)
+              const int infovec_size = infovec.size();
+              for(int j=0; j<infovec_size; ++j)
               {
-                  int proc = infovec[j].proc;
+                  const int proc = infovec[j].proc;
     
-                  bool proc_already_found = find_proc_before_index(infovec, proc, j);
+                  const bool proc_already_found = j>0 && find_proc_before_index(infovec, proc, j);
                   if (!proc_already_found) {
                       unsigned char* dest_ptr = send_data[proc].data()+send_sizes[proc];
-                      unsigned char* src_ptr = field_data_ptr;
+                      const unsigned char* src_ptr = field_data_ptr;
                       std::memcpy(dest_ptr, src_ptr, e_size);
                       send_sizes[proc] += e_size;
                   }
@@ -243,26 +249,26 @@ inline void communicate_field_data(
   parallel_data_exchange_nonsym_known_sizes_t(send_data, recv_data, mesh.parallel());
 
   //now unpack and store the recvd data
-  for(fi = fb; fi != fe; ++fi)
+  for(int fi=0; fi<numFields; ++fi)
   {
-      const FieldBase & f = **fi;
+      const FieldBase & f = *fields[fi];
 
-      for(size_t i=0; i<comm_info_vec_size; ++i)
+      for(int i = fieldRange[fi].first; i<fieldRange[fi].second; ++i)
       {
-          int owner = comm_info_vec[i].owner;
-          const bool owned = (owner == parallel_rank);
+          const Bucket* bucket = comm_info_vec[i].bucket;
+          if (bucket->owned()) {
+              continue;
+          }
 
-          if(owned || recv_data[owner].size() == 0)
+          const int owner = mesh.parallel_owner_rank(comm_info_vec[i].entity);
+          if(recv_data[owner].size() == 0)
           {
               continue;
           }
 
-          const Bucket* bucket = comm_info_vec[i].bucket;
-
-          if(is_matching_rank(f, *bucket))
           {
               const unsigned bucketId = bucket->bucket_id();
-              unsigned size = field_bytes_per_entity(f, bucketId);
+              const unsigned size = field_bytes_per_entity(f, bucketId);
               if (size > 0)
               {
                   unsigned char * ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, comm_info_vec[i].bucket_ordinal, size));

@@ -84,8 +84,7 @@ public:
      // assumes the embedded solution is the low order solution
      int order = metaData->getOrder() - 1;
      Scalar dt = metaData->getDt();
-     //bool printChanges = solutionHistory->getVerbLevel() !=
-        //Teuchos::as<int>(Teuchos::VERB_NONE);
+     //bool printDtChanges = tsc.getPrintDtChanges();
 
      Teuchos::RCP<Teuchos::FancyOStream> out = tsc.getOStream();
      Teuchos::OSTab ostab(out,1,"getNextTimeStep");

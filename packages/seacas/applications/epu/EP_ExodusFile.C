@@ -232,7 +232,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
         mode64bit_ |= EX_ALL_INT64_DB;
       }
 
-      int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+      int max_name_length = (int)ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
       if (max_name_length > maximumNameLength_) {
         maximumNameLength_ = max_name_length;
       }

@@ -13,15 +13,23 @@
 /*     filename: ZoltanPartition.h                                      */
 /*      purpose: header file for stk toolkit zoltan methods             */
 /*                                                                      */
-/*----------------------------------------------------------------------*/
-/*    Copyright 2001,2010 Sandia Corporation.                           */
-/*    Under the terms of Contract DE-AC04-94AL85000, there is a         */
-/*    non-exclusive license for use of this work by or on behalf        */
-/*    of the U.S. Government.  Export of this program may require       */
-/*    a license from the United States Government.                      */
-/*----------------------------------------------------------------------*/
+/*--------------------------------------------------------------------*/
+/*    Copyright 2002 - 2008, 2010, 2011 National Technology &         */
+/*    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   */
+/*    of Contract DE-NA0003525 with NTESS, there is a                 */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
 
-// Copyright 2001 Sandia Corporation, Albuquerque, NM.
+/*--------------------------------------------------------------------*/
+/*    Copyright 2002 - 2008, 2010, 2011 National Technology &         */
+/*    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   */
+/*    of Contract DE-NA0003525 with NTESS, there is a                 */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
 
 #ifndef stk_rebalance_ZoltanPartition_hpp
 #define stk_rebalance_ZoltanPartition_hpp

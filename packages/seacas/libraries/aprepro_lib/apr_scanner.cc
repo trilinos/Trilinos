@@ -52,7 +52,7 @@
 
 /* C99 systems have <inttypes.h>. Non-C99 systems may or may not. */
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || defined(_MSC_VER)
 
 /* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
  * if you want the limit (max/min) macros for int types.
@@ -1028,11 +1028,8 @@ typedef SEAMS::Parser::token_type token_type;
 
 #define show(x) *(aprepro->infoStream) << "<" << x << ">" << std::flush;
 namespace SEAMS {
-  extern bool        echo;
-  extern const char *get_temp_filename(void);
-  extern char *      pathopen(const char *file);
-  extern void        conv_string(const char *string);
-  void               yyerror(const char *s);
+  extern bool echo;
+  void        yyerror(const char *s);
 } // namespace SEAMS
 
 int file_must_exist = 0; /* Global used by include/conditional include */
@@ -1049,7 +1046,7 @@ const char *  temp_f;
 #define MAX_IF_NESTING 64
 
 int    if_state[MAX_IF_NESTING]    = {0};     // INITIAL
-int    if_case_run[MAX_IF_NESTING] = {false}; /* Has any if or elseif condition executed */
+bool   if_case_run[MAX_IF_NESTING] = {false}; /* Has any if or elseif condition executed */
 int    if_lvl                      = 0;
 int    if_skip_level               = 0;
 bool   suppress_nl                 = false;
@@ -3521,7 +3518,7 @@ namespace SEAMS {
 
     // Don't do it if the file is the one used by execute and rescan.
     if (aprepro.ap_file_list.top().name == "_string_" ||
-	aprepro.ap_file_list.top().name == "standard input") {
+        aprepro.ap_file_list.top().name == "standard input") {
       return;
     }
 

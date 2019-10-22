@@ -262,7 +262,7 @@ void EigenVerify::run(int argc, char** argv)
   stk::mesh::Field<double, stk::mesh::Cartesian> * coordinates_to =
     mesh_data[1]->meta_data().get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
 
-  boost::shared_ptr<STKMeshTransfer> mesh_transfer_01 =
+  std::shared_ptr<STKMeshTransfer> mesh_transfer_01 =
     buildSTKMeshTransfer<STKMeshTransfer>(mesh_data[0]->bulk_data(),
 		      coordinates_from,
 		      fieldAll[0],

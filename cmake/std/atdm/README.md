@@ -301,10 +301,11 @@ application customers and Trilinos developers just needing to enable a subset
 of packages.  But if package X does get enabled, then it will always have the
 same configuration options independent of any other packages that are enabled.
 
-When `ATDMDevEnv.cmake` is being processed, if there is a "tweaks" file
-defined for a build, then it will be picked up in the CMake cache var <a
-href="#ATDM_TWEAKS_FILES">ATDM_TWEAKS_FILES</a> and that file will be read in
-using `INCLUDE()` to process the extra options contained within it.
+When `ATDMDevEnv.cmake` (or `ATDMDevEnvSettings.cmake`) is being processed, if
+there are "tweaks" files defined for a build, then they will be picked up in
+the CMake cache var <a href="#ATDM_TWEAKS_FILES">ATDM_TWEAKS_FILES</a> and
+those files will be read in using `INCLUDE()` to process the extra options
+contained within it.
 
 
 ## Installation and usage
@@ -494,9 +495,10 @@ the `checkin-test-atdm.sh` script is run and will set these as the defaults
 ## ctest-s-local-test-driver.sh
 
 When one wants to run local builds to test a branch and submit results to
-CDash so that they are archived and for others to see, then a simple way to
-that is to use the provided `ctest-s-local-test-driver.sh` script.  This
-script uses the CTest -S Jenkins driver system in the directory
+CDash (so that they are archived and for others to see), then a simple way to
+that is to use the provided
+[`ctest-s-local-test-driver.sh`](https://github.com/trilinos/Trilinos/blob/develop/cmake/std/atdm/ctest-s-local-test-driver.sh)
+script.  This script uses the CTest -S Jenkins driver system in the directory
 `Trilinos/cmake/ctest/drivers/atdm/` and the specific Jenkins driver files in
 the directory
 
@@ -513,22 +515,40 @@ $ cd <some_base_build_dir>/
 $ ln -s <some_base_dir>/Trilinos/cmake/std/atdm/ctest-s-local-test-driver.sh .
 ````
 
-Then run any of the build names (e.g. `gnu-opt-debug`) listed in the variable
-`ATDM_CONFIG_ALL_SUPPORTED_BUILDS` in the file
-`cmake/std/atdm/<system_name>/all_supported_builds.sh` (or `all` for all of
-the defined builds) for the system as:
+Then one can run any of the builds with defined driver files listed under:
+
+```
+    Trilinos/cmake/ctest/drivers/atdm/<system_name>/drivers/
+      <full-build-name-1>.sh
+      <full-build-name-2>.sh
+      ...
+```
+
+using:
 
 ```
 $ env \
     Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+    ATDM_CTEST_S_USE_FULL_BUILD_NAME=1 \
   ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
 ```
 
-That will submit results to the Trilinos CDash project to the "Experimental"
-CDash Group (the CDash group can not be changed).  This will automatically
-allocate nodes and run just like it was running as a Jenkins job so the
-details of how this is done are completely taken care of by the existing setup
-for the current system.
+(Or leave out `Trilinos_PACKAGES` to test all of the ATDM packages.)  That
+will submit results to the Trilinos CDash project to the "Experimental" Group
+(the CDash group cannot be changed).  This will automatically allocate nodes
+and run just like it was running as a Jenkins job so the details of how this
+is done are completely taken care of by the existing setup for the current
+system.
+
+To run all of the supported builds listed in the variable
+`ATDM_CONFIG_ALL_SUPPORTED_BUILDS` in the file
+`cmake/std/atdm/<system_name>/all_supported_builds.sh`, use:
+
+```
+$ env \
+    Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+  ./ctest-s-local-test-driver.sh all
+```
 
 One can examine the progress of the builds and tests locally by looking at the
 generated files:
@@ -537,9 +557,8 @@ generated files:
   <some_base_build_dir>/<full_build_name>/smart-jenkins-driver.out
 ```
 
-(e.g. `<full_build_name>` = `Trilinos-atdm-<system_name>-gnu-opt-debug`) and
-also examine the generated `*.xml` configure, build, and test files created
-under:
+and also examine the generated `*.xml` configure, build, and test files
+created under:
 
 ```
   <some_base_build_dir>/<full_build_name>/SRC_AND_BUILD/BUILD/Testing/
@@ -556,10 +575,28 @@ $ env \
   ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
 ```
 
-See
+One can also do run local installs using:
+
+```
+$ env \
+    Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+    ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX=install \
+    CTEST_DO_INSTALL=ON \
+  ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
+```
+
+That will install the enabled Trilinos packages under:
+
+```
+  <full-build-name>/SRC_AND_BUILD/BUILD/install/
+```
+
+For more details, see the help documentation in the scirpt itself
+[`ctest-s-local-test-driver.sh`](https://github.com/trilinos/Trilinos/blob/develop/cmake/std/atdm/ctest-s-local-test-driver.sh). Also,
+see
 [TRIBITS_CTEST_DRIVER()](https://tribits.org/doc/TribitsDevelopersGuide.html#determining-what-testing-related-actions-are-performed-tribits-ctest-driver)
 for a description of all of the options that can be set as env vars to, for
-example, skip configure, skip the build, skip running tests, etc.
+example, skip the configure, skip the build, skip running tests, etc.
 
 
 ## Specific instructions for each system
@@ -1076,6 +1113,7 @@ contents:
        <COMPILER0>_<BUILD_TYPE0>_<NODE_TYPE0>_<KOKKOS_ARCH0>.cmake  # [Optional]
        <COMPILER1>_<BUILD_TYPE1>_<NODE_TYPE1>_<KOKKOS_ARCH0>.cmake  # [Optional]
        ...
+       Tweaks.cmake # [Optional]
 ```
 
 The optional file `<system-name>/all_supported_builds.sh` contains a list of
@@ -1110,9 +1148,9 @@ example, see `atdm/cee-rhel6/custom-builds.sh` and
 
 The **ATDM TWEAKS FILES** in the `cmake/std/atdm/<system-name>/tweaks/`
 directory contain special settings for specific builds for a specific system.
-Typically, this file contains (temporary) disables for tests for that given
-build.  When a configure is performed, the internal CMake variable
-`ATDM_BUILD_NAME_KEYS_STR` set to
+Typically, these files contains (temporary) disables for tests and test
+exectuables for that given build.  When a configure is performed, the internal
+CMake variable `ATDM_BUILD_NAME_KEYS_STR` set to
 `<COMPILER>_<BUILD_TYPE>_<NODE_TYPE>_<KOKKOS_ARCH>` (printed to STDOUT) is
 used to define a default file name:
 
@@ -1122,15 +1160,28 @@ used to define a default file name:
 
 If that file exists, then it is set as the default for the cmake cache
 variable `ATDM_TWEAKS_FILES` (prints to STDOUT) and that file is included and
-its options are read.  For example, this is what the output looks like on
-'waterman':
+its options are set as CMake cache varaibles.  For example, this is what the
+output looks like for a build on 'waterman':
 
 ```
 -- Reading in configuration options from cmake/std/atdm/ATDMDevEnv.cmake ...
--- ATDM_BUILD_NAME_KEYS_STR='GNU_RELEASE_OPENMP_POWER9'
--- ATDM_TWEAKS_FILES='<...>/Trilinos/cmake/std/atdm/waterman/tweaks/GNU_RELEASE_OPENMP_POWER9.cmake'
--- Including ATDM build tweaks file <...>//Trilinos/cmake/std/atdm/waterman/tweaks/GNU_RELEASE_OPENMP_POWER9.cmake ...
+-- ATDM_BUILD_NAME_KEYS_STR='CUDA-9.2_RELEASE-DEBUG_CUDA_POWER9_VOLTA70'
+-- ATDM_TWEAKS_FILES='<...>/cmake/std/atdm/waterman/tweaks/CUDA-9.2_RELEASE-DEBUG_CUDA_POWER9_VOLTA70.cmake'
+-- Including ATDM build tweaks file <...>/cmake/std/atdm/waterman/tweaks/CUDA-9.2_RELEASE-DEBUG_CUDA_POWER9_VOLTA70.cmake ...
 ```
+
+In addition, if the file:
+
+```
+  Trilinos/cmake/std/atdm/<system-name>/tweaks/Tweaks.cmake
+```
+
+exists, then it will be included after the above
+`tweaks/${ATDM_BUILD_NAME_KEYS_STR}.cmake` file for the matching build.
+Disables for all builds on a system or for many related builds on a system can
+go into the `Tweaks.cmake` file to avoid having to duplicate disables across
+multiple `${ATDM_BUILD_NAME_KEYS_STR}.cmake` files.  Details are in the next
+section.
 
 
 ## Disabling failing tests
@@ -1140,8 +1191,8 @@ platforms for certain builds or based on other criteria (see sub-process
 [Temporarily disable the failing code or
 test](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Triaging+and+addressing+ATDM+Trilinos+Failures#TriagingandaddressingATDMTrilinosFailures-5.Makesuretheissueisaddressedinatimelyway:)).
 There are various ways to disable tests with the Trilinos TriBITS/CMake-based
-build and test system.  Tests can be disabled in the `CMakeLists.txt` files
-that define the tests themselves using various logic.  But the way to
+build and test system.  First, tests can be disabled in the `CMakeLists.txt`
+files that define the tests themselves using various logic.  But the way to
 selectively disable tests for the ATDM Trilinos builds that will be described
 here will be to only modify files under the `Trilinos/cmake/std/atdm/`
 directory.  This will be done by setting the CMake cache variable
@@ -1199,7 +1250,7 @@ file](#ATDM_TWEAKS_FILES) for that build and platform:
 
 ```
   Trilinos/cmake/std/atdm/<system-name>/tweaks/<ATDM_BUILD_NAME_KEYS_STR>.cmake
-  ```
+```
 
 The tweak file being looked for is printed out in the CMake configure output
 as the line:
@@ -1240,52 +1291,64 @@ described below.
 ### Disable a test for several or all builds on a specific platform
 
 It is often the case that a test needs to be disabled for several (or all)
-builds for a given platform.  An efficient way to do this is to create a new
-`*.cmake` file that contains the `ATDM_SET_ENABLE()` statements and then
-include that new file in all of the tweaks files on that system where the
-tests should be disabled.
-
-For example, the Trilinos commit
-[3450efd421](https://github.com/trilinos/Trilinos/commit/3450efd421f1ce2b47700853aa4c5801f667202a)
-shows how a set of tests were disabled for all of the CUDA builds on the
-system `ride` through the creation of the file:
+builds for a given platform.  The best way to do this is to disable these in
+the file:
 
 ```
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_COMMON_TWEAKS.cmake
+cmake/std/atdm/<system_name>/tweaks/Tweaks.cmake
 ```
 
-and then the inclusion of that file in the specific tweak files for each CUDA
-build:
+If that file exists, it will get included after the
+`<ATDM_BUILD_NAME_KEYS_STR>.cmake` file as described above.
+
+Typical logic in a `Tweaks.cmake` file may look like:
 
 ```
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_DEBUG_CUDA.cmake
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_RELEASE_CUDA.cmake
+# Disable tests for all builds for this system
+ATDM_SET_ENABLE(<full_test_name_1>_DISABLE ON)
+ATDM_SET_ENABLE(<full_test_name_2>_DISABLE ON)
+...
+
+IF (Trilinos_ENABLE_DEBUG)
+  # Disable tests for all debug builds on this system
+  ...
+ENDIF()
+
+IF (ATDM_COMPILER STREQUAL "GNU-7.2.0")  # See <system_name>/enviornment.sh
+  # Disables for all non-CUDA GNU 7.2.0 builds
+  ...
+ENDIF()
+
+IF (ATDM_NODE_TYPE STREQUAL "SERIAL")
+  # Disable tests for all SERIAL builds for this system
+  ...
+ELSEIF (ATDM_NODE_TYPE STREQUAL "OPENMP")
+  # Disable tests for all OpenMP builds for this system
+  ...
+ELEIF (ATDM_NODE_TYPE STREQUAL "CUDA")
+  # Disable tests for all CUDA builds for this system
+  ...
+  IF (Trilinos_ENABLE_DEBUG)
+    # Disable tests for all CUDA debug builds for this system
+    ...
+  ENDIF()
+  IF (ATDM_CUDA_RDC and Trilinos_ENABLE_DEBUG)
+    # Disable tests for all CUDA, RDC, debug builds for this system
+    ...
+  ENDIF()
+ENDIF()
 ```
 
-(before `-POWER8-KEPLER37` was added to the names) using the inserted CMake
-statement:
-
-```
-INCLUDE("${CMAKE_CURRENT_LIST_DIR}/CUDA_COMMON_TWEAKS.cmake")
-```
-
-An example of using a `*.cmake` file to disable the same set of tests in all
-of the builds for a given system is shown in Trilinos commit
-[33a933b004](https://github.com/trilinos/Trilinos/commit/33a933b004f88710274906fad612380049e1e82e).
-This example shows the creation of the file:
-
-```
-  Trilinos/cmake/std/atdm/ride/tweaks/ALL_COMMON_TWEAKS.cmake
-```
-
-and then the inclusion of that file in all of the specific tweaks files on
-'ride' with the statement:
-
-```
-INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ALL_COMMON_TWEAKS.cmake")
-```
-
-in each of those files.
+Any CMake variable that has been set in the `ATDMDevEnvSettings.cmake` file
+before these tweak files are included can be used in if-logic but the
+recommended variables are `ATDM_COMPILER` (uppercase),
+`ATDM_KOKKOS_ARCH_JOB_NAME_KEYS` (uppercase seprated by `_`), `ATDM_NODE_TYPE`
+(values `CUDA`, `OPENMP`, `SERIAL`), `ATDM_CUDA_RDC` (`ON`/`OFF`), `ATDM_FPIC`
+(`ON`/`OFF`), `ATDM_COMPLEX` (`ON`/`OFF`), `ATDM_SHARED_LIBS` (`ON`/`OFF`),
+`ATDM_CMAKE_BUILD_TYPE` (values `DEBUG`, `RELEASE`, and `RELEASE-DEBUG`),
+`Trilinos_ENABLE_DEBUG` (`ON`/`OFF`), and `ATDM_PT_PACKAGES` (`ON`/`OFF`).  No
+other variables should be used in if-logic in these files as other variables
+may change in the future.
 
 
 ### Disable a test for builds on all platforms
@@ -1305,7 +1368,7 @@ For example, Trilinos commit [5e52db03ff](https://github.com/trilinos/Trilinos/c
 
 ```
 # Disable test that fails for all openmp builds (#3035)
-IF (ATDM_USE_OPENMP)
+IF (ATDM_NODE_TYPE STREQUAL "OPENMP")
   ATDM_SET_ENABLE(MueLu_UnitTestsTpetra_MPI_4_DISABLE ON)
 ENDIF()
 ```

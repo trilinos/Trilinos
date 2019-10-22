@@ -959,6 +959,23 @@ void check_field_on_device(stk::mesh::BulkData & bulk,
     });
 }
 
+template <typename T>
+void check_field_on_host(const stk::mesh::BulkData & bulk,
+                         unsigned fieldOrdinal,
+                         T expectedFieldValue)
+{
+    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    const stk::mesh::FieldBase* field = meta.get_fields()[fieldOrdinal];
+
+    const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::ELEM_RANK, meta.locally_owned_part());
+    for(const stk::mesh::Bucket* bptr : buckets) {
+        for(stk::mesh::Entity elem : *bptr) {
+            const double* fieldData = static_cast<const double*>(stk::mesh::field_data(*field, elem));
+            EXPECT_EQ(*fieldData, expectedFieldValue);
+        }
+    }
+}
+
 NGP_TEST_F(NgpHowTo, ReuseNgpField)
 {
     int numStates = 1;
@@ -975,38 +992,47 @@ NGP_TEST_F(NgpHowTo, ReuseNgpField)
 
     setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
 
-    ngp::Mesh ngpMesh(get_bulk());
-    ngp::FieldManager fieldManager(get_bulk());
+    {
+        ngp::Mesh ngpMesh(get_bulk());
+        ngp::FieldManager fieldManager(get_bulk());
+    
+        fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  shortStkField.mesh_meta_data_ordinal(), (short)42);
+        check_field_on_device(get_bulk(), ngpMesh, fieldManager, shortStkField.mesh_meta_data_ordinal(), (short)42);
+    
+        fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  ushortStkField.mesh_meta_data_ordinal(), (unsigned short)43);
+        check_field_on_device(get_bulk(), ngpMesh, fieldManager, ushortStkField.mesh_meta_data_ordinal(), (unsigned short)43);
+    
+        fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  intStkField.mesh_meta_data_ordinal(), (int)44);
+        check_field_on_device(get_bulk(), ngpMesh, fieldManager, intStkField.mesh_meta_data_ordinal(), (int)44);
+    
+        fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  uintStkField.mesh_meta_data_ordinal(), (unsigned int)45);
+        check_field_on_device(get_bulk(), ngpMesh, fieldManager, uintStkField.mesh_meta_data_ordinal(), (unsigned int)45);
+    
+        fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  longStkField.mesh_meta_data_ordinal(), (long)46);
+        check_field_on_device(get_bulk(), ngpMesh, fieldManager, longStkField.mesh_meta_data_ordinal(), (long)46);
+    
+        fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  ulongStkField.mesh_meta_data_ordinal(), (unsigned long)47);
+        check_field_on_device(get_bulk(), ngpMesh, fieldManager, ulongStkField.mesh_meta_data_ordinal(), (unsigned long)47);
+    
+        fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  longLongStkField.mesh_meta_data_ordinal(), (long long)48);
+        check_field_on_device(get_bulk(), ngpMesh, fieldManager, longLongStkField.mesh_meta_data_ordinal(), (long long)48);
+    
+        fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  ulongLongStkField.mesh_meta_data_ordinal(), (unsigned long long)49);
+        check_field_on_device(get_bulk(), ngpMesh, fieldManager, ulongLongStkField.mesh_meta_data_ordinal(), (unsigned long long)49);
+    
+        fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  floatStkField.mesh_meta_data_ordinal(), (float)3.14);
+        check_field_on_device(get_bulk(), ngpMesh, fieldManager, floatStkField.mesh_meta_data_ordinal(), (float)3.14);
+    
+        fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  doubleStkField.mesh_meta_data_ordinal(), (double)3.141);
+        check_field_on_device(get_bulk(), ngpMesh, fieldManager, doubleStkField.mesh_meta_data_ordinal(), (double)3.141);
+    }
 
-    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  shortStkField.mesh_meta_data_ordinal(), (short)42);
-    check_field_on_device(get_bulk(), ngpMesh, fieldManager, shortStkField.mesh_meta_data_ordinal(), (short)42);
-
-    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  ushortStkField.mesh_meta_data_ordinal(), (unsigned short)43);
-    check_field_on_device(get_bulk(), ngpMesh, fieldManager, ushortStkField.mesh_meta_data_ordinal(), (unsigned short)43);
-
-    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  intStkField.mesh_meta_data_ordinal(), (int)44);
-    check_field_on_device(get_bulk(), ngpMesh, fieldManager, intStkField.mesh_meta_data_ordinal(), (int)44);
-
-    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  uintStkField.mesh_meta_data_ordinal(), (unsigned int)45);
-    check_field_on_device(get_bulk(), ngpMesh, fieldManager, uintStkField.mesh_meta_data_ordinal(), (unsigned int)45);
-
-    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  longStkField.mesh_meta_data_ordinal(), (long)46);
-    check_field_on_device(get_bulk(), ngpMesh, fieldManager, longStkField.mesh_meta_data_ordinal(), (long)46);
-
-    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  ulongStkField.mesh_meta_data_ordinal(), (unsigned long)47);
-    check_field_on_device(get_bulk(), ngpMesh, fieldManager, ulongStkField.mesh_meta_data_ordinal(), (unsigned long)47);
-
-    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  longLongStkField.mesh_meta_data_ordinal(), (long long)48);
-    check_field_on_device(get_bulk(), ngpMesh, fieldManager, longLongStkField.mesh_meta_data_ordinal(), (long long)48);
-
-    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  ulongLongStkField.mesh_meta_data_ordinal(), (unsigned long long)49);
-    check_field_on_device(get_bulk(), ngpMesh, fieldManager, ulongLongStkField.mesh_meta_data_ordinal(), (unsigned long long)49);
-
-    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  floatStkField.mesh_meta_data_ordinal(), (float)3.14);
-    check_field_on_device(get_bulk(), ngpMesh, fieldManager, floatStkField.mesh_meta_data_ordinal(), (float)3.14);
-
-    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  doubleStkField.mesh_meta_data_ordinal(), (double)3.141);
-    check_field_on_device(get_bulk(), ngpMesh, fieldManager, doubleStkField.mesh_meta_data_ordinal(), (double)3.141);
+//now check field on host to see if FieldManager::clear_fields() (called by FieldManager dtor)
+//sync'd device fields back to host.
+//Only do this check if cuda, because if not cuda then host == device.
+#ifdef KOKKOS_ENABLE_CUDA
+    check_field_on_host(get_bulk(), doubleStkField.mesh_meta_data_ordinal(), (double)3.141);
+#endif
 }
 
 NGP_TEST_F(NgpHowTo, ReuseNgpFieldNewFieldManager)
@@ -1027,14 +1053,10 @@ NGP_TEST_F(NgpHowTo, ReuseNgpFieldNewFieldManager)
     // Reassign the FieldManager, which will blow away the internal ngp::Field instances
     fieldManager = ngp::FieldManager(get_bulk());
 
-#ifdef KOKKOS_ENABLE_CUDA
-    // On the GPU, the new ngp::Field instances will get the initial values from the stk Fields
-    const double expectedValue = initialValue;
-#else
-    // On the CPU, the new ngp::Field instances are just wrappers around stk Fields, so the values
-    // assigned above will persist.
+    //When the ngp::Field instances are blown away, their field-data values should first
+    //be sync'd back to host. Which means that when the other field-manager re-copies the
+    //field to device, it should still have the same values that were set on device above...
     const double expectedValue = specialValue;
-#endif
 
     check_field_on_device(get_bulk(), ngpMesh, fieldManager, stkField.mesh_meta_data_ordinal(), expectedValue);
 }

@@ -121,7 +121,7 @@ getTime() const
 }
 
 template<class Scalar>
-int 
+int
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 getIndex() const
 {
@@ -181,6 +181,14 @@ IntegratorPseudoTransientForwardSensitivity<Scalar>::
 getTimeStepControl() const
 {
   return state_integrator_->getTimeStepControl();
+}
+
+template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> >
+IntegratorPseudoTransientForwardSensitivity<Scalar>::
+getNonConstTimeStepControl()
+{
+  return state_integrator_->getNonConstTimeStepControl();
 }
 
 template<class Scalar>

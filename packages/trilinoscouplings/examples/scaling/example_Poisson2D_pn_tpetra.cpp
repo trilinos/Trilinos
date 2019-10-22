@@ -205,8 +205,8 @@ double distance2(const FC & coord, int n1, int n2) {
 /*********************************************************/
 typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
-typedef int local_ordinal_type;
-typedef int global_ordinal_type;
+using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
+using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
 typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
 typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
@@ -266,7 +266,7 @@ void CreateLinearSystem(int numWorkSets,
                         RCP<Basis<double,FieldContainer<double> > > &myBasis_rcp,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<global_ordinal_type>       const &globalNodeIds,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
                         std::string &msg
@@ -866,9 +866,9 @@ int main(int argc, char *argv[]) {
 
   // Only works in serial
   std::vector<bool>Pn_nodeIsOwned(Pn_numNodes,true);
-  std::vector<int>Pn_globalNodeIds(Pn_numNodes);
+  std::vector<global_ordinal_type>Pn_globalNodeIds(Pn_numNodes);
   for(int i=0; i<Pn_numNodes; i++)
-    Pn_globalNodeIds[i]=i;
+    Pn_globalNodeIds[i]=static_cast<global_ordinal_type>(i);
 
   std::vector<double> Pn_nodeCoordx(Pn_numNodes);
   std::vector<double> Pn_nodeCoordy(Pn_numNodes);
@@ -1004,11 +1004,11 @@ int main(int argc, char *argv[]) {
 
   // Build a list of the OWNED global ids...
   // NTS: will need to switch back to long long
-  std::vector<int> Pn_ownedGIDs(Pn_ownedNodes);
+  std::vector<global_ordinal_type> Pn_ownedGIDs(Pn_ownedNodes);
   int oidx=0;
   for(int i=0;i<numNodes;i++)
     if(Pn_nodeIsOwned[i]){
-      Pn_ownedGIDs[oidx]=(int)Pn_globalNodeIds[i];
+      Pn_ownedGIDs[oidx]=(global_ordinal_type)Pn_globalNodeIds[i];
       oidx++;
     }
 
@@ -1016,17 +1016,17 @@ int main(int argc, char *argv[]) {
   int P1_ownedNodes=0;
   for(int i=0;i<P1_numNodes;i++)
     if(P1_nodeIsOwned[i]) P1_ownedNodes++;
-  std::vector<int> P1_ownedGIDs(P1_ownedNodes);
+  std::vector<global_ordinal_type> P1_ownedGIDs(P1_ownedNodes);
   oidx=0;
   for(int i=0;i<P1_numNodes;i++)
     if(P1_nodeIsOwned[i]){
-      P1_ownedGIDs[oidx]=(int)P1_globalNodeIds[i];
+      P1_ownedGIDs[oidx]=(global_ordinal_type)P1_globalNodeIds[i];
       oidx++;
     }
   //TODO JJH 8-June-2016 need to populate edge and elem seed nodes
 
   //seed points for block relaxation
-  ArrayRCP<global_ordinal_type> nodeSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> nodeSeeds(Pn_numNodes,INVALID_LO);
   //unknowns at mesh nodes
   oidx=0;
   for(int i=0;i<P1_numNodes;i++) {
@@ -1038,13 +1038,13 @@ int main(int argc, char *argv[]) {
   int numNodeSeeds = oidx;
 
   //unknowns on edges
-  ArrayRCP<global_ordinal_type> edgeSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> edgeSeeds(Pn_numNodes,INVALID_LO);
   for (size_t i=0; i<Pn_edgeNodes.size(); ++i)
     edgeSeeds[Pn_edgeNodes[i]] = i;
   int numEdgeSeeds = Pn_edgeNodes.size();
 
   //unknowns in cell interiors
-  ArrayRCP<global_ordinal_type> cellSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> cellSeeds(Pn_numNodes,INVALID_LO);
   for (size_t i=0; i<Pn_cellNodes.size(); ++i)
     cellSeeds[Pn_cellNodes[i]] = i;
   int numCellSeeds = Pn_cellNodes.size();
@@ -1488,7 +1488,7 @@ int main(int argc, char *argv[]) {
 
   // Import solution onto current processor
   //int numNodesGlobal = globalMapG.NumGlobalElements();
-  RCP<driver_map_type>  solnMap = rcp(new driver_map_type(static_cast<int>(numNodesGlobal), static_cast<int>(numNodesGlobal), 0, Comm));
+  RCP<driver_map_type>  solnMap = rcp(new driver_map_type(static_cast<Tpetra::global_size_t>(numNodesGlobal), static_cast<size_t>(numNodesGlobal), 0, Comm));
   Tpetra::Import<local_ordinal_type, global_ordinal_type, NO> solnImporter(globalMapG,solnMap);
   multivector_type  uCoeff(solnMap,1);
   uCoeff.doImport(*femCoefficients, solnImporter, Tpetra::INSERT);
@@ -2377,7 +2377,7 @@ void CreateLinearSystem(int numWorksets,
                         RCP<Basis<double,FieldContainer<double> > >&myBasis_rcp,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<global_ordinal_type>       const &globalNodeIds,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
                         std::string &msg
@@ -2812,12 +2812,12 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
   A.resumeFill();
 
   for(int i=0; i<N; i++) {
-    int lrid = BCNodes[i];
+    local_ordinal_type lrid = BCNodes[i];
 
     xdata[lrid]=bdata[lrid] = solndata[lrid];
 
     size_t numEntriesInRow = A.getNumEntriesInLocalRow(lrid);
-    Array<global_ordinal_type> cols(numEntriesInRow);
+    Array<local_ordinal_type> cols(numEntriesInRow);
     Array<scalar_type> vals(numEntriesInRow);
     A.getLocalRowCopy(lrid, cols(), vals(), numEntriesInRow);
     

@@ -16,13 +16,17 @@ To use, symlink into some scratch directory and then run as:
 
   ./ctest-s-local-test-driver.sh <build-name-1> <build-name-2> ...
 
-If no build names are not given, then the help message is printed.  If 'all'
-is given, then all of the builds supported for the current sytem are run as
-specified in the Trilinos/cmake/std/atdm/<system_name>/all_supported_builds.sh
-file.
+To run all of the supported builds, run with 'all':
 
-The buld names <build-name-keysi> by default must match the the name of the
-builds listed under:
+  ./ctest-s-local-test-driver.sh all
+
+which runs all of the supported builds listed in the file
+Trilinos/cmake/std/atdm/<system_name>/all_supported_builds.sh.
+
+If no commandline arguments are given, then this help message is printed.
+
+If specifying the individual names <build-name-keysi> then the much match the
+names of the driver scripts listed under:
 
   Trilinos/cmake/ctest/drivers/atdm/<system_name>/drivers/
 
@@ -54,26 +58,35 @@ full script name:
     <build-name-keysi>.sh
 
 Tail -f the generated files <full_build_name>/smart-jenkins-driver.out to see
-details of each run (e.g. <full_build_name> =
-Trilinos-atdm-<system_name>-gnu-openmp-opt).
+details of each run.
 
 To select the default env to load instead of 'default', use:
 
-  env ATDM_CHT_DEFAULT_ENV=<system_name>-default \\
+  env ATDM_CTEST_S_DEFAULT_ENV=<system_name>-default \\
   ./ctest-s-local-test-driver.sh <build-name-1> >build-name-2> ...
 
-(For example, this is needed for the 'cee-rhel6' system to set
-ATDM_CHT_DEFAULT_ENV=cee-rhel6-default, otherwise the 'sems-rhel6' env will be
-selected.)
+(For example, one must set ATDM_CTEST_S_DEFAULT_ENV=cee-rhel6-default to run
+the 'cee-rhel6' builds on CEE RHEL6 and RHE6 machines. Otherwise the
+'sems-rhel6' env will be selected which is the default env on those machines.)
 
-To control the list of packages tests, not rebuild from scratch, and not
-submit, use (for example):
+To control the list of packages tested, not rebuild from scratch, and not
+submit, use, for example:
 
   env \\
     Trilinos_PACKAGES=<pkg0>,<pkg1>,... \\
     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \\
     CTEST_DO_SUBMIT=OFF \\
-  ./ctest-s-local-test-driver.sh <build-name-1> >build-name-2> ...
+  ./ctest-s-local-test-driver.sh <build-name-1> <build-name-2> ...
+
+To test local installs, one can also set env vars:
+
+  ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX=install
+  CTEST_DO_INSTALL=ON
+
+That will cause Trilinos to be installed into a new install/ directory under
+the build directory:
+
+  <full-build-name>/SRC_AND_BUILD/BUILD/install/
 
 Other options that are good to set sometimes include:
 
@@ -83,6 +96,8 @@ Other options that are good to set sometimes include:
   CTEST_DO_TEST=OFF
   CTEST_PARALLEL_LEVEL=<N>
   CTEST_DO_SUBMIT=OFF
+
+See the documentation for TRIBITS_CTEST_DRIVER() for more details.
 "
 
 if [[ "$@" == "" ]] || [[ "$@" == "-h" ]] ||  [[ "$@" == "--help" ]]; then
@@ -127,15 +142,15 @@ fi
 # Load a default env for the system
 #
 
-if [ "$ATDM_CHT_DEFAULT_ENV" == "" ] ; then
-  ATDM_CHT_DEFAULT_ENV=default
+if [ "$ATDM_CTEST_S_DEFAULT_ENV" == "" ] ; then
+  ATDM_CTEST_S_DEFAULT_ENV=default
 fi
-#echo "ATDM_CHT_DEFAULT_ENV = ${ATDM_CHT_DEFAULT_ENV}"
+#echo "ATDM_CTEST_S_DEFAULT_ENV = ${ATDM_CTEST_S_DEFAULT_ENV}"
 
 echo
 echo "Load some env to get python, cmake, etc ..."
 echo
-source $STD_ATDM_DIR/load-env.sh ${ATDM_CHT_DEFAULT_ENV}
+source $STD_ATDM_DIR/load-env.sh ${ATDM_CTEST_S_DEFAULT_ENV}
 # NOTE: Above, it does not matter which env you load.  Any of them will
 # provide the right python, cmake, etc.
 

@@ -20,7 +20,9 @@
  * Note:  This version has been updated by Mike Gleason <mgleason@ncftp.com>
  */
 
-#if defined(WIN32) || defined(_WINDOWS)
+#if defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
+
+#define __windows__ 1
 #include <conio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -58,34 +60,21 @@
 #define IsLocalPathDelim(c) ((c == LOCAL_PATH_DELIM) || (c == LOCAL_PATH_ALTDELIM))
 #define UNC_PATH_PREFIX "\\\\"
 #define IsUNCPrefixed(s) (IsLocalPathDelim(s[0]) && IsLocalPathDelim(s[1]))
-#define __windows__ 1
+#define pid_t int
+
 #else
-#ifndef __unix__
+
 #define __unix__ 1
-#endif
-#if defined(AIX) || defined(_AIX)
-#define _ALL_SOURCE 1
-#endif
-#if defined(HAVE_CONFIG_H)
-#include <config.h>
-#else
-#/* guess */
-#define HAVE_TERMIOS_H 1
-#define HAVE_UNISTD_H 1
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#ifdef CAN_USE_SYS_SELECT_H
-#include <sys/select.h>
-#endif
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
+#include <sys/select.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#define HAVE_TERMIOS_H 1
 #ifdef HAVE_TERMIOS_H /* use HAVE_TERMIOS_H interface */
 #include <termios.h>
 struct termios new_termios, old_termios;
@@ -326,9 +315,6 @@ static int gl_getc(void)
   int c;
 #ifdef __unix__
   char ch;
-#endif
-
-#ifdef __unix__
   while ((c = read(0, &ch, 1)) == -1) {
     if (errno != EINTR)
       break;

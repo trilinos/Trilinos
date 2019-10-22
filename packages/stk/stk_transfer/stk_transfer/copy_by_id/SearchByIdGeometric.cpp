@@ -101,7 +101,7 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
   EntityProcRelationVec source_to_target_vector;
   stk::search::coarse_search(source_bbox_vector,
                              target_bbox_vector,
-                             stk::search::BOOST_RTREE,
+                             stk::search::KDTREE,
                              mesha.comm(),
                              source_to_target_vector
                              );

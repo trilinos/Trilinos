@@ -46,8 +46,7 @@ public:
      const Scalar errorRel = metaData->getErrorRel();
      int order = metaData->getOrder();
      Scalar dt = metaData->getDt();
-     bool printChanges = solutionHistory->getVerbLevel() !=
-        Teuchos::as<int>(Teuchos::VERB_NONE);
+     bool printDtChanges = tsc.getPrintDtChanges();
 
      dt = tsc.getInitTimeStep();
 
@@ -65,7 +64,7 @@ public:
      // Stepper failure
      if (workingState->getSolutionStatus() == Status::FAILED) {
         if (order+1 <= tsc.getMaxOrder()) {
-           if (printChanges) *out << changeOrder(order, order+1,
+           if (printDtChanges) *out << changeOrder(order, order+1,
                  "Stepper failure, increasing order.");
            order++;
         } else {
@@ -81,7 +80,7 @@ public:
      // Absolute error failure
      if (errorAbs > tsc.getMaxAbsError()) {
         if (order+1 <= tsc.getMaxOrder()) {
-           if (printChanges) *out << changeOrder(order, order+1,
+           if (printDtChanges) *out << changeOrder(order, order+1,
                  "Absolute error is too large.  Increasing order.");
            order++;
         } else {
@@ -101,7 +100,7 @@ public:
      // Relative error failure
      if (errorRel > tsc.getMaxRelError()) {
         if (order+1 <= tsc.getMaxOrder()) {
-           if (printChanges) *out << changeOrder(order, order+1,
+           if (printDtChanges) *out << changeOrder(order, order+1,
                  "Relative error is too large.  Increasing order.");
            order++;
         } else {

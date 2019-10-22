@@ -316,8 +316,8 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
 
     if (j >= num_elem_blks) {
       snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: Invalid element number %" ST_ZU " found in side set %" PRId64 " in file %d",
-               elem, side_set_id, exoid);
+               "ERROR: Invalid element number %zu found in side set %" PRId64 " in file %d", elem,
+               side_set_id, exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
       err_stat = EX_FATAL;
       goto cleanup;
@@ -336,8 +336,8 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
     if (list_len != num_df) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "Warning: In side set %" PRId64 " the distribution factor count (%" PRId64
-               ") does not match the side set node list length (%" ST_ZU
-               "). These should match and this may indicate a corrupt database in file %d",
+               ") does not match the side set node list length (%zu). These should match and this "
+               "may indicate a corrupt database in file %d",
                side_set_id, num_df, list_len, exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_MSG);
       err_stat = EX_WARN;

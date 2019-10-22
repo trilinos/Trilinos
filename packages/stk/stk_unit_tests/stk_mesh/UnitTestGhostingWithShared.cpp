@@ -356,3 +356,23 @@ TEST(UnitTestGhosting, WithShared)
   }
 }
 
+TEST(UnitTestGhosting, basic1Elem)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+    unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+    const std::string generatedMeshSpecification = "generated:1x1x2";
+    stk::io::fill_mesh(generatedMeshSpecification, bulk);
+
+    std::vector<stk::mesh::EntityProc> send;
+    if (bulk.parallel_rank() == 0) {
+      send.emplace_back(bulk.get_entity(stk::topology::ELEM_RANK, 1), 1);
+    }
+    bulk.modification_begin();
+    stk::mesh::Ghosting& ghosting = bulk.create_ghosting("custom1");
+    bulk.change_ghosting(ghosting, send, std::vector<stk::mesh::EntityKey>());
+    bulk.modification_end();
+}
+

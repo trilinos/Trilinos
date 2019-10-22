@@ -88,7 +88,7 @@ MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos:
 
     //set up jacobian graph
     crs_graph = rcp(new Tpetra_CrsGraph(x_map, vecLength));
-    std::vector<int> indices(vecLength);
+    std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices(vecLength);
     for (int i=0; i<vecLength; i++) indices[i]=i;
     const int nodeNumElements = x_map->getNodeNumElements();
     for (int i=0; i<nodeNumElements; i++)
