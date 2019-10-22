@@ -506,7 +506,6 @@ namespace MueLu {
               // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
               SC qr_jk = fineNS[k][aggToRowMapLO[aggStart[agg]+j]];
               if(constantColSums) qr_jk = qr_jk / (double)aggSizes[agg];
-                fineNS[k][aggToRowMapLO[aggStart[agg]+j]];
               if (qr_jk != zero) {
                 ja [rowStart+lnnz] = offset + k;
                 val[rowStart+lnnz] = qr_jk;
