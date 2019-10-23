@@ -16,12 +16,12 @@
 
 namespace percept {
 
-  typedef boost::array<unsigned, 4> wedge_to_tet_tuple_type_local;
-  typedef boost::array<unsigned, 5> wedge_to_pyr_tuple_type_local;
-  typedef boost::array<unsigned, 6> wedge_to_wedge_tuple_type_local;
-  typedef boost::array<stk::mesh::EntityId, 4> wedge_to_tet_tuple_type;
-  typedef boost::array<stk::mesh::EntityId, 5> wedge_to_pyr_tuple_type;
-  typedef boost::array<stk::mesh::EntityId, 6> wedge_to_wedge_tuple_type;
+  typedef std::array<unsigned, 4> wedge_to_tet_tuple_type_local;
+  typedef std::array<unsigned, 5> wedge_to_pyr_tuple_type_local;
+  typedef std::array<unsigned, 6> wedge_to_wedge_tuple_type_local;
+  typedef std::array<stk::mesh::EntityId, 4> wedge_to_tet_tuple_type;
+  typedef std::array<stk::mesh::EntityId, 5> wedge_to_pyr_tuple_type;
+  typedef std::array<stk::mesh::EntityId, 6> wedge_to_wedge_tuple_type;
 
 
   /**
@@ -490,9 +490,9 @@ namespace percept {
                   for (unsigned ii=0; ii < elems_tri[0].size(); ++ii)
                     {
                       tri_tuple_type_local tl;
-                      tl.get<0>() = elems_tri[0][ii].get<0>();
-                      tl.get<1>() = elems_tri[0][ii].get<2>();
-                      tl.get<2>() = elems_tri[0][ii].get<1>();
+                      tl[0] = elems_tri[0][ii][0];
+                      tl[1] = elems_tri[0][ii][2];
+                      tl[2] = elems_tri[0][ii][1];
                       elems_tri[0][ii] = tl;
                     }
                 }
@@ -533,13 +533,13 @@ namespace percept {
               wedge_to_wedge_tuple_type_local hw;
               for (unsigned ii=0; ii < elems_tri[0].size(); ++ii)
                 {
-                  hw[0]   = map_to_wedge(tri_local_nodes[0][elems_tri[0][ii].get<0>()], edge_map_rev, face_map_rev);
-                  hw[1]   = map_to_wedge(tri_local_nodes[0][elems_tri[0][ii].get<1>()], edge_map_rev, face_map_rev);
-                  hw[2]   = map_to_wedge(tri_local_nodes[0][elems_tri[0][ii].get<2>()], edge_map_rev, face_map_rev);
+                  hw[0]   = map_to_wedge(tri_local_nodes[0][elems_tri[0][ii][0]], edge_map_rev, face_map_rev);
+                  hw[1]   = map_to_wedge(tri_local_nodes[0][elems_tri[0][ii][1]], edge_map_rev, face_map_rev);
+                  hw[2]   = map_to_wedge(tri_local_nodes[0][elems_tri[0][ii][2]], edge_map_rev, face_map_rev);
 
-                  hw[3]   = map_to_wedge(tri_local_nodes[1][elems_tri[1][ii].get<0>()], edge_map_rev, face_map_rev);
-                  hw[4]   = map_to_wedge(tri_local_nodes[1][elems_tri[1][ii].get<1>()], edge_map_rev, face_map_rev);
-                  hw[5]   = map_to_wedge(tri_local_nodes[1][elems_tri[1][ii].get<2>()], edge_map_rev, face_map_rev);
+                  hw[3]   = map_to_wedge(tri_local_nodes[1][elems_tri[1][ii][0]], edge_map_rev, face_map_rev);
+                  hw[4]   = map_to_wedge(tri_local_nodes[1][elems_tri[1][ii][1]], edge_map_rev, face_map_rev);
+                  hw[5]   = map_to_wedge(tri_local_nodes[1][elems_tri[1][ii][2]], edge_map_rev, face_map_rev);
 
                   elems_wedge.push_back(hw);
                 }
@@ -627,7 +627,7 @@ namespace percept {
               if (elems_tri.size() == 0 && elems_quad.size() == 0)
                 {
                   VERIFY_OP_ON(num_quad_edge_marks, ==, 0, "hmm");
-                  elems_quad.push_back(quad_to_quad_tuple_type_local(0,1,2,3));
+                  elems_quad.push_back({0,1,2,3});
                 }
               if (m_debug)
                 {
@@ -649,10 +649,10 @@ namespace percept {
 
                   wedge_to_pyr_tuple_type_local hp;
                   // reverse order to get proper volume - not here since faces have proper outward-pointing normals
-                  hp[3] = elems_quad[iquad].get<0>();
-                  hp[2] = elems_quad[iquad].get<1>();
-                  hp[1] = elems_quad[iquad].get<2>();
-                  hp[0] = elems_quad[iquad].get<3>();
+                  hp[3] = elems_quad[iquad][0];
+                  hp[2] = elems_quad[iquad][1];
+                  hp[1] = elems_quad[iquad][2];
+                  hp[0] = elems_quad[iquad][3];
                   for (unsigned ii=0; ii < 4; ++ii)
                     {
                       int hpii = quad_local_nodes[hp[ii]];
@@ -671,9 +671,9 @@ namespace percept {
                     }
                   wedge_to_tet_tuple_type_local ht;
                   // reverse order to get proper volume
-                  ht[2] = elems_tri[itri].get<0>();
-                  ht[1] = elems_tri[itri].get<1>();
-                  ht[0] = elems_tri[itri].get<2>();
+                  ht[2] = elems_tri[itri][0];
+                  ht[1] = elems_tri[itri][1];
+                  ht[0] = elems_tri[itri][2];
                   for (unsigned ii=0; ii < 3; ++ii)
                     {
                       int htii = quad_local_nodes[ht[ii]];
@@ -719,7 +719,7 @@ namespace percept {
               if (elems_tri.size() == 0)
                 {
                   VERIFY_OP_ON(num_tri_edge_marks, ==, 0, "hmm");
-                  elems_tri.push_back(tri_tuple_type_local(0,1,2));
+                  elems_tri.push_back({0,1,2});
                 }
 
               if (m_debug)
@@ -739,9 +739,9 @@ namespace percept {
                     }
                   wedge_to_tet_tuple_type_local ht;
                   // reverse order to get proper volume
-                  ht[2] = elems_tri[itri].get<0>();
-                  ht[1] = elems_tri[itri].get<1>();
-                  ht[0] = elems_tri[itri].get<2>();
+                  ht[2] = elems_tri[itri][0];
+                  ht[1] = elems_tri[itri][1];
+                  ht[0] = elems_tri[itri][2];
                   for (unsigned ii=0; ii < 3; ++ii)
                     {
                       int htii = tri_local_nodes[ht[ii]];

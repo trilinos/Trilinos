@@ -99,7 +99,7 @@ public :
                                    boost::shared_ptr<MeshB> &meshb,
                                    const std::string &name,
                                    const double expansion_factor = 1.5,
-                                   const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE)
+                                   const stk::search::SearchMethod search_method = stk::search::KDTREE)
   : m_mesha(to_be_deprecated::make_shared_ptr(mesha)),
   m_meshb(to_be_deprecated::make_shared_ptr(meshb)),
   m_name (name),
@@ -115,7 +115,7 @@ public :
                     const std::string &name,
                     stk::ParallelMachine pm,
                     const double expansion_factor = 1.5,
-                    const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE)
+                    const stk::search::SearchMethod search_method = stk::search::KDTREE)
   : m_mesha(mesha),
   m_meshb(meshb),
   m_name (name),
@@ -130,7 +130,7 @@ public :
                     std::shared_ptr<MeshB> &meshb,
                     const std::string &name,
                     const double expansion_factor = 1.5,
-                    const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE)
+                    const stk::search::SearchMethod search_method = stk::search::KDTREE)
   : m_mesha(mesha),
   m_meshb(meshb),
   m_name (name),

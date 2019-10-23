@@ -88,6 +88,7 @@ preconditioner for Belos linear solvers, and for any linear solver
 that treats preconditioners as instances of Tpetra::Operator.
 
 This class implements the following relaxation methods:
+- Richardson
 - Jacobi
 - Gauss-Seidel
 - Symmetric Gauss-Seidel
@@ -106,7 +107,7 @@ pp. 2864-2887.
 
 \section Ifpack_Relaxation_Performance Performance
 
-Jacobi will always use your matrix's native sparse matrix-vector
+Richardson and Jacobi will always use your matrix's native sparse matrix-vector
 multiply kernel.  This should give good performance, since we have
 spent a lot of effort tuning Tpetra's kernels.  Depending on the Node
 type of your Tpetra matrix, it may also exploit threads for additional
@@ -175,6 +176,11 @@ dimensions.  Suppose that \f$x^{(0)}\f$ is the starting vector and
 \f$x^{(k)}\f$ is the approximate solution for \f$x\f$ computed by
 iteration $k+1$ of whatever relaxation method we are using.  Here,
 \f$x^{(k)}_i\f$ is the $i$-th element of vector \f$x^{(k)}\f$.
+
+The Richardson method computes
+\f[
+x^{(k+1)}_i = x_^{(k)}_i + alpha ( b_i - \sum_{j} A_{ij} x^{(k)}_j ).
+\f]
 
 The Jacobi method computes
 \f[
@@ -317,6 +323,7 @@ public:
   /// The "relaxation: type" (string) parameter sets the relaxation /
   /// preconditioner method you want to use.  It currently accepts the
   /// following values (the default is "Jacobi"):
+  /// - "Richardson"
   /// - "Jacobi"
   /// - "Gauss-Seidel"
   /// - "Symmetric Gauss-Seidel"
@@ -625,6 +632,11 @@ private:
   /// This variant fills in default values for any valid parameters
   /// that are not in the input list.
   void setParametersImpl (Teuchos::ParameterList& params);
+
+ //! Apply Richardson to X, returning the result in Y.
+  void ApplyInverseRichardson(
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply Jacobi to X, returning the result in Y.
   void ApplyInverseJacobi(

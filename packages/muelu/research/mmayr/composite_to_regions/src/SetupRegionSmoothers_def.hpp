@@ -163,17 +163,7 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
      * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
      * 3. Compute r = B - tmp
      */
-    for (int j = 0; j < maxRegPerProc; j++) { // step 1
-
-      regionGrpMats[j]->apply(*regX[j], *regRes[j]);
-    }
-
-    sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
-                       revisedRowMapPerGrp, rowImportPerGrp); // step 2
-
-    for (int j = 0; j < maxRegPerProc; j++) { // step 3
-      regRes[j]->update(SC_ONE, *regB[j], -SC_ONE);
-    }
+    computeResidual( regRes, regX, regB, regionGrpMats, mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp );
 
     // update solution according to Jacobi's method
     for (int j = 0; j < maxRegPerProc; j++) {
@@ -218,16 +208,7 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
      * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
      * 3. Compute r = B - tmp
      */
-    for (int j = 0; j < maxRegPerProc; j++) { // step 1
-      regionGrpMats[j]->apply(*regX[j], *regRes[j]);
-    }
-
-    sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
-        revisedRowMapPerGrp, rowImportPerGrp);
-
-    for (int j = 0; j < maxRegPerProc; j++) { // step 3
-      regRes[j]->update(1.0, *regB[j], -1.0);
-    }
+    computeResidual( regRes, regX, regB, regionGrpMats, mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp );
 
     // update the solution and the residual
 
@@ -258,6 +239,223 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
   return;
 } // GS
 
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+calcNorm2(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec,
+                        const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
+                        const int maxRegPerProc,
+                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
+                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
+                        const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp)
+{
+#include "Xpetra_UseShortNames.hpp"
+  RCP<Vector> compVec = VectorFactory::Build(mapComp, true);
+  regionalToComposite(regVec, compVec, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::ADD);
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm = compVec->norm2();
+
+  return norm;
+} // calcNorm2
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Scalar
+dotProd(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regX,
+        Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regY,
+        const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
+        const int maxRegPerProc,
+        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
+        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
+        const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp)
+{
+#include "Xpetra_UseShortNames.hpp"
+  RCP<Vector> compX = VectorFactory::Build(mapComp, true);
+  RCP<Vector> compY = VectorFactory::Build(mapComp, true);
+  regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::ADD);
+  regionalToComposite(regY, compY, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::ADD);
+  SC dotVal = compX->dot(*compY);
+
+  return dotVal;
+} // dotProd
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Scalar
+powerMethod(RCP<Teuchos::ParameterList> params,
+                    const int maxRegPerProc,
+                    const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
+                    const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionInterfaceScaling,
+                    const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
+                    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
+                    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
+                    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp,
+                    const int numIters)
+{
+#include "Xpetra_UseShortNames.hpp"
+
+  Teuchos::Array<RCP<Vector> > diagInv = params->get<Teuchos::Array<RCP<Vector> > >("chebyshev: inverse diagonal");
+  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const SC SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
+  SC lambdaMax = SC_ZERO;
+  SC RQ_top, RQ_bottom, norm;
+
+  Array<RCP<Vector> > regX(maxRegPerProc);
+  createRegionalVector(regX, maxRegPerProc, revisedRowMapPerGrp);
+  Array<RCP<Vector> > regY(maxRegPerProc);
+  createRegionalVector(regY, maxRegPerProc, revisedRowMapPerGrp);
+
+  for( int j = 0; j < maxRegPerProc; j++){
+    regX[j]->randomize();
+  }
+  norm = calcNorm2(regX, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+  for (int j = 0; j < maxRegPerProc; j++) {
+    regX[j]->scale( SC_ONE / norm );
+  }
+
+  for (int iter = 0; iter < numIters; ++iter) {
+
+    for (int j = 0; j < maxRegPerProc; j++) { // step 1
+      regionGrpMats[j]->apply(*regX[j], *regY[j]); // A.apply (x, y);
+    }
+    sumInterfaceValues( regY, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp); // step 2
+
+    // Scale by inverse of diagonal
+    for (int j = 0; j < maxRegPerProc; j++){
+      regY[j]->elementWiseMultiply(SC_ONE, *diagInv[j], *regY[j], SC_ZERO);
+    }
+
+    RQ_top = dotProd( regY, regX, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+    RQ_bottom = dotProd( regX, regX, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+    lambdaMax = RQ_top / RQ_bottom;
+
+    norm = calcNorm2(regY, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+    if (norm == SC_ZERO) { // Return something reasonable.
+      return SC_ZERO;
+    }
+    for (int j = 0; j < maxRegPerProc; j++) {
+      regX[j]->update( SC_ONE / norm, *regY[j], SC_ZERO);
+    }
+
+  }
+
+  return lambdaMax;
+} // powerMethod
+
+/*! \brief performs Chebyshev setup
+ */
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void chebyshevSetup(RCP<Teuchos::ParameterList> params,
+                   const int maxRegPerProc,
+                   const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
+                   const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionInterfaceScaling,
+                   const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
+                   const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
+                   const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
+                   const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) {
+#include "Xpetra_UseShortNames.hpp"
+  const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
+
+  Array<RCP<Vector> > regRes(maxRegPerProc);
+  createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
+
+  // extract diagonal from region matrices, recover true diagonal values, invert diagonal
+  Teuchos::Array<RCP<Vector> > diag(maxRegPerProc);
+  for (int j = 0; j < maxRegPerProc; j++) {
+    // extract inverse of diagonal from matrix
+    diag[j] = VectorFactory::Build(regionGrpMats[j]->getRowMap(), true);
+    regionGrpMats[j]->getLocalDiagCopy(*diag[j]);
+    diag[j]->elementWiseMultiply(SC_ONE, *diag[j], *regionInterfaceScaling[j], SC_ZERO); // ToDo Does it work to pass in diag[j], but also return into the same variable?
+    diag[j]->reciprocal(*diag[j]);
+  }
+
+  params->set<Teuchos::Array<RCP<Vector> > >("chebyshev: inverse diagonal", diag);
+
+  // Calculate lambdaMax
+  Scalar lambdaMax = 1;
+  lambdaMax = powerMethod( params,
+                           maxRegPerProc,
+                           regionGrpMats,
+                           regionInterfaceScaling,
+                           mapComp,
+                           rowMapPerGrp,
+                           revisedRowMapPerGrp,
+                           rowImportPerGrp,
+                           1000);
+  params->set< Scalar >("chebyshev: lambda max", lambdaMax );
+
+} // chebyshevSetup
+
+/*! \brief The textbook Chebyshev algorithm from Ifpack2 translated into the region format
+ */
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
+                   Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regX, // left-hand side (or solution)
+                   const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regB, // right-hand side (or residual)
+                   const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats, // matrices in true region layout
+                   const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionInterfaceScaling, // recreate on coarse grid by import Add on region vector of ones
+                   const int maxRegPerProc, ///< max number of regions per proc [in]
+                   const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp, ///< composite map
+                   const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in region layout [in] requires the mapping of GIDs on fine mesh to "filter GIDs"
+                   const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp, ///< revised row maps in region layout [in] (actually extracted from regionGrpMats)
+                   const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in]
+                   )
+{
+#include "Xpetra_UseShortNames.hpp"
+  const int maxIter      = params->get<int>   ("smoother: sweeps");
+  const Scalar eigRatio  = params->get<double>("smoother: eigRatio");
+  const Scalar lambdaMax = params->get<Scalar>("chebyshev: lambda max");
+  const Scalar lambdaMin = lambdaMax / eigRatio;
+  
+  Teuchos::Array<RCP<Vector> > diag_inv = params->get<Teuchos::Array<RCP<Vector> > >("chebyshev: inverse diagonal");
+
+  const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar SC_TWO  = Teuchos::as<Scalar> (2);
+
+  const Scalar d = (lambdaMax + lambdaMin) / SC_TWO;// Ifpack2 calls this theta
+  const Scalar c = (lambdaMax - lambdaMin) / SC_TWO;// Ifpack2 calls this 1/delta
+
+  Array<RCP<Vector> > regRes(maxRegPerProc);
+  createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
+
+  Array<RCP<Vector> > regP(maxRegPerProc);
+  createRegionalVector(regP, maxRegPerProc, revisedRowMapPerGrp);
+  Array<RCP<Vector> > regZ(maxRegPerProc);
+  createRegionalVector(regZ, maxRegPerProc, revisedRowMapPerGrp);
+
+  Scalar alpha, beta;
+
+  for (int i = 0; i < maxIter; ++i) {
+    // Compute residual vector
+    computeResidual( regRes, regX, regB, regionGrpMats, mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp );
+
+    //solve (Z, D_inv, R); // z = D_inv * R, that is, D \ R.
+    for(int j = 0; j < maxRegPerProc; j++) {
+      regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regRes[j], SC_ZERO);
+    }
+    if (i == 0) {
+      for (int j=0; j < maxRegPerProc; j++) {
+      regP[j]->update( SC_ONE, *regZ[j], SC_ZERO); // P = Z
+      }
+      alpha = SC_TWO / d;
+    } else {
+      beta  = alpha * ( c / SC_TWO ) * ( c / SC_TWO );
+      alpha = SC_ONE / ( d - beta );
+      for (int j=0; j < maxRegPerProc; j++) {
+        regP[j]->update( SC_ONE, *regZ[j], beta);// P = Z + beta*P
+      }
+    }
+    for (int j=0; j < maxRegPerProc; j++) {
+      regX[j]->update( alpha, *regP[j], SC_ONE);// X = X + alpha*P
+    }
+
+    // If we compute the residual here, we could either do R = B -
+    // A*X, or R = R - alpha*A*P.  Since we choose the former, we
+    // can move the computeResidual call to the top of the loop.
+  }
+} // chebyshevIterate
+
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void smootherSetup(RCP<Teuchos::ParameterList> params,
                    const int maxRegPerProc,
@@ -286,7 +484,7 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
   }
   case 3:
   {
-    std::cout << "Chebyshev smoother not implemented yet. No smoother is applied" << std::endl;
+    chebyshevSetup(params, maxRegPerProc, regionGrpMats, regionInterfaceScaling, mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
     break;
   }
   default:
@@ -330,6 +528,8 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
     break;
   }
   case 3:
+    chebyshevIterate(params, regX, regB, regionGrpMats, regionInterfaceScaling, maxRegPerProc,
+                  mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
   {
     break;
   }

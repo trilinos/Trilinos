@@ -356,3 +356,116 @@ TEST(UnitTestGhosting, WithShared)
   }
 }
 
+TEST(UnitTestGhosting, basic1Elem)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+    unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+    const std::string generatedMeshSpecification = "generated:1x1x2";
+    stk::io::fill_mesh(generatedMeshSpecification, bulk);
+
+    std::vector<stk::mesh::EntityProc> send;
+    if (bulk.parallel_rank() == 0) {
+      send.emplace_back(bulk.get_entity(stk::topology::ELEM_RANK, 1), 1);
+    }
+    bulk.modification_begin();
+    stk::mesh::Ghosting& ghosting = bulk.create_ghosting("custom1");
+    bulk.change_ghosting(ghosting, send, std::vector<stk::mesh::EntityKey>());
+    bulk.modification_end();
+}
+
+void create_mesh_with_1_tri_per_proc(stk::mesh::BulkData& bulk)
+{
+  std::vector<stk::mesh::EntityId> nodeIds[] = { {1, 3, 2}, {2, 3, 4} };
+  stk::mesh::EntityId elemIds[] = {1, 2};
+
+  stk::mesh::Part& tri2dPart = bulk.mesh_meta_data().get_topology_root_part(stk::topology::TRI_3_2D);
+  stk::mesh::PartVector elemParts = {&tri2dPart};
+  const int myProc = bulk.parallel_rank();
+  const int otherProc = 1 - myProc;
+
+  bulk.modification_begin();
+  stk::mesh::declare_element(bulk, elemParts, elemIds[myProc], nodeIds[myProc]);
+  bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK, 2), otherProc);
+  bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK, 3), otherProc);
+  bulk.modification_end();
+}
+
+void delete_node_2_and_connect_node_5_to_elem_1(stk::mesh::BulkData& bulk)
+{
+  bulk.modification_begin();
+  if (bulk.parallel_rank() == 0) {
+    stk::mesh::Entity node5 = bulk.declare_node(5);
+    stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+    stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+    stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, 2);
+
+    bulk.destroy_relation(elem1, node2, 2);
+    bulk.destroy_relation(elem2, node2, 0);
+    bulk.destroy_entity(elem2);
+    bulk.destroy_entity(node2);
+    bulk.declare_relation(elem1, node5, 2);
+  }
+  bulk.modification_end();
+}
+
+TEST(UnitTestGhosting, sharedBecomesAuraGhost)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const unsigned spatialDim = 2;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);
+
+/*Create this mesh:
+
+ P0       P1
+    2* *2
+    /| |\
+   / | | \
+ 1*  | |  *4
+   \ | | /
+    \| |/
+    3* *3
+
+  nodes 2 and 3 are shared, aura ghosts node 1 to P1 and node 4 to P0
+*/
+
+  create_mesh_with_1_tri_per_proc(bulk);
+
+  stk::mesh::EntityVector sharedNodes;
+  stk::mesh::get_selected_entities(meta.globally_shared_part(),
+                                   bulk.buckets(stk::topology::NODE_RANK), sharedNodes);
+  EXPECT_EQ(2u, sharedNodes.size());
+
+  stk::mesh::Selector ghosts = !(meta.locally_owned_part() | meta.globally_shared_part());
+  stk::mesh::EntityVector ghostNodes;
+  stk::mesh::get_selected_entities(ghosts, bulk.buckets(stk::topology::NODE_RANK), ghostNodes);
+  EXPECT_EQ(1u, ghostNodes.size());
+
+/*Now change the mesh to be this:
+
+ P0       P1
+    5* *2
+    /| |\
+   / | | \
+ 1*  | |  *4
+   \ | | /
+    \| |/
+    3* *3
+  i.e., on P0: disconnect node 2 from elem 1 and elem 2, destroy node 2
+  node 3 still shared, aura ghosts nodes 1 and 5 to P1 and nodes 2 and 4 to P0
+*/
+
+  delete_node_2_and_connect_node_5_to_elem_1(bulk);
+
+  stk::mesh::get_selected_entities(meta.globally_shared_part(),
+                                   bulk.buckets(stk::topology::NODE_RANK), sharedNodes);
+  EXPECT_EQ(1u, sharedNodes.size());
+
+  stk::mesh::get_selected_entities(ghosts, bulk.buckets(stk::topology::NODE_RANK), ghostNodes);
+  EXPECT_EQ(2u, ghostNodes.size());
+}
+

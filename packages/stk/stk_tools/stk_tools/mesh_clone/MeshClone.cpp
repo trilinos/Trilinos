@@ -126,7 +126,12 @@ void copy_surface_to_block_mapping(const stk::mesh::MetaData &oldMeta, stk::mesh
 
 void copy_meta(const stk::mesh::MetaData &inputMeta, stk::mesh::MetaData &outputMeta)
 {
-    outputMeta.initialize(inputMeta.spatial_dimension(), inputMeta.entity_rank_names());
+    // Query the coordinate field, to figure out the final name (if none set by the user)
+    inputMeta.coordinate_field();
+
+    outputMeta.initialize(inputMeta.spatial_dimension(),
+                          inputMeta.entity_rank_names(),
+                          inputMeta.coordinate_field_name());
     copy_parts(inputMeta, outputMeta);
     copy_fields(inputMeta, outputMeta);
     copy_surface_to_block_mapping(inputMeta, outputMeta);

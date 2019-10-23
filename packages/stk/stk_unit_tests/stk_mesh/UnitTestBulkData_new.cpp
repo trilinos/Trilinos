@@ -360,7 +360,7 @@ TEST ( UnitTestBulkData_new , verifyParallelAddParts )
         i =  bulk.my_internal_comm_list().begin();
         i != bulk.my_internal_comm_list().end() ; ++i ) {
     if ( i->key.rank() == 0 ) {
-      if ( i->owner == fixture.comm_rank() ) {
+      if ( bulk.parallel_owner_rank(i->entity) == fixture.comm_rank() ) {
         bulk.change_entity_parts ( i->entity, add_part, ConstPartVector() );
       }
     }

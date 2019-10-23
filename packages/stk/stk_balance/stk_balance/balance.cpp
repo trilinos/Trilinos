@@ -390,7 +390,7 @@ void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
     run_static_stk_balance_with_settings(stkInput, bulk, outputFilename, bulk.parallel(), graphOptions);
 }
 
-void run_stk_balance_with_settings(const std::string& outputFilename, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
+void run_stk_balance_with_settings(const std::string& outputFilename, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& balanceSettings)
 {
     const std::string trimmedInputName = (exodusFilename.substr(0,2) == "./") ? exodusFilename.substr(2) : exodusFilename;
     const std::string trimmedOutputName = (outputFilename.substr(0,2) == "./") ? outputFilename.substr(2) : outputFilename;
@@ -404,26 +404,40 @@ void run_stk_balance_with_settings(const std::string& outputFilename, const std:
     const std::string initialDecompMethod = "RIB";
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, comm);
-    initial_decomp_and_balance(bulk, graphOptions, exodusFilename, outputFilename, initialDecompMethod);
+    meta.set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
+
+    initial_decomp_and_balance(bulk, balanceSettings, exodusFilename, outputFilename, initialDecompMethod);
 }
+
+class StkBalanceSettings : public GraphCreationSettings
+{
+public:
+    StkBalanceSettings()
+      : GraphCreationSettings()
+    {}
+
+    std::string getCoordinateFieldName() const override {
+      return "balance_coordinates";
+    }
+};
 
 void run_stk_rebalance(const std::string& outputDirectory, const std::string& inputFile, stk::balance::AppTypeDefaults appType, MPI_Comm comm)
 {
-    stk::balance::GraphCreationSettings graphOptions;
+    StkBalanceSettings balanceSettings;
 
     if (appType == stk::balance::SD_DEFAULTS)
     {
-        graphOptions.setShouldFixSpiders(true);
+        balanceSettings.setShouldFixSpiders(true);
     }
     else if (appType == stk::balance::SM_DEFAULTS)
     {
-        graphOptions.setEdgeWeightForSearch(3.0);
-        graphOptions.setVertexWeightMultiplierForVertexInSearch(10.0);
-        graphOptions.setToleranceFunctionForFaceSearch(std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+        balanceSettings.setEdgeWeightForSearch(3.0);
+        balanceSettings.setVertexWeightMultiplierForVertexInSearch(10.0);
+        balanceSettings.setToleranceFunctionForFaceSearch(std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
     }
 
     std::string outputFilename = construct_output_file_name(outputDirectory, inputFile);
-    run_stk_balance_with_settings(outputFilename, inputFile, comm, graphOptions);
+    run_stk_balance_with_settings(outputFilename, inputFile, comm, balanceSettings);
 }
 
 }

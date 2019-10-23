@@ -45,18 +45,12 @@
 
 #include <percept/PerceptBoostArray.hpp>
 
-#include <boost/tuple/tuple_io.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
-
 #include <Kokkos_UnorderedMap.hpp>
 #include <percept/MeshType.hpp>
 
 #define DEBUG_PRINT_11 0
 #define NR_PRINT(a) do { if (DEBUG_PRINT_11) std::cout << #a << " = " << a ; } while(0)
 #define NR_PRINT_OUT(a,out) do { if (DEBUG_PRINT_11) out << #a << " = " << a << std::endl; } while(0)
-
-/// define only one of these to be 1
-/// current best setting is NODE_REGISTRY_MAP_TYPE_BOOST = 1
 
 #define STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO 0
 #define STK_ADAPT_NODEREGISTRY_DO_REHASH 1
@@ -83,7 +77,6 @@
 
     /// map of the node ids on a sub-dim entity to the data on the sub-dim entity
     typedef Kokkos::UnorderedMap<SubDimCell_SDCEntityType, SubDimCellData, Kokkos::DefaultHostExecutionSpace, my_fast_hash<SDCEntityType, 4>, my_fast_equal_to<SDCEntityType, 4> > SubDimCellToDataMap_KOKKOS;
-    typedef Kokkos::UnorderedMap<stk::mesh::EntityId, stk::mesh::Entity, Kokkos::DefaultHostExecutionSpace> EntityRepo_KOKKOS;
 
     //========================================================================================================================
     //========================================================================================================================
@@ -112,7 +105,6 @@
                                                     m_useAddNodeSharing(false),
                                                     m_checkForGhostedNodes(false),
                                                     m_gee_cnt(0), m_gen_cnt(0),
-                                                    m_entity_repo(percept::EntityRankEnd),
                                                     m_debug(false),
                                                     m_state(NRS_NONE),
                                                     m_waste_tolerance(waste_tol)
@@ -127,7 +119,6 @@
       }
 
       void init_comm_all();
-      void init_entity_repo();
       void clear_dangling_nodes(SetOfEntities* nodes_to_be_deleted);
       void initialize();
 
@@ -232,8 +223,8 @@
           {
             SubDimCellData& nodeId_elementOwnderId = data;
 
-            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-            stk::mesh::EntityId owning_elementId = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnderId);
+            stk::mesh::EntityId owning_elementId = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnderId).id();
 
             if (1)
               std::cout << "put in map: nodeIds_onSE.size= " << (nodeIds_onSE.size())
@@ -412,7 +403,6 @@
     public:
       int m_gee_cnt;
       int m_gen_cnt;
-      std::vector<EntityRepo_KOKKOS> m_entity_repo;
 
       bool m_debug;
 

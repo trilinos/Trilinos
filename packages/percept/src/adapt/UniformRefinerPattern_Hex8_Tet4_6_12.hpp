@@ -142,7 +142,7 @@
       {
         EXCEPTWATCH;
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tet_tuple_type;
+        typedef std::array<stk::mesh::EntityId, 4> tet_tuple_type;
         vector<tet_tuple_type> new_elements(6);
 
         shards::CellTopology cell_topo(cell_topo_data);
@@ -242,7 +242,7 @@
                 }
               new_elements.resize(12);
 
-              //               boost::array<double,3> centroid = {{0,0,0}};
+              //               std::array<double,3> centroid = {{0,0,0}};
               //               for (unsigned iv = 0; iv < 8; iv++)
               //                 {
               //                   centroid[0] += m_node_coords[element_globalIds[iv]][0]/8.0;
@@ -264,10 +264,10 @@
                       //                           m_elems[shards_Tetrahedron_4].push_back(element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][jTriNodeIndex]]);
                       //                         }
 
-                      new_elements[iele++] = tet_tuple_type(CENTROID_N,
-                                                            element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][0]],
-                                                            element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][1]],
-                                                            element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][2]]);
+                      new_elements[iele++] = {CENTROID_N,
+                                              element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][0]],
+                                              element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][1]],
+                                              element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][2]]};
 
                     }
                 }
@@ -299,10 +299,10 @@
                           //    {
                           //       m_elems[shards_Tetrahedron_4].push_back(element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][jTriNodeIndex]]);
                           //    }
-                          new_elements[count] = tet_tuple_type(element_globalIds[vmaxIndx],
-                                                               element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][0]],
-                                                               element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][1]],
-                                                               element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][2]]);
+                          new_elements[count] = {element_globalIds[vmaxIndx],
+                                                 element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][0]],
+                                                 element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][1]],
+                                                 element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][2]]};
 
                           ++count;
 
@@ -315,6 +315,7 @@
         }
         // to here <<<<<< -----------------------
 
+        std::vector<stk::mesh::Entity> elemNodes(4);
         for (unsigned ielem=0; ielem < new_elements.size(); ielem++)
           {
             //stk::mesh::Entity newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
@@ -332,17 +333,11 @@
 
             unsigned nchild = new_elements.size();
 
-            {
-              if (!new_elements[ielem].get<0>())
-                {
-                  std::cout << "P[" << eMesh.get_rank() << " nid = 0 << " << std::endl;
-                  exit(123);
-                }
-            }
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<0>()), 0);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<1>()), 1);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<2>()), 2);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<3>()), 3);
+            elemNodes[0] = eMesh.createOrGetNode(new_elements[ielem][0]);
+            elemNodes[1] = eMesh.createOrGetNode(new_elements[ielem][1]);
+            elemNodes[2] = eMesh.createOrGetNode(new_elements[ielem][2]);
+            elemNodes[3] = eMesh.createOrGetNode(new_elements[ielem][3]);
+            eMesh.get_bulk_data()->declare_relation(newElement, elemNodes);
 
             set_parent_child_relations(eMesh, element, newElement, *ft_element_pool, ielem, &nchild);
 

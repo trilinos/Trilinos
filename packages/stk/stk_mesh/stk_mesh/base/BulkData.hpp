@@ -606,23 +606,31 @@ public:
 
   size_t get_num_communicated_entities() const { return m_entity_comm_list.size(); }
 
-  bool in_shared(EntityKey key) const { return !internal_entity_comm_map_shared(key).empty(); }         // CLEANUP: only used for testing
-  bool in_shared(EntityKey key, int proc) const;         // CLEANUP: only used for testing
-  bool in_receive_ghost( EntityKey key ) const;         // CLEANUP: only used for testing
-  bool in_receive_ghost( const Ghosting & ghost , EntityKey entity ) const;
+  bool in_shared(EntityKey key) const { return !internal_entity_comm_map_shared(key).empty(); }
+  bool in_shared(Entity entity) const { return !internal_entity_comm_map_shared(entity).empty(); }
+  bool in_shared(EntityKey key, int proc) const;
+  bool in_shared(Entity entity, int proc) const;
+  bool in_receive_ghost( EntityKey key ) const;
+  bool in_receive_ghost( Entity entity ) const;
+  bool in_receive_ghost( const Ghosting & ghost , EntityKey key ) const;
+  bool in_receive_ghost( const Ghosting & ghost , Entity entity ) const;
   bool in_receive_custom_ghost( EntityKey key ) const;
-  bool in_send_ghost( EntityKey key) const;         // CLEANUP: only used for testing
-  bool in_send_ghost( EntityKey key , int proc ) const;         // CLEANUP: only used for testing
+  bool in_send_ghost( EntityKey key) const;
+  bool in_send_ghost( Entity entity) const;
+  bool in_send_ghost( EntityKey key , int proc ) const;
   bool in_send_ghost( const Ghosting & ghosting, EntityKey key, int proc) const;
-  bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;     // CLEANUP: used only by modification_end_for_entity_creation
-  bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;     // CLEANUP: can be moved protected
+  bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;
+  bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;
+  bool in_ghost( const Ghosting & ghost , Entity entity , int proc ) const;
   void shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const; // CLEANUP: only used by aero
 
   // Comm-related convenience methods
 
+  bool is_communicated_with_proc(Entity entity, int proc) const;
   void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
   void comm_procs( const Ghosting & ghost , EntityKey key, std::vector<int> & procs ) const;
-  void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const; // shared entities
+  void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const;
+  void comm_shared_procs( Entity entity, std::vector<int> & procs ) const;
 
   inline bool in_index_range(Entity entity) const;
   inline bool is_valid(Entity entity) const;
@@ -900,17 +908,52 @@ protected: //functions
 
   const EntityCommListInfoVector & internal_comm_list() const { return m_entity_comm_list; }
   PairIterEntityComm internal_entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
+
+  PairIterEntityComm internal_entity_comm_map(Entity entity) const
+  {
+    if (m_entitycomm[entity.local_offset()] != nullptr) {
+      const EntityCommInfoVector& vec = m_entitycomm[entity.local_offset()]->comm_map;
+      return PairIterEntityComm(vec.begin(), vec.end());
+    }
+    return PairIterEntityComm();
+  }
+
   PairIterEntityComm internal_entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
-  int internal_entity_comm_map_owner(const EntityKey & key) const;
+
+  PairIterEntityComm internal_entity_comm_map(Entity entity, const Ghosting & sub ) const
+  {
+    if (m_entitycomm[entity.local_offset()] != nullptr) {
+      const EntityCommInfoVector& vec = m_entitycomm[entity.local_offset()]->comm_map;
+      const EntityCommInfo s_begin( sub.ordinal() ,     0 );
+      const EntityCommInfo s_end(   sub.ordinal() + 1 , 0 );
+    
+      EntityCommInfoVector::const_iterator i = vec.begin();
+      EntityCommInfoVector::const_iterator e = vec.end();
+    
+      i = std::lower_bound( i , e , s_begin );
+      e = std::lower_bound( i , e , s_end );
+    
+      return PairIterEntityComm( i , e );
+    }
+    return PairIterEntityComm();
+  }
 
   inline EntitySharing internal_is_entity_marked(Entity entity) const;
   PairIterEntityComm internal_entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }
+
+  PairIterEntityComm internal_entity_comm_map_shared(Entity entity) const
+  {
+    if (m_entitycomm[entity.local_offset()] != nullptr) {
+      const EntityCommInfoVector& vec = m_entitycomm[entity.local_offset()]->comm_map;
+      return shared_comm_info_range(vec);
+    }
+    return PairIterEntityComm();
+  }
 
   void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, bool onlyConsiderSoloSides, std::vector<shared_entity_type>& shared_entities);
   virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes);
 
   void gather_shared_nodes(std::vector<Entity> & shared_nodes);
-  inline bool internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
 
   inline void set_state(Entity entity, EntityState entity_state);
   inline void set_entity_key(Entity entity, EntityKey key);
@@ -956,6 +999,11 @@ protected: //functions
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
+                                 const std::vector<Entity> & remove_receive,
+                                 bool is_full_regen = false); // Mod Mark
+
+  void internal_change_ghosting( Ghosting & ghosts,
+                                 const std::vector<EntityProc> & add_send ,
                                  const std::vector<EntityKey> & remove_receive,
                                  bool is_full_regen = false); // Mod Mark
 
@@ -989,14 +1037,19 @@ protected: //functions
   void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank,
                                       const stk::mesh::Selector *only_consider_second_element_from_this_selector); // Mod Mark
 
-  void internal_resolve_shared_modify_delete(stk::mesh::EntityVector & entitiesNoLongerShared) // Mod Mark
+  void internal_resolve_shared_modify_delete(stk::mesh::EntityVector & entitiesNoLongerShared)
   {
       m_meshModification.internal_resolve_shared_modify_delete(entitiesNoLongerShared);
   }
 
+  void filter_upward_ghost_relations(const Entity entity, std::function<void(Entity)> filter);
+  EntityVector get_upward_send_ghost_relations(const Entity entity);
+  EntityVector get_upward_recv_ghost_relations(const Entity entity);
+  void add_entity_to_same_ghosting(Entity entity, Entity connectedGhost);
   void update_comm_list_based_on_changes_in_comm_map();
 
-  void internal_resolve_ghosted_modify_delete(); // Mod Mark
+  void internal_resolve_formerly_shared_entities(const stk::mesh::EntityVector& entitiesNoLongerShared);
+  void internal_resolve_ghosted_modify_delete(const stk::mesh::EntityVector& entitiesNoLongerShared);
   void internal_resolve_shared_part_membership_for_element_death(); // Mod Mark
 
   void remove_unneeded_induced_parts(stk::mesh::Entity entity, const EntityCommInfoVector& entity_comm_info,
@@ -1024,17 +1077,23 @@ protected: //functions
 
   void add_comm_list_entries_for_entities(const std::vector<stk::mesh::Entity>& shared_modified);
 
-  bool entity_comm_map_insert(Entity entity, const EntityCommInfo &val)
+  std::pair<EntityComm*,bool> entity_comm_map_insert(Entity entity, const EntityCommInfo &val)
   {
       EntityKey key = entity_key(entity);
-      bool didInsert = m_entity_comm_map.insert(key, val, parallel_owner_rank(entity));
-      if(didInsert)
+      std::pair<EntityComm*,bool> result = m_entity_comm_map.insert(key, val, parallel_owner_rank(entity));
+      if(result.second)
       {
+          m_entitycomm[entity.local_offset()] = result.first;
           m_modSummary.track_comm_map_insert(entity, val);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
-      return didInsert;
+      return result;
   }
+  void remove_entity_comm(Entity entity)
+  {
+    m_entitycomm[entity.local_offset()] = nullptr;
+  }
+
   bool entity_comm_map_erase(const EntityKey &key, const EntityCommInfo &val)
   {
       bool didErase = m_entity_comm_map.erase(key, val);
@@ -1114,13 +1173,6 @@ protected: //functions
     ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_keys.size() - 1);
   }
 
-  void fix_up_ownership(stk::mesh::Entity entity, int new_owner)
-  {
-      stk::mesh::EntityKey key = entity_key(entity);
-      this->internal_change_owner_in_comm_data(key, new_owner);
-      this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, new_owner);
-  }
-
   void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
   void remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
 
@@ -1157,7 +1209,7 @@ protected: //functions
 
   void internal_finish_modification_end(impl::MeshModification::modification_optimization opt); // Mod Mark
 
-  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner); // Mod Mark
+  void internal_set_owner(Entity entity, int new_owner);
 
   std::vector<uint64_t> internal_get_ids_in_use(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId>& reserved_ids = std::vector<stk::mesh::EntityId>()) const;
 
@@ -1193,7 +1245,9 @@ private: //functions
   void mark_entities_as_deleted(stk::mesh::Bucket * bucket);
 
   void generate_ghosting_receive_list(const stk::mesh::Ghosting &ghosting, const std::vector <EntityKey> &remove_receive,
-    std::set<EntityKey> &entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
+    std::set<EntityKey> &recvGhosts);
+  void generate_ghosting_receive_list(const stk::mesh::Ghosting &ghosting, const std::vector <Entity> &remove_receive,
+    std::vector<Entity> &recvGhosts, std::vector<bool>& ghostStatus);
 
   void verify_and_filter_add_send(Ghosting & ghosts, const std::vector<EntityProc> & add_send, bool &need_to_change_ghosting,
                                   bool &add_send_is_owned, std::vector <EntityProc> &filtered_add_send );
@@ -1461,6 +1515,7 @@ private:
                                  const PARTVECTOR& parts);
 
   stk::mesh::EntityId select_side_id(Entity elem, unsigned sideOrdinal);
+  void entity_comm_list_insert(Entity node);
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
@@ -1477,6 +1532,8 @@ protected: //data
   std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity
   impl::EntityRepository* m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
+  std::vector<EntityComm*> m_entitycomm;
+  std::vector<int> m_owner;
   CommListUpdater m_comm_list_updater;
   std::list<Entity::entity_value_type> m_deleted_entities_current_modification_cycle;
   GhostReuseMap m_ghost_reuse_map;

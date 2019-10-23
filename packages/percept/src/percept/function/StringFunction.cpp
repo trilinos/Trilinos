@@ -23,7 +23,6 @@
 #include <percept/function/StringFunction.hpp>
 #include <percept/ExceptionWatch.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <boost/lexical_cast.hpp>
 
   namespace percept
   {
@@ -75,7 +74,7 @@
       m_gradient_string = "";
       m_spatialDim = len;
       for (int i = 0; i < len; i++)
-        m_gradient_string += "v["+boost::lexical_cast<std::string>(i)+"]= "+gstring[i]+";";
+        m_gradient_string += "v["+std::to_string(i)+"]= "+gstring[i]+";";
     }
 
     void
@@ -86,7 +85,7 @@
       m_gradient_string = "";
       m_spatialDim = len;
       for (int i = 0; i < len; i++)
-        m_gradient_string += "v["+boost::lexical_cast<std::string>(i)+"]= "+gstring(i)+";";
+        m_gradient_string += "v["+std::to_string(i)+"]= "+gstring(i)+";";
     }
 
     // new StringFunction = lhs OP rhs
@@ -217,7 +216,7 @@
             }
           if (deriv_spec.dimension(0) > 1)
             {
-              out_str += "v["+boost::lexical_cast<std::string>(iresult)+"]= " + fstr+";";
+              out_str += "v["+std::to_string(iresult)+"]= " + fstr+";";
             }
           else
             {
@@ -234,7 +233,7 @@
 
     Teuchos::RCP<Function > StringFunction::derivative_test_fd(MDArrayString& deriv_spec, double eps)
     {
-      std::string eps_string = boost::lexical_cast<std::string>(eps);
+      std::string eps_string = std::to_string(eps);
       std::string fstr = m_func_string;
       std::string fstr_p = m_func_string;
       std::string fstr_m = m_func_string;
@@ -259,7 +258,7 @@
             }
           if (deriv_spec.dimension(0) > 1)
             {
-              out_str += "v["+boost::lexical_cast<std::string>(iresult)+"]= " + fstr+";";
+              out_str += "v["+std::to_string(iresult)+"]= " + fstr+";";
             }
           else
             {

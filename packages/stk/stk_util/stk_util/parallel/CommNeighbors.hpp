@@ -74,6 +74,10 @@
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
 
+#ifdef STK_DISABLE_MPI_NEIGHBOR_COMM
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+
 #endif
 
 //------------------------------------------------------------------------
@@ -128,7 +132,7 @@ public:
    */
   void reset_buffers();
 
-  ~CommNeighbors();
+  virtual ~CommNeighbors();
 
   const std::vector<int>& send_procs() const { return m_send_procs; }
   const std::vector<int>& recv_procs() const { return m_recv_procs; }
