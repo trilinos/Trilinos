@@ -80,6 +80,7 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("tentative: calculate qr");
     SET_VALID_ENTRY("tentative: build coarse coordinates");
+    SET_VALID_ENTRY("tentative: constant column sums");
 #undef  SET_VALID_ENTRY
     validParamList->set< std::string >("Nullspace name", "Nullspace", "Name for the input nullspace");
 
@@ -272,6 +273,16 @@ namespace MueLu {
 
     const GO     numAggs   = aggregates->GetNumAggregates();
     const size_t NSDim     = fineNullspace->getNumVectors();
+    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizes();
+
+
+    // Sanity checking
+    const ParameterList& pL = GetParameterList();
+    const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
+    const bool &constantColSums = pL.get<bool>("tentative: constant column sums");    
+
+    TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && constantColSums,Exceptions::RuntimeError,
+                               "MueLu::TentativePFactory::MakeTentative: cannot use 'constant column sums' and 'calculate qr' at the same time");
 
     // Aggregates map is based on the amalgamated column map
     // We can skip global-to-local conversion if LIDs in row map are
@@ -296,9 +307,6 @@ namespace MueLu {
     }
 
     coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
-
-    const ParameterList& pL = GetParameterList();
-    const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
 
     // Pull out the nullspace vectors so that we can have random access.
     ArrayRCP<ArrayRCP<const SC> > fineNS  (NSDim);
@@ -469,7 +477,7 @@ namespace MueLu {
     } else {
       GetOStream(Runtime1) << "TentativePFactory : bypassing local QR phase" << std::endl;
       if (NSDim>1)
-        GetOStream(Warnings0) << "TentativePFactor : for nontrivial nullspace, this may degrade performance" << std::endl;
+        GetOStream(Warnings0) << "TentativePFactory : for nontrivial nullspace, this may degrade performance" << std::endl;
       /////////////////////////////
       //      "no-QR" option     //
       /////////////////////////////
@@ -496,7 +504,8 @@ namespace MueLu {
 
             for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
               // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
-              const SC qr_jk = fineNS[k][aggToRowMapLO[aggStart[agg]+j]];
+              SC qr_jk = fineNS[k][aggToRowMapLO[aggStart[agg]+j]];
+              if(constantColSums) qr_jk = qr_jk / (double)aggSizes[agg];
               if (qr_jk != zero) {
                 ja [rowStart+lnnz] = offset + k;
                 val[rowStart+lnnz] = qr_jk;
@@ -520,7 +529,8 @@ namespace MueLu {
 
             for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
               // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
-              const SC qr_jk = fineNS[k][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j])];
+              SC qr_jk = fineNS[k][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j])];
+              if(constantColSums) qr_jk = qr_jk / (double)aggSizes[agg];
               if (qr_jk != zero) {
                 ja [rowStart+lnnz] = offset + k;
                 val[rowStart+lnnz] = qr_jk;
