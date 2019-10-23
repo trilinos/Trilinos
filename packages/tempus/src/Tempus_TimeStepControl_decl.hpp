@@ -129,6 +129,11 @@ public:
       { return tscPL_->get<int>("Number of Time Steps"); }
     virtual Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>>
        getTimeStepControlStrategy() const { return stepControlStrategy_;}
+    virtual int getOutputIndexInterval()
+      { return outputIndexInterval_;}
+    virtual Scalar setOutputTimeInterval()
+      { return outputTimeInterval_;}
+ 
   //@}
 
   /// \name Set ParameterList values
@@ -186,9 +191,11 @@ public:
         ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
     virtual void setNumTimeSteps(int numTimeSteps);
     virtual void setOutputIndexInterval(int OutputIndexInterval)
-      { tscPL_->set<int>("Output Index Interval",OutputIndexInterval); }
+      { tscPL_->set<int>("Output Index Interval",OutputIndexInterval); 
+        outputIndexInterval_ = OutputIndexInterval;}
     virtual void setOutputTimeInterval(double OutputTimeInterval)
-      { tscPL_->set<double>("Output Time Interval",OutputTimeInterval); }
+      { tscPL_->set<double>("Output Time Interval",OutputTimeInterval); 
+        outputTimeInterval_ = OutputTimeInterval;}
     virtual void setPrintDtChanges(bool printDtChanges)
       { printDtChanges_ = printDtChanges; }
     virtual bool getPrintDtChanges() const { return printDtChanges_; }
@@ -200,6 +207,8 @@ protected:
 
   std::vector<int>    outputIndices_;  ///< Vector of output indices.
   std::vector<Scalar> outputTimes_;    ///< Vector of output times.
+  int outputIndexInterval_;
+  Scalar outputTimeInterval_;
 
   bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
   Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
