@@ -50,7 +50,7 @@ StepperSubcycling<Scalar>::StepperSubcycling()
     stepperPL->set("Stepper Type", "Forward Euler");
     tempusPL->set("Default Subcycling Stepper", *stepperPL);
 
-    auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
+    auto sf = Teuchos::rcp(new Tempus::StepperFactory<Scalar>());
     auto stepperFE = sf->createStepperForwardEuler(Teuchos::null,Teuchos::null);
     setSubcyclingStepper(stepperFE);
   }
@@ -266,7 +266,6 @@ void StepperSubcycling<Scalar>::initialize()
          this->getICConsistency() == "App"  ||
          this->getICConsistency() == "Consistent") ) {
     isValidSetup = false;
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
     *out << "The IC consistency does not have a valid value!\n"
          << "('None', 'Zero', 'App' or 'Consistent')\n"
          << "  ICConsistency  = " << this->getICConsistency() << "\n";
@@ -417,7 +416,7 @@ void StepperSubcycling<Scalar>::takeStep(
                                            currentState->getStepperState(),
                                            currentState->getPhysicsState()));
 
-    auto scSH = rcp(new Tempus::SolutionHistory<double>());
+    auto scSH = rcp(new Tempus::SolutionHistory<Scalar>());
     scSH->setName("Subcycling States");
     scSH->setStorageType(Tempus::STORAGE_TYPE_STATIC);
     scSH->setStorageLimit(3);

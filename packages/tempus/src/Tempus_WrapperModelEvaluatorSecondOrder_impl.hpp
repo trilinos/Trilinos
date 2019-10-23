@@ -27,7 +27,7 @@ createInArgs() const
   inArgs.set_Np(appModel_->Np());
   inArgs.setSupports(MEB::IN_ARG_x);
 
-  return inArgs;
+  return std::move(inArgs);
 }
 
 
@@ -47,7 +47,7 @@ createOutArgsImpl() const
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
 
-  return outArgs;
+  return std::move(outArgs);
 }
 
 
