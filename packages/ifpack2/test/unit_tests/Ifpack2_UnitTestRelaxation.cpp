@@ -273,6 +273,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test4, Scalar, LocalOrdinal
   TEST_NOTHROW(prec.apply(x, y));
 }
 
+  // Test apply() to make sure the Richardson methods work
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Richardson, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
+  out << "Ifpack2::Version(): " << Ifpack2::Version () << std::endl;
+
+  GST num_rows_per_proc = 5;
+
+  RCP<const map_type > rowmap =
+    tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (rowmap);
+  Ifpack2::Relaxation<row_matrix_type> prec (crsmatrix);
+
+  Teuchos::ParameterList params;
+  params.set("relaxation: type", "Richardson");
+  prec.setParameters(params);
+
+  prec.initialize();
+  prec.compute();
+
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
+
+  TEST_EQUALITY(x.getMap()->getNodeNumElements(), 5);
+  TEST_EQUALITY(y.getMap()->getNodeNumElements(), 5);
+  TEST_NOTHROW(prec.apply(x, y));
+}
+
 // Check that (symmetric) Gauss-Seidel works if there are some MPI processes with zero rows of the matrix.
 // Test contributed by Jonathan Hu on 04 Jan 2013.
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal)
@@ -1058,6 +1090,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test2, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test3, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test4, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Richardson, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SymGaussSeidelZeroRows, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, NotCrsMatrix, Scalar, LO, GO ) \
