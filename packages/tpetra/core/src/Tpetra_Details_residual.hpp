@@ -45,92 +45,89 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 
 /// \file Tpetra_Details_residual.hpp
 /// \brief Functions that allow for fused residual calculation.
 /// \warning This file, and its contents, are implementation details
 ///   of Tpetra.  The file itself or its contents may disappear or
-///   change at any time.
+///   change at any time.-
 
 namespace Tpetra {
   namespace Details {
 
 template<class SC, class LO, class GO, class NO>
 void localResidual(const CrsMatrix<SC,LO,GO,NO> &   A,
-              const MultiVector<SC,LO,GO,NO> & X_in,
-              const MultiVector<SC,LO,GO,NO> & B,
-              MultiVector<SC,LO,GO,NO> & R_in) {
-   using Tpetra::Details::ProfilingRegion;
-    using Teuchos::NO_TRANS;
-    ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localResidual");
+                   const MultiVector<SC,LO,GO,NO> & X,
+                   const MultiVector<SC,LO,GO,NO> & B,
+                   MultiVector<SC,LO,GO,NO> & R) {
+  using Tpetra::Details::ProfilingRegion;
+  using Teuchos::NO_TRANS;
+  ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localResidual");
 
-    auto X_lcl = X.getLocalViewDevice ();
-    auto Y_lcl = Y.getLocalViewDevice ();
-    // TODO (24 Jul 2019) uncomment later; this line of code wasn't
-    // here before, so we need to test it separately before pushing.
-    //
-    // Y.modify_device ();
+  auto X_lcl = X.getLocalViewDevice ();
+  auto B_lcl = B.getLocalViewDevice ();
+  auto R_lcl = R.getLocalViewDevice ();
+  auto lclMatrix_ = A.getLocalMatrix ();
 
-    const bool debug = ::Tpetra::Details::Behavior::debug ();
-    if (debug) {
-      const char tfecfFuncName[] = "localResidual: ";
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (A.lclMatrix_.get () == nullptr, std::logic_error,
-         "lclMatrix_ not created yet.");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
-         "X.getNumVectors() = " << X.getNumVectors () << " != "
-         "Y.getNumVectors() = " << Y.getNumVectors () << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (X.getNumVectors () != R.getNumVectors (), std::runtime_error,
-         "X.getNumVectors() = " << X.getNumVectors () << " != "
-         "R.getNumVectors() = " << R.getNumVectors () << ".");
+  const bool debug = ::Tpetra::Details::Behavior::debug ();
+  if (debug) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (X.getNumVectors () != R.getNumVectors (), std::runtime_error,
+       "X.getNumVectors() = " << X.getNumVectors () << " != "
+       "R.getNumVectors() = " << R.getNumVectors () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (X.getNumVectors () != R.getNumVectors (), std::runtime_error,
+       "X.getNumVectors() = " << X.getNumVectors () << " != "
+       "R.getNumVectors() = " << R.getNumVectors () << ".");
 
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (X.getLocalLength () !=
-         A.getColMap ()->getNodeNumElements (), std::runtime_error,
-         "X has the wrong number of local rows.  "
-         "X.getLocalLength() = " << X.getLocalLength () << " != "
-         "A.getColMap()->getNodeNumElements() = " <<
-         A.getColMap ()->getNodeNumElements () << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (R.getLocalLength () !=
-         A.getRowMap ()->getNodeNumElements (), std::runtime_error,
-         "R has the wrong number of local rows.  "
-         "R.getLocalLength() = " << R.getLocalLength () << " != "
-         "A.getRangeMap()->getNodeNumElements() = " <<
-         A.getRangeMap ()->getNodeNumElements () << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (B.getLocalLength () !=
-         A.getRowMap ()->getNodeNumElements (), std::runtime_error,
-         "B has the wrong number of local rows.  "
-         "B.getLocalLength() = " << B.getLocalLength () << " != "
-         "A.getRangeMap()->getNodeNumElements() = " <<
-         A.getRangeMap ()->getNodeNumElements () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (X.getLocalLength () !=
+       A.getColMap ()->getNodeNumElements (), std::runtime_error,
+       "X has the wrong number of local rows.  "
+       "X.getLocalLength() = " << X.getLocalLength () << " != "
+       "A.getColMap()->getNodeNumElements() = " <<
+       A.getColMap ()->getNodeNumElements () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (R.getLocalLength () !=
+       A.getRowMap ()->getNodeNumElements (), std::runtime_error,
+       "R has the wrong number of local rows.  "
+       "R.getLocalLength() = " << R.getLocalLength () << " != "
+       "A.getRangeMap()->getNodeNumElements() = " <<
+       A.getRangeMap ()->getNodeNumElements () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (B.getLocalLength () !=
+       A.getRowMap ()->getNodeNumElements (), std::runtime_error,
+       "B has the wrong number of local rows.  "
+       "B.getLocalLength() = " << B.getLocalLength () << " != "
+       "A.getRangeMap()->getNodeNumElements() = " <<
+       A.getRangeMap ()->getNodeNumElements () << ".");
 
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! A.isFillComplete (), std::runtime_error, "The matrix A is not "
-         "fill complete.  You must call fillComplete() (possibly with "
-         "domain and range Map arguments) without an intervening "
-         "resumeFill() call before you may call this method.");
-
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! X.isConstantStride () || ! R.isConstantStride () || ! B.isConstantStride () )
-         std::runtime_error, "X, Y and B must be constant stride.");
-      // If the two pointers are NULL, then they don't alias one
-      // another, even though they are equal.
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (X_lcl.data () == R_lcl.data () && X_lcl.data () != nullptr ||
-         X_lcl.data () == B_lcl.data () && X_lcl.data () != nullptr,
-         std::runtime_error, "X, Y and R may not alias one another.");
-    }
-
-    // This is currently a "reference implementation" waiting until Kokkos Kernels provides
-    // a residual kernel.
-    //    lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! A.isFillComplete (), std::runtime_error, "The matrix A is not "
+       "fill complete.  You must call fillComplete() (possibly with "
+       "domain and range Map arguments) without an intervening "
+       "resumeFill() call before you may call this method.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! X.isConstantStride () || ! R.isConstantStride () || ! B.isConstantStride (),
+       std::runtime_error, "X, Y and B must be constant stride.");
+    // If the two pointers are NULL, then they don't alias one
+    // another, even though they are equal.
+    TEUCHOS_TEST_FOR_EXCEPTION
+      ((X_lcl.data () == R_lcl.data () && X_lcl.data () != nullptr) ||
+       (X_lcl.data () == B_lcl.data () && X_lcl.data () != nullptr),
+       std::runtime_error, "X, Y and R may not alias one another.");
   }
+      
+  // This is currently a "reference implementation" waiting until Kokkos Kernels provides
+  // a residual kernel.
+  SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();    
+  A.localApply(X,R,Teuchos::NO_TRANS, one, zero);
+  R.update(1.0,B,negone);
 }
+    
 
 //! Computes R = B - A * X 
 template<class SC, class LO, class GO, class NO>
@@ -144,6 +141,12 @@ void residual(const CrsMatrix<SC,LO,GO,NO> &   A,
   using Teuchos::rcp_const_cast;
   using Teuchos::rcpFromRef;
   
+  auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout)); 
+  
+  using import_type = typename CrsMatrix<SC,LO,GO,NO>::import_type;
+  using export_type = typename CrsMatrix<SC,LO,GO,NO>::export_type;
+  using MV = MultiVector<SC,LO,GO,NO>;
+
   // We treat the case of a replicated MV output specially.
   const bool R_is_replicated =
     (! R_in.isDistributed () && A.getComm ()->getSize () != 1);
@@ -169,7 +172,7 @@ void residual(const CrsMatrix<SC,LO,GO,NO> &   A,
       // copy of X_in, we force creation of the column (== domain)
       // Map MV (if it hasn't already been created, else fetch the
       // cached copy).  This avoids creating a new MV each time.
-      RCP<MV> X_colMapNonConst = getColumnMapMultiVector (X_in, true);
+      RCP<MV> X_colMapNonConst = A.getColumnMapMultiVector (X_in, true);
       Tpetra::deep_copy (*X_colMapNonConst, X_in);
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     }
@@ -185,21 +188,24 @@ void residual(const CrsMatrix<SC,LO,GO,NO> &   A,
     // elements of the domain Map MV X_in into a separate column Map
     // MV.  Thus, we don't have to worry whether X_in is constant
     // stride.
-    RCP<MV> X_colMapNonConst = getColumnMapMultiVector (X_in);
+    RCP<MV> X_colMapNonConst = A.getColumnMapMultiVector (X_in);
     
     // Import from the domain Map MV to the column Map MV.
     X_colMapNonConst->doImport (X_in, *importer, INSERT);
     X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
   }
 
-  // Temporary MV for doExport (if needed), or for copying a
-  // nonconstant stride output MV into a constant stride MV.  This
-  // is null if we don't need the temporary MV, that is, if the
-  // Export is trivial (null).
-  RCP<MV> R_rowMap = getRowMapMultiVector (R_in);
-
-  // FIXME: Need to get a potential cached buffer for B
-  RCP<MV> B_rowMap = getRowMapMultiVector2 (B_in);
+  // Get a vector for the rowMap output residual
+  RCP<MV> R_rowMap;
+  if(exporter.is_null()) {
+    R_rowMap = rcpFromRef(R_in);
+  }
+  else {
+    R_rowMap = A.getRowMapMultiVector (R_in);    
+  }
+  
+  // FIXME: Need to get a potential cached buffer for B (this will need to be another function)
+  RCP<const MV> B_rowMap =  rcpFromRef(B_in); // A.getRowMapMultiVector (B_in);
 
 
   // If we have a nontrivial Export object, we must perform an
@@ -210,7 +216,7 @@ void residual(const CrsMatrix<SC,LO,GO,NO> &   A,
   if (! exporter.is_null ()) {
     {
       ProfilingRegion regionExport ("Tpetra::CrsMatrix::residual: B Import");
-      B_rowMap.doImport(*B_in, *exporter, ADD);
+      //      B_rowMap->doImport(B_in, *exporter, ADD);//FIXME
     }
 
     localResidual (A, *X_colMap, *B_rowMap, *R_rowMap);
@@ -236,7 +242,7 @@ void residual(const CrsMatrix<SC,LO,GO,NO> &   A,
     if (! R_in.isConstantStride () || X_colMap.getRawPtr () == &R_in) {
       // Force creating the MV if it hasn't been created already.
       // This will reuse a previously created cached MV.
-      R_rowMap = getRowMapMultiVector (R_in, true);
+      R_rowMap = A.getRowMapMultiVector (R_in, true);
       // FIXME: Muck with this
 
       Tpetra::deep_copy (*R_rowMap, R_in);
