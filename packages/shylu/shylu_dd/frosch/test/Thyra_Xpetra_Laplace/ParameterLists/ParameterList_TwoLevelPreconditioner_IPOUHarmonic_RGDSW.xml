@@ -41,7 +41,7 @@
                                 <Parameter name="Type"                          type="string"   value="Full"/>
                                 <Parameter name="Distance Function"             type="string"   value="Constant"/>
                                 <ParameterList name="Custom">
-                                    <Parameter name="CoarseNodes"               type="bool"     value="true"/>
+                                    <Parameter name="Roots"               type="bool"     value="true"/>
                                 </ParameterList>
                             </ParameterList>
                         </ParameterList>

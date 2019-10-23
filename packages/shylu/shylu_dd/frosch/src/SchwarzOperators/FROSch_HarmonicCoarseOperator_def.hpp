@@ -287,7 +287,8 @@ namespace FROSch {
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeRotations(UN blockId,
                                                                                                                               UN dimension,
                                                                                                                               ConstXMultiVectorPtr nodeList,
-                                                                                                                              EntitySetConstPtr entitySet)
+                                                                                                                              EntitySetConstPtr entitySet,
+                                                                                                                              UN discardRotations)
     {
         FROSCH_TIMER_START_LEVELID(computeRotationsTime,"HarmonicCoarseOperator::computeRotations");
         FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"FROSch::HarmonicCoarseOperator : ERROR: Dimension of the nodeList is wrong.");
@@ -400,12 +401,15 @@ namespace FROSch {
             
             // If error to constant function is almost zero => scale rotation with zero
             SC err;
+            UN numZeroRotations = 0;
             switch (dimension) {
                 case 2:
                     err = errx[0]+erry[0];
                     err = ScalarTraits<SC>::squareroot(err);
                     if (std::fabs(err)<1.0e-12) {
-                        rotations[0]->scale(ScalarTraits<SC>::zero());
+                        FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator : ERROR: In 2D, no rotation can be constant!");
+                        rotations[0]->getVectorNonConst(i)->scale(ScalarTraits<SC>::zero());
+                        numZeroRotations++;
                     }
                     break;
                 case 3:
@@ -413,13 +417,29 @@ namespace FROSch {
                         err = errx[j]+erry[j]+errz[j];
                         err = ScalarTraits<SC>::squareroot(err);
                         if (std::fabs(err)<1.0e-12) {
-                            rotations[j]->scale(ScalarTraits<SC>::zero());
+                            rotations[j]->getVectorNonConst(i)->scale(ScalarTraits<SC>::zero());
+                            numZeroRotations++;
                         }
                     }
                     break;
                 default:
                     FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator : ERROR: The dimension is neither 1 nor 2 nor 3!");
                     break;
+            }
+            // If necessary, discard additional rotations
+            UN rotationsToDiscard = discardRotations - numZeroRotations;
+            if (rotationsToDiscard<0) {
+                if (this->Verbose_) std::cout << "FROSch::HarmonicCoarseOperator : WARNING: More rotations have been discarded than expected." << std::endl;
+            } else if (rotationsToDiscard>0) {
+                UN it=0;
+                UN rotationsDiscarded=0;
+                while (rotationsDiscarded<rotationsToDiscard) {
+                    if (rotations[it]->getVector(i)->norm2()>1.0e-12) {
+                        rotations[it]->getVectorNonConst(i)->scale(ScalarTraits<SC>::zero());
+                        rotationsDiscarded++;
+                    }
+                    it++;
+                }
             }
         }
         return rotations;
