@@ -18,8 +18,8 @@ namespace percept {
   class TriangulateTri {
 
   public:
-    typedef boost::tuple<unsigned, unsigned, unsigned> tri_tuple_type_local;
-    typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
+    typedef std::array<int, 3> tri_tuple_type_local;
+    typedef std::array<stk::mesh::EntityId, 3> tri_tuple_type;
 
       /**
        *
@@ -75,10 +75,10 @@ namespace percept {
           {
             elems.resize(4);
 
-            elems[0] = tri_tuple_type( T_VERT_N(0),    T_EDGE_N(0), T_EDGE_N(2) );
-            elems[1] = tri_tuple_type( T_VERT_N(1),    T_EDGE_N(1), T_EDGE_N(0) );
-            elems[2] = tri_tuple_type( T_VERT_N(2),    T_EDGE_N(2), T_EDGE_N(1) );
-            elems[3] = tri_tuple_type( T_EDGE_N(0),    T_EDGE_N(1), T_EDGE_N(2) );
+            elems[0] = { T_VERT_N(0),    T_EDGE_N(0), T_EDGE_N(2) };
+            elems[1] = { T_VERT_N(1),    T_EDGE_N(1), T_EDGE_N(0) };
+            elems[2] = { T_VERT_N(2),    T_EDGE_N(2), T_EDGE_N(1) };
+            elems[3] = { T_EDGE_N(0),    T_EDGE_N(1), T_EDGE_N(2) };
           }
         else if (num_edges_marked == 2)
           {
@@ -207,15 +207,15 @@ namespace percept {
             int jedgep = (jedge+1)%3;
             if (jedge_max_edge == jedge)
               {
-                elems[0] = tri_tuple_type( T_VERT_N(i0),    T_EDGE_N(jedge),         T_VERT_N(i2)       );
-                elems[1] = tri_tuple_type( T_EDGE_N(jedge), T_EDGE_N( jedgep ),      T_VERT_N(i2)       );
-                elems[2] = tri_tuple_type( T_EDGE_N(jedge), T_VERT_N(i1),            T_EDGE_N( jedgep ) );
+                elems[0] = { T_VERT_N(i0),    T_EDGE_N(jedge),         T_VERT_N(i2)       };
+                elems[1] = { T_EDGE_N(jedge), T_EDGE_N( jedgep ),      T_VERT_N(i2)       };
+                elems[2] = { T_EDGE_N(jedge), T_VERT_N(i1),            T_EDGE_N( jedgep ) };
               }
             else
               {
-                elems[0] = tri_tuple_type( T_VERT_N(i0),    T_EDGE_N(jedge),         T_EDGE_N( jedgep ) );
-                elems[1] = tri_tuple_type( T_VERT_N(i0),    T_EDGE_N( jedgep ),      T_VERT_N(i2)       );
-                elems[2] = tri_tuple_type( T_EDGE_N(jedge), T_VERT_N(i1),            T_EDGE_N( jedgep ) );
+                elems[0] = { T_VERT_N(i0),    T_EDGE_N(jedge),         T_EDGE_N( jedgep ) };
+                elems[1] = { T_VERT_N(i0),    T_EDGE_N( jedgep ),      T_VERT_N(i2)       };
+                elems[2] = { T_EDGE_N(jedge), T_VERT_N(i1),            T_EDGE_N( jedgep ) };
               }
           }
         else if (num_edges_marked == 1)
@@ -226,8 +226,8 @@ namespace percept {
                 unsigned num_nodes_on_edge = edge_marks[iedge];
                 if (num_nodes_on_edge)
                   {
-                    elems[0] = tri_tuple_type(T_VERT_N(iedge), T_EDGE_N(iedge), T_VERT_N((iedge+2)%3) );
-                    elems[1] = tri_tuple_type(T_EDGE_N(iedge), T_VERT_N((iedge+1)%3), T_VERT_N((iedge+2)%3) );
+                    elems[0] = {T_VERT_N(iedge), T_EDGE_N(iedge), T_VERT_N((iedge+2)%3) };
+                    elems[1] = {T_EDGE_N(iedge), T_VERT_N((iedge+1)%3), T_VERT_N((iedge+2)%3) };
                     break;
                   }
               }
@@ -239,7 +239,7 @@ namespace percept {
               {
                 // this allows each level to be at the same hierarchical level by having a single parent to single child
                 elems.resize(1);
-                elems[0] = tri_tuple_type(T_VERT_N(0), T_VERT_N(1), T_VERT_N(2) );
+                elems[0] = {T_VERT_N(0), T_VERT_N(1), T_VERT_N(2) };
               }
 #else
             if (elems.size() != 0)

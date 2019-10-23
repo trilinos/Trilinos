@@ -45,7 +45,7 @@
     public:
 
       //typedef double Point[3];
-      typedef boost::array<double,3> Point;
+      typedef std::array<double,3> Point;
       typedef stk::mesh::EntityIdVector QuadIds;
       typedef stk::mesh::EntityIdVector TriIds;
 

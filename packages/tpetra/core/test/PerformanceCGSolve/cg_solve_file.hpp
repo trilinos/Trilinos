@@ -59,13 +59,12 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLPerfTestArchive.hpp"
 #include "Teuchos_Array.hpp"
-
-#include <impl/Kokkos_Timer.hpp>
+#include "Teuchos_TimeMonitor.hpp"
 
 #include <algorithm>
 #include <functional>
 
-
+/*
 struct result_struct {
   double addtime,dottime,matvectime,final_residual;
   int niters;
@@ -73,7 +72,9 @@ struct result_struct {
     addtime(add),dottime(dot),matvectime(matvec),
     final_residual(res),niters(niter) {};
 };
+*/
 
+/*
 template<class CrsMatrix>
 Teuchos::XMLTestNode test_entry(
     const std::string& filename_matrix,
@@ -127,12 +128,16 @@ Teuchos::XMLTestNode test_entry(
   test.addChild(entry);
   return test;
 }
-
+*/
 
 template<class CrsMatrix, class Vector>
-result_struct
-cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int myproc, double tolerance, int max_iter)
+bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int myproc, double tolerance, int max_iter)
 {
+  using Teuchos::TimeMonitor;
+  TimeMonitor timerGlobal(*TimeMonitor::getNewTimer("CG: Global"));
+  std::string addTimerName = "CG: Vector Add";
+  std::string matvecTimerName = "CG: Matvec";
+  std::string dotTimerName = "CG: Dot Product";
   static_assert (std::is_same<typename CrsMatrix::scalar_type, typename Vector::scalar_type>::value,
                  "The CrsMatrix and Vector template parameters must have the same scalar_type.");
 
@@ -161,23 +166,22 @@ cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector
   if (print_freq>50) print_freq = 50;
   if (print_freq<1)  print_freq = 1;
 
-  double dottime = 0;
-  double addtime = 0;
-  double matvectime = 0;
-
-  Kokkos::Impl::Timer timer;
-  p->update(1.0,*x,0.0,*x,0.0);
-  addtime += timer.seconds(); timer.reset();
-
-
-  A->apply(*p, *Ap);
-  matvectime += timer.seconds(); timer.reset();
-
-  r->update(1.0,*b,-1.0,*Ap,0.0);
-  addtime += timer.seconds(); timer.reset();
-
-  rtrans = r->dot(*r);
-  dottime += timer.seconds(); timer.reset();
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+    p->update(1.0,*x,0.0,*x,0.0);
+  }
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(matvecTimerName));
+    A->apply(*p, *Ap);
+  }
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+    r->update(1.0,*b,-1.0,*Ap,0.0);
+  }
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
+    rtrans = r->dot(*r);
+  }
 
   normr = std::sqrt(rtrans);
 
@@ -189,16 +193,20 @@ cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector
   LO k;
   for(k=1; k <= max_iter && normr > tolerance; ++k) {
     if (k == 1) {
-      p->update(1.0,*r,0.0);
-      addtime += timer.seconds(); timer.reset();
+        TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+        p->update(1.0,*r,0.0);
     }
     else {
       oldrtrans = rtrans;
-      rtrans = r->dot(*r);
-      dottime += timer.seconds(); timer.reset();
-      magnitude_type beta = rtrans/oldrtrans;
-      p->update(1.0,*r,beta);
-      addtime += timer.seconds(); timer.reset();
+      {
+        TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
+        rtrans = r->dot(*r);
+      }
+      {
+        TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+        magnitude_type beta = rtrans/oldrtrans;
+        p->update(1.0,*r,beta);
+      }
     }
     normr = std::sqrt(rtrans);
     if (myproc == 0 && (k%print_freq==0 || k==max_iter)) {
@@ -207,37 +215,41 @@ cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector
 
     magnitude_type alpha = 0;
     magnitude_type p_ap_dot = 0;
-    A->apply(*p, *Ap);
-    matvectime += timer.seconds(); timer.reset();
-    p_ap_dot = Ap->dot(*p);
-    dottime += timer.seconds(); timer.reset();
+    {
+      TimeMonitor t(*TimeMonitor::getNewTimer(matvecTimerName));
+      A->apply(*p, *Ap);
+    }
+    {
+      TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
+      p_ap_dot = Ap->dot(*p);
+    }
 
    if (p_ap_dot < brkdown_tol) {
       if (p_ap_dot < 0 ) {
         std::cerr << "miniFE::cg_solve ERROR, numerical breakdown!"<<std::endl;
-        return result_struct(0,0,0,0,0);
+        return false;
       }
       else brkdown_tol = 0.1 * p_ap_dot;
     }
     alpha = rtrans/p_ap_dot;
 
-
-    x->update(alpha,*p,1.0);
-    r->update(-alpha,*Ap,1.0);
-    addtime += timer.seconds(); timer.reset();
-
+    {
+      TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+      x->update(alpha,*p,1.0);
+      r->update(-alpha,*Ap,1.0);
+    }
   }
-  rtrans = r->dot(*r);
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
+    rtrans = r->dot(*r);
+  }
 
   normr = std::sqrt(rtrans);
-
-
-  return result_struct(addtime,dottime,matvectime,k-1,normr);
+  return true;
 }
 
 template<class Node>
-int
-run (int argc, char *argv[])
+int run (int argc, char *argv[])
 {
   using Teuchos::RCP;
   using Teuchos::tuple;
@@ -289,7 +301,7 @@ run (int argc, char *argv[])
   cmdp.setOption("printMatrix","noPrintMatrix",&printMatrix,"Print the full matrix after reading it.");
   cmdp.setOption("size",&nsize,"Generate miniFE matrix with X^3 elements.");
   cmdp.setOption("tol_small",&tol_small,"Tolerance for total CG-Time and final residual.");
-  cmdp.setOption("tol_large",&tol_small,"Tolerance for individual times.");
+  cmdp.setOption("tol_large",&tol_large,"Tolerance for individual times.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return EXIT_FAILURE;
   }
@@ -372,45 +384,16 @@ run (int argc, char *argv[])
   RCP<vec_type> x (new vec_type (A->getDomainMap ()));
 
   // Solve the linear system Ax=b using CG.
-  result_struct results = cg_solve (A, b, x, myRank, tolerance, niters);
+  bool success = cg_solve(A, b, x, myRank, tolerance, niters);
 
-  // Print results.
-  if (myRank == 0) {
-    Teuchos::XMLTestNode machine_config = Teuchos::PerfTest_MachineConfig();
-    Teuchos::XMLTestNode test =
-      test_entry (filename, filename_vector, nsize, comm->getSize (), numteams,
-                  numthreads, A, results, niters, tolerance, tol_small,
-                  tol_large);
-    Teuchos::PerfTestResult comparison_result =
-      Teuchos::PerfTest_CheckOrAdd_Test (machine_config, test, testarchive, hostname);
-    switch (comparison_result) {
-      case Teuchos::PerfTestPassed:
-        cout << "PASSED" << endl;
-        break;
-      case Teuchos::PerfTestFailed:
-        cout << "FAILED" << endl;
-        break;
-      case Teuchos::PerfTestNewMachine:
-        cout << "PASSED. Adding new machine entry." << endl;
-        break;
-      case Teuchos::PerfTestNewConfiguration:
-        cout << "PASSED. Adding new machine configuration." << endl;
-        break;
-      case Teuchos::PerfTestNewTest:
-        cout << "PASSED. Adding new test entry." << endl;
-        break;
-      case Teuchos::PerfTestNewTestConfiguration:
-        cout << "PASSED. Adding new test entry configuration." << endl;
-        break;
-      case Teuchos::PerfTestUpdatedTest:
-        cout << "PASSED. Updating test entry." << endl;
-        break;
-    default:
-      cout << "FAILED: Invalid comparison result." << endl;
-    }
-    if (verbose) {
-      cout << test << endl;
-    }
+  Teuchos::TimeMonitor::report(comm.ptr(), std::cout, "");
+
+  if(myRank == 0)
+  {
+    if(success)
+      std::cout << "End Result: TEST PASSED\n";
+    else
+      std::cout << "End Result: TEST FAILED\n";
   }
 
   return EXIT_SUCCESS;

@@ -248,9 +248,20 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         mesh_factory->setParameterList(pl);
         // build mesh
         mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
-        //get dt
-        if (dt <=0.)
+        // get dt
+        if (dt <= 0.)
           dt = input_pl->get<double>("dt");
+      } else if (mesh_pl.get<std::string>("Source") ==  "Pamgen Mesh") { // Pamgen mesh generator
+        Teuchos::ParameterList & pamgen_pl = mesh_pl.sublist("Pamgen Mesh");
+        Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList(pamgen_pl.sublist("Pamgen Parameters")));
+        pl->set("File Type","Pamgen");
+        mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory());
+        mesh_factory->setParameterList(pl);
+        // build mesh
+        mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+        // get dt
+        if (dt <= 0.)
+          dt = pamgen_pl.get<double>("dt");
       } else if (mesh_pl.get<std::string>("Source") == "Inline Mesh") { // Inline mesh generator
         // set mesh factory parameters
         Teuchos::ParameterList & inline_gen_pl = mesh_pl.sublist("Inline Mesh");
@@ -285,7 +296,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
 
         // set dt
-        if (dt <=0.) {
+        if (dt <= 0.) {
           if (inline_gen_pl.isType<double>("dt"))
             dt = inline_gen_pl.get<double>("dt");
           else {
@@ -331,7 +342,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           return EXIT_FAILURE;
       else if (solver == ML_REFMAXWELL) {
         updateParams("solverMLRefMaxwell.xml", lin_solver_pl, comm, out);
-        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
       } else if (solver == MUELU_REFMAXWELL) {
         if (linAlgebra == linAlgTpetra) {
           updateParams("solverMueLuRefMaxwell.xml", lin_solver_pl, comm, out);
@@ -362,10 +372,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           if (dim == 2)
             updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
         }
-        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
       }
     } else
       updateParams(xml, lin_solver_pl, comm, out);
+    if (lin_solver_pl->sublist("Preconditioner Types").isSublist("Teko") &&
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").isSublist("Inverse Factory Library") &&
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").isSublist("Maxwell"))
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
     lin_solver_pl->print(*out);
 
     // The curl-curl term needs to be scaled by dt, the RefMaxwell augmentation needs 1/dt

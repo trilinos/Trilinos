@@ -243,7 +243,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag1 )
             }
 
           //exit(1);
-          boost::array<double,3> centroid = {{0,0,0}};
+          std::array<double,3> centroid = {{0,0,0}};
           for (unsigned iv = 0; iv < 6; iv++)
             {
               centroid[0] += m_node_coords[elem[iv]][0]/6.0;
@@ -384,7 +384,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag1 )
             }
 
           //exit(1);
-          boost::array<double,3> centroid = {{0,0,0}};
+          std::array<double,3> centroid = {{0,0,0}};
           for (unsigned iv = 0; iv < 8; iv++)
             {
               centroid[0] += m_node_coords[elem[iv]][0]/8.0;

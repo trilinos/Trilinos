@@ -129,12 +129,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     }
 
 
-    TimeMonitor globalTimeMonitor(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: S - Global Time"));
     
     unsigned int seed = generateSeed(*comm, optSeed);
     Teuchos::ScalarTraits<SC>::seedrandom(seed);
     
     for (int jj=0; jj<optNmults; ++jj) {
+      TimeMonitor globalTimeMonitor(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: S - Global Time"));
       
       RCP<Matrix> A;
       RCP<Matrix> B;
@@ -192,7 +192,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 	//  std::string fileName="checkAB.mm";
 	//  Utils::Write( fileName,*AB);
 	//}
-	if (comm->getRank() == 0) std::cout << "success" << std::endl;
 	
       } //scope for multiply
 
@@ -206,8 +205,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
       TimeMonitor::summarize();
     }
 
-    bool success = true;
-    return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+    if (comm->getRank() == 0)
+      std::cout << "End Result: TEST PASSED";
+
+    return 0;
 }
  //main_
 

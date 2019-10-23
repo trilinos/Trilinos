@@ -61,36 +61,6 @@ std::ostream& operator<<(std::ostream &out, SearchMethod method)
   return out;
 }
 
-// EXPERIMENTAL
-//
-// intersections returned will be those resulting from the (local) domain boxes
-// intersecting range boxes from the entire distributed set.  NEEDS TO BE CALLED
-// WITH EXPLICIT TEMPLATE ARGUMENTS.
-template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void coarse_search_nonIdentProc(
-                    std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
-                    std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
-                    SearchMethod                                          method,
-                    stk::ParallelMachine                                  comm,
-                    std::vector< std::pair< DomainIdent, RangeIdent> > &  intersections
-                  )
-{
-  switch( method )
-  {
-  case BOOST_RTREE:
-#if defined(STK_HAVE_BOOSTLIB)
-    coarse_search_boost_rtree_output_locally<DomainBox, DomainIdent, RangeBox, RangeIdent>(domain,range,comm,intersections);
-#else
-    ThrowRequireMsg(false,"ERROR, the BOOST_RTREE option in stk_search requires that Trilinos was configured with TPL_ENABLE_BoostLib:BOOL=ON");
-#endif
-    break;
-  default:
-    std::cerr << "coarse_search(..) interface used does not support std::search::coarse_search_nonIdentProc(..) yet" << method << std::endl;
-    abort();
-    break;
-  }
-}
-
 // THIS MIGHT BE WHAT WE ACTUALLY WANT FOR THE INTERFACE.
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
 void coarse_search(

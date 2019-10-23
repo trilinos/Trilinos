@@ -13,18 +13,15 @@
 #pragma warning disable 2196 2536 279
 #endif
 
-#include <boost/multi_array.hpp>
-#include <boost/array.hpp>
-#include <boost/tuple/tuple_io.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 #include <iostream>
+#include <array>
 
 namespace percept {
 
   template<class T, std::size_t N>
-  inline std::ostream& operator<< (std::ostream& out, const boost::array<T,N>& coll)
+  inline std::ostream& operator<< (std::ostream& out, const std::array<T,N>& coll)
   {
-    typedef boost::array<T,N> Array;
+    typedef std::array<T,N> Array;
     typename Array::const_iterator pos;
 
     for (pos=coll.begin(); pos!=coll.end(); ++pos) {
