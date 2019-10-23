@@ -123,7 +123,8 @@ namespace FROSch {
         virtual XMultiVectorPtrVecPtr computeRotations(UN blockId,
                                                        UN dimension,
                                                        ConstXMultiVectorPtr nodeList,
-                                                       EntitySetConstPtr entitySet);
+                                                       EntitySetConstPtr entitySet,
+                                                       UN discardRotations = 0);
 
         virtual XMultiVectorPtr computeExtensions(ConstXMapPtr localMap,
                                                   ConstXMapPtr coarseMap,

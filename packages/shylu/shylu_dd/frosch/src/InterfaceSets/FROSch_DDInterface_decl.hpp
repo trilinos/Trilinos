@@ -154,13 +154,14 @@ namespace FROSch {
                             bool buildStraightEdgesMap = true,
                             bool buildEdgesMap = true,
                             bool buildFacesMap = true,
-                            bool buildCoarseNodesMap = false);
+                            bool buildRootsMap = false,
+                            bool buildLeafsMap = false);
 
         int buildEntityHierarchy();
 
-        int computeDistancesToCoarseNodes(UN dimension,
-                                          ConstXMultiVectorPtr &nodeList = null,
-                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
+        int computeDistancesToRoots(UN dimension,
+                                    ConstXMultiVectorPtr &nodeList = null,
+                                    DistanceFunction distanceFunction = ConstantDistanceFunction);
 
         //! This function extracts those entities which are to be used to build a connectivity graph on the subdomain
         //! level. By default, we identify all entities with multiplicity 2. Afterwards, the corresponding entities can
@@ -193,7 +194,9 @@ namespace FROSch {
 
         EntitySetConstPtr & getInterior() const;
 
-        EntitySetConstPtr & getCoarseNodes() const;
+        EntitySetConstPtr & getRoots() const;
+        
+        EntitySetConstPtr & getLeafs() const;
 
         EntitySetPtrConstVecPtr & getEntitySetVector() const;
 
@@ -227,7 +230,8 @@ namespace FROSch {
         EntitySetPtr Faces_;
         EntitySetPtr Interface_;
         EntitySetPtr Interior_;
-        EntitySetPtr CoarseNodes_;
+        EntitySetPtr Roots_;
+        EntitySetPtr Leafs_;
         EntitySetPtr ConnectivityEntities_;
         EntitySetPtrVecPtr EntitySetVector_;
 
