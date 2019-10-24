@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
   bool debug = false;
   bool insitu = false;
   std::string which("LM");
+  std::string ortho("SVQB");
   int nev = 4;
   int blockSize = 2;
   MT tol = 1.0e-6;
@@ -97,6 +98,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("ortho",&ortho,"Orthogonalization method (DGKS, ICGS, or SVQB)");
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
   cmdp.setOption("numBlocks",&numBlocks,"Number of blocks in Krylov basis.");
@@ -181,7 +183,7 @@ int main(int argc, char *argv[])
   MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "In Situ Restarting", insitu );
-  // MyPL.set( "Orthogonalization", "DGKS");
+  MyPL.set( "Orthogonalization", ortho ); 
   //
   // Create the solver manager
   Anasazi::BlockKrylovSchurSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
