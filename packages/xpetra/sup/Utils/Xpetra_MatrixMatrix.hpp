@@ -566,53 +566,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
 
-        if (C == Teuchos::null) {
-          size_t maxNzInA     = 0;
-          size_t maxNzInB     = 0;
-          size_t numLocalRows = 0;
-          if (A.isFillComplete() && B.isFillComplete()) {
-            maxNzInA     = A.getNodeMaxNumRowEntries();
-            maxNzInB     = B.getNodeMaxNumRowEntries();
-            numLocalRows = A.getNodeNumRows();
-          }
-          if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
-            // first check if either A or B has at most 1 nonzero per row
-            // the case of both having at most 1 nz per row is handled by the ``else''
-            Teuchos::ArrayRCP<size_t> exactNnzPerRow(numLocalRows);
-
-            if ((maxNzInA == 1 && maxNzInB > 1) || AHasFixedNnzPerRow) {
-              for (size_t i = 0; i < numLocalRows; ++i)
-                exactNnzPerRow[i] = B.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInA;
-
-            } else {
-              for (size_t i = 0; i < numLocalRows; ++i)
-                exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
-            }
-
-            fos << "MatrixMatrix::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
-                << ", using static profiling" << std::endl;
-            C = rcp(new CrsMatrixWrap(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
-          } else {
-            // general case
-            double nnzPerRowInA = Teuchos::as<double>(A.getNodeNumEntries()) / A.getNodeNumRows();
-            double nnzPerRowInB = Teuchos::as<double>(B.getNodeNumEntries()) / B.getNodeNumRows();
-            LO    nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
-
-            LO maxPossible = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
-            //Use static profiling (more efficient) if the estimate is at least as big as the max
-            //possible nnz's in any single row of the result.
-            Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
-
-            fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-            fos << "MatrixMatrix::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
-                << ", max possible nnz per row in sum = " << maxPossible
-                << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
-                << std::endl;
-            C = rcp(new CrsMatrixWrap(A.getRowMap(), nnzToAllocate, pft));
-          }
-          if (transposeB)
-            fos << "MatrixMatrix::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
-        }
+        if (C == Teuchos::null)
+          C = rcp(new CrsMatrixWrap(transposeA ? A.getDomainMap() : A.getRowMap(), 0, Xpetra::StaticProfile));
 
         if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
           throw Exceptions::RuntimeError("MatrixMatrix::Add for Epetra only available with Scalar = double, LO = GO = int.");
@@ -622,7 +577,12 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
           RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >  tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
 
-          Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
+          RCP<ParameterList> params = rcp(new ParameterList(""));
+          params->set("Call fillComplete",false);
+          Tpetra::MatrixMatrix::add(alpha, transposeA, tpA, beta, transposeB, tpB, *tpC,
+                                    Xpetra::toTpetra(transposeA ? A.getRangeMap() : A.getDomainMap()),
+                                    Xpetra::toTpetra(transposeA ? A.getDomainMap() : A.getRangeMap()),
+                                    params);
   #else
           throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
   #endif
@@ -1315,54 +1275,57 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
         if (C == Teuchos::null) {
-          size_t maxNzInA     = 0;
-          size_t maxNzInB     = 0;
-          size_t numLocalRows = 0;
-          if (A.isFillComplete() && B.isFillComplete()) {
+          if (A.getRowMap()->lib() == Xpetra::UseEpetra) {
+            size_t maxNzInA     = 0;
+            size_t maxNzInB     = 0;
+            size_t numLocalRows = 0;
+            if (A.isFillComplete() && B.isFillComplete()) {
 
-            maxNzInA     = A.getNodeMaxNumRowEntries();
-            maxNzInB     = B.getNodeMaxNumRowEntries();
-            numLocalRows = A.getNodeNumRows();
-          }
-
-          if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
-            // first check if either A or B has at most 1 nonzero per row
-            // the case of both having at most 1 nz per row is handled by the ``else''
-            Teuchos::ArrayRCP<size_t> exactNnzPerRow(numLocalRows);
-
-            if ((maxNzInA == 1 && maxNzInB > 1) || AHasFixedNnzPerRow) {
-              for (size_t i = 0; i < numLocalRows; ++i)
-                exactNnzPerRow[i] = B.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInA;
-
-            } else {
-              for (size_t i = 0; i < numLocalRows; ++i)
-                exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
+              maxNzInA     = A.getNodeMaxNumRowEntries();
+              maxNzInB     = B.getNodeMaxNumRowEntries();
+              numLocalRows = A.getNodeNumRows();
             }
 
-            fos << "MatrixMatrix::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
-                << ", using static profiling" << std::endl;
-            C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
+            if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
+              // first check if either A or B has at most 1 nonzero per row
+              // the case of both having at most 1 nz per row is handled by the ``else''
+              Teuchos::ArrayRCP<size_t> exactNnzPerRow(numLocalRows);
 
-          } else {
-            // general case
-            double nnzPerRowInA = Teuchos::as<double>(A.getNodeNumEntries()) / A.getNodeNumRows();
-            double nnzPerRowInB = Teuchos::as<double>(B.getNodeNumEntries()) / B.getNodeNumRows();
-            LO    nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
+              if ((maxNzInA == 1 && maxNzInB > 1) || AHasFixedNnzPerRow) {
+                for (size_t i = 0; i < numLocalRows; ++i)
+                  exactNnzPerRow[i] = B.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInA;
 
-            LO maxPossible = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
-            //Use static profiling (more efficient) if the estimate is at least as big as the max
-            //possible nnz's in any single row of the result.
-            Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
+              } else {
+                for (size_t i = 0; i < numLocalRows; ++i)
+                  exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
+              }
 
-            fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-            fos << "MatrixMatrix::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
-                << ", max possible nnz per row in sum = " << maxPossible
-                << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
-                << std::endl;
-            C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), nnzToAllocate, pft));
-          }
-          if (transposeB)
-            fos << "MatrixMatrix::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+              fos << "MatrixMatrix::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
+                  << ", using static profiling" << std::endl;
+              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
+
+            } else {
+              // general case
+              double nnzPerRowInA = Teuchos::as<double>(A.getNodeNumEntries()) / A.getNodeNumRows();
+              double nnzPerRowInB = Teuchos::as<double>(B.getNodeNumEntries()) / B.getNodeNumRows();
+              LO    nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
+
+              LO maxPossible = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
+              //Use static profiling (more efficient) if the estimate is at least as big as the max
+              //possible nnz's in any single row of the result.
+              Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
+
+              fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+              fos << "MatrixMatrix::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+                  << ", max possible nnz per row in sum = " << maxPossible
+                  << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
+                  << std::endl;
+              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), nnzToAllocate, pft));
+            }
+            if (transposeB)
+              fos << "MatrixMatrix::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+          } else if (A.getRowMap()->lib() == Xpetra::UseTpetra)
+            C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(transposeA ? A.getDomainMap() : A.getRowMap(), 0, Xpetra::StaticProfile));
         }
 
         if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
@@ -1390,7 +1353,12 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
           RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >  tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
 
-          Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
+          RCP<ParameterList> params = rcp(new ParameterList(""));
+          params->set("Call fillComplete",false);
+          Tpetra::MatrixMatrix::add(alpha, transposeA, tpA, beta, transposeB, tpB, *tpC,
+                                    Xpetra::toTpetra(transposeA ? A.getRangeMap() : A.getDomainMap()),
+                                    Xpetra::toTpetra(transposeA ? A.getDomainMap() : A.getRangeMap()),
+                                    params);
   # endif
   #else
           throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
@@ -1929,53 +1897,56 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
                                    "TwoMatrixAdd: matrix row maps are not the same.");
 
         if (C == Teuchos::null) {
-          size_t maxNzInA     = 0;
-          size_t maxNzInB     = 0;
-          size_t numLocalRows = 0;
-          if (A.isFillComplete() && B.isFillComplete()) {
-            maxNzInA     = A.getNodeMaxNumRowEntries();
-            maxNzInB     = B.getNodeMaxNumRowEntries();
-            numLocalRows = A.getNodeNumRows();
-          }
-
-          if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
-            // first check if either A or B has at most 1 nonzero per row
-            // the case of both having at most 1 nz per row is handled by the ``else''
-            Teuchos::ArrayRCP<size_t> exactNnzPerRow(numLocalRows);
-
-            if ((maxNzInA == 1 && maxNzInB > 1) || AHasFixedNnzPerRow) {
-              for (size_t i = 0; i < numLocalRows; ++i)
-                exactNnzPerRow[i] = B.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInA;
-
-            } else {
-              for (size_t i = 0; i < numLocalRows; ++i)
-                exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
+          if (A.getRowMap()->lib() == Xpetra::UseEpetra) {
+            size_t maxNzInA     = 0;
+            size_t maxNzInB     = 0;
+            size_t numLocalRows = 0;
+            if (A.isFillComplete() && B.isFillComplete()) {
+              maxNzInA     = A.getNodeMaxNumRowEntries();
+              maxNzInB     = B.getNodeMaxNumRowEntries();
+              numLocalRows = A.getNodeNumRows();
             }
 
-            fos << "MatrixMatrix::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
-                << ", using static profiling" << std::endl;
-            C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
+            if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
+              // first check if either A or B has at most 1 nonzero per row
+              // the case of both having at most 1 nz per row is handled by the ``else''
+              Teuchos::ArrayRCP<size_t> exactNnzPerRow(numLocalRows);
 
-          } else {
-            // general case
-            double nnzPerRowInA = Teuchos::as<double>(A.getNodeNumEntries()) / A.getNodeNumRows();
-            double nnzPerRowInB = Teuchos::as<double>(B.getNodeNumEntries()) / B.getNodeNumRows();
-            LO    nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
+              if ((maxNzInA == 1 && maxNzInB > 1) || AHasFixedNnzPerRow) {
+                for (size_t i = 0; i < numLocalRows; ++i)
+                  exactNnzPerRow[i] = B.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInA;
 
-            LO maxPossible = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
-            //Use static profiling (more efficient) if the estimate is at least as big as the max
-            //possible nnz's in any single row of the result.
-            Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
+              } else {
+                for (size_t i = 0; i < numLocalRows; ++i)
+                  exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
+              }
 
-            fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-            fos << "MatrixMatrix::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
-                << ", max possible nnz per row in sum = " << maxPossible
-                << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
-                << std::endl;
-            C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), nnzToAllocate, pft));
-          }
-          if (transposeB)
-            fos << "MatrixMatrix::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+              fos << "MatrixMatrix::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
+                  << ", using static profiling" << std::endl;
+              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
+
+            } else {
+              // general case
+              double nnzPerRowInA = Teuchos::as<double>(A.getNodeNumEntries()) / A.getNodeNumRows();
+              double nnzPerRowInB = Teuchos::as<double>(B.getNodeNumEntries()) / B.getNodeNumRows();
+              LO    nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
+
+              LO maxPossible = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
+              //Use static profiling (more efficient) if the estimate is at least as big as the max
+              //possible nnz's in any single row of the result.
+              Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
+
+              fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+              fos << "MatrixMatrix::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+                  << ", max possible nnz per row in sum = " << maxPossible
+                  << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
+                  << std::endl;
+              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), nnzToAllocate, pft));
+            }
+            if (transposeB)
+              fos << "MatrixMatrix::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+          } else if (A.getRowMap()->lib() == Xpetra::UseTpetra)
+            C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(transposeA ? A.getDomainMap() : A.getRowMap(), 0, Xpetra::StaticProfile));
         }
 
         if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
@@ -2003,7 +1974,12 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
           RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >  tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
 
-          Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
+          RCP<ParameterList> params = rcp(new ParameterList(""));
+          params->set("Call fillComplete",false);
+          Tpetra::MatrixMatrix::add(alpha, transposeA, tpA, beta, transposeB, tpB, *tpC,
+                                    Xpetra::toTpetra(transposeA ? A.getRangeMap() : A.getDomainMap()),
+                                    Xpetra::toTpetra(transposeA ? A.getDomainMap() : A.getRangeMap()),
+                                    params);
   # endif
   #else
           throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
