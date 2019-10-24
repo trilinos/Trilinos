@@ -1018,6 +1018,14 @@
     </parameter>
 
     <parameter>
+      <name>tentative: constant column sums</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>If true, scale the column sums to one (before applying nullspace).</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>tentative: build coarse coordinates</name>
       <type>bool</type>
       <default>true</default>
