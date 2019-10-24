@@ -1499,6 +1499,15 @@ namespace Xpetra {
     }
 #endif
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector & X,
+                  const MultiVector & B,
+                  MultiVector & R) const {
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      R.update(STS::one(),X,STS::zero());
+      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());      
+    }
+    
   private:
 
     /** \name helper functions */
@@ -1572,7 +1581,6 @@ namespace Xpetra {
       // Set current view
       this->currentViewLabel_ = this->GetDefaultViewLabel();
     }
-
 
   private:
     bool is_diagonal_;   // If we're diagonal a bunch of the extraction stuff should work
