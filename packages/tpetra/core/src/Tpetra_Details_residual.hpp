@@ -59,7 +59,7 @@ namespace Tpetra {
   namespace Details {
 
 template<class SC, class LO, class GO, class NO>
-void localResidual(const CrsMatrix<SC,LO,GO,NO> &   A,
+void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
                    const MultiVector<SC,LO,GO,NO> & X,
                    const MultiVector<SC,LO,GO,NO> & B,
                    MultiVector<SC,LO,GO,NO> & R) {
@@ -125,13 +125,13 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &   A,
   // a residual kernel.
   SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();    
   A.localApply(X,R,Teuchos::NO_TRANS, one, zero);
-  R.update(1.0,B,negone);
+  R.update(one,B,negone);
 }
     
 
 //! Computes R = B - A * X 
 template<class SC, class LO, class GO, class NO>
-void residual(const CrsMatrix<SC,LO,GO,NO> &   A,
+void residual(const Operator<SC,LO,GO,NO> &   Aop,
               const MultiVector<SC,LO,GO,NO> & X_in,
               const MultiVector<SC,LO,GO,NO> & B_in,
               MultiVector<SC,LO,GO,NO> & R_in) {
@@ -141,8 +141,16 @@ void residual(const CrsMatrix<SC,LO,GO,NO> &   A,
   using Teuchos::rcp_const_cast;
   using Teuchos::rcpFromRef;
   
-  auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout)); 
-  
+  const CrsMatrix<SC,LO,GO,NO> * Apt  = dynamic_cast<const CrsMatrix<SC,LO,GO,NO>*>(&Aop);
+  if(!Apt) {
+    // If we're not a CrsMatrix, we can't do fusion, so just do apply+update
+     SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();    
+     Aop.apply(X_in,R_in,Teuchos::NO_TRANS, one, zero);
+     R_in.update(one,B_in,negone);
+     return;
+  }
+  const CrsMatrix<SC,LO,GO,NO> & A = *Apt;
+
   using import_type = typename CrsMatrix<SC,LO,GO,NO>::import_type;
   using export_type = typename CrsMatrix<SC,LO,GO,NO>::export_type;
   using MV = MultiVector<SC,LO,GO,NO>;

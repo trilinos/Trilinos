@@ -307,7 +307,7 @@ namespace Tpetra {
   /// Computes R = B - A * X 
   namespace Details {
     template<class SC, class LO, class GO, class NO>
-    void residual(const CrsMatrix<SC,LO,GO,NO> &   A,
+    void residual(const Operator<SC,LO,GO,NO> &   A,
                   const MultiVector<SC,LO,GO,NO> & X,
                   const MultiVector<SC,LO,GO,NO> & B,
                   MultiVector<SC,LO,GO,NO> & R);
@@ -864,9 +864,9 @@ namespace Tpetra {
 
     // This friend declaration allows for fused residual calculation
     template <class S2, class LO2, class GO2, class N2>
-    friend void Details::residual(const CrsMatrix<S2,LO2,GO2,N2> &   A,
-              const MultiVector<S2,LO2,GO2,N2> & X,
-              const MultiVector<S2,LO2,GO2,N2> & B,
+    friend void Details::residual(const Operator<S2,LO2,GO2,N2> &   A,
+                                  const MultiVector<S2,LO2,GO2,N2> & X,
+                                  const MultiVector<S2,LO2,GO2,N2> & B,
                                   MultiVector<S2,LO2,GO2,N2> & R);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
