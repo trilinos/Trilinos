@@ -339,6 +339,16 @@ namespace MueLu {
 
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector & X,
+                  const MultiVector & B,
+                  MultiVector & R) const {
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      R.update(STS::one(),X,STS::zero());
+      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());   
+    }      
+    
+
   private:
 
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
