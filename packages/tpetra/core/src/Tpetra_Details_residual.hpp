@@ -95,15 +95,15 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
        A.getRowMap ()->getNodeNumElements (), std::runtime_error,
        "R has the wrong number of local rows.  "
        "R.getLocalLength() = " << R.getLocalLength () << " != "
-       "A.getRangeMap()->getNodeNumElements() = " <<
-       A.getRangeMap ()->getNodeNumElements () << ".");
+       "A.getRowMap()->getNodeNumElements() = " <<
+       A.getRowMap ()->getNodeNumElements () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
       (B.getLocalLength () !=
        A.getRowMap ()->getNodeNumElements (), std::runtime_error,
        "B has the wrong number of local rows.  "
        "B.getLocalLength() = " << B.getLocalLength () << " != "
-       "A.getRangeMap()->getNodeNumElements() = " <<
-       A.getRangeMap ()->getNodeNumElements () << ".");
+       "A.getRowMap()->getNodeNumElements() = " <<
+       A.getRowMap ()->getNodeNumElements () << ".");
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (! A.isFillComplete (), std::runtime_error, "The matrix A is not "
@@ -203,18 +203,45 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
     X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
   }
 
-  // Get a vector for the rowMap output residual
+  // Get a vector for the R_rowMap output residual, handling the 
+  // non-constant stride and exporter cases.  Since R gets clobbered
+  // we don't need to worry about the data in it
   RCP<MV> R_rowMap;
   if(exporter.is_null()) {
-    R_rowMap = rcpFromRef(R_in);
+    if (! R_in.isConstantStride ()) {
+      R_rowMap = A.getRowMapMultiVector(R_in);
+    }
+    else {
+      R_rowMap = rcpFromRef (R_in);
+    }
   }
   else {
     R_rowMap = A.getRowMapMultiVector (R_in);    
   }
   
-  // FIXME: Need to get a potential cached buffer for B (this will need to be another function)
-  RCP<const MV> B_rowMap =  rcpFromRef(B_in); // A.getRowMapMultiVector (B_in);
-
+  // Get a vector for the B_rowMap output residual, handling the 
+  // non-constant stride and exporter cases
+  RCP<const MV> B_rowMap;
+  if(exporter.is_null()) {
+    if (! B_in.isConstantStride ()) {
+      // Do an allocation here.  If we need to optimize this later, we can have the matrix 
+      // cache this.
+      RCP<MV> B_rowMapNonConst = rcp(new MV(A.getRowMap(),B_in.getNumVectors()));
+      Tpetra::deep_copy (*B_rowMapNonConst, B_in);
+      B_rowMap = rcp_const_cast<const MV> (B_rowMapNonConst);
+    }
+    else {
+      B_rowMap = rcpFromRef (B_in);
+    }
+  }
+  else {
+    // Do an allocation here.  If we need to optimize this later, we can have the matrix 
+    // cache this.
+    ProfilingRegion regionExport ("Tpetra::CrsMatrix::residual: B Import");
+    RCP<MV> B_rowMapNonConst = rcp(new MV(A.getRowMap(),B_in.getNumVectors()));
+    B_rowMapNonConst->doImport(B_in, *exporter, ADD);
+    B_rowMap = rcp_const_cast<const MV> (B_rowMapNonConst);
+  }
 
   // If we have a nontrivial Export object, we must perform an
   // Export.  In that case, the local multiply result will go into
@@ -222,10 +249,6 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
   // constant-stride version of R_in in this case, because we had to
   // make a constant stride R_rowMap MV and do an Export anyway.
   if (! exporter.is_null ()) {
-    {
-      ProfilingRegion regionExport ("Tpetra::CrsMatrix::residual: B Import");
-      //      B_rowMap->doImport(B_in, *exporter, ADD);//FIXME
-    }
 
     localResidual (A, *X_colMap, *B_rowMap, *R_rowMap);
     
@@ -238,22 +261,13 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
   }
   else { // Don't do an Export: row Map and range Map are the same.
     //
-    // If R_in does not have constant stride, or if the column Map
-    // MV aliases R_in, then we can't let the kernel write directly
-    // to R_in.  Instead, we have to use the cached row (== range)
+    // If R_in does not have constant stride,
+    // then we can't let the kernel write directly to R_in.  
+    // Instead, we have to use the cached row (== range)
     // Map MV as temporary storage.
     //
-    // FIXME (mfh 05 Jun 2014) This test for aliasing only tests if
-    // the user passed in the same MultiVector for both X and R.  It
-    // won't detect whether one MultiVector views the other.  We
-    // should also check the MultiVectors' raw data pointers.
-    if (! R_in.isConstantStride () || X_colMap.getRawPtr () == &R_in) {
-      // Force creating the MV if it hasn't been created already.
-      // This will reuse a previously created cached MV.
-      R_rowMap = A.getRowMapMultiVector (R_in, true);
-      // FIXME: Muck with this
-
-      Tpetra::deep_copy (*R_rowMap, R_in);
+    if (! R_in.isConstantStride () ) {
+      // We need to be sure to do a copy out in this case.
       localResidual (A, *X_colMap, *B_rowMap, *R_rowMap);
       Tpetra::deep_copy (R_in, *R_rowMap);
     }
