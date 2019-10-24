@@ -786,6 +786,11 @@ add (const Scalar& alpha,
   RCP<const map_type> CcolMap;
   RCP<const import_type> Cimport = Teuchos::null;
   RCP<export_type> Cexport = Teuchos::null;
+  bool doFillComplete = true;
+  if(Teuchos::nonnull(params) && params->isParameter("Call fillComplete"))
+  {
+    doFillComplete = params->get<bool>("Call fillComplete");
+  }
   //The unsorted KCRS addition kernel uses std::sort(), which can't run on CUDA
   if(!matchingColMaps && !(CDomainMap->isContiguous()))
   {
@@ -803,7 +808,8 @@ add (const Scalar& alpha,
     Teuchos::RCP<crs_matrix_type> C_ = Teuchos::rcp_static_cast<crs_matrix_type>(Bprime->add(alpha, *Aprime, beta, CDomainMap, CRangeMap, params));
     C.replaceColMap(C_->getColMap());
     C.setAllValues(C_->getLocalMatrix().graph.row_map,C_->getLocalMatrix().graph.entries,C_->getLocalMatrix().values);
-    C.expertStaticFillComplete(CDomainMap, CRangeMap, C_->getGraph()->getImporter(), C_->getGraph()->getExporter(), params);
+    if(doFillComplete)
+      C.expertStaticFillComplete(CDomainMap, CRangeMap, C_->getGraph()->getImporter(), C_->getGraph()->getExporter(), params);
     return;
   }
   else if(!matchingColMaps)
@@ -893,39 +899,41 @@ add (const Scalar& alpha,
   //      C = rcp(new crs_matrix_type(CrowMap, CcolMap, rowptrs, colinds, vals, params));
   C.replaceColMap(CcolMap);
   C.setAllValues(rowptrs,colinds,vals);
+  if(doFillComplete)
+  {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null;
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs expertStaticFillComplete"))));
+    MM = Teuchos::null;
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs expertStaticFillComplete"))));
 #endif
-  if(!CDomainMap->isSameAs(*CcolMap))
-  {
+    if(!CDomainMap->isSameAs(*CcolMap))
+    {
+      if (debug) {
+        std::ostringstream os;
+        os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+           << "Create Cimport" << std::endl;
+        std::cerr << os.str ();
+      }
+      Cimport = rcp(new import_type(CDomainMap, CcolMap));
+    }
+    if(!CrowMap->isSameAs(*CRangeMap))
+    {
+      if (debug) {
+        std::ostringstream os;
+        os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+           << "Create Cexport" << std::endl;
+        std::cerr << os.str ();
+      }
+      Cexport = rcp(new export_type(CrowMap, CRangeMap));
+    }
+
     if (debug) {
       std::ostringstream os;
       os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-         << "Create Cimport" << std::endl;
+         << "Call C->expertStaticFillComplete(...)" << std::endl;
       std::cerr << os.str ();
     }
-    Cimport = rcp(new import_type(CDomainMap, CcolMap));
+    C.expertStaticFillComplete(CDomainMap, CRangeMap, Cimport, Cexport, params);
   }
-  if(!CrowMap->isSameAs(*CRangeMap))
-  {
-    if (debug) {
-      std::ostringstream os;
-      os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-         << "Create Cexport" << std::endl;
-      std::cerr << os.str ();
-    }
-    Cexport = rcp(new export_type(CrowMap, CRangeMap));
-  }
-
-  if (debug) {
-    std::ostringstream os;
-    os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-       << "Call C->expertStaticFillComplete(...)" << std::endl;
-    std::cerr << os.str ();
-  }
-  C.expertStaticFillComplete(CDomainMap, CRangeMap, Cimport, Cexport, params);
-
 }
 
 template <class Scalar,

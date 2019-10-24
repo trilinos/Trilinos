@@ -253,9 +253,9 @@ struct AddKernels
 /// \param B [in] The second input matrix.
 ///
 /// \param domainMap [in] Domain Map of C (on output).  If null or not
-///   provided, this defaults to the row Map of B.
+///   provided, this defaults to the domain map of B (or range map, if transposeB).
 /// \param rangeMap [in] Range Map of C (on output).  If null or not
-///   provided, this defaults to the row Map of B.
+///   provided, this defaults to the range map of B (or domain map, if transposeB).
 /// \param params [in/out] Same as the parameters of RowMatrix::add.
 ///
 /// See the documentation of RowMatrix::add for a more detailed
@@ -292,17 +292,14 @@ add (const Scalar& alpha,
 /// \param scalarA [in] Scalar multiplier for A in the sum.
 /// \param transposeA [in] If true, use the transpose of A.
 /// \param A [in] The first input matrix.
-///
 /// \param scalarB [in] Scalar multiplier for B in the sum.
 /// \param transposeB [in] If true, use the transpose of B.
 /// \param B [in] The second input matrix.
-///
-/// \param B [in] The result matrix, which we expect to be 'new'
-///
+/// \param C [out] The result matrix, which we expect to be 'new' on input.
 /// \param domainMap [in] Domain Map of C (on output).  If null or not
-///   provided, this defaults to the row Map of B.
+///   provided, this defaults to the domain map of B (or range map, if transposeB).
 /// \param rangeMap [in] Range Map of C (on output).  If null or not
-///   provided, this defaults to the row Map of B.
+///   provided, this defaults to the range map of B (or domain map, if transposeB).
 /// \param params [in/out] Same as the parameters of RowMatrix::add.
 ///
 /// See the documentation of RowMatrix::add for a more detailed
