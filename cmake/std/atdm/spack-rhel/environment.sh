@@ -136,11 +136,6 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]; then
 
   BINUTILS_LIBIBERTY_LIB_DIR_NAME=lib
 
-  export ATDM_CONFIG_CXX_FLAGS="--gcc-toolchain=${GCC_ROOT}"
-  # NOTE: Above, it seems that in our version of Spack that Spack's set up of
-  # the clang@5.0.1 compiler does not use the include directories for
-  # gcc@4.9.3 that it was built with.
-
   export ATDM_CONFIG_EXTRA_LINK_FLAGS="${GCC_ROOT}/lib64/libgfortran.so"
   # NOTE: Above, for some reason, need to provide full path to libgfortran as
   # -L and -l don't work.
