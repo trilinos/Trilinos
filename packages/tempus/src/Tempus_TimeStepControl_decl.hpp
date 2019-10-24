@@ -131,7 +131,7 @@ public:
        getTimeStepControlStrategy() const { return stepControlStrategy_;}
     virtual int getOutputIndexInterval()
       { return outputIndexInterval_;}
-    virtual Scalar setOutputTimeInterval()
+    virtual Scalar getOutputTimeInterval()
       { return outputTimeInterval_;}
  
   //@}
