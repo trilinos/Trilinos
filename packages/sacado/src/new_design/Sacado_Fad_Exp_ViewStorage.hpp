@@ -120,7 +120,11 @@ namespace Sacado {
       //! Assignment
       KOKKOS_INLINE_FUNCTION
       ViewStorage& operator=(const ViewStorage& x) {
-        if (this != std::addressof(x)) {
+        // Can't use std::addressof() on the GPU, so this is equivalent
+        // according to cppreference.com
+        if (this != reinterpret_cast<ViewStorage*>(
+              &const_cast<char&>(
+                reinterpret_cast<const volatile char&>(x)))) {
           *val_ = *x.val_;
           if (stride_one)
             for (int i=0; i<sz_.value; ++i)
