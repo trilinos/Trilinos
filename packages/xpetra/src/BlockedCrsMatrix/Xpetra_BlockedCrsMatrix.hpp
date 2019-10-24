@@ -781,7 +781,6 @@ namespace Xpetra {
         return;
       }
       else if(is_diagonal_) {
-	//CMS
 	GlobalOrdinal gid = this->getRowMap()->getGlobalElement(LocalRow);
 	size_t row = getBlockedRangeMap()->getMapIndexForGID(gid);
 	getMatrix(row,row)->getLocalRowView(getMatrix(row,row)->getRowMap()->getLocalElement(gid),indices,values);

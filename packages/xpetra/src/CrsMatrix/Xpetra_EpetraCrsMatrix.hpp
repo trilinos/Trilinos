@@ -1242,8 +1242,9 @@ public:
                 const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
                 MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
     Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+
     apply(X,R);
-    R.update(one,X,negone);
+    R.update(one,B,negone);
   }
 
 private:
@@ -2247,7 +2248,7 @@ public:
                 MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
     Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
     apply(X,R);
-    R.update(one,X,negone);
+    R.update(one,B,negone);
   }
 
 
