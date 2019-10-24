@@ -31,6 +31,7 @@
 #define SACADO_FAD_EXP_VIEWSTORAGE_HPP
 
 #include <type_traits>
+#include <utility>
 #include <memory>
 
 #include "Sacado_DynamicArrayTraits.hpp"
@@ -108,6 +109,10 @@ namespace Sacado {
       ViewStorage(const ViewStorage& x) :
         sz_(x.sz_), stride_(x.stride_), val_(x.val_), dx_(x.dx_) {}
 
+      // Move does not make sense for this storage since it is always tied to
+      // some preallocated data.  Don't define move constructor so compiler will
+      // always fall-back to copy
+
       //! Destructor
       KOKKOS_INLINE_FUNCTION
       ~ViewStorage() {}
@@ -115,7 +120,11 @@ namespace Sacado {
       //! Assignment
       KOKKOS_INLINE_FUNCTION
       ViewStorage& operator=(const ViewStorage& x) {
-        if (this != std::addressof(x)) {
+        // Can't use std::addressof() on the GPU, so this is equivalent
+        // according to cppreference.com
+        if (this != reinterpret_cast<ViewStorage*>(
+              &const_cast<char&>(
+                reinterpret_cast<const volatile char&>(x)))) {
           *val_ = *x.val_;
           if (stride_one)
             for (int i=0; i<sz_.value; ++i)
@@ -126,6 +135,10 @@ namespace Sacado {
         }
         return *this;
       }
+
+      // Move does not make sense for this storage since it is always tied to
+      // some preallocated data.  Don't define move assignment so compiler will
+      // always fall-back to copy
 
       //! Returns number of derivative components
       KOKKOS_INLINE_FUNCTION
