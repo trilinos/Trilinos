@@ -145,7 +145,7 @@ namespace MueLu {
                   const Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
                   Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
       using STS = Teuchos::ScalarTraits<Scalar>;
-      R.update(STS::one(),X,STS::zero());
+      R.update(STS::one(),B,STS::zero());
       this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());   
     }      
     
