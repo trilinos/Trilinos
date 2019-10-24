@@ -52,7 +52,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     IF ("$ENV{ATDM_CONFIG_BUILD_COUNT}" GREATER "0")
       SET(CTEST_BUILD_FLAGS "-j$ENV{ATDM_CONFIG_BUILD_COUNT} ")
     ELSE()
-      SET(CTEST_BUILD_FLAGS "")
+      SET(CTEST_BUILD_FLAGS "")  # Use all cores!
     ENDIF()
     SET(CTEST_BUILD_FLAGS "${CTEST_BUILD_FLAGS}-k 999999")
   ELSE()
@@ -154,6 +154,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     # for the number of new warnings, errors, tests, etc.
     SET(CTEST_SITE "$ENV{ATDM_CONFIG_CDASH_HOSTNAME}")
   ENDIF()
+
+  # Let's be brave and do all rebuilds (massively speed up build times)
+  SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY FALSE)
 
   # Don't process any extra repos
   SET(Trilinos_EXTRAREPOS_FILE NONE)
