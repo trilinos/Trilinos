@@ -60,6 +60,7 @@
 #include "Teuchos_XMLPerfTestArchive.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -134,10 +135,9 @@ template<class CrsMatrix, class Vector>
 bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int myproc, double tolerance, int max_iter)
 {
   using Teuchos::TimeMonitor;
-  TimeMonitor timerGlobal(*TimeMonitor::getNewTimer("CG: Global"));
-  std::string addTimerName = "CG: Vector Add";
-  std::string matvecTimerName = "CG: Matvec";
-  std::string dotTimerName = "CG: Dot Product";
+  std::string addTimerName = "CG: axpby";
+  std::string matvecTimerName = "CG: spmv";
+  std::string dotTimerName = "CG: dot";
   static_assert (std::is_same<typename CrsMatrix::scalar_type, typename Vector::scalar_type>::value,
                  "The CrsMatrix and Vector template parameters must have the same scalar_type.");
 
@@ -163,9 +163,8 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
   magnitude_type oldrtrans = 0;
 
   LO print_freq = max_iter/10;
-  if (print_freq>50) print_freq = 50;
-  if (print_freq<1)  print_freq = 1;
-
+  print_freq = std::min(print_freq, 50);
+  print_freq = std::max(print_freq, 1);
   {
     TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
     p->update(1.0,*x,0.0,*x,0.0);
@@ -223,18 +222,16 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
       TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
       p_ap_dot = Ap->dot(*p);
     }
-
-   if (p_ap_dot < brkdown_tol) {
-      if (p_ap_dot < 0 ) {
-        std::cerr << "miniFE::cg_solve ERROR, numerical breakdown!"<<std::endl;
-        return false;
-      }
-      else brkdown_tol = 0.1 * p_ap_dot;
-    }
-    alpha = rtrans/p_ap_dot;
-
     {
       TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+      if (p_ap_dot < brkdown_tol) {
+        if (p_ap_dot < 0 ) {
+          std::cerr << "miniFE::cg_solve ERROR, numerical breakdown!"<<std::endl;
+          return false;
+        }
+        else brkdown_tol = 0.1 * p_ap_dot;
+      }
+      alpha = rtrans / p_ap_dot;
       x->update(alpha,*p,1.0);
       r->update(-alpha,*Ap,1.0);
     }
@@ -252,6 +249,9 @@ template<class Node>
 int run (int argc, char *argv[])
 {
   using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
+  using Teuchos::StackedTimer;
   using Teuchos::tuple;
   using std::cout;
   using std::endl;
@@ -384,9 +384,14 @@ int run (int argc, char *argv[])
   RCP<vec_type> x (new vec_type (A->getDomainMap ()));
 
   // Solve the linear system Ax=b using CG.
-  bool success = cg_solve(A, b, x, myRank, tolerance, niters);
+  RCP<StackedTimer> timer = rcp(new StackedTimer("CG: global"));
+  TimeMonitor::setStackedTimer(timer);
 
-  Teuchos::TimeMonitor::report(comm.ptr(), std::cout, "");
+  bool success = cg_solve(A, b, x, myRank, tolerance, niters);
+  timer->stopBaseTimer();
+  StackedTimer::OutputOptions options;
+  options.print_warnings = false;
+  timer->report(std::cout, comm, options);
 
   if(myRank == 0)
   {
