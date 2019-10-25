@@ -121,6 +121,10 @@ namespace ROL {
     ROL::Ptr<Teuchos::Time> AssembleQOIHessVec31        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec31");
     ROL::Ptr<Teuchos::Time> AssembleQOIHessVec32        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec32");
     ROL::Ptr<Teuchos::Time> AssembleQOIHessVec33        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec33");
+    ROL::Ptr<Teuchos::Time> AssembleQOIHessian11        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Hessian11");
+    ROL::Ptr<Teuchos::Time> AssembleQOIHessian12        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Hessian12");
+    ROL::Ptr<Teuchos::Time> AssembleQOIHessian21        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Hessian21");
+    ROL::Ptr<Teuchos::Time> AssembleQOIHessian22        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Hessian22");
   }
 }
 #endif
@@ -588,6 +592,26 @@ public:
                             const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                             const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
                             const ROL::Ptr<const std::vector<Real>> &z_param = ROL::nullPtr);
+  void assembleQoIHessian11(ROL::Ptr<Tpetra::CrsMatrix<>> &H11,
+                            const ROL::Ptr<QoI<Real>> &qoi,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                            const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assembleQoIHessian12(ROL::Ptr<Tpetra::CrsMatrix<>> &H12,
+                            const ROL::Ptr<QoI<Real>> &qoi,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                            const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assembleQoIHessian21(ROL::Ptr<Tpetra::CrsMatrix<>> &H21,
+                            const ROL::Ptr<QoI<Real>> &qoi,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                            const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assembleQoIHessian22(ROL::Ptr<Tpetra::CrsMatrix<>> &H22,
+                            const ROL::Ptr<QoI<Real>> &qoi,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                            const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
   /***************************************************************************/
   /* End QoI assembly routines                                               */
   /***************************************************************************/
