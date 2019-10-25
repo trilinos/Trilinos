@@ -98,6 +98,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   using Teuchos::rcp;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
+  using Teuchos::StackedTimer;
   using namespace MueLuTests;
 
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
