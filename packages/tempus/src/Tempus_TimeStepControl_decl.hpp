@@ -170,13 +170,15 @@ public:
         tscPL_->set<std::string>("Output Index List", ss.str());
       }
     virtual void setOutputTimes(std::vector<Scalar> OutputTimes)
-      { outputTimes_ = OutputTimes;
+      {
+        outputTimes_ = OutputTimes;
         std::ostringstream ss;
-        if (!outputTimes_.empty())
-          { std::copy(OutputTimes.begin(), OutputTimes.end()-1,
-                  std::ostream_iterator<Scalar>(ss, ","));
-            ss << OutputTimes.back();
-	  }
+        ss << std::setprecision(16);
+        if (!outputTimes_.empty()) {
+          for (size_t i=0; i < outputTimes_.size()-1; ++i)
+            ss << outputTimes_[i] << ",";
+          ss << outputTimes_[outputTimes_.size()-1];
+        }
         tscPL_->set<std::string>("Output Time List", ss.str());
       }
     virtual void setMaxFailures(int MaxFailures)
