@@ -8,6 +8,9 @@ ATDM_SET_ENABLE(PanzerAdaptersIOSS_tIOSSConnManager3_MPI_3_DISABLE ON)
 
 IF (Trilinos_ENABLE_DEBUG)
 
+  # STEQR() test fails on IBM Power systems with current TPL setup (#2410, #6166)
+  ATDM_SET_ENABLE(TeuchosNumerics_DISABLE_STEQR_TEST ON)
+
   # Disable Tempus tests that started timing out in debug builds when
   # Trilinos_ENABLE_DEBUG=ON was set PR #5970 (#6009)
   ATDM_SET_ENABLE(Tempus_BackwardEuler_MPI_1_DISABLE ON)
