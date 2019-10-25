@@ -126,6 +126,9 @@ namespace Sacado {
       //! Copy constructor
       GeneralFad(const GeneralFad& x) = default;
 
+      //! Move constructor
+      GeneralFad(GeneralFad&& x) = default;
+
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
@@ -218,6 +221,10 @@ namespace Sacado {
       //! Assignment with GeneralFad right-hand-side
       GeneralFad&
       operator=(const GeneralFad& x) = default;
+
+      //! Move assignment with GeneralFad right-hand-side
+      GeneralFad&
+      operator=(GeneralFad&& x) = default;
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
