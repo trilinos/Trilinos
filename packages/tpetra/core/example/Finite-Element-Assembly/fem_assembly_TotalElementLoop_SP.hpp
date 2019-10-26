@@ -152,7 +152,7 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
   auto ghost_element_to_node_ids = mesh.getGhostElementToNode();
 
-  RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
+  Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
   RCP<crs_graph_type> crs_graph = rcp(new crs_graph_type(row_map, maxEntriesPerRow, Tpetra::StaticProfile));
@@ -353,7 +353,7 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
     crs_matrix.describe (out, Teuchos::VERB_EXTREME);
   }
 
-  timerGlobal = Teuchos::null;
+  Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
 
   // Save crs_matrix as a MatrixMarket file.
   if (opts.saveMM) {
@@ -431,7 +431,7 @@ executeTotalElementLoopSPKokkos_
   auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
   auto ghost_element_to_node_ids = mesh.getGhostElementToNode();
 
-  RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
+  Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
   RCP<crs_graph_type> crs_graph = rcp(new crs_graph_type(row_map, maxEntriesPerRow, Tpetra::StaticProfile));
@@ -644,7 +644,7 @@ executeTotalElementLoopSPKokkos_
   // Print out crs_matrix details.
   if(opts.verbose) crs_matrix->describe(out, Teuchos::VERB_EXTREME);
 
-  timerGlobal = Teuchos::null;
+  Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
 
   // Save crs_matrix as a MatrixMarket file.
   if(opts.saveMM)

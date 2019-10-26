@@ -98,7 +98,7 @@ ENDIF()
 TRIBITS_ADD_TEST(
   FEMAssembly
   NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
-  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
+  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=8192 --num-elements-y=8192 --kokkos"
   COMM mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -109,7 +109,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   FEMAssembly
   NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
-  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
+  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=8192 --num-elements-y=8192 --kokkos"
   COMM mpi
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
@@ -120,7 +120,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   FEMAssembly
   NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
-  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
+  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=8192 --num-elements-y=8192 --kokkos"
   COMM mpi
   NUM_MPI_PROCS 9
   STANDARD_PASS_OUTPUT
@@ -131,7 +131,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   FEMAssembly
   NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
-  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
+  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=8192 --num-elements-y=8192 --kokkos"
   COMM mpi
   NUM_MPI_PROCS 16
   STANDARD_PASS_OUTPUT
@@ -142,7 +142,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   FEMAssembly
   NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
-  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
+  ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=8192 --num-elements-y=8192 --kokkos"
   COMM mpi
   NUM_MPI_PROCS 25
   STANDARD_PASS_OUTPUT
