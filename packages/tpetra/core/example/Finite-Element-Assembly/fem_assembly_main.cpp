@@ -47,6 +47,8 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
 
 #include "fem_assembly_commandLineOpts.hpp"
 #include "fem_assembly_typedefs.hpp"
@@ -67,6 +69,9 @@ int main (int argc, char *argv[])
 {
   using std::endl;
   using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
+  using Teuchos::StackedTimer;
 
   int status = EXIT_SUCCESS;
 
@@ -96,6 +101,13 @@ int main (int argc, char *argv[])
     return status;
   }
 
+  RCP<StackedTimer> timer = Teuchos::null;
+  if(opts.timing)
+  {
+    timer = rcp(new StackedTimer("X) Global", false));
+    TimeMonitor::setStackedTimer(timer);
+  }
+
   // Entry point
   if(opts.useStaticProfile)
   {
@@ -114,8 +126,13 @@ int main (int argc, char *argv[])
        status = EXIT_FAILURE;
   }
 
-  // Print out timing results.
-  if(opts.timing) Teuchos::TimeMonitor::report(comm.ptr(), std::cout, "");
+  if(opts.timing)
+  {
+    //note: base timer was already stopped by executeInsertGlobalIndices...()
+    StackedTimer::OutputOptions timeReportOpts;
+    timeReportOpts.print_warnings = false;
+    timer->report(std::cout, comm, timeReportOpts);
+  }
 
   // This tells the Trilinos test framework that the test passed.
   if(EXIT_SUCCESS == comm->getRank()) out << "End Result: TEST PASSED" << endl;
