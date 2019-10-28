@@ -663,7 +663,7 @@ add (const Scalar& alpha,
   typedef Export<LO,GO,NO>                  export_type;
   typedef AddDetails::AddKernels<SC,LO,GO,NO>           AddKern;
   const char* prefix_mmm = "TpetraExt::MatrixMatrix::add: ";
-  constexpr bool debug = false;
+  const bool debug =  ::Tpetra::Details::Behavior::debug ();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("transpose"))));
