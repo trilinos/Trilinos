@@ -131,7 +131,7 @@ public:
        getTimeStepControlStrategy() const { return stepControlStrategy_;}
     virtual int getOutputIndexInterval()
       { return outputIndexInterval_;}
-    virtual Scalar getOutputTimeInterval()
+    virtual double getOutputTimeInterval()
       { return outputTimeInterval_;}
  
   //@}
@@ -196,7 +196,7 @@ public:
       { tscPL_->set<int>("Output Index Interval",OutputIndexInterval); 
         outputIndexInterval_ = OutputIndexInterval;}
     virtual void setOutputTimeInterval(double OutputTimeInterval)
-      { tscPL_->set<double>("Output Time Interval",OutputTimeInterval); 
+      { tscPL_->set<Scalar>("Output Time Interval",OutputTimeInterval); 
         outputTimeInterval_ = OutputTimeInterval;}
     virtual void setPrintDtChanges(bool printDtChanges)
       { printDtChanges_ = printDtChanges; }
@@ -210,10 +210,10 @@ protected:
   std::vector<int>    outputIndices_;  ///< Vector of output indices.
   std::vector<Scalar> outputTimes_;    ///< Vector of output times.
   int outputIndexInterval_;
-  Scalar outputTimeInterval_;
+  double outputTimeInterval_;
 
   bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
-  Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
+  double dtAfterOutput_;  ///< dt to reinstate after output step.
 
   Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> stepControlStrategy_;
 
