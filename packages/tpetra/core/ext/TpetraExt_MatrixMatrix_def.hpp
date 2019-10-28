@@ -845,7 +845,7 @@ add (const Scalar& alpha,
     CrowMap = Bprime->getRowMap();
     //OLD: CcolMap = AddKern::makeColMapAndConvertGids(Aprime->getGlobalNumCols(), globalColinds, colinds, comm);
     //Get C's column map as the union of Aprime and Bprime col maps
-    CcolMap = AddKern::makeColMapAndConvertGids(Aprime->getGlobalNumCols(), globalColinds, colinds, comm);
+    CcolMap = AddKern::makeColMapAndConvertGids(domainMap->getMaxAllGlobalIndex()+1, globalColinds, colinds, comm);
   }
   else
   {
