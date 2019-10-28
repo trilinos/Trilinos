@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
   bool debug = false;
   std::string filename("mhd1280b.cua");
   std::string which("LM");
+  std::string ortho("SVQB");
   int nev = 4;
   int blockSize = 4;
   MT tol = 1.0e-6;
@@ -109,6 +110,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("ortho",&ortho,"Orthogonalization (DGKS, ICGS, or SVQB)");
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
