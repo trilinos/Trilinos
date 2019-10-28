@@ -47,7 +47,6 @@
 #include <Xpetra_Export.hpp>
 
 #include <Teuchos_DefaultSerialComm.hpp>
-#include <Teuchos_ScalarTraits.hpp>
 
 #include <ShyLU_DDFROSch_config.h>
 
