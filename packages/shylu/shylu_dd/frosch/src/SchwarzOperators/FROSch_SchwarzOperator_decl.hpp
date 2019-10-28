@@ -47,6 +47,7 @@
 #include <Xpetra_Export.hpp>
 
 #include <Teuchos_DefaultSerialComm.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <ShyLU_DDFROSch_config.h>
 
@@ -203,6 +204,11 @@ namespace FROSch {
         bool isComputed() const;
 
         int resetMatrix(ConstXMatrixPtr &k);
+
+      
+        virtual void residual(const XMultiVector & X,
+                              const XMultiVector & B,
+                              XMultiVector& R) const;
 
     protected:
 
