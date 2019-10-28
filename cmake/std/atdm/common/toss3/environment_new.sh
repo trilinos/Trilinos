@@ -50,7 +50,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     export PNETCDF_ROOT=/projects/sparc/tpls/cts1-bdw/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/cts1-bdw_intel-18.0.2_openmpi-2.0.3
 
     export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3/include
-    export ATDM_CONFIG_SUPERLUDIST_LIBS=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3/lib64
+    export ATDM_CONFIG_SUPERLUDIST_LIBS=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3/lib64/libsuperlu_dist.a
     export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
 
     export OMPI_CXX=`which icpc`
