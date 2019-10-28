@@ -38,6 +38,7 @@ fi
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module load intel/18.0.2.199
     module load openmpi-intel/2.0
+    module load mkl/18.0.5.274
 
     module load sparc-cmake/3.12.3
 
