@@ -97,8 +97,8 @@ public :
 
   enum {Dimension = 3};
 
-  ReducedDependencyGeometricTransfer(std::shared_ptr<MeshA> &mesha,
-                    std::shared_ptr<MeshB> &meshb,
+  ReducedDependencyGeometricTransfer(std::shared_ptr<MeshA> mesha,
+                    std::shared_ptr<MeshB> meshb,
                     const std::string &name,
                     stk::ParallelMachine pm,
                     const double expansion_factor = 1.5,
@@ -293,8 +293,8 @@ void do_communication(const ReducedDependencyCommData & comm_data, const MeshAVe
 
 
 template <class INTERPOLATE> ReducedDependencyGeometricTransfer<INTERPOLATE>::ReducedDependencyGeometricTransfer
-(std::shared_ptr<MeshA> &mesha,
- std::shared_ptr<MeshB> &meshb,
+(std::shared_ptr<MeshA> mesha,
+ std::shared_ptr<MeshB> meshb,
  const std::string        &name,
  stk::ParallelMachine pm,
  const double              expansion_factor,

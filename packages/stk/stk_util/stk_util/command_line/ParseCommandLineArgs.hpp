@@ -31,28 +31,19 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef STK_UTIL_ENVIRONMENT_COMMANDLINEPARSERUTILS_HPP
-#define STK_UTIL_ENVIRONMENT_COMMANDLINEPARSERUTILS_HPP
+#ifndef STK_UTIL_COMMANDLINE_PARSECOMMANDLINEARGS_HPP
+#define STK_UTIL_COMMANDLINE_PARSECOMMANDLINEARGS_HPP
 
-#include "CommandLineParser.hpp"
-#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/stk_config.h>
+#include <stk_util/command_line/OptionsSpecification.hpp>
+#include <stk_util/command_line/ParsedOptions.hpp>
 
 namespace stk {
 
-class CommandLineParserParallel : public CommandLineParser
-{
-public:
-    CommandLineParserParallel(MPI_Comm c) : CommandLineParser(), comm(c) {}
-    explicit CommandLineParserParallel(const std::string &usagePreamble, MPI_Comm c) : CommandLineParser(usagePreamble), comm(c) {}
-    virtual void print_message(const std::string &msg)
-    {
-        if(stk::parallel_machine_rank(comm) == 0)
-            CommandLineParser::print_message(msg);
-    }
-protected:
-    MPI_Comm comm;
-};
+void parse_command_line_args(int argc, const char** argv,
+                             const OptionsSpecification& optionsDesc,
+                             stk::ParsedOptions& varMap);
 
 }
 
-#endif //STK_UTIL_ENVIRONMENT_COMMANDLINEPARSERUTILS_HPP
+#endif //STK_UTIL_COMMANDLINE_PARSECOMMANDLINEARGS_HPP
