@@ -24,6 +24,4 @@ if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "BDW" ] ; then
   return
 fi
 
-export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
-
-source $ATDM_SCRIPT_DIR/common/toss3/environment.sh
+source $ATDM_SCRIPT_DIR/common/toss3/environment_new.sh
