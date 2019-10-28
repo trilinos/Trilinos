@@ -354,7 +354,7 @@ namespace FROSch {
     void SubdomainSolver<SC,LO,GO,NO>::residual(const XMultiVector & X,
                                                 const XMultiVector & B,
                                                 XMultiVector& R) const {
-    SCr one = Teuchos::ScalarTraits<SC>::one(), negone = -one;
+    SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one;
     apply(X,R);
     R.update(one,B,negone);
   }
