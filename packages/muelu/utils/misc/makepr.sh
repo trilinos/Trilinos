@@ -116,7 +116,7 @@ SHA=`git rev-parse HEAD | cut -c1-7`
 REMOTE=$USER-$SHA
 
 # Push this branch to remote with a new name
-#git push origin $CBRANCH:$REMOTE
+git push origin $CBRANCH:$REMOTE
 
 if [[ -z $PR_FIRST_COMMENT ]]; then
   PR_FIRST_COMMENT="Auto-PR for SHA $SHA"
@@ -162,8 +162,13 @@ else
     CMD=$(echo curl -i -H $h -d @${ISSUE_BODY_TMPFILE} https://api.github.com/repos/$fork/$repo/issues/$ISSUE_NUM)
     eval $CMD >$TMPFILE 2> $TMPFILE
 
-    cat $TMPFILE
-    exit 1
+    if grep 'closed_by' $TMPFILE > /dev/null; then
+        echo "Issue $ISSUE_NUM closed"
+    else
+        echo "Issue $ISSUE_NUM closing failed"
+        echo "See $TMPFILE and ${ISSUE_BODY_TMPFILE}."
+        exit 1
+    fi
 
     rm -f $ISSUE_BODY_TMPFILE
 fi
