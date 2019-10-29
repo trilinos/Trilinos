@@ -491,6 +491,16 @@ namespace Xpetra {
     }
   }
 
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::residual(
+            const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X, 
+            const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+            MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    matrixData_->residual(X,B,R);
+  }
+
+
 } //namespace Xpetra
 
 #endif //ifndef XPETRA_CRSMATRIXWRAP_DEF_HPP

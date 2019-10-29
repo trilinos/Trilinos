@@ -574,6 +574,15 @@ namespace FROSch {
         return 0;
     }
     
+    template<class SC,class LO,class GO,class NO>
+    void SubdomainSolver<SC,LO,GO,NO>::residual(const XMultiVector & X,
+                                                const XMultiVector & B,
+                                                XMultiVector& R) const {
+    SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one;
+    apply(X,R);
+    R.update(one,B,negone);
+  }
+
 }
 
 #endif

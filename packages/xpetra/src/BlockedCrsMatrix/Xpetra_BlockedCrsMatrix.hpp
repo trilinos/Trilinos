@@ -781,7 +781,6 @@ namespace Xpetra {
         return;
       }
       else if(is_diagonal_) {
-	//CMS
 	GlobalOrdinal gid = this->getRowMap()->getGlobalElement(LocalRow);
 	size_t row = getBlockedRangeMap()->getMapIndexForGID(gid);
 	getMatrix(row,row)->getLocalRowView(getMatrix(row,row)->getRowMap()->getLocalElement(gid),indices,values);
@@ -1499,6 +1498,15 @@ namespace Xpetra {
     }
 #endif
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector & X,
+                  const MultiVector & B,
+                  MultiVector & R) const {
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      R.update(STS::one(),B,STS::zero());
+      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());      
+    }
+    
   private:
 
     /** \name helper functions */
@@ -1572,7 +1580,6 @@ namespace Xpetra {
       // Set current view
       this->currentViewLabel_ = this->GetDefaultViewLabel();
     }
-
 
   private:
     bool is_diagonal_;   // If we're diagonal a bunch of the extraction stuff should work
