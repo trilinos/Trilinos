@@ -134,7 +134,7 @@ PR_BODY=`awk -v firstComment="${PR_FIRST_COMMENT}" -v teamMentions="${MENTIONS}"
 # Generate a new pull request
 TITLE_STRING="$*"
 PR_BODY_TMPFILE=$(mktemp /tmp/pr_body.XXXXXX)
-if [ -z ${EDITOR_CMD+x} ]; then $EDITOR_CMD $PR_BODY_TMPFILE
+if [ -z ${EDITOR_CMD+x} ]; then $EDITOR_CMD $PR_BODY_TMPFILE; fi
 echo "{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$PR_BODY\"}" > ${PR_BODY_TMPFILE}
 token=$(cat $tokenfile)
 h="'Authorization: token $token'"
