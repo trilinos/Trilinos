@@ -170,10 +170,10 @@ else
         exit 1
     fi
 
+    PR_FIRST_COMMENT="$PR_FIRST_COMMENT\n See Issue #$ISSUE_NUM"
+
     rm -f $ISSUE_BODY_TMPFILE
 fi
-
-exit 1
 
 # Create the PR body from the Trilinos PR template.
 # Insert the first comment from above.
