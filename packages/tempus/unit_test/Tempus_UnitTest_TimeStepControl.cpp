@@ -32,6 +32,7 @@ using Teuchos::getParametersFromXmlFile;
 
 // Comment out any of the following tests to exclude from build/run.
 #define SETOUTPUTTIMES
+#define SETANDGETOUTPUTINDICESANDINTERVALS
 
 
 #ifdef SETOUTPUTTIMES
@@ -109,6 +110,25 @@ TEUCHOS_UNIT_TEST(TimeStepControl, setOutputTimes)
   //std::cout << "tscPL = \n" << *tscPL << std::endl;
 }
 #endif // SETOUTPUTTIMES
+
+
+#ifdef SETANDGETOUTPUTINDICESANDINTERVALS
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeStepControl, getOutputIndicesandIntervals){
+  auto tsc = rcp(new Tempus::TimeStepControl<double>());
+  int setOutputTimeIndex = 17;
+  double setOutputTimeInterval = 1.101001000100001e-7;
+
+  tsc->setOutputIndexInterval(setOutputTimeIndex);
+  tsc->setOutputTimeInterval(setOutputTimeInterval);
+
+  int getOutputTimeIndex = tsc->getOutputIndexInterval();
+  double getOutputTimeInterval = tsc->getOutputTimeInterval();
+  TEST_COMPARE(getOutputTimeInterval, ==, setOutputTimeInterval);
+  TEST_COMPARE(getOutputTimeIndex, ==, setOutputTimeIndex);
+}
+#endif // SETANDGETOUTPUTINDICESANDINTERVALS
 
 
 } // namespace Tempus_Test
