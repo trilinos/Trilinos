@@ -195,3 +195,4 @@ fi
 
 rm -f $TMPFILE
 rm -f $PR_BODY_TMPFILE
+rm -f $PR_TEXT_TMPFILE
