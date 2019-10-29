@@ -132,6 +132,9 @@ done
 token=$(cat $tokenfile)
 h="'Authorization: token $token'"
 
+# Get title string
+TITLE_STRING="$*"
+
 # Generate an issue (and then immediately close it), if we want that
 if [ -z ${ISSUE_TEXT+x} ]; then :
 else
@@ -165,7 +168,6 @@ exit 1
 PR_BODY=`awk -v firstComment="${PR_FIRST_COMMENT}" -v teamMentions="${MENTIONS}" '/@trilinos/ {print teamMentions "\\\n"; next} /Please describe your changes in detail/ {print $0 "\\\n"; print firstComment "\\\n"; next} /^$/ {print; next} /PackageName:/ {print "the title with PackageName:.\\\n"; next} 1 {print $0 "\\\n"}' ${PR_TEMPLATE}`
 
 # Generate a new pull request
-TITLE_STRING="$*"
 PR_TEXT_TMPFILE=$(mktemp /tmp/pr_text.XXXXXX)
 PR_BODY_TMPFILE=$(mktemp /tmp/pr_body.XXXXXX)
 
