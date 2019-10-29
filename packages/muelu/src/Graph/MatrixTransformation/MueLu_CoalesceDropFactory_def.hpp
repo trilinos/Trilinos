@@ -73,6 +73,8 @@
 #include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Utilities.hpp"
 
+#include <random>
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -714,36 +716,135 @@ namespace MueLu {
 
             LO nnz = indices.size(), rownnz = 0;
             if (threshold != STS::zero()) {
-              // DJS: Let's pre compute aij - aiiajj for all entries in the column,
-              // and store in vector of std::pairs<colID,aij-aiijj> and then 
-              // sort them on aij-aiijj, which will give us the split points.  Grab a random number,
-              // pick the split from that and then drop all of the stuff which is past the split.
-              // NOTE: We want to drop all values below the split and keep all values above it.
-              // NOTE: Please always keep the diagonal :)
-              // For Monte Carlo: We also need some means of RNG seed control.  Add an RNG seed option to Trilinos Couplings example and then
-              //      use that RNG here.
-              for (LO colID = 0; colID < nnz; colID++) {
+              // threshold < 10.0             normal threshold behavior
+              // 10.0 <= threshold  < 100.0   monte carlo
+              // 100.0 < threshold            magnitude search
 
-                LO col = indices[colID];
+              if (threshold < 10.0) {
+                for (LO colID = 0; colID < nnz; colID++) {
 
-                if (row == col) {
-                  columns[realnnz++] = col;
-                  rownnz++;
-                  continue;
+                  LO col = indices[colID];
+
+                  if (row == col) {
+                    columns[realnnz++] = col;
+                    rownnz++;
+                    continue;
+                  }
+
+                  SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                  typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+
+                  if (aij > aiiajj) {
+                    columns[realnnz++] = col;
+                    rownnz++;
+                  } else {
+                    numDropped++;
+                  }
+                }
+              } else {
+                // DJS: Let's pre compute aij - aiiajj for all entries in the column,
+                // and store in vector of std::pairs<colID,aij-aiijj> and then 
+                // sort them on aij-aiijj, which will give us the split points.  Grab a random number,
+                // pick the split from that and then drop all of the stuff which is past the split.
+                // NOTE: We want to drop all values below the split and keep all values above it.
+                // NOTE: Please always keep the diagonal :)
+                // For Monte Carlo: We also need some means of RNG seed control.  Add an RNG seed option to Trilinos Couplings example and then
+                //      use that RNG here.
+
+                struct DropTol {
+
+                  DropTol()               = default;
+                  DropTol(DropTol const&) = default;
+                  DropTol(DropTol &&)     = default;
+                  
+                  DropTol& operator=(DropTol const&) = default;
+                  DropTol& operator=(DropTol &&)     = default;
+
+                  DropTol(double m, int c, bool d)
+                    : mag{m}, col{c}, drop{d} 
+                  {}
+
+                  double mag  {0}; 
+                  int    col  {0};
+                  bool   drop {0};
+                };
+
+                double my_threshold = static_cast<double>(threshold);
+
+                std::vector<DropTol> drop_vec;
+                drop_vec.reserve(nnz);
+
+                // find magnitudes
+                for (LO colID = 0; colID < nnz; colID++) {
+
+                  LO col = indices[colID];
+
+                  if (row == col) {
+                    drop_vec.emplace_back( 0.0, static_cast<int>(colID), false); 
+                    continue;
+                  }
+
+                  SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                  typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+
+                  drop_vec.emplace_back(static_cast<double>(aij - aiiajj), static_cast<int>(colID), false); 
                 }
 
-                SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
-                typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
-                typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+                std::sort(drop_vec.begin(), drop_vec.end(), [](DropTol const& a, DropTol const& b) { return a.mag < b.mag; });
+                  
+                const int n = static_cast<int>(drop_vec.size());
 
-                if (aij > aiiajj) {
-                  columns[realnnz++] = col;
-                  rownnz++;
-                } else {
-                  numDropped++;
+                // use monte carlo
+                if (my_threshold < 100.0) {
+                  std::mt19937 gen(static_cast<int>(my_threshold*row));
+                  std::uniform_int_distribution<> dis(0, n);
+
+                  for (int i=dis(gen); i<n; ++i) {
+                    drop_vec[i].drop = true;
+                  }
+                } else { // use magnitude scaling
+                  my_threshold /= 100.0;
+
+                  constexpr double espilon = 1e-15;
+
+                  if ( drop_vec[0].mag < espilon) {
+                    drop_vec[0].drop = true;
+                  }
+
+                  for (int i=1; i<n; ++i) {
+                    if (  drop_vec[i-1].drop 
+                       || drop_vec[i].mag < espilon 
+                       || drop_vec[i-1].mag/drop_vec[i].mag > my_threshold
+                       ) 
+                    {
+                      drop_vec[i].drop = true;
+                    }
+                  }
+                }
+
+                std::sort(drop_vec.begin(), drop_vec.end(), [](DropTol const& a, DropTol const& b) { return a.col < b.col; } );
+
+                for (LO colID = 0; colID < nnz; colID++) {
+
+                  LO col = indices[colID];
+
+                  // don't drop diagonal
+                  if (row == col) {
+                    columns[realnnz++] = col;
+                    rownnz++;
+                    continue;
+                  }
+
+                  if (!drop_vec[colID].drop) {
+                    columns[realnnz++] = col;
+                    rownnz++;
+                  } else {
+                    numDropped++;
+                  }
                 }
               }
-
             } else {
               // Skip laplace calculation and threshold comparison for zero threshold
               for (LO colID = 0; colID < nnz; colID++) {
