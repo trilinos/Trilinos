@@ -17,6 +17,8 @@
 #include <string>                                    // for basic_string, etc
 #include <utility>                                   // for pair
 #include <vector>                                    // for vector
+
+#include "stk_mesh/base/FieldParallel.hpp"
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/CoordinateSystems.hpp"       // for Cartesian
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
@@ -304,17 +306,35 @@ void declare_parts_and_coordinates(MeshData &meshData, stk::mesh::MetaData &meta
     }
 }
 
+void fill_coordinates(const std::vector<double> coordinates, stk::mesh::BulkData &bulk, unsigned spatialDimension, stk::mesh::Selector selector)
+{
+  stk::mesh::EntityVector nodes;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::NODE_RANK), nodes, true);
+  ThrowRequireMsg(coordinates.size() >= nodes.size()*spatialDimension, "coordinate size: " << coordinates.size() << " node size: " << nodes.size());
+  stk::mesh::FieldBase & coordsField = *meta.get_field(stk::topology::NODE_RANK, "coordinates");
+  for(size_t nodeIndex=0; nodeIndex < nodes.size(); nodeIndex++)
+  {
+    double * nodalCoords = static_cast<double*>(stk::mesh::field_data(coordsField, nodes[nodeIndex]));
+    for(unsigned coordIndex=0; coordIndex < spatialDimension; coordIndex++)
+      nodalCoords[coordIndex] = coordinates[nodeIndex*spatialDimension+coordIndex];
+  }
+}
+
 void fill_coordinates(const std::vector<double> coordinates, stk::mesh::BulkData &bulk, unsigned spatialDimension)
 {
-    stk::mesh::EntityVector nodes;
-    stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
-    stk::mesh::FieldBase & coordsField = *bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
-    for(size_t nodeIndex=0; nodeIndex < nodes.size(); nodeIndex++)
-    {
-       double * nodalCoords = static_cast<double*>(stk::mesh::field_data(coordsField, nodes[nodeIndex]));
-       for(unsigned coordIndex=0; coordIndex < spatialDimension; coordIndex++)
-           nodalCoords[coordIndex] = coordinates[nodeIndex*spatialDimension+coordIndex];
-    }
+    stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    stk::mesh::Selector selector = meta.universal_part();
+    fill_coordinates(coordinates, bulk, spatialDimension, selector);
+}
+
+void fill_coordinates_with_aura(const std::vector<double> coordinates, stk::mesh::BulkData &bulk, unsigned spatialDimension)
+{
+    stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    stk::mesh::Selector selector = meta.locally_owned_part() | meta.globally_shared_part();
+    fill_coordinates(coordinates, bulk, spatialDimension, selector);
+    stk::mesh::FieldBase* coordsField = meta.get_field(stk::topology::NODE_RANK, "coordinates");
+    stk::mesh::communicate_field_data(bulk, {coordsField});
 }
 
 void fill_mesh(MeshData &meshData, const std::string &meshDesc, stk::mesh::BulkData &bulkData)
@@ -329,7 +349,11 @@ void fill_mesh_using_text_mesh_with_coordinates(const std::string &meshDesc, con
 {
     MeshData meshData;
     fill_mesh(meshData, meshDesc, bulkData);
-    fill_coordinates(coordinates, bulkData, meshData.spatialDim);
+    if(bulkData.is_automatic_aura_on()) {
+      fill_coordinates_with_aura(coordinates, bulkData, meshData.spatialDim);
+    } else {
+      fill_coordinates(coordinates, bulkData, meshData.spatialDim);
+    }
 }
 
 void fill_mesh_using_text_mesh(const std::string &meshDesc, stk::mesh::BulkData &bulkData)

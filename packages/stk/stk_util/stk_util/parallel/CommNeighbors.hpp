@@ -73,9 +73,19 @@
 #ifdef __INTEL_COMPILER
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
+#define STK_MPI_SUPPORTS_NEIGHBOR_COMM
 
+//Finally: if the user explicitly enables or disables mpi-neighbor-comm
+//by defining one of the following macros (e.g., with cmake option or with
+//-D on compile line etc), then they take precedence over anything that
+//happened in the ifdef logic above.
+//
 #ifdef STK_DISABLE_MPI_NEIGHBOR_COMM
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+
+#ifdef STK_ENABLE_MPI_NEIGHBOR_COMM
+#define STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
 
 #endif

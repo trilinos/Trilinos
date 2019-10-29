@@ -31,21 +31,23 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#ifndef _DisconnectBlocks_hpp_
-#define _DisconnectBlocks_hpp_
-#include "DisconnectBlocksImpl.hpp"
+#include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/Entity.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace tools {
+namespace impl {
 
-    void disconnect_all_blocks(stk::mesh::BulkData& bulk, bool preserveOrphans = false);
-    void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<impl::BlockPairType>& blockPairsToDisconnect,
-                                impl::LinkInfo& info);
-    void reconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<impl::BlockPairType>& blockPairsToDisconnect,
-                                impl::LinkInfo& info);
-}
-}
 
-#endif
+bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part);
+
+stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
+
+unsigned get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
+
+void fill_block_membership(const stk::mesh::BulkData& bulk, stk::mesh::Entity node, stk::mesh::PartVector& members);
+
+}}}
