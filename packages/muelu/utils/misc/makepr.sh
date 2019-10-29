@@ -116,7 +116,7 @@ SHA=`git rev-parse HEAD | cut -c1-7`
 REMOTE=$USER-$SHA
 
 # Push this branch to remote with a new name
-git push origin $CBRANCH:$REMOTE
+#git push origin $CBRANCH:$REMOTE
 
 if [[ -z $PR_FIRST_COMMENT ]]; then
   PR_FIRST_COMMENT="Auto-PR for SHA $SHA"
@@ -138,12 +138,15 @@ PR_BODY=`awk -v firstComment="${PR_FIRST_COMMENT}" -v teamMentions="${MENTIONS}"
 TITLE_STRING="$*"
 PR_TEXT_TMPFILE=$(mktemp /tmp/pr_text.XXXXXX)
 PR_BODY_TMPFILE=$(mktemp /tmp/pr_body.XXXXXX)
+
 if [ -z ${EDITOR_CMD+x} ]; then : 
 else 
-    echo "$PR_BODY" > ${PR_TEXT_TEMPFILE}
+    echo "$PR_BODY" > ${PR_TEXT_TMPFILE}
     $EDITOR_CMD $PR_TEXT_TMPFILE; 
     PR_BODY=`cat $PR_TEXT_TEMPFILE`
 fi
+
+exit 1
 
 echo "{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$PR_BODY\"}" > ${PR_BODY_TMPFILE}
 token=$(cat $tokenfile)
