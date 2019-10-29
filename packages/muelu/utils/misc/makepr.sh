@@ -141,7 +141,6 @@ else
     ISSUE_BODY_TMPFILE=$(mktemp /tmp/issue_body.XXXXXX)
     # Open the issue
     echo "{\"title\": \"$TITLE_STRING\" , \"body\": \"$ISSUE_TEXT\"}"  > ${ISSUE_BODY_TMPFILE}
-    cat $ISSUE_BODY_TMPFILE
 
     CMD=$(echo curl -i -H $h -d @${ISSUE_BODY_TMPFILE} https://api.github.com/repos/$fork/$repo/issues)
     eval $CMD >$TMPFILE 2> $TMPFILE
