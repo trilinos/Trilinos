@@ -571,7 +571,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
           RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >  tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
           auto addParams = rcp(new Teuchos::ParameterList);
-          addParams->set<bool>("Call fillComplete", false);
+          addParams->set("Call fillComplete", false);
           //passing A after B means C will have the same domain/range map as A (or A^T if transposeA)
           Tpetra::MatrixMatrix::add<SC,LO,GO,NO>(beta, transposeB, tpB, alpha, transposeA, tpA, *tpC, Teuchos::null, Teuchos::null, addParams);
   #else
@@ -1341,7 +1341,10 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
           RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >  tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
 
-          Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
+          auto addParams = rcp(new Teuchos::ParameterList);
+          addParams->set("Call fillComplete", false);
+          //passing A after B means C will have the same domain/range map as A (or A^T if transposeA)
+          Tpetra::MatrixMatrix::add<SC,LO,GO,NO>(beta, transposeB, tpB, alpha, transposeA, tpA, *tpC, Teuchos::null, Teuchos::null, addParams);
   # endif
   #else
           throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
@@ -1954,7 +1957,9 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
           RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >  tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
 
-          Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
+          auto addParams = rcp(new Teuchos::ParameterList);
+          addParams->set("Call fillComplete", false);
+          Tpetra::MatrixMatrix::add<SC,LO,GO,NO>(beta, transposeB, tpB, alpha, transposeA, tpA, *tpC, Teuchos::null, Teuchos::null, addParams);
   # endif
   #else
           throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");

@@ -558,7 +558,7 @@ struct AddKernels
   typedef typename KCRS::index_type::non_const_type col_inds_array;
   typedef typename Kokkos::View<const GlobalOrdinal*, device_type> local_map_type;
   typedef typename Kokkos::View<GlobalOrdinal*, device_type> global_col_inds_array;
-  typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+  typedef Kokkos::RangePolicy<execution_space> range_type;
 
   /// \brief Given two matrices in CRS format, return their sum
   /// \pre A and B must both have column indices sorted within each row
@@ -638,7 +638,7 @@ struct AddKernels
     row_ptrs_array& Crowptrs,
     col_inds_array& Ccolinds);
 
-  static Teuchos::RCP<map_type> makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOrdinal maxCol, const global_col_inds_array& gids, col_inds_array& lids, const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+  static Teuchos::RCP<const map_type> makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOrdinal maxCol, const global_col_inds_array& gids, col_inds_array& lids, const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 };
 
 }//end namespace MMdetails

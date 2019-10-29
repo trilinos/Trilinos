@@ -549,18 +549,30 @@ add (const Scalar& alpha,
      const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap,
      const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
-  typedef Map<LocalOrdinal,GlobalOrdinal,Node>                     map_type;
+  using Teuchos::RCP;
+  using Teuchos::rcpFromRef;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>  crs_matrix_type;
+  //If transposeB, must compute B's explicit transpose to
+  //get the correct row map for C.
+  RCP<const crs_matrix_type> Brcp = rcpFromRef(B);
+  if(transposeB)
+  {
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(Brcp);
+    RCP<ParameterList> transposeParams(new ParameterList);
+    transposeParams->set ("sort", false);
+    Brcp = transposer.createTranspose(transposeParams);
+  }
   //Check that A,B are fillComplete before getting B's column map
   TEUCHOS_TEST_FOR_EXCEPTION
-    (! A.isFillComplete () || ! B.isFillComplete (), std::invalid_argument,
+    (! A.isFillComplete () || ! Brcp->isFillComplete (), std::invalid_argument,
      "TpetraExt::MatrixMatrix::add(): A and B must both be fill complete.");
-  Teuchos::RCP<const map_type> CrowMap = transposeB ?  B.getDomainMap() : B.getRowMap();
-  Teuchos::RCP<crs_matrix_type> C = rcp(new crs_matrix_type(CrowMap, 0));
-  //this version of add() always fill completes the result
+  Teuchos::RCP<crs_matrix_type> C = rcp(new crs_matrix_type(Brcp->getRowMap(), 0));
+  //this version of add() always fill completes the result, no matter what is in params on input
   if(!params.is_null())
-    params->set<bool>("Call fillComplete", true);
-  add(alpha, transposeA, A, beta, transposeB, B, *C, domainMap, rangeMap, params);
+    params->set("Call fillComplete", true);
+  add(alpha, transposeA, A, beta, false, *Brcp, *C, domainMap, rangeMap, params);
   return C;
 }
 
@@ -727,7 +739,6 @@ add (const Scalar& alpha,
   }
   if(!matchingColMaps)
   {
-    std::cout << "In non-matching column map case.\n";
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = Teuchos::null;
       MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mismatched col map full kernel"))));
@@ -756,7 +767,7 @@ add (const Scalar& alpha,
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("building optimized column map"))));
 #endif
     CrowMap = Bprime->getRowMap();
-    colinds = col_inds_array("C colinds", globalColinds.extent(0));
+    colinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), globalColinds.extent(0));
     //Compute an optimized column map for the sum
     CcolMap = AddKern::makeColMapAndConvertGids(CDomainMap->getIndexBase(), CDomainMap->getMinGlobalIndex(), CDomainMap->getMaxGlobalIndex(), globalColinds, colinds, comm);
   }
@@ -3110,7 +3121,7 @@ namespace ColMapFunctors
       : minGID(minGID_), gidList(gidList_), present(present_)
     {}
 
-    KOKKOS_INLINE_FUNCTION void operator()(const GO i, GO& lcount, const bool& finalPass) const
+    KOKKOS_INLINE_FUNCTION void operator()(const GO i, GO& lcount, const bool finalPass) const
     {
       if(finalPass && present.test(i))
       {
@@ -3148,7 +3159,7 @@ namespace ColMapFunctors
 //Build the minimal (sorted) column map for the given set of global columns
 //Then convert gids and store them in lids (gids is not modified)
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOrdinal maxCol,
                    const typename MMdetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_col_inds_array& gids,
                    typename MMdetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::col_inds_array& lids,
@@ -3156,8 +3167,6 @@ makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOr
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  int myRank = comm->getRank();
-  std::cout << "Rank " << myRank << ": column map for some subset of global cols: " << minCol << " <= col <= " << maxCol << '\n';
   typedef typename MMdetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_col_inds_array::non_const_type GView;
   typedef typename MMdetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::col_inds_array::non_const_type LView;
   typedef typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type LocalMap;
@@ -3167,11 +3176,10 @@ makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOr
   //Determine the set of GIDs in the column map using a dense bitset (covers entire possible range)
   bitset_t presentGIDs(maxCol - minCol + 1);
   Kokkos::parallel_for(range_type(0, nentries), ColMapFunctors::GatherPresentEntries<GlobalOrdinal, GView, bitset_t>(minCol, gids, presentGIDs));
-  execution_space().fence();
   const_bitset_t constPresentGIDs(presentGIDs);
-  GView mapGIDs("Sum colmap GIDs", constPresentGIDs.count());
-  std::cout << "Rank " << myRank << ": determined there are " << mapGIDs.extent(0) << " unique global cols on this proc.\n";
+  GView mapGIDs(Kokkos::ViewAllocateWithoutInitializing("Sum colmap GIDs"), constPresentGIDs.count());
   Kokkos::parallel_scan(range_type(0, maxCol - minCol + 1), ColMapFunctors::ListGIDs<GlobalOrdinal, GView, const_bitset_t>(minCol, mapGIDs, constPresentGIDs));
+  //Fence required because mapGIDs may be in CudaUVMSpace, and Map() may read from it on host
   execution_space().fence();
   //Construct the map
   auto colMap = rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(
@@ -3181,7 +3189,6 @@ makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOr
   LocalMap localColMap = colMap->getLocalMap();
   //Use it to convert gids to lids
   Kokkos::parallel_for(range_type(0, nentries), ColMapFunctors::ConvertGlobalToLocal<GlobalOrdinal, GView, LView, LocalMap>(gids, lids, localColMap));
-  execution_space().fence();
   return colMap;
 }
 
@@ -3203,7 +3210,7 @@ addSorted(
   using Teuchos::TimeMonitor;
   TEUCHOS_TEST_FOR_EXCEPTION(Arowptrs.extent(0) != Browptrs.extent(0), std::runtime_error, "Can't add matrices with different numbers of rows.");
   auto nrows = Arowptrs.extent(0) - 1;
-  Crowptrs = row_ptrs_array("C row ptrs", nrows + 1);
+  Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename col_inds_array::size_type, LO, impl_scalar_type,
               execution_space, memory_space, memory_space> KKH;
   KKH handle;
@@ -3218,8 +3225,9 @@ addSorted(
     typename row_ptrs_array::const_type, typename col_inds_array::const_type,
     row_ptrs_array, col_inds_array>
     (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
+  //KokkosKernels requires values to be zeroed
   Cvals = values_array("C values", addHandle->get_max_result_nnz());
-  Ccolinds = col_inds_array("C colinds", addHandle->get_max_result_nnz());
+  Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_max_result_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted numeric")));
@@ -3249,7 +3257,7 @@ addUnsorted(
   using Teuchos::TimeMonitor;
   TEUCHOS_TEST_FOR_EXCEPTION(Arowptrs.extent(0) != Browptrs.extent(0), std::runtime_error, "Can't add matrices with different numbers of rows.");
   auto nrows = Arowptrs.extent(0) - 1;
-  Crowptrs = row_ptrs_array("C row ptrs", nrows + 1);
+  Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
   typedef MMdetails::AddKernels<SC, LO, GO, NO> AddKern;
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename col_inds_array::size_type, LO, AddKern::impl_scalar_type,
               AddKern::execution_space, AddKern::memory_space, AddKern::memory_space> KKH;
@@ -3265,8 +3273,9 @@ addUnsorted(
     typename row_ptrs_array::const_type, typename col_inds_array::const_type,
     row_ptrs_array, col_inds_array>
       (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
+  //Cvals must be zeroed out
   Cvals = values_array("C values", addHandle->get_max_result_nnz());
-  Ccolinds = col_inds_array("C colinds", addHandle->get_max_result_nnz());
+  Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_max_result_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted kernel: sorted numeric")));
@@ -3293,7 +3302,7 @@ struct ConvertColIndsFunctor
     colmap (colmap_)
   {}
   KOKKOS_INLINE_FUNCTION void
-  operator() (const size_t& i) const
+  operator() (const GO i) const
   {
     colindsConverted[i] = colmap[colindsOrig[i]];
   }
@@ -3320,14 +3329,14 @@ convertToGlobalAndAdd(
 {
   using Teuchos::TimeMonitor;
 
-  const values_array& Avals = A.values;
-  const values_array& Bvals = B.values;
-  const col_inds_array& Acolinds = A.graph.entries;
-  const col_inds_array& Bcolinds = B.graph.entries;
+  const values_array Avals = A.values;
+  const values_array Bvals = B.values;
+  const col_inds_array Acolinds = A.graph.entries;
+  const col_inds_array Bcolinds = B.graph.entries;
   auto Arowptrs = A.graph.row_map;
   auto Browptrs = B.graph.row_map;
-  global_col_inds_array AcolindsConverted("A colinds (converted)", Acolinds.extent(0));
-  global_col_inds_array BcolindsConverted("B colinds (converted)", Bcolinds.extent(0));
+  global_col_inds_array AcolindsConverted(Kokkos::ViewAllocateWithoutInitializing("A colinds (converted)"), Acolinds.extent(0));
+  global_col_inds_array BcolindsConverted(Kokkos::ViewAllocateWithoutInitializing("B colinds (converted)"), Bcolinds.extent(0));
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: " + std::string("column map conversion"))));
 #endif
@@ -3345,12 +3354,12 @@ convertToGlobalAndAdd(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: unsorted symbolic")));
 #endif
   auto nrows = Arowptrs.extent(0) - 1;
-  Crowptrs = row_ptrs_array("C row ptrs", nrows + 1);
+  Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
   KokkosSparse::Experimental::spadd_symbolic
     <KKH, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, row_ptrs_array, global_col_inds_array>
     (&handle, Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
   Cvals = values_array("C values", addHandle->get_max_result_nnz());
-  Ccolinds = global_col_inds_array("C colinds", addHandle->get_max_result_nnz());
+  Ccolinds = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_max_result_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: unsorted numeric")));
