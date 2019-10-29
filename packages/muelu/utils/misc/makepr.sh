@@ -141,6 +141,7 @@ else
     CMD=$(echo curl -i -H $h -d @${ISSUE_BODY_TMPFILE} https://api.github.com/repos/$fork/$repo/issues)
     eval $CMD >$TMPFILE 2> $TMPFILE
 
+    cat $TMPFILE
     # Get the Issue number
     ISSUE_NUM=`grep number\": $TMPFILE | cut -f2 -d: | cut -f1 -d, | sed 's/ *//'`
 
@@ -148,6 +149,7 @@ else
     echo "{\"state\": \closed\"}"  > ${ISSUE_BODY_TMPFILE}
     CMD=$(echo curl -i -H $h -d @${ISSUE_BODY_TMPFILE} https://api.github.com/repos/$fork/$repo/issues/$ISSUE_NUM)
     eval $CMD >$TMPFILE 2> $TMPFILE
+
 
     rm -f $ISSUE_BODY_TMPFILE
 fi
