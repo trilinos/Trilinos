@@ -332,20 +332,41 @@ class MultiVector
     typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename dev_execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
                                 typename dual_view_type::t_dev_um,
                                 typename dual_view_type::t_host_um>::type
-    getLocalView() const;
+    getLocalView() const
+    {
+        if(Kokkos::Impl::is_same<
+                      typename host_execution_space::memory_space,
+                      typename TargetDeviceType::memory_space
+           >::value) 
+        {
+            return getHostLocalView();
+        } else {
+            return getDeviceLocalView();
+        }
+    }    
 
 
-    virtual typename dual_view_type::t_host_um getHostLocalView() const;
+    virtual typename dual_view_type::t_host_um getHostLocalView ()  const 
+    {
+      typename dual_view_type::t_host_um test;
+      return test;
+    }
 
 
-    virtual typename dual_view_type::t_dev_um getDeviceLocalView() const;
-
+    virtual typename dual_view_type::t_dev_um  getDeviceLocalView() const 
+    {
+        typename dual_view_type::t_dev_um test;
+        return test;
+    }
 
 #endif      // HAVE_XPETRA_KOKKOS_REFACTOR
 
+
     //@}
 
+
   protected:
+
 
     /// \brief Implementation of the assignment operator (operator=);
     ///   does a deep copy.
