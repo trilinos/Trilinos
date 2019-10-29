@@ -116,7 +116,7 @@ SHA=`git rev-parse HEAD | cut -c1-7`
 REMOTE=$USER-$SHA
 
 # Push this branch to remote with a new name
-git push origin $CBRANCH:$REMOTE
+#git push origin $CBRANCH:$REMOTE
 
 if [[ -z $PR_FIRST_COMMENT ]]; then
   PR_FIRST_COMMENT="Auto-PR for SHA $SHA"
@@ -151,6 +151,8 @@ else
 
     rm -f $ISSUE_BODY_TMPFILE
 fi
+
+exit 1
 
 # Create the PR body from the Trilinos PR template.
 # Insert the first comment from above.
