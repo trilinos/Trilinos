@@ -179,14 +179,17 @@ fi
 # Insert the first comment from above.
 # Insert carriage returns everywhere so that markdown renders it correctly.
 # Remove the line with double quotes, as that screws up the JSON parsing.
-PR_BODY=`awk -v firstComment="${PR_FIRST_COMMENT}" -v teamMentions="${MENTIONS}" '/@trilinos/ {print teamMentions "\\\n"; next} /Please describe your changes in detail/ {print $0 "\\\n"; print firstComment "\\\n"; next} /^$/ {print; next} /PackageName:/ {print "the title with PackageName:.\\\n"; next} 1 {print $0 "\\\n"}' ${PR_TEMPLATE}`
 
 # Generate a new pull request
 PR_TEXT_TMPFILE=$(mktemp /tmp/pr_text.XXXXXX)
 PR_BODY_TMPFILE=$(mktemp /tmp/pr_body.XXXXXX)
 
-if [ -z ${EDITOR_CMD+x} ]; then : 
+if [ -z ${EDITOR_CMD+x} ]; then
+    PR_BODY=${PR_FIRST_COMMENT}
+
 else 
+    # TODO: Clean this up
+    PR_BODY=`awk -v firstComment="${PR_FIRST_COMMENT}" -v teamMentions="${MENTIONS}" '/@trilinos/ {print teamMentions "\\\n"; next} /Please describe your changes in detail/ {print $0 "\\\n"; print firstComment "\\\n"; next} /^$/ {print; next} /PackageName:/ {print "the title with PackageName:.\\\n"; next} 1 {print $0 "\\\n"}' ${PR_TEMPLATE}`
     echo "$PR_BODY" > ${PR_TEXT_TMPFILE}
     $EDITOR_CMD $PR_TEXT_TMPFILE; 
     PR_BODY=`cat $PR_TEXT_TMPFILE`
