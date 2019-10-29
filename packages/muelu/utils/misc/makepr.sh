@@ -2,7 +2,20 @@
 fork="trilinos"
 repo="Trilinos"
 mainBranch="develop"
-TRILINOS_SOURCE=/home/jhu/software/checkin/Trilinos
+
+# Get the PR template from the environemnt, if available
+if [ -z ${TRILINOS_PR_TEMPLATE+x} ]; then
+    PR_TEMPLATE=$TRILINOS_PR_TEMPLATE
+else
+    PR_TEMPLATE=/home/jhu/software/checkin/Trilinos/.github/PULL_REQUEST_TEMPLATE.md
+fi
+
+# Get the editor command from the environment (follows the svn variable default ordering)
+if [ -z ${VISUAL+x} ]; then    
+    EDITOR_CMD=$VISUAL
+elif [ -z ${EDITOR+x} ]; then
+    EDITOR_CMD=$EDITOR
+fi
 
 #TODO It looks like the github API allows one to get a single file.
 #TODO Rather than use a local Trilinos source for the issue template,
@@ -15,7 +28,8 @@ TMPFILE=$(mktemp /tmp/makepr.XXXXXX)
 
 USAGE="Usage: `basename $0` [-hfrbles] \"PR title\""
 OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}]\n  -t
--- team [github package name for @mentions and labels, CASE-SENSITIVE]\n  -e
+-- team [github package name for @mentions and labels, CASE-SENSITIVE]\n  -i
+-- issue [generate a github issue with the following text]\n   -e
 -- (r)eviewer [github handle]\n  -s     -- summary/description [first comment, ideally should reference github issue]"
 EXAMPLE_USAGE="Example: makepr.sh -t \"MueLu\" -t \"Xpetra\" -e \"jhux2\" -e \"csiefer2\" -s \"Fixes issue #666\" \"MueLu: implement nifty feature\""
 
@@ -23,7 +37,7 @@ LABELS="\"AT: AUTOMERGE\""
 reviewers=""
 
 # Parse command line options.
-while getopts hvf:r:b:t:e:s: OPT; do
+while getopts hvf:r:b:t:e:s:i: OPT; do
     case "$OPT" in
         h)
             echo -e $USAGE
@@ -57,6 +71,10 @@ while getopts hvf:r:b:t:e:s: OPT; do
         s)
             PR_FIRST_COMMENT=$OPTARG
             ;;
+        i)
+            ISSUE_TEXT=$OUTARG
+            ;;
+
         \?)
             # getopts issues an error message
             echo $USAGE >&2
@@ -111,11 +129,12 @@ done
 # Insert the first comment from above.
 # Insert carriage returns everywhere so that markdown renders it correctly.
 # Remove the line with double quotes, as that screws up the JSON parsing.
-PR_BODY=`awk -v firstComment="${PR_FIRST_COMMENT}" -v teamMentions="${MENTIONS}" '/@trilinos/ {print teamMentions "\\\n"; next} /Please describe your changes in detail/ {print $0 "\\\n"; print firstComment "\\\n"; next} /^$/ {print; next} /PackageName:/ {print "the title with PackageName:.\\\n"; next} 1 {print $0 "\\\n"}' ${TRILINOS_SOURCE}/.github/PULL_REQUEST_TEMPLATE.md`
+PR_BODY=`awk -v firstComment="${PR_FIRST_COMMENT}" -v teamMentions="${MENTIONS}" '/@trilinos/ {print teamMentions "\\\n"; next} /Please describe your changes in detail/ {print $0 "\\\n"; print firstComment "\\\n"; next} /^$/ {print; next} /PackageName:/ {print "the title with PackageName:.\\\n"; next} 1 {print $0 "\\\n"}' ${PR_TEMPLATE}`
 
 # Generate a new pull request
 TITLE_STRING="$*"
 PR_BODY_TMPFILE=$(mktemp /tmp/pr_body.XXXXXX)
+if [ -z ${EDITOR_CMD+x} ]; then $EDITOR_CMD $PR_BODY_TMPFILE
 echo "{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$PR_BODY\"}" > ${PR_BODY_TMPFILE}
 token=$(cat $tokenfile)
 h="'Authorization: token $token'"
