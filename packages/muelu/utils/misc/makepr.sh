@@ -128,6 +128,30 @@ for tt in "${teams[@]}"; do
   LABELS="$LABELS,\"pkg: $tt\""
 done
 
+# Get the oauth token
+token=$(cat $tokenfile)
+h="'Authorization: token $token'"
+
+# Generate an issue (and then immediately close it), if we want that
+if [ -z ${ISSUE_TEXT+x} ]; then :
+else
+    ISSUE_BODY_TMPFILE=$(mktemp /tmp/issue_body.XXXXXX)
+    # Open the issue
+    echo "{\"title\": \"$TITLE_STRING\" , \"body\": \"$ISSUE_TEXT\"}"  > ${ISSUE_BODY_TMPFILE}
+    CMD=$(echo curl -i -H $h -d @${ISSUE_BODY_TMPFILE} https://api.github.com/repos/$fork/$repo/issues)
+    eval $CMD >$TMPFILE 2> $TMPFILE
+
+    # Get the Issue number
+    ISSUE_NUM=`grep number\": $TMPFILE | cut -f2 -d: | cut -f1 -d, | sed 's/ *//'`
+
+    # Close the issue
+    echo "{\"state\": \closed\"}"  > ${ISSUE_BODY_TMPFILE}
+    CMD=$(echo curl -i -H $h -d @${ISSUE_BODY_TMPFILE} https://api.github.com/repos/$fork/$repo/issues/$ISSUE_NUM)
+    eval $CMD >$TMPFILE 2> $TMPFILE
+
+    rm -f $ISSUE_BODY_TMPFILE
+fi
+
 # Create the PR body from the Trilinos PR template.
 # Insert the first comment from above.
 # Insert carriage returns everywhere so that markdown renders it correctly.
@@ -147,11 +171,7 @@ else
 fi
 
 echo "{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$PR_BODY\"}" > ${PR_BODY_TMPFILE}
-token=$(cat $tokenfile)
-h="'Authorization: token $token'"
-
 CMD=$(echo curl -i -H $h -d @${PR_BODY_TMPFILE} https://api.github.com/repos/$fork/$repo/pulls)
-
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 # Get the PR number
