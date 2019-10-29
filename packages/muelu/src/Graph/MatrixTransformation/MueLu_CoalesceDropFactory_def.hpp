@@ -721,6 +721,7 @@ namespace MueLu {
               // 100.0 < threshold            magnitude search
 
               if (threshold < 10.0) {
+                printf("Normal Threshold\n");
                 for (LO colID = 0; colID < nnz; colID++) {
 
                   LO col = indices[colID];
@@ -765,9 +766,9 @@ namespace MueLu {
                     : mag{m}, col{c}, drop{d} 
                   {}
 
-                  double mag  {0}; 
+                  double mag  {0.0}; 
                   int    col  {0};
-                  bool   drop {0};
+                  bool   drop {false};
                 };
 
                 double my_threshold = static_cast<double>(threshold);
@@ -792,12 +793,14 @@ namespace MueLu {
                   drop_vec.emplace_back(static_cast<double>(aij - aiiajj), static_cast<int>(colID), false); 
                 }
 
-                std::sort(drop_vec.begin(), drop_vec.end(), [](DropTol const& a, DropTol const& b) { return a.mag < b.mag; });
+                // sort in reverse order
+                std::sort(drop_vec.begin(), drop_vec.end(), [](DropTol const& a, DropTol const& b) { return a.mag > b.mag; });
                   
                 const int n = static_cast<int>(drop_vec.size());
 
                 // use monte carlo
                 if (my_threshold < 100.0) {
+                  printf("Monto Carlo Threshold\n");
                   std::mt19937 gen(static_cast<int>(my_threshold*row));
                   std::uniform_int_distribution<> dis(0, n);
 
@@ -805,17 +808,19 @@ namespace MueLu {
                     drop_vec[i].drop = true;
                   }
                 } else { // use magnitude scaling
+                  printf("Magnitude Scale Threshold\n");
+
                   my_threshold /= 100.0;
 
-                  constexpr double espilon = 1e-15;
+                  constexpr double esplion = 1e-15;
 
-                  if ( drop_vec[0].mag < espilon) {
+                  if ( drop_vec[0].mag < esplion) {
                     drop_vec[0].drop = true;
                   }
 
                   for (int i=1; i<n; ++i) {
                     if (  drop_vec[i-1].drop 
-                       || drop_vec[i].mag < espilon 
+                       || drop_vec[i].mag < esplion 
                        || drop_vec[i-1].mag/drop_vec[i].mag > my_threshold
                        ) 
                     {
