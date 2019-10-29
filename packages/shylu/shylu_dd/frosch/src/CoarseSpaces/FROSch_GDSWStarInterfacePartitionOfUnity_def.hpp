@@ -90,8 +90,8 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: Specify a valid Distance Function.");
         }
-        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(1);
-        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(1);
+        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(2);
+        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(2);
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -112,7 +112,7 @@ namespace FROSch {
                                             false,
                                             false,
                                             UseRoots_,
-                                            false);
+                                            UseLeafs_);
 
         EntitySetVector_ = this->DDInterface_->getEntitySetVector();
 
@@ -121,13 +121,18 @@ namespace FROSch {
             Roots_ = this->DDInterface_->getRoots();
             this->PartitionOfUnityMaps_[0] = Roots_->getEntityMap();
         }
+        if (UseLeafs_) {
+            Leafs_ = this->DDInterface_->getLeafs();
+            this->PartitionOfUnityMaps_[1] = Leafs_->getEntityMap();
+        }
 
         if (this->MpiComm_->getRank() == 0) {
             std::cout << std::boolalpha << "\n\
     ------------------------------------------------------------------------------\n\
-     RGDSW Interface Partition Of Unity (RGDSW IPOU)\n\
+     GDSW Star Interface Partition Of Unity (GDSW Star IPOU)\n\
     ------------------------------------------------------------------------------\n\
       Roots                                      --- " << UseRoots_ << "\n\
+      Leafs                                      --- " << UseRoots_ << "\n\
     ------------------------------------------------------------------------------\n" << std::noboolalpha;
         }
 
@@ -142,32 +147,51 @@ namespace FROSch {
                 // Loop over entities
                 for (UN j=0; j<EntitySetVector_[i]->getNumEntities(); j++) {
                     InterfaceEntityPtr tmpEntity = EntitySetVector_[i]->getEntity(j);
-                    LO rootID = tmpEntity->getRootID();
-                    UN numRoots = tmpEntity->getRoots()->getNumEntities();
-                    if (rootID==-1) {
-                        FROSCH_ASSERT(numRoots!=0,"rootID==-1 but numRoots==0!");
-                        for (UN m=0; m<numRoots; m++) {
-                            InterfaceEntityPtr tmpRoot = tmpEntity->getRoots()->getEntity(m);
-                            LO index = tmpRoot->getRootID();
-                            // Offspring: loop over nodes
-                            for (UN l=0; l<tmpEntity->getNumNodes(); l++) {
-                                SC value = tmpEntity->getDistanceToRoot(l,m)/tmpEntity->getDistanceToRoot(l,numRoots);
-                                for (UN k=0; k<dofsPerNode; k++) {
-                                    tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),index,value*ScalarTraits<SC>::one());
+                    LO leafID = tmpEntity->getLeafID();
+                    // If the entity is a leaf, it will obtain its own partition of unity function
+                    if (leafID==-1) {
+                        LO rootID = tmpEntity->getRootID();
+                        UN numRoots = tmpEntity->getRoots()->getNumEntities();
+                        if (rootID==-1) {
+                            FROSCH_ASSERT(numRoots!=0,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: rootID==-1 but numRoots==0!");
+                            for (UN m=0; m<numRoots; m++) {
+                                InterfaceEntityPtr tmpRoot = tmpEntity->getRoots()->getEntity(m);
+                                LO index = tmpRoot->getRootID();
+                                // Offspring: loop over nodes
+                                for (UN l=0; l<tmpEntity->getNumNodes(); l++) {
+                                    SC value = tmpEntity->getDistanceToRoot(l,m)/tmpEntity->getDistanceToRoot(l,numRoots);
+                                    for (UN k=0; k<dofsPerNode; k++) {
+                                        tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),index,value*ScalarTraits<SC>::one());
+                                    }
                                 }
                             }
-                        }
-                    } else {
-                        // Coarse node: loop over nodes
-                        for (UN l=0; l<EntitySetVector_[i]->getEntity(j)->getNumNodes(); l++) {
-                            for (UN k=0; k<dofsPerNode; k++) {
-                                tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),rootID,ScalarTraits<SC>::one());
+                        } else {
+                            // Coarse node: loop over nodes
+                            for (UN l=0; l<EntitySetVector_[i]->getEntity(j)->getNumNodes(); l++) {
+                                for (UN k=0; k<dofsPerNode; k++) {
+                                    tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),rootID,ScalarTraits<SC>::one());
+                                }
                             }
                         }
                     }
                 }
             }
             this->LocalPartitionOfUnity_[0] = tmpVector;
+        }
+        
+        if (UseLeafs_ && Leafs_->getNumEntities()>0) {
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Leafs_->getNumEntities());
+            
+            for (UN i=0; i<Leafs_->getNumEntities(); i++) {
+                LO leafID = tmpEntity->getLeafID();
+                FROSCH_ASSERT(leafID!=i,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: leafID!=i!");
+                for (UN j=0; j<Leafs_->getEntity(i)->getNumNodes(); j++) {
+                    for (UN k=0; k<dofsPerNode; k++) {
+                        tmpVector->replaceLocalValue(Leafs_->getEntity(i)->getGammaDofID(j,k),leafID,ScalarTraits<SC>::one());
+                    }
+                }
+            }
+            this->LocalPartitionOfUnity_[1] = tmpVector;
         }
 
         return 0;
