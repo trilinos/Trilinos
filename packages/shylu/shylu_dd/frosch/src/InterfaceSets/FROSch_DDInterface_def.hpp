@@ -182,8 +182,10 @@ namespace FROSch {
         XMapPtr map = MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,indicesGammaDofs(),0,MpiComm_);
         matrix = FROSch::ExtractLocalSubdomainMatrix(matrix.getConst(),map.getConst(),ScalarTraits<SC>::one());
 
-        Edges_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
-        Faces_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
+        // Operate on hierarchy
+        for (UN i=0; i<EntitySetVector_.size(); i++) {
+            EntitySetVector_[i]->divideUnconnectedEntities(matrix,MpiComm_->getRank());
+        }
 
         /*
         LO numSeparateEdges = Edges_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
@@ -201,8 +203,9 @@ namespace FROSch {
         removeEmptyEntities();
 
         // We need to set the unique ID; otherwise, we cannot sort entities
-        Edges_->setUniqueIDToFirstGlobalNodeID();
-        Faces_->setUniqueIDToFirstGlobalNodeID();
+        for (UN i=0; i<EntitySetVector_.size(); i++) {
+            EntitySetVector_[i]->setUniqueIDToFirstGlobalNodeID();
+        }
         return 0;
     }
 
@@ -240,6 +243,13 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(sortVerticesEdgesFacesTime,"DDInterface::sortVerticesEdgesFaces");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Sorting interface components" << std::endl;
 
+        // Clear EntitySets if non-empty
+        if (Vertices_->getNumEntities()>0) Vertices_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
+        if (ShortEdges_->getNumEntities()>0) ShortEdges_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
+        if (StraightEdges_->getNumEntities()>0) StraightEdges_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
+        if (Edges_->getNumEntities()>0) Edges_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
+        if (Faces_->getNumEntities()>0) Faces_.reset(new EntitySet<SC,LO,GO,NO>(FaceType));
+        
         flagEntities(nodeList);
 
         // Make sure that we do not sort any empty entities
