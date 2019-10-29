@@ -133,6 +133,11 @@ namespace PHX {
     typename PHX::FieldReturnType<array_type>::return_type
     operator()(const index_pack&...) const;
 
+    template<typename... index_pack>
+    KOKKOS_INLINE_FUNCTION
+    typename PHX::FieldReturnType<array_type>::return_type
+    access(const index_pack&...) const;
+
     KOKKOS_INLINE_FUNCTION
     size_type rank() const;
 
