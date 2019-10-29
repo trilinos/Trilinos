@@ -3,17 +3,19 @@ fork="trilinos"
 repo="Trilinos"
 mainBranch="develop"
 
-# Get the PR template from the environemnt, if available
-if [ -z ${TRILINOS_PR_TEMPLATE+x} ]; then
+# Get the PR template from the environment, otherwise try to grab it from the current directory
+if [[ $TRILINOS_PR_TEMPLATE ]]; then
     PR_TEMPLATE=$TRILINOS_PR_TEMPLATE
 else
-    PR_TEMPLATE=/home/jhu/software/checkin/Trilinos/.github/PULL_REQUEST_TEMPLATE.md
+    T_PREFIX=`pwd | sed 's/\(.*\)Trilinos\(.*\)/\1/'`
+    PR_TEMPLATE=${T_PREFIX}Trilinos/.github/PULL_REQUEST_TEMPLATE.md
 fi
 
+
 # Get the editor command from the environment (follows the svn variable default ordering)
-if [ -z ${VISUAL+x} ]; then    
+if [[ $VISUAL ]]; then    
     EDITOR_CMD=$VISUAL
-elif [ -z ${EDITOR+x} ]; then
+elif [[ $EDITOR ]]; then
     EDITOR_CMD=$EDITOR
 fi
 
@@ -26,11 +28,12 @@ tokenfile=~/.githubOAuth/token
 
 TMPFILE=$(mktemp /tmp/makepr.XXXXXX)
 
-USAGE="Usage: `basename $0` [-hfrbles] \"PR title\""
+USAGE="Usage: `basename $0` [-hfrbleis] \"PR title\""
 OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}]\n  -t
--- team [github package name for @mentions and labels, CASE-SENSITIVE]\n  -i
--- issue [generate a github issue with the following text]\n   -e
--- (r)eviewer [github handle]\n  -s     -- summary/description [first comment, ideally should reference github issue]"
+-- team [github package name for @mentions and labels, CASE-SENSITIVE]\n  -e
+-- (r)eviewer [github handle]\n  -i
+-- issue [generate a github issue with the following text]\n   -s
+-- summary/description [first comment, ideally should reference github issue]"
 EXAMPLE_USAGE="Example: makepr.sh -t \"MueLu\" -t \"Xpetra\" -e \"jhux2\" -e \"csiefer2\" -s \"Fixes issue #666\" \"MueLu: implement nifty feature\""
 
 LABELS="\"AT: AUTOMERGE\""
@@ -134,7 +137,9 @@ PR_BODY=`awk -v firstComment="${PR_FIRST_COMMENT}" -v teamMentions="${MENTIONS}"
 # Generate a new pull request
 TITLE_STRING="$*"
 PR_BODY_TMPFILE=$(mktemp /tmp/pr_body.XXXXXX)
-if [ -z ${EDITOR_CMD+x} ]; then $EDITOR_CMD $PR_BODY_TMPFILE; fi
+if [ -z ${EDITOR_CMD+x} ]; then : 
+else $EDITOR_CMD $PR_BODY_TMPFILE; fi
+
 echo "{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$PR_BODY\"}" > ${PR_BODY_TMPFILE}
 token=$(cat $tokenfile)
 h="'Authorization: token $token'"
