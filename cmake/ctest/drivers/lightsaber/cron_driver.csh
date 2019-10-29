@@ -58,7 +58,8 @@ setenv OMP_NUM_THREADS 2
 (cd /home/nightlyTesting/avatar; git pull --rebase )
 
 # Set variables to work aroun TriBITS problems
-setenv TDD_FORCE_CMAKE_INSTALL 0
+#setenv TDD_FORCE_CMAKE_INSTALL 0
+setenv TRIBITS_TDD_USE_SYSTEM_CTEST 1
 
 # Machine independent cron_driver:
 setenv SCRIPT_DIR `dirname "$0"`
