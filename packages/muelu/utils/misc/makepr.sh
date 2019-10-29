@@ -158,7 +158,7 @@ else
     fi
 
     # Close the issue
-    echo "{\"state\": \closed\"}"  > ${ISSUE_BODY_TMPFILE}
+    echo "{\"state\": \"closed\"}"  > ${ISSUE_BODY_TMPFILE}
     CMD=$(echo curl -i -H $h -d @${ISSUE_BODY_TMPFILE} https://api.github.com/repos/$fork/$repo/issues/$ISSUE_NUM)
     eval $CMD >$TMPFILE 2> $TMPFILE
 
