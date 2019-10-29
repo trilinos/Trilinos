@@ -73,6 +73,7 @@ while getopts hvf:r:b:t:e:s:i: OPT; do
             ;;
         s)
             PR_FIRST_COMMENT=$OPTARG
+            unset EDITOR_CMD
             ;;
         i)
             ISSUE_TEXT=$OUTARG
