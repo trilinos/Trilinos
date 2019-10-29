@@ -341,10 +341,10 @@ public:
     algo_state.ngrad += augLag.getNumberGradientEvaluations();
     // Initialize intermediate stopping tolerances
     minPenaltyReciprocal_ = std::min(one/state->searchSize,minPenaltyLowerBound_);
-    optTolerance_  = std::max(TOL*outerOptTolerance_,
+    optTolerance_  = std::max<Real>(TOL*outerOptTolerance_,
                               optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_));
-    optTolerance_  = std::min(optTolerance_,TOL*algo_state.gnorm);
-    feasTolerance_ = std::max(TOL*outerFeasTolerance_,
+    optTolerance_  = std::min<Real>(optTolerance_,TOL*algo_state.gnorm);
+    feasTolerance_ = std::max<Real>(TOL*outerFeasTolerance_,
                               feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
     if (verbosity_ > 0) {
       std::cout << std::endl;
