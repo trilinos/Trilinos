@@ -143,7 +143,7 @@ if [ -z ${EDITOR_CMD+x} ]; then :
 else 
     echo "$PR_BODY" > ${PR_TEXT_TMPFILE}
     $EDITOR_CMD $PR_TEXT_TMPFILE; 
-    PR_BODY=`cat $PR_TEXT_TEMPFILE`
+    PR_BODY=`cat $PR_TEXT_TMPFILE`
 fi
 
 echo "{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$PR_BODY\"}" > ${PR_BODY_TMPFILE}
