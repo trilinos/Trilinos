@@ -140,6 +140,7 @@ PR_TEXT_TMPFILE=$(mktemp /tmp/pr_text.XXXXXX)
 PR_BODY_TMPFILE=$(mktemp /tmp/pr_body.XXXXXX)
 if [ -z ${EDITOR_CMD+x} ]; then : 
 else 
+    echo $PR_BODY >> $PR_TEXT_TEMPFILE
     $EDITOR_CMD $PR_TEXT_TMPFILE; 
     PR_BODY=`cat $PR_TEXT_TEMPFILE`
 fi
