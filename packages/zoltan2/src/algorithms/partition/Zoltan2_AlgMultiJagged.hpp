@@ -3875,10 +3875,11 @@ struct ReduceWeightsFunctor {
             // which loads a lot of coordinates on the same point, so without
             // this our cuts would all just sit at 0.
             part_t base_b = part;
+            scalar_t base_coord = cut_coordinates(base_b);
             part += 1;
             while(part < num_cuts) {
               b = cut_coordinates(part);
-              scalar_t delta = b - base_b;
+              scalar_t delta = b - base_coord;
               if(delta < 0) delta = -delta;
               if(delta < sEpsilon) {
                 // Note if on cut we set right/left closest to the cut itself
@@ -3900,7 +3901,7 @@ struct ReduceWeightsFunctor {
             part = base_b - 1;
             while(part >= 0) {
               b = cut_coordinates(part);
-              scalar_t delta = b - base_b;
+              scalar_t delta = b - base_coord;
               if(delta < 0) delta = -delta;
               if(delta < sEpsilon) {
                 // Note if on cut we set right/left closest to the cut itself

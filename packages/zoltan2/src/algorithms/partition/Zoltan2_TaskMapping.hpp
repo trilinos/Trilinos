@@ -1287,10 +1287,24 @@ public:
       }
     }
 
+    // Number of permutations for tasks and processors
+    int taskPerm = 1;
+    int procPerm = 1;
+
     // Get number of different permutations for task dimension ordering
-    int taskPerm = z2Fact<int>(this->task_coord_dim);
+    if (this->task_coord_dim <= 8)
+      taskPerm = z2Fact<int>(this->task_coord_dim);
+    // Prevent overflow
+    else
+      taskPerm = z2Fact<int>(8);
+
     // Get number of different permutations for proc dimension ordering
-    int procPerm = z2Fact<int>(this->proc_coord_dim);
+    if (this->proc_coord_dim <= 8)
+      procPerm = z2Fact<int>(this->proc_coord_dim);
+    // Prevent overflow
+    else
+      procPerm = z2Fact<int>(8);
+
 
     // Total number of permutations (both task and proc permuted)
     int permutations =  taskPerm * procPerm;
@@ -1391,7 +1405,10 @@ public:
         ? this->proc_coord_dim : this->task_coord_dim];
 
     // Get the permutation order from the proc permutation index.
-    ithPermutation<int>(this->proc_coord_dim, myProcPerm, permutation);
+    if (this->proc_coord_dim <= 8)
+      ithPermutation<int>(this->proc_coord_dim, myProcPerm, permutation);
+    else
+      ithPermutation<int>(8, myProcPerm, permutation);
 
 /*
     // Reorder the coordinate dimensions.
@@ -1539,7 +1556,10 @@ public:
     fillContinousArray<part_t>(task_adjList,this->no_tasks, NULL);
 
     // Get the permutation order from the task permutation index.
-    ithPermutation<int>(this->task_coord_dim, myTaskPerm, permutation);
+    if (this->task_coord_dim <= 8)
+      ithPermutation<int>(this->task_coord_dim, myTaskPerm, permutation);
+    else
+      ithPermutation<int>(8, myTaskPerm, permutation);
 
     // Reorder task coordinate dimensions.
     tcoord_t **tcoords = new tcoord_t*[this->task_coord_dim];
@@ -1802,10 +1822,24 @@ protected:
     int procDim = this->proc_task_comm->proc_coord_dim;
     int taskDim = this->proc_task_comm->task_coord_dim;
 
-    // Get the number of different permutations for task dimension ordering
-    int taskPerm = z2Fact<int>(procDim);
-    // Get the number of different permutations for proc dimension ordering
-    int procPerm = z2Fact<int>(taskDim);
+    // Number of permutations for tasks and processors
+    int taskPerm = 1;
+    int procPerm = 1;
+
+    // Get number of different permutations for task dimension ordering
+    if (taskDim <= 8)
+      taskPerm = z2Fact<int>(taskDim);
+    // Prevent overflow
+    else
+      taskPerm = z2Fact<int>(8);
+
+    // Get number of different permutations for proc dimension ordering
+    if (procDim <= 8)
+      procPerm = z2Fact<int>(procDim);
+    // Prevent overflow
+    else
+      procPerm = z2Fact<int>(8);
+
     // Total number of permutations
     int idealGroupSize =  taskPerm * procPerm;
 
