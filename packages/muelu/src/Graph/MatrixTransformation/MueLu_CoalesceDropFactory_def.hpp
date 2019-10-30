@@ -73,7 +73,10 @@
 #include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Utilities.hpp"
 
+#include <algorithm>
+#include <cstdlib>
 #include <random>
+#include <string>
 
 namespace MueLu {
 
@@ -716,12 +719,16 @@ namespace MueLu {
 
             LO nnz = indices.size(), rownnz = 0;
             if (threshold != STS::zero()) {
-              // threshold < 10.0             normal threshold behavior
-              // 10.0 <= threshold  < 100.0   monte carlo
-              // 100.0 < threshold            magnitude search
 
-              if (threshold < 10.0) {
-                printf("Normal Threshold\n");
+              auto getenv_uppercase = [](const char * env) { 
+                std::string s((getenv(env) ? getenv(env) : ""));
+                std::transform(s.begin(), s.end(), s.begin(), ::toupper); 
+                return s; 
+              };
+
+              const std::string drop_tol_mode = getenv_uppercase("MUELU_DROP_TOLERANCE_MODE");
+
+              if (drop_tol_mode != "MONTE_CARLO" && drop_tol_mode != "SCALED" ) {
                 for (LO colID = 0; colID < nnz; colID++) {
 
                   LO col = indices[colID];
@@ -771,8 +778,6 @@ namespace MueLu {
                   bool   drop {false};
                 };
 
-                double my_threshold = static_cast<double>(threshold);
-
                 std::vector<DropTol> drop_vec;
                 drop_vec.reserve(nnz);
 
@@ -798,19 +803,36 @@ namespace MueLu {
                   
                 const int n = static_cast<int>(drop_vec.size());
 
+                const char * drop_tol_value = getenv("MUELU_DROP_TOLERANCE_VALUE");
+                
                 // use monte carlo
-                if (my_threshold < 100.0) {
+                if (drop_tol_mode == "MONTE_CARLO") {
                   printf("Monto Carlo Threshold\n");
-                  std::mt19937 gen(static_cast<int>(my_threshold*row));
+
+                  auto get_random_number_generator = [&]() {
+                    int seed = drop_tol_value ? atoi(drop_tol_value) : 0;
+                    if (seed == -1) {
+                      std::random_device rd;
+                      seed = rd();
+                    }
+                    std::mt19937 gen(seed);
+                    return gen;
+                  };
+
+                  static auto gen = get_random_number_generator();
+
                   std::uniform_int_distribution<> dis(0, n);
 
                   for (int i=dis(gen); i<n; ++i) {
                     drop_vec[i].drop = true;
                   }
-                } else { // use magnitude scaling
-                  printf("Magnitude Scale Threshold\n");
+                } else { // drop_tol_mode == "SCALED"
+                  printf("Scaled Threshold\n");
 
-                  my_threshold /= 100.0;
+                  double my_threshold = atof(drop_tol_value); 
+
+                  if (my_threshold == 0.0) my_threshold = 10.0;
+                  if (my_threshold < 1.0) my_threshold = 1.0;
 
                   constexpr double esplion = 1e-15;
 
