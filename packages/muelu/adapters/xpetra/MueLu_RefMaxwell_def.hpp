@@ -431,12 +431,11 @@ namespace MueLu {
         GlobalOrdinal globalNumRowsAH = AH_->getRowMap()->getGlobalNumElements();
         GlobalOrdinal globalNumRowsA22 = D0_Matrix_->getDomainMap()->getGlobalNumElements();
         double ratio = parameterList_.get<double>("refmaxwell: ratio AH / A22 subcommunicators", MasterList::getDefault<double>("refmaxwell: ratio AH / A22 subcommunicators"));
-        numProcsAH = numProcs * globalNumRowsAH / (globalNumRowsAH + ratio*globalNumRowsA22);
-        numProcsA22 = numProcs * ratio * globalNumRowsA22 / (globalNumRowsAH + ratio*globalNumRowsA22);
-        if (numProcsAH + numProcsA22 < numProcs)
-          ++numProcsAH;
-        if (numProcsAH + numProcsA22 < numProcs)
-          ++numProcsA22;
+        numProcsAH = (numProcs * globalNumRowsAH + (globalNumRowsAH + ratio*globalNumRowsA22)/2 ) / (globalNumRowsAH + ratio*globalNumRowsA22);
+        numProcsA22 = (numProcs * ratio * globalNumRowsA22 + (globalNumRowsAH + ratio*globalNumRowsA22)/2 ) / (globalNumRowsAH + ratio*globalNumRowsA22);
+        numProcsAH = std::min(numProcsAH, Teuchos::as<int>(1 + globalNumRowsAH / precList11_.get<int>("repartition: target rows per proc", 2000)));
+        numProcsA22 = std::min(numProcsA22, Teuchos::as<int>(1 + globalNumRowsA22 / precList22_.get<int>("repartition: target rows per proc", 2000)));
+        TEUCHOS_ASSERT(numProcsAH+numProcsA22<=numProcs);
         numProcsAH = std::max(numProcsAH, 1);
         numProcsA22 = std::max(numProcsA22, 1);
       } else
