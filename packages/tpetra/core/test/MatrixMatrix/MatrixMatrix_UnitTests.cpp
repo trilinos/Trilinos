@@ -1594,6 +1594,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  using Teuchos::RCP;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  size_t nrows = 0;
+  RCP<map_type> emptyMap = rcp(new map_type(nrows, 0, comm));
+  RCP<crs_matrix_type> A = rcp(new crs_matrix_type(emptyMap, 0));
+  A->fillComplete(emptyMap, emptyMap);
+  RCP<crs_matrix_type> B = rcp(new crs_matrix_type(emptyMap, 0));
+  B->fillComplete(emptyMap, emptyMap);
+  RCP<crs_matrix_type> C1 = rcp(new crs_matrix_type(emptyMap, 0));
+  SC one = Teuchos::ScalarTraits<SC>::one();
+  Tpetra::MatrixMatrix::add(one, false, *A, one, false, *B, *C1);
+  RCP<crs_matrix_type> C2 = Tpetra::MatrixMatrix::add
+    (one, false, *A, one, false, *B);
+  MT magZero = Teuchos::ScalarTraits<MT>::zero();
+  TEST_EQUALITY(C1->getFrobeniusNorm(), magZero);
+  TEST_EQUALITY(C2->getFrobeniusNorm(), magZero);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
@@ -1755,7 +1778,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

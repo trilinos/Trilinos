@@ -728,7 +728,6 @@ add (const Scalar& alpha,
   }
   bool matchingColMaps = Aprime->getColMap()->isSameAs(*(Bprime->getColMap()));
   bool sorted = AGraphSorted && BGraphSorted;
-  RCP<const map_type> CrowMap;
   RCP<const map_type> CcolMap;
   RCP<const import_type> Cimport = Teuchos::null;
   RCP<export_type> Cexport = Teuchos::null;
@@ -736,6 +735,15 @@ add (const Scalar& alpha,
   if(Teuchos::nonnull(params) && params->isParameter("Call fillComplete"))
   {
     doFillComplete = params->get<bool>("Call fillComplete");
+  }
+  auto Alocal = Aprime->getLocalMatrix();
+  auto Blocal = Bprime->getLocalMatrix();
+  if(Alocal.numRows() == 0)
+  {
+    //KokkosKernels spadd assumes rowptrs.extent(0) + 1 == nrows,
+    //but an empty Tpetra matrix is allowed to have rowptrs.extent(0) == 0.
+    //Handle this case now (without interfering with collective operations).
+    rowptrs = row_ptrs_array("C rowptrs", 1);
   }
   if(!matchingColMaps)
   {
@@ -754,7 +762,7 @@ add (const Scalar& alpha,
       std::cerr << os.str ();
     }
     AddKern::convertToGlobalAndAdd(
-      Aprime->getLocalMatrix(), alpha, Bprime->getLocalMatrix(), beta, Acolmap, Bcolmap,
+      Alocal, alpha, Blocal, beta, Acolmap, Bcolmap,
       CRangeMap->getMinGlobalIndex(), Aprime->getGlobalNumCols(), vals, rowptrs, globalColinds);
     if (debug) {
       std::ostringstream os;
@@ -766,7 +774,6 @@ add (const Scalar& alpha,
     MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("building optimized column map"))));
 #endif
-    CrowMap = Bprime->getRowMap();
     colinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), globalColinds.extent(0));
     //Compute an optimized column map for the sum
     CcolMap = AddKern::makeColMapAndConvertGids(CDomainMap->getIndexBase(), CDomainMap->getMinGlobalIndex(), CDomainMap->getMaxGlobalIndex(), globalColinds, colinds, comm);
@@ -774,14 +781,12 @@ add (const Scalar& alpha,
   else
   {
     //Aprime, Bprime and C all have the same column maps
-    auto localA = Aprime->getLocalMatrix();
-    auto localB = Bprime->getLocalMatrix();
-    auto Avals = localA.values;
-    auto Bvals = localB.values;
-    auto Arowptrs = localA.graph.row_map;
-    auto Browptrs = localB.graph.row_map;
-    auto Acolinds = localA.graph.entries;
-    auto Bcolinds = localB.graph.entries;
+    auto Avals = Alocal.values;
+    auto Bvals = Blocal.values;
+    auto Arowptrs = Alocal.graph.row_map;
+    auto Browptrs = Blocal.graph.row_map;
+    auto Acolinds = Alocal.graph.entries;
+    auto Bcolinds = Blocal.graph.entries;
     if(sorted)
     {
       //use sorted kernel
@@ -812,7 +817,6 @@ add (const Scalar& alpha,
       }
       AddKern::addUnsorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, Aprime->getGlobalNumCols(), vals, rowptrs, colinds);
     }
-    CrowMap = Bprime->getRowMap();
     CcolMap = Bprime->getColMap();
     //note: Cexport created below (if it's needed)
   }
@@ -838,7 +842,7 @@ add (const Scalar& alpha,
       }
       Cimport = rcp(new import_type(CDomainMap, CcolMap));
     }
-    if(!CrowMap->isSameAs(*CRangeMap))
+    if(!C.getRowMap()->isSameAs(*CRangeMap))
     {
       if (debug) {
         std::ostringstream os;
@@ -846,7 +850,7 @@ add (const Scalar& alpha,
            << "Create Cexport" << std::endl;
         std::cerr << os.str ();
       }
-      Cexport = rcp(new export_type(CrowMap, CRangeMap));
+      Cexport = rcp(new export_type(C.getRowMap(), CRangeMap));
     }
 
     if (debug) {
