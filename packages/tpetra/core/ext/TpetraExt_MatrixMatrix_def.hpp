@@ -776,7 +776,7 @@ add (const Scalar& alpha,
 #endif
     colinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), globalColinds.extent(0));
     //Compute an optimized column map for the sum
-    CcolMap = AddKern::makeColMapAndConvertGids(CDomainMap->getIndexBase(), CDomainMap->getMinGlobalIndex(), CDomainMap->getMaxGlobalIndex(), globalColinds, colinds, comm);
+    CcolMap = AddKern::makeColMapAndConvertGids(CDomainMap->getMinGlobalIndex(), CDomainMap->getMaxGlobalIndex(), globalColinds, colinds, comm);
   }
   else
   {
@@ -3164,7 +3164,7 @@ namespace ColMapFunctors
 //Then convert gids and store them in lids (gids is not modified)
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOrdinal maxCol,
+makeColMapAndConvertGids(GlobalOrdinal minCol, GlobalOrdinal maxCol,
                    const typename MMdetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_col_inds_array& gids,
                    typename MMdetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::col_inds_array& lids,
                    const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
@@ -3188,7 +3188,7 @@ makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOr
   //Construct the map
   auto colMap = rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(
         Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), //have Tpetra compute global #GIDs
-        mapGIDs, indexBase, comm));
+        mapGIDs, 0, comm));
   //Get the device-friendly local map
   LocalMap localColMap = colMap->getLocalMap();
   //Use it to convert gids to lids

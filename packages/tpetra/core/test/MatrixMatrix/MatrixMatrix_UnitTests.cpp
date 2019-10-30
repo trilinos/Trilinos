@@ -1617,6 +1617,66 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)
   TEST_EQUALITY(C2->getFrobeniusNorm(), magZero);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, GO, NT)
+{
+  using Teuchos::RCP;
+  using Teuchos::Array;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  LO nlocal = 5;
+  GO nrows = nlocal * comm->getSize();
+  GO indexBase = 4;
+  RCP<map_type> rowMap = rcp(new map_type(nrows, 0, comm));
+  RCP<map_type> domMap = rcp(new map_type(nrows, indexBase, comm));
+  //global rows range from 0 to nrows-1 (inclusive)
+  //global columns range from 4 to nrows+3 (inclusive)
+  SC one = Teuchos::ScalarTraits<SC>::one();
+  RCP<crs_matrix_type> A = rcp(new crs_matrix_type(rowMap, nlocal));
+  for(GO r = 0; r < nrows; r++)
+  {
+    if(rowMap->isNodeGlobalElement(r))
+    {
+      Array<GO> cols(nlocal);
+      Array<SC> vals(nlocal);
+      for(LO i = 0; i < nlocal; i++)
+      {
+        cols[i] = indexBase + (r / nlocal) * nlocal + i;
+        vals[i] = (r + i) * one;
+      }
+      A->insertGlobalValues(r, cols(), vals());
+    }
+  }
+  A->fillComplete(domMap, rowMap);
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add
+    (one, false, *A, one, false, *A);
+  //Verify global entries
+  for(GO r = 0; r < (GO) nrows; r++)
+  {
+    Array<GO> cols(nlocal + 10);
+    Array<SC> vals(nlocal + 10);
+    size_t numEntries;
+    C->getGlobalRowCopy(r, cols(), vals(), numEntries);
+    if(rowMap->isNodeGlobalElement(r))
+    {
+      TEST_EQUALITY((LO) numEntries, nlocal);
+      //row r is locally owned
+      LO lclRow = rowMap->getLocalElement(r);
+      for(size_t i = 0; i < numEntries; i++)
+      {
+        LO lclCol = domMap->getLocalElement(cols[i]);
+        TEST_EQUALITY(lclCol, i);
+        TEST_EQUALITY(cols[i], (GO) (indexBase + comm->getRank() * nlocal + i));
+        TEST_EQUALITY(vals[i], one * 2 * (r + lclCol));
+      }
+    }
+    else
+    {
+      TEST_EQUALITY(numEntries, 0);
+    }
+  }
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
@@ -1779,7 +1839,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
