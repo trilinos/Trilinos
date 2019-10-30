@@ -1602,7 +1602,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)
   using map_type = Tpetra::Map<LO, GO, NT>;
   using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
   size_t nrows = 0;
-  RCP<map_type> emptyMap = rcp(new map_type(nrows, 0, comm));
+  RCP<const map_type> emptyMap = rcp(new map_type(nrows, 0, comm));
   RCP<crs_matrix_type> A = rcp(new crs_matrix_type(emptyMap, 0));
   A->fillComplete(emptyMap, emptyMap);
   RCP<crs_matrix_type> B = rcp(new crs_matrix_type(emptyMap, 0));
@@ -1627,8 +1627,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, 
   LO nlocal = 5;
   GO nrows = nlocal * comm->getSize();
   GO indexBase = 4;
-  RCP<map_type> rowMap = rcp(new map_type(nrows, 0, comm));
-  RCP<map_type> domMap = rcp(new map_type(nrows, indexBase, comm));
+  RCP<const map_type> rowMap = rcp(new map_type(nrows, 0, comm));
+  RCP<const map_type> domMap = rcp(new map_type(nrows, indexBase, comm));
   //global rows range from 0 to nrows-1 (inclusive)
   //global columns range from 4 to nrows+3 (inclusive)
   SC one = Teuchos::ScalarTraits<SC>::one();
