@@ -18,16 +18,38 @@ int main(int argc, const char**argv)
     stk::CommandLineParserParallel commandLine(comm);
     commandLine.add_required<std::string>({"infile", "i", "input file"});
     commandLine.add_required<std::string>({"outfile", "o", "output file"});
-    commandLine.add_required<std::string>({"extract-blocks", "b", "Comma-separated list of blocks to extract"});
+    commandLine.add_optional<std::string>({"extract-blocks", "b", "Comma-separated list of blocks to extract"},{});
+    commandLine.add_optional<std::string>({"extract-nodesets","n","Comma-separated list of nodesets to extract"},{});
 
     stk::CommandLineParser::ParseState state = commandLine.parse(argc, argv);
     stk::parallel::require(state == stk::CommandLineParser::ParseComplete, commandLine.get_usage(), comm);
 
     std::string inFile = commandLine.get_option_value<std::string>("infile");
     std::string outFile = commandLine.get_option_value<std::string>("outfile");
-    std::string csvBlocks = commandLine.get_option_value<std::string>("extract-blocks");
+    std::string csvBlocks;
+    if (commandLine.is_option_provided("extract-blocks")) {
+      csvBlocks = commandLine.get_option_value<std::string>("extract-blocks");
+    }
     std::vector<std::string> blockNames = stk::tools::get_block_names_given_ids(stk::tools::get_csv(csvBlocks));
-    stk::tools::extract_blocks_from_file(inFile, outFile, blockNames, comm);
+
+    std::string csvNodesets;
+    if (commandLine.is_option_provided("extract-nodesets")) {
+      csvNodesets = commandLine.get_option_value<std::string>("extract-nodesets");
+    }
+    std::vector<std::string> nodesetNames = stk::tools::get_nodeset_names_given_ids(stk::tools::get_csv(csvNodesets));
+
+    if (nodesetNames.empty())
+    {
+    	std::cout << "No nodesets specified, extracting only desired blocks" << "\n";
+        stk::tools::extract_blocks_from_file(inFile, outFile, blockNames, comm);
+
+    }
+    else
+    {
+    	std::cout << "Nodesets specified, extracting combination of blocks and nodesets" << "\n";
+    	stk::tools::extract_blocks_and_ns_from_file(inFile,outFile,blockNames, nodesetNames, comm);
+
+    }
 
     MPI_Finalize();
     return 0;

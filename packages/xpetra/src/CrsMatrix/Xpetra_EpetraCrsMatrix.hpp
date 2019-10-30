@@ -257,6 +257,14 @@ public:
 #endif
 #endif
 
+  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const{ 
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+    apply(X,R);
+    R.update(one,B,negone);
+  }
+
 }; // EpetraCrsMatrixT class (specialization on GO=long, empty stub implementation)
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -1232,6 +1240,15 @@ public:
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
+  }
+
+  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+
+    apply(X,R);
+    R.update(one,B,negone);
   }
 
 private:
@@ -2229,6 +2246,15 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
   }
+
+  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+    apply(X,R);
+    R.update(one,B,negone);
+  }
+
 
 private:
   mutable local_matrix_type localMatrix_;
