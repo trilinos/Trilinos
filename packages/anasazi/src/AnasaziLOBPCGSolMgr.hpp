@@ -57,6 +57,7 @@
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziBasicOrthoManager.hpp"
+#include "AnasaziICGSOrthoManager.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziStatusTestWithOrdering.hpp"
@@ -365,7 +366,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
 
   // which orthogonalization to use
   ortho_ = pl.get("Orthogonalization",ortho_);
-  if (ortho_ != "DGKS" && ortho_ != "SVQB") {
+  if (ortho_ != "DGKS" && ortho_ != "SVQB" && ortho_ != "ICGS") {
     ortho_ = "SVQB";
   }
 
@@ -539,8 +540,10 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     ortho = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
   } else if (ortho_=="DGKS") {
     ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
+  } else if (ortho_=="ICGS") {
+    ortho = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
   } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS",std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): Invalid orthogonalization type.");
+    TEUCHOS_TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS"&&ortho_!="ICGS",std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): Invalid orthogonalization type.");
   }
 
   //////////////////////////////////////////////////////////////////////////////////////

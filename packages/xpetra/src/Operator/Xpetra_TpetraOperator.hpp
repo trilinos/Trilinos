@@ -49,6 +49,7 @@
 #include "Xpetra_TpetraConfigDefs.hpp"
 
 #include <Tpetra_Operator.hpp>
+#include <Tpetra_Details_residual.hpp>
 
 #include "Xpetra_Map.hpp"
 #include "Xpetra_TpetraMap.hpp"
@@ -124,6 +125,14 @@ namespace Xpetra {
     //! Gets the operator out
     RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return op_;}
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+      Tpetra::Details::residual(*op_,X,B,R);
+    }
+
+
     //@}
 
   private:
@@ -195,6 +204,10 @@ namespace Xpetra {
     //! Gets the operator out
     RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return Teuchos::null;}
 
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    }
 
   //@}
 
@@ -262,6 +275,11 @@ namespace Xpetra {
 
     //! Gets the operator out
     RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return Teuchos::null;}
+
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    }
     //@}
 
   }; // TpetraOperator class
