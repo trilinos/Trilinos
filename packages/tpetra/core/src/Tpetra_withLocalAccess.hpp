@@ -295,7 +295,7 @@ namespace Tpetra {
                    const bool thisIsValid = true) :
         G_ (G),
         space_ (space),
-        valid_ (thisIValid)
+        valid_ (thisIsValid)
       {}
 
       /// \brief Type that users see, that's an argument to the
