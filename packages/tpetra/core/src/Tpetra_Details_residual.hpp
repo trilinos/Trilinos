@@ -58,6 +58,79 @@
 namespace Tpetra {
   namespace Details {
 
+
+template<class ExecutionSpace>
+int64_t
+residual_launch_parameters (int64_t numRows,
+                            int64_t nnz,
+                            int64_t rows_per_thread,
+                            int& team_size,
+                            int& vector_length)
+{
+  using execution_space = typename ExecutionSpace::execution_space;
+
+  int64_t rows_per_team;
+  int64_t nnz_per_row = nnz/numRows;
+
+  if (nnz_per_row < 1) {
+    nnz_per_row = 1;
+  }
+
+  if (vector_length < 1) {
+    vector_length = 1;
+    while (vector_length<32 && vector_length*6 < nnz_per_row) {
+      vector_length *= 2;
+    }
+  }
+
+  // Determine rows per thread
+  if (rows_per_thread < 1) {
+#ifdef KOKKOS_ENABLE_CUDA
+    if (std::is_same<Kokkos::Cuda, execution_space>::value) {
+      rows_per_thread = 1;
+    }
+    else
+#endif
+    {
+      if (nnz_per_row < 20 && nnz > 5000000) {
+        rows_per_thread = 256;
+      }
+      else {
+        rows_per_thread = 64;
+      }
+    }
+  }
+
+#ifdef KOKKOS_ENABLE_CUDA
+  if (team_size < 1) {
+    if (std::is_same<Kokkos::Cuda,execution_space>::value) {
+      team_size = 256/vector_length;
+    }
+    else {
+      team_size = 1;
+    }
+  }
+#endif
+
+  rows_per_team = rows_per_thread * team_size;
+
+  if (rows_per_team < 0) {
+    int64_t nnz_per_team = 4096;
+    int64_t conc = execution_space::concurrency ();
+    while ((conc * nnz_per_team * 4 > nnz) &&
+           (nnz_per_team > 256)) {
+      nnz_per_team /= 2;
+    }
+    rows_per_team = (nnz_per_team + nnz_per_row - 1) / nnz_per_row;
+  }
+
+  return rows_per_team;
+}
+
+
+
+
+
 template<class SC, class LO, class GO, class NO>
 void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
                    const MultiVector<SC,LO,GO,NO> & X,
@@ -67,6 +140,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
   using Teuchos::NO_TRANS;
   ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localResidual");
 
+  auto A_lcl = A.getLocalMatrix (); 
   auto X_lcl = X.getLocalViewDevice ();
   auto B_lcl = B.getLocalViewDevice ();
   auto R_lcl = R.getLocalViewDevice ();
@@ -121,11 +195,102 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
        std::runtime_error, "X, Y and R may not alias one another.");
   }
       
+#ifdef TPETRA_DETAILS_USE_REFERENCE_RESIDUAL
   // This is currently a "reference implementation" waiting until Kokkos Kernels provides
   // a residual kernel.
   SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();    
   A.localApply(X,R,Teuchos::NO_TRANS, one, zero);
   R.update(one,B,negone);
+#else
+  using execution_space = typename CrsMatrix<SC,LO,GO,NO>::execution_space;
+
+  if (A_lcl.numRows() == 0) {
+    return;
+  }
+
+  int team_size = -1;
+  int vector_length = -1;
+  int64_t rows_per_thread = -1;
+
+  const int64_t rows_per_team = 
+    residual_launch_parameters<execution_space>(A_lcl.numRows (), A_lcl.nnz (), rows_per_thread, team_size, vector_length);
+  int64_t worksets = (B_lcl.extent (0) + rows_per_team - 1) / rows_per_team;
+
+  using policy_type = typename Kokkos::TeamPolicy<execution_space>;
+  using team_member = typename policy_type::member_type;
+
+  using residual_value_type = typename  MultiVector<SC,LO,GO,NO>::dual_view_type::t_dev::non_const_value_type;
+  using KAT = Kokkos::ArithTraits<residual_value_type>;
+
+  policy_type policy (1, 1);
+  if (team_size < 0) {
+    policy = policy_type (worksets, Kokkos::AUTO, vector_length);
+  }
+  else {
+    policy = policy_type (worksets, team_size, vector_length);
+  }
+
+  bool is_vector = (X_lcl.extent(1) == 1);
+
+  if(is_vector) {
+    // Vector case
+    // Kernel interior shamelessly horked from Ifpack2_Details_ScaledDampedResidual_def.hpp
+    Kokkos::parallel_for("residual-vector",policy,KOKKOS_LAMBDA(const team_member& dev) {
+        // NOTE: It looks like I should be able to get this data up above, but if I try to
+        // we get internal compiler errors.  Who knew that gcc tried to "gimplify"?
+        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
+            const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
+            
+            if (lclRow >= A_lcl.numRows ()) {
+              return;
+            }
+
+            const auto A_row = A_lcl.rowConst(lclRow);
+            const LO row_length = static_cast<LO> (A_row.length);
+            residual_value_type A_x = KAT::zero ();          
+            
+            Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, row_length), [&] (const LO iEntry, residual_value_type& lsum) {
+                const auto A_val = A_row.value(iEntry);
+                lsum += A_val * X_lcl(A_row.colidx(iEntry),0);
+              }, A_x);
+            
+            Kokkos::single(Kokkos::PerThread(dev),[&] () {            
+                R_lcl(lclRow,0) = B_lcl(lclRow,0) - A_x;
+              });           
+          });//end parallel_for TeamThreadRange
+      });//end parallel_for "residual-vector"
+  } else {
+    // MultiVector case
+    // Kernel interior shamelessly horked from Ifpack2_Details_ScaledDampedResidual_def.hpp
+    Kokkos::parallel_for("residual-multivector",policy,KOKKOS_LAMBDA(const team_member& dev) {
+        // NOTE: It looks like I should be able to get this data up above, but if I try to
+        // we get internal compiler errors.  Who knew that gcc tried to "gimplify"?
+        const LO numVectors = static_cast<LO>(X_lcl.extent(1));
+        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
+            const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
+            
+            if (lclRow >= A_lcl.numRows ()) {
+              return;
+            }
+            const auto A_row = A_lcl.rowConst(lclRow);
+            const LO row_length = static_cast<LO> (A_row.length);
+            for(LO v=0; v<numVectors; v++) {
+              residual_value_type A_x = KAT::zero ();          
+              
+              Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, row_length), [&] (const LO iEntry, residual_value_type& lsum) {
+                  const auto A_val = A_row.value(iEntry);
+                  lsum += A_val * X_lcl(A_row.colidx(iEntry),v);
+                }, A_x);
+              
+              Kokkos::single(Kokkos::PerThread(dev),[&] () {            
+                  R_lcl(lclRow,v) = B_lcl(lclRow,v) - A_x;
+                });
+              
+            }//end for numVectors
+          });//end parallel_for TeamThreadRange
+      });//end parallel_for "residual-multivector"
+  }// end else
+#endif
 }
     
 
