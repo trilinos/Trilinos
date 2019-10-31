@@ -563,6 +563,11 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       if(rcpBopA == Teuchos::null && rcpBopB == Teuchos::null) {
         if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
           throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
+        if(C.is_null())
+        {
+          //allocate 0 entries now; Tpetra add() will allocate exactly
+          C = rcp(new CrsMatrixWrap(A.getRowMap(), 0, Xpetra::StaticProfile));
+        }
         if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
           throw Exceptions::RuntimeError("MatrixMatrix::Add for Epetra only available with Scalar = double, LO = GO = int.");
         } else if (C->getRowMap()->lib() == Xpetra::UseTpetra) {

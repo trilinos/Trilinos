@@ -1623,6 +1623,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, 
   using Teuchos::Array;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
   using map_type = Tpetra::Map<LO, GO, NT>;
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   LO nlocal = 5;
   GO nrows = nlocal * comm->getSize();
@@ -1632,6 +1633,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, 
   //global rows range from 0 to nrows-1 (inclusive)
   //global columns range from 4 to nrows+3 (inclusive)
   SC one = Teuchos::ScalarTraits<SC>::one();
+  SC two = one + one;
   RCP<crs_matrix_type> A = rcp(new crs_matrix_type(rowMap, nlocal));
   for(GO r = 0; r < nrows; r++)
   {
@@ -1642,7 +1644,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, 
       for(LO i = 0; i < nlocal; i++)
       {
         cols[i] = indexBase + (r / nlocal) * nlocal + i;
-        vals[i] = (r + i) * one;
+        vals[i] = one * MT(r + i);
       }
       A->insertGlobalValues(r, cols(), vals());
     }
@@ -1661,13 +1663,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, 
     {
       TEST_EQUALITY((LO) numEntries, nlocal);
       //row r is locally owned
-      LO lclRow = rowMap->getLocalElement(r);
       for(size_t i = 0; i < numEntries; i++)
       {
         LO lclCol = domMap->getLocalElement(cols[i]);
-        TEST_EQUALITY(lclCol, i);
+        TEST_EQUALITY(lclCol, (LO) i);
         TEST_EQUALITY(cols[i], (GO) (indexBase + comm->getRank() * nlocal + i));
-        TEST_EQUALITY(vals[i], one * 2 * (r + lclCol));
+        TEST_EQUALITY(vals[i], two * MT(r + lclCol));
       }
     }
     else

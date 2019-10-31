@@ -776,7 +776,9 @@ add (const Scalar& alpha,
 #endif
     colinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), globalColinds.extent(0));
     //Compute an optimized column map for the sum
-    CcolMap = AddKern::makeColMapAndConvertGids(CDomainMap->getMinGlobalIndex(), CDomainMap->getMaxGlobalIndex(), globalColinds, colinds, comm);
+    GO minGID = std::min(Aprime->getColMap()->getMinGlobalIndex(), Bprime->getColMap()->getMinGlobalIndex());
+    GO maxGID = std::max(Aprime->getColMap()->getMaxGlobalIndex(), Bprime->getColMap()->getMaxGlobalIndex());
+    CcolMap = AddKern::makeColMapAndConvertGids(minGID, maxGID, globalColinds, colinds, comm);
   }
   else
   {
