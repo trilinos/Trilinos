@@ -568,7 +568,7 @@ add (const Scalar& alpha,
   TEUCHOS_TEST_FOR_EXCEPTION
     (! A.isFillComplete () || ! Brcp->isFillComplete (), std::invalid_argument,
      "TpetraExt::MatrixMatrix::add(): A and B must both be fill complete.");
-  Teuchos::RCP<crs_matrix_type> C = rcp(new crs_matrix_type(Brcp->getRowMap(), 0));
+  RCP<crs_matrix_type> C = rcp(new crs_matrix_type(Brcp->getRowMap(), 0));
   //this version of add() always fill completes the result, no matter what is in params on input
   if(!params.is_null())
     params->set("Call fillComplete", true);
@@ -754,8 +754,8 @@ add (const Scalar& alpha,
     //use kernel that converts col indices in both A and B to common domain map before adding
     auto Acolmap = Aprime->getColMap();
     auto Bcolmap = Bprime->getColMap();
-    auto AlocalColmap = Acolmap->getMyGlobalIndices();
-    auto BlocalColmap = Bcolmap->getMyGlobalIndices();
+    auto AlocalColmap = Acolmap->getLocalMap();
+    auto BlocalColmap = Bcolmap->getLocalMap();
     typename AddKern::global_col_inds_array globalColinds("", 0);
     if (debug) {
       std::ostringstream os;
@@ -765,7 +765,7 @@ add (const Scalar& alpha,
     }
     AddKern::convertToGlobalAndAdd(
       Alocal, alpha, Blocal, beta, AlocalColmap, BlocalColmap,
-      CRangeMap->getMinGlobalIndex(), Aprime->getGlobalNumCols(), vals, rowptrs, globalColinds);
+      vals, rowptrs, globalColinds);
     if (debug) {
       std::ostringstream os;
       os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
@@ -3301,11 +3301,9 @@ template<typename GO,
          typename ColMapType>
 struct ConvertColIndsFunctor
 {
-  ConvertColIndsFunctor (const GO minGlobal_,
-                         const LocalIndicesType& colindsOrig_,
+  ConvertColIndsFunctor (const LocalIndicesType& colindsOrig_,
                          const GlobalIndicesType& colindsConverted_,
                          const ColMapType& colmap_) :
-    minGlobal (minGlobal_),
     colindsOrig (colindsOrig_),
     colindsConverted (colindsConverted_),
     colmap (colmap_)
@@ -3313,9 +3311,8 @@ struct ConvertColIndsFunctor
   KOKKOS_INLINE_FUNCTION void
   operator() (const GO i) const
   {
-    colindsConverted[i] = colmap[colindsOrig[i]];
+    colindsConverted(i) = colmap.getGlobalElement(colindsOrig(i));
   }
-  GO minGlobal;
   LocalIndicesType colindsOrig;
   GlobalIndicesType colindsConverted;
   ColMapType colmap;
@@ -3330,8 +3327,6 @@ convertToGlobalAndAdd(
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::local_map_type& AcolMap,
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::local_map_type& BcolMap,
-  GO minGlobalCol,
-  GO /* numGlobalCols */,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
@@ -3349,9 +3344,9 @@ convertToGlobalAndAdd(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: " + std::string("column map conversion"))));
 #endif
-  ConvertColIndsFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertA(minGlobalCol, Acolinds, AcolindsConverted, AcolMap);
+  ConvertColIndsFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertA(Acolinds, AcolindsConverted, AcolMap);
   Kokkos::parallel_for("Tpetra_MatrixMatrix_convertColIndsA", range_type(0, Acolinds.extent(0)), convertA);
-  ConvertColIndsFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertB(minGlobalCol, Bcolinds, BcolindsConverted, BcolMap);
+  ConvertColIndsFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertB(Bcolinds, BcolindsConverted, BcolMap);
   Kokkos::parallel_for("Tpetra_MatrixMatrix_convertColIndsB", range_type(0, Bcolinds.extent(0)), convertB);
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename col_inds_array::size_type, GO, impl_scalar_type,
               execution_space, memory_space, memory_space> KKH;

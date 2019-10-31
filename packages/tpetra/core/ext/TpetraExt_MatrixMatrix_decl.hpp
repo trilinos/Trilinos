@@ -556,7 +556,7 @@ struct AddKernels
   typedef typename KCRS::row_map_type::non_const_type row_ptrs_array;
   typedef typename KCRS::row_map_type row_ptrs_array_const;
   typedef typename KCRS::index_type::non_const_type col_inds_array;
-  typedef typename Kokkos::View<const GlobalOrdinal*, device_type> local_map_type;
+  typedef typename map_type::local_map_type local_map_type;
   typedef typename Kokkos::View<GlobalOrdinal*, device_type> global_col_inds_array;
   typedef Kokkos::RangePolicy<execution_space> range_type;
 
@@ -604,8 +604,6 @@ struct AddKernels
     const impl_scalar_type scalarB,
     const local_map_type& AcolMap,
     const local_map_type& BcolMap,
-    GlobalOrdinal minGlobalCol,
-    GlobalOrdinal globalNumCols,
     values_array& Cvals,
     row_ptrs_array& Crowptrs,
     global_col_inds_array& Ccolinds);
