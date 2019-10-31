@@ -533,7 +533,8 @@ namespace MueLu {
           newA->SetParameterList(rebAcParams);
           newA->SetFactory("Importer", repartFactory);
 
-          coarseLevel.Request("R", newR.get());
+          if (!implicitTranspose_)
+            coarseLevel.Request("R", newR.get());
           coarseLevel.Request("P", newP.get());
           coarseLevel.Request("Importer", repartFactory.get());
           coarseLevel.Request("A", newA.get());
@@ -791,7 +792,8 @@ namespace MueLu {
             coarseLevel.Request("AP reuse data", rapFact.get());
             coarseLevel.Request("RAP reuse data", rapFact.get());
           }
-          coarseLevel.Request("R", transPFactory.get());
+          if (!implicitTranspose_)
+            coarseLevel.Request("R", transPFactory.get());
 
           A22_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
           if (!implicitTranspose_)
@@ -1045,7 +1047,7 @@ namespace MueLu {
         if (!xpExporter.is_null())
           xpExporter->setDistributorParameters(matvecParams);
       }
-      {
+      if (!D0_T_Matrix_.is_null()) {
         RCP<const Import> xpImporter = D0_T_Matrix_->getCrsGraph()->getImporter();
         if (!xpImporter.is_null())
           xpImporter->setDistributorParameters(matvecParams);
@@ -1053,7 +1055,7 @@ namespace MueLu {
         if (!xpExporter.is_null())
           xpExporter->setDistributorParameters(matvecParams);
       }
-      {
+      if (!R11_.is_null()) {
         RCP<const Import> xpImporter = R11_->getCrsGraph()->getImporter();
         if (!xpImporter.is_null())
           xpImporter->setDistributorParameters(matvecParams);
