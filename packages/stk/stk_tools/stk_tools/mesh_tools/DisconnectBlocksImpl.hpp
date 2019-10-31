@@ -34,12 +34,18 @@
 #ifndef _DisconnectBlocksImpl_hpp_
 #define _DisconnectBlocksImpl_hpp_
 
-#include "stk_mesh/base/Types.hpp"
-#include "stk_mesh/base/SideSetEntry.hpp"
+#include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/Entity.hpp"
+#include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Part.hpp"
+#include "stk_mesh/base/SideSetEntry.hpp"
+#include "stk_mesh/base/Types.hpp"
+#include "stk_tools/mesh_tools/DisconnectGroup.hpp"
+#include "stk_tools/mesh_tools/DisconnectUtils.hpp"
+#include "stk_util/parallel/ParallelComm.hpp"
 #include <utility>
 #include <vector>
+#include <map>
 
 namespace stk { namespace mesh { class BulkData; } }
 
@@ -49,24 +55,38 @@ namespace impl {
 
 struct NodeMapKey
 {
-  NodeMapKey(stk::mesh::Entity _parentNode, const stk::mesh::Part & _disconnectedBlock)
+  NodeMapKey(stk::mesh::Entity _parentNode, const DisconnectGroup& _disconnectedGroup)
     : parentNode(_parentNode),
-      disconnectedBlock(_disconnectedBlock) {}
+      disconnectedGroup(_disconnectedGroup) {}
   ~NodeMapKey() = default;
 
   stk::mesh::Entity parentNode;
-  const stk::mesh::Part & disconnectedBlock;
+  DisconnectGroup disconnectedGroup;
 };
 
 struct NodeMapValue
 {
   NodeMapValue()
-    : newNodeId(stk::mesh::InvalidEntityId)
+    : oldNodeId(stk::mesh::InvalidEntityId),
+      newNodeId(stk::mesh::InvalidEntityId),
+      reconnectNodeId(stk::mesh::InvalidEntityId)
       {}
+  NodeMapValue(const stk::mesh::BulkData& bulk, stk::mesh::Entity node)
+    : oldNodeId(bulk.identifier(node)),
+      newNodeId(stk::mesh::InvalidEntityId),
+      reconnectNodeId(stk::mesh::InvalidEntityId)
+  {
+    fill_block_membership(bulk, node, oldBlockMembership);
+  }
+
   ~NodeMapValue() = default;
 
+  stk::mesh::EntityId oldNodeId;
   stk::mesh::EntityId newNodeId;
+  stk::mesh::EntityId reconnectNodeId;
+
   std::vector<int> sharingProcs;
+  stk::mesh::PartVector oldBlockMembership;
 };
 
 class NodeMapLess {
@@ -77,33 +97,85 @@ public:
     if (lhs.parentNode != rhs.parentNode) {
       return (lhs.parentNode < rhs.parentNode);
     }
-    return (lhs.disconnectedBlock.mesh_meta_data_ordinal() < rhs.disconnectedBlock.mesh_meta_data_ordinal());
+    return (lhs.disconnectedGroup < rhs.disconnectedGroup);
   }
 };
 
-using NodeMapType = std::map<NodeMapKey, NodeMapValue, NodeMapLess>;
 using BlockPairType = std::pair<stk::mesh::Part*, stk::mesh::Part*>;
 using SideSetType = std::vector<stk::mesh::SideSetEntry>;
+using NodeMapType = std::map<NodeMapKey, NodeMapValue, NodeMapLess>;
+using DisconnectGroupVector = std::vector<DisconnectGroup>;
+using PreservedSharingInfo = std::map<stk::mesh::EntityId, std::vector<int>>;
+
+struct ReconnectNodeInfo {
+  stk::mesh::EntityId reconnectNodeId = stk::mesh::InvalidEntityId;
+  std::vector<int> reconnectProcs;
+  stk::mesh::EntityVector relatedNodes;
+};
+
+typedef std::map<stk::mesh::EntityId, ReconnectNodeInfo> ReconnectMap;
+
+struct LinkInfo
+{
+  PreservedSharingInfo sharedInfo;
+  NodeMapType clonedNodeMap;
+  NodeMapType preservedNodeMap;
+  bool preserveOrphans = false;
+  int debugLevel = 0;
+  std::ostringstream os;
+  ReconnectMap reconnectMap;
+
+  void flush() {
+    if(debugLevel > 1) {
+      std::cerr << os.str();
+    }
+    os.str("");
+    os.clear();
+  }
+};
+
+
+void update_node_id(stk::mesh::EntityId newNodeId, int proc,
+                    LinkInfo& info, const DisconnectGroup& group);
 
 bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part);
 
+stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
+
 unsigned get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
+
+void add_to_sharing_lookup(const stk::mesh::BulkData& bulk, stk::mesh::Entity node, PreservedSharingInfo& info);
 
 void add_nodes_to_disconnect(const stk::mesh::BulkData & bulk,
                              const BlockPairType & blockPair,
-                             NodeMapType & nodeMap);
+                             impl::LinkInfo& info);
 
-void create_new_duplicate_node_IDs(stk::mesh::BulkData & bulk, NodeMapType & nodeMap);
+void create_new_duplicate_node_IDs(stk::mesh::BulkData & bulk, LinkInfo& info);
 
-void communicate_shared_node_information(stk::mesh::BulkData & bulk, NodeMapType & nodeMap);
+void communicate_shared_node_information(stk::mesh::BulkData & bulk, LinkInfo& info);
 
 void get_all_blocks_in_mesh(const stk::mesh::BulkData & bulk, stk::mesh::PartVector & blocksInMesh);
 
 std::vector<BlockPairType> get_block_pairs_to_disconnect(const stk::mesh::BulkData & bulk);
 
-void disconnect_elements(stk::mesh::BulkData & bulk,
-                         const BlockPairType & blockPair,
-                         NodeMapType & nodeMap);
+void disconnect_elements(stk::mesh::BulkData& bulk, const DisconnectGroup& group, LinkInfo& info);
+
+void disconnect_elements(stk::mesh::BulkData & bulk, const BlockPairType & blockPair, LinkInfo& info);
+
+void reconnect_elements(stk::mesh::BulkData& bulk, const BlockPairType & blockPair, const DisconnectGroup& group, LinkInfo& info);
+
+void reconnect_block_pair(stk::mesh::BulkData& bulk, const BlockPairType & blockPair, LinkInfo& info);
+
+const std::vector<int>& find_preserved_sharing_data(stk::mesh::EntityId oldNodeId, const PreservedSharingInfo& info);
+
+void restore_node_sharing(stk::mesh::BulkData& bulk, stk::mesh::Entity node, LinkInfo& info);
+
+void sanitize_node_map(NodeMapType& nodeMap, std::ostringstream& os);
+
+void determine_reconnect_node_id(stk::mesh::BulkData& bulk, const std::vector<impl::BlockPairType>& blockPairsToReconnect,
+                                 LinkInfo& info);
+
+void fix_indirect_node_sharing(stk::mesh::BulkData& bulk, const std::vector<BlockPairType>& blockPairsToReconnect, LinkInfo& info);
 
 } } }
 

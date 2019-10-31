@@ -70,6 +70,16 @@ std::vector<std::string> get_block_names_given_ids(const std::vector<std::string
     return names;
 }
 
+std::vector<std::string> get_nodeset_names_given_ids(const std::vector<std::string> &ids)
+{
+    std::vector<std::string> names(ids.size());
+    for(size_t i=0; i<ids.size(); i++)
+    {
+        names[i] = "nodelist_" + ids[i];
+    }
+    return names;
+}
+
 }}
 
 #endif /* PACKAGES_STK_STK_TOOLS_STK_TOOLS_BLOCK_EXTRACTOR_PARSECSV_HPP_ */

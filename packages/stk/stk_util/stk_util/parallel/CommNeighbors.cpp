@@ -106,16 +106,11 @@ CommNeighbors::CommNeighbors( stk::ParallelMachine comm, const std::vector<int>&
 {
   m_send.resize(m_size);
   m_recv.resize(m_size);
-#ifdef OMPI_MAJOR_VERSION
-#if OMPI_MAJOR_VERSION < 2
-//if open-mpi version 1.10, MPI_Neighbor_* functions can't handle
-//empty send/recv lists.
   if (neighbor_procs.empty()) {
+    //at least some MPI_Neighbor_* implementations can't handle empty neighbor lists.
     m_send_procs.push_back(m_rank);
     m_recv_procs.push_back(m_rank);
   }
-#endif
-#endif
   stk::util::sort_and_unique(m_send_procs);
   stk::util::sort_and_unique(m_recv_procs);
 
@@ -146,13 +141,9 @@ CommNeighbors::CommNeighbors( stk::ParallelMachine comm, const std::vector<int>&
   std::vector<int> symmNeighbors = m_send_procs;
   symmNeighbors.insert(symmNeighbors.end(), m_recv_procs.begin(), m_recv_procs.end());
   stk::util::sort_and_unique(symmNeighbors);
-#ifdef OMPI_MAJOR_VERSION
-#if OMPI_MAJOR_VERSION < 2
   if (symmNeighbors.empty()) {
     symmNeighbors.push_back(m_rank);
   }
-#endif
-#endif
   m_send_procs = symmNeighbors;
   m_recv_procs = symmNeighbors;
 

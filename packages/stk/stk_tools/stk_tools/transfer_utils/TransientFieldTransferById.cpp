@@ -89,54 +89,95 @@ TransientFieldTransferById::~TransientFieldTransferById()
     mTransfers.clear();
 }
 
+
+
+void TransientFieldTransferById::writeFields(size_t aOutFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames)
+{
+	if(aTransientFields.empty())
+	    {
+	        mBrokerB.write_output_mesh(aOutFileIndex);
+	    }
+
+
+	std::vector<double> globalVariable;
+	    for(int iStep = 0; iStep < mBrokerA.get_num_time_steps(); iStep++)
+	    {
+	        double readTime = mBrokerA.read_defined_input_fields_at_step(iStep + 1, nullptr);
+
+	        do_transfer();
+
+	        stk::mesh::copy_owned_to_shared(mBrokerB.bulk_data(), aTransientFields);
+
+	        mBrokerB.begin_output_step(aOutFileIndex, readTime);
+	        mBrokerB.write_defined_output_fields(aOutFileIndex);
+
+
+	        for(const std::string& globalVariableName : aGlobalVariableNames) {
+	            mBrokerA.get_global(globalVariableName, globalVariable);
+	            mBrokerB.write_global(aOutFileIndex, globalVariableName, globalVariable);
+	        }
+
+	        mBrokerB.end_output_step(aOutFileIndex);
+	    }
+}
+
+void TransientFieldTransferById::get_field_names(size_t aOutputFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames)
+{
+    std::vector<stk::io::QaRecord> qaRecords = mBrokerA.get_qa_records();
+    mBrokerB.add_qa_records(aOutputFileIndex, qaRecords);
+    mBrokerB.set_name_and_version_for_qa_record(aOutputFileIndex, "stk_balance", stk::ProductRegistry::version());
+
+    mBrokerB.add_info_records(aOutputFileIndex, mBrokerA.get_info_records());
+
+    stk::mesh::FieldVector fieldVector = stk::io::get_transient_fields(mBrokerB.meta_data());
+
+    aTransientFields.assign(fieldVector.begin(), fieldVector.end());
+
+
+    mBrokerA.get_global_variable_names(aGlobalVariableNames);
+
+    for(const std::string& globalVariableName : aGlobalVariableNames) {
+        size_t length = mBrokerA.get_global_variable_length(globalVariableName);
+        mBrokerB.add_global(aOutputFileIndex, globalVariableName, length, Ioss::Field::DOUBLE);
+    }
+}
+
 size_t TransientFieldTransferById::transfer_and_write_transient_fields(const std::string &parallelOutputMeshName)
 {
     size_t outputFileIndex = setup_output_transient_fields(parallelOutputMeshName);
 
-    std::vector<stk::io::QaRecord> qaRecords = mBrokerA.get_qa_records();
-    mBrokerB.add_qa_records(outputFileIndex, qaRecords);
-    mBrokerB.set_name_and_version_for_qa_record(outputFileIndex, "stk_balance", stk::ProductRegistry::version());
 
-    mBrokerB.add_info_records(outputFileIndex, mBrokerA.get_info_records());
-
-    stk::mesh::FieldVector fieldVector = stk::io::get_transient_fields(mBrokerB.meta_data());
-
-    std::vector<const stk::mesh::FieldBase *> transientFields(fieldVector.begin(), fieldVector.end());
-
+    std::vector<const stk::mesh::FieldBase *> transientFields;
     std::vector<std::string> globalVariableNames;
-    mBrokerA.get_global_variable_names(globalVariableNames);
-    std::vector<double> globalVariable;
-    for(const std::string& globalVariableName : globalVariableNames) {
-        size_t length = mBrokerA.get_global_variable_length(globalVariableName);
-        mBrokerB.add_global(outputFileIndex, globalVariableName, length, Ioss::Field::DOUBLE);
-    }
 
-    if(fieldVector.empty())
-    {
-        mBrokerB.write_output_mesh(outputFileIndex);
-    }
+    get_field_names(outputFileIndex, transientFields, globalVariableNames);
 
-    for(int iStep = 0; iStep < mBrokerA.get_num_time_steps(); iStep++)
-    {
-        double readTime = mBrokerA.read_defined_input_fields_at_step(iStep + 1, nullptr);
 
-        do_transfer();
+    writeFields(outputFileIndex, transientFields, globalVariableNames);
 
-        stk::mesh::copy_owned_to_shared(mBrokerB.bulk_data(), transientFields);
-
-        mBrokerB.begin_output_step(outputFileIndex, readTime);
-        mBrokerB.write_defined_output_fields(outputFileIndex);
-
-        for(const std::string& globalVariableName : globalVariableNames) {
-            mBrokerA.get_global(globalVariableName, globalVariable);
-            mBrokerB.write_global(outputFileIndex, globalVariableName, globalVariable);
-        }
-
-        mBrokerB.end_output_step(outputFileIndex);
-    }
 
     return outputFileIndex;
 }
+
+size_t TransientFieldTransferById::transfer_and_write_transient_fields(const std::string &parallelOutputMeshName, stk::mesh::Selector & aselector)
+{
+    size_t outputFileIndex = setup_output_transient_fields(parallelOutputMeshName);
+
+
+    std::vector<const stk::mesh::FieldBase *> transientFields;
+    std::vector<std::string> globalVariableNames;
+
+    get_field_names(outputFileIndex, transientFields, globalVariableNames);
+
+
+    mBrokerB.set_subset_selector(outputFileIndex,aselector);
+
+    writeFields(outputFileIndex, transientFields, globalVariableNames);
+
+
+    return outputFileIndex;
+}
+
 
 void TransientFieldTransferById::do_transfer()
 {

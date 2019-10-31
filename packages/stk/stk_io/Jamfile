@@ -204,6 +204,7 @@ exe stk_io_mesh_read_write_example
   :
     $(stk_io-root)/example/io_mesh_read_write_example.cpp
     stk_io
+    /sierra/stk_util//stk_util_command_line
   : <tag>@sierra-exec-tag
   ;
 
@@ -231,6 +232,7 @@ exe stk_io_lowlevel_example
   :
     $(stk_io-root)/example/io_lowlevel_example.cpp
     stk_io
+    /sierra/stk_util//stk_util_command_line
   : <tag>@sierra-exec-tag
   ;
 
