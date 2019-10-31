@@ -292,10 +292,10 @@ namespace Tpetra {
       /// the default memory space from G.
       LocalAccess (global_object_type& G,
                    memory_space space = memory_space (),
-                   const bool isValid = true) :
+                   const bool thisIsValid = true) :
         G_ (G),
         space_ (space),
-        valid_ (isValid)
+        valid_ (thisIsValid)
       {}
 
       /// \brief Type that users see, that's an argument to the
@@ -307,17 +307,17 @@ namespace Tpetra {
       /// \brief Declare at run time whether you actually want to
       ///   access the object.
       ///
-      /// \param isValid [in] If false, then the caller promises that
+      /// \param thisIsValid [in] If false, then the caller promises that
       ///   they won't actually access the object.
       ///
-      /// If isValid is false, implementations should not spend any
+      /// If thisIsValid is false, implementations should not spend any
       /// effort getting the master local object.  This may save time
       /// on allocating temporary space, copying from device to host,
       /// etc.  This implies that implementations must be able to
       /// construct "null" / empty master local objects.
       LocalAccess<GlobalObjectType, MemorySpace, am>
-      valid (const bool isValid) const {
-        return {this->G_, this->space_, isValid};
+      valid (const bool thisIsValid) const {
+        return {this->G_, this->space_, thisIsValid};
       }
 
       /// \brief Declare intent to access this object's local data in
