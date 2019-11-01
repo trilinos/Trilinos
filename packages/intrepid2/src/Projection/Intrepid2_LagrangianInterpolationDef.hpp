@@ -345,8 +345,7 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
         "method not implemented for this basis function");
   }
 
-  auto tagToOrdinal = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofOrdinal());
-  Kokkos::deep_copy(tagToOrdinal, basis->getAllDofOrdinal());
+  auto tagToOrdinal = basis->template getAllDofOrdinalDevice<SpT>();
 
   const ordinal_type dim = topo.getDimension();
 

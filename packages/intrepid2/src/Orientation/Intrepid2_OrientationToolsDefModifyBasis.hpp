@@ -288,11 +288,9 @@ namespace Intrepid2 {
 #endif
 
     if (basis->requireOrientation()) {
-      auto ordinalToTag = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofTags());
-      auto tagToOrdinal = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofOrdinal());
 
-      Kokkos::deep_copy(ordinalToTag, basis->getAllDofTags());
-      Kokkos::deep_copy(tagToOrdinal, basis->getAllDofOrdinal());
+      auto ordinalToTag = basis->template getAllDofTagsDevice<SpT>();
+      auto tagToOrdinal = basis->template getAllDofOrdinalDevice<SpT>();
 
       const ordinal_type
         numCells  = output.extent(0),

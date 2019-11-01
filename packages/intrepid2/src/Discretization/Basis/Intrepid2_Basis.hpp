@@ -211,6 +211,7 @@ namespace Intrepid2 {
         \li     ordinalToTag_[DofOrd][3] = total number of DoFs associated with the subcell
     */
     OrdinalTypeArray2DHost ordinalToTag_;
+    OrdinalTypeArray2D ordinalToTag_device;
 
     /** \brief  DoF tag to ordinal lookup table.
 
@@ -224,6 +225,7 @@ namespace Intrepid2 {
         \li     tagToOrdinal_[subcDim][subcOrd][subcDofOrd] = Degree-of-freedom ordinal
     */
     OrdinalTypeArray3DHost tagToOrdinal_;
+    OrdinalTypeArray3D tagToOrdinal_device;
 
     /** \brief  Fills <var>ordinalToTag_</var> and <var>tagToOrdinal_</var> by basis-specific tag data
 
@@ -248,7 +250,7 @@ namespace Intrepid2 {
                             const ordinal_type       posScOrd,
                             const ordinal_type       posDfOrd ) {
       // Create ordinalToTag
-      ordinalToTag = OrdinalTypeView2D("ordinalToTag", basisCard, tagSize);
+      ordinalToTag = OrdinalTypeView2D(Kokkos::view_alloc("ordinalToTag",Kokkos::WithoutInitializing), basisCard, tagSize);
 
       // Initialize with -1
       Kokkos::deep_copy( ordinalToTag, -1 );
@@ -277,8 +279,11 @@ namespace Intrepid2 {
           maxDfOrd = tags(i*tagSize + posDfOrd);
       ++maxDfOrd;
 
+      // Create ordinalToTag device copy
+      ordinalToTag_device = Kokkos::create_mirror_view_and_copy(ExecSpaceType(), ordinalToTag);
+
       // Create tagToOrdinal
-      tagToOrdinal = OrdinalTypeView3D("tagToOrdinal", maxScDim, maxScOrd, maxDfOrd);
+      tagToOrdinal = OrdinalTypeView3D(Kokkos::view_alloc("tagToOrdinal",Kokkos::WithoutInitializing), maxScDim, maxScOrd, maxDfOrd);
 
       // Initialize with -1
       Kokkos::deep_copy( tagToOrdinal, -1 );
@@ -286,6 +291,9 @@ namespace Intrepid2 {
       // Overwrite elements of the array corresponding to tags with local DoF Id's, leave all other = -1
       for (ordinal_type i=0;i<basisCard;++i)
         tagToOrdinal(tags(i*tagSize), tags(i*tagSize+1), tags(i*tagSize+2)) = i;
+
+      // Create tagToOrdinal device copy
+      tagToOrdinal_device = Kokkos::create_mirror_view_and_copy(ExecSpaceType(), tagToOrdinal);
     }
 
     // dof coords
@@ -668,6 +676,19 @@ namespace Intrepid2 {
       return tagToOrdinal_;
     }
 
+    template<typename SpT>
+    const typename std::enable_if< !std::is_same<SpT,ExecSpaceType>::value, Kokkos::View<ordinal_type***,typename ExecSpaceType::array_layout,SpT> >::type
+    getAllDofOrdinalDevice() const {
+      auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(SpT(),tagToOrdinal_);
+      return tagToOrdinal;
+    }
+
+    template<typename SpT>
+    const typename std::enable_if< std::is_same<SpT,ExecSpaceType>::value, OrdinalTypeArray3D >::type
+    getAllDofOrdinalDevice() const {
+      return tagToOrdinal_device;
+    }
+
 
     /** \brief  DoF ordinal to DoF tag lookup.
 
@@ -700,6 +721,19 @@ namespace Intrepid2 {
     const OrdinalTypeArray2DHost
     getAllDofTags() const {
       return ordinalToTag_;
+    }
+
+    template<typename SpT>
+    const typename std::enable_if< !std::is_same<SpT,ExecSpaceType>::value, const Kokkos::View<ordinal_type**,typename ExecSpaceType::array_layout,SpT> >::type
+    getAllDofTagsDevice() const {
+      auto ordinalToTag = Kokkos::create_mirror_view_and_copy(SpT(),ordinalToTag_);
+      return ordinalToTag;
+    }
+
+    template<typename SpT>
+    const typename std::enable_if< std::is_same<SpT,ExecSpaceType>::value, const OrdinalTypeArray2D >::type
+    getAllDofTagsDevice() const {
+      return ordinalToTag_device;
     }
 
   }; // class Basis
