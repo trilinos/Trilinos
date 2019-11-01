@@ -224,8 +224,8 @@ std::vector<std::vector<Scalar> > generate_fem1d_element_values() {
 }
 
 template<class Scalar, class Node>
-Kokkos::View<Scalar[2][2], Kokkos::LayoutLeft, typename Node::device_type > generate_fem1d_element_values_kokkos() {
-  Kokkos::View<Scalar[2][2], Kokkos::LayoutLeft, typename Node::device_type> mat ("fem1d_element_values");
+Kokkos::View<Scalar*[4], Kokkos::LayoutLeft, typename Node::device_type > generate_fem1d_element_values_kokkos() {
+  Kokkos::View<Scalar*[4], Kokkos::LayoutLeft, typename Node::device_type> mat ("fem1d_element_values");
 
   auto mat_h = Kokkos::create_mirror_view(mat);
   mat_h(0,0) =  1.0;
@@ -309,6 +309,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
   using FEMAT = typename Tpetra::FECrsMatrix<Scalar,LO,GO,Node>;
   using CMAT = typename Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
   using FEG = typename Tpetra::FECrsGraph<LO,GO,Node>;
+  using ImplScalarType = typename FEMAT::impl_scalar_type;
 
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
@@ -358,7 +359,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
       LO lid_j = localMap.getLocalElement(k_e2n(i, j));
       for(size_t k=0; k < extent; k++) {
         LO lid_k = localMap.getLocalElement(k_e2n(i, k));
-	localMat.sumIntoValues(lid_j, &lid_k, 1, &kokkosValues(j, k), true, true);
+	ImplScalarType converted(kokkosValues(j, k));
+	localMat.sumIntoValues(lid_j, &lid_k, 1, &converted, true, true);
       }
     }
   });
@@ -450,6 +452,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   using FEMAT = typename Tpetra::FECrsMatrix<Scalar,LO,GO,Node>;
   using CMAT = typename Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
   using FEG = typename Tpetra::FECrsGraph<LO,GO,Node>;
+  using ImplScalarType = typename FEMAT::impl_scalar_type;
 
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
@@ -498,7 +501,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
       LO lid_j = localMap.getLocalElement(k_e2n(i, j));
       for(size_t k=0; k<k_e2n.extent(1); k++) {
         LO lid_k = localMap.getLocalElement(k_e2n(i, k));
-	localMat.sumIntoValues(lid_j, &lid_k, 1, &kokkosValues(j, k));
+	ImplScalarType converted(kokkosValues(j, k));
+	localMat.sumIntoValues(lid_j, &lid_k, 1, &converted, true, true);
       }
     }
   });
