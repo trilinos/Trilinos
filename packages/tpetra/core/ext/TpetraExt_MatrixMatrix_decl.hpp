@@ -636,7 +636,7 @@ struct AddKernels
     row_ptrs_array& Crowptrs,
     col_inds_array& Ccolinds);
 
-  static Teuchos::RCP<const map_type> makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOrdinal maxCol, const global_col_inds_array& gids, col_inds_array& lids, const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+  static Teuchos::RCP<const map_type> makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOrdinal maxCol, const global_col_inds_array& gids, col_inds_array& lids, const local_map_type& localDomMap, const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 };
 
 }//end namespace MMdetails

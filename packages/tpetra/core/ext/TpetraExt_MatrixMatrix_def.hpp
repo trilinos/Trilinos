@@ -781,7 +781,7 @@ add (const Scalar& alpha,
     GO indexBase = std::min(Acolmap->getIndexBase(), Bcolmap->getIndexBase());
     GO minGID = std::min(Acolmap->getMinGlobalIndex(), Bcolmap->getMinGlobalIndex());
     GO maxGID = std::max(Acolmap->getMaxGlobalIndex(), Bcolmap->getMaxGlobalIndex());
-    CcolMap = AddKern::makeColMapAndConvertGids(indexBase, minGID, maxGID, globalColinds, colinds, comm);
+    CcolMap = AddKern::makeColMapAndConvertGids(indexBase, minGID, maxGID, globalColinds, colinds, Aprime->getDomainMap()->getLocalMap(), comm);
   }
   else
   {
@@ -3123,28 +3123,40 @@ namespace ColMapFunctors
     bitset_t present;
   };
 
-  template<typename GO, typename GView, typename const_bitset_t>
+  template<typename LO, typename GO, typename GView, typename const_bitset_t, typename LocalMapType>
   struct ListGIDs
   {
-    ListGIDs(GO minGID_, GView& gidList_, const_bitset_t& present_)
-      : minGID(minGID_), gidList(gidList_), present(present_)
+    ListGIDs(GO minGID_, GView& gidList_, const_bitset_t& present_, const LocalMapType& localDomainMap_)
+      : minGID(minGID_), doingRemotes(false), gidList(gidList_), present(present_), localDomainMap(localDomainMap_)
     {}
 
     KOKKOS_INLINE_FUNCTION void operator()(const GO i, GO& lcount, const bool finalPass) const
     {
-      if(finalPass && present.test(i))
+      bool isRemote = localDomainMap.getLocalElement(i + minGID) == ::Tpetra::Details::OrdinalTraits<LO>::invalid();
+      if(present.test(i) && doingRemotes == isRemote)
       {
-        gidList(lcount) = minGID + i;
-      }
-      if(present.test(i))
-      {
+        if(finalPass)
+        {
+          if(doingRemotes)
+          {
+            //remotes are inserted at the end
+            gidList(gidList.extent(0) - 1 - lcount) = minGID + i;
+          }
+          else
+          {
+            //locals are inserted at the beginning
+            gidList(lcount) = minGID + i;
+          }
+        }
         lcount++;
       }
     }
 
     GO minGID;
+    bool doingRemotes;
     GView gidList;
     const_bitset_t present;
+    const LocalMapType localDomainMap;
   };
 
   template<typename GO, typename GView, typename LView, typename LocalMapType>
@@ -3172,6 +3184,7 @@ Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > AddKernels<Scalar, L
 makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOrdinal maxCol,
                    const typename MMdetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_col_inds_array& gids,
                    typename MMdetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::col_inds_array& lids,
+                   const typename MMdetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_map_type& localDomMap,
                    const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
 {
   using Teuchos::RCP;
@@ -3187,7 +3200,13 @@ makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOr
   Kokkos::parallel_for(range_type(0, nentries), ColMapFunctors::GatherPresentEntries<GlobalOrdinal, GView, bitset_t>(minCol, gids, presentGIDs));
   const_bitset_t constPresentGIDs(presentGIDs);
   GView mapGIDs(Kokkos::ViewAllocateWithoutInitializing("Sum colmap GIDs"), constPresentGIDs.count());
-  Kokkos::parallel_scan(range_type(0, maxCol - minCol + 1), ColMapFunctors::ListGIDs<GlobalOrdinal, GView, const_bitset_t>(minCol, mapGIDs, constPresentGIDs));
+  //This functor builds a list of GIDs for the column map.
+  ColMapFunctors::ListGIDs<LocalOrdinal, GlobalOrdinal, GView, const_bitset_t, LocalMap> listGIDs(minCol, mapGIDs, constPresentGIDs, localDomMap);
+  //First, insert the locally owned GIDs (using domain map) at the beginning of mapGIDs
+  Kokkos::parallel_scan(range_type(0, maxCol - minCol + 1), listGIDs);
+  //Then insert the remote GIDs at the end of mapGIDs
+  listGIDs.doingRemotes = true;
+  Kokkos::parallel_scan(range_type(0, maxCol - minCol + 1), listGIDs);
   //Fence required because mapGIDs may be in CudaUVMSpace, and Map() may read from it on host
   execution_space().fence();
   //Construct the map

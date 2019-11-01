@@ -503,14 +503,6 @@ public:
       }
 
       RCP<Matrix> newAc;
-      /*
-      std::cout << ">>> Ac (addend) colmap :\n";
-      Ac->getColMap()->describe(fos, Teuchos::VERB_EXTREME);
-      std::cout << ">>> fixDiagMatrix (addend) colmap :\n";
-      fixDiagMatrix->getColMap()->describe(fos, Teuchos::VERB_EXTREME);
-      */
-      //Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("addend1.mtx", *Ac, false);
-      //Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("addend2.mtx", *fixDiagMatrix, false);
 
       Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, false, 1.0, newAc, fos);
       if (Ac->IsView("stridedMaps"))
@@ -525,14 +517,6 @@ public:
       {
         Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete2"));
         Ac->fillComplete(p);
-        /*
-        std::cout << ">>> sum colmap:\n";
-        Ac->getColMap()->describe(fos, Teuchos::VERB_EXTREME);
-        */
-        char dumpName[64];
-        sprintf(dumpName, "Sum-%p.mtx", Ac.get());
-        Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(dumpName, *Ac, false);
-        //Ac->getCrsGraph()->describe(fos, Teuchos::VERB_EXTREME);
       }
     } // end repair
 
