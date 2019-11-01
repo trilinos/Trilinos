@@ -56,6 +56,7 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
+#include "Tpetra_Details_residual.hpp"
 #include <cmath>
 #include <iostream>
 
@@ -983,11 +984,10 @@ Chebyshev<ScalarType, MV>::
 computeResidual (MV& R, const MV& B, const op_type& A, const MV& X,
                  const Teuchos::ETransp mode)
 {
-  Tpetra::deep_copy(R, B);
-  A.apply (X, R, mode, -STS::one(), STS::one());
+  Tpetra::Details::residual(A,X,B,R);
 }
 
-template<class ScalarType, class MV>
+template <class ScalarType, class MV>
 void
 Chebyshev<ScalarType, MV>::
 solve (MV& Z, const V& D_inv, const MV& R) {

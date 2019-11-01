@@ -349,6 +349,17 @@ namespace PHX {
       return m_view(indices...);
     }
 
+    template<typename... index_pack>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename PHX::MDFieldReturnType<array_type>::return_type
+    access(const index_pack&... indices) const
+    {
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+      TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
+#endif
+      return m_view.access(indices...);
+    }
+
     template<typename iType0>
     KOKKOS_FORCEINLINE_FUNCTION
     typename PHX::MDFieldReturnType<array_type>::return_type

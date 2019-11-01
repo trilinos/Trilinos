@@ -9,7 +9,6 @@
 #Matrix
 #MatrixUtils
 #MatrixFactory
-#MultiVector
 #MultiVectorFactory
 #Operator
 #ReorderedBlockedCrsMatrix

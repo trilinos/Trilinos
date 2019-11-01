@@ -358,11 +358,9 @@ namespace MueLu {
     static RCP<MultiVector> Residual(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const MultiVector& X, const MultiVector& RHS) {
       TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
         const size_t numVecs = X.getNumVectors();
-        Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
         // TODO Op.getRangeMap should return a BlockedMap if it is a BlockedCrsOperator
         RCP<MultiVector> RES = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(RHS.getMap(), numVecs, false); // no need to initialize to zero
-        Op.apply(X, *RES, Teuchos::NO_TRANS, one, zero);
-        RES->update(one, RHS, negone);
+        Op.residual(X,RHS,*RES);
         return RES;
     }
     
@@ -370,10 +368,7 @@ namespace MueLu {
     static void Residual(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const MultiVector& X, const MultiVector& RHS, MultiVector & Resid) {
       TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides");
       TEUCHOS_TEST_FOR_EXCEPTION(Resid.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of residual vectors != number of right-hand sides");
-      Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
-      // TODO Op.getRangeMap should return a BlockedMap if it is a BlockedCrsOperator
-      Op.apply(X, Resid, Teuchos::NO_TRANS, one, zero);
-      Resid.update(one, RHS, negone);
+      Op.residual(X,RHS,Resid);
     }
 
 

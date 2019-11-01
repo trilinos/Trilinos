@@ -52,6 +52,7 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_transform_MultiVector.hpp"
 #include "Tpetra_withLocalAccess_MultiVector.hpp"
+#include "Tpetra_Details_residual.hpp"
 #include <cstdlib>
 #include <memory>
 #include <sstream>
@@ -1385,8 +1386,7 @@ ApplyInverseRichardson (const Tpetra::MultiVector<scalar_type,local_ordinal_type
 
   for (int j = startSweep; j < NumSweeps_; ++j) {
     // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
-    applyMat (Y, *cachedMV_);
-    cachedMV_->update (STS::one (), X, -STS::one ());
+    Tpetra::Details::residual(*A_,Y,X,*cachedMV_);
     Y.update(DampingFactor_,*cachedMV_,STS::one());
   }
 
@@ -1456,8 +1456,7 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
 
   for (int j = startSweep; j < NumSweeps_; ++j) {
     // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
-    applyMat (Y, *cachedMV_);
-    cachedMV_->update (STS::one (), X, -STS::one ());
+    Tpetra::Details::residual(*A_,Y,X,*cachedMV_);
     Y.elementWiseMultiply (DampingFactor_, *Diagonal_, *cachedMV_, STS::one ());
   }
 

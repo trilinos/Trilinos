@@ -468,6 +468,13 @@ public:
 
   RCP<CrsMatrix> getCrsMatrix() const;
 
+
+  //! Compute a residual R = B - (*this) * X
+  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
+  
+
   //@}
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
   template<class Node2>

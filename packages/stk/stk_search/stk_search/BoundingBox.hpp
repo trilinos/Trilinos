@@ -252,6 +252,11 @@ inline bool intersects(Box<T1> const& a, Box<T2> const& b)
 }
 
 template <typename T, typename U>
+inline void scale_by(Point<T> &p, U const& mult_fact, U const& add_fact = 0)
+{
+}
+
+template <typename T, typename U>
 inline void scale_by(Sphere<T> &s, U const& mult_fact, U const& add_fact = 0)
 {
   s.set_radius(s.radius()*mult_fact + add_fact);

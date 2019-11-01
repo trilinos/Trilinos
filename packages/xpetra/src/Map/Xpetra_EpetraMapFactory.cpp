@@ -47,7 +47,9 @@
 
 #include "Xpetra_BlockedMap.hpp"
 #include "Xpetra_EpetraMap.hpp"
+#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMap.hpp"
+#endif
 
 namespace Xpetra {
 
