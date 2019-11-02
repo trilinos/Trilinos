@@ -211,9 +211,12 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
   int team_size = -1;
   int vector_length = -1;
   int64_t rows_per_thread = -1;
+  
+  int64_t numLocalRows = A_lcl.numRows ();
+  int64_t myNnz = A_lcl.nnz();
 
-  const int64_t rows_per_team = 
-    residual_launch_parameters<execution_space>(A_lcl.numRows (), A_lcl.nnz (), rows_per_thread, team_size, vector_length);
+  int64_t rows_per_team = 
+    residual_launch_parameters<execution_space>(numLocalRows, myNnz, rows_per_thread, team_size, vector_length);
   int64_t worksets = (B_lcl.extent (0) + rows_per_team - 1) / rows_per_team;
 
   using policy_type = typename Kokkos::TeamPolicy<execution_space>;
@@ -236,8 +239,6 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
     // Vector case
     // Kernel interior shamelessly horked from Ifpack2_Details_ScaledDampedResidual_def.hpp
     Kokkos::parallel_for("residual-vector",policy,KOKKOS_LAMBDA(const team_member& dev) {
-        // NOTE: It looks like I should be able to get this data up above, but if I try to
-        // we get internal compiler errors.  Who knew that gcc tried to "gimplify"?
         Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
             const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
             
