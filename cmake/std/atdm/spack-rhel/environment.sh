@@ -106,7 +106,7 @@ else
   # instead run with half that many to be safe and avoid time-outs.
 fi
 
-if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]; then
+if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.1" ]; then
 
   module load spack-gcc/7.2.0
   export OMPI_CXX=`which g++`
