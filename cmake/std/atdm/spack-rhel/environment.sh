@@ -76,7 +76,7 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 
 module purge
 module load spack-git/2.20.1
-module load spack-cmake/3.15.4
+module load spack-cmake/3.14.5
 module load spack-ninja-fortran/1.9.0.2.g99df1
 module load spack-python/2.7.15  # For EMPIRE tests
 
