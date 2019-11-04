@@ -62,6 +62,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include <stdexcept>
 #include <cstddef>
@@ -149,10 +150,25 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         else if (write_interval == -1)
           observeFinalSolution = true;
       }
+
+      // Call observer method for each parameter if optimization variables have changed
+      if (optimizationParams.isParameter("Optimization Variables Changed")) {
+        if (optimizationParams.template get<bool>("Optimization Variables Changed")) {
+          if (analysisParams.isSublist("ROL")) {
+            auto rolParams = analysisParams.sublist("ROL");
+            int num_parameters = rolParams.get<int>("Number of Parameters", 1);
+            for(int i=0; i<num_parameters; ++i) {
+              std::ostringstream ss; ss << "Parameter Vector Index " << i;
+              const int p_ind = rolParams.get<int>(ss.str(), i);
+              const auto paramNames = *this->getModel().get_p_names(p_ind);
+              this->observer->parameterChanged(paramNames[0]);
+            }
+            optimizationParams.template set<bool>("Optimization Variables Changed", false);
+          }
+        }
+      }
     }
   }
-
-
 
   // Forward all parameters to underlying model
   Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = this->getModel().createInArgs();
@@ -165,6 +181,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   const Thyra::SolveCriteria<Scalar> solve_criteria;
 
   {
+    const auto timer = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Piro::NOXSolver::evalModelImpl::solve")));
     solver->setBasePoint(modelInArgs);
 
     const RCP<const Thyra::VectorBase<Scalar> > modelNominalState =
@@ -425,7 +442,10 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   }
 
   // (1) Calculate g, df/dp, dg/dp, dg/dx
-  this->getModel().evalModel(modelInArgs, modelOutArgs);
+  {
+    const auto timer = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Piro::NOXSolver::evalModelImpl::calc g, df/dp, dg/dp, dg/dx")));
+    this->getModel().evalModel(modelInArgs, modelOutArgs);
+  }
 
 
   // Ensure Jacobian is up-to-date
@@ -453,6 +473,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         lows_factory->createOp();
 
     {
+      const auto timer = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Piro::NOXSolver::evalModelImpl::evalModel")));
       in_args.set_x(finalSolution);
       out_args.set_W_op(lop);
       model->evalModel(in_args, out_args);
@@ -507,18 +528,34 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
           // (2) Calculate xbar multivector from -(J^{-T}*dg/dx)
 
           auto xbar = createMembers(dgdx->range(), num_cols);
-          xbar->assign(0);
-          Thyra::solve(
-              *jacobian,
-              Thyra::NOTRANS,
-              *dgdx,
-              xbar.ptr(),
-              Teuchos::ptr(&solve_criteria));
+          {
+            const auto timer = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Piro::NOXSolver::evalModelImpl::calc xbar")));
+            xbar->assign(0);
+            Thyra::solve(
+                *jacobian,
+                Thyra::NOTRANS,
+                *dgdx,
+                xbar.ptr(),
+                Teuchos::ptr(&solve_criteria));
 
-          Thyra::scale(-1.0, xbar.ptr());
+            Thyra::scale(-1.0, xbar.ptr());
+          }
 
           // (3) Calculate dg/dp^T = df/dp^T*xbar + dg/dp^T
           for (int i=0; i<num_p; i++) {
+            std::string paramName = "Parameter " + std::to_string(i);
+            if(appParams->isSublist("Analysis")){
+              auto analysisParams = appParams->sublist("Analysis");
+              if (analysisParams.isSublist("ROL")) {
+                std::ostringstream ss; ss << "Parameter Vector Index " << i;
+                auto rolParams = analysisParams.sublist("ROL");
+                const int p_ind = rolParams.get<int>(ss.str(), i);
+                const auto paramNames = *this->getModel().get_p_names(p_ind);
+                paramName = paramNames[0];
+              }
+            }
+            std::ostringstream ss; ss << "Piro::NOXSolver::evalModelImpl::calc dg/dp^T(" << paramName << ")";
+            const auto timer = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(ss.str())));
             if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, i).none()) {
               auto dgdp_out = outArgs.get_DgDp(j,i).getMultiVector();
               if (dgdp_out != Teuchos::null) {
