@@ -449,8 +449,8 @@ def createPackageEnables(arguments):
                         SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
                     ENDMACRO()
 
-                    PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' ON)
-                    """))
+                    PR_ENABLE_BOOL(Trilinos_ENABLE_{0} ON)
+                    """.format(enable_map[arguments.job_base_name]) ))
         print('Enabled packages:')
         cmake_rstring = subprocess.check_output(['cmake',
                                                  '-P',
