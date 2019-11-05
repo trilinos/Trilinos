@@ -415,7 +415,7 @@ namespace MueLu {
     }
 
     if (dump_matrices_)
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_clean.mat"), *D0_Matrix_);
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_clean.m"), *D0_Matrix_);
 
     // build special prolongator for (1,1)-block
     if(P11_.is_null()) {
@@ -1034,45 +1034,49 @@ namespace MueLu {
 
     if (dump_matrices_) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): dumping data" << std::endl;
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.mat"), *SM_Matrix_);
-      if(!Ms_Matrix_.is_null())    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("Ms.mat"), *Ms_Matrix_);
-      if(!M1_Matrix_.is_null())    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M1.mat"), *M1_Matrix_);
-      if(!M0inv_Matrix_.is_null()) Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M0inv.mat"), *M0inv_Matrix_);
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.m"), *SM_Matrix_);
+      if(!Ms_Matrix_.is_null())    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("Ms.m"), *Ms_Matrix_);
+      if(!M1_Matrix_.is_null())    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M1.m"), *M1_Matrix_);
+      if(!M0inv_Matrix_.is_null()) Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M0inv.m"), *M0inv_Matrix_);
 #ifndef HAVE_MUELU_KOKKOS_REFACTOR
-      std::ofstream outBCrows("BCrows.mat");
+      std::ofstream outBCrows("BCrows.m");
       std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<LO>(outBCrows, "\n"));
-      std::ofstream outBCcols("BCcols.mat");
+      std::ofstream outBCcols("BCcols.m");
       std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<LO>(outBCcols, "\n"));
 #else
       if (useKokkos_) {
-        std::ofstream outBCrows("BCrows.mat");
+        std::ofstream outBCrows("BCrows.m");
         auto BCrows = Kokkos::create_mirror_view (BCrowsKokkos_);
         Kokkos::deep_copy(BCrows , BCrowsKokkos_);
         for (size_t i = 0; i < BCrows.size(); i++)
           outBCrows << BCrows[i] << "\n";
 
-        std::ofstream outBCcols("BCcols.mat");
+        std::ofstream outBCcols("BCcols.m");
         auto BCcols = Kokkos::create_mirror_view (BCcolsKokkos_);
         Kokkos::deep_copy(BCcols , BCcolsKokkos_);
         for (size_t i = 0; i < BCcols.size(); i++)
           outBCcols << BCcols[i] << "\n";
       } else {
-        std::ofstream outBCrows("BCrows.mat");
+        std::ofstream outBCrows("BCrows.m");
         std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<LO>(outBCrows, "\n"));
-        std::ofstream outBCcols("BCcols.mat");
+        std::ofstream outBCcols("BCcols.m");
         std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<LO>(outBCcols, "\n"));
       }
 #endif
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("nullspace.mat"), *Nullspace_);
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("nullspace.m"), *Nullspace_);
       if (Coords_ != null)
-        Xpetra::IO<realType, LO, GlobalOrdinal, Node>::Write(std::string("coords.mat"), *Coords_);
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_nuked.mat"), *D0_Matrix_);
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.mat"), *A_nodal_Matrix_);
-      Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P11.mat"), *P11_);
+        Xpetra::IO<realType, LO, GlobalOrdinal, Node>::Write(std::string("coords.m"), *Coords_);
+      if (CoordsH_ != null)
+        Xpetra::IO<realType, LO, GlobalOrdinal, Node>::Write(std::string("coordsH.m"), *CoordsH_);
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_nuked.m"), *D0_Matrix_);
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.m"), *A_nodal_Matrix_);
+      Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P11.m"), *P11_);
+      if (!R11_.is_null())
+        Xpetra::IO<SC, LO, GO, NO>::Write(std::string("R11.m"), *R11_);
       if (!AH_.is_null())
-        Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AH.mat"), *AH_);
+        Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AH.m"), *AH_);
       if (!A22_.is_null())
-        Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A22.mat"), *A22_);
+        Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A22.m"), *A22_);
     }
 
     if (parameterList_.isSublist("matvec params"))
@@ -1257,7 +1261,7 @@ namespace MueLu {
         aggExport->Build(fineLevel, coarseLevel);
     }
     if (dump_matrices_)
-      Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal.mat"), *P_nodal);
+      Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal.m"), *P_nodal);
 
     RCP<CrsMatrix> D0Crs = rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix();
 
@@ -1274,7 +1278,7 @@ namespace MueLu {
                                  rcp_dynamic_cast<CrsMatrixWrap>(P_nodal)->getCrsMatrix()->getRangeMap());
       P_nodal_imported = P_nodal_temp->getCrsMatrix();
       if (dump_matrices_)
-        Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal_imported.mat"), *P_nodal_temp);
+        Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal_imported.m"), *P_nodal_temp);
     } else
       P_nodal_imported = rcp_dynamic_cast<CrsMatrixWrap>(P_nodal)->getCrsMatrix();
 
