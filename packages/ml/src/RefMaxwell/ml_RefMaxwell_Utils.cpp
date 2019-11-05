@@ -235,6 +235,123 @@ int RefMaxwell_SetupCoordinates(ML_Operator* A, Teuchos::ParameterList &List_, d
  }
 
 // ================================================ ====== ==== ==== == =
+int RefMaxwell_SetupMaterial(ML_Operator* A, Teuchos::ParameterList &List_, double *&material)
+// Modified From int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
+{
+  int NumPDEEqns_ =1;  // Always use 1 because A is a nodal matrix.
+
+  // For node coordinates
+  double * in_coord = List_.get("material coordinates", (double *)0);
+
+  if (in_coord != 0)  {
+      ML_Operator* AAA = A;
+
+      int n = AAA->invec_leng, Nghost = 0;
+
+      if (AAA->getrow->pre_comm)
+        {
+          if (AAA->getrow->pre_comm->total_rcv_length <= 0)
+            ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
+          Nghost = AAA->getrow->pre_comm->total_rcv_length;
+        }
+
+      std::vector<double> tmp(Nghost + n);
+      for (int i = 0 ; i < Nghost + n ; ++i)
+        tmp[i] = 0.0;
+
+      n /= NumPDEEqns_;
+      Nghost /= NumPDEEqns_;
+
+      if (in_coord)
+        {
+          double* x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+
+          for (int i = 0 ; i < n ; ++i)
+            tmp[i * NumPDEEqns_] = in_coord[i];
+
+          ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
+                           AAA->comm, ML_OVERWRITE,NULL);
+
+          for (int i = 0 ; i < n + Nghost ; ++i)
+            x_coord[i] = tmp[i * NumPDEEqns_];
+
+          material = x_coord;
+        }
+
+
+    }
+
+  return(0);
+ }
+
+// ================================================ ====== ==== ==== == =
+// Modified from ml_agg_genP.c
+static void ML_Init_Material(ML_Operator* A, Teuchos::ParameterList &List) {
+  int i, j, n, count, num_PDEs, BlockRow, BlockCol;
+  double threshold;
+  int* columns;
+  double* values;
+  int allocated, entries = 0;
+  int** filter;
+  //  int Nghost;
+
+
+  // Boundary exchange the material vector
+  double *material=0;
+  RefMaxwell_SetupMaterial(A,List,material);
+  TEUCHOS_TEST_FOR_EXCEPTION(material == 0, std::logic_error,"ML_Init_Material: material vector not found");
+
+  num_PDEs = A->num_PDEs;
+  threshold = A->aux_data->threshold;
+
+  ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
+  n = A->invec_leng;
+  //  Nghost = ML_CommInfoOP_Compute_TotalRcvLength(A->getrow->pre_comm);
+
+  filter = (int**) ML_allocate(sizeof(int*) * n);
+
+  allocated = 128;
+  columns = (int *)    ML_allocate(allocated * sizeof(int));
+  values  = (double *) ML_allocate(allocated * sizeof(double));
+
+
+  for (i = 0 ; i < n ; ++i) {
+    BlockRow = i;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+    count = 0;
+    for (j = 0 ; j < entries ; ++j) {
+      BlockCol = columns[j];
+      if (  (i != columns[j]) &&
+            (std::abs(log10(material[BlockRow]) - log10(material[BlockCol])) > threshold) ) {
+        columns[count++] = columns[j];
+      }
+    }
+    
+    /* insert the rows */
+    filter[BlockRow] = (int*) ML_allocate(sizeof(int) * (count + 1));
+    filter[BlockRow][0] = count;
+
+    for (j = 0 ; j < count ; ++j)
+      filter[BlockRow][j + 1] = columns[j];
+  }
+
+  ML_free(columns);
+  ML_free(values);
+
+  ML_Operator_UnAmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  A->aux_data->aux_func_ptr  = A->getrow->func_ptr;
+  A->getrow->func_ptr = ML_Aux_Getrow;
+  A->aux_data->filter = filter;
+  A->aux_data->filter_size = n;
+
+  // Cleanup
+  ML_free(material);
+
+}
+
+// ================================================ ====== ==== ==== == =
 // Copied from ml_agg_genP.c
 static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
   int i, j, n, count, num_PDEs, BlockRow, BlockCol;
@@ -251,7 +368,7 @@ static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
   int     Nghost;
 
 
-  // Boundary exchange the coords
+  // Boundary exchange the material vector
   double *x_coord=0, *y_coord=0, *z_coord=0;
   RefMaxwell_SetupCoordinates(A,List,x_coord,y_coord,z_coord);
   int dim=(x_coord!=0) + (y_coord!=0) + (z_coord!=0);
@@ -433,6 +550,12 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   double AuxThreshold = List.get("aggregation: aux: threshold",0.0);
   int  MaxAuxLevels   = List.get("aggregation: aux: max levels",10);
 
+  bool UseMaterial    = List.get("aggregation: material: enable",false);
+  double MatThreshold = List.get("aggregation: material: threshold",0.0);
+  int  MaxMatLevels   = List.get("aggregation: material: max levels",10);
+  // FIXME:  We need to allow this later
+  TEUCHOS_TEST_FOR_EXCEPTION(UseAux && UseMaterial, std::logic_error,"RefMaxwell_Aggregate_Nodes: Cannot use material and aux aggregation at the same time");
+
 
   ML_Aggregate_Create(&MLAggr);
   ML_Aggregate_Set_MaxLevels(MLAggr, 2);
@@ -460,7 +583,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
   }
 
-  /* Setup Aux Data */
+  /* Setup Aux Data (aux) */
   if(UseAux) {
     A_ML->aux_data->enable=1;
     A_ML->aux_data->threshold=AuxThreshold;
@@ -469,6 +592,18 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     if(verbose && !A.Comm().MyPID()) {
       printf("%s Using auxiliary matrix\n",PrintMsg.c_str());
       printf("%s aux threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
+    }
+  }
+
+  /* Setup Aux Data (material) */
+  if(UseMaterial) {
+    A_ML->aux_data->enable=1;
+    A_ML->aux_data->threshold=MatThreshold;
+    A_ML->aux_data->max_level=MaxMatLevels;
+    ML_Init_Material(A_ML,List);
+    if(verbose && !A.Comm().MyPID()) {
+      printf("%s Using materrial matrix\n",PrintMsg.c_str());
+      printf("%s material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
     }
   }
 
@@ -491,7 +626,8 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
 
   /* Cleanup */
   ML_qr_fix_Destroy();
-  if(UseAux) ML_Finalize_Aux(A_ML);
+  if(UseAux)      ML_Finalize_Aux(A_ML);
+  if(UseMaterial) ML_Finalize_Aux(A_ML);
   ML_Operator_Destroy(&A_ML);
 
   return 0;

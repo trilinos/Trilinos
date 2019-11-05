@@ -528,9 +528,13 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   setStringToIntegralParameter<int>("refmaxwell: mode","additive","Mode for RefMaxwell",tuple<std::string>("additive","212","121","none"),PL);
   PL->set("edge matrix free: coarse",dummy);
   List11.set("aggregation: aux: user matrix",(Epetra_CrsMatrix*)0);
+  List11.set("aggregation: material: enable",false);
+  List11.set("aggregation: material: threshold",0.0);
+  List11.set("aggregation: material: max levels",10);
+  List11.set("material coordinates",(double*)0);
   PL->set("refmaxwell: 11list",List11);
   PL->set("refmaxwell: 22list",dummy);
-
+  
 
   // HAQ - clobber the smoother list to avoid validation.  MUST FIX LATER
   PL->set("smoother: type","IFPACK");

@@ -979,6 +979,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    }
 
    // CMS: Debug
+#if 0
    printf("*** Pre-compressed ***\n");
    for(int i=0; i<Nrows; i++) {
      printf("row %d: ",i);
@@ -986,6 +987,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
        printf("%d(%4.1f) ",new_ja[j],new_val[j]);
      printf("\n");
    }
+#endif
 
 #ifdef MB_MODIF_QR
   /* set the number of nodes with dead dofs on current coarse grid */
@@ -1030,6 +1032,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       new_ia[i+1] = index;
    }
 
+#if 0
    printf("*** Post-compressed ***\n");
    for(int i=0; i<Nrows; i++) {
      printf("row %d: ",i);
@@ -1037,6 +1040,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
        printf("%d(%4.1f) ",new_ja[j],new_val[j]);
      printf("\n");
    }
+#endif
 
    ML_memory_alloc((void**) &csr_data,sizeof(struct ML_CSR_MSRdata),"AVP");
 
