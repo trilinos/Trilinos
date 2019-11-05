@@ -78,6 +78,9 @@ namespace Tpetra {
   namespace Details {
     namespace Impl {
 
+      struct GlobalToLocal_PackedTag {};
+      struct GlobalToLocal_UnpackedTag {};
+
       template<class LO, class GO, class DT, class OffsetType, class NumEntType>
       class ConvertColumnIndicesFromGlobalToLocal {
       public:
@@ -93,8 +96,18 @@ namespace Tpetra {
           numRowEnt_ (numRowEnt)
         {}
 
+        ConvertColumnIndicesFromGlobalToLocal (const ::Kokkos::View<LO*, DT>& lclColInds,
+                                               const ::Kokkos::View<const GO*, DT>& gblColInds,
+                                               const ::Kokkos::View<const OffsetType*, DT>& ptr,
+                                               const ::Tpetra::Details::LocalMap<LO, GO, DT>& lclColMap) :
+          lclColInds_ (lclColInds),
+          gblColInds_ (gblColInds),
+          ptr_ (ptr),
+          lclColMap_ (lclColMap)
+        {}
+
         KOKKOS_FUNCTION void
-        operator () (const LO& lclRow, OffsetType& curNumBad) const
+        operator () (const GlobalToLocal_UnpackedTag, const LO& lclRow, OffsetType& curNumBad) const
         {
           const OffsetType offset = ptr_(lclRow);
           // NOTE (mfh 26 Jun 2016) It's always legal to cast the number
@@ -111,6 +124,20 @@ namespace Tpetra {
           }
         }
 
+        KOKKOS_FUNCTION void
+        operator () (const GlobalToLocal_PackedTag, const LO& lclRow, OffsetType& curNumBad) const
+        {
+          for (OffsetType j = ptr_(lclRow); j < ptr_(lclRow + 1); ++j) {
+            const GO gid = gblColInds_(j);
+            const LO lid = lclColMap_.getLocalElement (gid);
+            lclColInds_(j) = lid;
+            if (lid == ::Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+              ++curNumBad;
+            }
+          }
+        }
+
+        //Version for unpacked storage (numRowEnt contains actual entries per row)
         static OffsetType
         run (const ::Kokkos::View<LO*, DT>& lclColInds,
              const ::Kokkos::View<const GO*, DT>& gblColInds,
@@ -118,7 +145,7 @@ namespace Tpetra {
              const ::Tpetra::Details::LocalMap<LO, GO, DT>& lclColMap,
              const ::Kokkos::View<const NumEntType*, DT>& numRowEnt)
         {
-          typedef ::Kokkos::RangePolicy<typename DT::execution_space, LO> range_type;
+          typedef ::Kokkos::RangePolicy<typename DT::execution_space, LO, GlobalToLocal_UnpackedTag> range_type;
           typedef ConvertColumnIndicesFromGlobalToLocal<LO, GO, DT, OffsetType, NumEntType> functor_type;
 
           const LO lclNumRows = ptr.extent (0) == 0 ?
@@ -128,6 +155,26 @@ namespace Tpetra {
           ::Kokkos::parallel_reduce (range_type (0, lclNumRows),
                                      functor_type (lclColInds, gblColInds, ptr,
                                                    lclColMap, numRowEnt),
+                                     numBad);
+          return numBad;
+        }
+
+        //Version for packed storage: ptr(i + 1) - ptr(i) is exact num entries in row i.
+        static OffsetType
+        run (const ::Kokkos::View<LO*, DT>& lclColInds,
+             const ::Kokkos::View<const GO*, DT>& gblColInds,
+             const ::Kokkos::View<const OffsetType*, DT>& ptr,
+             const ::Tpetra::Details::LocalMap<LO, GO, DT>& lclColMap)
+        {
+          typedef ::Kokkos::RangePolicy<typename DT::execution_space, LO, GlobalToLocal_PackedTag> range_type;
+          typedef ConvertColumnIndicesFromGlobalToLocal<LO, GO, DT, OffsetType, NumEntType> functor_type;
+
+          const LO lclNumRows = ptr.extent (0) == 0 ?
+            static_cast<LO> (0) : static_cast<LO> (ptr.extent (0) - 1);
+          OffsetType numBad = 0;
+          // Count of "bad" column indices is a reduction over rows.
+          ::Kokkos::parallel_reduce (range_type (0, lclNumRows),
+                                     functor_type (lclColInds, gblColInds, ptr, lclColMap),
                                      numBad);
           return numBad;
         }
@@ -143,7 +190,34 @@ namespace Tpetra {
     } // namespace Impl
 
     /// \brief Convert a (StaticProfile) CrsGraph's global column
-    ///   indices into local column indices.
+    ///   indices into local column indices. This version is for packed 1D storage,
+    ///   meaning that ptr encodes the number of entries in each row as a prefix sum.
+    ///
+    /// \param lclColInds [out] On output: The graph's local column
+    ///   indices.  This may alias gblColInds, if LO == GO.
+    /// \param gblColInds [in] On input: The graph's global column
+    ///   indices.  This may alias lclColInds, if LO == GO.
+    /// \param ptr [in] The graph's row offsets.
+    /// \param lclColMap [in] "Local" (threaded-kernel-worthy) version
+    ///   of the column Map.
+    ///
+    /// \return the number of "bad" global column indices (that don't
+    ///   live in the column Map on the calling process).
+    template<class LO, class GO, class DT, class OffsetType, class NumEntType>
+    OffsetType
+    convertColumnIndicesFromGlobalToLocal (const Kokkos::View<LO*, DT>& lclColInds,
+                                           const Kokkos::View<const GO*, DT>& gblColInds,
+                                           const Kokkos::View<const OffsetType*, DT>& ptr,
+                                           const LocalMap<LO, GO, DT>& lclColMap)
+    {
+      using Impl::ConvertColumnIndicesFromGlobalToLocal;
+      typedef ConvertColumnIndicesFromGlobalToLocal<LO, GO, DT, OffsetType, NumEntType> impl_type;
+      return impl_type::run (lclColInds, gblColInds, ptr, lclColMap);
+    }
+
+    /// \brief Convert a (StaticProfile) CrsGraph's global column
+    ///   indices into local column indices. This version is for unpacked 1D storage,
+    ///   meaning numRowEnt is required.
     ///
     /// \param lclColInds [out] On output: The graph's local column
     ///   indices.  This may alias gblColInds, if LO == GO.
@@ -3508,6 +3582,54 @@ namespace Tpetra {
     checkInternalState ();
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  setAllGlobalIndices (const typename local_graph_type::row_map_type& rowPointers,
+                       const Kokkos::View<global_ordinal_type*, execution_space>& columnIndices)
+  {
+    const char tfecfFuncName[] = "setAllGlobalIndices: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isLocallyIndexed(), std::runtime_error,
+      "The graph must not be locallyIndexed() in order to call this method (a 'new' graph is OK)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (rowPointers.size ()) != this->getNodeNumRows () + 1,
+      std::runtime_error, "rowPointers.size() = " << rowPointers.size () <<
+      " != this->getNodeNumRows()+1 = " << (this->getNodeNumRows () + 1) <<
+      ".");
+
+    // FIXME (mfh 07 Aug 2014) We need to relax this restriction,
+    // since the future model will be allocation at construction, not
+    // lazy allocation on first insert.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      ((this->k_lclInds1D_.extent (0) != 0 || this->k_gblInds1D_.extent (0) != 0),
+       std::runtime_error, "You may not call this method if 1-D data "
+       "structures are already allocated.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->lclInds2D_ != Teuchos::null ||
+       this->gblInds2D_ != Teuchos::null,
+       std::runtime_error, "You may not call this method if 2-D data "
+       "structures are already allocated.");
+
+    indicesAreAllocated_ = true;
+    indicesAreLocal_     = false;
+    indicesAreGlobal_    = true;
+    pftype_              = StaticProfile; // if the profile wasn't static before, it sure is now.
+    k_gblInds1D_         = columnIndices;
+    k_rowPtrs_           = rowPointers;
+    // Storage MUST be packed, since the interface doesn't give any
+    // way to indicate any extra space at the end of each row.
+    storageStatus_       = ::Tpetra::Details::STORAGE_1D_PACKED;
+
+    // These normally get cleared out at the end of allocateIndices.
+    // It makes sense to clear them out here, because at the end of
+    // this method, the graph is allocated on the calling process.
+    numAllocForAllRows_ = 0;
+    k_numAllocPerRow_ = decltype (k_numAllocPerRow_) ();
+
+    checkInternalState ();
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -5104,22 +5226,33 @@ namespace Tpetra {
         }
 
         auto lclColMap = colMap.getLocalMap ();
-        // This is a "device mirror" of the host View h_numRowEnt.
-        //
-        // NOTE (mfh 27 Sep 2016) Currently, the right way to get a
-        // Device instance is to use its default constructor.  See the
-        // following Kokkos issue:
-        //
-        // https://github.com/kokkos/kokkos/issues/442
-        auto k_numRowEnt = Kokkos::create_mirror_view (device_type (), h_numRowEnt);
-
         using ::Tpetra::Details::convertColumnIndicesFromGlobalToLocal;
-        lclNumErrs =
-          convertColumnIndicesFromGlobalToLocal<LO, GO, DT, offset_type, num_ent_type> (k_lclInds1D_,
-                                                                                        k_gblInds1D_,
-                                                                                        k_rowPtrs_,
-                                                                                        lclColMap,
-                                                                                        k_numRowEnt);
+        if(storageStatus_ == Tpetra::Details::STORAGE_1D_UNPACKED)
+        {
+          // This is a "device mirror" of the host View h_numRowEnt.
+          //
+          // NOTE (mfh 27 Sep 2016) Currently, the right way to get a
+          // Device instance is to use its default constructor.  See the
+          // following Kokkos issue:
+          //
+          // https://github.com/kokkos/kokkos/issues/442
+
+          auto k_numRowEnt = Kokkos::create_mirror_view (device_type (), h_numRowEnt);
+          lclNumErrs =
+            convertColumnIndicesFromGlobalToLocal<LO, GO, DT, offset_type, num_ent_type> (k_lclInds1D_,
+                                                                                          k_gblInds1D_,
+                                                                                          k_rowPtrs_,
+                                                                                          lclColMap,
+                                                                                          k_numRowEnt);
+        }
+        else if(storageStatus_ == Tpetra::Details::STORAGE_1D_PACKED)
+        {
+          lclNumErrs =
+            convertColumnIndicesFromGlobalToLocal<LO, GO, DT, offset_type, num_ent_type> (k_lclInds1D_,
+                k_gblInds1D_,
+                k_rowPtrs_,
+                lclColMap);
+        }
         if (lclNumErrs != 0) {
           const int myRank = [this] () {
             auto map = this->getMap ();

@@ -1493,7 +1493,7 @@ namespace Tpetra {
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
     /// \pre <tt>hasColMap() == true</tt>
-    /// \pre <tt>rowPointers.size() != getNodeNumRows()+1</tt>
+    /// \pre <tt>rowPointers.size() == getNodeNumRows()+1</tt>
     /// \pre No insert routines have been called.
     ///
     /// \warning This method is intended for expert developer use
@@ -1501,6 +1501,17 @@ namespace Tpetra {
     void
     setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
                    const typename local_graph_type::entries_type::non_const_type& columnIndices);
+
+    /// \brief Set the graph's data directly, using 1-D storage of global indices.
+    ///
+    /// \pre !isFillComplete()
+    /// \pre No insert routines have been called.
+    ///
+    /// \warning This method is intended for expert developer use
+    ///   only, and should never be called by user code.
+    void
+    setAllGlobalIndices (const typename local_graph_type::row_map_type& rowPointers,
+                         const Kokkos::View<global_ordinal_type*, execution_space>& columnIndices);
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///

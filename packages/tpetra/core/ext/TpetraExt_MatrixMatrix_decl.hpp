@@ -178,8 +178,15 @@ add (const Scalar& alpha,
 ///
 /// This version of sparse matrix-matrix add returns a new CrsMatrix
 /// instance, rather than using an existing instance for the result.
-/// The returned matrix is fill complete, with the given domain and
-/// range Maps.  It is correct (though less efficient) for A and B to
+/// The returned matrix is always locally indexed and
+/// is fill complete by default (with the given
+/// domain and range Maps, or using those of Op(B) if null).
+/// If params->get("Call fillComplete") = false,
+/// then the resulting matrix will not be fill complete but it will have
+/// an immutable sparsity pattern (only scalar values can be changed).
+/// This is because C is allocated with the exact amount of storage to hold the sum.
+///
+/// It is correct (though less efficient) for A and B to
 /// have different row Maps; the returned matrix will have the same
 /// row Map as the row Map of B.
 ///
@@ -192,7 +199,7 @@ add (const Scalar& alpha,
 /// \param scalarB [in] Scalar multiplier for B in the sum.
 /// \param transposeB [in] If true, use the transpose of B.
 /// \param B [in] The second input matrix.
-/// \param C [out] The result matrix, which we expect to be 'new' on input.
+/// \param C [out] The result matrix, which we expect to be 'new' (no entries inserted) on input.
 /// \param domainMap [in] Domain Map of C (on output).  If null or not
 ///   provided, this defaults to the domain map of B (or range map, if transposeB).
 /// \param rangeMap [in] Range Map of C (on output).  If null or not
@@ -635,8 +642,6 @@ struct AddKernels
     values_array& Cvals,
     row_ptrs_array& Crowptrs,
     col_inds_array& Ccolinds);
-
-  static Teuchos::RCP<const map_type> makeColMapAndConvertGids(GlobalOrdinal indexBase, GlobalOrdinal minCol, GlobalOrdinal maxCol, const global_col_inds_array& gids, col_inds_array& lids, const local_map_type& localDomMap, const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 };
 
 }//end namespace MMdetails
