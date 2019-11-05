@@ -602,7 +602,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     A_ML->aux_data->max_level=MaxMatLevels;
     ML_Init_Material(A_ML,List);
     if(verbose && !A.Comm().MyPID()) {
-      printf("%s Using materrial matrix\n",PrintMsg.c_str());
+      printf("%s Using material matrix\n",PrintMsg.c_str());
       printf("%s material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
     }
   }
