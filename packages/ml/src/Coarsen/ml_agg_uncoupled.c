@@ -105,8 +105,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    static int level_count = 0;
 #endif
    double t0=0,delta1=0,delta2=0,delta3=0,delta4=0;
-   int do_qr, coarsen_partial_dirichlet_dofs;
 
+   /*cms*/
+   int do_qr, coarsen_partial_dirichlet_dofs;
+   char *amatrix_bdry=0;
 
    StartTimer(&t0);
    /* ============================================================= */
@@ -132,7 +134,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* check that this function is called properly.                  */
    /* ============================================================= */
 
-   if ( !coarsen_partial_dirichlet_dofs && !do_qr ) {
+   if ( !coarsen_partial_dirichlet_dofs && do_qr ) {
      printf("ML_Aggregate_CoarsenUncoupled ERROR : partial dirichlet dofs can only be uncoarsened if we're not using QR\n");
      exit(-1);
    }
@@ -415,6 +417,11 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 				       bdry_array, &aggr_count, &aggr_index, true_bdry);
    }
    else {
+     /* If we're not coarsening the partial Dirichlet dofs, we need the 
+        Dirichlet rows of the matrix identified. */
+     if(!coarsen_partial_dirichlet_dofs)
+       amatrix_bdry = ML_Operator_IdentifyDirichletRows(Amatrix);
+
      /*JJH same error as above could occur here!*/
      csr_data->columns = amal_mat_indx;
      ML_Operator_Set_ApplyFuncData(Cmatrix,nvblocks, nvblocks,
@@ -423,6 +430,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      true_bdry = ML_Operator_IdentifyDirichletRows(Cmatrix);
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,amal_mat_indx,
 				       bdry_array, &aggr_count, &aggr_index, true_bdry);
+
 #ifdef ML_AGGR_INAGGR
 
    for ( i = 0; i < nvblocks; i++ ) aggr_index[i] = -1;
@@ -691,8 +699,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_qr_fix_Create(aggr_count, nullspace_dim); /* alloc array in structure */
    numDeadNod = 0;  /* number of nodes with dead dofs on current coarse lev */
 
-   if ( !do_qr && mypid == 0 && printflag  < ML_Get_PrintLevel())
-     printf("Aggregation(UC) : Bypassing QR\n");
+   if ( !do_qr && mypid == 0 && printflag  < ML_Get_PrintLevel()) {
+     if(coarsen_partial_dirichlet_dofs) printf("Aggregation(UC) : Bypassing QR\n");
+     else printf("Aggregation(UC) : Bypassing QR and dropping partial Dirichlet dofs\n");
+   }
 #endif
 
    for (i = 0; i < aggr_count; i++)
@@ -732,7 +742,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
                qr_tmp[k*agg_sizes[i] + j] =
                   nullspace_vect[ k*Nrows + rows_in_aggs[i][j] ];
       }
-
+   
 #ifdef MB_MODIF_QR
      /* Graciously treat the case where we have more kernel
       * components than freedom. For this, we need the xCDeadNodDof structure.
@@ -858,6 +868,19 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
         for (k = 0; k < nullspace_dim; k++)
           for (j = 0; j < k+1; j++)
             new_null[i*nullspace_dim+j+k*Ncoarse] = (j==k) ? 1.0 : 0.0;               
+
+        if(!coarsen_partial_dirichlet_dofs && amatrix_bdry) {
+          /* Remove interpolation for partial Dirichlet rows, but only
+             if we're in a world where we get multiple dofs per node */
+          for (j = 0; j < agg_sizes[i]; j++) {
+            row = rows_in_aggs[i][j];
+            if(amatrix_bdry[row] == 'T') {
+              for (k = 0; k < nullspace_dim; k++)
+                qr_tmp[k*agg_sizes[i] + j] = 0.0;
+            }
+          }         
+        }
+        
       }
 
 #else /*MB_MODIF_QR*/
@@ -954,6 +977,16 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
          }
       }
    }
+
+   // CMS: Debug
+   printf("*** Pre-compressed ***\n");
+   for(int i=0; i<Nrows; i++) {
+     printf("row %d: ",i);
+     for(int j=new_ia[i]; j < new_ia[i+1]; j++)
+       printf("%d(%4.1f) ",new_ja[j],new_val[j]);
+     printf("\n");
+   }
+
 #ifdef MB_MODIF_QR
   /* set the number of nodes with dead dofs on current coarse grid */
    ML_qr_fix_setNumDeadNod(numDeadNod);
@@ -996,6 +1029,15 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       k = new_ia[i+1];
       new_ia[i+1] = index;
    }
+
+   printf("*** Post-compressed ***\n");
+   for(int i=0; i<Nrows; i++) {
+     printf("row %d: ",i);
+     for(int j=new_ia[i]; j < new_ia[i+1]; j++)
+       printf("%d(%4.1f) ",new_ja[j],new_val[j]);
+     printf("\n");
+   }
+
    ML_memory_alloc((void**) &csr_data,sizeof(struct ML_CSR_MSRdata),"AVP");
 
    (*Pmatrix)->N_nonzeros = ML_Comm_GsumInt( comm, nz_cnt);
