@@ -258,7 +258,7 @@ void ML_Epetra::SetValidAggrParams(Teuchos::ParameterList *PL)
   PL->set("aggregation: respect materials",false);
   PL->set("aggregation: material type",(int*)0);
   PL->set("aggregation: do qr",true);
-  PL->set("aggregation: aggregation: coarsen partial dirichlet dofs",true);
+  PL->set("aggregation: coarsen partial dirichlet dofs",true);
 
 }//SetValidAggrParams()
 
