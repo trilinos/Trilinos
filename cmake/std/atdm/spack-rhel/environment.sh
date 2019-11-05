@@ -26,10 +26,15 @@ function load_spack_tpl_modules() {
   module load spack-metis/5.1.0-${compiler_dash_version}
   module load spack-hdf5/1.8.21-${compiler_dash_version}-${mpi_dash_version}
   module load spack-netcdf/4.4.1-${compiler_dash_version}-${mpi_dash_version}
-  module load spack-parallel-netcdf/1.11.0-${compiler_dash_version}-${mpi_dash_version}
   module load spack-parmetis/4.0.3-${compiler_dash_version}-${mpi_dash_version}
   module load spack-cgns/snl-atdm-${compiler_dash_version}-${mpi_dash_version}
   module load spack-superlu-dist/5.4.0-${compiler_dash_version}-${mpi_dash_version}
+
+  # NOTE: Above, we don't need to explicilty load the module for
+  # sparc-parallel-netcdf because it is implicitly enabled by loading the
+  # module for spack-netcdf.  And we not want to explicitly load any modules
+  # for packages that we have not set the explicit versions on as that breaks
+  # when we upgarde spack (and spack uses a new version).
 
 }
 
@@ -71,8 +76,9 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 
 module purge
 module load spack-git/2.20.1
-module load spack-cmake/3.13.4
-module load spack-ninja-fortran/1.7.2.gaad58
+module load spack-cmake/3.14.5
+module load spack-ninja-fortran/1.9.0.2.g99df1
+module load spack-python/2.7.15  # For EMPIRE tests
 
 # Assume binutils lib dir is 'lib64' by default
 BINUTILS_LIBIBERTY_LIB_DIR_NAME=lib64
@@ -100,7 +106,7 @@ else
   # instead run with half that many to be safe and avoid time-outs.
 fi
 
-if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]; then
+if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.1" ]; then
 
   module load spack-gcc/7.2.0
   export OMPI_CXX=`which g++`
@@ -124,8 +130,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-2.1.2" ]; then
 
 elif [ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]; then
 
+  module load spack-gcc/4.9.3  # Need to find gfortran and for llvm to find the right gcc!
   module load spack-llvm/5.0.1
-  module load spack-gcc/4.9.3  # Need to find gfortran
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
