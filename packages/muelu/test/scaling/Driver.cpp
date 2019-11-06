@@ -232,6 +232,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string rhsFile;                                clp.setOption("rhs",                   &rhsFile,           "rhs data file");
   std::string coordFile;                              clp.setOption("coords",                &coordFile,         "coordinates data file");
   std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
+  std::string materialFile;                           clp.setOption("material",              &materialFile,      "material data file");
   int         numRebuilds       = 0;                  clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
   int         numResolves       = 0;                  clp.setOption("resolve",               &numResolves,       "#times to redo solve");
   int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
@@ -345,11 +346,11 @@ MueLu::MueLu_AMGX_initialize_plugins();
   RCP<Matrix>      A;
   RCP<const Map>   map;
   RCP<RealValuedMultiVector> coordinates;
-  RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace;
+  RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace, material;
   RCP<MultiVector> X, B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,numVectors,galeriParameters,xpetraParameters,galeriStream);
+  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,materialFile,map,A,coordinates,nullspace,material,X,B,numVectors,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
 
@@ -458,7 +459,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
         comm->barrier();
         // Build the preconditioner numRebuilds+1 times
         MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
-        PreconditionerSetup(A,coordinates,nullspace,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
+        PreconditionerSetup(A,coordinates,nullspace,material,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
 
         comm->barrier();
         tm = Teuchos::null;
