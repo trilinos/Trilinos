@@ -359,7 +359,6 @@ bool matrix_read(Epetra_ActiveComm &Comm){
                                                                
   List_Material.sublist("refmaxwell: 11list").set("aggregation: material: threshold",0.01);
   List_Material.sublist("refmaxwell: 11list").set("aggregation: material: enable",true);
-
   List_Material.sublist("refmaxwell: 11list").set("material coordinates",material_ptr);
 
   /* Do Tests */
