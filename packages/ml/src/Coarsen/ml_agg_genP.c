@@ -2621,7 +2621,7 @@ static void ML_Init_Aux(ML* ml, int level)
   y_coord = grid_info->y;
   z_coord = grid_info->z;
   mat_coord = grid_info->material;
-  if (x_coord == NULL || mat_coord == NULL) {
+  if (x_coord == NULL && mat_coord == NULL) {
       printf("ML_Init_Aux: Cannot use aux options without supplying coordinates or material coordinates\n");
       exit(1);
   }
