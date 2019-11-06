@@ -66,6 +66,7 @@ int ML_Aggregate_VizAndStats_Setup( ML *ml)
     info->x = NULL;
     info->y = NULL;
     info->z = NULL;
+    info->material = NULL;
     info->graph_decomposition = NULL;
     info->Nlocal = 0;
     info->Naggregates = 0;
@@ -111,6 +112,8 @@ int ML_Aggregate_VizAndStats_Clean(ML *ml)
         ML_free( info->y );
       if( info->z != NULL )
         ML_free( info->z );
+      if( info->material != NULL )
+        ML_free( info->material );
       if( info->graph_decomposition != NULL )
         ML_free( info->graph_decomposition );
       info->Nlocal = -1;
@@ -1834,6 +1837,7 @@ int ML_Aggregate_Stats_CleanUp_Info(ML *ml)
 	    if( info->x != NULL ) ML_free( info->x );
 	    if( info->y != NULL ) ML_free( info->y );
 	    if( info->z != NULL ) ML_free( info->z );
+	    if( info->material != NULL ) ML_free( info->material );
       }
 
     }
@@ -1847,6 +1851,7 @@ int ML_Aggregate_Stats_CleanUp_Info(ML *ml)
 	    if( info->x != NULL ) ML_free( info->x );
 	    if( info->y != NULL ) ML_free( info->y );
 	    if( info->z != NULL ) ML_free( info->z );
+	    if( info->material != NULL ) ML_free( info->material );
       }
 
     }
