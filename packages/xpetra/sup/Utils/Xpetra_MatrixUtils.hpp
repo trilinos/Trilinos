@@ -503,7 +503,6 @@ public:
       }
 
       RCP<Matrix> newAc;
-
       Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, false, 1.0, newAc, fos);
       if (Ac->IsView("stridedMaps"))
         newAc->CreateView("stridedMaps", Ac);
@@ -519,6 +518,8 @@ public:
         Ac->fillComplete(p);
       }
     } // end repair
+
+
 
     // print some output
     fos << "CheckRepairMainDiagonal: " << (repairZeroDiagonals ? "repaired " : "found ")
