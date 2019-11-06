@@ -49,8 +49,8 @@
 #include "TpetraExt_MMHelpers_def.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
-#include "Tpetra_Details_makeGlobalCrsGraph.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_makeColMap.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Export.hpp"
@@ -576,6 +576,27 @@ add (const Scalar& alpha,
   return C;
 }
 
+//This functor does the same thing as CrsGraph::convertColumnIndicesFromGlobalToLocal,
+//but since the spadd() output is always packed there is no need for a separate
+//numRowEntries here.
+//
+template<class LO, class GO, class LOView, class GOView, class LocalMap>
+struct ConvertGlobalToLocalFunctor
+{
+  ConvertGlobalToLocalFunctor(LOView& lids_, const GOView& gids_, const LocalMap localColMap_)
+    : lids(lids_), gids(gids_), localColMap(localColMap_)
+  {}
+
+  KOKKOS_FUNCTION void operator() (const GO& i) const
+  {
+    lids(i) = localColMap.getLocalElement(gids(i));
+  }
+
+  LOView lids;
+  const GOView gids;
+  const LocalMap localColMap;
+};
+
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -609,7 +630,6 @@ add (const Scalar& alpha,
   using import_type     = Import<LO,GO,NO>;
   using export_type     = Export<LO,GO,NO>;
   using exec_space      = typename crs_graph_type::execution_space;
-  using gbl_ind_kcrs_graph = Kokkos::StaticCrsGraph<GO, Kokkos::LayoutLeft, exec_space>;
   using AddKern         = MMdetails::AddKernels<SC,LO,GO,NO>;
   const char* prefix_mmm = "TpetraExt::MatrixMatrix::add: ";
   constexpr bool debug = false;
@@ -660,7 +680,6 @@ add (const Scalar& alpha,
   RCP<ParameterList> transposeParams (new ParameterList);
   transposeParams->set ("sort", false);
 
-  auto comm = A.getComm();
   // Form the explicit transpose of A if necessary.
   RCP<const crs_matrix_type> Aprime = rcpFromRef(A);
   if (transposeA) {
@@ -727,7 +746,6 @@ add (const Scalar& alpha,
     // parameterlist "isMatrixMatrix_TransferAndFillComplete" true here as
     // this import _may_ take the form of a transfer. In practice it would be unlikely,
     // but the general case is not so forgiving.
-
     Aprime = importAndFillCompleteCrsMatrix<crs_matrix_type>(Aprime, *import, Bprime->getDomainMap(), Bprime->getRangeMap());
   }
   bool matchingColMaps = Aprime->getColMap()->isSameAs(*(Bprime->getColMap()));
@@ -745,13 +763,16 @@ add (const Scalar& alpha,
   {
     //KokkosKernels spadd assumes rowptrs.extent(0) + 1 == nrows,
     //but an empty Tpetra matrix is allowed to have rowptrs.extent(0) == 0.
-    //Handle this case now (without interfering with collective operations).
+    //Handle this case now
+    //(without interfering with collective operations, since it's possible for
+    //some ranks to have 0 local rows and others not).
     rowptrs = row_ptrs_array("C rowptrs", 1);
   }
   auto Acolmap = Aprime->getColMap();
   auto Bcolmap = Bprime->getColMap();
   if(!matchingColMaps)
   {
+    typedef typename AddKern::global_col_inds_array global_col_inds_array;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = Teuchos::null;
       MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mismatched col map full kernel"))));
@@ -759,7 +780,7 @@ add (const Scalar& alpha,
     //use kernel that converts col indices in both A and B to common domain map before adding
     auto AlocalColmap = Acolmap->getLocalMap();
     auto BlocalColmap = Bcolmap->getLocalMap();
-    typename AddKern::global_col_inds_array globalColinds("", 0);
+    global_col_inds_array globalColinds("", 0);
     if (debug) {
       std::ostringstream os;
       os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
@@ -779,14 +800,25 @@ add (const Scalar& alpha,
     MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Constructing graph"))));
 #endif
-    RCP<crs_graph_type> Cgraph = Details::makeCrsGraphFromGlobalIndicesAndMaps<LocalOrdinal,GlobalOrdinal,Node>
-      (gbl_ind_kcrs_graph(globalColinds, rowptrs), C.getRowMap(), CDomainMap, CRangeMap);
-    C = crs_matrix_type(Cgraph, vals);
+    RCP<const map_type> CcolMap;
+    Tpetra::Details::makeColMap<LocalOrdinal, GlobalOrdinal, Node>
+      (CcolMap, Aprime->getDomainMap(), globalColinds);
+    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    CcolMap->describe(*fos, Teuchos::VERB_EXTREME);
+    C.replaceColMap(CcolMap);
+    col_inds_array localColinds("C colinds", globalColinds.extent(0));
+    Kokkos::parallel_for(Kokkos::RangePolicy<exec_space>(0, globalColinds.extent(0)),
+        ConvertGlobalToLocalFunctor<LocalOrdinal, GlobalOrdinal,
+                              col_inds_array, global_col_inds_array,
+                              typename map_type::local_map_type>
+        (localColinds, globalColinds, CcolMap->getLocalMap()));
+    C.setAllValues(rowptrs, localColinds, vals);
+    //Use a regular fillComplete so that the values and indices get sorted.
+    C.fillComplete(CDomainMap, CRangeMap, params);
     if(!doFillComplete)
     {
       //Allow the user to change matrix values.
-      //Structure will be static, since C is locally indexed and is allocated
-      //to exactly the right size.
+      //Structure will be static, since C is allocated to exactly the right size.
       C.resumeFill();
     }
   }
@@ -3205,11 +3237,12 @@ template<typename GO,
          typename LocalIndicesType,
          typename GlobalIndicesType,
          typename ColMapType>
-struct ConvertColIndsFunctor
+struct ConvertLocalToGlobalFunctor
 {
-  ConvertColIndsFunctor (const LocalIndicesType& colindsOrig_,
-                         const GlobalIndicesType& colindsConverted_,
-                         const ColMapType& colmap_) :
+  ConvertLocalToGlobalFunctor(
+      const LocalIndicesType& colindsOrig_,
+      const GlobalIndicesType& colindsConverted_,
+      const ColMapType& colmap_) :
     colindsOrig (colindsOrig_),
     colindsConverted (colindsConverted_),
     colmap (colmap_)
@@ -3250,9 +3283,9 @@ convertToGlobalAndAdd(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: " + std::string("column map conversion"))));
 #endif
-  ConvertColIndsFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertA(Acolinds, AcolindsConverted, AcolMap);
+  ConvertLocalToGlobalFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertA(Acolinds, AcolindsConverted, AcolMap);
   Kokkos::parallel_for("Tpetra_MatrixMatrix_convertColIndsA", range_type(0, Acolinds.extent(0)), convertA);
-  ConvertColIndsFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertB(Bcolinds, BcolindsConverted, BcolMap);
+  ConvertLocalToGlobalFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertB(Bcolinds, BcolindsConverted, BcolMap);
   Kokkos::parallel_for("Tpetra_MatrixMatrix_convertColIndsB", range_type(0, Bcolinds.extent(0)), convertB);
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename col_inds_array::size_type, GO, impl_scalar_type,
               execution_space, memory_space, memory_space> KKH;
