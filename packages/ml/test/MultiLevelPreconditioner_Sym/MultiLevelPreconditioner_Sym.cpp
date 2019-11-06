@@ -376,6 +376,21 @@ int main(int argc, char *argv[]) {
   printf("Memory before = %d after = %d\n",initial_memory,final_memory);
 
   // =========================== //
+  // Material aggregation test
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  Epetra_Vector material(Matrix->RowMap());
+  material.PutScalar(1.0);
+  
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("aggregation: material: enable", true);
+  MLList.set("aggregation: material: threshold", 2.0);
+  MLList.set("material coordinates", &(material[0]));
+
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+
+  // =========================== //
   // Rowsum test (on Heat eqn)   //
   // =========================== //
   if (Comm.MyPID() == 0) PrintLine();
@@ -391,6 +406,7 @@ int main(int argc, char *argv[]) {
 
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
+
 
 
 
