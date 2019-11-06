@@ -2118,6 +2118,15 @@ ComputePreconditioner(const bool CheckPreconditioner)
       ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
     }
 
+    if (List_.get("aggregation: material: enable", false)) {
+      double Threshold   = List_.get("aggregation: material: threshold", 0.0);
+      int MaxAuxLevels   = List_.get("aggregation: material: max levels", 10);
+      ml_->Amat[LevelID_[0]].aux_data->threshold = Threshold;
+      ml_->Amat[LevelID_[0]].aux_data->enable = 1;
+      ml_->Amat[LevelID_[0]].aux_data->max_level = MaxAuxLevels;
+      ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
+    }
+
     if (List_.get("aggregation: block scaling", false) && NumPDEEqns_ != 1)
       agg_->block_scaled_SA = 1; // Unadvertised
 

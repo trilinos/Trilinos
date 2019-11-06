@@ -457,6 +457,12 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   /* EXPERIMENTAL - node aware code */
   setIntParameter("ML node id", -1, "Unlisted option", PL, intParam);
 
+  /* EXPERIEMNTAL - Material aggregation */
+  PL->set("aggregation: material: enable",false);
+  setDoubleParameter("aggregation: material: threshold",0.0,"Unlisted option",PL,dblParam);
+  setIntParameter("aggregation: material: max levels",10,"Unlisted option",PL,intParam);
+  PL->set("material coordinates",(double*)0);
+
   return PL;
 }
 
@@ -526,15 +532,10 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   setStringToIntegralParameter<int>("refmaxwell: 11solver","edge matrix free","(1,1) Block Solver",tuple<std::string>("edge matrix free","sa"),PL);
   setStringToIntegralParameter<int>("refmaxwell: 22solver","multilevel","(2,2) Block Solver",tuple<std::string>("multilevel"),PL);
   setStringToIntegralParameter<int>("refmaxwell: mode","additive","Mode for RefMaxwell",tuple<std::string>("additive","212","121","none"),PL);
+  List11.set("aggregation: aux: user matrix",(Epetra_CrsMatrix*)0);  
   PL->set("edge matrix free: coarse",dummy);
-  List11.set("aggregation: aux: user matrix",(Epetra_CrsMatrix*)0);
-  List11.set("aggregation: material: enable",false);
-  List11.set("aggregation: material: threshold",0.0);
-  List11.set("aggregation: material: max levels",10);
-  List11.set("material coordinates",(double*)0);
   PL->set("refmaxwell: 11list",List11);
   PL->set("refmaxwell: 22list",dummy);
-  
 
   // HAQ - clobber the smoother list to avoid validation.  MUST FIX LATER
   PL->set("smoother: type","IFPACK");
