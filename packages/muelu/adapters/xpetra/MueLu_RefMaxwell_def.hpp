@@ -69,6 +69,7 @@
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_SaPFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -79,6 +80,7 @@
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
+#include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_Utilities_kokkos.hpp"
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
@@ -1104,8 +1106,14 @@ namespace MueLu {
     if (read_P_from_file) {
       // This permits to read in an ML prolongator, so that we get the same hierarchy.
       // (ML and MueLu typically produce different aggregates.)
-      std::string P_filename = parameterList_.get("refmaxwell: P_filename",std::string("P.mat"));
-      P_nodal = Xpetra::IO<SC, LO, GO, NO>::Read(P_filename, A_nodal_Matrix_->getDomainMap());
+      std::string P_filename = parameterList_.get("refmaxwell: P_filename",std::string("P.m"));
+      std::string domainmap_filename = parameterList_.get("refmaxwell: P_domainmap_filename",std::string("domainmap_P.m"));
+      std::string colmap_filename = parameterList_.get("refmaxwell: P_colmap_filename",std::string("colmap_P.m"));
+      std::string coords_filename = parameterList_.get("refmaxwell: CoordsH",std::string("coordsH.m"));
+      RCP<const Map> colmap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(colmap_filename, A_nodal_Matrix_->getDomainMap()->lib(),A_nodal_Matrix_->getDomainMap()->getComm());
+      RCP<const Map> domainmap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(domainmap_filename, A_nodal_Matrix_->getDomainMap()->lib(),A_nodal_Matrix_->getDomainMap()->getComm());
+      P_nodal = Xpetra::IO<SC, LO, GO, NO>::Read(P_filename, A_nodal_Matrix_->getDomainMap(), colmap, domainmap, A_nodal_Matrix_->getDomainMap());
+      CoordsH_ = Xpetra::IO<typename RealValuedMultiVector::scalar_type, LO, GO, NO>::ReadMultiVector(coords_filename, domainmap);
     } else {
       Level fineLevel, coarseLevel;
       fineLevel.SetFactoryManager(null);
@@ -1126,36 +1134,38 @@ namespace MueLu {
       nullSpace->putScalar(SC_ONE);
       fineLevel.Set("Nullspace",nullSpace);
 
+      RCP<Factory> amalgFact, dropFact, UncoupledAggFact, coarseMapFact, TentativePFact, Tfact, SaPFact;
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-      RCP<Factory> amalgFact, dropFact, UncoupledAggFact, coarseMapFact, TentativePFact, Tfact;
       if (useKokkos_) {
         amalgFact = rcp(new AmalgamationFactory_kokkos());
         dropFact = rcp(new CoalesceDropFactory_kokkos());
         UncoupledAggFact = rcp(new UncoupledAggregationFactory_kokkos());
         coarseMapFact = rcp(new CoarseMapFactory_kokkos());
         TentativePFact = rcp(new TentativePFactory_kokkos());
+        if (parameterList_.get("multigrid algorithm","unsmoothed") == "sa")
+          SaPFact = rcp(new SaPFactory_kokkos());
         Tfact = rcp(new CoordinatesTransferFactory_kokkos());
-      } else {
+      } else
+#endif
+      {
         amalgFact = rcp(new AmalgamationFactory());
         dropFact = rcp(new CoalesceDropFactory());
         UncoupledAggFact = rcp(new UncoupledAggregationFactory());
         coarseMapFact = rcp(new CoarseMapFactory());
         TentativePFact = rcp(new TentativePFactory());
+        if (parameterList_.get("multigrid algorithm","unsmoothed") == "sa")
+          SaPFact = rcp(new SaPFactory());
         Tfact = rcp(new CoordinatesTransferFactory());
       }
-#else
-      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
-      RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
-      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
-      RCP<CoordinatesTransferFactory> Tfact = rcp(new CoordinatesTransferFactory());
-#endif
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
       double dropTol = parameterList_.get("aggregation: drop tol",0.0);
       dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(dropTol));
 
       UncoupledAggFact->SetFactory("Graph", dropFact);
+      int minAggSize = parameterList_.get("aggregation: min agg size",2);
+      UncoupledAggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(minAggSize));
+      int maxAggSize = parameterList_.get("aggregation: max agg size",-1);
+      UncoupledAggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(maxAggSize));
 
       coarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
 
@@ -1166,7 +1176,11 @@ namespace MueLu {
       Tfact->SetFactory("Aggregates", UncoupledAggFact);
       Tfact->SetFactory("CoarseMap", coarseMapFact);
 
-      coarseLevel.Request("P",TentativePFact.get());
+      if (parameterList_.get("multigrid algorithm","unsmoothed") == "sa") {
+        SaPFact->SetFactory("P", TentativePFact);
+        coarseLevel.Request("P", SaPFact.get());
+      } else
+        coarseLevel.Request("P",TentativePFact.get());
       coarseLevel.Request("Coordinates",Tfact.get());
 
       RCP<AggregationExportFactory> aggExport;
@@ -1183,7 +1197,10 @@ namespace MueLu {
         fineLevel.Request("UnAmalgamationInfo",amalgFact.get());
       }
 
-      coarseLevel.Get("P",P_nodal,TentativePFact.get());
+      if (parameterList_.get("multigrid algorithm","unsmoothed") == "sa")
+        coarseLevel.Get("P",P_nodal,SaPFact.get());
+      else
+        coarseLevel.Get("P",P_nodal,TentativePFact.get());
       coarseLevel.Get("Coordinates",CoordsH_,Tfact.get());
 
       if (parameterList_.get("aggregation: export visualization data",false))

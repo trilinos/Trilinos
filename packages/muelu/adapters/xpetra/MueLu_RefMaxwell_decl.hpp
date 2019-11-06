@@ -55,6 +55,7 @@
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
@@ -64,6 +65,7 @@
 #include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
+#include "MueLu_SaPFactory_kokkos_fwd.hpp"
 #include "MueLu_Utilities_kokkos_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 #endif
