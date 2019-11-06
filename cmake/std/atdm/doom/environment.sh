@@ -65,10 +65,6 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1" ]] ; then
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
   export ATDM_CONFIG_MPI_EXEC=mpirun
 
-  #TODO jfrye: what should these be for cuda build?
-  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
-  export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
-
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
   if [ ! -x "$OMPI_CXX" ]; then
       echo "No nvcc_wrapper found"
@@ -77,7 +73,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1" ]] ; then
   # some Trilinos tests require this to run correctly
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
-  export KOKKOS_NUM_DEVICES=2
+  export KOKKOS_NUM_DEVICES=1
 
 else
   echo

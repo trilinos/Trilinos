@@ -15,7 +15,7 @@ echo
 
 echo "Running ctest -S comamnd to test only ..."
 
-CTEST_S_CMND=env CTEST_DO_NEW_START=OFF CTEST_DO_UPDATES=OFF CTEST_DO_CONFIGURE=OFF CTEST_DO_BUILD=OFF CTEST_DO_TEST=ON ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
+CTEST_S_CMND=env CTEST_DO_NEW_START=OFF CTEST_DO_UPDATES=OFF CTEST_DO_CONFIGURE=OFF CTEST_DO_BUILD=OFF CTEST_DO_TEST=ON ctest -VV -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 
 echo
 echo "Running: ${CTEST_S_CMND} ..."
