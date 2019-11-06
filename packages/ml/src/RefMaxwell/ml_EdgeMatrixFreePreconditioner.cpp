@@ -182,9 +182,10 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   double * xcoord=List_.get("x-coordinates",(double*)0);
   double * ycoord=List_.get("y-coordinates",(double*)0);
   double * zcoord=List_.get("z-coordinates",(double*)0);
+  double * mcoord=List_.get("material coordinates",(double*)0);
   bool build_coarse_coords=true;
-  if(dim!=(xcoord!=0) + (ycoord!=0) + (zcoord!=0)) build_coarse_coords=false;
-
+  if(!mcoord && dim!=(xcoord!=0) + (ycoord!=0) + (zcoord!=0) ) build_coarse_coords=false;
+  
 
   /* Do the aggregation */
   ML_Aggregate_Struct * MLAggr;
@@ -203,6 +204,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     CoarseXcoord_.resize(std::max(P->invec_leng,1));
     CoarseYcoord_.resize(std::max(P->invec_leng,1));
     if(dim==3) CoarseZcoord_.resize(std::max(P->invec_leng,1));
+    if(mcoord) CoarseMcoord_.resize(std::max(P->invec_leng,1));
 
     /* Matvec with the *transpose* of P */
     // Note: sCSR_trans_matvec can never return anything other than true (in the current implementation)
@@ -211,12 +213,14 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     rv=CSR_trans_matvec(P,P->outvec_leng,xcoord,P->invec_leng,CoarseXcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-20);
     rv=CSR_trans_matvec(P,P->outvec_leng,ycoord,P->invec_leng,CoarseYcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-21);
     if(dim==3){rv=CSR_trans_matvec(P,P->outvec_leng,zcoord,P->invec_leng,CoarseZcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-22);}
+    if(mcoord){rv=CSR_trans_matvec(P,P->outvec_leng,mcoord,P->invec_leng,CoarseMcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-23);}
 
     /* Set coordinates on ListCoarse */
     Teuchos::ParameterList & ListCoarse=List_.sublist("edge matrix free: coarse");
     ListCoarse.set("x-coordinates",CoarseXcoord_.getRawPtr());
     ListCoarse.set("y-coordinates",CoarseYcoord_.getRawPtr());
     if(dim==3) ListCoarse.set("z-coordinates",CoarseZcoord_.getRawPtr());
+    if(mcoord) ListCoarse.set("material coordinates",CoarseMcoord_.getRawPtr());
   }
 
   print_hierarchy= List_.get("print hierarchy",false);

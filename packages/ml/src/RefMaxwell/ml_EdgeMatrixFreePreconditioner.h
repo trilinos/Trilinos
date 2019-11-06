@@ -187,7 +187,7 @@ namespace ML_Epetra
     ML_Operator * CoarseMat_ML;
 
     //! Coarse data objects
-    Teuchos::Array<double> CoarseXcoord_, CoarseYcoord_, CoarseZcoord_;
+    Teuchos::Array<double> CoarseXcoord_, CoarseYcoord_, CoarseZcoord_, CoarseMcoord_;
 
     //! Level 2+ Preconditioner
     MultiLevelPreconditioner * CoarsePC;
