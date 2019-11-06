@@ -803,8 +803,6 @@ add (const Scalar& alpha,
     RCP<const map_type> CcolMap;
     Tpetra::Details::makeColMap<LocalOrdinal, GlobalOrdinal, Node>
       (CcolMap, Aprime->getDomainMap(), globalColinds);
-    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    CcolMap->describe(*fos, Teuchos::VERB_EXTREME);
     C.replaceColMap(CcolMap);
     col_inds_array localColinds("C colinds", globalColinds.extent(0));
     Kokkos::parallel_for(Kokkos::RangePolicy<exec_space>(0, globalColinds.extent(0)),
