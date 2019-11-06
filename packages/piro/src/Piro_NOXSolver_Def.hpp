@@ -156,10 +156,10 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         if (optimizationParams.template get<bool>("Optimization Variables Changed")) {
           if (analysisParams.isSublist("ROL")) {
             auto rolParams = analysisParams.sublist("ROL");
-            int num_parameters = rolParams.get<int>("Number of Parameters", 1);
+            int num_parameters = rolParams.get("Number of Parameters", 1);
             for(int i=0; i<num_parameters; ++i) {
               std::ostringstream ss; ss << "Parameter Vector Index " << i;
-              const int p_ind = rolParams.get<int>(ss.str(), i);
+              const int p_ind = rolParams.get(ss.str(), i);
               const auto paramNames = *this->getModel().get_p_names(p_ind);
               this->observer->parameterChanged(paramNames[0]);
             }
@@ -549,7 +549,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
               if (analysisParams.isSublist("ROL")) {
                 std::ostringstream ss; ss << "Parameter Vector Index " << i;
                 auto rolParams = analysisParams.sublist("ROL");
-                const int p_ind = rolParams.get<int>(ss.str(), i);
+                const int p_ind = rolParams.get(ss.str(), i);
                 const auto paramNames = *this->getModel().get_p_names(p_ind);
                 paramName = paramNames[0];
               }
