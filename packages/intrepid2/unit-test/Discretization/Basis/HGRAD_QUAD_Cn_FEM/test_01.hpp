@@ -70,7 +70,7 @@ namespace Test {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -227,7 +227,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
       *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
     }
 #endif
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -290,7 +290,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
             << myTag(3) << "} ) = " << myBfOrd << "\n";
       }
     }
-  } catch (std::logic_error err){
+  } catch (std::logic_error &err){
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -361,7 +361,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
         }
       }
     }
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -843,7 +843,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
         }
       }
     }
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -875,7 +875,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
       }
       errorFlag++;
     }
-  } catch (std::logic_error err){
+  } catch (std::logic_error &err){
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
