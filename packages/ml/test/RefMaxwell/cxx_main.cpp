@@ -361,12 +361,16 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   List_Material.sublist("refmaxwell: 11list").set("aggregation: material: enable",true);
   List_Material.sublist("refmaxwell: 11list").set("material coordinates",material_ptr);
 
+  Teuchos::ParameterList List_SmoothSP = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
+  List_SmoothSP.sublist("refmaxwell: 11list").set("aggregation: damping factor",1.333);
+
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
   int status1, status2 = 0;
 
   if(!Comm.MyPID()) printf("*** Test 1 ***\n");
   rpc_test_additive(Comm,List_2level,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+#if 0
   lhs.PutScalar(0.0);
   if(!Comm.MyPID()) printf("*** Test 2 ***\n");
   rpc_test_additive(Comm,List_SGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
@@ -427,7 +431,10 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   lhs.PutScalar(0.0);
   if(!Comm.MyPID()) printf("*** Test 16 ***\n");
   rpc_test_additive_newconstructor(Comm,List_Material,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
-
+#endif  
+  /* Test w/ smooth special prolongator */
+  if(!Comm.MyPID()) printf("*** Test 17 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_SmoothSP,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
 
   delete M0; delete M1e;
   delete D0e;delete Se;
