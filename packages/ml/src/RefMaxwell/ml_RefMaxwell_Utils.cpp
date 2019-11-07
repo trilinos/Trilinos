@@ -757,18 +757,19 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   int PSmSweeps            = List.get("aggregation: smoothing sweeps", 1);
   std::string EigType      = List.get("eigen-analysis: type","cg");
   int NumEigenIts          = List.get("eigen-analysis: iterations",10);
+  int NodesPerAggr         = List.get("aggregation: nodes per aggregate",
+                                      ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
+  int doQR                 = (int) List.get("aggregation: do qr",false);
 
-  int NodesPerAggr    = List.get("aggregation: nodes per aggregate",
-                                  ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
-  bool UseAux         = List.get("aggregation: aux: enable",false);
-  double AuxThreshold = List.get("aggregation: aux: threshold",0.0);
-  int  MaxAuxLevels   = List.get("aggregation: aux: max levels",10);
+  bool UseAux              = List.get("aggregation: aux: enable",false);
+  double AuxThreshold      = List.get("aggregation: aux: threshold",0.0);
+  int  MaxAuxLevels        = List.get("aggregation: aux: max levels",10);
 
-  bool UseMaterial    = List.get("aggregation: material: enable",false);
-  double MatThreshold = List.get("aggregation: material: threshold",0.0);
-  int  MaxMatLevels   = List.get("aggregation: material: max levels",10);
+  bool UseMaterial         = List.get("aggregation: material: enable",false);
+  double MatThreshold      = List.get("aggregation: material: threshold",0.0);
+  int  MaxMatLevels        = List.get("aggregation: material: max levels",10);
+
   ML_Operator * smooP;
-  int doQR            = (int) List.get("aggregation: do qr",false);
 
   // FIXME:  We need to allow this later
   TEUCHOS_TEST_FOR_EXCEPTION(UseAux && UseMaterial, std::logic_error,"RefMaxwell_Aggregate_Nodes: Cannot use material and aux aggregation at the same time");
