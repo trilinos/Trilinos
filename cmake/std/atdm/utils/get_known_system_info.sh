@@ -243,6 +243,12 @@ if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${knownSystemNameInBuildName}" != ""
   assert_selected_system_matches_known_system_type_mathces || return
 fi
 
+# D.2) Second, go with matches based on hostname
+if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${hostnameMatch}" != "" ]] ; then
+  ATDM_SYSTEM_NAME=${hostnameMatchSystemName}
+  ATDM_HOSTNAME=${hostnameMatch}
+fi
+
 # D.2) Last, go with the hostname match or matching system type
 if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${systemNameTypeMatchedList}" != "" ]] ; then
   ATDM_SYSTEM_NAME=${systemNameTypeMatchedList[0]}  # First matching system type is preferred!
