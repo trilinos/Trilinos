@@ -93,7 +93,7 @@ elif [[ $realHostname == "waterman"* ]] ; then
 # Specifically named cts1 systems
 elif [[ $realHostname == "serrano"* ]] || [[ $realHostname =~ ser[0-9]+ ]] ; then
   hostnameMatch=serrano
-  hostnameMatchSystemName=
+  hostnameMatchSystemName=serrano
 elif [[ $realHostname == "eclipse"* ]] || [[ $realHostname =~ ec[0-9]+ ]] ; then
   hostnameMatch=eclipse
   hostnameMatchSystemName=serrano
