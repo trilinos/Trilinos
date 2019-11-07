@@ -782,7 +782,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
   MLAggr->cur_level = 0;
   ML_Aggregate_Set_Reuse(MLAggr);
-  ML_Aggregate_Set_Do_QR(MLAggr,DoQR);
+  ML_Aggregate_Set_Do_QR(MLAggr,doQR);
 
   ML_Aggregate_Set_DampingFactor(MLAggr,DampingFactor);  
   ML_Aggregate_Set_DampingSweeps(MLAggr,PSmSweeps,0);
