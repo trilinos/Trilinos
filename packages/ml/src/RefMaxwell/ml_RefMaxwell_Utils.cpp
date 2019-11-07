@@ -535,11 +535,29 @@ static void ML_Smooth_Prolongator(ML_Operator *Amat, ML_Aggregate * ag, int numS
   int Nfine    = Amat->outvec_leng;
   int ii;
   double max_eigen = 0;
+  ML_Operator *blockMat = NULL;
+
   if ( ag->smoothP_damping_factor == 0.0 || numSmSweeps == 0 ) 
     return;
 
   widget.Adiag = NULL;
   widget.near_bdry = NULL;
+
+  if (Amat->num_PDEs < ag->num_PDE_eqns) Amat->num_PDEs = ag->num_PDE_eqns;
+  if (ag->block_scaled_SA == 1) {
+    /*
+      Create block scaled and compute its eigenvalues
+      a) if the user has requested it, save this Amat into
+      the aggregate data structure.
+    */
+    mls_widget = ML_Smoother_Create_MLS();
+    ML_Gen_BlockScaledMatrix_with_Eigenvalues(Amat, -1, NULL,
+                                              &blockMat, mls_widget);
+    max_eigen = blockMat->lambda_max;
+  }
+  else    
+    max_eigen = Amat->lambda_max;
+
 
   if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
     printf("Calculating eigenvalue estimate using ");    
@@ -709,6 +727,8 @@ static void ML_Smooth_Prolongator(ML_Operator *Amat, ML_Aggregate * ag, int numS
   } /* for (ii=0; ii < numSmSweeps; ii++) */
   ML_Operator_Destroy(&AGGsmoother);
   ML_free(dampingFactors);
+  if (mls_widget != NULL) ML_Smoother_Destroy_MLS(mls_widget);
+
 }/*end ML_Smooth_Prolongator */
 
 
@@ -769,7 +789,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   else if( EigType == "Anasazi" )      ML_Operator_Set_SpectralNormScheme_Anasazi(A_ML);
   else if( EigType == "power-method" ) ML_Operator_Set_SpectralNormScheme_PowerMethod(A_ML);
   else {
-    if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) blocok eigenvalue type(%s), resetting to cg\n",PrintMsg.c_str(),EigType.c_str());
+    if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) block eigenvalue type(%s), resetting to cg\n",PrintMsg.c_str(),EigType.c_str());
     ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
   }
   ML_Operator_Set_SpectralNorm_Iterations(A_ML, NumEigenIts);
