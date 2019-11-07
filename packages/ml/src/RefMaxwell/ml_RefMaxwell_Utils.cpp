@@ -523,6 +523,195 @@ static void ML_Finalize_Aux(ML_Operator *A)
   ML_free(A->aux_data->filter);
 }
 
+// ================================================ ====== ==== ==== == =
+static void ML_Smooth_Prolongator(ML_Operator *Amat, ML_Aggregate * ag, int numSmSweeps, ML_Operator *Pmatrix, ML_Operator *Pfinal) {
+  ML_Comm *comm = Amat->comm;
+  ML_Krylov   *kdata;
+  struct ML_AGG_Matrix_Context widget;
+  double *dampingFactors; /* coefficients of prolongator smoother */
+  int level = 0;
+  ML_Operator *tmpmat1=NULL,*tmpmat2=NULL, *AGGsmoother=NULL, *Ptemp=NULL;
+  struct MLSthing *mls_widget = NULL;
+  int Nfine    = Amat->outvec_leng;
+  int ii;
+  double max_eigen = 0;
+  if ( ag->smoothP_damping_factor == 0.0 || numSmSweeps == 0 ) 
+    return;
+
+  widget.Adiag = NULL;
+  widget.near_bdry = NULL;
+
+  if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+    printf("Calculating eigenvalue estimate using ");    
+  switch( Amat->spectral_radius_scheme ) {      
+  case ML_USE_CG:  /* compute it using CG */
+    if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+      printf("CG method\n");
+    
+    kdata = ML_Krylov_Create( comm );
+    ML_Krylov_Set_PrintFreq( kdata, 0 );
+    ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
+    ML_Krylov_Set_ComputeEigenvalues( kdata );
+    ML_Krylov_Set_Amatrix(kdata, Amat);
+    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+    /* This is a bit screwy in that max_eigen corresponds to Dinv A. */
+    /* This is good for Cheby smoothers but bad for smoothed agg     */
+    /* if we actually filter A (significantly) as we should compute  */
+    /* the eigenvalue of Dinv Afilt.                                 */
+    max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+    
+    Amat->lambda_max = max_eigen;
+    Amat->lambda_min = kdata->ML_eigen_min;
+    ML_Krylov_Destroy( &kdata );
+    if ( max_eigen <= 0.0 ) {
+      printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+      max_eigen = 1.0;
+    }      
+    break;
+    
+  case ML_USE_ANASAZI: /* Use Anasazi */
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
+    ML_Anasazi_Get_SpectralNorm_Anasazi(Amat, 0, 10, 1e-5,
+                                        ML_FALSE, ML_TRUE, &max_eigen);
+    if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+      printf("Anasazi\n");
+#else
+    fprintf(stderr,
+            "--enable-epetra --enable-anasazi --enable-teuchos required\n"
+            "(file %s, line %d)\n",
+            __FILE__,
+            __LINE__);
+    exit(EXIT_FAILURE);
+#endif
+    Amat->lambda_max = max_eigen;
+    Amat->lambda_min = -12345.6789;
+    if ( max_eigen <= 0.0 ) {
+      printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+      max_eigen = 1.0;
+    }      
+    break;
+    
+  case ML_USE_POWER: /* use ML's power method */
+    if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+      printf("power method\n");
+    kdata = ML_Krylov_Create( comm );
+    ML_Krylov_Set_PrintFreq( kdata, 0 );
+    ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
+    ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
+    ML_Krylov_Set_Amatrix(kdata, Amat);
+    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+    max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+    Amat->lambda_max = max_eigen;
+    Amat->lambda_min = kdata->ML_eigen_min;
+    ML_Krylov_Destroy( &kdata );
+    if ( max_eigen <= 0.0 ) {
+      printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+      max_eigen = 1.0;
+    }
+    
+    break;
+    
+  default: /* using matrix max norm */
+    if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+      printf("matrix max norm\n");
+    max_eigen = ML_Operator_MaxNorm(Amat, ML_TRUE);
+    break;
+    
+  } /* switch( Amat->spectral_radius_scheme ) */    
+  
+  widget.omega  = ag->smoothP_damping_factor / max_eigen;
+  if ( comm->ML_mypid == 0 && 7 < ML_Get_PrintLevel())
+    printf("Gen_Prolongator (level %d) : Max eigenvalue = %2.4e\n",
+           ag->cur_level, max_eigen);
+
+  /******* Smoothing *******/
+  dampingFactors = (double *) ML_allocate( sizeof(double) * numSmSweeps );
+  if (numSmSweeps == 1)
+    dampingFactors[0] = ag->smoothP_damping_factor;
+  else
+    /* Calculate the proper Chebyshev polynomial coefficients. */
+    ML_AGG_Calculate_Smoothing_Factors(numSmSweeps, dampingFactors);
+    
+  if ( comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+    printf("\n");
+    for (ii=0; ii<numSmSweeps; ii++)
+      {
+        if (ag->minimizing_energy == -1)
+          {
+            printf("\nProlongator smoother (level %d) : damping factor #%d = %2.4e\nProlongator smoother (level %d) : ( = %2.4e / %2.4e)\nNon-smoothed restriction is used.\n",
+                   level, ii+1, dampingFactors[ii]/ max_eigen, level,
+                   dampingFactors[ii], max_eigen );
+          }
+        else
+          {
+            printf("Prolongator/Restriction smoother (level %d) : damping factor #%d = %2.4e\nProlongator/Restriction smoother (level %d) : ( = %2.4e / %2.4e)\n",
+                   level, ii+1, dampingFactors[ii]/ max_eigen, level,
+                   dampingFactors[ii], max_eigen );
+          }
+        printf("\n");
+      }
+  }
+  
+  /* Create the prolongator smoother operator, I-omega*inv(D)*A. */
+  AGGsmoother = ML_Operator_Create(comm);
+  //    ML_Operator_Set_Label(AGGsmoother,"Prolongator smoother");
+  widget.drop_tol = ag->drop_tol_for_smoothing;
+  widget.Amat   = Amat;
+  widget.aggr_info = ag->aggr_info[level];
+  ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
+                                widget.Amat->outvec_leng, &widget,
+                                widget.Amat->matvec->Nrows, NULL, 0);
+  ML_Operator_Set_Getrow(AGGsmoother,
+                         widget.Amat->getrow->Nrows,
+#ifdef USE_MOREACCURATE
+                         ML_AGG_JacobiMoreAccurate_Getrows
+#else
+                           ML_AGG_JacobiSmoother_Getrows
+#endif
+                         );
+  ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
+                      widget.Amat->getrow->pre_comm);
+  tmpmat2 = Pmatrix;
+  for (ii=0; ii < numSmSweeps; ii++) {
+    /* Set the appropriate prolongator smoother damping factor. */
+    widget.omega  = dampingFactors[ii] / max_eigen;
+    
+    if (ii < numSmSweeps-1) {
+      tmpmat1 = tmpmat2;
+      tmpmat2 = ML_Operator_Create(Amat->comm);
+    }
+    else {
+      tmpmat1 = tmpmat2;
+      tmpmat2 = Pfinal;
+    }
+    
+    if (ag->block_scaled_SA == 1) {
+      /* Computed the following:
+       *    a) turn off the usual 2 mat mult.
+       *    b) Ptemp = A*P
+       *    c) Ptemp = Dinv*Ptemp;
+       *    d) do an ML_Operator_Add() with the original P.
+       */
+      Ptemp = ML_Operator_Create(Amat->comm);
+      ML_2matmult(Amat, tmpmat1, Ptemp, ML_CSR_MATRIX );
+      ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs, ROW_SCALE_WITH_D);
+      
+      ML_Operator_Add(tmpmat1, Ptemp, tmpmat2, ML_CSR_MATRIX,
+                      -dampingFactors[ii] / max_eigen);
+      ML_Operator_Destroy(&Ptemp);
+    }
+    else
+      ML_2matmult(AGGsmoother, tmpmat1, tmpmat2, ML_CSR_MATRIX );
+    
+    /*Free intermediate matrix I-omega*inv(D)*A, as long as it's not Ptent.*/
+    if (tmpmat1 && tmpmat1 != Pmatrix) ML_Operator_Destroy(&tmpmat1);
+    
+  } /* for (ii=0; ii < numSmSweeps; ii++) */
+  ML_Operator_Destroy(&AGGsmoother);
+  ML_free(dampingFactors);
+}/*end ML_Smooth_Prolongator */
+
+
 
 // ================================================ ====== ==== ==== == =
 int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::ParameterList & List, ML_Comm * ml_comm, std::string PrintMsg,
@@ -544,7 +733,12 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   std::string CoarsenType  = List.get("aggregation: type", "Uncoupled");
   double Threshold         = List.get("aggregation: threshold", 0.0);
   double RowSum_Threshold  = List.get("aggregation: rowsum threshold", -1.0);
-  int    NodesPerAggr = List.get("aggregation: nodes per aggregate",
+  double DampingFactor     = List.get("aggregation: damping factor", 0.0);
+  int PSmSweeps            = List.get("aggregation: smoothing sweeps", 1);
+  std::string EigType      = List.get("eigen-analysis: type","cg");
+  int NumEigenIts          = List.get("eigen-analysis: iterations",10);
+
+  int NodesPerAggr    = List.get("aggregation: nodes per aggregate",
                                   ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
   bool UseAux         = List.get("aggregation: aux: enable",false);
   double AuxThreshold = List.get("aggregation: aux: threshold",0.0);
@@ -553,6 +747,8 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   bool UseMaterial    = List.get("aggregation: material: enable",false);
   double MatThreshold = List.get("aggregation: material: threshold",0.0);
   int  MaxMatLevels   = List.get("aggregation: material: max levels",10);
+  ML_Operator * smooP;
+
   // FIXME:  We need to allow this later
   TEUCHOS_TEST_FOR_EXCEPTION(UseAux && UseMaterial, std::logic_error,"RefMaxwell_Aggregate_Nodes: Cannot use material and aux aggregation at the same time");
 
@@ -565,6 +761,19 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
   MLAggr->cur_level = 0;
   ML_Aggregate_Set_Reuse(MLAggr);
+
+  ML_Aggregate_Set_DampingFactor(MLAggr,DampingFactor);  
+  ML_Aggregate_Set_DampingSweeps(MLAggr,PSmSweeps,0);
+  if( EigType == "cg" )                ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
+  else if( EigType == "Anorm" )        ML_Operator_Set_SpectralNormScheme_Anorm(A_ML);
+  else if( EigType == "Anasazi" )      ML_Operator_Set_SpectralNormScheme_Anasazi(A_ML);
+  else if( EigType == "power-method" ) ML_Operator_Set_SpectralNormScheme_PowerMethod(A_ML);
+  else {
+    if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) blocok eigenvalue type(%s), resetting to cg\n",PrintMsg.c_str(),EigType.c_str());
+    ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
+  }
+  ML_Operator_Set_SpectralNorm_Iterations(A_ML, NumEigenIts);
+
   MLAggr->keep_agg_information = 1;
   P = ML_Operator_Create(ml_comm);
 
@@ -611,7 +820,17 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   int printlevel=ML_Get_PrintLevel();
   if(verbose) ML_Set_PrintLevel(10);
   NumAggregates = ML_Aggregate_Coarsen(MLAggr,A_ML, &P, ml_comm);
-  if(verbose) ML_Set_PrintLevel(printlevel);
+
+  /* Do prolongator smoothing, if requested */
+  if(PSmSweeps && DampingFactor != 0.0) {
+    if(verbose && !A.Comm().MyPID()) printf("%s Smoothing Prolongator w/ Damping Factor %e\n",PrintMsg.c_str(),DampingFactor);
+    smooP = ML_Operator_Create(ml_comm);
+    ML_Smooth_Prolongator(A_ML,MLAggr,PSmSweeps,P,smooP);
+    ML_Operator_Destroy(&P);
+    P = smooP;
+  }
+
+ if(verbose) ML_Set_PrintLevel(printlevel);
   if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);
 
   if(verbose){
@@ -620,7 +839,6 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     if(!A.Comm().MyPID()) {
       printf("%s Aggregation threshold = %e\n",PrintMsg.c_str(),Threshold);
       printf("%s Global aggregates     = %d\n",PrintMsg.c_str(),globalAggs);
-
     }
   }
 

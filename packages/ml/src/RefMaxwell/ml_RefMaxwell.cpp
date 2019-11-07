@@ -999,6 +999,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List11.set("cycle applications",1);
   List11.set("aggregation: type","Uncoupled");
   List11.set("smoother: sweeps",0);
+  List11.set("aggregation: damping factor",0.0);
   List11.set("edge matrix free: coarse",List11c);
   List11.set("aggregation: threshold",.01);
   ML_Epetra::UpdateList(List11,List11_,OverWrite);
