@@ -802,7 +802,7 @@ add (const Scalar& alpha,
 #endif
     RCP<const map_type> CcolMap;
     Tpetra::Details::makeColMap<LocalOrdinal, GlobalOrdinal, Node>
-      (CcolMap, Aprime->getDomainMap(), globalColinds);
+      (CcolMap, CDomainMap, globalColinds);
     C.replaceColMap(CcolMap);
     col_inds_array localColinds("C colinds", globalColinds.extent(0));
     Kokkos::parallel_for(Kokkos::RangePolicy<exec_space>(0, globalColinds.extent(0)),

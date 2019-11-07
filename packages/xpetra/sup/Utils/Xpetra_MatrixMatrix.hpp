@@ -71,6 +71,7 @@
 
 #ifdef HAVE_XPETRA_TPETRA
 #include <TpetraExt_MatrixMatrix.hpp>
+#include <Tpetra_RowMatrixTransposer.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
@@ -78,13 +79,86 @@
 #endif // HAVE_XPETRA_TPETRA
 
 namespace Xpetra {
-
   /*!
     @class Helpers
     @brief Xpetra utility class containing transformation routines  between Xpetra::Matrix and Epetra/Tpetra objects
 
 Note: this class is not in the Xpetra_UseShortNames.hpp
 */
+  namespace Details
+  {
+    template <typename tcrs_matrix_type>
+    Teuchos::RCP<Xpetra::Matrix<typename tcrs_matrix_type::scalar_type, typename tcrs_matrix_type::local_ordinal_type, typename tcrs_matrix_type::global_ordinal_type, typename tcrs_matrix_type::node_type>>
+    tpetraAdd(
+      const tcrs_matrix_type& A, bool transposeA, const typename tcrs_matrix_type::scalar_type alpha,
+      const tcrs_matrix_type& B, bool transposeB, const typename tcrs_matrix_type::scalar_type beta)
+    {
+  #ifdef HAVE_XPETRA_TPETRA
+      using Teuchos::Array;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcp_implicit_cast;
+      using Teuchos::rcpFromRef;
+      using Teuchos::ParameterList;
+      using SC = typename tcrs_matrix_type::scalar_type;
+      using LO = typename tcrs_matrix_type::local_ordinal_type;
+      using GO = typename tcrs_matrix_type::global_ordinal_type;
+      using NO = typename tcrs_matrix_type::node_type;
+      using XTCrsType = Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>;
+      using CrsType = Xpetra::CrsMatrix<SC,LO,GO,NO>;
+      using CrsWrap = Xpetra::CrsMatrixWrap<SC,LO,GO,NO>;
+      using transposer_type = Tpetra::RowMatrixTransposer<SC,LO,GO,NO>;
+      using import_type = Tpetra::Import<LO,GO,NO>;
+      //Decide whether the fast code path can be taken.
+      if(A.isFillComplete() && B.isFillComplete())
+      {
+        auto addParams = rcp(new ParameterList);
+        addParams->set("Call fillComplete", false);
+        //passing A after B means C will have the same domain/range map as A (or A^T if transposeA)
+        return rcp(new CrsWrap(rcp_implicit_cast<CrsType>(rcp(new XTCrsType(Tpetra::MatrixMatrix::add<SC,LO,GO,NO>(beta, transposeB, B, alpha, transposeA, A, Teuchos::null, Teuchos::null, addParams))))));
+      }
+      else
+      {
+        //Slow case - one or both operands are non-fill complete.
+        //TODO: deprecate this.
+        //Need to compute the explicit transpose before add if transposeA and/or transposeB.
+        //This is to count the number of entries to allocate per row in the final sum.
+        RCP<const tcrs_matrix_type> Aprime = rcpFromRef(A);
+        RCP<const tcrs_matrix_type> Bprime = rcpFromRef(B);
+        if(transposeA)
+          Aprime = transposer_type(Aprime).createTranspose();
+        if(transposeB)
+          Bprime = transposer_type(Bprime).createTranspose();
+        //Use Aprime's row map as C's row map.
+        if(!(Aprime->getRowMap()->isSameAs(*(Bprime->getRowMap()))))
+        {
+          auto import = rcp(new import_type(Bprime->getRowMap(), Aprime->getRowMap()));
+          Bprime = Tpetra::importAndFillCompleteCrsMatrix<tcrs_matrix_type>(Bprime, *import, Aprime->getDomainMap(), Aprime->getRangeMap());
+        }
+        //Count the entries to allocate for C in each local row.
+        LO numLocalRows = Aprime->getNodeNumRows();
+        Array<size_t> allocPerRow(numLocalRows);
+        //0 is always the minimum LID
+        for(LO i = 0; i < numLocalRows; i++)
+        {
+          allocPerRow[i] = Aprime->getNumEntriesInLocalRow(i) + Bprime->getNumEntriesInLocalRow(i);
+        }
+        //Construct C
+        RCP<tcrs_matrix_type> C = rcp(new tcrs_matrix_type(Aprime->getRowMap(), allocPerRow(), Tpetra::StaticProfile));
+        //Compute the sum in C (already took care of transposes)
+        Tpetra::MatrixMatrix::Add<SC,LO,GO,NO>(
+            *Aprime, false, alpha,
+            *Bprime, false, beta,
+            C);
+        return rcp(new CrsWrap(rcp_implicit_cast<CrsType>(rcp(new XTCrsType(C)))));
+      }
+  #else
+      throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
+      return Teuchos::null;
+  #endif
+    }
+  }
+
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
@@ -555,32 +629,28 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       RCP<const Matrix> rcpB = Teuchos::rcpFromRef(B);
       RCP<const BlockedCrsMatrix> rcpBopA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(rcpA);
       RCP<const BlockedCrsMatrix> rcpBopB = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(rcpB);
-
       // We have to distinguish 4 cases:
       // both matrices are CrsMatrixWrap based, only one of them is CrsMatrixWrap based, or none.
+
+      // C can be null, so just use A to get the lib
+      auto lib = A.getRowMap()->lib();
 
       // Both matrices are CrsMatrixWrap
       if(rcpBopA == Teuchos::null && rcpBopB == Teuchos::null) {
         if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
           throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
-        if(C.is_null())
-        {
-          //allocate 0 entries now; Tpetra add() will allocate exactly
-          C = rcp(new CrsMatrixWrap(A.getRowMap(), 0, Xpetra::StaticProfile));
-        }
-        if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
+        if (lib == Xpetra::UseEpetra) {
           throw Exceptions::RuntimeError("MatrixMatrix::Add for Epetra only available with Scalar = double, LO = GO = int.");
-        } else if (C->getRowMap()->lib() == Xpetra::UseTpetra) {
+        } else if (lib == Xpetra::UseTpetra) {
   #ifdef HAVE_XPETRA_TPETRA
-          const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-          const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
-          RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >  tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
-          auto addParams = rcp(new Teuchos::ParameterList);
-          addParams->set("Call fillComplete", false);
-          //passing A after B means C will have the same domain/range map as A (or A^T if transposeA)
-          Tpetra::MatrixMatrix::add<SC,LO,GO,NO>(beta, transposeB, tpB, alpha, transposeA, tpA, *tpC, Teuchos::null, Teuchos::null, addParams);
+          using tcrs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NO>;
+          const tcrs_matrix_type& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+          const tcrs_matrix_type& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
+          C = Details::tpetraAdd<Tpetra::CrsMatrix<SC,LO,GO,NO>>(
+              tpA, transposeA, alpha, tpB, transposeB, beta);
   #else
-          throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
+          throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
+          return Teuchos::null;
   #endif
         }
         ///////////////////////// EXPERIMENTAL
@@ -1339,24 +1409,15 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
   #endif
         } else if (lib == Xpetra::UseTpetra) {
   #ifdef HAVE_XPETRA_TPETRA
-  # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
-       (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+    # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+         (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
           throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=int enabled."));
-  # else
-          const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-          const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
-          if(C.is_null())
-          {
-            //allocate 0 entries now; Tpetra add() will allocate exactly
-            C = rcp(new CrsMatrixWrap(A.getRowMap(), 0, Xpetra::StaticProfile));
-          }
-          RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >  tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
-
-          auto addParams = rcp(new Teuchos::ParameterList);
-          addParams->set("Call fillComplete", false);
-          //passing A after B means C will have the same domain/range map as A (or A^T if transposeA)
-          Tpetra::MatrixMatrix::add<SC,LO,GO,NO>(beta, transposeB, tpB, alpha, transposeA, tpA, *tpC, Teuchos::null, Teuchos::null, addParams);
-  # endif
+    #endif
+          using tcrs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NO>;
+          const tcrs_matrix_type& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+          const tcrs_matrix_type& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
+          C = Details::tpetraAdd<Tpetra::CrsMatrix<SC,LO,GO,NO>>(
+              tpA, transposeA, alpha, tpB, transposeB, beta);
   #else
           throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
   #endif
@@ -1961,23 +2022,16 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
   #endif
         } else if (lib == Xpetra::UseTpetra) {
   #ifdef HAVE_XPETRA_TPETRA
-  # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
-       (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
+    # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+         (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
           throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=long long enabled."));
-  # else
-          const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-          const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
-          if(C.is_null())
-          {
-            //allocate 0 entries now; Tpetra add() will allocate exactly
-            C = rcp(new CrsMatrixWrap(A.getRowMap(), 0, Xpetra::StaticProfile));
-          }
-          RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >  tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
-
-          auto addParams = rcp(new Teuchos::ParameterList);
-          addParams->set("Call fillComplete", false);
-          Tpetra::MatrixMatrix::add<SC,LO,GO,NO>(beta, transposeB, tpB, alpha, transposeA, tpA, *tpC, Teuchos::null, Teuchos::null, addParams);
-  # endif
+    # else
+          using tcrs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NO>;
+          const tcrs_matrix_type& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+          const tcrs_matrix_type& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
+          C = Details::tpetraAdd<Tpetra::CrsMatrix<SC,LO,GO,NO>>(
+              tpA, transposeA, alpha, tpB, transposeB, beta);
+    # endif
   #else
           throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
   #endif

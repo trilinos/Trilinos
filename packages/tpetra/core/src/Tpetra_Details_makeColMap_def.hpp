@@ -65,9 +65,9 @@ namespace Details {
 
 template <class LO, class GO, class NT>
 int
-makeColMapImpl (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
+makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
             Teuchos::Array<int>& remotePIDs,
-            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& domMap,
+            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
             size_t numLocalColGIDs,
             size_t numRemoteColGIDs,
             std::set<GO>& RemoteGIDSet,
@@ -581,6 +581,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
     }, Kokkos::MinMax<GO>(minMaxGID));
   minGID = minMaxGID.min_val;
   maxGID = minMaxGID.max_val;
+  auto comm = domMap->getComm();
   //Now, know the full range of input GIDs.
   //Determine the set of GIDs in the column map using a dense bitset, which corresponds to the range [minGID, maxGID]
   bitset_t presentGIDs(maxGID - minGID + 1);
@@ -593,10 +594,10 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
   GOView remoteGIDView(Kokkos::ViewAllocateWithoutInitializing("Remote GIDs"), constPresentGIDs.count());
   LocalMap localDomMap = domMap->getLocalMap();
   //This lists the locally owned GIDs in localGIDView
-  Kokkos::parallel_scan(RangePolicy<exec_space>(0, nentries),
+  Kokkos::parallel_scan(RangePolicy<exec_space>(0, constPresentGIDs.size()),
       ListGIDs<LO, GO, SingleView, GOView, const_bitset_t, LocalMap, false>(minGID, localGIDView, numLocals, constPresentGIDs, localDomMap));
   //And this lists the remote GIDs in remoteGIDView
-  Kokkos::parallel_scan(RangePolicy<exec_space>(0, nentries),
+  Kokkos::parallel_scan(RangePolicy<exec_space>(0, constPresentGIDs.size()),
       ListGIDs<LO, GO, SingleView, GOView, const_bitset_t, LocalMap, true>(minGID, remoteGIDView, numRemotes, constPresentGIDs, localDomMap));
   //Pull down the sizes
   GO numLocalColGIDs = 0;
