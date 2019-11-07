@@ -3054,7 +3054,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
       grid_info =(ML_Aggregate_Viz_Stats *) ml->Amat[level].to->Grid->Grid;
       if (grid_info) {
-        if (grid_info->x != NULL) {
+        if (grid_info->x != NULL || grid_info->material != NULL) {
           if (ML_Get_PrintLevel() > 6 && ml->comm->ML_mypid == 0)
             printf("ML_Gen_MultilevelHierarchy: Projecting node coordinates from level %d to level %d\n",
                    level,next);

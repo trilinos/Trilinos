@@ -46,6 +46,7 @@ extern int ML_NODE_ID; //FIXME
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "ml_memory.h"
 #include "ml_DD_prec.h"
+#include "ml_amg_genP.h"
 #include <iostream>
 #include <iomanip>
 
@@ -131,6 +132,10 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     }
     ML_Aggregate_Destroy(&agg_); agg_ = 0;
   }
+
+  if(amg_ != 0) {
+    ML_AMG_Destroy(&amg_); amg_ = 0;
+  }    
 
   if (TMatrixML_ != 0) {
     ML_Operator_Destroy(&TMatrixML_);
@@ -1396,6 +1401,7 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
 
   ml_ = 0;
   agg_ = 0;
+  amg_ = 0;
 
   sprintf(ErrorMsg_,"%s","*ML*ERR* : ");
   PrintMsg_ = "";
@@ -1819,6 +1825,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
     OutputList_.set("number of construction phases", ++NumCompute);
   }
 
+  // Set to classical, if we need to
+  std::string default_values="SA";
+  if(List_.isParameter("default values")) {
+    default_values = List_.get("default values","Classical-AMG");
+    if(default_values == "Classical-AMG")
+      AMGSolver_ = ML_CLASSICAL_FAMILY;
+  }
 
   // =======================================================================//
   //              MPI Stuff                                                 //
@@ -2184,6 +2197,27 @@ ComputePreconditioner(const bool CheckPreconditioner)
     }
     ML_CHK_ERR(SetNullSpace());
   }
+  if (AMGSolver_ == ML_CLASSICAL_FAMILY) {
+     ML_AMG_Create(&amg_);
+     ML_AMG_Set_MaxLevels(amg_, MaxCreationLevels);
+
+     double Threshold = 0.0;
+     Threshold = List_.get("aggregation: threshold", Threshold);
+     ML_AMG_Set_Threshold(amg_,Threshold);
+
+     int MaxCoarseSize = 128;
+     if (List_.isSublist("coarse: list")) {
+       ParameterList &coarseList = List_.sublist("coarse: list");
+       MaxCoarseSize = coarseList.get("smoother: max size", MaxCoarseSize);
+     }
+     ML_AMG_Set_MaxCoarseSize(amg_, MaxCoarseSize );
+
+     if( verbose_ ) {
+        std::cout << PrintMsg_ << "Aggregation threshold = " << Threshold << std::endl;
+        std::cout << PrintMsg_ << "Max coarse size = " << MaxCoarseSize << std::endl;
+
+     }
+  }
 
   if (AMGSolver_ == ML_MAXWELL) {
     ML_Aggregate_VizAndStats_Setup(ml_nodes_);
@@ -2424,7 +2458,20 @@ ComputePreconditioner(const bool CheckPreconditioner)
                             EdgeDampingFactor,
                             enrichBeta, PeDropThreshold);
 
+  }  
+  if (AMGSolver_ == ML_CLASSICAL_FAMILY) {
+    // ==================================================================== //
+    // Build smoothed aggregation hierarchy                                 //
+    // ==================================================================== //
+    NumLevels_ = ML_Gen_MGHierarchy_UsingAMG(ml_,LevelID_[0],
+                                             Direction,amg_);
+
+    if (verbose_)
+      std::cout << PrintMsg_ << "Time to build the hierarchy = "
+           << Time.ElapsedTime() << " (s)" << std::endl;
+
   }
+
   {
     int NL2 = OutputList_.get("max number of levels", 0); //what the hell???
     OutputList_.set("max number of levels", NL2+NumLevels_);

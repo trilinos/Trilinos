@@ -412,11 +412,11 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Unlisted Options */
   PL->set("ML debug mode",false);
-  setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<std::string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell","DD-ML-LU"),PL);
+  setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<std::string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell","DD-ML-LU","Classical-AMG"),PL);
   PL->set("ML validate parameter list",true);
   setIntParameter("ML validate depth",0,"Internal option to control validation depth",PL,intParam);
   PL->set("ResetList",true);
-  setStringToIntegralParameter<int>("SetDefaults","not-set","Internal Option",tuple<std::string>("not-set","SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
+  setStringToIntegralParameter<int>("SetDefaults","not-set","Internal Option",tuple<std::string>("not-set","SA","DD","DD-ML","maxwell","NSSA","RefMaxwell","Classical-AMG"),PL);
   setIntParameter("ML node id",-1,"Experimental option to identify the processor node (vis-a-vis core) id",PL,intParam);
 
   /* Unlisted Options that should probably be listed */
