@@ -1,12 +1,14 @@
 # Utilities for system matching
 
 function get_knownSystemNameInBuildName() {
+  knownSystemNameInBuildName=
   for known_build_name in ${ATDM_KNOWN_SYSTEM_NAMES_LIST[@]} ; do
     if [[ $ATDM_CONFIG_BUILD_NAME == *"${known_build_name}"* ]] ; then
       knownSystemNameInBuildName=${known_build_name}
       break
     fi
   done
+  echo ${knownSystemNameInBuildName}
 }
 
 

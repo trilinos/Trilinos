@@ -441,13 +441,13 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
 
 ## How to add a new system
 
-To add a new system, first the new system to the file:
+To add a new system, first update the file:
 
 ```
   Trilinos/cmake/std/atdm/utils/get_known_system_info.sh
 ```
 
-First, add the new system name to the variable:
+First, add the new system name to the list variable:
 
 ```
 ATDM_KNOWN_SYSTEM_NAMES_LIST=(
@@ -455,10 +455,10 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   )
 ```
 
-Second, if the system mathching is done by matching to the `hostname`, then
+Second, if the system selection is done by matching to the `hostname`, then
 add a new `elif` statement for that set of machines.  Note that more than one
 `hostname` machine may map to the same `<new_system_name>` (e.g. both `white`
-and `ride` machines map to the system `ride`).
+and `ride` machines map to the system env `ride`).
 
 However, if adding a new system type that will run on many machines and not
 looking at the `hostname` on the machine, then add a new `if` block to the
