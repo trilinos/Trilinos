@@ -362,6 +362,8 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   List_Material.sublist("refmaxwell: 11list").set("material coordinates",material_ptr);
 
   Teuchos::ParameterList List_SmoothSP = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
+  List_SmoothSP.sublist("refmaxwell: 11list").set("eigen-analysis: type","power-method");
+  List_SmoothSP.sublist("refmaxwell: 11list").set("aggregation: threshold",1e-2);
   List_SmoothSP.sublist("refmaxwell: 11list").set("aggregation: damping factor",1.333);
 
   /* Do Tests */
