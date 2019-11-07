@@ -66,7 +66,7 @@ namespace Intrepid2 {
     try {                                                               \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::logic_error &err) {                                      \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
@@ -211,7 +211,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( fst::evaluate(a_2_2_2_3, a_2_2, a_2_2_2_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( fst::evaluate(a_2_2_2_2, a_2_2, a_2_2_2_2_2) );
 #endif
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";

@@ -12,4 +12,4 @@ IF(Kokkos_ENABLE_Cuda AND Kokkos_ENABLE_Cuda_UVM)
   ADD_SUBDIRECTORY(Cuda)
 ENDIF()
 
-
+ADD_SUBDIRECTORY(TensorTopology)

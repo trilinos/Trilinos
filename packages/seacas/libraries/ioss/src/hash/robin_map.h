@@ -51,7 +51,7 @@ namespace tsl {
    * cache-miss for example) as we then compare the stored hashes before comparing the keys. When
    * `tsl::rh::power_of_two_growth_policy` is used as `GrowthPolicy`, it may also speed-up the
    * rehash process as we can avoid to recalculate the hash. When it is detected that storing the
-   * hash will not incur any memory penality due to alignement (i.e.
+   * hash will not incur any memory penalty due to alignment (i.e.
    * `sizeof(tsl::detail_robin_hash::bucket_entry<ValueType, true>) ==
    * sizeof(tsl::detail_robin_hash::bucket_entry<ValueType, false>)`) and
    * `tsl::rh::power_of_two_growth_policy` is used, the hash will be stored even if `StoreHash` is
@@ -336,7 +336,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup to the value if you already
+     * the same as hash_function()(key). Useful to speed-up the lookup to the value if you already
      * have the hash.
      */
     size_type erase(const key_type &key, std::size_t precalculated_hash)
@@ -359,7 +359,7 @@ namespace tsl {
      * @copydoc erase(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup to the value if you already
+     * the same as hash_function()(key). Useful to speed-up the lookup to the value if you already
      * have the hash.
      */
     template <class K, class KE = KeyEqual,
@@ -378,7 +378,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     T &at(const Key &key, std::size_t precalculated_hash)
@@ -411,7 +411,7 @@ namespace tsl {
      * @copydoc at(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -448,7 +448,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     size_type count(const Key &key, std::size_t precalculated_hash) const
@@ -471,7 +471,7 @@ namespace tsl {
      * @copydoc count(const K& key) const
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -485,7 +485,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     iterator find(const Key &key, std::size_t precalculated_hash)
@@ -518,7 +518,7 @@ namespace tsl {
      * @copydoc find(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -542,7 +542,7 @@ namespace tsl {
      * @copydoc find(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -556,7 +556,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     std::pair<iterator, iterator> equal_range(const Key &key, std::size_t precalculated_hash)
@@ -593,7 +593,7 @@ namespace tsl {
      * @copydoc equal_range(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,

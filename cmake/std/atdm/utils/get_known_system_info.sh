@@ -66,6 +66,10 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "ghost"* ]] \
   || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ gho[0-9]+ ]] ; then
   ATDM_HOSTNAME=ghost
   ATDM_SYSTEM_NAME=serrano
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "attaway"* ]] \
+  || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ swa[0-9]+ ]] ; then
+  ATDM_HOSTNAME=attaway
+  ATDM_SYSTEM_NAME=serrano
 
 # tlcc2 systems
 elif [[ $SNLSYSTEM == "tlcc2"* ]] ; then

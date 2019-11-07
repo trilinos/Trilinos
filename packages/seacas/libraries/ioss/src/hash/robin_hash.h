@@ -139,7 +139,7 @@ namespace tsl {
      * - If `StoreHash` is true, 32 bits of the hash of the value, if any, are also stored in the
      * bucket. If the size of the hash is more than 32 bits, it is truncated. We don't store the
      * full hash as storing the hash is a potential opportunity to use the unused space due to the
-     * alignement of the bucket_entry structure. We can thus potentially store the hash without any
+     * alignment of the bucket_entry structure. We can thus potentially store the hash without any
      * extra space (which would not be possible with 64 bits of the hash).
      */
     template <typename ValueType, bool StoreHash>
@@ -366,7 +366,7 @@ namespace tsl {
                          !std::is_same<Hash, std::hash<key_type>>::value));
 
       /**
-       * Only use the stored hash on lookup if we are explictly asked. We are not sure how slow
+       * Only use the stored hash on lookup if we are explicitly asked. We are not sure how slow
        * the KeyEqual operation is. An extra comparison may slow things down with a fast KeyEqual.
        */
       static constexpr bool USE_STORED_HASH_ON_LOOKUP = StoreHash;
@@ -529,7 +529,7 @@ namespace tsl {
 #else
       /**
        * C++11 doesn't support the creation of a std::vector with a custom allocator and 'count'
-       * default-inserted elements. The needed contructor `explicit vector(size_type count, const
+       * default-inserted elements. The needed constructor `explicit vector(size_type count, const
        * Allocator& alloc = Allocator());` is only available in C++14 and later. We thus must resize
        * after using the `vector(const Allocator& alloc)` constructor.
        *
@@ -1274,7 +1274,7 @@ namespace tsl {
 
       /**
        * Grow the table if m_grow_on_next_insert is true or we reached the max_load_factor.
-       * Shrink the table if m_try_skrink_on_next_insert is true (an erase occured) and
+       * Shrink the table if m_try_skrink_on_next_insert is true (an erase occurred) and
        * we're below the min_load_factor.
        *
        * Return true if the table has been rehashed.
