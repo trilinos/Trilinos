@@ -571,7 +571,18 @@ add (const Scalar& alpha,
   RCP<crs_matrix_type> C = rcp(new crs_matrix_type(Brcp->getRowMap(), 0));
   //this version of add() always fill completes the result, no matter what is in params on input
   if(!params.is_null())
+  {
+    if(params->isParameter("Call fillComplete") && !params->get<bool>("Call fillComplete"))
+    {
+      if(A.getRowMap()->getComm()->getRank() == 0)
+      {
+        std::cout << "WARNING: Tpetra::MatrixMatrix::add(): 'Call fillComplete' was explicitly set to false,\n";
+        std::cout << "but this version of add() always calls fillComplete() on the sum (C). Use the other version\n";
+        std::cout << "of add() (that works on a newly constructed C) to get a non-fillComplete matrix.\n";
+      }
+    }
     params->set("Call fillComplete", true);
+  }
   add(alpha, transposeA, A, beta, false, *Brcp, *C, domainMap, rangeMap, params);
   return C;
 }
@@ -811,14 +822,8 @@ add (const Scalar& alpha,
                               typename map_type::local_map_type>
         (localColinds, globalColinds, CcolMap->getLocalMap()));
     C.setAllValues(rowptrs, localColinds, vals);
-    //Use a regular fillComplete so that the values and indices get sorted.
-    C.fillComplete(CDomainMap, CRangeMap, params);
-    if(!doFillComplete)
-    {
-      //Allow the user to change matrix values.
-      //Structure will be static, since C is allocated to exactly the right size.
-      C.resumeFill();
-    }
+    if(doFillComplete)
+      C.fillComplete(CDomainMap, CRangeMap, params);
   }
   else
   {
