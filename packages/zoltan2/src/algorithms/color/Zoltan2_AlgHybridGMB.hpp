@@ -275,7 +275,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
                        Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace,MemorySpace> > adjs_view,
                        Kokkos::View<offset_t*, Kokkos::Device<ExecutionSpace,MemorySpace> > offset_view, 
                        Teuchos::ArrayRCP<int> colors,
-                       Teuchos::RCP<femv_t> femv){
+                       Teuchos::RCP<femv_t> femv,
+                       bool recolor=false){
       
       //default values are taken from KokkosKernels_TestParameters.hpp
       
@@ -332,8 +333,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
         default:
           kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
       }*/
-      kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
-     
+      if(recolor){
+        kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
+      } else {
+        kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
+        
+      }
       //set the initial coloring of the kh.get_graph_coloring_handle() to be
       //the data view from the femv.
       Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<MemorySpace>();
@@ -765,7 +770,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
             this->colorInterior<Tpetra::Map<>::execution_space,
                                 Tpetra::Map<>::memory_space,
                                 Tpetra::Map<>::memory_space>
-                                (femv_colors.size(),dist_adjs,dist_offsets,colors,femv);
+                                (femv_colors.size(),dist_adjs,dist_offsets,colors,femv,true);
             /*printf("Rank %d: AFTER RECOLORING\n", comm->getRank()); 
             for(int i = 0; i < femv->getData(0).size(); i++){
               printf("--Rank %d: global vtx %u is color %d\n",comm->getRank(),reorderGIDs[i],femv->getData(0)[i]);
