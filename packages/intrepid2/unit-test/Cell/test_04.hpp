@@ -68,7 +68,7 @@ namespace Intrepid2 {
     try {                                                               \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::logic_error &err) {                                      \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
@@ -264,7 +264,7 @@ namespace Intrepid2 {
                       << "                     F^{-1}F(P_d) = " << controlPoints(cellOrd, pt, d) <<"\n";
                   }
           }
-        } catch (std::logic_error err) {
+        } catch (std::logic_error &err) {
           *outStream << err.what() << "\n";
           errorFlag = -1000;
         }

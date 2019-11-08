@@ -359,11 +359,20 @@ compute (multivector_type& W,
 
   if (canFuse (B)) {
     // "nonconst" here has no effect other than on the return type.
-    RCP<vector_type> W_vec = W.getVectorNonConst (0);
-    RCP<vector_type> B_vec = B.getVectorNonConst (0);
-    RCP<vector_type> X_vec = X.getVectorNonConst (0);
+    if (W_vec_.is_null() || W.getLocalViewHost().data() != viewW_.data()) {
+      viewW_ = W.getLocalViewHost();
+      W_vec_ = W.getVectorNonConst (0);
+    }
+    if (B_vec_.is_null() || B.getLocalViewHost().data() != viewB_.data()) {
+      viewB_ = B.getLocalViewHost();
+      B_vec_ = B.getVectorNonConst (0);
+    }
+    if (X_vec_.is_null() || X.getLocalViewHost().data() != viewX_.data()) {
+      viewX_ = X.getLocalViewHost();
+      X_vec_ = X.getVectorNonConst (0);
+    }
     TEUCHOS_ASSERT( ! A_crs_.is_null () );
-    fusedCase (*W_vec, alpha, D_inv, *B_vec, *A_crs_, *X_vec, beta);
+    fusedCase (*W_vec_, alpha, D_inv, *B_vec_, *A_crs_, *X_vec_, beta);
   }
   else {
     TEUCHOS_ASSERT( ! A_op_.is_null () );

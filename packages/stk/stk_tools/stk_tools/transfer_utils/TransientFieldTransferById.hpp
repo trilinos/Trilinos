@@ -90,7 +90,11 @@ public:
 
     ~TransientFieldTransferById();
 
-    size_t transfer_and_write_transient_fields(const std::string &parallelOutputMeshName);
+    void writeFields(size_t aOutFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames);
+    void get_field_names(size_t aOutputFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames);
+
+    size_t transfer_and_write_transient_fields(const std::string &parallelOutputMeshName,  stk::mesh::Selector & aselector);
+    size_t transfer_and_write_transient_fields(const std::string &parallelOutputMeshNam);
 
     stk::io::StkMeshIoBroker &get_brokerA() { return mBrokerA; }
     stk::io::StkMeshIoBroker &get_brokerB() { return mBrokerB; }

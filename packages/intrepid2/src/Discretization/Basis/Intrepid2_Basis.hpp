@@ -58,6 +58,8 @@
 #include "Kokkos_Vector.hpp"
 #include "Shards_CellTopology.hpp"
 
+#include <vector>
+
 namespace Intrepid2 {
 
   /** \class  Intrepid2::Basis
@@ -79,11 +81,18 @@ namespace Intrepid2 {
               subcell of particular dimension, and the last field gives the total number of basis
               functions associated with that subcell; see Section \ref basis_dof_tag_ord_sec for details.
 
+              Note the use of Kokkos::LayoutStride as the layout for various View definitions (including the
+              argument for \ref getValues() ).  A method expecting a LayoutStride view can accept, thanks to
+              some conversion mechanisms defined elsewhere, a LayoutLeft view (the default for Cuda views in
+              Kokkos) or a LayoutRight view (the default on most other platforms).  This does introduce some
+              additional complexity when Views need to be allocated for temporary storage; see the method
+              \ref getMatchingViewWithLabel() provided in \ref Intrepid_Utils.hpp.
+   
       \remark To limit memory use by factory-type objects (basis factories will be included in future
               releases of Intrepid2), tag data is not initialized by basis ctors,
               instead, whenever a function that requires tag data is invoked for a first time, it calls
               initializeTags() to fill <var>ordinalToTag_</var> and <var>tagToOrdinal_</var>. Because
-              tag data is basis specific, every concrete basis class requires its own implementation
+              tag data is basis-specific, every concrete basis class requires its own implementation
               of initializeTags().
 
       \todo  restore test for inclusion of reference points in their resective reference cells in
@@ -436,7 +445,7 @@ namespace Intrepid2 {
       int degreeEntryLength     = fieldOrdinalPolynomialDegree_.extent_int(1);
       int requestedDegreeLength = degrees.extent_int(0);
       INTREPID2_TEST_FOR_EXCEPTION(degreeEntryLength != requestedDegreeLength, std::invalid_argument, "length of degrees does not match the entries in fieldOrdinalPolynomialDegree_");
-      Kokkos::vector<int> fieldOrdinalsVector;
+      std::vector<int> fieldOrdinalsVector;
       for (int basisOrdinal=0; basisOrdinal<fieldOrdinalPolynomialDegree_.extent_int(0); basisOrdinal++)
       {
         bool matches = true;
@@ -447,7 +456,7 @@ namespace Intrepid2 {
         if (matches) fieldOrdinalsVector.push_back(basisOrdinal);
       }
       OrdinalTypeArray1DHost fieldOrdinals("fieldOrdinalsForDegree",fieldOrdinalsVector.size());
-      for (int i=0; i<fieldOrdinalsVector.size(); i++)
+      for (unsigned i=0; i<fieldOrdinalsVector.size(); i++)
       {
         fieldOrdinals(i) = fieldOrdinalsVector[i];
       }
@@ -457,24 +466,25 @@ namespace Intrepid2 {
     /** \brief For hierarchical bases, returns the field ordinals that have at most the specified degree in each dimension.
      Assuming that these are less than or equal to the polynomial orders provided at Basis construction, the corresponding polynomials will form a superset of the Basis of the same type constructed with polynomial orders corresponding to the specified degrees.
      
-     This variant takes a Kokkos::vector of polynomial degrees and returns a Kokkos::vector of field ordinals.  It calls the other variant, which uses Kokkos Views on the host.
+
+     This variant takes a std::vector of polynomial degrees and returns a std::vector of field ordinals.  It calls the other variant, which uses Kokkos Views on the host.
      
-     \param  degrees      [in] - Kokkos::vector<int> of length specified by getPolynomialDegreeLength(), indicating what the maximum degree in each dimension should be
+     \param  degrees      [in] - std::vector<int> of length specified by getPolynomialDegreeLength(), indicating what the maximum degree in each dimension should be
      
-     \return a Kokkos::vector<int> containing the ordinals of matching basis functions
+     \return a std::vector<int> containing the ordinals of matching basis functions
      
      */
-    Kokkos::vector<int> getFieldOrdinalsForDegree(Kokkos::vector<int> &degrees) const
+    std::vector<int> getFieldOrdinalsForDegree(std::vector<int> &degrees) const
     {
       INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
                                    ">>> ERROR (Basis::getFieldOrdinalsForDegree): this method is not supported for non-hierarchical bases.");
       OrdinalTypeArray1DHost degreesView("degrees",degrees.size());
-      for (int d=0; d<degrees.size(); d++)
+      for (unsigned d=0; d<degrees.size(); d++)
       {
         degreesView(d) = degrees[d];
       }
       auto fieldOrdinalsView = getFieldOrdinalsForDegree(degreesView);
-      Kokkos::vector<int> fieldOrdinalsVector(fieldOrdinalsView.extent_int(0));
+      std::vector<int> fieldOrdinalsVector(fieldOrdinalsView.extent_int(0));
       for (int i=0; i<fieldOrdinalsView.extent_int(0); i++)
       {
         fieldOrdinalsVector[i] = fieldOrdinalsView(i);
@@ -495,7 +505,13 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinal < 0, std::invalid_argument, "field ordinal must be non-negative");
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinal >= fieldOrdinalPolynomialDegree_.extent_int(0), std::invalid_argument, "field ordinal out of bounds");
       
-      return Kokkos::subview(fieldOrdinalPolynomialDegree_,fieldOrdinal,Kokkos::ALL);
+      int polyDegreeLength = getPolynomialDegreeLength(); 
+      OrdinalTypeArray1DHost polyDegree("polynomial degree", polyDegreeLength);
+      for (int d=0; d<polyDegreeLength; d++)
+      {
+        polyDegree(d) = fieldOrdinalPolynomialDegree_(fieldOrdinal,d);
+      }
+      return polyDegree;
     }
     
     /**
@@ -503,16 +519,16 @@ namespace Intrepid2 {
      
      \param fieldOrdinal     [in] - ordinal of the basis function whose polynomial degree is requested.
      
-     \return a Kokkos::vector<int> of length matching getPolynomialDegreeLength(), with the polynomial degree of the basis function in each dimension.
+     \return a std::vector<int> of length matching getPolynomialDegreeLength(), with the polynomial degree of the basis function in each dimension.
      */
-    Kokkos::vector<int> getPolynomialDegreeOfFieldAsVector(int fieldOrdinal) const
+    std::vector<int> getPolynomialDegreeOfFieldAsVector(int fieldOrdinal) const
     {
       INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
                                    ">>> ERROR (Basis::getPolynomialDegreeOfFieldAsVector): this method is not supported for non-hierarchical bases.");
       auto polynomialDegreeView = getPolynomialDegreeOfField(fieldOrdinal);
-      Kokkos::vector<int> polynomialDegree(polynomialDegreeView.extent_int(0));
+      std::vector<int> polynomialDegree(polynomialDegreeView.extent_int(0));
       
-      for (int d=0; d<polynomialDegree.size(); d++)
+      for (unsigned d=0; d<polynomialDegree.size(); d++)
       {
         polynomialDegree[d] = polynomialDegreeView(d);
       }

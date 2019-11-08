@@ -339,6 +339,16 @@ namespace MueLu {
 
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector & X,
+                  const MultiVector & B,
+                  MultiVector & R) const {
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      R.update(STS::one(),B,STS::zero());
+      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());   
+    }      
+    
+
   private:
 
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
@@ -403,7 +413,7 @@ namespace MueLu {
     Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
     Teuchos::RCP<Teuchos::ParameterList> A22_AP_reuse_data_, A22_RAP_reuse_data_;
     //! Some options
-    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_,implicitTranspose_;
+    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_,implicitTranspose_,fuseProlongationAndUpdate_;
     std::string mode_;
     //! Temporary memory
     mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_;

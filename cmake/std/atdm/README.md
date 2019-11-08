@@ -94,16 +94,21 @@ Each of these keywords [`<system_name>`](#system_name),
 <a name="system_name"/>
 
 **`<system_name>`**: Typically, the system name is determined automatically by
-examining the `hostname` or other files on the system and matching to known
-hosts.  Therefore, it is typically not necessary to specify `<system_name>` in
-the `<build-name>` keys string.  But there are some cases where more then one
-`<system_name>` env are supported on the same machine.  For example, on CEE
-LAN RHEL6 machines, both the <a href="#sems-rhel6-environment">SEMS RHEL6
-env</a> and <a href="#cee-rhel6-environment">CEE RHEL6 env</a> are supported.
-On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in
-`<build-name>`, then the `cee-rhel6` env will be selected.  But if
-`sems-rhel6` is included in the build name or no system name is given, then
-the `sems-rhel6` env will be selected by default on such machines.
+examining the `hostname`, standard system env vars, or other files on the
+machine and matching to a known supported system.  Therefore, it is typically
+not necessary to specify `<system_name>` in the `<build-name>` keys string.
+But there are some cases where more then one `<system_name>` env are supported
+on the same machine.  For example, on CEE LAN RHEL6 machines, both the <a
+href="#sems-rhel6-environment">sems-rhel6</a> and <a
+href="#cee-rhel6-environment">cee-rhel6</a> environments are supported.  On
+these CEE LAN RHEL6 machines, when `cee-rhel6` is included in `<build-name>`,
+then the `cee-rhel6` env will be selected.  But if `sems-rhel6` is included in
+the build name or no system name is given, then the `sems-rhel6` env will be
+selected by default on such machines.  Likewise for CEE LAN RHEL7 machines
+with the <a href="#sems-rhel6-environment">sems-rhel7</a> and <a
+href="#cee-rhel6-environment">cee-rhel6</a> environments.  And if `spack-rhel`
+is included in `<build-name>`, then the <a
+href="#spack-rhel-environment">spack-rhel</a> will attempted to be loaded.
 
 <a name="kokkos_arch"/>
 
@@ -608,7 +613,7 @@ example, skip the configure, skip the build, skip running tests, etc.
 * <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
 * <a href="#spack-rhel-environment">Spack RHEL Environment</a>
-* <a href="#cee-rhel6-environment">CEE RHEL6 Environment</a>
+* <a href="#cee-rhel6-environment">CEE RHEL6 and RHEL7 Environment</a>
 * <a href="#waterman">waterman</a>
 
 
@@ -934,11 +939,11 @@ builds for the `spack-rhel` env and also to load the correct env to find
 Python, etc.
 
 
-### CEE RHEL6 Environment
+### CEE RHEL6 and RHEL7 Environment
 
-Once logged into any CEE LAN RHEL6 SRN machine, one can configure, build, and
-run tests for any ATDM Trilinos package using the `cee-rhel6` env.  For
-example, to configure, build and run the tests for the
+Once logged into any CEE LAN RHEL6 or RHEL7 SRN machine, one can configure,
+build, and run tests for any ATDM Trilinos package using the `cee-rhel6` env.
+For example, to configure, build and run the tests for the
 `cee-rhel6-clang-opt-openmp` build for say `MueLu` on a CEE LAN machine,
 (after cloning Trilinos on the `develop` branch) one would do:
 
@@ -1083,7 +1088,8 @@ contains the following files:
   arbitrary sets of packages.
 
 * **ATDMDisables.cmake**: Disables a bunch of Trilinos packages and
-  subpackages not used by ATDM application customers.  This file gets included
+  subpackages not used by ATDM application customers, disables of test suites
+  and individual tests across various builds, etc..  This file gets included
   automatically in `ATDMDevEnv.cmake` (so you don't need to list it in local
   configures of Trilinos).  But this file is also included in the outer `ctest
   -S` driver script code for ATDM builds of Trilinos which is needed for
@@ -1361,7 +1367,7 @@ one can accomplish this by adding a (conditional) `ATDM_SET_ENABLE()`
 statement for each test disable directly to the file:
 
 ```
-  Trilinos/cmake/std/atdm/ATDMDevEnvSettings.cmake
+  Trilinos/cmake/std/atdm/ATDMDisables.cmake
 ```
 
 For example, Trilinos commit [5e52db03ff](https://github.com/trilinos/Trilinos/commit/5e52db03ff33acb5b9a0be7ba7507a8bb0de6e30) added the CMake code:
@@ -1373,7 +1379,7 @@ IF (ATDM_NODE_TYPE STREQUAL "OPENMP")
 ENDIF()
 ```
 
-to the file `ATDMDevEnvSettings.cmake` to disable the test
+to the file `ATDMDisables.cmake` to disable the test
 `MueLu_UnitTestsTpetra_MPI_4` for all OpenMP builds across all platforms.
 (Note that that disable was later removed in Trilinos commit
 [62fa6663a6](https://github.com/trilinos/Trilinos/commit/62fa6663a6d5a757d786ac87752c3e2074d28414)

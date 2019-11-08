@@ -158,7 +158,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
 
   auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
 
-  RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
+  Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
   RCP<fe_graph_type> fe_graph = rcp(new fe_graph_type(row_map, owned_plus_shared_map, 16));
@@ -301,8 +301,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     Tpetra::endFill(*rhs);
   }
 
-
-  timerGlobal = Teuchos::null;
+  Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
 
   // Print out fe_matrix details.
   if(opts.verbose) fe_matrix->describe(out, Teuchos::VERB_EXTREME);
@@ -379,7 +378,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
 
   auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
 
-  RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
+  Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
 
   RCP<fe_graph_type> fe_graph =
     rcp (new fe_graph_type (row_map, owned_plus_shared_map, 16));
@@ -544,8 +543,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     Tpetra::endFill(*rhs);
   }
 
-
-  timerGlobal = Teuchos::null;
+  Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
 
   // Print out fe_matrix details.
   if(opts.verbose) fe_matrix->describe(out, Teuchos::VERB_EXTREME);

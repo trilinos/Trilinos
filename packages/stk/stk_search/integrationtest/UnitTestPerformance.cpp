@@ -53,20 +53,6 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBo
 void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
                 stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
 
-TEST(Performance, ofAxisAlignedBoundingBoxesUsingOctTree)
-{
-  MPI_Comm comm = MPI_COMM_WORLD;
-  stk::search::SearchMethod searchMethod = stk::search::KDTREE;
-  testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
-}
-
-TEST(Performance, ofAxisAlignedBoundingBoxesUsingBoostRtree)
-{
-  MPI_Comm comm = MPI_COMM_WORLD;
-  stk::search::SearchMethod searchMethod = stk::search::BOOST_RTREE;
-  testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
-}
-
 TEST(Performance, ofAxisAlignedBoundingBoxesUsingKdtree)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
@@ -145,19 +131,9 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
 
 ////////////////////////////////////////////////////////////
 
-TEST(Performance, stkSearchUsingBoostUsingStkAABoxes)
-{
-    runStkSearchTestUsingStkAABoxes(stk::search::BOOST_RTREE);
-}
-
 TEST(Performance, stkSearchUsingKdtreeUsingStkAABoxes)
 {
     runStkSearchTestUsingStkAABoxes(stk::search::KDTREE);
-}
-
-TEST(Performance, stkSearchUsingBoostUsingFloatAABoxes)
-{
-    runStkSearchTestUsingFloatAABoxes(stk::search::BOOST_RTREE);
 }
 
 TEST(Performance, stkSearchUsingKdtreeUsingFloatAABoxes)

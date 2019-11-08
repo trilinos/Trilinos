@@ -468,6 +468,9 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     {
         // Change ownership of changing elem and all entities in it's closure that
         // we own to proc 0.
+        // Inspecting the ascii-art in the above mesh setup function reveals that
+        // P2 doesn't own nodes 5 and 6, so the field-data for those won't be sent
+        // to P0.
 
         Entity changing_elem = mesh.get_entity(elem_key_chg_own);
         ASSERT_TRUE( mesh.is_valid(changing_elem));
@@ -504,9 +507,11 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
         stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
         double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
-        EXPECT_EQ( 5.0, *elem_field_data_node5 );
+        const double expectedNode5Data = 5.0;
+        EXPECT_EQ( expectedNode5Data, *elem_field_data_node5 );
         double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
-        EXPECT_EQ( 6.0, *elem_field_data_node6 );
+        const double expectedNode6Data = 6.0;
+        EXPECT_EQ( expectedNode6Data, *elem_field_data_node6 );
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -522,9 +527,11 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
         stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
         double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
-        EXPECT_EQ( 5.0, *elem_field_data_node5 );
+        const double expectedNode5Data = 5.0;
+        EXPECT_EQ( expectedNode5Data, *elem_field_data_node5 );
         double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
-        EXPECT_EQ( 6.0, *elem_field_data_node6 );
+        const double expectedNode6Data = 6.0;
+        EXPECT_EQ( expectedNode6Data, *elem_field_data_node6 );
     }
 
 }

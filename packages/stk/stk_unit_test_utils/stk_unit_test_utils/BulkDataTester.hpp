@@ -246,7 +246,8 @@ public:
 
     void my_internal_resolve_ghosted_modify_delete()
     {
-        this->internal_resolve_ghosted_modify_delete();
+        stk::mesh::EntityVector entitiesNoLongerShared;
+        this->internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
     }
 
     void my_internal_resolve_parallel_create()

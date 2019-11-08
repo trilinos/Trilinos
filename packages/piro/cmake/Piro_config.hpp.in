@@ -33,11 +33,9 @@
 #cmakedefine HAVE_PIRO_STOKHOS
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_Stokhos
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
 #cmakedefine HAVE_PIRO_OPTIPACK
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_OptiPack
-#endif // !OPTIPACK_HIDE_DEPRECATED_CODE
 #cmakedefine HAVE_PIRO_TRIKOTA
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_TriKota

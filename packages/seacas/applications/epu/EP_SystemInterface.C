@@ -163,7 +163,7 @@ void Excn::SystemInterface::enroll_options()
 
   options_.enroll("join_subcycles", GetLongOption::NoValue,
                   "If -subcycle is specified, then after the subcycle files are processed,\n"
-                  "\t\trun epu one more time and join the subcycle files into a single file.",
+                  "\t\turn epu one more time and join the subcycle files into a single file.",
                   nullptr);
 
   options_.enroll("keep_temporary", GetLongOption::NoValue,
