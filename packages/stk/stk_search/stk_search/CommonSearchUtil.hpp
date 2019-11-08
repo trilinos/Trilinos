@@ -41,6 +41,7 @@
 #include "stk_util/environment/WallTime.hpp"
 #include "stk_util/parallel/CommSparse.hpp"
 #include "stk_util/parallel/ParallelComm.hpp"
+#include "stk_util/util/SortAndUnique.hpp"
 #include "stk_search/KDTree_BoundingBox.hpp"
 #include "stk_search/KDTree.hpp"
 #include "mpi.h"
@@ -282,8 +283,7 @@ namespace stk {
 template <typename DomainKey, typename RangeKey>
 void communicateVector(
   stk::ParallelMachine arg_comm ,
-  const std::vector< std::pair< DomainKey, RangeKey> > & send_relation ,
-        std::vector< std::pair< DomainKey, RangeKey> > & recv_relation ,
+        std::vector< std::pair< DomainKey, RangeKey> > & search_relations ,
         bool communicateRangeBoxInfo = true )
 {
   typedef std::pair<DomainKey, RangeKey> ValueType ;
@@ -295,11 +295,12 @@ void communicateVector(
 
   typename std::vector< ValueType >::const_iterator i ; 
 
-  for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) { 
+  size_t numLocal = 0;
+  for ( i = search_relations.begin() ; i != search_relations.end() ; ++i ) { 
     const ValueType & val = *i ;
     if ( static_cast<int>(val.first.proc()) == p_rank || ( communicateRangeBoxInfo && static_cast<int>(val.second.proc()) == p_rank) )
     {   
-      recv_relation.push_back( val );
+      ++numLocal;
     }   
     if ( static_cast<int>(val.first.proc()) != p_rank ) { 
       CommBuffer & buf = commSparse.send_buffer( val.first.proc() );
@@ -316,7 +317,7 @@ void communicateVector(
 
   commSparse.allocate_buffers();
 
-  for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) { 
+  for ( i = search_relations.begin() ; i != search_relations.end() ; ++i ) { 
     const ValueType & val = *i ;
     if ( static_cast<int>(val.first.proc()) != p_rank ) { 
       CommBuffer & buf = commSparse.send_buffer( val.first.proc() );
@@ -333,12 +334,31 @@ void communicateVector(
 
   commSparse.communicate();
 
+  size_t numRecvd = 0;
+  for ( int p = 0 ; p < p_size ; ++p ) { 
+    CommBuffer & buf = commSparse.recv_buffer( p );
+    numRecvd += (buf.remaining()/sizeof(ValueType));
+  }
+  search_relations.reserve(numLocal+numRecvd);
+
+  size_t keep = 0;
+  for (size_t j=0; j<search_relations.size(); ++j) {
+    const ValueType & val = search_relations[j];
+    if ( static_cast<int>(val.first.proc()) == p_rank || ( communicateRangeBoxInfo && static_cast<int>(val.second.proc()) == p_rank) )
+    {   
+      if (j > keep) {
+        search_relations[keep] = val;
+      }
+      ++keep;
+    }   
+  }
+
   for ( int p = 0 ; p < p_size ; ++p ) { 
     CommBuffer & buf = commSparse.recv_buffer( p );
     while ( buf.remaining() ) { 
       ValueType val ;
       buf.unpack<ValueType>( val );
-      recv_relation.push_back( val );
+      search_relations.push_back(val);
     }   
   }
 }

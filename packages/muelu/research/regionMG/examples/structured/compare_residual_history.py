@@ -1,6 +1,5 @@
 import os
 import sys
-from __builtin__ import True, False
 
 numIterPassed = False
 goldConvergenceHistoryPassed = True

@@ -217,9 +217,10 @@ impacts if shared or stack TPL libs are linked to on some system):
 <a name="release_debug"/>
 
 **`<release_debug>`:** The following `<build-name>` keywords specify debug or
-optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
+optimized build and the `<BUILD_TYPE>` variable (used to set the CMake cache
 var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
-checking (e.g. array bounds checking, pointer checking etc.)):
+checking `Trilinos_ENABLE_DEBUG=ON`, e.g. array bounds checking, pointer
+checking etc.):
 
 * `release-debug` or `opt-dbg` (or using `_`): (`<BUILD_TYPE>=RELEASE-DEBUG`)
   * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)

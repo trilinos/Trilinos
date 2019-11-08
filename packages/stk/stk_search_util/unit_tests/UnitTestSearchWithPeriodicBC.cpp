@@ -32,14 +32,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"
 #include <cmath>
 #include <gtest/gtest.h>
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>
-#include <stk_search_util/PeriodicBoundarySearch.hpp>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <stk_mesh/base/Field.hpp>
+#include <stk_search_util/PeriodicBoundarySearch.hpp>
 
 typedef stk::mesh::fixtures::HexFixture::CoordFieldType CoordFieldType;
 typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;

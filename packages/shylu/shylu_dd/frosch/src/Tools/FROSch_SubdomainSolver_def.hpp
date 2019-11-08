@@ -78,10 +78,11 @@ namespace FROSch {
     IsComputed_ (false)
     {
         FROSCH_TIMER_START(subdomainSolverTime,"SubdomainSolver::SubdomainSolver");
+        FROSCH_ASSERT(!K_.is_null(),"FROSch::SubdomainSolver : ERROR: K_ is null.");
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
 #ifdef HAVE_SHYLU_DDFROSCH_AMESOS
-
           FROSCH_ASSERT(K_->getRowMap()->lib()==UseEpetra,"UnderlyingLib!=UseEpetra");
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
             // AH 10/18/2017: Dies könnten wir nach initialize() verschieben, oder?
             const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
             const EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
@@ -98,6 +99,7 @@ namespace FROSch {
             AmesosSolver_.reset(amesosFactory.Create(ParameterList_->get("Solver","Mumps"),*EpetraLinearProblem_));
 
             AmesosSolver_->SetParameters(ParameterList_->sublist("Amesos"));
+#endif
 #else
             ThrowErrorMissingPackage("FROSch::SubdomainSolver", "Amesos");
 #endif
@@ -154,8 +156,7 @@ namespace FROSch {
                     if (globIndex<=(GO)(dofs*blockCoarseSize[0]-1)) {
                         unsigned vecIndex = (globIndex)%dofs;
                         nullspace->getDataNonConst(vecIndex)[j] = 1.;
-                    }
-                    else{
+                    } else {
                         nullspace->getDataNonConst(dofs)[j] = 1.;
                     }
                 }
@@ -362,6 +363,7 @@ namespace FROSch {
 
 #ifdef HAVE_SHYLU_DDFROSCH_AMESOS
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
             const EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorX = dynamic_cast<const EpetraMultiVectorT<GO,NO> *>(&x);
             RCP<EMultiVector> epetraMultiVectorX = xEpetraMultiVectorX->getEpetra_MultiVector();
 
@@ -375,6 +377,7 @@ namespace FROSch {
 
             EpetraLinearProblem_->GetMatrix()->SetUseTranspose(mode==TRANS);
             AmesosSolver_->Solve();
+#endif
         } else
 #endif
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos2")) {
@@ -464,7 +467,7 @@ namespace FROSch {
     void SubdomainSolver<SC,LO,GO,NO>::describe(FancyOStream &out,
                                                 const EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(false,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has to be implemented properly...");
     }
 
     template<class SC,class LO,class GO,class NO>
@@ -485,6 +488,92 @@ namespace FROSch {
         return IsComputed_;
     }
 
+    template<class SC,class LO,class GO,class NO>
+    int SubdomainSolver<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr k,
+                                                   bool reuseInitialize)
+    {
+        FROSCH_TIMER_START(resetMatrixTime,"SubdomainSolver::resetMatrix");
+        K_ = k;
+        FROSCH_ASSERT(!K_.is_null(),"FROSch::SubdomainSolver : ERROR: K_ is null.");
+        if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
+#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
+            FROSCH_ASSERT(K_->getRowMap()->lib()==UseEpetra,"UnderlyingLib!=UseEpetra");
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+            // AH 10/18/2017: Dies könnten wir nach initialize() verschieben, oder?
+            const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
+            const EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
+            ECrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
+            TEUCHOS_TEST_FOR_EXCEPT(epetraMat.is_null());
+            
+            FROSCH_ASSERT(false,"FROSch::SubdomainSolver : ERROR: resetMatrix() is not implemented for Amesos yet.");
+#endif
+#else
+            ThrowErrorMissingPackage("FROSch::SubdomainSolver", "Amesos");
+#endif
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("Amesos2")) {
+            if (K_->getRowMap()->lib()==UseEpetra) {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
+                const EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
+                ECrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
+                TEUCHOS_TEST_FOR_EXCEPT(epetraMat.is_null());
+                
+                if (reuseInitialize) {
+                    Amesos2SolverEpetra_->setA(epetraMat,Amesos2::SYMBFACT);
+                } else {
+                    Amesos2SolverEpetra_->setA(epetraMat,Amesos2::CLEAN);
+                }
+                /////////////////////////////////////////////
+#else
+                ThrowErrorMissingPackage("FROSch::SubdomainSolver", "Epetra");
+#endif
+            } else if (K_->getRowMap()->lib()==UseTpetra) {
+                const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
+                const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
+                ConstTCrsMatrixPtr tpetraMat = xTpetraMat.getTpetra_CrsMatrix();
+                TEUCHOS_TEST_FOR_EXCEPT(tpetraMat.is_null());
+                
+                if (reuseInitialize) {
+                    Amesos2SolverTpetra_->setA(tpetraMat,Amesos2::SYMBFACT);
+                } else {
+                    Amesos2SolverTpetra_->setA(tpetraMat,Amesos2::CLEAN);
+                }
+               /////////////////////////////////////////////
+            } else {
+                FROSCH_ASSERT(false, "This can't happen. Either use Epetra or Tetra linear algebra stack.");
+            }
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("MueLu")) {
+#ifdef HAVE_SHYLU_DDFROSCH_MUELU
+            FROSCH_ASSERT(false,"FROSch::SubdomainSolver : ERROR: resetMatrix() is not implemented for MueLu yet.");
+#else
+            ThrowErrorMissingPackage("FROSch::SubdomainSolver", "MueLu");
+#endif
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("Ifpack2")) {
+#ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
+            FROSCH_ASSERT(K_->getRowMap()->lib()==UseTpetra,"FROSch::SubdomainSolver : ERROR: Ifpack2 is not compatible with Epetra.")
+            
+            // Convert matrix to Tpetra
+            const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
+            const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
+            ConstTCrsMatrixPtr tpetraMat = xTpetraMat.getTpetra_CrsMatrix();
+            TEUCHOS_TEST_FOR_EXCEPT(tpetraMat.is_null());
+            
+            FROSCH_ASSERT(false,"FROSch::SubdomainSolver : ERROR: resetMatrix() is not implemented for Ifpack2 yet.");
+#else
+            ThrowErrorMissingPackage("FROSch::SubdomainSolver", "Ifpack2");
+#endif
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("Belos")) {
+#ifdef HAVE_SHYLU_DDFROSCH_BELOS
+            FROSCH_ASSERT(false,"FROSch::SubdomainSolver : ERROR: resetMatrix() is not implemented for Belos yet.");
+#else
+            ThrowErrorMissingPackage("FROSch::SubdomainSolver", "Belos");
+#endif
+        } else {
+            FROSCH_ASSERT(false,"SolverType unknown...");
+        }
+        return 0;
+    }
+    
 }
 
 #endif

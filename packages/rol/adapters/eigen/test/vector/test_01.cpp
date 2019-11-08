@@ -24,9 +24,9 @@ int main(int argc, char *argv[]) {
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    ROL::makePtrFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    ROL::makePtrFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 

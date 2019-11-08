@@ -132,17 +132,13 @@ namespace FROSch {
         this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap.getConst(),verbosity,this->LevelID_,communicationStrategy));
         this->DDInterface_->resetGlobalDofs(dofsMaps);
         this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs);
-        if (this->ParameterList_->get("Test Unconnected Interface",true)) {
-            this->DDInterface_->divideUnconnectedEntities(this->K_);
-        }
-
-        EntitySetPtrVecPtr entitySetVector;
 
         EntitySetPtr interface = this->DDInterface_->getInterface();
         EntitySetPtr interior = this->DDInterface_->getInterior();
 
         // Check for interface
-        if (this->DofsPerNode_[blockId]*interface->getEntity(0)->getNumNodes()==0) {
+        if (interface->getEntity(0)->getNumNodes()==0) {
+            if (this->Verbose_) std::cout << "FROSch::RGDSWCoarseOperator : WARNING: No interface found => Volume functions will be used instead.";
             this->computeVolumeFunctions(blockId,dimension,nodesMap,nodeList,interior);
         } else {
             this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getEntity(0)->getNumNodes());
@@ -159,6 +155,11 @@ namespace FROSch {
             this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
 
             if (useForCoarseSpace) {
+                
+                if (this->ParameterList_->get("Test Unconnected Interface",true)) {
+                    this->DDInterface_->divideUnconnectedEntities(this->K_);
+                }
+                
                 this->DDInterface_->buildEntityHierarchy();
 
                 this->DDInterface_->computeDistancesToCoarseNodes(dimension,nodeList,distanceFunction);
@@ -166,7 +167,7 @@ namespace FROSch {
                 /////////////////////////////////
                 // Coarse Node Basis Functions //
                 /////////////////////////////////
-                entitySetVector = this->DDInterface_->getEntitySetVector();
+                EntitySetPtrVecPtr entitySetVector = this->DDInterface_->getEntitySetVector();
                 this->DDInterface_->buildEntityMaps(false,
                                                     false,
                                                     false,

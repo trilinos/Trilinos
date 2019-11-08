@@ -19,10 +19,15 @@
       <Parameter name="block col"                 type="int"     value="0"/>
     </ParameterList>
 
+    <ParameterList name="myAmalgFact1">
+      <Parameter name="factory" type="string" value="AmalgamationFactory"/>
+    </ParameterList>
+
     <ParameterList name="myCoalesceDropFact1">
       <Parameter name="factory" type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
       <Parameter name="aggregation: drop tol"               type="double" value="0.00"/>
+      <Parameter name="UnAmalgamationInfo"                  type="string" value="myAmalgFact1"/>
     </ParameterList>
 
     <ParameterList name="myAggFact1">
@@ -43,6 +48,7 @@
       <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+      <Parameter name="UnAmalgamationInfo" type="string" value="myAmalgFact1"/>
     </ParameterList>
 
     <ParameterList name="myNspFact1">
@@ -58,6 +64,10 @@
       <Parameter name="block col"                 type="int"     value="1"/>
     </ParameterList>
 
+    <ParameterList name="myAmalgFact2">
+      <Parameter name="factory" type="string" value="AmalgamationFactory"/>
+    </ParameterList>
+
     <ParameterList name="myCoarseMap2">
       <Parameter name="factory" type="string" value="CoarseMapFactory"/>
       <Parameter name="Striding info" type="string" value="{ 2,1 }"/>
@@ -69,6 +79,7 @@
       <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/> <!-- use old aggregates! -->
       <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+      <Parameter name="UnAmalgamationInfo" type="string" value="myAmalgFact2"/>
     </ParameterList>
 
     <ParameterList name="myNspFact2">

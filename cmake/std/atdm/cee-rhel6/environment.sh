@@ -74,6 +74,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
     export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
   fi
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
+
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
   module load sparc-dev/gcc-7.2.0_openmpi-1.10.2
   unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
@@ -92,22 +93,25 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3_OPENMPI-1.10.2" ]] ; then
-  module load sparc-dev/gcc-4.9.3_openmpi-1.10.2
-  export OMPI_CXX=`which g++`
-  export OMPI_CC=`which gcc`
-  export OMPI_FC=`which gfortran`
+
+elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_INTELMPI-2018.4" ]; then
+  module load sparc-dev/intel-19.0.3_intelmpi-2018.4
+  export OMPI_CXX=`which icpc`
+  export OMPI_CC=`which icc`
+  export OMPI_FC=`which ifort`
   export MPICC=`which mpicc`
   export MPICXX=`which mpicxx`
   export MPIF90=`which mpif90`
   if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
-    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
+    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_INTEL_CXX_WARNINGS}"
   fi
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
-  export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
-  # Still uses old 
-  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/SRC
-  export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
+  export ATDM_CONFIG_MPI_EXEC=mpirun
+  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
+  export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
+  export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
+  export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
+
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   module load sparc-dev/intel-18.0.2_mpich2-3.2
   export OMP_NUM_THREADS=3 # Because Si H. requested this
@@ -141,29 +145,14 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
-elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1_INTELMPI-5.1.2" ]; then
-  module load sparc-dev/intel-17.0.1_intelmpi-5.1.2
-  export OMPI_CXX=`which icpc`
-  export OMPI_CC=`which icc`
-  export OMPI_FC=`which ifort`
-  export MPICC=`which mpicc`
-  export MPICXX=`which mpicxx`
-  export MPIF90=`which mpif90`
-  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
-    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_INTEL_CXX_WARNINGS}"
-  fi
-  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
-  export ATDM_CONFIG_MPI_EXEC=mpirun
-  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
-  export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
-  export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
-  export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
+
 else
   echo
   echo "***"
   echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
   echo "***"
   return
+
 fi
 
 # ToDo: Update above to only load the compiler and MPI moudles and then

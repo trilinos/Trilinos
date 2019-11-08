@@ -342,6 +342,7 @@ ValidateFunction<Real>::solve_check( f_solve_t<Real>  solve,
   auto res1 = workspace_->clone(c);
   auto res2 = workspace_->clone(c);
   auto sol  = workspace_->clone(x);
+  sol->set(x);
 
   solve(*res1,*sol);
   update(*sol);

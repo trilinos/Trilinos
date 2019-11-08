@@ -106,6 +106,7 @@ namespace FROSch {
         using InterfaceEntityPtrVecPtr  = ArrayRCP<InterfaceEntityPtr>;
 
         using UN                        = unsigned;
+        using ConstUN                   = const UN;
         using UNVecPtr                  = ArrayRCP<UN>;
 
         using IntVec                    = Array<int>;
@@ -237,7 +238,7 @@ namespace FROSch {
 
         Verbosity Verbosity_;
 
-        UN LevelID_;
+        ConstUN LevelID_;
     };
 
 }
