@@ -581,7 +581,6 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
     }, Kokkos::MinMax<GO>(minMaxGID));
   minGID = minMaxGID.min_val;
   maxGID = minMaxGID.max_val;
-  auto comm = domMap->getComm();
   //Now, know the full range of input GIDs.
   //Determine the set of GIDs in the column map using a dense bitset, which corresponds to the range [minGID, maxGID]
   bitset_t presentGIDs(maxGID - minGID + 1);
