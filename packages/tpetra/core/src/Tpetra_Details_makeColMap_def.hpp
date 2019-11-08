@@ -496,9 +496,13 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
   return errCode;
 }
 
-template<typename GO, typename GOView, typename bitset_t>
+template<typename GO, typename device_t>
 struct GatherPresentEntries
 {
+  using bitset_t = Kokkos::Bitset<device_t>;
+  using mem_space = typename device_t::memory_space;
+  using GOView = Kokkos::View<GO*, mem_space>;
+
   GatherPresentEntries(GO minGID_, const GOView& gids_, bitset_t& present_)
     : minGID(minGID_), gids(gids_), present(present_)
   {}
@@ -513,9 +517,14 @@ struct GatherPresentEntries
   bitset_t present;
 };
 
-template<typename LO, typename GO, typename SingleView, typename GOView, typename const_bitset_t, typename LocalMapType, bool doingRemotes>
+template<typename LO, typename GO, typename device_t, typename LocalMapType, bool doingRemotes>
 struct ListGIDs
 {
+  using const_bitset_t = Kokkos::ConstBitset<device_t>;
+  using mem_space = typename device_t::memory_space;
+  using GOView = Kokkos::View<GO*, mem_space>;
+  using SingleView = Kokkos::View<GO, mem_space>;
+
   ListGIDs(GO minGID_, GOView& gidList_, SingleView& numElems_, const_bitset_t& present_, const LocalMapType& localDomainMap_)
     : minGID(minGID_), gidList(gidList_), numElems(numElems_), present(present_), localDomainMap(localDomainMap_)
   {}
@@ -532,7 +541,7 @@ struct ListGIDs
       }
       lcount++;
     }
-    if((i == (GO) present.size() - 1) && finalPass)
+    if((i == static_cast<GO>(present.size() - 1)) && finalPass)
     {
       //Set the number of inserted indices in a single-element view
       numElems() = lcount;
@@ -546,10 +555,32 @@ struct ListGIDs
   const LocalMapType localDomainMap;
 };
 
+template<typename GO, typename mem_space>
+struct MinMaxReduceFunctor
+{
+  using MinMaxValue = typename Kokkos::MinMax<GO>::value_type;
+  using GOView = Kokkos::View<GO*, mem_space>;
+
+  MinMaxReduceFunctor(const GOView& gids_)
+    : gids(gids_)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(const GO i, MinMaxValue& lminmax) const
+  {
+    GO gid = gids(i);
+    if(gid < lminmax.min_val)
+      lminmax.min_val = gid;
+    if(gid > lminmax.max_val)
+      lminmax.max_val = gid;
+  };
+
+  const GOView gids;
+};
+
 template <class LO, class GO, class NT>
 int
-makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
-            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& domMap,
+makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
+            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
             Kokkos::View<GO*, typename NT::memory_space> gids,
             std::ostream* errStrm)
 {
@@ -571,20 +602,13 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
   using MinMaxValue = typename Kokkos::MinMax<GO>::value_type;
   MinMaxValue minMaxGID = {minGID, maxGID};
   Kokkos::parallel_reduce(RangePolicy<exec_space>(0, nentries),
-    KOKKOS_LAMBDA (const GO i, MinMaxValue& lminmax)
-    {
-      GO gid = gids(i);
-      if(gid < lminmax.min_val)
-        lminmax.min_val = gid;
-      if(gid > lminmax.max_val)
-        lminmax.max_val = gid;
-    }, Kokkos::MinMax<GO>(minMaxGID));
-  minGID = minMaxGID.min_val;
-  maxGID = minMaxGID.max_val;
+      MinMaxReduceFunctor<GO, memory_space>(gids),
+      Kokkos::MinMax<GO>(minMaxGID));
+  minGID = minMaxGID.min_val; maxGID = minMaxGID.max_val;
   //Now, know the full range of input GIDs.
   //Determine the set of GIDs in the column map using a dense bitset, which corresponds to the range [minGID, maxGID]
   bitset_t presentGIDs(maxGID - minGID + 1);
-  Kokkos::parallel_for(RangePolicy<exec_space>(0, nentries), GatherPresentEntries<GO, GOView, bitset_t>(minGID, gids, presentGIDs));
+  Kokkos::parallel_for(RangePolicy<exec_space>(0, nentries), GatherPresentEntries<GO, device_t>(minGID, gids, presentGIDs));
   const_bitset_t constPresentGIDs(presentGIDs);
   //Get the set of local and remote GIDs on device
   SingleView numLocals("Num local GIDs");
@@ -594,11 +618,11 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
   LocalMap localDomMap = domMap->getLocalMap();
   //This lists the locally owned GIDs in localGIDView
   Kokkos::parallel_scan(RangePolicy<exec_space>(0, constPresentGIDs.size()),
-      ListGIDs<LO, GO, SingleView, GOView, const_bitset_t, LocalMap, false>
+      ListGIDs<LO, GO, device_t, LocalMap, false>
       (minGID, localGIDView, numLocals, constPresentGIDs, localDomMap));
   //And this lists the remote GIDs in remoteGIDView
   Kokkos::parallel_scan(RangePolicy<exec_space>(0, constPresentGIDs.size()),
-      ListGIDs<LO, GO, SingleView, GOView, const_bitset_t, LocalMap, true>
+      ListGIDs<LO, GO, device_t, LocalMap, true>
       (minGID, remoteGIDView, numRemotes, constPresentGIDs, localDomMap));
   //Pull down the sizes
   GO numLocalColGIDs = 0;
@@ -635,8 +659,8 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
             colMap,
             remotePIDs,
             domMap,
-            (size_t) numLocalColGIDs,
-            (size_t) numRemoteColGIDs,
+            static_cast<size_t>(numLocalColGIDs),
+            static_cast<size_t>(numRemoteColGIDs),
             RemoteGIDSet,
             RemoteGIDUnorderedVector,
             GIDisLocal, 

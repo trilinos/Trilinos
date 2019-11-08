@@ -138,8 +138,8 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
 /// \param domMap [in] The domain map, used to determine which global columns are locally owned.
 template <class LO, class GO, class NT>
 int
-makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
-            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& domMap,
+makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
+            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
             Kokkos::View<GO*, typename NT::memory_space> gids,
             std::ostream* errStrm = NULL);
 

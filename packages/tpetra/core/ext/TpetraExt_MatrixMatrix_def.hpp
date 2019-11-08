@@ -558,12 +558,8 @@ add (const Scalar& alpha,
   {
     if(params->isParameter("Call fillComplete") && !params->get<bool>("Call fillComplete"))
     {
-      if(A.getRowMap()->getComm()->getRank() == 0)
-      {
-        std::cout << "WARNING: Tpetra::MatrixMatrix::add(): 'Call fillComplete' was explicitly set to false,\n";
-        std::cout << "but this version of add() always calls fillComplete() on the sum (C). Use the other version\n";
-        std::cout << "of add() (that works on a newly constructed C) to get a non-fillComplete matrix.\n";
-      }
+      throw std::invalid_argument("Tpetra::MatrixMatrix::add(): this version of add() always calls fillComplete\n"
+          "on the result, but you explicitly set 'Call fillComplete' = false in the parameer list. Don't set this explicitly.");
     }
     params->set("Call fillComplete", true);
   }
