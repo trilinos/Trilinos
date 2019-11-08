@@ -138,9 +138,9 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color, int rank){
     for (size_t j = 0; j < indices.size(); j++) {
       if ((indices[j] != i) && (color[i] == colorData[indices[j]])){
         nconflicts++;
-        std::cout << "Debug: Rank "<< rank <<" found conflict ("
-                  << rowMap->getGlobalElement(i) << ", " 
-                  << colMap->getGlobalElement(indices[j]) << ")" << std::endl;
+//        std::cout << "Debug: Rank "<< rank <<" found conflict ("
+//                  << rowMap->getGlobalElement(i) << ", " 
+//                  << colMap->getGlobalElement(indices[j]) << ")" << std::endl;
       }
     }
   }
