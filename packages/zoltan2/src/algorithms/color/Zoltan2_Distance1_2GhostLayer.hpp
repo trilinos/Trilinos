@@ -52,7 +52,8 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
     void colorInterior(const size_t nVtx,
                        Kokkos::View<lno_t*,device_type> adjs_view,
                        Kokkos::View<offset_t*, device_type> offset_view,
-                       Teuchos::RCP<femv_t> femv);
+                       Teuchos::RCP<femv_t> femv,
+                       bool recolor);
     
     RCP<const base_adapter_t> adapter;
     RCP<GraphModel<base_adapter_t> > model;
@@ -530,7 +531,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       });*/
 
       //give the entire local graph to KokkosKernels to color
-      this->colorInterior(n_local, host_adjs, host_offsets, femv);
+      this->colorInterior(n_local, host_adjs, host_offsets, femv,false);
       timeInterior->stop();
       //communicate!
       timeBoundaryComm->start();
@@ -544,6 +545,54 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         printf("(%d, %d) ",gids[i],femv->getData(0)[i]);
       }
       printf("\n");*/
+      Kokkos::View<offset_t*, Tpetra::Map<>::device_type> dist_degrees("Owned+Ghost degree view",rand.size());
+      for(int i = 0; i < adjs.size(); i++) dist_degrees(adjs[i])++;
+      for(int i = 0; i < ghost_adjs.size(); i++) dist_degrees(ghost_adjs[i])++;
+      for(int i = 0; i < offsets.size()-1; i++) dist_degrees(i) = offsets[i+1] - offsets[i];
+      for(int i = 0; i < ghost_offsets.size()-1; i++) dist_degrees(i+n_local) = ghost_offsets[i+1] - ghost_offsets[i];
+      
+      Kokkos::View<offset_t*, Tpetra::Map<>::device_type> dist_offsets("Owned+Ghost Offset view", rand.size()+1);
+      dist_offsets(0) = 0;
+      int total_adjs = 0;
+      for(int i = 1; i < rand.size()+1; i++){
+        dist_offsets(i) = dist_degrees(i-1) + dist_offsets(i-1);
+        total_adjs += dist_degrees(i-1);
+      }
+      Kokkos::View<lno_t*, Tpetra::Map<>::device_type> dist_adjs("Owned+Ghost adjacency view", total_adjs);
+      for(int i = 0; i < rand.size(); i++){
+        dist_degrees(i) = 0;
+      }
+      for(int i = 0; i < adjs.size(); i++) dist_adjs(i) = adjs[i];
+      for(int i = adjs.size(); i < adjs.size() + ghost_adjs.size(); i++) dist_adjs(i) = ghost_adjs[i-adjs.size()];
+      for(int i = 0; i < ghost_offsets.size()-1; i++){
+        for(int j = ghost_offsets[i]; j < ghost_offsets[i+1]; j++){
+          if(ghost_adjs[j] >= n_total){
+            dist_adjs(dist_offsets(ghost_adjs[j]) + dist_degrees(ghost_adjs[j])) = i + n_local;
+            dist_degrees(ghost_adjs[j])++;
+          }
+        }
+      }
+      /*printf("Rank %d: owned graph\n",comm->getRank());
+      for(int i = 0; i < offsets.size()-1; i++){
+        printf("\tGlobal Vertex %u is adjacent to:\n",gids[i]+1);
+        for(int j = offsets[i]; j < offsets[i+1]; j++){
+          printf("\t\t%u\n",gids[adjs[j]]+1);
+        }
+      }
+      printf("Rank %d: ghost graph\n", comm->getRank());
+      for(int i = 0; i < ghost_offsets.size()-1; i++){
+        printf("\tGlobal Vertex %u is adjacent to:\n",gids[i+n_local]+1);
+        for(int j = ghost_offsets[i]; j < ghost_offsets[i+1]; j++){
+          printf("\t\t%u\n",gids[ghost_adjs[j]]+1);
+        }
+      }
+      printf("Rank %d: owned+ghost graph\n",comm->getRank());
+      for(int i = 0; i < rand.size(); i++){
+        printf("\tGlobal Vertex %u is adjacent to:\n",gids[i]+1);
+        for(int j = dist_offsets(i); j < dist_offsets(i+1); j++){
+          printf("\t\t%u\n",gids[dist_adjs(j)]+1);
+        }
+      }*/
       //resolve conflicts on the ghosts first, then the boundary vertices
       //(can keep a queue of the boundary vertices when we see them from the ghosts)
       
@@ -597,7 +646,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX, 1, &maxDegree, &host_maxDegree);
       //printf("Global Max Degree: %i\n",host_maxDegree);
       //detect conflicts only for local vertices
-      Kokkos::parallel_for(n_local, KOKKOS_LAMBDA (const int & i){
+      /*Kokkos::parallel_for(n_local, KOKKOS_LAMBDA (const int & i){
         for(offset_t j = host_offsets(i); j < host_offsets(i+1); j++){
           int currColor = femv_colors(i);
           int nborColor = femv_colors(host_adjs(j));
@@ -606,16 +655,24 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
             break;
           }
         }
-      });
+      });*/
       //detect conflicts only for ghost vertices
       Kokkos::parallel_for(ghost_offsets.size()-1, KOKKOS_LAMBDA (const int& i){
         lno_t localIdx = i + n_local;
         for(offset_t j = ghost_offset_view(i); j < ghost_offset_view(i+1); j++){
           int currColor = femv_colors(localIdx);
           int nborColor = femv_colors(ghost_adjs_view(j));
-          if(currColor == nborColor && rand_view(localIdx) > rand_view(ghost_adjs_view(j))){
-            recoloringQueue_atomic(recoloringSize_atomic(0)++) = localIdx;
-            break;
+          if(currColor == nborColor ){//&& rand_view(localIdx) > rand_view(ghost_adjs_view(j))){
+            if(rand_view(localIdx) > rand_view(ghost_adjs_view(j))){
+              recoloringSize_atomic(0)++;
+              femv_colors(localIdx) = 0;
+              //recoloringQueue_atomic(recoloringSize_atomic(0)++) = localIdx;
+              //break;
+            }
+            if(rand_view(ghost_adjs_view(j)) > rand_view(localIdx)){
+              recoloringSize_atomic(0)++;
+              femv_colors(ghost_adjs_view(j)) = 0;
+            }
           }
         }
       });
@@ -728,7 +785,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
           
         }*///end recolor
         if(distributedRounds < 100) vertsPerRound[distributedRounds++] = recoloringSize(0);
-        typedef Kokkos::TeamPolicy<execution_space>::member_type member_type;
+        /*typedef Kokkos::TeamPolicy<execution_space>::member_type member_type;
         Kokkos::parallel_for(Kokkos::TeamPolicy<>(recoloringSize(0),1).set_scratch_size(0,Kokkos::PerTeam(0), Kokkos::PerThread(1024*sizeof(bool))),
                              KOKKOS_LAMBDA (const member_type& team_member){
           bool* dev_forbidden = (bool*) team_member.team_shmem().get_shmem(1000*sizeof(bool));
@@ -754,7 +811,8 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
               break;
             }
           }
-        });
+        });*/
+        this->colorInterior(femv_colors.size(), dist_adjs, dist_offsets, femv, true);
         recoloringSize(0) = 0;
         //this->colorInterior(n_local, host_adjs, host_offsets, femv);
         //conflict_count_atomic(0) = 0;
@@ -769,8 +827,27 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         //printf("checking for further conflicts\n");
         //Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
         //Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
+        Kokkos::parallel_for(ghost_offsets.size()-1, KOKKOS_LAMBDA (const int& i){
+          lno_t localIdx = i + n_local;
+          for(offset_t j = ghost_offset_view(i); j < ghost_offset_view(i+1); j++){
+            int currColor = femv_colors(localIdx);
+            int nborColor = femv_colors(ghost_adjs_view(j));
+            if(currColor == nborColor ){//&& rand_view(localIdx) > rand_view(ghost_adjs_view(j))){
+              if(rand_view(localIdx) > rand_view(ghost_adjs_view(j))){
+                recoloringSize_atomic(0)++;
+                femv_colors(localIdx) = 0;
+                //recoloringQueue_atomic(recoloringSize_atomic(0)++) = localIdx;
+                //break;
+              }
+              if(rand_view(ghost_adjs_view(j)) > rand_view(localIdx)){
+                recoloringSize_atomic(0)++;
+                femv_colors(ghost_adjs_view(j)) = 0;
+              }
+            }
+          }
+        });
         
-        Kokkos::parallel_for(n_local, KOKKOS_LAMBDA (const int & i){
+        /*Kokkos::parallel_for(n_local, KOKKOS_LAMBDA (const int & i){
           for(offset_t j = host_offsets(i); j < host_offsets(i+1); j++){
             int currColor = femv_colors(i);
             int nborColor = femv_colors(host_adjs(j));
@@ -791,7 +868,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
               break;
             }
           }
-        });
+        });*/
         /*Kokkos::parallel_for(ghost_offsets.size()-1, KOKKOS_LAMBDA (const int& i){
           lno_t localIdx = i + n_local;
           for( offset_t j = ghost_offsets[i]; j < ghost_offsets[i+1]; j++){
@@ -932,7 +1009,8 @@ template<typename Adapter>
 void AlgDistance1TwoGhostLayer<Adapter>::colorInterior(const size_t nVtx,
                        Kokkos::View<lno_t*,device_type> adjs_view,
                        Kokkos::View<offset_t*, device_type> offset_view,
-                       Teuchos::RCP<femv_t> femv) {
+                       Teuchos::RCP<femv_t> femv,
+                       bool recolor=false) {
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
       <size_t, lno_t, lno_t, execution_space, memory_space, memory_space> KernelHandle;
   KernelHandle kh;
@@ -943,7 +1021,11 @@ void AlgDistance1TwoGhostLayer<Adapter>::colorInterior(const size_t nVtx,
   kh.set_suggested_vector_size(-1);
   kh.set_dynamic_scheduling(0);
   kh.set_verbose(0);
-  kh.create_graph_coloring_handle(KokkosGraph::COLORING_VB);
+  if(recolor){
+    kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
+  } else {
+    kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
+  }
   Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
   Kokkos::View<int*, device_type> sv = subview(femvColors, Kokkos::ALL, 0);
   kh.get_graph_coloring_handle()->set_vertex_colors(sv);
