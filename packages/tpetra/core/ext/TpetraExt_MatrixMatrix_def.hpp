@@ -594,7 +594,7 @@ struct ConvertGlobalToLocalFunctor
     : lids(lids_), gids(gids_), localColMap(localColMap_)
   {}
 
-  KOKKOS_FUNCTION void operator() (const GO& i) const
+  KOKKOS_FUNCTION void operator() (const GO i) const
   {
     lids(i) = localColMap.getLocalElement(gids(i));
   }
