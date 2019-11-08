@@ -182,8 +182,15 @@ namespace
             double P_i_minus_2 = shifted_scaled_legendre_values_host(i-2);
             L_i_expected = (P_i - t * t * P_i_minus_2) / i_factor;
           }
+          
+          bool valuesMatch = true;
+          bool valuesAreBothSmall = valuesAreSmall(L_i_actual, L_i_expected, tol);
+          if (!valuesAreBothSmall)
+          {
+            TEUCHOS_TEST_FLOATING_EQUALITY(L_i_actual, L_i_expected, tol, out, valuesMatch);
+          }
       
-          if (! approximatelyEqual(L_i_actual, L_i_expected, tol) )
+          if ( !valuesMatch )
           {
             out << "for polyOrder " << i << ", x = " << x << ", t = " << t << ": ";
             out << L_i_actual << " != " << L_i_expected;
