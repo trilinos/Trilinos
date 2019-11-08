@@ -131,7 +131,7 @@ namespace Intrepid2 {
     #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
   #else // GNU
     #if not defined(KOKKOS_ENABLE_CUDA)
-      #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit) __attribute__ ((deprecated(msg)))
+      #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit) [[deprecated(msg)]]
       #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
       // see https://gcc.gnu.org/onlinedocs/gcc-4.9.0/gcc/Function-Attributes.html
     #else // GNU + CUDA
