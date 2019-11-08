@@ -2226,7 +2226,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_Aggregate_Set_DampingFactor( agg_, 0.0);
   }
 
-  ML_CHK_ERR(SetupCoordinates());
+  // FIXME: Why do I need to do this?
+  if(AMGSolver_ != ML_CLASSICAL_FAMILY) 
+    ML_CHK_ERR(SetupCoordinates());
 
   if (List_.get("RAP: sort columns",0))                                     //
     ml_->sortColumnsAfterRAP = 1;
