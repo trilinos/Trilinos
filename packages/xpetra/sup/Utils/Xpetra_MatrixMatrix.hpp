@@ -116,7 +116,7 @@ namespace Xpetra {
         RCP<ParameterList> addParams = rcp(new ParameterList);
         addParams->set("Call fillComplete", false);
         //passing A after B means C will have the same domain/range map as A (or A^T if transposeA)
-        Tpetra::MatrixMatrix::add<SC,LO,GO,NO>(beta, transposeB, B, alpha, false, *Aprime, Teuchos::null, Teuchos::null, addParams);
+        Tpetra::MatrixMatrix::add<SC,LO,GO,NO>(beta, transposeB, B, alpha, false, *Aprime, *C, Teuchos::null, Teuchos::null, addParams);
         return rcp_implicit_cast<MatType>(rcp(new CrsWrap(rcp_implicit_cast<CrsType>(rcp(new XTCrsType(C))))));
       }
       else

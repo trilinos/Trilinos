@@ -554,6 +554,19 @@ add (const Scalar& alpha,
   using Teuchos::rcp;
   using Teuchos::ParameterList;
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>  crs_matrix_type;
+  if(!params.is_null())
+  {
+    if(params->isParameter("Call fillComplete") && !params->get<bool>("Call fillComplete"))
+    {
+      if(A.getRowMap()->getComm()->getRank() == 0)
+      {
+        std::cout << "WARNING: Tpetra::MatrixMatrix::add(): 'Call fillComplete' was explicitly set to false,\n";
+        std::cout << "but this version of add() always calls fillComplete() on the sum (C). Use the other version\n";
+        std::cout << "of add() (that works on a newly constructed C) to get a non-fillComplete matrix.\n";
+      }
+    }
+    params->set("Call fillComplete", true);
+  }
   //If transposeB, must compute B's explicit transpose to
   //get the correct row map for C.
   RCP<const crs_matrix_type> Brcp = rcpFromRef(B);
@@ -570,19 +583,6 @@ add (const Scalar& alpha,
      "TpetraExt::MatrixMatrix::add(): A and B must both be fill complete.");
   RCP<crs_matrix_type> C = rcp(new crs_matrix_type(Brcp->getRowMap(), 0));
   //this version of add() always fill completes the result, no matter what is in params on input
-  if(!params.is_null())
-  {
-    if(params->isParameter("Call fillComplete") && !params->get<bool>("Call fillComplete"))
-    {
-      if(A.getRowMap()->getComm()->getRank() == 0)
-      {
-        std::cout << "WARNING: Tpetra::MatrixMatrix::add(): 'Call fillComplete' was explicitly set to false,\n";
-        std::cout << "but this version of add() always calls fillComplete() on the sum (C). Use the other version\n";
-        std::cout << "of add() (that works on a newly constructed C) to get a non-fillComplete matrix.\n";
-      }
-    }
-    params->set("Call fillComplete", true);
-  }
   add(alpha, transposeA, A, beta, false, *Brcp, *C, domainMap, rangeMap, params);
   return C;
 }
@@ -822,8 +822,9 @@ add (const Scalar& alpha,
                               typename map_type::local_map_type>
         (localColinds, globalColinds, CcolMap->getLocalMap()));
     C.setAllValues(rowptrs, localColinds, vals);
-    if(doFillComplete)
-      C.fillComplete(CDomainMap, CRangeMap, params);
+    C.fillComplete(CDomainMap, CRangeMap, params);
+    if(!doFillComplete)
+      C.resumeFill();
   }
   else
   {
