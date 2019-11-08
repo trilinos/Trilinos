@@ -137,7 +137,6 @@
 // MueLu/Avatar Includes
 #ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
 #  include "MueLu_AvatarInterface.hpp"
-#enduif
 #endif
 
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
@@ -782,7 +781,7 @@ int main(int argc, char *argv[]) {
   double dist = 0;
   static const int NUM_NODE_PAIRS = 2;
   int diag_nodes1[] = {0, 1};
-  int diag_nodes2[] = {3, 2};
+  int diag_nodes2[] = {2, 3};
 
   double x0 = 0.0;
   double x1 = 0.0;
