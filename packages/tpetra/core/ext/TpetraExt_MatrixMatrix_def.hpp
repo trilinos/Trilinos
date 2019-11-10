@@ -556,10 +556,11 @@ add (const Scalar& alpha,
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>  crs_matrix_type;
   if(!params.is_null())
   {
-    if(params->isParameter("Call fillComplete") && !params->get<bool>("Call fillComplete"))
-    {
-      throw std::invalid_argument("Tpetra::MatrixMatrix::add(): this version of add() always calls fillComplete\n"
-          "on the result, but you explicitly set 'Call fillComplete' = false in the parameer list. Don't set this explicitly.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        params->isParameter("Call fillComplete") && !params->get<bool>("Call fillComplete"),
+        std::invalid_argument,
+        "Tpetra::MatrixMatrix::add(): this version of add() always calls fillComplete\n"
+        "on the result, but you explicitly set 'Call fillComplete' = false in the parameter list. Don't set this explicitly.");
     }
     params->set("Call fillComplete", true);
   }
