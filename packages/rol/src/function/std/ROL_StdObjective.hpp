@@ -83,7 +83,7 @@ public:
 
   virtual void gradient( std::vector<Real> &g, const std::vector<Real> &x, Real &tol ) {
     const unsigned size = x.size();
-    std::vector<Real> y; y.assing(x.begin(),x.end());
+    std::vector<Real> y; y.assign(x.begin(),x.end());
     const Real cbrteps = std::cbrt(ROL::ROL_EPSILON<Real>()), one(1);
     Real h(1), xi(0);
     const Real val = value(x,tol);
