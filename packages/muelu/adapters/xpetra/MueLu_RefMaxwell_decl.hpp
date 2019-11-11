@@ -47,13 +47,15 @@
 #define MUELU_REFMAXWELL_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_ExplicitInstantiation.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 
+#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
@@ -63,6 +65,7 @@
 #include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
+#include "MueLu_SaPFactory_kokkos_fwd.hpp"
 #include "MueLu_Utilities_kokkos_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 #endif
@@ -396,11 +399,11 @@ namespace MueLu {
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_, Addon_Matrix_;
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-    Kokkos::View<const bool*, typename Node::device_type> BCrowsKokkos_;
+    Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_;
     Kokkos::View<const bool*, typename Node::device_type> BCcolsKokkos_;
 #endif
     int BCrowcount_, BCcolcount_;
-    Teuchos::ArrayRCP<const bool> BCrows_;
+    Teuchos::ArrayRCP<bool> BCrows_;
     Teuchos::ArrayRCP<const bool> BCcols_;
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
