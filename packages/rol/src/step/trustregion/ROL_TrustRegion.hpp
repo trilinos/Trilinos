@@ -79,6 +79,12 @@ private:
 
   unsigned verbosity_;
 
+  // POST SMOOTHING PARAMETERS
+  Real alpha_init_; ///< Initial line-search parameter for projected methods.
+  int  max_fval_;   ///< Maximum function evaluations in line-search for projected methods.
+  Real mu_;         ///< Post-Smoothing tolerance for projected methods.
+  Real beta_;       ///< Post-Smoothing rate for projected methods.
+
 public:
 
   virtual ~TrustRegion() {}
@@ -113,6 +119,11 @@ public:
     forceFactor_ = ilist.get("Forcing Sequence Reduction Factor", static_cast<Real>(0.1));
     // Get verbosity level
     verbosity_ = glist.get("Print Verbosity", 0);
+    // Post-smoothing parameters
+    max_fval_    = list.sublist("Post-Smoothing").get("Function Evaluation Limit", 20);
+    alpha_init_  = list.sublist("Post-Smoothing").get("Initial Step Size", static_cast<Real>(1));
+    mu_          = list.sublist("Post-Smoothing").get("Tolerance",         static_cast<Real>(0.9999));
+    beta_        = list.sublist("Post-Smoothing").get("Rate",              static_cast<Real>(0.01));
   }
 
   virtual void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
@@ -302,10 +313,56 @@ public:
              (flagTR == TRUSTREGION_FLAG_POSPREDNEG)) { // Step Accepted
       x.plus(s);
       obj.update(x,true,iter);
+      // Perform line search (smoothing) to ensure decrease 
+      if ( bnd.isActivated() && TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
+        Real tol = std::sqrt(ROL_EPSILON<Real>());
+        // Compute new gradient
+        obj.gradient(*dual_,x,tol); // MUST DO SOMETHING HERE WITH TOL
+        ngrad++;
+        // Compute smoothed step
+        Real alpha(1);
+        prim_->set(x);
+        prim_->axpy(-alpha/alpha_init_,dual_->dual());
+        bnd.project(*prim_);
+        // Compute new objective value
+        obj.update(*prim_,true,iter);
+        Real ftmp = obj.value(*prim_,tol); // MUST DO SOMETHING HERE WITH TOL
+        nfval++;
+        // Perform smoothing
+        int cnt = 0;
+        alpha = alpha_init_;
+        while ( (fnew-ftmp) <= mu_*(fnew-fold) ) { 
+          prim_->set(x);
+          prim_->axpy(-alpha/alpha_init_,dual_->dual());
+          bnd.project(*prim_);
+          obj.update(*prim_,true,iter);
+          ftmp = obj.value(*prim_,tol); // MUST DO SOMETHING HERE WITH TOL
+          nfval++;
+          if ( cnt >= max_fval_ ) {
+            break;
+          }
+          alpha *= beta_;
+          cnt++;
+        }
+        // Store objective function and iteration information
+        if (std::isnan(ftmp)) {
+          flagTR = TRUSTREGION_FLAG_NAN;
+          del = gamma1_*std::min(snorm,del);
+	  rho = static_cast<Real>(-1);
+	  x.axpy(static_cast<Real>(-1),s);
+	  obj.update(x,true,iter);
+	  fnew = fold1;
+	}
+	else {
+          fnew = ftmp;
+          x.set(*prim_);
+	}
+      }
       if (rho >= eta2_) { // Increase trust-region radius
         del = gamma2_*del;
       }
     }
+
     if ( verbosity_ > 0 ) {
       std::cout << "    Trust-region radius after update:        " << del << std::endl;
       std::cout << std::endl;
