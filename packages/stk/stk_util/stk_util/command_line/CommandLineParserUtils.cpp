@@ -2,8 +2,8 @@
 #include <stk_util/command_line/CommandLineParser.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
-#include <stk_util/environment/FileUtils.hpp>
 #include <stk_util/registry/ProductRegistry.hpp>
+#include <stk_util/environment/FileUtils.hpp>
 #include <fstream>
 #include <string>
 
@@ -51,11 +51,6 @@ std::string get_quick_error(const std::string &execName, const std::string &quic
     std::string s = quickExample;
     s += "Use '" + execName + " --help' for more information.";
     return s;
-}
-
-std::string get_version(const std::string &executableName)
-{
-    return executableName + " " + stk::ProductRegistry::version();
 }
 
 void parse_command_line(int argc,

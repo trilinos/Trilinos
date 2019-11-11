@@ -34,8 +34,8 @@
 #ifndef STK_UTIL_ENVIRONMENT_COMMANDLINEPARSER_HPP
 #define STK_UTIL_ENVIRONMENT_COMMANDLINEPARSER_HPP
 
-#include <stk_util/command_line/OptionsSpecification.hpp>
-#include <stk_util/command_line/ParsedOptions.hpp>
+#include <stk_util/environment/OptionsSpecification.hpp>
+#include <stk_util/environment/ParsedOptions.hpp>
 #include <stk_util/command_line/ParseCommandLineArgs.hpp>
 #include <iostream>
 #include <string>

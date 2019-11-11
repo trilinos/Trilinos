@@ -35,8 +35,8 @@
 #define STK_UTIL_COMMANDLINE_PARSECOMMANDLINEARGS_HPP
 
 #include <stk_util/stk_config.h>
-#include <stk_util/command_line/OptionsSpecification.hpp>
-#include <stk_util/command_line/ParsedOptions.hpp>
+#include <stk_util/environment/OptionsSpecification.hpp>
+#include <stk_util/environment/ParsedOptions.hpp>
 
 namespace stk {
 

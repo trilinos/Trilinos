@@ -31,20 +31,22 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#ifndef _DisconnectBlocks_hpp_
-#define _DisconnectBlocks_hpp_
-#include "DisconnectBlocksImpl.hpp"
-#include "DisconnectTypes.hpp"
+#ifndef _DISCONNECT_TYPES_HPP_
+#define _DISCONNECT_TYPES_HPP_
 
-namespace stk { namespace mesh { class BulkData; } }
+#include <utility>
+#include <vector>
+
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace tools {
 
-    void disconnect_all_blocks(stk::mesh::BulkData& bulk, bool preserveOrphans = false);
-    void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect, int debugLevel = 0);
-    void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockNamePairVector& blockNamePairsToDisconnect, int debugLevel = 0);
-}
-}
+using BlockPair = std::pair<stk::mesh::Part*, stk::mesh::Part*>;
+using BlockPairVector = std::vector<BlockPair>;
+using BlockNamePair = std::pair<std::string, std::string>;
+using BlockNamePairVector = std::vector<BlockNamePair>;
+
+}}
 
 #endif
