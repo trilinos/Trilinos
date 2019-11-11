@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_VECTORFACTORY_HPP
-#define XPETRA_VECTORFACTORY_HPP
+#ifndef XPETRA_VECTORFACTORY_DECL_HPP
+#define XPETRA_VECTORFACTORY_DECL_HPP
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Vector.hpp"
@@ -74,32 +74,21 @@ namespace Xpetra {
 #include "Xpetra_UseShortNames.hpp"
 
   private:
+
     //! Private constructor. This is a static class.
-    VectorFactory() {}
+    VectorFactory();
 
   public:
 
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<Vector> Build(const Teuchos::RCP<const Map> &map, bool zeroOut=true) {
-      XPETRA_MONITOR("VectorFactory::Build");
+    static Teuchos::RCP< Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+    Build(const Teuchos::RCP<const Map> &map, bool zeroOut=true);
 
-      RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
-      if(!bmap.is_null())
-      {
-        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
-      }
+  };  // class VectorFactory
 
-#ifdef HAVE_XPETRA_TPETRA
-      if (map->lib() == UseTpetra)
-        return rcp( new TpetraVector(map, zeroOut) );
-#endif
-
-      XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
-      XPETRA_FACTORY_END;
-    }
-
-  };
 #define XPETRA_VECTORFACTORY_SHORT
+
+
 
 // we need the Epetra specialization only if Epetra is enabled
 #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
@@ -108,10 +97,11 @@ namespace Xpetra {
   // Used both for Epetra and Tpetra
   // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class VectorFactory<double, int, int, EpetraNode> {
-    typedef double                              Scalar;
-    typedef int                                 LocalOrdinal;
-    typedef int                                 GlobalOrdinal;
+  class VectorFactory<double, int, int, EpetraNode> 
+  {
+    typedef double     Scalar;
+    typedef int        LocalOrdinal;
+    typedef int        GlobalOrdinal;
     typedef EpetraNode Node;
 
 #undef XPETRA_VECTORFACTORY_SHORT
@@ -127,24 +117,31 @@ namespace Xpetra {
       XPETRA_MONITOR("VectorFactory::Build");
 
       RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
-      if(!bmap.is_null()) {
+      if(!bmap.is_null()) 
+      {
         return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
       }
 
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
+      {
         return rcp( new TpetraVector(map, zeroOut) );
-#endif
+      }
+#endif  // HAVE_XPETRA_TPETRA
 
       if (map->lib() == UseEpetra)
+      {
         return rcp( new EpetraVectorT<int,Node>(map, zeroOut) );
+      }
 
       XPETRA_FACTORY_END;
     }
 
   };
-#endif
+#endif  // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+
+
 
   // Specialization for Scalar=double, LO=int, GO=long long and EpetraNode
   // Used both for Epetra and Tpetra
@@ -152,11 +149,12 @@ namespace Xpetra {
 #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
 
   template <>
-  class VectorFactory<double, int, long long, EpetraNode> {
+  class VectorFactory<double, int, long long, EpetraNode> 
+  {
 
-    typedef double                              Scalar;
-    typedef int                                 LocalOrdinal;
-    typedef long long                           GlobalOrdinal;
+    typedef double     Scalar;
+    typedef int        LocalOrdinal;
+    typedef long long  GlobalOrdinal;
     typedef EpetraNode Node;
 
 #undef XPETRA_VECTORFACTORY_SHORT
@@ -188,9 +186,11 @@ namespace Xpetra {
     }
 
   };
-#endif
+#endif  // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
 
 #define XPETRA_VECTORFACTORY_SHORT
+
+
 
 // we need the Epetra specialization only if Epetra is enabled
 #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
@@ -200,11 +200,12 @@ namespace Xpetra {
   // Used both for Epetra and Tpetra
   // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class VectorFactory<int, int, int, EpetraNode> {
+  class VectorFactory<int, int, int, EpetraNode> 
+  {
 
-    typedef int                                 Scalar;
-    typedef int                                 LocalOrdinal;
-    typedef int                                 GlobalOrdinal;
+    typedef int        Scalar;
+    typedef int        LocalOrdinal;
+    typedef int        GlobalOrdinal;
     typedef EpetraNode Node;
 
 #undef XPETRA_VECTORFACTORY_SHORT
@@ -216,27 +217,35 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) 
+    {
       XPETRA_MONITOR("VectorFactory::Build");
 
       RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
-      if(!bmap.is_null()) {
+      if(!bmap.is_null()) 
+      {
         return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
       }
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
+      {
         return rcp( new TpetraVector(map, zeroOut) );
-#endif
+      }
+#endif  // HAVE_XPETRA_TPETRA
 
       if (map->lib() == UseEpetra)
+      {
         return rcp( new EpetraIntVectorT<int,Node>(map, zeroOut) );
+      }
 
       XPETRA_FACTORY_END;
     }
 
   };
-#endif
+#endif  // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+
+
 
 // we need the Epetra specialization only if Epetra is enabled
 #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
@@ -248,15 +257,16 @@ namespace Xpetra {
   template <>
   class VectorFactory<int, int, long long, EpetraNode> {
 
-    typedef int                                 Scalar;
-    typedef int                                 LocalOrdinal;
-    typedef long long                           GlobalOrdinal;
+    typedef int        Scalar;
+    typedef int        LocalOrdinal;
+    typedef long long  GlobalOrdinal;
     typedef EpetraNode Node;
 
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
   private:
+
     //! Private constructor. This is a static class.
     VectorFactory() {}
 
@@ -266,24 +276,32 @@ namespace Xpetra {
       XPETRA_MONITOR("VectorFactory::Build");
 
       RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
-      if(!bmap.is_null()) {
+      if(!bmap.is_null()) 
+      {
         return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
       }
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
+      {
         return rcp( new TpetraVector(map, zeroOut) );
-#endif
+      }
+#endif    // HAVE_XPETRA_TPETRA
 
       if (map->lib() == UseEpetra)
+      {
         return rcp( new EpetraIntVectorT<long long,Node>(map, zeroOut) );
+      }
 
       XPETRA_FACTORY_END;
     }
 
   };
-#endif
-}
+#endif    // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+}   // namespace Xpetra
+
 
 #define XPETRA_VECTORFACTORY_SHORT
-#endif
+#endif    // XPETRA_VECTORFACTORY_DECL_HPP
+
+
