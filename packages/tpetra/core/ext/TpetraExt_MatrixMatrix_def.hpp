@@ -561,7 +561,6 @@ add (const Scalar& alpha,
         std::invalid_argument,
         "Tpetra::MatrixMatrix::add(): this version of add() always calls fillComplete\n"
         "on the result, but you explicitly set 'Call fillComplete' = false in the parameter list. Don't set this explicitly.");
-    }
     params->set("Call fillComplete", true);
   }
   //If transposeB, must compute B's explicit transpose to
