@@ -66,9 +66,8 @@ BroadcastArg::BroadcastArg(
     buffer_length = s.size();
     if(buffer_length > 0) {
         buffer = new char[buffer_length];
+        std::copy(s.begin(), s.end(), buffer);
     }
-    
-    std::copy(s.begin(), s.end(), buffer);
   }
 
 // if STK_HAS_MPI, broadcast m_argc, buffer and buffer_length to processors

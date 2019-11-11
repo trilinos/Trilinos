@@ -60,9 +60,22 @@ struct Option
 class OptionsSpecification
 {
 public:
-  OptionsSpecification(const std::string& usagePreamble_="")
-   : usagePreamble(usagePreamble_), options() {}
+  OptionsSpecification(const std::string& usagePreamble_="", unsigned lineLen=0)
+   : usagePreamble(usagePreamble_), lineLength(lineLen), options(), subOptionSpecs() {}
+  OptionsSpecification(const OptionsSpecification& spec)
+  {
+    *this = spec;
+  }
+
   ~OptionsSpecification(){}
+
+  OptionsSpecification& operator=(const OptionsSpecification& spec)
+  {
+    usagePreamble = spec.usagePreamble;
+    options = spec.options;
+    subOptionSpecs = spec.subOptionSpecs;
+    return *this;
+  }
 
   bool empty() const { return options.empty(); }
 
@@ -89,6 +102,14 @@ public:
     if (numPartialMatches == 1) {
       return options[idxOfPartialMatch];
     }
+
+    for(const OptionsSpecification& spec : subOptionSpecs) {
+      const Option& option = spec.find_option(nameOrAbbrev);
+      if (!option.name.empty()) {
+        return option;
+      }
+    }
+
     return emptyOption;
   }
 
@@ -99,6 +120,11 @@ public:
         ++numPositionalOptions;
       }
     }
+
+    for(const OptionsSpecification& spec : subOptionSpecs) {
+      numPositionalOptions += spec.get_num_positional_options();
+    }
+
     return numPositionalOptions;
   }
 
@@ -109,7 +135,14 @@ public:
         return option;
       }
     }
-    ThrowRequireMsg(false, "stk::OptionsSpecification failed to find positional option "<<position);
+
+    for(const OptionsSpecification& spec : subOptionSpecs) {
+      const Option& option = spec.get_positional_option(position);
+      if (!option.name.empty()) {
+        return option;
+      }
+    }
+
     static Option emptyOption;
     return emptyOption;
   }
@@ -117,6 +150,12 @@ public:
   const std::vector<Option>& get_options() const { return options; }
 
   OptionsSpecification& add_options() { return *this; }
+
+  OptionsSpecification& add(const OptionsSpecification& spec)
+  {
+    subOptionSpecs.push_back(spec);
+    return *this;
+  }
 
   OptionsSpecification& operator()(const std::string& spec, const std::string& description)
   {
@@ -175,28 +214,41 @@ private:
     return *this;
   }
 
+  void print(std::ostream& out) const
+  {
+    if (!usagePreamble.empty()) {
+      out << usagePreamble << std::endl << std::endl;
+    }
+    int maxOptStrLen = 0;
+    for(const Option& opt : options) {
+      std::string optionString(dash_it(opt.name)+(!opt.abbrev.empty() ? ",-"+opt.abbrev : ""));
+      int strLen = optionString.size();
+      maxOptStrLen = std::max(maxOptStrLen,strLen);
+    }
+    int padWidth = maxOptStrLen+3;
+    for(const Option& opt : options) {
+      std::string optionString(dash_it(opt.name)+(!opt.abbrev.empty() ? ",-"+opt.abbrev : ""));
+      out << optionString<<std::setw(padWidth+opt.description.size()-optionString.size())<<opt.description<<(opt.isRequired ? " (required)":"")
+          <<(!opt.defaultValue.empty() ? (" default: "+opt.defaultValue) : "")
+          <<std::endl;
+    }
+  
+    out << std::endl;
+  }
+
   std::string usagePreamble;
+  unsigned lineLength;
   std::vector<Option> options;
+  std::vector<OptionsSpecification> subOptionSpecs;
 };
 
 inline
-std::ostream& operator<<(std::ostream& out, const OptionsSpecification& od)
+std::ostream& operator<<(std::ostream& out, const OptionsSpecification& opspec)
 {
-  if (!od.usagePreamble.empty()) {
-    out << od.usagePreamble << std::endl << std::endl;
-  }
-  int maxOptStrLen = 0;
-  for(const Option& opt : od.options) {
-    std::string optionString(dash_it(opt.name)+(!opt.abbrev.empty() ? ",-"+opt.abbrev : ""));
-    int strLen = optionString.size();
-    maxOptStrLen = std::max(maxOptStrLen,strLen);
-  }
-  int padWidth = maxOptStrLen+3;
-  for(const Option& opt : od.options) {
-    std::string optionString(dash_it(opt.name)+(!opt.abbrev.empty() ? ",-"+opt.abbrev : ""));
-    out << optionString<<std::setw(padWidth+opt.description.size()-optionString.size())<<opt.description<<(opt.isRequired ? " (required)":"")
-        <<(!opt.defaultValue.empty() ? (" default: "+opt.defaultValue) : "")
-        <<std::endl;
+  opspec.print(out);
+
+  for(const OptionsSpecification& spec : opspec.subOptionSpecs) {
+    spec.print(out);
   }
 
   return out;

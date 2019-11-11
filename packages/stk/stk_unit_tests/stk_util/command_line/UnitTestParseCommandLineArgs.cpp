@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include <stk_util/command_line/OptionsSpecification.hpp>
-#include <stk_util/command_line/ParsedOptions.hpp>
+#include <stk_util/environment/OptionsSpecification.hpp>
+#include <stk_util/environment/ParsedOptions.hpp>
 #include <stk_util/command_line/ParseCommandLineArgs.hpp>
 
 namespace {
