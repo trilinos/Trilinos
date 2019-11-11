@@ -69,7 +69,7 @@ using ViewType = Kokkos::DynRankView<ScalarType,Kokkos::DefaultExecutionSpace>;
 template<typename ScalarType>
 inline bool valuesAreSmall(ScalarType a, ScalarType b, double epsilon)
 {
-  using namespace std;
+  using std::abs;
   return (abs(a) < epsilon) && (abs(b) < epsilon);
 }
 
