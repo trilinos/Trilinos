@@ -191,7 +191,7 @@ namespace FROSch {
             for (UN i=0; i<Leafs_->getNumEntities(); i++) {
                 InterfaceEntityPtr tmpEntity = Leafs_->getEntity(i);
                 LO leafID = tmpEntity->getLeafID();
-                FROSCH_ASSERT(leafID==i,"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: leafID!=i!");
+                FROSCH_ASSERT(leafID==LO(i),"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: leafID!=i!");
                 for (UN j=0; j<Leafs_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
                         tmpVector->replaceLocalValue(Leafs_->getEntity(i)->getGammaDofID(j,k),leafID,ScalarTraits<SC>::one());
