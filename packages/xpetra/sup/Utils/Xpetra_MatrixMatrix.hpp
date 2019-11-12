@@ -83,13 +83,13 @@
 namespace Xpetra {
   namespace Details
   {
+#ifdef HAVE_XPETRA_TPETRA
     template <typename tcrs_matrix_type>
     Teuchos::RCP<Xpetra::Matrix<typename tcrs_matrix_type::scalar_type, typename tcrs_matrix_type::local_ordinal_type, typename tcrs_matrix_type::global_ordinal_type, typename tcrs_matrix_type::node_type>>
     tpetraAdd(
       const tcrs_matrix_type& A, bool transposeA, const typename tcrs_matrix_type::scalar_type alpha,
       const tcrs_matrix_type& B, bool transposeB, const typename tcrs_matrix_type::scalar_type beta)
     {
-  #ifdef HAVE_XPETRA_TPETRA
       using Teuchos::Array;
       using Teuchos::RCP;
       using Teuchos::rcp;
@@ -110,6 +110,7 @@ namespace Xpetra {
       if(transposeA)
         Aprime = transposer_type(Aprime).createTranspose();
       //Decide whether the fast code path can be taken.
+      /*
       if(A.isFillComplete() && B.isFillComplete())
       {
         RCP<tcrs_matrix_type> C = rcp(new tcrs_matrix_type(Aprime->getRowMap(), 0));
@@ -121,6 +122,7 @@ namespace Xpetra {
       }
       else
       {
+      */
         //Slow case - one or both operands are non-fill complete.
         //TODO: deprecate this.
         //Need to compute the explicit transpose before add if transposeA and/or transposeB.
@@ -150,12 +152,9 @@ namespace Xpetra {
             *Bprime, false, beta,
             C);
         return rcp(new CrsWrap(rcp_implicit_cast<CrsType>(rcp(new XTCrsType(C)))));
-      }
-  #else
-      throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
-      return Teuchos::null;
-  #endif
+      //}
     }
+#endif
   }
 
 /*!
