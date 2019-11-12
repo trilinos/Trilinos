@@ -565,7 +565,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
     bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
 
-    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="", Ms_file="", sol_file="", Kn_file="";
+
     std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="", material_file = "", Ms_file="", sol_file=""; Kn_file="";
 
     S_file = "S.mat";

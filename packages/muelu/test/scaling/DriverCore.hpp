@@ -200,7 +200,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
          if(epetraCoord->NumVectors() > 2)  mueluList.set("z-coordinates",(*epetraCoord)[2]);
        }
        if(!material.is_null()) {
-         RCP<const Epetra_MultiVector> epetraMat =  MueLu::Utilities<coordinate_type,LO,GO,NO>::MV2EpetraMV(material);
+         RCP<const Epetra_MultiVector> epetraMat =  MueLu::Utilities<SC,LO,GO,NO>::MV2EpetraMV(material);
          mueluList.set("material coordinates",(*epetraMat)[0]);
        }
        ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,Prec);
