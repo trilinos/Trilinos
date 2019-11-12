@@ -421,7 +421,7 @@ void MakeInterfaceScalingFactors(const int maxRegPerProc,
                                  Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& quasiRegRowMaps)
 {
 #include "Xpetra_UseShortNames.hpp"
-  std::cout << compRowMaps[0]->getComm()->getRank() << " | Computing interface scaling factors ..." << std::endl;
+  // std::cout << compRowMaps[0]->getComm()->getRank() << " | Computing interface scaling factors ..." << std::endl;
 
   const SC SC_ONE = Teuchos::ScalarTraits<SC>::one();
 
@@ -488,7 +488,7 @@ void createRegionHierarchy(const int maxRegPerProc,
   using Utilities = MueLu::Utilities<SC, LO, GO, NO>;
   using DirectCoarseSolver = Amesos2::Solver<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >;
 
-  std::cout << mapComp->getComm()->getRank() << " | Setting up MueLu hierarchies ..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | Setting up MueLu hierarchies ..." << std::endl;
   int numLevels = 0;
 
   // A hierarchy for each group
@@ -526,7 +526,7 @@ void createRegionHierarchy(const int maxRegPerProc,
     regGrpHierarchy[j] = MueLu::CreateXpetraPreconditioner(regionGrpMats[j], *mueluParams);
   }
 
-  std::cout << mapComp->getComm()->getRank() << " | Resize containers..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | Resize containers..." << std::endl;
 
   // resize Arrays and vectors
   {
@@ -560,7 +560,7 @@ void createRegionHierarchy(const int maxRegPerProc,
     }
   }
 
-  std::cout << mapComp->getComm()->getRank() << " | Fill fine level containers..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | Fill fine level containers..." << std::endl;
 
   // Fill fine level with our data
   {
@@ -582,7 +582,7 @@ void createRegionHierarchy(const int maxRegPerProc,
     regProlong[0] = fineLevelProlong;
   }
 
-  std::cout << mapComp->getComm()->getRank() << " | Fill coarser level containers..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | Fill coarser level containers..." << std::endl;
 
   /* Get coarse level matrices and prolongators from MueLu hierarchy
    * Note: fine level has been dealt with previously, so we start at level 1 here.
@@ -619,7 +619,7 @@ void createRegionHierarchy(const int maxRegPerProc,
                        compRowMaps,
                        regRowImporters);
 
-  std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeOperator ..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeOperator ..." << std::endl;
 
   MakeCoarseCompositeOperator(maxRegPerProc,
                               numLevels,
@@ -630,7 +630,7 @@ void createRegionHierarchy(const int maxRegPerProc,
                               regMatrices,
                               coarseCompOp);
 
-  std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeSolver ..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeSolver ..." << std::endl;
 
   const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
   if (coarseSolverType == "direct")
@@ -649,7 +649,7 @@ void createRegionHierarchy(const int maxRegPerProc,
     TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unknown coarse solver type.");
   }
 
-  std::cout << mapComp->getComm()->getRank() << " | MakeInterfaceScalingFactors ..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | MakeInterfaceScalingFactors ..." << std::endl;
 
   MakeInterfaceScalingFactors(maxRegPerProc,
                               numLevels,
