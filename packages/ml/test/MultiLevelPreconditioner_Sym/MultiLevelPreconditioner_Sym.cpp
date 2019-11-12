@@ -1,7 +1,8 @@
 #ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H
 #endif
-
+#include <malloc.h>
+#include <cstdio>
 #include "ml_config.h"
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
@@ -41,6 +42,76 @@ void PrintLine()
   return;
 }
 
+
+
+// ------------------------------------------------------------------------------------------------
+// Memory use tracking (gets memory use in MB)
+int get_memory() {
+  /*** Mallinfo ***/
+  struct mallinfo mi = mallinfo();
+
+  printf("Total non-mmapped bytes (arena):       %d\n", mi.arena);
+  printf("# of free chunks (ordblks):            %d\n", mi.ordblks);
+  printf("# of free fastbin blocks (smblks):     %d\n", mi.smblks);
+  printf("# of mapped regions (hblks):           %d\n", mi.hblks);
+  printf("Bytes in mapped regions (hblkhd):      %d\n", mi.hblkhd);
+  printf("Max. total allocated space (usmblks):  %d\n", mi.usmblks);
+  printf("Free bytes held in fastbins (fsmblks): %d\n", mi.fsmblks);
+  printf("Total allocated space (uordblks):      %d\n", mi.uordblks);
+  printf("Total free space (fordblks):           %d\n", mi.fordblks);
+  printf("Topmost releasable block (keepcost):   %d\n", mi.keepcost);
+  
+
+  /*** /proc/self/statm ***/
+  unsigned long m_vmsize = 0, m_vmrss = 0;
+  FILE * fp = fopen( "/proc/self/statm", "r" );
+  if (fp)
+  { 
+    char cbuf[40];
+    // run "man proc" to get info on the contents of /proc/[pid]/statm
+    fscanf( fp, "%lu %lu %s %s %s %s %s",
+            &m_vmsize, &m_vmrss, cbuf, cbuf, cbuf, cbuf, cbuf);
+
+    fclose(fp);
+  }
+  printf("Virtual memory size (vmsize)       :   %lu\n",m_vmsize);
+  printf("Resident set size (vmrss)          :   %lu\n",m_vmrss);
+
+  /*** /prof/self/status ***/
+  char vmsize[128];
+  char vmpeak[128];
+  char vmrss [128];
+  char vmhwm[128];
+  char line[128];
+
+  FILE *f = fopen("/proc/self/status", "r");
+  if (!f) return 0;
+  int ct=0;
+  
+  /* Read memory size data from /proc/pid/status */
+  while (ct < 4) {
+    if(fgets(line,128,f) == 0)
+      break;
+    if (!strncmp(line, "VmPeak:", 7)) {
+      sprintf(vmpeak,"%s",line); ct++;
+    }
+    else if (!strncmp(line, "VmSize:", 7)){
+      sprintf(vmsize,"%s",line); ct++;
+    }
+    else if (!strncmp(line, "VmRSS:", 6)) {
+      sprintf(vmrss,"%s",line); ct++;
+    }
+    else if (!strncmp(line, "VmHWM:", 6)) {
+      sprintf(vmhwm,"%s",line); ct++;
+    }
+  }  
+  printf("%s", vmpeak);
+  printf("%s", vmsize);
+  printf("%s", vmrss);
+  printf("%s", vmhwm);
+
+  return (mi.hblkhd + mi.usmblks + mi.uordblks)  / 1024;
+}
 
 
 int TestMultiLevelPreconditioner(char ProblemType[],
@@ -296,7 +367,18 @@ int main(int argc, char *argv[]) {
                                TotalErrorResidual, TotalErrorExactSol);
   
 
-  //#endif
+  // =========================== //
+  // Memory Test                 //
+  // =========================== //
+  int initial_memory = get_memory();
+  for (int i=0; i<20; i++) {
+    ML_Epetra::SetDefaults("SA",MLList);
+    TestMultiLevelPreconditioner(mystring, MLList, Problem,
+                                 TotalErrorResidual, TotalErrorExactSol);
+  }
+  int final_memory = get_memory();
+  printf("Memory before = %d after = %d\n",initial_memory,final_memory);
+
   // =========================== //
   // Rowsum test (on Heat eqn)   //
   // =========================== //

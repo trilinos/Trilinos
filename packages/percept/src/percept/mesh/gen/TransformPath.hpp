@@ -19,7 +19,7 @@
 
       class TransformPath : public Transform
       {
-        typedef boost::array<double,3> Coord;
+        typedef std::array<double,3> Coord;
         Coord m_from;
         Coord m_from_dir;
         Coord m_to;

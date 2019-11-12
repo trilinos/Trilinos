@@ -67,7 +67,7 @@ namespace Test {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -177,7 +177,7 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
       }
     }
   }
-  catch ( std::exception err) {
+  catch (std::exception &err) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   }
@@ -625,7 +625,7 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
       }
     }
     }
-  }  catch ( std::exception err) {
+  }  catch (std::exception &err) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   }
@@ -655,7 +655,7 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
       }
       errorFlag++;
     }
-  } catch (std::logic_error err){
+  } catch (std::logic_error &err){
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";

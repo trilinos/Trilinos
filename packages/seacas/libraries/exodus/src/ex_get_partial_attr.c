@@ -178,7 +178,7 @@ int ex_get_partial_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
   if (start_num + num_ent - 1 > num_entries_this_obj) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: start index (%" PRId64 ") + count (%" PRId64
-             ") is larger than total number of entities (%" ST_ZU ") in file id %d",
+             ") is larger than total number of entities (%zu) in file id %d",
              start_num, num_ent, num_entries_this_obj, exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);

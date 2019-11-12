@@ -43,6 +43,7 @@
  * in code that verifies that the array is sorted.
  */
 
+#include <EJ_CodeTypes.h>
 #include <cstdint>
 #include <unistd.h>
 

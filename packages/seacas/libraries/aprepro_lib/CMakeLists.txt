@@ -105,7 +105,8 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
    endif()
 endif()
 
-if(${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
+# Currently doesn't run on windows due to use of sed...
+if (${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
   add_executable(aprepro_test_app apr_test.cc)
   target_link_libraries(aprepro_test_app aprepro_lib)
 
@@ -128,6 +129,7 @@ TRIBITS_ADD_ADVANCED_TEST(
  COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION
+ XHOSTTYPE Windows
 )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -146,6 +148,7 @@ TRIBITS_ADD_ADVANCED_TEST(
  COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION
+ XHOSTTYPE Windows
 )
 endif()
 

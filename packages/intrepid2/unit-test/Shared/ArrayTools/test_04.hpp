@@ -68,7 +68,7 @@ namespace Intrepid2 {
       try {                                                             \
         S ;                                                             \
       }                                                                 \
-      catch (std::logic_error err) {                                    \
+      catch (std::logic_error &err) {                                    \
         *outStream << "Expected Error ----------------------------------------------------------------\n"; \
         *outStream << err.what() << '\n';                               \
         *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
@@ -650,7 +650,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P1_D3_D3) );
         }
 
-        catch (std::logic_error err) {
+        catch (std::logic_error &err) {
           *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
           *outStream << err.what() << '\n';
           *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -3293,7 +3293,7 @@ namespace Intrepid2 {
         *                                      Finish test                                             *
         ************************************************************************************************/
 
-      catch (std::logic_error err) {
+      catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";

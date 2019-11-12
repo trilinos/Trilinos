@@ -72,7 +72,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
-    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Maxwell.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml
+    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Maxwell.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml
     )
 
   IF(HAVE_MUELU_COMPLEX)

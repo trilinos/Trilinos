@@ -176,24 +176,28 @@ public:
   }
 
   bool x_hasChanged(const Vector<Real> &rol_x) {
+    bool changed;
     if (x_ptr == Teuchos::null) {
       x_ptr = rol_x.clone();
       x_ptr->set(rol_x);
       gradientUpdated = false;
       valueUpdated = false;
-      return true;
+      changed = true;
     }
     else {
       x_ptr->axpy( -1.0, rol_x );
       Real norm = x_ptr->norm();
       x_ptr->set(rol_x);
-      if (norm == 0) return false;
+      if (norm == 0) changed = false;
       else {
         gradientUpdated = false;
         valueUpdated = false;
-        return true;
+        changed = true;
       }
     }
+    if (params != Teuchos::null)
+      params->set<bool>("Optimization Variables Changed", changed);
+    return changed;
   }
 
 public:

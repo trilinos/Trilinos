@@ -60,7 +60,9 @@
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_Initializer.h>
 #include <transform/Iotr_Initializer.h>
+#ifndef _MSC_VER
 #include <visualization/Iovs_IOFactory.h>
+#endif
 
 namespace {
 #if defined(IOSS_THREADSAFE)
@@ -99,7 +101,9 @@ namespace Ioss {
       Iocgns::IOFactory::factory();
 #endif
 
+#ifndef _MSC_VER
       Iovs::IOFactory::factory(); // Visualization
+#endif
       Iohb::IOFactory::factory(); // HeartBeat
       Iogn::IOFactory::factory(); // Generated
       Iogs::IOFactory::factory(); // Structured Mesh Generator

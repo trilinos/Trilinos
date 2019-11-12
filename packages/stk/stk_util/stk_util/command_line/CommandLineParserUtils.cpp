@@ -1,4 +1,4 @@
-#include "mpi.h"
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/command_line/CommandLineParser.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
@@ -20,6 +20,30 @@ std::string bracket_it(const std::string &s)
 std::string dash_it(const std::string &s)
 {
     return "--" + s;
+}
+
+std::string rm_dashes(const std::string &s)
+{
+  size_t pos = s.find_first_not_of(" -");
+  if (pos != std::string::npos) {
+    return s.substr(pos);
+  }
+  return s;
+}
+
+std::string get_substring_before_comma(const std::string& s)
+{
+  size_t pos = s.find(",");
+  return s.substr(0,pos);
+}
+
+std::string get_substring_after_comma(const std::string& s)
+{
+  size_t pos = s.find(",");
+  if (pos != std::string::npos) {
+    return s.substr(pos+1);
+  }
+  return "";
 }
 
 std::string get_quick_error(const std::string &execName, const std::string &quickExample)

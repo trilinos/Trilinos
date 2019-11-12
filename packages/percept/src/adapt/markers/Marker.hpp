@@ -11,9 +11,7 @@
 #define Marker_h
 
 #include <vector>
-
-#include <boost/tuple/tuple_io.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
+#include <tuple>
 
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
@@ -33,7 +31,7 @@ class BoundingRegion;
  *
  */
 //--------------------------------------------------------------------
-typedef boost::tuple<double *, percept::RefineFieldType_type *, bool > ErrIndInfoTuple;
+typedef std::tuple<double *, percept::RefineFieldType_type *, bool > ErrIndInfoTuple;
 
 struct MarkerInfo
 {

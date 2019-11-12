@@ -54,12 +54,15 @@ namespace SEAMS {
   double do_atand(double x);
   double do_atanh(double x);
   double do_ceil(double x);
+  double do_cbrt(double x);
   double do_cos(double x);
   double do_cosd(double x);
   double do_cosh(double x);
   double do_d2r(double x);
   double do_dim(double x, double y);
   double do_dist(double x1, double y1, double x2, double y2);
+  double do_erf(double x);
+  double do_erfc(double x);
   double do_exp(double x);
   double do_expm1(double x);
   double do_fabs(double x);
@@ -72,6 +75,7 @@ namespace SEAMS {
   double do_log10(double x);
   double do_max(double x, double y);
   double do_min(double x, double y);
+  double do_pow(double x, double y);
   double do_r2d(double x);
   double do_rand(double xl, double xh);
   double do_srand(double seed);
@@ -93,6 +97,7 @@ namespace SEAMS {
   double do_word_count(char *string, char *delm);
   double do_find_word(char *word, char *string, char *delm);
   double do_lgamma(double val);
+  double do_tgamma(double val);
   double do_juldayhms(double mon, double day, double year, double h, double mi, double se);
   double do_julday(double mon, double day, double year);
   double do_log1p(double x);

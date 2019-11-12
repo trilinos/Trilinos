@@ -1719,6 +1719,12 @@ namespace Iocgns {
     int                         zone       = Iocgns::Utils::get_db_zone(sb);
     cgsize_t                    num_to_get = field.verify(data_size);
 
+    // In this routine, if isParallel, then reading
+    // file-per-processor; not parallel io from single file.
+    if (isParallel && num_to_get == 0) {
+      return 0;
+    }
+
     Ioss::Field::RoleType role = field.get_role();
     if (role == Ioss::Field::TRANSIENT) {
       // Locate the FlowSolution node corresponding to the correct state/step/time
@@ -1927,6 +1933,12 @@ namespace Iocgns {
     int                   zone = Iocgns::Utils::get_db_zone(sb);
 
     cgsize_t num_to_get = field.verify(data_size);
+
+    // In this routine, if isParallel, then reading file-per-processor; not parallel io from single
+    // file.
+    if (isParallel && num_to_get == 0) {
+      return 0;
+    }
 
     cgsize_t rmin[3] = {0, 0, 0};
     cgsize_t rmax[3] = {0, 0, 0};
@@ -2646,6 +2658,12 @@ namespace Iocgns {
     const Ioss::GroupingEntity *sb         = nb->contained_in();
     int                         zone       = Iocgns::Utils::get_db_zone(sb);
     cgsize_t                    num_to_get = field.verify(data_size);
+
+    // In this routine, if isParallel, then writing file-per-processor; not parallel io to single
+    // file.
+    if (isParallel && num_to_get == 0) {
+      return 0;
+    }
 
     Ioss::Field::RoleType role = field.get_role();
     if (role == Ioss::Field::TRANSIENT) {

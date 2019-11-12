@@ -86,6 +86,28 @@ bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec
   return false;
 }
 
+template<class VECTOR, typename COMPARE_LESS>
+bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec, COMPARE_LESS compare_less)
+{
+  typename VECTOR::iterator iter = std::lower_bound(vec.begin(), vec.end(), item, compare_less);
+  if (iter == vec.end() || *iter != item) {
+    vec.insert(iter, item);
+    return true;
+  }
+  return false;
+}
+
+template<class VECTOR, typename COMPARE_LESS, typename COMPARE_EQUALS>
+bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec, COMPARE_LESS compare_less, COMPARE_EQUALS compare_equals)
+{
+  typename VECTOR::iterator iter = std::lower_bound(vec.begin(), vec.end(), item, compare_less);
+  if (iter == vec.end() || !compare_equals(*iter, item)) {
+    vec.insert(iter, item);
+    return true;
+  }
+  return false;
+}
+
 } //namespace util
 } //namespace stk
 

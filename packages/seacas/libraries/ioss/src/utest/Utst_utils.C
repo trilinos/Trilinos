@@ -3,6 +3,7 @@
 
 #include <Ioss_Utils.h>
 #include <exception>
+#include <numeric>
 #include <vector>
 
 TEST_CASE("number_width", "[number_width]")

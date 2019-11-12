@@ -52,6 +52,7 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_transform_MultiVector.hpp"
 #include "Tpetra_withLocalAccess_MultiVector.hpp"
+#include "Tpetra_Details_residual.hpp"
 #include <cstdlib>
 #include <memory>
 #include <sstream>
@@ -272,18 +273,20 @@ Relaxation<MatrixType>::getValidParameters () const
 
     // Set a validator that automatically converts from the valid
     // string options to their enum values.
-    Array<std::string> precTypes (5);
+    Array<std::string> precTypes (6);
     precTypes[0] = "Jacobi";
     precTypes[1] = "Gauss-Seidel";
     precTypes[2] = "Symmetric Gauss-Seidel";
     precTypes[3] = "MT Gauss-Seidel";
     precTypes[4] = "MT Symmetric Gauss-Seidel";
-    Array<Details::RelaxationType> precTypeEnums (5);
+    precTypes[5] = "Richardson";
+    Array<Details::RelaxationType> precTypeEnums (6);
     precTypeEnums[0] = Details::JACOBI;
     precTypeEnums[1] = Details::GS;
     precTypeEnums[2] = Details::SGS;
     precTypeEnums[3] = Details::MTGS;
     precTypeEnums[4] = Details::MTSGS;
+    precTypeEnums[5] = Details::RICHARDSON;
     const std::string defaultPrecType ("Jacobi");
     setStringToIntegralParameter<Details::RelaxationType> ("relaxation: type",
       defaultPrecType, "Relaxation method", precTypes (), precTypeEnums (),
@@ -589,6 +592,9 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
         break;
       case Ifpack2::Details::MTGS:
         ApplyInverseMTGS_CrsMatrix(*Xcopy,Y);
+        break;
+      case Ifpack2::Details::RICHARDSON:
+        ApplyInverseRichardson(*Xcopy,Y);
         break;
 
       default:
@@ -1341,6 +1347,70 @@ void Relaxation<MatrixType>::compute ()
 template<class MatrixType>
 void
 Relaxation<MatrixType>::
+ApplyInverseRichardson (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+{
+  using Teuchos::as;
+  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+  const double numVectors = as<double> (X.getNumVectors ());
+  if (ZeroStartingSolution_) {
+    // For the first Richardson sweep, if we are allowed to assume that
+    // the initial guess is zero, then Richardson is just alpha times the RHS
+    // Compute it as Y(i,j) = DampingFactor_ * X(i,j).
+    Y.scale(DampingFactor_,X);
+
+    // Count (global) floating-point operations.  Ifpack2 represents
+    // this as a floating-point number rather than an integer, so that
+    // overflow (for a very large number of calls, or a very large
+    // problem) is approximate instead of catastrophic.
+    double flopUpdate = 0.0;
+    if (DampingFactor_ == STS::one ()) {
+      // Y(i,j) = X(i,j): one multiply for each entry of Y.
+      flopUpdate = numGlobalRows * numVectors;
+    } else {
+      // Y(i,j) = DampingFactor_ * X(i,j):
+      // One multiplies per entry of Y.
+      flopUpdate = numGlobalRows * numVectors;
+    }
+    ApplyFlops_ += flopUpdate;
+    if (NumSweeps_ == 1) {
+      return;
+    }
+  }
+  // If we were allowed to assume that the starting guess was zero,
+  // then we have already done the first sweep above.
+  const int startSweep = ZeroStartingSolution_ ? 1 : 0;
+
+  // Allocate a multivector if the cached one isn't perfect
+  updateCachedMultiVector(Y.getMap(),as<size_t>(numVectors));
+
+  for (int j = startSweep; j < NumSweeps_; ++j) {
+    // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
+    Tpetra::Details::residual(*A_,Y,X,*cachedMV_);
+    Y.update(DampingFactor_,*cachedMV_,STS::one());
+  }
+
+  // For each column of output, for each pass over the matrix:
+  //
+  // - One + and one * for each matrix entry
+  // - One / and one + for each row of the matrix
+  // - If the damping factor is not one: one * for each row of the
+  //   matrix.  (It's not fair to count this if the damping factor is
+  //   one, since the implementation could skip it.  Whether it does
+  //   or not is the implementation's choice.)
+
+  // Floating-point operations due to the damping factor, per matrix
+  // row, per direction, per columm of output.
+  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
+  const double dampingFlops = (DampingFactor_ == STS::one ()) ? 0.0 : 1.0;
+  ApplyFlops_ += as<double> (NumSweeps_ - startSweep) * numVectors *
+    (2.0 * numGlobalNonzeros + dampingFlops);
+}
+
+
+template<class MatrixType>
+void
+Relaxation<MatrixType>::
 ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
@@ -1386,8 +1456,7 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
 
   for (int j = startSweep; j < NumSweeps_; ++j) {
     // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
-    applyMat (Y, *cachedMV_);
-    cachedMV_->update (STS::one (), X, -STS::one ());
+    Tpetra::Details::residual(*A_,Y,X,*cachedMV_);
     Y.elementWiseMultiply (DampingFactor_, *Diagonal_, *cachedMV_, STS::one ());
   }
 

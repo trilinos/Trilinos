@@ -101,11 +101,11 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       int order = 1;
 
-      auto explicitTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Explicit Tableau - IMEX RK 1st order",
         A,b,c,order,order,order));
 
-      this->setExplicitTableau(explicitTableau);
+      this->setExplicitTableau(expTableau);
     }
     {
       // Implicit Tableau
@@ -129,11 +129,11 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       int order = 1;
 
-      auto implicitTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Implicit Tableau - IMEX RK 1st order",
         A,b,c,order,order,order));
 
-      this->setImplicitTableau(implicitTableau);
+      this->setImplicitTableau(impTableau);
     }
     this->setStepperType("IMEX RK 1st order");
     this->setOrder(1);
@@ -175,10 +175,10 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       int order = 2;
 
-      auto explicitTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Partition IMEX-RK Explicit Stepper",A,b,c,order,order,order));
 
-      this->setExplicitTableau(explicitTableau);
+      this->setExplicitTableau(expTableau);
     }
     {
       // Implicit Tableau
@@ -195,10 +195,10 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       int order = 3;
 
-      auto implicitTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Partition IMEX-RK Implicit Stepper",A,b,c,order,order,order));
 
-      this->setImplicitTableau(implicitTableau);
+      this->setImplicitTableau(impTableau);
     }
     this->setStepperType("IMEX RK ARS 233");
     this->setOrder(3);

@@ -453,7 +453,14 @@ namespace Iogn {
 
         if (field.is_type(Ioss::Field::INTEGER)) {
           int *ids = static_cast<int *>(data);
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
           std::copy(nodes.begin(), nodes.end(), ids);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
         }
         else {
           int64_t *ids = static_cast<int64_t *>(data);

@@ -136,7 +136,7 @@
       {
         EXCEPTWATCH;
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tet_tuple_type;
+        typedef std::array<stk::mesh::EntityId, 4> tet_tuple_type;
         static vector<tet_tuple_type> elems(24);
 
         shards::CellTopology cell_topo(cell_topo_data);
@@ -191,7 +191,7 @@
                     throw std::logic_error("UniformRefinerPattern_Hex8_Tet4_20 logic err");
                   }
 
-                 elems[iele++] = tet_tuple_type(CENTROID_N, VERT_N(itf), VERT_N(itfp), FACE_N(i_face));
+                elems[iele++] = {CENTROID_N, VERT_N(itf), VERT_N(itfp), FACE_N(i_face)};
               }
           }
 
@@ -203,6 +203,7 @@
 
 #endif
 
+        std::vector<stk::mesh::Entity> elemNodes(4);
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
             //stk::mesh::Entity newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
@@ -218,17 +219,11 @@
 
             change_entity_parts(eMesh, element, newElement);
 
-            {
-              if (!elems[ielem].get<0>())
-                {
-                  std::cout << "P[" << eMesh.get_rank() << " nid = 0 << " << std::endl;
-                  exit(1);
-                }
-            }
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
+            elemNodes[0] = eMesh.createOrGetNode(elems[ielem][0]);
+            elemNodes[1] = eMesh.createOrGetNode(elems[ielem][1]);
+            elemNodes[2] = eMesh.createOrGetNode(elems[ielem][2]);
+            elemNodes[3] = eMesh.createOrGetNode(elems[ielem][3]);
+            eMesh.get_bulk_data()->declare_relation(newElement, elemNodes);
 
             set_parent_child_relations(eMesh, element, newElement, *ft_element_pool, ielem);
 

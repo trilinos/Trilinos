@@ -36,6 +36,8 @@
 
 #cmakedefine STK_SHOW_DEPRECATED_WARNINGS
 
+#cmakedefine STK_DISABLE_MPI_NEIGHBOR_COMM
+
 #cmakedefine STK_HAVE_BOOST
 #cmakedefine STK_HAVE_BOOSTLIB
 

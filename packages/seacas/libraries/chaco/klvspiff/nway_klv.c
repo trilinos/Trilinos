@@ -38,6 +38,15 @@
 #include "structs.h"
 #include <math.h>
 #include <stdio.h>
+#include <sys/types.h>
+
+#if defined(_MSC_VER)
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t long
+#endif
+#endif
 
 /*
    Keep guys moved in and guys moving out of separator.
@@ -98,15 +107,15 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
   int             to = -1, from;        /* sets moving into / out of */
   int             rtop, ltop;           /* top of each set of buckets */
   int *           to_top;               /* ptr to top of set moving to */
-  int             lvtx, rvtx;           /* next vertex to move left/right */
+  ssize_t         lvtx, rvtx;           /* next vertex to move left/right */
   int             lweight, rweight;     /* weights of moving vertices */
   int             weightfrom = 0;       /* weight moving out of a set */
   int             list_length;          /* how long is list of vertices to bucketsort? */
   int             balanced;             /* is partition balanced? */
   int             temp_balanced;        /* is intermediate partition balanced? */
   int             ever_balanced;        /* has any partition been balanced? */
-  int             bestvtx = -1;         /* best vertex to move */
-  int             bestval = -1;         /* best change in value for a vtx move */
+  ssize_t         bestvtx = -1;         /* best vertex to move */
+  ssize_t         bestval = -1;         /* best change in value for a vtx move */
   int             vweight;              /* weight of best vertex */
   int             gtotal;               /* sum of changes from moving */
   int             improved;             /* total improvement from KL */
@@ -233,7 +242,7 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         --ltop;
       }
       if (ltop >= 0 && !left_too_big) {
-        lvtx           = ((long)lbuckets[ltop] - (long)llistspace) / sizeof(struct bilist);
+        lvtx           = ((size_t)lbuckets[ltop] - (size_t)llistspace) / sizeof(struct bilist);
         lweight        = graph[lvtx]->vwgt;
         rweight        = lweight - (ltop - maxdval);
         weightfrom     = rweight;
@@ -250,7 +259,7 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         --rtop;
       }
       if (rtop >= 0 && !right_too_big) {
-        rvtx            = ((long)rbuckets[rtop] - (long)rlistspace) / sizeof(struct bilist);
+        rvtx            = ((size_t)rbuckets[rtop] - (size_t)rlistspace) / sizeof(struct bilist);
         rweight         = graph[rvtx]->vwgt;
         lweight         = rweight - (rtop - maxdval);
         partial_weight  = weightsum[0] - lweight + weightsum[1] + rweight;
@@ -322,11 +331,6 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         if (temp_balanced) {
           enforce_balance_hard = FALSE;
         }
-      }
-
-      if (DEBUG_KL > 1) {
-        printf("At KLV step %d, bestvtx=%d, bestval=%d (2->%d), wt0 = %g, wt1 = %g\n", step,
-               bestvtx, bestval, to, weightsum[0], weightsum[1]);
       }
 
       /* Monitor the stopping criteria. */
@@ -512,7 +516,7 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         beststep = 0;
       }
       for (i = step - 1; i > beststep; i--) {
-        vtx = ((long)out_list - (long)llistspace) / sizeof(struct bilist);
+        vtx = ((size_t)out_list - (size_t)llistspace) / sizeof(struct bilist);
         if (sets[vtx] != 2) {
           weightsum[sets[vtx]] -= graph[vtx]->vwgt;
         }

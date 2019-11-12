@@ -837,9 +837,8 @@ void update_structs(int out_exoid)
 /*! \internal */
 void update_internal_structs(int out_exoid, ex_inquiry inqcode, struct ex__list_item **ctr_list)
 {
-  int i;
-  int number = ex_inquire_int(out_exoid, inqcode);
-
+  int64_t i;
+  int64_t number = ex_inquire_int(out_exoid, inqcode);
   if (number > 0) {
     for (i = 0; i < number; i++) {
       ex__inc_file_item(out_exoid, ctr_list);

@@ -13,7 +13,6 @@
 #include <percept/mesh/mod/smoother/MeshSmoother.hpp>
 #include <percept/mesh/mod/smoother/JacobianUtil.hpp>
 #include <percept/math/DenseMatrix.hpp>
-#include <percept/math/Math.hpp>
 
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stdio.h>

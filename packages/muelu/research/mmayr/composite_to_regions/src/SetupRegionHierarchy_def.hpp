@@ -717,62 +717,6 @@ void createRegionHierarchy(const int maxRegPerProc,
 }
 
 
-/*! \brief Compute the residual \f$r = b - Ax\f$
- *
- *  The residual is computed based on matrices and vectors in a regional layout.
- *  1. Compute y = A*x in regional layout.
- *  2. Sum interface values of y to account for duplication of interface DOFs.
- *  3. Compute r = b - y
- */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >
-computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regRes, ///< residual (to be evaluated)
-                const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regX, ///< left-hand side (solution)
-                const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regB, ///< right-hand side (forcing term)
-                const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
-                const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp, ///< composite map, computed by removing GIDs > numDofs in revisedRowMapPerGrp
-                const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in region layout [in] requires the mapping of GIDs on fine mesh to "filter GIDs"
-                const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp, ///< revised row maps in region layout [in] (actually extracted from regionGrpMats)
-                const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in]
-    )
-{
-#include "Xpetra_UseShortNames.hpp"
-  using Teuchos::TimeMonitor;
-  const int maxRegPerProc = regX.size();
-
-  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("computeResidual: 1 - Rreg = Areg*Xreg")));
-
-  /* Update the residual vector
-   * 1. Compute tmp = A * regX in each region
-   * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
-   * 3. Compute r = B - tmp
-   */
-  for (int j = 0; j < maxRegPerProc; j++) { // step 1
-    regionGrpMats[j]->apply(*regX[j], *regRes[j]);
-    //    TEUCHOS_ASSERT(regionGrpMats[j]->getDomainMap()->isSameAs(*regX[j]->getMap()));
-    //    TEUCHOS_ASSERT(regionGrpMats[j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
-  }
-
-  tm = Teuchos::null;
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("computeResidual: 2 - sumInterfaceValues")));
-
-  sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
-                     revisedRowMapPerGrp, rowImportPerGrp);
-
-  tm = Teuchos::null;
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("computeResidual: 3 - Rreg = Breg - Rreg")));
-
-  for (int j = 0; j < maxRegPerProc; j++) { // step 3
-    regRes[j]->update(1.0, *regB[j], -1.0);
-    //    TEUCHOS_ASSERT(regRes[j]->getMap()->isSameAs(*regB[j]->getMap()));
-  }
-
-  tm = Teuchos::null;
-
-  return regRes;
-} // computeResidual
-
-
 //! Recursive V-cycle in region fashion
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void vCycle(const int l, ///< ID of current level
@@ -931,24 +875,24 @@ void vCycle(const int l, ///< ID of current level
       if (coarseSolverType == "direct")
       {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-  
+
         using DirectCoarseSolver = Amesos2::Solver<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >;
         RCP<DirectCoarseSolver> coarseSolver = coarseSolverData->get<RCP<DirectCoarseSolver> >("direct solver object");
-  
+
         TEUCHOS_TEST_FOR_EXCEPT_MSG(coarseCompMat->getRowMap()->lib()!=Xpetra::UseTpetra,
             "Coarse solver requires Tpetra/Amesos2 stack.");
         TEUCHOS_ASSERT(!coarseSolver.is_null());
-  
+
         // using Utilities = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  
+
         // From here on we switch to Tpetra for simplicity
         // we could also implement a similar Epetra branch
         using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  
+
       //    *fos << "Attempting to use Amesos2 to solve the coarse grid problem" << std::endl;
         RCP<Tpetra_MultiVector> tX = Utilities::MV2NonConstTpetraMV2(*compX);
         RCP<const Tpetra_MultiVector> tB = Utilities::MV2TpetraMV(compRhs);
-  
+
         /* Solve!
          *
          * Calling solve() on the coarseSolver should just do a triangular solve, since symbolic
@@ -975,10 +919,10 @@ void vCycle(const int l, ///< ID of current level
       }
       else if (coarseSolverType == "amg") // use AMG as coarse level solver
       {
-  
+
         // Extract the hierarchy from the coarseSolverData
         RCP<Hierarchy> amgHierarchy = coarseSolverData->get<RCP<Hierarchy>>("amg hierarchy object");
-  
+
         // Run a single V-cycle
         amgHierarchy->Iterate(*compRhs, *compX, 1);
       }
@@ -986,7 +930,7 @@ void vCycle(const int l, ///< ID of current level
       {
         TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unknown coarse solver type.");
       }
-  
+
       // Transform back to region format
       Array<RCP<Vector> > quasiRegX(maxRegPerProc);
       compositeToRegional(compX, quasiRegX, fineRegX,
@@ -994,10 +938,10 @@ void vCycle(const int l, ///< ID of current level
                           quasiRegRowMaps[l],
                           regRowMaps[l],
                           regRowImporters[l]);
-  
+
       tm = Teuchos::null;
     }
-  } 
+  }
 
   return;
 } // vCycle

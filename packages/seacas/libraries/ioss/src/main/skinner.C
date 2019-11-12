@@ -65,7 +65,7 @@
 // ========================================================================
 
 namespace {
-  template <typename INT> void skinner(Skinner::Interface &interface, INT /*dummy*/);
+  template <typename INT> void skinner(Skinner::Interface &interFace, INT /*dummy*/);
   std::string                  codename;
   std::string                  version = "0.99";
 } // namespace
@@ -81,8 +81,8 @@ int main(int argc, char *argv[])
 
   codename = Ioss::FileInfo(argv[0]).basename();
 
-  Skinner::Interface interface;
-  bool               success = interface.parse_options(argc, argv);
+  Skinner::Interface interFace;
+  bool               success = interFace.parse_options(argc, argv);
   if (!success) {
     return EXIT_FAILURE;
   }
@@ -90,20 +90,20 @@ int main(int argc, char *argv[])
   Ioss::Init::Initializer io;
 
   if (my_rank == 0) {
-    fmt::print("\nInput:    '{}', Type: {}\n", interface.input_filename(), interface.input_type());
-    if (!interface.no_output()) {
-      fmt::print("Output:   '{}', Type: {}\n", interface.output_filename(),
-                 interface.output_type());
+    fmt::print("\nInput:    '{}', Type: {}\n", interFace.input_filename(), interFace.input_type());
+    if (!interFace.no_output()) {
+      fmt::print("Output:   '{}', Type: {}\n", interFace.output_filename(),
+                 interFace.output_type());
     }
   }
 
   double begin = Ioss::Utils::timer();
   try {
-    if (interface.ints_64_bit()) {
-      skinner(interface, static_cast<int64_t>(0));
+    if (interFace.ints_64_bit()) {
+      skinner(interFace, static_cast<int64_t>(0));
     }
     else {
-      skinner(interface, 0);
+      skinner(interFace, 0);
     }
   }
   catch (std::exception &e) {
@@ -124,14 +124,14 @@ int main(int argc, char *argv[])
 }
 
 namespace {
-  Ioss::PropertyManager set_properties(Skinner::Interface &interface);
+  Ioss::PropertyManager set_properties(Skinner::Interface &interFace);
 
-  template <typename INT> void skinner(Skinner::Interface &interface, INT /*dummy*/)
+  template <typename INT> void skinner(Skinner::Interface &interFace, INT /*dummy*/)
   {
-    std::string inpfile    = interface.input_filename();
-    std::string input_type = interface.input_type();
+    std::string inpfile    = interFace.input_filename();
+    std::string input_type = interFace.input_type();
 
-    Ioss::PropertyManager properties = set_properties(interface);
+    Ioss::PropertyManager properties = set_properties(interFace);
 
     //========================================================================
     // INPUT ...
@@ -143,13 +143,13 @@ namespace {
       std::exit(EXIT_FAILURE);
     }
 
-    if (interface.ints_64_bit()) {
+    if (interFace.ints_64_bit()) {
       dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     }
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
-    int my_rank = region.get_database()->util().parallel_rank();
+    int          my_rank = region.get_database()->util().parallel_rank();
 
     if (my_rank == 0) {
       region.output_summary(std::cerr, false);
@@ -159,7 +159,7 @@ namespace {
     Ioss::FaceGenerator face_generator(region);
     face_generator.generate_faces((INT)0, true);
 
-    if (interface.no_output()) {
+    if (interFace.no_output()) {
       return;
     }
 
@@ -202,7 +202,6 @@ namespace {
     std::vector<INT> ids;
     nb->get_field_data("ids", ids);
 
-
     std::vector<int> owner;
     nb->get_field_data("owning_processor", owner);
 
@@ -224,8 +223,8 @@ namespace {
     Ioss::Utils::clear(ids);
     Ioss::Utils::clear(owner);
 
-    std::string       file = interface.output_filename();
-    std::string       type = interface.output_type();
+    std::string       file = interFace.output_filename();
+    std::string       type = interFace.output_type();
     Ioss::DatabaseIO *dbo  = Ioss::IOFactory::create(type, file, Ioss::WRITE_RESTART,
                                                     (MPI_Comm)MPI_COMM_WORLD, properties);
     if (dbo == nullptr || !dbo->ok(true)) {
@@ -263,11 +262,12 @@ namespace {
       auto               face_topo = eb->topology()->face_type(0);
       std::string        topo      = "shell";
       if (face_topo == nullptr) {
-	std::ostringstream errmsg;
-	fmt::print(errmsg, "ERROR: Block '{}' with topology '{}' does not have"
-		   " a unique face topology.\nThis is not supported at this time.\n",
-		   name, eb->topology()->name());
-	IOSS_ERROR(errmsg);
+        std::ostringstream errmsg;
+        fmt::print(errmsg,
+                   "ERROR: Block '{}' with topology '{}' does not have"
+                   " a unique face topology.\nThis is not supported at this time.\n",
+                   name, eb->topology()->name());
+        IOSS_ERROR(errmsg);
       }
       if (face_topo->name() == "tri3") {
         topo = "trishell";
@@ -286,7 +286,7 @@ namespace {
     Ioss::Utils::clear(owner_out);
     Ioss::Utils::clear(ref_ids);
 
-    bool use_face_hash_ids = interface.useFaceHashIds_;
+    bool use_face_hash_ids = interFace.useFaceHashIds_;
     INT  fid               = 0;
     for (auto eb : ebs) {
       const std::string &name       = eb->name();
@@ -324,42 +324,42 @@ namespace {
     }
   }
 
-  Ioss::PropertyManager set_properties(Skinner::Interface &interface)
+  Ioss::PropertyManager set_properties(Skinner::Interface &interFace)
   {
     Ioss::PropertyManager properties;
-    if (interface.ints_64_bit()) {
+    if (interFace.ints_64_bit()) {
       properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
       properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
     }
 
-    if (interface.debug) {
+    if (interFace.debug) {
       properties.add(Ioss::Property("LOGGING", 1));
     }
 
-    if (!interface.decomp_method.empty()) {
-      properties.add(Ioss::Property("DECOMPOSITION_METHOD", interface.decomp_method));
+    if (!interFace.decomp_method.empty()) {
+      properties.add(Ioss::Property("DECOMPOSITION_METHOD", interFace.decomp_method));
     }
 
-    if (interface.compression_level > 0 || interface.shuffle) {
+    if (interFace.compression_level > 0 || interFace.shuffle) {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
-      properties.add(Ioss::Property("COMPRESSION_LEVEL", interface.compression_level));
-      properties.add(Ioss::Property("COMPRESSION_SHUFFLE", interface.shuffle));
+      properties.add(Ioss::Property("COMPRESSION_LEVEL", interFace.compression_level));
+      properties.add(Ioss::Property("COMPRESSION_SHUFFLE", interFace.shuffle));
     }
 
-    if (interface.compose_output == "default") {
+    if (interFace.compose_output == "default") {
       properties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
       properties.add(Ioss::Property("COMPOSE_RESTART", "NO"));
     }
-    else if (interface.compose_output == "external") {
+    else if (interFace.compose_output == "external") {
       properties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
       properties.add(Ioss::Property("COMPOSE_RESTART", "NO"));
     }
-    else if (interface.compose_output != "none") {
+    else if (interFace.compose_output != "none") {
       properties.add(Ioss::Property("COMPOSE_RESULTS", "YES"));
       properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
     }
 
-    if (interface.netcdf4_) {
+    if (interFace.netcdf4_) {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
 

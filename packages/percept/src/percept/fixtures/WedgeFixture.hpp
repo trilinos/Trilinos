@@ -52,7 +52,7 @@
         {
           bool verbose = false;
 
-          std::vector<boost::array<double,3> > coordsLine(n_nodes_x);
+          std::vector<std::array<double,3> > coordsLine(n_nodes_x);
           for (unsigned ix = 0; ix < n_nodes_x; ix++)
             {
               double dx = double(ix)/double(n_nodes_x - 1);
@@ -78,7 +78,7 @@
           tp2.dump();
 
           // sweep to make a quad mesh from line mesh
-          boost::array<double, 3> dir = {{0, (ymax-ymin)/double(n_nodes_y - 1),0}};
+          std::array<double, 3> dir = {{0, (ymax-ymin)/double(n_nodes_y - 1),0}};
 
           TransformDir xf0 ( dir );
           Transform* xf = &xf0;
@@ -102,7 +102,7 @@
           //tp2.writeSTKMesh("tp2-quad-tri.e");
 
           // sweep again to make a  wedge mesh
-          boost::array<double, 3> dir1 = {{0,0,(zmax-zmin)/double(n_nodes_z - 1)}};
+          std::array<double, 3> dir1 = {{0,0,(zmax-zmin)/double(n_nodes_z - 1)}};
           TransformDir xf01(dir1);
           Transform* xf01t = &xf01;
           std::vector<Transform *> xforms0(n_nodes_z - 1, xf01t);
@@ -138,7 +138,7 @@
         {
           bool verbose = true;
 
-          boost::array<double,3> coordsLine[] = {
+          std::array<double,3> coordsLine[] = {
             {{0,0,0}}, {{1,0,0}}, {{2,0,0}}, {{3,0,0}}, {{4,0,0}}
           };
 
@@ -170,7 +170,7 @@
           tp2.dump();
 
           // sweep to make a quad mesh from line mesh
-          boost::array<double, 3> dir = {{0,1.234,0}};
+          std::array<double, 3> dir = {{0,1.234,0}};
 
           TransformDir xf0 ( dir );
           Transform* xf = &xf0;
@@ -196,7 +196,7 @@
           //tp2.writeSTKMesh("tp2-quad-tri.e");
 
           // sweep again to make a  wedge mesh
-          boost::array<double, 3> dir1 = {{0,0,2.345}};
+          std::array<double, 3> dir1 = {{0,0,2.345}};
           std::vector<Transform *> xforms0(1);
           TransformDir xf01(dir1);
           xforms0[0] = &xf01; 

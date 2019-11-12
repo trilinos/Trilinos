@@ -13,6 +13,7 @@
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 #include "Tempus_IntegratorObserverSubcycling.hpp"
+#include "Tempus_IntegratorObserverNoOp.hpp"
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -36,7 +37,9 @@ StepperSubcycling<Scalar>::StepperSubcycling()
   scIntegrator_ = Teuchos::rcp(new IntegratorBasic<Scalar>());
   scIntegrator_->setTimeStepControl();
   scIntegrator_->setObserver(
-    Teuchos::rcp(new IntegratorObserverSubcycling<Scalar>()));
+    Teuchos::rcp(new IntegratorObserverNoOp<Scalar>()));
+
+  this->setSubcyclingPrintDtChanges(false);
 
   RCP<ParameterList> tempusPL = scIntegrator_->getTempusParameterList();
 
@@ -47,7 +50,7 @@ StepperSubcycling<Scalar>::StepperSubcycling()
     stepperPL->set("Stepper Type", "Forward Euler");
     tempusPL->set("Default Subcycling Stepper", *stepperPL);
 
-    auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
+    auto sf = Teuchos::rcp(new Tempus::StepperFactory<Scalar>());
     auto stepperFE = sf->createStepperForwardEuler(Teuchos::null,Teuchos::null);
     setSubcyclingStepper(stepperFE);
   }
@@ -88,6 +91,7 @@ StepperSubcycling<Scalar>::StepperSubcycling(
 
   this->setObserver(obs);
   scIntegrator_ = scIntegrator;
+  this->setSubcyclingPrintDtChanges(false);
 
   if (appModel != Teuchos::null) {
     this->setModel(appModel);
@@ -177,11 +181,38 @@ setSubcyclingScreenOutputIndexInterval(int i)
 
 template<class Scalar>
 void StepperSubcycling<Scalar>::
+setSubcyclingScreenOutputIndexList(std::string s)
+{
+  scIntegrator_->setScreenOutputIndexList(s);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::
 setSubcyclingTimeStepControlStrategy(
   Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs)
 {
   scIntegrator_->getNonConstTimeStepControl()->getTimeStepControlStrategy()->clearObservers();
   scIntegrator_->getNonConstTimeStepControl()->setTimeStepControlStrategy(tscs);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::setSubcyclingIntegratorObserver(
+  Teuchos::RCP<IntegratorObserver<Scalar> > obs)
+{
+  scIntegrator_->setObserver(obs);
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperSubcycling<Scalar>::setSubcyclingPrintDtChanges(
+  bool printDtChanges)
+{
+  scIntegrator_->getNonConstTimeStepControl()->setPrintDtChanges(printDtChanges);
   this->isInitialized_ = false;
 }
 
@@ -235,7 +266,6 @@ void StepperSubcycling<Scalar>::initialize()
          this->getICConsistency() == "App"  ||
          this->getICConsistency() == "Consistent") ) {
     isValidSetup = false;
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
     *out << "The IC consistency does not have a valid value!\n"
          << "('None', 'Zero', 'App' or 'Consistent')\n"
          << "  ICConsistency  = " << this->getICConsistency() << "\n";
@@ -362,7 +392,6 @@ void StepperSubcycling<Scalar>::takeStep(
     scTSC->setFinalTime  (workingState->getTime());
     scTSC->setMaxTimeStep(workingState->getTimeStep());
 
-
     Teuchos::RCP<SolutionStateMetaData<Scalar> > scMD =
       rcp(new SolutionStateMetaData<Scalar>());
     scMD->copy(currentState->getMetaData());
@@ -387,7 +416,7 @@ void StepperSubcycling<Scalar>::takeStep(
                                            currentState->getStepperState(),
                                            currentState->getPhysicsState()));
 
-    auto scSH = rcp(new Tempus::SolutionHistory<double>());
+    auto scSH = rcp(new Tempus::SolutionHistory<Scalar>());
     scSH->setName("Subcycling States");
     scSH->setStorageType(Tempus::STORAGE_TYPE_STATIC);
     scSH->setStorageLimit(3);

@@ -103,15 +103,11 @@ struct Options
      void setSearchMethod()
      {
          std::string optionString = "-method";
-         mSearchMethod = BOOST_RTREE;
-         std::string searchString = stk::unit_test_util::get_option(optionString, "boost");
-         if ( searchString == "octree")
+         mSearchMethod = KDTREE;
+         std::string searchString = stk::unit_test_util::get_option(optionString, "gtk");
+         if ( searchString != "gtk" && searchString != "kdtree")
          {
-             ThrowRequireMsg(false, "search method octree deprecated");
-         }
-         else if ( searchString == "gtk" )
-         {
-             mSearchMethod = KDTREE;
+             ThrowRequireMsg(false, "unrecognized search method");
          }
      }
 
@@ -175,7 +171,7 @@ void printOptions(const Options& options)
         }
         else
         {
-            std::cerr << "BOOST" << std::endl;
+            ThrowRequireMsg(false,"Unrecognized search method "<<options.mSearchMethod);
         }
     }
 }
@@ -309,7 +305,7 @@ TEST(NaluPerformance, BoxBoxIntersections)
         }
     }
 }
-
+ 
 TEST(stkSearch, boxSphereIntersection)
 {
     FloatBox box(0,0,0,1,1,1);
