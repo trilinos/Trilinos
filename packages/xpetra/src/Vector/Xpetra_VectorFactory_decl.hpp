@@ -85,8 +85,8 @@ namespace Xpetra {
   public:
 
     //! Constructor specifying the number of non-zeros for all rows.
-    static Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> 
-    Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node>> &map, bool zeroOut=true);
+    static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> 
+    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> &map, bool zeroOut=true);
 
   };  // class VectorFactory
 
@@ -118,30 +118,7 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
-      XPETRA_MONITOR("VectorFactory::Build");
-
-      RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
-      if(!bmap.is_null()) 
-      {
-        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
-      }
-
-
-#ifdef HAVE_XPETRA_TPETRA
-      if (map->lib() == UseTpetra)
-      {
-        return rcp( new TpetraVector(map, zeroOut) );
-      }
-#endif  // HAVE_XPETRA_TPETRA
-
-      if (map->lib() == UseEpetra)
-      {
-        return rcp( new EpetraVectorT<int,Node>(map, zeroOut) );
-      }
-
-      XPETRA_FACTORY_END;
-    }
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true);
 
   };
 #endif  // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
@@ -172,24 +149,7 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
-      XPETRA_MONITOR("VectorFactory::Build");
-
-      RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
-      if(!bmap.is_null()) {
-        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
-      }
-
-#ifdef HAVE_XPETRA_TPETRA
-      if (map->lib() == UseTpetra)
-        return rcp( new TpetraVector(map, zeroOut) );
-#endif
-
-      if (map->lib() == UseEpetra)
-        return rcp( new EpetraVectorT<long long,Node>(map, zeroOut) );
-
-      XPETRA_FACTORY_END;
-    }
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true);
 
   };
 #endif  // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
@@ -224,30 +184,7 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) 
-    {
-      XPETRA_MONITOR("VectorFactory::Build");
-
-      RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
-      if(!bmap.is_null()) 
-      {
-        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
-      }
-
-#ifdef HAVE_XPETRA_TPETRA
-      if (map->lib() == UseTpetra)
-      {
-        return rcp( new TpetraVector(map, zeroOut) );
-      }
-#endif  // HAVE_XPETRA_TPETRA
-
-      if (map->lib() == UseEpetra)
-      {
-        return rcp( new EpetraIntVectorT<int,Node>(map, zeroOut) );
-      }
-
-      XPETRA_FACTORY_END;
-    }
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true);
 
   };
 #endif  // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
@@ -279,29 +216,7 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
-      XPETRA_MONITOR("VectorFactory::Build");
-
-      RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
-      if(!bmap.is_null()) 
-      {
-        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
-      }
-
-#ifdef HAVE_XPETRA_TPETRA
-      if (map->lib() == UseTpetra)
-      {
-        return rcp( new TpetraVector(map, zeroOut) );
-      }
-#endif    // HAVE_XPETRA_TPETRA
-
-      if (map->lib() == UseEpetra)
-      {
-        return rcp( new EpetraIntVectorT<long long,Node>(map, zeroOut) );
-      }
-
-      XPETRA_FACTORY_END;
-    }
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true);
 
   };
 #endif    // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
