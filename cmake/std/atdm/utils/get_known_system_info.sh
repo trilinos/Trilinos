@@ -140,6 +140,15 @@ if [[ "${SEMS_PLATFORM}" == "rhel6-x86_64" ]] ; then
 elif [[ "${SEMS_PLATFORM}" == "rhel7-x86_64" ]] ; then
   systemNameTypeMatchedList+=(sems-rhel7)
   systemNameTypeMatchedListHostNames[sems-rhel7]=sems-rhel7
+elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
+  ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
+  if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
+    systemNameTypeMatchedList+=(sems-rhel6)
+    systemNameTypeMatchedListHostNames[sems-rhel6]=sems-rhel6
+  elif [[ $ATDM_SYSTEM_NAME == "rhel7-x86_64" ]] ; then
+    systemNameTypeMatchedList+=(sems-rhel7)
+    systemNameTypeMatchedListHostNames[sems-rhel7]=sems-rhel7
+  fi
 fi
 
 # CEE RHEL6 (and RHEL7) systems
