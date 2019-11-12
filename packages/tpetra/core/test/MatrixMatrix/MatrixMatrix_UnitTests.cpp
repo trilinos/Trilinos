@@ -1558,7 +1558,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
   TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
@@ -1590,6 +1590,90 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
     {
       TEUCHOS_TEST_FOR_EXCEPTION(valsCRS[2](Crowstart + j) != correctVals[colindsCRS[2](Crowstart + j)], std::logic_error,
           "Threaded addition of sorted Kokkos::CrsMatrix produced an incorrect value.");
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  using Teuchos::RCP;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  size_t nrows = 0;
+  RCP<const map_type> emptyMap = rcp(new map_type(nrows, 0, comm));
+  RCP<crs_matrix_type> A = rcp(new crs_matrix_type(emptyMap, 0));
+  A->fillComplete(emptyMap, emptyMap);
+  RCP<crs_matrix_type> B = rcp(new crs_matrix_type(emptyMap, 0));
+  B->fillComplete(emptyMap, emptyMap);
+  RCP<crs_matrix_type> C1 = rcp(new crs_matrix_type(emptyMap, 0));
+  SC one = Teuchos::ScalarTraits<SC>::one();
+  Tpetra::MatrixMatrix::add(one, false, *A, one, false, *B, *C1);
+  RCP<crs_matrix_type> C2 = Tpetra::MatrixMatrix::add
+    (one, false, *A, one, false, *B);
+  MT magZero = Teuchos::ScalarTraits<MT>::zero();
+  TEST_EQUALITY(C1->getFrobeniusNorm(), magZero);
+  TEST_EQUALITY(C2->getFrobeniusNorm(), magZero);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, GO, NT)
+{
+  using Teuchos::RCP;
+  using Teuchos::Array;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  LO nlocal = 5;
+  GO nrows = nlocal * comm->getSize();
+  GO indexBase = 4;
+  RCP<const map_type> rowMap = rcp(new map_type(nrows, 0, comm));
+  RCP<const map_type> domMap = rcp(new map_type(nrows, indexBase, comm));
+  //global rows range from 0 to nrows-1 (inclusive)
+  //global columns range from 4 to nrows+3 (inclusive)
+  SC one = Teuchos::ScalarTraits<SC>::one();
+  SC two = one + one;
+  RCP<crs_matrix_type> A = rcp(new crs_matrix_type(rowMap, nlocal));
+  for(GO r = 0; r < nrows; r++)
+  {
+    if(rowMap->isNodeGlobalElement(r))
+    {
+      Array<GO> cols(nlocal);
+      Array<SC> vals(nlocal);
+      for(LO i = 0; i < nlocal; i++)
+      {
+        cols[i] = indexBase + (r / nlocal) * nlocal + i;
+        vals[i] = one * MT(r + i);
+      }
+      A->insertGlobalValues(r, cols(), vals());
+    }
+  }
+  A->fillComplete(domMap, rowMap);
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add
+    (one, false, *A, one, false, *A);
+  //Verify global entries
+  for(GO r = 0; r < (GO) nrows; r++)
+  {
+    Array<GO> cols(nlocal + 10);
+    Array<SC> vals(nlocal + 10);
+    size_t numEntries;
+    C->getGlobalRowCopy(r, cols(), vals(), numEntries);
+    if(rowMap->isNodeGlobalElement(r))
+    {
+      TEST_EQUALITY((LO) numEntries, nlocal);
+      //row r is locally owned
+      for(size_t i = 0; i < numEntries; i++)
+      {
+        LO lclCol = domMap->getLocalElement(cols[i]);
+        TEST_EQUALITY(lclCol, (LO) i);
+        TEST_EQUALITY(cols[i], (GO) (indexBase + comm->getRank() * nlocal + i));
+        TEST_EQUALITY(vals[i], two * MT(r + lclCol));
+      }
+    }
+    else
+    {
+      TEST_EQUALITY(numEntries, 0);
     }
   }
 }
@@ -1672,7 +1756,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
   TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
@@ -1755,7 +1839,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

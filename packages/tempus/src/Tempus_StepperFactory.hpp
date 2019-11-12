@@ -795,9 +795,27 @@ public:
   Teuchos::RCP<StepperERK_3Stage3rdOrderTVD<Scalar> >
   createStepperERK_3Stage3rdOrderTVD(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL,
+    const std::string stepperType)
   {
     auto stepper = Teuchos::rcp(new StepperERK_3Stage3rdOrderTVD<Scalar>());
+    stepper->setStepperType(stepperType);
+    setStepperRKValues(stepper, stepperPL);
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
+  Teuchos::RCP<StepperERK_SSPERK54<Scalar> >
+  createStepperERK_SSPERK54(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    auto stepper = Teuchos::rcp(new StepperERK_SSPERK54<Scalar>());
     setStepperRKValues(stepper, stepperPL);
 
     if (model != Teuchos::null) {
@@ -954,6 +972,83 @@ public:
 
     return stepper;
   }
+
+  Teuchos::RCP<StepperSDIRK_SSPDIRK22<Scalar> >
+  createStepperSDIRK_SSPDIRK22(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    auto stepper = Teuchos::rcp(new StepperSDIRK_SSPDIRK22<Scalar>());
+    setStepperDIRKValues(stepper, stepperPL);
+    //if (stepperPL != Teuchos::null)
+      //stepper->setGamma(stepperPL->get<double>("gamma", 0.2928932188134524));
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      setStepperSolverValues(stepper, stepperPL);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
+  Teuchos::RCP<StepperSDIRK_SSPDIRK32<Scalar> >
+  createStepperSDIRK_SSPDIRK32(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    auto stepper = Teuchos::rcp(new StepperSDIRK_SSPDIRK32<Scalar>());
+    setStepperDIRKValues(stepper, stepperPL);
+    //if (stepperPL != Teuchos::null)
+      //stepper->setGamma(stepperPL->get<double>("gamma", 0.2928932188134524));
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      setStepperSolverValues(stepper, stepperPL);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
+  Teuchos::RCP<StepperSDIRK_SSPDIRK23<Scalar> >
+  createStepperSDIRK_SSPDIRK23(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    auto stepper = Teuchos::rcp(new StepperSDIRK_SSPDIRK23<Scalar>());
+    setStepperDIRKValues(stepper, stepperPL);
+    //if (stepperPL != Teuchos::null)
+      //stepper->setGamma(stepperPL->get<double>("gamma", 0.2928932188134524));
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      setStepperSolverValues(stepper, stepperPL);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
+  Teuchos::RCP<StepperSDIRK_SSPDIRK33<Scalar> >
+  createStepperSDIRK_SSPDIRK33(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    auto stepper = Teuchos::rcp(new StepperSDIRK_SSPDIRK33<Scalar>());
+    setStepperDIRKValues(stepper, stepperPL);
+    //if (stepperPL != Teuchos::null)
+      //stepper->setGamma(stepperPL->get<double>("gamma", 0.2928932188134524));
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      setStepperSolverValues(stepper, stepperPL);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
 
   Teuchos::RCP<StepperSDIRK_2Stage3rdOrder<Scalar> >
   createStepperSDIRK_2Stage3rdOrder(
@@ -1216,15 +1311,18 @@ private:
       return createStepperERK_5Stage3rdOrderKandG(model, stepperPL);
     else if (stepperType == "RK Explicit 3 Stage 3rd order" )
       return createStepperERK_3Stage3rdOrder(model, stepperPL);
-    else if (stepperType == "RK Explicit 3 Stage 3rd order TVD" )
-      return createStepperERK_3Stage3rdOrderTVD(model, stepperPL);
+    else if (stepperType == "RK Explicit 3 Stage 3rd order TVD" ||
+             stepperType == "SSPERK33")
+      return createStepperERK_3Stage3rdOrderTVD(model, stepperPL, stepperType);
     else if (stepperType == "RK Explicit 3 Stage 3rd order by Heun" )
       return createStepperERK_3Stage3rdOrderHeun(model, stepperPL);
     else if (stepperType == "RK Explicit Midpoint" )
       return createStepperERK_Midpoint(model, stepperPL);
     else if (stepperType == "RK Explicit Trapezoidal" ||
-             stepperType == "Heuns Method" )
+             stepperType == "Heuns Method" || stepperType == "SSPERK22")
       return createStepperERK_Trapezoidal(model, stepperPL, stepperType);
+    else if (stepperType == "SSPERK54" )
+      return createStepperERK_SSPERK54(model, stepperPL);
     else if (stepperType == "Bogacki-Shampine 3(2) Pair" )
       return createStepperERK_BogackiShampine32(model, stepperPL);
     else if (stepperType == "Merson 4(5) Pair" )
@@ -1235,6 +1333,14 @@ private:
       return createStepperDIRK_BackwardEuler(model, stepperPL);
     else if (stepperType == "SDIRK 2 Stage 2nd order" )
       return createStepperSDIRK_2Stage2ndOrder(model, stepperPL);
+    else if (stepperType == "SSPDIRK22" )
+      return createStepperSDIRK_SSPDIRK22(model, stepperPL);
+    else if (stepperType == "SSPDIRK32" )
+      return createStepperSDIRK_SSPDIRK32(model, stepperPL);
+    else if (stepperType == "SSPDIRK23" )
+      return createStepperSDIRK_SSPDIRK23(model, stepperPL);
+    else if (stepperType == "SSPDIRK33" )
+      return createStepperSDIRK_SSPDIRK33(model, stepperPL);
     else if (stepperType == "SDIRK 2 Stage 3rd order" )
       return createStepperSDIRK_2Stage3rdOrder(model, stepperPL);
     else if (stepperType == "EDIRK 2 Stage 3rd order" )
@@ -1307,6 +1413,9 @@ private:
       << "    'RK Explicit Midpoint'\n"
       << "    'RK Explicit Trapezoidal' or 'Heuns Method'\n"
       << "    'Bogacki-Shampine 3(2) Pair'\n"
+      << "    'SSPERK22'\n"
+      << "    'SSPERK33'\n"
+      << "    'SSPERK54'\n"
       << "    'General ERK'\n"
       << "  Implicit Runge-Kutta Methods:\n"
       << "    'RK Backward Euler'\n"
@@ -1320,6 +1429,10 @@ private:
       << "    'SDIRK 3 Stage 4th order'\n"
       << "    'SDIRK 5 Stage 4th order'\n"
       << "    'SDIRK 5 Stage 5th order'\n"
+      << "    'SSPDIRK22'\n"
+      << "    'SSPDIRK32'\n"
+      << "    'SSPDIRK23'\n"
+      << "    'SSPDIRK33'\n"
       << "    'SDIRK 2(1) Pair'\n"
       << "    'RK Trapezoidal Rule' or 'RK Crank-Nicolson'\n"
       << "    'General DIRK'\n"

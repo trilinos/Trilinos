@@ -875,24 +875,24 @@ void vCycle(const int l, ///< ID of current level
       if (coarseSolverType == "direct")
       {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-  
+
         using DirectCoarseSolver = Amesos2::Solver<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >;
         RCP<DirectCoarseSolver> coarseSolver = coarseSolverData->get<RCP<DirectCoarseSolver> >("direct solver object");
-  
+
         TEUCHOS_TEST_FOR_EXCEPT_MSG(coarseCompMat->getRowMap()->lib()!=Xpetra::UseTpetra,
             "Coarse solver requires Tpetra/Amesos2 stack.");
         TEUCHOS_ASSERT(!coarseSolver.is_null());
-  
+
         // using Utilities = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  
+
         // From here on we switch to Tpetra for simplicity
         // we could also implement a similar Epetra branch
         using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  
+
       //    *fos << "Attempting to use Amesos2 to solve the coarse grid problem" << std::endl;
         RCP<Tpetra_MultiVector> tX = Utilities::MV2NonConstTpetraMV2(*compX);
         RCP<const Tpetra_MultiVector> tB = Utilities::MV2TpetraMV(compRhs);
-  
+
         /* Solve!
          *
          * Calling solve() on the coarseSolver should just do a triangular solve, since symbolic
@@ -919,10 +919,10 @@ void vCycle(const int l, ///< ID of current level
       }
       else if (coarseSolverType == "amg") // use AMG as coarse level solver
       {
-  
+
         // Extract the hierarchy from the coarseSolverData
         RCP<Hierarchy> amgHierarchy = coarseSolverData->get<RCP<Hierarchy>>("amg hierarchy object");
-  
+
         // Run a single V-cycle
         amgHierarchy->Iterate(*compRhs, *compX, 1);
       }
@@ -930,7 +930,7 @@ void vCycle(const int l, ///< ID of current level
       {
         TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unknown coarse solver type.");
       }
-  
+
       // Transform back to region format
       Array<RCP<Vector> > quasiRegX(maxRegPerProc);
       compositeToRegional(compX, quasiRegX, fineRegX,
@@ -938,10 +938,10 @@ void vCycle(const int l, ///< ID of current level
                           quasiRegRowMaps[l],
                           regRowMaps[l],
                           regRowImporters[l]);
-  
+
       tm = Teuchos::null;
     }
-  } 
+  }
 
   return;
 } // vCycle

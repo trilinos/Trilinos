@@ -157,7 +157,11 @@ namespace
         OutputScalar expected  = expectedValuesViewHost(fieldOrdinal);
         
         bool valuesMatch = true;
-        TEUCHOS_TEST_FLOATING_EQUALITY(actual, expected, tol, out, valuesMatch);
+        bool valuesAreBothSmall = valuesAreSmall(actual, expected, tol);
+        if (!valuesAreBothSmall)
+        {
+          TEUCHOS_TEST_FLOATING_EQUALITY(actual, expected, tol, out, valuesMatch);
+        }
         
         if (!valuesMatch)
         {
@@ -290,7 +294,11 @@ namespace
         double expected  = expectedValues[fieldOrdinal];
         
         bool valuesMatch = true;
-        TEUCHOS_TEST_FLOATING_EQUALITY(actual, expected, tol, out, valuesMatch);
+        bool valuesAreBothSmall = valuesAreSmall(actual, expected, tol);
+        if (!valuesAreBothSmall)
+        {
+          TEUCHOS_TEST_FLOATING_EQUALITY(actual, expected, tol, out, valuesMatch);
+        }
         
         if (!valuesMatch)
         {
@@ -372,8 +380,16 @@ namespace
         OutputScalar hgradValue = hgradOutputViewHost(fieldOrdinal,  pointOrdinal,0);
         OutputScalar hvolValue  =  hvolOutputViewHost(fieldOrdinal-1,pointOrdinal,0);
         
+        OutputScalar actual = hgradValue;
+        OutputScalar expected = OutputScalar(0.5 * hvolValue);
+        
         bool valuesMatch = true;
-        TEUCHOS_TEST_FLOATING_EQUALITY(hgradValue, OutputScalar(0.5 * hvolValue), tol, out, valuesMatch);
+        
+        bool valuesAreBothSmall = valuesAreSmall(actual, expected, tol);
+        if (!valuesAreBothSmall)
+        {
+          TEUCHOS_TEST_FLOATING_EQUALITY(actual, expected, tol, out, valuesMatch);
+        }
         
         if (!valuesMatch)
         {
