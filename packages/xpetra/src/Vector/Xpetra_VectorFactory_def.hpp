@@ -54,24 +54,15 @@
 namespace Xpetra {
 
 
-
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-VectorFactory()
-{
-}
-
-
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>& map, 
+Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>>
+VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node>>& map, 
       bool zeroOut)
 {
     XPETRA_MONITOR("VectorFactory::Build");
 
-    RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> 
+    RCP<const Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node>> 
       bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
 
     if(!bmap.is_null())

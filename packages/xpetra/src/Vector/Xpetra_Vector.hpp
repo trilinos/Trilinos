@@ -60,11 +60,14 @@ namespace Xpetra {
   class Vector
     : public virtual MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {
+
   public:
-    typedef Scalar        scalar_type;
-    typedef LocalOrdinal  local_ordinal_type;
-    typedef GlobalOrdinal global_ordinal_type;
-    typedef Node          node_type;
+
+    using scalar_type         = Scalar;
+    using local_ordinal_type  = LocalOrdinal;
+    using global_ordinal_type = GlobalOrdinal;
+    using node_type           = Node;
+
 
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::dot;          // overloading, not hiding
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm1;        // overloading, not hiding
