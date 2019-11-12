@@ -465,7 +465,8 @@ namespace FROSch {
                 }
                 if (useStraightEdgeRotations) {
                     XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getStraightEdges(),(dimension==3));
-                    for (UN i=0; i<rotations.size(); i++) {                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getStraightEdges()->getEntityMap(),rotations[i]);
+                    for (UN i=0; i<rotations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getStraightEdges()->getEntityMap(),rotations[i]);
                     }
                 }
                 // Edges
