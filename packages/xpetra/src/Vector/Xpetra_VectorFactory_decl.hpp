@@ -58,31 +58,35 @@
 #endif
 
 #include "Xpetra_BlockedMap.hpp"
-#include <Xpetra_BlockedVector.hpp>
+#include "Xpetra_BlockedVector.hpp"
 
 #include "Xpetra_Exceptions.hpp"
 
+
+
 namespace Xpetra {
 
-  template <class Scalar/* = Vector<>::scalar_type*/,
-            class LocalOrdinal/* = typename Vector<Scalar>::local_ordinal_type*/,
-            class GlobalOrdinal/* = typename Vector<Scalar, LocalOrdinal>::local_ordinal_type*/,
-            class Node/* = typename Vector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type*/>
+
+
+  template <class Scalar        /* = Vector<>::scalar_type*/,
+            class LocalOrdinal  /* = typename Vector<Scalar>::local_ordinal_type*/,
+            class GlobalOrdinal /* = typename Vector<Scalar, LocalOrdinal>::local_ordinal_type*/,
+            class Node          /* = typename Vector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type*/>
   class VectorFactory
   {
-#undef XPETRA_VECTORFACTORY_SHORT
-#include "Xpetra_UseShortNames.hpp"
+    #undef XPETRA_VECTORFACTORY_SHORT
+    #include "Xpetra_UseShortNames.hpp"
 
   private:
 
     //! Private constructor. This is a static class.
-    VectorFactory();
+    VectorFactory() = default;
 
   public:
 
     //! Constructor specifying the number of non-zeros for all rows.
-    static Teuchos::RCP< Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
-    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> &map, bool zeroOut=true);
+    static Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> 
+    Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node>> &map, bool zeroOut=true);
 
   };  // class VectorFactory
 
@@ -108,8 +112,9 @@ namespace Xpetra {
 #include "Xpetra_UseShortNames.hpp"
 
   private:
+
     //! Private constructor. This is a static class.
-    VectorFactory() {}
+    VectorFactory() = default;
 
   public:
 
@@ -161,8 +166,9 @@ namespace Xpetra {
 #include "Xpetra_UseShortNames.hpp"
 
   private:
+
     //! Private constructor. This is a static class.
-    VectorFactory() {}
+    VectorFactory() = default;
 
   public:
 
@@ -212,8 +218,9 @@ namespace Xpetra {
 #include "Xpetra_UseShortNames.hpp"
 
   private:
+
     //! Private constructor. This is a static class.
-    VectorFactory() {}
+    VectorFactory() = default;
 
   public:
 
@@ -255,8 +262,8 @@ namespace Xpetra {
   // For any other node definition the general default implementation is used which allows Tpetra only
 
   template <>
-  class VectorFactory<int, int, long long, EpetraNode> {
-
+  class VectorFactory<int, int, long long, EpetraNode> 
+  {
     typedef int        Scalar;
     typedef int        LocalOrdinal;
     typedef long long  GlobalOrdinal;
@@ -268,7 +275,7 @@ namespace Xpetra {
   private:
 
     //! Private constructor. This is a static class.
-    VectorFactory() {}
+    VectorFactory() = default;
 
   public:
 
