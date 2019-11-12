@@ -94,8 +94,11 @@ namespace Xpetra {
 
 
 
+#if defined(HAVE_XPETRA_EPETRA)
+
+
 // we need the Epetra specialization only if Epetra is enabled
-#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+#if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 
   // Specialization for Scalar=double, LO=GO=int and EpetraNode node
   // Used both for Epetra and Tpetra
@@ -118,17 +121,19 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true);
+    static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> 
+    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>& map, 
+          bool zeroOut=true);
 
   };
-#endif  // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+#endif  // #if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 
 
 
   // Specialization for Scalar=double, LO=int, GO=long long and EpetraNode
   // Used both for Epetra and Tpetra
   // For any other node definition the general default implementation is used which allows Tpetra only
-#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+#if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
 
   template <>
   class VectorFactory<double, int, long long, EpetraNode> 
@@ -149,18 +154,18 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true);
+    static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>>
+    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>& map, 
+          bool zeroOut=true);
 
   };
-#endif  // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
-
+#endif  // #if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
 #define XPETRA_VECTORFACTORY_SHORT
 
 
 
 // we need the Epetra specialization only if Epetra is enabled
-#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
-
+#if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 
   // Specialization for Scalar=int, LO=GO=int and EpetraNode
   // Used both for Epetra and Tpetra
@@ -184,15 +189,17 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true);
+    static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> 
+    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>& map, 
+          bool zeroOut=true);
 
   };
-#endif  // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+#endif  // #if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 
 
 
 // we need the Epetra specialization only if Epetra is enabled
-#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+#if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
 
   // Specialization for Scalar=int, LO=int, GO=long long and Serial node
   // Used both for Epetra and Tpetra
@@ -216,10 +223,17 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true);
+    static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> 
+    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>& map, 
+          bool zeroOut=true);
 
   };
-#endif    // #if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+#endif    // !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+
+
+#endif  // #if defined(HAVE_XPETRA_EPETRA)
+
+
 }   // namespace Xpetra
 
 
