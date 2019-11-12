@@ -63,11 +63,11 @@ Build(const Teuchos::RCP<const Xpetra::Map<int, int, EpetraNode>>& map, bool zer
 
     using Scalar        = double;
     using LocalOrdinal  = int;
-    using GlobalOrdinal = long long;
+    using GlobalOrdinal = int;
     using Node          = EpetraNode;
 
     RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> 
-      bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<int, int, EpetraNode>>(map);
+      bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
 
     if(!bmap.is_null())
     {
