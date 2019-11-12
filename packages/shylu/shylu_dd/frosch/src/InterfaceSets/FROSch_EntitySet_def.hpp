@@ -196,7 +196,7 @@ namespace FROSch {
     {
         EntitySetPtr Leafs(new EntitySet<SC,LO,GO,NO>(DefaultType));
         for (UN i=0; i<getNumEntities(); i++) {
-            if (getEntity(i)->getOffspring()->getNumEntities()>0) {
+            if (getEntity(i)->getOffspring()->getNumEntities()==0) {
                 Leafs->addEntity(getEntity(i));
             }
         }

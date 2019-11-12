@@ -250,6 +250,13 @@ namespace FROSch {
             Ancestors_->addEntity(ancestors->getEntity(i));
         }
         Ancestors_->sortUnique();
+        
+        // this is offspring of each ancestor
+        for (UN i=0; i<Ancestors_->getNumEntities(); i++) {
+            InterfaceEntityPtr thisEntity = rcpFromRef(*this);
+            FROSCH_ASSERT(!thisEntity.is_null(),"FROSch::InterfaceEntity : ERROR: thisEntity.is_null()");
+            Ancestors_->getEntity(i)->addOffspring(thisEntity);
+        }
         return 0;
     }
 

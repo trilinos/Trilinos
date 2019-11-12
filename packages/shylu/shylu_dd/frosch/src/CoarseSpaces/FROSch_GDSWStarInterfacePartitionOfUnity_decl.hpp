@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_RGDSWINTERFACEPARTITIONOFUNITY_DECL_HPP
-#define _FROSCH_RGDSWINTERFACEPARTITIONOFUNITY_DECL_HPP
+#ifndef _FROSCH_GDSWSTARINTERFACEPARTITIONOFUNITY_DECL_HPP
+#define _FROSCH_GDSWSTARINTERFACEPARTITIONOFUNITY_DECL_HPP
 
 #include <FROSch_GDSWInterfacePartitionOfUnity_def.hpp>
 
@@ -54,7 +54,7 @@ namespace FROSch {
               class LO = int,
               class GO = DefaultGlobalOrdinal,
               class NO = KokkosClassic::DefaultNode::DefaultNodeType>
-    class RGDSWInterfacePartitionOfUnity : public GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> {
+    class GDSWStarInterfacePartitionOfUnity : public GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> {
 
     protected:
 
@@ -92,23 +92,25 @@ namespace FROSch {
 
     public:
 
-        RGDSWInterfacePartitionOfUnity(CommPtr mpiComm,
-                                       CommPtr serialComm,
-                                       UN dimension,
-                                       UN dofsPerNode,
-                                       ConstXMapPtr nodesMap,
-                                       ConstXMapPtrVecPtr dofsMaps,
-                                       ParameterListPtr parameterList,
-                                       Verbosity verbosity = All,
-                                       UN levelID = 1);
+        GDSWStarInterfacePartitionOfUnity(CommPtr mpiComm,
+                                          CommPtr serialComm,
+                                          UN dimension,
+                                          UN dofsPerNode,
+                                          ConstXMapPtr nodesMap,
+                                          ConstXMapPtrVecPtr dofsMaps,
+                                          ParameterListPtr parameterList,
+                                          Verbosity verbosity = All,
+                                          UN levelID = 1);
 
         virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList);
 
     protected:
 
         bool UseRoots_;
+        bool UseLeafs_;
 
         EntitySetPtr Roots_;
+        EntitySetPtr Leafs_;
 
         EntitySetPtrVecPtr EntitySetVector_;
 
