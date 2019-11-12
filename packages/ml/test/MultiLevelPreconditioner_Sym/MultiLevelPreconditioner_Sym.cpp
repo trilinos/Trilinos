@@ -42,8 +42,6 @@ void PrintLine()
   return;
 }
 
-
-
 // ------------------------------------------------------------------------------------------------
 // Memory use tracking (gets memory use in MB)
 int get_memory() {
@@ -114,7 +112,7 @@ int get_memory() {
 }
 
 
-int TestMultiLevelPreconditioner(char ProblemType[],
+int TestMultiLevelPreconditioner(const char ProblemType[],
 				 Teuchos::ParameterList & MLList,
 				 Epetra_LinearProblem & Problem, double & TotalErrorResidual,
 				 double & TotalErrorExactSol,bool cg=false)
@@ -234,11 +232,9 @@ int main(int argc, char *argv[]) {
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
   char mystring[80];
 
-  //#if 0
   // ====================== //
   // default options for SA //
   // ====================== //
-
   if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("SA",MLList);
@@ -339,6 +335,7 @@ int main(int argc, char *argv[]) {
                                TotalErrorResidual, TotalErrorExactSol);
 #endif
 
+
   // =========================== //
   // Autodetected Line SGS (trivial lines) 
   // =========================== //
@@ -360,7 +357,7 @@ int main(int argc, char *argv[]) {
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("aggregation: type","Uncoupled");
   MLList.set("aggregation: do qr",false);
-  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+  TestMultiLevelPreconditioner("No QR", MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
   
   // =========================== //
@@ -381,13 +378,23 @@ int main(int argc, char *argv[]) {
   if (Comm.MyPID() == 0) PrintLine();
   Epetra_Vector material(Matrix->RowMap());
   material.PutScalar(1.0);
-  
-  ML_Epetra::SetDefaults("SA",MLList);
-  MLList.set("aggregation: material: enable", true);
-  MLList.set("aggregation: material: threshold", 2.0);
-  MLList.set("material coordinates", &(material[0]));
+  Teuchos::ParameterList MaterialList;
+  ML_Epetra::SetDefaults("SA",MaterialList);
+  MaterialList.set("aggregation: material: enable", true);
+  MaterialList.set("aggregation: material: threshold", 2.0);
+  MaterialList.set("material coordinates", &(material[0]));
+  MaterialList.set("x-coordinates",(*Coords)[0]);
+  MaterialList.set("y-coordinates",(*Coords)[1]);
+  MaterialList.set("z-coordinates",(*Coords)[2]);
+  TestMultiLevelPreconditioner("Material", MaterialList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
 
-  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+  // =========================== //
+  // Classical Test
+  // =========================== //
+  Teuchos::ParameterList ClassicalList;
+  ML_Epetra::SetDefaults("Classical-AMG",ClassicalList);
+  TestMultiLevelPreconditioner("Classical-AMG",ClassicalList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
   // =========================== //
@@ -404,12 +411,8 @@ int main(int argc, char *argv[]) {
   MLList.set("aggregation: type","Uncoupled");
   MLList.set("aggregation: rowsum threshold", 0.9);
 
-  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+  TestMultiLevelPreconditioner("Rowsum", MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
-
-
-
-
 
   // ===================== //
   // print out total error //
