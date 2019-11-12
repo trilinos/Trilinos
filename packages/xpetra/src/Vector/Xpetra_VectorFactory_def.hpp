@@ -48,6 +48,7 @@
 
 #include "Xpetra_VectorFactory_decl.hpp"
 
+#include "Xpetra_Vector.hpp"
 
 
 namespace Xpetra {
@@ -63,9 +64,9 @@ VectorFactory()
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+Teuchos::RCP< Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Build(const Teuchos::RCP<const Map>& map, 
+Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>& map, 
       bool zeroOut)
 {
     XPETRA_MONITOR("VectorFactory::Build");

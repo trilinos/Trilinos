@@ -81,8 +81,8 @@ namespace Xpetra {
   public:
 
     //! Constructor specifying the number of non-zeros for all rows.
-    static Teuchos::RCP< Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
-    Build(const Teuchos::RCP<const Map> &map, bool zeroOut=true);
+    static Teuchos::RCP< Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> &map, bool zeroOut=true);
 
   };  // class VectorFactory
 
