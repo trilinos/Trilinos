@@ -1509,7 +1509,7 @@ public:
 
     Kokkos::View<part_t*, device_t> initial_selected_coords_output_permutation_pcoords(
       "initial_selected_coords_output_permutation_pcoords", this->no_procs);
-    typename decltype(initial_selected_coords_output_permutation_pcoords)::HostMirror
+    typename Kokkos::View<part_t*, device_t>::HostMirror
       host_initial_selected_coords_output_permutation_pcoords =
         Kokkos::create_mirror_view(initial_selected_coords_output_permutation_pcoords);
     for(int n = 0; n < this->no_procs; ++n) {
@@ -1518,6 +1518,15 @@ public:
     }
     Kokkos::deep_copy(initial_selected_coords_output_permutation_pcoords,
       host_initial_selected_coords_output_permutation_pcoords);
+
+    // Note num_group_count = 1 when group_count = NULL - perhaps could change
+    Kokkos::View<part_t *, Kokkos::HostSpace> kokkos_group_count(
+      "kokkos_group_count", group_count ? num_group_count : 0);
+    if(group_count) {
+      for(int n = 0; n < num_group_count; ++n) {
+        kokkos_group_count(n) = group_count[n];
+      }
+    }
 
     mj_partitioner.sequential_task_partitioning(
         env,
@@ -1535,19 +1544,18 @@ public:
         num_ranks_per_node,
         divide_to_prime_first,
         num_group_count,
-        // Note this is a bit kludgy as we reshape this class to fit the Kokkos
-        // requirement of MJ. We can continue the refactor to make group_count
-        // a Kokkos::View but this continues to spread to other things. So
-        // cutting this off here for now for bring PR to a completion state.
-        // Note when group_count is NULL, num_group_count is still 1. MJ is
-        // using size to determine empty. Dragonfly code could probably be
-        // refactored so num_group_count is 0 for null group_count.
-        Kokkos::View<part_t *, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(
-          group_count, group_count ? num_group_count : 0));
+        kokkos_group_count);
     env->timerStop(MACRO_TIMERS, "Mapping - Proc Partitioning");
 //    comm_->barrier();
 //    std::cout << "mj_partitioner.for procs over" << std::endl;
 //    freeArray<pcoord_t *>(pcoords);
+
+    Kokkos::deep_copy(host_initial_selected_coords_output_permutation_pcoords,
+      initial_selected_coords_output_permutation_pcoords);
+    for(int n = 0; n < this->no_procs; ++n) {
+      proc_adjList[n] =
+        host_initial_selected_coords_output_permutation_pcoords(n);
+    }
 
     part_t *task_xadj = new part_t[num_parts + 1];
     part_t *task_adjList = new part_t[this->no_tasks];
@@ -1583,7 +1591,7 @@ public:
 
     Kokkos::View<part_t*, device_t> initial_selected_coords_output_permutation_tcoords(
       "initial_selected_coords_output_permutation_tcoords", this->no_tasks);
-    typename decltype(initial_selected_coords_output_permutation_tcoords)::HostMirror
+    typename Kokkos::View<part_t*, device_t>::HostMirror
       host_initial_selected_coords_output_permutation_tcoords =
         Kokkos::create_mirror_view(initial_selected_coords_output_permutation_tcoords);
     for(int n = 0; n < this->no_tasks; ++n) {
@@ -1610,16 +1618,15 @@ public:
         num_ranks_per_node,
         divide_to_prime_first,
         num_group_count,
-        // Note this is a bit kludgy as we reshape this class to fit the Kokkos
-        // requirement of MJ. We can continue the refactor to make group_count
-        // a Kokkos::View but this continues to spread to other things. So
-        // cutting this off here for now for bring PR to a completion state.
-        // Note when group_count is NULL, num_group_count is still 1. MJ is
-        // using size to determine empty. Dragonfly code could probably be
-        // refactored so num_group_count is 0 for null group_count.
-        Kokkos::View<part_t *, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(
-          group_count, group_count ? num_group_count : 0));
+        kokkos_group_count);
     env->timerStop(MACRO_TIMERS, "Mapping - Task Partitioning");
+
+    Kokkos::deep_copy(host_initial_selected_coords_output_permutation_tcoords,
+      initial_selected_coords_output_permutation_tcoords);
+    for(int n = 0; n < this->no_tasks; ++n) {
+      task_adjList[n] =
+        host_initial_selected_coords_output_permutation_tcoords(n);
+    }
 
 //    std::cout << "myrank:" << myRank << std::endl;
 //    comm_->barrier();

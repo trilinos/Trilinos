@@ -1526,7 +1526,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
   Kokkos::View<mj_scalar_t **, Kokkos::LayoutLeft, device_t> &
     mj_coordinates_,
-  Kokkos::View<mj_lno_t *, device_t> & inital_adjList_output_adjlist,
+  Kokkos::View<mj_lno_t *, device_t> & initial_adjList_output_adjlist,
   mj_lno_t *output_xadj,
   int rd,
   const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & part_no_array_,
@@ -1595,14 +1595,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     local_part_xadj(0) = static_cast<mj_lno_t>(num_selected_coords);
   });
 
-  auto local_coordinate_permutations =
-    this->coordinate_permutations;
-  auto local_inital_adjList_output_adjlist =
-    inital_adjList_output_adjlist;
+  auto local_coordinate_permutations = this->coordinate_permutations;
+  auto local_initial_adjList_output_adjlist = initial_adjList_output_adjlist;
   Kokkos::parallel_for(
     Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_lno_t>
       (0, num_total_coords), KOKKOS_LAMBDA (mj_lno_t i) {
-    local_coordinate_permutations(i) = local_inital_adjList_output_adjlist(i);
+    local_coordinate_permutations(i) = local_initial_adjList_output_adjlist(i);
   });
 
   mj_part_t current_num_parts = 1;
@@ -2087,7 +2085,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   Kokkos::parallel_for(
     Kokkos::RangePolicy<typename mj_node_t::execution_space,
     mj_part_t> (0, num_total_coords), KOKKOS_LAMBDA (mj_part_t i) {
-    inital_adjList_output_adjlist(i) = local_coordinate_permutations(i);
+    local_initial_adjList_output_adjlist(i) = local_coordinate_permutations(i);
   });
 
   // Return output_xadj in CSR format
