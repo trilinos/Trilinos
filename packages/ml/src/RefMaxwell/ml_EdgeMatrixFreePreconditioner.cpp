@@ -201,9 +201,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 
     /* Use the nodal prolongator to generate coarse coordinates at the aggregated nodes */
     // Note: ML requires a non-null pointer even if we're out of nodes, so we're sure to allocate *something* here
-    CoarseXcoord_.resize(std::max(P->invec_leng,1));
-    CoarseYcoord_.resize(std::max(P->invec_leng,1));
-    if(dim==3) CoarseZcoord_.resize(std::max(P->invec_leng,1));
+    if(xcoord) CoarseXcoord_.resize(std::max(P->invec_leng,1));
+    if(ycoord) CoarseYcoord_.resize(std::max(P->invec_leng,1));
+    if(zcoord) CoarseZcoord_.resize(std::max(P->invec_leng,1));
     if(mcoord) CoarseMcoord_.resize(std::max(P->invec_leng,1));
 
     /* Matvec with the *transpose* of P */
