@@ -137,7 +137,6 @@
 // MueLu/Avatar Includes
 #ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
 #  include "MueLu_AvatarInterface.hpp"
-#enduif
 #endif
 
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
@@ -768,6 +767,13 @@ int main(int argc, char *argv[]) {
   double maxmin_ratio    = 0;
   double diag_ratio      = 0;
   double stretch         = 0;
+  double taper           = 0;
+  double skew            = 0;
+
+  double dist1           = 0.0;
+  double dist2           = 0.0;
+  double dist3           = 0.0;
+  double dist4           = 0.0;
  
   int edge = P1_elemToEdge(0, 0);
   int node1 = P1_edgeToNode(edge, 0);
@@ -775,7 +781,18 @@ int main(int argc, char *argv[]) {
   double dist = 0;
   static const int NUM_NODE_PAIRS = 2;
   int diag_nodes1[] = {0, 1};
-  int diag_nodes2[] = {3, 2};
+  int diag_nodes2[] = {2, 3};
+
+  double x0 = 0.0;
+  double x1 = 0.0;
+  double x2 = 0.0;
+  double x3 = 0.0;
+  double y0 = 0.0;
+  double y1 = 0.0;
+  double y2 = 0.0;
+  double y3 = 0.0;
+  double e3 = 0.0;
+  double f3 = 0.0;
 
   // Intialize
   for(int i=0; i<NUM_STATISTICS; i++) {
@@ -834,6 +851,41 @@ int main(int argc, char *argv[]) {
     local_stat_max[4] = std::max(local_stat_max[4], diag_ratio);
     local_stat_min[4] = std::min(local_stat_min[4], diag_ratio);
     local_stat_sum[4] += diag_ratio;
+
+    // 5 - Inverse Taper
+    int opposite_edges1[2][2] = {{0, 1}, {0, 3}};
+    int opposite_edges2[2][2] = {{2, 3}, {1, 2}};
+    dist1 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges1[0][0]), P1_elemToNode(i, opposite_edges1[0][1]));
+    dist2 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges2[0][0]), P1_elemToNode(i, opposite_edges2[0][1]));
+    dist3 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges1[1][0]), P1_elemToNode(i, opposite_edges1[1][1]));
+    dist4 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges2[1][1]), P1_elemToNode(i, opposite_edges2[1][1]));
+    taper = std::max(dist1/dist2, dist2/dist1);
+    taper = std::max(taper, dist3/dist4);
+    taper = std::max(taper, dist4/dist3);
+    local_stat_max[5] = std::max(local_stat_max[5], taper);
+    local_stat_min[5] = std::max(local_stat_min[5], taper);
+    local_stat_sum[5] += taper;
+
+
+    // 6 - Skew
+    // See "Quadrilateral and hexagonal shape parameters" - Robinson, J. 1994
+    x0 = P1_nodeCoord(P1_elemToNode(i, 0), 0);
+    x1 = P1_nodeCoord(P1_elemToNode(i, 1), 0);
+    x2 = P1_nodeCoord(P1_elemToNode(i, 2), 0);
+    x3 = P1_nodeCoord(P1_elemToNode(i, 3), 0);
+
+    y0 = P1_nodeCoord(P1_elemToNode(i, 0), 1);
+    y1 = P1_nodeCoord(P1_elemToNode(i, 1), 1);
+    y2 = P1_nodeCoord(P1_elemToNode(i, 2), 1);
+    y3 = P1_nodeCoord(P1_elemToNode(i, 3), 1);
+
+    e3 = 0.25 * (x0-x1+x2-x3);
+    f3 = 0.25 * (-y0-y1+y2+y3);
+    skew = e3 / f3;
+    local_stat_max[6] = std::max(local_stat_max[4], skew);
+    local_stat_min[6] = std::min(local_stat_max[4], skew);
+    local_stat_sum[6] += skew;
+
 
   }
 
