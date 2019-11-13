@@ -48,6 +48,9 @@ std::string rm_dashes(const std::string &s);
 std::string get_substring_before_comma(const std::string& s);
 std::string get_substring_after_comma(const std::string& s);
 
+std::string tailname(const std::string& filename);
+std::string basename(const std::string& filename);
+
 } // namespace stk
 
 #endif /* stk_util_string_utils_hpp */

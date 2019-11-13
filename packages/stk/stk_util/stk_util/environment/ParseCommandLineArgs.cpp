@@ -31,38 +31,43 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <stk_util/command_line/ParseCommandLineArgs.hpp>
+#include <stk_util/stk_config.h>
+#include <stk_util/util/string_utils.hpp>
+#include <stk_util/environment/ParseCommandLineArgs.hpp>
 
 namespace stk {
 
-bool insert_option(const Option& option, const std::string& value, stk::ParsedOptions& varMap)
+bool insert_option(const Option& option, const std::string& value, stk::ParsedOptions& parsedOptions)
 {
     std::string theValue = value.empty() ? option.defaultValue : value;
-    return varMap.insert(option.name, option.abbrev, theValue);
+    option.store(theValue);
+//std::cerr<<"inserting name="<<option.name<<", abbrev="<<option.abbrev<<", value="<<theValue<<std::endl;
+    return parsedOptions.insert(option.name, option.abbrev, theValue);
 }
 
 void make_sure_all_required_were_found(const OptionsSpecification& optionsDesc,
-                                       const ParsedOptions& varMap)
+                                       const ParsedOptions& parsedOptions)
 {
-  for(const Option& option : optionsDesc.get_options()) {
-    ThrowRequireMsg(!option.isRequired || varMap.count(option.name) == 1,
+  for(const auto& option : optionsDesc.get_options_plus_sub_options()) {
+    ThrowRequireMsg(!option->isRequired || parsedOptions.count(option->name) == 1,
                     "Error in stk::parse_command_line_args: "
-                    << "required option '"<<dash_it(option.name)<<"' not found.");
+                    << "required option '"<<dash_it(option->name)<<"' not found.");
   }
 }
 
 void parse_command_line_args(int argc, const char** argv,
                              const OptionsSpecification& optionsDesc,
-                             stk::ParsedOptions& varMap)
+                             stk::ParsedOptions& parsedOptions)
 {
-  for(const Option& option : optionsDesc.get_options()) {
-    if (!option.defaultValue.empty()) {
-      insert_option(option, "", varMap);
+  for(const auto& option : optionsDesc.get_options_plus_sub_options()) {
+    if (!option->defaultValue.empty() && !option->isImplicit) {
+      insert_option(*option, "", parsedOptions);
     }
   }
-
   std::vector<bool> argHasBeenUsed(argc, false);
   for(int i=1; i<argc; ++i) {
+//std::cerr<<"prs-cmd-line-args, i="<<i<<", argc="<<argc<<", argv["<<i<<"]: '"
+//         <<(argv[i]==nullptr?std::string("nullptr"):std::string(argv[i]))<<"'"<<std::endl;
     const char* arg = argv[i];
     if (arg == nullptr) {
       continue;
@@ -76,6 +81,7 @@ void parse_command_line_args(int argc, const char** argv,
     std::string optionKey = rm_dashes(std::string(arg));
     std::string value;
     bool argContainedEquals = false;
+
     size_t posOfEqualSign = optionKey.find("=");
     if (posOfEqualSign != std::string::npos) {
       argContainedEquals = true;
@@ -87,17 +93,30 @@ void parse_command_line_args(int argc, const char** argv,
     if (option.name.empty()) {
       continue;
     }
+//std::cerr<<"   found option '"<<option.name<<"' isFlag="<<option.isFlag<<", isImplicit="<<option.isImplicit<<std::endl;
 
     argHasBeenUsed[i] = true;
 
-    if (!option.isFlag && !argContainedEquals) {
+    bool useNextArgAsValue = !option.isFlag && !argContainedEquals;
+
+//std::cerr<<"   useNextArgAsValue="<<useNextArgAsValue<<std::endl;
+    if (useNextArgAsValue) {
+      if (option.isImplicit &&
+          ((i >= (argc-1)) || (argv[i+1]==nullptr) || (argv[i+1][0] == '-'))) {
+        useNextArgAsValue = false;
+        value = option.defaultValue;
+      }
+    }
+
+    if (useNextArgAsValue) {
       ThrowRequireMsg(i < (argc-1), "stk::parse_command_line_args: reached end of command line "
                       <<" without finding value for option "<<dash_it(option.name));
       value = argv[i+1];
       argHasBeenUsed[i+1] = true;
       ++i;
     }
-    insert_option(option, value, varMap);
+
+    insert_option(option, value, parsedOptions);
   }
 
   if (optionsDesc.get_num_positional_options() > 0) {
@@ -106,15 +125,16 @@ void parse_command_line_args(int argc, const char** argv,
       const bool isPositionalArg = !argHasBeenUsed[i];
       if (isPositionalArg) {
         const Option& option = optionsDesc.get_positional_option(positionalArgIndex);
-        insert_option(option, std::string(argv[i]), varMap);
+        insert_option(option, std::string(argv[i]), parsedOptions);
         ++positionalArgIndex;
       }
     }
   }
 
-  if (varMap.count("help") == 0 && varMap.count("version") == 0) {
-    make_sure_all_required_were_found(optionsDesc, varMap);
+  if (parsedOptions.count("help") == 0 && parsedOptions.count("version") == 0) {
+    make_sure_all_required_were_found(optionsDesc, parsedOptions);
   }
+//std::cerr<<"leaving prs-cmd-line-args"<<std::endl;
 }
 
 }

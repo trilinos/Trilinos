@@ -35,6 +35,7 @@
 #define STK_UTIL_COMMANDLINE_OPTIONSSPECIFICATION_HPP
 
 #include <stk_util/stk_config.h>
+#include <stk_util/util/string_utils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <ostream>
@@ -43,124 +44,160 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <memory>
 
 namespace stk {
 
 struct Option
 {
+  Option()
+  : name(), abbrev(), description(), defaultValue(),
+    isFlag(false), isRequired(false), isImplicit(false),
+    position(-2)
+  {}
+
+  Option(const std::string& nm, const std::string& abrv,
+         const std::string& desc, const std::string& deflt,
+         bool isFlg, bool isReqd, bool isImplct, int pos)
+  : name(nm), abbrev(abrv), description(desc), defaultValue(deflt),
+    isFlag(isFlg), isRequired(isReqd), isImplicit(isImplct),
+    position(pos)
+  {}
+
   std::string name;
   std::string abbrev;
   std::string description;
   std::string defaultValue;
   bool isFlag;
   bool isRequired;
+  bool isImplicit;
   int position;
+
+  virtual void store(const std::string& val) const {}
+};
+
+template<typename T>
+struct OptionT : public Option
+{
+  OptionT(const std::string& nm, const std::string& abrv,
+         const std::string& desc, const std::string& deflt,
+         T* target, int pos=-2)
+  : Option(nm, abrv, desc, deflt, false, false, false, pos),
+    targetVariable(target)
+  {}
+
+  void store(const std::string& val) const override
+  {
+    if (!val.empty() && targetVariable != nullptr) {
+      std::istringstream iss(val);
+      T tVal;
+      iss >> tVal;
+      ThrowRequireMsg(!iss.fail(), "Error in OptionT, failed to store '"<<val<<"'");
+      *targetVariable = tVal;
+    }
+  }
+
+  mutable T* targetVariable;
+};
+
+template<typename T>
+struct DefaultValue {
+  DefaultValue(const T& val) : value(val) {}
+  const T& value;
+};
+
+template<typename T>
+struct ImplicitValue {
+  ImplicitValue(const T& val) : value(val) {}
+  const T& value;
+};
+
+template<typename T>
+struct TargetPointer {
+  TargetPointer(T* ptr) : target(ptr) {}
+  T* target;
+};
+
+template<typename T>
+struct ValueType {
+  typedef T type;
 };
 
 class OptionsSpecification
 {
 public:
-  OptionsSpecification(const std::string& usagePreamble_="", unsigned lineLen=0)
-   : usagePreamble(usagePreamble_), lineLength(lineLen), options(), subOptionSpecs() {}
-  OptionsSpecification(const OptionsSpecification& spec)
-  {
-    *this = spec;
-  }
+  OptionsSpecification(const std::string& usagePreamble_="", unsigned lineLen=0);
 
-  ~OptionsSpecification(){}
+  virtual ~OptionsSpecification(){}
 
-  OptionsSpecification& operator=(const OptionsSpecification& spec)
-  {
-    usagePreamble = spec.usagePreamble;
-    options = spec.options;
-    subOptionSpecs = spec.subOptionSpecs;
-    return *this;
-  }
+  //copy constructor
+  OptionsSpecification(const OptionsSpecification& spec);
+
+  //assignment operator
+  OptionsSpecification& operator=(const OptionsSpecification& spec);
+
+  //move constructor
+  OptionsSpecification(OptionsSpecification&& spec);
+
+  //move assignment operator
+  OptionsSpecification& operator=(OptionsSpecification&& spec);
 
   bool empty() const { return options.empty(); }
 
   size_t size() const { return options.size(); }
 
-  const Option& find_option(const std::string& nameOrAbbrev) const
-  {
-    static Option emptyOption;
-    unsigned numPartialMatches = 0;
-    unsigned idxOfPartialMatch = 0;
-    unsigned idx = 0;
-    for(const Option& option : options) {
-      if (option.name == nameOrAbbrev || option.abbrev == nameOrAbbrev) {
-        return option;
-      }
-      else if ((nameOrAbbrev.size() > 1) && (nameOrAbbrev.size() < option.name.size()) &&
-               (option.name.find(nameOrAbbrev)==0)) {
-        ++numPartialMatches;
-        idxOfPartialMatch = idx;
-      }
-      ++idx;
-    }
-    //if there were no complete matches, return a partial match if there was exactly one.
-    if (numPartialMatches == 1) {
-      return options[idxOfPartialMatch];
-    }
+  const Option& find_option(const std::string& nameOrAbbrev) const;
 
-    for(const OptionsSpecification& spec : subOptionSpecs) {
-      const Option& option = spec.find_option(nameOrAbbrev);
-      if (!option.name.empty()) {
-        return option;
-      }
-    }
+  size_t get_num_positional_options() const;
 
-    return emptyOption;
-  }
+  const Option& get_positional_option(int position) const;
 
-  size_t get_num_positional_options() const {
-    size_t numPositionalOptions = 0;
-    for(const Option& option : options) {
-      if (option.position >= -1) {
-        ++numPositionalOptions;
-      }
-    }
-
-    for(const OptionsSpecification& spec : subOptionSpecs) {
-      numPositionalOptions += spec.get_num_positional_options();
-    }
-
-    return numPositionalOptions;
-  }
-
-  const Option& get_positional_option(int position) const
-  {
-    for(const Option& option : options) {
-      if (option.position == position || option.position == -1) {
-        return option;
-      }
-    }
-
-    for(const OptionsSpecification& spec : subOptionSpecs) {
-      const Option& option = spec.get_positional_option(position);
-      if (!option.name.empty()) {
-        return option;
-      }
-    }
-
-    static Option emptyOption;
-    return emptyOption;
-  }
-
-  const std::vector<Option>& get_options() const { return options; }
+  const std::vector<std::shared_ptr<Option>>& get_options() const { return options; }
+  const std::vector<std::shared_ptr<Option>>& get_options_plus_sub_options() const { return optionsPlusSubOptions; }
 
   OptionsSpecification& add_options() { return *this; }
 
-  OptionsSpecification& add(const OptionsSpecification& spec)
-  {
-    subOptionSpecs.push_back(spec);
-    return *this;
-  }
+  OptionsSpecification& add(const OptionsSpecification& spec);
 
   OptionsSpecification& operator()(const std::string& spec, const std::string& description)
   {
     std::string defaultValue("");
-    return add_option(spec, description, defaultValue, true, false, -2);
+    const bool isFlag = true;
+    const bool isRequired = false;
+    const bool isImplicit = false;
+    const int position = -2;
+    return add_option(spec, description, defaultValue,
+                      isFlag, isRequired, isImplicit,
+                      position);
+  }
+
+  template<typename T>
+  OptionsSpecification& operator()(const std::string& spec,
+                                   const std::string& description,
+                                   ValueType<T> valueType)
+  {
+    std::string defaultValue("");
+    const bool isFlag = false;
+    const bool isRequired = false;
+    const bool isImplicit = false;
+    const int position = -2;
+    return add_option(spec, description, defaultValue,
+                      isFlag, isRequired, isImplicit,
+                      position);
+  }
+
+  template<typename T>
+  OptionsSpecification& operator()(const std::string& spec,
+                                   const std::string& description,
+                                   ImplicitValue<T> implicitValue)
+  {
+    const bool isFlag = false;
+    const bool isRequired = false;
+    const bool isImplicit = true;
+    const int position = -2;
+    return add_option(spec, description, implicitValue.value,
+                      isFlag, isRequired, isImplicit,
+                      position);
   }
 
   OptionsSpecification& operator()(const std::string& spec,
@@ -170,18 +207,55 @@ public:
                                  int position=-2)
   {
     std::string defaultValue("");
-    return add_option(spec, description, defaultValue, isFlag, isRequired, position);
+    const bool isImplicit = false;
+    return add_option(spec, description, defaultValue,
+                      isFlag, isRequired, isImplicit,
+                      position);
+  }
+
+  template<typename T>
+  OptionsSpecification& operator()(const std::string& spec,
+                                   const std::string& description,
+                                   TargetPointer<T> targetToStoreResult)
+  {
+    const bool isRequired = true;
+    T defaultValue = std::is_same<T,std::string>::value ? "" : 0;
+    int position = -2;
+    return add_option(spec, description, defaultValue, targetToStoreResult.target, false, isRequired, position);
+  }
+
+  template<typename T>
+  OptionsSpecification& operator()(const std::string& spec,
+                                   const std::string& description,
+                                   TargetPointer<T> targetToStoreResult,
+                                   DefaultValue<T> defaultValue,
+                                   int position = -2)
+  {
+    return add_option(spec, description, defaultValue.value, targetToStoreResult.target, false, false, position);
+  }
+
+  template<typename T>
+  OptionsSpecification& operator()(const std::string& spec,
+                                   const std::string& description,
+                                   DefaultValue<T> defaultValue,
+                                   TargetPointer<T> targetToStoreResult,
+                                   int position = -2)
+  {
+    return add_option(spec, description, defaultValue.value, targetToStoreResult.target, false, false, position);
   }
 
   template<typename T>
   OptionsSpecification& operator()(const std::string& spec,
                                  const std::string& description,
-                                 const T& defaultValue,
+                                 DefaultValue<T> defaultValue,
                                  bool isFlag = false,
                                  bool isRequired = false,
                                  int position = -2)
   {
-    return add_option(spec, description, defaultValue, isFlag, isRequired, position);
+    const bool isImplicit = false;
+    return add_option(spec, description, defaultValue.value,
+                      isFlag, isRequired, isImplicit,
+                      position);
   }
 
   friend std::ostream& operator<<(std::ostream& out, const OptionsSpecification& od);
@@ -193,6 +267,7 @@ private:
                                  const T& defaultValue,
                                  bool isFlag,
                                  bool isRequired,
+                                 bool isImplicit,
                                  int position)
   {
     std::string optionName = get_substring_before_comma(spec);
@@ -201,45 +276,57 @@ private:
     oss<<defaultValue;
     std::string defaultValueStr = oss.str();
 
-    for(const Option& opt : options) {
-      if (opt.name == optionName) {
+    for(const auto& opt : options) {
+      if (opt->name == optionName) {
         return *this;
       }
     }
 
-    Option option{optionName, optionAbbrev, description, defaultValueStr,
-                  isFlag, isRequired, position};
-    options.push_back(option);
+    options.push_back(std::shared_ptr<Option>(new Option(optionName, optionAbbrev, description,
+                                             defaultValueStr,
+                                             isFlag, isRequired, isImplicit,
+                                             position)));
+    optionsPlusSubOptions.push_back(options.back());
 
     return *this;
   }
 
-  void print(std::ostream& out) const
+  template<typename T>
+  OptionsSpecification& add_option(const std::string& spec,
+                                 const std::string& description,
+                                 const T& defaultValue,
+                                 T* targetToStoreResult,
+                                 bool isFlag,
+                                 bool isRequired,
+                                 int position)
   {
-    if (!usagePreamble.empty()) {
-      out << usagePreamble << std::endl << std::endl;
+    std::string optionName = get_substring_before_comma(spec);
+    std::string optionAbbrev = get_substring_after_comma(spec);
+    std::ostringstream oss;
+    oss<<defaultValue;
+    std::string defaultValueStr = oss.str();
+
+    for(const auto& opt : options) {
+      if (opt->name == optionName) {
+        return *this;
+      }
     }
-    int maxOptStrLen = 0;
-    for(const Option& opt : options) {
-      std::string optionString(dash_it(opt.name)+(!opt.abbrev.empty() ? ",-"+opt.abbrev : ""));
-      int strLen = optionString.size();
-      maxOptStrLen = std::max(maxOptStrLen,strLen);
-    }
-    int padWidth = maxOptStrLen+3;
-    for(const Option& opt : options) {
-      std::string optionString(dash_it(opt.name)+(!opt.abbrev.empty() ? ",-"+opt.abbrev : ""));
-      out << optionString<<std::setw(padWidth+opt.description.size()-optionString.size())<<opt.description<<(opt.isRequired ? " (required)":"")
-          <<(!opt.defaultValue.empty() ? (" default: "+opt.defaultValue) : "")
-          <<std::endl;
-    }
-  
-    out << std::endl;
+
+    options.push_back(std::shared_ptr<Option>(new OptionT<T>(optionName, optionAbbrev, description,
+                                                          defaultValueStr, targetToStoreResult,
+                                                          position)));
+    optionsPlusSubOptions.push_back(options.back());
+
+    return *this;
   }
+
+  void print(std::ostream& out) const;
 
   std::string usagePreamble;
   unsigned lineLength;
-  std::vector<Option> options;
+  std::vector<std::shared_ptr<Option>> options;
   std::vector<OptionsSpecification> subOptionSpecs;
+  std::vector<std::shared_ptr<Option>> optionsPlusSubOptions;
 };
 
 inline

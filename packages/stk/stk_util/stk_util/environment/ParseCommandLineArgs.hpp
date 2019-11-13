@@ -31,33 +31,19 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef STK_STK_UTIL_STK_UTIL_COMMAND_LINE_COMMANDLINEPARSERUTILS_HPP_
-#define STK_STK_UTIL_STK_UTIL_COMMAND_LINE_COMMANDLINEPARSERUTILS_HPP_
+#ifndef STK_UTIL_ENVIRONMENT_PARSECOMMANDLINEARGS_HPP
+#define STK_UTIL_ENVIRONMENT_PARSECOMMANDLINEARGS_HPP
 
 #include <stk_util/stk_config.h>
-#include <stk_util/parallel/Parallel.hpp>
-#include <string>
+#include <stk_util/environment/OptionsSpecification.hpp>
+#include <stk_util/environment/ParsedOptions.hpp>
 
 namespace stk {
 
-class CommandLineParserParallel;
-
-std::string get_quick_error(const std::string &execName, const std::string &quickExample);
-
-void parse_command_line(int argc,
-                        const char** argv,
-                        const std::string& quickExample,
-                        const std::string& longExample,
-                        stk::CommandLineParserParallel& commandLine,
-                        MPI_Comm comm);
-namespace parallel {
-void print_and_exit(const std::string &msg, MPI_Comm comm);
-void require(bool requirement, const std::string &msg, MPI_Comm comm);
-bool does_file_exist(const std::string& filename);
-void require_file_exists(const std::string& inFile, const std::string& execName, const std::string& quickExample, MPI_Comm comm);
-}
-
+void parse_command_line_args(int argc, const char** argv,
+                             const OptionsSpecification& optionsDesc,
+                             stk::ParsedOptions& varMap);
 
 }
 
-#endif /* STK_STK_UTIL_STK_UTIL_COMMAND_LINE_COMMANDLINEPARSERUTILS_HPP_ */
+#endif //STK_UTIL_ENVIRONMENT_PARSECOMMANDLINEARGS_HPP

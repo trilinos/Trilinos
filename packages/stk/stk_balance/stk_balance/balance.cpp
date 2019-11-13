@@ -409,18 +409,6 @@ void run_stk_balance_with_settings(const std::string& outputFilename, const std:
     initial_decomp_and_balance(bulk, balanceSettings, exodusFilename, outputFilename, initialDecompMethod);
 }
 
-class StkBalanceSettings : public GraphCreationSettings
-{
-public:
-    StkBalanceSettings()
-      : GraphCreationSettings()
-    {}
-
-    std::string getCoordinateFieldName() const override {
-      return "balance_coordinates";
-    }
-};
-
 void run_stk_rebalance(const std::string& outputDirectory, const std::string& inputFile, stk::balance::AppTypeDefaults appType, MPI_Comm comm)
 {
     StkBalanceSettings balanceSettings;

@@ -74,5 +74,26 @@ std::string get_substring_after_comma(const std::string& s)
   return "";
 }
 
+std::string tailname(const std::string &filename)
+{
+  size_t ind = filename.find_last_of("/", filename.size());
+  if (ind != std::string::npos) {
+    return filename.substr(ind+1, filename.size());
+  }
+  return filename; // No path, just return the filename
+}
+
+std::string basename(const std::string &filename)
+{
+  std::string tail = tailname(filename);
+
+  // Strip off the extension
+  size_t ind = tail.find_last_of('.', tail.size());
+  if (ind != std::string::npos) {
+    return tail.substr(0,ind);
+  }
+  return tail;
+}
+
 } // namespace stk
 
