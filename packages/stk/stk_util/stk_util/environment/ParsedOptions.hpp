@@ -46,8 +46,11 @@ namespace stk {
 class VariableType
 {
 public:
+  VariableType() : val() {}
   VariableType(const std::string& value) : val(value) {}
   ~VariableType(){}
+
+  VariableType(const VariableType& varType) : val(varType.val) {}
 
   operator const std::string&() const { return val; }
   operator std::string&() { return val; }
@@ -55,19 +58,30 @@ public:
   bool empty() const { return val.empty(); }
 
   template<typename T>
-  T as()
+  const T& as() const
   {
     ThrowRequireMsg(!val.empty(), "Error in VariableType::as, internal value is empty.");
     std::istringstream iss(val);
-    T returnVal;
-    iss >> returnVal;
+    T* Tptr = new (asData) T(0);
+    iss >> *Tptr;
     ThrowRequireMsg(!iss.fail(), "Error in VariableType::as, failed to parse '"<<val<<"'");
-    return returnVal;
+    return *Tptr;
   }
+
+  const std::string& value() const { return val; }
+  std::string& value() { return val; }
 
 private:
   std::string val;
+  mutable char asData[64];
 };
+
+template<>
+inline
+const std::string& VariableType::as<std::string>() const
+{
+  return val;
+}
 
 class ParsedOptions
 {
@@ -86,11 +100,11 @@ public:
       if (it == keyToIndex.end()) {
         unsigned idx = indexToValues.size();
         keyToIndex.insert(std::make_pair(key,idx));
-        indexToValues.push_back(val);
+        indexToValues.push_back(VariableType(val));
         return true;
       }
       else {
-        indexToValues[it->second] = val;
+        indexToValues[it->second].value() = val;
       }
 
       return false;
@@ -106,11 +120,11 @@ public:
         if (!abbrev.empty()) {
           keyToIndex.insert(std::make_pair(abbrev,idx));
         }
-        indexToValues.push_back(val);
+        indexToValues.push_back(VariableType(val));
         return true;
       }
       else {
-        indexToValues[it->second] = val;
+        indexToValues[it->second].value() = val;
       }
 
       return false;
@@ -118,20 +132,21 @@ public:
 
     size_t count(const std::string& key) const { return keyToIndex.count(key); }
 
-    VariableType operator[](const std::string& key) const
+    const VariableType& operator[](const std::string& key) const
     {
+      static VariableType s_var("");
       KeyMapType::const_iterator it = keyToIndex.find(key);
       if (it != keyToIndex.end()) {
-        return VariableType(indexToValues[it->second]);
+        return indexToValues[it->second];
       }
-      return VariableType("");
+      return s_var;
     }
 
 private:
     using KeyMapType = std::map<std::string,unsigned>;
 
     std::map<std::string,unsigned> keyToIndex;
-    std::vector<std::string> indexToValues;
+    std::vector<VariableType> indexToValues;
 };
 
 }

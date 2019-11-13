@@ -939,7 +939,7 @@ TEST(LoadBalance, checkBBOnFace)
         ASSERT_EQ(1u, faceBuckets[0]->size());
 
         stk::balance::internal::StkBox goldFaceBoundingBox(-0.1, -0.1, -0.1, 0.1, 1.1, 1.1);
-        stk::balance::internal::BoxVectorWithStkId faceBoundingBoxesWithIdents;
+        stk::balance::internal::SearchBoxIdentProcs faceBoundingBoxesWithIdents;
         stk::mesh::Entity face = (*faceBuckets[0])[0];
         const double eps = 0.1;
         const stk::mesh::FieldBase * coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK,"coordinates");
@@ -953,7 +953,7 @@ TEST(LoadBalance, checkBBOnFace)
         ASSERT_EQ(1u, numElements);
 
         const stk::mesh::Entity *element = stkMeshBulkData.begin_elements(face);
-        stk::balance::internal::StkMeshIdent resultIdent = faceBoundingBoxesWithIdents[0].second;
+        stk::balance::internal::SearchIdentProc resultIdent = faceBoundingBoxesWithIdents[0].second;
         EXPECT_EQ(stkMeshBulkData.identifier(*element), resultIdent.id());
 
         EXPECT_EQ(stkMeshBulkData.parallel_rank(), resultIdent.proc());
@@ -974,7 +974,7 @@ TEST(LoadBalance, doOneElementSearch)
         fillIoBroker(communicator, options.getMeshFileName(), ioBroker);
         stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
 
-        stk::balance::internal::BoxVectorWithStkId faceBoxes;
+        stk::balance::internal::SearchBoxIdentProcs faceBoxes;
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
         stk::balance::GraphCreationSettings settings;
         settings.setToleranceForFaceSearch( 0.1 );
@@ -983,7 +983,7 @@ TEST(LoadBalance, doOneElementSearch)
         size_t goldNumFaceBoxes = 6u;
         EXPECT_EQ(goldNumFaceBoxes, faceBoxes.size());
 
-        stk::balance::internal::StkSearchResults searchResults;
+        stk::balance::internal::SearchElemPairs searchResults;
         stk::search::coarse_search(faceBoxes, faceBoxes, stk::search::KDTREE, communicator, searchResults);
 
         size_t numNonSelfFaceInteractions = 24u;
@@ -991,7 +991,7 @@ TEST(LoadBalance, doOneElementSearch)
         size_t totalNumInterations = numNonSelfFaceInteractions + numSelfInteractions;
         EXPECT_EQ(totalNumInterations, searchResults.size());
 
-        stk::balance::internal::StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
+        stk::balance::internal::SearchElemPairs::iterator iter = std::unique(searchResults.begin(), searchResults.end());
         searchResults.resize(iter - searchResults.begin());
         size_t numUniqueInteractions = 1;
         EXPECT_EQ(numUniqueInteractions, searchResults.size());
@@ -1088,7 +1088,7 @@ TEST(LoadBalance, doSearch)
         fillIoBroker(communicator, options.getMeshFileName(), ioBroker);
         stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
 
-        stk::balance::internal::BoxVectorWithStkId faceBoxes;
+        stk::balance::internal::SearchBoxIdentProcs faceBoxes;
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
         stk::balance::GraphCreationSettings settings;
         settings.setToleranceForFaceSearch( 0.1 );
@@ -1108,16 +1108,16 @@ TEST(LoadBalance, doSearch)
             balance_utils::clearFiles(file, numProcs);
         }
 
-        stk::balance::internal::StkSearchResults searchResults;
+        stk::balance::internal::SearchElemPairs searchResults;
         do_kdtree_search(faceBoxes, faceBoxes, communicator, searchResults);
 
-        stk::balance::internal::StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
+        stk::balance::internal::SearchElemPairs::iterator iter = std::unique(searchResults.begin(), searchResults.end());
         searchResults.resize(iter - searchResults.begin());
 
         for(size_t i = 0; i < searchResults.size(); i++)
         {
-            stk::balance::internal::StkMeshIdent item1 = searchResults[i].first;
-            stk::balance::internal::StkMeshIdent item2 = searchResults[i].second;
+            stk::balance::internal::SearchIdentProc item1 = searchResults[i].first;
+            stk::balance::internal::SearchIdentProc item2 = searchResults[i].second;
             std::ostringstream os;
             os << "For interaction " << i << " on processor " << me << " element " << item1.id() << " on proc " << item1.proc() <<
                     " iteracts with element " << item2.id() << " from proc " << item2.proc() << std::endl;
@@ -1170,7 +1170,7 @@ TEST(LoadBalance, testGraphCreationUsingSearchForContact)
                                                                 stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
 
         std::vector<double> vertexWeights(numElements, 1);
-        stk::balance::internal::createGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.locally_owned_part());
+        stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.locally_owned_part());
 
         unsigned numEdgesCreated = 2;
         EXPECT_EQ(numEdgesCreated, graphEdges.size());
@@ -1282,13 +1282,12 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticles)
         std::vector<stk::balance::GraphEdge> graphEdges;
         stk::balance::GraphCreationSettingsWithCustomTolerances loadBalanceSettings;
 
-        loadBalanceSettings.setToleranceForFaceSearch(0.1);
-        loadBalanceSettings.setToleranceForParticleSearch(1.0);
+        loadBalanceSettings.setToleranceForParticleSearch(2.01);
 
         size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
                                                                         stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
         std::vector<double> vertexWeights(numElements, 1);
-        stk::balance::internal::createGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.locally_owned_part());
+        stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.locally_owned_part());
 
         unsigned numEdgesCreated = 2;
         EXPECT_EQ(numEdgesCreated, graphEdges.size());
@@ -1337,14 +1336,14 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticlesAndSkin)
         std::vector<stk::balance::GraphEdge> graphEdges;
         stk::balance::GraphCreationSettingsWithCustomTolerances loadBalanceSettings;
 
-        loadBalanceSettings.setToleranceForFaceSearch(0.1);
-        loadBalanceSettings.setToleranceForParticleSearch(1.0);
+        loadBalanceSettings.setToleranceForFaceSearch(0.21);
+        loadBalanceSettings.setToleranceForParticleSearch(2.01);
 
         size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
                                                                         stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
 
         std::vector<double> vertexWeights(numElements, 1);
-        stk::balance::internal::createGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.locally_owned_part());
+        stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.locally_owned_part());
 
         unsigned numEdgesCreated = 12;
         EXPECT_EQ(numEdgesCreated, graphEdges.size());

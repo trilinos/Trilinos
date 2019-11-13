@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,21 +30,28 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-#ifndef _DisconnectBlocks_hpp_
-#define _DisconnectBlocks_hpp_
-#include "DisconnectBlocksImpl.hpp"
-#include "DisconnectTypes.hpp"
+// 
 
-namespace stk { namespace mesh { class BulkData; } }
+#ifndef stk_util_string_utils_hpp
+#define stk_util_string_utils_hpp
+
+#include <stk_util/stk_config.h>
+#include <string>
 
 namespace stk {
-namespace tools {
 
-    void disconnect_all_blocks(stk::mesh::BulkData& bulk, bool preserveOrphans = false);
-    void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect, int debugLevel = 0);
-    void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockNamePairVector& blockNamePairsToDisconnect, int debugLevel = 0);
-}
-}
+std::string angle_it(const std::string &s);
+std::string bracket_it(const std::string &s);
+std::string dash_it(const std::string &s);
+std::string rm_dashes(const std::string &s);
 
-#endif
+std::string get_substring_before_comma(const std::string& s);
+std::string get_substring_after_comma(const std::string& s);
+
+std::string tailname(const std::string& filename);
+std::string basename(const std::string& filename);
+
+} // namespace stk
+
+#endif /* stk_util_string_utils_hpp */
+

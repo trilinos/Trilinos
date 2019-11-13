@@ -41,11 +41,14 @@
 #include "stk_mesh/base/SideSetEntry.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_tools/mesh_tools/DisconnectGroup.hpp"
+#include "stk_tools/mesh_tools/DisconnectTypes.hpp"
 #include "stk_tools/mesh_tools/DisconnectUtils.hpp"
 #include "stk_util/parallel/ParallelComm.hpp"
+#include <map>
 #include <utility>
 #include <vector>
-#include <map>
+
+//#define PRINT_DEBUG
 
 namespace stk { namespace mesh { class BulkData; } }
 
@@ -72,7 +75,8 @@ struct NodeMapValue
       reconnectNodeId(stk::mesh::InvalidEntityId)
       {}
   NodeMapValue(const stk::mesh::BulkData& bulk, stk::mesh::Entity node)
-    : oldNodeId(bulk.identifier(node)),
+    : boundaryNode(node),
+      oldNodeId(bulk.identifier(node)),
       newNodeId(stk::mesh::InvalidEntityId),
       reconnectNodeId(stk::mesh::InvalidEntityId)
   {
@@ -81,6 +85,7 @@ struct NodeMapValue
 
   ~NodeMapValue() = default;
 
+  stk::mesh::Entity boundaryNode;
   stk::mesh::EntityId oldNodeId;
   stk::mesh::EntityId newNodeId;
   stk::mesh::EntityId reconnectNodeId;
@@ -101,11 +106,12 @@ public:
   }
 };
 
-using BlockPairType = std::pair<stk::mesh::Part*, stk::mesh::Part*>;
+
 using SideSetType = std::vector<stk::mesh::SideSetEntry>;
 using NodeMapType = std::map<NodeMapKey, NodeMapValue, NodeMapLess>;
 using DisconnectGroupVector = std::vector<DisconnectGroup>;
 using PreservedSharingInfo = std::map<stk::mesh::EntityId, std::vector<int>>;
+using NodeMapIterator = NodeMapType::iterator;
 
 struct ReconnectNodeInfo {
   stk::mesh::EntityId reconnectNodeId = stk::mesh::InvalidEntityId;
@@ -115,6 +121,15 @@ struct ReconnectNodeInfo {
 
 typedef std::map<stk::mesh::EntityId, ReconnectNodeInfo> ReconnectMap;
 
+class NullStream : public std::ostream {
+    class NullBuffer : public std::streambuf {
+    public:
+        int overflow( int c ) { return c; }
+    } m_nb;
+public:
+    NullStream() : std::ostream( &m_nb ) {}
+};
+
 struct LinkInfo
 {
   PreservedSharingInfo sharedInfo;
@@ -122,18 +137,41 @@ struct LinkInfo
   NodeMapType preservedNodeMap;
   bool preserveOrphans = false;
   int debugLevel = 0;
+  std::string debugString = "";
   std::ostringstream os;
+  NullStream ns;
   ReconnectMap reconnectMap;
 
-  void flush() {
-    if(debugLevel > 1) {
-      std::cerr << os.str();
-    }
+  void flush(std::ostream& stream) {
+    stream << os.str();
     os.str("");
     os.clear();
   }
+
+  void flush() {
+    flush(std::cerr);
+  }
+
+  std::ostream& print_debug_msg(int userDebugLevel, bool prefixMsg = true) {
+    if(userDebugLevel <= debugLevel) {
+      if(prefixMsg) {
+        os << "P" << stk::parallel_machine_rank(MPI_COMM_WORLD) << ": ";
+      }
+      return os;
+    } else {
+      return ns;
+    }
+  }
+
+  std::ostream& print_debug_msg_p0(int userDebugLevel, bool prefixMsg = true) {
+    if(stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+      return print_debug_msg(userDebugLevel, prefixMsg);
+    }
+    return ns;
+  }
 };
 
+void clean_up_aura(stk::mesh::BulkData& bulk, LinkInfo& info);
 
 void update_node_id(stk::mesh::EntityId newNodeId, int proc,
                     LinkInfo& info, const DisconnectGroup& group);
@@ -147,8 +185,8 @@ unsigned get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::E
 void add_to_sharing_lookup(const stk::mesh::BulkData& bulk, stk::mesh::Entity node, PreservedSharingInfo& info);
 
 void add_nodes_to_disconnect(const stk::mesh::BulkData & bulk,
-                             const BlockPairType & blockPair,
-                             impl::LinkInfo& info);
+                             const BlockPair & blockPair,
+                             LinkInfo& info);
 
 void create_new_duplicate_node_IDs(stk::mesh::BulkData & bulk, LinkInfo& info);
 
@@ -156,27 +194,26 @@ void communicate_shared_node_information(stk::mesh::BulkData & bulk, LinkInfo& i
 
 void get_all_blocks_in_mesh(const stk::mesh::BulkData & bulk, stk::mesh::PartVector & blocksInMesh);
 
-std::vector<BlockPairType> get_block_pairs_to_disconnect(const stk::mesh::BulkData & bulk);
+std::vector<BlockPair> get_block_pairs_to_disconnect(const stk::mesh::BulkData & bulk);
 
-void disconnect_elements(stk::mesh::BulkData& bulk, const DisconnectGroup& group, LinkInfo& info);
+void disconnect_elements(stk::mesh::BulkData& bulk, const NodeMapKey& key, NodeMapValue& value, LinkInfo& info);
 
-void disconnect_elements(stk::mesh::BulkData & bulk, const BlockPairType & blockPair, LinkInfo& info);
+void disconnect_elements(stk::mesh::BulkData & bulk, const BlockPair & blockPair, LinkInfo& info);
 
-void reconnect_elements(stk::mesh::BulkData& bulk, const BlockPairType & blockPair, const DisconnectGroup& group, LinkInfo& info);
+void reconnect_elements(stk::mesh::BulkData& bulk, const BlockPair & blockPair, const NodeMapKey& key, const NodeMapValue& value, LinkInfo& info);
 
-void reconnect_block_pair(stk::mesh::BulkData& bulk, const BlockPairType & blockPair, LinkInfo& info);
+void reconnect_block_pair(stk::mesh::BulkData& bulk, const BlockPair & blockPair, LinkInfo& info);
 
 const std::vector<int>& find_preserved_sharing_data(stk::mesh::EntityId oldNodeId, const PreservedSharingInfo& info);
 
-void restore_node_sharing(stk::mesh::BulkData& bulk, stk::mesh::Entity node, LinkInfo& info);
+void restore_node_sharing(stk::mesh::BulkData& bulk, stk::mesh::EntityId referenceId, stk::mesh::Entity node, LinkInfo& info);
 
-void sanitize_node_map(NodeMapType& nodeMap, std::ostringstream& os);
+void sanitize_node_map(NodeMapType& nodeMap, LinkInfo& os);
 
-void determine_reconnect_node_id(stk::mesh::BulkData& bulk, const std::vector<impl::BlockPairType>& blockPairsToReconnect,
-                                 LinkInfo& info);
-
-void fix_indirect_node_sharing(stk::mesh::BulkData& bulk, const std::vector<BlockPairType>& blockPairsToReconnect, LinkInfo& info);
-
+void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPair>& blockPairsToDisconnect,
+                            LinkInfo& info);
+void reconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPair>& blockPairsToDisconnect,
+                           LinkInfo& info);
 } } }
 
 #endif

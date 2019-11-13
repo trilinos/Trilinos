@@ -31,19 +31,31 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef STK_UTIL_COMMANDLINE_PARSECOMMANDLINEARGS_HPP
-#define STK_UTIL_COMMANDLINE_PARSECOMMANDLINEARGS_HPP
-
 #include <stk_util/stk_config.h>
-#include <stk_util/command_line/OptionsSpecification.hpp>
-#include <stk_util/command_line/ParsedOptions.hpp>
+#include <stk_util/command_line/CommandLineParser.hpp>
+#include <stk_util/environment/ParseCommandLineArgs.hpp>
 
 namespace stk {
 
-void parse_command_line_args(int argc, const char** argv,
-                             const OptionsSpecification& optionsDesc,
-                             stk::ParsedOptions& varMap);
+CommandLineParser::ParseState CommandLineParser::parse(int argc, const char ** argv)
+{
+    ParseState state = ParseError;
+    try
+    {
+        stk::parse_command_line_args(argc, argv, optionsSpec, parsedOptions);
+        if(is_option_provided("help"))
+            return ParseHelpOnly;
+        if(is_option_provided("version"))
+            return ParseVersionOnly;
+
+        state = ParseComplete;
+    }
+    catch(std::exception &e)
+    {
+        print_message(e.what());
+    }
+    return state;
+}
 
 }
 
-#endif //STK_UTIL_COMMANDLINE_PARSECOMMANDLINEARGS_HPP

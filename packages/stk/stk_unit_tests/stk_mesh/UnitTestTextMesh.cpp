@@ -127,6 +127,19 @@ TEST_F(TestTextMesh, mixedSpatialDim)
     EXPECT_THROW(stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk()), std::logic_error);
 }
 
+TEST_F(TestTextMesh, particleHex)
+{
+    if (get_bulk().parallel_size() != 1) return;
+
+    std::string meshDesc =
+        "0,1,PARTICLE,1\n"
+        "0,2,HEX_8,2,3,4,5,6,7,8,9";
+    EXPECT_NO_THROW(stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk()));
+
+    verify_single_element(get_bulk(), 1u, stk::topology::PARTICLE, stk::mesh::EntityIdVector{1});
+    verify_single_element(get_bulk(), 2u, stk::topology::HEX_8, stk::mesh::EntityIdVector{2,3,4,5,6,7,8,9});
+}
+
 TEST_F(TestTextMesh, singlHexWithSpaces)
 {
     std::string meshDesc = "0, 1, HEX_8, 1, 2, 3, 4, 5, 6, 7, 8";

@@ -63,6 +63,11 @@ double BalanceSettings::getToleranceForParticleSearch() const
     return 0.0;
 }
 
+double BalanceSettings::getAbsoluteToleranceForParticleSearch(stk::mesh::Entity particle) const
+{
+    return getParticleRadius(particle) * getToleranceForParticleSearch();
+}
+
 double BalanceSettings::getGraphEdgeWeightForSearch() const
 {
     return 1.0;

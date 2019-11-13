@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <stk_util/command_line/ParsedOptions.hpp>
+#include <stk_util/environment/ParsedOptions.hpp>
 
 namespace {
 
