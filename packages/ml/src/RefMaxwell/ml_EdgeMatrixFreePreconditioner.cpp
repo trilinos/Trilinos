@@ -210,16 +210,16 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     // Note: sCSR_trans_matvec can never return anything other than true (in the current implementation)
     // Note: The in/out lengths for sCSR_trans_matvec represent the vector lengths, not the in/out lengths for the (untransposed) matrix.
     //       So they're basically reversed
-    rv=CSR_trans_matvec(P,P->outvec_leng,xcoord,P->invec_leng,CoarseXcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-20);
-    rv=CSR_trans_matvec(P,P->outvec_leng,ycoord,P->invec_leng,CoarseYcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-21);
-    if(dim==3){rv=CSR_trans_matvec(P,P->outvec_leng,zcoord,P->invec_leng,CoarseZcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-22);}
+    if(xcoord){rv=CSR_trans_matvec(P,P->outvec_leng,xcoord,P->invec_leng,CoarseXcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-20);}
+    if(ycoord){rv=CSR_trans_matvec(P,P->outvec_leng,ycoord,P->invec_leng,CoarseYcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-21);}
+    if(zcoord){rv=CSR_trans_matvec(P,P->outvec_leng,zcoord,P->invec_leng,CoarseZcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-22);}
     if(mcoord){rv=CSR_trans_matvec(P,P->outvec_leng,mcoord,P->invec_leng,CoarseMcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-23);}
 
     /* Set coordinates on ListCoarse */
     Teuchos::ParameterList & ListCoarse=List_.sublist("edge matrix free: coarse");
-    ListCoarse.set("x-coordinates",CoarseXcoord_.getRawPtr());
-    ListCoarse.set("y-coordinates",CoarseYcoord_.getRawPtr());
-    if(dim==3) ListCoarse.set("z-coordinates",CoarseZcoord_.getRawPtr());
+    if(xcoord) ListCoarse.set("x-coordinates",CoarseXcoord_.getRawPtr());
+    if(ycoord) ListCoarse.set("y-coordinates",CoarseYcoord_.getRawPtr());
+    if(zcoord) ListCoarse.set("z-coordinates",CoarseZcoord_.getRawPtr());
     if(mcoord) ListCoarse.set("material coordinates",CoarseMcoord_.getRawPtr());
   }
 
