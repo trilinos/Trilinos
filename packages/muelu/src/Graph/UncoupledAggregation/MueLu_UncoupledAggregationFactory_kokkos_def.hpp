@@ -196,14 +196,19 @@ namespace MueLu {
     // If dirichletBoundaryMap was an actual Xpetra::Map, one could call
     // getLocalMap to have a Kokkos::View on the appropriate memory_space
     // instead of an ArrayRCP.
-    // // TODO
-    // //ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
-    // ArrayRCP<const bool> dirichletBoundaryMap;
+    {
+      auto dirichletBoundaryMap = graph->GetBoundaryNodeMap();
 
-    // if (dirichletBoundaryMap != Teuchos::null)
-    //   for (LO i = 0; i < numRows; i++)
-    //     if (dirichletBoundaryMap[i] == true)
-    //       aggStat[i] = BOUNDARY;
+      typename Kokkos::View<unsigned*,typename LWGraph_kokkos::memory_space>::HostMirror aggStatHost
+        = Kokkos::create_mirror_view(aggStat);
+      Kokkos::deep_copy(aggStatHost, aggStat);
+
+      for (LO i = 0; i < numRows; i++)
+        if (dirichletBoundaryMap(i) == true)
+          aggStatHost(i) = BOUNDARY;
+
+      Kokkos::deep_copy(aggStat, aggStatHost);
+    }
 
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
     GO indexBase = graph->GetDomainMap()->getIndexBase();
