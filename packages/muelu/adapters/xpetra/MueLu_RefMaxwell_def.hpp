@@ -1441,7 +1441,7 @@ namespace MueLu {
     // Option "gustavson":
     //   Loop over D0, P and nullspace and allocate directly. (Gustavson-like)
     //   More efficient, but only available for serial node.
-    std::string defaultAlgo = "gustavson";
+    std::string defaultAlgo = "mat-mat";
     std::string algo = parameterList_.get("refmaxwell: prolongator compute algorithm",defaultAlgo);
 
     if (algo == "mat-mat") {
