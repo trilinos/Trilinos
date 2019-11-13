@@ -100,6 +100,8 @@ namespace Intrepid2
      */
     Basis_Derived_HGRAD_HEX(int polyOrder) : Basis_Derived_HGRAD_HEX(polyOrder, polyOrder, polyOrder) {}
     
+    using Basis<ExecutionSpace,OutputValueType,PointValueType>::getValues;
+    
     /** \brief  multi-component getValues() method (required/called by TensorBasis)
         \param [out] outputValues - the view into which to place the output values
         \param [in] operatorType - the operator on the basis

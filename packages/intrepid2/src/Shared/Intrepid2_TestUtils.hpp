@@ -66,9 +66,11 @@ static const double TEST_TOLERANCE_TIGHT = 1.e2 * std::numeric_limits<double>::e
 template<typename ScalarType>
 using ViewType = Kokkos::DynRankView<ScalarType,Kokkos::DefaultExecutionSpace>;
 
-inline bool valuesAreSmall(double a, double b, double epsilon)
+template<typename ScalarType>
+inline bool valuesAreSmall(ScalarType a, ScalarType b, double epsilon)
 {
-  return (std::abs(a) < epsilon) && (std::abs(b) < epsilon);
+  using std::abs;
+  return (abs(a) < epsilon) && (abs(b) < epsilon);
 }
 
 inline bool approximatelyEqual(double a, double b, double epsilon)
