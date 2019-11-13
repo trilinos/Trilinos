@@ -4,47 +4,11 @@
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/registry/ProductRegistry.hpp>
 #include <stk_util/environment/FileUtils.hpp>
+#include <stk_util/util/string_utils.hpp>
 #include <fstream>
 #include <string>
 
 namespace stk {
-
-std::string angle_it(const std::string &s)
-{
-    return "<" + s + ">";
-}
-std::string bracket_it(const std::string &s)
-{
-    return "[" + s + "]";
-}
-std::string dash_it(const std::string &s)
-{
-    return "--" + s;
-}
-
-std::string rm_dashes(const std::string &s)
-{
-  size_t pos = s.find_first_not_of(" -");
-  if (pos != std::string::npos) {
-    return s.substr(pos);
-  }
-  return s;
-}
-
-std::string get_substring_before_comma(const std::string& s)
-{
-  size_t pos = s.find(",");
-  return s.substr(0,pos);
-}
-
-std::string get_substring_after_comma(const std::string& s)
-{
-  size_t pos = s.find(",");
-  if (pos != std::string::npos) {
-    return s.substr(pos+1);
-  }
-  return "";
-}
 
 std::string get_quick_error(const std::string &execName, const std::string &quickExample)
 {
@@ -60,7 +24,7 @@ void parse_command_line(int argc,
                         stk::CommandLineParserParallel& commandLine,
                         MPI_Comm comm)
 {
-    std::string execName = stk::util::tailname(argv[0]);
+    std::string execName = stk::tailname(argv[0]);
     stk::CommandLineParser::ParseState state = commandLine.parse(argc, argv);
     if(state == stk::CommandLineParser::ParseVersionOnly)
         stk::parallel::print_and_exit(stk::get_version(execName), comm);
