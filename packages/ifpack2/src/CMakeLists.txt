@@ -222,6 +222,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     ContainerFactory
     TriDiContainer
     Details::Chebyshev
+    Details::ChebyshevKernel
     Details::DenseSolver
     Details::Factory
     Details::LinearSolver
