@@ -59,7 +59,6 @@
 
 #include "Xpetra_BlockedMap.hpp"
 #include "Xpetra_BlockedVector.hpp"
-
 #include "Xpetra_Exceptions.hpp"
 
 
@@ -86,7 +85,28 @@ namespace Xpetra {
 
     //! Constructor specifying the number of non-zeros for all rows.
     static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> 
-    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> &map, bool zeroOut=true);
+    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> &map, bool zeroOut=true)
+    {
+        XPETRA_MONITOR("VectorFactory::Build");
+
+        RCP<const Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node>>
+            bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
+
+        if(!bmap.is_null())
+        {
+            return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
+        }
+
+        #ifdef HAVE_XPETRA_TPETRA
+        if(map->lib() == UseTpetra)
+        {
+            return rcp(new TpetraVector(map, zeroOut));
+        }
+        #endif
+
+        XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
+        XPETRA_FACTORY_END;
+    }
 
   };  // class VectorFactory
 

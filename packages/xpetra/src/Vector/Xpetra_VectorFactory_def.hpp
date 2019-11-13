@@ -48,39 +48,9 @@
 
 #include "Xpetra_VectorFactory_decl.hpp"
 
-#include "Xpetra_Vector.hpp"
 
 
 namespace Xpetra {
-
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>>
-VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>& map, 
-      bool zeroOut)
-{
-    XPETRA_MONITOR("VectorFactory::Build");
-
-    RCP<const Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node>> 
-      bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
-
-    if(!bmap.is_null())
-    {
-        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
-    }
-
-#ifdef HAVE_XPETRA_TPETRA
-    if(map->lib() == UseTpetra)
-    {
-        return rcp(new TpetraVector(map, zeroOut));
-    }
-#endif
-
-    XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
-    XPETRA_FACTORY_END;
-}
-
 
 
 }      // namespace Xpetra

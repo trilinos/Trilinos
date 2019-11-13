@@ -43,7 +43,7 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "Xpetra_VectorFactory_decl.hpp"
+#include "Xpetra_VectorFactory.hpp"
 
 
 namespace Xpetra {
@@ -210,6 +210,7 @@ Build(const Teuchos::RCP<const Xpetra::Map<int, long long, EpetraNode>>& map, bo
 }
 
 #endif      // #if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+
 
 
 #endif // #if defined(HAVE_XPETRA_EPETRA)
