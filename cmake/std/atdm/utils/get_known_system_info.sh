@@ -115,6 +115,8 @@ fi
 #echo "hostnameMatch ='${hostnameMatch}'"
 
 if [[ "${hostnameMatch}" != "" ]] ; then
+  # A matching system by hostname becomes the first preferred match (but not
+  # the only possible match)
   systemNameTypeMatchedList+=(${hostnameMatchSystemName})
   systemNameTypeMatchedListHostNames[${hostnameMatchSystemName}]=${hostnameMatch}
 fi
@@ -195,13 +197,7 @@ if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${knownSystemNameInBuildName}" != ""
   assert_selected_system_matches_known_system_type_mathces || return
 fi
 
-# D.2) Second, go with matches based on hostname
-if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${hostnameMatch}" != "" ]] ; then
-  ATDM_SYSTEM_NAME=${hostnameMatchSystemName}
-  ATDM_HOSTNAME=${hostnameMatch}
-fi
-
-# D.3) Last, go with a matching system type
+# D.2) Last, go with the hostname match or matching system type
 if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${systemNameTypeMatchedList}" != "" ]] ; then
   ATDM_SYSTEM_NAME=${systemNameTypeMatchedList[0]}  # First matching system type is preferred!
   ATDM_HOSTNAME=${systemNameTypeMatchedListHostNames[${ATDM_SYSTEM_NAME}]}
