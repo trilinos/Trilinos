@@ -48,7 +48,21 @@
 
 #include "Xpetra_BlockedCrsMatrix_decl.hpp"
 
+#include "Xpetra_BlockedMultiVector.hpp"
+#include "Xpetra_BlockedVector.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_MatrixFactory.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 
+
+#ifdef HAVE_XPETRA_THYRA
+#   include <Thyra_ProductVectorSpaceBase.hpp> 
+#   include <Thyra_VectorSpaceBase.hpp>    
+#   include <Thyra_LinearOpBase.hpp>         
+#   include <Thyra_PhysicallyBlockedLinearOpBase.hpp>  
+#   include "Xpetra_ThyraUtils.hpp"        
+#endif
 
 namespace Xpetra {
 
@@ -264,7 +278,7 @@ mergeMaps(std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal
 
     Teuchos::ArrayView<GO>gidsView(&gids[ 0 ], gids.size());
 
-    Teuchos::RCP<Xpetra::Map> fullMap = MapFactory::Build(subMaps[ 0 ]->lib(), INVALID, gidsView, subMaps[ 0 ]->getIndexBase(), subMaps[ 0 ]->getComm());
+    Teuchos::RCP<Map> fullMap = MapFactory::Build(subMaps[ 0 ]->lib(), INVALID, gidsView, subMaps[ 0 ]->getIndexBase(), subMaps[ 0 ]->getComm());
     return fullMap;
 }
 
@@ -355,7 +369,7 @@ replaceLocalValues(LocalOrdinal localRow,
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-virtual void
+void
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 setAllToScalar(const Scalar& alpha)
 {
@@ -395,7 +409,7 @@ scale(const Scalar& alpha)
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-resumeFill(const RCP<ParameterList>& params = null)
+resumeFill(const RCP<ParameterList>& params)
 {
     XPETRA_MONITOR("XpetraBlockedCrsMatrix::resumeFill");
     for(size_t row = 0; row < Rows(); row++)
@@ -416,7 +430,7 @@ void
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 fillComplete(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>& domainMap, 
              const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>& rangeMap, 
-             const RCP<ParameterList>& params = null)
+             const RCP<ParameterList>& params)
 {
     XPETRA_MONITOR("XpetraBlockedCrsMatrix::fillComplete");
     if(Rows() == 1 && Cols() == 1)
@@ -431,7 +445,7 @@ fillComplete(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>& doma
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-fillComplete(const RCP<ParameterList>& params = null)
+fillComplete(const RCP<ParameterList>& params)
 {
     XPETRA_MONITOR("XpetraBlockedCrsMatrix::fillComplete");
     TEUCHOS_TEST_FOR_EXCEPTION(rangemaps_ == Teuchos::null, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::fillComplete: rangemaps_ is not set. Error.");
@@ -752,7 +766,7 @@ isFillComplete() const
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-virtual void
+void
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView<LocalOrdinal>& Indices, const ArrayView<Scalar>& Values, size_t& NumEntries) const
 {
@@ -963,7 +977,7 @@ rightScale(const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& x)
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-virtual typename ScalarTraits<Scalar>::magnitudeType
+typename ScalarTraits<Scalar>::magnitudeType
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getFrobeniusNorm() const
 {
@@ -986,7 +1000,7 @@ getFrobeniusNorm() const
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-virtual bool
+bool
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 haveGlobalConstants() const
 {
@@ -995,7 +1009,7 @@ haveGlobalConstants() const
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-virtual void
+void
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
       Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y, 
@@ -1242,14 +1256,14 @@ getDomainMapExtractor() const
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-virtual void
+void
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-bgs_apply(const MultiVector& X,                                        ///< Vector to be multiplied by matrix (input)
-          MultiVector&       Y,                                        ///< result vector
-          size_t             row,                                      ///< Index of block row to be treated
-          Teuchos::ETransp   mode  = Teuchos::NO_TRANS,                ///< Transpose mode
-          Scalar             alpha = ScalarTraits<Scalar>::one(),      ///< scaling factor for result of matrix-vector product
-          Scalar             beta  = ScalarTraits<Scalar>::zero()      ///< scaling factor for linear combination with result vector
+bgs_apply(const MultiVector& X,        ///< Vector to be multiplied by matrix (input)
+          MultiVector&       Y,        ///< result vector
+          size_t             row,      ///< Index of block row to be treated
+          Teuchos::ETransp   mode,     ///< Transpose mode
+          Scalar             alpha,    ///< scaling factor for result of matrix-vector product
+          Scalar             beta      ///< scaling factor for linear combination with result vector
           ) const
 {
     XPETRA_MONITOR("XpetraBlockedCrsMatrix::bgs_apply");
@@ -1416,7 +1430,7 @@ description() const
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const
+describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
 {
     out << "Xpetra::BlockedCrsMatrix: " << Rows() << " x " << Cols() << std::endl;
 
@@ -1497,7 +1511,7 @@ hasCrsGraph() const
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const CrsGraph>
+RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getCrsGraph() const
 {
@@ -1511,7 +1525,7 @@ getCrsGraph() const
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-virtual bool
+bool
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 isDiagonal() const
 {
@@ -1520,7 +1534,7 @@ isDiagonal() const
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-virtual size_t
+size_t
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Rows() const
 {
@@ -1530,7 +1544,7 @@ Rows() const
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-virtual size_t
+size_t
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Cols() const
 {
@@ -1776,21 +1790,6 @@ Merge() const
     return sparse;
 }
 
-
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-local_matrix_type
-BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-getLocalMatrix() const
-{
-    if(Rows() == 1 && Cols() == 1)
-    {
-        return getMatrix(0, 0)->getLocalMatrix();
-    }
-    throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::getLocalMatrix(): operation not supported.");
-}
-#endif      // #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 
 
 #ifdef HAVE_XPETRA_THYRA

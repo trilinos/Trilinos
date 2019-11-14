@@ -54,28 +54,16 @@
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
 
-#include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MultiVector.hpp"
-#include "Xpetra_BlockedMultiVector.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "Xpetra_BlockedVector.hpp"
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_CrsMatrix.hpp"
-#include "Xpetra_CrsMatrixFactory.hpp"
 
 #include "Xpetra_MapExtractor.hpp"
 
 #include "Xpetra_Matrix.hpp"
-#include "Xpetra_MatrixFactory.hpp"
-#include "Xpetra_CrsMatrixWrap.hpp"
 
 #ifdef HAVE_XPETRA_THYRA
-#include <Thyra_ProductVectorSpaceBase.hpp>
-#include <Thyra_VectorSpaceBase.hpp>
-#include <Thyra_LinearOpBase.hpp>
-#include <Thyra_BlockedLinearOpBase.hpp>
-#include <Thyra_PhysicallyBlockedLinearOpBase.hpp>
-#include "Xpetra_ThyraUtils.hpp"
+    #include <Thyra_BlockedLinearOpBase.hpp>
 #endif
 
 #include "Xpetra_VectorFactory.hpp"
@@ -643,7 +631,14 @@ class BlockedCrsMatrix
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
 
     /// \brief Access the underlying local Kokkos::CrsMatrix object
-    local_matrix_type getLocalMatrix() const;
+    local_matrix_type getLocalMatrix() const
+    {
+        if(Rows() == 1 && Cols() == 1)
+        {
+            return getMatrix(0, 0)->getLocalMatrix();
+        }
+        throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::getLocalMatrix(): operation not supported.");
+    }        
 #endif    // #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 
 
