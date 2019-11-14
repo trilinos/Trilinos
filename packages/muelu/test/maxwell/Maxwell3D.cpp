@@ -54,6 +54,7 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MultiVector.hpp>
+#include <Xpetra_Vector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixFactory.hpp>
@@ -117,6 +118,7 @@ struct ML_Wrapper{
                                                    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& M0inv,
                                                    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& M1,
                                                    Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& nullspace,
+                                                   Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& node_material,
                                                    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node> >& coords,
                                                    Teuchos::ParameterList & mueluList,
                                                    Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & mlopX) {
@@ -182,6 +184,7 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
                                                    Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& M0inv,
                                                    Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& M1,
                                                    Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& nullspace,
+                                                   Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& node_material,
                                                    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& coords,
                                                    Teuchos::ParameterList & mueluList,
                                                    Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
@@ -211,6 +214,10 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
       if(epetraCoord->NumVectors() > 0)  mueluList.sublist("refmaxwell: 11list").set("x-coordinates",(*epetraCoord)[0]);
       if(epetraCoord->NumVectors() > 1)  mueluList.sublist("refmaxwell: 11list").set("y-coordinates",(*epetraCoord)[1]);
       if(epetraCoord->NumVectors() > 2)  mueluList.sublist("refmaxwell: 11list").set("z-coordinates",(*epetraCoord)[2]);
+    }
+    if(!node_material.is_null()) {
+      RCP<const Epetra_MultiVector> epetraMaterial =  MueLu::Utilities<coordinate_type,LO,GO,NO>::MV2EpetraMV(node_material);
+      mueluList.sublist("refmaxwell: 11list").set("material coordinates",(*epetraMaterial)[0]);
     }
     if(!nullspace.is_null()) {
       RCP<const Epetra_MultiVector> epetraNullspace =  MueLu::Utilities<SC,LO,GO,NO>::MV2EpetraMV(nullspace);
@@ -284,7 +291,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
     bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
 
-    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="", Ms_file="";
+    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="", material_file = "", Ms_file="";
 
     if (!TYPE_EQUAL(SC, std::complex<double>)) {
       S_file = "S.mat";
@@ -311,6 +318,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     clp.setOption("M0inv", &M0inv_file);
     clp.setOption("D0", &D0_file);
     clp.setOption("coords", &coords_file);
+    clp.setOption("material", &material_file);
     clp.setOption("nullspace", &nullspace_file);
     clp.setOption("rhs", &rhs_file);
 
@@ -388,6 +396,11 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     RCP<MultiVector> nullspace = Teuchos::null;
     if (nullspace_file != "")
       nullspace = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(nullspace_file, edge_map);
+
+    RCP<MultiVector> material = Teuchos::null;
+    if (material_file != "") {
+      material  = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(material_file, node_map);
+    }
 
     // set parameters
     Teuchos::ParameterList params;
@@ -552,7 +565,9 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
     bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
 
-    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="", Ms_file="", sol_file="", Kn_file="";
+
+    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="", material_file = "", Ms_file="", sol_file="", Kn_file="";
+
     S_file = "S.mat";
     SM_file = "";
     M1_file = "M1.mat";
@@ -572,6 +587,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     clp.setOption("coords", &coords_file);
     clp.setOption("rhs", &rhs_file);
     clp.setOption("nullspace", &nullspace_file);
+    clp.setOption("material", &material_file);
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {
@@ -656,6 +672,11 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     RCP<MultiVector> nullspace = Teuchos::null;
     if (nullspace_file != "")
       nullspace = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(nullspace_file, edge_map);
+    
+    RCP<MultiVector> material = Teuchos::null;
+    if (material_file != "") {
+      material  = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(material_file, node_map);
+    }
 
     // set parameters
     Teuchos::ParameterList params;
@@ -688,7 +709,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
         TEUCHOS_ASSERT(lib==Xpetra::UseEpetra);
         ML_Wrapper<SC, LO, GO, NO>::Generate_ML_RefMaxwellPreconditioner(SM_Matrix,D0_Matrix,Ms_Matrix,M0inv_Matrix,
-                                                                         M1_Matrix,nullspace,coords,params,preconditioner);
+                                                                         M1_Matrix,nullspace,material,coords,params,preconditioner);
 #else
         throw std::runtime_error("ML not available.");
 #endif

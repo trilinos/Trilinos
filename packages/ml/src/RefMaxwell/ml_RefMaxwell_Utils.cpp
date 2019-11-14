@@ -146,25 +146,16 @@ after:
   return(ierr);
 }
 
-
 // ================================================ ====== ==== ==== == =
-int RefMaxwell_SetupCoordinates(ML_Operator* A, Teuchos::ParameterList &List_, double *&coordx, double *&coordy, double *&coordz)
-// Coppied From int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
-{
-  double* in_x_coord = 0;
-  double* in_y_coord = 0;
-  double* in_z_coord = 0;
-  int NumPDEEqns_ =1;  // Always use 1 because A is a nodal matrix.
-
-  // For node coordinates
-  in_x_coord = List_.get("x-coordinates", (double *)0);
-  in_y_coord = List_.get("y-coordinates", (double *)0);
-  in_z_coord = List_.get("z-coordinates", (double *)0);
-
-  if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
+// Copied From int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
+int ML_Epetra::RefMaxwell_SetupCoordinates(ML_Operator* A, 
+                                const double *in_x_coord, const double *in_y_coord, const double *in_z_coord, const double* in_m_coord,
+                                double *&coordx, double *&coordy, double *&coordz, double*& material) {
+  int NumPDEEqns_ = 1; // Assume A is always nodal
+  if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0 && in_m_coord))
     {
       ML_Operator* AAA = A;
-
+      
       int n = AAA->invec_leng, Nghost = 0;
 
       if (AAA->getrow->pre_comm)
@@ -228,15 +219,109 @@ int RefMaxwell_SetupCoordinates(ML_Operator* A, Teuchos::ParameterList &List_, d
 
           coordz = z_coord;
         }
+      if (in_m_coord)
+        {
+          double* m_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
 
-    } // if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
+          for (int i = 0 ; i < n ; ++i)
+            tmp[i * NumPDEEqns_] = in_m_coord[i];
 
+          ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
+                           AAA->comm, ML_OVERWRITE,NULL);
+
+          for (int i = 0 ; i < n + Nghost ; ++i)
+            m_coord[i] = tmp[i * NumPDEEqns_];
+
+          material = m_coord;
+        }
+    } // if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0 && in_m_coord == 0))
+  
   return(0);
- }
+}
+
+
+// ================================================ ====== ==== ==== == =
+static int RefMaxwell_SetupCoordinates(ML_Operator* A, Teuchos::ParameterList &List_, double *&coordx, double *&coordy, double *&coordz, double*& material)
+
+{
+  // For node coordinates
+  double *in_x_coord = List_.get("x-coordinates", (double *)0);
+  double *in_y_coord = List_.get("y-coordinates", (double *)0);
+  double *in_z_coord = List_.get("z-coordinates", (double *)0);
+  double *in_m_coord = List_.get("material coordinates", (double *)0);
+
+  int rv = ML_Epetra::RefMaxwell_SetupCoordinates(A,in_x_coord,in_y_coord,in_z_coord,in_m_coord,
+                                                  coordx,coordy,coordz,material);
+  return rv;
+}
+
+
+// ================================================ ====== ==== ==== == =
+// Modified from ml_agg_genP.c
+static void ML_Init_Material(ML_Operator* A, double * material) {
+  int i, j, n, count, num_PDEs, BlockRow, BlockCol;
+  double threshold;
+  int* columns;
+  double* values;
+  int allocated, entries = 0;
+  int** filter;
+  //  int Nghost;
+
+
+  // Sanity check
+  TEUCHOS_TEST_FOR_EXCEPTION(material == 0, std::logic_error,"ML_Init_Material: material vector not found");
+
+  num_PDEs = A->num_PDEs;
+  threshold = A->aux_data->threshold;
+
+  ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
+  n = A->invec_leng;
+  //  Nghost = ML_CommInfoOP_Compute_TotalRcvLength(A->getrow->pre_comm);
+
+  filter = (int**) ML_allocate(sizeof(int*) * n);
+
+  allocated = 128;
+  columns = (int *)    ML_allocate(allocated * sizeof(int));
+  values  = (double *) ML_allocate(allocated * sizeof(double));
+
+
+  for (i = 0 ; i < n ; ++i) {
+    BlockRow = i;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+    count = 0;
+    for (j = 0 ; j < entries ; ++j) {
+      BlockCol = columns[j];
+      if (  (i != columns[j]) &&
+            (std::abs(log10(material[BlockRow]) - log10(material[BlockCol])) > threshold) ) {
+        columns[count++] = columns[j];
+      }
+    }
+    
+    /* insert the rows */
+    filter[BlockRow] = (int*) ML_allocate(sizeof(int) * (count + 1));
+    filter[BlockRow][0] = count;
+
+    for (j = 0 ; j < count ; ++j)
+      filter[BlockRow][j + 1] = columns[j];
+  }
+
+  ML_free(columns);
+  ML_free(values);
+
+  ML_Operator_UnAmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  A->aux_data->aux_func_ptr  = A->getrow->func_ptr;
+  A->getrow->func_ptr = ML_Aux_Getrow;
+  A->aux_data->filter = filter;
+  A->aux_data->filter_size = n;
+
+ 
+}
 
 // ================================================ ====== ==== ==== == =
 // Copied from ml_agg_genP.c
-static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
+static void ML_Init_Aux(ML_Operator* A, double * x_coord, double * y_coord, double * z_coord) {
   int i, j, n, count, num_PDEs, BlockRow, BlockCol;
   double threshold;
   int* columns;
@@ -250,13 +335,8 @@ static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
   double *LaplacianDiag;
   int     Nghost;
 
-
-  // Boundary exchange the coords
-  double *x_coord=0, *y_coord=0, *z_coord=0;
-  RefMaxwell_SetupCoordinates(A,List,x_coord,y_coord,z_coord);
-  int dim=(x_coord!=0) + (y_coord!=0) + (z_coord!=0);
-
   /* Sanity Checks */
+  int dim=(x_coord!=0) + (y_coord!=0) + (z_coord!=0);
   if(dim == 0 || ((!x_coord && (y_coord || z_coord)) || (x_coord && !y_coord && z_coord))){
     std::cerr<<"Error: Coordinates not defined.  This is necessary for aux aggregation (found "<<dim<<" coordinates).\n";
     exit(-1);
@@ -387,11 +467,6 @@ static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
   A->aux_data->filter = filter;
   A->aux_data->filter_size = n;
 
-  // Cleanup
-  ML_free(x_coord);
-  ML_free(y_coord);
-  ML_free(z_coord);
-
 }
 
 // ================================================ ====== ==== ==== == =
@@ -406,10 +481,393 @@ static void ML_Finalize_Aux(ML_Operator *A)
   ML_free(A->aux_data->filter);
 }
 
+// ================================================ ====== ==== ==== == =
+static void ML_Smooth_Prolongator(ML_Operator *Amat, ML_Aggregate * ag, int numSmSweeps, ML_Operator *Pmatrix, ML_Operator *Pfinal) {
+  ML_Comm *comm = Amat->comm;
+  ML_Krylov   *kdata;
+  struct ML_AGG_Matrix_Context widget;
+  double *dampingFactors; /* coefficients of prolongator smoother */
+  int level = 0;
+  ML_Operator *tmpmat1=NULL,*tmpmat2=NULL, *AGGsmoother=NULL, *Ptemp=NULL;
+  struct MLSthing *mls_widget = NULL;
+  int Nfine    = Amat->outvec_leng;
+  int ii;
+  double max_eigen = 0;
+  ML_Operator *blockMat = NULL;
+
+  if ( ag->smoothP_damping_factor == 0.0 || numSmSweeps == 0 ) 
+    return;
+
+  widget.Adiag = NULL;
+  widget.near_bdry = NULL;
+
+  if (Amat->num_PDEs < ag->num_PDE_eqns) Amat->num_PDEs = ag->num_PDE_eqns;
+  if (ag->block_scaled_SA == 1) {
+    /*
+      Create block scaled and compute its eigenvalues
+      a) if the user has requested it, save this Amat into
+      the aggregate data structure.
+    */
+    mls_widget = ML_Smoother_Create_MLS();
+    ML_Gen_BlockScaledMatrix_with_Eigenvalues(Amat, -1, NULL,
+                                              &blockMat, mls_widget);
+    max_eigen = blockMat->lambda_max;
+  }
+  else    
+    max_eigen = Amat->lambda_max;
+
+
+  if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+    printf("Calculating eigenvalue estimate using ");    
+  switch( Amat->spectral_radius_scheme ) {      
+  case ML_USE_CG:  /* compute it using CG */
+    if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+      printf("CG method\n");
+    
+    kdata = ML_Krylov_Create( comm );
+    ML_Krylov_Set_PrintFreq( kdata, 0 );
+    ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
+    ML_Krylov_Set_ComputeEigenvalues( kdata );
+    ML_Krylov_Set_Amatrix(kdata, Amat);
+    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+    /* This is a bit screwy in that max_eigen corresponds to Dinv A. */
+    /* This is good for Cheby smoothers but bad for smoothed agg     */
+    /* if we actually filter A (significantly) as we should compute  */
+    /* the eigenvalue of Dinv Afilt.                                 */
+    max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+    
+    Amat->lambda_max = max_eigen;
+    Amat->lambda_min = kdata->ML_eigen_min;
+    ML_Krylov_Destroy( &kdata );
+    if ( max_eigen <= 0.0 ) {
+      printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+      max_eigen = 1.0;
+    }      
+    break;
+    
+  case ML_USE_ANASAZI: /* Use Anasazi */
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
+    ML_Anasazi_Get_SpectralNorm_Anasazi(Amat, 0, 10, 1e-5,
+                                        ML_FALSE, ML_TRUE, &max_eigen);
+    if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+      printf("Anasazi\n");
+#else
+    fprintf(stderr,
+            "--enable-epetra --enable-anasazi --enable-teuchos required\n"
+            "(file %s, line %d)\n",
+            __FILE__,
+            __LINE__);
+    exit(EXIT_FAILURE);
+#endif
+    Amat->lambda_max = max_eigen;
+    Amat->lambda_min = -12345.6789;
+    if ( max_eigen <= 0.0 ) {
+      printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+      max_eigen = 1.0;
+    }      
+    break;
+    
+  case ML_USE_POWER: /* use ML's power method */
+    if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+      printf("power method\n");
+    kdata = ML_Krylov_Create( comm );
+    ML_Krylov_Set_PrintFreq( kdata, 0 );
+    ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
+    ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
+    ML_Krylov_Set_Amatrix(kdata, Amat);
+    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+    max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+    Amat->lambda_max = max_eigen;
+    Amat->lambda_min = kdata->ML_eigen_min;
+    ML_Krylov_Destroy( &kdata );
+    if ( max_eigen <= 0.0 ) {
+      printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+      max_eigen = 1.0;
+    }
+    
+    break;
+    
+  default: /* using matrix max norm */
+    if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+      printf("matrix max norm\n");
+    max_eigen = ML_Operator_MaxNorm(Amat, ML_TRUE);
+    break;
+    
+  } /* switch( Amat->spectral_radius_scheme ) */    
+  
+  widget.omega  = ag->smoothP_damping_factor / max_eigen;
+  if ( comm->ML_mypid == 0 && 7 < ML_Get_PrintLevel())
+    printf("Gen_Prolongator (level %d) : Max eigenvalue = %2.4e\n",
+           ag->cur_level, max_eigen);
+
+  /******* Smoothing *******/
+  dampingFactors = (double *) ML_allocate( sizeof(double) * numSmSweeps );
+  if (numSmSweeps == 1)
+    dampingFactors[0] = ag->smoothP_damping_factor;
+  else
+    /* Calculate the proper Chebyshev polynomial coefficients. */
+    ML_AGG_Calculate_Smoothing_Factors(numSmSweeps, dampingFactors);
+    
+  if ( comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+    printf("\n");
+    for (ii=0; ii<numSmSweeps; ii++)
+      {
+        if (ag->minimizing_energy == -1)
+          {
+            printf("\nProlongator smoother (level %d) : damping factor #%d = %2.4e\nProlongator smoother (level %d) : ( = %2.4e / %2.4e)\nNon-smoothed restriction is used.\n",
+                   level, ii+1, dampingFactors[ii]/ max_eigen, level,
+                   dampingFactors[ii], max_eigen );
+          }
+        else
+          {
+            printf("Prolongator/Restriction smoother (level %d) : damping factor #%d = %2.4e\nProlongator/Restriction smoother (level %d) : ( = %2.4e / %2.4e)\n",
+                   level, ii+1, dampingFactors[ii]/ max_eigen, level,
+                   dampingFactors[ii], max_eigen );
+          }
+        printf("\n");
+      }
+  }
+  
+  /* Create the prolongator smoother operator, I-omega*inv(D)*A. */
+  AGGsmoother = ML_Operator_Create(comm);
+  //    ML_Operator_Set_Label(AGGsmoother,"Prolongator smoother");
+  widget.drop_tol = ag->drop_tol_for_smoothing;
+  widget.Amat   = Amat;
+  widget.aggr_info = ag->aggr_info[level];
+  ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
+                                widget.Amat->outvec_leng, &widget,
+                                widget.Amat->matvec->Nrows, NULL, 0);
+  ML_Operator_Set_Getrow(AGGsmoother,
+                         widget.Amat->getrow->Nrows,
+#ifdef USE_MOREACCURATE
+                         ML_AGG_JacobiMoreAccurate_Getrows
+#else
+                           ML_AGG_JacobiSmoother_Getrows
+#endif
+                         );
+  ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
+                      widget.Amat->getrow->pre_comm);
+  tmpmat2 = Pmatrix;
+  for (ii=0; ii < numSmSweeps; ii++) {
+    /* Set the appropriate prolongator smoother damping factor. */
+    widget.omega  = dampingFactors[ii] / max_eigen;
+    
+    if (ii < numSmSweeps-1) {
+      tmpmat1 = tmpmat2;
+      tmpmat2 = ML_Operator_Create(Amat->comm);
+    }
+    else {
+      tmpmat1 = tmpmat2;
+      tmpmat2 = Pfinal;
+    }
+    
+    if (ag->block_scaled_SA == 1) {
+      /* Computed the following:
+       *    a) turn off the usual 2 mat mult.
+       *    b) Ptemp = A*P
+       *    c) Ptemp = Dinv*Ptemp;
+       *    d) do an ML_Operator_Add() with the original P.
+       */
+      Ptemp = ML_Operator_Create(Amat->comm);
+      ML_2matmult(Amat, tmpmat1, Ptemp, ML_CSR_MATRIX );
+      ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs, ROW_SCALE_WITH_D);
+      
+      ML_Operator_Add(tmpmat1, Ptemp, tmpmat2, ML_CSR_MATRIX,
+                      -dampingFactors[ii] / max_eigen);
+      ML_Operator_Destroy(&Ptemp);
+    }
+    else
+      ML_2matmult(AGGsmoother, tmpmat1, tmpmat2, ML_CSR_MATRIX );
+    
+    /*Free intermediate matrix I-omega*inv(D)*A, as long as it's not Ptent.*/
+    if (tmpmat1 && tmpmat1 != Pmatrix) ML_Operator_Destroy(&tmpmat1);
+    
+  } /* for (ii=0; ii < numSmSweeps; ii++) */
+  ML_Operator_Destroy(&AGGsmoother);
+  ML_free(dampingFactors);
+  if (mls_widget != NULL) ML_Smoother_Destroy_MLS(mls_widget);
+
+}/*end ML_Smooth_Prolongator */
+
+// ================================================ ====== ==== ==== == =
+static void RefMaxwell_Project_Coordinates(int oldPDEs, ML_Operator * Pmat,  ML_Aggregate_Viz_Stats *Agrid_info, ML_Epetra::CoordPack & Cgrid_info) {
+  const char * ML_FUNCTION_NAME = "RefMaxwell_Project_Coordinates";
+  int (*getrow)(ML_Operator*, int, int [], int, int [], double [], int []) = NULL;
+  int (*matvec)(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]) = NULL;
+  int PDEs = oldPDEs;
+  int i;
+  if (PDEs != 1)
+  {
+    getrow = Pmat->getrow->func_ptr;
+    matvec = Pmat->matvec->func_ptr;
+
+    if (getrow != CSR_getrow && getrow != sCSR_getrows)
+    {
+      fprintf(stderr, "ERROR: only CSR_getrow() and sCSR_getrows() are currently supported\n"
+              "ERROR: (file %s, line %d)\n",
+              __FILE__, __LINE__);
+      exit(EXIT_FAILURE);
+    }
+
+    if (matvec != CSR_matvec && matvec != sCSR_matvec)
+    {
+      fprintf(stderr, "ERROR: only CSR_matvec() and sCSR_matvec() are currently supported\n"
+              "ERROR: (file %s, line %d)\n",
+              __FILE__, __LINE__);
+      exit(EXIT_FAILURE);
+    }
+
+    Pmat->getrow->func_ptr = CSR_get_one_row;
+    Pmat->matvec->func_ptr = CSR_ones_matvec;
+  }
+
+  ML_Operator * Rmat = ML_Operator_Create(Pmat->comm);
+  ML_CommInfoOP_TransComm(Pmat->getrow->pre_comm,&(Rmat->getrow->post_comm),
+			    Pmat->invec_leng);
+
+  ML_Operator_Set_ApplyFuncData(Rmat, Pmat->outvec_leng,
+                                Pmat->invec_leng,
+                                Pmat->data, -1, CSR_trans_ones_matvec, 0);
+
+  Rmat->getrow->func_ptr = NULL;
+  Rmat->data_destroy = NULL;
+  int Nghost = 0;
+
+  int size_old = Rmat->invec_leng;
+  int size_new = Rmat->outvec_leng + Nghost;
+  double * tmp_old = (double*) ML_allocate(sizeof(double) * (size_old + 1));
+  double * tmp_new = (double*) ML_allocate(sizeof(double) * (size_new + 1));
+  for (i=0; i<size_new+1; i++) tmp_new[i] = 0.0;
+  double * aggr_sizes = (double*) ML_allocate(sizeof(double) * (size_new + 1));
+
+  /* computes how many nodes are included in each aggregate */
+  for (i = 0 ; i < size_old ; ++i)
+    tmp_old[i] = 0.0;
+
+  for (i = 0 ; i < size_old ; i += oldPDEs)
+    tmp_old[i] = 1.0;
+  
+  ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, aggr_sizes);
+
+
+  if (Agrid_info->x!= NULL)
+  {
+    for (i = 0 ; i < size_old ; i+=oldPDEs)
+      tmp_old[i] = Agrid_info->x[i / oldPDEs];
+
+    ML_Operator_Apply(Rmat, size_old, tmp_old, Rmat->outvec_leng, tmp_new);
+    Cgrid_info.x.resize(size_new / PDEs+1);
+    double *new_x_coord = Cgrid_info.x.data();
+
+    for (i = 0 ; i < size_new ; i+=PDEs) {
+      if (aggr_sizes[i] != 0.0)
+        new_x_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+      else {
+        if (tmp_new[i] == 0.0)
+          new_x_coord[i / PDEs] = 0.0;
+        else {
+          char msg[240];
+          sprintf(msg,"(pid %d) agg %d size = %f but nonzero coordinate = %f",
+                  Pmat->comm->ML_mypid, i, aggr_sizes[i],tmp_new[i]);
+          pr_error("*ML_ERR* %s\n*ML_ERR* function %s\n*ML_ERR* file %s\n*ML_ERR* line %d\n",
+                   msg,ML_FUNCTION_NAME,__FILE__, __LINE__);
+        }
+      }
+    }
+  }
+
+  if (Agrid_info->y!= NULL)
+  {
+    for (i = 0 ; i < size_old ; i+=oldPDEs)
+      tmp_old[i] = Agrid_info->y[i / oldPDEs];
+
+    ML_Operator_Apply(Rmat, size_old, tmp_old, Rmat->outvec_leng, tmp_new);
+    Cgrid_info.y.resize(size_new / PDEs+1);
+    double *new_y_coord = Cgrid_info.y.data();
+    
+    for (i = 0 ; i < size_new ; i+=PDEs) {
+      if (aggr_sizes[i] != 0.0)
+        new_y_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+      else {
+        if (tmp_new[i] == 0.0)
+          new_y_coord[i / PDEs] = 0.0;
+        else {
+          char msg[240];
+          sprintf(msg,"(pid %d) agg %d size = %f but nonzero coordinate = %f",
+                  Pmat->comm->ML_mypid, i, aggr_sizes[i],tmp_new[i]);
+          pr_error("*ML_ERR* %s\n*ML_ERR* function %s\n*ML_ERR* file %s\n*ML_ERR* line %d\n",
+                   msg,ML_FUNCTION_NAME,__FILE__, __LINE__);
+        }
+      }
+    }
+  }
+  if (Agrid_info->z!= NULL)
+  {
+    for (i = 0 ; i < size_old ; i+=oldPDEs)
+      tmp_old[i] = Agrid_info->z[i / oldPDEs];
+
+    ML_Operator_Apply(Rmat, size_old, tmp_old, Rmat->outvec_leng, tmp_new);
+    Cgrid_info.z.resize(size_new / PDEs+1);
+    double *new_z_coord = Cgrid_info.z.data();
+
+    for (i = 0 ; i < size_new ; i+=PDEs) {
+      if (aggr_sizes[i] != 0.0)
+        new_z_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+      else {
+        if (tmp_new[i] == 0.0)
+          new_z_coord[i / PDEs] = 0.0;
+        else {
+          char msg[240];
+          sprintf(msg,"(pid %d) agg %d size = %f but nonzero coordinate = %f",
+                  Pmat->comm->ML_mypid, i, aggr_sizes[i],tmp_new[i]);
+          pr_error("*ML_ERR* %s\n*ML_ERR* function %s\n*ML_ERR* file %s\n*ML_ERR* line %d\n",
+                   msg,ML_FUNCTION_NAME,__FILE__, __LINE__);
+        }
+      }
+    }
+  }
+  if (Agrid_info->material!= NULL)
+  {
+    for (i = 0 ; i < size_old ; i+=oldPDEs)
+      tmp_old[i] = Agrid_info->material[i / oldPDEs];
+
+    ML_Operator_Apply(Rmat, size_old, tmp_old, Rmat->outvec_leng, tmp_new);
+    Cgrid_info.material.resize(size_new / PDEs+1);
+    double *new_m_coord = Cgrid_info.material.data();
+
+    for (i = 0 ; i < size_new ; i+=PDEs) {
+      if (aggr_sizes[i] != 0.0)
+        new_m_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+      else {
+        if (tmp_new[i] == 0.0)
+          new_m_coord[i / PDEs] = 0.0;
+        else {
+          char msg[240];
+          sprintf(msg,"(pid %d) agg %d size = %f but nonzero coordinate = %f",
+                  Pmat->comm->ML_mypid, i, aggr_sizes[i],tmp_new[i]);
+          pr_error("*ML_ERR* %s\n*ML_ERR* function %s\n*ML_ERR* file %s\n*ML_ERR* line %d\n",
+                   msg,ML_FUNCTION_NAME,__FILE__, __LINE__);
+        }
+      }
+    }
+  }
+
+  ML_free(tmp_old);
+  ML_free(tmp_new);
+  ML_free(aggr_sizes);
+
+  if (PDEs != 1)
+  {
+    Pmat->getrow->func_ptr = getrow;
+    Pmat->matvec->func_ptr = matvec;
+  }
+  ML_Operator_Destroy(&Rmat);
+}
+
 
 // ================================================ ====== ==== ==== == =
 int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::ParameterList & List, ML_Comm * ml_comm, std::string PrintMsg,
-                                          ML_Aggregate_Struct *& MLAggr,ML_Operator *&P, int &NumAggregates){
+                                          ML_Aggregate_Struct *& MLAggr,ML_Operator *&P, int &NumAggregates, ML_Epetra::CoordPack & pack) {
 
   /* Output level */
   bool verbose, very_verbose;
@@ -427,12 +885,29 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   std::string CoarsenType  = List.get("aggregation: type", "Uncoupled");
   double Threshold         = List.get("aggregation: threshold", 0.0);
   double RowSum_Threshold  = List.get("aggregation: rowsum threshold", -1.0);
-  int    NodesPerAggr = List.get("aggregation: nodes per aggregate",
-                                  ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
-  bool UseAux         = List.get("aggregation: aux: enable",false);
-  double AuxThreshold = List.get("aggregation: aux: threshold",0.0);
-  int  MaxAuxLevels   = List.get("aggregation: aux: max levels",10);
+  double DampingFactor     = List.get("aggregation: damping factor", 0.0);
+  int PSmSweeps            = List.get("aggregation: smoothing sweeps", 1);
+  std::string EigType      = List.get("eigen-analysis: type","cg");
+  int NumEigenIts          = List.get("eigen-analysis: iterations",10);
+  int NodesPerAggr         = List.get("aggregation: nodes per aggregate",
+                                      ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
+  int doQR                 = (int) List.get("aggregation: do qr",false);
 
+  bool UseAux              = List.get("aggregation: aux: enable",false);
+  double AuxThreshold      = List.get("aggregation: aux: threshold",0.0);
+  int  MaxAuxLevels        = List.get("aggregation: aux: max levels",10);
+
+  bool UseMaterial         = List.get("aggregation: material: enable",false);
+  double MatThreshold      = List.get("aggregation: material: threshold",0.0);
+  int  MaxMatLevels        = List.get("aggregation: material: max levels",10);
+
+  // Setup the Fine Coordinates
+  ML_Aggregate_Viz_Stats fine_grid;
+  fine_grid.x=0; fine_grid.y=0; fine_grid.z=0; fine_grid.material=0;
+  RefMaxwell_SetupCoordinates(A_ML,List,fine_grid.x,fine_grid.y,fine_grid.z,fine_grid.material);
+
+  // FIXME:  We need to allow this later
+  TEUCHOS_TEST_FOR_EXCEPTION(UseAux && UseMaterial, std::logic_error,"RefMaxwell_Aggregate_Nodes: Cannot use material and aux aggregation at the same time");
 
   ML_Aggregate_Create(&MLAggr);
   ML_Aggregate_Set_MaxLevels(MLAggr, 2);
@@ -442,6 +917,20 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
   MLAggr->cur_level = 0;
   ML_Aggregate_Set_Reuse(MLAggr);
+  ML_Aggregate_Set_Do_QR(MLAggr,doQR);
+
+  ML_Aggregate_Set_DampingFactor(MLAggr,DampingFactor);  
+  ML_Aggregate_Set_DampingSweeps(MLAggr,PSmSweeps,0);
+  if( EigType == "cg" )                ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
+  else if( EigType == "Anorm" )        ML_Operator_Set_SpectralNormScheme_Anorm(A_ML);
+  else if( EigType == "Anasazi" )      ML_Operator_Set_SpectralNormScheme_Anasazi(A_ML);
+  else if( EigType == "power-method" ) ML_Operator_Set_SpectralNormScheme_PowerMethod(A_ML);
+  else {
+    if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) block eigenvalue type(%s), resetting to cg\n",PrintMsg.c_str(),EigType.c_str());
+    ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
+  }
+  ML_Operator_Set_SpectralNorm_Iterations(A_ML, NumEigenIts);
+
   MLAggr->keep_agg_information = 1;
   P = ML_Operator_Create(ml_comm);
 
@@ -460,15 +949,27 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
   }
 
-  /* Setup Aux Data */
+  /* Setup Aux Data (aux) */
   if(UseAux) {
     A_ML->aux_data->enable=1;
     A_ML->aux_data->threshold=AuxThreshold;
     A_ML->aux_data->max_level=MaxAuxLevels;
-    ML_Init_Aux(A_ML,List);
+    ML_Init_Aux(A_ML,fine_grid.x,fine_grid.y,fine_grid.z);
     if(verbose && !A.Comm().MyPID()) {
       printf("%s Using auxiliary matrix\n",PrintMsg.c_str());
       printf("%s aux threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
+    }
+  }
+
+  /* Setup Aux Data (material) */
+  if(UseMaterial) {
+    A_ML->aux_data->enable=1;
+    A_ML->aux_data->threshold=MatThreshold;
+    A_ML->aux_data->max_level=MaxMatLevels;
+    ML_Init_Material(A_ML,fine_grid.material);
+    if(verbose && !A.Comm().MyPID()) {
+      printf("%s Using material matrix\n",PrintMsg.c_str());
+      printf("%s material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
     }
   }
 
@@ -476,22 +977,42 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   int printlevel=ML_Get_PrintLevel();
   if(verbose) ML_Set_PrintLevel(10);
   NumAggregates = ML_Aggregate_Coarsen(MLAggr,A_ML, &P, ml_comm);
+
+  /* Project down the coordinates, if we need to, using Ptent.  Note NumPDEs always = 1 */
+  if(fine_grid.x || fine_grid.y || fine_grid.z || fine_grid.material)
+    RefMaxwell_Project_Coordinates(1,P,&fine_grid,pack);
+
+  /* Do prolongator smoothing, if requested */
+  if(PSmSweeps && DampingFactor != 0.0) {
+    if(verbose && !A.Comm().MyPID()) printf("%s Smoothing Prolongator w/ Damping Factor %e\n",PrintMsg.c_str(),DampingFactor);
+    ML_Operator * smooP = ML_Operator_Create(ml_comm);
+    ML_Smooth_Prolongator(A_ML,MLAggr,PSmSweeps,P,smooP);
+    ML_Operator_Destroy(&P);
+    P = smooP;
+  }
+
+
   if(verbose) ML_Set_PrintLevel(printlevel);
   if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);
-
+  
   if(verbose){
     int globalAggs=0;
     A.Comm().SumAll(&NumAggregates,&globalAggs,1);
     if(!A.Comm().MyPID()) {
       printf("%s Aggregation threshold = %e\n",PrintMsg.c_str(),Threshold);
       printf("%s Global aggregates     = %d\n",PrintMsg.c_str(),globalAggs);
-
     }
   }
 
   /* Cleanup */
+  if(fine_grid.x) ML_free(fine_grid.x);
+  if(fine_grid.y) ML_free(fine_grid.y);
+  if(fine_grid.z) ML_free(fine_grid.z);
+  if(fine_grid.material) ML_free(fine_grid.material);
+
   ML_qr_fix_Destroy();
-  if(UseAux) ML_Finalize_Aux(A_ML);
+  if(UseAux)      ML_Finalize_Aux(A_ML);
+  if(UseMaterial) ML_Finalize_Aux(A_ML);
   ML_Operator_Destroy(&A_ML);
 
   return 0;

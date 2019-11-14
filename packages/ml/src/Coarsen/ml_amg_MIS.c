@@ -766,7 +766,6 @@ for ( i = 0; i < Nrows; i++ )
       }
    }
 /* #endif */
-
    ML_free( short_list );
    ML_free( short_size );
 
@@ -1454,7 +1453,7 @@ for ( i = 0; i < Nrows; i++ )
    /* ============================================================= */
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
-
+   if ( sort_array != NULL ) ML_free( sort_array );
    if ( offibuffer != NULL ) ML_free( offibuffer );
    if ( offlengths != NULL ) ML_free( offlengths );
    if ( offdbuffer != NULL ) ML_free( offdbuffer );
