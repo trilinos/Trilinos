@@ -340,7 +340,7 @@ namespace FROSch {
                         }
                         elemsPerRow[i] = numEntries;
                     }
-                    CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,elemsPerRow,StaticProfile);
+                    CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,elemsPerRow);
                     for (LO i = 0; i < numRows; i++) {
                         GO globalRow = CoarseSolveMap_->getGlobalElement(i);
                         k0->getLocalRowView(i,indices,values);
@@ -370,7 +370,7 @@ namespace FROSch {
                         }
                         elemsPerRow[i] = numEntries;
                     }
-                    CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,elemsPerRow,StaticProfile);
+                    CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,elemsPerRow);
                     for (LO i = 0; i < numRows; i++) {
                         GO globalRow = CoarseSolveMap_->getGlobalElement(i);
                         k0->getGlobalRowView(globalRow,indices,values);

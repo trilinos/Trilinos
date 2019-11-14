@@ -241,8 +241,7 @@ namespace MueLu {
     *out << "Call constructor of CrsGraph" << std::endl;
     myGraph = CrsGraphFactory::Build(rowMap,
                                      colMap,
-                                     nnzOnRow,
-                                     Xpetra::StaticProfile);
+                                     nnzOnRow);
 
     *out << "Fill CrsGraph" << std::endl;
     LO rowIdx = 0;

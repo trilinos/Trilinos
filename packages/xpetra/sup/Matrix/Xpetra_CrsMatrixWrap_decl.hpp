@@ -104,19 +104,17 @@ public:
 
   //! Constructor specifying fixed number of entries for each row.
   CrsMatrixWrap (const RCP<const Map>& rowMap,
-                 size_t maxNumEntriesPerRow,
-                 Xpetra::ProfileType pftype = Xpetra::DynamicProfile);
+                 size_t maxNumEntriesPerRow);
 
   //! Constructor specifying (possibly different) number of entries in each row.
   CrsMatrixWrap (const RCP<const Map>& rowMap,
-                 const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-                 ProfileType pftype = Xpetra::DynamicProfile);
+                 const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc);
 
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile);
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow);
 
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Xpetra::ProfileType pftype = Xpetra::DynamicProfile);
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc);
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA

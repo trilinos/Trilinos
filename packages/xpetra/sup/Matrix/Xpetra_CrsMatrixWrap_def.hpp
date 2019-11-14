@@ -70,41 +70,39 @@ namespace Xpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap (const RCP<const Map>& rowMap,
-                 size_t maxNumEntriesPerRow,
-                 Xpetra::ProfileType pftype)
+                 size_t maxNumEntriesPerRow)
     : finalDefaultView_ (false)
   {
-    matrixData_ = CrsMatrixFactory::Build (rowMap, maxNumEntriesPerRow, pftype);
+    matrixData_ = CrsMatrixFactory::Build (rowMap, maxNumEntriesPerRow);
     CreateDefaultView ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap (const RCP<const Map>& rowMap,
-                 const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-                 ProfileType pftype)
+                 const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc)
     : finalDefaultView_ (false)
   {
-    matrixData_ = CrsMatrixFactory::Build(rowMap, NumEntriesPerRowToAlloc, pftype);
+    matrixData_ = CrsMatrixFactory::Build(rowMap, NumEntriesPerRowToAlloc);
     CreateDefaultView ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype)
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow)
     : finalDefaultView_(false)
   {
     // Set matrix data
-    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, maxNumEntriesPerRow, pftype);
+    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, maxNumEntriesPerRow);
 
     // Default view
     CreateDefaultView();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Xpetra::ProfileType pftype)
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc)
     : finalDefaultView_(false)
   {
     // Set matrix data
-    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, NumEntriesPerRowToAlloc, pftype);
+    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, NumEntriesPerRowToAlloc);
 
     // Default view
     CreateDefaultView();

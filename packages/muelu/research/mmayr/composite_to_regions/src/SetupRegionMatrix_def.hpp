@@ -424,8 +424,7 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
 
     quasiRegionGrpMats[j] = MatrixFactory::Build(rowMapPerGrp[j],
                                                  colMapPerGrp[j],
-                                                 AComp->getCrsGraph()->getNodeMaxNumRowEntries(),
-                                                 Xpetra::DynamicProfile);
+                                                 AComp->getCrsGraph()->getNodeMaxNumRowEntries());
 
     tm = Teuchos::null;
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 2 - Import data")));
@@ -494,7 +493,7 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
   // Copy data from quasiRegionGrpMats, but into new map layout
   {
     for (int j = 0; j < maxRegPerProc; j++) {
-      regionGrpMats[j] = rcp(new CrsMatrixWrap(revisedRowMapPerGrp[j], revisedColMapPerGrp[j], 9, Xpetra::DynamicProfile));
+      regionGrpMats[j] = rcp(new CrsMatrixWrap(revisedRowMapPerGrp[j], revisedColMapPerGrp[j], 9));
 
       // Extract current region CrsMatrix
       RCP<CrsMatrix> regionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(regionGrpMats[j])->getCrsMatrix();
@@ -654,8 +653,7 @@ void regionalToComposite(const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdin
     for (int j = 0; j < maxRegPerProc; j++) {
       quasiRegMat[j] = rcp(new CrsMatrixWrap(rowMapPerGrp[j],
                                              colMapPerGrp[j],
-                                             regMat[j]->getCrsGraph()->getNodeMaxNumRowEntries(),
-                                             Xpetra::StaticProfile));
+                                             regMat[j]->getCrsGraph()->getNodeMaxNumRowEntries()));
 
       // Extract current quasi-region CrsMatrix
       RCP<CrsMatrix> quasiRegionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegMat[j])->getCrsMatrix();
@@ -696,8 +694,7 @@ void regionalToComposite(const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdin
   std::vector<RCP<Matrix> > partialCompMat(maxRegPerProc);
   for (int j = 0; j < maxRegPerProc; j++) {
     partialCompMat[j] = MatrixFactory::Build(compMat->getRowMap(),
-                                             8*regMat[0]->getCrsGraph()->getNodeMaxNumRowEntries(),
-                                             Xpetra::StaticProfile);
+                                             8*regMat[0]->getCrsGraph()->getNodeMaxNumRowEntries());
     partialCompMat[j]->doExport(*(quasiRegMat[j]), *(rowImportPerGrp[j]), Xpetra::INSERT);
     partialCompMat[j]->fillComplete();
   }

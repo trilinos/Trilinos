@@ -115,11 +115,10 @@ namespace Xpetra {
      * \param rangeMaps range maps for all blocks
      * \param domainMaps domain maps for all blocks
      * \param npr extimated number of entries per row in each block(!)
-     * \param pftype Xpetra profile type
      */
     BlockedCrsMatrix(const Teuchos::RCP<const BlockedMap>& rangeMaps,
                      const Teuchos::RCP<const BlockedMap>& domainMaps,
-                     size_t npr, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
+                     size_t npr) {
       is_diagonal_ = true;
       domainmaps_ = Teuchos::rcp(new MapExtractor(domainMaps));
       rangemaps_  = Teuchos::rcp(new MapExtractor(rangeMaps));
@@ -131,7 +130,7 @@ namespace Xpetra {
       // add CrsMatrix objects in row,column order
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c)
-          blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr, pftype));
+          blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr));
 
       // Default view
       CreateDefaultView();
@@ -142,13 +141,12 @@ namespace Xpetra {
      * \param rangeMaps range maps for all blocks
      * \param domainMaps domain maps for all blocks
      * \param npr extimated number of entries per row in each block(!)
-     * \param pftype Xpetra profile type
      *
      * \note This constructor will be deprecated. Please use the constructor which takes BlockedMap objects instead.
      */
     BlockedCrsMatrix(Teuchos::RCP<const MapExtractor>& rangeMaps,
                      Teuchos::RCP<const MapExtractor>& domainMaps,
-                     size_t npr, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
+                     size_t npr)
       : is_diagonal_(true), domainmaps_(domainMaps), rangemaps_(rangeMaps)
     {
       bRangeThyraMode_  = rangeMaps->getThyraMode();
@@ -159,7 +157,7 @@ namespace Xpetra {
       // add CrsMatrix objects in row,column order
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c)
-          blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr, pftype));
+          blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr));
 
       // Default view
       CreateDefaultView();
@@ -171,7 +169,6 @@ namespace Xpetra {
      * \param rangeMaps range maps for all blocks
      * \param domainMaps domain maps for all blocks
      * \param npr extimated number of entries per row in each block(!)
-     * \param pftype Xpetra profile type
      */
     BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& /* comm */)
       : is_diagonal_(true), thyraOp_(thyraOp)
@@ -253,7 +250,7 @@ namespace Xpetra {
             blocks_.push_back(xwrap);
           } else {
             // add empty block
-            blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), 0, Xpetra::DynamicProfile));
+            blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), 0));
           }
         }
       }

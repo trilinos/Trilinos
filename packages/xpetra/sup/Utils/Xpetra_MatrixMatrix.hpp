@@ -1377,25 +1377,12 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
               fos << "MatrixMatrix::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
                 << ", using static profiling" << std::endl;
-              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
+              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), exactNnzPerRow));
 
             } else {
               // general case
-              double nnzPerRowInA = Teuchos::as<double>(A.getNodeNumEntries()) / A.getNodeNumRows();
-              double nnzPerRowInB = Teuchos::as<double>(B.getNodeNumEntries()) / B.getNodeNumRows();
-              LO    nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
-
-              LO maxPossible = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
-              //Use static profiling (more efficient) if the estimate is at least as big as the max
-              //possible nnz's in any single row of the result.
-              Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
-
-              fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-              fos << "MatrixMatrix::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
-                << ", max possible nnz per row in sum = " << maxPossible
-                << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
-                << std::endl;
-              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), nnzToAllocate, pft));
+              LO maxPossibleNNZ = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
+              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), maxPossibleNNZ));
             }
             if (transposeB)
               fos << "MatrixMatrix::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
@@ -1991,25 +1978,12 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
               fos << "MatrixMatrix::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
                 << ", using static profiling" << std::endl;
-              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
+              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), exactNnzPerRow));
 
             } else {
               // general case
-              double nnzPerRowInA = Teuchos::as<double>(A.getNodeNumEntries()) / A.getNodeNumRows();
-              double nnzPerRowInB = Teuchos::as<double>(B.getNodeNumEntries()) / B.getNodeNumRows();
-              LO    nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
-
-              LO maxPossible = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
-              //Use static profiling (more efficient) if the estimate is at least as big as the max
-              //possible nnz's in any single row of the result.
-              Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
-
-              fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-              fos << "MatrixMatrix::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
-                << ", max possible nnz per row in sum = " << maxPossible
-                << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
-                << std::endl;
-              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), nnzToAllocate, pft));
+              LO maxPossibleNNZ = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
+              C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), maxPossibleNNZ));
             }
             if (transposeB)
               fos << "MatrixMatrix::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;

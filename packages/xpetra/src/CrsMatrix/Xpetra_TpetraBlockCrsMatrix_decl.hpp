@@ -81,14 +81,12 @@ namespace Xpetra {
     //! Constructor specifying fixed number of entries for each row (not implemented)
     TpetraBlockCrsMatrix(const  Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          size_t maxNumEntriesPerRow, 
-                         ProfileType pftype=DynamicProfile, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
 
     //! Constructor specifying (possibly different) number of entries in each row (not implemented)
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, 
-                         ProfileType pftype=DynamicProfile, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
 
@@ -96,7 +94,6 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, 
                          size_t maxNumEntriesPerRow, 
-                         ProfileType pftype=DynamicProfile, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
 
@@ -104,7 +101,6 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, 
                          const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, 
-                         ProfileType pftype=DynamicProfile, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
 
