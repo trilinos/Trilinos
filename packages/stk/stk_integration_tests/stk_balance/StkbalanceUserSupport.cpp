@@ -50,13 +50,13 @@ void getMaxMinForNodes(stk::mesh::BulkData& bulk, stk::mesh::EntityVector& nodes
     }
 }
 
-stk::balance::internal::BoxVectorWithStkId fill_bounding_boxes(const std::vector<stk::mesh::SideSetEntry>& skinnedSideSet,
+stk::balance::internal::SearchBoxIdentProcs fill_bounding_boxes(const std::vector<stk::mesh::SideSetEntry>& skinnedSideSet,
                       stk::mesh::BulkData& bulk,
                       std::vector<double>& coordMinOnProc,
                       std::vector<double>& coordMaxOnProc,
                       double searchTol)
 {
-    stk::balance::internal::BoxVectorWithStkId local_domain;
+    stk::balance::internal::SearchBoxIdentProcs local_domain;
     const stk::mesh::FieldBase * coordField = bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, "Coordinates" );
 
     int boxCounter = 0;
@@ -80,18 +80,18 @@ stk::balance::internal::BoxVectorWithStkId fill_bounding_boxes(const std::vector
                                            maxCoord[0] + searchTol,
                                            maxCoord[1] + searchTol,
                                            maxCoord[2] + searchTol);
-        stk::balance::internal::StkMeshIdent id(boxCounter, bulk.parallel_rank());
+        stk::balance::internal::SearchIdentProc id(boxCounter, bulk.parallel_rank());
         boxCounter++;
         local_domain.push_back(std::make_pair(box, id));
     }
     return local_domain;
 }
 
-void write_metrics_for_overlapping_BB(int myId, const stk::balance::internal::BoxVectorWithStkId &local_domain, const std::vector<double>& coordMinOnProc, const std::vector<double>& coordMaxOnProc)
+void write_metrics_for_overlapping_BB(int myId, const stk::balance::internal::SearchBoxIdentProcs &local_domain, const std::vector<double>& coordMinOnProc, const std::vector<double>& coordMaxOnProc)
 {
-    stk::balance::internal::BoxVectorWithStkId local_range = local_domain;
+    stk::balance::internal::SearchBoxIdentProcs local_range = local_domain;
 
-    stk::balance::internal::StkSearchResults searchResults;
+    stk::balance::internal::SearchElemPairs searchResults;
     stk::search::coarse_search(local_domain, local_range, stk::search::KDTREE, MPI_COMM_WORLD, searchResults);
 
     std::ostringstream os;
@@ -139,7 +139,7 @@ TEST(Stkbalance, NumOverlappingBB)
     std::vector<stk::mesh::SideSetEntry> skinnedSideSet = stk::mesh::SkinMeshUtil::get_skinned_sideset(bulk, meta.locally_owned_part());
 
     double searchTol = 1e-4;
-    stk::balance::internal::BoxVectorWithStkId local_domain = fill_bounding_boxes(skinnedSideSet, bulk, coordMinOnProc, coordMaxOnProc, searchTol);
+    stk::balance::internal::SearchBoxIdentProcs local_domain = fill_bounding_boxes(skinnedSideSet, bulk, coordMinOnProc, coordMaxOnProc, searchTol);
 
     int myId = bulk.parallel_rank();
     write_metrics_for_overlapping_BB(myId, local_domain, coordMinOnProc, coordMaxOnProc);
@@ -321,7 +321,7 @@ void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weigh
     stk::mesh::EntityVector sideNodes;
 
     std::vector<stk::mesh::SideSetEntry> skinnedSideSet = stk::mesh::SkinMeshUtil::get_skinned_sideset(bulk, meta.locally_owned_part());
-    stk::balance::internal::BoxVectorWithStkId local_domain;
+    stk::balance::internal::SearchBoxIdentProcs local_domain;
 
     for (stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet)
     {
@@ -339,16 +339,16 @@ void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weigh
         stk::balance::internal::StkBox box(minCoord[0], minCoord[1], minCoord[2],
                          maxCoord[0], maxCoord[1], maxCoord[2]);
 
-        stk::balance::internal::StkMeshIdent id(bulk.identifier(sidesetElement), bulk.parallel_rank());
+        stk::balance::internal::SearchIdentProc id(bulk.identifier(sidesetElement), bulk.parallel_rank());
 
         local_domain.push_back(std::make_pair(box,id));
     }
 
 
     {
-        stk::balance::internal::BoxVectorWithStkId local_range = local_domain;
+        stk::balance::internal::SearchBoxIdentProcs local_range = local_domain;
 
-        stk::balance::internal::StkSearchResults searchResults;
+        stk::balance::internal::SearchElemPairs searchResults;
         try {
             stk::search::coarse_search(local_domain, local_range, stk::search::KDTREE, MPI_COMM_WORLD, searchResults);
         }

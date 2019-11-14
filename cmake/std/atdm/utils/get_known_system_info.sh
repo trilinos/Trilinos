@@ -61,6 +61,11 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
 knownSystemNameInBuildName=`get_knownSystemNameInBuildName`
 #echo "knownSystemNameInBuildName = '${knownSystemNameInBuildName}'"
 
+# System name and hostname matching
+systemNameTypeMatchedList=()  # In order of match preference
+unset systemNameTypeMatchedListHostNames
+declare -A systemNameTypeMatchedListHostNames
+
 #
 # B) See if the current system matches a known hostname
 #
@@ -109,6 +114,9 @@ fi
 
 #echo "hostnameMatch ='${hostnameMatch}'"
 
+systemNameTypeMatchedList+=(${hostnameMatchSystemName})
+systemNameTypeMatchedListHostNames[${hostnameMatchSystemName}]=${hostnameMatch}
+
 #
 # C) Look for known system types that matches this machine
 #
@@ -118,9 +126,6 @@ fi
 # matching system type will be selected.
 #
 
-systemNameTypeMatchedList=()  # In order of match preference
-unset systemNameTypeMatchedListHostNames
-declare -A systemNameTypeMatchedListHostNames
 
 # TLCC2 systems
 if [[ $SNLSYSTEM == "tlcc2"* ]] ; then
@@ -135,6 +140,15 @@ if [[ "${SEMS_PLATFORM}" == "rhel6-x86_64" ]] ; then
 elif [[ "${SEMS_PLATFORM}" == "rhel7-x86_64" ]] ; then
   systemNameTypeMatchedList+=(sems-rhel7)
   systemNameTypeMatchedListHostNames[sems-rhel7]=sems-rhel7
+elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
+  ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
+  if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
+    systemNameTypeMatchedList+=(sems-rhel6)
+    systemNameTypeMatchedListHostNames[sems-rhel6]=sems-rhel6
+  elif [[ $ATDM_SYSTEM_NAME == "rhel7-x86_64" ]] ; then
+    systemNameTypeMatchedList+=(sems-rhel7)
+    systemNameTypeMatchedListHostNames[sems-rhel7]=sems-rhel7
+  fi
 fi
 
 # CEE RHEL6 (and RHEL7) systems

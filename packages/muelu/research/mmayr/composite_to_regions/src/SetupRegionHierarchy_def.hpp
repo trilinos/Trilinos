@@ -422,7 +422,7 @@ void MakeInterfaceScalingFactors(const int maxRegPerProc,
                                  Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& quasiRegRowMaps)
 {
 #include "Xpetra_UseShortNames.hpp"
-  std::cout << compRowMaps[0]->getComm()->getRank() << " | Computing interface scaling factors ..." << std::endl;
+  // std::cout << compRowMaps[0]->getComm()->getRank() << " | Computing interface scaling factors ..." << std::endl;
 
   const SC SC_ONE = Teuchos::ScalarTraits<SC>::one();
 
@@ -489,7 +489,7 @@ void createRegionHierarchy(const int maxRegPerProc,
   using Utilities = MueLu::Utilities<SC, LO, GO, NO>;
   using DirectCoarseSolver = Amesos2::Solver<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >;
 
-  std::cout << mapComp->getComm()->getRank() << " | Setting up MueLu hierarchies ..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | Setting up MueLu hierarchies ..." << std::endl;
   int numLevels = 0;
 
   // A hierarchy for each group
@@ -527,7 +527,7 @@ void createRegionHierarchy(const int maxRegPerProc,
     regGrpHierarchy[j] = MueLu::CreateXpetraPreconditioner(regionGrpMats[j], *mueluParams);
   }
 
-  std::cout << mapComp->getComm()->getRank() << " | Resize containers..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | Resize containers..." << std::endl;
 
   // resize Arrays and vectors
   {
@@ -561,7 +561,7 @@ void createRegionHierarchy(const int maxRegPerProc,
     }
   }
 
-  std::cout << mapComp->getComm()->getRank() << " | Fill fine level containers..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | Fill fine level containers..." << std::endl;
 
   // Fill fine level with our data
   {
@@ -583,7 +583,7 @@ void createRegionHierarchy(const int maxRegPerProc,
     regProlong[0] = fineLevelProlong;
   }
 
-  std::cout << mapComp->getComm()->getRank() << " | Fill coarser level containers..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | Fill coarser level containers..." << std::endl;
 
   /* Get coarse level matrices and prolongators from MueLu hierarchy
    * Note: fine level has been dealt with previously, so we start at level 1 here.
@@ -620,7 +620,7 @@ void createRegionHierarchy(const int maxRegPerProc,
                        compRowMaps,
                        regRowImporters);
 
-  std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeOperator ..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeOperator ..." << std::endl;
 
   MakeCoarseCompositeOperator(maxRegPerProc,
                               numLevels,
@@ -631,7 +631,7 @@ void createRegionHierarchy(const int maxRegPerProc,
                               regMatrices,
                               coarseCompOp);
 
-  std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeSolver ..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeSolver ..." << std::endl;
 
   const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
   if (coarseSolverType == "direct")
@@ -650,7 +650,7 @@ void createRegionHierarchy(const int maxRegPerProc,
     TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unknown coarse solver type.");
   }
 
-  std::cout << mapComp->getComm()->getRank() << " | MakeInterfaceScalingFactors ..." << std::endl;
+  // std::cout << mapComp->getComm()->getRank() << " | MakeInterfaceScalingFactors ..." << std::endl;
 
   MakeInterfaceScalingFactors(maxRegPerProc,
                               numLevels,
@@ -875,24 +875,24 @@ void vCycle(const int l, ///< ID of current level
       if (coarseSolverType == "direct")
       {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-  
+
         using DirectCoarseSolver = Amesos2::Solver<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >;
         RCP<DirectCoarseSolver> coarseSolver = coarseSolverData->get<RCP<DirectCoarseSolver> >("direct solver object");
-  
+
         TEUCHOS_TEST_FOR_EXCEPT_MSG(coarseCompMat->getRowMap()->lib()!=Xpetra::UseTpetra,
             "Coarse solver requires Tpetra/Amesos2 stack.");
         TEUCHOS_ASSERT(!coarseSolver.is_null());
-  
+
         // using Utilities = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  
+
         // From here on we switch to Tpetra for simplicity
         // we could also implement a similar Epetra branch
         using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  
+
       //    *fos << "Attempting to use Amesos2 to solve the coarse grid problem" << std::endl;
         RCP<Tpetra_MultiVector> tX = Utilities::MV2NonConstTpetraMV2(*compX);
         RCP<const Tpetra_MultiVector> tB = Utilities::MV2TpetraMV(compRhs);
-  
+
         /* Solve!
          *
          * Calling solve() on the coarseSolver should just do a triangular solve, since symbolic
@@ -919,10 +919,10 @@ void vCycle(const int l, ///< ID of current level
       }
       else if (coarseSolverType == "amg") // use AMG as coarse level solver
       {
-  
+
         // Extract the hierarchy from the coarseSolverData
         RCP<Hierarchy> amgHierarchy = coarseSolverData->get<RCP<Hierarchy>>("amg hierarchy object");
-  
+
         // Run a single V-cycle
         amgHierarchy->Iterate(*compRhs, *compX, 1);
       }
@@ -930,7 +930,7 @@ void vCycle(const int l, ///< ID of current level
       {
         TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unknown coarse solver type.");
       }
-  
+
       // Transform back to region format
       Array<RCP<Vector> > quasiRegX(maxRegPerProc);
       compositeToRegional(compX, quasiRegX, fineRegX,
@@ -938,10 +938,10 @@ void vCycle(const int l, ///< ID of current level
                           quasiRegRowMaps[l],
                           regRowMaps[l],
                           regRowImporters[l]);
-  
+
       tm = Teuchos::null;
     }
-  } 
+  }
 
   return;
 } // vCycle

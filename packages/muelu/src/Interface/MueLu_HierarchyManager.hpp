@@ -343,7 +343,11 @@ namespace MueLu {
     template<class T>
     void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
       for (int i = 0; i < data.size(); ++i) {
-        std::string fileName = name + "_" + Teuchos::toString(data[i]) + ".m";
+        std::string fileName;
+        if (H.getObjectLabel() != "")
+          fileName = H.getObjectLabel() + "_" + name + "_" + Teuchos::toString(data[i]) + ".m";
+        else
+          fileName = name + "_" + Teuchos::toString(data[i]) + ".m";
 
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
