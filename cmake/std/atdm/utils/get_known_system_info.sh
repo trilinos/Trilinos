@@ -44,7 +44,7 @@ realHostname=`hostname`
 ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   shiller
   ride
-  mutrino   # Will be repalced by 'cts1'
+  mutrino   # Will be repalced by 'ats1'
   waterman
   serrano   # Will be replaced by 'cts1'
   tlcc2
@@ -125,7 +125,6 @@ systemNameTypeMatchedListHostNames[${hostnameMatchSystemName}]=${hostnameMatch}
 # match order so, if no other match criteria is in play, then the first
 # matching system type will be selected.
 #
-
 
 # TLCC2 systems
 if [[ $SNLSYSTEM == "tlcc2"* ]] ; then
