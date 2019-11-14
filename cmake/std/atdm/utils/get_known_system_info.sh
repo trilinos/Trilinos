@@ -114,8 +114,10 @@ fi
 
 #echo "hostnameMatch ='${hostnameMatch}'"
 
-systemNameTypeMatchedList+=(${hostnameMatchSystemName})
-systemNameTypeMatchedListHostNames[${hostnameMatchSystemName}]=${hostnameMatch}
+if [[ "${hostnameMatch}" != "" ]] ; then
+  systemNameTypeMatchedList+=(${hostnameMatchSystemName})
+  systemNameTypeMatchedListHostNames[${hostnameMatchSystemName}]=${hostnameMatch}
+fi
 
 #
 # C) Look for known system types that matches this machine
