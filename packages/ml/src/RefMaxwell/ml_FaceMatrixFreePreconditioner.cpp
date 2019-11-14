@@ -290,7 +290,8 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
   ML_Aggregate_Struct *MLAggr=0;
   ML_Operator *P=0;
   int NumAggregates;
-  int rv=ML_Epetra::RefMaxwell_Aggregate_Nodes(*TMT_Matrix_,List_,ml_comm_,std::string("FMFP (level 0) :"),MLAggr,P,NumAggregates);
+  CoordPack coarse_grid_domain_map;
+  int rv=ML_Epetra::RefMaxwell_Aggregate_Nodes(*TMT_Matrix_,List_,ml_comm_,std::string("FMFP (level 0) :"),MLAggr,P,NumAggregates,coarse_grid_domain_map);
   if(rv || !P) {if(!Comm_->MyPID()) printf("ERROR: Building nodal P\n");ML_CHK_ERR(-1);}
 
   /* Build 1-unknown sparsity of prolongator */
