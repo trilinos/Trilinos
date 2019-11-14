@@ -34,6 +34,7 @@
 #ifndef _DisconnectBlocks_hpp_
 #define _DisconnectBlocks_hpp_
 #include "DisconnectBlocksImpl.hpp"
+#include "DisconnectTypes.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
 
@@ -41,10 +42,8 @@ namespace stk {
 namespace tools {
 
     void disconnect_all_blocks(stk::mesh::BulkData& bulk, bool preserveOrphans = false);
-    void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<impl::BlockPairType>& blockPairsToDisconnect,
-                                impl::LinkInfo& info);
-    void reconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<impl::BlockPairType>& blockPairsToDisconnect,
-                                impl::LinkInfo& info);
+    void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect, int debugLevel = 0);
+    void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockNamePairVector& blockNamePairsToDisconnect, int debugLevel = 0);
 }
 }
 

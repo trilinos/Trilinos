@@ -80,10 +80,58 @@ void fill_block_membership(const stk::mesh::BulkData& bulk, stk::mesh::Entity no
 
   for(unsigned i=0; i<numElems; ++i) {
     stk::mesh::Part* block = get_block_part_for_element(bulk, elements[i]);
-//    std::cerr << "P" << bulk.parallel_rank() << ": " << "Node " << bulk.identifier(node) << " has block " << block->name() << " as member" << std::endl;
     ThrowRequire(block != nullptr);
     stk::util::insert_keep_sorted_and_unique(block, members, stk::mesh::PartLess());
   }
 }
 
+BlockPair get_block_pair(stk::mesh::Part* block1, stk::mesh::Part* block2)
+{
+  ThrowRequire(nullptr != block1 && nullptr != block2);
+  ThrowRequire(block1 != block2);
+
+  if(block2->mesh_meta_data_ordinal() > block1->mesh_meta_data_ordinal()) {
+    return std::make_pair(block1, block2);
+  }
+  return std::make_pair(block2, block1);
+}
+
+void insert_block_pair(stk::mesh::Part* block1, stk::mesh::Part* block2,
+                       std::vector<stk::tools::BlockPair>& blockPairs)
+{
+  BlockPair blockPair = get_block_pair(block1, block2);
+  stk::util::insert_keep_sorted_and_unique(blockPair, blockPairs, PartPairLess());
+}
+
+void populate_blocks_to_reconnect(const stk::mesh::BulkData& bulk, const BlockPairVector& orderedBlockPairsInMesh,
+                                  const BlockPairVector& blockPairsToDisconnect,
+                                  BlockPairVector& blockPairsToReconnect)
+{
+  BlockPairVector orderedBlockPairsInMeshCopy;
+  for(const BlockPair& blockPair : orderedBlockPairsInMesh) {
+    orderedBlockPairsInMeshCopy.push_back(blockPair);
+  }
+
+  for(const BlockPair& connectPair : blockPairsToDisconnect) {
+    BlockPair parts = get_block_pair(connectPair.first, connectPair.second);
+
+    auto it = std::find(orderedBlockPairsInMeshCopy.begin(), orderedBlockPairsInMeshCopy.end(), parts);
+    if(it != orderedBlockPairsInMeshCopy.end()) {
+      orderedBlockPairsInMeshCopy.erase(it);
+    }
+  }
+
+  for(const BlockPair blockPair : orderedBlockPairsInMeshCopy) {
+    blockPairsToReconnect.push_back(blockPair);
+  }
+}
+
+void fill_ordered_block_pairs(stk::mesh::PartVector& allBlocksInMesh, BlockPairVector& orderedBlockPairsInMesh)
+{
+  for(unsigned i = 0; i < allBlocksInMesh.size() - 1; i++) {
+    for(unsigned j = i+1; j < allBlocksInMesh.size(); j++) {
+      insert_block_pair(allBlocksInMesh[i], allBlocksInMesh[j], orderedBlockPairsInMesh);
+    }
+  }
+}
 }}}

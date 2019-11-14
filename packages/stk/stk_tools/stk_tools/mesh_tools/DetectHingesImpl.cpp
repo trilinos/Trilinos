@@ -133,6 +133,7 @@ void fill_common_nodes_for_connected_elems(const stk::mesh::BulkData& bulk, stk:
                                            PairwiseSideInfoVector& infoVec)
 {
   unsigned numConnectedElem = bulk.num_elements(node);
+  if(numConnectedElem == 0) { return; }
   const stk::mesh::Entity* elems = bulk.begin_elements(node);
 
   for(unsigned i = 0; i < numConnectedElem-1; i++) {
@@ -216,10 +217,11 @@ PairwiseSideInfoVector get_hinge_info_vec(const stk::mesh::BulkData& bulk, stk::
 HingeNode convert_to_hinge_node (const stk::mesh::BulkData& bulk, stk::mesh::Entity node)
 {
   PairwiseSideInfoVector infoVec = get_hinge_info_vec(bulk, node);
-  int sideCount = get_side_count(infoVec);
-  int numElem = bulk.num_elements(node);
 
-  if(numElem - sideCount >= 2) {
+  HingeGroupVector groupVec;
+  insert_into_group(infoVec, groupVec);
+
+  if(groupVec.size() >= 2) {
     return HingeNode(node, infoVec);
   }
   return HingeNode();
@@ -595,15 +597,14 @@ void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk, bool debug)
   std::vector<stk::mesh::EntityId> newNodeIdVec;
   std::pair<stk::mesh::Part*, stk::mesh::PartVector> hingeBlocks;
 
-  std::ostringstream os;
+  LinkInfo info;
+  std::ostringstream& os = info.os;
 
   if(debug) {
     os << "P" << bulk.parallel_rank() << std::endl;
   }
 
   bulk.modification_begin();
-
-  LinkInfo info;
 
   for(HingeNode& hinge : hingeNodes) {
     hingeGroups = get_convex_groupings(bulk, hinge);
@@ -640,8 +641,8 @@ void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk, bool debug)
           NodeMapKey key(hinge.get_node(), group);
           info.clonedNodeMap[key] = NodeMapValue(bulk, hinge.get_node());
         } else {
-           NodeMapKey key(hinge.get_node(), group);
-           info.preservedNodeMap[key] = NodeMapValue(bulk, hinge.get_node());
+          NodeMapKey key(hinge.get_node(), group);
+          info.preservedNodeMap[key] = NodeMapValue(bulk, hinge.get_node());
         }
       }
     }
@@ -658,22 +659,16 @@ void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk, bool debug)
 
   communicate_shared_node_information(bulk, info);
 
-  DisconnectGroupVector groupVec;
-  for(auto& mapEntry : info.clonedNodeMap) {
-    const NodeMapKey& key = mapEntry.first;
-    groupVec.push_back(key.disconnectedGroup);
+  for(auto mapEntry = info.clonedNodeMap.begin(); mapEntry != info.clonedNodeMap.end(); ++mapEntry) {
+    const NodeMapKey& key = mapEntry->first;
 
     if(debug) {
       print_disconnect_group_info(key.disconnectedGroup, 1u, os);
-      os << indent(2u) << "New node id: " << mapEntry.second.newNodeId << std::endl;
+      os << indent(2u) << "New node id: " << mapEntry->second.newNodeId << std::endl;
     }
+    disconnect_elements(bulk, key, mapEntry->second, info);
   }
-
-  for(const DisconnectGroup& group : groupVec) {
-    disconnect_elements(bulk, group, info);
-  }
-
-  std::cout << os.str();
+  info.flush(std::cout);
   bulk.modification_end();
 }
 

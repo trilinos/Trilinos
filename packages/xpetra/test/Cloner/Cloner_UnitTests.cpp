@@ -145,7 +145,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Cloner, MapCloneEpetra, LO, GO, N2 )
   {
-#ifdef HAVE_XPETRA_EPETRA
+#if defined(HAVE_XPETRA_EPETRA) && !defined(KOKKOS_ENABLE_DEPRECATED_CODE)
     typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
 
     // NOTE (mfh 20 Jul 2016) This fixes #508.  Epetra only works for

@@ -94,9 +94,9 @@ public:
 
   stk::mesh::EntityIdVector get_group_element_ids() const;
 
-  void pack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId newNodeId, int proc, std::ostringstream& os) const;
+  void pack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId newNodeId, int proc, std::ostream& os) const;
 
-  void unpack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId& newNodeId, int proc, std::ostringstream& os);
+  void unpack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId& newNodeId, int proc, std::ostream& os);
   void set_active(bool flag) const { m_active = flag; }
   bool is_active() const { return m_active; }
 

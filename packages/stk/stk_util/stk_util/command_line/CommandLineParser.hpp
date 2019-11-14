@@ -31,12 +31,11 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef STK_UTIL_ENVIRONMENT_COMMANDLINEPARSER_HPP
-#define STK_UTIL_ENVIRONMENT_COMMANDLINEPARSER_HPP
+#ifndef STK_UTIL_COMMAND_LINE_COMMANDLINEPARSER_HPP
+#define STK_UTIL_COMMAND_LINE_COMMANDLINEPARSER_HPP
 
-#include <stk_util/command_line/OptionsSpecification.hpp>
-#include <stk_util/command_line/ParsedOptions.hpp>
-#include <stk_util/command_line/ParseCommandLineArgs.hpp>
+#include <stk_util/environment/OptionsSpecification.hpp>
+#include <stk_util/environment/ParsedOptions.hpp>
 #include <iostream>
 #include <string>
 
@@ -107,7 +106,7 @@ public:
         const bool isFlag = false;
         const bool isRequired = false;
         optionsSpec.add_options()
-          (option, description, defaultValue, isFlag, isRequired, position);
+          (option, description, stk::DefaultValue<ValueType>(defaultValue), isFlag, isRequired, position);
     }
 
     std::string get_usage() const
@@ -117,25 +116,7 @@ public:
         return os.str();
     }
 
-    ParseState parse(int argc, const char *argv[])
-    {
-        ParseState state = ParseError;
-        try
-        {
-            stk::parse_command_line_args(argc, argv, optionsSpec, parsedOptions);
-            if(is_option_provided("help"))
-                return ParseHelpOnly;
-            if(is_option_provided("version"))
-                return ParseVersionOnly;
-
-            state = ParseComplete;
-        }
-        catch(std::exception &e)
-        {
-            print_message(e.what());
-        }
-        return state;
-    }
+    ParseState parse(int argc, const char ** argv);
 
     bool is_option_provided(const std::string &option) const
     {
@@ -150,6 +131,7 @@ public:
     template <typename ValueType>
     ValueType get_option_value(const std::string &option) const
     {
+        ThrowRequireMsg(is_option_provided(option), "Error, option '"<<option<<"'not provided.");
         return parsedOptions[option].as<ValueType>();
     }
 
@@ -171,4 +153,4 @@ protected:
 
 }
 
-#endif //STK_UTIL_ENVIRONMENT_COMMANDLINEPARSER_HPP
+#endif //STK_UTIL_COMMAND_LINE_COMMANDLINEPARSER_HPP
