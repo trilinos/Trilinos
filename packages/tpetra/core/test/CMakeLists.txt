@@ -12,6 +12,7 @@ ADD_SUBDIRECTORIES(
   Core  
   CrsGraph
   CrsMatrix
+  CudaAwareMpiIssues
   Directory
   Distributor
   FECrsGraph

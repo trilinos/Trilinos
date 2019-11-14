@@ -7,6 +7,7 @@
 typedef Tpetra::Map<>::global_ordinal_type GO_TYPE;
 
 //////////////////////////////////////////////////////////////////////////////
+// Function to test two maps:  create vectors and do import / export
 void testImports(
   const Teuchos::RCP<const Tpetra::Map<> > &oneToOneMap,
   const Teuchos::RCP<const Tpetra::Map<> > &sharedMap,
@@ -24,6 +25,12 @@ void testImports(
 }
 
 //////////////////////////////////////////////////////////////////////////////
+// Test to exercise repeated construction, communication, destruction with
+// one-to-one and shared maps.
+// The same maps are used in each iteration, with IDs generated before
+// iterations begin.
+// Usage:
+//    mpirun -np # TpetraCore_repeatedMaps.exe [niterations globalsize]
 
 int main(int narg, char *arg[]) 
 {
@@ -48,9 +55,11 @@ int main(int narg, char *arg[])
 
   // Shared IDs:  randomly selected; no local duplicates
   size_t maxShared = gsize / np * 2;
+
   Teuchos::ArrayRCP<GO_TYPE> sharedIds(maxShared);
   std::unordered_set<GO_TYPE> shared(maxShared);
   size_t nSharedIds = 0;
+  srand(me);
   for (int i = 0; i < maxShared; i++) {
     GO_TYPE tmp = (rand() % gsize);
     if (shared.find(tmp) == shared.end()) {
@@ -79,9 +88,9 @@ int main(int narg, char *arg[])
              Teuchos::rcp(new Tpetra::Map<>(dummy, sharedIds(0, nSharedIds),
                                             0, comm));
 
-    // Create multivectors with owned and shared maps; then import
+    // Test ownedMap and sharedMap
     std::cout << "Iter " << n << " of " << ntrials 
-              << ": IMPORT OWNED + SHARED " 
+              << " TEST  OWNED + SHARED " 
               << ownedMap->getNodeNumElements() << " "
               << sharedMap->getNodeNumElements() << std::endl;
 
@@ -93,9 +102,9 @@ int main(int narg, char *arg[])
     Teuchos::RCP<const Tpetra::Map<> > oneToOneMap =
              Tpetra::createOneToOne(sharedMap);
 
-    // Create multivectors with created oneToOne and shared maps; then import
+    // Test oneToOneMap and sharedMap
     std::cout << "Iter " << n << " of " << ntrials 
-              << ": IMPORT ONETOONE + SHARED " 
+              << " TEST  ONETOONE + SHARED " 
               << oneToOneMap->getNodeNumElements() << " "
               << sharedMap->getNodeNumElements() << std::endl;
 
