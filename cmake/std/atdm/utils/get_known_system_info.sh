@@ -105,6 +105,7 @@ elif [[ $SNLSYSTEM == "tlcc2"* ]] ; then
   else
     ATDM_HOSTNAME=$SNLCLUSTER
   fi
+fi
 
 
 # System name and hostname matching
