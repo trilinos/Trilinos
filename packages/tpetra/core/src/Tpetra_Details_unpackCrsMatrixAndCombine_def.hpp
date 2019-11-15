@@ -375,15 +375,17 @@ struct UnpackCrsMatrixAndCombineFunctor {
     const LO* const lids_raw = const_cast<const LO*> (lids_out.data ());
     const ST* const vals_raw = const_cast<const ST*> (vals_out.data ());
     LO num_modified = 0;
+
+    constexpr bool matrix_has_sorted_rows = true; // see #6282
     if (combine_mode == ADD) {
       num_modified +=
         local_matrix.sumIntoValues (import_lid, lids_raw, num_ent,
-                                    vals_raw, false, atomic);
+                                    vals_raw, matrix_has_sorted_rows, atomic);
     }
     else if (combine_mode == REPLACE) {
       num_modified +=
         local_matrix.replaceValues (import_lid, lids_raw, num_ent,
-                                    vals_raw, false, atomic);
+                                    vals_raw, matrix_has_sorted_rows, atomic);
     }
     else {
       dst = Kokkos::make_pair (4, i); // invalid combine mode

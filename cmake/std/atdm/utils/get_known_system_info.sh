@@ -44,7 +44,7 @@ realHostname=`hostname`
 ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   shiller
   ride
-  mutrino   # Will be repalced by 'cts1'
+  mutrino   # Will be repalced by 'ats1'
   waterman
   serrano   # Will be replaced by 'cts1'
   tlcc2
@@ -114,8 +114,12 @@ fi
 
 #echo "hostnameMatch ='${hostnameMatch}'"
 
-systemNameTypeMatchedList+=(${hostnameMatchSystemName})
-systemNameTypeMatchedListHostNames[${hostnameMatchSystemName}]=${hostnameMatch}
+if [[ "${hostnameMatch}" != "" ]] ; then
+  # A matching system by hostname becomes the first preferred match (but not
+  # the only possible match)
+  systemNameTypeMatchedList+=(${hostnameMatchSystemName})
+  systemNameTypeMatchedListHostNames[${hostnameMatchSystemName}]=${hostnameMatch}
+fi
 
 #
 # C) Look for known system types that matches this machine
@@ -125,7 +129,6 @@ systemNameTypeMatchedListHostNames[${hostnameMatchSystemName}]=${hostnameMatch}
 # match order so, if no other match criteria is in play, then the first
 # matching system type will be selected.
 #
-
 
 # TLCC2 systems
 if [[ $SNLSYSTEM == "tlcc2"* ]] ; then
@@ -194,13 +197,7 @@ if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${knownSystemNameInBuildName}" != ""
   assert_selected_system_matches_known_system_type_mathces || return
 fi
 
-# D.2) Second, go with matches based on hostname
-if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${hostnameMatch}" != "" ]] ; then
-  ATDM_SYSTEM_NAME=${hostnameMatchSystemName}
-  ATDM_HOSTNAME=${hostnameMatch}
-fi
-
-# D.3) Last, go with a matching system type
+# D.2) Last, go with the hostname match or matching system type
 if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${systemNameTypeMatchedList}" != "" ]] ; then
   ATDM_SYSTEM_NAME=${systemNameTypeMatchedList[0]}  # First matching system type is preferred!
   ATDM_HOSTNAME=${systemNameTypeMatchedListHostNames[${ATDM_SYSTEM_NAME}]}
