@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -108,7 +106,7 @@ KOKKOS_FUNCTION int
 unpackRow(typename PackTraits<GO, DT>::output_array_type& gids_out,
           typename PackTraits<int, DT>::output_array_type& pids_out,
           typename PackTraits<ST, DT>::output_array_type& vals_out,
-          const Kokkos::View<const char*, BDT>& imports,
+          const char imports[],
           const size_t offset,
           const size_t /* num_bytes */,
           const size_t num_ent,
@@ -135,10 +133,10 @@ unpackRow(typename PackTraits<GO, DT>::output_array_type& gids_out,
   const size_t vals_beg = gids_beg + gids_len + pids_len;
   const size_t vals_len = num_ent * num_bytes_per_value;
 
-  const char* const num_ent_in = imports.data () + num_ent_beg;
-  const char* const gids_in = imports.data () + gids_beg;
-  const char* const pids_in = unpack_pids ? imports.data () + pids_beg : NULL;
-  const char* const vals_in = imports.data () + vals_beg;
+  const char* const num_ent_in = imports + num_ent_beg;
+  const char* const gids_in = imports + gids_beg;
+  const char* const pids_in = unpack_pids ? imports + pids_beg : nullptr;
+  const char* const vals_in = imports + vals_beg;
 
   size_t num_bytes_out = 0;
   LO num_ent_out;
@@ -356,7 +354,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     // Unpack this row!
     int unpack_err =
       unpackRow<ST,LO,GO,DT,BDT>(gids_out, pids_out, vals_out,
-                                 imports, offset, num_bytes,
+                                 imports.data(), offset, num_bytes,
                                  num_ent, num_bytes_per_value);
     if (unpack_err != 0) {
       dst = Kokkos::make_pair (unpack_err, i); // unpack error
@@ -676,21 +674,23 @@ unpackAndCombineWithOwningPIDsCount(
   return count;
 }
 
-template<class LO, class DT, class BDT>
+template<class LO, class DT>
 KOKKOS_INLINE_FUNCTION
 size_t
-unpackRowCount(const Kokkos::View<const char*, BDT>& imports,
+unpackRowCount(const char imports[],
                const size_t offset,
                const size_t num_bytes)
 {
+  using PT = PackTraits<LO, DT>;
+
   LO num_ent_LO = 0;
   if (num_bytes > 0) {
-    const size_t p_num_bytes = PackTraits<LO, DT>::packValueCount(num_ent_LO);
+    const size_t p_num_bytes = PT::packValueCount(num_ent_LO);
     if (p_num_bytes > num_bytes) {
       return OrdinalTraits<size_t>::invalid();
     }
-    const char* const in_buf = imports.data () + offset;
-    (void) PackTraits<LO,DT>::unpackValue(num_ent_LO, in_buf);
+    const char* const in_buf = imports + offset;
+    (void) PT::unpackValue(num_ent_LO, in_buf);
   }
   return static_cast<size_t>(num_ent_LO);
 }
@@ -720,7 +720,7 @@ setupRowPointersForRemotes(
       typedef typename std::remove_reference< decltype( tgt_rowptr(0) ) >::type atomic_incr_type;
       const size_t num_bytes = num_packets_per_lid(i);
       const size_t offset = offsets(i);
-      const size_t num_ent = unpackRowCount<LO, DT, BDT> (imports, offset, num_bytes);
+      const size_t num_ent = unpackRowCount<LO, DT> (imports.data(), offset, num_bytes);
       if (num_ent == InvalidNum) {
         k_error += 1;
       }
@@ -899,7 +899,7 @@ unpackAndCombineIntoCrsArrays2(
         // Empty buffer means that the row is empty.
         return;
       }
-      size_t num_ent = unpackRowCount<LO,DT,BDT>(imports, offset, num_bytes);
+      size_t num_ent = unpackRowCount<LO, DT>(imports.data(), offset, num_bytes);
       if (num_ent == InvalidNum) {
         k_error += 1;
         return;
@@ -913,7 +913,7 @@ unpackAndCombineIntoCrsArrays2(
       pids_out_type pids_out = subview(tgt_pids, slice(start_row, end_row));
 
       k_error += unpackRow<ST,LO,GO,DT,BDT>(gids_out, pids_out, vals_out,
-                                            imports, offset, num_bytes,
+                                            imports.data(), offset, num_bytes,
                                             num_ent, num_bytes_per_value);
 
       // Correct target PIDs.
