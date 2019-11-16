@@ -1595,13 +1595,15 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     local_part_xadj(0) = static_cast<mj_lno_t>(num_selected_coords);
   });
 
-  auto local_coordinate_permutations = this->coordinate_permutations;
-  auto local_initial_adjList_output_adjlist = initial_adjList_output_adjlist;
-  Kokkos::parallel_for(
-    Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_lno_t>
-      (0, num_total_coords), KOKKOS_LAMBDA (mj_lno_t i) {
-    local_coordinate_permutations(i) = local_initial_adjList_output_adjlist(i);
-  });
+  {
+    auto local_coordinate_permutations = this->coordinate_permutations;
+    auto local_initial_adjList_output_adjlist = initial_adjList_output_adjlist;
+    Kokkos::parallel_for(
+      Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_lno_t>
+        (0, num_total_coords), KOKKOS_LAMBDA (mj_lno_t i) {
+      local_coordinate_permutations(i) = local_initial_adjList_output_adjlist(i);
+    });
+  }
 
   mj_part_t current_num_parts = 1;
 
@@ -1633,10 +1635,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     view_total_reduction_size("view_total_reduction_size", 1);
 
   for(int rd = 0; rd < this->recursion_depth; ++rd) {
-
-    auto local_new_coordinate_permutations =
-      this->new_coordinate_permutations;
-
     // next_future_num_parts_in_parts will be as the size of outnumParts,
     // and this will hold how many more parts that each output part
     // should be divided. this array will also be used to determine the weight
@@ -2005,6 +2003,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
                 = part_size;
             });
 
+            auto local_new_coordinate_permutations =
+              this->new_coordinate_permutations;
+            auto local_coordinate_permutations =
+              this->coordinate_permutations;
             Kokkos::parallel_for(
               Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_lno_t>
               (0, part_size), KOKKOS_LAMBDA (mj_lno_t n) {
@@ -2030,6 +2032,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
             host_num_partitioning_in_current_dim(current_work_part + kk);
           auto local_new_part_xadj = this->new_part_xadj;
           auto local_mj_current_dim_coords = mj_current_dim_coords;
+          auto local_new_coordinate_permutations =
+            new_coordinate_permutations;
           Kokkos::parallel_for(
             Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_part_t> (
             0, num_parts), KOKKOS_LAMBDA (mj_part_t ii) {
@@ -2081,12 +2085,15 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     this->new_part_xadj = Kokkos::View<mj_lno_t*, device_t>("empty");
   }
 
-  local_coordinate_permutations = this->coordinate_permutations;
-  Kokkos::parallel_for(
-    Kokkos::RangePolicy<typename mj_node_t::execution_space,
-    mj_part_t> (0, num_total_coords), KOKKOS_LAMBDA (mj_part_t i) {
-    local_initial_adjList_output_adjlist(i) = local_coordinate_permutations(i);
-  });
+  {
+    auto local_initial_adjList_output_adjlist = initial_adjList_output_adjlist;
+    auto local_coordinate_permutations = this->coordinate_permutations;
+    Kokkos::parallel_for(
+      Kokkos::RangePolicy<typename mj_node_t::execution_space,
+      mj_part_t> (0, num_total_coords), KOKKOS_LAMBDA (mj_part_t i) {
+      local_initial_adjList_output_adjlist(i) = local_coordinate_permutations(i);
+    });
+  }
 
   // Return output_xadj in CSR format
   output_xadj[0] = 0;
