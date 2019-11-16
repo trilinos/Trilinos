@@ -151,6 +151,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string rhsFile;                                clp.setOption("rhs",                   &rhsFile,           "rhs data file");
     std::string coordFile;                              clp.setOption("coords",                &coordFile,         "coordinates data file");
     std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
+    std::string materialFile;                           clp.setOption("material",              &materialFile,      "material data file");
     int         numVectors        = 1;                  clp.setOption("multivector",           &numVectors,        "number of rhs to solve simultaneously");
 
     switch (clp.parse(argc,argv)) {
@@ -187,10 +188,11 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     RCP<const Map>             map;
     RCP<RealValuedMultiVector> coordinates;
     RCP<MultiVector>           nullspace;
+    RCP<MultiVector>           material;
     RCP<MultiVector>           X, B;
 
     std::ostringstream galeriStream;
-    MatrixLoad<SC,LocalOrdinal,GlobalOrdinal,Node>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,numVectors,matrixParameters,xpetraParameters,galeriStream);
+    MatrixLoad<SC,LocalOrdinal,GlobalOrdinal,Node>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,materialFile,map,A,coordinates,nullspace,material,X,B,numVectors,matrixParameters,xpetraParameters,galeriStream);
     out << galeriStream.str();
 
     //

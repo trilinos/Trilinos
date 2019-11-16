@@ -30,17 +30,34 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-#include "stk_mesh/base/Types.hpp"
+
+#ifndef DISCONNECT_UTILS_H
+#define DISCONNECT_UTILS_H
+
 #include "stk_mesh/base/Entity.hpp"
+#include "stk_mesh/base/Part.hpp"
+#include "stk_mesh/base/Types.hpp"
+#include "stk_tools/mesh_tools/DisconnectTypes.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace tools {
 namespace impl {
 
+struct PartPairLess {
+
+  inline bool operator()( const BlockPair& lhs, const BlockPair& rhs ) const
+  {
+    if(lhs.first->mesh_meta_data_ordinal() < rhs.first->mesh_meta_data_ordinal()) {
+      return true;
+    }
+    else if(lhs.first->mesh_meta_data_ordinal() == rhs.first->mesh_meta_data_ordinal()) {
+      return lhs.second->mesh_meta_data_ordinal() < rhs.second->mesh_meta_data_ordinal();
+    }
+    return false;
+  }
+};
 
 bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part);
 
@@ -50,4 +67,16 @@ unsigned get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::E
 
 void fill_block_membership(const stk::mesh::BulkData& bulk, stk::mesh::Entity node, stk::mesh::PartVector& members);
 
+stk::tools::BlockPair get_block_pair(stk::mesh::Part* block1, stk::mesh::Part* block2);
+
+void fill_ordered_block_pairs(stk::mesh::PartVector& allBlocksInMesh, BlockPairVector& orderedBlockPairsInMesh);
+
+void insert_block_pair(stk::mesh::Part* block1, stk::mesh::Part* block2,
+                       std::vector<stk::tools::BlockPair>& blockPairs);
+
+void populate_blocks_to_reconnect(const stk::mesh::BulkData& bulk, const BlockPairVector& orderedBlockPairsInMesh,
+                                  const BlockPairVector& blockPairsToDisconnect,
+                                  BlockPairVector& blockPairsToReconnect);
 }}}
+
+#endif

@@ -1205,6 +1205,39 @@ void ML_Epetra::Apply_BCsToMatrixRows(const int *dirichletRows, int numBCRows, c
 }/*end Apply_BCsToMatrixRows*/
 
 
+  // ======================================================================
+void ML_Epetra::Apply_BCsToMatrixRowsNodal(const int *dirichletRows, int numBCRows, int dofsPerNode, const Epetra_CrsMatrix & Matrix)
+{
+  /* This function zeros out *rows* of Matrix that correspond to Dirichlet rows.
+     Input:
+         Matrix             matrix
+     Output:
+         Grad               matrix with Dirichlet *rows* zeroed out
+
+     Comments: The graph of Matrix is unchanged.
+  */
+  std::vector<bool> dirichletApplied(Matrix.NumMyRows(),false);
+  for (int i=0; i < numBCRows; i++) {
+    int numEntries;
+    double *vals;
+    int *cols;
+    int base = ((int) (dirichletRows[i] / dofsPerNode)) * dofsPerNode;
+    for (int row=base; row<base+dofsPerNode; row++) {
+      if(!dirichletApplied[row]) {
+        int ierr = Matrix.ExtractMyRowView(row,numEntries,vals,cols);
+        if(ierr == 0) {
+          for (int j=0; j < numEntries; j++)
+            vals[j] = 0.0;
+        }
+        else {
+          printf("[%d] ExtractMyRowView failed for row %d (actually have %d rows\n",Matrix.Comm().MyPID(),row,Matrix.NumMyRows());
+        }
+        dirichletApplied[row]=true;
+      }/*end if*/
+    }/*end for*/
+  }/*end for*/
+}/*end Apply_BCsToMatrixRowsNodal*/
+
 
 // ======================================================================
 void ML_Epetra::Apply_BCsToMatrixColumns(const Epetra_IntVector &dirichletColumns,const Epetra_CrsMatrix & Matrix){

@@ -184,6 +184,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   // ======================================== //
   RCP<Ifpack2::OverlappingRowMatrix<row_matrix_type> > B;
 
+
   try {
     B = rcp (new Ifpack2::OverlappingRowMatrix<row_matrix_type> (A, OverlapLevel));
   } catch (std::exception& e) {
@@ -191,6 +192,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
     errStrm << "Ifpack2::OverlappingRowMatrix constructor threw exception: " << e.what () << endl;
   }
   IFPACK2OVERLAPPINGROWMATRIX_REPORT_GLOBAL_ERR( "Ifpack2::OverlappingRowMatrix constructor" );
+
+  Teuchos::ArrayView<size_t> halo = B->getExtHaloStarts();
+  printf("Halo Starts:");
+  for(size_t i=0; i< (size_t)halo.size(); i++)
+    printf("%d ",(int) halo[i]);
+  printf("\n");
+
 
   size_t NumGlobalRowsB = B->getGlobalNumRows ();
   size_t NumGlobalNonzerosB = B->getGlobalNumEntries ();

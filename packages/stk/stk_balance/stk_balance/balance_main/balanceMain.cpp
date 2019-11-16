@@ -9,6 +9,7 @@
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/environment/FileUtils.hpp>
+#include <stk_util/util/string_utils.hpp>
 
 #include <string>
 #include <iostream>
@@ -26,7 +27,7 @@ int main(int argc, const char**argv)
         stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
     }
 
-    std::string execName = stk::util::tailname(argv[0]);
+    std::string execName = stk::tailname(argv[0]);
     stk::balance::CommandLineOptions cmdLineOptions;
     std::string quickExample = stk::balance::get_quick_example(execName, cmdLineOptions.infile.name, cmdLineOptions.outputDirectory.name, comm);
     stk::balance::ParsedOptions balanceOptions;

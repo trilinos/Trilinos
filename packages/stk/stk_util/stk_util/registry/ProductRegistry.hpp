@@ -245,6 +245,8 @@ private:
   bool				m_registryOK;			///< Registry is OK
 };
 
+std::string get_version(const std::string& executableName);
+
 } // namespace stk
 
 #ifdef STK_BUILT_IN_SIERRA

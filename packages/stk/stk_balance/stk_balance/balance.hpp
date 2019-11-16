@@ -42,11 +42,26 @@ namespace stk { namespace mesh { class BulkData; } }
 #include <string>
 #include "mpi.h"
 #include <stk_balance/internal/balanceDefaults.hpp>
+#include "balanceUtils.hpp"               // for BalanceSettings, etc
 
 namespace stk
 {
 namespace balance
 {
+
+class StkBalanceSettings : public GraphCreationSettings
+{
+public:
+    StkBalanceSettings()
+      : GraphCreationSettings()
+    {}
+
+    ~StkBalanceSettings() = default;
+
+    std::string getCoordinateFieldName() const override {
+      return "balance_coordinates";
+    }
+};
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData);
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors);

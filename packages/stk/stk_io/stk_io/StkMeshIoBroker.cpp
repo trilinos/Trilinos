@@ -527,6 +527,7 @@ void StkMeshIoBroker::update_sidesets() {
     if (m_bulkData->was_mesh_modified_since_sideset_creation()) {
         std::vector<std::shared_ptr<SidesetUpdater> > updaters = m_bulkData->get_observer_type<SidesetUpdater>();
         ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+        updaters[0]->set_output_stream(std::cerr);
         std::vector<size_t> values;
         updaters[0]->fill_values_to_reduce(values);
         std::vector<size_t> maxValues(values);
