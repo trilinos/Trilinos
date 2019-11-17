@@ -32,3 +32,9 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES CrsMatrix_sumIntoLocalValues.cpp
   COMM serial mpi
 )
+
+TRIBITS_ADD_EXECUTABLE(
+  CrsMatrixDenseRowUnpack
+  SOURCES CrsMatrixDenseRowUnpack.cpp
+  COMM serial mpi
+)
