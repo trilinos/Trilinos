@@ -95,7 +95,6 @@ struct ScalarViewTraits {
                  const std::string& label = "")
   {
     using view_type = Kokkos::View<value_type*, device_type>;
-    using size_type = typename view_type::size_type;
 
     // When the traits::specialize type is non-void this exploits
     // the fact that Kokkos::View's constructor ignores
