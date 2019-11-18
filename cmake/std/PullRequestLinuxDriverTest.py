@@ -396,7 +396,7 @@ def get_memory_info():
         import psutil
         mem_total = psutil.virtual_memory().total
         mem_kb = mem_total/1024
-    except ModuleNotFoundError:
+    except:
         # If we can't load psutil then just look for /proc/meminfo
         # - Note: /proc/meminfo assumes a unix/linux system and will fail on
         #         windows or OSX systems that don't have that file.
