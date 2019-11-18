@@ -289,9 +289,8 @@ struct UnpackCrsMatrixAndCombineFunctor {
     using Kokkos::View;
     using Kokkos::subview;
     using Kokkos::MemoryUnmanaged;
-    typedef typename XS::size_type size_type;
-    typedef typename Kokkos::pair<size_type, size_type> slice;
-    typedef BufferDeviceType BDT;
+    using size_type = typename XS::size_type;
+    using slice = Kokkos::pair<size_type, size_type>;
 
     typedef View<LO*, DT, MemoryUnmanaged> lids_out_type;
     typedef View<int*,DT, MemoryUnmanaged> pids_out_type;
@@ -874,7 +873,6 @@ unpackAndCombineIntoCrsArrays2(
   typedef typename Kokkos::View<LO*, DT>::size_type size_type;
   typedef typename Kokkos::pair<size_type, size_type> slice;
   typedef Kokkos::RangePolicy<XS, Kokkos::IndexType<size_type> > range_policy;
-  typedef BufferDeviceType BDT;
 
   typedef View<int*,DT, MemoryUnmanaged> pids_out_type;
   typedef View<GO*, DT, MemoryUnmanaged> gids_out_type;
@@ -959,7 +957,6 @@ unpackAndCombineIntoCrsArrays(
   const char prefix[] = "unpackAndCombineIntoCrsArrays: ";
 
   const size_t N = tgt_num_rows;
-  const size_t mynnz = tgt_num_nonzeros;
 
   // In the case of reduced communicators, the sourceMatrix won't have
   // the right "my_pid", so thus we have to supply it.
