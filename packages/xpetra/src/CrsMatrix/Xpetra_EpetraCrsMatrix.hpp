@@ -291,9 +291,9 @@ public:
   //! @name Constructor/Destructor Methods
   //@{
 
-  //! Constructor specifying fixed number of entries for each row.
+  //! Constructor for DynamicProfile matrix with entries per row hint.
   EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */ = Teuchos::null)
-: mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), maxNumEntriesPerRow, true))), isFillResumed_(false)
+: mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), maxNumEntriesPerRow, false))), isFillResumed_(false)
 { }
 
 
@@ -312,7 +312,7 @@ public:
   { }
 
 
-  //! Constructor specifying column Map and number of entries in each row.
+  //! Constructor specifying row and column Maps and number of entries in each row.
   EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
   : isFillResumed_(false)
   {
