@@ -645,6 +645,13 @@ int main(int argc, char* argv[])
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   {
     auto tpetraComm = Tpetra::getDefaultComm();
+    const int minNumProcs = 2;
+    if(tpetraComm->getSize() < minNumProcs) {
+      std::cerr << "This benchmark must be run with at least "
+                << minNumProcs << " MPI processes." << std::endl;
+      return EXIT_FAILURE;
+    }
+
     CommandLineProcessor cmdp;
     CmdLineArgs args;
     setCmdLineArgs(args, cmdp);
