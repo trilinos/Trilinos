@@ -100,7 +100,7 @@ namespace Xpetra {
       using LO = typename tcrs_matrix_type::local_ordinal_type;
       using GO = typename tcrs_matrix_type::global_ordinal_type;
       using NO = typename tcrs_matrix_type::node_type;
-      using MatType = Xpetra::Matrix<SC,LO,GO,NO>;
+      //      using MatType = Xpetra::Matrix<SC,LO,GO,NO>;
       using XTCrsType = Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>;
       using CrsType = Xpetra::CrsMatrix<SC,LO,GO,NO>;
       using CrsWrap = Xpetra::CrsMatrixWrap<SC,LO,GO,NO>;
