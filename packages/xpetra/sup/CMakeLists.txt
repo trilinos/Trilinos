@@ -86,8 +86,6 @@ APPEND_GLOB(SOURCES */*.cpp)
 APPEND_GLOB(SOURCES mac.cpp) # Avoid empty library (MacOs 'ar' utility doesn't work on empty library).
 
 # Create the .hpp file in BUILD/packages/xpetra/sup
-TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Matrix     NOSIERRABJAM)
-TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/StridedMap NOSIERRABJAM)
 
 #
 #

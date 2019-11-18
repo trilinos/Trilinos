@@ -75,6 +75,7 @@ BlockedCrsMatrix(const Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal,Global
                  Xpetra::ProfileType pftype)
 {
     using MapExtractor = Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using MatrixFactory = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     is_diagonal_      = true;
     domainmaps_       = Teuchos::rcp(new MapExtractor(domainMaps));
@@ -1022,6 +1023,7 @@ apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
     using MultiVector = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using MultiVectorFactory = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     // using Teuchos::RCP;
 
@@ -1271,6 +1273,7 @@ bgs_apply(const MultiVector& X,        ///< Vector to be multiplied by matrix (i
     using MultiVector = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using MultiVectorFactory = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       mode != Teuchos::NO_TRANS && mode != Teuchos::TRANS, Xpetra::Exceptions::RuntimeError, "apply() only supports the following modes: NO_TRANS and TRANS.");
