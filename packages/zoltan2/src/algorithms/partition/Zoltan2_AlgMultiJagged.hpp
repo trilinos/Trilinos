@@ -1595,15 +1595,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     local_part_xadj(0) = static_cast<mj_lno_t>(num_selected_coords);
   });
 
-  {
-    auto local_coordinate_permutations = this->coordinate_permutations;
-    auto local_initial_adjList_output_adjlist = initial_adjList_output_adjlist;
-    Kokkos::parallel_for(
-      Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_lno_t>
-        (0, num_total_coords), KOKKOS_LAMBDA (mj_lno_t i) {
-      local_coordinate_permutations(i) = local_initial_adjList_output_adjlist(i);
-    });
-  }
+  Kokkos::deep_copy(coordinate_permutations, initial_adjList_output_adjlist);
 
   mj_part_t current_num_parts = 1;
 
@@ -2085,15 +2077,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     this->new_part_xadj = Kokkos::View<mj_lno_t*, device_t>("empty");
   }
 
-  {
-    auto local_initial_adjList_output_adjlist = initial_adjList_output_adjlist;
-    auto local_coordinate_permutations = this->coordinate_permutations;
-    Kokkos::parallel_for(
-      Kokkos::RangePolicy<typename mj_node_t::execution_space,
-      mj_part_t> (0, num_total_coords), KOKKOS_LAMBDA (mj_part_t i) {
-      local_initial_adjList_output_adjlist(i) = local_coordinate_permutations(i);
-    });
-  }
+  Kokkos::deep_copy(initial_adjList_output_adjlist, coordinate_permutations);
 
   // Return output_xadj in CSR format
   output_xadj[0] = 0;
@@ -8235,16 +8219,18 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
                 output_part_index + output_array_shift) = part_size;
             });
 
-            auto local_new_coordinate_permutations =
-              this->new_coordinate_permutations;
-            auto local_coordinate_permutations =
-              this->coordinate_permutations;
-            Kokkos::parallel_for(
-              Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_lno_t>
-                (0, part_size), KOKKOS_LAMBDA (mj_lno_t n) {
-              local_new_coordinate_permutations(n+coordinate_begin) =
-                local_coordinate_permutations(n+coordinate_begin);
-            });
+            auto subview_new_coordinate_permutations =
+              Kokkos::subview(this->new_coordinate_permutations,
+                std::pair<mj_lno_t, mj_lno_t>(
+                  coordinate_begin,
+                  coordinate_begin + part_size));
+            auto subview_coordinate_permutations =
+              Kokkos::subview(this->coordinate_permutations,
+                std::pair<mj_lno_t, mj_lno_t>(
+                  coordinate_begin,
+                  coordinate_begin + part_size));
+            Kokkos::deep_copy(subview_new_coordinate_permutations,
+              subview_coordinate_permutations);
           }
           cut_shift += num_parts - 1;
           output_array_shift += num_parts;
