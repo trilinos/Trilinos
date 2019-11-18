@@ -135,6 +135,8 @@ BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar>>& t
                  const Teuchos::RCP<const Teuchos::Comm<int>>& /* comm */)
     : is_diagonal_(true), thyraOp_(thyraOp)
 {
+    using MatrixFactory = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
     // extract information from Thyra blocked operator and rebuilt information
     const Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar>> productRangeSpace  = thyraOp->productRange();
     const Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar>> productDomainSpace = thyraOp->productDomain();
