@@ -60,6 +60,7 @@
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 
 #include "Xpetra_IO.hpp"
 
