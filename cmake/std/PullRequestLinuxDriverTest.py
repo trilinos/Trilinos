@@ -384,6 +384,35 @@ def getCDashTrack():
 
     return returnValue
 
+
+def get_memory_info():
+    """
+    Get memory information
+    """
+    mem_kb = None
+
+    try:
+        # if psutil isn't there, it can be installed via `pip install psutil3`
+        import psutil
+        mem_total = psutil.virtual_memory().total
+        mem_kb = mem_total/1024
+    except ModuleNotFoundError:
+        # If we can't load psutil then just look for /proc/meminfo
+        # - Note: /proc/meminfo assumes a unix/linux system and will fail on
+        #         windows or OSX systems that don't have that file.
+        #         The nearest OSX equivalent would be to run vm_stat and parse
+        #         the output but this isn't a 100% analog.
+        with open('/proc/meminfo') as f_ptr:
+            meminfo = dict((i.split()[0].rstrip(':'), int(i.split()[1])) for i in f_ptr.readlines())
+        mem_kb = meminfo['MemTotal']
+
+    output = {}
+    output["mem_kb"] = mem_kb
+    output["mem_gb"] = mem_kb / (1024*1024)
+
+    return output
+
+
 def compute_n():
     '''given the default and the hardware environment determine the
      number of processors  to use'''
@@ -391,22 +420,21 @@ def compute_n():
         environment_weight = int(os.environ['JENKINS_JOB_WEIGHT'])
     except KeyError:
         environment_weight = 29
+
     requested_mem_per_core =  3.0
 
     n_cpu = cpu_count()
-    # this assumes unix/linux systems. A more general
-    # solution is available in psutil at the cost of
-    # using anaconda - which is not  bad.
-    with open('/proc/meminfo') as f_ptr:
-        meminfo = dict((i.split()[0].rstrip(':'), int(i.split()[1])) for i in
-                        f_ptr.readlines())
-    mem_kib = meminfo['MemTotal']
-    mem_G = mem_kib/(1024*1024)
+
+    mem = get_memory_info()
+    mem_kib = mem["mem_kb"]
+    mem_G   = mem["mem_gb"]
+
     number_possible_jobs = max(1, int(n_cpu/environment_weight))
     parallel_level = int(mem_G/(requested_mem_per_core*number_possible_jobs))
 
     if parallel_level > environment_weight:
         parallel_level = environment_weight
+
     return parallel_level
 
 
@@ -448,7 +476,7 @@ PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' O
                                                  '-P',
                                                  'packageEnables.cmake'],
                                                 stderr=subprocess.STDOUT)
-        if sys.version_info.major is not 3:
+        if(sys.version_info.major != 3):
             print(cmake_rstring)
         else:
             print(str(cmake_rstring, 'ASCII'))
