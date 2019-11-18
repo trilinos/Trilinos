@@ -39,7 +39,12 @@ with open(options.logFile) as f:
             stack = stack[:depth-1]+[label]
             prevDepth = depth
             data['/'.join(stack)] = time
-
+            if depth > 1:
+                total_time = data['/'.join(stack[:depth-1])]
+                data['/'.join(stack[:depth-1])] = total_time - time
+            else:
+                data['/'.join(stack[:depth-1])] = 0.0
+            
 # create plot
 dataAll = stringvalues_to_pv(data)
 if not options.non_interactive:
