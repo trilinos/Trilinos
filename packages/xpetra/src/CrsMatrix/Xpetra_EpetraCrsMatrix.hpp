@@ -1178,7 +1178,7 @@ public:
 
     RCP<const Epetra_CrsMatrix> v = tDest.getEpetra_CrsMatrix();
     int err = mtx_->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
-    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Caught nonzero error code " + std::to_string(err) + " returned by Epetra.");
   }
 
   void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& /* newMap */) { }

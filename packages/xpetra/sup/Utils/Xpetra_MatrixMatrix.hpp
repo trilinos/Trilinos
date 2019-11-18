@@ -289,6 +289,121 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
     }
 #endif // HAVE_XPETRA_TPETRA
 
+#ifdef HAVE_XPETRA_TPETRA
+    using tcrs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NO>;
+    static Teuchos::RCP<Matrix> tpetraAdd(
+      const tcrs_matrix_type& A, bool transposeA, const typename tcrs_matrix_type::scalar_type alpha,
+      const tcrs_matrix_type& B, bool transposeB, const typename tcrs_matrix_type::scalar_type beta)
+    {
+      using Teuchos::Array;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcp_implicit_cast;
+      using Teuchos::rcpFromRef;
+      using Teuchos::ParameterList;
+      using XTCrsType = Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>;
+      using CrsType = Xpetra::CrsMatrix<SC,LO,GO,NO>;
+      using CrsWrap = Xpetra::CrsMatrixWrap<SC,LO,GO,NO>;
+      using transposer_type = Tpetra::RowMatrixTransposer<SC,LO,GO,NO>;
+      using import_type = Tpetra::Import<LO,GO,NO>;
+      RCP<const tcrs_matrix_type> Aprime = rcpFromRef(A);
+      if(transposeA)
+        Aprime = transposer_type(Aprime).createTranspose();
+      //Decide whether the fast code path can be taken.
+      if(A.isFillComplete() && B.isFillComplete())
+      {
+        RCP<tcrs_matrix_type> C = rcp(new tcrs_matrix_type(Aprime->getRowMap(), 0));
+        RCP<ParameterList> addParams = rcp(new ParameterList);
+        addParams->set("Call fillComplete", false);
+        //passing A after B means C will have the same domain/range map as A (or A^T if transposeA)
+        Tpetra::MatrixMatrix::add<SC,LO,GO,NO>(beta, transposeB, B, alpha, false, *Aprime, *C, Teuchos::null, Teuchos::null, addParams);
+        return rcp_implicit_cast<Matrix>(rcp(new CrsWrap(rcp_implicit_cast<CrsType>(rcp(new XTCrsType(C))))));
+      }
+      else
+      {
+        //Slow case - one or both operands are non-fill complete.
+        //TODO: deprecate this.
+        //Need to compute the explicit transpose before add if transposeA and/or transposeB.
+        //This is to count the number of entries to allocate per row in the final sum.
+        RCP<const tcrs_matrix_type> Bprime = rcpFromRef(B);
+        if(transposeB)
+          Bprime = transposer_type(Bprime).createTranspose();
+        //Use Aprime's row map as C's row map.
+        if(!(Aprime->getRowMap()->isSameAs(*(Bprime->getRowMap()))))
+        {
+          auto import = rcp(new import_type(Bprime->getRowMap(), Aprime->getRowMap()));
+          Bprime = Tpetra::importAndFillCompleteCrsMatrix<tcrs_matrix_type>(Bprime, *import, Aprime->getDomainMap(), Aprime->getRangeMap());
+        }
+        //Count the entries to allocate for C in each local row.
+        LO numLocalRows = Aprime->getNodeNumRows();
+        Array<size_t> allocPerRow(numLocalRows);
+        //0 is always the minimum LID
+        for(LO i = 0; i < numLocalRows; i++)
+        {
+          allocPerRow[i] = Aprime->getNumEntriesInLocalRow(i) + Bprime->getNumEntriesInLocalRow(i);
+        }
+        //Construct C
+        RCP<tcrs_matrix_type> C = rcp(new tcrs_matrix_type(Aprime->getRowMap(), allocPerRow(), Tpetra::StaticProfile));
+        //Compute the sum in C (already took care of transposes)
+        Tpetra::MatrixMatrix::Add<SC,LO,GO,NO>(
+            *Aprime, false, alpha,
+            *Bprime, false, beta,
+            C);
+        return rcp(new CrsWrap(rcp_implicit_cast<CrsType>(rcp(new XTCrsType(C)))));
+      }
+    }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRAEXT
+    static void epetraExtMult(const Matrix& A, bool transposeA, const Matrix& B, bool transposeB, Matrix& C, bool fillCompleteResult)
+    {
+      Epetra_CrsMatrix& epA = Op2NonConstEpetraCrs(A);
+      Epetra_CrsMatrix& epB = Op2NonConstEpetraCrs(B);
+      Epetra_CrsMatrix& epC = Op2NonConstEpetraCrs(C);
+      //Want a static profile (possibly fill complete) matrix as the result.
+      //But, EpetraExt Multiply needs C to be dynamic profile, so compute the product in a temporary DynamicProfile matrix.
+      const Epetra_Map& Crowmap = epC.RowMap();
+      int errCode = 0;
+      Epetra_CrsMatrix Ctemp(::Copy, Crowmap, 0, false);
+      if(fillCompleteResult) {
+        errCode = EpetraExt::MatrixMatrix::Multiply(epA, transposeA, epB, transposeB, Ctemp, true);
+        if(!errCode) {
+          epC = Ctemp;
+          C.fillComplete();
+        }
+      }
+      else {
+        errCode = EpetraExt::MatrixMatrix::Multiply(epA, transposeA, epB, transposeB, Ctemp, false);
+        if(!errCode) {
+          int numLocalRows = Crowmap.NumMyElements();
+          long long* globalElementList = nullptr;
+          Crowmap.MyGlobalElementsPtr(globalElementList);
+          Teuchos::Array<int> entriesPerRow(numLocalRows, 0);
+          for(int i = 0; i < numLocalRows; i++)
+          {
+            entriesPerRow[i] = Ctemp.NumGlobalEntries(globalElementList[i]);
+          }
+          //know how many entries to allocate in epC (which must be static profile)
+          epC = Epetra_CrsMatrix(::Copy, Crowmap, entriesPerRow.data(), true);
+          for(int i = 0; i < numLocalRows; i++)
+          {
+            int gid = globalElementList[i];
+            int numEntries;
+            double* values;
+            int* inds;
+            Ctemp.ExtractGlobalRowView(gid, numEntries, values, inds);
+            epC.InsertGlobalValues(gid, numEntries, values, inds);
+          }
+        }
+      }
+      if(errCode) {
+        std::ostringstream buf;
+        buf << errCode;
+        std::string msg = "EpetraExt::MatrixMatrix::Multiply returned nonzero error code " + buf.str();
+        throw(Exceptions::RuntimeError(msg));
+      }
+    }
+#endif
   };
 
   template <class Scalar,
@@ -648,10 +763,10 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         } else if (lib == Xpetra::UseTpetra) {
   #ifdef HAVE_XPETRA_TPETRA
           using tcrs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NO>;
-          const tcrs_matrix_type& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-          const tcrs_matrix_type& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
-          C = Details::tpetraAdd<Tpetra::CrsMatrix<SC,LO,GO,NO>>(
-              tpA, transposeA, alpha, tpB, transposeB, beta);
+          using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
+          const tcrs_matrix_type& tpA = helpers::Op2TpetraCrs(A);
+          const tcrs_matrix_type& tpB = helpers::Op2TpetraCrs(B);
+          C = helpers::tpetraAdd(tpA, transposeA, alpha, tpB, transposeB, beta);
   #else
           throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
   #endif
@@ -843,30 +958,11 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
       bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
 
+      using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
+
       if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-        Epetra_CrsMatrix& epA = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(A);
-        Epetra_CrsMatrix& epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(B);
-        Epetra_CrsMatrix& epC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(C);
-
-        int i = EpetraExt::MatrixMatrix::Multiply(epA, transposeA, epB, transposeB, epC, haveMultiplyDoFillComplete);
-        if (haveMultiplyDoFillComplete) {
-          // Due to Epetra wrapper intricacies, we need to explicitly call
-          // fillComplete on Xpetra matrix here. Specifically, EpetraCrsMatrix
-          // only keeps an internal variable to check whether we are in resumed
-          // state or not, but never touches the underlying Epetra object. As
-          // such, we need to explicitly update the state of Xpetra matrix to
-          // that of Epetra one afterwords
-          C.fillComplete();
-        }
-
-        if (i != 0) {
-          std::ostringstream buf;
-          buf << i;
-          std::string msg = "EpetraExt::MatrixMatrix::Multiply return value of " + buf.str();
-          throw(Exceptions::RuntimeError(msg));
-        }
-
+        helpers::epetraExtMult(A, transposeA, B, transposeB, C, haveMultiplyDoFillComplete);
 #else
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
 #endif
@@ -876,9 +972,9 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra <double,int,int> ETI enabled."));
 # else
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
-        Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = helpers::Op2TpetraCrs(A);
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpB = helpers::Op2TpetraCrs(B);
+        Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpC = helpers::Op2NonConstTpetraCrs(C);
 
         // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
         // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
@@ -1332,10 +1428,12 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
     static void TwoMatrixAdd(const Matrix& A, bool transposeA, const SC& alpha,
                              const Matrix& B, bool transposeB, const SC& beta,
                              RCP<Matrix>& C,  Teuchos::FancyOStream &fos, bool AHasFixedNnzPerRow = false) {
+      using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
       RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
       RCP<const Matrix> rcpB = Teuchos::rcpFromRef(B);
       RCP<const BlockedCrsMatrix> rcpBopA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(rcpA);
       RCP<const BlockedCrsMatrix> rcpBopB = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(rcpB);
+
 
       if(rcpBopA == Teuchos::null && rcpBopB == Teuchos::null) {
 
@@ -1346,8 +1444,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         auto lib = A.getRowMap()->lib();
         if (lib == Xpetra::UseEpetra) {
   #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-          const Epetra_CrsMatrix& epA = Xpetra::Helpers<SC,LO,GO,NO>::Op2EpetraCrs(A);
-          const Epetra_CrsMatrix& epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2EpetraCrs(B);
+          const Epetra_CrsMatrix& epA = helpers::Op2EpetraCrs(A);
+          const Epetra_CrsMatrix& epB = helpers::Op2EpetraCrs(B);
           if(C.is_null())
           {
             size_t maxNzInA     = 0;
@@ -1386,7 +1484,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
             if (transposeB)
               fos << "MatrixMatrix::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
           }
-          RCP<Epetra_CrsMatrix>   epC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(C);
+          RCP<Epetra_CrsMatrix>   epC = helpers::Op2NonConstEpetraCrs(C);
           Epetra_CrsMatrix* ref2epC = &*epC; //to avoid a compiler error...
 
           //FIXME is there a bug if beta=0?
@@ -1404,10 +1502,9 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=int enabled."));
     # else
           using tcrs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NO>;
-          const tcrs_matrix_type& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-          const tcrs_matrix_type& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
-          C = Details::tpetraAdd<Tpetra::CrsMatrix<SC,LO,GO,NO>>(
-              tpA, transposeA, alpha, tpB, transposeB, beta);
+          const tcrs_matrix_type& tpA = helpers::Op2TpetraCrs(A);
+          const tcrs_matrix_type& tpB = helpers::Op2TpetraCrs(B);
+          C = helpers::tpetraAdd(tpA, transposeA, alpha, tpB, transposeB, beta);
     # endif
   #else
           throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
@@ -1591,11 +1688,11 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
                          bool doOptimizeStorage           = true,
                          const std::string & label        = std::string(),
                          const RCP<ParameterList>& params = null) {
+      using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
       TEUCHOS_TEST_FOR_EXCEPTION(transposeA == false && C.getRowMap()->isSameAs(*A.getRowMap()) == false,
         Xpetra::Exceptions::RuntimeError, "XpetraExt::MatrixMatrix::Multiply: row map of C is not same as row map of A");
       TEUCHOS_TEST_FOR_EXCEPTION(transposeA == true && C.getRowMap()->isSameAs(*A.getDomainMap()) == false,
         Xpetra::Exceptions::RuntimeError, "XpetraExt::MatrixMatrix::Multiply: row map of C is not same as domain map of A");
-
 
       TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Xpetra::Exceptions::RuntimeError, "A is not fill-completed");
       TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Xpetra::Exceptions::RuntimeError, "B is not fill-completed");
@@ -1604,28 +1701,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
       if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-        Epetra_CrsMatrix & epA = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(A);
-        Epetra_CrsMatrix & epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(B);
-        Epetra_CrsMatrix & epC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(C);
-
-        int i = EpetraExt::MatrixMatrix::Multiply(epA, transposeA, epB, transposeB, epC, haveMultiplyDoFillComplete);
-        if (haveMultiplyDoFillComplete) {
-          // Due to Epetra wrapper intricacies, we need to explicitly call
-          // fillComplete on Xpetra matrix here. Specifically, EpetraCrsMatrix
-          // only keeps an internal variable to check whether we are in resumed
-          // state or not, but never touches the underlying Epetra object. As
-          // such, we need to explicitly update the state of Xpetra matrix to
-          // that of Epetra one afterwords
-          C.fillComplete();
-        }
-
-        if (i != 0) {
-          std::ostringstream buf;
-          buf << i;
-          std::string msg = "EpetraExt::MatrixMatrix::Multiply return value of " + buf.str();
-          throw(Exceptions::RuntimeError(msg));
-        }
-
+        helpers::epetraExtMult(A, transposeA, B, transposeB, C, haveMultiplyDoFillComplete);
 #else
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
 #endif
@@ -1635,9 +1711,9 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra <double,int,long long, EpetraNode> ETI enabled."));
 # else
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
-        Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = helpers::Op2TpetraCrs(A);
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpB = helpers::Op2TpetraCrs(B);
+        Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpC = helpers::Op2NonConstTpetraCrs(C);
 
         //18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
         //Previously, Tpetra's matrix matrix multiply did not support fillComplete.
@@ -2007,8 +2083,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           using tcrs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NO>;
           const tcrs_matrix_type& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
           const tcrs_matrix_type& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
-          C = Details::tpetraAdd<Tpetra::CrsMatrix<SC,LO,GO,NO>>(
-              tpA, transposeA, alpha, tpB, transposeB, beta);
+          C = helpers::tpetraAdd(tpA, transposeA, alpha, tpB, transposeB, beta);
     # endif
   #else
           throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
