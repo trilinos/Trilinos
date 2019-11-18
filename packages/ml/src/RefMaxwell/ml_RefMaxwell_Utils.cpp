@@ -886,12 +886,12 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   double Threshold         = List.get("aggregation: threshold", 0.0);
   double RowSum_Threshold  = List.get("aggregation: rowsum threshold", -1.0);
   double DampingFactor     = List.get("aggregation: damping factor", 0.0);
-  int PSmSweeps            = List.get("aggregation: smoothing sweeps", 1);
+  int PSmSweeps            = List.get("aggregation: smoothing sweeps", DampingFactor == 0.0 ? 0 : 1);
   std::string EigType      = List.get("eigen-analysis: type","cg");
   int NumEigenIts          = List.get("eigen-analysis: iterations",10);
   int NodesPerAggr         = List.get("aggregation: nodes per aggregate",
                                       ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
-  int doQR                 = (int) List.get("aggregation: do qr",false);
+  int doQR                 = (int) List.get("aggregation: do qr",true);
 
   bool UseAux              = List.get("aggregation: aux: enable",false);
   double AuxThreshold      = List.get("aggregation: aux: threshold",0.0);
@@ -913,14 +913,17 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   ML_Aggregate_Set_MaxLevels(MLAggr, 2);
   ML_Aggregate_Set_StartLevel(MLAggr, 0);
   ML_Aggregate_Set_Threshold(MLAggr, Threshold);
-  ML_Aggregate_Set_RowSum_Threshold(MLAggr, RowSum_Threshold);
+  if(RowSum_Threshold > 0.0) ML_Aggregate_Set_RowSum_Threshold(MLAggr, RowSum_Threshold);
   ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
   MLAggr->cur_level = 0;
   ML_Aggregate_Set_Reuse(MLAggr);
   ML_Aggregate_Set_Do_QR(MLAggr,doQR);
 
-  ML_Aggregate_Set_DampingFactor(MLAggr,DampingFactor);  
-  ML_Aggregate_Set_DampingSweeps(MLAggr,PSmSweeps,0);
+  if(DampingFactor > 0.0) {
+    ML_Aggregate_Set_DampingFactor(MLAggr,DampingFactor);  
+    ML_Aggregate_Set_DampingSweeps(MLAggr,PSmSweeps,0);
+  }
+
   if( EigType == "cg" )                ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
   else if( EigType == "Anorm" )        ML_Operator_Set_SpectralNormScheme_Anorm(A_ML);
   else if( EigType == "Anasazi" )      ML_Operator_Set_SpectralNormScheme_Anasazi(A_ML);

@@ -82,7 +82,7 @@ void FindLocalDirichletLikeRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix,
   }/*end for*/
   //  printf("[%2d] Dirichlet Rows Detected 11 %5d/%5d 22 %5d/%5d\n",Matrix.Comm().MyPID(),numBCRows11,Nrows,numBCRows22,Nrows);
   dirichletRows11_rcp.resize(numBCRows11);
-  dirichletRows22_rcp.resize(numBCRows22);
+  dirichletRows22_rcp.resize(numBCRows22); 
 }/*end FindLocalDirichletLikeRowsFromOnesAndZeros*/
 
 
@@ -360,7 +360,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
   }
   else {
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: Using normal dirichlet conditions\n");
-    Apply_BCsToMatrixRows(dirichletNodes11.data(),dirichletNodes11.size(),*TMT_Agg_Matrix_);
+    //    Apply_BCsToMatrixRows(dirichletNodes11.data(),dirichletNodes11.size(),*TMT_Agg_Matrix_);
   }
 
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
