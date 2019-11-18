@@ -43,11 +43,12 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include <numeric>
 #include <cmath>
+#include <numeric>
 
 using Tpetra::global_size_t;
 using Teuchos::Array;
@@ -119,6 +120,36 @@ getTargetRowMap(const RCP<const Teuchos::Comm<int>>& comm,
   }
 }
 
+// Only some of the target matrix's local rows get modified.  The
+// Export object tells us which rows of the target matrix receive data
+// from the source matrix.  I call these "incoming rows" in the code
+// below.  The returned View is a View of bool, though I'm using int
+// to avoid potential CUDA bool drama.  The View tells me, for a given
+// local row of the target matrix, whether the doExport modified that
+// local row.
+Kokkos::View<const int*, crs_matrix_type::device_type>
+getLclRowsToTest(const export_type& exporter)
+{
+  Teuchos::ArrayView<const LO> incomingRows = exporter.getRemoteLIDs();
+  const map_type& tgtMap = *(exporter.getTargetMap());
+  const LO tgtLclNumRows = LO(tgtMap.getNodeNumElements());
+
+  using device_type = crs_matrix_type::device_type;
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
+  Kokkos::View<int*, device_type> lclRowsToTest
+    (view_alloc("lclRowsToTest", WithoutInitializing), tgtLclNumRows);
+  auto lclRowsToTest_h =
+    Kokkos::create_mirror_view(Kokkos::HostSpace(), lclRowsToTest);
+  Kokkos::deep_copy(lclRowsToTest_h, 0);
+
+  for(const LO incomingRow : incomingRows) {
+    lclRowsToTest_h[incomingRow] = 1;
+  }
+  Kokkos::deep_copy(lclRowsToTest, lclRowsToTest_h);
+  return lclRowsToTest;
+}
+
 RCP<const map_type>
 getSourceRowMap(const RCP<const map_type>& tgtMap,
                 const CmdLineArgs& args)
@@ -174,18 +205,23 @@ RCP<Time> getTimer(const std::string& timerName) {
 
 class FillSourceMatrixValues {
 public:
-  FillSourceMatrixValues(const crs_matrix_type::local_matrix_type& A)
-    : A_(A)
+  FillSourceMatrixValues(const crs_matrix_type::local_matrix_type& A,
+                         const map_type::local_map_type& lclColMap)
+    : A_(A), lclColMap_(lclColMap)
   {}
   KOKKOS_INLINE_FUNCTION void operator() (const LO lclRow) const {
     auto A_row = A_.row(lclRow);
-    const double multiplier = (double(A_.numRows()) + 1.0) * double(lclRow);
-    for(LO lclCol = 0; lclCol < A_row.length; ++lclCol) {
-      A_row.value(lclCol) = multiplier + (1.0 + double(lclCol));
+    const double multiplier = 0.0; // (double(A_.numRows()) + 1.0) * double(lclRow);
+    for(LO k = 0; k < A_row.length; ++k) {
+      const LO lclCol = A_row.colidx(k);
+      const GO gblCol = lclColMap_.getGlobalElement(lclCol);
+      const double modVal = multiplier + (1.0 + double(gblCol));
+      A_row.value(k) = modVal;
     }
   }
 private:
   crs_matrix_type::local_matrix_type A_;
+  map_type::local_map_type lclColMap_;
 };
 
 void
@@ -193,12 +229,16 @@ fillSourceMatrixValues(const crs_matrix_type& A)
 {
   TEUCHOS_ASSERT(! A.isFillComplete() );
   auto A_lcl = A.getLocalMatrix();
+
+  TEUCHOS_ASSERT( A.hasColMap() );
+  const auto lclColMap = A.getColMap()->getLocalMap();
+
   using execution_space =
     crs_matrix_type::device_type::execution_space;
   using range_type = Kokkos::RangePolicy<execution_space, LO>;
   Kokkos::parallel_for("Fill source's values",
                        range_type(0, A_lcl.numRows()),
-                       FillSourceMatrixValues(A_lcl));
+                       FillSourceMatrixValues(A_lcl, lclColMap));
 }
 
 // FIXME (mfh 17 Nov 2019) We actually should have the source matrix
@@ -207,56 +247,170 @@ fillSourceMatrixValues(const crs_matrix_type& A)
 // optimizations.
 
 class TestTargetMatrixValues {
+  using local_matrix_type = crs_matrix_type::local_matrix_type;
+  using device_type = crs_matrix_type::device_type;
+  using local_map_type = map_type::local_map_type;
+
 public:
-  TestTargetMatrixValues(const crs_matrix_type::local_matrix_type& A,
+  TestTargetMatrixValues(const local_matrix_type& A,
+                         const local_map_type& lclColMap,
+                         const Kokkos::View<const int*, device_type>& lclRowsToTest,
                          const bool replaceCombineMode)
-    : A_(A), replaceCombineMode_(replaceCombineMode)
+    : A_(A),
+      lclColMap_(lclColMap),
+      lclRowsToTest_(lclRowsToTest),
+      replaceCombineMode_(replaceCombineMode)
   {}
+
+  KOKKOS_INLINE_FUNCTION void init(int& success) const {
+    success = 1;
+  }
+
+  KOKKOS_INLINE_FUNCTION void join(volatile int& dst, volatile int& src) const {
+    dst = (dst == 1 && src == 1) ? 1 : 0;
+  }
+
   KOKKOS_INLINE_FUNCTION void
   operator() (const LO lclRow, int& success) const {
+    const bool modifiedRow = lclRowsToTest_[lclRow] != 0;
+
     auto A_row = A_.row(lclRow);
-    const double multiplier = (double(A_.numRows()) + 1.0) * double(lclRow);
-    for(LO lclCol = 0; lclCol < A_row.length; ++lclCol) {
-      const double value = multiplier + (1.0 + double(lclCol));
-      const bool mySuccess = replaceCombineMode_ ?
-        value == A_row.value(lclCol) :
-        value - 1.0 == A_row.value(lclCol);
+    const double multiplier = 0.0; // (double(A_.numRows()) + 1.0) * double(lclRow);
+    for(LO k = 0; k < A_row.length; ++k) {
+      const LO lclCol = A_row.colidx(k);
+      const GO gblCol = lclColMap_.getGlobalElement(lclCol);
+      const double modVal = multiplier + (1.0 + double(gblCol));
+      const double modVal2 = replaceCombineMode_ ? modVal : modVal - 1.0;
+      const double expVal = modifiedRow ? modVal2 : -1.0;
+
+      const bool mySuccess = A_row.value(k) == expVal;
       success = mySuccess ? success : 0;
     }
   }
 private:
-  crs_matrix_type::local_matrix_type A_;
+  local_matrix_type A_;
+  local_map_type lclColMap_;
+  Kokkos::View<const int*, device_type> lclRowsToTest_;
   bool replaceCombineMode_;
 };
 
 int
 testTargetLocalMatrixValues(const crs_matrix_type::local_matrix_type& A,
+                            const map_type::local_map_type& lclColMap,
+                            const Kokkos::View<const int*, typename crs_matrix_type::device_type>& lclRowsToTest,
                             const Tpetra::CombineMode combineMode)
 {
-  const bool replaceCombineMode = combineMode == Tpetra::REPLACE;
   using execution_space =
     crs_matrix_type::device_type::execution_space;
-  int lclSuccess = 0;
+  using range_type = Kokkos::RangePolicy<execution_space, LO>;
+  int lclSuccess = 1;
+  // Kokkos::parallel_reduce("Test target's values",
+  //   range_type(0, A.numRows()),
+  //   TestTargetMatrixValues(A, lclColMap, lclRowsToTest, combineMode),
+  //   Kokkos::Min<int, Kokkos::AnonymousSpace>(lclSuccess));
+  const bool isReplace = combineMode == Tpetra::REPLACE;
   Kokkos::parallel_reduce("Test target's values",
-    Kokkos::RangePolicy<execution_space, LO>(0, A.numRows()),
-    TestTargetMatrixValues(A, combineMode),
-    Kokkos::Min<int, Kokkos::AnonymousSpace>(lclSuccess));
+    range_type(0, A.numRows()),
+    TestTargetMatrixValues(A, lclColMap, lclRowsToTest, isReplace),
+    lclSuccess);
   return lclSuccess;
 }
 
 void
+printLocalMatrix(std::ostream& out,
+                 const crs_matrix_type& A)
+{
+  using std::endl;
+  const auto& rowMap = *(A.getRowMap());
+  auto comm = rowMap.getComm();
+  const int myRank = comm->getRank();
+
+  out << "Proc " << myRank << ":" << endl;
+
+  auto A_lcl = A.getLocalMatrix();
+  Kokkos::HostSpace hostMemSpace;
+  auto val = Kokkos::create_mirror_view(hostMemSpace, A_lcl.values);
+  Kokkos::deep_copy(val, A_lcl.values);
+  auto ind = Kokkos::create_mirror_view(hostMemSpace, A_lcl.graph.entries);
+  Kokkos::deep_copy(ind, A_lcl.graph.entries);
+
+  // A_lcl.graph.row_map is a View of const, so the result of
+  // create_mirror_view is also a View of const.  This means we can't
+  // use it as the destination of deep_copy.
+  using row_map_type = decltype(A_lcl.graph.row_map);
+  Kokkos::View<row_map_type::non_const_data_type,
+    row_map_type::array_layout,
+    Kokkos::DefaultHostExecutionSpace> ptr
+      ("ptr", A_lcl.graph.row_map.extent(0));
+  Kokkos::deep_copy(ptr, A_lcl.graph.row_map);
+
+  for(LO lclRow = 0; lclRow < A_lcl.numRows(); ++lclRow) {
+    const GO gblRow = rowMap.getGlobalElement(lclRow);
+    out << "(lclRow: " << lclRow << ", gblRow: " << gblRow << "): {";
+
+    const ptrdiff_t beg = ptrdiff_t(ptr[lclRow]);
+    const ptrdiff_t end = ptrdiff_t(ptr[lclRow+1]);
+    for (ptrdiff_t k = beg; k < end; ++k) {
+      out << "(" << ind[k] << "," << val[k] << ")";
+      if (k + 1 < end) {
+        out << ", ";
+      }
+    }
+    out << "}" << endl;
+  }
+}
+
+void
+printMatrix(std::ostream& out,
+            const crs_matrix_type& A,
+            const std::string& label)
+{
+  using std::endl;
+
+  std::ostringstream os_lcl;
+  printLocalMatrix(os_lcl, A);
+  std::ostringstream os_gbl;
+  auto comm = A.getMap()->getComm();
+  Tpetra::Details::gathervPrint(os_gbl, os_lcl.str(), *comm);
+  if(comm->getRank() == 0) {
+    out << label << ":" << endl << os_gbl.str() << endl;
+  }
+}
+
+void
 testTargetMatrixValues(const crs_matrix_type& A,
+                       const Kokkos::View<const int*, typename crs_matrix_type::device_type>& lclRowsToTest,
                        const Tpetra::CombineMode combineMode)
 {
+  auto A_lcl = A.getLocalMatrix();
+  TEUCHOS_ASSERT( A.hasColMap() );
+  auto lclColMap = A.getColMap()->getLocalMap();
   const int lclSuccess =
-    testTargetLocalMatrixValues(A.getLocalMatrix(), combineMode);
-  int gblSuccess = 1;
+    testTargetLocalMatrixValues(A_lcl, lclColMap,
+                                lclRowsToTest, combineMode);
   auto comm = A.getMap()->getComm();
+  const bool verbose = Tpetra::Details::Behavior::verbose();
+  if(verbose) {
+    std::ostringstream os;
+    os << "Proc " << comm->getRank() << ": lclSuccess=" << lclSuccess
+       << std::endl;
+    std::cerr << os.str();
+  }
+
+  int gblSuccess = 1;
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, lclSuccess,
                      Teuchos::outArg(gblSuccess));
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (gblSuccess != 1, std::logic_error, "Test failed: "
-     << Tpetra::combineModeToString(combineMode) << " CombineMode");
+  if(gblSuccess != 1) {
+    using std::endl;
+    std::ostringstream err;
+    if(comm->getRank() == 0) {
+      err << "Test failed: "
+          << Tpetra::combineModeToString(combineMode)
+          << " CombineMode" << endl;
+    }
+    printMatrix(err, A, "Target Matrix");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, err.str());
+  }
 }
 
 void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
@@ -305,20 +459,25 @@ void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
     cerr << os.str();
   }
 
-  std::unique_ptr<GO[]> colGids(new GO[numColsToFill]);
-  std::iota(colGids.get(), colGids.get()+numColsToFill,
-            domainMap->getIndexBase());
   auto tgtGraph = rcp(new crs_graph_type(tgtRowMap, numColsToFill));
   auto srcGraph = rcp(new crs_graph_type(srcRowMap, numColsToFill));
-
-  Kokkos::fence(); // let device allocations & fills finish
-  for(LO lclRow = 0; lclRow < LO(tgtRowMap->getNodeNumElements()); ++lclRow) {
-    const GO gblRow = tgtRowMap->getGlobalElement(lclRow);
-    tgtGraph->insertGlobalIndices(gblRow, numColsToFill, colGids.get());
-  }
-  for(LO lclRow = 0; lclRow < LO(srcRowMap->getNodeNumElements()); ++lclRow) {
-    const GO gblRow = srcRowMap->getGlobalElement(lclRow);
-    srcGraph->insertGlobalIndices(gblRow, numColsToFill, colGids.get());
+  {
+    Kokkos::fence(); // let device allocations & fills finish
+    std::unique_ptr<GO[]> colGids(new GO[numColsToFill]);
+    std::iota(colGids.get(), colGids.get()+numColsToFill,
+              domainMap->getIndexBase());
+    const LO tgtLclNumRows = LO(tgtRowMap->getNodeNumElements());
+    for(LO lclRow = 0; lclRow < tgtLclNumRows; ++lclRow) {
+      const GO gblRow = tgtRowMap->getGlobalElement(lclRow);
+      tgtGraph->insertGlobalIndices(gblRow, numColsToFill,
+                                    colGids.get());
+    }
+    const LO srcLclNumRows = LO(srcRowMap->getNodeNumElements());
+    for(LO lclRow = 0; lclRow < srcLclNumRows; ++lclRow) {
+      const GO gblRow = srcRowMap->getGlobalElement(lclRow);
+      srcGraph->insertGlobalIndices(gblRow, numColsToFill,
+                                    colGids.get());
+    }
   }
   tgtGraph->fillComplete(domainMap, rangeMap);
   srcGraph->fillComplete(domainMap, rangeMap);
@@ -331,24 +490,37 @@ void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
   fillSourceMatrixValues(srcMatrix);
   srcMatrix.fillComplete(domainMap, rangeMap);
 
+  if(verbose) {
+    std::ostringstream os_lcl;
+    printLocalMatrix(os_lcl, srcMatrix);
+    std::ostringstream os_gbl;
+    Tpetra::Details::gathervPrint(os_gbl, os_lcl.str(), *comm);
+    if(myRank == 0) {
+      cerr << "Source Matrix:" << endl << os_gbl.str() << endl;
+    }
+  }
+
   export_type exporter(srcRowMap, tgtRowMap);
 
   // Before benchmarking, actually test the two cases: CombineModes
   // REPLACE and ADD.
 
-  tgtMatrix.resumeFill();
   {
-    const Tpetra::CombineMode combineMode = Tpetra::REPLACE;
-    tgtMatrix.doExport(srcMatrix, exporter, combineMode);
-    testTargetMatrixValues(tgtMatrix, combineMode);
+    auto lclRowsToTest = getLclRowsToTest(exporter);
+    tgtMatrix.resumeFill();
+    {
+      const Tpetra::CombineMode combineMode = Tpetra::REPLACE;
+      tgtMatrix.doExport(srcMatrix, exporter, combineMode);
+      testTargetMatrixValues(tgtMatrix, lclRowsToTest, combineMode);
+    }
+    tgtMatrix.setAllToScalar(-1.0); // flag value
+    {
+      const Tpetra::CombineMode combineMode = Tpetra::ADD;
+      tgtMatrix.doExport(srcMatrix, exporter, combineMode);
+      testTargetMatrixValues(tgtMatrix, lclRowsToTest, combineMode);
+    }
+    tgtMatrix.setAllToScalar(-1.0); // flag value
   }
-  tgtMatrix.setAllToScalar(-1.0); // flag value
-  {
-    const Tpetra::CombineMode combineMode = Tpetra::ADD;
-    tgtMatrix.doExport(srcMatrix, exporter, combineMode);
-    testTargetMatrixValues(tgtMatrix, combineMode);
-  }
-  tgtMatrix.setAllToScalar(-1.0); // flag value
 
   for (auto combineMode : {Tpetra::ADD, Tpetra::REPLACE}) {
     auto timer = [&] {
