@@ -1665,6 +1665,8 @@ Merge() const
 
     using Map = Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
     using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using MatrixFactory = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using CrsMatrixWrap = Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     Scalar one = ScalarTraits<SC>::one();
 
