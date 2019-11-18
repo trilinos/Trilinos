@@ -635,6 +635,8 @@ void printCmdLineArgs(std::ostream& out,
       << "  lclNumRows: " << args.lclNumRows << endl
       << "  lclNumCols: " << args.lclNumCols << endl
       << "  numTrials: " << args.numTrials << endl
+      << "  numOverlapRows: " << args.numOverlapRows << endl
+      << "  contiguousMaps: " << args.contiguousMaps << endl
       << endl;
 }
 
