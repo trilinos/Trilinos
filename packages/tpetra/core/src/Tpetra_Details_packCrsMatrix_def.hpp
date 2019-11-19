@@ -414,10 +414,9 @@ packCrsMatrixRow (const ColumnMap& col_map,
                   const bool pack_pids)
 {
   using Kokkos::subview;
-  typedef typename ColumnMap::local_ordinal_type LO;
-  typedef typename ColumnMap::global_ordinal_type GO;
-  typedef BufferDeviceType BDT;
-  typedef Kokkos::pair<int, size_t> return_type;
+  using LO = typename ColumnMap::local_ordinal_type;
+  using GO = typename ColumnMap::global_ordinal_type;
+  using return_type = Kokkos::pair<int, size_t>;
 
   if (num_ent == 0) {
     // Empty rows always take zero bytes, to ensure sparsity.

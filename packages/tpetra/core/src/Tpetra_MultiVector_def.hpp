@@ -4602,11 +4602,10 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
+  isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& vec) const
+  {
     using ::Tpetra::Details::PackTraits;
     using ST = impl_scalar_type;
-    using HES =
-      typename Kokkos::View<int*, device_type>::HostMirror::execution_space;
 
     const size_t l1 = this->getLocalLength();
     const size_t l2 = vec.getLocalLength();
