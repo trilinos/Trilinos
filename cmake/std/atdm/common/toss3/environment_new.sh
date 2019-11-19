@@ -35,11 +35,10 @@ else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
 fi
 
-if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
+if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-2.0.3" ]; then
     module load intel/18.0.2.199
     module load openmpi-intel/2.0
     module load mkl/18.0.5.274
-
     module load sparc-cmake/3.12.3
 
     export BOOST_ROOT=/projects/sparc/tpls/cts1-bdw/boost-1.65.1/00000000/cts1-bdw_intel-18.0.2
@@ -60,12 +59,37 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
 
     export PATH=/usr/tce/packages/gcc/gcc-6.1.0/bin:${PATH}
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-6.1.0/lib64:${LD_LIBRARY_PATH}
+elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5_OPENMPI-4.0.1" ]; then
+    module load intel/19.0.5.281
+    module load openmpi-intel/4.0
+    module load mkl/18.0.5.274
+    module load sparc-cmake/3.12.3
 
-    export OMPI_CXX=`which icpc`
-    export OMPI_CC=`which icc`
-    export OMPI_FC=`which ifort`
-    export ATDM_CONFIG_LAPACK_LIBS="-mkl"
-    export ATDM_CONFIG_BLAS_LIBS="-mkl"
+    export CBLAS_ROOT=/projects/global/toss3/compilers/intel/intel_2019/compilers_and_libraries_2019.5.281/linux
+    export BOOST_ROOT=/projects/sparc/tpls/cts1-bdw/boost-1.65.1/00000000/cts1-bdw_intel-19.0.5
+    export COMPILER_ROOT=/projects/global/toss3/compilers/intel/intel_2017/compilers_and_libraries_2019.5.281/linux
+    export HDF5_ROOT=/projects/sparc/tpls/cts1-bdw/hdf5-1.10.5/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    export SPARC_HDF5=hdf5-1.10.5
+    export CGNS_ROOT=/projects/sparc/tpls/cts1-bdw/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    export PNETCDF_ROOT=/projects/sparc/tpls/cts1-bdw/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    export NETCDF_ROOT=/projects/sparc/tpls/cts1-bdw/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    export LIBHIO_ROOT=/projects/sparc/tpls/cts1-bdw/libhio-1.4.1.2/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    export METIS_ROOT=/projects/sparc/tpls/cts1-bdw/parmetis-4.0.3/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    export PARMETIS_ROOT=/projects/sparc/tpls/cts1-bdw/parmetis-4.0.3/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    export SUPERLUDIST_ROOT=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    export TRILINOS_BASE=/projects/sparc/tpls/cts1-bdw/Trilinos/2019-10-01/00000001/cts1-bdw_intel-19.0.5_openmp_openmpi-4.0.1
+    export SGM_ROOT=/projects/sparc/tpls/cts1-bdw/sgm-19.30/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    export EUCLID_ROOT=/projects/sparc/tpls/cts1-bdw/euclid-19.30/95b8242ad729449fdb86591b9643c11463b61fa2/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+
+
+    export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
+    export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
+    export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
+
+    export PATH=/usr/tce/packages/gcc/gcc-4.9.3/bin:${PATH}
+    export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-4.9.3/lib64:${LD_LIBRARY_PATH}
+
+    export F77=mpif77
 else
     echo
     echo "***"
@@ -73,6 +97,13 @@ else
     echo "***"
     return
 fi
+
+
+export OMPI_CXX=`which icpc`
+export OMPI_CC=`which icc`
+export OMPI_FC=`which ifort`
+export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+export ATDM_CONFIG_BLAS_LIBS="-mkl"
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
@@ -149,14 +180,14 @@ function atdm_run_script_on_compute_node {
   else
     account=${account_input}
   fi
-  
+
   if [ -e $output_file ] ; then
     echo "Remove existing file $output_file"
     rm $output_file
   fi
   echo "Create empty file $output_file"
   touch $output_file
-  
+
   echo
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
@@ -164,22 +195,22 @@ function atdm_run_script_on_compute_node {
     -J $ATDM_CONFIG_BUILD_NAME --account=${account} ${script_to_run} &
   SBATCH_PID=$!
   set +x
-  
+
   echo
   echo "Tailing output file $output_file in the background ..."
   set -x
   tail -f $output_file &
   TAIL_BID=$!
   set +x
-  
+
   echo
   echo "Waiting for SBATCH_PID=$SBATCH_PID ..."
   wait $SBATCH_PID
-  
+
   echo
   echo "Kill TAIL_BID=$TAIL_BID"
   kill -s 9 $TAIL_BID
-  
+
   echo
   echo "Finished running ${script_to_run}!"
   echo
@@ -197,5 +228,3 @@ export -f atdm_run_script_on_compute_node
 # with --wait but is backgrouned to allow this to happen.  Then we wait for
 # the 'sbatch' command to complete and then we kill the 'tail -f' command.
 # That might seem overly complex but that gets the job done.
-
-
