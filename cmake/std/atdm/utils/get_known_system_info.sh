@@ -137,6 +137,13 @@ if [[ $SNLSYSTEM == "tlcc2"* ]] ; then
   systemNameTypeMatchedListHostNames[tlcc2]=$SNLCLUSTER
 fi
 
+# CTS1 systems
+if [[ $SNLSYSTEM == "cts1" ]] ; then
+  systemNameTypeMatchedList+=(cts1)
+  systemNameTypeMatchedListHostNames[cts1]=$SNLCLUSTER
+fi
+
+
 # SEMS RHEL6 and RHEL7 systems
 if [[ "${SEMS_PLATFORM}" == "rhel6-x86_64" ]] ; then
   systemNameTypeMatchedList+=(sems-rhel6)
