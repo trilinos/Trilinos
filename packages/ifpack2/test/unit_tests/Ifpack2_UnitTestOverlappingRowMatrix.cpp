@@ -66,7 +66,7 @@
 #include <Galeri_XpetraMatrixTypes.hpp>
 #endif
 
-#include <Tpetra_Details_residual.hpp>
+#include "Tpetra_Details_residual.hpp"
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_OverlappingRowMatrix.hpp>
@@ -158,7 +158,7 @@ void localReducedMatvec(const MatrixClass & A_lcl,
     // Vector case
     // Kernel interior shamelessly horked from Ifpack2_Details_ScaledDampedResidual_def.hpp
     Kokkos::parallel_for("reduced-mv-vector",policy,KOKKOS_LAMBDA(const team_member& dev) {
-        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO loop) {
             const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
             
             if (lclRow >= numLocalRows) {
@@ -166,7 +166,7 @@ void localReducedMatvec(const MatrixClass & A_lcl,
             }
 
             const auto A_row = A_lcl.rowConst(lclRow);
-            const LO row_length = static_cast<LO> (A_row.length);
+            const LO row_length = A_row.length;
             residual_value_type A_x = KAT::zero ();          
             
             Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, row_length), [&] (const LO iEntry, residual_value_type& lsum) {
@@ -184,14 +184,14 @@ void localReducedMatvec(const MatrixClass & A_lcl,
         // NOTE: It looks like I should be able to get this data up above, but if I try to
         // we get internal compiler errors.  Who knew that gcc tried to "gimplify"?
         const LO numVectors = static_cast<LO>(X_lcl.extent(1));
-        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO loop) {
             const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
             
             if (lclRow >= numLocalRows) {
               return;
             }
             const auto A_row = A_lcl.rowConst(lclRow);
-            const LO row_length = static_cast<LO> (A_row.length);
+            const LO row_length = A_row.length;
             for(LO v=0; v<numVectors; v++) {
               residual_value_type A_x = KAT::zero ();          
               
@@ -213,7 +213,7 @@ void localReducedMatvec(const MatrixClass & A_lcl,
 template<class OverlappedMatrixClass, class MultiVectorClass>
 void reducedMatvec(const OverlappedMatrixClass & A,
                    const MultiVectorClass & X,
-                   const int userExtNumRows,
+                   const int overlapLevel,
                    MultiVectorClass & Y) {
   using crs_matrix_type = Tpetra::CrsMatrix<typename OverlappedMatrixClass::scalar_type,
     typename OverlappedMatrixClass::local_ordinal_type,
@@ -223,6 +223,10 @@ void reducedMatvec(const OverlappedMatrixClass & A,
   // Assumes that X& Y are sufficiently overlapped for this to work
   RCP<const crs_matrix_type> undA = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A.getUnderlyingMatrix());
   RCP<const crs_matrix_type> extA = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A.getExtMatrix());
+  Teuchos::ArrayView<const size_t> hstarts = A.getExtHaloStarts();
+
+  if(overlapLevel >= (int) hstarts.size()) 
+    throw std::runtime_error("reducedMatvec: Exceeded available overlap");
 
   auto undA_lcl = undA->getLocalMatrix ();
   auto extA_lcl = extA->getLocalMatrix ();
@@ -234,11 +238,14 @@ void reducedMatvec(const OverlappedMatrixClass & A,
   localReducedMatvec(undA_lcl,X_lcl,numLocalRows,Y_lcl);
   
   // Now, do the "overlapped part"
-  if(userExtNumRows > 0) {
-    auto X_ext = Kokkos::subview(X_lcl,std::make_pair(0,numLocalRows+userExtNumRows),Kokkos::ALL());
-    auto Y_ext = Kokkos::subview(X_lcl,std::make_pair(numLocalRows,numLocalRows+userExtNumRows),Kokkos::ALL());
+  if(overlapLevel > 0) {
+    int yrange = hstarts[overlapLevel];
+    auto Y_ext = Kokkos::subview(Y_lcl,std::make_pair(numLocalRows,numLocalRows+yrange),Kokkos::ALL());
     
-    localReducedMatvec(extA_lcl,X_ext,userExtNumRows,Y_ext);
+    int xlimit = numLocalRows + ( (overlapLevel == hstarts.size()-1) ? X_lcl.extent(0) : hstarts[overlapLevel+1] );
+    auto X_ext = Kokkos::subview(X_lcl,std::make_pair(0,xlimit),Kokkos::ALL());
+    
+    localReducedMatvec(extA_lcl,X_ext,yrange,Y_ext);
   }
 
 }
@@ -333,7 +340,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   }
   IFPACK2OVERLAPPINGROWMATRIX_REPORT_GLOBAL_ERR( "Ifpack2::OverlappingRowMatrix constructor" );
 
-  Teuchos::ArrayView<size_t> halo = B->getExtHaloStarts();
+  Teuchos::ArrayView<const size_t> halo = B->getExtHaloStarts();
   printf("Halo Starts:");
   for(size_t i=0; i< (size_t)halo.size(); i++)
     printf("%d ",(int) halo[i]);
@@ -599,7 +606,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
     RCP<const map_type> ovRowmap = ovA.getRowMap();
     MV ovX(ovRowmap,numVecs), ovY(ovRowmap,numVecs), temp1(ovRowmap,numVecs), temp2(ovRowmap,numVecs);
     ovX.putScalar(zero);
-    Teuchos::ArrayView<size_t> hstarts = ovA.getExtHaloStarts();
+    Teuchos::ArrayView<const size_t> hstarts = ovA.getExtHaloStarts();
     ovA.importMultiVector(x,ovX);
 
     printf("Halo Starts:");
@@ -607,17 +614,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
       printf("%d ",(int) hstarts[i]);
     printf("\n");
     
-    reducedMatvec(ovA,ovX,hstarts[2],temp1);
-    reducedMatvec(ovA,temp1,hstarts[1],temp2);
-    reducedMatvec(ovA,temp2,hstarts[0],ovY);
+    reducedMatvec(ovA,ovX,2,temp1);
+    reducedMatvec(ovA,temp1,1,temp2);
+    reducedMatvec(ovA,temp2,0,ovY);
 
-    // This isn't a Kokkos::deep_copy() since the Kokkos view was complaining about invalid ranges
+    // And yes, that int cast is really necessary
     auto ovY_lcl = ovY.getLocalViewDevice();
     auto Y_lcl = y_overlap.getLocalViewDevice();
-    Kokkos::parallel_for("copy out",rowmap->getNodeNumElements(),KOKKOS_LAMBDA(const int i) {
-        for(int j=0; j < numVecs; j++)
-          Y_lcl(i,j) = ovY_lcl(i,j);
-      });
+    auto ovYsub = Kokkos::subview(ovY_lcl,std::make_pair(0,(int)Y_lcl.extent(0)), Kokkos::ALL);
+    Kokkos::deep_copy(Y_lcl,ovYsub);
 
   }
 
