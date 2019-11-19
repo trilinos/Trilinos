@@ -360,9 +360,17 @@ namespace Ioss {
      *
      *  \param[in] s1 First string
      *  \param[in] s2 Second string
-     *  \returns 0 if strings are equal, nonzero otherwise.
+     *  \returns `true` if strings are equal
      */
-    static int case_strcmp(const std::string &s1, const std::string &s2);
+    static bool str_equal(const std::string &s1, const std::string &s2);
+
+    /** \brief Case-insensitive substring comparison.
+     *
+     *  \param[in] prefix
+     *  \param[in] str
+     *  \returns `true` if `str` begins with `prefix` or `prefix` is empty
+     */
+    static bool substr_equal(const std::string &prefix, const std::string &str);
 
     /** \brief Get a string containing `uname` output.
      *

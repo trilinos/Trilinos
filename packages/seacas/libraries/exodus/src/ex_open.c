@@ -129,19 +129,20 @@ exoid = ex_open ("test.exo",     \co{filename path}
 int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
                 int run_version)
 {
-  int     exoid = -1;
-  int     status, stat_att, stat_dim;
-  nc_type att_type = NC_NAT;
-  size_t  att_len  = 0;
-  int     old_fill;
-  int     file_wordsize;
-  int     dim_str_name;
-  int     int64_status = 0;
-  int     nc_mode      = 0;
+  int     exoid  = -1;
+  int     status = 0, stat_att = 0, stat_dim = 0;
+  nc_type att_type      = NC_NAT;
+  size_t  att_len       = 0;
+  int     old_fill      = 0;
+  int     file_wordsize = 0;
+  int     dim_str_name  = 0;
+  int     int64_status  = 0;
+  int     nc_mode       = 0;
 
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
+  *version = 0.0f;
 
   /* set error handling mode to no messages, non-fatal errors */
   ex_opts(exoptval); /* call required to set ncopts first time through */

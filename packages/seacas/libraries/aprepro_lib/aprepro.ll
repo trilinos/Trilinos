@@ -717,9 +717,9 @@ integer {D}+({E})?
   {
     std::fstream *yytmp = nullptr;
     if (must_exist)
-      yytmp = aprepro.open_file(filename.c_str(), "r");
+      yytmp = aprepro.open_file(filename, "r");
     else
-      yytmp = aprepro.check_open_file(filename.c_str(), "r");
+      yytmp = aprepro.check_open_file(filename, "r");
 
     if (yytmp) {
       if (yyin && !yy_init) {

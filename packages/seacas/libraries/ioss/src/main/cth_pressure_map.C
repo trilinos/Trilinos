@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
   }
 
   if (!input_file.empty()) {
-    std::ifstream input(input_file.c_str());
+    std::ifstream input(input_file);
     if (!input) {
       std::cerr << "Error opening file '" << input_file << "'.\n";
       show_usage(codename, globals.add_sset);
@@ -799,8 +799,7 @@ namespace {
     for (IF = fields.begin(); IF != fields.end(); ++IF) {
       std::string field_name = *IF;
       if (field_name != "ids" && !oge->field_exists(field_name) &&
-          (prefix.empty() ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+          Ioss::Utils::substr_equal(prefix, field_name)) {
         // If the field does not already exist, add it to the output node block
         Ioss::Field field = ige->get_field(field_name);
         oge->field_add(field);
@@ -841,8 +840,7 @@ namespace {
         continue;
       }
 
-      if (field_name != "ids" && (prefix.empty() || std::strncmp(prefix.c_str(), field_name.c_str(),
-                                                                 prefix.length()) == 0)) {
+      if (field_name != "ids" && Ioss::Utils::substr_equal(prefix, field_name)) {
         assert(oge->field_exists(field_name));
         transfer_field_data_internal(ige, oge, field_name);
       }
@@ -1052,7 +1050,7 @@ namespace {
           // NOTE: Only dealing with the "cth_" fields here.
           // If there are other fields, we probably have an invalid
           // output database...
-          if (std::strncmp("cth_", field_name.c_str(), 4) == 0) {
+          if (Ioss::Utils::substr_equal("cth_", field_name)) {
             int isize = (*i)->get_field(field_name).get_size();
             int count = (*i)->get_field(field_name).raw_count();
             data.resize(isize);
@@ -1136,7 +1134,7 @@ namespace {
             }
             fb->put_field_data(field_name, &data[0], isize);
           }
-          else if (std::strncmp("cth_", field_name.c_str(), 4) == 0) {
+          else if (Ioss::Utils::substr_equal("cth_", field_name)) {
             assert(fb->field_exists(field_name));
             transfer_field_data_internal(*i, fb, field_name);
           }
@@ -1188,7 +1186,7 @@ namespace {
 
         for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
           std::string field_name = *IF;
-          if (std::strncmp("cth_", field_name.c_str(), 4) == 0) {
+          if (Ioss::Utils::substr_equal("cth_", field_name)) {
             if (field_name == cth_pressure &&
                 (globals.final_pressure == Globals::ZERO ||
                  globals.final_pressure == Globals::OFFSET || globals.convert_gage)) {
