@@ -186,7 +186,7 @@ namespace Galeri {
       SerialDenseMatrix<LO,SC> R(D->numRows(), bDim);
       R(0,0) = R(1,4) = R(2,8) = R(3,1) = R(3,3) = R(4,5) = R(4,7) = R(5,2) = R(5,6) = 1;
 
-      this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 27*numDofPerNode);
+      this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, numNodesPerElem * 8 * numDofPerElem);
 
       SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
       SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, nDim_);        // cache
@@ -325,7 +325,9 @@ namespace Galeri {
         // NOTE: KE is symmetric, therefore it does not matter that it is in the CSC format
         for (size_t j = 0; j < numDofPerElem; j++)
           if (this->Map_->isNodeGlobalElement(elemDofs[j]))
+          {
             this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
+          }
       }
       this->A_->fillComplete();
 

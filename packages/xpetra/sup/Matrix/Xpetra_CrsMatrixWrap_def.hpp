@@ -67,6 +67,13 @@
 #include "Xpetra_CrsMatrixWrap_decl.hpp"
 
 namespace Xpetra {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap (const RCP<const Map>& rowMap)
+    : finalDefaultView_ (false)
+  {
+    matrixData_ = CrsMatrixFactory::Build (rowMap);
+    CreateDefaultView ();
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap (const RCP<const Map>& rowMap,

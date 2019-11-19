@@ -224,6 +224,11 @@ namespace Xpetra {
     MatrixFactory() {}
 
   public:
+    /// Constructor for an empty, DynamicProfile matrix.
+    /// Supports Epetra only, as DynamicProfile no longer exists in Tpetra.
+    static RCP<Matrix> Build(const RCP<const Map>& rowMap) {
+      return rcp(new CrsMatrixWrap(rowMap));
+    }
 
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<Matrix> Build(const RCP<const Map>& rowMap, size_t maxNumEntriesPerRow) {

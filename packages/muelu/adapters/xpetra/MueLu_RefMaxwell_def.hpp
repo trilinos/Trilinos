@@ -1271,7 +1271,7 @@ namespace MueLu {
     if (numProcs > 1) {
       RCP<CrsMatrixWrap> P_nodal_temp;
       RCP<const Map> targetMap = D0Crs->getColMap();
-      P_nodal_temp = rcp(new CrsMatrixWrap(targetMap, 0));
+      P_nodal_temp = rcp(new CrsMatrixWrap(targetMap));
       RCP<const Import> importer = D0Crs->getCrsGraph()->getImporter();
       P_nodal_temp->doImport(*P_nodal, *importer, Xpetra::INSERT);
       P_nodal_temp->fillComplete(rcp_dynamic_cast<CrsMatrixWrap>(P_nodal)->getCrsMatrix()->getDomainMap(),
@@ -1306,7 +1306,7 @@ namespace MueLu {
       std::string algo = parameterList_.get("refmaxwell: prolongator compute algorithm",defaultAlgo);
 
       if (algo == "mat-mat") {
-        RCP<Matrix> D0_P_nodal = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+        RCP<Matrix> D0_P_nodal = MatrixFactory::Build(SM_Matrix_->getRowMap());
         Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,false,*P_nodal,false,*D0_P_nodal,true,true);
 
 #ifdef HAVE_MUELU_DEBUG
@@ -1450,7 +1450,7 @@ namespace MueLu {
     std::string algo = parameterList_.get("refmaxwell: prolongator compute algorithm",defaultAlgo);
 
     if (algo == "mat-mat") {
-      RCP<Matrix> D0_P_nodal = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+      RCP<Matrix> D0_P_nodal = MatrixFactory::Build(SM_Matrix_->getRowMap());
       Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,false,*P_nodal,false,*D0_P_nodal,true,true);
 
       // Get data out of D0*P.
@@ -1737,8 +1737,8 @@ namespace MueLu {
                                    "lumped mass matrix required for add-on (i.e. M0inv_Matrix is null)");
 
         // coarse matrix for add-on, i.e P11* (M1 D0 M0inv D0* M1) P11
-        RCP<Matrix> Zaux = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
-        RCP<Matrix> Z = MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
+        RCP<Matrix> Zaux = MatrixFactory::Build(M1_Matrix_->getRowMap());
+        RCP<Matrix> Z = MatrixFactory::Build(D0_Matrix_->getDomainMap());
 
         // construct Zaux = M1 P11
         Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*P11_,false,*Zaux,true,true);
@@ -1746,7 +1746,7 @@ namespace MueLu {
         Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*Zaux,false,*Z,true,true);
 
         // construct Z* M0inv Z
-        RCP<Matrix> Matrix2 = MatrixFactory::Build(Z->getDomainMap(),0);
+        RCP<Matrix> Matrix2 = MatrixFactory::Build(Z->getDomainMap());
         if (M0inv_Matrix_->getGlobalMaxNumRowEntries()<=1) {
           // We assume that if M0inv has at most one entry per row then
           // these are all diagonal entries.
@@ -1771,7 +1771,7 @@ namespace MueLu {
           }
           Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*ZT,false,*Z,false,*Matrix2,true,true);
         } else if (parameterList_.get<bool>("rap: triple product", false) == false) {
-          RCP<Matrix> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
+          RCP<Matrix> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap());
           // construct C2 = M0inv Z
           Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M0inv_Matrix_,false,*Z,false,*C2,true,true);
           // construct Matrix2 = Z* M0inv Z = Z* C2

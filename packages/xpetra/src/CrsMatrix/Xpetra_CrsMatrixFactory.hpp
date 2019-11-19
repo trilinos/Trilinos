@@ -72,6 +72,20 @@ namespace Xpetra {
     CrsMatrixFactory() {}
 
   public:
+    //! Constructor for empty matrix (intended use is an import/export target - can't insert entries directly)
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    Build (const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(rowMap->lib() == UseEpetra, std::logic_error,
+          "Can't create Xpetra::EpetraCrsMatrix with these scalar/LO/GO types");
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, 0) );
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
     //! Constructor specifying fixed number of entries for each row.
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     Build (const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap,
@@ -273,6 +287,21 @@ namespace Xpetra {
     CrsMatrixFactory() {}
 
   public:
+    //! Constructor for empty matrix (intended use is an import/export target - can't insert entries directly)
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    Build (const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap)
+    {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, 0) );
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+      if(rowMap->lib() == UseEpetra)
+        return rcp( new EpetraCrsMatrixT<int,Node>(rowMap));
+#endif
+      XPETRA_FACTORY_END;
+    }
 
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
@@ -488,6 +517,21 @@ namespace Xpetra {
     CrsMatrixFactory() {}
 
   public:
+    //! Constructor for empty matrix (intended use is an import/export target - can't insert entries directly)
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    Build (const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap)
+    {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, 0, plist) );
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+      if(rowMap->lib() == UseEpetra)
+        return rcp( new EpetraCrsMatrixT<long long,Node>(rowMap));
+#endif
+      XPETRA_FACTORY_END;
+    }
 
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
       XPETRA_MONITOR("CrsMatrixFactory::Build");

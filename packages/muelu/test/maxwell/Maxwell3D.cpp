@@ -161,9 +161,9 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
     }
     RCP<const Epetra_CrsMatrix> epetraKn;
     if (Kn.is_null()) {
-      RCP<Matrix> temp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(SM->getRangeMap(),0);
+      RCP<Matrix> temp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(SM->getRangeMap());
       Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*SM,false,*D0,false,*temp,true,true);
-      RCP<Matrix> Kn2 = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(D0->getDomainMap(),0);
+      RCP<Matrix> Kn2 = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(D0->getDomainMap());
       Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*D0,true,*temp,false,*Kn2,true,true);
       epetraKn = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(Kn2);
     } else

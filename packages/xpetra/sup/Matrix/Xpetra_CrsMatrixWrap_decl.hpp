@@ -102,6 +102,9 @@ public:
   //! @name Constructor/Destructor Methods
   //@{
 
+  //! Constructor for a dynamic profile matrix (Epetra only)
+  CrsMatrixWrap (const RCP<const Map>& rowMap);
+
   //! Constructor specifying fixed number of entries for each row.
   CrsMatrixWrap (const RCP<const Map>& rowMap,
                  size_t maxNumEntriesPerRow);

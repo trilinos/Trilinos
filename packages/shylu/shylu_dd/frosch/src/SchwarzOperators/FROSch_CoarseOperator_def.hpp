@@ -268,7 +268,7 @@ namespace FROSch {
             //------------------------------------------------------------------------------------------------------------------------
             // Communicate coarse matrix
             if (!DistributionList_->get("Type","linear").compare("linear")) {
-                XMatrixPtr tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
+                XMatrixPtr tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0]);
                 {
 #ifdef FROSCH_COARSEOPERATOR_DETAIL_TIMERS
                     FROSCH_TIMER_START_LEVELID(coarseMatrixExportTime,"Export Coarse Matrix");
@@ -279,7 +279,7 @@ namespace FROSch {
                 for (UN j=1; j<GatheringMaps_.size(); j++) {
                     tmpCoarseMatrix->fillComplete();
                     k0 = tmpCoarseMatrix;
-                    tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],k0->getGlobalMaxNumRowEntries());
+                    tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j]);
                     {
 #ifdef FROSCH_COARSEOPERATOR_DETAIL_TIMERS
                         FROSCH_TIMER_START_LEVELID(coarseMatrixExportTime,"Export Coarse Matrix");
@@ -295,7 +295,7 @@ namespace FROSch {
                 CoarseSolveExporters_[0] = ExportFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),GatheringMaps_[0]);
                 
                 if (NumProcsCoarseSolve_ < this->MpiComm_->getSize()) {
-                    XMatrixPtr k0Unique = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
+                    XMatrixPtr k0Unique = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0]);
                     k0Unique->doExport(*k0,*CoarseSolveExporters_[0],INSERT);
                     k0Unique->fillComplete(GatheringMaps_[0],GatheringMaps_[0]);
                     
