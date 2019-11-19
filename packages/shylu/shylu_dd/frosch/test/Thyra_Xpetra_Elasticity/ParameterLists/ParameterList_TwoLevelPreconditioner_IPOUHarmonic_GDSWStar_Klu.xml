@@ -1,28 +1,28 @@
 <ParameterList name="Thyra Example">
-    <Parameter name="Linear Solver Type"                                        type="string" value="Belos"/>
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
     <ParameterList name="Linear Solver Types">
         <ParameterList name="Belos">
-            <Parameter name="Solver Type"                                       type="string" value="Block GMRES"/>
+            <Parameter name="Solver Type" type="string" value="Block GMRES"/>
             <ParameterList name="Solver Types">
                 <ParameterList name="Block GMRES">
-                    <Parameter name="PreconditionerPosition"                    type="string" value="left"/>
-                    <Parameter name="Block Size"                                type="int" value="1"/>
-                    <Parameter name="Convergence Tolerance" 	                type="double" value="1e-4"/>
-                    <Parameter name="Maximum Iterations"                        type="int" value="100"/>
-                    <Parameter name="Output Frequency"                          type="int" value="1"/>
-                    <Parameter name="Show Maximum Residual Norm Only"           type="bool" value="1"/>
+                    <Parameter name="PreconditionerPosition" type="string" value="left"/>
+                    <Parameter name="Block Size" type="int" value="1"/>
+                    <Parameter name="Convergence Tolerance" type="double" value="1e-4"/>
+                    <Parameter name="Maximum Iterations" type="int" value="100"/>
+                    <Parameter name="Output Frequency" type="int" value="1"/>
+                    <Parameter name="Show Maximum Residual Norm Only" type="bool" value="1"/>
                 </ParameterList>
             </ParameterList>
         </ParameterList>
     </ParameterList>
-    <Parameter name="Preconditioner Type"                                       type="string" value="FROSch"/>
+    <Parameter name="Preconditioner Type" type="string" value="FROSch"/>
     <ParameterList name="Preconditioner Types">
         <ParameterList name="FROSch">
             <Parameter name="FROSch Preconditioner Type"                        type="string"   value="TwoLevelPreconditioner"/>
             
             <Parameter name="OverlappingOperator Type"                          type="string"   value="AlgebraicOverlappingOperator"/>
-            <Parameter name="CoarseOperator Type"                               type="string"   value="RGDSWCoarseOperator"/>
-            <Parameter name="Null Space Type"                                   type="string"   value="Laplace"/>
+            <Parameter name="CoarseOperator Type"                               type="string"   value="IPOUHarmonicCoarseOperator"/>
+            <Parameter name="Null Space Type"                                   type="string"   value="Linear Elasticity"/>
             
             <ParameterList name="AlgebraicOverlappingOperator">
                 <ParameterList name="Solver">
@@ -31,21 +31,16 @@
                 </ParameterList>
             </ParameterList>
             
-            <ParameterList name="RGDSWCoarseOperator">
+            <ParameterList name="IPOUHarmonicCoarseOperator">
                 <ParameterList name="Blocks">
                     <ParameterList name="1">
                         <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
-                        <Parameter name="Rotations"                             type="bool"     value="true"/>
-                        <ParameterList name="Custom">
-                            <Parameter name="Vertices: translations"            type="bool"     value="true"/>
-                            <Parameter name="ShortEdges: translations"          type="bool"     value="true"/>
-                            <Parameter name="ShortEdges: rotations"             type="bool"     value="true"/>
-                            <Parameter name="StraightEdges: translations"       type="bool"     value="true"/>
-                            <Parameter name="StraightEdges: rotations"          type="bool"     value="true"/>
-                            <Parameter name="Edges: translations"               type="bool"     value="true"/>
-                            <Parameter name="Edges: rotations"                  type="bool"     value="true"/>
-                            <Parameter name="Faces: translations"               type="bool"     value="true"/>
-                            <Parameter name="Faces: rotations"                  type="bool"     value="true"/>
+                        <ParameterList name="InterfacePartitionOfUnity">
+                            <Parameter name="Type"                              type="string"   value="GDSWStar"/>
+                            <ParameterList name="GDSWStar">
+                                <Parameter name="Type"                          type="string"   value="Full"/>
+                                <Parameter name="Distance Function"             type="string"   value="Inverse Euclidean"/>
+                            </ParameterList>
                         </ParameterList>
                     </ParameterList>
                 </ParameterList>

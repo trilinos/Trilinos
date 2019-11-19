@@ -530,14 +530,20 @@ public:
    { return sidesets_.size(); }
 
    stk::mesh::Part * getSideset(const std::string & name) const
-   { return sidesets_.find(name)->second; }
+   {
+     auto itr = sidesets_.find(name);
+     return (itr != sidesets_.end()) ? itr->second : nullptr;
+   }
 
    //! get the side set count
    std::size_t getNumNodesets() const
    { return nodesets_.size(); }
 
    stk::mesh::Part * getNodeset(const std::string & name) const
-   { return nodesets_.find(name)->second; }
+   {
+     auto itr = nodesets_.find(name);
+     return (itr != nodesets_.end()) ? itr->second : nullptr;
+   }
 
    //! get the global counts for the entity of specified rank
    std::size_t getEntityCounts(unsigned entityRank) const;

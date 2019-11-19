@@ -110,14 +110,14 @@ namespace FROSch {
     protected:
 
         virtual XMultiVectorPtrVecPtr computeTranslations(UN blockId,
-                                                          EntitySetPtr coarseNodes,
+                                                          EntitySetPtr Roots,
                                                           EntitySetPtrVecPtr entitySetVector,
                                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
 
         virtual XMultiVectorPtrVecPtr computeRotations(UN blockId,
                                                        UN dimension,
                                                        ConstXMultiVectorPtr nodeList,
-                                                       EntitySetPtr coarseNodes,
+                                                       EntitySetPtr Roots,
                                                        EntitySetPtrVecPtr entitySetVector,
                                                        DistanceFunction distanceFunction = ConstantDistanceFunction);
     };
