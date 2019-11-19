@@ -353,7 +353,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   //  Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix);
   int nnz=100;
   double time;
-  ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,false,time,0,very_verbose_);
+  ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,true,time,0,very_verbose_);
   // NTS: This is a hack to get around the sticking ones on the diagonal issue;
 
   /* Cleanup */
