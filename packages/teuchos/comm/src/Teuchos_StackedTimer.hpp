@@ -574,11 +574,24 @@ public:
     timer_.report(os);
   }
 
-  /// Struct for controlling output options like histograms
+  /** Struct for controlling output options like histograms
+
+      @param output_fraction Print the timer fractions within a level.
+      @param output_total_updates Print the updates counter.
+      @param output_historgram Print the histogram.
+      @param output_minmax Print the min max and standard deviation across MPI processes.
+      @param num_histogram The number of equally size bickets to use in the histogram.
+      @param max_level The number of levels in the stacked timer to print (default prints all levels).
+      @param print_warnings Print any relevant warnings on stacked timer use.
+      @param align_columns Output will align the columsn of stacked timer data.
+      @param print_names_before_values If set to true, writes the timer names before values.
+      @param drop_time If a timer has a total time less that this value, the timer will not be printed and the total time of that timer will be added to the Remainder. Useful for ignoring negligible timers. Default is -1.0 to force printing of all timers even if they have zero accumulated time.
+   */
   struct OutputOptions {
     OutputOptions() : output_fraction(false), output_total_updates(false), output_histogram(false),
                       output_minmax(false), num_histogram(10), max_levels(INT_MAX),
-                      print_warnings(true), align_columns(false), print_names_before_values(true) {}
+                      print_warnings(true), align_columns(false), print_names_before_values(true),
+                      drop_time(-1.0) {}
     bool output_fraction;
     bool output_total_updates;
     bool output_histogram;
@@ -588,6 +601,7 @@ public:
     bool print_warnings;
     bool align_columns;
     bool print_names_before_values;
+    double drop_time;
   };
 
   /**

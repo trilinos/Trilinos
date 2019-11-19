@@ -68,7 +68,8 @@ namespace FROSch {
     Faces_ (new EntitySet<SC,LO,GO,NO>(FaceType)),
     Interface_ (new EntitySet<SC,LO,GO,NO>(InterfaceType)),
     Interior_ (new EntitySet<SC,LO,GO,NO>(InteriorType)),
-    CoarseNodes_ (new EntitySet<SC,LO,GO,NO>(DefaultType)),
+    Roots_ (new EntitySet<SC,LO,GO,NO>(DefaultType)),
+    Leafs_ (new EntitySet<SC,LO,GO,NO>(DefaultType)),
     ConnectivityEntities_ (new EntitySet<SC,LO,GO,NO>(DefaultType)),
     EntitySetVector_ (),
     NodesMap_ (localToGlobalMap),
@@ -181,8 +182,10 @@ namespace FROSch {
         XMapPtr map = MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,indicesGammaDofs(),0,MpiComm_);
         matrix = FROSch::ExtractLocalSubdomainMatrix(matrix.getConst(),map.getConst(),ScalarTraits<SC>::one());
 
-        Edges_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
-        Faces_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
+        // Operate on hierarchy
+        for (UN i=0; i<EntitySetVector_.size(); i++) {
+            EntitySetVector_[i]->divideUnconnectedEntities(matrix,MpiComm_->getRank());
+        }
 
         /*
         LO numSeparateEdges = Edges_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
@@ -200,8 +203,9 @@ namespace FROSch {
         removeEmptyEntities();
 
         // We need to set the unique ID; otherwise, we cannot sort entities
-        Edges_->setUniqueIDToFirstGlobalNodeID();
-        Faces_->setUniqueIDToFirstGlobalNodeID();
+        for (UN i=0; i<EntitySetVector_.size(); i++) {
+            EntitySetVector_[i]->setUniqueIDToFirstGlobalNodeID();
+        }
         return 0;
     }
 
@@ -239,6 +243,13 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(sortVerticesEdgesFacesTime,"DDInterface::sortVerticesEdgesFaces");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Sorting interface components" << std::endl;
 
+        // Clear EntitySets if non-empty
+        if (Vertices_->getNumEntities()>0) Vertices_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
+        if (ShortEdges_->getNumEntities()>0) ShortEdges_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
+        if (StraightEdges_->getNumEntities()>0) StraightEdges_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
+        if (Edges_->getNumEntities()>0) Edges_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
+        if (Faces_->getNumEntities()>0) Faces_.reset(new EntitySet<SC,LO,GO,NO>(FaceType));
+        
         flagEntities(nodeList);
 
         // Make sure that we do not sort any empty entities
@@ -312,7 +323,8 @@ namespace FROSch {
                                                   bool buildStraightEdgesMap,
                                                   bool buildEdgesMap,
                                                   bool buildFacesMap,
-                                                  bool buildCoarseNodesMap)
+                                                  bool buildRootsMap,
+                                                  bool buildLeafsMap)
     {
         FROSCH_TIMER_START_LEVELID(buildEntityMapsTime,"DDInterface::buildEntityMaps");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Building global interface component maps" << std::endl;
@@ -322,16 +334,17 @@ namespace FROSch {
         if (buildStraightEdgesMap) StraightEdges_->buildEntityMap(NodesMap_);
         if (buildEdgesMap) Edges_->buildEntityMap(NodesMap_);
         if (buildFacesMap) Faces_->buildEntityMap(NodesMap_);
-        if (buildCoarseNodesMap) CoarseNodes_->buildEntityMap(NodesMap_);
+        if (buildRootsMap) Roots_->buildEntityMap(NodesMap_);
+        if (buildLeafsMap) Leafs_->buildEntityMap(NodesMap_);
 
         if (Verbosity_==All) {
             // Count entities
-            GOVec global(6);
-            LOVec local(6);
-            LOVec sum(6);
-            SCVec avg(6);
-            LOVec min(6);
-            LOVec max(6);
+            GOVec global(7);
+            LOVec local(7);
+            LOVec sum(7);
+            SCVec avg(7);
+            LOVec min(7);
+            LOVec max(7);
             if (buildVerticesMap) {
                 global[0] = Vertices_->getEntityMap()->getMaxAllGlobalIndex();
                 if (NodesMap_->lib()==UseEpetra || Vertices_->getEntityMap()->getGlobalNumElements()>0) {
@@ -422,13 +435,13 @@ namespace FROSch {
                 min[4] = -1;
                 max[4] = -1;
             }
-            if (buildCoarseNodesMap) {
-                global[5] = CoarseNodes_->getEntityMap()->getMaxAllGlobalIndex();
-                if (NodesMap_->lib()==UseEpetra || CoarseNodes_->getEntityMap()->getGlobalNumElements()>0) {
+            if (buildRootsMap) {
+                global[5] = Roots_->getEntityMap()->getMaxAllGlobalIndex();
+                if (NodesMap_->lib()==UseEpetra || Roots_->getEntityMap()->getGlobalNumElements()>0) {
                     global[5] += 1;
                 }
                 if (global[5]<0) global[5] = 0;
-                local[5] = (LO) std::max((LO) CoarseNodes_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                local[5] = (LO) std::max((LO) Roots_->getEntityMap()->getNodeNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,local[5],ptr(&sum[5]));
                 avg[5] = std::max(sum[5]/double(MpiComm_->getSize()),0.0);
                 reduceAll(*MpiComm_,REDUCE_MIN,local[5],ptr(&min[5]));
@@ -439,6 +452,24 @@ namespace FROSch {
                 avg[5] = -1;
                 min[5] = -1;
                 max[5] = -1;
+            }
+            if (buildLeafsMap) {
+                global[6] = Leafs_->getEntityMap()->getMaxAllGlobalIndex();
+                if (NodesMap_->lib()==UseEpetra || Leafs_->getEntityMap()->getGlobalNumElements()>0) {
+                    global[6] += 1;
+                }
+                if (global[6]<0) global[6] = 0;
+                local[6] = (LO) std::max((LO) Leafs_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                reduceAll(*this->MpiComm_,REDUCE_SUM,local[6],ptr(&sum[6]));
+                avg[6] = std::max(sum[6]/double(MpiComm_->getSize()),0.0);
+                reduceAll(*MpiComm_,REDUCE_MIN,local[6],ptr(&min[6]));
+                reduceAll(*MpiComm_,REDUCE_MAX,local[6],ptr(&max[6]));
+            } else {
+                global[6] = -1;
+                local[6] = -1;
+                avg[6] = -1;
+                min[6] = -1;
+                max[6] = -1;
             }
 
             for (UN i=0; i<global.size(); i++) {
@@ -457,7 +488,8 @@ namespace FROSch {
       StraightEdges:  total / avg / min / max     ---  " << global[2] << " / " << avg[2] << " / " << min[2] << " / " << max[2] << "\n\
       Edges:          total / avg / min / max     ---  " << global[3] << " / " << avg[3] << " / " << min[3] << " / " << max[3] << "\n\
       Faces:          total / avg / min / max     ---  " << global[4] << " / " << avg[4] << " / " << min[4] << " / " << max[4] << "\n\
-      Coarse nodes:   total / avg / min / max     ---  " << global[5] << " / " << avg[5] << " / " << min[5] << " / " << max[5] << "\n\
+      Roots:          total / avg / min / max     ---  " << global[5] << " / " << avg[5] << " / " << min[5] << " / " << max[5] << "\n\
+      Leafs:          total / avg / min / max     ---  " << global[6] << " / " << avg[6] << " / " << min[6] << " / " << max[6] << "\n\
     ------------------------------------------------------------------------------\n";
             }
         }
@@ -471,31 +503,41 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(buildEntityHierarchyTime,"DDInterface::buildEntityHierarchy");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Building hierarchy of interface components" << std::endl;
 
+        // Build hierarchy
         for (UN i=0; i<EntitySetVector_.size(); i++) {
             for (UN j=i+1; j<EntitySetVector_.size(); j++) {
                 EntitySetVector_[i]->findAncestorsInSet(EntitySetVector_[j]);
             }
         }
 
+        // Find roots
         for (UN i=0; i<EntitySetVector_.size(); i++) {
-            EntitySetPtr tmpCoarseNodes = EntitySetVector_[i]->findCoarseNodes();
-            CoarseNodes_->addEntitySet(tmpCoarseNodes);
+            EntitySetPtr tmpRoots = EntitySetVector_[i]->findRoots();
+            Roots_->addEntitySet(tmpRoots);
         }
-        CoarseNodes_->sortUnique();
-        CoarseNodes_->setCoarseNodeID();
+        Roots_->sortUnique();
+        Roots_->setRootID();
+        
+        // Find Leafs
+        for (UN i=0; i<EntitySetVector_.size(); i++) {
+            EntitySetPtr tmpLeafs = EntitySetVector_[i]->findLeafs();
+            Leafs_->addEntitySet(tmpLeafs);
+        }
+        Leafs_->sortUnique();
+        Leafs_->setLeafID();
         return 0;
     }
 
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
-                                                                ConstXMultiVectorPtr &nodeList,
-                                                                DistanceFunction distanceFunction)
+    int DDInterface<SC,LO,GO,NO>::computeDistancesToRoots(UN dimension,
+                                                          ConstXMultiVectorPtr &nodeList,
+                                                          DistanceFunction distanceFunction)
     {
-        FROSCH_TIMER_START_LEVELID(computeDistancesToCoarseNodesTime,"DDInterface::computeDistancesToCoarseNodes");
+        FROSCH_TIMER_START_LEVELID(computeDistancesToRootsTime,"DDInterface::computeDistancesToRoots");
         //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Computing distances to the coarse nodes" << std::endl;
 
         for (UN i=0; i<EntitySetVector_.size(); i++) {
-            EntitySetVector_[i]->computeDistancesToCoarseNodes(dimension,nodeList,distanceFunction);
+            EntitySetVector_[i]->computeDistancesToRoots(dimension,nodeList,distanceFunction);
         }
         return 0;
     }
@@ -589,9 +631,15 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getCoarseNodes() const
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getRoots() const
     {
-        return CoarseNodes_;
+        return Roots_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getLeafs() const
+    {
+        return Leafs_;
     }
 
     template <class SC,class LO,class GO,class NO>

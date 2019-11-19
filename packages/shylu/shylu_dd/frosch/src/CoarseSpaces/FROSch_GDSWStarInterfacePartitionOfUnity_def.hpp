@@ -39,10 +39,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_RGDSWINTERFACEPARTITIONOFUNITY_DEF_HPP
-#define _FROSCH_RGDSWINTERFACEPARTITIONOFUNITY_DEF_HPP
+#ifndef _FROSCH_GDSWSTARINTERFACEPARTITIONOFUNITY_DEF_HPP
+#define _FROSCH_GDSWSTARINTERFACEPARTITIONOFUNITY_DEF_HPP
 
-#include <FROSch_RGDSWInterfacePartitionOfUnity_decl.hpp>
+#include <FROSch_GDSWStarInterfacePartitionOfUnity_decl.hpp>
 
 
 namespace FROSch {
@@ -51,22 +51,22 @@ namespace FROSch {
     using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
-    RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::RGDSWInterfacePartitionOfUnity(CommPtr mpiComm,
-                                                                                CommPtr serialComm,
-                                                                                UN dimension,
-                                                                                UN dofsPerNode,
-                                                                                ConstXMapPtr nodesMap,
-                                                                                ConstXMapPtrVecPtr dofsMaps,
-                                                                                ParameterListPtr parameterList,
-                                                                                Verbosity verbosity,
-                                                                                UN levelID) :
+    GDSWStarInterfacePartitionOfUnity<SC,LO,GO,NO>::GDSWStarInterfacePartitionOfUnity(CommPtr mpiComm,
+                                                                                      CommPtr serialComm,
+                                                                                      UN dimension,
+                                                                                      UN dofsPerNode,
+                                                                                      ConstXMapPtr nodesMap,
+                                                                                      ConstXMapPtrVecPtr dofsMaps,
+                                                                                      ParameterListPtr parameterList,
+                                                                                      Verbosity verbosity,
+                                                                                      UN levelID) :
     GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
     UseRoots_ (false),
     Roots_ (),
     EntitySetVector_ (),
     DistanceFunction_ (ConstantDistanceFunction)
     {
-        FROSCH_TIMER_START_LEVELID(rGDSWInterfacePartitionOfUnityTime,"RGDSWInterfacePartitionOfUnity::RGDSWInterfacePartitionOfUnity");
+        FROSCH_TIMER_START_LEVELID(GDSWStarInterfacePartitionOfUnityTime,"GDSWStarInterfacePartitionOfUnity::GDSWStarInterfacePartitionOfUnity");
         this->UseVertices_ = false;
         this->UseShortEdges_ = false;
         this->UseStraightEdges_ = false;
@@ -75,12 +75,18 @@ namespace FROSch {
 
         if (!this->ParameterList_->get("Type","Full").compare("Full")) {
             UseRoots_ = true;
+            UseLeafs_ = true;
         } else if (!this->ParameterList_->get("Type","Full").compare("Roots")) {
             UseRoots_ = true;
+            UseLeafs_ = false;
+        } else if (!this->ParameterList_->get("Type","Full").compare("Leafs")) {
+            UseRoots_ = false;
+            UseLeafs_ = true;
         } else if (!this->ParameterList_->get("Type","Full").compare("Custom")) {
             UseRoots_ = this->ParameterList_->sublist("Custom").get("Roots",false);
+            UseLeafs_ = this->ParameterList_->sublist("Custom").get("Leafs",false);
         } else {
-            FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
+            FROSCH_ASSERT(false,"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
         }
 
         if (!this->ParameterList_->get("Distance Function","Constant").compare("Constant")) {
@@ -88,16 +94,16 @@ namespace FROSch {
         } else if (!this->ParameterList_->get("Distance Function","Constant").compare("Inverse Euclidean")) {
             DistanceFunction_ = InverseEuclideanDistanceFunction;
         } else {
-            FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: Specify a valid Distance Function.");
+            FROSCH_ASSERT(false,"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: Specify a valid Distance Function.");
         }
-        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(1);
-        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(1);
+        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(2);
+        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(2);
     }
 
     template <class SC,class LO,class GO,class NO>
-    int RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstXMultiVectorPtr nodeList)
+    int GDSWStarInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(computePartitionOfUnityTime,"RGDSWInterfacePartitionOfUnity::computePartitionOfUnity");
+        FROSCH_TIMER_START_LEVELID(computePartitionOfUnityTime,"GDSWStarInterfacePartitionOfUnity::computePartitionOfUnity");
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();
         UN numInterfaceDofs = dofsPerNode*this->DDInterface_->getInterface()->getEntity(0)->getNumNodes();
@@ -112,7 +118,7 @@ namespace FROSch {
                                             false,
                                             false,
                                             UseRoots_,
-                                            false);
+                                            UseLeafs_);
 
         EntitySetVector_ = this->DDInterface_->getEntitySetVector();
 
@@ -121,13 +127,18 @@ namespace FROSch {
             Roots_ = this->DDInterface_->getRoots();
             this->PartitionOfUnityMaps_[0] = Roots_->getEntityMap();
         }
+        if (UseLeafs_) {
+            Leafs_ = this->DDInterface_->getLeafs();
+            this->PartitionOfUnityMaps_[1] = Leafs_->getEntityMap();
+        }
 
         if (this->MpiComm_->getRank() == 0) {
             std::cout << std::boolalpha << "\n\
     ------------------------------------------------------------------------------\n\
-     RGDSW Interface Partition Of Unity (RGDSW IPOU)\n\
+     GDSW Star Interface Partition Of Unity (GDSW Star IPOU)\n\
     ------------------------------------------------------------------------------\n\
       Roots                                      --- " << UseRoots_ << "\n\
+      Leafs                                      --- " << UseRoots_ << "\n\
     ------------------------------------------------------------------------------\n" << std::noboolalpha;
         }
 
@@ -142,32 +153,52 @@ namespace FROSch {
                 // Loop over entities
                 for (UN j=0; j<EntitySetVector_[i]->getNumEntities(); j++) {
                     InterfaceEntityPtr tmpEntity = EntitySetVector_[i]->getEntity(j);
-                    LO rootID = tmpEntity->getRootID();
-                    UN numRoots = tmpEntity->getRoots()->getNumEntities();
-                    if (rootID==-1) {
-                        FROSCH_ASSERT(numRoots!=0,"rootID==-1 but numRoots==0!");
-                        for (UN m=0; m<numRoots; m++) {
-                            InterfaceEntityPtr tmpRoot = tmpEntity->getRoots()->getEntity(m);
-                            LO index = tmpRoot->getRootID();
-                            // Offspring: loop over nodes
-                            for (UN l=0; l<tmpEntity->getNumNodes(); l++) {
-                                SC value = tmpEntity->getDistanceToRoot(l,m)/tmpEntity->getDistanceToRoot(l,numRoots);
-                                for (UN k=0; k<dofsPerNode; k++) {
-                                    tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),index,value*ScalarTraits<SC>::one());
+                    LO leafID = tmpEntity->getLeafID();
+                    // If the entity is a leaf, it will obtain its own partition of unity function
+                    if (leafID==-1) {
+                        LO rootID = tmpEntity->getRootID();
+                        UN numRoots = tmpEntity->getRoots()->getNumEntities();
+                        if (rootID==-1) {
+                            FROSCH_ASSERT(numRoots!=0,"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: rootID==-1 but numRoots==0!");
+                            for (UN m=0; m<numRoots; m++) {
+                                InterfaceEntityPtr tmpRoot = tmpEntity->getRoots()->getEntity(m);
+                                LO index = tmpRoot->getRootID();
+                                // Offspring: loop over nodes
+                                for (UN l=0; l<tmpEntity->getNumNodes(); l++) {
+                                    SC value = tmpEntity->getDistanceToRoot(l,m)/tmpEntity->getDistanceToRoot(l,numRoots);
+                                    for (UN k=0; k<dofsPerNode; k++) {
+                                        tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),index,value*ScalarTraits<SC>::one());
+                                    }
                                 }
                             }
-                        }
-                    } else {
-                        // Coarse node: loop over nodes
-                        for (UN l=0; l<EntitySetVector_[i]->getEntity(j)->getNumNodes(); l++) {
-                            for (UN k=0; k<dofsPerNode; k++) {
-                                tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),rootID,ScalarTraits<SC>::one());
+                        } else {
+                            // Coarse node: loop over nodes
+                            for (UN l=0; l<EntitySetVector_[i]->getEntity(j)->getNumNodes(); l++) {
+                                for (UN k=0; k<dofsPerNode; k++) {
+                                    tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),rootID,ScalarTraits<SC>::one());
+                                }
                             }
                         }
                     }
                 }
             }
             this->LocalPartitionOfUnity_[0] = tmpVector;
+        }
+        
+        if (UseLeafs_ && Leafs_->getNumEntities()>0) {
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Leafs_->getNumEntities());
+            
+            for (UN i=0; i<Leafs_->getNumEntities(); i++) {
+                InterfaceEntityPtr tmpEntity = Leafs_->getEntity(i);
+                LO leafID = tmpEntity->getLeafID();
+                FROSCH_ASSERT(leafID==LO(i),"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: leafID!=i!");
+                for (UN j=0; j<Leafs_->getEntity(i)->getNumNodes(); j++) {
+                    for (UN k=0; k<dofsPerNode; k++) {
+                        tmpVector->replaceLocalValue(Leafs_->getEntity(i)->getGammaDofID(j,k),leafID,ScalarTraits<SC>::one());
+                    }
+                }
+            }
+            this->LocalPartitionOfUnity_[1] = tmpVector;
         }
 
         return 0;
