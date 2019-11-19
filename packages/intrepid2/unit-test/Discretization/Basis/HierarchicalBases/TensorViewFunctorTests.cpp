@@ -71,9 +71,8 @@ namespace
     
     const bool hasADType = false;
     const int vectorSize = hasADType ? FAD_VECTOR_SIZE : VECTOR_SIZE;
-    const int teamSize = view2.extent_int(0);
     
-    auto policy = Kokkos::TeamPolicy<ExecutionSpace>(view1.extent_int(0),teamSize,vectorSize);
+    auto policy = Kokkos::TeamPolicy<ExecutionSpace>(view1.extent_int(0),Kokkos::AUTO(),vectorSize);
     
     using FunctorType = TensorViewFunctor<ExecutionSpace, Scalar, ScalarViewType>;
     
