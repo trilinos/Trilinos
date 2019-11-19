@@ -46,7 +46,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   ride
   mutrino   # Will be repalced by 'ats1'
   waterman
-  serrano   # Will be replaced by 'cts1'
+  cts1
   tlcc2
   sems-rhel7
   sems-rhel6
@@ -62,51 +62,6 @@ knownSystemNameInBuildName=`get_knownSystemNameInBuildName`
 #echo "knownSystemNameInBuildName = '${knownSystemNameInBuildName}'"
 
 ATDM_IS_CEE_RHEL6_MACHINE=
-
-# Specifically named systems
-if [[ $ATDM_CONFIG_REAL_HOSTNAME == "hansen"* ]] ; then
-  ATDM_HOSTNAME=hansen
-  ATDM_SYSTEM_NAME=shiller
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "shiller"* ]] ; then
-  ATDM_HOSTNAME=shiller
-  ATDM_SYSTEM_NAME=shiller
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "white"* ]] ; then
-  ATDM_HOSTNAME=white
-  ATDM_SYSTEM_NAME=ride
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "ride"* ]] ; then
-  ATDM_HOSTNAME=ride
-  ATDM_SYSTEM_NAME=ride
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "mutrino"* ]] ; then
-  ATDM_HOSTNAME=mutrino
-  ATDM_SYSTEM_NAME=mutrino
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
-  ATDM_HOSTNAME=waterman
-  ATDM_SYSTEM_NAME=waterman
-
-# cts1 systems
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] \
-  || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ ser[0-9]+ ]] ; then
-  ATDM_HOSTNAME=serrano
-  ATDM_SYSTEM_NAME=cts1
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "eclipse"* ]] \
-  || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ ec[0-9]+ ]] ; then
-  ATDM_HOSTNAME=eclipse
-  ATDM_SYSTEM_NAME=cts1
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "ghost"* ]] \
-  || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ gho[0-9]+ ]] ; then
-  ATDM_HOSTNAME=ghost
-  ATDM_SYSTEM_NAME=cts1
-
-# tlcc2 systems
-elif [[ $SNLSYSTEM == "tlcc2"* ]] ; then
-  ATDM_SYSTEM_NAME=tlcc2
-  if [[ $SNLCLUSTER == "" ]] ; then
-    ATDM_HOSTNAME=$ATDM_CONFIG_REAL_HOSTNAME
-  else
-    ATDM_HOSTNAME=$SNLCLUSTER
-  fi
-fi
-
 
 # System name and hostname matching
 systemNameTypeMatchedList=()  # In order of match preference
@@ -145,17 +100,16 @@ elif [[ $realHostname == "waterman"* ]] ; then
 # Specifically named cts1 systems
 elif [[ $realHostname == "serrano"* ]] || [[ $realHostname =~ ser[0-9]+ ]] ; then
   hostnameMatch=serrano
-  hostnameMatchSystemName=serrano
+  hostnameMatchSystemName=cts1
 elif [[ $realHostname == "eclipse"* ]] || [[ $realHostname =~ ec[0-9]+ ]] ; then
   hostnameMatch=eclipse
-  hostnameMatchSystemName=serrano
+  hostnameMatchSystemName=cts1
 elif [[ $realHostname == "ghost"* ]] || [[ $realHostname =~ gho[0-9]+ ]] ; then
   hostnameMatch=ghost
-  hostnameMatchSystemName=serrano
+  hostnameMatchSystemName=cts1
 elif [[ $realHostname == "attaway"* ]] || [[ $realHostname =~ swa[0-9]+ ]] ; then
   hostnameMatch=attaway
-  hostnameMatchSystemName=serrano
-
+  hostnameMatchSystemName=cts1
 # End specifically named systems
 fi
 

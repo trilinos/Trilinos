@@ -44,11 +44,15 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
 
     export BOOST_ROOT=/projects/sparc/tpls/cts1-bdw/boost-1.65.1/00000000/cts1-bdw_intel-18.0.2
     export CGNS_ROOT=/projects/sparc/tpls/cts1-bdw/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/cts1-bdw_intel-18.0.2_openmpi-2.0.3
+    export EUCLID_ROOT=/projects/sparc/tpls/cts1-bdw/euclid-19.30/95b8242ad729449fdb86591b9643c11463b61fa2/cts1-bdw_intel-18.0.2_openmpi-2.0.3
     export HDF5_ROOT=/projects/sparc/tpls/cts1-bdw/hdf5-1.10.5/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
+    export LIBHIO_ROOT=/projects/sparc/tpls/cts1-bdw/libhio-1.4.1.2/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
     export METIS_ROOT=/projects/sparc/tpls/cts1-bdw/parmetis-4.0.3/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
     export NETCDF_ROOT=/projects/sparc/tpls/cts1-bdw/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/cts1-bdw_intel-18.0.2_openmpi-2.0.3
     export PARMETIS_ROOT=/projects/sparc/tpls/cts1-bdw/parmetis-4.0.3/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
     export PNETCDF_ROOT=/projects/sparc/tpls/cts1-bdw/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/cts1-bdw_intel-18.0.2_openmpi-2.0.3
+    export SGM_ROOT=/projects/sparc/tpls/cts1-bdw/sgm-19.30/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
+    export SUPERLUDIST_ROOT=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3
 
     export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3/include
     export ATDM_CONFIG_SUPERLUDIST_LIBS=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3/lib64/libsuperlu_dist.a
