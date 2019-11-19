@@ -266,7 +266,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
       }
 
     } else if(numRanks == 4) {
-      // All ranks will have the same number of rows/cols/entries
+      // All ranks will have the same global length of the vector, but local length differs.
+      // Due to region numbering and region interface duplications,
+      // lower rank IDs have more local entries then higher rank IDs.
       if( myRank == 0){
         TEST_EQUALITY(compVec->getLocalLength(),  9);
         TEST_EQUALITY(compVec->getGlobalLength(), 25);
@@ -295,7 +297,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
       } else if(myRank == 3) {
         refValues.deepCopy(ArrayView<const SC>({4.3, 5.3, 7.3, 8.3}));
       }
-      // Loop over region matrix data and compare it to ref data
+      // Loop over region vector data and compare it to reference data
       myValues = compVec->getData(0);
       for(int idx = 0; idx < compVec->getLocalLength(); ++idx) {
         TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
@@ -357,7 +359,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
       } else if(myRank == 3) {
         refValues.deepCopy(ArrayView<const SC>({4, 2, 2, 2, 1, 1, 2, 1, 1}));
       }
-      // Loop over region matrix data and compare it to ref data
+      // Loop over region vector data and compare it to reference data
       for (int j = 0; j < maxRegPerProc; j++){
         myScaling = interfaceScaling[j]->getData(0);
         for(int idx = 0; idx < interfaceScaling[j]->getLocalLength(); ++idx) {
