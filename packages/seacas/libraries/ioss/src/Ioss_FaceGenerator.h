@@ -89,7 +89,29 @@ namespace Ioss {
     size_t operator()(const Face &face) const { return face.hashId_; }
   };
 
-  struct FaceEqual;
+  struct FaceEqual
+  {
+    bool operator()(const Face &left, const Face &right) const
+    {
+      if (left.hashId_ != right.hashId_) {
+        return false;
+      }
+      // Hash (hashId_) is equal
+      // Check whether same vertices (can be in different order)
+      // Most (All?) of the time, there are no hashId_ collisions, so this test will not
+      // find a difference and the function will return 'true'
+      // However, for some reason, removing this check does not change the execution time
+      // appreiciably...
+      for (auto lvert : left.connectivity_) {
+        if (std::find(right.connectivity_.cbegin(), right.connectivity_.cend(), lvert) ==
+            right.connectivity_.cend()) {
+          // Not found, therefore not the same.
+          return false;
+        }
+      }
+      return true;
+    }
+  };
 
 #if defined USE_STD
   using FaceUnorderedSet = std::unordered_set<Face, FaceHash, FaceEqual>;
@@ -114,30 +136,6 @@ namespace Ioss {
     template <typename INT> void            generate_model_faces(INT /*dummy*/);
     Ioss::Region &                          region_;
     std::map<std::string, FaceUnorderedSet> faces_;
-  };
-
-  struct FaceEqual
-  {
-    bool operator()(const Face &left, const Face &right) const
-    {
-      if (left.hashId_ != right.hashId_) {
-        return false;
-      }
-      // Hash (hashId_) is equal
-      // Check whether same vertices (can be in different order)
-      // Most (All?) of the time, there are no hashId_ collisions, so this test will not
-      // find a difference and the function will return 'true'
-      // However, for some reason, removing this check does not change the execution time
-      // appreiciably...
-      for (auto lvert : left.connectivity_) {
-        if (std::find(right.connectivity_.cbegin(), right.connectivity_.cend(), lvert) ==
-            right.connectivity_.cend()) {
-          // Not found, therefore not the same.
-          return false;
-        }
-      }
-      return true;
-    }
   };
 
 } // namespace Ioss
