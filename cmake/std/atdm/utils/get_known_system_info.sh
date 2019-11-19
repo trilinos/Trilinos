@@ -61,8 +61,6 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
 knownSystemNameInBuildName=`get_knownSystemNameInBuildName`
 #echo "knownSystemNameInBuildName = '${knownSystemNameInBuildName}'"
 
-ATDM_IS_CEE_RHEL6_MACHINE=
-
 # System name and hostname matching
 systemNameTypeMatchedList=()  # In order of match preference
 unset systemNameTypeMatchedListHostNames
@@ -203,12 +201,6 @@ if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${knownSystemNameInBuildName}" != ""
   ATDM_HOSTNAME=${systemNameTypeMatchedListHostNames[${ATDM_SYSTEM_NAME}]}
   assert_selected_system_matches_known_host_in_build_name || return
   assert_selected_system_matches_known_system_type_mathces || return
-fi
-
-# D.2) Second, go with matches based on hostname
-if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${hostnameMatch}" != "" ]] ; then
-  ATDM_SYSTEM_NAME=${hostnameMatchSystemName}
-  ATDM_HOSTNAME=${hostnameMatch}
 fi
 
 # D.2) Last, go with the hostname match or matching system type

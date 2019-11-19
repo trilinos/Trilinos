@@ -54,9 +54,12 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     export SGM_ROOT=/projects/sparc/tpls/cts1-bdw/sgm-19.30/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
     export SUPERLUDIST_ROOT=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3
 
-    export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3/include
-    export ATDM_CONFIG_SUPERLUDIST_LIBS=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3/lib64/libsuperlu_dist.a
+    export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
+    export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
     export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
+
+    export PATH=/usr/tce/packages/gcc/gcc-6.1.0/bin:${PATH}
+    export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-6.1.0/lib64:${LD_LIBRARY_PATH}
 
     export OMPI_CXX=`which icpc`
     export OMPI_CC=`which icc`
