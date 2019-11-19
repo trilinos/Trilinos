@@ -129,7 +129,7 @@ namespace Xpetra {
     void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                   const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
                   MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
-      Tpetra::Details::residual(*op_,X,B,R);
+      Tpetra::Details::residual(*op_,toTpetra(X),toTpetra(B),toTpetra(R));
     }
 
 
