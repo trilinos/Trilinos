@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -8012,16 +8010,13 @@ namespace Tpetra {
                           buffer_device_type>& numPacketsPerLID,
                         const size_t constantNumPackets,
                         Distributor & distor,
-                        const CombineMode combineMode,
-                        const bool atomic)
+                        const CombineMode combineMode)
   {
-    // Exception are caught and handled upstream, so we just call the
-    // implementations directly.
     if (this->isStaticGraph ()) {
       using ::Tpetra::Details::unpackCrsMatrixAndCombineNew;
       unpackCrsMatrixAndCombineNew (*this, imports, numPacketsPerLID,
                                     importLIDs, constantNumPackets,
-                                    distor, combineMode, atomic);
+                                    distor, combineMode);
     }
     else {
       this->unpackAndCombineImplNonStatic (importLIDs, imports,

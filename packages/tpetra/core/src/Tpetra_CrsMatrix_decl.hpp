@@ -3836,8 +3836,7 @@ namespace Tpetra {
                             buffer_device_type>& numPacketsPerLID,
                           const size_t constantNumPackets,
                           Distributor& distor,
-                          const CombineMode combineMode,
-                          const bool atomic = useAtomicUpdatesByDefault);
+                          const CombineMode combineMode);
 
     /// \brief Implementation of unpackAndCombineImpl for when the
     ///   target matrix's structure may change.
