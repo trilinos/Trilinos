@@ -57,7 +57,6 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-2.0.3" ]; then
     export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
     export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
 
-    export PATH=/usr/tce/packages/gcc/gcc-6.1.0/bin:${PATH}
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-6.1.0/lib64:${LD_LIBRARY_PATH}
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5_OPENMPI-4.0.1" ]; then
     module load intel/19.0.5.281
@@ -86,7 +85,6 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5_OPENMPI-4.0.1" ]; then
     export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
     export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
 
-    export PATH=/usr/tce/packages/gcc/gcc-4.9.3/bin:${PATH}
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-4.9.3/lib64:${LD_LIBRARY_PATH}
 
     export F77=mpif77
