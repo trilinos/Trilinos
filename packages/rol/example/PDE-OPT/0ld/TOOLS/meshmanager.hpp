@@ -50,7 +50,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Intrepid_FieldContainer.hpp"
-
+#include "Tpetra_Map.hpp"
 
 /** \class  MeshManager
     \brief  This is the pure virtual parent class for mesh construction
@@ -61,6 +61,8 @@
 */
 template <class Real>
 class MeshManager {
+private:
+  using GO = typename Tpetra::Map<>::global_ordinal_type;
 
 public:
   /** \brief  Destructor
@@ -77,34 +79,34 @@ public:
              Format: number_of_cells x number_of_nodes_per_cell (int)
                      (cell_index)  node_index1  node_index2  ...
   */
-  virtual ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const = 0;
+  virtual ROL::Ptr<Intrepid::FieldContainer<GO> > getCellToNodeMap() const = 0;
 
   /** \brief Returns cell to edge adjacencies.
              Format: number_of_cells x number_of_edges_per_cell (int)
                      (cell_index)  edge_index1  edge_index2  ...
   */
-  virtual ROL::Ptr<Intrepid::FieldContainer<int> > getCellToEdgeMap() const = 0;
+  virtual ROL::Ptr<Intrepid::FieldContainer<GO> > getCellToEdgeMap() const = 0;
 
   /** \brief Returns sideset information.
              Format: The std::vector components are indexed by the local side number (0, 1, 2, ...);
                      the FieldConTainer is a 1D array of cell indices.
              Input:  Sideset number.  Its meaning is context-dependent.
   */
-  virtual ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+  virtual ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<GO> > > > getSideSets(
               std::ostream & outStream = std::cout,
               const bool verbose = false) const = 0;
 
   /** \brief Returns number of cells.
   */
-  virtual int getNumCells() const = 0;
+  virtual GO getNumCells() const = 0;
 
   /** \brief Returns number of nodes.
   */
-  virtual int getNumNodes() const = 0;
+  virtual GO getNumNodes() const = 0;
 
   /** \brief Returns number of edges.
   */
-  virtual int getNumEdges() const = 0;
+  virtual GO getNumEdges() const = 0;
 
 }; // MeshManager
 
@@ -132,6 +134,8 @@ class MeshManager_BackwardFacingStepChannel : public MeshManager<Real> {
 */
 
 private:
+  using GO = typename Tpetra::Map<>::global_ordinal_type;
+
   Real channelH_;   // channel height (height of regions 1+4)
   Real channelW_;   // channel width (width of regions 3+4+5)
   Real stepH_;      // step height (height of region 1)
@@ -140,26 +144,26 @@ private:
   
   int ref_;          // mesh refinement level
 
-  int nx1_;
-  int nx2_;
-  int nx3_;
-  int nx4_;
-  int nx5_;
-  int ny1_;
-  int ny2_;
-  int ny3_;
-  int ny4_;
-  int ny5_;
+  GO nx1_;
+  GO nx2_;
+  GO nx3_;
+  GO nx4_;
+  GO nx5_;
+  GO ny1_;
+  GO ny2_;
+  GO ny3_;
+  GO ny4_;
+  GO ny5_;
 
-  int numCells_;
-  int numNodes_;
-  int numEdges_;
+  GO numCells_;
+  GO numNodes_;
+  GO numEdges_;
 
   ROL::Ptr<Intrepid::FieldContainer<Real> > meshNodes_;
-  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<GO> >  meshCellToNodeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<GO> >  meshCellToEdgeMap_;
 
-  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<GO> > > >  meshSideSets_;
 
 public:
 
@@ -204,34 +208,34 @@ public:
   }
 
 
-  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<GO> > getCellToNodeMap() const {
     return meshCellToNodeMap_;
   }
 
 
-  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<GO> > getCellToEdgeMap() const {
     return meshCellToEdgeMap_;
   }
 
 
-  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<GO> > > > getSideSets(
       std::ostream & outStream = std::cout,
       const bool verbose = false) const {
     return meshSideSets_;
   }
 
 
-  int getNumCells() const {
+  GO getNumCells() const {
     return numCells_;
   } // getNumCells
 
 
-  int getNumNodes() const {
+  GO getNumNodes() const {
     return numNodes_;
   } // getNumNodes
 
 
-  int getNumEdges() const {
+  GO getNumEdges() const {
     return numEdges_;
   } // getNumEdges
 
@@ -248,16 +252,16 @@ private:
     Real dx1 = observeW_ / nx1_;
     Real dx2 = (channelW_ - stepW_ - observeW_) / nx2_;
     Real dx3 = stepW_ / nx3_;
-    int nodeCt = 0;
+    GO nodeCt = 0;
 
     // bottom region
-    for (int j=0; j<ny1_; ++j) {
-      for (int i=0; i<=nx1_; ++i) {
+    for (GO j=0; j<ny1_; ++j) {
+      for (GO i=0; i<=nx1_; ++i) {
         nodes(nodeCt, 0) = stepW_ + i*dx1;
         nodes(nodeCt, 1) = j*dy1; 
         ++nodeCt;
       }
-      for (int i=0; i<nx2_; ++i) {
+      for (GO i=0; i<nx2_; ++i) {
         nodes(nodeCt, 0) = stepW_ + observeW_ + (i+1)*dx2;
         nodes(nodeCt, 1) = j*dy1;
         ++nodeCt;
@@ -265,18 +269,18 @@ private:
     }
 
     // top region
-    for (int j=0; j<=ny3_; ++j) {
-      for (int i=0; i<=nx3_; ++i) {
+    for (GO j=0; j<=ny3_; ++j) {
+      for (GO i=0; i<=nx3_; ++i) {
         nodes(nodeCt, 0) = i*dx3;
         nodes(nodeCt, 1) = stepH_ + j*dy3; 
         ++nodeCt;
       }
-      for (int i=0; i<nx1_; ++i) {
+      for (GO i=0; i<nx1_; ++i) {
         nodes(nodeCt, 0) = stepW_ + (i+1)*dx1;
         nodes(nodeCt, 1) = stepH_ + j*dy3;
         ++nodeCt;
       }
-      for (int i=0; i<nx2_; ++i) {
+      for (GO i=0; i<nx2_; ++i) {
         nodes(nodeCt, 0) = stepW_ + observeW_ + (i+1)*dx2;
         nodes(nodeCt, 1) = stepH_ + j*dy3;
         ++nodeCt;
@@ -288,14 +292,14 @@ private:
 
   void computeCellToNodeMap() {
 
-    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, 4);
-    Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
+    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<GO>>(numCells_, 4);
+    Intrepid::FieldContainer<GO> &ctn = *meshCellToNodeMap_;
 
-    int cellCt = 0;
+    GO cellCt = 0;
 
     // bottom region
-    for (int j=0; j<ny1_-1; ++j) {
-      for (int i=0; i<nx1_+nx2_; ++i) {
+    for (GO j=0; j<ny1_-1; ++j) {
+      for (GO i=0; i<nx1_+nx2_; ++i) {
         ctn(cellCt, 0) = j*(nx1_+nx2_+1) + i;
         ctn(cellCt, 1) = j*(nx1_+nx2_+1) + (i+1);
         ctn(cellCt, 2) = (j+1)*(nx1_+nx2_+1) + (i+1);
@@ -305,7 +309,7 @@ private:
     }
 
     // transition region
-    for (int i=0; i<nx1_+nx2_; ++i) {
+    for (GO i=0; i<nx1_+nx2_; ++i) {
       ctn(cellCt, 0) = (ny1_-1)*(nx1_+nx2_+1) + i;
       ctn(cellCt, 1) = (ny1_-1)*(nx1_+nx2_+1) + (i+1);
       ctn(cellCt, 2) = ny1_*(nx1_+nx2_+1) + nx3_ + (i+1);
@@ -314,8 +318,8 @@ private:
     }
 
     // top region
-    for (int j=0; j<ny3_; ++j) {
-      for (int i=0; i<nx3_+nx1_+nx2_; ++i) {
+    for (GO j=0; j<ny3_; ++j) {
+      for (GO i=0; i<nx3_+nx1_+nx2_; ++i) {
         ctn(cellCt, 0) = ny1_*(nx1_+nx2_+1) + j*(nx3_+nx1_+nx2_+1) + i;
         ctn(cellCt, 1) = ny1_*(nx1_+nx2_+1) + j*(nx3_+nx1_+nx2_+1) + (i+1);
         ctn(cellCt, 2) = ny1_*(nx1_+nx2_+1) + (j+1)*(nx3_+nx1_+nx2_+1) + (i+1);
@@ -329,14 +333,14 @@ private:
 
   void computeCellToEdgeMap() {
 
-    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, 4);
-    Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
+    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<GO>>(numCells_, 4);
+    Intrepid::FieldContainer<GO> &cte = *meshCellToEdgeMap_;
 
-    int cellCt = 0;
+    GO cellCt = 0;
 
     // bottom region
-    for (int j=0; j<ny1_-1; ++j) {
-      for (int i=0; i<nx1_+nx2_; ++i) {
+    for (GO j=0; j<ny1_-1; ++j) {
+      for (GO i=0; i<nx1_+nx2_; ++i) {
         cte(cellCt, 0) = j*(2*(nx1_+nx2_)+1) + i;
         cte(cellCt, 1) = j*(2*(nx1_+nx2_)+1) + (nx1_+nx2_) + (i+1);
         cte(cellCt, 2) = (j+1)*(2*(nx1_+nx2_)+1) + i;
@@ -346,7 +350,7 @@ private:
     }
 
     // transition region
-    for (int i=0; i<nx1_+nx2_; ++i) {
+    for (GO i=0; i<nx1_+nx2_; ++i) {
       cte(cellCt, 0) = (ny1_-1)*(2*(nx1_+nx2_)+1) + i;
       cte(cellCt, 1) = (ny1_-1)*(2*(nx1_+nx2_)+1) + (nx1_+nx2_) + (i+1); 
       cte(cellCt, 2) = ny1_*(2*(nx1_+nx2_)+1) + nx3_ + i;
@@ -355,8 +359,8 @@ private:
     }
 
     // top region
-    for (int j=0; j<ny3_; ++j) {
-      for (int i=0; i<nx3_+nx1_+nx2_; ++i) {
+    for (GO j=0; j<ny3_; ++j) {
+      for (GO i=0; i<nx3_+nx1_+nx2_; ++i) {
         cte(cellCt, 0) = ny1_*(2*(nx1_+nx2_)+1) + j*(2*(nx3_+nx1_+nx2_)+1) + i;
         cte(cellCt, 1) = ny1_*(2*(nx1_+nx2_)+1) + j*(2*(nx3_+nx1_+nx2_)+1) + (nx3_+nx1_+nx2_) + (i+1);
         cte(cellCt, 2) = ny1_*(2*(nx1_+nx2_)+1) + (j+1)*(2*(nx3_+nx1_+nx2_)+1) + i;
@@ -400,26 +404,26 @@ private:
     (*meshSideSets_)[7][0].resize(1);
     (*meshSideSets_)[8][3].resize(1);
 
-    for (int i=0; i<nx1_+nx2_; ++i) {
+    for (GO i=0; i<nx1_+nx2_; ++i) {
       (*meshSideSets_)[0][0](i) = i;
     }
-    for (int i=0; i<ny2_; ++i) {
+    for (GO i=0; i<ny2_; ++i) {
       (*meshSideSets_)[1][1](i) = (i+1)*(nx1_+nx2_) - 1;
     }
-    int offset = nx1_*ny1_+nx2_*ny2_;
-    for (int i=0; i<ny5_; ++i) {
+    GO offset = nx1_*ny1_+nx2_*ny2_;
+    for (GO i=0; i<ny5_; ++i) {
       (*meshSideSets_)[2][1](i) = offset + (i+1)*(nx3_+nx4_+nx5_) - 1;
     }
-    for (int i=0; i<nx3_+nx4_+nx5_; ++i) {
+    for (GO i=0; i<nx3_+nx4_+nx5_; ++i) {
       (*meshSideSets_)[3][2](i) = offset + (ny3_-1)*(nx3_+nx4_+nx5_) + i;
     }
-    for (int i=0; i<ny3_; ++i) {
+    for (GO i=0; i<ny3_; ++i) {
       (*meshSideSets_)[4][3](i) = offset + i*(nx3_+nx4_+nx5_);
     }
-    for (int i=0; i<nx3_; ++i) {
+    for (GO i=0; i<nx3_; ++i) {
       (*meshSideSets_)[5][0](i) = offset + i;
     }
-    for (int i=0; i<ny1_-1; ++i) {
+    for (GO i=0; i<ny1_-1; ++i) {
       (*meshSideSets_)[6][3](i) = i*(nx1_+nx2_);
     }
     (*meshSideSets_)[7][0](0) = offset + nx3_;
@@ -454,23 +458,24 @@ class MeshManager_Rectangle : public MeshManager<Real> {
 */
 
 private:
+  using GO = typename Tpetra::Map<>::global_ordinal_type;
   Real width_;   // rectangle height
   Real height_;  // rectangle width
   Real X0_;      // x coordinate of bottom left corner
   Real Y0_;      // y coordinate of bottom left corner
 
-  int nx_;
-  int ny_;
+  GO nx_;
+  GO ny_;
 
-  int numCells_;
-  int numNodes_;
-  int numEdges_;
+  GO numCells_;
+  GO numNodes_;
+  GO numEdges_;
 
   ROL::Ptr<Intrepid::FieldContainer<Real> > meshNodes_;
-  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<GO> >  meshCellToNodeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<GO> >  meshCellToEdgeMap_;
 
-  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<GO> > > >  meshSideSets_;
 
 public:
 
@@ -499,34 +504,34 @@ public:
   }
 
 
-  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<GO> > getCellToNodeMap() const {
     return meshCellToNodeMap_;
   }
 
 
-  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<GO> > getCellToEdgeMap() const {
     return meshCellToEdgeMap_;
   }
 
 
-  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<GO> > > > getSideSets(
       std::ostream & outStream = std::cout,
       const bool verbose = false) const {
     return meshSideSets_;
   }
 
 
-  int getNumCells() const {
+  GO getNumCells() const {
     return numCells_;
   } // getNumCells
 
 
-  int getNumNodes() const {
+  GO getNumNodes() const {
     return numNodes_;
   } // getNumNodes
 
 
-  int getNumEdges() const {
+  GO getNumEdges() const {
     return numEdges_;
   } // getNumEdges
 
@@ -539,11 +544,11 @@ private:
 
     Real dx = width_ / nx_;
     Real dy = height_ / ny_;
-    int nodeCt = 0;
+    GO nodeCt = 0;
 
-    for (int j=0; j<=ny_; ++j) {
+    for (GO j=0; j<=ny_; ++j) {
       Real ycoord = Y0_ + j*dy;
-      for (int i=0; i<=nx_; ++i) {
+      for (GO i=0; i<=nx_; ++i) {
         nodes(nodeCt, 0) = X0_ + i*dx;
         nodes(nodeCt, 1) = ycoord; 
         ++nodeCt;
@@ -555,13 +560,13 @@ private:
 
   void computeCellToNodeMap() {
 
-    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, 4);
-    Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
+    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<GO>>(numCells_, 4);
+    Intrepid::FieldContainer<GO> &ctn = *meshCellToNodeMap_;
 
-    int cellCt = 0;
+    GO cellCt = 0;
 
-    for (int j=0; j<ny_; ++j) {
-      for (int i=0; i<nx_; ++i) {
+    for (GO j=0; j<ny_; ++j) {
+      for (GO i=0; i<nx_; ++i) {
         ctn(cellCt, 0) = j*(nx_+1) + i;
         ctn(cellCt, 1) = j*(nx_+1) + (i+1);
         ctn(cellCt, 2) = (j+1)*(nx_+1) + (i+1);
@@ -575,13 +580,13 @@ private:
 
   void computeCellToEdgeMap() {
 
-    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, 4);
-    Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
+    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<GO>>(numCells_, 4);
+    Intrepid::FieldContainer<GO> &cte = *meshCellToEdgeMap_;
 
-    int cellCt = 0;
+    GO cellCt = 0;
 
-    for (int j=0; j<ny_; ++j) {
-      for (int i=0; i<nx_; ++i) {
+    for (GO j=0; j<ny_; ++j) {
+      for (GO i=0; i<nx_; ++i) {
         cte(cellCt, 0) = j*(2*nx_+1) + i;
         cte(cellCt, 1) = j*(2*nx_+1) + nx_ + (i+1);
         cte(cellCt, 2) = (j+1)*(2*nx_+1) + i;
@@ -595,24 +600,24 @@ private:
 
   virtual void computeSideSets() {
 
-    meshSideSets_ = ROL::makePtr<std::vector<std::vector<Intrepid::FieldContainer<int> > >>(1);
-    int numSides = 4;
+    meshSideSets_ = ROL::makePtr<std::vector<std::vector<Intrepid::FieldContainer<GO> > >>(1);
+    GO numSides = 4;
     (*meshSideSets_)[0].resize(numSides);
     (*meshSideSets_)[0][0].resize(nx_);
     (*meshSideSets_)[0][1].resize(ny_);
     (*meshSideSets_)[0][2].resize(nx_);
     (*meshSideSets_)[0][3].resize(ny_);
     
-    for (int i=0; i<nx_; ++i) {
+    for (GO i=0; i<nx_; ++i) {
       (*meshSideSets_)[0][0](i) = i;
     }
-    for (int i=0; i<ny_; ++i) {
+    for (GO i=0; i<ny_; ++i) {
       (*meshSideSets_)[0][1](i) = (i+1)*nx_-1;
     }
-    for (int i=0; i<nx_; ++i) {
+    for (GO i=0; i<nx_; ++i) {
       (*meshSideSets_)[0][2](i) = i + nx_*(ny_-1);
     }
-    for (int i=0; i<ny_; ++i) {
+    for (GO i=0; i<ny_; ++i) {
       (*meshSideSets_)[0][3](i) = i*nx_;
     }
 
@@ -628,20 +633,22 @@ class MeshManager_Interval : public MeshManager<Real> {
 /* Interval geometry [X0,X0+width] */
 
 private:
+  using GO = typename Tpetra::Map<>::global_ordinal_type;
+
   Real width_;    // Interval width
   Real X0_;       // x coordinate left corner
 
-  int nx_;      
+  GO nx_;      
 
-  int numCells_;  
-  int numNodes_;
-  int numEdges_;
+  GO numCells_;  
+  GO numNodes_;
+  GO numEdges_;
 
   ROL::Ptr<Intrepid::FieldContainer<Real> > meshNodes_;
-  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<GO> >  meshCellToNodeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<GO> >  meshCellToEdgeMap_;
 
-  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > > meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<GO> > > > meshSideSets_;
 
 public:   
 
@@ -670,30 +677,30 @@ public:
     return meshNodes_;
   }
 
-  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<GO> > getCellToNodeMap() const {
     return meshCellToNodeMap_; 
   }
 
-  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<GO> > getCellToEdgeMap() const {
     return meshCellToEdgeMap_;
   }
 
-  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<GO> > > > getSideSets(
       std::ostream & outStream = std::cout,
       const bool verbose = false) const {
     return meshSideSets_;
   }
 
-  int getNumCells() const {
+  GO getNumCells() const {
     return numCells_;
   }
   
-  int getNumNodes() const {
+  GO getNumNodes() const {
     return numNodes_;
   } // getNumNodes
 
 
-  int getNumEdges() const {
+  GO getNumEdges() const {
     return numEdges_;
   } // getNumEdges
 
@@ -707,7 +714,7 @@ private:
 
     Real dx = width_ / nx_;
 
-    for( int i=0; i<nx_; ++i ) {
+    for( GO i=0; i<nx_; ++i ) {
       nodes(i, 0) = X0_ + i*dx;
     }  
   } // computeNodes
@@ -715,10 +722,10 @@ private:
 
   void computeCellToNodeMap() {
   
-    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_,2);
-    Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
+    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<GO>>(numCells_,2);
+    Intrepid::FieldContainer<GO> &ctn = *meshCellToNodeMap_;
 
-    for( int i=0; i<nx_; ++i ) {
+    for( GO i=0; i<nx_; ++i ) {
       ctn(i,0) = i;
       ctn(i,1) = i+1;
     }
@@ -727,10 +734,10 @@ private:
 
   void computeCellToEdgeMap() {
 
-    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_,1);
-    Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
+    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<GO>>(numCells_,1);
+    Intrepid::FieldContainer<GO> &cte = *meshCellToEdgeMap_;
 
-    for( int i=0; i<nx_; ++i ) {
+    for( GO i=0; i<nx_; ++i ) {
       cte(i,0) = i;
     }
 
@@ -742,8 +749,8 @@ private:
     using std::vector;
     using Intrepid::FieldContainer;
 
-    meshSideSets_ = ROL::makePtr<vector<vector<FieldContainer<int> > >>(1);
-    int numSides = 2;
+    meshSideSets_ = ROL::makePtr<vector<vector<FieldContainer<GO> > >>(1);
+    GO numSides = 2;
 
     (*meshSideSets_)[0].resize(numSides);
     (*meshSideSets_)[0][0](0) = 0;

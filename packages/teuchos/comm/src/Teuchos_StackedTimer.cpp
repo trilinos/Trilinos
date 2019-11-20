@@ -192,6 +192,8 @@ StackedTimer::computeColumnWidthsForAligment(std::string prefix,
   double total_time = 0.0;
 
   for (int i=0; i<flat_names_.size(); ++i ) {
+    if (sum_[i]/active_[i] <= options.drop_time)
+      continue;
     if (printed[i])
       continue;
     int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
@@ -314,6 +316,9 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
   double total_time = 0.0;
 
   for (int i=0; i<flat_names_.size(); ++i ) {
+    if (sum_[i]/active_[i] <= options.drop_time) {
+      continue;
+    }
     if (printed[i])
       continue;
     int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
@@ -529,5 +534,11 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
     printLevel("", 0, os, printed, 0., options);
   }
 }
+
+void StackedTimer::enableVerbose(const bool enable_verbose)
+{enable_verbose_ = enable_verbose;}
+
+void StackedTimer::setVerboseOstream(const Teuchos::RCP<std::ostream>& os)
+{verbose_ostream_ = os;}
 
 } //namespace Teuchos

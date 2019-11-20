@@ -75,13 +75,14 @@ namespace FROSch {
     SubdomainsVector_ (multiplicity),
     Ancestors_ (),
     Offspring_ (),
-    CoarseNodes_ (),
+    Roots_ (),
     DistancesVector_ (0),
     DofsPerNode_ (dofsPerNode),
     Multiplicity_ (multiplicity),
     UniqueID_ (-1),
     LocalID_ (-1),
-    CoarseNodeID_ (-1)
+    RootID_ (-1),
+    LeafID_ (-1)
     {
         for (UN i=0; i<multiplicity; i++) {
             SubdomainsVector_[i] = subdomains[i];
@@ -90,7 +91,7 @@ namespace FROSch {
 
         Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
         Offspring_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
-        CoarseNodes_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        Roots_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -196,12 +197,19 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int InterfaceEntity<SC,LO,GO,NO>::setCoarseNodeID(LO coarseNodeID)
+    int InterfaceEntity<SC,LO,GO,NO>::setRootID(LO rootID)
     {
-        CoarseNodeID_ = coarseNodeID;
+        RootID_ = rootID;
         return 0;
     }
 
+    template <class SC,class LO,class GO,class NO>
+    int InterfaceEntity<SC,LO,GO,NO>::setLeafID(LO leafID)
+    {
+        LeafID_ = leafID;
+        return 0;
+    }
+    
     template <class SC,class LO,class GO,class NO>
     int InterfaceEntity<SC,LO,GO,NO>::setUniqueIDToFirstGlobalID()
     {
@@ -242,6 +250,13 @@ namespace FROSch {
             Ancestors_->addEntity(ancestors->getEntity(i));
         }
         Ancestors_->sortUnique();
+        
+        // this is offspring of each ancestor
+        for (UN i=0; i<Ancestors_->getNumEntities(); i++) {
+            InterfaceEntityPtr thisEntity = rcpFromRef(*this);
+            FROSCH_ASSERT(!thisEntity.is_null(),"FROSch::InterfaceEntity : ERROR: thisEntity.is_null()");
+            Ancestors_->getEntity(i)->addOffspring(thisEntity);
+        }
         return 0;
     }
 
@@ -268,54 +283,54 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename InterfaceEntity<SC,LO,GO,NO>::EntitySetPtr InterfaceEntity<SC,LO,GO,NO>::findCoarseNodes()
+    typename InterfaceEntity<SC,LO,GO,NO>::EntitySetPtr InterfaceEntity<SC,LO,GO,NO>::findRoots()
     {
-        if (CoarseNodes_->getNumEntities()) {
+        if (Roots_->getNumEntities()) {
             FROSCH_ASSERT(Ancestors_->getNumEntities()!=0,"Ancestors_->getNumEntities()==0");
-            return CoarseNodes_;
+            return Roots_;
         }
         for (UN i=0; i<Ancestors_->getNumEntities(); i++) {
-            EntitySetPtr tmpCoarseNodes = Ancestors_->getEntity(i)->findCoarseNodes();
-            if (tmpCoarseNodes.is_null()) {
+            EntitySetPtr tmpRoots = Ancestors_->getEntity(i)->findRoots();
+            if (tmpRoots.is_null()) {
                 FROSCH_ASSERT(Ancestors_->getEntity(i)->getAncestors()->getNumEntities()==0,"EntityVector_[i]->getAncestors()->getNumEntities()!=0");
-                CoarseNodes_->addEntity(Ancestors_->getEntity(i));
+                Roots_->addEntity(Ancestors_->getEntity(i));
             } else {
                 FROSCH_ASSERT(Ancestors_->getEntity(i)->getAncestors()->getNumEntities()!=0,"EntityVector_[i]->getAncestors()->getNumEntities()==0");
-                FROSCH_ASSERT(tmpCoarseNodes->getNumEntities()>0,"tmpCoarseNodes->getNumEntities()<=0");
-                CoarseNodes_->addEntitySet(tmpCoarseNodes);
+                FROSCH_ASSERT(tmpRoots->getNumEntities()>0,"tmpRoots->getNumEntities()<=0");
+                Roots_->addEntitySet(tmpRoots);
             }
         }
-        CoarseNodes_->sortUnique();
-        if (CoarseNodes_->getNumEntities()) {
+        Roots_->sortUnique();
+        if (Roots_->getNumEntities()) {
             FROSCH_ASSERT(Ancestors_->getNumEntities()!=0,"Ancestors_->getNumEntities()==0");
-            return CoarseNodes_;
+            return Roots_;
         } else {
             return null;
         }
     }
 
     template <class SC,class LO,class GO,class NO>
-    int InterfaceEntity<SC,LO,GO,NO>::clearCoarseNodes()
+    int InterfaceEntity<SC,LO,GO,NO>::clearRoots()
     {
-        CoarseNodes_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        Roots_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
         return 0;
     }
 
     template <class SC,class LO,class GO,class NO>
-    int InterfaceEntity<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
-                                                                    ConstXMultiVectorPtr &nodeList,
-                                                                    DistanceFunction distanceFunction)
+    int InterfaceEntity<SC,LO,GO,NO>::computeDistancesToRoots(UN dimension,
+                                                              ConstXMultiVectorPtr &nodeList,
+                                                              DistanceFunction distanceFunction)
     {
-        if (CoarseNodes_->getNumEntities()>0) {
+        if (Roots_->getNumEntities()>0) {
             DistancesVector_.resize(getNumNodes());
             for (UN i=0; i<getNumNodes(); i++) {
-                DistancesVector_[i].resize(CoarseNodes_->getNumEntities()+1,std::numeric_limits<SC>::max());
+                DistancesVector_[i].resize(Roots_->getNumEntities()+1,std::numeric_limits<SC>::max());
             }
 
             switch (distanceFunction) {
                 case ConstantDistanceFunction:
                     for (UN i=0; i<NodeVector_.size(); i++) {
-                        for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
+                        for (UN j=0; j<Roots_->getNumEntities(); j++) {
                             DistancesVector_[i][j] = ScalarTraits<SC>::one(); // AH 08/08/2019 TODO: Make a MultiVector out of this and use putScalar()
                         }
                     }
@@ -323,12 +338,12 @@ namespace FROSch {
                 case InverseEuclideanDistanceFunction:
                     FROSCH_ASSERT(!nodeList.is_null(),"FROSch::InterfaceEntity : ERROR: The inverse euclidean distance cannot be calculated without coordinates of the nodes!");
                     FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"FROSch::InterfaceEntity : ERROR: Inconsistent Dimension.");
-                    for (UN i=0; i<CoarseNodes_->getNumEntities(); i++) {
-                        for (UN j=0; j<CoarseNodes_->getEntity(i)->getNumNodes(); j++) {
+                    for (UN i=0; i<Roots_->getNumEntities(); i++) {
+                        for (UN j=0; j<Roots_->getEntity(i)->getNumNodes(); j++) {
                             // Coordinates of the nodes of the coarse node
                             SCVecPtr CN(dimension);
                             for (UN k=0; k<dimension; k++) {
-                                CN[k] = nodeList->getData(k)[CoarseNodes_->getEntity(i)->getLocalNodeID(j)];
+                                CN[k] = nodeList->getData(k)[Roots_->getEntity(i)->getLocalNodeID(j)];
                             }
                             for (UN k=0; k<NodeVector_.size(); k++) {
                                 // Coordinates of the nodes of the entity
@@ -345,7 +360,7 @@ namespace FROSch {
                         }
                     }
                     for (UN i=0; i<NodeVector_.size(); i++) {
-                        for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
+                        for (UN j=0; j<Roots_->getNumEntities(); j++) {
                             DistancesVector_[i][j] = ScalarTraits<SC>::one()/DistancesVector_[i][j];
                         }
                     }
@@ -357,9 +372,9 @@ namespace FROSch {
 
             // In the last "row", we store the sum of the distances for all coarse nodes
             for (UN i=0; i<NodeVector_.size(); i++) {
-                DistancesVector_[i][CoarseNodes_->getNumEntities()] = ScalarTraits<SC>::zero();
-                for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
-                    DistancesVector_[i][CoarseNodes_->getNumEntities()] += DistancesVector_[i][j];
+                DistancesVector_[i][Roots_->getNumEntities()] = ScalarTraits<SC>::zero();
+                for (UN j=0; j<Roots_->getNumEntities(); j++) {
+                    DistancesVector_[i][Roots_->getNumEntities()] += DistancesVector_[i][j];
                 }
             }
         }
@@ -439,9 +454,15 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    LO InterfaceEntity<SC,LO,GO,NO>::getCoarseNodeID() const
+    LO InterfaceEntity<SC,LO,GO,NO>::getRootID() const
     {
-        return CoarseNodeID_;
+        return RootID_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    LO InterfaceEntity<SC,LO,GO,NO>::getLeafID() const
+    {
+        return LeafID_;
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -511,18 +532,18 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    const typename InterfaceEntity<SC,LO,GO,NO>::EntitySetPtr InterfaceEntity<SC,LO,GO,NO>::getCoarseNodes() const
+    const typename InterfaceEntity<SC,LO,GO,NO>::EntitySetPtr InterfaceEntity<SC,LO,GO,NO>::getRoots() const
     {
-        return CoarseNodes_;
+        return Roots_;
     }
 
     template <class SC,class LO,class GO,class NO>
-    SC InterfaceEntity<SC,LO,GO,NO>::getDistanceToCoarseNode(UN iDNode,
-                                                             UN iDCoarseNode) const
+    SC InterfaceEntity<SC,LO,GO,NO>::getDistanceToRoot(UN iDNode,
+                                                       UN iDRoot) const
     {
         FROSCH_ASSERT(iDNode<getNumNodes(),"iDNode>=getNumNodes()");
-        FROSCH_ASSERT(iDCoarseNode<CoarseNodes_->getNumEntities()+1,"iDNode>=CoarseNodes_->getNumEntities()+1");
-        return DistancesVector_[iDNode][iDCoarseNode];
+        FROSCH_ASSERT(iDRoot<Roots_->getNumEntities()+1,"iDNode>=Roots_->getNumEntities()+1");
+        return DistancesVector_[iDNode][iDRoot];
     }
 
     template <class SC,class LO,class GO,class NO>

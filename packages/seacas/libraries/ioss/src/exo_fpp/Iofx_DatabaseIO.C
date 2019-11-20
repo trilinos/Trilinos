@@ -57,7 +57,6 @@
 #include <numeric>
 #include <set>
 #include <string>
-#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <tokenize.h>
@@ -153,6 +152,25 @@ namespace {
       }
     }
   }
+
+  template <typename T>
+  void extract_data(std::vector<double> &local_data, T *data, size_t num_entity, size_t comp_count,
+                    size_t offset)
+  {
+    local_data.resize(num_entity);
+    if (comp_count == 1 && offset == 0) {
+      for (size_t j = 0; j < num_entity; j++) {
+        local_data[j] = data[j];
+      }
+    }
+    else {
+      for (size_t j = 0; j < num_entity; j++) {
+        local_data[j] = data[offset];
+        offset += comp_count;
+      }
+    }
+  }
+
 } // namespace
 
 namespace Iofx {
@@ -1944,9 +1962,10 @@ void DatabaseIO::get_commsets()
       }
 
       // Count nodes, elements, and convert counts to offsets.
-      my_node_count += std::accumulate(nodeCmapNodeCnts.begin(), nodeCmapNodeCnts.end(), 0);
+      my_node_count +=
+          std::accumulate(nodeCmapNodeCnts.begin(), nodeCmapNodeCnts.end(), int64_t(0));
 
-      elem_count += std::accumulate(elemCmapElemCnts.begin(), elemCmapElemCnts.end(), 0);
+      elem_count += std::accumulate(elemCmapElemCnts.begin(), elemCmapElemCnts.end(), int64_t(0));
     }
     // Create a single node commset and a single element commset
     Ioss::CommSet *commset = new Ioss::CommSet(this, "commset_node", "node", my_node_count);
@@ -3201,16 +3220,36 @@ int64_t DatabaseIO::write_attribute_field(ex_entity_type type, const Ioss::Field
 {
   std::string att_name   = ge->name() + SEP() + field.get_name();
   ssize_t     num_entity = ge->entity_count();
-  ssize_t     offset     = field.get_index();
+  ssize_t     fld_offset = field.get_index();
 
   int64_t id              = Ioex::get_id(ge, type, &ids_);
   int     attribute_count = ge->get_property("attribute_count").get_int();
-  assert(offset > 0);
-  assert(offset - 1 + field.raw_storage()->component_count() <= attribute_count);
+  assert(fld_offset > 0);
+  assert(fld_offset - 1 + field.raw_storage()->component_count() <= attribute_count);
 
-  if (offset == 1 && field.raw_storage()->component_count() == attribute_count) {
+  Ioss::Field::BasicType ioss_type = field.get_type();
+  assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
+         ioss_type == Ioss::Field::INT64);
+
+  if (fld_offset == 1 && field.raw_storage()->component_count() == attribute_count) {
     // Write all attributes in one big chunk...
-    int ierr = ex_put_attr(get_file_pointer(), type, id, static_cast<double *>(data));
+    std::vector<double> temp;
+    double *            rdata = nullptr;
+    if (ioss_type == Ioss::Field::INTEGER) {
+      int *idata = static_cast<int *>(data);
+      extract_data(temp, idata, attribute_count * num_entity, 1, 0);
+      rdata = temp.data();
+    }
+    else if (ioss_type == Ioss::Field::INT64) {
+      int64_t *idata = static_cast<int64_t *>(data);
+      extract_data(temp, idata, attribute_count * num_entity, 1, 0);
+      rdata = temp.data();
+    }
+    else {
+      rdata = static_cast<double *>(data);
+    }
+
+    int ierr = ex_put_attr(get_file_pointer(), type, id, rdata);
     if (ierr < 0) {
       Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
     }
@@ -3219,7 +3258,23 @@ int64_t DatabaseIO::write_attribute_field(ex_entity_type type, const Ioss::Field
     // Write a subset of the attributes.  If scalar, write one;
     // if higher-order (vector3d, ..) write each component.
     if (field.raw_storage()->component_count() == 1) {
-      int ierr = ex_put_one_attr(get_file_pointer(), type, id, offset, static_cast<double *>(data));
+      std::vector<double> temp;
+      double *            rdata = nullptr;
+      if (ioss_type == Ioss::Field::INTEGER) {
+        int *idata = static_cast<int *>(data);
+        extract_data(temp, idata, num_entity, 1, 0);
+        rdata = temp.data();
+      }
+      else if (ioss_type == Ioss::Field::INT64) {
+        int64_t *idata = static_cast<int64_t *>(data);
+        extract_data(temp, idata, num_entity, 1, 0);
+        rdata = temp.data();
+      }
+      else {
+        rdata = static_cast<double *>(data);
+      }
+
+      int ierr = ex_put_one_attr(get_file_pointer(), type, id, fld_offset, rdata);
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
       }
@@ -3229,15 +3284,22 @@ int64_t DatabaseIO::write_attribute_field(ex_entity_type type, const Ioss::Field
       // data into and then write that out to the file...
       std::vector<double> local_data(num_entity);
       int                 comp_count = field.raw_storage()->component_count();
-      double *            rdata      = static_cast<double *>(data);
       for (int i = 0; i < comp_count; i++) {
-        size_t k = i;
-        for (ssize_t j = 0; j < num_entity; j++) {
-          local_data[j] = rdata[k];
-          k += comp_count;
+        size_t offset = i;
+        if (ioss_type == Ioss::Field::REAL) {
+          double *rdata = static_cast<double *>(data);
+          extract_data(local_data, rdata, num_entity, comp_count, offset);
+        }
+        else if (ioss_type == Ioss::Field::INTEGER) {
+          int *idata = static_cast<int *>(data);
+          extract_data(local_data, idata, num_entity, comp_count, offset);
+        }
+        else if (ioss_type == Ioss::Field::INT64) {
+          int64_t *idata = static_cast<int64_t *>(data);
+          extract_data(local_data, idata, num_entity, comp_count, offset);
         }
 
-        int ierr = ex_put_one_attr(get_file_pointer(), type, id, offset + i, TOPTR(local_data));
+        int ierr = ex_put_one_attr(get_file_pointer(), type, id, fld_offset + i, TOPTR(local_data));
         if (ierr < 0) {
           Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
         }
@@ -3250,9 +3312,19 @@ int64_t DatabaseIO::write_attribute_field(ex_entity_type type, const Ioss::Field
 int64_t DatabaseIO::read_attribute_field(ex_entity_type type, const Ioss::Field &field,
                                          const Ioss::GroupingEntity *ge, void *data) const
 {
+  // TODO: Handle INTEGER fields...
+
   int64_t num_entity = ge->entity_count();
   if (num_entity == 0) {
     return 0;
+  }
+
+  Ioss::Field::BasicType ioss_type = field.get_type();
+  if (ioss_type == Ioss::Field::INTEGER || ioss_type == Ioss::Field::INT64) {
+    std::ostringstream errmsg;
+    fmt::print(errmsg, "INTERNAL ERROR: Integer attribute fields are not yet handled for read. "
+                       "Please report.\n");
+    IOSS_ERROR(errmsg);
   }
 
   int     attribute_count = ge->get_property("attribute_count").get_int();

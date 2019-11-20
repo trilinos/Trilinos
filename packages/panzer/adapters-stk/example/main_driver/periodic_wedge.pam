@@ -1,0 +1,39 @@
+mesh
+  radial trisection
+    #enforce periodicity
+    trisection blocks, 2
+    numz = 1
+      zblock 1 5.0 interval 2
+    numr = 1 INITIAL RADIUS 0.0
+      rblock 1 10.0 interval 2
+    numa = 1
+      ablock 1 90. interval 8
+  end
+  set assign
+    block sideset, jlo, 1, 1
+    block sideset, jhi, 2, 1
+    block sideset, ihi, 3, 1
+    block sideset, klo, 3, 1
+    block sideset, khi, 3, 1
+  end
+  user defined geometry transformation
+    "
+      double x = inxcoord;
+      double y = inycoord;
+      double r = sqrt(x*x+y*y);
+      if (x > 0.) {
+        double theta = atan(y/x);
+        double shift_in_rads = 0.25 * 3.141592653589793238462643383279502884;
+        outxcoord = r * cos(shift_in_rads+theta);
+        outycoord = r * sin(shift_in_rads+theta);
+      }
+      else {
+        double theta = 0.5 * 3.141592653589793238462643383279502884;
+        double shift_in_rads = 0.25 * 3.141592653589793238462643383279502884;
+        outxcoord = r * cos(shift_in_rads+theta);
+        outycoord = r * sin(shift_in_rads+theta);
+      }
+      outzcoord = inzcoord;
+    "
+  end
+end

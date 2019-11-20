@@ -299,12 +299,12 @@ using namespace Intrepid;
           if ( stk::mesh::is_auto_declared_part(*part) )
             continue;
 
-          const CellTopologyData * const part_cell_topo_data = stk::mesh::MetaData::get(bulk).get_cell_topology(*part).getCellTopologyData();
+          const stk::topology part_cell_topo_data = stk::mesh::MetaData::get(bulk).get_topology(*part);
           //std::cout << "P[" << p_rank << "] part = " << part->name() << " part_cell_topo_data= " << part_cell_topo_data << " topo-name= "
           //          << (part_cell_topo_data ? part_cell_topo_data->name : "null") << std::endl;
 
-          if (part_cell_topo_data)
-            jac_data[part_cell_topo_data->name] = jacData();
+          if (part_cell_topo_data.is_valid())
+            jac_data[part_cell_topo_data.char_name()] = jacData();
         }
 
       for (unsigned ipass = 0; ipass < 1; ipass++)

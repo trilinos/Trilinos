@@ -140,6 +140,18 @@ namespace MueLu {
     }
 #endif
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      R.update(STS::one(),B,STS::zero());
+      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());   
+    }      
+    
+
+
+
     //! @name MueLu specific
     //@{
 

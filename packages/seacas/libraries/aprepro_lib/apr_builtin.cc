@@ -100,24 +100,12 @@ namespace SEAMS {
 
   extern SEAMS::Aprepro *aprepro;
 
-#if defined(VMS) || defined(_hpux_) || defined(sun) || defined(__linux__) || defined(__APPLE__)
-#define HYPOT(x, y) hypot(x, y)
-#else
-#define HYPOT(x, y) do_hypot(x, y)
-#endif
-
 #define d2r(x) ((x)*PI / 180.)
 #define r2d(x) ((x)*180. / PI)
 
 #ifndef max
 #define max(x, y) (x) > (y) ? (x) : (y)
 #define min(x, y) (x) < (y) ? (x) : (y)
-#endif
-
-#if defined(sun) || defined(__linux__) || defined(__APPLE__)
-#define LOG1P(x) log1p(x)
-#else
-#define LOG1P(x) std::log(1.0 + (x))
 #endif
 
   double do_time()
@@ -150,7 +138,7 @@ namespace SEAMS {
   double do_dist(double x1, double y1, double x2, double y2)
   {
     reset_error();
-    double temp = HYPOT((x1 - x2), (y1 - y2));
+    double temp = std::hypot((x1 - x2), (y1 - y2));
     SEAMS::math_error("hypot");
     return (temp);
   }
@@ -160,7 +148,7 @@ namespace SEAMS {
 
   double do_angle(double x1, double y1, double x2, double y2)
   {
-    double temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
+    double temp = ((x1 * x2) + (y1 * y2)) / (std::hypot(x1, y1) * std::hypot(x2, y2));
     reset_error();
     temp = acos(temp);
     SEAMS::math_error("angle");
@@ -172,7 +160,7 @@ namespace SEAMS {
 
   double do_angled(double x1, double y1, double x2, double y2)
   {
-    double temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
+    double temp = ((x1 * x2) + (y1 * y2)) / (std::hypot(x1, y1) * std::hypot(x2, y2));
     reset_error();
     temp = r2d(acos(temp));
     SEAMS::math_error("angled");
@@ -180,31 +168,12 @@ namespace SEAMS {
   }
 
   // DO_HYPOT: calculate sqrt(p^2 + q^2)
-  // Algorithm from "More Programming Pearls," Jon Bentley
-  // Accuracy: 6.5 digits after 2 iterations,
-  //           20  digits after 3 iterations,
-  //           62  digits after 4 iterations.
-  double do_hypot(double x, double y)
-  {
-    x = fabs(x);
-    y = fabs(y);
-    if (x < y) {
-      double r = y;
-      y        = x;
-      x        = r;
-    }
-    if (x == 0.0) {
-      return (y);
-    }
+  double do_hypot(double x, double y) { return std::hypot(x, y); }
 
-    for (int i = 0; i < 3; i++) {
-      double r = y / x;
-      r *= r;
-      r /= (4.0 + r);
-      x += (2.0 * r * x);
-      y *= r;
-    }
-    return (x);
+  double do_pow(double x, double y)
+  {
+    // X^Y
+    return std::pow(x, y);
   }
 
   double do_max(double x, double y)
@@ -422,14 +391,14 @@ namespace SEAMS {
   double do_expm1(double x)
   {
     reset_error();
-#if defined(__linux__) || defined(__APPLE__)
-    double temp = expm1(x);
-#else
-    double temp = exp(x) - 1.0;
-#endif
+    double temp = std::expm1(x);
     SEAMS::math_error("exp");
     return (temp);
   }
+
+  double do_erf(double x) { return std::erf(x); }
+
+  double do_erfc(double x) { return std::erfc(x); }
 
   double do_floor(double x)
   {
@@ -482,6 +451,17 @@ namespace SEAMS {
     return (temp);
   }
 
+  double do_cbrt(double x)
+  {
+    feclearexcept(FE_ALL_EXCEPT);
+    reset_error();
+    double temp = std::cbrt(x);
+    if (fetestexcept(FE_INVALID | FE_OVERFLOW | FE_DIVBYZERO) != 0) {
+      SEAMS::math_error("sqrt");
+    }
+    return (temp);
+  }
+
   double do_tanh(double x)
   {
     reset_error();
@@ -494,21 +474,9 @@ namespace SEAMS {
 
   double do_polarY(double rad, double ang) { return (rad * sin(d2r(ang))); }
 
-  double cof[] = {76.18009173,  -86.50532033,   24.01409822,
-                  -1.231739516, 0.120858003e-2, -0.536382e-5};
-  double do_lgamma(double val)
-  {
-    constexpr double STP = 2.50662827465;
-    double           x   = val - 1.0;
-    double           tmp = x + 5.5;
-    tmp                  = (x + 0.5) * std::log(tmp) - tmp;
-    double ser           = 1.0;
-    for (int j = 0; j < 6; j++) {
-      x += 1.0;
-      ser += (cof[j] / x);
-    }
-    return (tmp + std::log(STP * ser));
-  }
+  double do_lgamma(double val) { return std::lgamma(val); }
+
+  double do_tgamma(double val) { return std::tgamma(val); }
 
   double do_juldayhms(double mon, double day, double year, double h, double mi, double se)
   {
@@ -541,37 +509,13 @@ namespace SEAMS {
     return do_juldayhms(mon, day, year, 0.0, 0.0, 0.0);
   }
 
-  double do_log1p(double x) { return LOG1P(x); }
+  double do_log1p(double x) { return std::log1p(x); }
 
-  double do_acosh(double x)
-  {
-    if (x > 1.0e20) {
-      return (LOG1P(x) + std::log(2.0));
-    }
-    double t = std::sqrt(x - 1.0);
-    return (LOG1P(t * (t + std::sqrt(x + 1))));
-  }
+  double do_acosh(double x) { return std::acosh(x); }
 
-  double do_asinh(double x)
-  {
-    if (1.0 + x * x == 1.0) {
-      return (x);
-    }
-    if (std::sqrt(1.0 + x * x) == 1.0) {
-      return (do_sign(1.0, x) * (LOG1P(x) + std::log(2.0)));
-    }
-    double t = fabs(x);
-    double s = 1.0 / t;
-    return (do_sign(1.0, x) * LOG1P(t + t / (s + std::sqrt(1 + s * s))));
-  }
+  double do_asinh(double x) { return std::asinh(x); }
 
-  double do_atanh(double x)
-  {
-    double z = do_sign(0.5, x);
-    x        = do_sign(x, 1.0);
-    x        = x / (1.0 - x);
-    return (z * LOG1P(x + x));
-  }
+  double do_atanh(double x) { return std::atanh(x); }
 
   double do_rows(const array *arr) { return arr->rows; }
 

@@ -256,12 +256,15 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   RCP<crs_type> cell_to_node;
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("Build matrix",BuildMatrix);
-    // The matrix is indexed by (global cell, global node) = local node
-    cell_to_node = rcp(new crs_type(cell_map,0));
 
     // fill in the cell to node matrix
     const unsigned int num_local_cells = owned_cells_to_nodes.extent(0);
     const unsigned int num_nodes_per_cell = owned_cells_to_nodes.extent(1);
+
+    // The matrix is indexed by (global cell, global node) = local node
+    cell_to_node = rcp(new crs_type(cell_map,num_nodes_per_cell,
+                                    Tpetra::StaticProfile));
+
     std::vector<panzer::LocalOrdinal> local_node_indexes(num_nodes_per_cell);
     std::vector<panzer::GlobalOrdinal> global_node_indexes(num_nodes_per_cell);
     for(unsigned int i=0;i<num_local_cells;i++) {

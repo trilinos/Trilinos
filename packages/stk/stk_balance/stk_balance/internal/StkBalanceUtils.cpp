@@ -48,7 +48,7 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
                     const stk::mesh::FieldBase* coord,
                     const double eps,
                     stk::mesh::EntityId elementId,
-                    stk::balance::internal::BoxVectorWithStkId& faceBoxes)
+                    stk::balance::internal::SearchBoxIdentProcs& faceBoxes)
 {
     unsigned dim = stkMeshBulkData.mesh_meta_data().spatial_dimension();
     std::vector<double> coords(dim * numNodes, 0);
@@ -67,19 +67,11 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
     double minY = *std::min_element(&coords[numNodes], &coords[2 * numNodes]);
     double minZ = *std::min_element(&coords[2 * numNodes], &coords[3 * numNodes]);
     stk::balance::internal::StkBox faceBox(minX - eps, minY - eps, minZ - eps, maxX + eps, maxY + eps, maxZ + eps);
-    stk::balance::internal::StkMeshIdent id(elementId, stkMeshBulkData.parallel_rank());
+    stk::balance::internal::SearchIdentProc id(elementId, stkMeshBulkData.parallel_rank());
     faceBoxes.emplace_back(faceBox, id);
 }
 
-const stk::mesh::FieldBase * get_coordinate_field(const stk::mesh::MetaData& meta_data, const std::string& coordinateFieldName)
-{
-    //stk::mesh::FieldBase const * coord = stkMeshBulkData.mesh_meta_data().coordinate_field();
-    const stk::mesh::FieldBase * coord = meta_data.get_field(stk::topology::NODE_RANK, coordinateFieldName);
-    ThrowRequireMsg(coord != nullptr, "Null coordinate field for name=" << coordinateFieldName << ". Contact sierra-help@sandia.gov for support.");
-    return coord;
-}
-
-void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, stk::balance::internal::BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector)
+void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, stk::balance::internal::SearchBoxIdentProcs &faceBoxes, const stk::mesh::Selector& searchSelector)
 {
     std::vector<stk::mesh::SideSetEntry> skinnedSideSet = stk::mesh::SkinMeshUtil::get_skinned_sideset_excluding_region(stkMeshBulkData, searchSelector, !searchSelector);
     stk::mesh::EntityVector sideNodes;
@@ -87,13 +79,20 @@ void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSet
     {
         stk::mesh::Entity sidesetElement = sidesetEntry.element;
         stk::mesh::ConnectivityOrdinal sidesetSide = sidesetEntry.side;
-        stk::mesh::get_subcell_nodes(stkMeshBulkData, sidesetElement, stkMeshBulkData.mesh_meta_data().side_rank(), sidesetSide, sideNodes);
-        const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord, sideNodes.data(), sideNodes.size());
-        addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps, stkMeshBulkData.identifier(sidesetElement), faceBoxes);
+        stk::mesh::get_subcell_nodes(stkMeshBulkData, sidesetElement,
+                                     stkMeshBulkData.mesh_meta_data().side_rank(),
+                                     sidesetSide, sideNodes);
+        const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord,
+                                                                     sideNodes.data(), sideNodes.size());
+        addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps,
+                       stkMeshBulkData.identifier(sidesetElement), faceBoxes);
     }
 }
 
-void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, stk::balance::internal::BoxVectorWithStkId &boxes)
+void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData,
+                              const BalanceSettings & balanceSettings,
+                              const stk::mesh::FieldBase* coord,
+                              stk::balance::internal::SearchBoxIdentProcs &boxes)
 {
     const stk::mesh::BucketVector &elementBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
 
@@ -106,13 +105,13 @@ void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const Balanc
             {
                 const stk::mesh::Entity *node = stkMeshBulkData.begin_nodes(bucket[j]);
                 double *xyz = static_cast<double *>(stk::mesh::field_data(*coord, *node));
-                double eps = balanceSettings.getParticleRadius(bucket[j]) * balanceSettings.getToleranceForParticleSearch();
+                double eps = balanceSettings.getAbsoluteToleranceForParticleSearch(bucket[j]);
 
                 stk::balance::internal::StkBox box(xyz[0] - eps, xyz[1] - eps, xyz[2] - eps, xyz[0] + eps, xyz[1] + eps, xyz[2] + eps);
 
                 unsigned int val1 = stkMeshBulkData.identifier(bucket[j]);
                 int val2 = stkMeshBulkData.parallel_rank();
-                stk::balance::internal::StkMeshIdent id(val1, val2);
+                stk::balance::internal::SearchIdentProc id(val1, val2);
 
                 boxes.emplace_back(box, id);
             }
@@ -120,16 +119,18 @@ void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const Balanc
     }
 }
 
-StkSearchResults getSearchResultsForFacesParticles(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings, const stk::mesh::Selector& searchSelector)
+SearchElemPairs getBBIntersectionsForFacesParticles(stk::mesh::BulkData& stkMeshBulkData,
+                                                    const BalanceSettings &balanceSettings,
+                                                    const stk::mesh::Selector& searchSelector)
 {
     bool useLocalIds = balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH ||
                        balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_BY_TOPOLOGY ||
                        balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_AND_OUTPUT_COLOR_FIELDS;
     ThrowRequireWithSierraHelpMsg(useLocalIds != true);
 
-    const stk::mesh::FieldBase* coord = get_coordinate_field(stkMeshBulkData.mesh_meta_data(), balanceSettings.getCoordinateFieldName());
+    const stk::mesh::FieldBase * coord = stkMeshBulkData.mesh_meta_data().coordinate_field();
 
-    stk::balance::internal::BoxVectorWithStkId faceBoxes;
+    stk::balance::internal::SearchBoxIdentProcs faceBoxes;
     fillFaceBoxesWithIds(stkMeshBulkData, balanceSettings, coord, faceBoxes, searchSelector);
 
     if ( balanceSettings.getEdgesForParticlesUsingSearch() )
@@ -137,11 +138,11 @@ StkSearchResults getSearchResultsForFacesParticles(stk::mesh::BulkData& stkMeshB
         fillParticleBoxesWithIds(stkMeshBulkData, balanceSettings, coord, faceBoxes);
     }
 
-    stk::balance::internal::StkSearchResults searchResults;
+    stk::balance::internal::SearchElemPairs searchResults;
 
     stk::search::coarse_search(faceBoxes, faceBoxes, stk::search::KDTREE, stkMeshBulkData.parallel(), searchResults);
 
-    stk::balance::internal::StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
+    stk::balance::internal::SearchElemPairs::iterator iter = std::unique(searchResults.begin(), searchResults.end());
     searchResults.resize(iter - searchResults.begin());
     return searchResults;
 }

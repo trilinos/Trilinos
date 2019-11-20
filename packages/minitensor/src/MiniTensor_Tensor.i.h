@@ -567,43 +567,6 @@ greater_than(S const & a, S const & b)
 } // anonymous namespace
 
 //
-// Sort and index in descending order. Useful for ordering singular values
-// and eigenvalues and corresponding vectors in the respective decompositions.
-//
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Vector<T, N>, Tensor<T, N>>
-sort_permutation(Vector<T, N> const & u)
-{
-
-  Index const
-  dimension = u.get_dimension();
-
-  std::vector <std::pair<T, Index>>
-  s(dimension);
-
-  for (Index i = 0; i < dimension; ++i) {
-    s[i].first = u(i);
-    s[i].second = i;
-  }
-
-  std::sort(s.begin(), s.end(), greater_than<std::pair<T, Index>>);
-
-  Vector<T, N> v(dimension);
-
-  Tensor<T, N>
-  P = zero<T, N>(dimension);
-
-  for (Index i = 0; i < dimension; ++i) {
-    v(i) = s[i].first;
-    P(s[i].second, i) = 1.0;
-  }
-
-  return std::make_pair(v, P);
-
-}
-
-//
 // Extract a row as a vector
 //
 template<typename T, Index N>

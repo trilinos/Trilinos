@@ -257,6 +257,14 @@ public:
 #endif
 #endif
 
+  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const{ 
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+    apply(X,R);
+    R.update(one,B,negone);
+  }
+
 }; // EpetraCrsMatrixT class (specialization on GO=long, empty stub implementation)
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -1234,6 +1242,8 @@ public:
                                "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
   }
 
+
+
 private:
   mutable local_matrix_type localMatrix_;
   mutable bool              isInitializedLocalMatrix_ = false; // It's OK to use C++11 when Tpetra is enabled
@@ -1244,6 +1254,15 @@ private:
 #endif
 #endif
   //@}
+
+  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+
+    apply(X,R);
+    R.update(one,B,negone);
+  }
 
 private:
   //! The underlying actual matrix object
@@ -2230,6 +2249,7 @@ public:
                                "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
   }
 
+ 
 private:
   mutable local_matrix_type localMatrix_;
   mutable bool              isInitializedLocalMatrix_ = false;
@@ -2240,6 +2260,14 @@ private:
 #endif
 #endif
   //@}
+
+ void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+    apply(X,R);
+    R.update(one,B,negone);
+  }
 
 private:
   RCP<Epetra_CrsMatrix> mtx_;

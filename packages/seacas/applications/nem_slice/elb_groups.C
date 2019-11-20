@@ -42,6 +42,7 @@
 #include "elb_elem.h" // for elem_name_from_enum
 #include "elb_err.h"  // for Gen_Error
 #include "elb_groups.h"
+#include "elb_util.h"
 #include <cstdio>  // for sscanf, nullptr
 #include <cstdlib> // for free, malloc
 #include <cstring> // for strchr, strlen
@@ -309,7 +310,11 @@ namespace {
     int         c;        /* integer index when spanning a range */
 
     while (*p != '/' && *p != 0) {
+#ifdef _MSC_VER
+      q = sscanf(p, "%lld%n", &i, &qn);
+#else
       q = sscanf(p, "%ld%n", &i, &qn);
+#endif
       if (q == 0 || i < 0) {
         if (p[qn - 1] == '/' || *p == 0) {
           return;

@@ -64,6 +64,10 @@ namespace tsl {
    * slow modulo. Other growth policies are available and you may define your own growth policy,
    * check `tsl::rh::power_of_two_growth_policy` for the interface.
    *
+   * `Key` must be swappable.
+   *
+   * `Key` must be copy and/or move constructible.
+   *
    * If the destructor of `Key` throws an exception, the behaviour of the class is undefined.
    *
    * Iterators invalidation:
@@ -132,9 +136,9 @@ namespace tsl {
     explicit robin_set(const Allocator &alloc) : robin_set(ht::DEFAULT_INIT_BUCKETS_SIZE, alloc) {}
 
     template <class InputIt>
-    robin_set(InputIt first, InputIt last,
-              size_type my_bucket_count = ht::DEFAULT_INIT_BUCKETS_SIZE, const Hash &hash = Hash(),
-              const KeyEqual &equal = KeyEqual(), const Allocator &alloc = Allocator())
+    robin_set(InputIt first, InputIt last, size_type my_bucket_count = ht::DEFAULT_INIT_BUCKETS_SIZE,
+              const Hash &hash = Hash(), const KeyEqual &equal = KeyEqual(),
+              const Allocator &alloc = Allocator())
         : robin_set(my_bucket_count, hash, equal, alloc)
     {
       insert(first, last);
@@ -500,8 +504,8 @@ namespace tsl {
     void min_load_factor(float ml) { m_ht.min_load_factor(ml); }
     void max_load_factor(float ml) { m_ht.max_load_factor(ml); }
 
-    void rehash(size_type my_count) { m_ht.rehash(my_count); }
-    void reserve(size_type my_count) { m_ht.reserve(my_count); }
+    void rehash(size_type new_count) { m_ht.rehash(new_count); }
+    void reserve(size_type new_count) { m_ht.reserve(new_count); }
 
     /*
      * Observers

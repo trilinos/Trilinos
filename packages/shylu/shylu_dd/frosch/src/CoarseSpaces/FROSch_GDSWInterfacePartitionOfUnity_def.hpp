@@ -178,6 +178,7 @@ namespace FROSch {
                                             UseStraightEdges_,
                                             UseEdges_,
                                             UseFaces_,
+                                            false,
                                             false);
 
         // Maps

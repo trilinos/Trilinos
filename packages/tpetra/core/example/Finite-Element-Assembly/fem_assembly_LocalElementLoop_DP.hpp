@@ -148,7 +148,7 @@ int executeLocalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
 
   auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
 
-  RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
+  Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (All Graph)")));
 
   // Type-2 Assembly distinguishes owned and overlapping nodes.
@@ -335,7 +335,7 @@ int executeLocalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
     crs_matrix_owned->fillComplete();
   }
 
-  timerGlobal = Teuchos::null;
+  Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
 
   // Print out crs_matrix_owned and crs_matrix_overlapping details.
   if(opts.verbose)
@@ -414,7 +414,7 @@ int executeLocalElementLoopDPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
 
   auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
 
-  RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
+  Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (All Graph)")));
 
   // Type-2 Assembly distinguishes owned and overlapping nodes.
@@ -622,7 +622,7 @@ int executeLocalElementLoopDPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
     crs_matrix_owned->fillComplete();
   }
 
-  timerGlobal = Teuchos::null;
+  Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
 
   // Print out crs_matrix_owned and crs_matrix_overlapping details.
   if(opts.verbose)

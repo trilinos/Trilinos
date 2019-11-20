@@ -105,7 +105,7 @@ protected:
     {
         make_two_separated_hex_mesh();
         stk::mesh::Selector thingsToSearch = get_meta().locally_owned_part();
-        stk::balance::internal::StkSearchResults searchResults = stk::balance::internal::getSearchResultsForFacesParticles(get_bulk(), balanceSettings, thingsToSearch);
+        stk::balance::internal::SearchElemPairs searchResults = stk::balance::internal::getBBIntersectionsForFacesParticles(get_bulk(), balanceSettings, thingsToSearch);
         return searchResults.size();
     }
 };

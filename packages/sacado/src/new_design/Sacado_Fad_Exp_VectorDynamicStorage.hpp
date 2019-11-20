@@ -31,6 +31,7 @@
 #define SACADO_FAD_EXP_VECTORDYNAMICSTORAGE_HPP
 
 #include <type_traits>
+#include <utility>
 
 #include "Sacado_Traits.hpp"
 #include "Sacado_DynamicArrayTraits.hpp"
@@ -65,13 +66,15 @@ namespace Sacado {
       //! Default constructor
       KOKKOS_INLINE_FUNCTION
       VectorDynamicStorage() :
-        v_(), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_), dx_(NULL)
+        v_(), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_),
+        dx_(nullptr)
       {}
 
       //! Constructor with value
       KOKKOS_INLINE_FUNCTION
       VectorDynamicStorage(const T & x) :
-        v_(x), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_), dx_(NULL)
+        v_(x), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_),
+        dx_(nullptr)
       {}
 
       //! Constructor with size \c sz
@@ -104,6 +107,10 @@ namespace Sacado {
         stride_(1), val_(&v_)  {
         dx_ = ds_array<U>::strided_get_and_fill(x.dx_, x.stride_, sz_);
       }
+
+      // Move does not make sense for this storage since it is always tied to
+      // some preallocated data.  Don't define move constructor so compiler will
+      // always fall-back to copy
 
       //! Destructor
       KOKKOS_INLINE_FUNCTION
@@ -139,6 +146,10 @@ namespace Sacado {
         }
         return *this;
       }
+
+      // Move does not make sense for this storage since it is always tied to
+      // some preallocated data.  Don't define move assignment so compiler will
+      // always fall-back to copy
 
       //! Returns number of derivative components
       KOKKOS_INLINE_FUNCTION

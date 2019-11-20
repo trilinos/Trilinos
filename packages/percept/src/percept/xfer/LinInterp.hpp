@@ -167,6 +167,9 @@ LinInterp<FROM,TO>::filter_to_nearest (
         }
         dist = std::sqrt(dist);
       }
+      else if (topo.getKey()==shards::Beam<2>::key) {
+        // do nothing
+      }
       else {
         Intrepid::CellTools<double>::mapToReferenceFrame(outputParametricPoints,
                                                          inputPhysicalPoints,
@@ -349,6 +352,10 @@ LinInterp<FROM,TO>::apply_from_nodal_field (
 
   if (topo.getKey()==shards::Particle::key) {
     basisVals(0,0) = 1.0;
+  }
+  else if(topo.getKey()==shards::Beam<2>::key) {
+    basisVals(0,0) = 0.5;
+    basisVals(1,0) = 0.5;    
   }
   else {
     Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double> > > HGRAD_Basis =

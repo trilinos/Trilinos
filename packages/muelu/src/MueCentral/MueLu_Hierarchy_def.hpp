@@ -985,6 +985,7 @@ namespace MueLu {
           postSmoo->Apply(X, B, zeroGuess);
           CompCoarse->stop();
           emptySolve = false;
+          zeroGuess  = false;
         }
         if (emptySolve == true) {
           GetOStream(Warnings1) << "No coarse grid solver" << std::endl;
@@ -1005,6 +1006,7 @@ namespace MueLu {
           if (Fine->IsAvailable("PreSmoother")) {
             RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
             preSmoo->Apply(X, B, zeroGuess);
+            zeroGuess  = false;
           }
         }
 
@@ -1014,6 +1016,12 @@ namespace MueLu {
           if (!useStackedTimer)
             ATime                     = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)"      , Timings0));
           RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
+          if (zeroGuess) {
+            // If there's a pre-smoother, then zeroGuess is false.  If there isn't and people still have zeroGuess set,
+            // then then X still has who knows what, so we need to zero it before we go to the coarse grid.
+            X.putScalar(zero);
+          }
+
           Utilities::Residual(*A, X, B,*residual_[startLevel]);
           residual = residual_[startLevel];
         }

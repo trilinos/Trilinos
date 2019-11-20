@@ -10,8 +10,8 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-bool is_comm_list_globally_consistent(stk::ParallelMachine communicator, const EntityCommListInfoVector& comm_list);
-bool is_comm_list_globally_consistent(stk::ParallelMachine communicator, const EntityCommListInfoVector& comm_list, std::ostream& error_msg);
+bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const EntityCommListInfoVector& comm_list);
+bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const EntityCommListInfoVector& comm_list, std::ostream& error_msg);
 
 } //namespace impl
 } //namespace mesh

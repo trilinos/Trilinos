@@ -85,9 +85,11 @@ stk::mesh::Entity get_side(const stk::mesh::BulkData& bulk, const stk::mesh::Sid
     return stk::mesh::Entity();
 }
 
-bool is_side_internal(const stk::mesh::BulkData& bulk, stk::mesh::Entity side,
+std::pair<bool,bool> is_side_internal_and_modified(const stk::mesh::BulkData& bulk, stk::mesh::Entity side,
                         const std::vector<const stk::mesh::Part*> &blocks, const stk::mesh::Selector& activeSelector)
 {
+    bool isModified = !(bulk.state(side) == stk::mesh::Unchanged);
+    bool isInternal = false;
     unsigned numElems = bulk.num_elements(side);
     if (numElems > 1)
     {
@@ -103,33 +105,24 @@ bool is_side_internal(const stk::mesh::BulkData& bulk, stk::mesh::Entity side,
                 bool isShell = bucket.topology().is_shell();
                 bool isInBlock = bucket.member(*block);
                 bool isActive = activeSelector(bucket);
-                if (!isShell && isInBlock && isActive)
-                {
+                if (!isShell && isInBlock && isActive) {
                     numSolidElementsInBlock++;
+                }
+                if (!isModified) {
+                    isModified = !(bulk.state(elem) == stk::mesh::Unchanged);
                 }
             }
 
-            if (numSolidElementsInBlock > 1)
-            {
-//                for(unsigned i=0; i<numElems; ++i)
-//                {
-//                    sierra::Env::outputP0()<<"for block "<<block->name()<<", elem "<<i<<": "<<bulk.identifier(elems[i])<<", topo: "<<bulk.bucket(elems[i]).topology()
-//                    <<", parts: "<<std::endl;
-//                    const stk::mesh::PartVector& parts = bulk.bucket(elems[i]).supersets();
-//                    for(const stk::mesh::Part* part : parts) {
-//                      sierra::Env::outputP0()<<"      "<<part->name()<<std::endl;
-//                    }
-//                }
-                return true;
-            }
+            isInternal |= (numSolidElementsInBlock > 1);
         }
     }
 
-    return false;
+    return std::make_pair(isInternal, isModified);
 }
 
-bool is_sideset_internal(const stk::mesh::BulkData& bulk, const stk::mesh::Part& surfacePart, const stk::mesh::Selector& activeSelector)
+std::pair<bool,bool> is_sideset_internal_and_modified(const stk::mesh::BulkData& bulk, const stk::mesh::Part& surfacePart, const stk::mesh::Selector& activeSelector)
 {
+    std::pair<bool,bool> isInternalAndModified(false,false);
     if (is_part_a_sideset(bulk, surfacePart))
     {
         std::vector<const stk::mesh::Part*> blocks = bulk.mesh_meta_data().get_blocks_touching_surface(&surfacePart);
@@ -138,19 +131,22 @@ bool is_sideset_internal(const stk::mesh::BulkData& bulk, const stk::mesh::Part&
         stk::mesh::get_selected_entities(surfacePart, bulk.buckets(bulk.mesh_meta_data().side_rank()), sides);
 
         for(stk::mesh::Entity side : sides) {
-            if(is_side_internal(bulk, side, blocks, activeSelector)) {
-                return true;
+            std::pair<bool,bool> internalAndModified = is_side_internal_and_modified(bulk, side, blocks, activeSelector);
+            isInternalAndModified.first |= internalAndModified.first;
+            isInternalAndModified.second |= internalAndModified.second;
+            if (isInternalAndModified.first && isInternalAndModified.second) {
+              return isInternalAndModified;
             }
         }
     }
-    return false;
+    return isInternalAndModified;
 }
 
-void issue_internal_sideset_warning(const std::string& sidesetName)
+void issue_internal_sideset_warning(const std::string& sidesetName, std::ostream& ostrm)
 {
-  std::cerr<<"WARNING, Internal sideset ("<<sidesetName<<") detected. STK doesn't support internal sidesets\n"
-           <<"(i.e., sidesets between elements where both elements are in the same block)\n"
-           <<"Execution will continue but correct results are not guaranteed. Contact sierra-help@sandia.gov"<<std::endl;
+  ostrm <<"WARNING, Internal sideset ("<<sidesetName<<") detected. STK doesn't support internal sidesets\n"
+        <<"(i.e., sidesets between elements where both elements are in the same block)\n"
+        <<"Execution will continue but correct results are not guaranteed. Contact sierra-help@sandia.gov"<<std::endl;
 }
 
 void SidesetUpdater::update_sidesets_without_surface_block_mapping(stk::mesh::BulkData &bulk)
@@ -181,6 +177,11 @@ void SidesetUpdater::update_sidesets_without_surface_block_mapping(stk::mesh::Bu
   }
 }
 
+bool value_is_from_internal_sideset(size_t value)
+{
+  return value > 0;
+}
+
 void SidesetUpdater::reconstruct_noninternal_sidesets(const std::vector<size_t> &reducedValues)
 {
     bool reconstructed = false;
@@ -192,15 +193,19 @@ void SidesetUpdater::reconstruct_noninternal_sidesets(const std::vector<size_t> 
 
         for(unsigned i=0; i<surfacesInMap.size(); ++i) {
             const stk::mesh::Part* part = surfacesInMap[i];
-            bool isInternal = reducedValues[i] == 1;
+            const bool isInternal = value_is_from_internal_sideset(reducedValues[i]);
+            const bool isInternalAndModified = (reducedValues[i] == 2);
             if (!isInternal)
             {
                 const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(*part);
                 parents.insert(&parentPart);
             } else {
-                if (!internalSidesetWarningHasBeenIssued && bulkData.parallel_rank()==0)
+                if (!internalSidesetWarningHasBeenIssued &&
+                    isInternalAndModified &&
+                    bulkData.parallel_rank()==0 &&
+                    outputStream != nullptr)
                 {
-                    issue_internal_sideset_warning(part->name());
+                    issue_internal_sideset_warning(part->name(), *outputStream);
                 }
                 internalSidesetWarningHasBeenIssued = true;
             }
@@ -215,7 +220,7 @@ void SidesetUpdater::reconstruct_noninternal_sidesets(const std::vector<size_t> 
         for(size_t i = 0; i < surfacesInMap.size(); ++i)
         {
             const stk::mesh::Part* surfacePart = surfacesInMap[i];
-            bool isInternal = reducedValues[i] == 1;
+            bool isInternal = value_is_from_internal_sideset(reducedValues[i]);
             if (!isInternal)
             {
                 std::vector<const stk::mesh::Part *> touching_parts = bulkData.mesh_meta_data().get_blocks_touching_surface(surfacePart);
@@ -284,10 +289,17 @@ void SidesetUpdater::fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
 
         for(unsigned i=0; i<surfacesInMap.size(); ++i) {
             const stk::mesh::Part* part = surfacesInMap[i];
-            bool isInternal = is_sideset_internal(bulkData, *part, activeSelector);
-            if (isInternal)
+            std::pair<bool,bool> isInternalAndModified = is_sideset_internal_and_modified(bulkData, *part, activeSelector);
+            const bool isInternalSideset = isInternalAndModified.first;
+            const bool isModified = isInternalAndModified.second;
+            if (isInternalSideset)
             {
-                valuesToReduce[i] = 1;
+                if (isModified) {
+                    valuesToReduce[i] = 2;
+                }
+                else {
+                    valuesToReduce[i] = 1;
+                }
             }
         }
     }

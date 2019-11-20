@@ -61,7 +61,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -128,7 +128,7 @@ namespace Intrepid2 {
           Basis_HVOL_C0_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);
         }
 
-      } catch (std::logic_error err){
+      } catch (std::logic_error &err){
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -192,7 +192,7 @@ namespace Intrepid2 {
             }
           }
         }
-      } catch (std::logic_error err){
+      } catch (std::logic_error &err){
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -242,7 +242,7 @@ namespace Intrepid2 {
           }
           
         }
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -275,7 +275,7 @@ namespace Intrepid2 {
             errorFlag++;
           }
         }
-      } catch (std::logic_error err){
+      } catch (std::logic_error &err){
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";

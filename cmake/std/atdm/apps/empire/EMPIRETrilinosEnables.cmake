@@ -10,6 +10,8 @@ ATDM_SET_CACHE(Gtest_SKIP_INSTALL TRUE CACHE BOOL)
 # #5341.  (Once we can get SPARC to have its own gtest, then we can move this
 # setting to ATDMDevEnvSettings.cmake. See SPAR-614.)
 
+ATDM_SET_CACHE(Trilinos_ENABLE_Gtest FALSE CACHE BOOL)
+
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/EMPIRETrilinosPackagesList.cmake")
 FOREACH(TRIBITS_PACKAGE ${EMPIRE_Trilinos_Packages})
   SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)

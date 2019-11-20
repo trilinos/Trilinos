@@ -163,15 +163,5 @@
         <Parameter name="Explicit Array" type="string" value="{0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="OptiPack">
-      <Parameter name="Max Num Iterations" type="int" value="20"/>
-      <Parameter name="Objective Gradient Tol" type="double" value="1.0e-6"/>
-      <Parameter name="Solver Type" type="string" value="FR"/>
-    </ParameterList>
-    <ParameterList name="GlobiPack">
-      <ParameterList name="Minimize">
-        <Parameter name="Max Iterations" type="int" value="8"/>
-      </ParameterList>
-    </ParameterList>
   </ParameterList>
 </ParameterList>

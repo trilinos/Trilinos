@@ -375,6 +375,7 @@ namespace Belos {
     static constexpr const char * resScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr bool assertPositiveDefiniteness_default_ = true;
     static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     //
@@ -404,6 +405,7 @@ namespace Belos {
     int blockSize_, verbosity_, outputStyle_, outputFreq_;
     bool adaptiveBlockSize_, showMaxResNormOnly_, useSingleReduction_;
     std::string orthoType_, resScale_;
+    bool assertPositiveDefiniteness_;
     bool foldConvergenceDetectionIntoAllreduce_;
 
     //! Prefix label for all the timers.
@@ -435,6 +437,7 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::BlockCGSolMgr() :
   useSingleReduction_(useSingleReduction_default_),
   orthoType_(orthoType_default_),
   resScale_(resScale_default_),
+  assertPositiveDefiniteness_(assertPositiveDefiniteness_default_),
   foldConvergenceDetectionIntoAllreduce_(foldConvergenceDetectionIntoAllreduce_default_),
   label_(label_default_),
   isSet_(false)
@@ -462,6 +465,7 @@ BlockCGSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   useSingleReduction_(useSingleReduction_default_),
   orthoType_(orthoType_default_),
   resScale_(resScale_default_),
+  assertPositiveDefiniteness_(assertPositiveDefiniteness_default_),
   foldConvergenceDetectionIntoAllreduce_(foldConvergenceDetectionIntoAllreduce_default_),
   label_(label_default_),
   isSet_(false)
@@ -772,6 +776,12 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     }
   }
 
+  // BelosCgIter accepts a parameter specifying whether to assert for the positivity of p^H*A*p in the CG iteration
+  if (params->isParameter("Assert Positive Definiteness")) {
+    assertPositiveDefiniteness_ = Teuchos::getParameter<bool>(*params,"Assert Positive Definiteness");
+    params_->set("Assert Positive Definiteness", assertPositiveDefiniteness_);
+  }
+
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
     std::string solveLabel = label_ + ": BlockCGSolMgr total solve time";
@@ -828,6 +838,8 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
       "The string to use as a prefix for the timer labels.");
     pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
       "The type of orthogonalization to use: DGKS, ICGS, or IMGS.");
+    pl->set("Assert Positive Definiteness",static_cast<bool>(assertPositiveDefiniteness_default_),
+      "Assert for positivity of p^H*A*p in CG iteration.");
     pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(DefaultSolverParameters::orthoKappa),
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
@@ -910,6 +922,8 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
 
   ////////////////////////////////////////////////////////////////////////////
   // Set up the BlockCG Iteration subclass.
+
+  plist.set("Assert Positive Definiteness", assertPositiveDefiniteness_);
 
   RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
   if (blockSize_ == 1) {

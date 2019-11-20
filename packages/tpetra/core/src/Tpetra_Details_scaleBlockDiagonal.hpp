@@ -55,7 +55,7 @@
 
 /// \file Tpetra_Details_scaleBlockDiagonal.hpp
 /// \brief Functions that rescales a multivector (in-place) by a inverse of a block-diagonal matrix 
-/// (as implied by the given MultiVector
+/// (as implied by the given MultiVector) or its transpose.
 /// \warning This file, and its contents, are implementation details
 ///   of Tpetra.  The file itself or its contents may disappear or
 ///   change at any time.
@@ -65,7 +65,7 @@ namespace Details {
 
 
 template<class MultiVectorType>        
-void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, MultiVectorType & multiVectorToBeScaled) {
+void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, bool doTranspose, MultiVectorType & multiVectorToBeScaled) {
   using LO             = typename MultiVectorType::local_ordinal_type;
   using local_mv_type  = typename MultiVectorType::dual_view_type::t_dev;
   using range_type     = Kokkos::RangePolicy<typename MultiVectorType::node_type::execution_space, LO>;
@@ -95,12 +95,18 @@ void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, MultiVecto
       // Factor
       SerialLU<algo_type>::invoke(A);
 
-      // Solve L
-      SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,algo_type>::invoke(SC_one,A,B);
-
-      // Solve U
-      SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,algo_type>::invoke(SC_one,A,B);
-
+      if(doTranspose) {
+	// Solve U^T
+	SerialTrsm<Side::Left,Uplo::Upper,Trans::Transpose,Diag::NonUnit,algo_type>::invoke(SC_one,A,B);
+	// Solver L^T
+	SerialTrsm<Side::Left,Uplo::Lower,Trans::Transpose,Diag::Unit,algo_type>::invoke(SC_one,A,B);
+      }
+      else {
+	// Solve L
+	SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,algo_type>::invoke(SC_one,A,B);	
+	// Solve U
+	SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,algo_type>::invoke(SC_one,A,B);
+      }
     });  
 }
 

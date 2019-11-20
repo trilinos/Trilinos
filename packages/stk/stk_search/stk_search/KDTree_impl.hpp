@@ -1423,7 +1423,7 @@ inline void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBo
  template<typename DomainBox>
    inline void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBox&           searchObject,
                                                                                           std::vector<int>&          returnIndexList,
-                                                                                          std::vector<RangeBoxType>& returnBoxList) {
+                                                                                          std::vector<RangeBoxType>& returnBoxList) const {
    returnIndexList.clear();
    returnBoxList.clear();
    if(m_tree.empty()) {
@@ -1453,7 +1453,7 @@ inline void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBo
 
 template<typename RangeBoxType>
 template<typename DomainBox>
-inline bool ProximitySearchTree_T<RangeBoxType>::AnyOverlap(const DomainBox& searchObject) {
+inline bool ProximitySearchTree_T<RangeBoxType>::AnyOverlap(const DomainBox& searchObject) const {
   if(m_tree.empty()) {
     return false;
   } else {

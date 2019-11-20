@@ -215,20 +215,20 @@ namespace Ioss {
     // Put this fields data into 'data'.
     // Returns number of entities for which the field was read.
     // Assumes 'data' is large enough to hold all values.
-    int get_field_data(const std::string &field_name, void *data, size_t data_size) const;
+    int64_t get_field_data(const std::string &field_name, void *data, size_t data_size) const;
 
-    int put_field_data(const std::string &field_name, void *data, size_t data_size) const;
+    int64_t put_field_data(const std::string &field_name, void *data, size_t data_size) const;
 
     // Put this fields data into the specified std::vector space.
     // Returns number of entities for which the field was read.
     // Resizes 'data' to size needed to hold all values.
     template <typename T>
-    int get_field_data(const std::string &field_name, std::vector<T> &data) const;
+    int64_t get_field_data(const std::string &field_name, std::vector<T> &data) const;
 
     template <typename T>
-    int put_field_data(const std::string &field_name, const std::vector<T> &data) const;
+    int64_t put_field_data(const std::string &field_name, const std::vector<T> &data) const;
     template <typename T>
-    int put_field_data(const std::string &field_name, std::vector<T> &data) const;
+    int64_t put_field_data(const std::string &field_name, std::vector<T> &data) const;
 
 #ifdef SEACAS_HAVE_KOKKOS
     // Get and put this field's data into the specified Kokkos::View.
@@ -237,16 +237,16 @@ namespace Ioss {
     // however, any Views that were previously created referencing the same
     // underlying memory allocation as 'data' will remain the original size.
     template <typename T, typename... Args>
-    int get_field_data(const std::string &field_name, Kokkos::View<T *, Args...> &data) const;
+    int64_t get_field_data(const std::string &field_name, Kokkos::View<T *, Args...> &data) const;
 
     template <typename T, typename... Args>
-    int get_field_data(const std::string &field_name, Kokkos::View<T **, Args...> &data) const;
+    int64_t get_field_data(const std::string &field_name, Kokkos::View<T **, Args...> &data) const;
 
     template <typename T, typename... Args>
-    int put_field_data(const std::string &field_name, Kokkos::View<T *, Args...> &data) const;
+    int64_t put_field_data(const std::string &field_name, Kokkos::View<T *, Args...> &data) const;
 
     template <typename T, typename... Args>
-    int put_field_data(const std::string &field_name, Kokkos::View<T **, Args...> &data) const;
+    int64_t put_field_data(const std::string &field_name, Kokkos::View<T **, Args...> &data) const;
 #endif
 
     /** Get the number of bytes used to store the INT data type
@@ -457,7 +457,8 @@ inline size_t Ioss::GroupingEntity::field_count() const { return fields.count();
  *
  */
 template <typename T>
-int Ioss::GroupingEntity::get_field_data(const std::string &field_name, std::vector<T> &data) const
+int64_t Ioss::GroupingEntity::get_field_data(const std::string &field_name,
+                                             std::vector<T> &   data) const
 {
   verify_field_exists(field_name, "input");
 
@@ -466,7 +467,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string &field_name, std::vec
 
   data.resize(field.raw_count() * field.raw_storage()->component_count());
   size_t data_size = data.size() * sizeof(T);
-  int    retval    = internal_get_field_data(field, TOPTR(data), data_size);
+  auto   retval    = internal_get_field_data(field, TOPTR(data), data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0) {
@@ -484,8 +485,8 @@ int Ioss::GroupingEntity::get_field_data(const std::string &field_name, std::vec
  *
  */
 template <typename T>
-int Ioss::GroupingEntity::put_field_data(const std::string &   field_name,
-                                         const std::vector<T> &data) const
+int64_t Ioss::GroupingEntity::put_field_data(const std::string &   field_name,
+                                             const std::vector<T> &data) const
 {
   verify_field_exists(field_name, "output");
 
@@ -504,7 +505,8 @@ int Ioss::GroupingEntity::put_field_data(const std::string &   field_name,
 }
 
 template <typename T>
-int Ioss::GroupingEntity::put_field_data(const std::string &field_name, std::vector<T> &data) const
+int64_t Ioss::GroupingEntity::put_field_data(const std::string &field_name,
+                                             std::vector<T> &   data) const
 {
   verify_field_exists(field_name, "output");
 
@@ -528,8 +530,8 @@ int Ioss::GroupingEntity::put_field_data(const std::string &field_name, std::vec
  *
  */
 template <typename T, typename... Args>
-int Ioss::GroupingEntity::get_field_data(const std::string &         field_name,
-                                         Kokkos::View<T *, Args...> &data) const
+int64_t Ioss::GroupingEntity::get_field_data(const std::string &         field_name,
+                                             Kokkos::View<T *, Args...> &data) const
 {
   typedef Kokkos::View<T *, Args...> ViewType;
 
@@ -549,7 +551,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string &         field_name,
   T *host_data_ptr = host_data.data();
 
   // Extract the data from disk to the underlying memory pointed to by host_data_ptr.
-  int retval = internal_get_field_data(field, host_data_ptr, data_size);
+  auto retval = internal_get_field_data(field, host_data_ptr, data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0)
@@ -571,8 +573,8 @@ int Ioss::GroupingEntity::get_field_data(const std::string &         field_name,
  *
  */
 template <typename T, typename... Args>
-int Ioss::GroupingEntity::get_field_data(const std::string &          field_name,
-                                         Kokkos::View<T **, Args...> &data) const
+int64_t Ioss::GroupingEntity::get_field_data(const std::string &          field_name,
+                                             Kokkos::View<T **, Args...> &data) const
 {
   typedef Kokkos::View<T **, Args...> ViewType;
 
@@ -596,7 +598,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string &          field_name
   typename ViewType::HostMirror host_data = Kokkos::create_mirror_view(data);
 
   // Extract the data from disk to the underlying memory pointed to by host_data_ptr.
-  int retval = internal_get_field_data(field, data_array, data_size);
+  auto retval = internal_get_field_data(field, data_array, data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0)
@@ -633,8 +635,8 @@ int Ioss::GroupingEntity::get_field_data(const std::string &          field_name
  *
  */
 template <typename T, typename... Args>
-int Ioss::GroupingEntity::put_field_data(const std::string &         field_name,
-                                         Kokkos::View<T *, Args...> &data) const
+int64_t Ioss::GroupingEntity::put_field_data(const std::string &         field_name,
+                                             Kokkos::View<T *, Args...> &data) const
 {
   typedef Kokkos::View<T *, Args...> ViewType;
 
@@ -669,8 +671,8 @@ int Ioss::GroupingEntity::put_field_data(const std::string &         field_name,
  *
  */
 template <typename T, typename... Args>
-int Ioss::GroupingEntity::put_field_data(const std::string &          field_name,
-                                         Kokkos::View<T **, Args...> &data) const
+int64_t Ioss::GroupingEntity::put_field_data(const std::string &          field_name,
+                                             Kokkos::View<T **, Args...> &data) const
 {
   typedef Kokkos::View<T **, Args...> ViewType;
 
@@ -718,7 +720,7 @@ int Ioss::GroupingEntity::put_field_data(const std::string &          field_name
   field.transform(data_array);
 
   // Copy the data to disk from the underlying memory pointed to by data_array.
-  int retval = internal_put_field_data(field, data_array, data_size);
+  auto retval = internal_put_field_data(field, data_array, data_size);
 
   // Delete the temporary array
   delete[] data_array;

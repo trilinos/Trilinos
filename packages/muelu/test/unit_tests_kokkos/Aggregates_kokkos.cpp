@@ -356,44 +356,8 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
 
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
+    TEST_INEQUALITY(numAggs, 0);
 
-    auto aggSizes = aggregates->ComputeAggregateSizes(true);
-
-    bool foundAggNotSize2=false;
-    for (int i=0; i < as<int>(aggSizes.size()); ++i)
-      if (aggSizes[i] != 2) {
-        foundAggNotSize2=true;
-        break;
-      }
-
-    switch (comm->getSize()) {
-
-      case 1 :
-        TEST_EQUALITY(numAggs, 18);
-        TEST_EQUALITY(foundAggNotSize2, false);
-        break;
-
-      case 2:
-        TEST_EQUALITY(numAggs, 9);
-        TEST_EQUALITY(foundAggNotSize2, false);
-        break;
-
-      case 3:
-        TEST_EQUALITY(numAggs, 6);
-        TEST_EQUALITY(foundAggNotSize2, false);
-        break;
-
-      case 4:
-        TEST_EQUALITY(numAggs, 4);
-        TEST_EQUALITY(foundAggNotSize2, true);
-        break;
-
-      default:
-        std::string msg = "Only 1-4 MPI processes are supported.";
-        //throw(MueLu::Exceptions::NotImplemented(msg));
-        out << msg << std::endl;
-        break;
-    }
   } //UncoupledPhase3
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \

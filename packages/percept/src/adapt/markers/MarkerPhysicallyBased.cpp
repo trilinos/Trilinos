@@ -82,13 +82,13 @@ void MarkerPhysicallyBased::markUsing(double errIndRefineThreshold, std::vector<
 {
   for (unsigned i = 0; i < errIndRefFieldVec.size(); ++i) {
     // reset to 0, then check criterion
-    *errIndRefFieldVec[i].get<1>() = static_cast<percept::RefineFieldType_type>(0);
-    if (*errIndRefFieldVec[i].get<0>() < m_unrefinement_multiplier*errIndRefineThreshold) {
-      *errIndRefFieldVec[i].get<1>() = static_cast<percept::RefineFieldType_type>(-1);
+    *std::get<1>(errIndRefFieldVec[i]) = static_cast<percept::RefineFieldType_type>(0);
+    if (*std::get<0>(errIndRefFieldVec[i]) < m_unrefinement_multiplier*errIndRefineThreshold) {
+      *std::get<1>(errIndRefFieldVec[i]) = static_cast<percept::RefineFieldType_type>(-1);
     }
-    if (do_refine && (*errIndRefFieldVec[i].get<0>() > errIndRefineThreshold)
-        && !errIndRefFieldVec[i].get<2>())  {
-      *errIndRefFieldVec[i].get<1>() = static_cast<percept::RefineFieldType_type>(1);
+    if (do_refine && (*std::get<0>(errIndRefFieldVec[i]) > errIndRefineThreshold)
+        && !std::get<2>(errIndRefFieldVec[i]))  {
+      *std::get<1>(errIndRefFieldVec[i]) = static_cast<percept::RefineFieldType_type>(1);
     }
   }
 }
@@ -102,8 +102,8 @@ size_t MarkerPhysicallyBased::estimateNewElements(double errIndRefineThreshold, 
   size_t numRefinedLocal = 0, numRefinedGlobal = 0;
   for (size_t i = 0; i < errIndRefFieldVec.size(); ++i)
     {
-      if ((*errIndRefFieldVec[i].get<0>() > errIndRefineThreshold)
-          && !errIndRefFieldVec[i].get<2>() )
+      if ((*std::get<0>(errIndRefFieldVec[i]) > errIndRefineThreshold)
+          && !std::get<2>(errIndRefFieldVec[i]) )
         ++numRefinedLocal;
     }
 

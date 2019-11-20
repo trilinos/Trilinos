@@ -45,18 +45,18 @@ namespace {
   // Data space shared by most field input/output routines...
   std::vector<char> data;
 
-  void info_nodeblock(Ioss::Region &region, const Info::Interface &interface);
+  void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace);
   void info_edgeblock(Ioss::Region &region);
   void info_faceblock(Ioss::Region &region);
-  void info_elementblock(Ioss::Region &region, const Info::Interface &interface);
-  void info_structuredblock(Ioss::Region &region, const Info::Interface &interface);
+  void info_elementblock(Ioss::Region &region, const Info::Interface &interFace);
+  void info_structuredblock(Ioss::Region &region, const Info::Interface &interFace);
 
   void info_nodesets(Ioss::Region &region);
   void info_edgesets(Ioss::Region &region);
   void info_facesets(Ioss::Region &region);
   void info_elementsets(Ioss::Region &region);
 
-  void info_sidesets(Ioss::Region &region, const Info::Interface &interface);
+  void info_sidesets(Ioss::Region &region, const Info::Interface &interFace);
   void info_coordinate_frames(Ioss::Region &region);
 
   void info_aliases(const Ioss::Region &region, const Ioss::GroupingEntity *ige, bool nl_pre,
@@ -65,8 +65,8 @@ namespace {
   void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
                    const std::string &header);
 
-  void file_info(const Info::Interface &interface);
-  void group_info(Info::Interface &interface);
+  void file_info(const Info::Interface &interFace);
+  void group_info(Info::Interface &interFace);
 
   void info_df(const Ioss::GroupingEntity *ge, const std::string &prefix)
   {
@@ -100,11 +100,11 @@ namespace {
     return id;
   }
 
-  Ioss::PropertyManager set_properties(const Info::Interface &interface)
+  Ioss::PropertyManager set_properties(const Info::Interface &interFace)
   {
     Ioss::PropertyManager properties;
-    if (!interface.decomp_method().empty()) {
-      properties.add(Ioss::Property("DECOMPOSITION_METHOD", interface.decomp_method()));
+    if (!interFace.decomp_method().empty()) {
+      properties.add(Ioss::Property("DECOMPOSITION_METHOD", interFace.decomp_method()));
     }
     return properties;
   }
@@ -148,11 +148,11 @@ namespace {
     return 0;
   }
 
-  void group_info(Info::Interface &interface)
+  void group_info(Info::Interface &interFace)
   {
 #if defined(SEACAS_HAVE_EXODUS)
     // Assume exodusII...
-    std::string inpfile       = interface.filename();
+    std::string inpfile       = interFace.filename();
     float       vers          = 0.0;
     int         CPU_word_size = 0;
     int         IO_word_size  = 0;
@@ -163,35 +163,35 @@ namespace {
 #endif
   }
 
-  void file_info(const Info::Interface &interface)
+  void file_info(const Info::Interface &interFace)
   {
-    std::string inpfile    = interface.filename();
-    std::string input_type = interface.type();
+    std::string inpfile    = interFace.filename();
+    std::string input_type = interFace.type();
 
     //========================================================================
     // INPUT ...
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
     //========================================================================
-    Ioss::PropertyManager properties = set_properties(interface);
+    Ioss::PropertyManager properties = set_properties(interFace);
 
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
                                                     (MPI_Comm)MPI_COMM_WORLD, properties);
 
-    Ioss::io_info_set_db_properties(interface, dbi);
+    Ioss::io_info_set_db_properties(interFace, dbi);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
-    Ioss::io_info_file_info(interface, region);
+    Ioss::io_info_file_info(interFace, region);
   }
 
   void info_nodeblock(Ioss::Region &region, const Ioss::NodeBlock &nb,
-                      const Info::Interface &interface, const std::string &prefix = "")
+                      const Info::Interface &interFace, const std::string &prefix = "")
   {
     int64_t num_nodes  = nb.entity_count();
     int64_t num_attrib = nb.get_property("attribute_count").get_int();
     fmt::print("\n{}{} {:14n} nodes, {:3d} attributes.\n", prefix, name(&nb), num_nodes,
                num_attrib);
-    if (interface.check_node_status()) {
+    if (interFace.check_node_status()) {
       std::vector<char>    node_status;
       std::vector<int64_t> ids;
       nb.get_field_data("node_connectivity_status", node_status);
@@ -219,15 +219,15 @@ namespace {
     info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient: ");
   }
 
-  void info_nodeblock(Ioss::Region &region, const Info::Interface &interface)
+  void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::NodeBlockContainer &nbs = region.get_node_blocks();
     for (auto nb : nbs) {
-      info_nodeblock(region, *nb, interface, "");
+      info_nodeblock(region, *nb, interFace, "");
     }
   }
 
-  void info_structuredblock(Ioss::Region &region, const Info::Interface &interface)
+  void info_structuredblock(Ioss::Region &region, const Info::Interface &interFace)
   {
     bool                                  parallel = region.get_database()->is_parallel();
     const Ioss::StructuredBlockContainer &sbs      = region.get_structured_blocks();
@@ -255,7 +255,7 @@ namespace {
 
       info_aliases(region, sb, true, false);
       info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
-      info_nodeblock(region, sb->get_node_block(), interface, "\t");
+      info_nodeblock(region, sb->get_node_block(), interFace, "\t");
       fmt::print("\n");
 
       if (!sb->m_zoneConnectivity.empty()) {
@@ -270,7 +270,7 @@ namespace {
           fmt::print("{}\n", bc);
         }
       }
-      if (interface.compute_bbox()) {
+      if (interFace.compute_bbox()) {
         Ioss::AxisAlignedBoundingBox bbox = sb->get_bounding_box();
         fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
                    "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
@@ -279,7 +279,7 @@ namespace {
     }
   }
 
-  void info_elementblock(Ioss::Region &region, const Info::Interface &interface)
+  void info_elementblock(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
     for (auto eb : ebs) {
@@ -293,7 +293,7 @@ namespace {
       info_aliases(region, eb, true, false);
       info_fields(eb, Ioss::Field::ATTRIBUTE, "\n\tAttributes: ");
 
-      if (interface.adjacencies()) {
+      if (interFace.adjacencies()) {
         std::vector<std::string> blocks;
         eb->get_block_adjacencies(blocks);
         fmt::print("\n\tAdjacent to  {} element block(s):\t", blocks.size());
@@ -304,7 +304,7 @@ namespace {
       info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
       fmt::print("\n");
 
-      if (interface.compute_bbox()) {
+      if (interFace.compute_bbox()) {
         Ioss::AxisAlignedBoundingBox bbox = eb->get_bounding_box();
         fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
                    "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
@@ -367,7 +367,7 @@ namespace {
     }
   }
 
-  void info_sidesets(Ioss::Region &region, const Info::Interface &interface)
+  void info_sidesets(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::SideSetContainer &fss = region.get_sidesets();
     for (auto fs : fss) {
@@ -382,7 +382,7 @@ namespace {
       }
       info_aliases(region, fs, true, false);
       info_fields(fs, Ioss::Field::TRANSIENT, "\n\tTransient: ");
-      if (interface.adjacencies()) {
+      if (interFace.adjacencies()) {
         std::vector<std::string> blocks;
         fs->block_membership(blocks);
         fmt::print("\n\t\tTouches {} element block(s):\t", blocks.size());
@@ -514,14 +514,27 @@ namespace {
     }
 
     if (!header.empty()) {
-      fmt::print("{}", header);
+      fmt::print("{}\n\t", header);
     }
     // Iterate through results fields and transfer to output
     // database...
+    // Get max width of a name...
+    int max_width = 0;
+    for (const auto &field_name : fields) {
+      max_width = max_width > (int)field_name.length() ? max_width : field_name.length();
+    }
+
+    auto width = Ioss::Utils::term_width();
+    int cur_out = 8; // Tab width...
     for (const auto &field_name : fields) {
       const Ioss::VariableType *var_type   = ige->get_field(field_name).raw_storage();
       int                       comp_count = var_type->component_count();
-      fmt::print("{:>16s}:{} ", field_name, comp_count);
+      fmt::print("{1:>{0}s}:{2}  ", max_width, field_name, comp_count);
+      cur_out += max_width + 4;
+      if (cur_out + max_width >= width) {
+	fmt::print("\n\t");
+	cur_out = 8;
+      }
     }
     if (!header.empty()) {
       fmt::print("\n");
@@ -530,39 +543,39 @@ namespace {
 } // namespace
 
 namespace Ioss {
-  void io_info_file_info(const Info::Interface &interface) { file_info(interface); }
-  void io_info_group_info(Info::Interface &interface) { group_info(interface); }
+  void io_info_file_info(const Info::Interface &interFace) { file_info(interFace); }
+  void io_info_group_info(Info::Interface &interFace) { group_info(interFace); }
 
-  void io_info_set_db_properties(const Info::Interface &interface, Ioss::DatabaseIO *dbi)
+  void io_info_set_db_properties(const Info::Interface &interFace, Ioss::DatabaseIO *dbi)
   {
-    std::string inpfile = interface.filename();
+    std::string inpfile = interFace.filename();
 
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
 
-    if (interface.use_generic_names()) {
+    if (interFace.use_generic_names()) {
       dbi->set_use_generic_canonical_name(true);
     }
 
-    dbi->set_surface_split_type(Ioss::int_to_surface_split(interface.surface_split_scheme()));
-    dbi->set_field_separator(interface.field_suffix_separator());
-    dbi->set_field_recognition(!interface.disable_field_recognition());
-    if (interface.ints_64_bit()) {
+    dbi->set_surface_split_type(Ioss::int_to_surface_split(interFace.surface_split_scheme()));
+    dbi->set_field_separator(interFace.field_suffix_separator());
+    dbi->set_field_recognition(!interFace.disable_field_recognition());
+    if (interFace.ints_64_bit()) {
       dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     }
 
-    if (!interface.groupname().empty()) {
-      bool success = dbi->open_group(interface.groupname());
+    if (!interFace.groupname().empty()) {
+      bool success = dbi->open_group(interFace.groupname());
       if (!success) {
-        fmt::print("ERROR: Unable to open group '{}' in file '{}'\n", interface.groupname(),
+        fmt::print("ERROR: Unable to open group '{}' in file '{}'\n", interFace.groupname(),
                    inpfile);
         return;
       }
     }
   }
 
-  void io_info_file_info(const Info::Interface &interface, Ioss::Region &region)
+  void io_info_file_info(const Info::Interface &interFace, Ioss::Region &region)
   {
     Ioss::DatabaseIO *dbi = region.get_database();
 
@@ -582,27 +595,27 @@ namespace Ioss {
         }
         region.output_summary(std::cout, true);
 
-        if (interface.summary() == 0) {
+        if (interFace.summary() == 0) {
 
-          info_nodeblock(region, interface);
+          info_nodeblock(region, interFace);
           info_edgeblock(region);
           info_faceblock(region);
-          info_elementblock(region, interface);
-          info_structuredblock(region, interface);
+          info_elementblock(region, interFace);
+          info_structuredblock(region, interFace);
 
           info_nodesets(region);
           info_edgesets(region);
           info_facesets(region);
           info_elementsets(region);
 
-          info_sidesets(region, interface);
+          info_sidesets(region, interFace);
           info_coordinate_frames(region);
         }
       }
       region.get_database()->util().barrier();
     }
 
-    if (interface.compute_volume()) {
+    if (interFace.compute_volume()) {
       element_volume(region);
     }
   }

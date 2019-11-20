@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <set>
+#include <tuple>
 
 #include <stdio.h>
 #include <execinfo.h>
@@ -22,9 +23,6 @@
 #if defined(__GNUC__)
 #include <cxxabi.h>
 #endif
-
-#include <boost/unordered_set.hpp>
-
 
 #include <percept/Percept.hpp>
 #include <percept/Name.hpp>
@@ -74,13 +72,10 @@
 
 #include "Teuchos_RCP.hpp"
 
-//#include "PerceptMeshReadWrite.hpp"
 #include <percept/function/ElementOp.hpp>
 #include <percept/function/BucketOp.hpp>
 
 #include <percept/math/Math.hpp>
-
-#include <percept/SameRankRelation.hpp>
 
 #if !STK_PERCEPT_LITE
 #include <percept/function/internal/SimpleSearcher.hpp>
@@ -269,14 +264,7 @@
                                                             stk::mesh::Entity& element_found,
                                                             unsigned& side_ord_found, bool debug=false);
 
-      typedef boost::tuple<stk::mesh::Entity, stk::mesh::EntityRank, unsigned, std::vector<stk::mesh::EntityId> > SubDimInfoType;
-
-      /// return info about elements that contain the given collection of entities - returns the number of results found
-      int in_mesh(const std::vector<stk::mesh::EntityId>& subDim, std::vector<SubDimInfoType>& results, bool sorted=true);
-
-      /// treat the listOfNodes individually, calling in_mesh with a single node at a time from the list and
-      ///   coalescing the results - returns which ones in listOfNodes are in the mesh
-      std::vector<stk::mesh::EntityId> nodes_in_mesh(const std::vector<stk::mesh::EntityId>& listOfNodes, std::vector<SubDimInfoType>& results, bool sorted=true);
+      typedef std::tuple<stk::mesh::Entity, stk::mesh::EntityRank, unsigned, std::vector<stk::mesh::EntityId> > SubDimInfoType;
 
       /// for surface faces (tri's and quad's) find if the given parametric coords are inside
       bool in_face(stk::mesh::Entity face, const double *uv, const double tol=1.e-5) const;
@@ -438,11 +426,6 @@
       double get_database_time_at_step(int step);
       /// return the number of steps in the database
       int get_database_time_step_count();
-
-#if !STK_PERCEPT_LITE
-      /// transform mesh by a given 3x3 matrix
-      void transform_mesh(MDArray& matrix);
-#endif
 
       /// add coordinate-like fields needed, for example, to use smoothing of geometry-projected refined meshes
       /// Must be called before commit()
@@ -715,9 +698,6 @@
 
       void set_sync_io_regions(bool val) { m_sync_io_regions = val; }
       void set_remove_io_orig_topo_type(bool val) { m_remove_io_orig_topo_type = val; }
-
-      /// transform mesh by a given 3x3 matrix
-      void transform_mesh(Math::Matrix& matrix);
 
       /// return true if the two meshes are different; if @param print is true, print diffs; set print_all_field_diffs to get more output
       static bool mesh_difference(stk::mesh::MetaData& metaData_1,
@@ -1022,7 +1002,7 @@
       }
       const CellTopologyData * get_cell_topology(const stk::mesh::Part& thing)
       {
-        const CellTopologyData * cell_topo_data = get_fem_meta_data()->get_cell_topology(thing).getCellTopologyData();
+        const CellTopologyData * cell_topo_data = stk::mesh::get_cell_topology(get_fem_meta_data()->get_topology(thing)).getCellTopologyData();
         return cell_topo_data;
       }
 

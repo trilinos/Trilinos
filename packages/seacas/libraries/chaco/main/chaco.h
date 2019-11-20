@@ -190,7 +190,13 @@ extern "C" {
 
 #include <stdio.h>
 
-extern int interface(int    nvtxs,                 /**< number of vertices in full graph */
+#ifdef _MSC_VER
+#define INTERFACE interFace
+#else
+#define INTERFACE interface
+#endif
+
+extern int INTERFACE(int    nvtxs,                 /**< number of vertices in full graph */
                      int *  start,                 /**< start of edge list for each vertex */
                      int *  adjacency,             /**< edge list data */
                      int *  vwgts,                 /**< weights for all vertices */

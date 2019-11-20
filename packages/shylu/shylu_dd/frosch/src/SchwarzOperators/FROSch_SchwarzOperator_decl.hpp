@@ -115,6 +115,7 @@ namespace FROSch {
         using DDInterfacePtr                    = RCP<DDInterface<SC,LO,GO,NO> >;
 
         using EntitySetPtr                      = RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetConstPtr                 = const EntitySetPtr;
         using EntitySetPtrVecPtr                = ArrayRCP<EntitySetPtr>;
         using EntitySetPtrConstVecPtr           = const EntitySetPtrVecPtr;
 
@@ -203,6 +204,11 @@ namespace FROSch {
         bool isComputed() const;
 
         int resetMatrix(ConstXMatrixPtr &k);
+
+      
+        virtual void residual(const XMultiVector & X,
+                              const XMultiVector & B,
+                              XMultiVector& R) const;
 
     protected:
 

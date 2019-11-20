@@ -135,7 +135,7 @@ namespace SEAMS {
    * so don't save the pointer; copy the data it points to if you
    * need to keep it for awhile.
    */
-  char *get_temp_filename()
+  const char *get_temp_filename()
   {
     static char tmp_name[] = "./aprepro_temp_XXXXXX";
 

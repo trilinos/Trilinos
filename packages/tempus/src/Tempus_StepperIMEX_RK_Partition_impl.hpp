@@ -101,11 +101,11 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
 
       int order = 1;
 
-      auto explicitTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Explicit Tableau - Partitioned IMEX RK 1st order",
         A,b,c,order,order,order));
 
-      this->setExplicitTableau(explicitTableau);
+      this->setExplicitTableau(expTableau);
     }
     {
       // Implicit Tableau
@@ -129,11 +129,11 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
 
       int order = 1;
 
-      auto implicitTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Implicit Tableau - Partitioned IMEX RK 1st order",
         A,b,c,order,order,order));
 
-      this->setImplicitTableau(implicitTableau);
+      this->setImplicitTableau(impTableau);
     }
     this->setStepperType("Partitioned IMEX RK 1st order");
     this->setOrder(1);
@@ -176,11 +176,11 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
 
       int order = 2;
 
-      auto explicitTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Explicit Tableau - Partitioned IMEX RK ARS 233",
         A,b,c,order,order,order));
 
-      this->setExplicitTableau(explicitTableau);
+      this->setExplicitTableau(expTableau);
     }
     {
       // Implicit Tableau
@@ -197,11 +197,11 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
 
       int order = 3;
 
-      auto implicitTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Implicit Tableau - Partitioned IMEX RK ARS 233",
         A,b,c,order,order,order));
 
-      this->setImplicitTableau(implicitTableau);
+      this->setImplicitTableau(impTableau);
     }
     this->setStepperType("Partitioned IMEX RK ARS 233");
     this->setOrder(3);
@@ -328,18 +328,27 @@ template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-
   if (this->stepperObserver_ == Teuchos::null)
      this->stepperObserver_  =
         Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
 
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) ) {
-    obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
+    return;
 
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
+     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
+
+    // Check that this casts to prevent a runtime error if it doesn't
+  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
     this->stepperObserver_->addObserver(
-        Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
+         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
+  } else {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,0,"setObserver");
+    *out << "Tempus::StepperIMEX_RK_Partition::setObserver: Warning: An observer has been provided that";
+    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
+    *out << " In the future, this will result in a runtime error!" << std::endl;
   }
-
 }
 
 

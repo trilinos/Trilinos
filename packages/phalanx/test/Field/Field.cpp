@@ -296,6 +296,30 @@ TEUCHOS_UNIT_TEST(field, all)
     cout << "passed!" << endl;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Check the access() function
+    for (size_type i=0; i < f7.extent(0); ++i) {
+      f1(i) = cf1.access(i);
+      for (size_type j=0; j < f7.extent(1); ++j) {
+	f2(i,j) = cf2.access(i,j);
+	for (size_type k=0; k < f7.extent(2); ++k) {
+	  f3(i,j,k) = cf3.access(i,j,k);
+	  for (size_type l=0; l < f7.extent(3); ++l) {
+	    f4(i,j,k,l) = cf4.access(i,j,k,l);
+	    for (size_type m=0; m < f7.extent(4); ++m) {
+	      f5(i,j,k,l,m) = cf5.access(i,j,k,l,m);
+	      for (size_type n=0; n < f7.extent(5); ++n) {
+		f6(i,j,k,l,m,n) = cf6.access(i,j,k,l,m,n);
+		for (size_type o=0; o < f7.extent(6); ++o) {
+		  f7(i,j,k,l,m,n,o) = cf7.access(i,j,k,l,m,n,o);
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+ 
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for const mdfield assignment from non-const factory
     // PHX::any.  the field manager always stores the non-const
     // version.

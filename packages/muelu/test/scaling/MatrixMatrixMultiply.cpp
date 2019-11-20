@@ -49,6 +49,8 @@
 #endif
 
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
@@ -96,6 +98,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   using Teuchos::rcp;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
+  using Teuchos::StackedTimer;
   using namespace MueLuTests;
 
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -129,11 +132,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     }
 
 
-    TimeMonitor globalTimeMonitor(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: S - Global Time"));
     
     unsigned int seed = generateSeed(*comm, optSeed);
     Teuchos::ScalarTraits<SC>::seedrandom(seed);
     
+    RCP<StackedTimer> timer = rcp(new StackedTimer("MatrixMatrix Multiply: Total"));
+    TimeMonitor::setStackedTimer(timer);
+
     for (int jj=0; jj<optNmults; ++jj) {
       
       RCP<Matrix> A;
@@ -192,7 +197,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 	//  std::string fileName="checkAB.mm";
 	//  Utils::Write( fileName,*AB);
 	//}
-	if (comm->getRank() == 0) std::cout << "success" << std::endl;
 	
       } //scope for multiply
 
@@ -200,14 +204,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
       
     } //for (int jj=0; jj<optNmults; ++jj)
         
-    if (optTimings) {
-      Teuchos::TableFormat &format = TimeMonitor::format();
-      format.setPrecision(25);
-      TimeMonitor::summarize();
-    }
+    timer->stopBaseTimer();
+    StackedTimer::OutputOptions options;
+    options.print_warnings = false;
+    timer->report(std::cout, comm, options);
 
-    bool success = true;
-    return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+    if (comm->getRank() == 0)
+      std::cout << "End Result: TEST PASSED";
+
+    return 0;
 }
  //main_
 

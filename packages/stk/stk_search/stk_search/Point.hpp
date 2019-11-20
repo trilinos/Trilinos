@@ -102,6 +102,13 @@ std::ostream& operator<<(std::ostream & out, Point<T> const& p)
   return out;
 }
 
+template<class T>
+std::istream& operator>>(std::istream& in, Point<T>& p) {
+  char c;
+  in >> c >> p[0] >> c >> p[1] >> c >> p[2] >> c;
+  return in;
+}
+
 }} // stk::search
 
 

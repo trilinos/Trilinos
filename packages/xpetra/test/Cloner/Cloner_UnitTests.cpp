@@ -117,7 +117,9 @@ namespace {
   //
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Cloner, MapCloneTpetra, LO, GO, N2 )
   {
-#ifdef HAVE_XPETRA_TPETRA
+    //BMK 10-2019: clone() for Tpetra Maps is deprecated
+    //TODO: remove test or implement clone() that doesn't rely on deprecated
+#if defined(HAVE_XPETRA_TPETRA) && defined(TPETRA_ENABLE_DEPRECATED_CODE)
     typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
 
     // create a comm
@@ -143,7 +145,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Cloner, MapCloneEpetra, LO, GO, N2 )
   {
-#ifdef HAVE_XPETRA_EPETRA
+#if defined(HAVE_XPETRA_EPETRA) && !defined(KOKKOS_ENABLE_DEPRECATED_CODE)
     typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
 
     // NOTE (mfh 20 Jul 2016) This fixes #508.  Epetra only works for

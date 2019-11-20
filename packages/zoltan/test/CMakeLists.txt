@@ -128,6 +128,7 @@ ENDIF()
 TRIBITS_COPY_FILES_TO_BINARY_DIR(zoltan_zdrive_copy
   SOURCE_FILES zdrive.exe
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/../src/driver
+  CATEGORIES BASIC PERFORMANCE
 )
 
 IF (${PACKAGE_NAME}_ENABLE_CPPDRIVER)
@@ -147,5 +148,6 @@ ENDIF()
 # Command that copies test perl script to the test directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(zoltan_ctest_zoltan_copy
   SOURCE_FILES ctest_zoltan.pl ctest_zoltan_purify.sh
+  CATEGORIES BASIC PERFORMANCE
 )
 

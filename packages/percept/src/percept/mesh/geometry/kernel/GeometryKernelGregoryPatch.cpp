@@ -130,7 +130,7 @@ void GeometryKernelGregoryPatch::snap_to
   std::set<stk::mesh::Entity> neighbors, neighbors_local;
   if (!m_geometryMesh->is_valid(closest_face))
     {
-      GeometryKernelGregoryPatch::EntitySet& faceSet = m_meshTransfer->meshb()->m_searchMap[node_hint];
+      GeometryKernelGregoryPatch::EntitySet& faceSet = m_meshTransfer->meshB()->m_searchMap[node_hint];
       neighbors = faceSet;
     }
 
