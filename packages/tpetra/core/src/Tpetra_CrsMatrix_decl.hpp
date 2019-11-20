@@ -55,7 +55,7 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_Details_PackTraits.hpp"
+#include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "KokkosSparse_CrsMatrix.hpp"
 
 // localGaussSeidel and reorderedLocalGaussSeidel are templated on
@@ -304,7 +304,7 @@ namespace Tpetra {
                                   const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   /// \brief Nonmember function that computes a residual
-  /// Computes R = B - A * X 
+  /// Computes R = B - A * X
   namespace Details {
     template<class SC, class LO, class GO, class NO>
     void residual(const Operator<SC,LO,GO,NO> &   A,
