@@ -99,9 +99,9 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: ordering");
     validParamList->getEntry("aggregation: ordering").setValidator(
       rcp(new validatorType(Teuchos::tuple<std::string>("natural", "graph", "random"), "aggregation: ordering")));
-    SET_VALID_ENTRY("aggregation: enable phase 1");
-    SET_VALID_ENTRY("aggregation: phase 1 algorithm");
     SET_VALID_ENTRY("aggregation: deterministic");
+    SET_VALID_ENTRY("aggregation: coloring algorithm");
+    SET_VALID_ENTRY("aggregation: enable phase 1");
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
@@ -142,7 +142,11 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
+  void UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  Build(Level &currentLevel) const {
+    using execution_space    = typename LWGraph_kokkos::execution_space;
+    using memory_space       = typename LWGraph_kokkos::memory_space;
+    using local_ordinal_type = typename LWGraph_kokkos::local_ordinal_type;
     FactoryMonitor m(*this, "Build", currentLevel);
 
     ParameterList pL = GetParameterList();
@@ -197,17 +201,14 @@ namespace MueLu {
     // getLocalMap to have a Kokkos::View on the appropriate memory_space
     // instead of an ArrayRCP.
     {
-      auto dirichletBoundaryMap = graph->GetBoundaryNodeMap();
-
-      typename Kokkos::View<unsigned*,typename LWGraph_kokkos::memory_space>::HostMirror aggStatHost
-        = Kokkos::create_mirror_view(aggStat);
-      Kokkos::deep_copy(aggStatHost, aggStat);
-
-      for (LO i = 0; i < numRows; i++)
-        if (dirichletBoundaryMap(i) == true)
-          aggStatHost(i) = BOUNDARY;
-
-      Kokkos::deep_copy(aggStat, aggStatHost);
+      typename LWGraph_kokkos::boundary_nodes_type dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+      Kokkos::parallel_for("MueLu - UncoupledAggregation: tagging boundary nodes in aggStat",
+                           Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numRows),
+                           KOKKOS_LAMBDA(const local_ordinal_type nodeIdx) {
+                             if (dirichletBoundaryMap(nodeIdx) == true) {
+                               aggStat(nodeIdx) = BOUNDARY;
+                             }
+                           });
     }
 
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
@@ -267,7 +268,16 @@ namespace MueLu {
       //     COLORING_D2_VB             - Use the parallel vertex based direct method
       //     COLORING_D2_VB_BIT         - Same as VB but using the bitvector forbidden array
       //     COLORING_D2_VB_BIT_EF      - Add experimental edge-filtering to VB_BIT
-      coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
+      if(pL.get<bool>("aggregation: deterministic") == true) {
+        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
+      } else {
+        // Note: LBV on 2019-11-19
+        // I would really like to set this to COLORING_D2_DEFAULT
+        // unless pL.get<std::string>("aggregation: coloring algorithm")
+        // is set which would trigger a specific algorithm being used...
+        // We first need to test the coloring algorithms a bit more!
+        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
+      }
 
       //Create device views for graph rowptrs/colinds
       typename graph_t::row_map_type aRowptrs = graph->getRowPtrs();
@@ -285,6 +295,10 @@ namespace MueLu {
 
       //clean up coloring handle
       kh.destroy_distance2_graph_coloring_handle();
+
+      if (IsPrint(Statistics1)) {
+        GetOStream(Statistics1) << "  num colors: " << aggregates->GetGraphNumColors() << std::endl;
+      }
     }
 
     LO numNonAggregatedNodes = numRows;
