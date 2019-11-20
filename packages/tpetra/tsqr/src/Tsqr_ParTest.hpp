@@ -34,36 +34,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_DistTest_hpp
 #define __TSQR_Test_DistTest_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
-#include <Tsqr_Random_NormalGenerator.hpp>
-#include <Tsqr_verifyTimerConcept.hpp>
-
-#include <Tsqr_generateStack.hpp>
-#include <Tsqr_DistTsqr.hpp>
-#include <Tsqr_GlobalTimeStats.hpp>
-#include <Tsqr_GlobalVerify.hpp>
-#include <Tsqr_printGlobalMatrix.hpp>
-
+#include "Tsqr_ConfigDefs.hpp"
+#include "Tsqr_Random_NormalGenerator.hpp"
+#include "Tsqr_verifyTimerConcept.hpp"
+#include "Tsqr_generateStack.hpp"
+#include "Tsqr_DistTsqr.hpp"
+#include "Tsqr_GlobalTimeStats.hpp"
+#include "Tsqr_GlobalVerify.hpp"
+#include "Tsqr_printGlobalMatrix.hpp"
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 
-
 namespace TSQR {
   namespace Test {
-
     /// \class DistTsqrVerifier
     /// \brief Generic version of \c DistTsqr accuracy test.
-    ///
     template<class Ordinal, class Scalar>
     class DistTsqrVerifier {
       TSQR::Random::NormalGenerator<Ordinal, Scalar> gen_;

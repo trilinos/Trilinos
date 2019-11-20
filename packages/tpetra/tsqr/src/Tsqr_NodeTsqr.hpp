@@ -34,30 +34,25 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 /// \file Tsqr_NodeTsqr.hpp
 /// \brief Common interface and functionality for intranode TSQR.
-///
+
 #ifndef __TSQR_Tsqr_NodeTsqr_hpp
 #define __TSQR_Tsqr_NodeTsqr_hpp
 
-#include <Tsqr_ApplyType.hpp>
-#include <Tsqr_Matrix.hpp>
-
-#include <Teuchos_as.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_LAPACK.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-
+#include "Tsqr_ApplyType.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Teuchos_as.hpp"
+#include "Teuchos_Describable.hpp"
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include <vector>
 
 namespace TSQR {
-
   /// \class NodeTsqr
   /// \brief Common interface and functionality for intranode TSQR.
   ///
@@ -91,7 +86,6 @@ namespace TSQR {
   /// would not be useful.  This is because ultimately each subclass
   /// is bound to a Kokkos Node type, and those only use compile-time
   /// polymorphism.
-  ///
   template<class Ordinal, class Scalar, class FactorOutputType>
   class NodeTsqr : public Teuchos::Describable {
   public:
@@ -102,10 +96,10 @@ namespace TSQR {
     typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
 
     //! Constructor
-    NodeTsqr() {}
+    NodeTsqr() = default;
 
     //! Virtual destructor, for memory safety of derived classes.
-    virtual ~NodeTsqr() {}
+    virtual ~NodeTsqr() = default;
 
     /// \brief Whether this object is ready to perform computations.
     ///

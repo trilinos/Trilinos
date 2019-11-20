@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -44,25 +42,20 @@
 
 #include <tbb/tbb.h>
 #include <tbb/task_scheduler_init.h>
-
-#include <TbbTsqr_FactorTask.hpp>
-#include <TbbTsqr_ApplyTask.hpp>
-#include <TbbTsqr_ExplicitQTask.hpp>
-#include <TbbTsqr_RevealRankTask.hpp>
-#include <TbbTsqr_CacheBlockTask.hpp>
-#include <TbbTsqr_UnCacheBlockTask.hpp>
-#include <TbbTsqr_FillWithZerosTask.hpp>
-
-#include <Tsqr_ApplyType.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "TbbTsqr_FactorTask.hpp"
+#include "TbbTsqr_ApplyTask.hpp"
+#include "TbbTsqr_ExplicitQTask.hpp"
+#include "TbbTsqr_RevealRankTask.hpp"
+#include "TbbTsqr_CacheBlockTask.hpp"
+#include "TbbTsqr_UnCacheBlockTask.hpp"
+#include "TbbTsqr_FillWithZerosTask.hpp"
+#include "Tsqr_ApplyType.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <algorithm>
 #include <limits>
 
-
 namespace TSQR {
   namespace TBB {
-
     /// \class TbbParallelTsqr
     /// \brief Parallel implementation of \c TbbTsqr.
     /// \author Mark Hoemmen

@@ -34,34 +34,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_TbbRecursiveTsqr_hpp
 #define __TSQR_TbbRecursiveTsqr_hpp
 
-#include <Tsqr_ApplyType.hpp>
-#include <Tsqr_CacheBlocker.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
-#include <TbbTsqr_Partitioner.hpp>
-
+#include "Tsqr_ApplyType.hpp"
+#include "Tsqr_CacheBlocker.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
+#include "TbbTsqr_Partitioner.hpp"
 #include <stdexcept>
 #include <string>
 #include <utility> // std::pair
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
   namespace TBB {
-
     /// \class TbbRecursiveTsqr
     /// \brief Non-parallel "functioning stub" implementation of \c TbbTsqr.
-    ///
-    template< class LocalOrdinal, class Scalar >
+    template<class LocalOrdinal, class Scalar>
     class TbbRecursiveTsqr {
     public:
       /// \brief Constructor.
@@ -273,6 +265,6 @@ namespace TSQR {
   } // namespace TBB
 } // namespace TSQR
 
-#include <TSQR/TBB/TbbRecursiveTsqr_Def.hpp>
+#include "TSQR/TBB/TbbRecursiveTsqr_Def.hpp"
 
 #endif // __TSQR_TbbRecursiveTsqr_hpp

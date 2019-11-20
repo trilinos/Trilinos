@@ -34,22 +34,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __Tsqr_CombineBenchmarker_hpp
 #define __Tsqr_CombineBenchmarker_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
-#include <Tsqr_Random_NormalGenerator.hpp>
-#include <Tsqr_Random_MatrixGenerator.hpp>
-#include <Tsqr_verifyTimerConcept.hpp>
+#include "Tsqr_ConfigDefs.hpp"
+#include "Tsqr_Random_NormalGenerator.hpp"
+#include "Tsqr_Random_MatrixGenerator.hpp"
+#include "Tsqr_verifyTimerConcept.hpp"
 
-#include <Tsqr_ApplyType.hpp>
-#include <Tsqr_Matrix.hpp>
-#include <Tsqr_Util.hpp>
+#include "Tsqr_ApplyType.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_Util.hpp"
 
 #include <algorithm>
 #include <iostream>

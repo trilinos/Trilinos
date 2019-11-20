@@ -34,19 +34,16 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 /// \file Tsqr_Util.hpp
 /// \brief Utilities for TSQR (the Tall Skinny QR factorization)
-///
 
 #ifndef __TSQR_Tsqr_Util_hpp
 #define __TSQR_Tsqr_Util_hpp
 
-#include <Teuchos_ScalarTraits.hpp>
+#include "Teuchos_ScalarTraits.hpp"
 
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
 #  include <complex>
@@ -54,7 +51,6 @@
 
 #include <algorithm>
 #include <ostream>
-
 
 namespace TSQR {
 

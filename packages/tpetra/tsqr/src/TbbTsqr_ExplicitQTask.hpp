@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -43,18 +41,13 @@
 #define __TSQR_TBB_ExplicitQTask_hpp
 
 #include <tbb/task.h>
-#include <TbbTsqr_Partitioner.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include "TbbTsqr_Partitioner.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
 
 namespace TSQR {
   namespace TBB {
-
     /// \class ExplicitQTask
     /// \brief TBB task for recursive TSQR "compute explicit Q" phase.
-    ///
     template< class LocalOrdinal, class Scalar >
     class ExplicitQTask : public tbb::task {
     public:
@@ -66,8 +59,6 @@ namespace TSQR {
       typedef std::pair<const_mat_view_type, const_mat_view_type> const_split_t;
 
     public:
-      /// \brief Constructor.
-      ///
       ExplicitQTask (const size_t P_first__,
                      const size_t P_last__,
                      mat_view_type Q_out,
@@ -149,9 +140,7 @@ namespace TSQR {
           }
       }
     };
-
   } // namespace TBB
 } // namespace TSQR
-
 
 #endif // __TSQR_TBB_ExplicitQTask_hpp

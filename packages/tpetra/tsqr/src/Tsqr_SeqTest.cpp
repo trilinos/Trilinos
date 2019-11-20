@@ -34,25 +34,19 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
-#include <Tsqr_SeqTest.hpp>
-
-#include <Tsqr_Random_NormalGenerator.hpp>
-#include <Tsqr_nodeTestProblem.hpp>
-#include <Tsqr_verifyTimerConcept.hpp>
-
-#include <Tsqr_LocalVerify.hpp>
-#include <Tsqr_Matrix.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
-#include <Tsqr_Util.hpp>
-
-#include <Teuchos_LAPACK.hpp>
-#include <Teuchos_Time.hpp>
-
+#include "Tsqr_SeqTest.hpp"
+#include "Tsqr_Random_NormalGenerator.hpp"
+#include "Tsqr_nodeTestProblem.hpp"
+#include "Tsqr_verifyTimerConcept.hpp"
+#include "Tsqr_LocalVerify.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
+#include "Tsqr_Util.hpp"
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_Time.hpp"
 #include <algorithm>
 #include <cstring> // size_t definition
 #include <fstream>

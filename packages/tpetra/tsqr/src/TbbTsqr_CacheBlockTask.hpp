@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -43,22 +41,17 @@
 #define __TSQR_TBB_CacheBlockTask_hpp
 
 #include <tbb/task.h>
-#include <TbbTsqr_Partitioner.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include "TbbTsqr_Partitioner.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
 
 namespace TSQR {
   namespace TBB {
-
     /// \class CacheBlockTask
     /// \brief TBB task for recursive TSQR cache blocking phase.
     ///
     /// "Cache blocking" here means copying the input matrix, which is
     /// stored with noncontiguous cache blocks, to the output matrix,
     /// which is stored with contiguous cache blocks.
-    ///
     template<class LocalOrdinal, class Scalar>
     class CacheBlockTask : public tbb::task {
     public:
@@ -84,11 +77,11 @@ namespace TSQR {
         using tbb::task;
 
         if (P_first_ > P_last_ || A_out_.empty() || A_in_.empty())
-          return NULL;
+          return nullptr;
         else if (P_first_ == P_last_)
           {
             execute_base_case ();
-            return NULL;
+            return nullptr;
           }
         else
           {
@@ -109,7 +102,7 @@ namespace TSQR {
             if (out_split.second.empty() || out_split.second.nrows() == 0)
               {
                 execute_base_case ();
-                return NULL;
+                return nullptr;
               }
 
             // "c": continuation task

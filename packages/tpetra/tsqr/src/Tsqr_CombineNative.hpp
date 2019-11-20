@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -45,12 +43,10 @@
 #ifndef __TSQR_CombineNative_hpp
 #define __TSQR_CombineNative_hpp
 
-#include <Teuchos_LAPACK.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include "Tsqr_ApplyType.hpp"
 #include "Tsqr_CombineDefault.hpp"
-
 #include "Kokkos_Core.hpp"
 #include "KokkosBlas2_gemv.hpp"
 #include "Kokkos_ArithTraits.hpp"

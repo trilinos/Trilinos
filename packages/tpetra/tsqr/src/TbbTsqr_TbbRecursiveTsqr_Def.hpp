@@ -34,26 +34,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_TBB_TbbRecursiveTsqr_Def_hpp
 #define __TSQR_TBB_TbbRecursiveTsqr_Def_hpp
 
-#include <TbbTsqr_TbbRecursiveTsqr.hpp>
-#include <Tsqr_Util.hpp>
-
-// #define TBB_DEBUG 1
-#ifdef TBB_DEBUG
-#  include <iostream>
-using std::cerr;
-using std::endl;
-#endif // TBB_DEBUG
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include "TbbTsqr_TbbRecursiveTsqr.hpp"
+#include "Tsqr_Util.hpp"
 
 namespace TSQR {
   namespace TBB {
@@ -73,12 +61,6 @@ namespace TSQR {
         CacheBlocker< LocalOrdinal, Scalar >
           blocker (Q_out.nrows(), Q_out.ncols(),
                    seq_.cache_blocking_strategy());
-#ifdef TBB_DEBUG
-        cerr << "explicit_Q_helper: On P_first = " << P_first
-             << ", filling Q_out with zeros:" << endl
-             << "Q_out is " << Q_out.nrows() << " x " << Q_out.ncols()
-             << " with leading dimension " << Q_out.lda() << endl;
-#endif // TBB_DEBUG
         // Fill my partition with zeros.
         blocker.fill_with_zeros (Q_out, contiguous_cache_blocks);
 
@@ -154,12 +136,6 @@ namespace TSQR {
       // If we're completely done, extract the final R factor from
       // the topmost partition.
       if (depth == 0) {
-#ifdef TBB_DEBUG
-        cerr << "factor_helper: On P_first = " << P_first
-             << ", extracting R:" << endl
-             << "A_top is " << A_top.nrows() << " x " << A_top.ncols()
-             << " with leading dimension " << A_top.lda();
-#endif // TBB_DEBUG
         seq_.extract_R (A_top.nrows(), A_top.ncols(), A_top.get(),
                         A_top.lda(), R, ldr, contiguous_cache_blocks);
       }
@@ -204,13 +180,6 @@ namespace TSQR {
                            mat_view& C,
                            const bool contiguous_cache_blocks) const
     {
-#ifdef TBB_DEBUG
-      cerr << "build_partition_array: [" << P_first << ", " << P_last << "]:" << endl
-           << "Q is " << Q.nrows() << " x " << Q.ncols() << " w/ LDA = "
-           << Q.lda() << endl << "C is " << C.nrows() << " x " << C.ncols()
-           << " w/ LDA = " << C.lda() << endl;
-#endif // TBB_DEBUG
-
       if (P_first > P_last)
         return;
       else if (P_first == P_last)
@@ -252,12 +221,6 @@ namespace TSQR {
                   const bool contiguous_cache_blocks) const
     {
       typedef std::pair< const_mat_view, mat_view > apply_t;
-#ifdef TBB_DEBUG
-      cerr << "apply_helper: [" << P_first << ", " << P_last << "]:" << endl
-           << "Q is " << Q.nrows() << " x " << Q.ncols() << " w/ LDA = "
-           << Q.lda() << endl << "C is " << C.nrows() << " x " << C.ncols()
-           << " w/ LDA = " << C.lda() << endl;
-#endif // TBB_DEBUG
 
       if (apply_helper_empty (P_first, P_last, Q, C))
         return;
@@ -267,9 +230,6 @@ namespace TSQR {
           seq_.apply ("N", Q.nrows(), Q.ncols(), Q.get(), Q.lda(),
                       seq_outputs[P_first], C.ncols(), C.get(),
                       C.lda(), contiguous_cache_blocks);
-#ifdef TBB_DEBUG
-          cerr << "BOO!!!" << endl;
-#endif // TBB_DEBUG
         }
       else
         {

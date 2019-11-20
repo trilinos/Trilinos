@@ -34,31 +34,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 /// \file Tsqr.hpp
 /// \brief Parallel Tall Skinny QR (TSQR) implementation
-///
+
 #ifndef __TSQR_Tsqr_hpp
 #define __TSQR_Tsqr_hpp
 
-#include <Tsqr_ApplyType.hpp>
-#include <Tsqr_Matrix.hpp>
-#include <Tsqr_MessengerBase.hpp>
-#include <Tsqr_DistTsqr.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
-#include <Tsqr_Util.hpp>
-
-#include <Teuchos_as.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
-
+#include "Tsqr_ApplyType.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_MessengerBase.hpp"
+#include "Tsqr_DistTsqr.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
+#include "Tsqr_Util.hpp"
+#include "Teuchos_as.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace TSQR {
-
   /// \class Tsqr
   /// \brief Parallel Tall Skinny QR (TSQR) factorization
   /// \author Mark Hoemmen
@@ -94,10 +89,9 @@ namespace TSQR {
   ///   are the same (int, in the case of Epetra).  For other
   ///   distributed linear algebra libraries, such as Tpetra, the
   ///   local and global ordinal types may be different.
-  ///
   template<class LocalOrdinal,
            class Scalar,
-           class NodeTsqrType = SequentialTsqr<LocalOrdinal, Scalar> >
+           class NodeTsqrType = SequentialTsqr<LocalOrdinal, Scalar>>
   class Tsqr {
   public:
     typedef MatView<LocalOrdinal, Scalar> mat_view_type;

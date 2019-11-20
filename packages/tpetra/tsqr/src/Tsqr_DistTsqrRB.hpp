@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 */
@@ -44,20 +42,19 @@
 #ifndef __TSQR_DistTsqrRB_hpp
 #define __TSQR_DistTsqrRB_hpp
 
-#include <Tsqr_ApplyType.hpp>
-#include <Tsqr_Combine.hpp>
-#include <Tsqr_Matrix.hpp>
-#include <Tsqr_StatTimeMonitor.hpp>
+#include "Tsqr_ApplyType.hpp"
+#include "Tsqr_Combine.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_StatTimeMonitor.hpp"
 
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TimeMonitor.hpp>
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
 #include <vector>
-
 
 namespace TSQR {
 

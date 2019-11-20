@@ -34,22 +34,18 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Tsqr_SequentialCholeskyQR_hpp
 #define __TSQR_Tsqr_SequentialCholeskyQR_hpp
 
-#include <Tsqr_MatView.hpp>
-#include <Tsqr_CacheBlockingStrategy.hpp>
-#include <Tsqr_CacheBlocker.hpp>
-#include <Tsqr_Util.hpp>
-
-#include <Teuchos_BLAS.hpp>
-#include <Teuchos_LAPACK.hpp>
-
+#include "Tsqr_MatView.hpp"
+#include "Tsqr_CacheBlockingStrategy.hpp"
+#include "Tsqr_CacheBlocker.hpp"
+#include "Tsqr_Util.hpp"
+#include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
 #include <string>
 #include <utility>
 #include <vector>

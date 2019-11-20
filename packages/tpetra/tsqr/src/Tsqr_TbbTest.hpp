@@ -34,30 +34,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_TbbTest_hpp
 #define __TSQR_Test_TbbTest_hpp
 
-#include <Tsqr_nodeTestProblem.hpp>
-#include <Tsqr_verifyTimerConcept.hpp>
-#include <Tsqr_Random_NormalGenerator.hpp>
+#include "Tsqr_nodeTestProblem.hpp"
+#include "Tsqr_verifyTimerConcept.hpp"
+#include "Tsqr_Random_NormalGenerator.hpp"
 
+#include "Tsqr_LocalVerify.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_Util.hpp"
+#include "TbbTsqr.hpp"
 
-#include <Tsqr_LocalVerify.hpp>
-#include <Tsqr_Matrix.hpp>
-#include <Tsqr_Util.hpp>
-#include <TbbTsqr.hpp>
-
-#include <Teuchos_LAPACK.hpp>
-#include <Teuchos_Time.hpp>
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_Time.hpp"
 
 #include <algorithm>
 #include <cstring> // size_t definition
-//#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -71,16 +67,12 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
   namespace Test {
-
     /// Test the accuracy of Intel TBB TSQR on an nrows by ncols
     /// matrix (using the given number of cores and the given cache
     /// block size (in bytes)), and print the results to stdout.
-    template< class Ordinal, class Scalar >
+    template<class Ordinal, class Scalar>
     void
     verifyTbbTsqr (const std::string& scalarTypeName,
                    TSQR::Random::NormalGenerator< Ordinal, Scalar >& generator,

@@ -34,27 +34,21 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Tsqr_GlobalVerify_hpp
 #define __TSQR_Tsqr_GlobalVerify_hpp
 
-#include <Tsqr_LocalVerify.hpp>
-#include <Tsqr_MessengerBase.hpp>
-#include <Tsqr_Util.hpp>
-
-#include <Teuchos_BLAS.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "Tsqr_LocalVerify.hpp"
+#include "Tsqr_MessengerBase.hpp"
+#include "Tsqr_Util.hpp"
+#include "Teuchos_BLAS.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <utility> // std::pair
 #include <vector>
 
-
 namespace TSQR {
-
   /// \class GlobalSummer
   ///
   /// Compute a global sum of (magnitudes of) Scalar values, returning

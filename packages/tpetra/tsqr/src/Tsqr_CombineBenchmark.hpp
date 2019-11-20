@@ -34,20 +34,18 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_CombineBenchmark_hpp
 #define __TSQR_Test_CombineBenchmark_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
-#include <Tsqr_CombineBenchmarker.hpp>
-#include <Tsqr_CombineDefault.hpp>
-#include <Tsqr_CombineNative.hpp>
+#include "Tsqr_ConfigDefs.hpp"
+#include "Tsqr_CombineBenchmarker.hpp"
+#include "Tsqr_CombineDefault.hpp"
+#include "Tsqr_CombineNative.hpp"
 #ifdef HAVE_KOKKOSTSQR_FORTRAN
-#  include <Tsqr_CombineFortran.hpp>
+#  include "Tsqr_CombineFortran.hpp"
 #endif // HAVE_KOKKOSTSQR_FORTRAN
 
 #include <algorithm>

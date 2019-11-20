@@ -34,16 +34,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Tsqr_LocalVerify_hpp
 #define __TSQR_Tsqr_LocalVerify_hpp
 
-#include <Tsqr_Util.hpp>
-#include <Teuchos_BLAS.hpp>
+#include "Tsqr_Util.hpp"
+#include "Teuchos_BLAS.hpp"
 #include <cmath>
 #include <limits>
 #include <utility> // std::pair, std::make_pair

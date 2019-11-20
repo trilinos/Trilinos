@@ -34,15 +34,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Tsqr_MatView_hpp
 #define __TSQR_Tsqr_MatView_hpp
-
-#include <cstring> // NULL
 
 // Define for bounds checking and other safety features, undefine for speed.
 // #define TSQR_MATVIEW_DEBUG 1
@@ -173,9 +169,7 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
     typedef Scalar* pointer_type;
 
-    /// \note g++ with -Wall wants A_ to be initialized after lda_,
-    /// otherwise it emits a compiler warning.
-    MatView () : nrows_(0), ncols_(0), lda_(0), A_(NULL) {}
+    MatView () = default;
 
     MatView (const Ordinal num_rows,
              const Ordinal num_cols,
@@ -191,23 +185,10 @@ namespace TSQR {
 #endif // TSQR_MATVIEW_DEBUG
     }
 
-    MatView (const MatView& view) :
-      nrows_(view.nrows()),
-      ncols_(view.ncols()),
-      lda_(view.lda()),
-      A_(view.get())
-    {}
-
-    //! Assignment operator: Does a shallow (pointer) assignment.
-    MatView& operator= (const MatView& view) {
-      if (this != &view) {
-        nrows_ = view.nrows ();
-        ncols_ = view.ncols ();
-        A_ = view.get ();
-        lda_ = view.lda ();
-      }
-      return *this;
-    }
+    MatView (const MatView& view) = default;
+    MatView& operator= (const MatView& view) = default;
+    MatView (MatView&& view) = default;
+    MatView& operator= (MatView&& view) = default;
 
     /// \note The function is const, only because returning a
     /// reference to the matrix data doesn't change any members of
@@ -387,8 +368,10 @@ namespace TSQR {
     }
 
   private:
-    ordinal_type nrows_, ncols_, lda_;
-    scalar_type* A_;
+    ordinal_type nrows_ = 0;
+    ordinal_type ncols_ = 0;
+    ordinal_type lda_ = 0;
+    scalar_type* A_ = nullptr;
   };
 
 

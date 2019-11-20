@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -45,13 +43,13 @@
 #ifndef __TSQR_Tsqr_DistTsqr_hpp
 #define __TSQR_Tsqr_DistTsqr_hpp
 
-#include <Tsqr_DistTsqrHelper.hpp>
-#include <Tsqr_DistTsqrRB.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <utility> // std::pair
+#include "Tsqr_DistTsqrHelper.hpp"
+#include "Tsqr_DistTsqrRB.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
+#include <utility> // std::pair
 
 namespace TSQR {
   /// \class DistTsqr

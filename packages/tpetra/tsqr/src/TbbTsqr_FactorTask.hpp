@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -43,20 +41,15 @@
 #define __TSQR_TBB_FactorTask_hpp
 
 #include <tbb/task.h>
-#include <TbbTsqr_Partitioner.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
-#include <Teuchos_Assert.hpp>
+#include "TbbTsqr_Partitioner.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
+#include "Teuchos_Assert.hpp"
 #include <algorithm>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace TBB {
-
     /// \class FactorTask
     /// \brief TBB task for recursive TSQR factorization phase.
-    ///
     template<class LocalOrdinal, class Scalar, class TimerType>
     class FactorTask : public tbb::task {
     public:

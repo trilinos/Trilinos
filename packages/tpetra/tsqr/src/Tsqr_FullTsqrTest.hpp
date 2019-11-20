@@ -34,23 +34,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_FullTsqrTest_hpp
 #define __TSQR_Test_FullTsqrTest_hpp
 
-#include <Tsqr.hpp>
-#include <Tsqr_Random_NormalGenerator.hpp>
-#include <Tsqr_Random_GlobalMatrix.hpp>
-#include <Tsqr_TestSetup.hpp>
-//#include <TsqrFactory_SequentialTsqr.hpp>
-#include <Tsqr_GlobalVerify.hpp>
-#include <Tsqr_TeuchosMessenger.hpp>
+#include "Tsqr.hpp"
+#include "Tsqr_Random_NormalGenerator.hpp"
+#include "Tsqr_Random_GlobalMatrix.hpp"
+#include "Tsqr_TestSetup.hpp"
+#include "Tsqr_GlobalVerify.hpp"
+#include "Tsqr_TeuchosMessenger.hpp"
 #include "Tsqr_TestUtils.hpp"
-#include <Teuchos_ScalarTraits.hpp>
+#include "Teuchos_ScalarTraits.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -61,7 +58,6 @@ namespace TSQR {
 
     /// \class TsqrInaccurate
     /// \brief Signals that a TSQR test failed due to insufficient accuracy.
-    ///
     class TsqrInaccurate : public std::exception {
     public:
       //! Constructor

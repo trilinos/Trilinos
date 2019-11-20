@@ -34,28 +34,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_generateStack_hpp
 #define __TSQR_Test_generateStack_hpp
 
-#include <Tsqr_Matrix.hpp>
-#include <Tsqr_Util.hpp>
-#include <Tsqr_Random_MatrixGenerator.hpp>
-#include <Tsqr_RMessenger.hpp>
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_Util.hpp"
+#include "Tsqr_Random_MatrixGenerator.hpp"
+#include "Tsqr_RMessenger.hpp"
 
 #include <algorithm>
 #include <functional>
 #include <sstream>
 #include <stdexcept>
 
-
 namespace TSQR {
   namespace Test {
-
     /// \brief Generate a random "R stack" test problem on one MPI process.
     ///
     /// Generate a (pseudo)random test problem consisting of numProcs

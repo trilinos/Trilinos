@@ -34,15 +34,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Random_NormalGenerator_hpp
 #define __TSQR_Random_NormalGenerator_hpp
 
-#include <Teuchos_LAPACK.hpp>
+#include "Teuchos_LAPACK.hpp"
 #include <algorithm>
 #include <vector>
 

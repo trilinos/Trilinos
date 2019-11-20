@@ -34,17 +34,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_CacheBlocker_hpp
 #define __TSQR_CacheBlocker_hpp
 
-#include <Tsqr_CacheBlockingStrategy.hpp>
-#include <Tsqr_MatView.hpp>
-#include <Tsqr_Util.hpp>
+#include "Tsqr_CacheBlockingStrategy.hpp"
+#include "Tsqr_MatView.hpp"
+#include "Tsqr_Util.hpp"
 
 #include <iterator>
 #include <sstream>

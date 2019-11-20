@@ -34,15 +34,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_TBB_Partitioner_hpp
 #define __TSQR_TBB_Partitioner_hpp
 
-#include <Tsqr_MatView.hpp>
+#include "Tsqr_MatView.hpp"
 
 #include <cstring> // size_t
 #include <sstream>
@@ -50,13 +48,9 @@
 #include <utility>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
   namespace TBB {
-
-    template< class Ordinal, class Scalar >
+    template<class Ordinal, class Scalar>
     class Partitioner {
     private:
       bool
@@ -67,20 +61,18 @@ namespace TSQR {
         using std::invalid_argument;
         using std::ostringstream;
 
-        if (nrows < ncols)
-          {
-            ostringstream os;
-            os << "Partitioner::should_split: nrows (= " << nrows
-               << ") < ncols (= " << ncols << ")";
-            throw invalid_argument (os.str());
-          }
-        else if (num_partitions == 0)
-          {
-            ostringstream os;
-            os << "Partitioner::should_split: nrows (= " << nrows
-               << ") < ncols (= " << ncols << ")";
-            throw invalid_argument (os.str());
-          }
+        if (nrows < ncols) {
+          ostringstream os;
+          os << "Partitioner::should_split: nrows (= " << nrows
+             << ") < ncols (= " << ncols << ")";
+          throw invalid_argument (os.str());
+        }
+        else if (num_partitions == 0) {
+          ostringstream os;
+          os << "Partitioner::should_split: nrows (= " << nrows
+             << ") < ncols (= " << ncols << ")";
+          throw invalid_argument (os.str());
+        }
         // FIXME (mfh 11 Jul 2010) Need more overflow checks here.
         return static_cast<size_t>(nrows) / num_partitions >= static_cast<size_t>(ncols);
       }

@@ -34,33 +34,28 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_TsqrTest_hpp
 #define __TSQR_Test_TsqrTest_hpp
 
-#include <Tsqr.hpp>
+#include "Tsqr.hpp"
 #ifdef HAVE_KOKKOSTSQR_TBB
-#  include <TbbTsqr.hpp>
+#  include "TbbTsqr.hpp"
 #endif // HAVE_KOKKOSTSQR_TBB
-#include <Tsqr_TestSetup.hpp>
-#include <Tsqr_GlobalVerify.hpp>
-#include <Tsqr_printGlobalMatrix.hpp>
-#include <Tsqr_verifyTimerConcept.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "Tsqr_TestSetup.hpp"
+#include "Tsqr_GlobalVerify.hpp"
+#include "Tsqr_printGlobalMatrix.hpp"
+#include "Tsqr_verifyTimerConcept.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <cstring> // size_t
 #include <iostream>
 #include <stdexcept>
 #include <string>
 
-
 namespace TSQR {
   namespace Test {
-
     template<class TsqrType>
     class TsqrVerifier {
     public:

@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -45,17 +43,14 @@
 #include "Tsqr_Matrix.hpp"
 #include "Tsqr_Random_MatrixGenerator.hpp"
 #include "Tsqr_RMessenger.hpp"
-
-#include <Teuchos_BLAS.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "Teuchos_BLAS.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <algorithm>
 #include <functional>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
-
 
 namespace TSQR {
   namespace Random {

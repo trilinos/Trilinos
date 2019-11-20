@@ -34,23 +34,21 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 /// \file Tsqr_KokkosNodeTsqr.hpp
 /// \brief Parallel intranode TSQR implemented using the Kokkos Node API.
-///
+
 #ifndef __TSQR_KokkosNodeTsqr_hpp
 #define __TSQR_KokkosNodeTsqr_hpp
 
-#include <Tsqr_CacheBlocker.hpp>
-#include <Tsqr_Combine.hpp>
-#include <Tsqr_NodeTsqr.hpp>
+#include "Tsqr_CacheBlocker.hpp"
+#include "Tsqr_Combine.hpp"
+#include "Tsqr_NodeTsqr.hpp"
 
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 //#define KNR_DEBUG 1
 #ifdef KNR_DEBUG

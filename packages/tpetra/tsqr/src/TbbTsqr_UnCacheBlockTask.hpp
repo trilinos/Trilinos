@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -43,22 +41,17 @@
 #define __TSQR_TBB_UnCacheBlockTask_hpp
 
 #include <tbb/task.h>
-#include <TbbTsqr_Partitioner.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include "TbbTsqr_Partitioner.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
 
 namespace TSQR {
   namespace TBB {
-
     /// \class UnCacheBlockTask
     /// \brief TBB task for recursive TSQR un-(cache blocking) phase.
     ///
     /// "Un-(cache blocking)" here means copying the input matrix,
     /// which is stored with contiguous cache blocks, to the output
     /// matrix, which is stored with noncontiguous cache blocks.
-    ///
     template<class LocalOrdinal, class Scalar>
     class UnCacheBlockTask : public tbb::task {
     public:

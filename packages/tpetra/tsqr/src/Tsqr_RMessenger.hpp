@@ -34,21 +34,17 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_RMessenger_hpp
 #define __TSQR_RMessenger_hpp
 
-#include <Tsqr_MatView.hpp>
-#include <Tsqr_MessengerBase.hpp>
-#include <Teuchos_RCP.hpp>
-
+#include "Tsqr_MatView.hpp"
+#include "Tsqr_MessengerBase.hpp"
+#include "Teuchos_RCP.hpp"
 #include <algorithm>
 #include <vector>
-
 
 namespace TSQR {
 
@@ -65,6 +61,8 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
     typedef MessengerBase< Scalar > messenger_type;
     typedef Teuchos::RCP< messenger_type > messenger_ptr;
+
+    RMessenger () = delete;
 
     /// \brief Constructor
     ///
@@ -120,13 +118,9 @@ namespace TSQR {
       return *this;
     }
 
-
   private:
     messenger_ptr messenger_;
-    std::vector< Scalar > buffer_;
-
-    //! Default construction doesn't make sense, so we forbid it syntactically.
-    RMessenger ();
+    std::vector<Scalar> buffer_;
 
     /// \brief Buffer length as a function of R factor dimension.
     ///
@@ -148,12 +142,11 @@ namespace TSQR {
       const Ordinal buf_length = buffer_length (ncols);
       buffer_.resize (buf_length);
       iter_type iter = buffer_.begin();
-      for (view_ordinal_type j = 0; j < ncols; ++j)
-        {
-          const view_scalar_type* const R_j = &R(0,j);
-          std::copy (R_j, R_j + (j+1), iter);
-          iter += (j+1);
-        }
+      for (view_ordinal_type j = 0; j < ncols; ++j) {
+        const view_scalar_type* const R_j = &R(0,j);
+        std::copy (R_j, R_j + (j+1), iter);
+        iter += (j+1);
+      }
     }
 
     template<class MatrixViewType>
@@ -165,11 +158,10 @@ namespace TSQR {
 
       const view_ordinal_type ncols = R.ncols();
       const_iter_type iter = buffer_.begin();
-      for (view_ordinal_type j = 0; j < ncols; ++j)
-        {
-          std::copy (iter, iter + (j+1), &R(0,j));
-          iter += (j+1);
-        }
+      for (view_ordinal_type j = 0; j < ncols; ++j) {
+        std::copy (iter, iter + (j+1), &R(0,j));
+        iter += (j+1);
+      }
     }
   };
 

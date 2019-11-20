@@ -34,26 +34,21 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __Tsqr_printGlobalMatrix_hpp
 #define __Tsqr_printGlobalMatrix_hpp
 
-#include <Tsqr_MessengerBase.hpp>
-#include <Tsqr_Util.hpp>
-#include <Tsqr_Matrix.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "Tsqr_MessengerBase.hpp"
+#include "Tsqr_Util.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <limits>
 #include <ostream>
 #include <stdexcept>
 
-
 namespace TSQR {
-
   /// \fn printGlobalMatrix
   ///
   /// Print a dense matrix distributed in block row fashion among all

@@ -34,27 +34,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Tsqr_Matrix_hpp
 #define __TSQR_Tsqr_Matrix_hpp
 
-#include <Tsqr_Util.hpp>
-#include <Tsqr_MatView.hpp>
-
+#include "Tsqr_Util.hpp"
+#include "Tsqr_MatView.hpp"
 #include <stdexcept>
 #include <sstream>
 #include <limits>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
-
   /// \class Matrix
   /// \brief A column-oriented dense matrix
   /// \author Mark Hoemmen
