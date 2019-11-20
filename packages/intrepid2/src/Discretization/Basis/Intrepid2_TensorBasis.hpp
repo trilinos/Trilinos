@@ -686,9 +686,8 @@ namespace Intrepid2
             const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputValueType>();
             const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointValueType>();
             const int vectorSize = std::max(outputVectorSize,pointVectorSize);
-            const int teamSize = basisCardinality2;
             
-            auto policy = Kokkos::TeamPolicy<ExecutionSpace>(basisCardinality1,teamSize,vectorSize);
+            auto policy = Kokkos::TeamPolicy<ExecutionSpace>(basisCardinality1,Kokkos::AUTO(),vectorSize);
             
             double weight = 1.0;
             using FunctorType = TensorViewFunctor<ExecutionSpace, OutputValueType, OutputViewType>;
@@ -840,9 +839,8 @@ namespace Intrepid2
       const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputValueType>();
       const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointValueType>();
       const int vectorSize = std::max(outputVectorSize,pointVectorSize);
-      const int teamSize = basisCardinality2;
       
-      auto policy = Kokkos::TeamPolicy<ExecutionSpace>(basisCardinality1,teamSize,vectorSize);
+      auto policy = Kokkos::TeamPolicy<ExecutionSpace>(basisCardinality1,Kokkos::AUTO(),vectorSize);
       
       using FunctorType = TensorViewFunctor<ExecutionSpace, OutputValueType, OutputViewType>;
       
@@ -1342,9 +1340,8 @@ namespace Intrepid2
       const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputScalar>();
       const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointScalar>();
       const int vectorSize = std::max(outputVectorSize,pointVectorSize);
-      const int teamSize = basisCardinality2;
       
-      auto policy = Kokkos::TeamPolicy<ExecutionSpace>(basisCardinality1,teamSize,vectorSize);
+      auto policy = Kokkos::TeamPolicy<ExecutionSpace>(basisCardinality1,Kokkos::AUTO(),vectorSize);
       
       using FunctorType = TensorBasis3_Functor<ExecutionSpace, OutputScalar, OutputViewType>;
       FunctorType functor(outputValues, outputValues1, outputValues2, outputValues3, tensorPoints, weight);
