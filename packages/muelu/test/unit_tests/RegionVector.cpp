@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
     compVec->putScalar(0.0);
     const size_t localLength = compVec->getLocalLength();
     for (size_t k = 0; k < localLength; ++k) {
-      compVec->replaceLocalValue(k, k + myRank/10.0);// (LO, Scalar) need to fix type of k
+      compVec->replaceLocalValue(k, static_cast<Scalar>(k));
     }
 
     // Create a region vector
