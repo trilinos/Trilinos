@@ -47,9 +47,6 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-2.0.3" ]; then
     sparc_tpl_ext=cts1-bdw_intel-18.0.2
     sparc_tpl_mpi_ext=cts1-bdw_intel-18.0.2_openmpi-2.0.3
 
-    export SGM_ROOT=${sparc_tpl_base}/sgm-19.30/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-    export SUPERLUDIST_ROOT=${sparc_tpl_base}/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-6.1.0/lib64:${LD_LIBRARY_PATH}
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5_OPENMPI-4.0.1" ]; then
     module load intel/19.0.5.281
@@ -58,13 +55,9 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5_OPENMPI-4.0.1" ]; then
     sparc_tpl_ext=cts1-bdw_intel-19.0.5
     sparc_tpl_mpi_ext=cts1-bdw_intel-19.0.5_openmpi-4.0.1
 
-    export CBLAS_ROOT=/projects/global/toss3/compilers/intel/intel_2019/compilers_and_libraries_2019.5.281/linux=
+    export CBLAS_ROOT=/projects/global/toss3/compilers/intel/intel_2019/compilers_and_libraries_2019.5.281/linux
     export COMPILER_ROOT=/projects/global/toss3/compilers/intel/intel_2017/compilers_and_libraries_2019.5.281/linux
     export SPARC_HDF5=hdf5-1.10.5
-
-    export SUPERLUDIST_ROOT=${sparc_tpl_base}/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-19.0.5_openmpi-4.0.1
-    export TRILINOS_BASE=${sparc_tpl_base}/Trilinos/2019-10-01/00000001/cts1-bdw_intel-19.0.5_openmp_openmpi-4.0.1
-    export SGM_ROOT=${sparc_tpl_base}/sgm-19.30/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
 
     export PATH=/usr/tce/packages/gcc/gcc-4.9.3/bin:${PATH}
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-4.9.3/lib64:${LD_LIBRARY_PATH}
@@ -93,6 +86,8 @@ export PARMETIS_ROOT=${sparc_tpl_base}/parmetis-4.0.3/00000000/${sparc_tpl_mpi_e
 export METIS_ROOT=${sparc_tpl_base}/parmetis-4.0.3/00000000/${sparc_tpl_mpi_ext}
 export LIBHIO_ROOT=${sparc_tpl_base}/libhio-1.4.1.2/00000000/${sparc_tpl_mpi_ext}
 export EUCLID_ROOT=${sparc_tpl_base}/euclid-19.30/95b8242ad729449fdb86591b9643c11463b61fa2/${sparc_tpl_mpi_ext}
+export SGM_ROOT=${sparc_tpl_base}/sgm-19.30/00000000/${sparc_tpl_mpi_ext}
+export SUPERLUDIST_ROOT=${sparc_tpl_base}/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/${sparc_tpl_mpi_ext}
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
