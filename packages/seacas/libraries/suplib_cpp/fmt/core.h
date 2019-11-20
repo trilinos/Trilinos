@@ -69,8 +69,7 @@
 #ifndef FMT_USE_CONSTEXPR
 #define FMT_USE_CONSTEXPR                                                                          \
   (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1910 ||                                \
-   (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L)) &&                                          \
-      !FMT_NVCC
+   (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L))
 #endif
 #if FMT_USE_CONSTEXPR
 #define FMT_CONSTEXPR constexpr
@@ -241,7 +240,7 @@ namespace internal {
 
 #ifdef FMT_USE_INT128
 // Do nothing.
-#elif defined(__SIZEOF_INT128__) && !defined(FMT_NVCC)
+#elif defined(__SIZEOF_INT128__) && !FMT_NVCC
 #define FMT_USE_INT128 1
   using int128_t                                 = __int128_t;
   using uint128_t                                = __uint128_t;

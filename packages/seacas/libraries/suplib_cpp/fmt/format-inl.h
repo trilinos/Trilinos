@@ -373,13 +373,13 @@ namespace internal {
     template <int SHIFT> friend fp normalize(fp value)
     {
       // Handle subnormals.
-      const auto shifted_implicit_bit = implicit_bit << SHIFT;
+      const auto shifted_implicit_bit = fp::implicit_bit << SHIFT;
       while ((value.f & shifted_implicit_bit) == 0) {
         value.f <<= 1;
         --value.e;
       }
       // Subtract 1 to account for hidden bit.
-      const auto offset = significand_size - double_significand_size - SHIFT - 1;
+      const auto offset = fp::significand_size - fp::double_significand_size - SHIFT - 1;
       value.f <<= offset;
       value.e -= offset;
       return value;
