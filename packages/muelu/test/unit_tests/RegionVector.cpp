@@ -166,13 +166,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
 
     compositeToRegional(compVec, quasiRegVec, regVec, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
-    //RCP<Teuchos::FancyOStream> outF = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    //std::cout<<"compVec:"<<std::endl;
-    //compVec->describe(*outF, Teuchos::VERB_EXTREME);
-    //std::cout<<"Quasi:"<<std::endl;
-    //quasiRegVec[0]->describe(*outF, Teuchos::VERB_EXTREME);
-    //std::cout<<"Reg:"<<std::endl;
-    //regVec[0]->describe(*outF, Teuchos::VERB_EXTREME);
     if(numRanks == 1){
       TEST_EQUALITY(regVec[0]->getLocalLength(),  25);
       TEST_EQUALITY(regVec[0]->getGlobalLength(), 25);
