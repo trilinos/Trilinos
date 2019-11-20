@@ -372,6 +372,23 @@ namespace internal {
     // Normalizes the value converted from double and multiplied by (1 << SHIFT).
     template <int SHIFT> friend fp normalize(fp value)
     {
+#ifdef __NVCC__
+      static const int double_significand_size = std::numeric_limits<double>::digits - 1;
+      static const uint64_t implicit_bit = 1ull << double_significand_size;
+      static const int significand_size = bits<uint64_t>::value;
+
+      // Handle subnormals.
+      const auto shifted_implicit_bit = implicit_bit << SHIFT;
+      while ((value.f & shifted_implicit_bit) == 0) {
+        value.f <<= 1;
+        --value.e;
+      }
+      // Subtract 1 to account for hidden bit.
+      const auto offset = significand_size - double_significand_size - SHIFT - 1;
+      value.f <<= offset;
+      value.e -= offset;
+      return value;
+#else
       // Handle subnormals.
       const auto shifted_implicit_bit = fp::implicit_bit << SHIFT;
       while ((value.f & shifted_implicit_bit) == 0) {
@@ -383,6 +400,7 @@ namespace internal {
       value.f <<= offset;
       value.e -= offset;
       return value;
+#endif
     }
 
     // Assigns d to this and return true iff predecessor is closer than successor.
