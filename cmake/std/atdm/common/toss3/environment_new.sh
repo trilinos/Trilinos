@@ -35,56 +35,38 @@ else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
 fi
 
+# Common paths and modules for both intel-1{8,9}
+sparc_tpl_base=/projects/sparc/tpls/cts1-bdw
+module load mkl/18.0.5.274
+module load sparc-cmake/3.12.3
+
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-2.0.3" ]; then
     module load intel/18.0.2.199
     module load openmpi-intel/2.0
-    module load mkl/18.0.5.274
-    module load sparc-cmake/3.12.3
 
-    export BOOST_ROOT=/projects/sparc/tpls/cts1-bdw/boost-1.65.1/00000000/cts1-bdw_intel-18.0.2
-    export CGNS_ROOT=/projects/sparc/tpls/cts1-bdw/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-    export EUCLID_ROOT=/projects/sparc/tpls/cts1-bdw/euclid-19.30/95b8242ad729449fdb86591b9643c11463b61fa2/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-    export HDF5_ROOT=/projects/sparc/tpls/cts1-bdw/hdf5-1.10.5/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-    export LIBHIO_ROOT=/projects/sparc/tpls/cts1-bdw/libhio-1.4.1.2/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-    export METIS_ROOT=/projects/sparc/tpls/cts1-bdw/parmetis-4.0.3/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-    export NETCDF_ROOT=/projects/sparc/tpls/cts1-bdw/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-    export PARMETIS_ROOT=/projects/sparc/tpls/cts1-bdw/parmetis-4.0.3/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-    export PNETCDF_ROOT=/projects/sparc/tpls/cts1-bdw/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-    export SGM_ROOT=/projects/sparc/tpls/cts1-bdw/sgm-19.30/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
-    export SUPERLUDIST_ROOT=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3
+    sparc_tpl_ext=cts1-bdw_intel-18.0.2
+    sparc_tpl_mpi_ext=cts1-bdw_intel-18.0.2_openmpi-2.0.3
 
-    export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
-    export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
-    export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
+    export SGM_ROOT=${sparc_tpl_base}/sgm-19.30/00000000/cts1-bdw_intel-18.0.2_openmpi-2.0.3
+    export SUPERLUDIST_ROOT=${sparc_tpl_base}/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-18.0.2_openmpi-2.0.3
 
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-6.1.0/lib64:${LD_LIBRARY_PATH}
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5_OPENMPI-4.0.1" ]; then
     module load intel/19.0.5.281
     module load openmpi-intel/4.0
-    module load mkl/18.0.5.274
-    module load sparc-cmake/3.12.3
 
-    export CBLAS_ROOT=/projects/global/toss3/compilers/intel/intel_2019/compilers_and_libraries_2019.5.281/linux
-    export BOOST_ROOT=/projects/sparc/tpls/cts1-bdw/boost-1.65.1/00000000/cts1-bdw_intel-19.0.5
+    sparc_tpl_ext=cts1-bdw_intel-19.0.5
+    sparc_tpl_mpi_ext=cts1-bdw_intel-19.0.5_openmpi-4.0.1
+
+    export CBLAS_ROOT=/projects/global/toss3/compilers/intel/intel_2019/compilers_and_libraries_2019.5.281/linux=
     export COMPILER_ROOT=/projects/global/toss3/compilers/intel/intel_2017/compilers_and_libraries_2019.5.281/linux
-    export HDF5_ROOT=/projects/sparc/tpls/cts1-bdw/hdf5-1.10.5/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
     export SPARC_HDF5=hdf5-1.10.5
-    export CGNS_ROOT=/projects/sparc/tpls/cts1-bdw/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/cts1-bdw_intel-19.0.5_openmpi-4.0.1
-    export PNETCDF_ROOT=/projects/sparc/tpls/cts1-bdw/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/cts1-bdw_intel-19.0.5_openmpi-4.0.1
-    export NETCDF_ROOT=/projects/sparc/tpls/cts1-bdw/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/cts1-bdw_intel-19.0.5_openmpi-4.0.1
-    export LIBHIO_ROOT=/projects/sparc/tpls/cts1-bdw/libhio-1.4.1.2/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
-    export METIS_ROOT=/projects/sparc/tpls/cts1-bdw/parmetis-4.0.3/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
-    export PARMETIS_ROOT=/projects/sparc/tpls/cts1-bdw/parmetis-4.0.3/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
-    export SUPERLUDIST_ROOT=/projects/sparc/tpls/cts1-bdw/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-19.0.5_openmpi-4.0.1
-    export TRILINOS_BASE=/projects/sparc/tpls/cts1-bdw/Trilinos/2019-10-01/00000001/cts1-bdw_intel-19.0.5_openmp_openmpi-4.0.1
-    export SGM_ROOT=/projects/sparc/tpls/cts1-bdw/sgm-19.30/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
-    export EUCLID_ROOT=/projects/sparc/tpls/cts1-bdw/euclid-19.30/95b8242ad729449fdb86591b9643c11463b61fa2/cts1-bdw_intel-19.0.5_openmpi-4.0.1
 
+    export SUPERLUDIST_ROOT=${sparc_tpl_base}/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    export TRILINOS_BASE=${sparc_tpl_base}/Trilinos/2019-10-01/00000001/cts1-bdw_intel-19.0.5_openmp_openmpi-4.0.1
+    export SGM_ROOT=${sparc_tpl_base}/sgm-19.30/00000000/cts1-bdw_intel-19.0.5_openmpi-4.0.1
 
-    export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
-    export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
-    export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
-
+    export PATH=/usr/tce/packages/gcc/gcc-4.9.3/bin:${PATH}
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-4.9.3/lib64:${LD_LIBRARY_PATH}
 
     export F77=mpif77
@@ -96,16 +78,28 @@ else
     return
 fi
 
-
 export OMPI_CXX=`which icpc`
 export OMPI_CC=`which icc`
 export OMPI_FC=`which ifort`
 export ATDM_CONFIG_LAPACK_LIBS="-mkl"
 export ATDM_CONFIG_BLAS_LIBS="-mkl"
 
+export BOOST_ROOT=${sparc_tpl_base}/boost-1.65.1/00000000/${sparc_tpl_ext}
+export HDF5_ROOT=${sparc_tpl_base}/hdf5-1.10.5/00000000/${sparc_tpl_mpi_ext}
+export CGNS_ROOT=${sparc_tpl_base}/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/${sparc_tpl_mpi_ext}
+export PNETCDF_ROOT=${sparc_tpl_base}/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/${sparc_tpl_mpi_ext}
+export NETCDF_ROOT=${sparc_tpl_base}/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/${sparc_tpl_mpi_ext}
+export PARMETIS_ROOT=${sparc_tpl_base}/parmetis-4.0.3/00000000/${sparc_tpl_mpi_ext}
+export METIS_ROOT=${sparc_tpl_base}/parmetis-4.0.3/00000000/${sparc_tpl_mpi_ext}
+export LIBHIO_ROOT=${sparc_tpl_base}/libhio-1.4.1.2/00000000/${sparc_tpl_mpi_ext}
+export EUCLID_ROOT=${sparc_tpl_base}/euclid-19.30/95b8242ad729449fdb86591b9643c11463b61fa2/${sparc_tpl_mpi_ext}
+
 export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${NETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
+export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
+export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
 
 # not sure what below does.  It was in the original environment script
 #unset ATTB_ENV
