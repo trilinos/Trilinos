@@ -220,7 +220,7 @@ void reducedMatvec(const OverlappedMatrixClass & A,
     typename OverlappedMatrixClass::global_ordinal_type,
     typename OverlappedMatrixClass::node_type>;
 
-  // Assumes that X& Y are sufficiently overlapped for this to work
+  // Assumes that X & Y are sufficiently overlapped for this to work
   RCP<const crs_matrix_type> undA = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A.getUnderlyingMatrix());
   RCP<const crs_matrix_type> extA = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A.getExtMatrix());
   Teuchos::ArrayView<const size_t> hstarts = A.getExtHaloStarts();
@@ -234,15 +234,16 @@ void reducedMatvec(const OverlappedMatrixClass & A,
   auto Y_lcl = Y.getLocalViewDevice ();
   
   // Do the "Local part"
-  auto numLocalRows = undA_lcl.numRows();
+  auto numLocalRows = undA->getNodeNumRows();
   localReducedMatvec(undA_lcl,X_lcl,numLocalRows,Y_lcl);
+
   
   // Now, do the "overlapped part"
   if(overlapLevel > 0) {
     int yrange = hstarts[overlapLevel];
     auto Y_ext = Kokkos::subview(Y_lcl,std::make_pair(numLocalRows,numLocalRows+yrange),Kokkos::ALL());
     
-    int xlimit = numLocalRows + ( (overlapLevel == hstarts.size()-1) ? X_lcl.extent(0) : hstarts[overlapLevel+1] );
+    int xlimit = ( (overlapLevel == hstarts.size()-1) ? X_lcl.extent(0) : numLocalRows+hstarts[overlapLevel+1] );
     auto X_ext = Kokkos::subview(X_lcl,std::make_pair(0,xlimit),Kokkos::ALL());
     
     localReducedMatvec(extA_lcl,X_ext,yrange,Y_ext);
@@ -341,11 +342,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   IFPACK2OVERLAPPINGROWMATRIX_REPORT_GLOBAL_ERR( "Ifpack2::OverlappingRowMatrix constructor" );
 
   Teuchos::ArrayView<const size_t> halo = B->getExtHaloStarts();
+#if 0
   printf("Halo Starts:");
   for(size_t i=0; i< (size_t)halo.size(); i++)
     printf("%d ",(int) halo[i]);
   printf("\n");
-
+#endif
 
   size_t NumGlobalRowsB = B->getGlobalNumRows ();
   size_t NumGlobalNonzerosB = B->getGlobalNumEntries ();
@@ -604,16 +606,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
   {
     // Overlap approach
     RCP<const map_type> ovRowmap = ovA.getRowMap();
+    RCP<const map_type> ovColmap = ovA.getColMap();
     MV ovX(ovRowmap,numVecs), ovY(ovRowmap,numVecs), temp1(ovRowmap,numVecs), temp2(ovRowmap,numVecs);
     ovX.putScalar(zero);
     Teuchos::ArrayView<const size_t> hstarts = ovA.getExtHaloStarts();
     ovA.importMultiVector(x,ovX);
-
+#if 0
     printf("Halo Starts:");
     for(size_t i=0; i< (size_t)hstarts.size(); i++)
       printf("%d ",(int) hstarts[i]);
     printf("\n");
-    
+#endif
+    //    printf("Before matvec A is (locally)%dx%d x is of size %d, ovX is ov size %d\n",(int)A->getNodeNumRows(),(int)A->getNodeNumCols(),
+    //           (int)x.getMap()->getNodeNumElements(),(int)ovX.getMap()->getNodeNumElements());
+    //    printf("ovA->getUnderlyingMatrix() is (locally) %dx%d\n",(int)ovA.getUnderlyingMatrix()->getNodeNumRows(),(int)ovA.getUnderlyingMatrix()->getNodeNumCols());
+
     reducedMatvec(ovA,ovX,2,temp1);
     reducedMatvec(ovA,temp1,1,temp2);
     reducedMatvec(ovA,temp2,0,ovY);
