@@ -146,6 +146,30 @@ getLclRowsToTest(const export_type& exporter)
   for(const LO incomingRow : incomingRows) {
     lclRowsToTest_h[incomingRow] = 1;
   }
+
+  const bool verbose = Tpetra::Details::Behavior::verbose();
+  if(verbose) {
+    using std::cerr;
+    using std::endl;
+
+    const auto comm = exporter.getSourceMap()->getComm();
+    const int myRank = comm->getRank();
+    if(myRank == 0) {
+      cerr << "lclRowsToTest:" << endl;
+    }
+    std::ostringstream os;
+    os << "Proc " << myRank << ": [";
+    const LO numLclRowsToTest(lclRowsToTest_h.extent(0));
+    for(LO k = 0; k < numLclRowsToTest; ++k) {
+      os << lclRowsToTest_h[k];
+      if (k + LO(1) < numLclRowsToTest) {
+        os << ", ";
+      }
+    }
+    os << "]" << endl;
+    Tpetra::Details::gathervPrint(cerr, os.str(), *comm);
+  }
+
   Kokkos::deep_copy(lclRowsToTest, lclRowsToTest_h);
   return lclRowsToTest;
 }
@@ -298,12 +322,19 @@ int
 testTargetLocalMatrixValues(const crs_matrix_type::local_matrix_type& A,
                             const map_type::local_map_type& lclColMap,
                             const Kokkos::View<const int*, typename crs_matrix_type::device_type>& lclRowsToTest,
-                            const Tpetra::CombineMode combineMode)
+                            const Tpetra::CombineMode combineMode,
+                            const Teuchos::Comm<int>& comm,
+                            const bool verbose)
 {
+  using std::endl;
   using execution_space =
     crs_matrix_type::device_type::execution_space;
   using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+  const int myRank = comm.getRank();
   int lclSuccess = 1;
+
+  const LO lclNumRows = A.numRows();
   // Kokkos::parallel_reduce("Test target's values",
   //   range_type(0, A.numRows()),
   //   TestTargetMatrixValues(A, lclColMap, lclRowsToTest, combineMode),
@@ -313,6 +344,66 @@ testTargetLocalMatrixValues(const crs_matrix_type::local_matrix_type& A,
     range_type(0, A.numRows()),
     TestTargetMatrixValues(A, lclColMap, lclRowsToTest, isReplace),
     lclSuccess);
+  if(verbose) {
+    std::ostringstream os_lcl;
+    os_lcl << "Proc " << myRank << ": ";
+    if(lclSuccess != 0) {
+      os_lcl << "Local target matrix appears correct: "
+        "lclSuccess=" << lclSuccess << endl;
+    }
+    else if(lclSuccess == 0) {
+      os_lcl << "Local target matrix appears wrong.  "
+             << "Let's retest sequentially on host." << endl;
+
+      Kokkos::HostSpace hostMemSpace;
+      using Kokkos::create_mirror_view;
+      auto val = create_mirror_view(hostMemSpace, A.values);
+      Kokkos::deep_copy(val, A.values);
+      auto ind = create_mirror_view(hostMemSpace, A.graph.entries);
+      Kokkos::deep_copy(ind, A.graph.entries);
+
+      // create_mirror_view preserves const-ness of input View.
+      using Kokkos::create_mirror;
+      auto ptr = create_mirror(hostMemSpace, A.graph.row_map);
+      Kokkos::deep_copy(ptr, A.graph.row_map);
+      auto lclRowsToTest_h =
+        create_mirror(hostMemSpace, lclRowsToTest);
+      Kokkos::deep_copy(lclRowsToTest_h, lclRowsToTest);
+
+      bool good = true;
+      for(LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+        const bool modifiedRow = lclRowsToTest_h[lclRow];
+        const LO numEnt = LO(ptr[lclRow+1] - ptr[lclRow]);
+
+        const double multiplier = 0.0; // (double(A_.numRows()) + 1.0) * double(lclRow);
+        for(LO k = 0; k < numEnt; ++k) {
+          const LO lclCol = ind[k];
+          const GO gblCol = lclColMap.getGlobalElement(lclCol);
+          const double modVal = multiplier + (1.0 + double(gblCol));
+          const double modVal2 = isReplace ? modVal : modVal - 1.0;
+          const double expVal = modifiedRow ? modVal2 : -1.0;
+
+          if(val[k] != expVal) {
+            good = false;
+            os_lcl << "Bad: lclRow=" << lclRow << ", lclCol="
+                   << lclCol << ", val=" << val[k] << endl;
+          }
+        }
+      }
+      if(good) {
+        os_lcl << "Local Matrix looks good here." << endl;
+      }
+    }
+
+    if(myRank == 0) {
+      std::cerr << "Local results:" << endl;
+    }
+    Tpetra::Details::gathervPrint(std::cerr, os_lcl.str(), comm);
+    if(myRank == 0) {
+      std::cerr << "Above were the local results." << endl;
+    }
+    comm.barrier();
+  }
   return lclSuccess;
 }
 
@@ -375,41 +466,47 @@ printMatrix(std::ostream& out,
   if(comm->getRank() == 0) {
     out << label << ":" << endl << os_gbl.str() << endl;
   }
+  // This is not strictly necessary, but it helps to let printing
+  // finish before a test fails.
+  comm->barrier();
 }
 
-void
+bool
 testTargetMatrixValues(const crs_matrix_type& A,
                        const Kokkos::View<const int*, typename crs_matrix_type::device_type>& lclRowsToTest,
                        const Tpetra::CombineMode combineMode)
 {
+  using std::endl;
+  const bool verbose = Tpetra::Details::Behavior::verbose();
+  auto comm = A.getMap()->getComm();
+  const int myRank = comm->getRank();
+
   auto A_lcl = A.getLocalMatrix();
   TEUCHOS_ASSERT( A.hasColMap() );
   auto lclColMap = A.getColMap()->getLocalMap();
   const int lclSuccess =
-    testTargetLocalMatrixValues(A_lcl, lclColMap,
-                                lclRowsToTest, combineMode);
-  auto comm = A.getMap()->getComm();
-  const bool verbose = Tpetra::Details::Behavior::verbose();
+    testTargetLocalMatrixValues(A_lcl, lclColMap, lclRowsToTest,
+                                combineMode, *comm, verbose);
   if(verbose) {
     std::ostringstream os;
-    os << "Proc " << comm->getRank() << ": lclSuccess=" << lclSuccess
-       << std::endl;
+    os << "Proc " << myRank << ": lclSuccess=" << lclSuccess << endl;
     std::cerr << os.str();
   }
 
   int gblSuccess = 1;
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, lclSuccess,
                      Teuchos::outArg(gblSuccess));
-  if(gblSuccess != 1) {
-    using std::endl;
+  if(gblSuccess == 0) {
     std::ostringstream err;
-    if(comm->getRank() == 0) {
+    if(myRank == 0) {
       err << "Test failed: "
           << Tpetra::combineModeToString(combineMode)
           << " CombineMode" << endl;
     }
-    printMatrix(err, A, "Target Matrix");
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, err.str());
+    return false;
+  }
+  else {
+    return true;
   }
 }
 
@@ -431,10 +528,12 @@ void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
     cerr << os.str();
   }
 
+  Tpetra::Details::Behavior::disable_verbose_behavior();
   auto tgtRowMap = getTargetRowMap(comm, args);
   auto domainMap = getDomainMap(comm, args);
   auto rangeMap  = tgtRowMap;
   auto srcRowMap = getSourceRowMap(tgtRowMap, args);
+  Tpetra::Details::Behavior::enable_verbose_behavior();
 
   RCP<Teuchos::FancyOStream> fancyOutPtr;
   if(verbose) {
@@ -459,6 +558,7 @@ void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
     cerr << os.str();
   }
 
+  Tpetra::Details::Behavior::disable_verbose_behavior();
   auto tgtGraph = rcp(new crs_graph_type(tgtRowMap, numColsToFill));
   auto srcGraph = rcp(new crs_graph_type(srcRowMap, numColsToFill));
   {
@@ -489,6 +589,7 @@ void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
 
   fillSourceMatrixValues(srcMatrix);
   srcMatrix.fillComplete(domainMap, rangeMap);
+  Tpetra::Details::Behavior::enable_verbose_behavior();
 
   if(verbose) {
     std::ostringstream os_lcl;
@@ -500,7 +601,9 @@ void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
     }
   }
 
+  Tpetra::Details::Behavior::disable_verbose_behavior();
   export_type exporter(srcRowMap, tgtRowMap);
+  Tpetra::Details::Behavior::enable_verbose_behavior();
 
   // Before benchmarking, actually test the two cases: CombineModes
   // REPLACE and ADD.
@@ -509,19 +612,40 @@ void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
     auto lclRowsToTest = getLclRowsToTest(exporter);
     tgtMatrix.resumeFill();
     {
+      Tpetra::Details::Behavior::disable_verbose_behavior();
       const Tpetra::CombineMode combineMode = Tpetra::REPLACE;
       tgtMatrix.doExport(srcMatrix, exporter, combineMode);
-      testTargetMatrixValues(tgtMatrix, lclRowsToTest, combineMode);
+      Tpetra::Details::Behavior::enable_verbose_behavior();
+      if(verbose) {
+        printMatrix(cerr, tgtMatrix, "Target Matrix (REPLACE)");
+      }
+      const bool ok =
+        testTargetMatrixValues(tgtMatrix, lclRowsToTest, combineMode);
+      if(! ok) {
+        std::cerr << "Test FAILED" << std::endl;
+      }
     }
     tgtMatrix.setAllToScalar(-1.0); // flag value
     {
       const Tpetra::CombineMode combineMode = Tpetra::ADD;
       tgtMatrix.doExport(srcMatrix, exporter, combineMode);
-      testTargetMatrixValues(tgtMatrix, lclRowsToTest, combineMode);
+      if(verbose) {
+        printMatrix(cerr, tgtMatrix, "Target Matrix (ADD)");
+      }
+      const bool ok =
+        testTargetMatrixValues(tgtMatrix, lclRowsToTest, combineMode);
+      if(! ok) {
+        std::cerr << "Test FAILED" << std::endl;
+      }
     }
     tgtMatrix.setAllToScalar(-1.0); // flag value
   }
 
+  if(args.numTrials == 0) { // only test; don't benchmark
+    return;
+  }
+
+  Tpetra::Details::Behavior::disable_verbose_behavior();
   for (auto combineMode : {Tpetra::ADD, Tpetra::REPLACE}) {
     auto timer = [&] {
       std::ostringstream os;
@@ -538,6 +662,7 @@ void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
     }
     tgtMatrix.setAllToScalar(-1.0); // flag value
   }
+  Tpetra::Details::Behavior::enable_verbose_behavior();
 }
 
 void setCmdLineArgs(CmdLineArgs& args,
