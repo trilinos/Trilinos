@@ -1123,7 +1123,7 @@ public:
     Kokkos::View<mj_lno_t *, device_t> &
       initial_selected_coords_output_permutation,
     mj_lno_t *output_xadj,
-    int recursion_depth,
+    int recursion_depth_,
     const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & part_no_array,
     bool partition_along_longest_dim,
     int num_ranks_per_node,
@@ -1528,7 +1528,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     mj_coordinates_,
   Kokkos::View<mj_lno_t *, device_t> & initial_adjList_output_adjlist,
   mj_lno_t *output_xadj,
-  int rd,
+  int recursion_depth_,
   const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & part_no_array_,
   bool partition_along_longest_dim,
   int num_ranks_per_node,
@@ -1550,7 +1550,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   this->imbalance_tolerance = 0;
   this->num_global_parts = num_target_part;
   this->part_no_array = part_no_array_;
-  this->recursion_depth = rd;
+  this->recursion_depth = recursion_depth_;
 
   // If nonuniform first level partitioning, the requested num of parts and the
   // requested distribution of elements for each part
