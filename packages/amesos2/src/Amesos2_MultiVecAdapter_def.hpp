@@ -93,7 +93,7 @@ namespace Amesos2{
      * the same, then we can do a simple straight copy.
      */
     template <typename MV>
-    void same_type_get_copy<MV>::apply(const Teuchos::Ptr<const MV>& mv,
+    void same_type_get_copy<MV>::apply(const Teuchos::Ptr<const MV> mv,
                                        const Teuchos::ArrayView<typename MV::scalar_t>& v,
                                        const size_t ldx,
                                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
@@ -110,7 +110,7 @@ namespace Amesos2{
      */
     template <typename MV, typename S>
     void diff_type_get_copy<MV,S>::
-    apply (const Teuchos::Ptr<const MV>& mv,
+    apply (const Teuchos::Ptr<const MV> mv,
            const Teuchos::ArrayView<S>& v,
            const size_t ldx,
            Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,

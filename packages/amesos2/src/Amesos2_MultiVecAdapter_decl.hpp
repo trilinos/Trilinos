@@ -234,7 +234,7 @@ namespace Amesos2 {
      */
     template <typename MV>
     struct same_type_get_copy {
-      static void apply(const Teuchos::Ptr<const MV>& mv,
+      static void apply(const Teuchos::Ptr<const MV> mv,
                         const Teuchos::ArrayView<typename MV::scalar_t>& v,
                         const size_t ldx,
                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
@@ -249,7 +249,7 @@ namespace Amesos2 {
      */
     template <typename MV, typename S>
     struct diff_type_get_copy {
-      static void apply(const Teuchos::Ptr<const MV>& mv,
+      static void apply(const Teuchos::Ptr<const MV> mv,
                         const Teuchos::ArrayView<S>& v,
                         const size_t ldx,
                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
