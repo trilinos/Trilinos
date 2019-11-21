@@ -112,7 +112,7 @@ namespace Amesos2{
     void diff_type_get_copy<MV,S>::
     apply (const Teuchos::Ptr<const MV>& mv,
            const Teuchos::ArrayView<S>& v,
-           const size_t& ldx,
+           const size_t ldx,
            Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
            EDistribution distribution )
     {
@@ -295,7 +295,7 @@ namespace Amesos2{
     template <typename MV, typename S>
     void diff_type_data_put<MV,S>::apply(const Teuchos::Ptr<MV>& mv,
                                          const Teuchos::ArrayView<S>& data,
-                                         const size_t& ldx,
+                                         const size_t ldx,
                                          Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                                          EDistribution distribution )
     {
