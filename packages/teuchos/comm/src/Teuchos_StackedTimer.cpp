@@ -142,8 +142,14 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
   reduce(used.getRawPtr(), active_.getRawPtr(), num_names, REDUCE_SUM, 0, *comm);
 
   if (min_.size()) {
-    reduceAll(*comm, REDUCE_MIN, num_names, time.getRawPtr(), min_.getRawPtr());
     reduceAll(*comm, REDUCE_MAX, num_names, time.getRawPtr(), max_.getRawPtr());
+    for (int i=0;i<num_names;++i)
+      if (!used[i])
+        time[i] = max_[i];
+    reduceAll(*comm, REDUCE_MIN, num_names, time.getRawPtr(), min_.getRawPtr());
+    for (int i=0;i<num_names;++i)
+      if (!used[i])
+        time[i] = 0.;
     if (procmin_.size()) {
       Array<int> procmin(num_names);
       Array<int> procmax(num_names);
