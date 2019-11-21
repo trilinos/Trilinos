@@ -467,7 +467,7 @@ int64_t Ioss::GroupingEntity::get_field_data(const std::string &field_name,
 
   data.resize(field.raw_count() * field.raw_storage()->component_count());
   size_t data_size = data.size() * sizeof(T);
-  auto   retval    = internal_get_field_data(field, TOPTR(data), data_size);
+  auto retval    = internal_get_field_data(field, TOPTR(data), data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0) {

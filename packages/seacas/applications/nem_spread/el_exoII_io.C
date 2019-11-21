@@ -1797,6 +1797,9 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
    *                              the global element block number.
    *                              (Global int vector of length globals.Num_Elem_Blk)
    */
+  if (globals.Num_Elem_Blk == 0) {
+    return;
+  }
 
   /* Boolean vector of length globals.Num_Elem_Blk If the i'th
      element block exists on the current processor, the i'th entry

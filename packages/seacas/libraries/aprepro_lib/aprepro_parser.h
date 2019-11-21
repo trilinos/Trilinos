@@ -1,4 +1,4 @@
-// A Bison parser, made by GNU Bison 3.3.2.
+// A Bison parser, made by GNU Bison 3.4.
 
 // Skeleton interface for Bison LALR(1) parsers in C++
 
@@ -153,7 +153,7 @@
 #endif /* ! defined SEAMSDEBUG */
 
 namespace SEAMS {
-#line 165 "aprepro_parser.h" // lalr1.cc:417
+#line 164 "aprepro_parser.h"
 
   /// A Bison parser.
   class Parser
@@ -162,14 +162,14 @@ namespace SEAMS {
 #ifndef SEAMSSTYPE
     /// Symbol semantic values.
     union semantic_type {
-#line 89 "aprepro.yy" // lalr1.cc:417
+#line 89 "aprepro.yy"
 
-      double         val;    /* For returning numbers.          */
-      struct symrec *tptr;   /* For returning symbol-table pointers     */
-      char *         string; /* For returning quoted strings            */
+      double         val;    /* For returning numbers.               */
+      struct symrec *tptr;   /* For returning symbol-table pointers  */
+      char *         string; /* For returning quoted strings         */
       struct array * arrval; /* For returning arrays                 */
 
-#line 184 "aprepro_parser.h" // lalr1.cc:417
+#line 184 "aprepro_parser.h"
     };
 #else
     typedef SEAMSSTYPE semantic_type;
@@ -378,7 +378,7 @@ namespace SEAMS {
     void error(const syntax_error &err);
 
   private:
-    /// This class is not copyable.
+    /// This class is not copiable.
     Parser(const Parser &);
     Parser &operator=(const Parser &);
 
@@ -631,7 +631,7 @@ namespace SEAMS {
     /// Constants.
     enum {
       yyeof_     = 0,
-      yylast_    = 1299, ///< Last index in yytable_.
+      yylast_    = 1315, ///< Last index in yytable_.
       yynnts_    = 7,    ///< Number of nonterminal symbols.
       yyfinal_   = 2,    ///< Termination state number.
       yyterror_  = 1,
@@ -644,6 +644,6 @@ namespace SEAMS {
   };
 
 } // namespace SEAMS
-#line 728 "aprepro_parser.h" // lalr1.cc:417
+#line 728 "aprepro_parser.h"
 
 #endif // !YY_SEAMS_APREPRO_PARSER_H_INCLUDED

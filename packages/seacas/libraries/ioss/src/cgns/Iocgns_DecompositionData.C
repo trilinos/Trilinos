@@ -321,9 +321,7 @@ namespace Iocgns {
               zone->m_name, zone->m_zone, zone->m_proc, zone->m_adam->m_zone, zone->work(),
               zone_node_count);
           auto zgcs = zone->m_zoneConnectivity;
-          for (auto &zgc : zgcs) {
-            fmt::print(stderr, "{}\n", zgc);
-          }
+          fmt::print(stderr, "{}\n", fmt::join(zgcs.begin(), zgcs.end(), "\n"));
         }
 #endif
       }
@@ -1081,8 +1079,7 @@ namespace Iocgns {
 
     if (!m_zoneSharedMap.empty()) {
       for (auto &node : file_conn) {
-        ZoneSharedMap::const_iterator alias =
-            m_zoneSharedMap.find(node - 1);
+        ZoneSharedMap::const_iterator alias = m_zoneSharedMap.find(node - 1);
         if (alias != m_zoneSharedMap.end()) {
           node = (*alias).second + 1;
         }

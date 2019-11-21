@@ -178,6 +178,7 @@ int main(int argc, char **argv)
   /* Circle */
   connect[0] = 5;
   EXCHECK(ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[2], connect, NULL, NULL));
+  free(connect);
 
   /* write element block attributes */
   for (i = 0; i < num_elem; i++) {

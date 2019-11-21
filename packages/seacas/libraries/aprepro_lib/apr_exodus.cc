@@ -257,7 +257,7 @@ namespace SEAMS {
 
       int64_t idx = 0;
       for (int64_t i = 0; i < num_elemblks; i++) {
-        ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], type, &nel, &nnel, 0, 0, &natr);
+        ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], type, &nel, &nnel, nullptr, nullptr, &natr);
         array_data->data[i]           = ids[i];
         array_block_info->data[idx++] = ids[i];
         array_block_info->data[idx++] = nel;
