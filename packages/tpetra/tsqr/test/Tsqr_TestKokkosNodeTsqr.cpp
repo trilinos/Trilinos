@@ -37,15 +37,11 @@
 // ************************************************************************
 //@HEADER
 
-#include "Teuchos_ConfigDefs.hpp" // HAVE_MPI
-#ifdef HAVE_MPI
-#  include "Teuchos_GlobalMPISession.hpp"
-#  include "Teuchos_oblackholestream.hpp"
-#endif // HAVE_MPI
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Tsqr_KokkosNodeTsqrTest.hpp"
+#include "Kokkos_Core.hpp"
 
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
 #  include <complex>
@@ -345,39 +341,13 @@ namespace {
 int
 main (int argc, char *argv[])
 {
-#ifdef HAVE_MPI
-  using Teuchos::Comm;
-#endif // HAVE_MPI
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-#ifdef HAVE_MPI
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
-  const int myRank = comm->getRank();
-  // Only Rank 0 gets to write to stdout.  The other MPI process ranks
-  // send their output to something that looks like /dev/null (and
-  // likely is, on Unix-y operating systems).
-  std::ostream& out = (myRank == 0) ? std::cout : blackhole;
-  // Only Rank 0 performs the tests.
-  bool performingTests = (myRank == 0);
-  const bool allowedToPrint = (myRank == 0);
-#else // Don't HAVE_MPI: single-node test
   bool performingTests = true;
   const bool allowedToPrint = true;
   std::ostream& out = std::cout;
-#endif // HAVE_MPI
-
-  // FIXME (mfh 02 Jul 2013) This test immediately segfaults on Linux
-  // PGI 11.1.  I have no idea why and I don't have time to fix it
-  // now.  The issue might go away if I get time to rewrite TSQR using
-  // Kokkos Array, so for now, I'm just going to make the test pass
-  // trivially when building with the PGI compiler.
-#ifdef __PGI
-  performingTests = false;
-#endif // __PGI
 
   // Fetch command-line parameters.
   bool printedHelp = false;
@@ -391,6 +361,7 @@ main (int argc, char *argv[])
   bool verbose = false;
   try {
     if (performingTests) {
+      Kokkos::ScopeGuard kokkosScope (argc, argv);
       runTests (params);
       success = true;
       // The Trilinos test framework expects a message like this.
