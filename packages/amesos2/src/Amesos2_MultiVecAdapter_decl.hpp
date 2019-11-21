@@ -319,15 +319,6 @@ namespace Amesos2 {
                         EDistribution distribution );
     };
 
-    template <typename MV, typename KV>
-    struct same_type_data_put_kokkos_view {
-      static void apply(const Teuchos::Ptr<MV>& mv,
-                        KV& kokkos_data,
-                        const size_t ldx,
-                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
-                        EDistribution distribution );
-    };
-
     /*
      * In the case where the scalar type of the multi-vector and the
      * corresponding S type are different, then we need to first get a
@@ -338,15 +329,6 @@ namespace Amesos2 {
     struct diff_type_data_put {
       static void apply(const Teuchos::Ptr<MV>& mv,
                         const Teuchos::ArrayView<S>& data,
-                        const size_t ldx,
-                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
-                        EDistribution distribution );
-    };
-
-    template <typename MV, typename KV>
-    struct diff_type_data_put_kokkos_view {
-      static void apply(const Teuchos::Ptr<MV>& mv,
-                        KV& kokkos_data,
                         const size_t ldx,
                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                         EDistribution distribution );

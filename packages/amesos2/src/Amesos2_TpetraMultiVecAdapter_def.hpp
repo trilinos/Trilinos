@@ -526,9 +526,9 @@ namespace Amesos2 {
 
       // num_vecs = 1; stride does not matter
 
-      // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test - tested manually by setting numVecs 1 in Solver_Test.cpp. Add param?
+      // If this is the optimized path then kokkos_new_data will be the dst
       auto mv_view_to_modify_2d = mv_->getLocalViewDevice();
-      Kokkos::deep_copy(mv_view_to_modify_2d, kokkos_new_data);
+      deep_copy_or_assign_view(mv_view_to_modify_2d, kokkos_new_data);
     }
     else {
 
@@ -554,7 +554,12 @@ namespace Amesos2 {
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
         // Do this if GIDs contiguous - existing functionality
         // Redistribute the output (multi)vector.
-        const multivec_t source_mv (srcMap, Teuchos::ArrayView<typename KV::value_type>(kokkos_new_data.data(), kokkos_new_data.size()), lda, num_vecs);
+
+        // must convert type first
+        Kokkos::View<Scalar**, Kokkos::LayoutLeft, typename KV::execution_space>
+          fix_type_kokkos_new_data;
+        deep_copy_or_assign_view(fix_type_kokkos_new_data, kokkos_new_data);
+        const multivec_t source_mv (srcMap, Teuchos::ArrayView<Scalar>(fix_type_kokkos_new_data.data(), fix_type_kokkos_new_data.size()), lda, num_vecs);
         mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
       }
       else {
