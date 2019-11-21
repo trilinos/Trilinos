@@ -476,6 +476,7 @@ namespace MueLu {
     bool doRebalancing = false;
 #ifdef HAVE_MPI
     doRebalancing = parameterList_.get<bool>("refmaxwell: subsolves on subcommunicators", MasterList::getDefault<bool>("refmaxwell: subsolves on subcommunicators"));
+    int rebalanceStriding = parameterList_.get<int>("refmaxwell: subsolves striding", -1);
     int numProcsAH, numProcsA22;
 #endif
     {
@@ -495,6 +496,10 @@ namespace MueLu {
         TEUCHOS_ASSERT(numProcsAH+numProcsA22<=numProcs);
         numProcsAH = std::max(numProcsAH, 1);
         numProcsA22 = std::max(numProcsA22, 1);
+        if (rebalanceStriding >= 1) {
+          TEUCHOS_ASSERT(rebalanceStriding*numProcsAH<=numProcs);
+          TEUCHOS_ASSERT(rebalanceStriding*numProcsA22<=numProcs);
+        }
       } else
         doRebalancing = false;
 
@@ -556,6 +561,12 @@ namespace MueLu {
           ParameterList repartParams;
           repartParams.set("repartition: print partition distribution", precList11_.get<bool>("repartition: print partition distribution", false));
           repartParams.set("repartition: remap parts", precList11_.get<bool>("repartition: remap parts", true));
+          if (rebalanceStriding >= 1) {
+            bool acceptPart = (SM_Matrix_->getDomainMap()->getComm()->getRank() % rebalanceStriding) == 0;
+            if (SM_Matrix_->getDomainMap()->getComm()->getRank() >= numProcsAH*rebalanceStriding)
+              acceptPart = false;
+            repartParams.set("repartition: remap accept partition", acceptPart);
+          }
           repartFactory->SetParameterList(repartParams);
           // repartFactory->SetFactory("number of partitions", repartheurFactory);
           repartFactory->SetFactory("Partition", partitioner);
@@ -759,7 +770,15 @@ namespace MueLu {
             ParameterList repartParams;
             repartParams.set("repartition: print partition distribution", precList22_.get<bool>("repartition: print partition distribution", false));
             repartParams.set("repartition: remap parts", precList22_.get<bool>("repartition: remap parts", true));
-            repartParams.set("repartition: remap accept partition", AH_.is_null());
+            if (rebalanceStriding >= 1) {
+              bool acceptPart = ((SM_Matrix_->getDomainMap()->getComm()->getSize()-1-SM_Matrix_->getDomainMap()->getComm()->getRank()) % rebalanceStriding) == 0;
+              if (SM_Matrix_->getDomainMap()->getComm()->getSize()-1-SM_Matrix_->getDomainMap()->getComm()->getRank() >= numProcsA22*rebalanceStriding)
+                acceptPart = false;
+              if (acceptPart)
+                TEUCHOS_ASSERT(AH_.is_null());
+              repartParams.set("repartition: remap accept partition", acceptPart);
+            } else
+              repartParams.set("repartition: remap accept partition", AH_.is_null());
             repartFactory->SetParameterList(repartParams);
             repartFactory->SetFactory("A", rapFact);
             // repartFactory->SetFactory("number of partitions", repartheurFactory);
