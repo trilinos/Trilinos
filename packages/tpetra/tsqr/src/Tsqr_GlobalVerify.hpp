@@ -144,22 +144,14 @@ namespace TSQR {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
 
-    // FIXME (mfh 20 Apr 2010) This is currently implemented using an
-    // all-reduction.  This may result in different processors getting
-    // slightly different answers, due to floating-point arithmetic
-    // roundoff.  We might not want this if we are using this function
-    // to test a routine.
-
-    magnitude_type localResult (0);
-    for (LocalOrdinal j = 0; j < ncols; j++)
-      {
-        const Scalar* const cur_col = &A_local[j*lda_local];
-        for (LocalOrdinal i = 0; i < nrows_local; ++i)
-          {
-            const magnitude_type abs_xi = STS::magnitude (cur_col[i]);
-            localResult = localResult + abs_xi * abs_xi;
-          }
+    magnitude_type localResult {};
+    for (LocalOrdinal j = 0; j < ncols; j++) {
+      const Scalar* const cur_col = &A_local[j*lda_local];
+      for (LocalOrdinal i = 0; i < nrows_local; ++i) {
+        const magnitude_type abs_xi = STS::magnitude (cur_col[i]);
+        localResult = localResult + abs_xi * abs_xi;
       }
+    }
     // GlobalSummmer() is a hack to let us use a Scalar - type
     // MessengerBase with magnitude_type inputs and outputs.
     // Otherwise we would need to carry around a
@@ -190,8 +182,8 @@ namespace TSQR {
     using std::pair;
     using std::vector;
 
-    const magnitude_type ZERO (0);
-    const magnitude_type ONE (1);
+    const magnitude_type ZERO {};
+    const magnitude_type ONE (1.0);
     Teuchos::BLAS<LocalOrdinal, Scalar> blas;
 
     //

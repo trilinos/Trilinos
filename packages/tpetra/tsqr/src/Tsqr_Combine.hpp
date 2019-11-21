@@ -85,10 +85,6 @@ namespace TSQR {
   /// <li> CombineFortran, a Fortran 9x in-place implementation for
   ///   LAPACK's four data types (S, D, C, and Z). </li>
   /// </ul>
-  ///
-  /// The default CombineImpl is CombineNative, since that should work
-  /// for any Ordinal and Scalar types for which LAPACK<Ordinal,
-  /// Scalar> and BLAS<Ordinal, Scalar> are implemented.
   template< class Ordinal,
             class Scalar,
             class CombineImpl = CombineNative<Ordinal, Scalar, Teuchos::ScalarTraits<Scalar >::isComplex> >
@@ -105,7 +101,7 @@ namespace TSQR {
     typedef CombineImpl combine_impl_type;
 
     //! Constructor.
-    Combine () {}
+    Combine () = default;
 
     /// Whether or not the QR factorizations computed by methods of
     /// this class produce an R factor with all nonnegative diagonal

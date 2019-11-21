@@ -122,14 +122,7 @@ namespace TSQR {
       /// with all nonnegative diagonal entries.
       static bool QR_produces_R_factor_with_nonnegative_diagonal() {
         typedef Combine<LocalOrdinal, Scalar> combine_type;
-        //typedef LAPACK<LocalOrdinal, Scalar> lapack_type;
-
-        const bool combineMakesNonnegDiag =
-          combine_type::QR_produces_R_factor_with_nonnegative_diagonal ();
-        //const bool lapackMakesNonnegDiag =
-        //  lapack_type::QR_produces_R_factor_with_nonnegative_diagonal ();
-        const bool lapackMakesNonnegDiag = false;
-        return combineMakesNonnegDiag && lapackMakesNonnegDiag;
+        return combine_type::QR_produces_R_factor_with_nonnegative_diagonal ();
       }
 
       /// \typedef SeqOutput

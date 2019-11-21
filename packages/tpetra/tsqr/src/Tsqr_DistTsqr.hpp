@@ -60,13 +60,8 @@ namespace TSQR {
   /// \tparam Scalar Value type for matrices to factor.
   ///
   /// This class combines the square R factors computed by the
-  /// intranode TSQR factorization (\c NodeTsqr subclass) on
-  /// individual MPI processes.
-  ///
-  /// It should be possible to instantiate
-  /// DistTsqr<LocalOrdinal,Scalar> for any LocalOrdinal and Scalar
-  /// types for which \c Combine<LocalOrdinal, Scalar> and \c
-  /// LAPACK<LocalOrdinal, Scalar> can be instantiated.
+  /// intranode TSQR factorization (NodeTsqr subclass) on individual
+  /// MPI processes.
   template<class LocalOrdinal, class Scalar>
   class DistTsqr : public Teuchos::ParameterListAcceptorDefaultBase {
   public:

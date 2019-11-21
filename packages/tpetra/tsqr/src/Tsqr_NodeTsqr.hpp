@@ -47,7 +47,7 @@
 #include "Tsqr_Matrix.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_Describable.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "Tsqr_Impl_Lapack.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include <vector>
@@ -321,7 +321,6 @@ namespace TSQR {
                      const bool contiguousCacheBlocks) const = 0;
 
   protected:
-
     /// \brief Return view of topmost cache block of C
     ///
     /// \param C [in] Matrix (view), supporting the usual nrows(),
@@ -343,7 +342,6 @@ namespace TSQR {
                      const bool contiguousCacheBlocks) const = 0;
 
   public:
-
     /// \brief Return view of topmost cache block of C.
     ///
     /// \param C [in] View of a matrix C.
@@ -498,7 +496,7 @@ namespace TSQR {
     // factor is full rank (expected to be the common case), we need
     // to leave it alone (so that it stays upper triangular).
     //
-    Teuchos::LAPACK<Ordinal, Scalar> lapack;
+    Impl::Lapack<Scalar> lapack;
     mat_view_type R_view (ncols, ncols, R, ldr);
     Matrix<Ordinal, Scalar> B (R_view); // B := R (deep copy)
     mat_view_type U_view (ncols, ncols, U, ldu);
@@ -508,30 +506,23 @@ namespace TSQR {
     std::vector<magnitude_type> svd_rwork (5*ncols);
     std::vector<magnitude_type> singular_values (ncols);
     Ordinal svd_lwork = -1; // -1 for LWORK query; will be changed
-    int svd_info = 0;
 
     // LAPACK workspace ("LWORK") query for SVD.  The workspace
     // ("WORK") array is always of Scalar type, even in the complex
     // case.
     {
       // Exception messages in this scope all start with this.
-      const char prefix[] = "In NodeTsqr::reveal_R_rank: LAPACK SVD (_GESVD) "
-        "workspace query returned ";
+      const char prefix[] = "In NodeTsqr::reveal_R_rank: LAPACK SVD "
+        "(_GESVD) workspace query returned ";
       // std::logic_error messages in this scope all end with this.
       const char postfix[] = ".  Please report this bug to the Kokkos "
         "developers.";
 
-      Scalar svd_lwork_scalar = STS::zero ();
+      Scalar svd_lwork_scalar {};
       lapack.GESVD ('A', 'A', ncols, ncols, B.get(), B.lda(),
-                    &singular_values[0], U_view.get(), U_view.lda(),
+                    singular_values.data(), U_view.get(), U_view.lda(),
                     VT.get(), VT.lda(), &svd_lwork_scalar, svd_lwork,
-                    &svd_rwork[0], &svd_info);
-      // Failure of the LAPACK workspace query is a logic error (a
-      // bug) because we have already validated the matrix
-      // dimensions above.
-      TEUCHOS_TEST_FOR_EXCEPTION(svd_info != 0, std::logic_error,
-                         prefix << "a nonzero INFO = " << svd_info
-                         << postfix);
+                    svd_rwork.data());
       // LAPACK returns the workspace array length as a Scalar.  We
       // have to convert it back to an Ordinal in order to allocate
       // the workspace array and pass it in to LAPACK as the LWORK
@@ -549,22 +540,20 @@ namespace TSQR {
       // original Scalar result.  This should work unless Scalar and
       // Ordinal are user-defined types with weird definitions of
       // the type casts.
-      TEUCHOS_TEST_FOR_EXCEPTION(as<Scalar> (svd_lwork) != svd_lwork_scalar,
-                         std::logic_error,
-                         prefix << "a workspace array length (LWORK) of type "
-                         "Scalar=" << TypeNameTraits<Scalar>::name()
-                         << " that does not fit in an Ordinal="
-                         << TypeNameTraits<Ordinal>::name() << " type.  "
-                         "As a Scalar, LWORK=" << svd_lwork_scalar
-                         << ", but cast to Ordinal, LWORK=" << svd_lwork
-                         << postfix);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (as<Scalar> (svd_lwork) != svd_lwork_scalar, std::logic_error,
+         prefix << "a workspace array length (LWORK) of type Scalar="
+         << TypeNameTraits<Scalar>::name() << " that does not fit in "
+         << "Ordinal=" << TypeNameTraits<Ordinal>::name() << " type."
+         "  As a Scalar, LWORK=" << svd_lwork_scalar << ", but cast "
+         << "to Ordinal, LWORK=" << svd_lwork << postfix);
       // Make sure svd_lwork is nonnegative.  (Ordinal must be a
       // signed type, as we explain above, so this test should never
       // signal any unsigned-to-signed conversions from the compiler.
       // If it does, you're probably using the wrong Ordinal type.
-      TEUCHOS_TEST_FOR_EXCEPTION(svd_lwork < 0, std::logic_error,
-                         prefix << "a negative workspace array length (LWORK)"
-                         " = " << svd_lwork << postfix);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (svd_lwork < 0, std::logic_error, prefix << "a negative "
+         "workspace array length (LWORK) = " << svd_lwork << postfix);
     }
     // Allocate workspace for LAPACK's SVD routine.
     std::vector<Scalar> svd_work (svd_lwork);
@@ -573,9 +562,9 @@ namespace TSQR {
     // why we copied R into B (so that we don't overwrite R if R is
     // full rank).
     lapack.GESVD ('A', 'A', ncols, ncols, B.get(), B.lda(),
-                  &singular_values[0], U_view.get(), U_view.lda(),
-                  VT.get(), VT.lda(), &svd_work[0], svd_lwork,
-                  &svd_rwork[0], &svd_info);
+                  singular_values.data(), U_view.get(), U_view.lda(),
+                  VT.get(), VT.lda(), svd_work.data(), svd_lwork,
+                  svd_rwork.data());
     //
     // Compute the numerical rank of B, using the given relative
     // tolerance and the computed singular values.  GESVD computes
@@ -636,10 +625,11 @@ namespace TSQR {
                const bool contiguousCacheBlocks) const
   {
     // Take the easy exit if available.
-    if (ncols == 0)
+    if (ncols == 0) {
       return 0;
+    }
     // Matrix to hold the left singular vectors of the R factor.
-    Matrix<Ordinal, Scalar> U (ncols, ncols, Scalar(0));
+    Matrix<Ordinal, Scalar> U (ncols, ncols, Scalar {});
     // Compute numerical rank of the R factor using the SVD.
     // Store the left singular vectors in U.
     const Ordinal rank =
@@ -649,9 +639,10 @@ namespace TSQR {
     // already computed the SVD \f$R = U \Sigma V^*\f$ of (the
     // input) R, and overwrote R with \f$\Sigma V^*\f$.  Now, we
     // compute \f$Q := Q \cdot U\f$, respecting cache blocks of Q.
-    if (rank < ncols)
+    if (rank < ncols) {
       Q_times_B (nrows, ncols, Q, ldq, U.get(), U.lda(),
                  contiguousCacheBlocks);
+    }
     return rank;
   }
 

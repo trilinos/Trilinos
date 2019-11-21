@@ -45,7 +45,7 @@
 #include "Tsqr_CacheBlocker.hpp"
 #include "Tsqr_Util.hpp"
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "Tsqr_Impl_Lapack.hpp"
 #include <string>
 #include <utility>
 #include <vector>
@@ -67,7 +67,6 @@ namespace TSQR {
     typedef MatView< LocalOrdinal, Scalar > mat_view_type;
     typedef ConstMatView< LocalOrdinal, Scalar > const_mat_view_type;
     typedef Teuchos::BLAS<LocalOrdinal, Scalar> blas_type;
-    typedef Teuchos::LAPACK<LocalOrdinal, Scalar> lapack_type;
 
   public:
     typedef Scalar scalar_type;
@@ -122,7 +121,7 @@ namespace TSQR {
       using Teuchos::NO_TRANS;
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
       blas_type blas;
-      lapack_type lapack;
+      Impl::Lapack<Scalar> lapack;
 
       std::vector<Scalar> work (ncols);
       Matrix<LocalOrdinal, Scalar> ATA (ncols, ncols, Scalar(0));
@@ -168,16 +167,12 @@ namespace TSQR {
       }
 
       // Compute the Cholesky factorization of ATA in place, so that
-      // A^T * A = R^T * R, where R is ncols by ncols upper
-      // triangular.
-      int info = 0;
-      lapack.POTRF ('U', ncols, ATA.get(), ATA.lda(), &info);
-      // FIXME (mfh 22 June 2010) The right thing to do here would be
-      // to resort to a rank-revealing factorization, as Stathopoulos
-      // and Wu (2002) do with their CholeskyQR + symmetric
-      // eigensolver factorization.
-      if (info != 0)
-        throw std::runtime_error("Cholesky factorization failed");
+      // A^T * A = R^T * R, where R is ncols x ncols upper triangular.
+      lapack.POTRF ('U', ncols, ATA.get(), ATA.lda());
+      // FIXME (mfh 22 June 2010, mfh 21 Nov 2019) The right thing to
+      // do on failure of above would be to resort to a rank-revealing
+      // factorization, as Stathopoulos and Wu (2002) do with their
+      // CholeskyQR + symmetric eigensolver factorization.
 
       // Copy out the R factor
       fill_matrix (ncols, ncols, R, ldr, Scalar(0));

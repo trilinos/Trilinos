@@ -45,7 +45,7 @@
 #include "Tsqr_Matrix.hpp"
 #include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr_Util.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "Tsqr_Impl_Lapack.hpp"
 #include "Teuchos_Time.hpp"
 #include <algorithm>
 #include <cstring> // size_t definition
@@ -63,42 +63,26 @@ namespace TSQR {
 
     template<class Ordinal, class Scalar>
     static Ordinal
-    lworkQueryLapackQr (Teuchos::LAPACK<Ordinal, Scalar>& lapack,
+    lworkQueryLapackQr (Impl::Lapack<Scalar>& lapack,
                         const Ordinal nrows,
                         const Ordinal ncols,
                         const Ordinal lda)
     {
-      typedef Teuchos::ScalarTraits<Scalar> STS;
-      typedef typename STS::magnitudeType magnitude_type;
       using std::ostringstream;
       using std::endl;
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      using mag_type = typename STS::magnitudeType;
 
-      Scalar d_lwork_geqrf = Scalar (0);
-      int INFO = 0;
-      lapack.GEQRF (nrows, ncols, NULL, lda, NULL, &d_lwork_geqrf, -1, &INFO);
-      if (INFO != 0) {
-        ostringstream os;
-        os << "LAPACK _GEQRF workspace size query failed: INFO = " << INFO;
-        // It's a logic error and not a runtime error, because the
-        // LWORK query should only fail if the input parameters have
-        // invalid (e.g., out of range) values.
-        throw std::logic_error (os.str ());
-      }
+      Scalar d_lwork_geqrf {};
+      lapack.compute_QR (nrows, ncols, nullptr, lda, nullptr,
+                         &d_lwork_geqrf, -1);
 
-      Scalar d_lwork_orgqr = Scalar (0);
+      Scalar d_lwork_orgqr {};
       // A workspace query appropriate for computing the explicit Q
       // factor (nrows x ncols) in place, from the QR factorization of
       // an nrows x ncols matrix with leading dimension lda.
-      lapack.UNGQR (nrows, ncols, ncols, NULL, lda, NULL, &d_lwork_orgqr,
-                    -1, &INFO);
-      if (INFO != 0) {
-        ostringstream os;
-        os << "LAPACK _UNGQR workspace size query failed: INFO = " << INFO;
-        // It's a logic error and not a runtime error, because the
-        // LWORK query should only fail if the input parameters have
-        // invalid (e.g., out of range) values.
-        throw std::logic_error (os.str());
-      }
+      lapack.compute_explicit_Q (nrows, ncols, ncols, nullptr, lda,
+                                 nullptr, &d_lwork_orgqr, -1);
 
       // LAPACK workspace queries do return their results as a
       // double-precision floating-point value, but LAPACK promises
@@ -106,8 +90,8 @@ namespace TSQR {
       // check for valid casts to int below.  I include the checks
       // just to be "bulletproof" and also to show how to do the
       // checks for later reference.
-      const magnitude_type lwork_geqrf_test =
-        static_cast< magnitude_type > (static_cast<Ordinal> (STS::magnitude (d_lwork_geqrf)));
+      const mag_type lwork_geqrf_test =
+        static_cast<mag_type> (static_cast<Ordinal> (STS::magnitude (d_lwork_geqrf)));
       if (lwork_geqrf_test != STS::magnitude (d_lwork_geqrf)) {
         ostringstream os;
         os << "LAPACK _GEQRF workspace query returned a result, "
@@ -116,7 +100,7 @@ namespace TSQR {
         throw std::range_error (os.str ());
       }
       const Scalar lwork_orgqr_test =
-        static_cast<magnitude_type> (static_cast<Ordinal> (STS::magnitude ((d_lwork_orgqr))));
+        static_cast<mag_type> (static_cast<Ordinal> (STS::magnitude ((d_lwork_orgqr))));
       if (lwork_orgqr_test != STS::magnitude (d_lwork_orgqr)) {
         ostringstream os;
         os << "LAPACK _UNGQR workspace query returned a result, "
@@ -156,7 +140,7 @@ namespace TSQR {
       using std::string;
       using std::vector;
 
-      SequentialTsqr< Ordinal, Scalar > actor (cache_size_hint);
+      SequentialTsqr<Ordinal, Scalar> actor (cache_size_hint);
       Ordinal numCacheBlocks;
 
       if (b_debug) {
@@ -168,10 +152,10 @@ namespace TSQR {
         }
       }
 
-      Matrix< Ordinal, Scalar > A (nrows, ncols);
-      Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
-      Matrix< Ordinal, Scalar > Q (nrows, ncols);
-      Matrix< Ordinal, Scalar > R (ncols, ncols);
+      Matrix<Ordinal, Scalar> A (nrows, ncols);
+      Matrix<Ordinal, Scalar> A_copy (nrows, ncols);
+      Matrix<Ordinal, Scalar> Q (nrows, ncols);
+      Matrix<Ordinal, Scalar> R (ncols, ncols);
       if (std::numeric_limits<Scalar>::has_quiet_NaN) {
         A.fill (std::numeric_limits< Scalar>::quiet_NaN());
         A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
@@ -217,7 +201,7 @@ namespace TSQR {
 
         // Verify cache blocking, when in debug mode.
         if (b_debug) {
-          Matrix< Ordinal, Scalar > A2 (nrows, ncols);
+          Matrix<Ordinal, Scalar> A2 (nrows, ncols);
           if (std::numeric_limits<Scalar>::has_quiet_NaN) {
             A2.fill (std::numeric_limits<Scalar>::quiet_NaN ());
           }
@@ -250,7 +234,7 @@ namespace TSQR {
       }
 
       // Factor the matrix and compute the explicit Q factor
-      typedef typename SequentialTsqr< Ordinal, Scalar >::FactorOutput
+      typedef typename SequentialTsqr<Ordinal, Scalar>::FactorOutput
         factor_output_type;
       factor_output_type factorOutput =
         actor.factor (nrows, ncols, A_copy.get(), A_copy.lda(),
@@ -444,7 +428,7 @@ namespace TSQR {
     template< class Ordinal, class Scalar >
     static void
     verifyLapackTemplate (std::ostream& out,
-                          TSQR::Random::NormalGenerator< Ordinal, Scalar >& generator,
+                          TSQR::Random::NormalGenerator<Ordinal, Scalar>& generator,
                           const std::string& datatype,
                           const Ordinal nrows,
                           const Ordinal ncols,
@@ -460,18 +444,17 @@ namespace TSQR {
       using std::cerr;
       using std::endl;
 
-      // Initialize LAPACK.
-      Teuchos::LAPACK< Ordinal, Scalar > lapack;
+      Impl::Lapack<Scalar> lapack;
 
       if (b_debug) {
         cerr << "LAPACK test problem:" << endl
              << "* " << nrows << " x " << ncols << endl;
       }
 
-      Matrix< Ordinal, Scalar > A (nrows, ncols);
-      Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
-      Matrix< Ordinal, Scalar > Q (nrows, ncols);
-      Matrix< Ordinal, Scalar > R (ncols, ncols);
+      Matrix<Ordinal, Scalar> A (nrows, ncols);
+      Matrix<Ordinal, Scalar> A_copy (nrows, ncols);
+      Matrix<Ordinal, Scalar> Q (nrows, ncols);
+      Matrix<Ordinal, Scalar> R (ncols, ncols);
       if (std::numeric_limits<Scalar>::has_quiet_NaN) {
         A.fill (std::numeric_limits< Scalar>::quiet_NaN());
         A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
@@ -503,18 +486,10 @@ namespace TSQR {
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
-      R.fill (Scalar (0));
+      R.fill (Scalar {});
 
-      // Compute the QR factorization
-      int info = 0; // INFO is always an int
-      lapack.GEQRF (nrows, ncols, A_copy.get(), A_copy.lda(),
-                    &tau[0], &work[0], lwork, &info);
-      if (info != 0) {
-        ostringstream os;
-        os << "LAPACK QR factorization (_GEQRF) failed: INFO = " << info;
-        throw std::runtime_error (os.str());
-      }
-
+      lapack.compute_QR (nrows, ncols, A_copy.get(), A_copy.lda(),
+                         tau.data(), work.data(), lwork);
       // Copy out the R factor from A_copy (where we computed the QR
       // factorization in place) into R.
       copy_upper_triangle (ncols, ncols, R.get(), ldr, A_copy.get(), lda);
@@ -529,17 +504,13 @@ namespace TSQR {
       // result of the factorization into Q.
       deep_copy (Q, A_copy);
 
-      // Compute the explicit Q factor
-      lapack.UNGQR (nrows, ncols, ncols, Q.get(), ldq, &tau[0], &work[0], lwork, &info);
-      if (info != 0) {
-        ostringstream os;
-        os << "LAPACK explicit Q computation (_UNGQR) failed: INFO = " << info;
-        throw std::runtime_error (os.str());
-      }
+      lapack.compute_explicit_Q (nrows, ncols, ncols, Q.get(), ldq,
+                                 tau.data(), work.data(), lwork);
 
       // Validate the factorization
-      std::vector< magnitude_type > results =
-        local_verify (nrows, ncols, A.get(), lda, Q.get(), ldq, R.get(), ldr);
+      std::vector<magnitude_type> results =
+        local_verify (nrows, ncols, A.get(), lda, Q.get(), ldq,
+                      R.get(), ldr);
 
       // Print the results
       if (human_readable) {
@@ -692,9 +663,9 @@ namespace TSQR {
                  const std::string& additionalData,
                  const bool printFieldNames)
       {
-        Matrix< Ordinal, Scalar > A (numRows, numCols);
-        Matrix< Ordinal, Scalar > Q (numRows, numCols);
-        Matrix< Ordinal, Scalar > R (numCols, numCols);
+        Matrix<Ordinal, Scalar> A (numRows, numCols);
+        Matrix<Ordinal, Scalar> Q (numRows, numCols);
+        Matrix<Ordinal, Scalar> R (numCols, numCols);
         const Ordinal lda = numRows;
         const Ordinal ldq = numRows;
         const Ordinal ldr = numCols;
@@ -720,28 +691,17 @@ namespace TSQR {
         TimerType timer("LAPACK");
         timer.start();
         for (int trialNum = 0; trialNum < numTrials; ++trialNum) {
-          // Compute the QR factorization
-          int info = 0; // INFO is always an int
-          lapack_.GEQRF (numRows, numCols, Q.get(), ldq, &tau[0], &work[0], lwork, &info);
-          if (info != 0) {
-            std::ostringstream os;
-            os << "LAPACK QR factorization (_GEQRF) failed: INFO = " << info;
-            throw std::runtime_error (os.str());
-          }
-
+          lapack_.compute_QR (numRows, numCols,
+                              Q.get(), ldq, tau.data(),
+                              work.data(), lwork);
           // Extract the upper triangular factor R from Q (where it
           // was computed in place by GEQRF), since UNGQR will
           // overwrite all of Q with the explicit Q factor.
-          copy_upper_triangle (numRows, numCols, R.get(), ldr, Q.get(), ldq);
-
-          // Compute the explicit Q factor
-          lapack_.UNGQR (numRows, numCols, numCols, Q.get(), ldq,
-                         &tau[0], &work[0], lwork, &info);
-          if (info != 0) {
-            std::ostringstream os;
-            os << "LAPACK explicit Q computation (_UNGQR) failed: INFO = " << info;
-            throw std::runtime_error (os.str ());
-          }
+          copy_upper_triangle (numRows, numCols, R.get(), ldr,
+                               Q.get(), ldq);
+          lapack_.compute_explicit_Q (numRows, numCols, numCols,
+                                      Q.get(), ldq, tau.data(),
+                                      work.data(), lwork);
         }
         const double lapackTiming = timer.stop();
         reportResults (numTrials, numRows, numCols, lapackTiming,
@@ -751,7 +711,7 @@ namespace TSQR {
 
     private:
       //! Wrapper around LAPACK routines.
-      Teuchos::LAPACK< Ordinal, Scalar > lapack_;
+      Impl::Lapack<Scalar> lapack_;
 
       /// \brief Pseudorandom normal(0,1) generator.
       ///

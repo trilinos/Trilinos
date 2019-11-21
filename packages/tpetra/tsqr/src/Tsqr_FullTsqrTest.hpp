@@ -541,13 +541,6 @@ namespace TSQR {
     public:
       /// \typedef ordinal_type
       /// \brief The (local) Ordinal type to use for TSQR.
-      ///
-      /// This must be a type for which Teuchos::BLAS<ordinal_type,
-      /// Scalar> and Teuchos::LAPACK<ordinal_type, Scalar> each have
-      /// an instantiation.  That means a signed integer type.  LAPACK
-      /// and the BLAS can be built with signed 64-bit integers
-      /// (int64_t), but usually they are only built with signed
-      /// 32-bit integers (int).
       typedef int ordinal_type;
 
       /// \brief Return a valid parameter list for verifying Tsqr.

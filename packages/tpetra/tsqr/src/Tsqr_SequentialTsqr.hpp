@@ -159,7 +159,7 @@ namespace TSQR {
     {
       const LocalOrdinal ncols = A_top.ncols();
       combine.factor_first (A_top.nrows(), ncols, A_top.get(), A_top.lda(),
-                            &tau[0], &work[0]);
+                            tau.data(), work.data());
       return mat_view_type(ncols, ncols, A_top.get(), A_top.lda());
     }
 
@@ -178,7 +178,7 @@ namespace TSQR {
       const LocalOrdinal nrowsLocal = Q_first.nrows();
       combine.apply_first (applyType, nrowsLocal, C_first.ncols(),
                            Q_first.ncols(), Q_first.get(), Q_first.lda(),
-                           &tau[0], C_first.get(), C_first.lda(), &work[0]);
+                           tau.data(), C_first.get(), C_first.lda(), work.data());
     }
 
     void
@@ -196,9 +196,9 @@ namespace TSQR {
 
       combine.apply_inner (apply_type,
                            nrows_local, ncols_C, ncols_Q,
-                           Q_cur.get(), C_cur.lda(), &tau[0],
+                           Q_cur.get(), C_cur.lda(), tau.data(),
                            C_top.get(), C_top.lda(),
-                           C_cur.get(), C_cur.lda(), &work[0]);
+                           C_cur.get(), C_cur.lda(), work.data());
     }
 
     void
@@ -212,8 +212,8 @@ namespace TSQR {
       const LocalOrdinal ncols = A_cur.ncols();
 
       combine.factor_inner (nrows_local, ncols, R.get(), R.lda(),
-                            A_cur.get(), A_cur.lda(), &tau[0],
-                            &work[0]);
+                            A_cur.get(), A_cur.lda(), tau.data(),
+                            work.data());
     }
 
   public:
@@ -624,7 +624,6 @@ namespace TSQR {
       // free to choose the cache block dimensions as we wish in
       // apply(), independently of what we did in factor().
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols_Q, strategy_);
-      Teuchos::LAPACK<LocalOrdinal, Scalar> lapack;
       Combine<LocalOrdinal, Scalar> combine;
 
       const bool transposed = apply_type.transposed();

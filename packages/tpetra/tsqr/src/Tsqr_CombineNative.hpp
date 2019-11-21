@@ -43,13 +43,13 @@
 #ifndef __TSQR_CombineNative_hpp
 #define __TSQR_CombineNative_hpp
 
-#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Tsqr_ApplyType.hpp"
 #include "Tsqr_CombineDefault.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosBlas2_gemv.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "Tsqr_Impl_Lapack.hpp"
 
 namespace TSQR {
 
@@ -77,13 +77,9 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
 
   private:
-    typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
     typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
   public:
-
-    CombineNative () {}
-
     /// Whether or not the QR factorizations computed by methods of
     /// this class produce an R factor with all nonnegative diagonal
     /// entries.  It depends on LAPACK because this implementation
@@ -92,8 +88,7 @@ namespace TSQR {
     /// of {LARFGP, LARFP}, which is necessary to ensure that the BETA
     /// output of the function is always nonnegative.
     static bool QR_produces_R_factor_with_nonnegative_diagonal() {
-      return /* lapack_type::QR_produces_R_factor_with_nonnegative_diagonal() */ false &&
-        combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      return combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     void
@@ -193,7 +188,6 @@ namespace TSQR {
     using device_type = Kokkos::Device<execution_space, memory_space>;
 
   private:
-    typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
     typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
     void
@@ -204,12 +198,13 @@ namespace TSQR {
 
     void
     LARFG (const Ordinal n,
-           scalar_type* const alpha,
+           scalar_type& alpha,
            const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& x,
-           scalar_type* const tau) const
+           scalar_type& tau) const
     {
       constexpr Ordinal incx {1};
-      lapack_type ().LARFG (n, alpha, x.data (), incx, tau);
+      Impl::Lapack<scalar_type> lapack;
+      lapack.LARFG (n, alpha, x.data (), incx, tau);
     }
 
     magnitude_type
@@ -278,8 +273,7 @@ namespace TSQR {
     CombineNative () = default;
 
     static bool QR_produces_R_factor_with_nonnegative_diagonal() {
-      return /* lapack_type::QR_produces_R_factor_with_nonnegative_diagonal() */ false &&
-        combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      return combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     void
@@ -371,15 +365,11 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
 
   private:
-    typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
     typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
   public:
-    CombineNative () {}
-
     static bool QR_produces_R_factor_with_nonnegative_diagonal() {
-      return /* lapack_type::QR_produces_R_factor_with_nonnegative_diagonal() */ false &&
-        combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      return combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     void
@@ -556,7 +546,7 @@ namespace TSQR {
       auto A_1k = subview (A_view, ALL (), k);
       auto A_1kp1 = subview (A_view, range_type (0, m), range_type (k+1, n));
 
-      this->LARFG (m + 1, &R_kk, A_1k, &tau_view[k]);
+      this->LARFG (m + 1, R_kk, A_1k, tau_view[k]);
       this->GEMV ("T", ONE, A_1kp1, A_1k, ZERO, work_view);
 
       for (Ordinal j = k+1; j < n; ++j) {
@@ -570,7 +560,7 @@ namespace TSQR {
     Scalar& R_nn = R_view(n-1, n-1);
     auto A_1n = subview (A_view, ALL (), n-1);
 
-    this->LARFG (m+1, &R_nn, A_1n, &tau_view[n-1]);
+    this->LARFG (m+1, R_nn, A_1n, tau_view[n-1]);
   }
 
 
@@ -725,7 +715,7 @@ namespace TSQR {
 
       // k+2: 1 element in R_top (R_top(k,k)), and k+1 elements in
       // R_bot (R_bot(1:k,k), in 1-based indexing notation).
-      this->LARFG (k+2, &R_top_kk, R_bot_1k, &tau_view[k]);
+      this->LARFG (k+2, R_top_kk, R_bot_1k, tau_view[k]);
       // One-based indexing, Matlab version of the GEMV call below:
       // work(1:k) := R_bot(1:k,k+1:n)' * R_bot(1:k,k)
 
@@ -743,7 +733,7 @@ namespace TSQR {
 
     // n+1: 1 element in R_top (n,n), and n elements in R_bot (the
     // whole last column).
-    this->LARFG (n+1, &R_top_nn, R_bot_1n, &tau_view[n-1]);
+    this->LARFG (n+1, R_top_nn, R_bot_1n, tau_view[n-1]);
   }
 
 
