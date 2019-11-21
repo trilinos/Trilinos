@@ -94,11 +94,16 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
   updates_.resize(num_names);
   active_.resize(num_names);
 
-  if (options.output_minmax || options.output_histogram) {
+  if (options.output_minmax || options.output_histogram || options.output_proc_minmax) {
     min_.resize(num_names);
     max_.resize(num_names);
     if ( options.output_minmax )
       sum_sq_.resize(num_names);
+  }
+
+  if (options.output_proc_minmax) {
+    procmin_.resize(num_names);
+    procmax_.resize(num_names);
   }
 
 
@@ -139,6 +144,23 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
   if (min_.size()) {
     reduceAll(*comm, REDUCE_MIN, num_names, time.getRawPtr(), min_.getRawPtr());
     reduceAll(*comm, REDUCE_MAX, num_names, time.getRawPtr(), max_.getRawPtr());
+    if (procmin_.size()) {
+      Array<int> procmin(num_names);
+      Array<int> procmax(num_names);
+      int commRank = comm->getRank();
+      for (int i=0;i<num_names; ++i) {
+        if (used[i] && (min_[i]==time[i]))
+          procmin[i] = commRank;
+        else
+          procmin[i] = -1;
+        if (used[i] && (max_[i]==time[i]))
+          procmax[i] = commRank;
+        else
+          procmax[i] = -1;
+      }
+      reduceAll(*comm, REDUCE_MAX, num_names, procmin.getRawPtr(), procmin_.getRawPtr());
+      reduceAll(*comm, REDUCE_MAX, num_names, procmax.getRawPtr(), procmax_.getRawPtr());
+    }
   }
 
   if (options.output_histogram) {
@@ -254,6 +276,20 @@ StackedTimer::computeColumnWidthsForAligment(std::string prefix,
         if (active_[i] <= 1)
           os << "}";
         alignments_.max_ = std::max(alignments_.max_,os.str().size());
+      }
+      if (procmin_.size()) {
+        std::ostringstream os;
+        os << ", proc min=" << procmin_[i];
+        if (active_[i] <= 1)
+          os << "}";
+        alignments_.procmin_ = std::min(alignments_.procmin_,os.str().size());
+      }
+      if (procmax_.size()) {
+        std::ostringstream os;
+        os << ", proc max=" << procmax_[i];
+        if (active_[i] <= 1)
+          os << "}";
+        alignments_.procmax_ = std::max(alignments_.procmax_,os.str().size());
       }
       if (active_[i]>1) {
         std::ostringstream os;
@@ -393,6 +429,24 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
           tmp << "}";
         if (options.align_columns)
           os << std::left << std::setw(alignments_.max_);
+        os << tmp.str();
+      }
+      if (procmin_.size()) {
+        std::ostringstream tmp;
+        tmp <<", proc min="<<procmin_[i];
+        if (active_[i] <= 1)
+          tmp << "}";
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.procmin_);
+        os << tmp.str();
+      }
+      if (procmax_.size()) {
+        std::ostringstream tmp;
+        tmp <<", proc max="<<procmax_[i];
+        if (active_[i] <= 1)
+          tmp << "}";
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.procmax_);
         os << tmp.str();
       }
       if (active_[i]>1) {
