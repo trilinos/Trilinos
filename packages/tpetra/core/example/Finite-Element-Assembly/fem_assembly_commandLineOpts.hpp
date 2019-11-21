@@ -65,7 +65,7 @@ struct CmdLineOpts
   // Number of doubles per element (for simulated state transfer)
   int numStateDoublesPerElement;
   // execInsertGlobalIndicesFE - execute the FE Insert Global Indices kernel
-  bool execInsertGlobalIndicesFE
+  bool execInsertGlobalIndicesFE;
   // execTotalElementLoop - execute the Total Element Loop kernel
   bool execTotalElementLoop;
 };
@@ -130,6 +130,21 @@ int parseCmdLineOpts(Teuchos::CommandLineProcessor& clp, int argc, char* argv[])
     default:
       return -1;
   }
+}
+
+// Check the command-line options that were read in by
+// parseCmdLineOpts.  Return 0 if all correct, else return nonzero,
+// using the LAPACK error reporting convention of the negative of
+// the argument in its original order (starting with 1) as the error
+// code.  Print informative error messages to the given output
+// stream \c out.
+int
+checkCmdLineOpts (std::ostream& out, const CmdLineOpts& opts)
+{
+  int err = 0;
+  // FIXME: Not implemented fully
+  return err;
+
 }
 
 int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char* argv[])
