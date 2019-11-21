@@ -2035,7 +2035,7 @@ int ex__populate_header(int exoid, const char *path, int my_mode, int is_paralle
   char  errmsg[MAX_ERR_LENGTH];
   int   int64_status = my_mode & (EX_ALL_INT64_DB | EX_ALL_INT64_API);
 
-  int format;
+  int format = 0;
   int mode;
 
   /* turn off automatic filling of netCDF variables */

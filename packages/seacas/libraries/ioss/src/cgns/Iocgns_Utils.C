@@ -856,7 +856,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     // and "ser43") on certain ranks which caused an HDF5 failure way
     // downstream -- basically at file close.
     char tmp[2048];
-    Ioss::Utils::copy_string(tmp, version.c_str(), 2048);
+    Ioss::Utils::copy_string(tmp, version, 2048);
     MPI_Bcast(tmp, (int)version.size() + 1, MPI_BYTE, 0,
               region.get_database()->util().communicator());
     version = std::string{tmp};

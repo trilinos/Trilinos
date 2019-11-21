@@ -54,14 +54,13 @@
 #define USE_MURMUR
 //#define USE_RANDOM
 
+#define DO_TIMING 1
+
 #if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
 #define FALL_THROUGH [[gnu::fallthrough]]
 #else
 #define FALL_THROUGH ((void)0)
 #endif /* __GNUC__ >= 7 */
-
-size_t Ioss::FaceGenerator::fequal = 0;
-size_t Ioss::FaceGenerator::secondary = 0;
 
 namespace {
   template <typename T> void generate_index(std::vector<T> &index)
@@ -207,7 +206,7 @@ namespace {
         if (face.elementCount_ == 1) {
           // On 'boundary' -- try to determine whether on processor or exterior
           // boundary
-          int                face_node_count = 0;
+          int face_node_count = 0;
           for (auto &gnode : face.connectivity_) {
             if (gnode > 0) {
               auto node = region.get_database()->node_global_to_local(gnode, true) - 1;
@@ -221,11 +220,11 @@ namespace {
               }
             }
           }
-	  for (size_t i=0; i < proc_count; i++) {
-	    if (shared_nodes[i] == face_node_count) {
+          for (size_t i = 0; i < proc_count; i++) {
+            if (shared_nodes[i] == face_node_count) {
               potential_count[i]++;
             }
-	    shared_nodes[i] = 0; // Reset for next trip through face.connectivity_ loop
+            shared_nodes[i] = 0; // Reset for next trip through face.connectivity_ loop
           }
         }
       }
@@ -240,7 +239,7 @@ namespace {
         if (face.elementCount_ == 1) {
           // On 'boundary' -- try to determine whether on processor or exterior
           // boundary
-          int                face_node_count = 0;
+          int face_node_count = 0;
           for (auto &gnode : face.connectivity_) {
             if (gnode > 0) {
               auto node = region.get_database()->node_global_to_local(gnode, true) - 1;
@@ -254,8 +253,8 @@ namespace {
               }
             }
           }
-	  for (size_t i=0; i < proc_count; i++) {
-	    if (shared_nodes[i] == face_node_count) {
+          for (size_t i = 0; i < proc_count; i++) {
+            if (shared_nodes[i] == face_node_count) {
               size_t offset                   = potential_offset[i];
               potential_faces[6 * offset + 0] = face.hashId_;
               potential_faces[6 * offset + 1] = face.connectivity_[0];
@@ -266,7 +265,7 @@ namespace {
               assert(face.elementCount_ == 1);
               potential_offset[i]++;
             }
-	    shared_nodes[i] = 0; // Reset for next trip through face.connectivity_ loop
+            shared_nodes[i] = 0; // Reset for next trip through face.connectivity_ loop
           }
         }
       }
@@ -356,13 +355,18 @@ namespace Ioss {
     nb->get_field_data("ids", ids);
 
     // Convert ids into hashed-ids
-    //    auto                starth = std::chrono::high_resolution_clock::now();
+#if DO_TIMING
+    auto starth = std::chrono::high_resolution_clock::now();
+#endif
     std::vector<size_t> hash_ids;
     hash_ids.reserve(ids.size());
     for (auto id : ids) {
       hash_ids.push_back(id_hash(id));
     }
-    //    auto endh = std::chrono::high_resolution_clock::now();
+
+#if DO_TIMING
+    auto endh = std::chrono::high_resolution_clock::now();
+#endif
 
     const Ioss::ElementBlockContainer &ebs = region_.get_element_blocks();
     for (auto eb : ebs) {
@@ -373,15 +377,16 @@ namespace Ioss {
       internal_generate_faces(eb, faces_[name], ids, hash_ids, (INT)0);
     }
 
-    //    auto   endf       = std::chrono::high_resolution_clock::now();
+#if DO_TIMING
+    auto endf = std::chrono::high_resolution_clock::now();
+#endif
     size_t face_count = 0;
     for (auto eb : ebs) {
       resolve_parallel_faces(region_, faces_[eb->name()], hash_ids, (INT)0);
       face_count += faces_[eb->name()].size();
     }
-    //    auto endp = std::chrono::high_resolution_clock::now();
-
-#if 0
+#if DO_TIMING
+    auto endp  = std::chrono::high_resolution_clock::now();
     auto diffh = endh - starth;
     auto difff = endf - endh;
     fmt::print("Node ID hash time:   \t{} ms\t{} nodes/second\n"
@@ -413,13 +418,17 @@ namespace Ioss {
     nb->get_field_data("ids", ids);
 
     // Convert ids into hashed-ids
-    //    auto                starth = std::chrono::high_resolution_clock::now();
+#if DO_TIMING
+    auto starth = std::chrono::high_resolution_clock::now();
+#endif
     std::vector<size_t> hash_ids;
     hash_ids.reserve(ids.size());
     for (auto id : ids) {
       hash_ids.push_back(id_hash(id));
     }
-    //    auto endh = std::chrono::high_resolution_clock::now();
+#if DO_TIMING
+    auto endh = std::chrono::high_resolution_clock::now();
+#endif
 
     auto & my_faces = faces_["ALL"];
     size_t numel    = region_.get_property("element_count").get_int();
@@ -431,12 +440,13 @@ namespace Ioss {
       internal_generate_faces(eb, my_faces, ids, hash_ids, (INT)0);
     }
 
-    //    auto endf = std::chrono::high_resolution_clock::now();
+#if DO_TIMING
+    auto endf = std::chrono::high_resolution_clock::now();
+#endif
     resolve_parallel_faces(region_, my_faces, hash_ids, (INT)0);
 
-    //    auto endp = std::chrono::high_resolution_clock::now();
-
-#if 0
+#if DO_TIMING
+    auto endp  = std::chrono::high_resolution_clock::now();
     auto diffh = endh - starth;
     auto difff = endf - endh;
     fmt::print("Node ID hash time:   \t{} ms\t{} nodes/second\n"

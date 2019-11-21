@@ -34,7 +34,8 @@
 #include <Ioss_IOFactory.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_Utils.h> // for IOSS_ERROR
-#include <cstddef>      // for nullptr
+#include <Ioss_Version.h>
+#include <cstddef> // for nullptr
 #include <fmt/ostream.h>
 #include <map>     // for _Rb_tree_iterator, etc
 #include <ostream> // for basic_ostream, etc
@@ -105,11 +106,8 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
       fmt::print(errmsg, "ERROR: The database type '{}' is not supported.\n", type);
       Ioss::NameList db_types;
       describe__(registry(), &db_types);
-      fmt::print(errmsg, "\nSupported database types:\n\t");
-      for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
-        fmt::print(errmsg, "{} ", *IF);
-      }
-      fmt::print(errmsg, "\n\n");
+      fmt::print(errmsg, "\nSupported database types:\n\t{}\n\n",
+                 fmt::join(db_types.begin(), db_types.end(), " "));
       IOSS_ERROR(errmsg);
     }
   }
@@ -136,9 +134,10 @@ int Ioss::IOFactory::describe(NameList *names)
 
 void Ioss::IOFactory::show_configuration()
 {
+  fmt::print(stderr, "\nIOSS Library Version '{}'\n\n", Ioss::Version());
   NameList db_types;
   describe(&db_types);
-  fmt::print(stderr, "\nSupported database types:\n\t");
+  fmt::print(stderr, "Supported database types:\n\t");
   for (const auto &db_type : db_types) {
     fmt::print(stderr, "{} ", db_type);
   }

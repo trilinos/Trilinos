@@ -52,6 +52,12 @@
 #define FMT_HAS_GXX_CXX11 0
 #endif
 
+#ifdef __NVCC__
+#define FMT_NVCC __NVCC__
+#else
+#define FMT_NVCC 0
+#endif
+
 #ifdef _MSC_VER
 #define FMT_MSC_VER _MSC_VER
 #else
@@ -134,8 +140,8 @@
 #endif
 #endif
 
-// Workaround broken [[deprecated]] in the Intel compiler.
-#if defined(__INTEL_COMPILER) || defined(__NVCC__)
+// Workaround broken [[deprecated]] in the Intel compiler and NVCC.
+#if defined(__INTEL_COMPILER) || FMT_NVCC
 #define FMT_DEPRECATED_ALIAS
 #else
 #define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
@@ -203,6 +209,7 @@ template <bool B, class T, class F> using conditional_t = typename std::conditio
 template <bool B> using bool_constant                   = std::integral_constant<bool, B>;
 template <typename T> using remove_reference_t          = typename std::remove_reference<T>::type;
 template <typename T> using remove_const_t              = typename std::remove_const<T>::type;
+template <typename T> using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
 
 struct monostate
 {
@@ -231,7 +238,25 @@ namespace internal {
   };
 #endif
 
-  // Casts nonnegative integer to unsigned.
+#ifdef FMT_USE_INT128
+// Do nothing.
+#elif defined(__SIZEOF_INT128__) && !FMT_NVCC
+#define FMT_USE_INT128 1
+  using int128_t                                 = __int128_t;
+  using uint128_t                                = __uint128_t;
+#else
+#define FMT_USE_INT128 0
+#endif
+#if !FMT_USE_INT128
+  struct int128_t
+  {
+  };
+  struct uint128_t
+  {
+  };
+#endif
+
+  // Casts a nonnegative integer to unsigned.
   template <typename Int>
   FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value)
   {
@@ -295,6 +320,8 @@ public:
 
   FMT_CONSTEXPR iterator begin() const { return data_; }
   FMT_CONSTEXPR iterator end() const { return data_ + size_; }
+
+  FMT_CONSTEXPR const Char &operator[](size_t pos) const { return data_[pos]; }
 
   FMT_CONSTEXPR void remove_prefix(size_t n)
   {
@@ -681,10 +708,13 @@ namespace internal {
     uint_type,
     long_long_type,
     ulong_long_type,
+    int128_type,
+    uint128_type,
     bool_type,
     char_type,
     last_integer_type = char_type,
     // followed by floating-point types.
+    float_type,
     double_type,
     long_double_type,
     last_numeric_type = long_double_type,
@@ -711,21 +741,24 @@ namespace internal {
   FMT_TYPE_CONSTANT(unsigned, uint_type);
   FMT_TYPE_CONSTANT(long long, long_long_type);
   FMT_TYPE_CONSTANT(unsigned long long, ulong_long_type);
+  FMT_TYPE_CONSTANT(int128_t, int128_type);
+  FMT_TYPE_CONSTANT(uint128_t, uint128_type);
   FMT_TYPE_CONSTANT(bool, bool_type);
   FMT_TYPE_CONSTANT(Char, char_type);
+  FMT_TYPE_CONSTANT(float, float_type);
   FMT_TYPE_CONSTANT(double, double_type);
   FMT_TYPE_CONSTANT(long double, long_double_type);
   FMT_TYPE_CONSTANT(const Char *, cstring_type);
   FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
   FMT_TYPE_CONSTANT(const void *, pointer_type);
 
-  FMT_CONSTEXPR bool is_integral(type t)
+  FMT_CONSTEXPR bool is_integral_type(type t)
   {
     FMT_ASSERT(t != named_arg_type, "invalid argument type");
     return t > none_type && t <= last_integer_type;
   }
 
-  FMT_CONSTEXPR bool is_arithmetic(type t)
+  FMT_CONSTEXPR bool is_arithmetic_type(type t)
   {
     FMT_ASSERT(t != named_arg_type, "invalid argument type");
     return t > none_type && t <= last_numeric_type;
@@ -755,8 +788,11 @@ namespace internal {
       unsigned                         uint_value;
       long long                        long_long_value;
       unsigned long long               ulong_long_value;
+      int128_t                         int128_value;
+      uint128_t                        uint128_value;
       bool                             bool_value;
       char_type                        char_value;
+      float                            float_value;
       double                           double_value;
       long double                      long_double_value;
       const void *                     pointer;
@@ -769,6 +805,9 @@ namespace internal {
     FMT_CONSTEXPR value(unsigned val) : uint_value(val) {}
     value(long long val) : long_long_value(val) {}
     value(unsigned long long val) : ulong_long_value(val) {}
+    value(int128_t val) : int128_value(val) {}
+    value(uint128_t val) : uint128_value(val) {}
+    value(float val) : float_value(val) {}
     value(double val) : double_value(val) {}
     value(long double val) : long_double_value(val) {}
     value(bool val) : bool_value(val) {}
@@ -821,16 +860,18 @@ namespace internal {
   {
     using char_type = typename Context::char_type;
 
-    FMT_CONSTEXPR int      map(signed char val) { return val; }
-    FMT_CONSTEXPR unsigned map(unsigned char val) { return val; }
-    FMT_CONSTEXPR int      map(short val) { return val; }
-    FMT_CONSTEXPR unsigned map(unsigned short val) { return val; }
-    FMT_CONSTEXPR int      map(int val) { return val; }
-    FMT_CONSTEXPR unsigned map(unsigned val) { return val; }
-    FMT_CONSTEXPR long_type map(long val) { return val; }
+    FMT_CONSTEXPR int                map(signed char val) { return val; }
+    FMT_CONSTEXPR unsigned           map(unsigned char val) { return val; }
+    FMT_CONSTEXPR int                map(short val) { return val; }
+    FMT_CONSTEXPR unsigned           map(unsigned short val) { return val; }
+    FMT_CONSTEXPR int                map(int val) { return val; }
+    FMT_CONSTEXPR unsigned           map(unsigned val) { return val; }
+    FMT_CONSTEXPR long_type          map(long val) { return val; }
     FMT_CONSTEXPR ulong_type         map(unsigned long val) { return val; }
     FMT_CONSTEXPR long long          map(long long val) { return val; }
     FMT_CONSTEXPR unsigned long long map(unsigned long long val) { return val; }
+    FMT_CONSTEXPR int128_t           map(int128_t val) { return val; }
+    FMT_CONSTEXPR uint128_t          map(uint128_t val) { return val; }
     FMT_CONSTEXPR bool               map(bool val) { return val; }
 
     template <typename T, FMT_ENABLE_IF(is_char<T>::value)> FMT_CONSTEXPR char_type map(T val)
@@ -840,7 +881,7 @@ namespace internal {
       return val;
     }
 
-    FMT_CONSTEXPR double      map(float val) { return static_cast<double>(val); }
+    FMT_CONSTEXPR float       map(float val) { return val; }
     FMT_CONSTEXPR double      map(double val) { return val; }
     FMT_CONSTEXPR long double map(long double val) { return val; }
 
@@ -859,6 +900,14 @@ namespace internal {
     FMT_CONSTEXPR basic_string_view<char_type> map(const T &val)
     {
       return basic_string_view<char_type>(val);
+    }
+    template <typename T,
+              FMT_ENABLE_IF(std::is_constructible<std_string_view<char_type>, T>::value &&
+                            !std::is_constructible<basic_string_view<char_type>, T>::value &&
+                            !is_string<T>::value)>
+    FMT_CONSTEXPR basic_string_view<char_type> map(const T &val)
+    {
+      return std_string_view<char_type>(val);
     }
     FMT_CONSTEXPR const char *map(const signed char *val)
     {
@@ -887,9 +936,10 @@ namespace internal {
     template <typename T,
               FMT_ENABLE_IF(std::is_enum<T>::value && !has_formatter<T, Context>::value &&
                             !has_fallback_formatter<T, Context>::value)>
-    FMT_CONSTEXPR int map(const T &val)
+    FMT_CONSTEXPR auto map(const T &val)
+        -> decltype(map(static_cast<typename std::underlying_type<T>::type>(val)))
     {
-      return static_cast<int>(val);
+      return map(static_cast<typename std::underlying_type<T>::type>(val));
     }
     template <typename T, FMT_ENABLE_IF(!is_string<T>::value && !is_char<T>::value &&
                                         (has_formatter<T, Context>::value ||
@@ -913,8 +963,9 @@ namespace internal {
   using mapped_type_constant = type_constant<decltype(arg_mapper<Context>().map(std::declval<T>())),
                                              typename Context::char_type>;
 
+  enum { packed_arg_bits = 5 };
   // Maximum number of arguments with packed types.
-  enum { max_packed_args = 15 };
+  enum { max_packed_args = 63 / packed_arg_bits };
   enum : unsigned long long { is_unpacked_bit = 1ull << 63 };
 
   template <typename Context> class arg_map;
@@ -961,8 +1012,8 @@ public:
 
   internal::type type() const { return type_; }
 
-  bool is_integral() const { return internal::is_integral(type_); }
-  bool is_arithmetic() const { return internal::is_arithmetic(type_); }
+  bool is_integral() const { return internal::is_integral_type(type_); }
+  bool is_arithmetic() const { return internal::is_arithmetic_type(type_); }
 };
 
 /**
@@ -984,8 +1035,16 @@ FMT_CONSTEXPR auto visit_format_arg(Visitor &&vis, const basic_format_arg<Contex
   case internal::uint_type: return vis(arg.value_.uint_value);
   case internal::long_long_type: return vis(arg.value_.long_long_value);
   case internal::ulong_long_type: return vis(arg.value_.ulong_long_value);
+#if FMT_USE_INT128
+  case internal::int128_type: return vis(arg.value_.int128_value);
+  case internal::uint128_type: return vis(arg.value_.uint128_value);
+#else
+  case internal::int128_type:
+  case internal::uint128_type: break;
+#endif
   case internal::bool_type: return vis(arg.value_.bool_value);
   case internal::char_type: return vis(arg.value_.char_value);
+  case internal::float_type: return vis(arg.value_.float_value);
   case internal::double_type: return vis(arg.value_.double_value);
   case internal::long_double_type: return vis(arg.value_.long_double_value);
   case internal::cstring_type: return vis(arg.value_.string.data);
@@ -1058,7 +1117,8 @@ namespace internal {
   template <typename Context, typename Arg, typename... Args>
   constexpr unsigned long long encode_types()
   {
-    return mapped_type_constant<Arg, Context>::value | (encode_types<Context, Args...>() << 4);
+    return mapped_type_constant<Arg, Context>::value |
+           (encode_types<Context, Args...>() << packed_arg_bits);
   }
 
   template <typename Context, typename T>
@@ -1108,9 +1168,9 @@ public:
    Constructs a ``basic_format_context`` object. References to the arguments are
    stored in the object so make sure they have appropriate lifetimes.
    */
-  basic_format_context(OutputIt out_it, basic_format_args<basic_format_context> ctx_args,
+  basic_format_context(OutputIt out, basic_format_args<basic_format_context> ctx_args,
                        internal::locale_ref loc = internal::locale_ref())
-      : out_(out_it), args_(ctx_args), loc_(loc)
+      : out_(out), args_(ctx_args), loc_(loc)
   {
   }
 
@@ -1205,8 +1265,9 @@ private:
 
   internal::type type(int index) const
   {
-    int shift = index * 4;
-    return static_cast<internal::type>((types_ & (0xfull << shift)) >> shift);
+    int shift = index * internal::packed_arg_bits;
+    int mask  = (1 << internal::packed_arg_bits) - 1;
+    return static_cast<internal::type>((types_ >> shift) & mask);
   }
 
   friend class internal::arg_map<Context>;

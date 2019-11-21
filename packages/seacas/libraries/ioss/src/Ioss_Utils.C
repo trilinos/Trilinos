@@ -444,7 +444,7 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
     }
   }
 
-  if (std::strncmp(type.c_str(), "super", 5) == 0) {
+  if (Ioss::Utils::substr_equal("super", type)) {
     // A super element can have a varying number of nodes.  Create
     // an IO element type for this super element just so the IO
     // system can read a mesh containing super elements.  This
@@ -553,9 +553,7 @@ namespace {
     // and see if it defines a valid type...
     std::vector<Ioss::Suffix> suffices;
 
-    char suffix[2];
-    suffix[0] = suffix_separator;
-    suffix[1] = 0;
+    char suffix[2] = {suffix_separator, '\0'};
 
     for (int which_name : which_names) {
       std::vector<std::string> tokens     = Ioss::tokenize(names[which_name], suffix);
@@ -1166,18 +1164,16 @@ void Ioss::Utils::input_file(const std::string &file_name, std::vector<std::stri
   }
 }
 
-int Ioss::Utils::case_strcmp(const std::string &s1, const std::string &s2)
+bool Ioss::Utils::str_equal(const std::string &s1, const std::string &s2)
 {
-  const char *c1 = s1.c_str();
-  const char *c2 = s2.c_str();
-  for (;; c1++, c2++) {
-    if (std::tolower(*c1) != std::tolower(*c2)) {
-      return (std::tolower(*c1) - std::tolower(*c2));
-    }
-    if (*c1 == '\0') {
-      return 0;
-    }
-  }
+  return (s1.size() == s2.size()) &&
+         std::equal(s1.begin(), s1.end(), s2.begin(),
+                    [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+}
+
+bool Ioss::Utils::substr_equal(const std::string &prefix, const std::string &str)
+{
+  return (str.size() >= prefix.size()) && str_equal(prefix, str.substr(0, prefix.size()));
 }
 
 std::string Ioss::Utils::uppercase(std::string name)
@@ -2217,8 +2213,7 @@ namespace {
         max_field_size = field.get_size();
       }
       if (field_name != "ids" && !oge->field_exists(field_name) &&
-          (prefix.empty() ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+          Ioss::Utils::substr_equal(prefix, field_name)) {
         // If the field does not already exist, add it to the output node block
         oge->field_add(field);
       }
@@ -2252,8 +2247,7 @@ namespace {
       if (field_name == "ids") {
         continue;
       }
-      if ((prefix.empty() ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+      if (Ioss::Utils::substr_equal(prefix, field_name)) {
         assert(oge->field_exists(field_name));
         transfer_field_data_internal(ige, oge, pool, field_name, options);
       }

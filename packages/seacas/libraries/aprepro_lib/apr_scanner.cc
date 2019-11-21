@@ -2312,7 +2312,7 @@ yyFlexLexer::yyFlexLexer(std::istream *arg_yyin, std::ostream *arg_yyout)
 {
   yyin          = arg_yyin;
   yyout         = arg_yyout;
-  yy_c_buf_p    = 0;
+  yy_c_buf_p    = nullptr;
   yy_init       = 0;
   yy_start      = 0;
   yy_flex_debug = 0;
@@ -2328,11 +2328,11 @@ yyFlexLexer::yyFlexLexer(std::istream *arg_yyin, std::ostream *arg_yyout)
   yy_start_stack_ptr = yy_start_stack_depth = 0;
   yy_start_stack                            = NULL;
 
-  yy_buffer_stack     = 0;
+  yy_buffer_stack     = nullptr;
   yy_buffer_stack_top = 0;
   yy_buffer_stack_max = 0;
 
-  yy_state_buf = 0;
+  yy_state_buf = nullptr;
 }
 
 /* The contents of this function are C++ specific, so the () macro is not used.
@@ -2469,7 +2469,7 @@ int yyFlexLexer::yy_get_next_buffer()
       }
       else
         /* Can't grow it, we don't own it. */
-        b->yy_ch_buf = 0;
+        b->yy_ch_buf = nullptr;
 
       if (!b->yy_ch_buf)
         YY_FATAL_ERROR("fatal error - scanner input buffer overflow");
@@ -3175,9 +3175,9 @@ namespace SEAMS {
   {
     std::fstream *yytmp = nullptr;
     if (must_exist)
-      yytmp = aprepro.open_file(filename.c_str(), "r");
+      yytmp = aprepro.open_file(filename, "r");
     else
-      yytmp = aprepro.check_open_file(filename.c_str(), "r");
+      yytmp = aprepro.check_open_file(filename, "r");
 
     if (yytmp) {
       if (yyin && !yy_init) {
