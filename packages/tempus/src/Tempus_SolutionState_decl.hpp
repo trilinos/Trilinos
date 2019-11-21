@@ -125,18 +125,23 @@ public:
       { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
         return metaData_nc_; }
 
-    virtual Scalar getTime()     const {return metaData_->getTime();}
-    virtual int getIndex()    const {return metaData_->getIStep();}
-    virtual Scalar getTimeStep() const {return metaData_->getDt();}
-    virtual Scalar getOrder()    const {return metaData_->getOrder();}
-    virtual Scalar getNRunningFailures() const
-      { return metaData_->getNRunningFailures(); }
-    virtual Scalar getNConsecutiveFailures() const
-      { return metaData_->getNConsecutiveFailures(); }
-    virtual Status getSolutionStatus() const
-      { return metaData_->getSolutionStatus(); }
-    virtual bool getOutput()     const {return metaData_->getOutput();}
-    virtual bool getIsSynced()   const {return metaData_->getIsSynced();}
+    virtual Scalar getTime()             const {return metaData_->getTime();}
+    virtual int    getIndex()            const {return metaData_->getIStep();}
+    virtual Scalar getTimeStep()         const {return metaData_->getDt();}
+    virtual Scalar getErrorAbs()         const {return metaData_->getErrorAbs();}
+    virtual Scalar getErrorRel()         const {return metaData_->getErrorRel();}
+    virtual int    getOrder()            const {return metaData_->getOrder();}
+    virtual int    getNFailures()        const {return metaData_->getNFailures();}
+    virtual int    getNRunningFailures() const {return metaData_->getNRunningFailures();}
+    virtual int    getNConsecutiveFailures() const {return metaData_->getNConsecutiveFailures();}
+    virtual Scalar getTolAbs()           const {return metaData_->getTolAbs();}
+    virtual Scalar getTolRel()           const {return metaData_->getTolRel();}
+    virtual Status getSolutionStatus()   const {return metaData_->getSolutionStatus();}
+    virtual bool getOutput()             const {return metaData_->getOutput();}
+    virtual bool getOutputScreen()       const {return metaData_->getOutputScreen();}
+    virtual bool getIsSynced()           const {return metaData_->getIsSynced();}
+    virtual bool getIsInterpolated()     const {return metaData_->getIsInterpolated();}
+    virtual bool getAccuracy()           const {return metaData_->getAccuracy();}
   //@}
 
   /// \name Set MetaData values
@@ -147,15 +152,33 @@ public:
     virtual void setMetaData(Teuchos::RCP<SolutionStateMetaData<Scalar> > md)
       { metaData_nc_ = md; metaData_ = metaData_nc_; }
 
-    virtual void setTime(Scalar time)   {metaData_nc_->setTime(time);}
-    virtual void setIndex(Scalar index) {metaData_nc_->setIStep(index);}
-    virtual void setTimeStep(Scalar dt) {metaData_nc_->setDt(dt);}
-    virtual void setOrder(Scalar order)
-      { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
-        metaData_nc_->setOrder(order); }
-    virtual void setSolutionStatus(Status s)
-      { metaData_nc_->setSolutionStatus(s); }
+    virtual void setTime(Scalar time)   { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setTime(time);}
+    virtual void setIndex(Scalar index) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setIStep(index);}
+    virtual void setTimeStep(Scalar dt) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setDt(dt);}
+    virtual void setErrorAbs(Scalar errorAbs){ TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                               metaData_nc_->setErrorAbs(errorAbs);}
+    virtual void setErrorRel(Scalar errorRel){ TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                               metaData_nc_->setErrorRel(errorRel);}
+    virtual void setOrder(int order) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setOrder(order); }
 
+    virtual void setNFailures(int nFailures) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                               metaData_nc_->setNFailures(nFailures); }
+    virtual void setNRunningFailures(int nFailures) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setNRunningFailures(nFailures); }
+    virtual void setNConsecutiveFailures(int nConsecutiveFailures)
+      { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setNConsecutiveFailures(nConsecutiveFailures); }
+    virtual void setTolRel (Scalar tolRel){ TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setTolRel(tolRel); }
+    virtual void setTolAbs (Scalar tolAbs){ TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setTolAbs(tolAbs); }
+
+    virtual void setSolutionStatus(Status s) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                               metaData_nc_->setSolutionStatus(s); }
     virtual void setSolutionStatus(const Thyra::SolveStatus<Scalar> sStatus)
       {
         if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
@@ -164,12 +187,16 @@ public:
           metaData_nc_->setSolutionStatus(Status::FAILED);
       }
 
-    virtual void setOutput(bool output)
-      { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
-        metaData_nc_->setOutput(output); }
-    virtual void setIsSynced(bool isSynced)
-      {  TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
-         metaData_nc_->setIsSynced(isSynced); }
+    virtual void setOutput(bool output) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setOutput(output); }
+    virtual void setOutputScreen(bool output) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                                metaData_nc_->setOutputScreen(output); }
+    virtual void setIsSynced(bool isSynced) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                              metaData_nc_->setIsSynced(isSynced); }
+    virtual void setIsInterpolated(bool isInterpolated) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                              metaData_nc_->setIsInterpolated(isInterpolated); }
+    virtual void setAccuracy(bool accuracy) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                              metaData_nc_->setAccuracy(accuracy); }
   //@}
 
   /// \name Get State Data

@@ -41,6 +41,8 @@ public:
     const int    nFailures,
     const int    nRunningFailures,
     const int    nConsecutiveFailures,
+    const Scalar tolRel,
+    const Scalar tolAbs,
     const Status solutionStatus,
     const bool   output,
     const bool   outputScreen,
@@ -71,14 +73,14 @@ public:
     int    getNFailures()            const {return nFailures_;}
     int    getNRunningFailures()     const {return nRunningFailures_;}
     int    getNConsecutiveFailures() const {return nConsecutiveFailures_;}
+    Scalar getTolAbs()               const {return tolAbs_;}
+    Scalar getTolRel()               const {return tolRel_;}
     Status getSolutionStatus()       const {return solutionStatus_;}
     bool   getOutput()               const {return output_;}
     bool   getOutputScreen()         const {return outputScreen_;}
     bool   getIsSynced()             const {return isSynced_;}
     bool   getIsInterpolated()       const {return isInterpolated_;}
     Scalar getAccuracy()             const {return accuracy_;}
-    Scalar getTolAbs()               const {return tolAbs_;}
-    Scalar getTolRel()               const {return tolRel_;}
 
     void setTime(Scalar time) {time_ = time;}
     void setIStep(int iStep) {iStep_ = iStep;}
@@ -90,6 +92,8 @@ public:
     void setNRunningFailures(int nFailures) {nRunningFailures_ = nFailures;}
     void setNConsecutiveFailures(int nConsecutiveFailures)
       {nConsecutiveFailures_ = nConsecutiveFailures;}
+    void setTolRel (Scalar tolRel){tolRel_ = tolRel;}
+    void setTolAbs (Scalar tolAbs){tolAbs_ = tolAbs;}
     void setSolutionStatus(Status solutionStatus)
       {solutionStatus_ = solutionStatus;}
     void setOutput(bool output) {output_ = output;}
@@ -98,9 +102,7 @@ public:
     void setIsInterpolated(bool isInterpolated)
       {isInterpolated_ = isInterpolated;}
     void setAccuracy(Scalar accuracy) {accuracy_ = accuracy;}
-    void setTolAbs(Scalar tolAbs){tolAbs_ = tolAbs;}
-    void setTolRel(Scalar tolRel){tolRel_ = tolRel;}
-       
+
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -120,7 +122,7 @@ protected:
   int nFailures_;            ///< Total number of stepper failures
   int nRunningFailures_;     ///< Total number of running stepper failures
   int nConsecutiveFailures_; ///< Consecutive number of stepper failures
-  Scalar tolRel_;            ///< Absolute tolerance 
+  Scalar tolRel_;            ///< Absolute tolerance
   Scalar tolAbs_;            ///< Relative tolerance
 
   /** \brief The solutionStatus is used to indicate
