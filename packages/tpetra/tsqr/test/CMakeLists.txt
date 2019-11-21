@@ -27,6 +27,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+# Performance and accuracy test suite for TSQR::KokkosNodeTsqr
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  KokkosHostTsqr
+  SOURCES Tsqr_TestKokkosNodeTsqr.cpp
+  COMM serial mpi
+  ARGS "--verify --numRows=100000 --numCols=10"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
 # This test uses LAPACK's QR factorization to get a reference for
 # performance and accuracy.  It doesn't run any parts of the TSQR
 # algorithm, but it does depend on some TSQR test code (for generating

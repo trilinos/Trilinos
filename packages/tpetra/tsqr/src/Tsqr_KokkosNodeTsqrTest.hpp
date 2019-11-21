@@ -62,8 +62,6 @@ namespace TSQR {
     /// Test the accuracy of KokkosNodeTsqr's QR factorization on a
     /// numRows by numCols matrix, and print results to stdout.
     ///
-    /// \param node [in] The Kokkos Node instance on which to execute
-    ///   in parallel.
     /// \param gen [in/out] Pseudorandom number generator for the
     ///   normal(0,1) distribution.
     /// \param numRows [in] Number of rows in the test matrix.
@@ -82,10 +80,9 @@ namespace TSQR {
     ///   for a script to parse.
     /// \param debug [in] Whether to print extra debugging output to
     ///   stderr.
-    template<class Ordinal, class Scalar, class NodeType>
+    template<class Ordinal, class Scalar>
     void
-    verifyKokkosNodeTsqr (const Teuchos::RCP<NodeType>& node,
-                          TSQR::Random::NormalGenerator<Ordinal, Scalar>& gen,
+    verifyKokkosNodeTsqr (TSQR::Random::NormalGenerator<Ordinal, Scalar>& gen,
                           const Ordinal numRows,
                           const Ordinal numCols,
                           const int numPartitions,
@@ -102,7 +99,7 @@ namespace TSQR {
       using std::cerr;
       using std::cout;
       using std::endl;
-      typedef TSQR::KokkosNodeTsqr<Ordinal, Scalar, NodeType> node_tsqr_type;
+      using node_tsqr_type = TSQR::KokkosNodeTsqr<Ordinal, Scalar>;
       typedef typename node_tsqr_type::FactorOutput factor_output_type;
       typedef Teuchos::ScalarTraits<Scalar> STS;
       typedef typename STS::magnitudeType magnitude_type;
@@ -117,33 +114,30 @@ namespace TSQR {
       params->set ("Cache Size Hint", cacheSizeHint);
       params->set ("Num Tasks", numPartitions);
       node_tsqr_type actor (params);
-      actor.setNode (node);
-      if (debug)
-        {
-          cerr << actor.description() << endl;
-          if (contiguousCacheBlocks)
-            cerr << "-- Test with contiguous cache blocks" << endl;
+      if (debug) {
+        cerr << actor.description() << endl;
+        if (contiguousCacheBlocks) {
+          cerr << "-- Test with contiguous cache blocks" << endl;
         }
+      }
 
       // Allocate space for test problem.
       matrix_type A (numRows, numCols);
       matrix_type A_copy (numRows, numCols);
       matrix_type Q (numRows, numCols);
       matrix_type R (numCols, numCols);
-      if (std::numeric_limits<Scalar>::has_quiet_NaN)
-        {
-          A.fill (std::numeric_limits<Scalar>::quiet_NaN());
-          A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
-          Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
-          R.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        }
-      else
-        {
-          A.fill (STS::zero());
-          A_copy.fill (STS::zero());
-          Q.fill (STS::zero());
-          R.fill (STS::zero());
-        }
+      if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+        A.fill (std::numeric_limits<Scalar>::quiet_NaN());
+        A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
+        Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
+        R.fill (std::numeric_limits<Scalar>::quiet_NaN());
+      }
+      else {
+        A.fill (Scalar {});
+        A_copy.fill (Scalar {});
+        Q.fill (Scalar {});
+        R.fill (Scalar {});
+      }
       const Ordinal lda = numRows;
       const Ordinal ldq = numRows;
       const Ordinal ldr = numCols;
@@ -151,18 +145,16 @@ namespace TSQR {
       // Create a test problem
       nodeTestProblem (gen, numRows, numCols, A.get(), A.lda(), true);
 
-      if (debug)
-        {
-          cerr << "-- Generated test problem" << endl;
-          // Don't print the matrix if it's too big.
-          if (A.nrows() <= 30)
-            {
-              cerr << "A = " << endl;
-              print_local_matrix (cerr, A.nrows(), A.ncols(),
-                                  A.get(), A.lda());
-              cerr << endl << endl;
-            }
+      if (debug) {
+        cerr << "-- Generated test problem" << endl;
+        // Don't print the matrix if it's too big.
+        if (A.nrows() <= 30) {
+          cerr << "A = " << endl;
+          print_local_matrix (cerr, A.nrows(), A.ncols(),
+                              A.get(), A.lda());
+          cerr << endl << endl;
         }
+      }
 
       // Copy A into A_copy, since TSQR overwrites the input.  If
       // specified, rearrange the data in A_copy so that the data in
@@ -231,7 +223,7 @@ namespace TSQR {
       if (debug) {
         cerr << "-- Filling R with zeros" << endl;
       }
-      R.fill (STS::zero());
+      R.fill (Scalar {});
 
       if (debug) {
         cerr << "-- Calling factor()" << endl;
@@ -254,9 +246,9 @@ namespace TSQR {
           actor.top_block (Q.view (), contiguousCacheBlocks);
         mat_view_type Q_top_square (Q_top.ncols(), Q_top.ncols(),
                                     Q_top.get(), Q_top.lda());
-        Q_top_square.fill (STS::zero ());
+        Q_top_square.fill (Scalar {});
         for (Ordinal j = 0; j < Q_top_square.ncols(); ++j) {
-          Q_top_square(j,j) = STS::one ();
+          Q_top_square(j,j) = Scalar (1.0);
         }
       }
       actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(),
@@ -355,8 +347,6 @@ namespace TSQR {
     /// to that of LAPACK's QR factorization.  Print results to
     /// stdout.
     ///
-    /// \param node [in] The Kokkos Node instance on which to execute
-    ///   in parallel.
     /// \param numTrials [in] Number of times to run the benchmark;
     ///   the timing result is cumulative over all trials.  Timing
     ///   over larger numbers of trials improves certainty of the
@@ -375,11 +365,9 @@ namespace TSQR {
     /// \param humanReadable [in] Whether to print output that is easy
     ///   for humans to read, or instead to print output that is easy
     ///   for a script to parse.
-    ///
-    template<class Ordinal, class Scalar, class NodeType>
+    template<class Ordinal, class Scalar>
     void
-    benchmarkKokkosNodeTsqr (const Teuchos::RCP<NodeType>& node,
-                             const int numTrials,
+    benchmarkKokkosNodeTsqr (const int numTrials,
                              const Ordinal numRows,
                              const Ordinal numCols,
                              const int numPartitions,
@@ -395,10 +383,8 @@ namespace TSQR {
       using std::cerr;
       using std::cout;
       using std::endl;
-      typedef TSQR::KokkosNodeTsqr<Ordinal, Scalar, NodeType> node_tsqr_type;
+      using node_tsqr_type = TSQR::KokkosNodeTsqr<Ordinal, Scalar>;
       typedef typename node_tsqr_type::FactorOutput factor_output_type;
-      typedef Teuchos::ScalarTraits<Scalar> STS;
-      // typedef typename STS::magnitudeType magnitude_type;
       typedef Teuchos::Time timer_type;
       typedef Matrix<Ordinal, Scalar> matrix_type;
 
@@ -413,7 +399,6 @@ namespace TSQR {
       params->set ("Cache Size Hint", cacheSizeHint);
       params->set ("Num Tasks", numPartitions);
       node_tsqr_type actor (params);
-      actor.setNode (node);
 
       // Allocate space for test problem.
       matrix_type A (numRows, numCols);
@@ -423,7 +408,7 @@ namespace TSQR {
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
-      R.fill (STS::zero());
+      R.fill (Scalar {});
 
       // Create a test problem
       nodeTestProblem (gen, numRows, numCols, A.get(), A.lda(), false);
