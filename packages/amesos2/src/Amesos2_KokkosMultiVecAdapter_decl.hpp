@@ -42,12 +42,12 @@
 // @HEADER
 
 /**
-  \file   Amesos2_TpetraMultiVecAdapter_decl.hpp
-  \author Eric T Bavier <etbavier@sandia.gov>
-  \date   Wed May 26 19:49:10 CDT 2010
+  \file   Amesos2_KokkosMultiVecAdapter_decl.hpp
+  \author
+  \date
 
   \brief  Amesos2::MultiVecAdapter specialization for the
-          Tpetra::MultiVector class.
+          Kokkos::View class.
 */
 
 #ifndef AMESOS2_KOKKOS_MULTIVEC_ADAPTER_DECL_HPP
@@ -118,7 +118,6 @@ namespace Amesos2 {
       return false;
     }
 
-    // TODO
     bool isGloballyIndexed() const;
 
     Teuchos::RCP<const Tpetra::Map<
@@ -127,17 +126,13 @@ namespace Amesos2 {
                          node_t > >
     getMap() const
     {
-   //   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "getMap() not implemented for Kokkos CrsMatrix.");
-      return Teuchos::null;
-      //return mv_->getMap();
+      return Teuchos::null; // serial only for Kokkos adapter right now
     }
 
     /// Returns the Teuchos::Comm object associated with this multi-vector
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
     {
-      return Tpetra::getDefaultComm(); // serial
-
-      // return getMap()->getComm();
+      return Tpetra::getDefaultComm(); // serial only for Kokkos adapter right now
     }
 
     /// Get the length of vectors local to the calling node
@@ -275,12 +270,6 @@ namespace Amesos2 {
                 global_ordinal_t,
                 node_t> > distribution_map,
               EDistribution) const {
-      // in optimal memory matching the get just obtained a ptr to the
-      // view and now will again do nothing.
-      // The problem with this is that right now, for non-matched memory
-      // the get step is doing an unecessary copy (copying from the Kokkos::View)
-      // when all it needs is uninitialized memory space. Need to add some API
-      // logic so the solver can know at the high level if the views will match.
       deep_copy_or_assign_view(*mv_, kokkos_new_data);
     }
 

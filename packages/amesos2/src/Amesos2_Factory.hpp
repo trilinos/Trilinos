@@ -393,6 +393,20 @@ struct throw_no_scalar_support_exception {
   }
 };
 
+template < template <class,class> class ConcreteSolver,
+           class Matrix,
+           class Vector >
+struct throw_no_matrix_support_exception {
+  static Teuchos::RCP<Solver<Matrix,Vector> > apply(Teuchos::RCP<const Matrix> A,
+                                                    Teuchos::RCP<Vector>       X,
+                                                    Teuchos::RCP<const Vector> B )
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
+                        std::invalid_argument,
+                        "Currently only the Tacho solver supports the kokkos adapter." );
+  }
+};
+
   /**
    * \internal
    *
@@ -405,7 +419,7 @@ struct throw_no_scalar_support_exception {
   template < template <class,class> class ConcreteSolver,
              class Matrix,
              class Vector >
-  struct handle_solver_type_support {
+  struct handle_solver_scalar_type_support {
     static Teuchos::RCP<Solver<Matrix,Vector> > apply(Teuchos::RCP<const Matrix> A,
                                                       Teuchos::RCP<Vector>       X,
                                                       Teuchos::RCP<const Vector> B )
@@ -417,6 +431,29 @@ struct throw_no_scalar_support_exception {
     }
   };
 
+  /**
+   * \internal
+   *
+   * Utility meta-function which binds to an exception-throwing
+   * runtime function if the solver does not support the scalar type
+   * of the matrix or the matrix adapter.  Otherwise, if the scalar type and
+   * adapter are supported, then this returns an RCP to a new concrete Amesos2
+   * solver of the given type.
+   */
+  template < template <class,class> class ConcreteSolver,
+             class Matrix,
+             class Vector >
+  struct handle_solver_matrix_and_type_support {
+    static Teuchos::RCP<Solver<Matrix,Vector> > apply(Teuchos::RCP<const Matrix> A,
+                                                      Teuchos::RCP<Vector>       X,
+                                                      Teuchos::RCP<const Vector> B )
+    {
+      return Meta::if_then_else<
+        solver_supports_matrix<ConcreteSolver, Matrix>::value,
+        handle_solver_scalar_type_support<ConcreteSolver,Matrix,Vector>,
+        throw_no_matrix_support_exception<ConcreteSolver,Matrix,Vector> >::type::apply(A, X, B);
+    }
+  };
 
   /////////////////////
   // Query Functions //
@@ -537,14 +574,14 @@ struct throw_no_scalar_support_exception {
 #ifdef HAVE_AMESOS2_SHYLUBASKER
     if((solverName == "ShyLUBasker") || (solverName == "shylubasker") || (solverName == "amesos2_shylubasker"))
     {
-      return handle_solver_type_support<ShyLUBasker, Matrix,Vector>::apply(A,X,B);
+      return handle_solver_matrix_and_type_support<ShyLUBasker, Matrix,Vector>::apply(A,X,B);
     }
 #endif
 
 #ifdef HAVE_AMESOS2_BASKER
     if((solverName == "Basker") || (solverName == "basker") || (solverName == "amesos2_basker"))
     {
-      return handle_solver_type_support<Basker, Matrix,Vector>::apply(A,X,B);
+      return handle_solver_matrix_and_type_support<Basker, Matrix,Vector>::apply(A,X,B);
     }
 #endif
 
@@ -552,7 +589,7 @@ struct throw_no_scalar_support_exception {
 #ifdef HAVE_AMESOS2_KLU2
     if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
         (solverName == "amesos2_klu")  || (solverName == "klu")){
-      return handle_solver_type_support<KLU2,Matrix,Vector>::apply(A, X, B);
+      return handle_solver_matrix_and_type_support<KLU2,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 
@@ -561,7 +598,7 @@ struct throw_no_scalar_support_exception {
        (solverName == "superludist") ||
        (solverName == "amesos2_superlu_dist") ||
        (solverName == "superlu_dist")){
-      return handle_solver_type_support<Superludist,Matrix,Vector>::apply(A, X, B);
+      return handle_solver_matrix_and_type_support<Superludist,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 
@@ -570,27 +607,27 @@ struct throw_no_scalar_support_exception {
        (solverName == "superlumt") ||
        (solverName == "amesos2_superlu_mt") ||
        (solverName == "superlu_mt")){
-      return handle_solver_type_support<Superlumt,Matrix,Vector>::apply(A, X, B);
+      return handle_solver_matrix_and_type_support<Superlumt,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 
 #ifdef HAVE_AMESOS2_UMFPACK
     if((solverName == "amesos2_umfpack") ||
        (solverName == "umfpack")){
-      return handle_solver_type_support<Umfpack,Matrix,Vector>::apply(A, X, B);
+      return handle_solver_matrix_and_type_support<Umfpack,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 
 #ifdef HAVE_AMESOS2_TACHO
     if((solverName == "amesos2_tacho") ||
        (solverName == "tacho")){
-      return handle_solver_type_support<TachoSolver,Matrix,Vector>::apply(A, X, B);
+      return handle_solver_matrix_and_type_support<TachoSolver,Matrix,Vector>::apply(A, X, B);
     }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA // this is a 2nd version which builds tacho on host for testing
     if((solverName == "amesos2_tachohost") ||
        (solverName == "tachohost")){
-        return handle_solver_type_support<TachoHostSolver,Matrix,Vector>::apply(A, X, B);
+        return handle_solver_matrix_and_type_support<TachoHostSolver,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 
@@ -599,7 +636,7 @@ struct throw_no_scalar_support_exception {
 #ifdef HAVE_AMESOS2_SUPERLU
     if((solverName == "amesos2_superlu") ||
        (solverName == "superlu")){
-      return handle_solver_type_support<Superlu,Matrix,Vector>::apply(A, X, B);
+      return handle_solver_matrix_and_type_support<Superlu,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 
@@ -608,14 +645,14 @@ struct throw_no_scalar_support_exception {
        (solverName == "pardiso_mkl") ||
        (solverName == "amesos2_pardisomkl")  ||
        (solverName == "pardisomkl")){
-      return handle_solver_type_support<PardisoMKL,Matrix,Vector>::apply(A, X, B);
+      return handle_solver_matrix_and_type_support<PardisoMKL,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 
 #ifdef HAVE_AMESOS2_LAPACK
     if((solverName == "amesos2_lapack") ||
        (solverName == "lapack")){
-      return handle_solver_type_support<Lapack,Matrix,Vector>::apply(A, X, B);
+      return handle_solver_matrix_and_type_support<Lapack,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 
@@ -624,13 +661,13 @@ struct throw_no_scalar_support_exception {
     if((solverName == "MUMPS") || (solverName == "mumps") ||
        (solverName == "amesos2_MUMPS") || (solverName == "amesos2_mumps"))
       {
-        return handle_solver_type_support<MUMPS,Matrix,Vector>::apply(A,X,B);
+        return handle_solver_matrix_and_type_support<MUMPS,Matrix,Vector>::apply(A,X,B);
       }
 #endif
 
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
     if(solverName == "amesos2_cholmod")
-      return handle_solver_type_support<Cholmod,Matrix,Vector>::apply(A, X, B);
+      return handle_solver_matrix_and_type_support<Cholmod,Matrix,Vector>::apply(A, X, B);
 #endif
 
     /* If none of the above conditionals are satisfied, then the solver

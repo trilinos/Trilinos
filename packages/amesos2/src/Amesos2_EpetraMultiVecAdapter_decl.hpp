@@ -179,9 +179,9 @@ namespace Amesos2 {
     void get1dCopy( const Teuchos::ArrayView<scalar_t>& A,
                     size_t lda,
                     Teuchos::Ptr<
-                      const Tpetra::Map<local_ordinal_t,
-                      global_ordinal_t,
-                      node_t> > distribution_map,
+                    const Tpetra::Map<local_ordinal_t,
+                    global_ordinal_t,
+                    node_t> > distribution_map,
         EDistribution distribution) const;
 
     template<typename KV>
@@ -255,7 +255,7 @@ namespace Amesos2 {
                       node_t> > source_map,
                     EDistribution distribution ) {
       // Convert to Host Space
-      // MDM-TODO decide later about any further improvements - we are designating
+      // Decide later about any further improvements - we are designating
       // Epetra low priority right now so just getting clean compile and run right now.
       // Note we might like this to be HostMirror and avoid the copy on serial
       // but there are some awkward issues with the templating since, unlike
@@ -263,10 +263,6 @@ namespace Amesos2 {
       // Note that we might just put the whole thing in the header and
       // avoid the secondary put1dData_kokkos_view_host call which is not that
       // long. But that brings in some headers that would be undesirable.
-      // Note that Amesos2_MultiVecAdapter_def.hpp includes
-      // Amesos2_TpetraMultiVecAdapter_def.hpp which is a templated class unlike
-      // this one and structrured differently. So there the put1dData_kokkos_view
-      // templated call can link for ETI.
       Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial> host_new_data(
         Kokkos::ViewAllocateWithoutInitializing("host_new_data"),
         new_data.extent(0), new_data.extent(1));

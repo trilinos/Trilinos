@@ -46,7 +46,8 @@
 #define AMESOS2_MULTIVECADAPTER_DEF_HPP
 
 #include "Amesos2_TpetraMultiVecAdapter_def.hpp"
-#include "Amesos2_KokkosMultiVecAdapter_def.hpp" // MDM - Decide about this ....
+// EpetraMultiVecAdapter_def.hpp not included because the specialization is not a template
+#include "Amesos2_KokkosMultiVecAdapter_def.hpp"
 
 #include "Amesos2_Util.hpp"     // for getDistributionMap
 
@@ -101,16 +102,6 @@ namespace Amesos2{
       mv->get1dCopy (v, ldx, distribution_map, distribution);
     }
 
-    template <typename MV, typename KV>
-    void same_type_get_copy_kokkos_view<MV, KV>::apply(const Teuchos::Ptr<const MV>& mv,
-                                       KV& kokkos_view,
-                                       const size_t ldx,
-                                       Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
-                                       EDistribution distribution )
-    {
-      mv->get1dCopy_kokkos_view(kokkos_view, ldx, distribution_map, distribution);
-    }
-
     /*
      * In the case where the scalar type of the multi-vector and the
      * corresponding S type are different, then we need to first get a
@@ -142,45 +133,6 @@ namespace Amesos2{
       for (size_type i = 0; i < vals_length; ++i) {
         v[i] = Teuchos::as<S> (vals_tmp[i]);
       }
-    }
-
-    template <typename MV, typename KV>
-    void diff_type_get_copy_kokkos_view<MV,KV>::
-    apply (const Teuchos::Ptr<const MV>& mv,
-           KV& kokkos_view,
-           const size_t ldx,
-           Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
-           EDistribution distribution )
-    {
-      typedef typename MV::scalar_t mv_scalar_t;
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        mv.getRawPtr () == NULL, std::invalid_argument,
-        "Amesos2::diff_type_get_copy_kokkos_view::apply: mv is null.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        distribution_map.getRawPtr () == NULL, std::invalid_argument,
-        "Amesos2::diff_type_get_copy_kokkos_view::apply: distribution_map is null.");
-
-      // Create a View to hold the mismatched type data
-      // This should have same layout and memory space as kokkos_view and only
-      // differs in the value_type which matches the MV.
-      Kokkos::View<mv_scalar_t**, typename KV::array_layout, typename KV::execution_space>
-        mv_data(Kokkos::ViewAllocateWithoutInitializing("mv_data"), kokkos_view.extent(0), kokkos_view.extent(1));
-
-      mv->get1dCopy_kokkos_view(mv_data, ldx, distribution_map, distribution);
-
-      // Now copy element by element in KV::execution_space
-      // Note this code is not currently tested in the default Tacho Amesos2_Solver_Test
-      // setup so is not tested anywhere. Manually tested by forcing diff_type_get_copy_kokkos_view
-      // to be always on. MDM-TODO make sure it's tested
-
-      // MDM-TODO inquire if deep copy is ok instead of loop (would bypass Teuchos::as)
-      //  Kokkos::deep_copy(kokkos_view, mv_data);
-      Kokkos::parallel_for(
-        Kokkos::RangePolicy<typename KV::execution_space, int> (0, kokkos_view.size()),
-        KOKKOS_LAMBDA (size_t n) {
-        kokkos_view.data()[n] = Teuchos::as<typename KV::value_type>(mv_data.data()[n]);
-      });
     }
 
     /** \internal
@@ -259,10 +211,7 @@ namespace Amesos2{
             Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
             EDistribution distribution)
     {
-      // Dispatch to the copy function appropriate for the type
-      if_then_else<is_same<typename MV::scalar_t,typename KV::value_type>::value,
-        same_type_get_copy_kokkos_view<MV,KV>,
-        diff_type_get_copy_kokkos_view<MV,KV> >::type::apply (mv, kokkos_vals, ldx, distribution_map, distribution);
+      mv->get1dCopy_kokkos_view(kokkos_vals, ldx, distribution_map, distribution);
     }
 
     template <class MV, typename KV>
@@ -346,7 +295,7 @@ namespace Amesos2{
     template <typename MV, typename S>
     void diff_type_data_put<MV,S>::apply(const Teuchos::Ptr<MV>& mv,
                                          const Teuchos::ArrayView<S>& data,
-                                         const size_t ldx,
+                                         const size_t& ldx,
                                          Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                                          EDistribution distribution )
     {
@@ -383,16 +332,7 @@ namespace Amesos2{
       typedef Kokkos::View<mv_scalar_t**, typename KV::array_layout, typename KV::execution_space> matrix_kokkos_view_t;
       matrix_kokkos_view_t matrix_kokkos_data (Kokkos::ViewAllocateWithoutInitializing("data_tmp"),
         kokkos_data.extent(0), kokkos_data.extent(1));
-
-      // MDM-TODO inquire if deep copy is ok instead of loop (would bypass Teuchos::as)
-      // Kokkos::deep_copy(matrix_kokkos_data, kokkos_data);
-      Kokkos::parallel_for(
-        Kokkos::RangePolicy<typename KV::execution_space, int> (0, kokkos_data.size()),
-        KOKKOS_LAMBDA (size_t n) {
-        // MDM-TODO can we remove the data() access without looping in 2D?
-        matrix_kokkos_data.data()[n] = Teuchos::as<mv_scalar_t>(kokkos_data.data()[n]);
-      });
-
+      Kokkos::deep_copy(matrix_kokkos_data, kokkos_data);
       mv->put1dData_kokkos_view(matrix_kokkos_data, ldx, distribution_map, distribution);
     }
 

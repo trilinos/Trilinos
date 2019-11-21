@@ -338,7 +338,6 @@ bool do_mat_test(const ParameterList& parameters)
           if( verbosity > 1) *fos << "  | with " << solver_name << " : " << std::endl;
 
           ParameterList test_params = Teuchos::getValue<ParameterList>(parameters.entry(solver_it));
-
           bool solver_success = test_mat_with_solver(mm_file, solver_name, test_params, solve_params);
 
           if( verbosity > 1 ){
@@ -417,7 +416,6 @@ test_mat_with_solver (const string& mm_file,
           *fos << "    Testing Kokkos objects" << endl;
         }
         const ParameterList tpetra_runs = Teuchos::getValue<ParameterList> (test_params.entry (object_it));
-
         bool kokkosSuccess = test_kokkos(mm_file, solver_name, tpetra_runs, solve_params);
 
         if (verbosity > 1) {
@@ -498,9 +496,11 @@ struct solution_checker<Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpac
   typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> t_mv;
   bool operator()(RCP<t_mv> true_solution, RCP<t_mv> given_solution)
   {
-    // MDM-TODO Implement proper error checking
-    // Do we want to make a Tpetra MV and run it through the normal pipeline
-    // or make a Kokkos View equivalent?
+    // For Tpetra we just check the norms. MDM-DISCUSS Why is this?
+    // Here we need a Kokkos version so I've done this explicitly for each
+    // point but the method should be synchronized with the above.
+    // The kokkos adapter is really a temporary measure anyways while we
+    // develop UVM off code so this code is probably going away.
     typename t_mv::HostMirror host_true_solution = Kokkos::create_mirror_view(*true_solution);
     typename t_mv::HostMirror host_given_solution = Kokkos::create_mirror_view(*given_solution);
     Kokkos::deep_copy(host_true_solution, *true_solution);
@@ -1426,9 +1426,7 @@ bool do_kokkos_test_with_types(const string& mm_file,
                                const string& solver_name,
                                ParameterList solve_params)
 {
-  // Here I am using Tpetra as a helper to load and make solutions/
-  // MDM-TODO Would be better to eliminate Tpetra completey.
-  // I use the default node, not serial, since Serial Tpetra might be off
+  // Here I am using Tpetra as a helper to load and make solutions.
   typedef DefaultNode TpetraNode;
 
   using Tpetra::CrsMatrix;
@@ -1469,6 +1467,7 @@ bool do_kokkos_test_with_types(const string& mm_file,
   Teuchos::ArrayRCP<const Scalar> values;
   tpetraM->getAllValues(rowPointers, columnIndices, values);
 
+  // convert Tpetra size_t row ptrs to kokkos crsmatrix LO type
   Teuchos::ArrayRCP<LocalOrdinal> kokkosRowPointers = Teuchos::arcp(new LocalOrdinal[rowPointers.size()], 0, rowPointers.size());
   for(int n = 0; n < rowPointers.size(); ++n) {
     kokkosRowPointers[n] = Teuchos::as<LocalOrdinal>(rowPointers[n]);
@@ -1477,30 +1476,17 @@ bool do_kokkos_test_with_types(const string& mm_file,
   auto num_rows = tpetraM->getNodeNumRows();
   auto num_cols = tpetraM->getNodeNumCols();
 
-  // MDM-TODO clean up casting - should use arcp_const_cast first but having
-  // some trouble getting that to work.
+  // Kokkos CrsMatrix builds with non const ptrs while Tpetra loads into const
+  Teuchos::ArrayRCP<Scalar> non_const_values = Teuchos::arcp_const_cast<Scalar>(values);
+  Teuchos::ArrayRCP<LocalOrdinal> non_const_kokkosRowPointers = Teuchos::arcp_const_cast<LocalOrdinal>(kokkosRowPointers);
+  Teuchos::ArrayRCP<LocalOrdinal> non_const_columnIndices = Teuchos::arcp_const_cast<LocalOrdinal>(columnIndices);
   RCP<MAT> A = rcp(new MAT("Kokkos CrsMatrix",
              num_rows,
              num_cols,
              tpetraM->getGlobalNumEntries(),
-             (Scalar*)values.getRawPtr(),
-             (LocalOrdinal*)kokkosRowPointers.getRawPtr(),
-             (LocalOrdinal*)columnIndices.getRawPtr()));
-
-  // MDM-TODO Add some description
-  /*
-  if (verbosity > 2) {
-    *fos << "done" << endl;
-    switch (verbosity) {
-    case 6:
-      A.describe (*fos, Teuchos::VERB_EXTREME); break;
-    case 5:
-      A.describe (*fos, Teuchos::VERB_HIGH); break;
-    case 4:
-      A.describe (*fos, Teuchos::VERB_LOW); break;
-    }
-  }
-  */
+             non_const_values.getRawPtr(),
+             non_const_kokkosRowPointers.getRawPtr(),
+             non_const_columnIndices.getRawPtr()));
 
   if (verbosity > 2) {
     *fos << endl << "      Creating right-hand side and solution vectors" << endl;
@@ -1530,52 +1516,32 @@ bool do_kokkos_test_with_types(const string& mm_file,
     tpetraM->apply(*xMV[i], *bMV[i], trans);
   }
 
-  // MDM - Odd to have Views in RCPs but this allows us to reuse the current
-  // do_solve_routine API. So will need to discuss how we want to design it.
   Array<RCP<view_t>> x(numRHS);
   Array<RCP<view_t>> b(numRHS);
   for( size_t i = 0; i < numRHS; ++i ){
-    // see comment above
-    x[i] = rcp(new view_t("x", num_rows, numRHS));
-    b[i] = rcp(new view_t("b", num_rows, numRHS));
-  // MDM-TODO Ignore transpose for now
-  /*
-    if( transpose ){
-      x[i] = rcp(new MV(dmnmap,numVecs));
-      b[i] = rcp(new MV(rngmap,numVecs));
-    } else {
-      x[i] = rcp(new MV(rngmap,numVecs));
-      b[i] = rcp(new MV(dmnmap,numVecs));
-    }
     std::ostringstream xlabel, blabel;
     xlabel << "x[" << i << "]";
     blabel << "b[" << i << "]";
-    x[i]->setObjectLabel(xlabel.str());
-    b[i]->setObjectLabel(blabel.str());
-  */
+    if( transpose ){
+      x[i] = rcp(new view_t(xlabel.str(), num_cols, numRHS));
+      b[i] = rcp(new view_t(blabel.str(), num_cols, numRHS));
+    } else {
+      x[i] = rcp(new view_t(xlabel.str(), num_rows, numRHS));
+      b[i] = rcp(new view_t(blabel.str(), num_rows, numRHS));
+    }
 
-    // don't know if Kokkos has a View randomize method so manual implementation
-    // MDM-TODO - use this instead of below
-    // MDM-TODO What is easiest way to apply x and b to the Kokkos CrsMatrix
-/*
-    typedef Kokkos::Details::ArithTraits<Scalar> ATS;
-    typedef Kokkos::Random_XorShift64_Pool<typename Node::device_type::execution_space> pool_type;
-    typedef typename pool_type::generator_type generator_type;
-
-    const Scalar max = Kokkos::rand<generator_type, Scalar>::max ();
-    const Scalar min = ATS::is_signed ? Scalar (-max) : ATS::zero ();
-
-    int rank = comm->getRank();
-    uint64_t seed64 = static_cast<uint64_t> (std::rand ()) + rank + 17311uLL;
-    unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
-    pool_type rand_pool (seed);
-
-    Kokkos::fill_random(x[i], rand_pool, min, max);
-*/
-
-
-    RCP<MV> xMV = rcp(new MV(rngmap,numVecs));
-    RCP<MV> bMV = rcp(new MV(dmnmap,numVecs));
+    // MDM Right now I'm employing the Tpetra version to generate the random
+    // values. But probably should make a pure kokkos version though I'd like
+    // them all to be the same.
+    RCP<MV> xMV, bMV;
+    if( transpose ){
+      xMV = rcp(new MV(rngmap,numVecs));
+      bMV = rcp(new MV(dmnmap,numVecs));
+    }
+    else {
+      xMV = rcp(new MV(dmnmap,numVecs));
+      bMV = rcp(new MV(rngmap,numVecs));
+    }
     xMV->randomize();
     tpetraM->apply(*xMV, *bMV, trans);
 
@@ -1586,30 +1552,22 @@ bool do_kokkos_test_with_types(const string& mm_file,
   RCP<tpetra_crsmatrix_t> temp_tpetraM =
     Tpetra::MatrixMarket::Reader<tpetra_crsmatrix_t>::readSparseFile (path, comm);
 
-
   RCP<MAT> A2;
   RCP<view_t> Xhat, x2, b2;
 
-  Xhat = rcp(new view_t("Xhat", num_rows, numVecs));
-  x2 = rcp(new view_t("x2", num_rows, numVecs));
-  b2 = rcp(new view_t("b2", num_rows, numVecs));
-
-  // MDM-TODO Ignored transpose and refactor for now
-  /*
   if (transpose) {
-    Xhat = rcp(new MV(dmnmap,numVecs));
+    Xhat = rcp(new view_t("Xhat", num_rows, numVecs));
     if (refactor) {
-      x2 = rcp(new MV(dmnmap,numVecs));
-      b2 = rcp(new MV(rngmap,numVecs));
+      x2 = rcp(new view_t("x2", num_rows, numVecs));
+      b2 = rcp(new view_t("b2", num_cols, numVecs));
     }
   } else {
-    Xhat = rcp(new MV(rngmap,numVecs));
+    Xhat = rcp(new view_t("Xhat", num_cols, numVecs));
     if (refactor) {
-      x2 = rcp(new MV(rngmap,numVecs));
-      b2 = rcp(new MV(dmnmap,numVecs));
+      x2 = rcp(new view_t("x2", num_cols, numVecs));
+      b2 = rcp(new view_t ("b2", num_rows, numVecs));
     }
   }
-  */
 
   if (refactor) {
     if (verbosity > 2) {
@@ -1630,7 +1588,6 @@ bool do_kokkos_test_with_types(const string& mm_file,
     tpetraM2->resumeFill ();
     tpetraM2->replaceLocalValues (0, indices, values);
     tpetraM2->fillComplete (tpetraM->getDomainMap (), tpetraM->getRangeMap ());
-
 
     // Make a deep copy of the entire CrsMatrix.
     // originalNode can be null; only needed for type deduction.
@@ -1685,7 +1642,6 @@ bool test_kokkos(const string& mm_file,
                  ParameterList solve_params)
 {
   bool success = true;
-  typedef DefaultNode DN;
   ParameterList::ConstIterator run_it;
   for( run_it = kokkos_runs.begin(); run_it != kokkos_runs.end(); ++run_it ){
     if( kokkos_runs.entry(run_it).isList() ){

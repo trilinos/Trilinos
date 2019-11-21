@@ -80,8 +80,6 @@ template<class dst_t, class src_t> // version for same memory spaces
 typename std::enable_if<std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
 implement_copy_or_assign_same_mem_check_types(dst_t & dst, const src_t & src) {
-  std::cout << "Assign View: " << src_t::memory_space::name() <<
-    " to " << dst_t::memory_space::name() << std::endl;
   dst = src; // just assign the ptr - no need to copy
 }
 
@@ -90,8 +88,6 @@ template<class dst_t, class src_t> // version for same memory spaces
 typename std::enable_if<!std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
 implement_copy_or_assign_same_mem_check_types(dst_t & dst, const src_t & src) {
-  std::cout << "Deep Copy different types: " << src_t::memory_space::name() <<
-    " to " << dst_t::memory_space::name() << std::endl;
   update_dst_size(dst, src); // allocates if necessary
   Kokkos::deep_copy(dst, src); // full copy
 }
@@ -111,8 +107,6 @@ template<class dst_t, class src_t> // version for different memory spaces
 typename std::enable_if<std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
 implement_copy_or_assign_diff_mem_check_types(dst_t & dst, const src_t & src) {
-  std::cout << "Deep Copy same types: " << src_t::memory_space::name() <<
-    " to " << dst_t::memory_space::name() << std::endl;
   update_dst_size(dst, src); // allocates if necessary
   Kokkos::deep_copy(dst, src); // full copy
 }
@@ -141,11 +135,9 @@ template<class dst_t, class src_t> // version for different memory spaces
 typename std::enable_if<!std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
 implement_copy_or_assign_diff_mem_check_types(dst_t & dst, const src_t & src) {
-  std::cout << "Deep Copy different types: " << src_t::memory_space::name() <<
-    " to " << dst_t::memory_space::name() << std::endl;
   update_dst_size(dst, src); // allocates if necessary
   // since mem space and types are different, we specify the order of operations
-  // Kokkos::deep_copy doesn't allow this directly - MDM-TODO understand details
+  // Kokkos::deep_copy won't do both since it would be a hidden deep_copy
   implement_copy_or_assign_diff_mem_diff_types_check_dim(dst, src);
 }
 

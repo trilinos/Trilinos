@@ -130,6 +130,7 @@ APPEND_SET(HEADERS
   Amesos2_SolverTraits.hpp
   Amesos2_Status.hpp
   Amesos2_Timers.hpp
+  Amesos2_Tpetra_Impl.hpp
   Amesos2_TpetraMultiVecAdapter.hpp
   Amesos2_TpetraMultiVecAdapter_decl.hpp
   Amesos2_TpetraMultiVecAdapter_def.hpp

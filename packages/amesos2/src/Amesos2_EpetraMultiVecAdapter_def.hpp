@@ -226,17 +226,17 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
 #ifdef HAVE_AMESOS2_DEBUG
   const size_t requested_vector_length = distribution_map->getNodeNumElements();
   TEUCHOS_TEST_FOR_EXCEPTION( lda < requested_vector_length,
-          std::invalid_argument,
-          "Given stride is not large enough for local vector length" );
+		      std::invalid_argument,
+		      "Given stride is not large enough for local vector length" );
   TEUCHOS_TEST_FOR_EXCEPTION( as<size_t>(av.size()) < (num_vecs-1) * lda + requested_vector_length,
-          std::invalid_argument,
-          "MultiVector storage not large enough given leading dimension "
-          "and number of vectors" );
+		      std::invalid_argument,
+		      "MultiVector storage not large enough given leading dimension "
+		      "and number of vectors" );
 #endif
 
   // Optimization for ROOTED and single MPI process
   if ( num_vecs == 1 && mv_->Comm().MyPID() == 0 && mv_->Comm().NumProc() == 1 ) {
-    mv_->ExtractCopy(av.getRawPtr(), lda);
+	  mv_->ExtractCopy(av.getRawPtr(), lda);
   }
   else {
   Epetra_Map e_dist_map
@@ -252,6 +252,7 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
   // Finally, do copy
   redist_mv.ExtractCopy(av.getRawPtr(), lda);
   }
+
 }
 
 void MultiVecAdapter<Epetra_MultiVector>::get1dCopy_kokkos_view_host(
@@ -283,24 +284,24 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy_kokkos_view_host(
 
     // Optimization for ROOTED and single MPI process
     if ( num_vecs == 1 && this->mv_->Comm().MyPID() == 0 && this->mv_->Comm().NumProc() == 1 ) {
-      mv_->ExtractCopy(host_view.data(), lda);
+	    mv_->ExtractCopy(host_view.data(), lda);
     }
     else {
-    Epetra_Map e_dist_map
-      = *Util::tpetra_map_to_epetra_map<local_ordinal_t,
-                                        global_ordinal_t,
-                                        global_size_t,
-                                        node_t>(*distribution_map);
+      Epetra_Map e_dist_map
+        = *Util::tpetra_map_to_epetra_map<local_ordinal_t,
+                                          global_ordinal_t,
+                                          global_size_t,
+                                          node_t>(*distribution_map);
 
-    multivec_t redist_mv(e_dist_map, as<int>(num_vecs));
-    const Epetra_Import importer(e_dist_map, *mv_map_); // Note, target/source order is reversed in Tpetra
-    redist_mv.Import(*mv_, importer, Insert);
+      multivec_t redist_mv(e_dist_map, as<int>(num_vecs));
+      const Epetra_Import importer(e_dist_map, *mv_map_); // Note, target/source order is reversed in Tpetra
+      redist_mv.Import(*mv_, importer, Insert);
 
-    // Finally, access data
+      // Finally, access data
 
-    // Extract the data - MDM-TODO can we consider direct ptr usage with ExtractView?
-    // For now I will just copy - this was discussed as low priority for now.
-    redist_mv.ExtractCopy(host_view.data(), lda);
+      // Can we consider direct ptr usage with ExtractView?
+      // For now I will just copy - this was discussed as low priority for now.
+      redist_mv.ExtractCopy(host_view.data(), lda);
     }
 }
 
@@ -414,16 +415,10 @@ MultiVecAdapter<Epetra_MultiVector>::put1dData_kokkos_view_host(
 
   const size_t num_vecs  = getGlobalNumVectors();
 
-  // TODO: check that the following const_cast is safe
-  double* data_ptr = const_cast<double*>(host_new_data.data());
+  double* data_ptr = host_new_data.data();
 
   // Optimization for ROOTED and single MPI process
   if ( num_vecs == 1 && mv_->Comm().MyPID() == 0 && mv_->Comm().NumProc() == 1 ) {
-    // First, functioning impl
-    //const multivec_t source_mv(Copy, *mv_map_, data_ptr, as<int>(lda), as<int>(num_vecs));
-    //const Epetra_Import importer(*mv_map_, *mv_map_); //trivial - map does not change
-    //mv_->Import(source_mv, importer, Insert);
-    // Element-wise copy rather than using importer
     auto vector = mv_->Pointers();
     for ( size_t i = 0; i < lda; ++i ) {
       vector[0][i] = data_ptr[i];

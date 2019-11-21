@@ -221,7 +221,7 @@ namespace Amesos2 {
   }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
-  template <typename KV> // MDM-TODO Need to discuss this templating design
+  template <typename KV>
   void
   MultiVecAdapter<
     MultiVector<Scalar,
@@ -260,15 +260,8 @@ namespace Amesos2 {
       "communicator, the given stride lda = " << lda << " is not large enough "
       "for the local vector length " << requested_vector_length << ".");
 
-    // MDM Removing this check since I want the copy manager below to handle
-    // allocation. If it assigns we don't want the allocation to ever take place.
-    // MDM-TODO remove this code
-    /*
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      as<size_t> (kokkos_view.size ()) < as<size_t> ((num_vecs - 1) * lda + requested_vector_length),
-      std::invalid_argument, "Amesos2::MultiVector::get1dCopy: MultiVector "
-      "storage not large enough given leading dimension and number of vectors." );
-    */
+    // Note do not check size since deep_copy_or_assign_view below will allocate
+    // if necessary - but may just assign ptrs.
 #endif // HAVE_AMESOS2_DEBUG
 
     // Special case when number vectors == 1 and single MPI process
@@ -309,54 +302,16 @@ namespace Amesos2 {
       redist_mv.doExport (*mv_, *exporter_, Tpetra::REPLACE);
 
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
-        // MDM-TODO Need to decide how sync is handled for UVM on mode of Tpetra
-        // This code is not really tested until UVM is off.
-        // MDM-TODO Need testing which requires lda setting - ignored here successfully.
         if(redist_mv.isConstantStride()) {
           redist_mv.sync_device(); // no testing of this right now - since UVM on
           deep_copy_or_assign_view(kokkos_view, redist_mv.getLocalViewDevice());
         }
         else {
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Resolve handling for non-constant stride.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter non-constant stride not imlemented.");
         }
       }
       else {
-        // Do this if GIDs not contiguous...
-        // sync is needed for example if mv was updated on device, but will be passed through Amesos2 to solver running on host
-        typedef typename multivec_t::dual_view_type dual_view_type;
-        typedef typename dual_view_type::host_mirror_space host_execution_space;
-        redist_mv.template sync < host_execution_space > ();
-
-        auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
-        if ( redist_mv.isConstantStride() ) {
-          // MDM-TODO - Determine if this is the best way
-          // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Untested code 1 - resolve and remove comments.");
-          // MDM-TODO switch to getLocalViewDevice() etc. See above.
-          // auto contig_local_view_2d = redist_mv.template getLocalView<typename KV::execution_space>();
-          // Kokkos::deep_copy(kokkos_view, contig_local_view_2d);
-        }
-        else {
-          // ... lda should come from Teuchos::Array* allocation,
-          // not the MultiVector, since the MultiVector does NOT
-          // have constant stride in this case.
-          // TODO lda comes from X->getGlobalLength() in solve_impl - should this be changed???
-          // const size_t lclNumRows = redist_mv.getLocalLength();
-          for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
-            // MDM-TODO - Hacked this back to ArrayView - need to make host/device handling
-            // Need to determine how this will interact with MV for device/host
-            // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Untested code 2 - resolve and remove comments.");
-            // MDM-TODO switch to getLocalViewDevice() etc. See above.
-            // auto av_j = Teuchos::ArrayView<Scalar>(kokkos_view.data(), lda * num_vecs)(lda*j, lclNumRows);
-            // auto X_lcl_j_2d = redist_mv.template getLocalView<typename KV::execution_space> ();
-            // auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
-
-            // using val_type = typename decltype( X_lcl_j_1d )::value_type;
-            // Kokkos::View<val_type*, typename KV::execution_space> umavj ( const_cast< val_type* > ( reinterpret_cast<const val_type*> ( av_j.getRawPtr () ) ), av_j.size () );
-            // Kokkos::deep_copy (umavj, X_lcl_j_1d);
-          }
-        }
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter CONTIGUOUS_AND_ROOTED path not implemented for get1dCopy_kokkos_view().");
       }
     }
   }
@@ -536,7 +491,7 @@ namespace Amesos2 {
   }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node>
-  template <typename KV> // MDM-TODO Need to discuss this templating design
+  template <typename KV>
   void
   MultiVecAdapter<
     MultiVector<Scalar,
@@ -599,58 +554,11 @@ namespace Amesos2 {
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
         // Do this if GIDs contiguous - existing functionality
         // Redistribute the output (multi)vector.
-
-        // MDM-TODO Need to resolve this. This code works if kokkos_new_data is
-        // CudaSpace (no UVM) or HostSpace. The destination Tpetra object is
-        // UVM on but it seems the source_mv has no property to designate the
-        // data source. Would like to understand why it doesn't crash.
         const multivec_t source_mv (srcMap, Teuchos::ArrayView<typename KV::value_type>(kokkos_new_data.data(), kokkos_new_data.size()), lda, num_vecs);
         mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
       }
       else {
-        multivec_t redist_mv (srcMap, num_vecs); // unused for ROOTED case
-        typedef typename multivec_t::dual_view_type dual_view_type;
-        typedef typename dual_view_type::host_mirror_space host_execution_space;
-        redist_mv.template modify< host_execution_space > ();
-
-        if ( redist_mv.isConstantStride() ) {
-          // MDM-TODO - Complete and validate
-          // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Untested code 4 - resolve and remove comments.");
-          auto contig_local_view_2d = redist_mv.template getLocalView<typename KV::execution_space>();
-          Kokkos::deep_copy(contig_local_view_2d, kokkos_new_data);
-        }
-        else {
-          // ... lda should come from Teuchos::Array* allocation,
-          // not the MultiVector, since the MultiVector does NOT
-          // have constant stride in this case.
-          // TODO lda comes from X->getGlobalLength() in solve_impl - should this be changed???
-          const size_t lclNumRows = redist_mv.getLocalLength();
-          for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
-
-            // MDM-TODO - Hacked this back to ArrayView - need to make host/device handling
-            // Implement host/device solutions
-            // WARNING - This is not tested currently by Tacho Amesos2_Solver_Test so not tested anywhere yet!
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Untested code 5 - resolve and remove comments.");
-            auto av_j = Teuchos::ArrayView<typename KV::value_type>(kokkos_new_data.data(), kokkos_new_data.size())(lda*j, lclNumRows);
-
-            // MDM-TODO Set up testing of this code - validate space and how this works
-            auto X_lcl_j_2d = redist_mv.template getLocalView<typename KV::execution_space> ();
-            auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
-
-            using val_type = typename decltype( X_lcl_j_1d )::value_type;
-
-            // MDM-TODO Set up testing of this code - validate space and how this works
-            Kokkos::View<val_type*, typename KV::execution_space>
-              umavj ( const_cast< val_type* > ( reinterpret_cast<const val_type*> ( av_j.getRawPtr () ) ), av_j.size () );
-            Kokkos::deep_copy (umavj, X_lcl_j_1d);
-          }
-        }
-
-        typedef typename multivec_t::node_type::memory_space memory_space;
-        redist_mv.template sync <memory_space> ();
-
-        mv_->doImport (redist_mv, *importer_, Tpetra::REPLACE);
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter CONTIGUOUS_AND_ROOTED not implemented for put1dData_kokkos_view.");
       }
     }
 

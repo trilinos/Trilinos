@@ -44,12 +44,12 @@
 #ifndef AMESOS2_TACHO_HPP
 #define AMESOS2_TACHO_HPP
 
-#define TACHO_BUILD_SOLVER
+#define AMESOS2_TACHO_BUILD_SOLVER
 #include "Amesos2_Tacho_decl.hpp"
   #ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
     #include "Amesos2_Tacho_def.hpp"
   #endif
-#undef TACHO_BUILD_SOLVER
-#undef TACHO_SOLVER_NAME
+#undef AMESOS2_TACHO_BUILD_SOLVER
+#undef AMESOS2_TACHO_SOLVER_NAME
 
 #endif  // AMESOS2_TACHO_HPP

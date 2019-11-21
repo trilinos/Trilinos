@@ -63,14 +63,14 @@ namespace Amesos2 {
   typename ConcreteMatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::global_size_t
   ConcreteMatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getRowIndexBase() const
   {
-    return 0; // serial so no map, MDM-TODO use Kokkos matrix to read this?
+    return 0;
   }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
   typename ConcreteMatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::global_size_t
   ConcreteMatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getColumnIndexBase() const
   {
-    return 0; // // serial so no map, MDM-TODO use Kokkos matrix to read this?
+    return 0;
   }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
@@ -104,8 +104,10 @@ namespace Amesos2 {
     KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>
     >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "get_impl not implemented for the Kokkos CrsMatrix adapter yet");
-    return Teuchos::null;
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
+                        std::runtime_error,
+                        "get_impl() not implemented for the Kokkos CrsMatrix adapter yet.  "
+                        "Please contact the Amesos2 developers." );
   }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
@@ -147,8 +149,10 @@ namespace Amesos2 {
   ConcreteMatrixAdapter<
     KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getGlobalRowNNZ_impl(global_ordinal_t row) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "getGlobalRowNNZ_impl not implemented for the Kokkos CrsMatrix adapter yet");
-    return 0;
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
+                        std::runtime_error,
+                        "getGlobalRowNNZ_impl() not implemented for the Kokkos CrsMatrix adapter yet.  "
+                        "Please contact the Amesos2 developers." );
   }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
@@ -156,8 +160,10 @@ namespace Amesos2 {
   ConcreteMatrixAdapter<
     KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getLocalRowNNZ_impl(local_ordinal_t row) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "getLocalRowNNZ_impl not implemented for the Kokkos CrsMatrix adapter yet");
-    return 0;
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
+                        std::runtime_error,
+                        "getLocalRowNNZ_impl() not implemented for the Kokkos CrsMatrix adapter yet.  "
+                        "Please contact the Amesos2 developers." );
   }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
@@ -191,9 +197,10 @@ namespace Amesos2 {
                                        const ArrayView<scalar_t>& vals,
                                        size_t& nnz) const
     {
-    TEUCHOS_TEST_FOR_EXCEPTION( true,
+      TEUCHOS_TEST_FOR_EXCEPTION( true,
                         std::runtime_error,
-                        "getGlobalRowCopy_impl not implemeneted for Kokkos CrsMatrix yet." );
+                        "getGlobalRowCopy_impl not implemented for Kokkos CrsMatrix yet.  "
+                        "Please contact the Amesos2 developers." );
     }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
