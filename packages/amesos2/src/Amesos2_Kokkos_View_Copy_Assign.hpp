@@ -56,8 +56,7 @@ namespace Amesos2 {
 
 // allocate dst size if necessary - 2 methods handle 1d and 2d
 template<class dst_t, class src_t> // version for 1d view
-typename std::enable_if<std::is_same<typename dst_t::scalar_array_type,
-  typename dst_t::value_type*>::value>::type
+typename std::enable_if<static_cast<int>(dst_t::Rank) == 1>::type
 update_dst_size(dst_t & dst, const src_t & src) {
   if(dst.extent(0) != src.extent(0)) { // templated just for 1D
     dst = dst_t(Kokkos::ViewAllocateWithoutInitializing("dst"),
@@ -66,8 +65,7 @@ update_dst_size(dst_t & dst, const src_t & src) {
 }
 
 template<class dst_t, class src_t> // version for 2d view
-typename std::enable_if<std::is_same<typename dst_t::scalar_array_type,
-  typename dst_t::value_type**>::value>::type
+typename std::enable_if<static_cast<int>(dst_t::Rank) == 2>::type
 update_dst_size(dst_t & dst, const src_t & src) {  // templated just for 2d
   if(dst.extent(0) != src.extent(0) || dst.extent(1) != src.extent(1)) {
     dst = dst_t(Kokkos::ViewAllocateWithoutInitializing("dst"),
@@ -112,8 +110,7 @@ implement_copy_or_assign_diff_mem_check_types(dst_t & dst, const src_t & src) {
 }
 
 template<class dst_t, class src_t> // version for different memory spaces
-typename std::enable_if<std::is_same<typename dst_t::scalar_array_type,
-  typename dst_t::value_type*>::value>::type
+typename std::enable_if<static_cast<int>(dst_t::Rank) == 1>::type
 implement_copy_or_assign_diff_mem_diff_types_check_dim(dst_t & dst, const src_t & src) {
   Kokkos::View<typename dst_t::value_type*, typename src_t::execution_space>
     intermediate(Kokkos::ViewAllocateWithoutInitializing("intermediate"), src.extent(0));
@@ -122,8 +119,7 @@ implement_copy_or_assign_diff_mem_diff_types_check_dim(dst_t & dst, const src_t 
 }
 
 template<class dst_t, class src_t> // version for different memory spaces
-typename std::enable_if<std::is_same<typename dst_t::scalar_array_type,
-  typename dst_t::value_type**>::value>::type
+typename std::enable_if<static_cast<int>(dst_t::Rank) == 2>::type
 implement_copy_or_assign_diff_mem_diff_types_check_dim(dst_t & dst, const src_t & src) {
   Kokkos::View<typename dst_t::value_type**, Kokkos::LayoutLeft, typename src_t::execution_space>
     intermediate(Kokkos::ViewAllocateWithoutInitializing("intermediate"), src.extent(0), src.extent(1));
