@@ -398,7 +398,7 @@ namespace TSQR {
               resizeWork (numCols);
               combine_.factor_pair (numCols, R_mine.data(), R_mine.lda(),
                                     R_other.data(), R_other.lda(),
-                                    &tau[0], &work_[0]);
+                                    tau.data(), work_.data());
               QFactors.push_back (R_other);
               tauArrays.push_back (tau);
             }
@@ -462,9 +462,9 @@ namespace TSQR {
               Q_other.fill (scalar_type (0));
               combine_.apply_pair (ApplyType::NoTranspose,
                                    Q_mine.ncols(), Q_impl.ncols(),
-                                   Q_impl.data(), Q_impl.lda(), &tau[0],
+                                   Q_impl.data(), Q_impl.lda(), tau.data(),
                                    Q_mine.data(), Q_mine.lda(),
-                                   Q_other.data(), Q_other.lda(), &work_[0]);
+                                   Q_other.data(), Q_other.lda(), work_.data());
               // Send the resulting Q_other, and the final R factor, to P_mid.
               send_Q_R (Q_other, R_mine, P_mid);
               newpos = curpos - 1;
@@ -504,11 +504,11 @@ namespace TSQR {
       resizeWork (numElts);
 
       // Pack the Q data into the workspace array.
-      mat_view_type Q_contig (Q.nrows(), Q.ncols(), &work_[0], Q.nrows());
+      mat_view_type Q_contig (Q.nrows(), Q.ncols(), work_.data(), Q.nrows());
       deep_copy (Q_contig, Q);
       // Pack the R data into the workspace array.
       pack_R (R, &work_[Q_size]);
-      messenger_->send (&work_[0], numElts, destProc, 0);
+      messenger_->send (work_.data(), numElts, destProc, 0);
     }
 
     template< class MatrixType1, class MatrixType2 >
@@ -529,10 +529,10 @@ namespace TSQR {
       // to grow again.
       resizeWork (numElts);
 
-      messenger_->recv (&work_[0], numElts, srcProc, 0);
+      messenger_->recv (work_.data(), numElts, srcProc, 0);
 
       // Unpack the C data from the workspace array.
-      deep_copy (Q, mat_view_type (Q.nrows(), Q.ncols(), &work_[0], Q.nrows()));
+      deep_copy (Q, mat_view_type (Q.nrows(), Q.ncols(), work_.data(), Q.nrows()));
       // Unpack the R data from the workspace array.
       unpack_R (R, &work_[Q_size]);
     }
@@ -551,8 +551,8 @@ namespace TSQR {
       // to grow again.
       resizeWork (numElts);
       // Pack the R data into the workspace array.
-      pack_R (R, &work_[0]);
-      messenger_->send (&work_[0], numElts, destProc, 0);
+      pack_R (R, work_.data());
+      messenger_->send (work_.data(), numElts, destProc, 0);
     }
 
     template< class MatrixType >
@@ -568,9 +568,9 @@ namespace TSQR {
       // correct, but may require reallocation of data when it needs
       // to grow again.
       resizeWork (numElts);
-      messenger_->recv (&work_[0], numElts, srcProc, 0);
+      messenger_->recv (work_.data(), numElts, srcProc, 0);
       // Unpack the R data from the workspace array.
-      unpack_R (R, &work_[0]);
+      unpack_R (R, work_.data());
     }
 
     template< class MatrixType >

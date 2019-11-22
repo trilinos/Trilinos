@@ -59,50 +59,47 @@ namespace TSQR {
   void
   deep_copy (MatrixViewType1& A, const MatrixViewType2& B)
   {
-    const typename MatrixViewType1::ordinal_type A_nrows = A.nrows ();
-    const typename MatrixViewType1::ordinal_type A_ncols = A.ncols ();
-    if (A_nrows != B.nrows () || A_ncols != B.ncols ()) {
+    const ptrdiff_t A_nrows (A.nrows ());
+    const ptrdiff_t A_ncols (A.ncols ());
+    if (A_nrows != ptrdiff_t (B.nrows ()) ||
+        A_ncols != ptrdiff_t (B.ncols ())) {
       using std::endl;
       std::ostringstream os;
       os << "deep_copy: dimensions of A (output matrix) and B (input matrix) "
          << "are not compatible.  A is " << A.nrows () << " x " << A.ncols ()
-         << ", and B is " << B.nrows () << " x " << B.ncols () << ".";
+         << ", but B is " << B.nrows () << " x " << B.ncols () << ".";
       throw std::invalid_argument(os.str());
     }
-    for (typename MatrixViewType1::ordinal_type j = 0; j < A_ncols; ++j) {
-      typename MatrixViewType1::scalar_type* const A_j = &A(0,j);
-      const typename MatrixViewType2::scalar_type* const B_j = &B(0,j);
-      for (typename MatrixViewType1::ordinal_type i = 0; i < A_nrows; ++i) {
+    for (ptrdiff_t j = 0; j < A_ncols; ++j) {
+      auto* const A_j = &A(0,j);
+      const auto* const B_j = &B(0,j);
+      for (ptrdiff_t i = 0; i < A_nrows; ++i) {
         A_j[i] = B_j[i];
       }
     }
   }
 
-  template< class FirstMatrixViewType, class SecondMatrixViewType >
+  template<class FirstMatrixViewType, class SecondMatrixViewType>
   bool
-  matrix_equal (FirstMatrixViewType& A, SecondMatrixViewType& B)
+  matrix_equal (const FirstMatrixViewType& A,
+                const SecondMatrixViewType& B)
   {
-    if (A.nrows() != B.nrows() || A.ncols() != B.ncols())
+    if (A.nrows() != B.nrows() || A.ncols() != B.ncols()) {
       return false;
-
-    typedef typename FirstMatrixViewType::ordinal_type first_ordinal_type;
-    typedef typename SecondMatrixViewType::ordinal_type second_ordinal_type;
-    typedef typename FirstMatrixViewType::pointer_type first_pointer_type;
-    typedef typename SecondMatrixViewType::pointer_type second_pointer_type;
-
-    const first_ordinal_type nrows = A.nrows();
-    const first_ordinal_type A_lda = A.lda();
-    const first_ordinal_type ncols = A.ncols();
-    const second_ordinal_type B_lda = B.lda();
-
-    first_pointer_type A_j = A.data();
-    second_pointer_type B_j = B.data();
-
-    for (first_ordinal_type j = 0; j < ncols; ++j, A_j += A_lda, B_j += B_lda)
-      for (first_ordinal_type i = 0; i < nrows; ++i)
-        if (A_j[i] != B_j[i])
+    }
+    const ptrdiff_t nrows (A.nrows());
+    const ptrdiff_t A_lda (A.lda());
+    const ptrdiff_t ncols (A.ncols());
+    const ptrdiff_t B_lda (B.lda());
+    const auto* A_j = A.data();
+    const auto* B_j = B.data();
+    for (ptrdiff_t j = 0; j < ncols; ++j, A_j += A_lda, B_j += B_lda) {
+      for (ptrdiff_t i = 0; i < nrows; ++i) {
+        if (A_j[i] != B_j[i]) {
           return false;
-
+        }
+      }
+    }
     return true;
   }
 
