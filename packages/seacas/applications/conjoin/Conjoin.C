@@ -530,9 +530,8 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
         }
       }
       local_mesh[p - 1].timestepCount = i;
-      if (i > 0) {
-        t_min = t_min < times[0] ? t_min : times[0];
-      }
+      t_min = t_min < times[0] ? t_min : times[0];
+
       if (!used) {
         std::string part = "Part " + std::to_string(p) + ": ";
         part += interFace.inputFiles_[p - 1];

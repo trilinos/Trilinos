@@ -345,6 +345,10 @@ integer {D}+({E})?
   BEGIN(INITIAL);
   switch_active = false;
   switch_skip_to_endcase = false;
+  suppress_nl = false;
+  if (aprepro.ap_options.debugging)
+    fprintf (stderr, "DEBUG SWITCH: 'endswitch' at line %d\n",
+	     aprepro.ap_file_list.top().lineno);
 }
 
 <END_CASE_SKIP>.*"\n" {  aprepro.ap_file_list.top().lineno++; }
@@ -355,6 +359,7 @@ integer {D}+({E})?
     yyerror("endswitch statement found without matching switch.");
   }
   switch_active = false;
+  switch_skip_to_endcase = false;
 }
 
 <INITIAL>{
@@ -523,8 +528,10 @@ integer {D}+({E})?
     }
     else {
       if (if_state[if_lvl] == IF_SKIP ||
-          if_state[if_lvl] == INITIAL)
+          if_state[if_lvl] == INITIAL) {
             BEGIN(INITIAL);
+	    suppress_nl = false;
+      }
                            /* If neither is true, this is a nested
                               if that should be skipped */
       if (aprepro.ap_options.debugging)
