@@ -87,7 +87,7 @@ namespace TSQR {
           // has too few rows to be worth splitting.  In that case,
           // Q_split.second (the bottom block) will be empty.  We
           // can deal with this by treating it as the base case.
-          if (Q_split.second.empty() || Q_split.second.nrows() == 0) {
+          if (Q_split.second.empty() || Q_split.second.extent(0) == 0) {
             execute_base_case ();
             return NULL;
           }
@@ -122,22 +122,22 @@ namespace TSQR {
       execute_base_case ()
       {
         // Fill my partition with zeros.
-        seq_.fill_with_zeros (Q_out_.nrows(), Q_out_.ncols(), Q_out_.data(),
+        seq_.fill_with_zeros (Q_out_.extent(0), Q_out_.extent(1), Q_out_.data(),
                               Q_out_.lda(), contiguous_cache_blocks_);
         // If our partition is the first (topmost), fill it with
-        // the first Q_out.ncols() columns of the identity matrix.
-        if (P_first_ == 0)
-          {
-            // Fetch the topmost cache block of my partition.  Its
-            // leading dimension should be set correctly by
-            // top_block().
-            mat_view_type Q_out_top =
-              seq_.top_block (Q_out_, contiguous_cache_blocks_);
-            // Set the top block of Q_out to the first ncols
-            // columns of the identity matrix.
-            for (LocalOrdinal j = 0; j < Q_out_top.ncols(); ++j)
-              Q_out_top(j,j) = Scalar(1);
+        // the first Q_out.extent(1) columns of the identity matrix.
+        if (P_first_ == 0) {
+          // Fetch the topmost cache block of my partition.  Its
+          // leading dimension should be set correctly by
+          // top_block().
+          mat_view_type Q_out_top =
+            seq_.top_block (Q_out_, contiguous_cache_blocks_);
+          // Set the top block of Q_out to the first ncols
+          // columns of the identity matrix.
+          for (LocalOrdinal j = 0; j < Q_out_top.extent(1); ++j) {
+            Q_out_top(j,j) = Scalar(1);
           }
+        }
       }
     };
   } // namespace TBB

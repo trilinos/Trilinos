@@ -105,7 +105,7 @@ namespace TSQR {
             // C_split.second (the bottom block) will be empty.  We
             // deal with this in the same way as the base case
             // (P_first == P_last) above.
-            if (C_split.second.empty() || C_split.second.nrows() == 0)
+            if (C_split.second.empty() || C_split.second.extent(0) == 0)
               return seq_.top_block (C_split.first, contiguous_cache_blocks);
             else
               return top_block_helper (P_first, P_mid, C_split.first,
@@ -326,7 +326,7 @@ namespace TSQR {
         }
 
         // Copy the R factor out of A_top into R.
-        seq_.extract_R (A_top.nrows(), A_top.ncols(), A_top.data(),
+        seq_.extract_R (A_top.extent(0), A_top.extent(1), A_top.data(),
                         A_top.lda(), R, ldr, contiguous_cache_blocks);
 
         // Save the timings for future reference
@@ -643,9 +643,9 @@ namespace TSQR {
           const_mat_view_type Q_top = seq_.top_block (Q, contiguous_cache_blocks);
           mat_view_type C_top = seq_.top_block (C, contiguous_cache_blocks);
           top_blocks[P_first] =
-            std::make_pair (const_mat_view_type (Q_top.ncols(), Q_top.ncols(),
+            std::make_pair (const_mat_view_type (Q_top.extent(1), Q_top.extent(1),
                                                  Q_top.data(), Q_top.lda()),
-                            mat_view_type (C_top.ncols(), C_top.ncols(),
+                            mat_view_type (C_top.extent(1), C_top.extent(1),
                                            C_top.data(), C_top.lda()));
         }
         else {
@@ -664,14 +664,14 @@ namespace TSQR {
           // Q, and Q_split.second (the bottom block) will be empty.
           // Ditto for C_split.  We deal with this in the same way
           // as the base case (P_first == P_last) above.
-          if (Q_split.second.empty() || Q_split.second.nrows() == 0) {
+          if (Q_split.second.empty() || Q_split.second.extent(0) == 0) {
             const_mat_view_type Q_top =
               seq_.top_block (Q, contiguous_cache_blocks);
             mat_view_type C_top = seq_.top_block (C, contiguous_cache_blocks);
             top_blocks[P_first] =
-              std::make_pair (const_mat_view_type (Q_top.ncols(), Q_top.ncols(),
+              std::make_pair (const_mat_view_type (Q_top.extent(1), Q_top.extent(1),
                                                    Q_top.data(), Q_top.lda()),
-                              mat_view_type (C_top.ncols(), C_top.ncols(),
+                              mat_view_type (C_top.extent(1), C_top.extent(1),
                                              C_top.data(), C_top.lda()));
           }
           else {

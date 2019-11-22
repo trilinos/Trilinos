@@ -186,12 +186,12 @@ namespace TSQR {
     /// default copy constructor would override the generic matrix
     /// view "copy constructor" below.
     Matrix (const Matrix& in) :
-      nrows_ (in.nrows()),
-      ncols_ (in.ncols()),
-      A_ (verified_alloc_size (in.nrows(), in.ncols()))
+      nrows_ (in.extent(0)),
+      ncols_ (in.extent(1)),
+      A_ (verified_alloc_size (in.extent(0), in.extent(1)))
     {
       if (! in.empty())
-        copy_matrix (nrows(), ncols(), data(), lda(), in.data(), in.lda());
+        copy_matrix (extent(0), extent(1), data(), lda(), in.data(), in.lda());
     }
 
     //! Default constructor (constructs an empty matrix).
@@ -204,23 +204,23 @@ namespace TSQR {
     ///
     /// This constructor allocates a new matrix and copies the
     /// elements of the input view into the resulting new matrix.
-    /// MatrixViewType must have nrows(), ncols(), data(), and lda()
+    /// MatrixViewType must have extent(0), extent(1), data(), and lda()
     /// methods that match MatView's methods.
     template<class MatrixViewType>
     Matrix (const MatrixViewType& in) :
-      nrows_ (in.nrows()),
-      ncols_ (in.ncols()),
-      A_ (verified_alloc_size (in.nrows(), in.ncols()))
+      nrows_ (in.extent(0)),
+      ncols_ (in.extent(1)),
+      A_ (verified_alloc_size (in.extent(0), in.extent(1)))
     {
       if (A_.size() != 0)
-        copy_matrix (nrows(), ncols(), data(), lda(), in.data(), in.lda());
+        copy_matrix (extent(0), extent(1), data(), lda(), in.data(), in.lda());
     }
 
     //! Fill all entries of the matrix with the given value.
     void
     fill (const Scalar value)
     {
-      fill_matrix (nrows(), ncols(), data(), lda(), value);
+      fill_matrix (extent(0), extent(1), data(), lda(), value);
     }
 
     /// \brief Non-const reference to element (i,j) of the matrix.
@@ -248,24 +248,22 @@ namespace TSQR {
     template<class MatrixViewType>
     bool operator== (const MatrixViewType& B) const
     {
-      if (data() != B.data() || nrows() != B.nrows() || ncols() != B.ncols() || lda() != B.lda()) {
+      if (data() != B.data() || extent(0) != B.extent(0) || extent(1) != B.extent(1) || lda() != B.lda()) {
         return false;
       } else {
         return true;
       }
     }
 
-    //! Number of rows in the matrix.
-    Ordinal nrows() const { return nrows_; }
-
-    //! Number of columns in the matrix.
-    Ordinal ncols() const { return ncols_; }
+    constexpr Ordinal extent (const int r) const noexcept {
+      return r == 0 ? nrows_ : (r == 1 ? ncols_ : Ordinal(0));
+    }
 
     //! Leading dimension (a.k.a. stride) of the matrix.
     Ordinal lda() const { return nrows_; }
 
     //! Whether the matrix is empty (has either zero rows or zero columns).
-    bool empty() const { return nrows() == 0 || ncols() == 0; }
+    bool empty() const { return extent(0) == 0 || extent(1) == 0; }
 
     //! A non-const pointer to the matrix data.
     Scalar*
@@ -289,12 +287,12 @@ namespace TSQR {
 
     //! A non-const view of the matrix.
     mat_view_type view () {
-      return mat_view_type (nrows(), ncols(), data(), lda());
+      return mat_view_type (extent(0), extent(1), data(), lda());
     }
 
     //! A const view of the matrix.
     const_mat_view_type const_view () const {
-      return const_mat_view_type (nrows(), ncols(),
+      return const_mat_view_type (extent(0), extent(1),
                                   const_cast<const Scalar*> (data()), lda());
     }
 
@@ -311,7 +309,7 @@ namespace TSQR {
     void
     reshape (const Ordinal num_rows, const Ordinal num_cols)
     {
-      if (num_rows == nrows() && num_cols == ncols())
+      if (num_rows == extent(0) && num_cols == extent(1))
         return; // no need to reallocate or do anything else
 
       const size_t alloc_size = verified_alloc_size (num_rows, num_cols);

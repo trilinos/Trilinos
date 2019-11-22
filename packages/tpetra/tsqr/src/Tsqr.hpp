@@ -270,12 +270,12 @@ namespace TSQR {
       // case Q is arranged using contiguous cache blocks.
       mat_view_type Q_top_block =
         nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
-      if (Q_top_block.nrows () < numCols) {
+      if (Q_top_block.extent (0) < numCols) {
         std::ostringstream os;
         os << "The top block of Q has too few rows.  This means that the "
            << "the intranode TSQR implementation has a bug in its top_block"
            << "() method.  The top block should have at least " << numCols
-           << " rows, but instead has only " << Q_top_block.ncols ()
+           << " rows, but instead has only " << Q_top_block.extent (1)
            << " rows.";
         throw std::logic_error (os.str ());
       }
@@ -360,12 +360,12 @@ namespace TSQR {
       // case Q is arranged using contiguous cache blocks.
       mat_view_type Q_top_block =
         nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
-      if (Q_top_block.nrows () < numCols) {
+      if (Q_top_block.extent (0) < numCols) {
         std::ostringstream os;
         os << "The top block of Q has too few rows.  This means that the "
            << "the intranode TSQR implementation has a bug in its top_block"
            << "() method.  The top block should have at least " << numCols
-           << " rows, but instead has only " << Q_top_block.ncols ()
+           << " rows, but instead has only " << Q_top_block.extent (1)
            << " rows.";
         throw std::logic_error (os.str ());
       }
@@ -539,7 +539,7 @@ namespace TSQR {
         matrix_type C_top (C_top_view);
 
         // Compute in place on all processors' C_top blocks.
-        distTsqr_->apply (applyType, C_top.ncols(), ncols_Q, C_top.data(),
+        distTsqr_->apply (applyType, C_top.extent(1), ncols_Q, C_top.data(),
                           C_top.lda(), factor_output.second);
 
         // Copy the result from C_top back into the top ncols_C by

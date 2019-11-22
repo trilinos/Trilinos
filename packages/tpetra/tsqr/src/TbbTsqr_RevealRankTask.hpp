@@ -85,7 +85,7 @@ namespace TSQR {
         // doesn't suggest any orthogonality of the B input matrix,
         // though in this case B is U and U is orthogonal
         // (resp. unitary if Scalar is complex).
-        seq_.Q_times_B (Q_.nrows(), Q_.ncols(), Q_.data(), Q_.lda(),
+        seq_.Q_times_B (Q_.extent(0), Q_.extent(1), Q_.data(), Q_.lda(),
                         U_.data(), U_.lda(), contiguous_cache_blocks_);
       }
 
@@ -112,11 +112,10 @@ namespace TSQR {
             // has too few rows to be worth splitting.  In that case,
             // out_split.second (the bottom block) will be empty.  We
             // can deal with this by treating it as the base case.
-            if (out_split.second.empty() || out_split.second.nrows() == 0)
-              {
-                execute_base_case ();
-                return NULL;
-              }
+            if (out_split.second.empty() || out_split.second.extent(0) == 0) {
+              execute_base_case ();
+              return nullptr;
+            }
 
             // "c": continuation task
             tbb::empty_task& c =

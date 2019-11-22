@@ -59,15 +59,16 @@ namespace TSQR {
   void
   deep_copy (MatrixViewType1& A, const MatrixViewType2& B)
   {
-    const ptrdiff_t A_nrows (A.nrows ());
-    const ptrdiff_t A_ncols (A.ncols ());
-    if (A_nrows != ptrdiff_t (B.nrows ()) ||
-        A_ncols != ptrdiff_t (B.ncols ())) {
+    const ptrdiff_t A_nrows (A.extent (0));
+    const ptrdiff_t A_ncols (A.extent (1));
+    if (A_nrows != ptrdiff_t (B.extent (0)) ||
+        A_ncols != ptrdiff_t (B.extent (1))) {
       using std::endl;
       std::ostringstream os;
-      os << "deep_copy: dimensions of A (output matrix) and B (input matrix) "
-         << "are not compatible.  A is " << A.nrows () << " x " << A.ncols ()
-         << ", but B is " << B.nrows () << " x " << B.ncols () << ".";
+      os << "deep_copy: dimensions of A (output matrix) and B (input "
+        "matrix) are not compatible.  A is " << A.extent (0) << " x "
+         << A.extent (1) << ", but B is " << B.extent (0) << " x "
+         << B.extent (1) << ".";
       throw std::invalid_argument(os.str());
     }
     for (ptrdiff_t j = 0; j < A_ncols; ++j) {
@@ -84,12 +85,12 @@ namespace TSQR {
   matrix_equal (const FirstMatrixViewType& A,
                 const SecondMatrixViewType& B)
   {
-    if (A.nrows() != B.nrows() || A.ncols() != B.ncols()) {
+    if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
       return false;
     }
-    const ptrdiff_t nrows (A.nrows());
+    const ptrdiff_t nrows (A.extent(0));
     const ptrdiff_t A_lda (A.lda());
-    const ptrdiff_t ncols (A.ncols());
+    const ptrdiff_t ncols (A.extent(1));
     const ptrdiff_t B_lda (B.lda());
     const auto* A_j = A.data();
     const auto* B_j = B.data();
@@ -196,18 +197,18 @@ namespace TSQR {
     {
 #ifdef TSQR_MATVIEW_DEBUG
       if (std::numeric_limits< Ordinal >::is_signed) {
-        if (i < 0 || i >= nrows()) {
+        if (i < 0 || i >= extent(0)) {
           throw std::invalid_argument("Row range invalid");
         }
-        else if (j < 0 || j >= ncols()) {
+        else if (j < 0 || j >= extent(1)) {
           throw std::invalid_argument("Column range invalid");
         }
       }
       else {
-        if (i >= nrows()) {
+        if (i >= extent(0)) {
           throw std::invalid_argument("Row range invalid");
         }
-        else if (j >= ncols()) {
+        else if (j >= extent(1)) {
           throw std::invalid_argument("Column range invalid");
         }
       }
@@ -218,8 +219,10 @@ namespace TSQR {
       return A_[i + j*lda()];
     }
 
-    Ordinal nrows() const { return nrows_; }
-    Ordinal ncols() const { return ncols_; }
+    constexpr Ordinal extent(const int r) const noexcept {
+      return r == 0 ? nrows_ : (r == 1 ? ncols_ : Ordinal(0));
+    }
+
     Ordinal lda() const { return lda_; }
 
     /// \note The function is const, only because returning A_ doesn't
@@ -227,7 +230,7 @@ namespace TSQR {
     /// resulting pointer to fiddle with entries in the matrix, but
     /// that doesn't affect the MatView's properties.
     pointer_type data() const { return A_; }
-    bool empty() const { return nrows() == 0 || ncols() == 0; }
+    bool empty() const { return extent(0) == 0 || extent(1) == 0; }
 
     /// Return a "row block" (submatrix of consecutive rows in the
     /// inclusive range [firstRow,lastRow]).
@@ -235,17 +238,17 @@ namespace TSQR {
     {
 #ifdef TSQR_MATVIEW_DEBUG
       if (std::numeric_limits< Ordinal >::is_signed) {
-        if (firstRow < 0 || firstRow > lastRow || lastRow >= nrows()) {
+        if (firstRow < 0 || firstRow > lastRow || lastRow >= extent(0)) {
           throw std::invalid_argument ("Row range invalid");
         }
       }
       else {
-        if (firstRow > lastRow || lastRow >= nrows()) {
+        if (firstRow > lastRow || lastRow >= extent(0)) {
           throw std::invalid_argument ("Row range invalid");
         }
       }
 #endif // TSQR_MATVIEW_DEBUG
-      return MatView (lastRow - firstRow + 1, ncols(), data() + firstRow, lda());
+      return MatView (lastRow - firstRow + 1, extent(1), data() + firstRow, lda());
     }
 
     /// Split off and return the top cache block of nrows_top rows.
@@ -273,23 +276,23 @@ namespace TSQR {
           os << "nrows_top (= " << nrows_top << ") < 0";
           throw std::invalid_argument (os.str());
         }
-      else if (nrows_top > nrows())
+      else if (nrows_top > extent(0))
         {
           std::ostringstream os;
-          os << "nrows_top (= " << nrows_top << ") > nrows (= " << nrows() << ")";
+          os << "nrows_top (= " << nrows_top << ") > nrows (= " << extent(0) << ")";
           throw std::invalid_argument (os.str());
         }
 #endif // TSQR_MATVIEW_DEBUG
 
       Scalar* const A_top_ptr = data();
       Scalar* A_rest_ptr;
-      const Ordinal nrows_rest = nrows() - nrows_top;
+      const Ordinal nrows_rest = extent(0) - nrows_top;
       Ordinal lda_top, lda_rest;
       if (b_contiguous_blocks)
         {
           lda_top = nrows_top;
           lda_rest = nrows_rest;
-          A_rest_ptr = A_top_ptr + nrows_top * ncols();
+          A_rest_ptr = A_top_ptr + nrows_top * extent(1);
         }
       else
         {
@@ -297,7 +300,7 @@ namespace TSQR {
           lda_rest = lda();
           A_rest_ptr = A_top_ptr + nrows_top;
         }
-      MatView A_top (nrows_top, ncols(), data(), lda_top);
+      MatView A_top (nrows_top, extent(1), data(), lda_top);
       A_ = A_rest_ptr;
       nrows_ = nrows_rest;
       lda_ = lda_rest;
@@ -313,19 +316,19 @@ namespace TSQR {
 #ifdef TSQR_MATVIEW_DEBUG
       if (std::numeric_limits< Ordinal >::is_signed && nrows_bottom < 0)
         throw std::invalid_argument ("nrows_bottom < 0");
-      if (nrows_bottom > nrows())
+      if (nrows_bottom > extent(0))
         throw std::invalid_argument ("nrows_bottom > nrows");
 #endif // TSQR_MATVIEW_DEBUG
 
       Scalar* const A_rest_ptr = data();
       Scalar* A_bottom_ptr;
-      const Ordinal nrows_rest = nrows() - nrows_bottom;
+      const Ordinal nrows_rest = extent(0) - nrows_bottom;
       Ordinal lda_bottom, lda_rest;
       if (b_contiguous_blocks)
         {
           lda_bottom = nrows_bottom;
-          lda_rest = nrows() - nrows_bottom;
-          A_bottom_ptr = A_rest_ptr + nrows_rest * ncols();
+          lda_rest = extent(0) - nrows_bottom;
+          A_bottom_ptr = A_rest_ptr + nrows_rest * extent(1);
         }
       else
         {
@@ -333,7 +336,7 @@ namespace TSQR {
           lda_rest = lda();
           A_bottom_ptr = A_rest_ptr + nrows_rest;
         }
-      MatView A_bottom (nrows_bottom, ncols(), A_bottom_ptr, lda_bottom);
+      MatView A_bottom (nrows_bottom, extent(1), A_bottom_ptr, lda_bottom);
       A_ = A_rest_ptr;
       nrows_ = nrows_rest;
       lda_ = lda_rest;
@@ -344,8 +347,8 @@ namespace TSQR {
     void
     fill (const scalar_type& value)
     {
-      const ordinal_type num_rows = nrows();
-      const ordinal_type num_cols = ncols();
+      const ordinal_type num_rows = extent(0);
+      const ordinal_type num_cols = extent(1);
       const ordinal_type stride = lda();
 
       scalar_type* A_j = data();
@@ -355,12 +358,12 @@ namespace TSQR {
     }
 
     bool operator== (const MatView& rhs) const {
-      return nrows() == rhs.nrows() && ncols() == rhs.ncols() &&
+      return extent(0) == rhs.extent(0) && extent(1) == rhs.extent(1) &&
         lda() == rhs.lda() && data() == rhs.data();
     }
 
     bool operator!= (const MatView& rhs) const {
-      return nrows() != rhs.nrows() || ncols() != rhs.ncols() ||
+      return extent(0) != rhs.extent(0) || extent(1) != rhs.extent(1) ||
         lda() != rhs.lda() || data() != rhs.data();
     }
 
@@ -406,8 +409,8 @@ namespace TSQR {
     }
 
     ConstMatView (const ConstMatView& view) :
-      nrows_(view.nrows()),
-      ncols_(view.ncols()),
+      nrows_(view.extent(0)),
+      ncols_(view.extent(1)),
       lda_(view.lda()),
       A_(view.data())
     {}
@@ -415,8 +418,8 @@ namespace TSQR {
     //! Assignment operator: Does a shallow (pointer) copy.
     ConstMatView& operator= (const ConstMatView& view) {
       if (this != &view) {
-        nrows_ = view.nrows();
-        ncols_ = view.ncols();
+        nrows_ = view.extent(0);
+        ncols_ = view.extent(1);
         lda_ = view.lda();
         A_ = view.data();
       }
@@ -427,18 +430,18 @@ namespace TSQR {
     {
 #ifdef TSQR_MATVIEW_DEBUG
       if (std::numeric_limits< Ordinal >::is_signed) {
-        if (i < 0 || i >= nrows()) {
+        if (i < 0 || i >= extent(0)) {
             throw std::invalid_argument("Row range invalid");
         }
-        else if (j < 0 || j >= ncols()) {
+        else if (j < 0 || j >= extent(1)) {
             throw std::invalid_argument("Column range invalid");
         }
       }
       else {
-        if (i >= nrows()) {
+        if (i >= extent(0)) {
             throw std::invalid_argument("Row range invalid");
         }
-        else if (j >= ncols()) {
+        else if (j >= extent(1)) {
             throw std::invalid_argument("Column range invalid");
         }
       }
@@ -449,11 +452,15 @@ namespace TSQR {
       return A_[i + j*lda()];
     }
 
-    Ordinal nrows() const { return nrows_; }
-    Ordinal ncols() const { return ncols_; }
+    constexpr Ordinal extent(const int r) const noexcept {
+      return r == 0 ? nrows_ : (r == 1 ? ncols_ : Ordinal(0));
+    }
+
     Ordinal lda() const { return lda_; }
+
     pointer_type data() const { return A_; }
-    bool empty() const { return nrows() == 0 || ncols() == 0; }
+
+    bool empty() const { return extent(0) == 0 || extent(1) == 0; }
 
     /// Return a "row block" (submatrix of consecutive rows in the
     /// inclusive range [firstRow,lastRow]).
@@ -461,10 +468,10 @@ namespace TSQR {
                            const Ordinal lastRow) const
     {
 #ifdef TSQR_MATVIEW_DEBUG
-      if (firstRow < 0 || lastRow >= nrows())
+      if (firstRow < 0 || lastRow >= extent(0))
         throw std::invalid_argument ("Row range invalid");
 #endif // TSQR_MATVIEW_DEBUG
-      return ConstMatView (lastRow - firstRow + 1, ncols(), data() + firstRow, lda());
+      return ConstMatView (lastRow - firstRow + 1, extent(1), data() + firstRow, lda());
     }
 
 
@@ -489,19 +496,19 @@ namespace TSQR {
 #ifdef TSQR_MATVIEW_DEBUG
       if (std::numeric_limits< Ordinal >::is_signed && nrows_top < 0)
         throw std::invalid_argument ("nrows_top < 0");
-      if (nrows_top > nrows())
+      if (nrows_top > extent(0))
         throw std::invalid_argument ("nrows_top > nrows");
 #endif // TSQR_MATVIEW_DEBUG
 
       pointer_type const A_top_ptr = data();
       pointer_type A_rest_ptr;
-      const Ordinal nrows_rest = nrows() - nrows_top;
+      const Ordinal nrows_rest = extent(0) - nrows_top;
       Ordinal lda_top, lda_rest;
       if (b_contiguous_blocks)
         {
           lda_top = nrows_top;
           lda_rest = nrows_rest;
-          A_rest_ptr = A_top_ptr + nrows_top * ncols();
+          A_rest_ptr = A_top_ptr + nrows_top * extent(1);
         }
       else
         {
@@ -509,7 +516,7 @@ namespace TSQR {
           lda_rest = lda();
           A_rest_ptr = A_top_ptr + nrows_top;
         }
-      ConstMatView A_top (nrows_top, ncols(), data(), lda_top);
+      ConstMatView A_top (nrows_top, extent(1), data(), lda_top);
       A_ = A_rest_ptr;
       nrows_ = nrows_rest;
       lda_ = lda_rest;
@@ -526,19 +533,19 @@ namespace TSQR {
 #ifdef TSQR_MATVIEW_DEBUG
       if (std::numeric_limits< Ordinal >::is_signed && nrows_bottom < 0)
         throw std::invalid_argument ("nrows_bottom < 0");
-      if (nrows_bottom > nrows())
+      if (nrows_bottom > extent(0))
         throw std::invalid_argument ("nrows_bottom > nrows");
 #endif // TSQR_MATVIEW_DEBUG
 
       pointer_type const A_rest_ptr = data();
       pointer_type A_bottom_ptr;
-      const ordinal_type nrows_rest = nrows() - nrows_bottom;
+      const ordinal_type nrows_rest = extent(0) - nrows_bottom;
       ordinal_type lda_bottom, lda_rest;
       if (b_contiguous_blocks)
         {
           lda_bottom = nrows_bottom;
-          lda_rest = nrows() - nrows_bottom;
-          A_bottom_ptr = A_rest_ptr + nrows_rest * ncols();
+          lda_rest = extent(0) - nrows_bottom;
+          A_bottom_ptr = A_rest_ptr + nrows_rest * extent(1);
         }
       else
         {
@@ -546,7 +553,7 @@ namespace TSQR {
           lda_rest = lda();
           A_bottom_ptr = A_rest_ptr + nrows_rest;
         }
-      ConstMatView A_bottom (nrows_bottom, ncols(), A_bottom_ptr, lda_bottom);
+      ConstMatView A_bottom (nrows_bottom, extent(1), A_bottom_ptr, lda_bottom);
       A_ = A_rest_ptr;
       nrows_ = nrows_rest;
       lda_ = lda_rest;
@@ -555,12 +562,12 @@ namespace TSQR {
     }
 
     bool operator== (const ConstMatView& rhs) const {
-      return nrows() == rhs.nrows() && ncols() == rhs.ncols() &&
+      return extent(0) == rhs.extent(0) && extent(1) == rhs.extent(1) &&
         lda() == rhs.lda() && data() == rhs.data();
     }
 
     bool operator!= (const ConstMatView& rhs) const {
-      return nrows() != rhs.nrows() || ncols() != rhs.ncols() ||
+      return extent(0) != rhs.extent(0) || extent(1) != rhs.extent(1) ||
         lda() != rhs.lda() || data() != rhs.data();
     }
 

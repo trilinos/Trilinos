@@ -120,7 +120,7 @@ namespace TSQR {
             // has too few rows to be worth splitting.  In that case,
             // A_split.second (the bottom block) will be empty.  We
             // can deal with this by treating it as the base case.
-            if (A_split.second.empty() || A_split.second.nrows() == 0)
+            if (A_split.second.empty() || A_split.second.extent(0) == 0)
               {
                 execute_base_case ();
                 return NULL;
@@ -195,13 +195,13 @@ namespace TSQR {
                            "partitions are the same.");
         // We only read and write the upper ncols x ncols triangle of
         // each block.
-        TEUCHOS_TEST_FOR_EXCEPTION(A_top.ncols() != A_bot.ncols(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(A_top.extent(1) != A_bot.extent(1), std::logic_error,
                            thePrefix << "The top cache block A_top is "
-                           << A_top.nrows() << " x " << A_top.ncols()
+                           << A_top.extent(0) << " x " << A_top.extent(1)
                            << ", and the bottom cache block A_bot is "
-                           << A_bot.nrows() << " x " << A_bot.ncols()
+                           << A_bot.extent(0) << " x " << A_bot.extent(1)
                            << "; this means we can't factor [A_top; A_bot].");
-        const LocalOrdinal ncols = A_top.ncols();
+        const LocalOrdinal ncols = A_top.extent(1);
         std::vector<Scalar>& tau = par_output_[P_bot];
         std::vector<Scalar> work (ncols);
         combine_.factor_pair (ncols, A_top.data(), A_top.lda(),
@@ -214,7 +214,7 @@ namespace TSQR {
         TimerType timer("");
         timer.start();
         seq_outputs_[P_first_] =
-          seq_.factor (A_.nrows(), A_.ncols(), A_.data(),
+          seq_.factor (A_.extent(0), A_.extent(1), A_.data(),
                        A_.lda(), contiguous_cache_blocks_);
         // Assign the topmost cache block of the current partition to
         // *A_top_ptr_.  Every base case invocation does this, so that

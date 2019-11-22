@@ -89,7 +89,7 @@ namespace TSQR {
           // has too few rows to be worth splitting.  In that case,
           // C_split.second (the bottom block) will be empty.  We
           // can deal with this by treating it as the base case.
-          if (C_split.second.empty() || C_split.second.nrows() == 0) {
+          if (C_split.second.empty() || C_split.second.extent(0) == 0) {
             execute_base_case ();
             return nullptr;
           }
@@ -124,7 +124,7 @@ namespace TSQR {
       execute_base_case ()
       {
         // Fill my partition with zeros.
-        seq_.fill_with_zeros (C_.nrows(), C_.ncols(), C_.data(),
+        seq_.fill_with_zeros (C_.extent(0), C_.extent(1), C_.data(),
                               C_.lda(), contiguous_cache_blocks_);
       }
     };

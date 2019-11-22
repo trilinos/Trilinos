@@ -143,7 +143,7 @@ namespace TSQR {
           // Process the first cache block: ATA := A_cur^T * A_cur
           //
           // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
-          blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.nrows (),
+          blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.extent (0),
                      Scalar (1), A_cur.data (), A_cur.lda (), A_cur.data (),
                      A_cur.lda (), Scalar (0), ATA.data (), ATA.lda ());
           // Process the remaining cache blocks in order.
@@ -152,7 +152,7 @@ namespace TSQR {
             // ATA := ATA + A_cur^T * A_cur
             //
             // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
-            blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.nrows (),
+            blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.extent (0),
                        Scalar (1), A_cur.data (), A_cur.lda (), A_cur.data (),
                        A_cur.lda (), Scalar (1), ATA.data (), ATA.lda ());
           }
@@ -194,14 +194,14 @@ namespace TSQR {
 
         // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
         blas.TRSM (RIGHT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG,
-                   A_cur.nrows (), ncols, Scalar (1), ATA.data (), ATA.lda (),
+                   A_cur.extent (0), ncols, Scalar (1), ATA.data (), ATA.lda (),
                    A_cur.data (), A_cur.lda ());
 
         // Process the remaining cache blocks in order.
         while (! A_rest.empty ()) {
           A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
           blas.TRSM (RIGHT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG,
-                     A_cur.nrows (), ncols, Scalar (1), ATA.data (), ATA.lda (),
+                     A_cur.extent (0), ncols, Scalar (1), ATA.data (), ATA.lda (),
                      A_cur.data (), A_cur.lda ());
         }
       }
@@ -305,14 +305,15 @@ namespace TSQR {
       // blocks (in C) may or may not be stored contiguously.  If they
       // are stored contiguously, the CacheBlocker knows the right
       // layout, based on the cache blocking strategy.
-      CacheBlocker< LocalOrdinal, Scalar > blocker (C.nrows(), C.ncols(), strategy_);
+      CacheBlocker<LocalOrdinal, Scalar> blocker
+        (C.extent(0), C.extent(1), strategy_);
 
       // C_top_block is a view of the topmost cache block of C.
       // C_top_block should have >= ncols rows, otherwise either cache
       // blocking is broken or the input matrix C itself had fewer
       // rows than columns.
       MatrixViewType C_top_block = blocker.top_block (C, contiguous_cache_blocks);
-      if (C_top_block.nrows() < C_top_block.ncols())
+      if (C_top_block.extent(0) < C_top_block.extent(1))
         throw std::logic_error ("C\'s topmost cache block has fewer rows than "
                                 "columns");
       return C_top_block;

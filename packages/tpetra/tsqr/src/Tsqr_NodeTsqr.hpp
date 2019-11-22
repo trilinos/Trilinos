@@ -323,8 +323,8 @@ namespace TSQR {
   protected:
     /// \brief Return view of topmost cache block of C
     ///
-    /// \param C [in] Matrix (view), supporting the usual nrows(),
-    ///   ncols(), data(), lda() interface.
+    /// \param C [in] Matrix (view), supporting the usual extent(0),
+    ///   extent(1), data(), lda() interface.
     /// \param contiguousCacheBlocks [in] Whether the cache blocks
     ///   in C are stored contiguously.
     ///
@@ -351,7 +351,7 @@ namespace TSQR {
     /// Return a view of the topmost cache block (on this node) of the
     /// given matrix C.  This is not necessarily square, though it
     /// must have at least as many rows as columns.  For a view of the
-    /// first C.ncols() rows of that block, which methods like
+    /// first C.extent(1) rows of that block, which methods like
     /// Tsqr::apply() need, do the following:
     /// \code
     /// MatrixViewType top = this->top_block (C, contig);
@@ -359,7 +359,7 @@ namespace TSQR {
     /// \endcode
     ///
     /// Models for MatrixViewType are MatView and ConstMatView.
-    /// MatrixViewType must have member functions nrows(), ncols(),
+    /// MatrixViewType must have member functions extent(0), extent(1),
     /// data(), and lda(), and its constructor must take the same four
     /// arguments as the constructor of ConstMatView.
     template<class MatrixViewType>
@@ -372,17 +372,17 @@ namespace TSQR {
       // method.  The only cast from const to nonconst may be in the
       // return value, but there it's legitimate since we're just
       // using the same constness as C has.
-      const_mat_view_type C_view (C.nrows(), C.ncols(), C.data(), C.lda());
+      const_mat_view_type C_view (C.extent(0), C.extent(1), C.data(), C.lda());
       const_mat_view_type C_top =
         const_top_block (C_view, contiguous_cache_blocks);
-      TEUCHOS_TEST_FOR_EXCEPTION(C_top.nrows() < C_top.ncols(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(C_top.extent(0) < C_top.extent(1), std::logic_error,
                          "The subclass of NodeTsqr has a bug in const_top_block"
                          "(); it returned a block with fewer rows than columns "
-                         "(" << C_top.nrows() << " rows and " << C_top.ncols()
+                         "(" << C_top.extent(0) << " rows and " << C_top.extent(1)
                          << " columns).  Please report this bug to the Kokkos "
                          "developers.");
       typedef typename MatrixViewType::pointer_type ptr_type;
-      return MatrixViewType (C_top.nrows(), C_top.ncols(),
+      return MatrixViewType (C_top.extent(0), C_top.extent(1),
                              const_cast<ptr_type> (C_top.data()),
                              C_top.lda());
     }

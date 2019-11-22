@@ -80,7 +80,7 @@ namespace TSQR {
       typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
 
       const int myRank = scalarComm->rank();
-      const ordinal_type ncols = A_local.ncols();
+      const ordinal_type ncols = A_local.extent(1);
 
       if (myRank == 0) {
         // Generate some singular values for the test problem.

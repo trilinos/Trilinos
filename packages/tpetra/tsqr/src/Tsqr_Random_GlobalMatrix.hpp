@@ -61,8 +61,8 @@ namespace TSQR {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       typedef typename MatrixViewType::scalar_type scalar_type;
 
-      const ordinal_type nrows = A.nrows();
-      const ordinal_type ncols = A.ncols();
+      const ordinal_type nrows = A.extent(0);
+      const ordinal_type ncols = A.extent(1);
       const ordinal_type lda = A.lda();
 
       if (nrows == lda) { // A is stored contiguously.
@@ -100,8 +100,8 @@ namespace TSQR {
       const int myRank = ordinalMessenger->rank();
       Impl::SystemBlas<scalar_type> blas;
 
-      const ordinal_type nrowsLocal = A_local.nrows();
-      const ordinal_type ncols = A_local.ncols();
+      const ordinal_type nrowsLocal = A_local.extent(0);
+      const ordinal_type ncols = A_local.extent(1);
 
       // Theory: Suppose there are P processors.  Proc q wants an m_q by n
       // component of the matrix A, which we write as A_q.  On Proc 0, we

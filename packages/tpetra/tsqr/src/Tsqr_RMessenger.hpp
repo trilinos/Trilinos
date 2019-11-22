@@ -82,7 +82,7 @@ namespace TSQR {
     void
     recv (MatrixViewType& R, const int srcProc)
     {
-      const typename MatrixViewType::ordinal_type ncols = R.ncols();
+      const typename MatrixViewType::ordinal_type ncols = R.extent(1);
       const Ordinal buflen = buffer_length (ncols);
       buffer_.resize (buflen);
       messenger_->recv (&buffer_[0], buflen, srcProc, 0);
@@ -96,7 +96,7 @@ namespace TSQR {
       const int myRank = messenger_->rank();
       if (myRank == rootProc)
         pack (R);
-      messenger_->broadcast (&buffer_[0], buffer_length (R.ncols()), rootProc);
+      messenger_->broadcast (buffer_.data(), buffer_length (R.extent(1)), rootProc);
       if (myRank != rootProc)
         unpack (R);
     }
@@ -138,7 +138,7 @@ namespace TSQR {
       typedef typename ConstMatrixViewType::ordinal_type view_ordinal_type;
       typedef typename std::vector< Scalar >::iterator iter_type;
 
-      const view_ordinal_type ncols = R.ncols();
+      const view_ordinal_type ncols = R.extent(1);
       const Ordinal buf_length = buffer_length (ncols);
       buffer_.resize (buf_length);
       iter_type iter = buffer_.begin();
@@ -156,7 +156,7 @@ namespace TSQR {
       typedef typename MatrixViewType::ordinal_type view_ordinal_type;
       typedef typename std::vector< Scalar >::const_iterator const_iter_type;
 
-      const view_ordinal_type ncols = R.ncols();
+      const view_ordinal_type ncols = R.extent(1);
       const_iter_type iter = buffer_.begin();
       for (view_ordinal_type j = 0; j < ncols; ++j) {
         std::copy (iter, iter + (j+1), &R(0,j));
@@ -191,7 +191,7 @@ namespace TSQR {
     const int my_rank = messenger->rank();
 
     if (my_rank == 0) {
-      const ordinal_type ncols = R_stack.ncols();
+      const ordinal_type ncols = R_stack.extent(1);
 
       // Copy data from top ncols x ncols block of R_stack into R_local.
       const_view_type R_stack_view_first (ncols, ncols, R_stack.data(), R_stack.lda());
@@ -231,7 +231,7 @@ namespace TSQR {
     const int my_rank = messenger->rank();
 
     if (my_rank == 0) {
-      const ordinal_type ncols = R_stack.ncols();
+      const ordinal_type ncols = R_stack.extent(1);
 
       // Copy data from R_local into top ncols x ncols block of R_stack.
       mat_view_type R_stack_view_first (ncols, ncols, R_stack.data(), R_stack.lda());

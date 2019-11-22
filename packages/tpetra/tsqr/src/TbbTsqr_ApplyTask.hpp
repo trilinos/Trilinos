@@ -128,7 +128,7 @@ namespace TSQR {
             // that case, Q_split.second and C_split.second (the
             // bottom block) will be empty.  We can deal with this by
             // treating it as the base case.
-            if (Q_split.second.empty() || Q_split.second.nrows() == 0)
+            if (Q_split.second.empty() || Q_split.second.extent(0) == 0)
               {
                 execute_base_case ();
                 return NULL;
@@ -191,9 +191,9 @@ namespace TSQR {
         TimerType timer("");
         timer.start();
         const std::vector<SeqOutput>& seq_outputs = factor_output_.first;
-        seq_.apply (apply_type_, Q_.nrows(), Q_.ncols(),
+        seq_.apply (apply_type_, Q_.extent(0), Q_.extent(1),
                     Q_.data(), Q_.lda(), seq_outputs[P_first_],
-                    C_.ncols(), C_.data(), C_.lda(),
+                    C_.extent(1), C_.data(), C_.lda(),
                     contiguous_cache_blocks_);
         my_seq_timing_ = timer.stop();
       }
@@ -211,8 +211,9 @@ namespace TSQR {
 
         const ParOutput& par_output = factor_output_.second;
         const std::vector<Scalar>& tau = par_output[P_bot];
-        std::vector<Scalar> work (C_top.ncols());
-        combine_.apply_pair (apply_type_, C_top.ncols(), Q_bot.ncols(),
+        std::vector<Scalar> work (C_top.extent(1));
+        combine_.apply_pair (apply_type_,
+                             C_top.extent(1), Q_bot.extent(1),
                              Q_bot.data(), Q_bot.lda(), tau.data(),
                              C_top.data(), C_top.lda(),
                              C_bot.data(), C_bot.lda(), work.data());

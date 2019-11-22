@@ -105,7 +105,7 @@ namespace TSQR {
       nrows_ (num_rows),
       ncols_ (num_cols),
       strategy_ (strategy),
-      nrows_cache_block_ (strategy_.cache_block_num_rows (ncols()))
+      nrows_cache_block_ (strategy_.cache_block_num_rows (extent(1)))
     {
       validate ();
     }
@@ -114,21 +114,21 @@ namespace TSQR {
     CacheBlocker () :
       nrows_ (0),
       ncols_ (0),
-      nrows_cache_block_ (strategy_.cache_block_num_rows (ncols()))
+      nrows_cache_block_ (strategy_.cache_block_num_rows (extent(1)))
     {}
 
     //! Copy constructor
     CacheBlocker (const CacheBlocker& rhs) :
-      nrows_ (rhs.nrows()),
-      ncols_ (rhs.ncols()),
+      nrows_ (rhs.extent(0)),
+      ncols_ (rhs.extent(1)),
       strategy_ (rhs.strategy_),
       nrows_cache_block_ (rhs.nrows_cache_block_)
     {}
 
     //! Assignment operator
     CacheBlocker& operator= (const CacheBlocker& rhs) {
-      nrows_ = rhs.nrows();
-      ncols_ = rhs.ncols();
+      nrows_ = rhs.extent(0);
+      ncols_ = rhs.extent(1);
       strategy_ = rhs.strategy_;
       nrows_cache_block_ = rhs.nrows_cache_block_;
       return *this;
@@ -137,11 +137,9 @@ namespace TSQR {
     //! Cache size hint (in bytes).
     size_t cache_size_hint () const { return strategy_.cache_size_hint(); }
 
-    //! Number of rows in the matrix to block.
-    Ordinal nrows () const { return nrows_; }
-
-    //! Number of columns in the matrix to block.
-    Ordinal ncols () const { return ncols_; }
+    constexpr Ordinal extent (const int r) const noexcept {
+      return r == 0 ? nrows_ : (r == 1 ? ncols_ : Ordinal(0));
+    }
 
     /// \brief Split A in place into [A_top; A_rest].
     ///
@@ -161,7 +159,7 @@ namespace TSQR {
     ///   columns with which this CacheBlocker was set up (rather than
     ///   the number of columns in A, which may not be the same).  The
     ///   idea is to have the number and distribution of rows in the
-    ///   cache blocks be the same as the original nrows() by ncols()
+    ///   cache blocks be the same as the original extent(0) by extent(1)
     ///   matrix with which this CacheBlocker was initialized.
     template< class MatrixViewType >
     MatrixViewType
@@ -169,7 +167,7 @@ namespace TSQR {
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       const ordinal_type nrows_top =
-        strategy_.top_block_split_nrows (A.nrows(), ncols(),
+        strategy_.top_block_split_nrows (A.extent(0), extent(1),
                                          nrows_cache_block());
       // split_top() sets A to A_rest, and returns A_top.
       return A.split_top (nrows_top, contiguous_cache_blocks);
@@ -192,7 +190,7 @@ namespace TSQR {
       // Ignore the number of columns in A, since we want to block all
       // matrices using the same cache blocking strategy.
       const ordinal_type nrows_top =
-        strategy_.top_block_split_nrows (A.nrows(), ncols(),
+        strategy_.top_block_split_nrows (A.extent(0), extent(1),
                                          nrows_cache_block());
       MatrixViewType A_copy (A);
       return A_copy.split_top (nrows_top, contiguous_cache_blocks);
@@ -220,7 +218,7 @@ namespace TSQR {
       // Ignore the number of columns in A, since we want to block all
       // matrices using the same cache blocking strategy.
       const ordinal_type nrows_bottom =
-        strategy_.bottom_block_split_nrows (A.nrows(), ncols(),
+        strategy_.bottom_block_split_nrows (A.extent(0), extent(1),
                                             nrows_cache_block());
       // split_bottom() sets A to A_rest, and returns A_bot.
       return A.split_bottom (nrows_bottom, contiguous_cache_blocks);
@@ -342,7 +340,7 @@ namespace TSQR {
           // This call modifies A_out_rest.
           mat_view_type A_out_cur = split_top_block (A_out_rest, true);
 
-          copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.data(),
+          copy_matrix (A_in_cur.extent(0), num_cols, A_out_cur.data(),
                        A_out_cur.lda(), A_in_cur.data(), A_in_cur.lda());
         }
     }
@@ -375,7 +373,7 @@ namespace TSQR {
           // This call modifies A_out_rest.
           mat_view_type A_out_cur = split_top_block (A_out_rest, false);
 
-          copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.data(),
+          copy_matrix (A_in_cur.extent(0), num_cols, A_out_cur.data(),
                        A_out_cur.lda(), A_in_cur.data(), A_in_cur.lda());
         }
     }
@@ -404,7 +402,7 @@ namespace TSQR {
 
       // Total number of cache blocks.
       const ordinal_type num_cache_blocks =
-        strategy_.num_cache_blocks (A.nrows(), A.ncols(), nrows_cache_block());
+        strategy_.num_cache_blocks (A.extent(0), A.extent(1), nrows_cache_block());
 
       if (cache_block_index >= num_cache_blocks)
         return MatrixViewType (0, 0, NULL, 0); // empty
@@ -414,7 +412,7 @@ namespace TSQR {
       // result[2] = pointer offset (A.data() + result[2])
       // result[3] = leading dimension (a.k.a. stride) of the cache block
       std::vector<Ordinal> result =
-        strategy_.cache_block_details (cache_block_index, A.nrows(), A.ncols(),
+        strategy_.cache_block_details (cache_block_index, A.extent(0), A.extent(1),
                                        A.lda(), nrows_cache_block(),
                                        contiguous_cache_blocks);
       if (result[1] == 0)
@@ -424,7 +422,7 @@ namespace TSQR {
       // We expect that ordinal_type is signed, so adding signed
       // (ordinal_type) to unsigned (pointer) may raise compiler
       // warnings.
-      return MatrixViewType (result[1], A.ncols(),
+      return MatrixViewType (result[1], A.extent(1),
                              A.data() + static_cast<size_t>(result[2]),
                              result[3]);
     }
@@ -437,8 +435,8 @@ namespace TSQR {
     bool
     operator== (const CacheBlockingStrategy<Ordinal, Scalar>& rhs) const
     {
-      return nrows() == rhs.nrows() &&
-        ncols() == rhs.ncols() &&
+      return extent(0) == rhs.extent(0) &&
+        extent(1) == rhs.extent(1) &&
         strategy_ == rhs.strategy_;
     }
 
@@ -465,8 +463,8 @@ namespace TSQR {
     /// For an explanation of "typical," see the documentation of
     /// CacheBlockingStrategy.  In brief, some cache blocks may have
     /// more rows (up to but not including nrows_cache_block() +
-    /// ncols() rows), and some may have less (but no less than
-    /// ncols() rows).
+    /// extent(1) rows), and some may have less (but no less than
+    /// extent(1) rows).
     size_t nrows_cache_block () const { return nrows_cache_block_; }
   };
 
@@ -516,7 +514,7 @@ namespace TSQR {
                              const bool reverse,
                              const bool contiguousCacheBlocks) :
       A_ (A),
-      blocker_ (A_.nrows(), A_.ncols(), strategy),
+      blocker_ (A_.extent(0), A_.extent(1), strategy),
       curInd_ (currentIndex),
       reverse_ (reverse),
       contiguousCacheBlocks_ (contiguousCacheBlocks)

@@ -131,7 +131,7 @@ namespace TSQR {
     /// Overwrite the upper triangle of A_top with the R factor, and
     /// return a view of the R factor (stored in place in A_top).
     /// Overwrite the (strict) lower triangle of A_top, and the
-    /// A_top.ncols() entries of tau, with an implicit representation
+    /// A_top.extent(1) entries of tau, with an implicit representation
     /// of the Q factor.
     ///
     /// \param combine [in/out] Implementation of linear algebra
@@ -139,16 +139,16 @@ namespace TSQR {
     ///   implementations use scratch space.
     ///
     /// \param A_top [in/out] On input: the first (topmost) cache
-    ///   block of the matrix.  Prerequisite: A_top.nrows() >=
-    ///   A.top.ncols().  On output, the upper triangle of A_top is
+    ///   block of the matrix.  Prerequisite: A_top.extent(0) >=
+    ///   A.top.extent(1).  On output, the upper triangle of A_top is
     ///   overwritten with the R factor, and the lower trapezoid of
     ///   A_top is overwritten with part of the implicit
     ///   representation of the Q factor.
     ///
-    /// \param tau [out] Array of length >= A_top.ncols().  On output:
+    /// \param tau [out] Array of length >= A_top.extent(1).  On output:
     ///   the TAU array (see the LAPACK documentation for _GEQRF).
     ///
-    /// \param work [out] Workspace array of length >= A_top.ncols().
+    /// \param work [out] Workspace array of length >= A_top.extent(1).
     ///
     /// \return A view of the upper triangle of A_top, containing the
     ///   R factor.
@@ -158,8 +158,8 @@ namespace TSQR {
                         std::vector<Scalar>& tau,
                         std::vector<Scalar>& work) const
     {
-      const LocalOrdinal ncols = A_top.ncols();
-      combine.factor_first (A_top.nrows(), ncols, A_top.data(), A_top.lda(),
+      const LocalOrdinal ncols = A_top.extent(1);
+      combine.factor_first (A_top.extent(0), ncols, A_top.data(), A_top.lda(),
                             tau.data(), work.data());
       return mat_view_type(ncols, ncols, A_top.data(), A_top.lda());
     }
@@ -176,9 +176,9 @@ namespace TSQR {
                        mat_view_type& C_first,
                        std::vector<Scalar>& work) const
     {
-      const LocalOrdinal nrowsLocal = Q_first.nrows();
-      combine.apply_first (applyType, nrowsLocal, C_first.ncols(),
-                           Q_first.ncols(), Q_first.data(), Q_first.lda(),
+      const LocalOrdinal nrowsLocal = Q_first.extent(0);
+      combine.apply_first (applyType, nrowsLocal, C_first.extent(1),
+                           Q_first.extent(1), Q_first.data(), Q_first.lda(),
                            tau.data(), C_first.data(), C_first.lda(), work.data());
     }
 
@@ -191,9 +191,9 @@ namespace TSQR {
                    mat_view_type& C_cur,
                    std::vector<Scalar>& work) const
     {
-      const LocalOrdinal nrows_local = Q_cur.nrows();
-      const LocalOrdinal ncols_Q = Q_cur.ncols();
-      const LocalOrdinal ncols_C = C_cur.ncols();
+      const LocalOrdinal nrows_local = Q_cur.extent(0);
+      const LocalOrdinal ncols_Q = Q_cur.extent(1);
+      const LocalOrdinal ncols_C = C_cur.extent(1);
 
       combine.apply_inner (apply_type,
                            nrows_local, ncols_C, ncols_Q,
@@ -209,8 +209,8 @@ namespace TSQR {
                     std::vector<Scalar>& tau,
                     std::vector<Scalar>& work) const
     {
-      const LocalOrdinal nrows_local = A_cur.nrows();
-      const LocalOrdinal ncols = A_cur.ncols();
+      const LocalOrdinal nrows_local = A_cur.extent(0);
+      const LocalOrdinal ncols = A_cur.extent(1);
 
       combine.factor_inner (nrows_local, ncols, R.data(), R.lda(),
                             A_cur.data(), A_cur.lda(), tau.data(),
@@ -758,12 +758,12 @@ namespace TSQR {
         // GEMM doesn't like aliased arguments, so we use a copy.
         // We only copy the current cache block, rather than all of
         // Q; this saves memory.
-        Q_cur_copy.reshape (Q_cur.nrows (), ncols);
+        Q_cur_copy.reshape (Q_cur.extent (0), ncols);
         deep_copy (Q_cur_copy, Q_cur);
         // Q_cur := Q_cur_copy * B.
-        blas.GEMM (NO_TRANS, NO_TRANS, Q_cur.nrows (), ncols, ncols,
+        blas.GEMM (NO_TRANS, NO_TRANS, Q_cur.extent (0), ncols, ncols,
                    Scalar (1.0), Q_cur_copy.data (), Q_cur_copy.lda (),
-                   B, ldb, Scalar (0.0), Q_cur.data (), Q_cur.lda ());
+                   B, ldb, Scalar {}, Q_cur.data (), Q_cur.lda ());
       }
     }
 
@@ -861,7 +861,7 @@ namespace TSQR {
       // are stored contiguously, the CacheBlocker knows the right
       // layout, based on the cache blocking strategy.
       typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
-      blocker_type blocker (C.nrows(), C.ncols(), strategy_);
+      blocker_type blocker (C.extent(0), C.extent(1), strategy_);
 
       // C_top_block is a view of the topmost cache block of C.
       // C_top_block should have >= ncols rows, otherwise either cache

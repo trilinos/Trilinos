@@ -102,7 +102,7 @@ namespace TSQR {
 
         // Factor the (copy of the) matrix.  On output, the explicit Q
         // factor (of A_local) is in Q_local and the R factor is in R.
-        orthogonalizer.mgs (Q_local.nrows(), Q_local.ncols(),
+        orthogonalizer.mgs (Q_local.extent(0), Q_local.extent(1),
                             Q_local.data(), Q_local.lda(),
                             R.data(), R.lda());
         if (b_debug) {
@@ -277,8 +277,8 @@ namespace TSQR {
 
       TSQR::Test::verifyTimerConcept<TimerType>();
 
-      const ordinal_type nrows_local = Q_local.nrows();
-      const ordinal_type ncols = Q_local.ncols();
+      const ordinal_type nrows_local = Q_local.extent(0);
+      const ordinal_type ncols = Q_local.extent(1);
 
       // Benchmark MGS for ntrials trials.  The answer (the numerical
       // results of the factorization) is only valid if ntrials == 1,

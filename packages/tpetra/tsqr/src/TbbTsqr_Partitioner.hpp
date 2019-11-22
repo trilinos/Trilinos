@@ -95,8 +95,8 @@ namespace TSQR {
         const size_t num_partitions_top = P_mid - P_first + 1;
         //const size_t num_partitions_bottom = P_last - P_mid;
         const size_t num_partitions = P_last - P_first + 1;
-        const ordinal_type nrows = A.nrows();
-        const ordinal_type ncols = A.ncols();
+        const ordinal_type nrows = A.extent(0);
+        const ordinal_type ncols = A.extent(1);
 
         if (! should_split (nrows, ncols, num_partitions)) {
           return std::make_pair (MatrixViewType(A), MatrixViewType());

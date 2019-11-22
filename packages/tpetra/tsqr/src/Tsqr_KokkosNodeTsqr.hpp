@@ -168,12 +168,12 @@ namespace TSQR {
                              const mat_view_type& A_top,
                              std::vector<Scalar>& work) const
       {
-        std::vector<Scalar> tau (A_top.ncols());
+        std::vector<Scalar> tau (A_top.extent(1));
 
-        // We should only call this if A_top.ncols() > 0 and therefore
+        // We should only call this if A_top.extent(1) > 0 and therefore
         // work.size() > 0, but we've already checked for that, so we
         // don't have to check again.
-        combine.factor_first (A_top.nrows(), A_top.ncols(), A_top.data(),
+        combine.factor_first (A_top.extent(0), A_top.extent(1), A_top.data(),
                               A_top.lda(), tau.data(), work.data());
         return tau;
       }
@@ -184,12 +184,12 @@ namespace TSQR {
                         const mat_view_type& A_cur,
                         std::vector<Scalar>& work) const
       {
-        std::vector<Scalar> tau (A_top.ncols());
+        std::vector<Scalar> tau (A_top.extent(1));
 
-        // We should only call this if A_top.ncols() > 0 and therefore
+        // We should only call this if A_top.extent(1) > 0 and therefore
         // tau.size() > 0 and work.size() > 0, but we've already
         // checked for that, so we don't have to check again.
-        combine.factor_inner (A_cur.nrows(), A_top.ncols(),
+        combine.factor_inner (A_cur.extent(0), A_top.extent(1),
                               A_top.data(), A_top.lda(),
                               A_cur.data(), A_cur.lda(),
                               tau.data(), work.data());
@@ -211,7 +211,7 @@ namespace TSQR {
 
         // Workspace is created here, because it must not be shared
         // among threads.
-        std::vector<Scalar> work (A_.ncols());
+        std::vector<Scalar> work (A_.extent(1));
 
         // Range of cache blocks to factor.
         cb_range_type cbRange (A_, strategy_, cbIndices.first,
@@ -339,7 +339,7 @@ namespace TSQR {
         }
         else {
           const std::pair<LocalOrdinal, LocalOrdinal> cbIndices =
-            cacheBlockIndexRange (A_.nrows(), A_.ncols(), partitionIndex,
+            cacheBlockIndexRange (A_.extent(0), A_.extent(1), partitionIndex,
                                   numPartitions_, strategy_);
           // It's legitimate, though suboptimal, for some partitions
           // not to get any work to do (in this case, not to get any
@@ -385,17 +385,17 @@ namespace TSQR {
                             const mat_view_type& C_top,
                             std::vector<Scalar>& work) const
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(tau.size() < static_cast<size_t> (Q_top.ncols()),
+        TEUCHOS_TEST_FOR_EXCEPTION(tau.size() < static_cast<size_t> (Q_top.extent(1)),
                            std::logic_error,
                            "ApplyFirstPass::applyFirstCacheBlock: tau.size() "
                            "(= " << tau.size() << ") < number of columns "
-                           << Q_top.ncols() << " in the Q factor.  Please "
+                           << Q_top.extent(1) << " in the Q factor.  Please "
                            "report this bug to the Kokkos developers.");
 
         // If we get this far, it's fair to assume that we have
         // checked whether tau and work have nonzero lengths.
-        combine.apply_first (applyType, C_top.nrows(), C_top.ncols(),
-                             Q_top.ncols(), Q_top.data(), Q_top.lda(),
+        combine.apply_first (applyType, C_top.extent(0), C_top.extent(1),
+                             Q_top.extent(1), Q_top.data(), Q_top.lda(),
                              tau.data(), C_top.data(), C_top.lda(), work.data());
       }
 
@@ -409,16 +409,16 @@ namespace TSQR {
                        std::vector<Scalar>& work) const
       {
         TEUCHOS_TEST_FOR_EXCEPTION
-          (tau.size() < static_cast<size_t> (Q_cur.ncols()),
+          (tau.size() < static_cast<size_t> (Q_cur.extent(1)),
            std::logic_error, "ApplyFirstPass::applyCacheBlock: tau.size() "
            "(= " << tau.size() << ") < number of columns "
-           << Q_cur.ncols() << " in the Q factor."
+           << Q_cur.extent(1) << " in the Q factor."
            "  Please report this bug to the Tpetra developers.");
 
         // If we get this far, it's fair to assume that we have
         // checked whether tau and work have nonzero lengths.
-        combine.apply_inner (applyType, C_cur.nrows(), C_cur.ncols(),
-                             Q_cur.ncols(), Q_cur.data(), Q_cur.lda(),
+        combine.apply_inner (applyType, C_cur.extent(0), C_cur.extent(1),
+                             Q_cur.extent(1), Q_cur.data(), Q_cur.lda(),
                              tau.data(),
                              C_top.data(), C_top.lda(),
                              C_cur.data(), C_cur.lda(),
@@ -466,11 +466,11 @@ namespace TSQR {
            "indices [" << cbIndices.first << ", "
            << cbIndices.second << ") is not empty." << suffix);
 
-        // Task-local workspace array of length C_.ncols().  Workspace
+        // Task-local workspace array of length C_.extent(1).  Workspace
         // must be per task, else there will be race conditions as
         // different tasks attempt to write to and read from the same
         // workspace simultaneously.
-        std::vector<Scalar> work (C_.ncols());
+        std::vector<Scalar> work (C_.extent(1));
 
         Combine<LocalOrdinal, Scalar> combine;
         if (applyType.transposed ()) {
@@ -492,7 +492,7 @@ namespace TSQR {
           if (explicitQ_) {
             C_top.fill (Scalar {});
             if (partitionIndex == 0) {
-              for (LocalOrdinal j = 0; j < C_top.ncols(); ++j) {
+              for (LocalOrdinal j = 0; j < C_top.extent(1); ++j) {
                 C_top(j,j) = Scalar (1.0);
               }
             }
@@ -536,9 +536,9 @@ namespace TSQR {
             // internode part of the Q factor via DistTsqr).  However,
             // we still need to fill the rest of C_top (everything but
             // the top ncols rows of C_top) with zeros.
-            mat_view_type C_top_rest (C_top.nrows() - C_top.ncols(),
-                                      C_top.ncols(),
-                                      C_top.data() + C_top.ncols(),
+            mat_view_type C_top_rest (C_top.extent(0) - C_top.extent(1),
+                                      C_top.extent(1),
+                                      C_top.data() + C_top.extent(1),
                                       C_top.lda());
             C_top_rest.fill (Scalar {});
           }
@@ -662,7 +662,7 @@ namespace TSQR {
 
         // We use the same cache block indices for Q and for C.
         std::pair<LocalOrdinal, LocalOrdinal> cbIndices =
-          cacheBlockIndexRange (Q_.nrows(), Q_.ncols(), partitionIndex,
+          cacheBlockIndexRange (Q_.extent(0), Q_.extent(1), partitionIndex,
                                 numPartitions_, strategy_);
         if (cbIndices.second <= cbIndices.first)
           return;
@@ -671,15 +671,15 @@ namespace TSQR {
                                             size_t (cbIndices.second));
           TEUCHOS_TEST_FOR_EXCEPTION
             (cbIndices.first < LocalOrdinal(0), std::logic_error,
-             prefix << "cacheBlockIndexRange(" << Q_.nrows () << ", "
-             << Q_.ncols() << ", " << partitionIndex << ", "
+             prefix << "cacheBlockIndexRange(" << Q_.extent (0) << ", "
+             << Q_.extent(1) << ", " << partitionIndex << ", "
              << numPartitions_ << ", strategy) returned a cache block "
              "range " << cbIndices.first << "," << cbIndices.second <<
              " with negative starting index." << suffix);
           TEUCHOS_TEST_FOR_EXCEPTION
             (cbInds.second > tauArrays_.size (), std::logic_error,
-             prefix << "cacheBlockIndexRange(" << Q_.nrows () << ", "
-             << Q_.ncols() << ", " << partitionIndex << ", "
+             prefix << "cacheBlockIndexRange(" << Q_.extent (0) << ", "
+             << Q_.extent(1) << ", " << partitionIndex << ", "
              << numPartitions_ << ", strategy) returned a cache block "
              "range" << cbIndices.first << "," << cbIndices.second <<
              " with starting index larger than the number of tau "
@@ -760,14 +760,14 @@ namespace TSQR {
         unblock_ (unblock)
       {
         TEUCHOS_TEST_FOR_EXCEPTION
-          (A_in_.nrows() != A_out_.nrows() ||
-           A_in_.ncols() != A_out_.ncols(),
+          (A_in_.extent(0) != A_out_.extent(0) ||
+           A_in_.extent(1) != A_out_.extent(1),
            std::invalid_argument,
            "A_in and A_out do not have the same dimensions: "
-           "A_in is " << A_in_.nrows() << " by "
-           << A_in_.ncols() << ", but A_out is "
-           << A_out_.nrows() << " by "
-           << A_out_.ncols() << ".");
+           "A_in is " << A_in_.extent(0) << " by "
+           << A_in_.extent(1) << ", but A_out is "
+           << A_out_.extent(0) << " by "
+           << A_out_.extent(1) << ".");
         TEUCHOS_TEST_FOR_EXCEPTION
           (numPartitions_ < 1, std::invalid_argument,
            "The number of partitions " << numPartitions_
@@ -788,7 +788,7 @@ namespace TSQR {
         else {
           using index_range_type = std::pair<LocalOrdinal, LocalOrdinal>;
           const index_range_type cbIndices =
-            cacheBlockIndexRange (A_in_.nrows (), A_in_.ncols (),
+            cacheBlockIndexRange (A_in_.extent (0), A_in_.extent (1),
                                   partitionIndex, numPartitions_, strategy_);
           // It's perfectly legal for a partitioning to assign zero
           // cache block indices to a particular partition.  In that
@@ -837,16 +837,16 @@ namespace TSQR {
                  Matrix<LocalOrdinal, Scalar>& Q_temp) const
       {
         using Teuchos::NO_TRANS;
-        const LocalOrdinal numCols = Q_cur.ncols ();
+        const LocalOrdinal numCols = Q_cur.extent (1);
 
         // GEMM doesn't like aliased arguments, so we use a copy.  We
         // only copy the current cache block, rather than all of Q;
         // this saves memory.
-        Q_temp.reshape (Q_cur.nrows (), numCols);
+        Q_temp.reshape (Q_cur.extent (0), numCols);
         deep_copy (Q_temp, Q_cur);
 
         // Q_cur := Q_temp * B.
-        blas.GEMM (NO_TRANS, NO_TRANS, Q_cur.nrows(), numCols, numCols,
+        blas.GEMM (NO_TRANS, NO_TRANS, Q_cur.extent(0), numCols, numCols,
                    Scalar (1.0),
                    Q_temp.data(), Q_temp.lda(), B_.data(), B_.lda(),
                    Scalar(0), Q_cur.data(), Q_cur.lda());
@@ -909,7 +909,7 @@ namespace TSQR {
         else {
           typedef std::pair<LocalOrdinal, LocalOrdinal> index_range_type;
           const index_range_type cbIndices =
-            cacheBlockIndexRange (Q_.nrows (), Q_.ncols (), partitionIndex,
+            cacheBlockIndexRange (Q_.extent (0), Q_.extent (1), partitionIndex,
                                   numPartitions_, strategy_);
           if (cbIndices.first >= cbIndices.second) {
             return;
@@ -987,7 +987,7 @@ namespace TSQR {
         else {
           typedef std::pair<LocalOrdinal, LocalOrdinal> index_range_type;
           const index_range_type cbIndices =
-            cacheBlockIndexRange (A_.nrows(), A_.ncols(), partitionIndex,
+            cacheBlockIndexRange (A_.extent(0), A_.extent(1), partitionIndex,
                                   numPartitions_, strategy_);
           if (cbIndices.first >= cbIndices.second) {
             return;
@@ -1423,9 +1423,9 @@ namespace TSQR {
         return FactorOutput (0, 0);
       }
       const LO numRowsPerCacheBlock =
-        strategy_.cache_block_num_rows (A.ncols());
+        strategy_.cache_block_num_rows (A.extent(1));
       const LO numCacheBlocks =
-        strategy_.num_cache_blocks (A.nrows(), A.ncols(), numRowsPerCacheBlock);
+        strategy_.num_cache_blocks (A.extent(0), A.extent(1), numRowsPerCacheBlock);
       //
       // Compute the first factorization pass (over partitions).
       //
@@ -1453,11 +1453,11 @@ namespace TSQR {
         (R_top.empty (), std::logic_error, prefix << "After "
          "factorSecondPass: result.topBlocks[0] is an empty view."
          << suffix);
-      mat_view_type R_top_square (R_top.ncols(), R_top.ncols(),
+      mat_view_type R_top_square (R_top.extent(1), R_top.extent(1),
                                   R_top.data(), R_top.lda());
       R.fill (Scalar {});
       // Only copy the upper triangle of R_top into R.
-      copy_upper_triangle (R.ncols(), R.ncols(), R.data(), R.lda(),
+      copy_upper_triangle (R.extent(1), R.extent(1), R.data(), R.lda(),
                            R_top.data(), R_top.lda());
       return result;
     }
@@ -1496,12 +1496,12 @@ namespace TSQR {
       {
         using index_range_type = std::pair<LO, LO>;
         using blocker_type = CacheBlocker<LO, Scalar>;
-        blocker_type C_blocker (C.nrows(), C.ncols(), strategy_);
+        blocker_type C_blocker (C.extent(0), C.extent(1), strategy_);
 
         // For each partition, collect its top block of C.
         for (int partIdx = 0; partIdx < numParts; ++partIdx) {
           const index_range_type cbIndices =
-            cacheBlockIndexRange (C.nrows(), C.ncols(), partIdx,
+            cacheBlockIndexRange (C.extent(0), C.extent(1), partIdx,
                                   numParts, strategy_);
           if (cbIndices.first >= cbIndices.second) {
             topBlocksOfC[partIdx] = mat_view_type (0, 0, nullptr, 0);
@@ -1541,11 +1541,11 @@ namespace TSQR {
         (work_.size() == 0, std::logic_error,
          "Workspace array work_ has length zero.");
       TEUCHOS_TEST_FOR_EXCEPTION
-        (work_.size() < size_t (R_top.ncols()), std::logic_error,
+        (work_.size() < size_t (R_top.extent(1)), std::logic_error,
          "Workspace array work_ has length = " << work_.size()
-         << " < R_top.ncols() = " << R_top.ncols() << ".");
+         << " < R_top.extent(1) = " << R_top.extent(1) << ".");
 
-      std::vector<Scalar> tau (R_top.ncols ());
+      std::vector<Scalar> tau (R_top.extent (1));
 
       // Our convention for such helper methods is for the immediate
       // parent to allocate workspace (the work_ array in this case).
@@ -1553,7 +1553,7 @@ namespace TSQR {
       // The statement below only works if R_top and R_bot have a
       // nonzero (and the same) number of columns, but we have already
       // checked that above.
-      combine_.factor_pair (R_top.ncols(), R_top.data(), R_top.lda(),
+      combine_.factor_pair (R_top.extent(1), R_top.data(), R_top.lda(),
                             R_bot.data(), R_bot.lda(), tau.data(),
                             work_.data());
       return tau;
@@ -1587,7 +1587,7 @@ namespace TSQR {
       // However, other partitions besides the top one might be empty,
       // in which case their top blocks will be empty.  We skip over
       // the empty partitions in the loop below.
-      work_.resize (size_t (topBlocks[0].ncols()));
+      work_.resize (size_t (topBlocks[0].extent(1)));
       for (int partIdx = 1; partIdx < numPartitions; ++partIdx) {
         if (! topBlocks[partIdx].empty ()) {
           tauArrays[partIdx-1] = factorPair (topBlocks[0], topBlocks[partIdx]);
@@ -1608,7 +1608,7 @@ namespace TSQR {
       // The statement below only works if C_top, R_bot, and C_bot
       // have a nonzero (and the same) number of columns, but we have
       // already checked that above.
-      combine_.apply_pair (applyType, C_top.ncols(), R_bot.ncols(),
+      combine_.apply_pair (applyType, C_top.extent(1), R_bot.extent(1),
                            R_bot.data(), R_bot.lda(), tau.data(),
                            C_top.data(), C_top.lda(),
                            C_bot.data(), C_bot.lda(), work_.data());
@@ -1639,7 +1639,7 @@ namespace TSQR {
          << factorOutput.secondPassTauArrays.size()
          << ") != number of partitions minus 1 (= "
          << (numParts-1) << ")." << suffix);
-      const LocalOrdinal numCols = topBlocksOfC[0].ncols();
+      const LocalOrdinal numCols = topBlocksOfC[0].extent(1);
       work_.resize (size_t (numCols));
 
       // Top blocks of C are the whole cache blocks.  We only want to
@@ -1667,7 +1667,7 @@ namespace TSQR {
         }
       } else {
         // In non-transposed mode, when computing the first
-        // C.ncols() columns of the explicit Q factor, intranode
+        // C.extent(1) columns of the explicit Q factor, intranode
         // TSQR would run after internode TSQR (i.e., DistTsqr)
         // (even if only running on a single node in non-MPI mode).
         // Therefore, internode TSQR is responsible for filling the
@@ -1719,7 +1719,7 @@ namespace TSQR {
                      const bool contiguous_cache_blocks) const
     {
       typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
-      blocker_type blocker (C.nrows(), C.ncols(), strategy_);
+      blocker_type blocker (C.extent(0), C.extent(1), strategy_);
 
       // C_top_block is a view of the topmost cache block of C.
       // C_top_block should have >= ncols rows, otherwise either cache

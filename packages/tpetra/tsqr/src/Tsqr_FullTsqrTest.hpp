@@ -240,9 +240,10 @@ namespace TSQR {
           // this process is in A_local) with the given singular values.
           // This part has O(P) communication for P MPI processes.
           using TSQR::Random::randomGlobalMatrix;
-          // Help the C++ compiler with type inference.
-          mat_view_type A_local_view (A_local.nrows(), A_local.ncols(), A_local.data(), A_local.lda());
-          const magnitude_type* const singVals = (numCols == 0) ? NULL : &singularValues[0];
+          mat_view_type A_local_view (A_local.extent(0),
+                                      A_local.extent(1),
+                                      A_local.data(), A_local.lda());
+          const magnitude_type* const singVals = singularValues.data();
           randomGlobalMatrix<mat_view_type, generator_type> (&gen, A_local_view, singVals,
                                                              ordinalMessenger.getRawPtr(),
                                                              scalarMessenger.getRawPtr());
@@ -274,7 +275,7 @@ namespace TSQR {
         // factoring the matrix, when only the explicit Q factor is
         // wanted.
         if (testFactorExplicit) {
-          tsqr->factorExplicitRaw (A_copy.nrows (), A_copy.ncols (),
+          tsqr->factorExplicitRaw (A_copy.extent (0), A_copy.extent (1),
                                    A_copy.data (), A_copy.lda (),
                                    Q_local.data (), Q_local.lda (),
                                    R.data (), R.lda (),
@@ -321,7 +322,7 @@ namespace TSQR {
           // actual numerical rank.
           const magnitude_type tol = STM::zero();
           const ordinal_type rank =
-            tsqr->revealRankRaw (Q_local.nrows (), Q_local.ncols (),
+            tsqr->revealRankRaw (Q_local.extent (0), Q_local.extent (1),
                                  Q_local.data (), Q_local.lda (),
                                  R.data (), R.lda (), tol,
                                  contiguousCacheBlocks);

@@ -80,8 +80,8 @@ namespace TSQR {
         using std::cerr;
         using std::endl;
 
-        const ordinal_type nrows_local = A_local.nrows();
-        const ordinal_type ncols = A_local.ncols();
+        const ordinal_type nrows_local = A_local.extent(0);
+        const ordinal_type ncols = A_local.extent(1);
 
         // If specified, rearrange cache blocks in the copy.
         if (contiguousCacheBlocks) {
@@ -438,8 +438,8 @@ namespace TSQR {
       using std::cout;
       using std::endl;
 
-      const ordinal_type nrows_local = A_local.nrows();
-      const ordinal_type ncols = A_local.ncols();
+      const ordinal_type nrows_local = A_local.extent(0);
+      const ordinal_type ncols = A_local.extent(1);
 
       if (contiguousCacheBlocks) {
         tsqr.cache_block (nrows_local, ncols, A_copy.data(),

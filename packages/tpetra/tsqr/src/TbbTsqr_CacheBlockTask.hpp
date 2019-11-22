@@ -99,7 +99,7 @@ namespace TSQR {
             // the same way.)  In that case, out_split.second and
             // in_split.second (the bottom block) will be empty.  We
             // can deal with this by treating it as the base case.
-            if (out_split.second.empty() || out_split.second.nrows() == 0)
+            if (out_split.second.empty() || out_split.second.extent(0) == 0)
               {
                 execute_base_case ();
                 return nullptr;
@@ -134,7 +134,7 @@ namespace TSQR {
       void
       execute_base_case ()
       {
-        seq_.cache_block (A_out_.nrows(), A_out_.ncols(),
+        seq_.cache_block (A_out_.extent(0), A_out_.extent(1),
                           A_out_.data(), A_in_.data(), A_in_.lda());
       }
     };

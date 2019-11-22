@@ -160,7 +160,7 @@ namespace TSQR {
       implicit_Q (MatrixViewType& Q,
                   typename MatrixViewType::scalar_type tau[])
       {
-        implicit_Q (Q.nrows(), Q.ncols(), Q.data(), Q.lda(), tau);
+        implicit_Q (Q.extent(0), Q.extent(1), Q.data(), Q.lda(), tau);
       }
 
       void

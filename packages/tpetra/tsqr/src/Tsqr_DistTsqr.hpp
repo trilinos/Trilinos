@@ -274,7 +274,7 @@ namespace TSQR {
                                  "MessengerBase instance.");
       VecVec Q_factors, tau_arrays;
       DistTsqrHelper<ordinal_type, scalar_type> helper;
-      const ordinal_type ncols = R_mine.ncols();
+      const ordinal_type ncols = R_mine.extent(1);
 
       std::vector< scalar_type > R_local (ncols*ncols);
       copy_matrix (ncols, ncols, R_local.data(), ncols, R_mine.data(), R_mine.lda());

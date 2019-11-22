@@ -272,36 +272,36 @@ namespace TSQR {
             }
           }
 
-            if (printMatrices_)
-              {
-                if (myRank == 0)
-                  err_ << std::endl << "Computed Q factor:" << std::endl;
-                printGlobalMatrix (err_, Q_local, scalarComm_.get(), ordinalComm_.get());
-                if (myRank == 0)
-                  {
-                    err_ << std::endl << "Computed R factor:" << std::endl;
-                    print_local_matrix (err_, R.nrows(), R.ncols(), R.data(), R.lda());
-                    err_ << std::endl;
-                  }
-              }
-
-            // Verify the factorization
-            result_type result =
-              global_verify (numCols, numCols, A_local.data(), A_local.lda(),
-                             Q_local.data(), Q_local.lda(), R.data(), R.lda(),
-                             scalarComm_.get());
-            if (debug_)
-              {
-                scalarComm_->barrier();
-                if (myRank == 0)
-                  err_ << "-- Finished global_verify" << endl;
-              }
-            reportResults ("DistTsqrRB", numCols, result,
-                           additionalFieldNames, additionalData,
-                           printFieldNames && (! printedFieldNames));
-            if (printFieldNames && (! printedFieldNames))
-              printedFieldNames = true;
+          if (printMatrices_) {
+            if (myRank == 0) {
+              err_ << std::endl << "Computed Q factor:" << std::endl;
+            }
+            printGlobalMatrix (err_, Q_local, scalarComm_.get(), ordinalComm_.get());
+            if (myRank == 0) {
+              err_ << std::endl << "Computed R factor:" << std::endl;
+              print_local_matrix (err_, R.extent(0), R.extent(1), R.data(), R.lda());
+              err_ << std::endl;
+            }
           }
+
+          // Verify the factorization
+          result_type result =
+            global_verify (numCols, numCols, A_local.data(), A_local.lda(),
+                           Q_local.data(), Q_local.lda(), R.data(), R.lda(),
+                           scalarComm_.get());
+          if (debug_) {
+            scalarComm_->barrier();
+            if (myRank == 0) {
+              err_ << "-- Finished global_verify" << endl;
+            }
+          }
+          reportResults ("DistTsqrRB", numCols, result,
+                         additionalFieldNames, additionalData,
+                         printFieldNames && (! printedFieldNames));
+          if (printFieldNames && (! printedFieldNames)) {
+            printedFieldNames = true;
+          }
+        }
       }
 
     private:

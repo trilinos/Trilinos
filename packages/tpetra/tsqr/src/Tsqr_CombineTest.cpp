@@ -205,7 +205,7 @@ namespace TSQR {
     printMatrix (std::ostream& out,
                  const MatrixViewType& A)
     {
-      print_local_matrix (out, A.nrows(), A.ncols(), A.data(), A.lda());
+      print_local_matrix (out, A.extent(0), A.extent(1), A.data(), A.lda());
     }
 
     template<class MatrixViewType>
@@ -215,7 +215,7 @@ namespace TSQR {
                  const MatrixViewType& Q,
                  const MatrixViewType& R)
     {
-      return local_verify (A.nrows(), A.ncols(), A.data(), A.lda(),
+      return local_verify (A.extent(0), A.extent(1), A.data(), A.lda(),
                            Q.data(), Q.lda(), R.data(), R.lda());
     }
 
@@ -357,18 +357,18 @@ namespace TSQR {
         {
           cerr << "Results of first test problem:" << endl;
           cerr << "-- Copy of test problem:" << endl;
-          print_local_matrix (cerr, A_R1R2.nrows(), A_R1R2.ncols(),
+          print_local_matrix (cerr, A_R1R2.extent(0), A_R1R2.extent(1),
                               A_R1R2.data(), A_R1R2.lda());
           cerr << endl << "-- Q factor:" << endl;
-          print_local_matrix (cerr, Q_R1R2.nrows(), Q_R1R2.ncols(),
+          print_local_matrix (cerr, Q_R1R2.extent(0), Q_R1R2.extent(1),
                               Q_R1R2.data(), Q_R1R2.lda());
           cerr << endl << "-- R factor:" << endl;
-          print_local_matrix (cerr, R1.nrows(), R1.ncols(),
+          print_local_matrix (cerr, R1.extent(0), R1.extent(1),
                               R1.data(), R1.lda());
           cerr << endl;
         }
       const results_type firstResults =
-        local_verify (A_R1R2.nrows(), A_R1R2.ncols(),
+        local_verify (A_R1R2.extent(0), A_R1R2.extent(1),
                       A_R1R2.data(), A_R1R2.lda(),
                       Q_R1R2.data(), Q_R1R2.lda(),
                       R1.data(), R1.lda());
@@ -394,18 +394,18 @@ namespace TSQR {
         {
           cerr << "Results of second test problem:" << endl;
           cerr << "-- Copy of test problem:" << endl;
-          print_local_matrix (cerr, A_R3A.nrows(), A_R3A.ncols(),
+          print_local_matrix (cerr, A_R3A.extent(0), A_R3A.extent(1),
                               A_R3A.data(), A_R3A.lda());
           cerr << endl << "-- Q factor:" << endl;
-          print_local_matrix (cerr, Q_R3A.nrows(), Q_R3A.ncols(),
+          print_local_matrix (cerr, Q_R3A.extent(0), Q_R3A.extent(1),
                               Q_R3A.data(), Q_R3A.lda());
           cerr << endl << "-- R factor:" << endl;
-          print_local_matrix (cerr, R3.nrows(), R3.ncols(),
+          print_local_matrix (cerr, R3.extent(0), R3.extent(1),
                               R3.data(), R3.lda());
           cerr << endl;
         }
       const results_type secondResults =
-        local_verify (A_R3A.nrows(), A_R3A.ncols(),
+        local_verify (A_R3A.extent(0), A_R3A.extent(1),
                       A_R3A.data(), A_R3A.lda(),
                       Q_R3A.data(), Q_R3A.lda(),
                       R3.data(), R3.lda());

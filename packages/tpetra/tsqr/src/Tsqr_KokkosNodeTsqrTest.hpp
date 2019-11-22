@@ -148,9 +148,9 @@ namespace TSQR {
       if (debug) {
         cerr << "-- Generated test problem" << endl;
         // Don't print the matrix if it's too big.
-        if (A.nrows() <= 30) {
+        if (A.extent(0) <= 30) {
           cerr << "A = " << endl;
-          print_local_matrix (cerr, A.nrows(), A.ncols(),
+          print_local_matrix (cerr, A.extent(0), A.extent(1),
                               A.data(), A.lda());
           cerr << endl << endl;
         }
@@ -164,9 +164,9 @@ namespace TSQR {
         if (debug) {
           cerr << "-- Copied test problem from A into A_copy" << endl;
           // Don't print the matrix if it's too big.
-          if (A_copy.nrows() <= 30) {
+          if (A_copy.extent(0) <= 30) {
             cerr << "A_copy = " << endl;
-            print_local_matrix (cerr, A_copy.nrows(), A_copy.ncols(),
+            print_local_matrix (cerr, A_copy.extent(0), A_copy.extent(1),
                                 A_copy.data(), A_copy.lda());
             cerr << endl << endl;
           }
@@ -178,9 +178,9 @@ namespace TSQR {
           cerr << "-- Reorganized test matrix to have contiguous "
             "cache blocks" << endl;
           // Don't print the matrix if it's too big.
-          if (A_copy.nrows() <= 30) {
+          if (A_copy.extent(0) <= 30) {
             cerr << "A_copy = " << endl;
-            print_local_matrix (cerr, A_copy.nrows(), A_copy.ncols(),
+            print_local_matrix (cerr, A_copy.extent(0), A_copy.extent(1),
                                 A_copy.data(), A_copy.lda());
             cerr << endl << endl;
           }
@@ -203,12 +203,12 @@ namespace TSQR {
               cerr << "*** Cache blocking test failed! A != A2 ***"
                    << endl << endl;
               // Don't print the matrices if they are too big.
-              if (A.nrows() <= 30 && A2.nrows() <= 30) {
+              if (A.extent(0) <= 30 && A2.extent(0) <= 30) {
                 cerr << "A = " << endl;
-                print_local_matrix (cerr, A.nrows(), A.ncols(),
+                print_local_matrix (cerr, A.extent(0), A.extent(1),
                                     A.data(), A.lda());
                 cerr << endl << "A2 = " << endl;
-                print_local_matrix (cerr, A2.nrows(), A2.ncols(),
+                print_local_matrix (cerr, A2.extent(0), A2.extent(1),
                                     A2.data(), A2.lda());
                 cerr << endl;
               }
@@ -244,10 +244,10 @@ namespace TSQR {
       {
         mat_view_type Q_top =
           actor.top_block (Q.view (), contiguousCacheBlocks);
-        mat_view_type Q_top_square (Q_top.ncols(), Q_top.ncols(),
+        mat_view_type Q_top_square (Q_top.extent(1), Q_top.extent(1),
                                     Q_top.data(), Q_top.lda());
         Q_top_square.fill (Scalar {});
-        for (Ordinal j = 0; j < Q_top_square.ncols(); ++j) {
+        for (Ordinal j = 0; j < Q_top_square.extent(1); ++j) {
           Q_top_square(j,j) = Scalar (1.0);
         }
       }
@@ -275,9 +275,9 @@ namespace TSQR {
       // Print out the Q and R factors in debug mode.
       if (debug) {
         // Don't print the matrix if it's too big.
-        if (Q.nrows() <= 30) {
+        if (Q.extent(0) <= 30) {
           cerr << endl << "-- Q factor:" << endl;
-          print_local_matrix (cerr, Q.nrows(), Q.ncols(),
+          print_local_matrix (cerr, Q.extent(0), Q.extent(1),
                               Q.data(), Q.lda());
           cerr << endl << endl;
         }

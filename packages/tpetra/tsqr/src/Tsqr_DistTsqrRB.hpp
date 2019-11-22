@@ -106,20 +106,20 @@ namespace TSQR {
       void force (mat_view_type Q_mine, mat_view_type R_mine) {
         typedef Teuchos::ScalarTraits<Scalar> STS;
 
-        if (Q_mine.nrows() > 0 && Q_mine.ncols() > 0) {
-          for (int k = 0; k < R_mine.ncols(); ++k) {
+        if (Q_mine.extent(0) > 0 && Q_mine.extent(1) > 0) {
+          for (int k = 0; k < R_mine.extent(1); ++k) {
             if (R_mine(k,k) < STS::zero()) {
               // Scale column k of Q_mine.  We use a raw pointer since
               // typically there are many rows in Q_mine, so this
               // operation should be fast.
               Scalar* const Q_k = &Q_mine(0,k);
-              for (int i = 0; i < Q_mine.nrows(); ++i) {
+              for (int i = 0; i < Q_mine.extent(0); ++i) {
                 Q_k[i] = -Q_k[i];
               }
               // Scale row k of R_mine.  R_mine is upper triangular,
               // so we only have to scale right of (and including) the
               // diagonal entry.
-              for (int j = k; j < R_mine.ncols(); ++j) {
+              for (int j = k; j < R_mine.extent(1); ++j) {
                 R_mine(k,j) = -R_mine(k,j);
               }
             }
@@ -244,21 +244,21 @@ namespace TSQR {
       // R_mine has columns, but Q_mine may have any number of
       // columns.  (It depends on how many columns of the explicit Q
       // factor we want to compute.)
-      if (R_mine.nrows() < R_mine.ncols())
+      if (R_mine.extent(0) < R_mine.extent(1))
         {
           std::ostringstream os;
-          os << "R factor input has fewer rows (" << R_mine.nrows()
-             << ") than columns (" << R_mine.ncols() << ")";
+          os << "R factor input has fewer rows (" << R_mine.extent(0)
+             << ") than columns (" << R_mine.extent(1) << ")";
           // This is a logic error because TSQR users should not be
           // calling this method directly.
           throw std::logic_error (os.str());
         }
-      else if (Q_mine.nrows() != R_mine.ncols())
+      else if (Q_mine.extent(0) != R_mine.extent(1))
         {
           std::ostringstream os;
           os << "Q factor input must have the same number of rows as the R "
-            "factor input has columns.  Q has " << Q_mine.nrows()
-             << " rows, but R has " << R_mine.ncols() << " columns.";
+            "factor input has columns.  Q has " << Q_mine.extent(0)
+             << " rows, but R has " << R_mine.extent(1) << " columns.";
           // This is a logic error because TSQR users should not be
           // calling this method directly.
           throw std::logic_error (os.str());
@@ -310,11 +310,11 @@ namespace TSQR {
       Q_mine.fill (scalar_type (0));
       if (messenger_->rank() == 0)
         {
-          for (ordinal_type j = 0; j < Q_mine.ncols(); ++j)
+          for (ordinal_type j = 0; j < Q_mine.extent(1); ++j)
             Q_mine(j, j) = scalar_type (1);
         }
       // Scratch space for computing results to send to other processors.
-      matrix_type Q_other (Q_mine.nrows(), Q_mine.ncols(), scalar_type (0));
+      matrix_type Q_other (Q_mine.extent(0), Q_mine.extent(1), scalar_type (0));
       const rank_type numSteps = QFactors.size() - 1;
 
       {
@@ -387,7 +387,7 @@ namespace TSQR {
           // This only does anything if P_mine is either P_first or P_mid.
           if (P_mine == P_first)
             {
-              const ordinal_type numCols = R_mine.ncols();
+              const ordinal_type numCols = R_mine.extent(1);
               matrix_type R_other (numCols, numCols);
               recv_R (R_other, P_mid);
 
@@ -457,11 +457,11 @@ namespace TSQR {
               // Apply implicitly stored local Q factor to
               //   [Q_mine;
               //    Q_other]
-              // where Q_other = zeros(Q_mine.nrows(), Q_mine.ncols()).
+              // where Q_other = zeros(Q_mine.extent(0), Q_mine.extent(1)).
               // Overwrite both Q_mine and Q_other with the result.
               Q_other.fill (scalar_type (0));
               combine_.apply_pair (ApplyType::NoTranspose,
-                                   Q_mine.ncols(), Q_impl.ncols(),
+                                   Q_mine.extent(1), Q_impl.extent(1),
                                    Q_impl.data(), Q_impl.lda(), tau.data(),
                                    Q_mine.data(), Q_mine.lda(),
                                    Q_other.data(), Q_other.lda(), work_.data());
@@ -493,8 +493,8 @@ namespace TSQR {
     {
       StatTimeMonitor bcastCommMonitor (*bcastCommTime_, bcastCommStats_);
 
-      const ordinal_type R_numCols = R.ncols();
-      const ordinal_type Q_size = Q.nrows() * Q.ncols();
+      const ordinal_type R_numCols = R.extent(1);
+      const ordinal_type Q_size = Q.extent(0) * Q.extent(1);
       const ordinal_type R_size = (R_numCols * (R_numCols + 1)) / 2;
       const ordinal_type numElts = Q_size + R_size;
 
@@ -504,7 +504,7 @@ namespace TSQR {
       resizeWork (numElts);
 
       // Pack the Q data into the workspace array.
-      mat_view_type Q_contig (Q.nrows(), Q.ncols(), work_.data(), Q.nrows());
+      mat_view_type Q_contig (Q.extent(0), Q.extent(1), work_.data(), Q.extent(0));
       deep_copy (Q_contig, Q);
       // Pack the R data into the workspace array.
       pack_R (R, &work_[Q_size]);
@@ -519,8 +519,8 @@ namespace TSQR {
     {
       StatTimeMonitor bcastCommMonitor (*bcastCommTime_, bcastCommStats_);
 
-      const ordinal_type R_numCols = R.ncols();
-      const ordinal_type Q_size = Q.nrows() * Q.ncols();
+      const ordinal_type R_numCols = R.extent(1);
+      const ordinal_type Q_size = Q.extent(0) * Q.extent(1);
       const ordinal_type R_size = (R_numCols * (R_numCols + 1)) / 2;
       const ordinal_type numElts = Q_size + R_size;
 
@@ -532,7 +532,7 @@ namespace TSQR {
       messenger_->recv (work_.data(), numElts, srcProc, 0);
 
       // Unpack the C data from the workspace array.
-      deep_copy (Q, mat_view_type (Q.nrows(), Q.ncols(), work_.data(), Q.nrows()));
+      deep_copy (Q, mat_view_type (Q.extent(0), Q.extent(1), work_.data(), Q.extent(0)));
       // Unpack the R data from the workspace array.
       unpack_R (R, &work_[Q_size]);
     }
@@ -543,7 +543,7 @@ namespace TSQR {
     {
       StatTimeMonitor reduceCommMonitor (*reduceCommTime_, reduceCommStats_);
 
-      const ordinal_type numCols = R.ncols();
+      const ordinal_type numCols = R.extent(1);
       const ordinal_type numElts = (numCols * (numCols+1)) / 2;
 
       // Don't shrink the workspace array; doing so would still be
@@ -561,7 +561,7 @@ namespace TSQR {
     {
       StatTimeMonitor reduceCommMonitor (*reduceCommTime_, reduceCommStats_);
 
-      const ordinal_type numCols = R.ncols();
+      const ordinal_type numCols = R.extent(1);
       const ordinal_type numElts = (numCols * (numCols+1)) / 2;
 
       // Don't shrink the workspace array; doing so would still be
@@ -578,7 +578,7 @@ namespace TSQR {
     unpack_R (MatrixType& R, const scalar_type buf[])
     {
       ordinal_type curpos = 0;
-      for (ordinal_type j = 0; j < R.ncols(); ++j)
+      for (ordinal_type j = 0; j < R.extent(1); ++j)
         {
           scalar_type* const R_j = &R(0, j);
           for (ordinal_type i = 0; i <= j; ++i)
@@ -591,7 +591,7 @@ namespace TSQR {
     pack_R (const ConstMatrixType& R, scalar_type buf[])
     {
       ordinal_type curpos = 0;
-      for (ordinal_type j = 0; j < R.ncols(); ++j)
+      for (ordinal_type j = 0; j < R.extent(1); ++j)
         {
           const scalar_type* const R_j = &R(0, j);
           for (ordinal_type i = 0; i <= j; ++i)
