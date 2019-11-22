@@ -204,8 +204,8 @@ namespace TSQR {
         const LocalOrdinal ncols = A_top.ncols();
         std::vector<Scalar>& tau = par_output_[P_bot];
         std::vector<Scalar> work (ncols);
-        combine_.factor_pair (ncols, A_top.get(), A_top.lda(),
-                              A_bot.get(), A_bot.lda(), &tau[0], &work[0]);
+        combine_.factor_pair (ncols, A_top.data(), A_top.lda(),
+                              A_bot.data(), A_bot.lda(), &tau[0], &work[0]);
       }
 
       void
@@ -214,7 +214,7 @@ namespace TSQR {
         TimerType timer("");
         timer.start();
         seq_outputs_[P_first_] =
-          seq_.factor (A_.nrows(), A_.ncols(), A_.get(),
+          seq_.factor (A_.nrows(), A_.ncols(), A_.data(),
                        A_.lda(), contiguous_cache_blocks_);
         // Assign the topmost cache block of the current partition to
         // *A_top_ptr_.  Every base case invocation does this, so that

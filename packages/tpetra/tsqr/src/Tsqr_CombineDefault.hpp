@@ -152,8 +152,8 @@ namespace TSQR {
       const std::string trans = apply_type.toString ();
       const int lwork = ncols_C;
       lapack_.apply_Q_factor ('L', trans[0], numRows, ncols_C, ncols_Q,
-                              A_buf_.get(), A_buf_.lda(), tau,
-                              C_buf_.get(), C_buf_.lda(),
+                              A_buf_.data(), A_buf_.lda(), tau,
+                              C_buf_.data(), C_buf_.lda(),
                               work, lwork);
       // Copy back the results.
       deep_copy (C_top_view, C_buf_top);
@@ -182,7 +182,7 @@ namespace TSQR {
       copy_matrix (m, n, &A_buf_(n, 0), A_buf_.lda(), A, lda);
 
       const int lwork = n;
-      lapack_.compute_QR (numRows, n, A_buf_.get(), A_buf_.lda(),
+      lapack_.compute_QR (numRows, n, A_buf_.data(), A_buf_.lda(),
                           tau, work, lwork);
       // Copy back the results.  R might be a view of the upper
       // triangle of a cache block, so only copy into the upper
@@ -213,7 +213,7 @@ namespace TSQR {
       copy_upper_triangle (n, n, &A_buf_(n, 0), A_buf_.lda(), R_bot, ldr_bot);
 
       const int lwork = n;
-      lapack_.compute_QR (numRows, n, A_buf_.get(), A_buf_.lda(),
+      lapack_.compute_QR (numRows, n, A_buf_.data(), A_buf_.lda(),
                           tau, work, lwork);
       // Copy back the results.  Only read the upper triangles of the
       // two n by n row blocks of A_buf_ (this means we don't have to
@@ -250,8 +250,8 @@ namespace TSQR {
       const int lwork = ncols_Q;
       const std::string trans = apply_type.toString ();
       lapack_.apply_Q_factor ('L', trans[0], numRows, ncols_C, ncols_Q,
-                              A_buf_.get(), A_buf_.lda(), tau,
-                              C_buf_.get(), C_buf_.lda(),
+                              A_buf_.data(), A_buf_.lda(), tau,
+                              C_buf_.data(), C_buf_.lda(),
                               work, lwork);
       // Copy back the results.
       copy_matrix (ncols_Q, ncols_C, C_top, ldc_top, &C_buf_(0, 0), C_buf_.lda());

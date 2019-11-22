@@ -241,7 +241,7 @@ namespace TSQR {
           // This part has O(P) communication for P MPI processes.
           using TSQR::Random::randomGlobalMatrix;
           // Help the C++ compiler with type inference.
-          mat_view_type A_local_view (A_local.nrows(), A_local.ncols(), A_local.get(), A_local.lda());
+          mat_view_type A_local_view (A_local.nrows(), A_local.ncols(), A_local.data(), A_local.lda());
           const magnitude_type* const singVals = (numCols == 0) ? NULL : &singularValues[0];
           randomGlobalMatrix<mat_view_type, generator_type> (&gen, A_local_view, singVals,
                                                              ordinalMessenger.getRawPtr(),
@@ -258,8 +258,8 @@ namespace TSQR {
         // we have to make a copy in order to validate the final
         // result.
         if (contiguousCacheBlocks) {
-          tsqr->cache_block (numRowsLocal, numCols, A_copy.get(),
-                             A_local.get(), A_local.lda());
+          tsqr->cache_block (numRowsLocal, numCols, A_copy.data(),
+                             A_local.data(), A_local.lda());
           if (debug) {
             Teuchos::barrier (*comm);
             if (myRank == 0)
@@ -275,9 +275,9 @@ namespace TSQR {
         // wanted.
         if (testFactorExplicit) {
           tsqr->factorExplicitRaw (A_copy.nrows (), A_copy.ncols (),
-                                   A_copy.get (), A_copy.lda (),
-                                   Q_local.get (), Q_local.lda (),
-                                   R.get (), R.lda (),
+                                   A_copy.data (), A_copy.lda (),
+                                   Q_local.data (), Q_local.lda (),
+                                   R.data (), R.lda (),
                                    contiguousCacheBlocks);
           if (debug) {
             Teuchos::barrier (*comm);
@@ -288,16 +288,16 @@ namespace TSQR {
         else {
           // Factor the (copy of the) matrix.
           factor_output_type factorOutput =
-            tsqr->factor (numRowsLocal, numCols, A_copy.get(), A_copy.lda(),
-                          R.get(), R.lda(), contiguousCacheBlocks);
+            tsqr->factor (numRowsLocal, numCols, A_copy.data(), A_copy.lda(),
+                          R.data(), R.lda(), contiguousCacheBlocks);
           if (debug) {
             Teuchos::barrier (*comm);
             if (myRank == 0)
               cerr << "-- Finished Tsqr::factor" << endl;
           }
           // Compute the explicit Q factor in Q_local.
-          tsqr->explicit_Q (numRowsLocal, numCols, A_copy.get(), A_copy.lda(),
-                            factorOutput, numCols, Q_local.get(), Q_local.lda(),
+          tsqr->explicit_Q (numRowsLocal, numCols, A_copy.data(), A_copy.lda(),
+                            factorOutput, numCols, Q_local.data(), Q_local.lda(),
                             contiguousCacheBlocks);
           if (debug) {
             Teuchos::barrier (*comm);
@@ -322,8 +322,8 @@ namespace TSQR {
           const magnitude_type tol = STM::zero();
           const ordinal_type rank =
             tsqr->revealRankRaw (Q_local.nrows (), Q_local.ncols (),
-                                 Q_local.get (), Q_local.lda (),
-                                 R.get (), R.lda (), tol,
+                                 Q_local.data (), Q_local.lda (),
+                                 R.data (), R.lda (), tol,
                                  contiguousCacheBlocks);
 
           magnitude_type two_to_the_numCols = STM::one();
@@ -361,8 +361,8 @@ namespace TSQR {
           // We can use A_copy as scratch space for
           // un-cache-blocking Q_local, since we're done using
           // A_copy for other things.
-          tsqr->un_cache_block (numRowsLocal, numCols, A_copy.get(),
-                                A_copy.lda(), Q_local.get());
+          tsqr->un_cache_block (numRowsLocal, numCols, A_copy.data(),
+                                A_copy.lda(), Q_local.data());
           // Overwrite Q_local with the un-cache-blocked Q factor.
           deep_copy (Q_local, A_copy);
           if (debug) {
@@ -374,8 +374,8 @@ namespace TSQR {
 
         // Test accuracy of the factorization.
         const std::vector<magnitude_type> results =
-          global_verify (numRowsLocal, numCols, A_local.get(), A_local.lda(),
-                         Q_local.get(), Q_local.lda(), R.get(), R.lda(),
+          global_verify (numRowsLocal, numCols, A_local.data(), A_local.lda(),
+                         Q_local.data(), Q_local.lda(), R.data(), R.lda(),
                          scalarMessenger.getRawPtr());
         if (debug) {
           Teuchos::barrier (*comm);

@@ -124,7 +124,7 @@ namespace TSQR {
       execute_base_case ()
       {
         // Fill my partition with zeros.
-        seq_.fill_with_zeros (C_.nrows(), C_.ncols(), C_.get(),
+        seq_.fill_with_zeros (C_.nrows(), C_.ncols(), C_.data(),
                               C_.lda(), contiguous_cache_blocks_);
       }
     };

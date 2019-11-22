@@ -167,7 +167,7 @@ namespace TSQR {
       const Ordinal ldr = ncols;
 
       // Create a test problem
-      nodeTestProblem (generator, nrows, ncols, A.get(), A.lda(), true);
+      nodeTestProblem (generator, nrows, ncols, A.data(), A.lda(), true);
 
       if (save_matrices) {
         string filename = "A_" + shortDatatype + ".txt";
@@ -175,7 +175,7 @@ namespace TSQR {
           cerr << "-- Saving test problem to \"" << filename << "\"" << endl;
         }
         std::ofstream fileOut (filename.c_str());
-        print_local_matrix (fileOut, nrows, ncols, A.get(), A.lda());
+        print_local_matrix (fileOut, nrows, ncols, A.data(), A.lda());
         fileOut.close();
       }
 
@@ -193,7 +193,7 @@ namespace TSQR {
         }
       }
       else {
-        actor.cache_block (nrows, ncols, A_copy.get(), A.get(), A.lda());
+        actor.cache_block (nrows, ncols, A_copy.data(), A.data(), A.lda());
         if (b_debug) {
           cerr << "-- Reorganized test matrix to have contiguous "
             "cache blocks" << endl;
@@ -205,8 +205,8 @@ namespace TSQR {
           if (std::numeric_limits<Scalar>::has_quiet_NaN) {
             A2.fill (std::numeric_limits<Scalar>::quiet_NaN ());
           }
-          actor.un_cache_block (nrows, ncols, A2.get (), A2.lda (),
-                                A_copy.get ());
+          actor.un_cache_block (nrows, ncols, A2.data (), A2.lda (),
+                                A_copy.data ());
           if (matrix_equal (A, A2)) {
             if (b_debug) {
               cerr << "-- Cache blocking test succeeded!" << endl;
@@ -225,7 +225,7 @@ namespace TSQR {
       // Count the number of cache blocks that factor() will use.
       // This is only for diagnostic purposes.
       numCacheBlocks =
-        actor.factor_num_cache_blocks (nrows, ncols, A_copy.get(),
+        actor.factor_num_cache_blocks (nrows, ncols, A_copy.data(),
                                        A_copy.lda(), contiguous_cache_blocks);
       // In debug mode, report how many cache blocks factor() will use.
       if (b_debug) {
@@ -237,8 +237,8 @@ namespace TSQR {
       typedef typename SequentialTsqr<Ordinal, Scalar>::FactorOutput
         factor_output_type;
       factor_output_type factorOutput =
-        actor.factor (nrows, ncols, A_copy.get(), A_copy.lda(),
-                      R.get(), R.lda(), contiguous_cache_blocks);
+        actor.factor (nrows, ncols, A_copy.data(), A_copy.lda(),
+                      R.data(), R.lda(), contiguous_cache_blocks);
       if (b_debug) {
         cerr << "-- Finished SequentialTsqr::factor" << endl;
       }
@@ -248,12 +248,12 @@ namespace TSQR {
           cerr << "-- Saving R factor to \"" << filename << "\"" << endl;
         }
         std::ofstream fileOut (filename.c_str ());
-        print_local_matrix (fileOut, ncols, ncols, R.get (), R.lda ());
+        print_local_matrix (fileOut, ncols, ncols, R.data (), R.lda ());
         fileOut.close ();
       }
 
-      actor.explicit_Q (nrows, ncols, A_copy.get(), lda, factorOutput,
-                        ncols, Q.get(), Q.lda(), contiguous_cache_blocks);
+      actor.explicit_Q (nrows, ncols, A_copy.data(), lda, factorOutput,
+                        ncols, Q.data(), Q.lda(), contiguous_cache_blocks);
       if (b_debug) {
         cerr << "-- Finished SequentialTsqr::explicit_Q" << endl;
       }
@@ -263,7 +263,7 @@ namespace TSQR {
       // currently support contiguous cache blocks.
       if (contiguous_cache_blocks) {
         // Use A_copy as temporary storage for un-cache-blocking Q.
-        actor.un_cache_block (nrows, ncols, A_copy.get(), A_copy.lda(), Q.get());
+        actor.un_cache_block (nrows, ncols, A_copy.data(), A_copy.lda(), Q.data());
         deep_copy (Q, A_copy);
         if (b_debug) {
           cerr << "-- Un-cache-blocked output Q factor" << endl;
@@ -276,20 +276,20 @@ namespace TSQR {
           cerr << "-- Saving Q factor to \"" << filename << "\"" << endl;
         }
         std::ofstream fileOut (filename.c_str());
-        print_local_matrix (fileOut, nrows, ncols, Q.get(), Q.lda());
+        print_local_matrix (fileOut, nrows, ncols, Q.data(), Q.lda());
         fileOut.close();
       }
 
       // Print out the R factor
       if (false && b_debug) {
         cerr << endl << "-- R factor:" << endl;
-        print_local_matrix (cerr, ncols, ncols, R.get(), R.lda());
+        print_local_matrix (cerr, ncols, ncols, R.data(), R.lda());
         cerr << endl;
       }
 
       // Validate the factorization
       vector< magnitude_type > results =
-        local_verify (nrows, ncols, A.get(), lda, Q.get(), ldq, R.get(), ldr);
+        local_verify (nrows, ncols, A.data(), lda, Q.data(), ldq, R.data(), ldr);
       if (b_debug) {
         cerr << "-- Finished local_verify" << endl;
       }
@@ -466,7 +466,7 @@ namespace TSQR {
       const Ordinal ldr = ncols;
 
       // Create a test problem
-      nodeTestProblem (generator, nrows, ncols, A.get (), A.lda (), true);
+      nodeTestProblem (generator, nrows, ncols, A.data (), A.lda (), true);
 
       if (b_debug) {
         cerr << "-- Generated test problem" << endl;
@@ -488,15 +488,15 @@ namespace TSQR {
       // the strict lower triangle of R.
       R.fill (Scalar {});
 
-      lapack.compute_QR (nrows, ncols, A_copy.get(), A_copy.lda(),
+      lapack.compute_QR (nrows, ncols, A_copy.data(), A_copy.lda(),
                          tau.data(), work.data(), lwork);
       // Copy out the R factor from A_copy (where we computed the QR
       // factorization in place) into R.
-      copy_upper_triangle (ncols, ncols, R.get(), ldr, A_copy.get(), lda);
+      copy_upper_triangle (ncols, ncols, R.data(), ldr, A_copy.data(), lda);
 
       if (b_debug) {
         cerr << endl << "-- R factor:" << endl;
-        print_local_matrix (cerr, ncols, ncols, R.get(), R.lda());
+        print_local_matrix (cerr, ncols, ncols, R.data(), R.lda());
         cerr << endl;
       }
 
@@ -504,13 +504,13 @@ namespace TSQR {
       // result of the factorization into Q.
       deep_copy (Q, A_copy);
 
-      lapack.compute_explicit_Q (nrows, ncols, ncols, Q.get(), ldq,
+      lapack.compute_explicit_Q (nrows, ncols, ncols, Q.data(), ldq,
                                  tau.data(), work.data(), lwork);
 
       // Validate the factorization
       std::vector<magnitude_type> results =
-        local_verify (nrows, ncols, A.get(), lda, Q.get(), ldq,
-                      R.get(), ldr);
+        local_verify (nrows, ncols, A.data(), lda, Q.data(), ldq,
+                      R.data(), ldr);
 
       // Print the results
       if (human_readable) {
@@ -671,7 +671,7 @@ namespace TSQR {
         const Ordinal ldr = numCols;
 
         // Create a test problem
-        nodeTestProblem (gen_, numRows, numCols, A.get(), lda, false);
+        nodeTestProblem (gen_, numRows, numCols, A.data(), lda, false);
 
         // Copy A into Q, since LAPACK QR overwrites the input.  We only
         // need Q because LAPACK's computation of the explicit Q factor
@@ -692,15 +692,15 @@ namespace TSQR {
         timer.start();
         for (int trialNum = 0; trialNum < numTrials; ++trialNum) {
           lapack_.compute_QR (numRows, numCols,
-                              Q.get(), ldq, tau.data(),
+                              Q.data(), ldq, tau.data(),
                               work.data(), lwork);
           // Extract the upper triangular factor R from Q (where it
           // was computed in place by GEQRF), since UNGQR will
           // overwrite all of Q with the explicit Q factor.
-          copy_upper_triangle (numRows, numCols, R.get(), ldr,
-                               Q.get(), ldq);
+          copy_upper_triangle (numRows, numCols, R.data(), ldr,
+                               Q.data(), ldq);
           lapack_.compute_explicit_Q (numRows, numCols, numCols,
-                                      Q.get(), ldq, tau.data(),
+                                      Q.data(), ldq, tau.data(),
                                       work.data(), lwork);
         }
         const double lapackTiming = timer.stop();
@@ -920,7 +920,7 @@ namespace TSQR {
         const Ordinal ldq = numRows;
 
         // Create a test problem
-        nodeTestProblem (gen_, numRows, numCols, A.get(), lda, false);
+        nodeTestProblem (gen_, numRows, numCols, A.data(), lda, false);
 
         // Copy A into A_copy, since TSQR overwrites the input
         deep_copy (A_copy, A);
@@ -935,14 +935,14 @@ namespace TSQR {
           typedef typename SequentialTsqr<Ordinal, Scalar>::FactorOutput
             factor_output_type;
           factor_output_type factorOutput =
-            actor.factor (numRows, numCols, A_copy.get(), lda,
-                          R.get(), R.lda(), contiguousCacheBlocks);
+            actor.factor (numRows, numCols, A_copy.data(), lda,
+                          R.data(), R.lda(), contiguousCacheBlocks);
           // Compute the explicit Q factor.  Unlike with LAPACK QR,
           // this doesn't happen in place: the implicit Q factor is
           // stored in A_copy, and the explicit Q factor is written to
           // Q.
-          actor.explicit_Q (numRows, numCols, A_copy.get(), lda, factorOutput,
-                            numCols, Q.get(), ldq, contiguousCacheBlocks);
+          actor.explicit_Q (numRows, numCols, A_copy.data(), lda, factorOutput,
+                            numCols, Q.data(), ldq, contiguousCacheBlocks);
         }
         const double seqTsqrTiming = timer.stop();
         reportResults (numTrials, numRows, numCols, actor.cache_size_hint(),

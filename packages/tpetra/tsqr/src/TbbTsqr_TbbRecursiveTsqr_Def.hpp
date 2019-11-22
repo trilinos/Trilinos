@@ -110,7 +110,7 @@ namespace TSQR {
       }
       else if (P_first == P_last) {
         std::pair<SeqOutput, mat_view> results =
-          seq_.factor (A.nrows(), A.ncols(), A.get(), A.lda(),
+          seq_.factor (A.nrows(), A.ncols(), A.data(), A.lda(),
                        contiguous_cache_blocks);
         seq_outputs[P_first] = results.first;
         A_top = A;
@@ -136,7 +136,7 @@ namespace TSQR {
       // If we're completely done, extract the final R factor from
       // the topmost partition.
       if (depth == 0) {
-        seq_.extract_R (A_top.nrows(), A_top.ncols(), A_top.get(),
+        seq_.extract_R (A_top.nrows(), A_top.ncols(), A_top.data(),
                         A_top.lda(), R, ldr, contiguous_cache_blocks);
       }
       return A_top;
@@ -188,8 +188,8 @@ namespace TSQR {
           const_mat_view Q_top = blocker.top_block (Q, contiguous_cache_blocks);
           mat_view C_top = blocker.top_block (C, contiguous_cache_blocks);
           top_blocks[P_first] =
-            std::make_pair (const_mat_view (Q_top.ncols(), Q_top.ncols(), Q_top.get(), Q_top.lda()),
-                            mat_view (C_top.ncols(), C_top.ncols(), C_top.get(), C_top.lda()));
+            std::make_pair (const_mat_view (Q_top.ncols(), Q_top.ncols(), Q_top.data(), Q_top.lda()),
+                            mat_view (C_top.ncols(), C_top.ncols(), C_top.data(), C_top.lda()));
         }
       else
         {
@@ -227,8 +227,8 @@ namespace TSQR {
       else if (P_first == P_last)
         {
           const std::vector< SeqOutput >& seq_outputs = factor_output.first;
-          seq_.apply ("N", Q.nrows(), Q.ncols(), Q.get(), Q.lda(),
-                      seq_outputs[P_first], C.ncols(), C.get(),
+          seq_.apply ("N", Q.nrows(), Q.ncols(), Q.data(), Q.lda(),
+                      seq_outputs[P_first], C.ncols(), C.data(),
                       C.lda(), contiguous_cache_blocks);
         }
       else
@@ -270,8 +270,8 @@ namespace TSQR {
       }
       else if (P_first == P_last) {
         const std::vector<SeqOutput>& seq_outputs = factor_output.first;
-        seq_.apply (op, Q.nrows(), Q.ncols(), Q.get(), Q.lda(),
-                    seq_outputs[P_first], C.ncols(), C.get(),
+        seq_.apply (op, Q.nrows(), Q.ncols(), Q.data(), Q.lda(),
+                    seq_outputs[P_first], C.ncols(), C.data(),
                     C.lda(), contiguous_cache_blocks);
         return std::make_pair (Q, C);
       }
@@ -327,8 +327,8 @@ namespace TSQR {
       std::vector< Scalar > work (ncols);
 
       TSQR::Combine< LocalOrdinal, Scalar > combine_;
-      combine_.factor_pair (ncols, A_top.get(), A_top.lda(),
-                            A_bot.get(), A_bot.lda(), &tau[0], &work[0]);
+      combine_.factor_pair (ncols, A_top.data(), A_top.lda(),
+                            A_bot.data(), A_bot.lda(), &tau[0], &work[0]);
     }
 
     template< class LocalOrdinal, class Scalar >
@@ -351,9 +351,9 @@ namespace TSQR {
 
       TSQR::Combine<LocalOrdinal, Scalar> combine_;
       combine_.apply_pair (trans.c_str(), C_top.ncols(), Q_bot.ncols(),
-                           Q_bot.get(), Q_bot.lda(), &tau[0],
-                           C_top.get(), C_top.lda(),
-                           C_bot.get(), C_bot.lda(), &work[0]);
+                           Q_bot.data(), Q_bot.lda(), &tau[0],
+                           C_top.data(), C_top.lda(),
+                           C_bot.data(), C_bot.lda(), &work[0]);
     }
 
     template< class LocalOrdinal, class Scalar >
@@ -367,8 +367,8 @@ namespace TSQR {
       if (P_first > P_last)
         return;
       else if (P_first == P_last)
-        seq_.cache_block (A_out.nrows(), A_out.ncols(), A_out.get(),
-                          A_in.get(), A_in.lda());
+        seq_.cache_block (A_out.nrows(), A_out.ncols(), A_out.data(),
+                          A_in.data(), A_in.lda());
       else
         {
           const size_t P_mid = (P_first + P_last) / 2;
@@ -395,8 +395,8 @@ namespace TSQR {
         return;
       }
       else if (P_first == P_last) {
-        seq_.un_cache_block (A_out.nrows(), A_out.ncols(), A_out.get(),
-                             A_out.lda(), A_in.get());
+        seq_.un_cache_block (A_out.nrows(), A_out.ncols(), A_out.data(),
+                             A_out.lda(), A_in.data());
       }
       else {
         const size_t P_mid = (P_first + P_last) / 2;

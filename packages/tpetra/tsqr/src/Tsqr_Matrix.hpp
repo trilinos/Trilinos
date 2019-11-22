@@ -191,7 +191,7 @@ namespace TSQR {
       A_ (verified_alloc_size (in.nrows(), in.ncols()))
     {
       if (! in.empty())
-        copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
+        copy_matrix (nrows(), ncols(), data(), lda(), in.data(), in.lda());
     }
 
     //! Default constructor (constructs an empty matrix).
@@ -204,7 +204,7 @@ namespace TSQR {
     ///
     /// This constructor allocates a new matrix and copies the
     /// elements of the input view into the resulting new matrix.
-    /// MatrixViewType must have nrows(), ncols(), get(), and lda()
+    /// MatrixViewType must have nrows(), ncols(), data(), and lda()
     /// methods that match MatView's methods.
     template<class MatrixViewType>
     Matrix (const MatrixViewType& in) :
@@ -213,14 +213,14 @@ namespace TSQR {
       A_ (verified_alloc_size (in.nrows(), in.ncols()))
     {
       if (A_.size() != 0)
-        copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
+        copy_matrix (nrows(), ncols(), data(), lda(), in.data(), in.lda());
     }
 
     //! Fill all entries of the matrix with the given value.
     void
     fill (const Scalar value)
     {
-      fill_matrix (nrows(), ncols(), get(), lda(), value);
+      fill_matrix (nrows(), ncols(), data(), lda(), value);
     }
 
     /// \brief Non-const reference to element (i,j) of the matrix.
@@ -248,7 +248,7 @@ namespace TSQR {
     template<class MatrixViewType>
     bool operator== (const MatrixViewType& B) const
     {
-      if (get() != B.get() || nrows() != B.nrows() || ncols() != B.ncols() || lda() != B.lda()) {
+      if (data() != B.data() || nrows() != B.nrows() || ncols() != B.ncols() || lda() != B.lda()) {
         return false;
       } else {
         return true;
@@ -269,7 +269,7 @@ namespace TSQR {
 
     //! A non-const pointer to the matrix data.
     Scalar*
-    get()
+    data()
     {
       if (A_.size() > 0)
         return &A_[0];
@@ -279,7 +279,7 @@ namespace TSQR {
 
     //! A const pointer to the matrix data.
     const Scalar*
-    get() const
+    data() const
     {
       if (A_.size() > 0)
         return &A_[0];
@@ -289,13 +289,13 @@ namespace TSQR {
 
     //! A non-const view of the matrix.
     mat_view_type view () {
-      return mat_view_type (nrows(), ncols(), get(), lda());
+      return mat_view_type (nrows(), ncols(), data(), lda());
     }
 
     //! A const view of the matrix.
     const_mat_view_type const_view () const {
       return const_mat_view_type (nrows(), ncols(),
-                                  const_cast<const Scalar*> (get()), lda());
+                                  const_cast<const Scalar*> (data()), lda());
     }
 
     /// Change the dimensions of the matrix.  Reallocate if necessary.

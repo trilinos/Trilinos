@@ -224,7 +224,7 @@ namespace TSQR {
             throw std::runtime_error ("Failed to reshape matrix R");
           }
         }
-        return pTsqr_->factor (nrowsLocal, ncols, A_local.get(), LDA,
+        return pTsqr_->factor (nrowsLocal, ncols, A_local.data(), LDA,
                                R.values(), R.stride(), contiguousCacheBlocks);
       }
 
@@ -277,9 +277,9 @@ namespace TSQR {
         ArrayRCP<const scalar_type> pQin = fetchConstView (Q_in);
         ArrayRCP<scalar_type> pQout = fetchNonConstView (Q_out);
         pTsqr_->explicit_Q (nrowsLocal,
-                            ncols_in, pQin.get(), LDQ_in,
+                            ncols_in, pQin.data(), LDQ_in,
                             factorOutput,
-                            ncols_out, pQout.get(), LDQ_out,
+                            ncols_out, pQout.data(), LDQ_out,
                             contiguousCacheBlocks);
       }
 
@@ -320,7 +320,7 @@ namespace TSQR {
 
         ArrayRCP< scalar_type > Q_ptr = fetchNonConstView (Q);
         return pTsqr_->reveal_rank (nrowsLocal, ncols,
-                                    Q_ptr.get(), ldqLocal,
+                                    Q_ptr.data(), ldqLocal,
                                     R.values(), R.stride(),
                                     relativeTolerance,
                                     contiguousCacheBlocks);
@@ -363,8 +363,8 @@ namespace TSQR {
         }
         ArrayRCP<const scalar_type> pA_in = fetchConstView (A_in);
         ArrayRCP<scalar_type> pA_out = fetchNonConstView (A_out);
-        pTsqr_->cache_block (nrowsLocal, ncols, pA_out.get(),
-                             pA_in.get(), LDA_in);
+        pTsqr_->cache_block (nrowsLocal, ncols, pA_out.data(),
+                             pA_in.data(), LDA_in);
       }
 
       /// \brief Un-cache-block A_in into A_out.
@@ -399,8 +399,8 @@ namespace TSQR {
         }
         ArrayRCP<const scalar_type> pA_in = fetchConstView (A_in);
         ArrayRCP<scalar_type> pA_out = fetchNonConstView (A_out);
-        pTsqr_->un_cache_block (nrowsLocal, ncols, pA_out.get(),
-                                LDA_out, pA_in.get());
+        pTsqr_->un_cache_block (nrowsLocal, ncols, pA_out.data(),
+                                LDA_out, pA_in.data());
       }
 
       /// \brief Verify the result of the "thin" QR factorization \f$A = QR\f$.
@@ -437,8 +437,8 @@ namespace TSQR {
         // Const views suffice for verification
         ArrayRCP<const scalar_type> A_ptr = fetchConstView (A);
         ArrayRCP<const scalar_type> Q_ptr = fetchConstView (Q);
-        return global_verify (nrowsLocal_A, ncols_A, A_ptr.get(), LDA,
-                              Q_ptr.get(), LDQ, R.values(), R.stride(),
+        return global_verify (nrowsLocal_A, ncols_A, A_ptr.data(), LDA,
+                              Q_ptr.data(), LDQ, R.values(), R.stride(),
                               pScalarMessenger_.get());
       }
 

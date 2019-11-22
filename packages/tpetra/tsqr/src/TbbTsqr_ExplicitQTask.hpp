@@ -122,7 +122,7 @@ namespace TSQR {
       execute_base_case ()
       {
         // Fill my partition with zeros.
-        seq_.fill_with_zeros (Q_out_.nrows(), Q_out_.ncols(), Q_out_.get(),
+        seq_.fill_with_zeros (Q_out_.nrows(), Q_out_.ncols(), Q_out_.data(),
                               Q_out_.lda(), contiguous_cache_blocks_);
         // If our partition is the first (topmost), fill it with
         // the first Q_out.ncols() columns of the identity matrix.

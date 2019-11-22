@@ -135,7 +135,7 @@ namespace TSQR {
       execute_base_case ()
       {
         seq_.cache_block (A_out_.nrows(), A_out_.ncols(),
-                          A_out_.get(), A_in_.get(), A_in_.lda());
+                          A_out_.data(), A_in_.data(), A_in_.lda());
       }
     };
 

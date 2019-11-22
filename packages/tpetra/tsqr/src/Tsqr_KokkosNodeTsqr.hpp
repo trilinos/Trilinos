@@ -173,8 +173,8 @@ namespace TSQR {
         // We should only call this if A_top.ncols() > 0 and therefore
         // work.size() > 0, but we've already checked for that, so we
         // don't have to check again.
-        combine.factor_first (A_top.nrows(), A_top.ncols(), A_top.get(),
-                              A_top.lda(), &tau[0], &work[0]);
+        combine.factor_first (A_top.nrows(), A_top.ncols(), A_top.data(),
+                              A_top.lda(), tau.data(), work.data());
         return tau;
       }
 
@@ -190,9 +190,9 @@ namespace TSQR {
         // tau.size() > 0 and work.size() > 0, but we've already
         // checked for that, so we don't have to check again.
         combine.factor_inner (A_cur.nrows(), A_top.ncols(),
-                              A_top.get(), A_top.lda(),
-                              A_cur.get(), A_cur.lda(),
-                              &tau[0], &work[0]);
+                              A_top.data(), A_top.lda(),
+                              A_cur.data(), A_cur.lda(),
+                              tau.data(), work.data());
         return tau;
       }
 
@@ -395,8 +395,8 @@ namespace TSQR {
         // If we get this far, it's fair to assume that we have
         // checked whether tau and work have nonzero lengths.
         combine.apply_first (applyType, C_top.nrows(), C_top.ncols(),
-                             Q_top.ncols(), Q_top.get(), Q_top.lda(),
-                             &tau[0], C_top.get(), C_top.lda(), &work[0]);
+                             Q_top.ncols(), Q_top.data(), Q_top.lda(),
+                             tau.data(), C_top.data(), C_top.lda(), work.data());
       }
 
       void
@@ -418,10 +418,10 @@ namespace TSQR {
         // If we get this far, it's fair to assume that we have
         // checked whether tau and work have nonzero lengths.
         combine.apply_inner (applyType, C_cur.nrows(), C_cur.ncols(),
-                             Q_cur.ncols(), Q_cur.get(), Q_cur.lda(),
+                             Q_cur.ncols(), Q_cur.data(), Q_cur.lda(),
                              tau.data(),
-                             C_top.get(), C_top.lda(),
-                             C_cur.get(), C_cur.lda(),
+                             C_top.data(), C_top.lda(),
+                             C_cur.data(), C_cur.lda(),
                              work.data());
       }
 
@@ -538,7 +538,7 @@ namespace TSQR {
             // the top ncols rows of C_top) with zeros.
             mat_view_type C_top_rest (C_top.nrows() - C_top.ncols(),
                                       C_top.ncols(),
-                                      C_top.get() + C_top.ncols(),
+                                      C_top.data() + C_top.ncols(),
                                       C_top.lda());
             C_top_rest.fill (Scalar {});
           }
@@ -848,8 +848,8 @@ namespace TSQR {
         // Q_cur := Q_temp * B.
         blas.GEMM (NO_TRANS, NO_TRANS, Q_cur.nrows(), numCols, numCols,
                    Scalar (1.0),
-                   Q_temp.get(), Q_temp.lda(), B_.get(), B_.lda(),
-                   Scalar(0), Q_cur.get(), Q_cur.lda());
+                   Q_temp.data(), Q_temp.lda(), B_.data(), B_.lda(),
+                   Scalar(0), Q_cur.data(), Q_cur.lda());
       }
 
       /// \brief Multiply (in place) each cache block in the range by B_.
@@ -1454,11 +1454,11 @@ namespace TSQR {
          "factorSecondPass: result.topBlocks[0] is an empty view."
          << suffix);
       mat_view_type R_top_square (R_top.ncols(), R_top.ncols(),
-                                  R_top.get(), R_top.lda());
+                                  R_top.data(), R_top.lda());
       R.fill (Scalar {});
       // Only copy the upper triangle of R_top into R.
-      copy_upper_triangle (R.ncols(), R.ncols(), R.get(), R.lda(),
-                           R_top.get(), R_top.lda());
+      copy_upper_triangle (R.ncols(), R.ncols(), R.data(), R.lda(),
+                           R_top.data(), R_top.lda());
       return result;
     }
 
@@ -1553,8 +1553,8 @@ namespace TSQR {
       // The statement below only works if R_top and R_bot have a
       // nonzero (and the same) number of columns, but we have already
       // checked that above.
-      combine_.factor_pair (R_top.ncols(), R_top.get(), R_top.lda(),
-                            R_bot.get(), R_bot.lda(), tau.data(),
+      combine_.factor_pair (R_top.ncols(), R_top.data(), R_top.lda(),
+                            R_bot.data(), R_bot.lda(), tau.data(),
                             work_.data());
       return tau;
     }
@@ -1609,9 +1609,9 @@ namespace TSQR {
       // have a nonzero (and the same) number of columns, but we have
       // already checked that above.
       combine_.apply_pair (applyType, C_top.ncols(), R_bot.ncols(),
-                           R_bot.get(), R_bot.lda(), &tau[0],
-                           C_top.get(), C_top.lda(),
-                           C_bot.get(), C_bot.lda(), &work_[0]);
+                           R_bot.data(), R_bot.lda(), tau.data(),
+                           C_top.data(), C_top.lda(),
+                           C_bot.data(), C_bot.lda(), work_.data());
     }
 
     void
@@ -1645,7 +1645,7 @@ namespace TSQR {
       // Top blocks of C are the whole cache blocks.  We only want to
       // affect the top ncols x ncols part of each of those blocks in
       // this method.
-      mat_view_type C_top_square (numCols, numCols, topBlocksOfC[0].get(),
+      mat_view_type C_top_square (numCols, numCols, topBlocksOfC[0].data(),
                                   topBlocksOfC[0].lda());
       if (applyType.transposed ()) {
         // Don't include the topmost (index 0) partition in the
@@ -1656,7 +1656,7 @@ namespace TSQR {
           // empty, and we can skip over them.
           const mat_view_type& C_cur = topBlocksOfC[partIdx];
           if (! C_cur.empty()) {
-            mat_view_type C_cur_square (numCols, numCols, C_cur.get (),
+            mat_view_type C_cur_square (numCols, numCols, C_cur.data (),
                                         C_cur.lda ());
             // If explicitQ: We've already done the first pass and
             // filled the top blocks of C.
@@ -1682,7 +1682,7 @@ namespace TSQR {
           const mat_view_type& C_cur = topBlocksOfC[partIdx];
           if (! C_cur.empty()) {
             mat_view_type C_cur_square (numCols, numCols,
-                                        C_cur.get (), C_cur.lda ());
+                                        C_cur.data (), C_cur.lda ());
             // The "first" pass (actually the last, only named
             // "first" by analogy with factorFirstPass()) will
             // fill the rest of these top blocks.  For now, we

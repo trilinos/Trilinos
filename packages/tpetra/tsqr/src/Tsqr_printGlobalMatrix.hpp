@@ -86,7 +86,7 @@ namespace TSQR {
           // Print the remote matrix data
           // out << "Processor " << my_rank << ":" << endl;
           print_local_matrix (out, A_local.nrows(), A_local.ncols(),
-                              A_local.get(), A_local.lda());
+                              A_local.data(), A_local.lda());
 
           // Space for remote matrix data.  Other processors are allowed
           // to have different nrows_local values; we make space as
@@ -126,11 +126,11 @@ namespace TSQR {
 
               // Receive the remote matrix data, which we assume is
               // stored contiguously.
-              scalarComm->recv (A_remote.get(), dims[0]*dims[1], srcProc, 0);
+              scalarComm->recv (A_remote.data(), dims[0]*dims[1], srcProc, 0);
 
               // Print the remote matrix data
               // out << "Processor " << proc << ":" << endl;
-              print_local_matrix (out, dims[0], dims[0], A_remote.get(), A_remote.lda());
+              print_local_matrix (out, dims[0], dims[0], A_remote.data(), A_remote.lda());
             }
         }
       else
@@ -148,7 +148,7 @@ namespace TSQR {
           deep_copy (A_buf, A_local);
 
           // Send the actual data to proc 0.
-          scalarComm->send (A_buf.get(), nrowsLocal*ncols, rootProc, 0);
+          scalarComm->send (A_buf.data(), nrowsLocal*ncols, rootProc, 0);
         }
       scalarComm->barrier ();
     }

@@ -84,14 +84,13 @@ namespace TSQR {
       TSQR::Random::MatrixGenerator<Ordinal, Scalar, Generator> matGen (generator);
       const Ordinal numRows = numProcs * numCols;
       A_global.reshape (numRows, numCols);
-      A_global.fill (Scalar(0));
+      A_global.fill (Scalar {});
 
-      for (int p = 0; p < numProcs; ++p)
-        {
-          Scalar* const curptr = A_global.get() + p*numCols;
-          mat_view_type R_cur (numCols, numCols, curptr, numRows);
-          matGen.fill_random_R (numCols, R_cur.get(), numRows, singularValues);
-        }
+      for (int p = 0; p < numProcs; ++p) {
+        Scalar* const curptr = A_global.data() + p*numCols;
+        mat_view_type R_cur (numCols, numCols, curptr, numRows);
+        matGen.fill_random_R (numCols, R_cur.data(), numRows, singularValues);
+      }
     }
 
     /// \brief Generate a random test problem for the distributed-memory part of TSQR.

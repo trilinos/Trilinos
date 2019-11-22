@@ -277,7 +277,7 @@ namespace TSQR {
       const ordinal_type ncols = R_mine.ncols();
 
       std::vector< scalar_type > R_local (ncols*ncols);
-      copy_matrix (ncols, ncols, &R_local[0], ncols, R_mine.get(), R_mine.lda());
+      copy_matrix (ncols, ncols, R_local.data(), ncols, R_mine.data(), R_mine.lda());
 
       const int P = messenger_->size();
       const int my_rank = messenger_->rank();
@@ -285,7 +285,7 @@ namespace TSQR {
       std::vector<scalar_type> work (ncols);
       helper.factor_helper (ncols, R_local, my_rank, 0, P-1, first_tag,
                             messenger_.get(), Q_factors, tau_arrays, work);
-      copy_matrix (ncols, ncols, R_mine.get(), R_mine.lda(), &R_local[0], ncols);
+      copy_matrix (ncols, ncols, R_mine.data(), R_mine.lda(), R_local.data(), ncols);
       return std::make_pair (Q_factors, tau_arrays);
     }
 
@@ -319,7 +319,7 @@ namespace TSQR {
       const int cur_pos = Q_factors.size() - 1;
       DistTsqrHelper<ordinal_type, scalar_type> helper;
       helper.apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
-                           &C_other[0], my_rank, 0, P-1, first_tag,
+                           C_other.data(), my_rank, 0, P-1, first_tag,
                            messenger_.get(), Q_factors, tau_arrays, cur_pos,
                            work);
     }

@@ -117,14 +117,14 @@ namespace TSQR {
           // is for splitting off a single cache block.  Each half
           // of the split may contain more than one cache block.
           if (contiguous_cache_blocks) {
-            pointer_type A_bot_ptr = A.get() + num_rows_top * ncols;
-            MatrixViewType A_top (num_rows_top, ncols, A.get(), num_rows_top);
+            pointer_type A_bot_ptr = A.data() + num_rows_top * ncols;
+            MatrixViewType A_top (num_rows_top, ncols, A.data(), num_rows_top);
             MatrixViewType A_bot (num_rows_bot, ncols, A_bot_ptr, num_rows_bot);
             return std::make_pair (A_top, A_bot);
           }
           else {
-            pointer_type A_bot_ptr = A.get() + num_rows_top;
-            MatrixViewType A_top (num_rows_top, ncols, A.get(), A.lda());
+            pointer_type A_bot_ptr = A.data() + num_rows_top;
+            MatrixViewType A_top (num_rows_top, ncols, A.data(), A.lda());
             MatrixViewType A_bot (num_rows_bot, ncols, A_bot_ptr, A.lda());
             return std::make_pair (A_top, A_bot);
           }

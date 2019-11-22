@@ -85,8 +85,8 @@ namespace TSQR {
 
         // If specified, rearrange cache blocks in the copy.
         if (contiguousCacheBlocks) {
-          tsqr.cache_block (nrows_local, ncols, A_copy.get(),
-                            A_local.get(), A_local.lda());
+          tsqr.cache_block (nrows_local, ncols, A_copy.data(),
+                            A_local.data(), A_local.lda());
           if (b_debug) {
             scalarComm->barrier ();
             if (scalarComm->rank () == 0)
@@ -110,8 +110,8 @@ namespace TSQR {
         else {
           // Factor the (copy of the) matrix.
           factor_output_type factorOutput =
-            tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(),
-                         R.get(), R.lda(), contiguousCacheBlocks);
+            tsqr.factor (nrows_local, ncols, A_copy.data(), A_copy.lda(),
+                         R.data(), R.lda(), contiguousCacheBlocks);
           if (b_debug) {
             scalarComm->barrier ();
             if (scalarComm->rank () == 0)
@@ -120,8 +120,8 @@ namespace TSQR {
 
           // Compute the explicit Q factor in Q_local
           tsqr.explicit_Q (nrows_local,
-                           ncols, A_copy.get(), A_copy.lda(), factorOutput,
-                           ncols, Q_local.get(), Q_local.lda(),
+                           ncols, A_copy.data(), A_copy.lda(), factorOutput,
+                           ncols, Q_local.data(), Q_local.lda(),
                            contiguousCacheBlocks);
           if (b_debug) {
             scalarComm->barrier ();
@@ -136,8 +136,8 @@ namespace TSQR {
         if (contiguousCacheBlocks) {
           // We can use A_copy as scratch space for un-cache-blocking
           // Q_local, since we're done using A_copy for other things.
-          tsqr.un_cache_block (nrows_local, ncols, A_copy.get(),
-                               A_copy.lda(), Q_local.get());
+          tsqr.un_cache_block (nrows_local, ncols, A_copy.data(),
+                               A_copy.lda(), Q_local.data());
           // Overwrite Q_local with the un-cache-blocked Q factor.
           deep_copy (Q_local, A_copy);
 
@@ -321,7 +321,7 @@ namespace TSQR {
         scalarComm->barrier ();
         if (my_rank == 0) {
           cerr << endl << "R factor:" << endl;
-          print_local_matrix (cerr, ncols, ncols, R.get(), R.lda());
+          print_local_matrix (cerr, ncols, ncols, R.data(), R.lda());
           cerr << endl;
         }
         scalarComm->barrier ();
@@ -329,8 +329,8 @@ namespace TSQR {
 
       // Test accuracy of the resulting factorization
       std::vector< magnitude_type > results =
-        global_verify (nrows_local, ncols, A_local.get(), A_local.lda(),
-                       Q_local.get(), Q_local.lda(), R.get(), R.lda(),
+        global_verify (nrows_local, ncols, A_local.data(), A_local.lda(),
+                       Q_local.data(), Q_local.lda(), R.data(), R.lda(),
                        scalarComm.get());
       if (b_debug) {
         scalarComm->barrier ();
@@ -442,8 +442,8 @@ namespace TSQR {
       const ordinal_type ncols = A_local.ncols();
 
       if (contiguousCacheBlocks) {
-        tsqr.cache_block (nrows_local, ncols, A_copy.get(),
-                          A_local.get(), A_local.lda());
+        tsqr.cache_block (nrows_local, ncols, A_copy.data(),
+                          A_local.data(), A_local.lda());
         if (b_debug) {
           messenger->barrier ();
           if (messenger->rank () == 0) {
@@ -496,11 +496,11 @@ namespace TSQR {
               // un-cache-blocking the output (when cache blocks are
               // stored contiguously).
               factor_output_type factor_output =
-                tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(),
-                             R.get(), R.lda(), contiguousCacheBlocks);
+                tsqr.factor (nrows_local, ncols, A_copy.data(), A_copy.lda(),
+                             R.data(), R.lda(), contiguousCacheBlocks);
               tsqr.explicit_Q (nrows_local,
-                               ncols, A_copy.get(), A_copy.lda(), factor_output,
-                               ncols, Q_local.get(), Q_local.lda(),
+                               ncols, A_copy.data(), A_copy.lda(), factor_output,
+                               ncols, Q_local.data(), Q_local.lda(),
                                contiguousCacheBlocks);
               // Timings in debug mode likely won't make sense, because
               // Proc 0 is outputting the debug messages to cerr.

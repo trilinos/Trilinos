@@ -326,7 +326,7 @@ namespace TSQR {
         }
 
         // Copy the R factor out of A_top into R.
-        seq_.extract_R (A_top.nrows(), A_top.ncols(), A_top.get(),
+        seq_.extract_R (A_top.nrows(), A_top.ncols(), A_top.data(),
                         A_top.lda(), R, ldr, contiguous_cache_blocks);
 
         // Save the timings for future reference
@@ -512,7 +512,7 @@ namespace TSQR {
 
         Matrix<LocalOrdinal, Scalar> U (ncols, ncols, Scalar(0));
         const LocalOrdinal rank =
-          reveal_R_rank (ncols, R, ldr, U.get(), U.ldu(), tol);
+          reveal_R_rank (ncols, R, ldr, U.data(), U.ldu(), tol);
 
         if (rank < ncols)
           {
@@ -520,7 +520,7 @@ namespace TSQR {
             // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
             // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
             // := Q \cdot U\f$, respecting cache blocks of Q.
-            Q_times_B (nrows, ncols, Q, ldq, U.get(), U.lda(),
+            Q_times_B (nrows, ncols, Q, ldq, U.data(), U.lda(),
                        contiguous_cache_blocks);
           }
         return rank;
@@ -644,9 +644,9 @@ namespace TSQR {
           mat_view_type C_top = seq_.top_block (C, contiguous_cache_blocks);
           top_blocks[P_first] =
             std::make_pair (const_mat_view_type (Q_top.ncols(), Q_top.ncols(),
-                                                 Q_top.get(), Q_top.lda()),
+                                                 Q_top.data(), Q_top.lda()),
                             mat_view_type (C_top.ncols(), C_top.ncols(),
-                                           C_top.get(), C_top.lda()));
+                                           C_top.data(), C_top.lda()));
         }
         else {
           // Recurse on two intervals: [P_first, P_mid] and [P_mid+1, P_last]
@@ -670,9 +670,9 @@ namespace TSQR {
             mat_view_type C_top = seq_.top_block (C, contiguous_cache_blocks);
             top_blocks[P_first] =
               std::make_pair (const_mat_view_type (Q_top.ncols(), Q_top.ncols(),
-                                                   Q_top.get(), Q_top.lda()),
+                                                   Q_top.data(), Q_top.lda()),
                               mat_view_type (C_top.ncols(), C_top.ncols(),
-                                             C_top.get(), C_top.lda()));
+                                             C_top.data(), C_top.lda()));
           }
           else {
             build_partition_array (P_first, P_mid, top_blocks,

@@ -396,8 +396,8 @@ namespace TSQR {
               // require expensive reallocation every time we send /
               // receive data.
               resizeWork (numCols);
-              combine_.factor_pair (numCols, R_mine.get(), R_mine.lda(),
-                                    R_other.get(), R_other.lda(),
+              combine_.factor_pair (numCols, R_mine.data(), R_mine.lda(),
+                                    R_other.data(), R_other.lda(),
                                     &tau[0], &work_[0]);
               QFactors.push_back (R_other);
               tauArrays.push_back (tau);
@@ -462,9 +462,9 @@ namespace TSQR {
               Q_other.fill (scalar_type (0));
               combine_.apply_pair (ApplyType::NoTranspose,
                                    Q_mine.ncols(), Q_impl.ncols(),
-                                   Q_impl.get(), Q_impl.lda(), &tau[0],
-                                   Q_mine.get(), Q_mine.lda(),
-                                   Q_other.get(), Q_other.lda(), &work_[0]);
+                                   Q_impl.data(), Q_impl.lda(), &tau[0],
+                                   Q_mine.data(), Q_mine.lda(),
+                                   Q_other.data(), Q_other.lda(), &work_[0]);
               // Send the resulting Q_other, and the final R factor, to P_mid.
               send_Q_R (Q_other, R_mine, P_mid);
               newpos = curpos - 1;

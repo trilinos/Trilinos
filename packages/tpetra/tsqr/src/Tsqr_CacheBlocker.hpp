@@ -342,8 +342,8 @@ namespace TSQR {
           // This call modifies A_out_rest.
           mat_view_type A_out_cur = split_top_block (A_out_rest, true);
 
-          copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.get(),
-                       A_out_cur.lda(), A_in_cur.get(), A_in_cur.lda());
+          copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.data(),
+                       A_out_cur.lda(), A_in_cur.data(), A_in_cur.lda());
         }
     }
 
@@ -375,8 +375,8 @@ namespace TSQR {
           // This call modifies A_out_rest.
           mat_view_type A_out_cur = split_top_block (A_out_rest, false);
 
-          copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.get(),
-                       A_out_cur.lda(), A_in_cur.get(), A_in_cur.lda());
+          copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.data(),
+                       A_out_cur.lda(), A_in_cur.data(), A_in_cur.lda());
         }
     }
 
@@ -411,7 +411,7 @@ namespace TSQR {
 
       // result[0] = starting row index of the cache block
       // result[1] = number of rows in the cache block
-      // result[2] = pointer offset (A.get() + result[2])
+      // result[2] = pointer offset (A.data() + result[2])
       // result[3] = leading dimension (a.k.a. stride) of the cache block
       std::vector<Ordinal> result =
         strategy_.cache_block_details (cache_block_index, A.nrows(), A.ncols(),
@@ -425,7 +425,7 @@ namespace TSQR {
       // (ordinal_type) to unsigned (pointer) may raise compiler
       // warnings.
       return MatrixViewType (result[1], A.ncols(),
-                             A.get() + static_cast<size_t>(result[2]),
+                             A.data() + static_cast<size_t>(result[2]),
                              result[3]);
     }
 

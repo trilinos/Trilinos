@@ -85,8 +85,8 @@ namespace TSQR {
         // doesn't suggest any orthogonality of the B input matrix,
         // though in this case B is U and U is orthogonal
         // (resp. unitary if Scalar is complex).
-        seq_.Q_times_B (Q_.nrows(), Q_.ncols(), Q_.get(), Q_.lda(),
-                        U_.get(), U_.lda(), contiguous_cache_blocks_);
+        seq_.Q_times_B (Q_.nrows(), Q_.ncols(), Q_.data(), Q_.lda(),
+                        U_.data(), U_.lda(), contiguous_cache_blocks_);
       }
 
       tbb::task* execute ()
