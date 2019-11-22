@@ -51,6 +51,7 @@
 #include "Tsqr_LocalVerify.hpp"
 #include "Tsqr_NodeTsqr.hpp"
 #include "Tsqr_Util.hpp"
+#include "Tsqr_Impl_SystemBlas.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListExceptions.hpp"
@@ -746,8 +747,7 @@ namespace TSQR {
       // restructuring of this code would parallelize nicely using
       // OpenMP.
       CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
-
-      Teuchos::BLAS<LocalOrdinal, Scalar> blas;
+      Impl::SystemBlas<Scalar> blas;
       mat_view_type Q_rest (nrows, ncols, Q, ldq);
       Matrix<LocalOrdinal, Scalar>
         Q_cur_copy (LocalOrdinal(0), LocalOrdinal(0)); // will be resized

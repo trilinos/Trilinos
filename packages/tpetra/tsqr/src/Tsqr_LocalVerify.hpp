@@ -41,26 +41,22 @@
 #define __TSQR_Tsqr_LocalVerify_hpp
 
 #include "Tsqr_Util.hpp"
-#include "Teuchos_BLAS.hpp"
+#include "Tsqr_Impl_SystemBlas.hpp"
 #include <cmath>
 #include <limits>
 #include <utility> // std::pair, std::make_pair
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
-
-  template< class Ordinal, class Scalar >
+  template<class Ordinal, class Scalar>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   local_frobenius_norm (const Ordinal nrows_local,
                         const Ordinal ncols,
-                        const Scalar  A_local[],
+                        const Scalar A_local[],
                         const Ordinal lda_local)
   {
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-    typedef typename STS::magnitudeType magnitude_type;
+    using STS = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type = typename STS::magnitudeType;
 
     // FIXME (mfh 22 Apr 2010) This function does no scaling of
     // intermediate quantities, so it might overflow unnecessarily.
@@ -68,7 +64,7 @@ namespace TSQR {
     for (Ordinal j = 0; j < ncols; ++j) {
       const Scalar* const cur_col = &A_local[j*lda_local];
       for (Ordinal i = 0; i < nrows_local; ++i) {
-        const magnitude_type abs_xi = STS::magnitude (cur_col[i]);
+        const auto abs_xi = STS::magnitude (cur_col[i]);
         result = result + abs_xi * abs_xi;
       }
     }
@@ -131,10 +127,10 @@ namespace TSQR {
                       const Ordinal ldq)
   {
     typedef Teuchos::ScalarTraits<Scalar> STS;
-    const Scalar ZERO (0);
-    const Scalar ONE (1);
+    const Scalar ZERO {};
+    const Scalar ONE (1.0);
 
-    Teuchos::BLAS<Ordinal, Scalar> blas;
+    Impl::SystemBlas<Scalar> blas;
 
     std::vector<Scalar> AbsOrthog (ncols * ncols, std::numeric_limits<Scalar>::quiet_NaN());
     const Ordinal AbsOrthog_stride = ncols;
@@ -170,11 +166,11 @@ namespace TSQR {
   {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
-    const Scalar ZERO (0);
-    const Scalar ONE (1);
+    const Scalar ZERO {};
+    const Scalar ONE (1.0);
 
     const bool relative = false; // whether to scale $\|I-Q^T*Q\|_F$ by $\|A\|_F$
-    Teuchos::BLAS<Ordinal, Scalar> blas;
+    Impl::SystemBlas<Scalar> blas;
 
     std::vector<Scalar> AbsOrthog (ncols * ncols, std::numeric_limits<Scalar>::quiet_NaN());
     const Ordinal AbsOrthog_stride = ncols;
@@ -221,7 +217,7 @@ namespace TSQR {
     std::vector<Scalar> AbsResid (nrows * ncols,
                                   std::numeric_limits<Scalar>::quiet_NaN ());
     const Ordinal AbsResid_stride = nrows;
-    Teuchos::BLAS<Ordinal, Scalar> blas;
+    Impl::SystemBlas<Scalar> blas;
     const magnitude_type ONE (1);
 
     // A_copy := A_copy - Q * R
@@ -251,41 +247,18 @@ namespace TSQR {
 
     std::vector<Scalar> AbsResid (nrows * ncols, std::numeric_limits<Scalar>::quiet_NaN ());
     const Ordinal AbsResid_stride = nrows;
-    Teuchos::BLAS<Ordinal, Scalar> blas;
-    const magnitude_type ONE (1);
-
-    // if (b_debug)
-    //   cerr << "relative_residual:" << endl;
-    // if (matrix_contains_nan (nrows, ncols, A, lda))
-    //   cerr << "relative_residual: matrix A contains a NaN" << endl;
-    // if (matrix_contains_nan (nrows, ncols, Q, ldq))
-    //   cerr << "relative_residual: matrix Q contains a NaN" << endl;
-    // if (matrix_contains_nan (ncols, ncols, R, ldr))
-    //   cerr << "relative_residual: matrix R contains a NaN" << endl;
+    Impl::SystemBlas<Scalar> blas;
+    const magnitude_type ONE (1.0);
 
     // A_copy := A_copy - Q * R
-    copy_matrix (nrows, ncols, &AbsResid[0], AbsResid_stride, A, lda);
-
-    // if (NaN_in_matrix (nrows, ncols, AbsResid, AbsResid_stride))
-    //   cerr << "relative_residual: matrix AbsResid := A contains a NaN" << endl;
-
-    blas.GEMM (NO_TRANS, NO_TRANS, nrows, ncols, ncols, -ONE, Q, ldq, R, ldr,
-               ONE, &AbsResid[0], AbsResid_stride);
-
-    // if (NaN_in_matrix (nrows, ncols, AbsResid, AbsResid_stride))
-    //   cerr << "relative_residual: matrix AbsResid := A - Q*R contains a NaN" << endl;
+    copy_matrix (nrows, ncols, AbsResid.data(),
+                 AbsResid_stride, A, lda);
+    blas.GEMM (NO_TRANS, NO_TRANS, nrows, ncols, ncols,
+               -ONE, Q, ldq, R, ldr,
+               ONE, AbsResid.data(), AbsResid_stride);
 
     const magnitude_type absolute_residual =
       local_frobenius_norm (nrows, ncols, &AbsResid[0], AbsResid_stride);
-
-    // if (b_debug)
-    //   {
-    //     cerr << "In relative_residual:" << endl;
-    //     cerr << "||Q||_2 = " << matrix_2norm(nrows, ncols, Q, ldq) << endl;
-    //     cerr << "||R||_2 = " << matrix_2norm(ncols, ncols, R, ldr) << endl;
-    //     cerr << "||A - QR||_2 = " << absolute_residual << endl;
-    //   }
-
     return absolute_residual / A_norm_F;
   }
 

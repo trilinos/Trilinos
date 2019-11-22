@@ -64,13 +64,13 @@ namespace TSQR {
   template<class LocalOrdinal, class Scalar>
   class SequentialCholeskyQR {
   private:
-    typedef MatView< LocalOrdinal, Scalar > mat_view_type;
-    typedef ConstMatView< LocalOrdinal, Scalar > const_mat_view_type;
-    typedef Teuchos::BLAS<LocalOrdinal, Scalar> blas_type;
+    using mat_view_type = MatView<LocalOrdinal, Scalar>;
+    using const_mat_view_type = ConstMatView<LocalOrdinal, Scalar>;
+    using blas_type = Impl::SystemBlas<Scalar>;
 
   public:
-    typedef Scalar scalar_type;
-    typedef LocalOrdinal ordinal_type;
+    using scalar_type = Scalar;
+    using ordinal_type = LocalOrdinal;
 
     /// \typedef FactorOutput
     /// \brief Return value of \c factor().
@@ -124,7 +124,7 @@ namespace TSQR {
       Impl::Lapack<Scalar> lapack;
 
       std::vector<Scalar> work (ncols);
-      Matrix<LocalOrdinal, Scalar> ATA (ncols, ncols, Scalar(0));
+      Matrix<LocalOrdinal, Scalar> ATA (ncols, ncols, Scalar {});
       FactorOutput retval (0);
 
       if (contiguous_cache_blocks)
@@ -175,7 +175,7 @@ namespace TSQR {
       // CholeskyQR + symmetric eigensolver factorization.
 
       // Copy out the R factor
-      fill_matrix (ncols, ncols, R, ldr, Scalar(0));
+      fill_matrix (ncols, ncols, R, ldr, Scalar {});
       copy_upper_triangle (ncols, ncols, R, ldr, ATA.get(), ATA.lda());
 
       // Compute A := A * R^{-1}.  We do this in place in A, using
@@ -189,7 +189,8 @@ namespace TSQR {
 
         mat_view_type A_rest (nrows, ncols, A, lda);
         // This call modifies A_rest.
-        mat_view_type A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+        mat_view_type A_cur =
+          blocker.split_top_block (A_rest, contiguous_cache_blocks);
 
         // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
         blas.TRSM (RIGHT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG,
@@ -227,12 +228,15 @@ namespace TSQR {
       const LocalOrdinal ncols = ncols_Q;
 
       if (contiguous_cache_blocks) {
-        CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
+        CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols,
+                                                    strategy_);
         mat_view_type C_rest (nrows, ncols, C, ldc);
         const_mat_view_type Q_rest (nrows, ncols, Q, ldq);
 
-        mat_view_type C_cur = blocker.split_top_block (C_rest, contiguous_cache_blocks);
-        const_mat_view_type Q_cur = blocker.split_top_block (Q_rest, contiguous_cache_blocks);
+        mat_view_type C_cur =
+          blocker.split_top_block (C_rest, contiguous_cache_blocks);
+        const_mat_view_type Q_cur =
+          blocker.split_top_block (Q_rest, contiguous_cache_blocks);
 
         while (! C_rest.empty ()) {
           deep_copy (Q_cur, C_cur);

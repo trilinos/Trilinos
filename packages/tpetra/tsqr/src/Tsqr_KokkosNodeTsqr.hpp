@@ -46,6 +46,7 @@
 #include "Tsqr_CacheBlocker.hpp"
 #include "Tsqr_Combine.hpp"
 #include "Tsqr_NodeTsqr.hpp"
+#include "Tsqr_Impl_SystemBlas.hpp"
 
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Kokkos_Core.hpp"
@@ -827,8 +828,11 @@ namespace TSQR {
       int numPartitions_;
       bool contiguousCacheBlocks_;
 
+      // This uses SystemBlas for now.
+      // In the future, we may want to use a TPL.
+      // That means we could switch to RawBlas.
       void
-      multBlock (Teuchos::BLAS<LocalOrdinal, Scalar>& blas,
+      multBlock (Impl::SystemBlas<Scalar>& blas,
                  const mat_view_type& Q_cur,
                  Matrix<LocalOrdinal, Scalar>& Q_temp) const
       {
@@ -861,7 +865,7 @@ namespace TSQR {
         // routine (which forbids aliasing of any input argument and
         // the output argument).
         Matrix<LocalOrdinal, Scalar> Q_temp;
-        Teuchos::BLAS<LocalOrdinal, Scalar> blas;
+        Impl::SystemBlas<Scalar> blas;
         while (iter != end) {
           mat_view_type Q_cur = *iter;
           multBlock (blas, Q_cur, Q_temp);

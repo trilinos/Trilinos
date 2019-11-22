@@ -43,14 +43,12 @@
 #include "Tsqr_Matrix.hpp"
 #include "Tsqr_Random_MatrixGenerator.hpp"
 #include "Tsqr_RMessenger.hpp"
-#include "Teuchos_BLAS.hpp"
+#include "Tsqr_Impl_SystemBlas.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <vector>
 
 namespace TSQR {
   namespace Random {
@@ -93,17 +91,14 @@ namespace TSQR {
                         MessengerBase< typename MatrixViewType::scalar_type >* const scalarMessenger)
     {
       using Teuchos::NO_TRANS;
-      using std::vector;
-      typedef typename MatrixViewType::ordinal_type ordinal_type;
-      typedef typename MatrixViewType::scalar_type scalar_type;
-
-
-      const bool b_local_debug = false;
+      using ordinal_type = typename MatrixViewType::ordinal_type;
+      using scalar_type = typename MatrixViewType::scalar_type;
+      using STS = Teuchos::ScalarTraits<scalar_type>;
 
       const int rootProc = 0;
       const int nprocs = ordinalMessenger->size();
       const int myRank = ordinalMessenger->rank();
-      Teuchos::BLAS<ordinal_type, scalar_type> blas;
+      Impl::SystemBlas<scalar_type> blas;
 
       const ordinal_type nrowsLocal = A_local.nrows();
       const ordinal_type ncols = A_local.ncols();
@@ -117,107 +112,99 @@ namespace TSQR {
       //
       // \sum_{q = 0}^{P-1} (Q_q^T * Q_q) / P = I.
 
-      if (myRank == rootProc)
-        {
-          typedef Random::MatrixGenerator< ordinal_type, scalar_type, Generator > matgen_type;
-          matgen_type matGen (*pGenerator);
+      if (myRank == rootProc) {
+        using matgen_type = Random::MatrixGenerator<ordinal_type,
+          scalar_type, Generator>;
+        matgen_type matGen (*pGenerator);
 
-          // Generate a random ncols by ncols upper triangular matrix
-          // R with the given singular values.
-          Matrix< ordinal_type, scalar_type > R (ncols, ncols, scalar_type(0));
-          matGen.fill_random_R (ncols, R.get(), R.lda(), singular_values);
+        // Generate a random ncols by ncols upper triangular matrix R
+        // with the given singular values.
+        Matrix<ordinal_type, scalar_type> R (ncols, ncols, scalar_type {});
+        matGen.fill_random_R (ncols, R.get(), R.lda(), singular_values);
 
-          // Broadcast R to all the processors.
-          scalarMessenger->broadcast (R.get(), ncols*ncols, rootProc);
+        // Broadcast R to all the processors.
+        scalarMessenger->broadcast (R.get(), ncols*ncols, rootProc);
 
-          // Generate (for myself) a random nrowsLocal x ncols
-          // orthogonal matrix, stored in explicit form.
-          Matrix< ordinal_type, scalar_type > Q_local (nrowsLocal, ncols);
-          matGen.explicit_Q (nrowsLocal, ncols, Q_local.get(), Q_local.lda());
+        // Generate (for myself) a random nrowsLocal x ncols
+        // orthogonal matrix, stored in explicit form.
+        Matrix<ordinal_type, scalar_type> Q_local (nrowsLocal, ncols);
+        matGen.explicit_Q (nrowsLocal, ncols, Q_local.get(), Q_local.lda());
 
-          // Scale the (local) orthogonal matrix by the number of
-          // processors P, to make the columns of the global matrix Q
-          // orthogonal.  (Otherwise the norm of each column will be P
-          // instead of 1.)
-          const scalar_type P = static_cast< scalar_type > (nprocs);
-          // Do overflow check.  If casting P back to scalar_type
-          // doesn't produce the same value as nprocs, the cast
-          // overflowed.  We take the real part, because scalar_type
-          // might be complex.
-          if (nprocs != static_cast<int> (Teuchos::ScalarTraits<scalar_type>::real (P)))
-            throw std::runtime_error ("Casting nprocs to Scalar failed");
-
-          scaleMatrix (Q_local, P);
-
-          // A_local := Q_local * R
-          blas.GEMM (NO_TRANS, NO_TRANS, nrowsLocal, ncols, ncols,
-                     scalar_type(1), Q_local.get(), Q_local.lda(),
-                     R.get(), R.lda(),
-                     scalar_type(0), A_local.get(), A_local.lda());
-
-          for (int recvProc = 1; recvProc < nprocs; ++recvProc)
-            {
-              // Ask the receiving processor how big (i.e., how many rows)
-              // its local component of the matrix is.
-              ordinal_type nrowsRemote = 0;
-              ordinalMessenger->recv (&nrowsRemote, 1, recvProc, 0);
-
-              if (b_local_debug)
-                {
-                  std::ostringstream os;
-                  os << "For Proc " << recvProc << ": local block is "
-                     << nrowsRemote << " by " << ncols << std::endl;
-                  std::cerr << os.str();
-                }
-
-              // Make sure Q_local is big enough to hold the data for
-              // the current receiver proc.
-              Q_local.reshape (nrowsRemote, ncols);
-
-              // Compute a random nrowsRemote * ncols orthogonal
-              // matrix Q_local, for the current receiving processor.
-              matGen.explicit_Q (nrowsRemote, ncols, Q_local.get(), Q_local.lda());
-
-              // Send Q_local to the current receiving processor.
-              scalarMessenger->send (Q_local.get(), nrowsRemote*ncols, recvProc, 0);
-            }
+        // Scale the (local) orthogonal matrix by the number of
+        // processors P, to make the columns of the global matrix Q
+        // orthogonal.  (Otherwise the norm of each column will be P
+        // instead of 1.)
+        const scalar_type P (static_cast<double> (nprocs));
+        // Do overflow check.  If casting P back to scalar_type
+        // doesn't produce the same value as nprocs, the cast
+        // overflowed.  We take the real part, because scalar_type
+        // might be complex.
+        if (nprocs != static_cast<int> (STS::real (P))) {
+          throw std::runtime_error ("Casting nprocs to Scalar failed");
         }
-      else
-        {
-          // Receive the R factor from Proc 0.  There's only 1 R
-          // factor for all the processes.
-          Matrix< ordinal_type, scalar_type > R (ncols, ncols, scalar_type (0));
-          scalarMessenger->broadcast (R.get(), ncols*ncols, rootProc);
 
-          // Q_local (nrows_local by ncols, random orthogonal matrix)
-          // will be received from Proc 0, where it was generated.
-          const ordinal_type recvSize = nrowsLocal * ncols;
-          Matrix< ordinal_type, scalar_type > Q_local (nrowsLocal, ncols);
+        scaleMatrix (Q_local, P);
 
-          // Tell Proc 0 how many rows there are in the random orthogonal
-          // matrix I want to receive from Proc 0.
-          ordinalMessenger->send (&nrowsLocal, 1, rootProc, 0);
+        // A_local := Q_local * R
+        blas.GEMM (NO_TRANS, NO_TRANS, nrowsLocal, ncols, ncols,
+                   scalar_type(1), Q_local.get(), Q_local.lda(),
+                   R.get(), R.lda(),
+                   scalar_type(0), A_local.get(), A_local.lda());
 
-          // Receive the orthogonal matrix from Proc 0.
-          scalarMessenger->recv (Q_local.get(), recvSize, rootProc, 0);
+        for (int recvProc = 1; recvProc < nprocs; ++recvProc) {
+          // Ask the receiving processor how big (i.e., how many rows)
+          // its local component of the matrix is.
+          ordinal_type nrowsRemote = 0;
+          ordinalMessenger->recv (&nrowsRemote, 1, recvProc, 0);
 
-          // Scale the (local) orthogonal matrix by the number of
-          // processors, to make the global matrix Q orthogonal.
-          const scalar_type P = static_cast< scalar_type > (nprocs);
-          // Do overflow check.  If casting P back to scalar_type
-          // doesn't produce the same value as nprocs, the cast
-          // overflowed.  We take the real part, because scalar_type
-          // might be complex.
-          if (nprocs != static_cast<int> (Teuchos::ScalarTraits<scalar_type>::real (P)))
-            throw std::runtime_error ("Casting nprocs to Scalar failed");
-          scaleMatrix (Q_local, P);
+          // Make sure Q_local is big enough to hold the data for
+          // the current receiver proc.
+          Q_local.reshape (nrowsRemote, ncols);
 
-          // A_local := Q_local * R
-          blas.GEMM (NO_TRANS, NO_TRANS, nrowsLocal, ncols, ncols,
-                     scalar_type(1), Q_local.get(), Q_local.lda(),
-                     R.get(), R.lda(),
-                     scalar_type(0), A_local.get(), A_local.lda());
+          // Compute a random nrowsRemote * ncols orthogonal
+          // matrix Q_local, for the current receiving processor.
+          matGen.explicit_Q (nrowsRemote, ncols, Q_local.get(), Q_local.lda());
+
+          // Send Q_local to the current receiving processor.
+          scalarMessenger->send (Q_local.get(), nrowsRemote*ncols, recvProc, 0);
         }
+      }
+      else {
+        // Receive the R factor from Proc 0.  There's only 1 R
+        // factor for all the processes.
+        Matrix<ordinal_type, scalar_type> R (ncols, ncols, scalar_type {});
+        scalarMessenger->broadcast (R.get(), ncols*ncols, rootProc);
+
+        // Q_local (nrows_local by ncols, random orthogonal matrix)
+        // will be received from Proc 0, where it was generated.
+        const ordinal_type recvSize = nrowsLocal * ncols;
+        Matrix<ordinal_type, scalar_type> Q_local (nrowsLocal, ncols);
+
+        // Tell Proc 0 how many rows there are in the random orthogonal
+        // matrix I want to receive from Proc 0.
+        ordinalMessenger->send (&nrowsLocal, 1, rootProc, 0);
+
+        // Receive the orthogonal matrix from Proc 0.
+        scalarMessenger->recv (Q_local.get(), recvSize, rootProc, 0);
+
+        // Scale the (local) orthogonal matrix by the number of
+        // processors, to make the global matrix Q orthogonal.
+        const scalar_type P (static_cast<double> (nprocs));
+        // Do overflow check.  If casting P back to scalar_type
+        // doesn't produce the same value as nprocs, the cast
+        // overflowed.  We take the real part, because scalar_type
+        // might be complex.
+        if (nprocs != static_cast<int> (STS::real (P))) {
+          throw std::runtime_error ("Casting nprocs to Scalar failed");
+        }
+        scaleMatrix (Q_local, P);
+
+        // A_local := Q_local * R
+        blas.GEMM (NO_TRANS, NO_TRANS, nrowsLocal, ncols, ncols,
+                   scalar_type(1), Q_local.get(), Q_local.lda(),
+                   R.get(), R.lda(),
+                   scalar_type(0), A_local.get(), A_local.lda());
+      }
     }
   } // namespace Random
 } // namespace TSQR

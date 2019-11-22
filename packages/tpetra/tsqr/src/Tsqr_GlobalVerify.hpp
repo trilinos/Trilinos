@@ -43,7 +43,7 @@
 #include "Tsqr_LocalVerify.hpp"
 #include "Tsqr_MessengerBase.hpp"
 #include "Tsqr_Util.hpp"
-#include "Teuchos_BLAS.hpp"
+#include "Tsqr_Impl_SystemBlas.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include <utility> // std::pair
 #include <vector>
@@ -184,7 +184,7 @@ namespace TSQR {
 
     const magnitude_type ZERO {};
     const magnitude_type ONE (1.0);
-    Teuchos::BLAS<LocalOrdinal, Scalar> blas;
+    Impl::SystemBlas<Scalar> blas;
 
     //
     // Compute $\| I - Q^T * Q \|_F$
