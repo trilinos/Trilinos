@@ -246,7 +246,9 @@ void test_matrix(const int maxRegPerProc,
   ArrayRCP<const SC> dataB     = B->getData(0);
   ArrayRCP<const SC> dataCompB = compB->getData(0);
   for(size_t idx = 0; idx < B->getLocalLength(); ++idx) {
-    TEST_FLOATING_EQUALITY(dataB[idx], dataCompB[idx], 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(TST::magnitude(dataB[idx]),
+                           TST::magnitude(dataCompB[idx]),
+                           100*TMT::eps());
   }
 
 
@@ -291,7 +293,9 @@ void test_matrix(const int maxRegPerProc,
   TEST_EQUALITY(compositeValues_h.extent(0),  refValues_h.extent(0));
   for(LO idx = 0; idx < compositeEntries_h.extent_int(0); ++idx) {
     TEST_EQUALITY(compositeEntries_h(idx), refEntries(idx));
-    TEST_FLOATING_EQUALITY(compositeValues_h(idx), refValues_h(idx), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(TST::magnitude(compositeValues_h(idx)),
+                           TST::magnitude(refValues_h(idx)),
+                           100*TMT::eps());
   }
 } // test_matrix
 
@@ -391,7 +395,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
 
     for(int idx = 0; idx < 105; ++idx) {
       TEST_EQUALITY(myEntries_h(idx), refEntries_h(idx));
-      TEST_FLOATING_EQUALITY(myValues_h(idx),  refValues_h(idx), 100*TMT::eps());
+      TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
+                             TST::magnitude(refValues_h(idx)),
+                             100*TMT::eps());
     }
   } else if(numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
@@ -460,7 +466,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
     // Loop over region matrix data and compare it to ref data
     for(int idx = 0; idx < 33; ++idx) {
       TEST_EQUALITY(myEntries_h(idx), refEntries[idx]);
-      TEST_FLOATING_EQUALITY(myValues_h(idx), refValues[idx], 100*TMT::eps());
+      TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
+                             TST::magnitude(refValues[idx]),
+                             100*TMT::eps());
     }
   }
 
@@ -567,7 +575,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
   TEST_EQUALITY(compositeValues_h.extent(0),  refValues_h.extent(0));
   for(LO idx = 0; idx < compositeEntries_h.extent_int(0); ++idx) {
     TEST_EQUALITY(compositeEntries_h(idx), refEntries(idx));
-    TEST_FLOATING_EQUALITY(compositeValues_h(idx), refValues_h(idx), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(TST::magnitude(compositeValues_h(idx)),
+                           TST::magnitude(refValues_h(idx)),
+                           100*TMT::eps());
   }
 
 } // RegionToCompositeMatrix
@@ -661,7 +671,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, MatVec, Scalar, LocalOrdinal, Gl
   ArrayRCP<const SC> dataB     = B->getData(0);
   ArrayRCP<const SC> dataCompB = compB->getData(0);
   for(size_t idx = 0; idx < B->getLocalLength(); ++idx) {
-    TEST_FLOATING_EQUALITY(dataB[idx], dataCompB[idx], 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(TST::magnitude(dataB[idx]),
+                           TST::magnitude(dataCompB[idx]),
+                           100*TMT::eps());
   }
 
 } // MatVec
@@ -760,7 +772,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
 
     for(int idx = 0; idx < 128; ++idx) {
       TEST_EQUALITY(myEntries_h(idx), refEntries_h(idx));
-      TEST_FLOATING_EQUALITY(myValues_h(idx),  refValues_h(idx), 100*TMT::eps());
+      TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
+                             TST::magnitude(refValues_h(idx)),
+                             100*TMT::eps());
     }
   } else if(numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
@@ -830,7 +844,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
 
     // Loop over region matrix data and compare it to ref data
     for(int idx = 0; idx < 33; ++idx) {
-      TEST_FLOATING_EQUALITY(myValues_h(idx), refValues[idx], 100*TMT::eps());
+      TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
+                             TST::magnitude(refValues[idx]),
+                             100*TMT::eps());
     }
   }
 } // Laplace2D
@@ -930,7 +946,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
 
     for(int idx = 0; idx < refEntries_h.extent_int(0); ++idx) {
       TEST_EQUALITY(myEntries_h(idx), refEntries_h(idx));
-      TEST_FLOATING_EQUALITY(myValues_h(idx),  refValues_h(idx), 100*TMT::eps());
+      TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
+                             TST::magnitude(refValues_h(idx)),
+                             100*TMT::eps());
     }
   } else if(numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
@@ -981,7 +999,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
 
       // Loop over region matrix data and compare it to ref data
       for(int idx = 0; idx < 186; ++idx) {
-        TEST_FLOATING_EQUALITY(myValues_h(idx), refValues[idx], 100*TMT::eps());
+        TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
+                               TST::magnitude(refValues[idx]),
+                               100*TMT::eps());
       }
 
     } else if(myRank == 1) {
@@ -1038,7 +1058,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
 
       // Loop over region matrix data and compare it to ref data
       for(int idx = 0; idx < 256; ++idx) {
-        TEST_FLOATING_EQUALITY(myValues_h(idx), refValues[idx], 100*TMT::eps());
+        TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
+                               TST::magnitude(refValues[idx]),
+                               100*TMT::eps());
       }
 
     } else if(myRank == 2) {
@@ -1083,7 +1105,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
 
       // Loop over region matrix data and compare it to ref data
       for(int idx = 0; idx < 186; ++idx) {
-        TEST_FLOATING_EQUALITY(myValues_h(idx), refValues[idx], 100*TMT::eps());
+        TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
+                               TST::magnitude(refValues[idx]),
+                               100*TMT::eps());
       }
 
     } else if(myRank == 3) {
@@ -1140,7 +1164,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
 
       // Loop over region matrix data and compare it to ref data
       for(int idx = 0; idx < 256; ++idx) {
-        TEST_FLOATING_EQUALITY(myValues_h(idx), refValues[idx], 100*TMT::eps());
+        TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
+                               TST::magnitude(refValues[idx]),
+                               100*TMT::eps());
       }
     }
   }

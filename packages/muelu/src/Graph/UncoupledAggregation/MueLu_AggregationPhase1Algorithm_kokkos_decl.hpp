@@ -117,16 +117,11 @@ namespace MueLu {
                          Kokkos::View<unsigned*, memory_space>& aggStat,
                          LO& numNonAggregatedNodes) const;
 
-    void BuildAggregatesSerial(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-                               std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
-                               LO minNodesPerAggregate, LO maxNodesPerAggregate,
-                               LO maxNeighAlreadySelected, std::string& orderingStr) const;
-
-    void BuildAggregatesDistance2(const LO maxAggSize,
-                                  const LWGraph_kokkos& graph,
-                                  Aggregates_kokkos& aggregates,
-                                  Kokkos::View<unsigned*, memory_space>& aggStat,
-                                  LO& numNonAggregatedNodes) const;
+    void BuildAggregatesRandom(const LO maxAggSize,
+                               const LWGraph_kokkos& graph,
+                               Aggregates_kokkos& aggregates,
+                               Kokkos::View<unsigned*, memory_space>& aggStat,
+                               LO& numNonAggregatedNodes) const;
 
     void BuildAggregatesDeterministic(const LO maxAggSize,
                                       const LWGraph_kokkos& graph,
@@ -136,30 +131,6 @@ namespace MueLu {
     //@}
 
     std::string description() const { return "Phase 1 (main)"; }
-
-    enum struct Algorithm
-    {
-      Serial,
-      Distance2
-    };
-
-    static Algorithm algorithmFromName(const std::string& name)
-    {
-      if(name == "Distance2")
-        return Algorithm::Distance2;
-      return Algorithm::Serial;
-    }
-
-  private:
-
-    /*! @brief Utility to take a list of integers and reorder them randomly (by using a local permutation).
-      @param list On input, a bunch of integers. On output, the same integers in a different order
-      that is determined randomly.
-    */
-    void RandomReorder(ArrayRCP<LO> list) const;
-
-    /*! @brief Generate a random number in the range [min, max] */
-    int RandomOrdinal(int min, int max) const;
 
   };
 
