@@ -38,7 +38,7 @@ filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
@@ -46,9 +46,9 @@ aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
-aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: deterministic = 0   [default]
+aggregation: coloring algorithm = default   [default]
+aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -123,7 +123,7 @@ filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
@@ -131,9 +131,9 @@ aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
-aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: deterministic = 0   [default]
+aggregation: coloring algorithm = default   [default]
+aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]

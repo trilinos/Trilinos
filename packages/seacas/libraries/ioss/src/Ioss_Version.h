@@ -1,4 +1,4 @@
-// Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -13,6 +13,7 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
+//
 //     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
@@ -28,13 +29,10 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#ifndef SEACAS_Version_h
-#define SEACAS_Version_h
 
-static char const *qainfo[] = {
-    "conjoin",
-    "2019/11/19",
-    "1.4.5",
-};
-
-#endif // SEACAS_Version_h
+#ifndef IOSS_VERSION_H
+#define IOSS_VERSION_H
+namespace Ioss {
+  inline const char *Version() { return "2019-10-30"; }
+} // namespace Ioss
+#endif

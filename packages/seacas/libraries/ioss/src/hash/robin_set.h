@@ -136,9 +136,9 @@ namespace tsl {
     explicit robin_set(const Allocator &alloc) : robin_set(ht::DEFAULT_INIT_BUCKETS_SIZE, alloc) {}
 
     template <class InputIt>
-    robin_set(InputIt first, InputIt last, size_type my_bucket_count = ht::DEFAULT_INIT_BUCKETS_SIZE,
-              const Hash &hash = Hash(), const KeyEqual &equal = KeyEqual(),
-              const Allocator &alloc = Allocator())
+    robin_set(InputIt first, InputIt last,
+              size_type my_bucket_count = ht::DEFAULT_INIT_BUCKETS_SIZE, const Hash &hash = Hash(),
+              const KeyEqual &equal = KeyEqual(), const Allocator &alloc = Allocator())
         : robin_set(my_bucket_count, hash, equal, alloc)
     {
       insert(first, last);

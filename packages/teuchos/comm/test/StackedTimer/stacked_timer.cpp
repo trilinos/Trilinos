@@ -438,6 +438,43 @@ TEUCHOS_UNIT_TEST(StackedTimer, drop_time)
   }
 }
 
+TEUCHOS_UNIT_TEST(StackedTimer, proc_minmax)
+{
+
+  Teuchos::StackedTimer timer("L0");
+  timer.stopBaseTimer();
+
+  const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+  if (comm->getSize() < 2)
+    return;
+  const int myRank = Teuchos::rank(*comm);
+
+  if (myRank == 0)
+    const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(1.0);
+  else if (myRank == 1)
+    const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(5.0);
+  else
+    const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(2.0);
+
+  Teuchos::StackedTimer::OutputOptions options;
+
+  out << "\n### Printing default report ###" << std::endl;
+  options.output_minmax=true;
+  options.output_proc_minmax=true;
+  options.output_histogram=true;
+  options.num_histogram=3;
+  options.output_fraction=true;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("proc min=0") != std::string::npos);
+      TEST_ASSERT(os.str().find("proc max=1") != std::string::npos);
+    }
+  }
+}
+
 
 // Overlapping timers are not allowed in a StackedTimer, but are in
 // TimeMonitor. Since StackedTimer is automatically used in
