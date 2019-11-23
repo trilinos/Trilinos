@@ -64,7 +64,7 @@
 namespace MueLu {
 
   template<class Type>
-  void calculateStats(Type& minVal, Type& maxVal, double& avgVal, double& devVal, const RCP<const Teuchos::Comm<int> >& comm, int numActiveProcs, const Type& v) {
+  void calculateStats(Type& minVal, Type& maxVal, double& avgVal, double& devVal, int& minProc, int& maxProc, const RCP<const Teuchos::Comm<int> >& comm, int numActiveProcs, const Type& v) {
 
     Type sumVal, sum2Val;
 
@@ -72,6 +72,12 @@ namespace MueLu {
     MueLu_sumAll(comm, v*v, sum2Val);
     MueLu_minAll(comm,   v, minVal);
     MueLu_maxAll(comm,   v, maxVal);
+
+    int w;
+    w = (minVal == v) ? comm->getRank() : -1;
+    MueLu_maxAll(comm,   w, maxProc);
+    w = (maxVal == v) ? comm->getRank() : -1;
+    MueLu_maxAll(comm,   w, minProc);
 
     avgVal = (numActiveProcs > 0 ? as<double>(sumVal) / numActiveProcs : 0);
     devVal = (numActiveProcs > 1 ? sqrt((sum2Val - sumVal*avgVal)/(numActiveProcs-1)) : 0);
@@ -81,15 +87,16 @@ namespace MueLu {
   std::string stringStats(const RCP<const Teuchos::Comm<int> >& comm, int numActiveProcs, const Type& v, RCP<ParameterList> paramList = Teuchos::null) {
     Type minVal, maxVal;
     double avgVal, devVal;
-    calculateStats<Type>(minVal, maxVal, avgVal, devVal, comm, numActiveProcs, v);
+    int minProc, maxProc;
+    calculateStats<Type>(minVal, maxVal, avgVal, devVal, minProc, maxProc, comm, numActiveProcs, v);
 
     char buf[256];
     if (avgVal && (paramList.is_null() || !paramList->isParameter("print abs") || paramList->get<bool>("print abs") == false))
-      sprintf(buf, "avg = %.2e,  dev = %5.1f%%,  min = %+6.1f%%,  max = %+6.1f%%", avgVal,
-              (devVal/avgVal)*100, (minVal/avgVal-1)*100, (maxVal/avgVal-1)*100);
+      sprintf(buf, "avg = %.2e,  dev = %5.1f%%,  min = %+6.1f%% (%4d),  max = %+6.1f%% (%4d)", avgVal,
+              (devVal/avgVal)*100, (minVal/avgVal-1)*100, minProc, (maxVal/avgVal-1)*100, maxProc);
     else
-      sprintf(buf, "avg = %8.2f,  dev = %6.2f,  min = %6.1f ,  max = %6.1f", avgVal,
-              devVal, as<double>(minVal), as<double>(maxVal));
+      sprintf(buf, "avg = %8.2f,  dev = %6.2f,  min = %6.1f  (%4d),  max = %6.1f  (%4d)", avgVal,
+              devVal, as<double>(minVal), minProc, as<double>(maxVal), maxProc);
     return buf;
   }
 
