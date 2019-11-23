@@ -2463,7 +2463,7 @@ namespace {
     else {
       out << normStr.str() << std::endl;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(relativeError[0]>1e-8, std::runtime_error, "BlockCrsMatrix matvec does not produce same result as CrsMatrix matvec.");
+    TEUCHOS_TEST_FOR_EXCEPTION(relativeError[0]>5e-8, std::runtime_error, "BlockCrsMatrix matvec does not produce same result as CrsMatrix matvec.");
   }
 
 
