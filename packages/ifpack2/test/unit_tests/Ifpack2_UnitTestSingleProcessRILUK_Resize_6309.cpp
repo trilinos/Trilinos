@@ -104,6 +104,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
     params.set("fact: iluk level-of-fill", lof);
     params.set("fact: iluk level-of-overlap", 0);
 
+    const double overalloc = 1.+(1./(lof+1)); // non-default only to test resize
+    params.set("fact: iluk overalloc", overalloc);
+
     prec.setParameters(params);
     prec.initialize();
     prec.compute();
