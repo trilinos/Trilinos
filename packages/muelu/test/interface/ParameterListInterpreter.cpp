@@ -407,6 +407,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           stringToReplace = "Smoother complexity = " + floatRegex;
           replacementString = "Smoother complexity = <ignored>";
           run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
+
+          // Finally ignore the Chebyshev eigen value ratio which varies with aggregation
+          stringToReplace = "chebyshev: ratio eigenvalue = " + floatRegex;
+          replacementString = "chebyshev: ratio eigenvalue = <ignored>";
+          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
+
+          // as well as the alpha paramter it sets
+          stringToReplace = "lambdaMax = <ignored>, alpha: " + floatRegex + ", lambdaMin = <ignored>,";
+          replacementString = "lambdaMax = <ignored>, alpha: <ignored>, lambdaMin = <ignored>,";
+          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
         }
 
         // Run comparison (ignoring whitespaces)

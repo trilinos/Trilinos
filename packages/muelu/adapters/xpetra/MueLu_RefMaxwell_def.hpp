@@ -259,6 +259,13 @@ namespace MueLu {
       M1_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
     }
 
+    if (IsPrint(Statistics2)) {
+      RCP<ParameterList> params = rcp(new ParameterList());;
+      params->set("printLoadBalancingInfo", true);
+      params->set("printCommInfo",          true);
+      GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*SM_Matrix_, "SM_Matrix", params);
+    }
+
     if (!reuse) {
       // clean rows associated with boundary conditions
       // Find rows with only 1 or 2 nonzero entries, record them in BCrows_.
@@ -621,6 +628,12 @@ namespace MueLu {
 #endif
       if (!AH_.is_null()) {
         int oldRank = SetProcRankVerbose(AH_->getDomainMap()->getComm()->getRank());
+        if (IsPrint(Statistics2)) {
+          RCP<ParameterList> params = rcp(new ParameterList());;
+          params->set("printLoadBalancingInfo", true);
+          params->set("printCommInfo",          true);
+          GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*AH_, "AH", params);
+        }
         if (!reuse) {
           ParameterList& userParamList = precList11_.sublist("user data");
           userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
@@ -857,6 +870,12 @@ namespace MueLu {
       if (!A22_.is_null()) {
         A22_->setObjectLabel("RefMaxwell (2,2)");
         int oldRank = SetProcRankVerbose(A22_->getDomainMap()->getComm()->getRank());
+        if (IsPrint(Statistics2)) {
+          RCP<ParameterList> params = rcp(new ParameterList());;
+          params->set("printLoadBalancingInfo", true);
+          params->set("printCommInfo",          true);
+          GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*A22_, "A22", params);
+        }
         if (!reuse) {
           ParameterList& userParamList = precList22_.sublist("user data");
           userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
