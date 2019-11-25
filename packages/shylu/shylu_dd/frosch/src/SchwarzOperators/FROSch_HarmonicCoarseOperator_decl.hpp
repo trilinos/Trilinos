@@ -84,6 +84,7 @@ namespace FROSch {
         using UN                      = typename SchwarzOperator<SC,LO,GO,NO>::UN;
         using UNVec                   = typename SchwarzOperator<SC,LO,GO,NO>::UNVec;
         using UNVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr;
+        using ConstUNVecView          = typename SchwarzOperator<SC,LO,GO,NO>::ConstUNVecView;
 
         using LOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
         using LOVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr;
@@ -107,7 +108,7 @@ namespace FROSch {
 
         int intializeCoarseMap();
         
-        XMapPtr assembleCoarseMap();
+        int assembleInterfaceCoarseSpace();
 
         int addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap);
 
@@ -137,6 +138,7 @@ namespace FROSch {
         SubdomainSolverPtr ExtensionSolver_;
 
         CoarseSpacePtrVecPtr InterfaceCoarseSpaces_;
+        CoarseSpacePtr AssembledInterfaceCoarseSpace_;
 
         UNVecPtr Dimensions_;
         UNVecPtr DofsPerNode_;
