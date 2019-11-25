@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -434,9 +432,9 @@ struct PackCrsGraphFunctor {
   using offsets_view_type = Kokkos::View<const size_t*, BufferDeviceType>;
   using exports_view_type = Kokkos::View<Packet*, BufferDeviceType>;
   using export_lids_view_type =
-    typename PackTraits<LO, BufferDeviceType>::input_array_type;
+    typename PackTraits<LO>::input_array_type;
   using source_pids_view_type =
-    typename PackTraits<int, BufferDeviceType>::input_array_type;
+    typename PackTraits<int>::input_array_type;
 
   using count_type =
     typename num_packets_per_lid_view_type::non_const_value_type;
@@ -566,16 +564,13 @@ do_pack(const LocalGraph& local_graph,
         const LocalMap& local_map,
         const Kokkos::View<Packet*, BufferDeviceType>& exports,
         const typename PackTraits<
-            size_t,
-            BufferDeviceType
+            size_t
         >::input_array_type& num_packets_per_lid,
         const typename PackTraits<
-          typename LocalMap::local_ordinal_type,
-          BufferDeviceType
+          typename LocalMap::local_ordinal_type
         >::input_array_type& export_lids,
         const typename PackTraits<
-          int,
-          BufferDeviceType
+          int
         >::input_array_type& source_pids,
         const Kokkos::View<const size_t*, BufferDeviceType>& offsets,
         const bool pack_pids)
@@ -620,33 +615,19 @@ do_pack(const LocalGraph& local_graph,
   Kokkos::parallel_reduce (range, f, result);
 
   if (result.first != 0) {
+    // We can't deep_copy from AnonymousSpace Views, so we can't
+    // print out any information from them in case of error.
     std::ostringstream os;
-
     if (result.first == 1) { // invalid local row index
-      auto export_lids_h = Kokkos::create_mirror_view (export_lids);
-      Kokkos::deep_copy (export_lids_h, export_lids);
-      const auto firstBadLid = export_lids_h(result.second);
-      os << "First bad export LID: export_lids(i=" << result.second << ") = "
-         << firstBadLid;
+      os << "invalid local row index";
     }
     else if (result.first == 2) { // invalid offset
-      auto offsets_h = Kokkos::create_mirror_view (offsets);
-      Kokkos::deep_copy (offsets_h, offsets);
-      const auto firstBadOffset = offsets_h(result.second);
-
-      auto num_packets_per_lid_h =
-        Kokkos::create_mirror_view (num_packets_per_lid);
-      Kokkos::deep_copy (num_packets_per_lid_h, num_packets_per_lid);
-      os << "First bad offset: offsets(i=" << result.second << ") = "
-         << firstBadOffset << ", num_packets_per_lid(i) = "
-         << num_packets_per_lid_h(result.second) << ", buf_size = "
-         << exports.size ();
+      os << "invalid offset";
     }
-
     TEUCHOS_TEST_FOR_EXCEPTION
-      (true, std::runtime_error, prefix << "PackCrsGraphFunctor reported "
-       "error code " << result.first << " for the first bad row "
-       << result.second << ".  " << os.str ());
+      (true, std::runtime_error, prefix << "PackCrsGraphFunctor "
+       "reported error code " << result.first << " (" << os.str ()
+       << ") for the first bad row " << result.second << ".");
   }
 }
 

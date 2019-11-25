@@ -159,8 +159,8 @@ exoid = ex_create ("test.exo"       \comment{filename path}
  */
 int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws, int run_version)
 {
-  int  exoid;
-  int  status;
+  int  exoid  = 0;
+  int  status = 0;
   char errmsg[MAX_ERR_LENGTH];
   int  nc_mode = 0;
 
@@ -185,7 +185,7 @@ int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws, int run
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", path);
     }
 #endif
-    ex_err_fn(exoid, __func__, errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

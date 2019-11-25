@@ -932,7 +932,7 @@ namespace Iofx {
             Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
           }
 
-          if (map_count == 1 && Ioss::Utils::case_strcmp(names[0], "original_global_id_map") == 0) {
+          if (map_count == 1 && Ioss::Utils::str_equal(names[0], "original_global_id_map")) {
             int error = 0;
             if ((ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) != 0) {
               Ioss::Int64Vector tmp_map(entity_map.size());

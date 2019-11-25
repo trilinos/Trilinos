@@ -1064,6 +1064,7 @@ namespace SEAMS {
         }
       }
       assert(rows - rows_to_skip == (size_t)array_data->rows);
+      delete file;
       return array_data;
     }
 
@@ -1111,9 +1112,9 @@ namespace SEAMS {
         }
       }
       assert((int)rows == array_data->rows);
+      delete file;
       return array_data;
     }
-
     return nullptr;
   }
 
