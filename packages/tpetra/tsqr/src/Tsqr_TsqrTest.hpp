@@ -231,8 +231,8 @@ namespace TSQR {
       Matrix< Ordinal, Scalar > A_local (nrows_local, ncols);
       Matrix< Ordinal, Scalar > Q_local (nrows_local, ncols);
       if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-          A_local.fill (std::numeric_limits<Scalar>::quiet_NaN ());
-          Q_local.fill (std::numeric_limits<Scalar>::quiet_NaN ());
+        deep_copy (A_local, std::numeric_limits<Scalar>::quiet_NaN ());
+        deep_copy (Q_local, std::numeric_limits<Scalar>::quiet_NaN ());
       }
       Matrix<Ordinal, Scalar> R (ncols, ncols, Scalar(0));
 
@@ -259,9 +259,9 @@ namespace TSQR {
       // Factoring the matrix stored in A_local overwrites it, so we
       // make a copy of A_local.  Initialize with NaNs to make sure
       // that cache blocking works correctly (if applicable).
-      Matrix< Ordinal, Scalar > A_copy (nrows_local, ncols);
-      if (std::numeric_limits< Scalar >::has_quiet_NaN) {
-        A_copy.fill (std::numeric_limits< Scalar >::quiet_NaN ());
+      Matrix<Ordinal, Scalar> A_copy (nrows_local, ncols);
+      if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+        deep_copy (A_copy, std::numeric_limits< Scalar >::quiet_NaN ());
       }
 
       // actual_cache_size_hint: "cache_size_hint" is just a
@@ -610,42 +610,44 @@ namespace TSQR {
       const Ordinal nrows_local = numLocalRows (nrows_global, my_rank, nprocs);
 
       // Set up storage for the test problem.
-      Matrix< Ordinal, Scalar > A_local (nrows_local, ncols);
-      Matrix< Ordinal, Scalar > Q_local (nrows_local, ncols);
-      if (std::numeric_limits< Scalar >::has_quiet_NaN)
-        {
-          A_local.fill (std::numeric_limits< Scalar >::quiet_NaN());
-          Q_local.fill (std::numeric_limits< Scalar >::quiet_NaN());
-        }
-      Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
+      Matrix<Ordinal, Scalar> A_local (nrows_local, ncols);
+      Matrix<Ordinal, Scalar> Q_local (nrows_local, ncols);
+      if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+        deep_copy (A_local, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (Q_local, std::numeric_limits<Scalar>::quiet_NaN());
+      }
+      Matrix<Ordinal, Scalar> R (ncols, ncols, Scalar {});
 
       // Generate the test problem.
-      distributedTestProblem (generator, A_local, ordinalComm.get(), scalarComm.get());
-      if (b_debug)
-        {
-          scalarComm->barrier();
-          if (my_rank == 0)
-            cerr << "-- Generated test problem." << endl;
+      distributedTestProblem (generator, A_local, ordinalComm.get(),
+                              scalarComm.get());
+      if (b_debug) {
+        scalarComm->barrier();
+        if (my_rank == 0) {
+          cerr << "-- Generated test problem." << endl;
         }
+      }
 
       // Make sure that the test problem (the matrix to factor) was
       // distributed correctly.
-      if (b_extra_debug && b_debug)
-        {
-          if (my_rank == 0)
-            cerr << "Test matrix A:" << endl;
-          scalarComm->barrier ();
-          printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
-          scalarComm->barrier ();
+      if (b_extra_debug && b_debug) {
+        if (my_rank == 0) {
+          cerr << "Test matrix A:" << endl;
         }
+        scalarComm->barrier ();
+        printGlobalMatrix (cerr, A_local, scalarComm.get(),
+                           ordinalComm.get());
+        scalarComm->barrier ();
+      }
 
       // Factoring the matrix stored in A_local overwrites it, so we
       // make a copy of A_local.  If specified, rearrange cache blocks
       // in the copy.  Initialize with NaNs to make sure that cache
       // blocking worked correctly.
-      Matrix< Ordinal, Scalar > A_copy (nrows_local, ncols);
-      if (std::numeric_limits< Scalar >::has_quiet_NaN)
-        A_copy.fill (std::numeric_limits< Scalar >::quiet_NaN());
+      Matrix<Ordinal, Scalar> A_copy (nrows_local, ncols);
+      if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+        deep_copy (A_copy, std::numeric_limits< Scalar >::quiet_NaN());
+      }
 
       // actual_cache_size_hint: "cache_size_hint" is just a
       // suggestion.  TSQR determines the cache block size itself;
@@ -655,141 +657,137 @@ namespace TSQR {
       // value) for TSQR on this MPI node.
       double tsqr_timing;
 
-      if (which == "MpiTbbTSQR")
-        {
+      if (which == "MpiTbbTSQR") {
 #ifdef HAVE_KOKKOSTSQR_TBB
-          using Teuchos::RCP;
-          typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
-          typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
-          typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
+        using Teuchos::RCP;
+        typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
+        typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
+        typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
-          RCP< node_tsqr_type > nodeTsqr (new node_tsqr_type (num_cores, cache_size_hint));
-          RCP< dist_tsqr_type > distTsqr (new dist_tsqr_type (scalarComm));
-          tsqr_type tsqr (nodeTsqr, distTsqr);
+        RCP< node_tsqr_type > nodeTsqr (new node_tsqr_type (num_cores, cache_size_hint));
+        RCP< dist_tsqr_type > distTsqr (new dist_tsqr_type (scalarComm));
+        tsqr_type tsqr (nodeTsqr, distTsqr);
 
-          // Run the benchmark.
-          tsqr_timing =
-            do_tsqr_benchmark< tsqr_type, TimerType > (which, tsqr, scalarComm, A_local,
-                                                       A_copy, Q_local, R, ntrials,
-                                                       contiguousCacheBlocks,
-                                                       human_readable, b_debug);
+        // Run the benchmark.
+        tsqr_timing =
+          do_tsqr_benchmark< tsqr_type, TimerType > (which, tsqr, scalarComm, A_local,
+                                                     A_copy, Q_local, R, ntrials,
+                                                     contiguousCacheBlocks,
+                                                     human_readable, b_debug);
 
-          // Save the "actual" cache block size
-          actual_cache_size_hint = tsqr.cache_size_hint();
+        // Save the "actual" cache block size
+        actual_cache_size_hint = tsqr.cache_size_hint();
 #else
-          throw std::logic_error("TSQR not built with Intel TBB support");
+        throw std::logic_error("TSQR not built with Intel TBB support");
 #endif // HAVE_KOKKOSTSQR_TBB
-        }
-      else if (which == "MpiSeqTSQR")
-        {
-          using Teuchos::RCP;
-          typedef SequentialTsqr< Ordinal, Scalar > node_tsqr_type;
-          typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
-          typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
+      }
+      else if (which == "MpiSeqTSQR") {
+        using Teuchos::RCP;
+        using node_tsqr_type = SequentialTsqr<Ordinal, Scalar>;
+        using dist_tsqr_type = TSQR::DistTsqr<Ordinal, Scalar>;
+        using tsqr_type = typedef Tsqr<Ordinal, Scalar, node_tsqr_type, dist_tsqr_type>;
 
-          // Set up TSQR.
-          RCP< node_tsqr_type > nodeTsqr (new node_tsqr_type (cache_size_hint));
-          RCP< dist_tsqr_type > distTsqr (new dist_tsqr_type (scalarComm));
-          tsqr_type tsqr (nodeTsqr, distTsqr);
+        // Set up TSQR.
+        RCP<node_tsqr_type> nodeTsqr (new node_tsqr_type (cache_size_hint));
+        RCP<dist_tsqr_type> distTsqr (new dist_tsqr_type (scalarComm));
+        tsqr_type tsqr (nodeTsqr, distTsqr);
 
-          // Run the benchmark.
-          tsqr_timing =
-            do_tsqr_benchmark< tsqr_type, TimerType > (which, tsqr, scalarComm, A_local,
-                                                       A_copy, Q_local, R, ntrials,
-                                                       contiguousCacheBlocks,
-                                                       human_readable, b_debug);
-          // Save the "actual" cache block size
-          actual_cache_size_hint = tsqr.cache_size_hint();
-        }
-      else
+        // Run the benchmark.
+        tsqr_timing =
+          do_tsqr_benchmark<tsqr_type, TimerType> (which, tsqr, scalarComm, A_local,
+                                                   A_copy, Q_local, R, ntrials,
+                                                   contiguousCacheBlocks,
+                                                   human_readable, b_debug);
+        // Save the "actual" cache block size
+        actual_cache_size_hint = tsqr.cache_size_hint();
+      }
+      else {
         throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
+      }
 
       // Find the min and max TSQR timing on all processors.
       const double min_tsqr_timing = scalarComm->globalMin (tsqr_timing);
       const double max_tsqr_timing = scalarComm->globalMax (tsqr_timing);
 
       // Print the results on Proc 0.
-      if (my_rank == 0)
-        {
-          if (human_readable)
-            {
-              std::string human_readable_name;
+      if (my_rank == 0) {
+        if (human_readable) {
+          std::string human_readable_name;
 
-              if (which == "MpiSeqTSQR")
-                human_readable_name = "MPI parallel / cache-blocked TSQR";
-              else if (which == "MpiTbbTSQR")
-                {
+          if (which == "MpiSeqTSQR") {
+            human_readable_name = "MPI parallel / cache-blocked TSQR";
+          }
+          else if (which == "MpiTbbTSQR") {
 #ifdef HAVE_KOKKOSTSQR_TBB
-                  human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
+            human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
 #else
-                  throw std::logic_error("TSQR not built with Intel TBB support");
+            throw std::logic_error("TSQR not built with Intel TBB support");
 #endif // HAVE_KOKKOSTSQR_TBB
-                }
-              else
-                throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
+          }
+          else {
+            throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
+          }
 
-              cout << human_readable_name << ":" << endl
-                   << "Scalar type: " << scalarTypeName << endl
-                   << "# rows: " << nrows_global << endl
-                   << "# columns: " << ncols << endl
-                   << "# MPI processes: " << nprocs << endl;
+          cout << human_readable_name << ":" << endl
+               << "Scalar type: " << scalarTypeName << endl
+               << "# rows: " << nrows_global << endl
+               << "# columns: " << ncols << endl
+               << "# MPI processes: " << nprocs << endl;
 
 #ifdef HAVE_KOKKOSTSQR_TBB
-              if (which == "MpiTbbTSQR")
-                cout << "# cores per process: " << num_cores << endl;
+          if (which == "MpiTbbTSQR")
+            cout << "# cores per process: " << num_cores << endl;
 #endif // HAVE_KOKKOSTSQR_TBB
 
-              cout << "Cache size hint in bytes: " << actual_cache_size_hint << endl
-                   << "contiguous cache blocks? " << contiguousCacheBlocks << endl
-                   << "# trials: " << ntrials << endl
-                   << "Min total time (s) over all MPI processes: "
-                   << min_tsqr_timing << endl
-                   << "Max total time (s) over all MPI processes: "
-                   << max_tsqr_timing << endl
-                   << endl;
-            }
-          else
-            {
-              if (printFieldNames)
-                {
-                  cout << "%"
-                       << "method"
-                       << ",scalarType"
-                       << ",globalNumRows"
-                       << ",numCols"
-                       << ",numProcs"
-                       << ",numCores"
-                       << ",cacheSizeHint"
-                       << ",contiguousCacheBlocks"
-                       << ",numTrials"
-                       << ",minTiming"
-                       << ",maxTiming"
-                       << endl;
-                }
-              cout << which
-                   << "," << scalarTypeName
-                   << "," << nrows_global
-                   << "," << ncols
-                   << "," << nprocs;
-#ifdef HAVE_KOKKOSTSQR_TBB
-              if (which == "MpiTbbTSQR")
-                cout << "," << num_cores;
-              else
-                cout << ",1";
-#else
-              cout << ",1";
-#endif // HAVE_KOKKOSTSQR_TBB
-              cout << "," << actual_cache_size_hint
-                   << "," << contiguousCacheBlocks
-                   << "," << ntrials
-                   << "," << min_tsqr_timing
-                   << "," << max_tsqr_timing
-                   << endl;
-            }
+          cout << "Cache size hint in bytes: " << actual_cache_size_hint << endl
+               << "contiguous cache blocks? " << contiguousCacheBlocks << endl
+               << "# trials: " << ntrials << endl
+               << "Min total time (s) over all MPI processes: "
+               << min_tsqr_timing << endl
+               << "Max total time (s) over all MPI processes: "
+               << max_tsqr_timing << endl
+               << endl;
         }
+        else {
+          if (printFieldNames) {
+            cout << "%"
+                 << "method"
+                 << ",scalarType"
+                 << ",globalNumRows"
+                 << ",numCols"
+                 << ",numProcs"
+                 << ",numCores"
+                 << ",cacheSizeHint"
+                 << ",contiguousCacheBlocks"
+                 << ",numTrials"
+                 << ",minTiming"
+                 << ",maxTiming"
+                 << endl;
+          }
+          cout << which
+               << "," << scalarTypeName
+               << "," << nrows_global
+               << "," << ncols
+               << "," << nprocs;
+#ifdef HAVE_KOKKOSTSQR_TBB
+          if (which == "MpiTbbTSQR") {
+            cout << "," << num_cores;
+          }
+          else {
+            cout << ",1";
+          }
+#else
+          cout << ",1";
+#endif // HAVE_KOKKOSTSQR_TBB
+          cout << "," << actual_cache_size_hint
+               << "," << contiguousCacheBlocks
+               << "," << ntrials
+               << "," << min_tsqr_timing
+               << "," << max_tsqr_timing
+               << endl;
+        }
+      }
     }
-
-
   } // namespace Test
 } // namespace TSQR
 

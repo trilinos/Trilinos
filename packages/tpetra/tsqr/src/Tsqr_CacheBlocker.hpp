@@ -251,7 +251,7 @@ namespace TSQR {
           // This call modifies the matrix view A, but that's OK since
           // we passed the input view by copy, not by reference.
           MatrixViewType A_cur = split_top_block (A, contiguous_cache_blocks);
-          A_cur.fill (Scalar(0));
+          deep_copy (A_cur, Scalar {});
         }
     }
 
@@ -289,12 +289,11 @@ namespace TSQR {
       // dimension is set correctly by A_rest.split_top().
       mat_view_type A_rest (num_rows, num_cols, A, lda);
 
-      while (! A_rest.empty())
-        {
-          // This call modifies A_rest.
-          mat_view_type A_cur = split_top_block (A_rest, contiguous_cache_blocks);
-          A_cur.fill (Scalar(0));
-        }
+      while (! A_rest.empty()) {
+        // This call modifies A_rest.
+        mat_view_type A_cur = split_top_block (A_rest, contiguous_cache_blocks);
+        deep_copy (A_cur, Scalar {});
+      }
     }
 
     /// \brief Cache-block the given A_in matrix into A_out.

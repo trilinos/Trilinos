@@ -208,8 +208,8 @@ namespace TSQR {
     }
     else {
       const int srcProc = 0;
-      R_local.fill (scalar_type(0));
-      RMessenger< ordinal_type, scalar_type > receiver (messenger);
+      deep_copy (R_local, scalar_type {});
+      RMessenger<ordinal_type, scalar_type> receiver (messenger);
       receiver.recv (R_local, srcProc);
     }
   }
@@ -244,7 +244,7 @@ namespace TSQR {
         mat_view_type R_stack_view_cur (ncols, ncols, R_ptr, R_stack.lda());
         // Fill (the lower triangle) with zeros, since
         // RMessenger::recv() only writes to the upper triangle.
-        R_stack_view_cur.fill (scalar_type (0));
+        deep_copy (R_stack_view_cur, scalar_type {});
         receiver.recv (R_stack_view_cur, srcProc);
       }
     }

@@ -135,13 +135,13 @@ namespace TSQR {
       const Ordinal numRows = m + ncols_Q;
 
       A_buf_.reshape (numRows, ncols_Q);
-      A_buf_.fill (Scalar(0));
+      deep_copy (A_buf_, Scalar {});
       const_mat_view_type A_bot (m, ncols_Q, A, lda);
       mat_view_type A_buf_bot (m, ncols_Q, &A_buf_(ncols_Q, 0), A_buf_.lda());
       deep_copy (A_buf_bot, A_bot);
 
       C_buf_.reshape (numRows, ncols_C);
-      C_buf_.fill (Scalar(0));
+      deep_copy (C_buf_, Scalar {});
       mat_view_type C_buf_top (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.lda());
       mat_view_type C_buf_bot (m, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.lda());
       mat_view_type C_top_view (ncols_Q, ncols_C, C_top, ldc_top);
@@ -173,7 +173,7 @@ namespace TSQR {
       const Ordinal numRows = m + n;
 
       A_buf_.reshape (numRows, n);
-      A_buf_.fill (Scalar {});
+      deep_copy (A_buf_, Scalar {});
       // R might be a view of the upper triangle of a cache block, but
       // we only want to include the upper triangle in the
       // factorization.  Thus, only copy the upper triangle of R into
@@ -203,7 +203,7 @@ namespace TSQR {
       const Ordinal numRows = Ordinal(2) * n;
 
       A_buf_.reshape (numRows, n);
-      A_buf_.fill (Scalar {});
+      deep_copy (A_buf_, Scalar {});
       // Copy the inputs into the compute buffer.  Only touch the
       // upper triangles of R_top and R_bot, since they each may be
       // views of some cache block (where the strict lower triangle
@@ -239,7 +239,7 @@ namespace TSQR {
       const Ordinal numRows = Ordinal(2) * ncols_Q;
 
       A_buf_.reshape (numRows, ncols_Q);
-      A_buf_.fill (Scalar {});
+      deep_copy (A_buf_, Scalar {});
       copy_upper_triangle (ncols_Q, ncols_Q,
                            &A_buf_(ncols_Q, 0), A_buf_.lda(),
                            R_bot, ldr_bot);

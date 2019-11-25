@@ -159,7 +159,6 @@ namespace TSQR {
     }
   }
 
-
   template< class Ordinal, class Scalar, class Generator >
   void
   generate_matrix (const Ordinal nrows,

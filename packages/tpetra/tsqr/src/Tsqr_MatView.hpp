@@ -46,39 +46,25 @@
 #ifdef TSQR_MATVIEW_DEBUG
 #  include <limits>
 #endif // TSQR_MATVIEW_DEBUG
-
 #include <sstream>
 #include <stdexcept>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
 
-  template< class MatrixViewType1, class MatrixViewType2 >
+  template<class Ordinal, class Scalar>
+  class MatView;
+
+  template<class LO, class SC, class SourceScalar>
   void
-  deep_copy (MatrixViewType1& A, const MatrixViewType2& B)
-  {
-    const ptrdiff_t A_nrows (A.extent (0));
-    const ptrdiff_t A_ncols (A.extent (1));
-    if (A_nrows != ptrdiff_t (B.extent (0)) ||
-        A_ncols != ptrdiff_t (B.extent (1))) {
-      using std::endl;
-      std::ostringstream os;
-      os << "deep_copy: dimensions of A (output matrix) and B (input "
-        "matrix) are not compatible.  A is " << A.extent (0) << " x "
-         << A.extent (1) << ", but B is " << B.extent (0) << " x "
-         << B.extent (1) << ".";
-      throw std::invalid_argument(os.str());
-    }
-    for (ptrdiff_t j = 0; j < A_ncols; ++j) {
-      auto* const A_j = &A(0,j);
-      const auto* const B_j = &B(0,j);
-      for (ptrdiff_t i = 0; i < A_nrows; ++i) {
-        A_j[i] = B_j[i];
-      }
-    }
-  }
+  deep_copy (const MatView<LO, SC>& tgt,
+             const SourceScalar& src);
+
+  template<class TargetOrdinal, class TargetScalar,
+           class SourceOrdinal, class SourceScalar,
+           template<class LO, class SC> class SourceMat>
+  void
+  deep_copy (const MatView<TargetOrdinal, TargetScalar>& tgt,
+             const SourceMat<SourceOrdinal, SourceScalar>& src);
 
   template<class FirstMatrixViewType, class SecondMatrixViewType>
   bool
@@ -222,7 +208,13 @@ namespace TSQR {
       return r == 0 ? nrows_ : (r == 1 ? ncols_ : ordinal_type(0));
     }
 
-    ordinal_type lda() const { return lda_; }
+    constexpr ordinal_type stride(const int r) const noexcept {
+      return r == 0 ? ordinal_type(1) : (r == 1 ? lda_ : ordinal_type(0));
+    }
+
+    constexpr ordinal_type lda() const noexcept {
+      return stride(1);
+    }
 
     /// \note The function is const, only because returning A_ doesn't
     /// change any members of *this.  Of course one may use the
@@ -340,21 +332,6 @@ namespace TSQR {
       lda_ = lda_rest;
 
       return A_bottom;
-    }
-
-    void
-    fill (const scalar_type& value)
-    {
-      const ordinal_type num_rows = extent(0);
-      const ordinal_type num_cols = extent(1);
-      const ordinal_type stride = lda();
-
-      scalar_type* A_j = data();
-      for (ordinal_type j = 0; j < num_cols; ++j, A_j += stride) {
-        for (ordinal_type i = 0; i < num_rows; ++i) {
-          A_j[i] = value;
-        }
-      }
     }
 
     bool operator== (const MatView& rhs) const {
@@ -563,6 +540,48 @@ namespace TSQR {
     pointer A_ = nullptr;
   };
 
+  template<class LO, class SC, class SourceScalar>
+  void
+  deep_copy (const MatView<LO, SC>& tgt, const SourceScalar& src)
+  {
+    using ordinal_type = typename MatView<LO, SC>::ordinal_type;
+    const ordinal_type num_rows = tgt.extent(0);
+    const ordinal_type num_cols = tgt.extent(1);
+    const ordinal_type stride = tgt.lda();
+    auto* tgt_j = tgt.data();
+    for (ordinal_type j = 0; j < num_cols; ++j, tgt_j += stride) {
+      for (ordinal_type i = 0; i < num_rows; ++i) {
+        tgt_j[i] = src;
+      }
+    }
+  }
+
+  template<class TargetOrdinal, class TargetScalar,
+           class SourceOrdinal, class SourceScalar,
+           template<class LO, class SC> class SourceMat>
+  void
+  deep_copy (const MatView<TargetOrdinal, TargetScalar>& tgt,
+             const SourceMat<SourceOrdinal, SourceScalar>& src)
+  {
+    const ptrdiff_t tgt_nrows (tgt.extent (0));
+    const ptrdiff_t tgt_ncols (tgt.extent (1));
+    if (tgt_nrows != ptrdiff_t (src.extent (0)) ||
+        tgt_ncols != ptrdiff_t (src.extent (1))) {
+      std::ostringstream os;
+      os << "TSQR::deep_copy: dimensions of tgt (output matrix) and "
+        "src (input matrix) are not compatible.  tgt is "
+         << tgt.extent (0) << " x " << tgt.extent (1) << ", but src "
+        "is " << src.extent (0) << " x " << src.extent (1) << ".";
+      throw std::invalid_argument (os.str ());
+    }
+    for (ptrdiff_t j = 0; j < tgt_ncols; ++j) {
+      auto* const tgt_j = &tgt(0,j);
+      const auto* const src_j = &src(0,j);
+      for (ptrdiff_t i = 0; i < tgt_nrows; ++i) {
+        tgt_j[i] = src_j[i];
+      }
+    }
+  }
 } // namespace TSQR
 
 

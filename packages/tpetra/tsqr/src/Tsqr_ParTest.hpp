@@ -399,13 +399,13 @@ namespace TSQR {
         // Copy the test problem input into R, since the factorization
         // will overwrite it in place with the final R factor.
         R.reshape (numCols, numCols);
-        R.fill (Scalar {});
+        deep_copy (R, Scalar {});
         deep_copy (R, A_local);
 
         // Prepare space in which to construct the explicit Q factor
         // (local component on this processor)
         Q_local.reshape (numRowsLocal, numCols);
-        Q_local.fill (Scalar {});
+        deep_copy (Q_local, Scalar {});
       }
     };
 
@@ -749,7 +749,7 @@ namespace TSQR {
         //
         // A_global: Global matrix (only nonempty on Proc 0); only
         //   used temporarily.
-        Matrix< Ordinal, Scalar > A_global;
+        Matrix<Ordinal, Scalar> A_global;
 
         // This modifies A_local on all procs, and A_global on Proc 0.
         par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_);
@@ -762,7 +762,7 @@ namespace TSQR {
         // Prepare space in which to construct the explicit Q factor
         // (local component on this processor)
         Q_local.reshape (numRowsLocal, numCols);
-        Q_local.fill (Scalar(0));
+        deep_copy (Q_local, Scalar {});
       }
 
       /// Make sure that timer_type satisfies the TimerType concept.
@@ -770,7 +770,7 @@ namespace TSQR {
       static void
       conceptChecks ()
       {
-        verifyTimerConcept< timer_type >();
+        verifyTimerConcept<timer_type>();
       }
     };
 

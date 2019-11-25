@@ -127,16 +127,16 @@ namespace TSQR {
       matrix_type Q (numRows, numCols);
       matrix_type R (numCols, numCols);
       if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-        A.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        R.fill (std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (A, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (A_copy, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (Q, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (R, std::numeric_limits<Scalar>::quiet_NaN());
       }
       else {
-        A.fill (Scalar {});
-        A_copy.fill (Scalar {});
-        Q.fill (Scalar {});
-        R.fill (Scalar {});
+        deep_copy (A, Scalar {});
+        deep_copy (A_copy, Scalar {});
+        deep_copy (Q, Scalar {});
+        deep_copy (R, Scalar {});
       }
       const Ordinal lda = numRows;
       const Ordinal ldq = numRows;
@@ -190,7 +190,7 @@ namespace TSQR {
         if (debug) {
           matrix_type A2 (numRows, numCols);
           if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-            A2.fill (std::numeric_limits<Scalar>::quiet_NaN());
+            deep_copy (A2, std::numeric_limits<Scalar>::quiet_NaN());
           }
 
           actor.un_cache_block (numRows, numCols, A2.data(), A2.lda(), A_copy.data());
@@ -223,7 +223,7 @@ namespace TSQR {
       if (debug) {
         cerr << "-- Filling R with zeros" << endl;
       }
-      R.fill (Scalar {});
+      deep_copy (R, Scalar {});
 
       if (debug) {
         cerr << "-- Calling factor()" << endl;
@@ -246,7 +246,7 @@ namespace TSQR {
           actor.top_block (Q.view (), contiguousCacheBlocks);
         mat_view_type Q_top_square (Q_top.extent(1), Q_top.extent(1),
                                     Q_top.data(), Q_top.lda());
-        Q_top_square.fill (Scalar {});
+        deep_copy (Q_top_square, Scalar {});
         for (Ordinal j = 0; j < Q_top_square.extent(1); ++j) {
           Q_top_square(j,j) = Scalar (1.0);
         }
@@ -408,7 +408,7 @@ namespace TSQR {
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
-      R.fill (Scalar {});
+      deep_copy (R, Scalar {});
 
       // Create a test problem
       nodeTestProblem (gen, numRows, numCols, A.data(), A.lda(), false);

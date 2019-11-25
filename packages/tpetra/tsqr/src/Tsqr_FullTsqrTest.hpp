@@ -194,46 +194,43 @@ namespace TSQR {
         matrix_type R (numCols, numCols);
 
         // Start out by filling the test problem with zeros.
-        typedef Teuchos::ScalarTraits<scalar_type> STS;
-        A_local.fill (STS::zero());
-        A_copy.fill (STS::zero());
-        Q_local.fill (STS::zero());
-        R.fill (STS::zero());
+        deep_copy (A_local, Scalar {});
+        deep_copy (A_copy, Scalar {});
+        deep_copy (Q_local, Scalar {});
+        deep_copy (R, Scalar {});
 
         // Create some reasonable singular values for the test problem:
         // 1, 1/2, 1/4, 1/8, ...
-        typedef typename STS::magnitudeType magnitude_type;
+        using STS = Teuchos::ScalarTraits<scalar_type>;
+        using magnitude_type = typename STS::magnitudeType;
         std::vector<magnitude_type> singularValues (numCols);
-        typedef Teuchos::ScalarTraits<magnitude_type> STM;
+        using STM = Teuchos::ScalarTraits<magnitude_type>;
         {
           const magnitude_type scalingFactor = STM::one() + STM::one();
           magnitude_type curVal = STM::one();
-          typedef typename std::vector<magnitude_type>::iterator iter_type;
-          for (iter_type it = singularValues.begin();
-               it != singularValues.end(); ++it)
-            {
-              *it = curVal;
-              curVal = curVal / scalingFactor;
-            }
+          for (magnitude_type& singularValue : singularValues) {
+            singularValue = curVal;
+            curVal = curVal / scalingFactor;
+          }
         }
 
         // Construct a normal(0,1) pseudorandom number generator with
         // the given random seed.
         using TSQR::Random::NormalGenerator;
-        typedef NormalGenerator<ordinal_type, scalar_type> generator_type;
+        using generator_type = NormalGenerator<ordinal_type, scalar_type>;
         generator_type gen (randomSeed);
 
         // We need a Messenger for Ordinal-type data, so that we can
         // build a global random test matrix.
-        RCP<MessengerBase<ordinal_type> > ordinalMessenger =
-          rcp_implicit_cast<MessengerBase<ordinal_type> > (rcp (new TeuchosMessenger<ordinal_type> (comm)));
+        RCP<MessengerBase<ordinal_type>> ordinalMessenger =
+          rcp_implicit_cast<MessengerBase<ordinal_type>> (rcp (new TeuchosMessenger<ordinal_type> (comm)));
 
         // We also need a Messenger for Scalar-type data.  The TSQR
         // implementation already constructed one, but it's OK to
         // construct another one; TeuchosMessenger is just a thin
         // wrapper over the Teuchos::Comm object.
-        RCP<MessengerBase<scalar_type> > scalarMessenger =
-          rcp_implicit_cast<MessengerBase<scalar_type> > (rcp (new TeuchosMessenger<scalar_type> (comm)));
+        RCP<MessengerBase<scalar_type>> scalarMessenger =
+          rcp_implicit_cast<MessengerBase<scalar_type>> (rcp (new TeuchosMessenger<scalar_type> (comm)));
 
         {
           // Generate a global distributed matrix (whose part local to

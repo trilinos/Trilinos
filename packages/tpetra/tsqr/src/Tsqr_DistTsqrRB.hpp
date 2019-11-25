@@ -297,24 +297,23 @@ namespace TSQR {
         factorReduce (R_mine, P_mine, P_first, P_last, QFactors, tauArrays);
       }
 
-      if (QFactors.size() != tauArrays.size())
-        {
-          std::ostringstream os;
-          os << "QFactors and tauArrays should have the same number of element"
-            "s after factorReduce() returns, but they do not.  QFactors has "
-             << QFactors.size() << " elements, but tauArrays has "
-             << tauArrays.size() << " elements.";
-          throw std::logic_error (os.str());
-        }
+      if (QFactors.size() != tauArrays.size()) {
+        std::ostringstream os;
+        os << "QFactors and tauArrays should have the same number of element"
+          "s after factorReduce() returns, but they do not.  QFactors has "
+           << QFactors.size() << " elements, but tauArrays has "
+           << tauArrays.size() << " elements.";
+        throw std::logic_error (os.str());
+      }
 
-      Q_mine.fill (scalar_type (0));
-      if (messenger_->rank() == 0)
-        {
-          for (ordinal_type j = 0; j < Q_mine.extent(1); ++j)
-            Q_mine(j, j) = scalar_type (1);
+      deep_copy (Q_mine, scalar_type {});
+      if (messenger_->rank() == 0) {
+        for (ordinal_type j = 0; j < Q_mine.extent(1); ++j) {
+          Q_mine(j, j) = scalar_type (1);
         }
+      }
       // Scratch space for computing results to send to other processors.
-      matrix_type Q_other (Q_mine.extent(0), Q_mine.extent(1), scalar_type (0));
+      matrix_type Q_other (Q_mine.extent(0), Q_mine.extent(1), scalar_type {});
       const rank_type numSteps = QFactors.size() - 1;
 
       {
@@ -326,7 +325,7 @@ namespace TSQR {
 
       if (forceNonnegativeDiagonal &&
           ! QR_produces_R_factor_with_nonnegative_diagonal()) {
-        typedef Teuchos::ScalarTraits<Scalar> STS;
+        using STS = Teuchos::ScalarTraits<Scalar>;
         details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
         forcer.force (Q_mine, R_mine);
       }
@@ -459,7 +458,7 @@ namespace TSQR {
               //    Q_other]
               // where Q_other = zeros(Q_mine.extent(0), Q_mine.extent(1)).
               // Overwrite both Q_mine and Q_other with the result.
-              Q_other.fill (scalar_type (0));
+              deep_copy (Q_other, scalar_type {});
               combine_.apply_pair (ApplyType::NoTranspose,
                                    Q_mine.extent(1), Q_impl.extent(1),
                                    Q_impl.data(), Q_impl.lda(), tau.data(),

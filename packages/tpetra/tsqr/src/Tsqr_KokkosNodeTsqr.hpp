@@ -490,7 +490,7 @@ namespace TSQR {
           const_mat_view_type Q_top = *Q_rangeIter;
           mat_view_type C_top = *C_rangeIter;
           if (explicitQ_) {
-            C_top.fill (Scalar {});
+            deep_copy (C_top, Scalar {});
             if (partitionIndex == 0) {
               for (LocalOrdinal j = 0; j < C_top.extent(1); ++j) {
                 C_top(j,j) = Scalar (1.0);
@@ -517,7 +517,7 @@ namespace TSQR {
             ++Q_rangeIter;
             ++C_rangeIter;
             if (explicitQ_) {
-              C_cur.fill (Scalar {});
+              deep_copy (C_cur, Scalar {});
             }
             applyCacheBlock (combine, applyType, Q_cur,
                              tauArrays_[curTauIndex++],
@@ -540,7 +540,7 @@ namespace TSQR {
                                       C_top.extent(1),
                                       C_top.data() + C_top.extent(1),
                                       C_top.lda());
-            C_top_rest.fill (Scalar {});
+            deep_copy (C_top_rest, Scalar {});
           }
           LocalOrdinal curTauIndex = cbIndices.second-1;
 
@@ -570,7 +570,7 @@ namespace TSQR {
             mat_view_type C_cur = *C_rangeIter;
 
             if (explicitQ_) {
-              C_cur.fill (Scalar {});
+              deep_copy (C_cur, Scalar {});
             }
             TEUCHOS_TEST_FOR_EXCEPTION
               (curTauIndex < cbIndices.first, std::logic_error,
@@ -946,7 +946,7 @@ namespace TSQR {
         iter_type end = cbRange.end();
         while (iter != end) {
           mat_view_type A_cur = *iter;
-          A_cur.fill (value);
+          deep_copy (A_cur, value);
           ++iter;
         }
       }
@@ -1455,7 +1455,7 @@ namespace TSQR {
          << suffix);
       mat_view_type R_top_square (R_top.extent(1), R_top.extent(1),
                                   R_top.data(), R_top.lda());
-      R.fill (Scalar {});
+      deep_copy (R, Scalar {});
       // Only copy the upper triangle of R_top into R.
       copy_upper_triangle (R.extent(1), R.extent(1), R.data(), R.lda(),
                            R_top.data(), R_top.lda());
@@ -1689,7 +1689,7 @@ namespace TSQR {
             // just fill the top n x n part of the top blocks
             // with zeros.
             if (explicitQ) {
-              C_cur_square.fill (Scalar {});
+              deep_copy (C_cur_square, Scalar {});
             }
             applyPair (applyType, factorOutput.topBlocks[partIdx],
                        factorOutput.secondPassTauArrays[partIdx-1],

@@ -181,7 +181,7 @@ namespace TSQR {
         // Fill A with zeros, and then make its diagonal the given set
         // of singular values.
         mat_view_type A_view (nrows, ncols, A, lda);
-        A_view.fill (Scalar {});
+        deep_copy (A_view, Scalar {});
         for (Ordinal j = 0; j < ncols; ++j) {
           A_view(j,j) = Scalar (singular_values[j]);
         }

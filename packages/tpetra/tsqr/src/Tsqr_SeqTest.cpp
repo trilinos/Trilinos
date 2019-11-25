@@ -157,10 +157,10 @@ namespace TSQR {
       Matrix<Ordinal, Scalar> Q (nrows, ncols);
       Matrix<Ordinal, Scalar> R (ncols, ncols);
       if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-        A.fill (std::numeric_limits< Scalar>::quiet_NaN());
-        A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        R.fill (std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (A, std::numeric_limits< Scalar>::quiet_NaN());
+        deep_copy (A_copy, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (Q, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (R, std::numeric_limits<Scalar>::quiet_NaN());
       }
       const Ordinal lda = nrows;
       const Ordinal ldq = nrows;
@@ -203,7 +203,7 @@ namespace TSQR {
         if (b_debug) {
           Matrix<Ordinal, Scalar> A2 (nrows, ncols);
           if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-            A2.fill (std::numeric_limits<Scalar>::quiet_NaN ());
+            deep_copy (A2, std::numeric_limits<Scalar>::quiet_NaN ());
           }
           actor.un_cache_block (nrows, ncols, A2.data (), A2.lda (),
                                 A_copy.data ());
@@ -220,7 +220,7 @@ namespace TSQR {
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
-      R.fill (Scalar (0));
+      deep_copy (R, Scalar {});
 
       // Count the number of cache blocks that factor() will use.
       // This is only for diagnostic purposes.
@@ -456,10 +456,10 @@ namespace TSQR {
       Matrix<Ordinal, Scalar> Q (nrows, ncols);
       Matrix<Ordinal, Scalar> R (ncols, ncols);
       if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-        A.fill (std::numeric_limits< Scalar>::quiet_NaN());
-        A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        R.fill (std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (A, std::numeric_limits< Scalar>::quiet_NaN());
+        deep_copy (A_copy, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (Q, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (R, std::numeric_limits<Scalar>::quiet_NaN());
       }
       const Ordinal lda = nrows;
       const Ordinal ldq = nrows;
@@ -486,7 +486,7 @@ namespace TSQR {
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
-      R.fill (Scalar {});
+      deep_copy (R, Scalar {});
 
       lapack.compute_QR (nrows, ncols, A_copy.data(), A_copy.lda(),
                          tau.data(), work.data(), lwork);

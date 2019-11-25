@@ -450,7 +450,7 @@ namespace TSQR {
             const bool contiguousCacheBlocks = false)
     {
       mat_view_type R_view (ncols, ncols, R, ldr);
-      R_view.fill (STS::zero());
+      deep_copy (R_view, Scalar {});
       NodeOutput nodeResults =
         nodeTsqr_->factor (nrows_local, ncols, A_local, lda_local,
                           R_view.data(), R_view.lda(),

@@ -145,9 +145,9 @@ namespace TSQR {
       // Set up storage for the test problem
       Matrix<Ordinal, Scalar> A_local (nrows_local, ncols);
       if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-        A_local.fill (std::numeric_limits< Scalar >::quiet_NaN());
+        deep_copy (A_local, std::numeric_limits<Scalar>::quiet_NaN());
       }
-      Matrix<Ordinal, Scalar> R (ncols, ncols, Scalar(0));
+      Matrix<Ordinal, Scalar> R (ncols, ncols, Scalar {});
 
       // Generate the test problem.
       distributedTestProblem (generator, A_local, ordinalComm.get(), scalarComm.get());
@@ -341,8 +341,8 @@ namespace TSQR {
 
       // Set up storage for the test problem.
       Matrix<Ordinal, Scalar> A_local (nrows_local, ncols);
-      if (std::numeric_limits< Scalar >::has_quiet_NaN) {
-        A_local.fill (std::numeric_limits< Scalar >::quiet_NaN());
+      if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+        deep_copy (A_local, std::numeric_limits<Scalar>::quiet_NaN());
       }
       Matrix<Ordinal, Scalar> R (ncols, ncols, Scalar(0));
 

@@ -297,9 +297,10 @@ namespace TSQR {
 
         // A place to put the Q factor.
         matrix_type Q (numRows, numCols);
-        Q.fill (STS::zero());
-        for (Ordinal j = 0; j < numCols; ++j)
+        deep_copy (Q, Scalar {});
+        for (Ordinal j = 0; j < numCols; ++j) {
           Q(j,j) = STS::one();
+        }
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
@@ -395,7 +396,7 @@ namespace TSQR {
 
         // A place to put the Q factor.
         matrix_type Q (numRows, numCols);
-        Q.fill (STS::zero());
+        deep_copy (Q, Scalar {});
         for (Ordinal j = 0; j < numCols; ++j)
           Q(j,j) = STS::one();
 
@@ -486,7 +487,7 @@ namespace TSQR {
 
         // A place to put the Q factor.
         matrix_type Q (numRows + numCols, numCols);
-        Q.fill (STS::zero());
+        deep_copy (Q, Scalar {});
         for (Ordinal j = 0; j < numCols; ++j)
           Q(j,j) = STS::one();
 
@@ -596,7 +597,7 @@ namespace TSQR {
 
         // A place to put the Q factor.
         matrix_type Q (numRows + numCols, numCols);
-        Q.fill (STS::zero());
+        deep_copy (Q, Scalar {});
         for (Ordinal j = 0; j < numCols; ++j)
           Q(j,j) = STS::one();
 
@@ -687,7 +688,7 @@ namespace TSQR {
 
         // A place to put the Q factor of [R1; R2].
         matrix_type Q (2*numCols, numCols);
-        Q.fill (STS::zero());
+        deep_copy (Q, Scalar {});
         for (Ordinal j = 0; j < numCols; ++j)
           Q(j,j) = STS::one();
 
@@ -795,7 +796,7 @@ namespace TSQR {
 
         // A place to put the Q factor of [R1; R2].
         matrix_type Q (2*numCols, numCols);
-        Q.fill (STS::zero());
+        deep_copy (Q, Scalar {});
         for (Ordinal j = 0; j < numCols; ++j)
           Q(j,j) = STS::one();
 

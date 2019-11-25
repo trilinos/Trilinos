@@ -64,14 +64,19 @@ namespace TSQR {
   template<class Ordinal, class Scalar>
   class Matrix {
   public:
-    typedef MatView<Ordinal, Scalar> mat_view_type;
-    typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
+    using scalar_type = Scalar;
+    using ordinal_type = Ordinal;
+    using pointer = scalar_type*;
+    using const_pointer = const scalar_type*;
+
+    using mat_view_type = MatView<ordinal_type, scalar_type>;
+    using const_mat_view_type = ConstMatView<ordinal_type, scalar_type>;
 
   private:
     static bool
-    fits_in_size_t (const Ordinal& ord)
+    fits_in_size_t (const ordinal_type& ord)
     {
-      const Ordinal result = static_cast< Ordinal > (static_cast< size_t > (ord));
+      const ordinal_type result = ordinal_type (size_t (ord));
       return (ord == result);
     }
 
@@ -87,20 +92,20 @@ namespace TSQR {
     /// \param num_cols [in] Number of columns in the matrix
     /// \return num_rows*num_cols
     size_t
-    verified_alloc_size (const Ordinal num_rows,
-                         const Ordinal num_cols) const
+    verified_alloc_size (const ordinal_type num_rows,
+                         const ordinal_type num_cols) const
     {
-      static_assert (std::numeric_limits<Ordinal>::is_integer,
-                     "Ordinal must be an integer type.");
+      static_assert (std::numeric_limits<ordinal_type>::is_integer,
+                     "ordinal_type must be an integer type.");
       // Quick exit also checks for zero num_cols (which prevents
       // division by zero in the tests below).
       if (num_rows == 0 || num_cols == 0) {
         return size_t(0);
       }
 
-      // If Ordinal is signed, make sure that num_rows and num_cols
+      // If ordinal_type is signed, make sure that num_rows and num_cols
       // are nonnegative.
-      if (std::numeric_limits<Ordinal>::is_signed) {
+      if (std::numeric_limits<ordinal_type>::is_signed) {
         if (num_rows < 0) {
           std::ostringstream os;
           os << "# rows (= " << num_rows << ") < 0";
@@ -113,12 +118,12 @@ namespace TSQR {
         }
       }
 
-      // If Ordinal is bigger than a size_t, do special range
+      // If ordinal_type is bigger than a size_t, do special range
       // checking.  The compiler warns (comparison of signed and
-      // unsigned) if Ordinal is a signed type and we try to do
+      // unsigned) if ordinal_type is a signed type and we try to do
       // "numeric_limits<size_t>::max() <
-      // std::numeric_limits<Ordinal>::max()", so instead we cast each
-      // of num_rows and num_cols to size_t and back to Ordinal again,
+      // std::numeric_limits<ordinal_type>::max()", so instead we cast each
+      // of num_rows and num_cols to size_t and back to ordinal_type again,
       // and see if we get the same result.  If not, then we
       // definitely can't return a size_t product of num_rows and
       // num_cols.
@@ -153,22 +158,18 @@ namespace TSQR {
     }
 
   public:
-    using scalar_type = Scalar;
-    using ordinal_type = Ordinal;
-    using pointer_type = Scalar*;
-
     //! Constructor with dimensions.
-    Matrix (const Ordinal num_rows,
-            const Ordinal num_cols) :
+    Matrix (const ordinal_type num_rows,
+            const ordinal_type num_cols) :
       nrows_ (num_rows),
       ncols_ (num_cols),
       A_ (verified_alloc_size (num_rows, num_cols))
     {}
 
     //! Constructor with dimensions and fill datum.
-    Matrix (const Ordinal num_rows,
-            const Ordinal num_cols,
-            const Scalar& value) :
+    Matrix (const ordinal_type num_rows,
+            const ordinal_type num_cols,
+            const scalar_type& value) :
       nrows_ (num_rows),
       ncols_ (num_cols),
       A_ (verified_alloc_size (num_rows, num_cols), value)
@@ -211,18 +212,11 @@ namespace TSQR {
       }
     }
 
-    //! Fill all entries of the matrix with the given value.
-    void
-    fill (const Scalar value)
-    {
-      fill_matrix (extent(0), extent(1), data(), lda(), value);
-    }
-
     /// \brief Non-const reference to element (i,j) of the matrix.
     ///
     /// \param i [in] Zero-based row index of the matrix.
     /// \param j [in] Zero-based column index of the matrix.
-    Scalar& operator() (const Ordinal i, const Ordinal j) {
+    scalar_type& operator() (const ordinal_type i, const ordinal_type j) {
       return A_[i + j*lda()];
     }
 
@@ -230,12 +224,12 @@ namespace TSQR {
     ///
     /// \param i [in] Zero-based row index of the matrix.
     /// \param j [in] Zero-based column index of the matrix.
-    const Scalar& operator() (const Ordinal i, const Ordinal j) const {
+    const scalar_type& operator() (const ordinal_type i, const ordinal_type j) const {
       return A_[i + j*lda()];
     }
 
     //! 1-D std::vector - style access.
-    Scalar& operator[] (const Ordinal i) {
+    scalar_type& operator[] (const ordinal_type i) {
       return A_[i];
     }
 
@@ -251,24 +245,27 @@ namespace TSQR {
       }
     }
 
-    constexpr Ordinal extent (const int r) const noexcept {
-      return r == 0 ? nrows_ : (r == 1 ? ncols_ : Ordinal(0));
+    constexpr ordinal_type extent (const int r) const noexcept {
+      return r == 0 ? nrows_ : (r == 1 ? ncols_ : ordinal_type(0));
     }
 
-    //! Leading dimension (a.k.a. stride) of the matrix.
-    Ordinal lda() const { return nrows_; }
+    constexpr ordinal_type stride(const int r) const noexcept {
+      return r == 0 ? ordinal_type(1) : (r == 1 ? nrows_ : ordinal_type(0));
+    }
+
+    constexpr ordinal_type lda() const noexcept { return stride(1); }
 
     //! Whether the matrix is empty (has either zero rows or zero columns).
     bool empty() const { return extent(0) == 0 || extent(1) == 0; }
 
     //! A non-const pointer to the matrix data.
-    Scalar* data()
+    pointer data()
     {
       return A_.size() != 0 ? A_.data () : nullptr;
     }
 
     //! A const pointer to the matrix data.
-    const Scalar* data() const
+    const_pointer data() const
     {
       return A_.size() != 0 ? A_.data () : nullptr;
     }
@@ -281,7 +278,7 @@ namespace TSQR {
     //! A const view of the matrix.
     const_mat_view_type const_view () const {
       return const_mat_view_type (extent(0), extent(1),
-                                  const_cast<const Scalar*> (data()), lda());
+                                  const_cast<const scalar_type*> (data()), lda());
     }
 
     /// Change the dimensions of the matrix.  Reallocate if necessary.
@@ -295,7 +292,7 @@ namespace TSQR {
     ///   not reinterpret the existing matrix data using different
     ///   dimensions.
     void
-    reshape (const Ordinal num_rows, const Ordinal num_cols)
+    reshape (const ordinal_type num_rows, const ordinal_type num_cols)
     {
       if (num_rows == extent(0) && num_cols == extent(1))
         return; // no need to reallocate or do anything else
@@ -308,17 +305,38 @@ namespace TSQR {
 
   private:
     //! Number of rows in the matrix.
-    Ordinal nrows_ = 0;
+    ordinal_type nrows_ = 0;
     //! Number of columns in the matrix.
-    Ordinal ncols_ = 0;
+    ordinal_type ncols_ = 0;
     /// \brief Where the entries of the matrix are stored.
     ///
     /// The matrix is stored using one-dimensional storage with
     /// column-major (Fortran-style) indexing.  This makes Matrix
     /// compatible with the BLAS and LAPACK.
-    std::vector<Scalar> A_;
+    std::vector<scalar_type> A_;
   };
 
+  template<class LO, class SC, class SourceScalar>
+  void
+  deep_copy (Matrix<LO, SC>& tgt, const SourceScalar& src)
+  {
+    MatView<LO, SC> tgt_view (tgt.extent(0), tgt.extent(1),
+                            tgt.data(), tgt.lda());
+    deep_copy (tgt_view, src);
+  }
+
+  template<class TargetOrdinal, class TargetScalar,
+           class SourceOrdinal, class SourceScalar,
+           template<class LO, class SC> class SourceMat>
+  void
+  deep_copy (Matrix<TargetOrdinal, TargetScalar>& tgt,
+             const SourceMat<SourceOrdinal, SourceScalar>& src)
+  {
+    using mat_view_type = MatView<TargetOrdinal, TargetScalar>;
+    mat_view_type tgt_view (tgt.extent(0), tgt.extent(1),
+                            tgt.data(), tgt.lda());
+    deep_copy (tgt_view, src);
+  }
 } // namespace TSQR
 
 #endif // __TSQR_Tsqr_Matrix_hpp
