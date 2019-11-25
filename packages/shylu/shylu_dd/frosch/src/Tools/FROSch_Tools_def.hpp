@@ -185,7 +185,6 @@ namespace FROSch {
         static int counter = 0;
         for (idx = 0; idx < numLids; ++idx) {
             // Organize the overlapping data to send it back to the original processes
-            if (ElementCounter_>=OverlappingDataList_.size()) std::cout << "FUUUUUUUUCCCCKKKKK!!!!!!!" << ElementCounter_ << " " << OverlappingDataList_.size() << std::endl;
             if (ElementCounter_<OverlappingDataList_.size()) {
                 OverlappingDataList_[ElementCounter_].reset(new OverlappingData<LO,GO>(GID,
                                                                                        pid_and_lid[idx].first,
@@ -289,9 +288,9 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConst(RCP<const Matrix<SC,LO,GO,NO> > matrix)
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConstOld(RCP<const Matrix<SC,LO,GO,NO> > matrix)
     {
-        FROSCH_TIMER_START(buildRepeatedMapNonConstTime,"BuildRepeatedMapNonConst");
+        FROSCH_TIMER_START(buildRepeatedMapNonConstTime,"BuildRepeatedMapNonConstOld");
         RCP<Map<LO,GO,NO> > uniqueMap = MapFactory<LO,GO,NO>::Build(matrix->getRowMap(),1);
         RCP<const Map<LO,GO,NO> > overlappingMap = uniqueMap.getConst();
         ExtendOverlapByOneLayer<SC,LO,GO,NO>(matrix,overlappingMap,matrix,overlappingMap);
@@ -381,15 +380,15 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    RCP<const Map<LO,GO,NO> > BuildRepeatedMap(RCP<const Matrix<SC,LO,GO,NO> > matrix)
+    RCP<const Map<LO,GO,NO> > BuildRepeatedMapOld(RCP<const Matrix<SC,LO,GO,NO> > matrix)
     {
         return BuildRepeatedMapNonConst(matrix).getConst();
     }
 
     template <class LO,class GO,class NO>
-    RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConst(RCP<const CrsGraph<LO,GO,NO> > graph)
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConstOld(RCP<const CrsGraph<LO,GO,NO> > graph)
     {
-        FROSCH_TIMER_START(buildRepeatedMapNonConstTime,"BuildRepeatedMapNonConst");
+        FROSCH_TIMER_START(buildRepeatedMapNonConstTime,"BuildRepeatedMapNonConstOld");
         RCP<Map<LO,GO,NO> > uniqueMap = MapFactory<LO,GO,NO>::Build(graph->getRowMap(),1);
         RCP<const Map<LO,GO,NO> > overlappingMap = uniqueMap.getConst();
         ExtendOverlapByOneLayer<LO,GO,NO>(graph,overlappingMap,graph,overlappingMap);
@@ -472,6 +471,58 @@ namespace FROSch {
         }
         sortunique(repeatedIndices);
         return MapFactory<LO,GO,NO>::Build(tmpGraph->getRowMap()->lib(),-1,repeatedIndices(),0,graph->getRowMap()->getComm());
+    }
+
+    template <class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > BuildRepeatedMapOld(RCP<const CrsGraph<LO,GO,NO> > graph)
+    {
+        return BuildRepeatedMapNonConstOld(graph).getConst();
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConst(RCP<const Matrix<SC,LO,GO,NO> > matrix)
+    {
+        return BuildRepeatedMapNonConst(matrix->getCrsGraph());
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > BuildRepeatedMap(RCP<const Matrix<SC,LO,GO,NO> > matrix)
+    {
+        return BuildRepeatedMapNonConst(matrix).getConst();
+    }
+
+    template <class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConst(RCP<const CrsGraph<LO,GO,NO> > graph)
+    {
+        FROSCH_TIMER_START(buildRepeatedMapNonConstTime,"BuildRepeatedMapNonConst");
+        RCP<Map<LO,GO,NO> > uniqueMap = MapFactory<LO,GO,NO>::Build(graph->getRowMap(),1);
+        RCP<const Map<LO,GO,NO> > overlappingMap = uniqueMap.getConst();
+        ExtendOverlapByOneLayer<LO,GO,NO>(graph,overlappingMap,graph,overlappingMap);
+        
+        RCP<CrsGraph<LO,GO,NO> > tmpGraphUnique = CrsGraphFactory<LO,GO,NO>::Build(uniqueMap,10);
+        Array<GO> myPID(1,uniqueMap->getComm()->getRank());
+        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
+            tmpGraphUnique->insertGlobalIndices(uniqueMap->getGlobalElement(i),myPID());
+        }
+        RCP<Map<LO,GO,NO> > domainMap = MapFactory<LO,GO,NO>::Build(uniqueMap->lib(),-1,myPID(),0,uniqueMap->getComm());
+        tmpGraphUnique->fillComplete(domainMap,uniqueMap);
+        
+        RCP<CrsGraph<LO,GO,NO> > tmpGraphOverlap = CrsGraphFactory<LO,GO,NO>::Build(overlappingMap,10);
+        RCP<Export<LO,GO,NO> > exporter = ExportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
+        tmpGraphOverlap->doExport(*tmpGraphUnique,*exporter,INSERT);
+        
+        ArrayView<const GO> indices;
+        Array<GO> repeatedIndices(0);
+        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
+            tmpGraphOverlap->getGlobalRowView(overlappingMap->getGlobalElement(i),indices);
+            for (unsigned j=0; j<indices.size(); j++) {
+                if (indices[j]<=uniqueMap->getComm()->getRank()) {
+                    repeatedIndices.push_back(overlappingMap->getGlobalElement(i));
+                }
+            }
+        }
+        sortunique(repeatedIndices);
+        return MapFactory<LO,GO,NO>::Build(uniqueMap->lib(),-1,repeatedIndices(),0,uniqueMap->getComm());
     }
 
     template <class LO,class GO,class NO>

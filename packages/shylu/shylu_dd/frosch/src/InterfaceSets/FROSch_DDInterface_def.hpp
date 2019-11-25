@@ -687,11 +687,11 @@ namespace FROSch {
                     for (int i=0; i<NumMyNodes_; i++) {
                         commMat->insertGlobalValues(NodesMap_->getGlobalElement(i),myPID(),one());
                     }
-                    XMapPtr rangeMap = MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
+                    XMapPtr domainMap = MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
 
-                    commMat->fillComplete(NodesMap_,rangeMap);
+                    commMat->fillComplete(domainMap,NodesMap_);
                     commMatTmp->doExport(*commMat,*commExporter,INSERT);
-                    commMatTmp->fillComplete(UniqueNodesMap_,rangeMap);
+                    commMatTmp->fillComplete(domainMap,UniqueNodesMap_);
                     commMat = MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
                     commMat->doImport(*commMatTmp,*commExporter,INSERT);
 
@@ -721,11 +721,11 @@ namespace FROSch {
                     for (int i=0; i<NumMyNodes_; i++) {
                         commGraph->insertGlobalIndices(NodesMap_->getGlobalElement(i),myPID());
                     }
-                    XMapPtr rangeMap = MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
+                    XMapPtr domainMap = MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
 
-                    commGraph->fillComplete(NodesMap_,rangeMap); // AH 08/07/2019: Can we remove some fillComplete?
+                    commGraph->fillComplete(domainMap,NodesMap_); // AH 08/07/2019: Can we remove some fillComplete?
                     commGraphTmp->doExport(*commGraph,*commExporter,INSERT);
-                    commGraphTmp->fillComplete(UniqueNodesMap_,rangeMap);
+                    commGraphTmp->fillComplete(domainMap,UniqueNodesMap_);
                     commGraph = CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10);
                     commGraph->doImport(*commGraphTmp,*commExporter,INSERT);
 
