@@ -81,7 +81,6 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(subspaceBasisMap->getNodeNumElements()==0,"FROSch::CoarseSpace : ERROR: subspaceBasisMap->getNodeNumElements()!=0");
         }
-        if (subspaceBasisMapUnique.is_null()) subspaceBasisMapUnique = BuildUniqueMap<LO,GO,NO>(subspaceBasisMap);
         
         UnassembledBasesMaps_.push_back(subspaceBasisMap);
         UnassembledBasesMapsUnique_.push_back(subspaceBasisMapUnique);
@@ -105,8 +104,25 @@ namespace FROSch {
         // BasisMap
         AssembledBasisMap_ = AssembleMaps(UnassembledBasesMaps_(),partMappings);
         
-        // BasisMapUnique
-        AssembledBasisMapUnique_ = AssembleMaps(UnassembledBasesMapsUnique_(),partMappings);
+        // BasisMapUnique - First, we check if any of the unassembled unique maps is null. In case, we re-build a unique map
+        bool buildUniqueMap = false;
+        UN i=0;
+        while (!buildUniqueMap && i<UnassembledBasesMapsUnique_.size()) {
+            buildUniqueMap = UnassembledBasesMapsUnique_[i].is_null();
+            i++;
+        }
+        int buildUniqueMapMax = 0;
+        reduceAll(*this->MpiComm_,REDUCE_MAX,int(buildUniqueMap),ptr(&buildUniqueMapMax));
+        
+        if (buildUniqueMapMax>0) {
+            if (this->MpiComm_->getRank()==0) std::cout << "FROSch::CoarseSpace : WARNING: We re-build a unique map of the AssembledBasisMap_." << std::endl;
+            AssembledBasisMapUnique_ = BuildUniqueMap<LO,GO,NO>(AssembledBasisMap_);
+        } else {
+            AssembledBasisMapUnique_ = AssembleMaps(UnassembledBasesMapsUnique_(),partMappings);
+        }
+        FROSCH_ASSERT(AssembledBasisMap_->getMaxAllGlobalIndex()==AssembledBasisMapUnique_->getMaxAllGlobalIndex(),"FROSch::CoarseSpace : ERROR: AssembledBasisMap_->getMaxAllGlobalIndex()!=AssembledBasisMapUnique_->getMaxAllGlobalIndex()");
+        FROSCH_ASSERT(AssembledBasisMap_->getMinAllGlobalIndex()==AssembledBasisMapUnique_->getMinAllGlobalIndex(),"FROSch::CoarseSpace : ERROR: AssembledBasisMap_->getMinAllGlobalIndex()!=AssembledBasisMapUnique_->getMinAllGlobalIndex()");
+        FROSCH_ASSERT(GO(AssembledBasisMapUnique_->getGlobalNumElements())==GO(AssembledBasisMapUnique_->getMaxAllGlobalIndex()+1),"FROSch::CoarseSpace : ERROR: AssembledBasisMapUnique_->getGlobalNumElements()!=(AssembledBasisMapUnique_->getMaxAllGlobalIndex()+1)");
         
         // Basis
         if (!AssembledBasisMap_.is_null()) {
@@ -137,7 +153,7 @@ namespace FROSch {
         UnassembledBasesMapsUnique_.resize(0);
         UnassembledSubspaceBases_.resize(0);
         Offsets_.resize(0);
-
+        
         UnassembledBasesMaps_.push_back(AssembledBasisMap_);
         UnassembledBasesMapsUnique_.push_back(AssembledBasisMapUnique_);
         UnassembledSubspaceBases_.push_back(AssembledBasis_);

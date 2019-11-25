@@ -143,9 +143,9 @@ namespace FROSch {
         ConstXMultiVectorPtrVec UnassembledSubspaceBases_;
         
         LOVec Offsets_;
-
-        XMapPtr AssembledBasisMap_;
-        XMapPtr AssembledBasisMapUnique_;
+        
+        ConstXMapPtr AssembledBasisMap_;
+        ConstXMapPtr AssembledBasisMapUnique_;
 
         XMultiVectorPtr AssembledBasis_;
 

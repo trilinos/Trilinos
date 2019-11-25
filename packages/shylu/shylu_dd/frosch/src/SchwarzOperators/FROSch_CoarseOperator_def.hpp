@@ -407,15 +407,14 @@ namespace FROSch {
     typename CoarseOperator<SC,LO,GO,NO>::XMatrixPtr CoarseOperator<SC,LO,GO,NO>::buildCoarseMatrix()
     {
         FROSCH_TIMER_START_LEVELID(buildCoarseMatrixTime,"CoarseOperator::buildCoarseMatrix");
-        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
-        
-        XMatrixPtr k0 = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSpace_->getBasisMapUnique(),CoarseSpace_->getBasisMap()->getNodeNumElements());
+        XMatrixPtr k0;
         if (this->ParameterList_->get("Use Triple MatrixMultiply",false)) {
+            k0 = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSpace_->getBasisMapUnique(),as<LO>(0));
             TripleMatrixMultiply<SC,LO,GO,NO>::MultiplyRAP(*Phi_,true,*this->K_,false,*Phi_,false,*k0);
         } else {
-            XMatrixPtr tmp = MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRowMap(),50);
-            MatrixMatrix<SC,LO,GO,NO>::Multiply(*this->K_,false,*Phi_,false,*tmp);
-            MatrixMatrix<SC,LO,GO,NO>::Multiply(*Phi_,true,*tmp,false,*k0);
+            RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
+            XMatrixPtr tmp = MatrixMatrix<SC,LO,GO,NO>::Multiply(*this->K_,false,*Phi_,false,*fancy);
+            k0 = MatrixMatrix<SC,LO,GO,NO>::Multiply(*Phi_,true,*tmp,false,*fancy);
         }
         return k0;
     }
