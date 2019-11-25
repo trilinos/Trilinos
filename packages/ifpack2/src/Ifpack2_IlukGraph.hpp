@@ -117,11 +117,13 @@ public:
   /// \param G [in] An existing graph.
   /// \param levelFill [in] The level of fill to compute; the k of ILU(k).
   /// \param levelOverlap [in] The level of overlap between subdomains.
+  /// \param overalloc [in] The estimated number of nonzeros per row in the resulting matrices is (maxNodeNumRowEntries of the input * overalloc^levelFill).  Must be greater than 1.  Smaller values are more conservative with memory, but may require recomputation if the estimate is too low.  Default value is two.
   ///
   /// \note Actual construction occurs in initialize().
   IlukGraph (const Teuchos::RCP<const GraphType>& G,
              const int levelFill,
-             const int levelOverlap);
+             const int levelOverlap,
+             const double overalloc = 2.);
 
   //! IlukGraph Destructor
   virtual ~IlukGraph ();
@@ -200,6 +202,7 @@ private:
   Teuchos::RCP<const crs_graph_type> OverlapGraph_;
   int LevelFill_;
   int LevelOverlap_;
+  const double Overalloc_;
   Teuchos::RCP<crs_graph_type> L_Graph_;
   Teuchos::RCP<crs_graph_type> U_Graph_;
   size_t NumMyDiagonals_;
@@ -211,13 +214,18 @@ template<class GraphType>
 IlukGraph<GraphType>::
 IlukGraph (const Teuchos::RCP<const GraphType>& G,
            const int levelFill,
-           const int levelOverlap)
+           const int levelOverlap,
+           const double overalloc)
   : Graph_ (G),
     LevelFill_ (levelFill),
     LevelOverlap_ (levelOverlap),
+    Overalloc_ (overalloc),
     NumMyDiagonals_ (0),
     NumGlobalDiagonals_ (0)
-{}
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(Overalloc_ <= 1., std::runtime_error,
+    "Ifpack2::IlukGraph: FATAL: overalloc must be greater than 1.")
+}
 
 
 template<class GraphType>
@@ -268,9 +276,10 @@ void IlukGraph<GraphType>::initialize()
   const int NumMyRows = OverlapGraph_->getRowMap ()->getNodeNumElements ();
 
   // Heuristic to get the maximum number of entries per row.
-  int MaxNumEntriesPerRow = (LevelFill_ == 0)
-                          ? MaxNumIndices
-                          : MaxNumIndices + 5*LevelFill_;
+  size_t MaxNumEntriesPerRow = (LevelFill_ == 0)
+                             ? MaxNumIndices  // No additional storage needed
+                             : ceil(static_cast<double>(MaxNumIndices) 
+                                  * pow(Overalloc_,LevelFill_));
 
   bool insertError;  // No error found yet while inserting entries
   do {
@@ -496,8 +505,8 @@ void IlukGraph<GraphType>::initialize()
       }
       catch (std::runtime_error &e) {
         insertError = true;
-        MaxNumEntriesPerRow *= 2;
-        std::cout << "KDD increasing MaxNumEntriesPerRow " << MaxNumEntriesPerRow << std::endl;
+        MaxNumEntriesPerRow = ceil(static_cast<double>(MaxNumEntriesPerRow) * 
+                                   Overalloc_);
       }
     }
   } while (insertError);  // do until all insertions complete successfully
