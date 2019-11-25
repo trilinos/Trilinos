@@ -38,7 +38,7 @@ fi
 # Common paths and modules for both intel-1{8,9}
 sparc_tpl_base=/projects/sparc/tpls/cts1-bdw
 module load mkl/18.0.5.274
-module load sparc-cmake/3.12.3
+module load cmake/3.12.2
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-2.0.3" ]; then
     module load intel/18.0.2.199
