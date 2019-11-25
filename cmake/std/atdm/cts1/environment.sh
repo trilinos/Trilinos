@@ -11,7 +11,7 @@
 # machines. please be mindful of this when making changes
 
 if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
-  export ATDM_CONFIG_KOKKOS_ARCH=BDW  
+  export ATDM_CONFIG_KOKKOS_ARCH=BDW
 fi
 
 if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "BDW" ] ; then
@@ -25,3 +25,5 @@ if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "BDW" ] ; then
 fi
 
 source $ATDM_SCRIPT_DIR/common/toss3/environment_new.sh
+
+export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/projects/atdm_devops/trilinos_installs/
