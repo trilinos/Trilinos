@@ -180,11 +180,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
                                               20, 21, 22, 23, 24}));
       for (int j = 0; j < maxRegPerProc; j++) {
         myValues = regVec[j]->getData(0);
-        for(int idx = 0; idx < regVec[j]->getLocalLength(); ++idx) {
+        for(size_t idx = 0; idx < regVec[j]->getLocalLength(); ++idx) {
           TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
         }
         myValues = quasiRegVec[j]->getData(0);
-        for(int idx = 0; idx < quasiRegVec[j]->getLocalLength(); ++idx) {
+        for(size_t idx = 0; idx < quasiRegVec[j]->getLocalLength(); ++idx) {
           TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
         }
 
@@ -214,11 +214,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
       // Loop over region matrix data and compare it to ref data
       for (int j = 0; j < maxRegPerProc; j++){
         myValues = regVec[j]->getData(0);
-        for(int idx = 0; idx < regVec[j]->getLocalLength(); ++idx) {
+        for(size_t idx = 0; idx < regVec[j]->getLocalLength(); ++idx) {
           TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
         }
         myValues = quasiRegVec[j]->getData(0);
-        for(int idx = 0; idx < quasiRegVec[j]->getLocalLength(); ++idx) {
+        for(size_t idx = 0; idx < quasiRegVec[j]->getLocalLength(); ++idx) {
           TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
         }
       }
@@ -240,7 +240,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
     // Create a composite vector
     RCP<Vector> compVec = VectorFactory::Build(dofMap, true);
 
-    regionalToComposite(regVec, compVec, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::ADD);
+    regionalToComposite(regVec, compVec, maxRegPerProc, rowImportPerGrp, Xpetra::ADD);
 
     if(numRanks == 1) {
       TEST_EQUALITY(compVec->getLocalLength(),  25);
@@ -254,7 +254,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
                                               15.0, 16.0, 17.0, 18.0, 19.0,
                                               20.0, 21.0, 22.0, 23.0, 24.0}));
       myValues = compVec->getData(0);
-      for(int idx = 0; idx < compVec->getLocalLength(); ++idx) {
+      for(size_t idx = 0; idx < compVec->getLocalLength(); ++idx) {
         TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
       }
 
@@ -292,7 +292,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
       }
       // Loop over region vector data and compare it to reference data
       myValues = compVec->getData(0);
-      for(int idx = 0; idx < compVec->getLocalLength(); ++idx) {
+      for(size_t idx = 0; idx < compVec->getLocalLength(); ++idx) {
         TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
       }
     }
@@ -309,7 +309,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
     // transform to composite layout while adding interface values via the Export() combine mode
     RCP<Vector> compInterfaceScalingSum = VectorFactory::Build(dofMap, true);
     regionalToComposite(interfaceScaling, compInterfaceScalingSum,
-                        maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::ADD);
+                        maxRegPerProc, rowImportPerGrp, Xpetra::ADD);
 
     /* transform composite layout back to regional layout. Now, GIDs associated
      * with region interface should carry a scaling factor (!= 1).
@@ -328,7 +328,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
       Teuchos::ArrayRCP<const SC> myScaling;
       for (int j = 0; j < maxRegPerProc; j++){
         myScaling = interfaceScaling[j]->getData(0);
-        for(int idx = 0; idx < interfaceScaling[j]->getLocalLength(); ++idx) {
+        for(size_t idx = 0; idx < interfaceScaling[j]->getLocalLength(); ++idx) {
           TEST_FLOATING_EQUALITY(myScaling[idx], 1.0, 100*TMT::eps());
         }
       }
@@ -355,7 +355,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
       // Loop over region vector data and compare it to reference data
       for (int j = 0; j < maxRegPerProc; j++){
         myScaling = interfaceScaling[j]->getData(0);
-        for(int idx = 0; idx < interfaceScaling[j]->getLocalLength(); ++idx) {
+        for(size_t idx = 0; idx < interfaceScaling[j]->getLocalLength(); ++idx) {
           TEST_FLOATING_EQUALITY(myScaling[idx], refValues[idx], 100*TMT::eps());
         }
       }

@@ -238,7 +238,6 @@ void test_matrix(const int maxRegPerProc,
   // with the original composite B vector.
   RCP<Vector> compB = VectorFactory::Build(A->getRowMap());
   regionalToComposite(regB, compB, maxRegPerProc,
-                      rowMapPerGrp,
                       rowImportPerGrp,
                       Xpetra::ADD);
 
@@ -663,7 +662,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, MatVec, Scalar, LocalOrdinal, Gl
   // composite B with the original B
   RCP<Vector> compB = VectorFactory::Build(dofMap);
   regionalToComposite(regB, compB, maxRegPerProc,
-                      rowMapPerGrp,
                       rowImportPerGrp,
                       Xpetra::ADD);
 

@@ -915,7 +915,7 @@ int main_(int argc, char *argv[]) {
 //        printRegionalObject<Vector>("regB 1", regB, myRank, *fos);
 
         compRes = VectorFactory::Build(mapComp, true);
-        regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
+        regionalToComposite(regRes, compRes, maxRegPerProc,
                             rowImportPerGrp, Xpetra::ADD);
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
 
