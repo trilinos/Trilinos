@@ -381,9 +381,9 @@ namespace TSQR {
                          "(" << C_top.extent(0) << " rows and " << C_top.extent(1)
                          << " columns).  Please report this bug to the Kokkos "
                          "developers.");
-      typedef typename MatrixViewType::pointer_type ptr_type;
+      using pointer = typename MatrixViewType::pointer;
       return MatrixViewType (C_top.extent(0), C_top.extent(1),
-                             const_cast<ptr_type> (C_top.data()),
+                             const_cast<pointer> (C_top.data()),
                              C_top.lda());
     }
 

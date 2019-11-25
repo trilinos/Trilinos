@@ -89,8 +89,8 @@ namespace TSQR {
              const size_t P_last,
              const bool contiguous_cache_blocks) const
       {
-        typedef typename MatrixViewType::ordinal_type ordinal_type;
-        typedef typename MatrixViewType::pointer_type pointer_type;
+        using ordinal_type = typename MatrixViewType::ordinal_type;
+        using pointer_type = typename MatrixViewType::pointer;
 
         const size_t num_partitions_top = P_mid - P_first + 1;
         //const size_t num_partitions_bottom = P_last - P_mid;
