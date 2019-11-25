@@ -353,9 +353,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
       int curNumErrors = 0;
       LO num_indices = static_cast<LO>(A_indices.size());
       for (LO i=0; i<num_indices; i++) {
-        if (! essentially_equal<SC>(2.0 * A_values[i], B_values[i])) {
+        if (! essentially_equal<SC>(SC(2.0) * A_values[i], B_values[i])) {
           errStrm << "ERROR: Proc " << world_rank << ", row " << loc_row
-                  << ", 2*A[" << i << "]=" << 2.0 * A_values[i] << ", but "
+                  << ", 2*A[" << i << "]=" << SC(2.0) * A_values[i] << ", but "
                   <<     "B[" << i << "]=" <<   B_values[i] << "!\n";
           ++curNumErrors;
         }
