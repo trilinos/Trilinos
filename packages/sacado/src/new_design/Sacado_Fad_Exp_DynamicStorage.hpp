@@ -31,6 +31,7 @@
 #define SACADO_FAD_EXP_DYNAMICSTORAGE_HPP
 
 #include <type_traits>
+#include <utility>
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_DynamicArrayTraits.hpp"
@@ -65,12 +66,12 @@ namespace Sacado {
       //! Default constructor
       KOKKOS_INLINE_FUNCTION
       DynamicStorage() :
-        val_(), sz_(0), len_(0), dx_(NULL) {}
+        val_(), sz_(0), len_(0), dx_(nullptr) {}
 
       //! Constructor with value
       KOKKOS_INLINE_FUNCTION
       DynamicStorage(const T & x) :
-        val_(x), sz_(0), len_(0), dx_(NULL) {}
+        val_(x), sz_(0), len_(0), dx_(nullptr) {}
 
       //! Constructor with size \c sz
       /*!
@@ -90,6 +91,15 @@ namespace Sacado {
       DynamicStorage(const DynamicStorage& x) :
         val_(x.val_), sz_(x.sz_), len_(x.sz_) {
         dx_ = ds_array<U>::get_and_fill(x.dx_, sz_);
+      }
+
+      //! Move constructor
+      KOKKOS_INLINE_FUNCTION
+      DynamicStorage(DynamicStorage&& x) :
+        val_(std::move(x.val_)), sz_(x.sz_), len_(x.len_), dx_(x.dx_) {
+        x.sz_ = 0;
+        x.len_ = 0;
+        x.dx_ = nullptr;
       }
 
       //! Destructor
@@ -117,6 +127,20 @@ namespace Sacado {
           }
           else
             ds_array<U>::copy(x.dx_, dx_, sz_);
+        }
+        return *this;
+      }
+
+      //! Move assignment
+      KOKKOS_INLINE_FUNCTION
+      DynamicStorage& operator=(DynamicStorage&& x) {
+        if (this != &x) {
+          if (len_ != 0)
+            ds_array<U>::destroy_and_release(dx_, len_);
+          val_ = std::move(x.val_);
+          sz_ = x.sz_; x.sz_ = 0;
+          len_ = x.len_; x.len_ = 0;
+          dx_ = x.dx_; x.dx_ = nullptr;
         }
         return *this;
       }

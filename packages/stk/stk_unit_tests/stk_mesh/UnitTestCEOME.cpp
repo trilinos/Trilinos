@@ -32,28 +32,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t
-#include <stdlib.h>                     // for exit
-#include <exception>                    // for exception
-#include <iostream>                     // for ostringstream, etc
-#include <iterator>                     // for distance
-#include <map>                          // for _Rb_tree_const_iterator, etc
-#include <stdexcept>                    // for logic_error, runtime_error
-#include <algorithm>                    // for sort
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
-#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
-#include <gtest/gtest.h>
-#include <string>                       // for string, basic_string, etc
-#include <stk_unit_tests/stk_mesh/UnitTestRingFixture.hpp>  // for test_shift_ring
-#include <stk_unit_tests/stk_mesh/Setup8Quad4ProcMesh.hpp>
-#include <utility>                      // for pair
-#include <vector>                       // for vector, etc
+#include "Setup8Quad4ProcMesh.hpp"
+#include "UnitTestCEO2Elem.hpp"
+#include "UnitTestCEO3Elem.hpp"
+#include "UnitTestCEO4ElemEdge.hpp"
+#include "UnitTestCEO4ElemRotate.hpp"
+#include "UnitTestCEO8Elem.hpp"
+#include "UnitTestCEOCommonUtils.hpp"
+#include "UnitTestRingFixture.hpp"  // for test_shift_ring
+#include "stk_io/StkMeshIoBroker.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for stk::mesh::EntityKey
@@ -63,22 +50,35 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Relation.hpp"
-#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/RingFixture.hpp"  // for RingFixture
 #include "stk_util/util/PairIter.hpp"   // for PairIter
-#include "stk_io/StkMeshIoBroker.hpp"
+#include <algorithm>                    // for sort
+#include <exception>                    // for exception
+#include <gtest/gtest.h>
+#include <iostream>                     // for ostringstream, etc
+#include <iterator>                     // for distance
+#include <map>                          // for _Rb_tree_const_iterator, etc
+#include <stddef.h>                     // for size_t
+#include <stdexcept>                    // for logic_error, runtime_error
+#include <stdlib.h>                     // for exit
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_unit_test_utils/BulkDataTester.hpp>
-#include "UnitTestCEOCommonUtils.hpp"
-#include "UnitTestCEO2Elem.hpp"
-#include "UnitTestCEO3Elem.hpp"
-#include "UnitTestCEO4ElemEdge.hpp"
-#include "UnitTestCEO4ElemRotate.hpp"
-#include "UnitTestCEO8Elem.hpp"
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
+#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
+#include <string>                       // for string, basic_string, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector, etc
 
 namespace stk
 {
@@ -468,6 +468,9 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     {
         // Change ownership of changing elem and all entities in it's closure that
         // we own to proc 0.
+        // Inspecting the ascii-art in the above mesh setup function reveals that
+        // P2 doesn't own nodes 5 and 6, so the field-data for those won't be sent
+        // to P0.
 
         Entity changing_elem = mesh.get_entity(elem_key_chg_own);
         ASSERT_TRUE( mesh.is_valid(changing_elem));
@@ -504,9 +507,11 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
         stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
         double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
-        EXPECT_EQ( 5.0, *elem_field_data_node5 );
+        const double expectedNode5Data = 5.0;
+        EXPECT_EQ( expectedNode5Data, *elem_field_data_node5 );
         double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
-        EXPECT_EQ( 6.0, *elem_field_data_node6 );
+        const double expectedNode6Data = 6.0;
+        EXPECT_EQ( expectedNode6Data, *elem_field_data_node6 );
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -522,9 +527,11 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
         stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
         double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
-        EXPECT_EQ( 5.0, *elem_field_data_node5 );
+        const double expectedNode5Data = 5.0;
+        EXPECT_EQ( expectedNode5Data, *elem_field_data_node5 );
         double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
-        EXPECT_EQ( 6.0, *elem_field_data_node6 );
+        const double expectedNode6Data = 6.0;
+        EXPECT_EQ( expectedNode6Data, *elem_field_data_node6 );
     }
 
 }

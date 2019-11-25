@@ -416,10 +416,10 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
           }
           else {
             *ret_int = 0;
-            snprintf(errmsg, MAX_ERR_LENGTH,
-                     "ERROR: failed to locate number of dist fact for %" ST_ZU
-                     "'th node set in file id %d",
-                     i, exoid);
+            snprintf(
+                errmsg, MAX_ERR_LENGTH,
+                "ERROR: failed to locate number of dist fact for %zu'th node set in file id %d", i,
+                exoid);
             ex_err_fn(exoid, __func__, errmsg, status);
             return (EX_FATAL);
           }
@@ -428,17 +428,16 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
           if ((status = nc_inq_dimid(exoid, DIM_NUM_NOD_NS(i + 1), &dimid)) != NC_NOERR) {
             *ret_int = 0;
             snprintf(errmsg, MAX_ERR_LENGTH,
-                     "ERROR: failed to locate number of nodes in %" ST_ZU
-                     "'th node set in file id %d",
-                     i, exoid);
+                     "ERROR: failed to locate number of nodes in %zu'th node set in file id %d", i,
+                     exoid);
             ex_err_fn(exoid, __func__, errmsg, status);
             return (EX_FATAL);
           }
           if ((status = nc_inq_dimlen(exoid, dimid, &idum)) != NC_NOERR) {
             *ret_int = 0;
             snprintf(errmsg, MAX_ERR_LENGTH,
-                     "ERROR: failed to get number of nodes in %" ST_ZU "'th node set in file id %d",
-                     i, exoid);
+                     "ERROR: failed to get number of nodes in %zu'th node set in file id %d", i,
+                     exoid);
             ex_err_fn(exoid, __func__, errmsg, status);
             return (EX_FATAL);
           }
@@ -597,10 +596,10 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
           }
           else {
             *ret_int = 0;
-            snprintf(errmsg, MAX_ERR_LENGTH,
-                     "ERROR: failed to locate number of dist fact for %" ST_ZU
-                     "'th side set in file id %d",
-                     i, exoid);
+            snprintf(
+                errmsg, MAX_ERR_LENGTH,
+                "ERROR: failed to locate number of dist fact for %zu'th side set in file id %d", i,
+                exoid);
             ex_err_fn(exoid, __func__, errmsg, status);
             return (EX_FATAL);
           }
@@ -609,8 +608,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
           if ((status = nc_inq_dimlen(exoid, dimid, &ldum)) != NC_NOERR) {
             *ret_int = 0;
             snprintf(errmsg, MAX_ERR_LENGTH,
-                     "ERROR: failed to get number of dist factors in %" ST_ZU
-                     "'th side set in file id %d",
+                     "ERROR: failed to get number of dist factors in %zu'th side set in file id %d",
                      i, exoid);
             ex_err_fn(exoid, __func__, errmsg, status);
             return (EX_FATAL);

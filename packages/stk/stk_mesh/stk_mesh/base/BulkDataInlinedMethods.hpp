@@ -78,8 +78,8 @@ bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
   }
   else
   {
-      const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
-      const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+      const EntityKey lhs_key = m_mesh->entity_key(lhs);
+      const EntityKey rhs_key = m_mesh->entity_key(rhs);
       result = lhs_key < rhs_key;
   }
   return result;
@@ -92,8 +92,8 @@ inline EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
 inline
 bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
-  const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs);
   return (lhs_key < rhs_key);
 }
 #endif
@@ -102,30 +102,30 @@ bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
 inline
 bool EntityLess::operator()(const Entity lhs, const EntityKey & rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs);
   return lhs_key < rhs;
 }
 
 inline
 bool EntityLess::operator()( const EntityProc & lhs, const EntityProc & rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey() ;
-  const EntityKey rhs_key = m_mesh->in_index_range(rhs.first) ? m_mesh->entity_key(rhs.first) : EntityKey() ;
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs.first);
   return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
 }
 
 inline
 bool EntityLess::operator()( const EntityProc & lhs, const Entity rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey();
-  const EntityKey rhs_key = m_mesh->in_index_range(rhs)       ? m_mesh->entity_key(rhs)       : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs);
   return lhs_key < rhs_key;
 }
 
 inline
 bool EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) const
 {
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey();
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
   return lhs_key < rhs ;
 }
 
@@ -442,22 +442,24 @@ bool BulkData::has_permutation(Entity entity, EntityRank rank) const
 }
 
 inline
-int BulkData::internal_entity_comm_map_owner(const EntityKey & key) const
-{
-  const int owner_rank = m_entity_comm_map.owner_rank(key);
-  ThrowAssertMsg(owner_rank == InvalidProcessRank || owner_rank == parallel_owner_rank(get_entity(key)),
-                 "Expected entity " << key.id() << " with rank " << key.rank() << " to have owner " <<
-                 parallel_owner_rank(get_entity(key)) << " but in comm map, found " << owner_rank);
-  return owner_rank;
-}
-
-inline
 bool BulkData::in_receive_ghost( EntityKey key ) const
 {
   const std::vector<Ghosting*> & ghosts= ghostings();
   for (size_t i=ghosts.size()-1;i>=AURA;--i)
   {
       if ( in_receive_ghost(*ghosts[i], key) )
+          return true;
+  }
+  return false;
+}
+
+inline
+bool BulkData::in_receive_ghost( Entity entity ) const
+{
+  const std::vector<Ghosting*> & ghosts= ghostings();
+  for (size_t i=ghosts.size()-1;i>=AURA;--i)
+  {
+      if ( in_receive_ghost(*ghosts[i], entity) )
           return true;
   }
   return false;
@@ -478,15 +480,54 @@ bool BulkData::in_receive_custom_ghost( EntityKey key ) const
 inline
 bool BulkData::in_receive_ghost( const Ghosting & ghost , EntityKey key ) const
 {
-  const int owner_rank = internal_entity_comm_map_owner(key);
+  const int owner_rank = parallel_owner_rank(get_entity(key));
   return in_ghost( ghost , key , owner_rank );
+}
+
+inline
+bool BulkData::in_receive_ghost( const Ghosting & ghost , Entity entity ) const
+{
+  if (m_entitycomm[entity.local_offset()] == nullptr) {
+    return false;
+  }
+
+  const int owner_rank = parallel_owner_rank(entity);
+  if (owner_rank == parallel_rank()) {
+    return false;
+  }
+
+  const EntityCommInfoVector& vec = m_entitycomm[entity.local_offset()]->comm_map;
+  EntityCommInfoVector::const_iterator i = vec.begin();
+  EntityCommInfoVector::const_iterator end = vec.end();
+  for(; i!=end; ++i) {
+    if (i->ghost_id == ghost.ordinal()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 inline
 bool BulkData::in_send_ghost( EntityKey key) const
 {
-    const int owner_rank = internal_entity_comm_map_owner(key);
+    const int owner_rank = parallel_owner_rank(get_entity(key));
     for ( PairIterEntityComm ec = internal_entity_comm_map(key); ! ec.empty() ; ++ec )
+    {
+      if ( ec->ghost_id != 0 &&
+           ec->proc     != owner_rank)
+      {
+        return true;
+      }
+    }
+    return false;
+}
+
+inline
+bool BulkData::in_send_ghost( Entity entity) const
+{
+    const int owner_rank = parallel_owner_rank(entity);
+    for ( PairIterEntityComm ec = internal_entity_comm_map(entity); ! ec.empty() ; ++ec )
     {
       if ( ec->ghost_id != 0 &&
            ec->proc     != owner_rank)
@@ -597,14 +638,13 @@ struct EntityGhostData
     }
 };
 
-struct StoreEntityKeyInSet
+struct StoreEntityInSet
 {
-    StoreEntityKeyInSet(const BulkData & mesh_in) : mesh(mesh_in) {}
+    StoreEntityInSet() : entity_set() {}
     void operator()(Entity entity) {
-       entity_key_set.insert(mesh.entity_key(entity));
+       entity_set.insert(entity);
     }
-    std::set<EntityKey> entity_key_set;
-    const BulkData & mesh;
+    std::set<Entity> entity_set;
 };
 
 struct StoreEntityProcInSet
@@ -722,7 +762,11 @@ inline bool BulkData::in_index_range(Entity entity) const
 
 inline bool BulkData::is_valid(Entity entity) const
 {
-  return (this->in_index_range(entity) && !m_meshModification.is_entity_deleted(entity.local_offset()) );
+  ThrowAssertMsg(in_index_range(entity),
+                 "Error in stk::mesh::BulkData::is_valid, entity not in index range. "
+                 " entity.local_offset()="<<entity.local_offset()<<", valid range is < "
+                 << get_size_of_entity_index_space());
+  return !m_meshModification.is_entity_deleted(entity.local_offset());
 }
 
 inline const MeshIndex& BulkData::mesh_index(Entity entity) const
@@ -826,7 +870,7 @@ inline int BulkData::parallel_owner_rank(Entity entity) const
   entity_getter_debug_check(entity);
 #endif
 
-  return bucket(entity).parallel_owner_rank(bucket_ordinal(entity));
+  return m_owner[entity.local_offset()];
 }
 
 inline unsigned BulkData::local_id(Entity entity) const
@@ -943,23 +987,6 @@ inline void BulkData::set_local_id(Entity entity, unsigned id)
   entity_setter_debug_check(entity);
 
   m_local_ids[entity.local_offset()] = id;
-}
-
-inline bool BulkData::internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank)
-{
-  entity_setter_debug_check(entity);
-
-  int & nonconst_processor_rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
-
-  m_modSummary.track_set_parallel_owner_rank_but_not_comm_lists(entity, nonconst_processor_rank, in_owner_rank);
-
-  if ( in_owner_rank != nonconst_processor_rank ) {
-    nonconst_processor_rank = in_owner_rank;
-
-    mark_entity_and_upward_related_entities_as_modified(entity);
-    return true;
-  }
-  return false;
 }
 
 inline void BulkData::log_created_parallel_copy(Entity entity)

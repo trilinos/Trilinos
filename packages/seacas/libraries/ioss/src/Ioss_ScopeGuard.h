@@ -79,7 +79,10 @@ public:
 };
 
 // typedef const ScopeGuardImplBase& ScopeGuard;
-__attribute__((unused)) typedef const ScopeGuardImplBase &ScopeGuard;
+#ifndef _MSC_VER
+__attribute__((unused))
+#endif
+typedef const ScopeGuardImplBase &ScopeGuard;
 
 template <typename F> class ScopeGuardImpl0 : public ScopeGuardImplBase
 {

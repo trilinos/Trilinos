@@ -89,7 +89,7 @@ public:
     virtual Scalar getTime() const override
     {return solutionHistory_->getCurrentTime();}
     /// Get current index
-    virtual Scalar getIndex() const override
+    virtual int getIndex() const override
     {return solutionHistory_->getCurrentIndex();}
     /// Get Status
     virtual Status getStatus() const override
@@ -98,7 +98,7 @@ public:
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override
     {return stepper_;}
     /// Set the Stepper
-    virtual void setStepper(Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model);
+    virtual void setStepper(Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model);
     /// Set the Stepper
     virtual void setStepper(
       std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
@@ -120,6 +120,8 @@ public:
       Teuchos::RCP<SolutionHistory<Scalar> > sh = Teuchos::null);
     /// Get the TimeStepControl
     virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override
+      {return timeStepControl_;}
+    virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override
       {return timeStepControl_;}
     /// Set the TimeStepControl
     virtual void setTimeStepControl(
@@ -158,6 +160,12 @@ public:
 
     //virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const
       //{return integratorTimer_;}
+
+    virtual void setScreenOutputIndexInterval(int i)
+    { integratorPL_->set("Screen Output Index Interval", i); }
+
+    virtual void setScreenOutputIndexList(std::string s)
+    { integratorPL_->set("Screen Output Index List", s); }
   //@}
 
   /// Parse when screen output should be executed

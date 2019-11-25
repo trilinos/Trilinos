@@ -22,12 +22,13 @@ protected:
   {
   }
 
-  void initialize_shared_values(stk::mesh::FieldBase & userField, stk::mesh::FieldBase & goldValues)
+  void initialize_shared_values(stk::mesh::FieldBase & userField, stk::mesh::FieldBase & goldValues,
+                                bool leaveGoldValuesNotSummed=false)
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().globally_shared_part());
+    std::vector<int> sharingProcs;
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & node : *bucket) {
-        std::vector<int> sharingProcs;
         stk::mesh::EntityKey nodeKey = get_bulk().entity_key(node);
         double id = static_cast<double>(get_bulk().identifier(node));
         double * gold = static_cast<double*>(stk::mesh::field_data(goldValues, node));
@@ -37,6 +38,9 @@ protected:
         get_bulk().comm_procs(nodeKey, sharingProcs);
         const size_t numSharers = sharingProcs.size() + 1;
         *user = id / numSharers;
+        if (leaveGoldValuesNotSummed) {
+          *gold = *user;
+        }
       }
     }
   }
@@ -50,7 +54,8 @@ protected:
   {
   }
 
-  void initialize_owned_shared_values(stk::mesh::FieldBase & userField, stk::mesh::FieldBase & goldValues)
+  void initialize_owned_shared_values(stk::mesh::FieldBase & userField, stk::mesh::FieldBase & goldValues,
+                                      bool leaveGoldValuesZero=false)
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().globally_shared_part());
     for (stk::mesh::Bucket * bucket : buckets) {
@@ -62,6 +67,9 @@ protected:
 
         double * user = static_cast<double*>(stk::mesh::field_data(userField, node));
         *user = bucket->owned() ? id : 0;
+        if (leaveGoldValuesZero) {
+          *gold = *user;
+        }
       }
     }
   }
@@ -75,7 +83,8 @@ protected:
   {
   }
 
-  void initialize_owned_ghosted_values(stk::mesh::FieldBase & userField, stk::mesh::FieldBase & goldValues)
+  void initialize_owned_ghosted_values(stk::mesh::FieldBase & userField, stk::mesh::FieldBase & goldValues,
+                                       bool leaveGoldValuesZero=false)
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, (get_meta().locally_owned_part() & !get_meta().globally_shared_part()) | get_meta().aura_part());
     for (stk::mesh::Bucket * bucket : buckets) {
@@ -87,6 +96,9 @@ protected:
 
         double * user = static_cast<double*>(stk::mesh::field_data(userField, node));
         *user = bucket->owned() ? id : 0;
+        if (leaveGoldValuesZero) {
+          *gold = *user;
+        }
       }
     }
   }
@@ -127,6 +139,33 @@ NGP_TEST_F(NgpParallelSum, simpleVersion)
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
+#ifdef KOKKOS_ENABLE_CUDA
+NGP_TEST_F(NgpParallelSum, simpleVersion_noSyncToDeviceAfterwards)
+{
+  const double initValue = 0.0;
+  const int numStates = 1;
+  stk::mesh::Field<double> & userField  = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "userField", numStates);
+  stk::mesh::Field<double> & goldValues = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "goldValues", numStates);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+
+  setup_mesh("generated:1x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  const bool leaveSharedGoldValuesNotSummed = true;
+  initialize_shared_values(userField, goldValues, leaveSharedGoldValuesNotSummed);
+
+  ngp::Mesh ngpMesh(get_bulk());
+  ngp::FieldManager fieldManager(get_bulk());
+  ngp::Field<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
+  ngp::Field<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+
+  const bool finalSyncToDevice = false;
+  ngp::parallel_sum<double>(get_bulk(), std::vector<ngp::Field<double>*>{&deviceUserField}, finalSyncToDevice);
+
+  check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
+}
+#endif
+
 NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion)
 {
   const double initValue = 0.0;
@@ -149,6 +188,33 @@ NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion)
 
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
+
+#ifdef KOKKOS_ENABLE_CUDA
+NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion_noSyncToDeviceAfterwards)
+{
+  const double initValue = 0.0;
+  const int numStates = 1;
+  stk::mesh::Field<double> & userField  = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "userField", numStates);
+  stk::mesh::Field<double> & goldValues = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "goldValues", numStates);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+
+  setup_mesh("generated:1x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  const bool leaveSharedGoldValuesZero = true;
+  initialize_owned_shared_values(userField, goldValues, leaveSharedGoldValuesZero);
+
+  ngp::Mesh ngpMesh(get_bulk());
+  ngp::FieldManager fieldManager(get_bulk());
+  ngp::Field<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
+  ngp::Field<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+
+  const bool finalSyncToDevice = false;
+  ngp::copy_owned_to_shared<double>(get_bulk(), std::vector<ngp::Field<double>*>{&deviceUserField}, finalSyncToDevice);
+
+  check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
+}
+#endif
 
 NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting)
 {
@@ -173,6 +239,33 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting)
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
+#ifdef KOKKOS_ENABLE_CUDA
+NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting_noSyncToDeviceAfterwards)
+{
+  const double initValue = 0.0;
+  const int numStates = 1;
+  stk::mesh::Field<double> & userField  = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "userField", numStates);
+  stk::mesh::Field<double> & goldValues = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "goldValues", numStates);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+
+  setup_mesh("generated:1x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  const bool leaveRecvGhostGoldValuesZero = true;
+  initialize_owned_ghosted_values(userField, goldValues, leaveRecvGhostGoldValuesZero);
+
+  ngp::Mesh ngpMesh(get_bulk());
+  ngp::FieldManager fieldManager(get_bulk());
+  ngp::Field<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
+  ngp::Field<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+
+  const bool finalSyncToDevice = false;
+  ngp::communicate_field_data<double>(*get_bulk().ghostings()[stk::mesh::BulkData::AURA], std::vector<ngp::Field<double>*>{&deviceUserField}, finalSyncToDevice);
+
+  check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
+}
+#endif
+
 NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData)
 {
   const double initValue = 0.0;
@@ -195,6 +288,33 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData)
 
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
+
+#ifdef KOKKOS_ENABLE_CUDA
+NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData_noSyncToDeviceAfterwards)
+{
+  const double initValue = 0.0;
+  const int numStates = 1;
+  stk::mesh::Field<double> & userField  = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "userField", numStates);
+  stk::mesh::Field<double> & goldValues = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "goldValues", numStates);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+
+  setup_mesh("generated:1x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  const bool leaveRecvGhostGoldValuesZero = true;
+  initialize_owned_ghosted_values(userField, goldValues, leaveRecvGhostGoldValuesZero);
+
+  ngp::Mesh ngpMesh(get_bulk());
+  ngp::FieldManager fieldManager(get_bulk());
+  ngp::Field<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
+  ngp::Field<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+
+  const bool finalSyncToDevice = false;
+  ngp::communicate_field_data<double>(get_bulk(), std::vector<ngp::Field<double>*>{&deviceUserField}, finalSyncToDevice);
+
+  check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
+}
+#endif
 
 NGP_TEST_F(NgpParallelSum, DeviceMPIVersion)
 {

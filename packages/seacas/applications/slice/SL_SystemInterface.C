@@ -53,19 +53,13 @@
 #endif
 
 namespace {
-  int case_strcmp(const std::string &s1, const std::string &s2)
+  bool str_equal(const std::string &s1, const std::string &s2)
   {
-    const char *c1 = s1.c_str();
-    const char *c2 = s2.c_str();
-    for (;; c1++, c2++) {
-      if (std::tolower(*c1) != std::tolower(*c2)) {
-        return (std::tolower(*c1) - std::tolower(*c2));
-      }
-      if (*c1 == '\0') {
-        return 0;
-      }
-    }
+    return (s1.size() == s2.size()) &&
+           std::equal(s1.begin(), s1.end(), s2.begin(),
+                      [](char a, char b) { return std::tolower(a) == std::tolower(b); });
   }
+
 #if 0
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
   void parse_integer_list(const char *tokens, std::vector<int> *list);
@@ -373,7 +367,7 @@ void SystemInterface::parse_step_option(const char *tokens)
       stepMax_      = abs(vals[1]);
       stepInterval_ = abs(vals[2]);
     }
-    else if (case_strcmp("LAST", tokens) == 0) {
+    else if (str_equal("LAST", tokens)) {
       stepMin_ = stepMax_ = -1;
     }
     else {

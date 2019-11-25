@@ -35,15 +35,16 @@
 #ifndef STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 #define STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_unit_test_utils/getOption.h>
-#include "stk_mesh/base/MetaData.hpp"
+#include "UnitTestUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"
-#include "stk_unit_test_utils/ioUtils.hpp"
-#include "stk_mesh/base/GetEntities.hpp"
-#include "stk_mesh/base/Field.hpp"
 #include "stk_mesh/base/ExodusTranslator.hpp"
+#include "stk_mesh/base/Field.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_unit_test_utils/ioUtils.hpp"
 #include <exodusII.h>
+#include <stk_unit_test_utils/getOption.h>
+#include <stk_util/parallel/ParallelComm.hpp>
 
 inline void findBoundingBoxCoordinates(const std::vector<double> &coordinates, std::vector<double>& boxCoordinates)
 {
@@ -423,21 +424,16 @@ inline void do_kdtree_search(std::vector< std::pair<FloatBox, Identifier> >& loc
     stk::search::coarse_search(local_domain, local_range, stk::search::KDTREE, comm, searchResults);
 }
 
-enum NewSearchMethod { BOOST_RTREE, KDTREE };
+enum NewSearchMethod { KDTREE };
 inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
 {
-    if ( method == BOOST_RTREE )
-    {
-        return stk::search::BOOST_RTREE;
-    }
-
     if ( method == KDTREE )
     {
       return stk::search::KDTREE;
     }
 
     ThrowRequireMsg(false, __FUNCTION__ << ", Unknown algorithm mysteriously specified");
-    return stk::search::BOOST_RTREE;
+    return stk::search::KDTREE;
 }
 
 template <typename Identifier>
@@ -446,10 +442,6 @@ inline void coarse_search_new(std::vector< std::pair<FloatBox, Identifier> >& lo
     if ( algorithm == KDTREE )
     {
         do_kdtree_search(local_domain, local_range, comm, searchResults);
-    }
-    else if ( algorithm == BOOST_RTREE )
-    {
-        stk::search::coarse_search(local_domain, local_range, stk::search::BOOST_RTREE, comm, searchResults);
     }
     else
     {

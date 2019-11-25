@@ -5,6 +5,7 @@
 #include <stk_io/FillMesh.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include "stk_mesh/base/Selector.hpp"
 #include <stk_io/StkMeshIoBroker.hpp>
@@ -54,7 +55,10 @@ void extract_blocks_from_file(const std::string &inFile,
                                 , false
 #endif
                                 , (stk::mesh::FieldDataManager*)nullptr);
+
+
     extract_blocks(inBulk, outBulk, blockNames);
+
 
     remove_io_attribute_from_empty_parts(outBulk);
 
@@ -65,6 +69,48 @@ void extract_blocks_from_file(const std::string &inFile,
     stk::transfer_utils::TransientFieldTransferById transfer(stkInput, stkOutput);
     transfer.transfer_and_write_transient_fields(outFile);
 }
+
+void extract_blocks_and_ns_from_file(const std::string &inFile,
+                              const std::string &outFile,
+                              const std::vector<std::string> &blockNames,
+							  const std::vector<std::string> &nodesetNames,
+                              MPI_Comm comm)
+{
+    stk::mesh::MetaData inMeta;
+    stk::mesh::BulkData inBulk(inMeta, comm, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+                               , false
+#endif
+                               , (stk::mesh::FieldDataManager*)nullptr);
+
+    stk::io::StkMeshIoBroker stkInput;
+    stk::io::fill_mesh_preexisting(stkInput, inFile, inBulk);
+
+    stk::mesh::PartVector parts;
+    for(size_t i=0; i<nodesetNames.size(); i++)
+    {
+        parts.push_back(inBulk.mesh_meta_data().get_part(nodesetNames[i]));
+        ThrowRequireMsg(parts[i] != nullptr, "Can't find nodeset " << nodesetNames[i] << " in mesh.\n");
+    }
+
+    for(size_t i=0; i<blockNames.size(); i++)
+        {
+            parts.push_back(inBulk.mesh_meta_data().get_part(blockNames[i]));
+            ThrowRequireMsg(parts[i] != nullptr, "Can't find block " << blockNames[i] << " in mesh.\n");
+        }
+
+
+    stk::mesh::Selector nodeset_and_block_selector = stk::mesh::selectUnion(parts);
+
+
+    stk::io::StkMeshIoBroker stkOutput;
+    stkOutput.set_bulk_data(inBulk);
+    stkOutput.set_attribute_field_ordering_stored_by_part_ordinal(stkInput.get_attribute_field_ordering_stored_by_part_ordinal());
+
+    stk::transfer_utils::TransientFieldTransferById transfer(stkInput, stkOutput);
+    transfer.transfer_and_write_transient_fields(outFile,nodeset_and_block_selector);
+}
+
 
 
 void extract_blocks(stk::mesh::BulkData &oldBulk, stk::mesh::BulkData &newBulk, const std::vector<std::string> &blockNames)

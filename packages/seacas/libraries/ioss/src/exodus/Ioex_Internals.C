@@ -3810,7 +3810,14 @@ namespace {
     else {
       // Have entity_id (long long), need ints...
       std::vector<int> int_ids(ids.size());
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
       int_ids.assign(ids.begin(), ids.end());
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
       status = nc_put_var_int(exoid, var_id, &int_ids[0]);
     }
 

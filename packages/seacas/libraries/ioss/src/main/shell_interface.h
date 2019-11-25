@@ -40,7 +40,7 @@
 #include <string>
 #include <vector>
 
-/** \brief A special namespace for the io_shell demonstration program interface.
+/** \brief A special namespace for the io_shell demonstration program interFace.
  */
 namespace IOShell {
   class Interface

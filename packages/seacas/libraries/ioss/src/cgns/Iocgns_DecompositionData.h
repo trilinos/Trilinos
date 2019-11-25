@@ -38,6 +38,15 @@
 #include <unordered_map>
 #include <vector>
 
+#define USE_ROBIN
+#if defined USE_STD
+#include <unordered_map>
+#elif defined USE_HOPSCOTCH
+#include <hash/bhopscotch_map.h>
+#elif defined USE_ROBIN
+#include <hash/robin_map.h>
+#endif
+
 #include <cstddef>
 #include <cstdint>
 
@@ -130,7 +139,15 @@ namespace Iocgns {
 
     // Maps nodes shared between zones.
     // TODO: Currently each processor has same map; need to figure out how to reduce size
-    std::unordered_map<cgsize_t, cgsize_t> m_zoneSharedMap;
+#if defined USE_STD
+    using ZoneSharedMap = std::unordered_map<cgsize_t, cgsize_t>;
+#elif defined USE_HOPSCOTCH
+    //    using ZoneSharedMap = tsl::hopscotch_map<cgsize_t, cgsize_t>;
+    using ZoneSharedMap = tsl::bhopscotch_map<cgsize_t, cgsize_t>;
+#elif defined USE_ROBIN
+    using ZoneSharedMap = tsl::robin_map<cgsize_t, cgsize_t>;
+#endif
+    ZoneSharedMap m_zoneSharedMap;
   };
 
   template <typename INT> class DecompositionData : public DecompositionDataBase

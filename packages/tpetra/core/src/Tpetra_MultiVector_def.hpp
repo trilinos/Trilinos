@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -4621,8 +4619,8 @@ namespace Tpetra {
 
     auto v1 = this->getLocalViewHost ();
     auto v2 = vec.getLocalViewHost ();
-    if (PackTraits<ST, HES>::packValueCount (v1(0,0)) !=
-        PackTraits<ST, HES>::packValueCount (v2(0,0))) {
+    if (PackTraits<ST>::packValueCount (v1(0,0)) !=
+        PackTraits<ST>::packValueCount (v2(0,0))) {
       return false;
     }
 

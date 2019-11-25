@@ -373,8 +373,8 @@ TEST(TestTransientFieldBalance, verifyTransientDataTransferOnFourProcessors)
 
 TEST(TestTransientFieldBalance, verifyStaticDataTransfer)
 {
-    std::string serialOutputMeshName = "sixteen_hex_transient.e";
-    std::string parallelOutputMeshName = "sixteen_hex_transient_balanced.e";
+    std::string serialOutputMeshName = "sixteen_hex_static.e";
+    std::string parallelOutputMeshName = "sixteen_hex_static_balanced.e";
 
     if((stk::parallel_machine_size(MPI_COMM_WORLD) ==  2) ||
        (stk::parallel_machine_size(MPI_COMM_WORLD) ==  4) ||

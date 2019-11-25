@@ -438,6 +438,11 @@ namespace Xpetra {
 #endif
 #endif
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
+    
    //@}
 
   private:
@@ -839,6 +844,11 @@ namespace Xpetra {
 #endif
 #endif
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const { }
+    
    //@}
   }; // TpetraCrsMatrix class (specialization for GO=int, NO=EpetraNode)
 #endif
@@ -1234,6 +1244,11 @@ namespace Xpetra {
                        const typename local_matrix_type::values_type& val) {    }
 #endif
 #endif
+
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const { }
 
    //@}
   }; // TpetraCrsMatrix class (specialization for GO=long long, NO=EpetraNode)

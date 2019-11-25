@@ -56,8 +56,8 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp" // FIXME_KOKKOS (once we have kokkos version)
-#include "MueLu_AmalgamationInfo_fwd.hpp"    // FIXME_KOKKOS (once we have kokkos version)
+#include "MueLu_AmalgamationFactory_kokkos_fwd.hpp"
+#include "MueLu_AmalgamationInfo_kokkos_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
@@ -159,14 +159,18 @@ namespace MueLu {
     // Therefore, we expose BuildPuncoupled and isGoodMap for now. An alternative solution
     // could be writing an out of class implementation, and then calling it in
     // a member function.
-    void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
+    void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
+                         RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
+                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
+                         RCP<MultiVector>& coarseNullspace, const int levelID) const;
     bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
   private:
 
-    void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
+    void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
+                         RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
+                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
+                         RCP<MultiVector>& coarseNullspace) const;
 
     mutable bool bTransferCoordinates_ = false;
 

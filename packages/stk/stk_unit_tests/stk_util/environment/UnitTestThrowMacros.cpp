@@ -339,7 +339,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:319\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:324\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }

@@ -298,7 +298,7 @@ namespace {
 
        RCP<MV> toScale5 = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(map,2); toScale5->putScalar(SC_one);
        
-       Xpetra::MatrixUtils<Scalar, LO, GO, Node>::inverseScaleBlockDiagonal(*diag5c,*toScale5);
+       Xpetra::MatrixUtils<Scalar, LO, GO, Node>::inverseScaleBlockDiagonal(*diag5c,false,*toScale5);
       
 
      }
@@ -329,7 +329,10 @@ namespace {
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, StridedMaps_Tpetra,  M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, BuildCopy_StridedMaps_Tpetra,  M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, ViewSwitching, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, ViewSwitching, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N ) 
+
+// Tpetra, but no complex
+#define XP_TPETRA_MATRIX_INSTANT_NO_COMPLEX(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, BlockDiagonalUtils_Tpetra, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N )
 
 // List of tests which run only with Epetra
@@ -351,6 +354,10 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
 //TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MATRIX_INSTANT )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
+
+#if !defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && !defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT_NO_COMPLEX )
+#endif
 
 #endif
 

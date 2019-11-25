@@ -225,13 +225,13 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
  *  \returns The number of values read.
  *
  */
-int Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *data,
-                                         size_t data_size) const
+int64_t Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *data,
+                                             size_t data_size) const
 {
   verify_field_exists(field_name, "input");
 
   Ioss::Field field  = get_field(field_name);
-  int         retval = internal_get_field_data(field, data, data_size);
+  int64_t     retval = internal_get_field_data(field, data, data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0) {
@@ -249,8 +249,8 @@ int Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *da
  *  \returns The number of values written.
  *
  */
-int Ioss::GroupingEntity::put_field_data(const std::string &field_name, void *data,
-                                         size_t data_size) const
+int64_t Ioss::GroupingEntity::put_field_data(const std::string &field_name, void *data,
+                                             size_t data_size) const
 {
   verify_field_exists(field_name, "input");
 

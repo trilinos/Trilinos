@@ -16,6 +16,8 @@
 #include <cmath>
 #include <utility>
 #include <stdint.h>
+#include <tuple>
+#include <unordered_map>
 
 #if defined( STK_HAS_MPI )
 #include <mpi.h>
@@ -29,6 +31,7 @@
 
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
+#include <stk_topology/topology.hpp>
 
 #include <stk_mesh/base/MemoryUsage.hpp>
 
@@ -40,10 +43,6 @@
 #include <stk_io/IossBridge.hpp>
 #include <Ioss_NullEntity.h>
 #include <Ioss_Utils.h>
-
-#include <boost/shared_ptr.hpp>
-#include <boost/static_assert.hpp>
-#include <boost/unordered_map.hpp>
 
 #define DEBUG_YAML 0
 
@@ -58,6 +57,17 @@
 
   namespace percept {
 
+    inline stk::topology find_topology_by_name(const std::string & topologyName)
+    {
+      stk::topology t(stk::topology::BEGIN_TOPOLOGY);
+      for ( ; t < stk::topology::END_TOPOLOGY; ++t) {
+        if (topologyName == t.name()) {
+          return t;
+        }
+      }
+      return stk::topology(stk::topology::INVALID_TOPOLOGY);
+    }
+
     /**  in the following, we are looking at one partition, m_iM, of M-partitioned mesh
      *
      */
@@ -71,14 +81,14 @@
       typedef std::string TopologyName;
       typedef std::string PartName;
       typedef std::vector<PartName> PartSubsets;
-      typedef boost::tuple<stk::mesh::EntityRank, TopologyName, PartSubsets> PartMapData;
+      typedef std::tuple<stk::mesh::EntityRank, TopologyName, PartSubsets> PartMapData;
       typedef std::map<PartName, PartMapData> PartMap;
 
       typedef stk::mesh::EntityId NodeMapKey;
       typedef int ProcRank;
       typedef std::vector<ProcRank> SharedProcs;
       typedef SharedProcs NodeMapValue;
-      typedef boost::unordered_map<NodeMapKey, NodeMapValue> NodeMap;
+      typedef std::unordered_map<NodeMapKey, NodeMapValue> NodeMap;
 
     private:
       PerceptMesh& m_eMesh;
@@ -213,12 +223,12 @@
             out << YAML::Value;               YAML_CHECK(out);
             out << YAML::Flow;                YAML_CHECK(out);
             out << YAML::BeginSeq;            YAML_CHECK(out);
-            out << iter->second.get<0>();
-            out << iter->second.get<1>();
+            out << std::get<0>(iter->second);
+            out << std::get<1>(iter->second);
             {
               out << YAML::Flow;                YAML_CHECK(out);
               out << YAML::BeginSeq;            YAML_CHECK(out);
-              PartSubsets subsets = iter->second.get<2>();
+              PartSubsets subsets = std::get<2>(iter->second);
               for (unsigned isub=0; isub < subsets.size(); isub++)
                 {
                   out << subsets[isub];
@@ -239,21 +249,21 @@
         for (iter = m_partMap->begin(); iter != m_partMap->end(); ++iter)
           {
             PartName part_name = iter->first;
-            stk::mesh::EntityRank part_rank = iter->second.get<0>();
-            TopologyName topo_name = iter->second.get<1>();
+            stk::mesh::EntityRank part_rank = std::get<0>(iter->second);
+            TopologyName topo_name = std::get<1>(iter->second);
             const stk::mesh::Part* c_part = m_eMesh.get_fem_meta_data()->get_part(part_name);
             stk::mesh::Part *part = const_cast<stk::mesh::Part *>(c_part);
             if (!part)
               {
                 part = &m_eMesh.get_fem_meta_data()->declare_part(part_name, part_rank);
                 stk::io::put_io_part_attribute(*part);
-                shards::CellTopology topo = m_eMesh.get_fem_meta_data()->get_cell_topology(topo_name);
-                if (!topo.getCellTopologyData())
+                stk::topology topo = find_topology_by_name(topo_name.c_str());
+                if (!topo.is_valid())
                   {
                     std::cout << "bad cell topo SerializeNodeRegistry::declareGlobalParts topo_name= " << topo_name << std::endl;
                     throw std::runtime_error("bad cell topo SerializeNodeRegistry::declareGlobalParts");
                   }
-                stk::mesh::set_cell_topology(*part, topo);
+                stk::mesh::set_topology(*part, topo);
               }
           }
         // once parts are declared, declare part subsets
@@ -266,7 +276,7 @@
               {
                 throw std::runtime_error(std::string("no part found SerializeNodeRegistry::declareGlobalParts: part= ")+part_name);
               }
-            PartSubsets subsets = iter->second.get<2>();
+            PartSubsets subsets = std::get<2>(iter->second);
             for (unsigned isub=0; isub < subsets.size(); isub++)
               {
                 const stk::mesh::Part* c_subset = m_eMesh.get_fem_meta_data()->get_part(subsets[isub]);
@@ -340,9 +350,9 @@
                     else
                       {
                         PartMapData& pmd_existing = partMap[part_name];
-                        pmd_existing.get<0>() = rank;
-                        pmd_existing.get<1>() = topo_name;
-                        PartSubsets& subsets_existing = pmd_existing.get<2>();
+                        std::get<0>(pmd_existing) = rank;
+                        std::get<1>(pmd_existing) = topo_name;
+                        PartSubsets& subsets_existing = std::get<2>(pmd_existing);
                         //std::cout << "pmd read= " << pmd << std::endl;
                         //std::cout << "pmd existing= " << pmd_existing << std::endl;
                         for (unsigned isub=0; isub < subsets.size(); isub++)
@@ -605,18 +615,16 @@
               {
                 subsets[isub] = part_subsets[isub]->name();
               }
-            PartMapData pmd(part.primary_entity_rank(), topo_name, subsets);
+            PartMapData pmd {part.primary_entity_rank(), topo_name, subsets};
             PartMap::iterator inMap = m_partMap->find(part.name());
             // if not yet in the map, or if already in map, choose to overwrite if this is the one with subset info
             if (inMap == m_partMap->end())
               {
-                if (m_debug) std::cout << "mergeGlobalParts:: not yet in map, part = " << part.name() << " data= " << pmd << std::endl;
                 (*m_partMap)[part.name()] = pmd;
               }
             else
               {
-                PartSubsets& inMapSubsets = inMap->second.get<2>();
-                if (m_debug) std::cout << "mergeGlobalParts:: in map, before, part = " << part.name() << " data= " << pmd << std::endl;
+                PartSubsets& inMapSubsets = std::get<2>(inMap->second);
                 for (unsigned isub=0; isub < subsets.size(); isub++)
                   {
                     PartSubsets::iterator iv = find(inMapSubsets.begin(), inMapSubsets.end(), subsets[isub]);
@@ -625,7 +633,6 @@
                         inMapSubsets.push_back(subsets[isub]);
                       }
                   }
-                if (m_debug) std::cout << "mergeGlobalParts:: in map, after, part = " << part.name() << " data= " << pmd << std::endl;
               }
           }
         // init/fini
@@ -1037,7 +1044,7 @@
         for (iter = localMap.begin(); iter != localMap.end(); ++iter)
           {
             const SubDimCell_SDCEntityType& subDimEntity = iter->first;
-            SubDimCellData& nodeId_elementOwnderId = iter->second;
+            SubDimCellData& nodeId_elementOwnerId = iter->second;
 
             // special case for "interior" subDimEntity's which are centroid nodes for quad or hex elements -
             //   by definition they aren't shared
@@ -1045,8 +1052,8 @@
               continue;
 
             // lookup from global...
-            SubDimCellData* global_nodeId_elementOwnderId_ptr = globalNR.getFromMapPtr(subDimEntity);
-            if (!global_nodeId_elementOwnderId_ptr)
+            SubDimCellData* global_nodeId_elementOwnerId_ptr = globalNR.getFromMapPtr(subDimEntity);
+            if (!global_nodeId_elementOwnerId_ptr)
               {
                 std::cout << "M[" << m_iM << "] SerializeNodeRegistry::lookupAndSetNewNodeIds couldn't find subDimEntity= " << subDimEntity;
                 for (unsigned kk=0; kk < subDimEntity.size(); kk++)
@@ -1058,10 +1065,10 @@
             else
               {
               }
-            VERIFY_OP_ON(global_nodeId_elementOwnderId_ptr, !=, 0, "SerializeNodeRegistry::lookupAndSetNewNodeIds couldn't find subDimEntity");
+            VERIFY_OP_ON(global_nodeId_elementOwnerId_ptr, !=, 0, "SerializeNodeRegistry::lookupAndSetNewNodeIds couldn't find subDimEntity");
 
-            NodeIdsOnSubDimEntityType& global_nodeIds_onSE = global_nodeId_elementOwnderId_ptr->get<SDC_DATA_GLOBAL_NODE_IDS>();
-            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            NodeIdsOnSubDimEntityType& global_nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(*global_nodeId_elementOwnerId_ptr);
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
             unsigned global_nnodes = global_nodeIds_onSE.size();
             unsigned nnodes = nodeIds_onSE.size();
             VERIFY_OP_ON(global_nnodes, ==, nnodes, "SerializeNodeRegistry::lookupAndSetNewNodeIds: mismatch in nnodes");
@@ -1139,10 +1146,10 @@
         SubDimCell_SDCEntityType key(&eMesh); // subDimEntity = (*iter).first;
         stk::mesh::EntityId value_nodeId;
 
-        SubDimCellData value; // nodeId_elementOwnderId = (*iter).second;
-        NodeIdsOnSubDimEntityType& nodeIds_onSE = value.get<SDC_DATA_GLOBAL_NODE_IDS>();
+        SubDimCellData value; // nodeId_elementOwnerId = (*iter).second;
+        NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(value);
         nodeIds_onSE.resize(0);
-        stk::mesh::EntityKey& value_entity_key = value.get<SDC_DATA_OWNING_ELEMENT_KEY>();
+        stk::mesh::EntityKey& value_entity_key = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(value);
         for(unsigned ikeyd=0; ikeyd < KEY.size(); ++ikeyd) 
           {
             key_nodeId = localNR.getMesh().identifier(KEY[ikeyd]);
@@ -1160,11 +1167,11 @@
             key.insert( node );
           }
 
-        stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>((UInt)VALUE.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank());
-        size_t id = VALUE.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
+        stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>((UInt)std::get<SDC_DATA_OWNING_ELEMENT_KEY>(VALUE).rank());
+        size_t id = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(VALUE).id();
 
         value_entity_key = stk::mesh::EntityKey(rank,id);
-        NodeIdsOnSubDimEntityType& NODEIDS_ONSE = VALUE.get<SDC_DATA_GLOBAL_NODE_IDS>();
+        NodeIdsOnSubDimEntityType& NODEIDS_ONSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(VALUE);
         value_nodeId = NODEIDS_ONSE.m_entity_id_vector[0];
         nodeIds_onSE.m_entity_id_vector.push_back(value_nodeId);
         stk::mesh::Entity entity = eMesh.get_bulk_data()->get_entity(stk::topology::NODE_RANK, value_nodeId);
@@ -1209,7 +1216,7 @@
         for (iter = localMap.begin(); iter != localMap.end(); ++iter)
           {
             const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
-            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            SubDimCellData& nodeId_elementOwnerId = (*iter).second;
             if (m_debug)
               {
                 std::cout << "SerializeNodeRegistry::processNodeRegistry inserting localMap entry = " << subDimEntity ;
@@ -1217,11 +1224,11 @@
                   {
                     std::cout << " [" << newLocalNR.getMesh().get_bulk_data()->identifier(subDimEntity[kk]) << "] ";
                   }
-                std::cout << " data= " << nodeId_elementOwnderId << " nid=" <<  nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_entity_id_vector[0] << std::endl;
+                std::cout << " data= " << nodeId_elementOwnerId << " nid=" << std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId).m_entity_id_vector[0] << std::endl;
               }
             /// clone subDimEntity...
-            //globalMap[subDimEntity] = nodeId_elementOwnderId;
-            addKeyValuePair(globalNR, newLocalNR, subDimEntity, nodeId_elementOwnderId);
+            //globalMap[subDimEntity] = nodeId_elementOwnerId;
+            addKeyValuePair(globalNR, newLocalNR, subDimEntity, nodeId_elementOwnerId);
           }
         if (m_debug) std::cout << "SerializeNodeRegistry::processNodeRegistry globalMap size= " << globalMap.size() << std::endl;
         stk::mesh::fixup_ghosted_to_shared_nodes(*globalNR.getMesh().get_bulk_data());
@@ -1393,8 +1400,8 @@
             for (iter = map.begin(); iter != map.end(); ++iter)
               {
                 //const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
-                SubDimCellData& nodeId_elementOwnderId = (*iter).second;
-                NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+                SubDimCellData& nodeId_elementOwnerId = (*iter).second;
+                NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
                 unsigned nnodes = nodeIds_onSE.size();
                 for (unsigned inode=0; inode < nnodes; inode++)
                   {
@@ -1432,8 +1439,8 @@
         for (iter = map.begin(); iter != map.end(); ++iter)
           {
             //const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
-            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
-            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            SubDimCellData& nodeId_elementOwnerId = (*iter).second;
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
             unsigned nnodes = nodeIds_onSE.size();
             for (unsigned inode=0; inode < nnodes; inode++)
               {
@@ -1463,8 +1470,8 @@
             for (iter = map.begin(); iter != map.end(); ++iter)
               {
                 //const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
-                SubDimCellData& nodeId_elementOwnderId = (*iter).second;
-                NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+                SubDimCellData& nodeId_elementOwnerId = (*iter).second;
+                NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
                 unsigned nnodes = nodeIds_onSE.size();
                 for (unsigned inode=0; inode < nnodes; inode++)
                   {
@@ -1480,8 +1487,8 @@
         for (iter = map.begin(); iter != map.end(); ++iter)
           {
             //const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
-            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
-            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            SubDimCellData& nodeId_elementOwnerId = (*iter).second;
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
             unsigned nnodes = nodeIds_onSE.size();
             for (unsigned inode=0; inode < nnodes; inode++)
               {
@@ -1524,7 +1531,7 @@
         for (iter = map.begin(); iter != map.end(); ++iter)
           {
             const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
-            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            SubDimCellData& nodeId_elementOwnerId = (*iter).second;
 
             // check if all nodes are on the boundary (defined by shared nodes in the NodeMap)
             if (nodeMapFilter)
@@ -1553,7 +1560,7 @@
             emitter << YAML::Key;       YAML_ERRCHECK;
             emitter << YAML::Flow;      YAML_ERRCHECK;
             emitter << YAML::BeginSeq;  YAML_ERRCHECK;
-            if (0) emitter << YAML::Anchor(std::string("seq")+boost::lexical_cast<std::string>(jj++));   YAML_ERRCHECK;
+            if (0) emitter << YAML::Anchor(std::string("seq")+std::to_string(jj++));   YAML_ERRCHECK;
             for (unsigned k=0; k < subDimEntity.size(); k++)
               {
                 //std::cout << " " << subDimEntity[k]->identifier() << " ";
@@ -1561,8 +1568,8 @@
               }
             emitter << YAML::EndSeq;      YAML_ERRCHECK;
 
-            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-            stk::mesh::EntityKey& value_entity_key = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>();
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>( nodeId_elementOwnerId);
+            stk::mesh::EntityKey& value_entity_key = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId);
 
             //emitter << YAML::Scalar << nodeIds_onSE.size()
             emitter << YAML::Value;          YAML_ERRCHECK;
@@ -1626,11 +1633,10 @@
                   stk::mesh::EntityId value_tuple_0_quantum;
                   NodeIdsOnSubDimEntityType value_tuple_0;
 
-                  //typedef boost::tuple<NodeIdsOnSubDimEntityType, stk::mesh::EntityKey> SubDimCellData;
-                  SubDimCellData value; // nodeId_elementOwnderId = (*iter).second;
-                  NodeIdsOnSubDimEntityType& nodeIds_onSE = value.get<SDC_DATA_GLOBAL_NODE_IDS>();
+                  SubDimCellData value; // nodeId_elementOwnerId = (*iter).second;
+                  NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(value);
                   nodeIds_onSE.resize(0);
-                  stk::mesh::EntityKey& value_entity_key = value.get<SDC_DATA_OWNING_ELEMENT_KEY>();
+                  stk::mesh::EntityKey& value_entity_key = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(value);
                   // value = { {new_node0, new_node1,...}:[vector<Entity>,vector<EntityId>], {elem_own[rank, ele_id]:EntityKey} }
                   // key = { nodePtr_0,... : set<Entity> }
                   // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
@@ -1676,15 +1682,14 @@
                         stk::mesh::EntityKey entityKey(rank,id);
                         if (DEBUG_YAML) std::cout << "s_r value_tuple_1= " << rank << " " << id << std::endl;
                         value_entity_key = stk::mesh::EntityKey(rank,id);
-                        if (DEBUG_YAML) std::cout << "s_r owning element rank= " << value.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank()
-                                                  << " owning element id= " << value.get<SDC_DATA_OWNING_ELEMENT_KEY>().id()
+                        if (DEBUG_YAML) std::cout << "s_r owning element rank= " << std::get<SDC_DATA_OWNING_ELEMENT_KEY>(value).rank()
+                                                  << " owning element id= " << std::get<SDC_DATA_OWNING_ELEMENT_KEY>(value).id()
                                                   << std::endl;
                       }
                     else
                       {
                         value_tuple_0_quantum = itv->as<stk::mesh::EntityId>();
 
-                        //stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
                         nodeIds_onSE.m_entity_id_vector.push_back(value_tuple_0_quantum);
                         stk::mesh::Entity entity = eMesh.get_bulk_data()->get_entity(stk::topology::NODE_RANK, value_tuple_0_quantum);
                         if (!eMesh.is_valid(entity))

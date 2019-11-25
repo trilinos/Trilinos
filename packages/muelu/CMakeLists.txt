@@ -109,6 +109,9 @@ IF (NOT Xpetra_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "MueLu Tpetra support requires Xpetra Tpetra support")
 ENDIF()
 
+# Need to do this because Xpetra_ENABLE_Epetra might have been disabled after
+# HAVE_MUELU_EPETRA was first set automatically
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 
 # Disable Ifpack2 if Tpetra is off
 IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -127,7 +130,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND NOT Xpetra_ENABLE_Experimental)
 ENDIF ()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  MESSAGE(STATUS "Enabling MueLu experimental code")
+  MESSAGE(STATUS "MueLu: Enabling experimental code")
 ENDIF()
 
 # Enable additive variant
@@ -265,8 +268,10 @@ GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_TEKO ${${PACKAGE_NAME}_ENABLE_Teko})
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - Enabling/disabling of scalar/ordinal types is controlled by Tpetra
 
-IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG OFF)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG OFF)
 
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # <double, int, int>
   # Examples and tests need at least this one, also if Epetra is enabled
   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
@@ -335,17 +340,23 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_FLOAT_INT_INT OFF)
   ENDIF()
 
-  MESSAGE(STATUS "${PACKAGE_NAME} ETI support enabled")
-  MESSAGE(STATUS "<float,   int, int>       : ${${PACKAGE_NAME}_INST_FLOAT_INT_INT}")
-  MESSAGE(STATUS "<double,  int, int>       : ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT}")
-  MESSAGE(STATUS "<double,  int, long>      : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT}")
-  MESSAGE(STATUS "<double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
-  MESSAGE(STATUS "<complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
+  MESSAGE(STATUS "${PACKAGE_NAME}: Enabling ETI support")
+  MESSAGE(STATUS "   <float,   int, int>       : ${${PACKAGE_NAME}_INST_FLOAT_INT_INT}")
+  MESSAGE(STATUS "   <double,  int, int>       : ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT}")
+  MESSAGE(STATUS "   <double,  int, long>      : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT}")
+  MESSAGE(STATUS "   <double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
+  MESSAGE(STATUS "   <complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
 
   # GO preference: int > long long > long
-  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG
-    (NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT} AND NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONG_LONG}))
-  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT})
+  IF(NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT})
+    # No GO=int (first choice for default)
+    IF(NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT})
+      #No GO=long long (second choice), must use long
+      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG ON)
+    ELSE()
+      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG ON)
+    ENDIF()
+  ENDIF()
 
   # If Tpetra is enabled, determine which Nodes are used
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -358,10 +369,10 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     # If Epetra is active, always activate SerialNode
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL ON)
   ENDIF ()
-  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_SERIAL       : ${HAVE_${PACKAGE_NAME_UC}_SERIAL}")
-  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_PTHREAD      : ${HAVE_${PACKAGE_NAME_UC}_PTHREAD}")
-  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_OPENMP       : ${HAVE_${PACKAGE_NAME_UC}_OPENMP}")
-  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_CUDA         : ${HAVE_${PACKAGE_NAME_UC}_CUDA}")
+  MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_SERIAL       : ${HAVE_${PACKAGE_NAME_UC}_SERIAL}")
+  MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_PTHREAD      : ${HAVE_${PACKAGE_NAME_UC}_PTHREAD}")
+  MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_OPENMP       : ${HAVE_${PACKAGE_NAME_UC}_OPENMP}")
+  MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_CUDA         : ${HAVE_${PACKAGE_NAME_UC}_CUDA}")
 ELSE()
   # ETI is turned off
 
@@ -373,15 +384,7 @@ ELSE()
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ON)
   ENDIF()
 
-  # With ETI off, can just use int as the default GO
-  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG OFF)
-  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG OFF)
-ENDIF()
-
-IF(${${PACKAGE_NAME}_ENABLE_DEFAULT_GO_LONGLONG})
-  MESSAGE(STATUS "Using long long as the default GlobalOrdinal in MueLu.")
-ELSE()
-  MESSAGE(STATUS "Using int as the default GlobalOrdinal in MueLu.")
+  # With ETI off, free to leave int as the default GO
 ENDIF()
 
 # HAVE_MUELU_COMPLEX=ON iff:

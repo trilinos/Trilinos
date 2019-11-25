@@ -39,6 +39,8 @@
 #include "Sacado_Fad_Exp_Ops_Fwd.hpp"
 #include "Sacado_cmath.hpp"
 
+#include "Sacado_mpl_has_equal_to.hpp"
+
 #if defined(HAVE_SACADO_KOKKOSCORE)
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Error.hpp"
@@ -1439,10 +1441,21 @@ namespace Sacado {
 namespace Sacado {
   namespace Fad {
   namespace Exp {
-    template <typename T1, typename T2 = T1>
-    struct ConditionalReturnType {
+  namespace Impl {
+    // Helper trait to determine return type of logical comparison operations
+    // (==, !=, ...), usually bool but maybe something else for SIMD types.
+    // Need to use SFINAE to restrict to types that define == operator in the
+    // conditional overloads below, otherwise instantiating ConditionaReturnType
+    // may fail during overload resolution.
+    template <typename T1, typename T2 = T1,
+              bool = mpl::has_equal_to<T1,T2>::value>
+    struct ConditionalReturnType {};
+
+    template <typename T1, typename T2>
+    struct ConditionalReturnType<T1,T2,true> {
       typedef decltype( std::declval<T1>() == std::declval<T2>() ) type;
     };
+  }
   }
   }
 }
@@ -1456,8 +1469,8 @@ namespace Sacado {                                                      \
     typename mpl::enable_if_c<                                          \
        IsFadExpr<T1>::value && IsFadExpr<T2>::value &&                  \
        ExprLevel<T1>::value == ExprLevel<T2>::value,                    \
-       typename ConditionalReturnType<typename T1::value_type,          \
-                                      typename T2::value_type>::type    \
+       typename Impl::ConditionalReturnType<typename T1::value_type,    \
+                                            typename T2::value_type>::type \
        >::type                                                          \
     operator OP (const T1& expr1, const T2& expr2)                      \
     {                                                                   \
@@ -1466,7 +1479,7 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T2>                                              \
     KOKKOS_INLINE_FUNCTION                                              \
-    typename ConditionalReturnType<typename T2::value_type>::type       \
+    typename Impl::ConditionalReturnType<typename T2::value_type>::type \
     operator OP (const typename T2::value_type& a,                      \
                  const Expr<T2>& expr2)                                 \
     {                                                                   \
@@ -1475,7 +1488,7 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T1>                                              \
     KOKKOS_INLINE_FUNCTION                                              \
-    typename ConditionalReturnType<typename T1::value_type>::type       \
+    typename Impl::ConditionalReturnType<typename T1::value_type>::type \
     operator OP (const Expr<T1>& expr1,                                 \
                  const typename T1::value_type& b)                      \
     {                                                                   \

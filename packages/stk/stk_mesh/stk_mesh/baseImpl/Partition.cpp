@@ -53,11 +53,11 @@ namespace stk { namespace mesh { class FieldBase; } }
 using namespace stk::mesh::impl;
 
 Partition::Partition(BulkData& mesh, BucketRepository *repo, EntityRank rank,
-                     const std::vector<PartOrdinal> &key)
+                     const PartOrdinal* keyBegin, const PartOrdinal* keyEnd)
   : m_mesh(mesh),
     m_repository(repo)
   , m_rank(rank)
-  , m_extPartitionKey(key)
+  , m_extPartitionKey(keyBegin, keyEnd)
   , m_size(0)
   , m_updated_since_sort(false)
 {

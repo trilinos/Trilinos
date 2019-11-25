@@ -332,7 +332,9 @@ public:
   /** \brief initialize
    *
    */
-  void initialize(size_t spatial_dimension, const std::vector<std::string> &rank_names = std::vector<std::string>());
+  void initialize(size_t spatial_dimension,
+                  const std::vector<std::string> &rank_names = std::vector<std::string>(),
+                  const std::string & coordinate_field_name = std::string());
 
   bool is_initialized() const
   { return !m_entity_rank_names.empty(); }
@@ -393,9 +395,12 @@ public:
    */
   FieldBase* get_field( stk::mesh::EntityRank entity_rank, const std::string& name ) const;
 
+  std::string coordinate_field_name() const;
+  void set_coordinate_field_name(const std::string & coordFieldName);
+
   /** \brief  Get/Set the coordinate field */
-  FieldBase const* coordinate_field() const;
-  void set_coordinate_field(FieldBase* coord_field) { m_coord_field = coord_field; }
+  const FieldBase * coordinate_field() const;
+  void set_coordinate_field(FieldBase* coord_field);
 
   /** \brief  Get all defined fields */
   const FieldVector & get_fields() const {
@@ -639,6 +644,7 @@ private:
   Part * m_aura_part ;
 
   impl::FieldRepository        m_field_repo ;
+  mutable std::string m_coord_field_name;
   mutable FieldBase* m_coord_field;
 
   std::vector< std::string >   m_entity_rank_names ;

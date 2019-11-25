@@ -785,7 +785,7 @@ EXODUS_EXPORT int ex_get_block(int exoid, ex_entity_type blk_type, ex_entity_id 
 /*  Read Edge Face or Element Block Parameters */
 EXODUS_EXPORT int ex_get_block_param(int exoid, ex_block *block);
 
-EXODUS_EXPORT int ex_put_block_param(int exoid, ex_block block);
+EXODUS_EXPORT int ex_put_block_param(int exoid, const ex_block block);
 
 EXODUS_EXPORT int ex_get_block_params(int exoid, size_t block_count, struct ex_block **blocks);
 

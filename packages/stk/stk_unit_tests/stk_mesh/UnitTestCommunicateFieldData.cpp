@@ -32,13 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, ASSERT_EQ, etc
-#include <stddef.h>                     // for size_t
-#include <iostream>                     // for basic_ostream::operator<<
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <vector>                       // for vector
+#include "SetupKeyholeMesh.hpp"
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -50,7 +44,13 @@
 #include "stk_mesh/base/Selector.hpp"   // for operator!, Selector, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp"
+#include <gtest/gtest.h>                // for AssertHelper, ASSERT_EQ, etc
+#include <iostream>                     // for basic_ostream::operator<<
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
+#include <vector>                       // for vector
 namespace stk { namespace mesh { class Ghosting; } }
 
 //TEST(CommunicateFieldData, pack_ghost)

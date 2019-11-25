@@ -55,7 +55,7 @@ namespace FROSch {
                                                                         CommPtr serialComm,
                                                                         UN dofsPerNode,
                                                                         ParameterListPtr parameterList,
-                                                                        XMultiVectorPtr nullSpaceBasis,
+                                                                        ConstXMultiVectorPtr nullSpaceBasis,
                                                                         XMultiVectorPtrVecPtr partitionOfUnity,
                                                                         XMapPtrVecPtr partitionOfUnityMaps) :
     MpiComm_ (mpiComm),
@@ -80,7 +80,7 @@ namespace FROSch {
     }
 
     template<class SC,class LO,class GO,class NO>
-    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addGlobalBasis(XMultiVectorPtr nullSpaceBasis)
+    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addGlobalBasis(ConstXMultiVectorPtr nullSpaceBasis)
     {
         NullspaceBasis_ = nullSpaceBasis;
         return 0;

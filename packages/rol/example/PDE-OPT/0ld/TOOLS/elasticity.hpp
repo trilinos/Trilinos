@@ -54,6 +54,9 @@
 
 template<class Real>
 class Elasticity : public PDE_FEM <Real> {
+private:
+  using GO = typename Tpetra::Map<>::global_ordinal_type;
+
 protected:
 
   Real E_;
@@ -772,7 +775,7 @@ public:
                               const std::vector<int> &localNodeNum,
                               const std::vector<Real> &coord1,
                               const std::vector<Real> &coord2) { 
-    ROL::Ptr<Intrepid::FieldContainer<int> > nodeDofs = this->dofMgr_->getNodeDofs();
+    ROL::Ptr<Intrepid::FieldContainer<GO> > nodeDofs = this->dofMgr_->getNodeDofs();
     bool isLoadPosContainedInCurrentSegment = false;
     int whichNodeIsCloser = -1;
     // if update F, provides parametrized computation of F[0] and F[1]

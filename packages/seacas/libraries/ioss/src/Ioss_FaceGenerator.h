@@ -65,6 +65,7 @@ namespace Ioss {
     }
 
     size_t hashId_{0};
+
     // NOTE: Not used at all by `Face` or `FaceGenerator` class, but are used by
     // skinner to give a consistent element id in cases where there
     // is a hash collision (face.id).
@@ -78,9 +79,8 @@ namespace Ioss {
     // you could recover element_id and local_face and then set up
     // parallel communication maps.  May need to save the proc it is
     // shared with also (which is available in git history)
-
-    mutable size_t element[2]{};
-    mutable int    elementCount_{0}; // Should be max of 2 solid elements...
+    mutable size_t        element[2]{};
+    mutable int           elementCount_{0}; // Should be max of 2 solid elements...
     std::array<size_t, 4> connectivity_{};
   };
 
@@ -98,6 +98,10 @@ namespace Ioss {
       }
       // Hash (hashId_) is equal
       // Check whether same vertices (can be in different order)
+      // Most (All?) of the time, there are no hashId_ collisions, so this test will not
+      // find a difference and the function will return 'true'
+      // However, for some reason, removing this check does not change the execution time
+      // appreiciably...
       for (auto lvert : left.connectivity_) {
         if (std::find(right.connectivity_.cbegin(), right.connectivity_.cend(), lvert) ==
             right.connectivity_.cend()) {
@@ -122,6 +126,7 @@ namespace Ioss {
   {
   public:
     explicit FaceGenerator(Ioss::Region &region);
+    ~FaceGenerator() = default;
 
     template <typename INT> void generate_faces(INT /*dummy*/, bool block_by_block = false);
     FaceUnorderedSet &           faces(const std::string &name = "ALL") { return faces_[name]; }
@@ -132,6 +137,7 @@ namespace Ioss {
     Ioss::Region &                          region_;
     std::map<std::string, FaceUnorderedSet> faces_;
   };
+
 } // namespace Ioss
 
 #endif

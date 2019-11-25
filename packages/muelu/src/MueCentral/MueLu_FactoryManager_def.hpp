@@ -74,6 +74,7 @@
 #include "MueLu_ZoltanInterface.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
@@ -187,7 +188,7 @@ namespace MueLu {
       if (varName == "repartition: heuristic target rows per process") return GetFactory("number of partitions");
 
       if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
-      if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
+      if (varName == "UnAmalgamationInfo")              return MUELU_KOKKOS_FACTORY(varName, AmalgamationFactory, AmalgamationFactory_kokkos);
       if (varName == "Aggregates")                      return MUELU_KOKKOS_FACTORY(varName, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
       if (varName == "CoarseMap")                       return MUELU_KOKKOS_FACTORY(varName, CoarseMapFactory, CoarseMapFactory_kokkos);
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
@@ -259,7 +260,7 @@ namespace MueLu {
         fancy<<"("<<Teuchos::toString(it->second.get()) <<")";
 #endif
       }
-      fancy<< std::endl;   
+      fancy<< std::endl;
     }
 
     fancy << "Default factory table (defaultFactoryTable_):" << std::endl;
@@ -273,7 +274,7 @@ namespace MueLu {
         fancy<<"("<<Teuchos::toString(it->second.get()) <<")";
 #endif
       }
-      fancy<< std::endl;   
+      fancy<< std::endl;
     }
 
   }

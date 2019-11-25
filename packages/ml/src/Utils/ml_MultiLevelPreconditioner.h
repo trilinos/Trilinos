@@ -158,6 +158,12 @@ namespace ML_Epetra
                        Teuchos::RCP<std::vector<double> > &params,
                        bool Overwrite=true);
 
+  //! Sets defaults for classical amg
+  int SetDefaultsClassicalAMG(Teuchos::ParameterList & List,
+                      Teuchos::RCP<std::vector<int> > &options,
+                       Teuchos::RCP<std::vector<double> > &params,
+                       bool Overwrite=true);
+
   //! Reads in parameter list options from file.
   int ReadXML(const std::string &FileName, Teuchos::ParameterList &List,
                    const Epetra_Comm &Comm);
@@ -168,7 +174,8 @@ namespace ML_Epetra
 
   ML_SA_FAMILY,         /*< Smoothed aggregation solver including EMIN,NSA */
   ML_MAXWELL,           /*< Old Maxwell solver */
-  ML_COMPOSITE          /*< Composite AMG: block diagonal prolongator */
+  ML_COMPOSITE,         /*< Composite AMG: block diagonal prolongator */
+  ML_CLASSICAL_FAMILY   /*< Classical AMG */
   };
 
 /*!
@@ -767,6 +774,10 @@ private:
 
   //! ML_Aggregate, contains aggregate information
   ML_Aggregate* agg_;
+
+  //! ML_AMG, contains amg family informatin
+  ML_AMG* amg_;
+
   //! Label for this object
   char* Label_;
   //! User-provided label for identifying preconditioner ctor/dtor, in the case

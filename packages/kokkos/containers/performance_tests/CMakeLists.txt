@@ -37,11 +37,12 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ${SOURCES}
   COMM serial mpi
   TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
+  CATEGORIES BASIC PERFORMANCE
   )
 
 TRIBITS_ADD_TEST(
-  PerformanceTest
-  NAME PerfTestExec
+  PerfTestExec
+  NAME PerformanceTest
   COMM serial mpi
   NUM_MPI_PROCS 1
   CATEGORIES PERFORMANCE

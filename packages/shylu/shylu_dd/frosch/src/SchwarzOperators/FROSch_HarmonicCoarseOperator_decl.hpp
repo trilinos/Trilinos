@@ -77,6 +77,7 @@ namespace FROSch {
         using CoarseSpacePtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr;
 
         using EntitySetPtr            = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr;
+        using EntitySetConstPtr       = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetConstPtr;
 
         using SubdomainSolverPtr      = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
 
@@ -104,9 +105,9 @@ namespace FROSch {
 
     protected:
 
+        int intializeCoarseMap();
+        
         XMapPtr assembleCoarseMap();
-
-        XMapPtr assembleSubdomainMap();
 
         int addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap);
 
@@ -114,15 +115,16 @@ namespace FROSch {
                                    UN dimension,
                                    ConstXMapPtr nodesMap,
                                    ConstXMultiVectorPtr nodeList,
-                                   EntitySetPtr interior);
+                                   EntitySetConstPtr interior);
 
         virtual XMultiVectorPtrVecPtr computeTranslations(UN blockId,
-                                                          EntitySetPtr entitySet);
+                                                          EntitySetConstPtr entitySet);
 
         virtual XMultiVectorPtrVecPtr computeRotations(UN blockId,
                                                        UN dimension,
                                                        ConstXMultiVectorPtr nodeList,
-                                                       EntitySetPtr entitySet);
+                                                       EntitySetConstPtr entitySet,
+                                                       UN discardRotations = 0);
 
         virtual XMultiVectorPtr computeExtensions(ConstXMapPtr localMap,
                                                   ConstXMapPtr coarseMap,

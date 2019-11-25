@@ -119,7 +119,7 @@ namespace phalanx_test {
     out << "\ndouble not padded c.span()=" << c.span() << "" << std::endl;
     out << "double not padded c.impl_track().get_record<>()->size()="
         << c.impl_track().get_record<PHX::Device>()->size() << " (bytes)" << std::endl;
-    Kokkos::View<double**> d(Kokkos::view_alloc("d",Kokkos::AllowPadding,Kokkos::WithoutInitializing),100,100,fad_dim);
+    Kokkos::View<double***> d(Kokkos::view_alloc("d",Kokkos::AllowPadding,Kokkos::WithoutInitializing),100,100,fad_dim);
     out << "double     padded d.span()=" << d.span() << "" << std::endl;
     out << "double not padded d.impl_track().get_record<>()->size()="
         << d.impl_track().get_record<PHX::Device>()->size() << " (bytes)" << std::endl;

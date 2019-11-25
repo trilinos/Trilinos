@@ -329,7 +329,7 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     }
 
     // Evaluate special stopping condition.
-    tol = tol;
+    //tol = ???;
 
 //    std::cout << "  " << i+1 << ": " << res[i+1]/res[0] << std::endl;
     if (res[i+1] <= tol) {

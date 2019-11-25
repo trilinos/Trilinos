@@ -59,6 +59,7 @@
 #if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
 
 #include <MueLu_BaseClass.hpp>
+#include <MueLu_AmalgamationFactory_fwd.hpp>
 #include <MueLu_CoalesceDropFactory_fwd.hpp>
 #include <MueLu_CoarseMapFactory_fwd.hpp>
 #include <MueLu_CoupledAggregationFactory_fwd.hpp>
@@ -283,6 +284,7 @@ namespace MueLu {
     RCP<GenericRFactory>              Rfact_;
     RCP<RAPFactory>                   Acfact_;
     RCP<RAPShiftFactory>              Acshift_;
+    RCP<AmalgamationFactory>          Amalgfact_;
     RCP<CoalesceDropFactory>          Dropfact_;
     RCP<CoupledAggregationFactory>    Aggfact_;
     RCP<UncoupledAggregationFactory>  UCaggfact_;

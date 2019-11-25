@@ -58,6 +58,10 @@
 #define FROSCH_TIMER_STOP(A) A.reset();
 #endif
 
+#ifndef FROSCH_TEST_OUTPUT
+#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
+#endif
+
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>

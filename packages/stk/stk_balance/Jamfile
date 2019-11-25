@@ -182,6 +182,7 @@ lib stk_balance_lib
     /sierra/stk_search//stk_search
     /sierra/stk_tools//stk_tools_lib
     /sierra/stk_util//stk_util_command_line
+    /sierra/stk_math//stk_math_headers
   :
     <include>$(stk_balance-root-inc)/stk_balance
     [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a
@@ -216,7 +217,7 @@ exe stk_balance_unit_tester
     [ glob $(stk_balance-root)/../stk_unit_tests/stk_balance/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_mesh//stk_mesh_fixtures
+    /sierra/stk_unit_test_utils//stk_mesh_fixtures
     stk_balance_test_utils
   :
     <tag>@sierra-exec-tag
@@ -237,6 +238,7 @@ exe stk_balance_integration_tester
     [ glob $(stk_balance-root)/../stk_integration_tests/stk_balance/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
+    /sierra/stk_search//stk_search
     stk_balance_test_utils
   :
     <tag>@sierra-exec-tag

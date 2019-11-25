@@ -98,13 +98,14 @@ namespace FROSch {
 
         virtual std::string description() const;
 
+        virtual int resetMatrix(ConstXMatrixPtr &k);
 
     protected:
 
         ConstXMatrixPtr K_;
 
         SumOperatorPtr SumOperator_;
-        AlgebraicOverlappingOperatorPtr FirstLevelOperator_;
+        AlgebraicOverlappingOperatorPtr OverlappingOperator_;
 
     };
 

@@ -31,6 +31,7 @@
 #define SACADO_FAD_EXP_STATICFIXEDSTORAGE_HPP
 
 #include <type_traits>
+#include <utility>
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_StaticArrayTraits.hpp"
@@ -104,6 +105,14 @@ namespace Sacado {
            dx_[i] = x.dx_[i];
       }
 
+      //! Move constructor
+      KOKKOS_INLINE_FUNCTION
+      StaticFixedStorage(StaticFixedStorage&& x) :
+        val_(std::move(x.val_)) {
+         for (int i=0; i<Num; i++)
+           dx_[i] = std::move(x.dx_[i]);
+      }
+
       //! Destructor
       ~StaticFixedStorage() = default;
 
@@ -119,6 +128,17 @@ namespace Sacado {
           val_ = x.val_;
           for (int i=0; i<Num; i++)
             dx_[i] = x.dx_[i];
+        }
+        return *this;
+      }
+
+      //! Move assignment
+      KOKKOS_INLINE_FUNCTION
+      StaticFixedStorage& operator=(StaticFixedStorage&& x) {
+        if (this != &x) {
+          val_ = std::move(x.val_);
+          for (int i=0; i<Num; i++)
+            dx_[i] = std::move(x.dx_[i]);
         }
         return *this;
       }

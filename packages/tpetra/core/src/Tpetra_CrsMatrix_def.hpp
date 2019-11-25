@@ -65,6 +65,7 @@
 #include "Tpetra_Details_leftScaleLocalCrsMatrix.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
+#include "Tpetra_Details_ScalarViewTraits.hpp"
 #include "KokkosSparse_getDiagCopy.hpp"
 #include "Tpetra_Details_copyConvert.hpp"
 #include "Tpetra_Details_iallreduce.hpp"
@@ -7290,7 +7291,6 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
-    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
 
     if (numEnt == 0) {
       // Empty rows always take zero bytes, to ensure sparsity.
@@ -7301,9 +7301,9 @@ namespace Tpetra {
     const LO numEntLO = static_cast<size_t> (numEnt);
 
     const size_t numEntBeg = offset;
-    const size_t numEntLen = PackTraits<LO, HES>::packValueCount (numEntLO);
+    const size_t numEntLen = PackTraits<LO>::packValueCount (numEntLO);
     const size_t gidsBeg = numEntBeg + numEntLen;
-    const size_t gidsLen = numEnt * PackTraits<GO, HES>::packValueCount (gid);
+    const size_t gidsLen = numEnt * PackTraits<GO>::packValueCount (gid);
     const size_t valsBeg = gidsBeg + gidsLen;
     const size_t valsLen = numEnt * numBytesPerValue;
 
@@ -7313,15 +7313,15 @@ namespace Tpetra {
 
     size_t numBytesOut = 0;
     int errorCode = 0;
-    numBytesOut += PackTraits<LO, HES>::packValue (numEntOut, numEntLO);
+    numBytesOut += PackTraits<LO>::packValue (numEntOut, numEntLO);
 
     {
       Kokkos::pair<int, size_t> p;
-      p = PackTraits<GO, HES>::packArray (gidsOut, gidsIn, numEnt);
+      p = PackTraits<GO>::packArray (gidsOut, gidsIn, numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
 
-      p = PackTraits<ST, HES>::packArray (valsOut, valsIn, numEnt);
+      p = PackTraits<ST>::packArray (valsOut, valsIn, numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
     }
@@ -7355,7 +7355,6 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
-    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
 
     if (numBytes == 0) {
       // Rows with zero bytes should always have zero entries.
@@ -7383,9 +7382,9 @@ namespace Tpetra {
     const LO lid = 0; // packValueCount wants this
 
     const size_t numEntBeg = offset;
-    const size_t numEntLen = PackTraits<LO, HES>::packValueCount (lid);
+    const size_t numEntLen = PackTraits<LO>::packValueCount (lid);
     const size_t gidsBeg = numEntBeg + numEntLen;
-    const size_t gidsLen = numEnt * PackTraits<GO, HES>::packValueCount (gid);
+    const size_t gidsLen = numEnt * PackTraits<GO>::packValueCount (gid);
     const size_t valsBeg = gidsBeg + gidsLen;
     const size_t valsLen = numEnt * numBytesPerValue;
 
@@ -7396,7 +7395,7 @@ namespace Tpetra {
     size_t numBytesOut = 0;
     int errorCode = 0;
     LO numEntOut;
-    numBytesOut += PackTraits<LO, HES>::unpackValue (numEntOut, numEntIn);
+    numBytesOut += PackTraits<LO>::unpackValue (numEntOut, numEntIn);
     if (static_cast<size_t> (numEntOut) != numEnt ||
         numEntOut == static_cast<LO> (0)) {
       const int myRank = this->getMap ()->getComm ()->getRank ();
@@ -7425,11 +7424,11 @@ namespace Tpetra {
 
     {
       Kokkos::pair<int, size_t> p;
-      p = PackTraits<GO, HES>::unpackArray (gidsOut, gidsIn, numEnt);
+      p = PackTraits<GO>::unpackArray (gidsOut, gidsIn, numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
 
-      p = PackTraits<ST, HES>::unpackArray (valsOut, valsIn, numEnt);
+      p = PackTraits<ST>::unpackArray (valsOut, valsIn, numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
     }
@@ -7676,11 +7675,9 @@ namespace Tpetra {
       }
 
       // Temporary buffer for global column indices.
-      View<GO*, HES> gidsIn_k;
-      {
-        GO gid = 0;
-        gidsIn_k = PackTraits<GO, HES>::allocateArray(gid, numEnt, "gids");
-      }
+      using Details::ScalarViewTraits;
+      View<GO*, HES> gidsIn_k =
+        ScalarViewTraits<GO, HES>::allocateArray (GO (0), numEnt, "gids");
 
       Teuchos::ArrayView<const Scalar> valsIn;
       if (this->isLocallyIndexed ()) {
@@ -7719,7 +7716,7 @@ namespace Tpetra {
                                                 valsIn.size (),
                                                 true, "valsIn");
       const size_t numBytesPerValue =
-        PackTraits<ST,HES>::packValueCount (valsIn[0]);
+        PackTraits<ST>::packValueCount (valsIn[0]);
       const size_t numBytes =
         this->packRow (exports_h.data (), offset, numEnt, gidsIn_k.data (),
                        valsIn_k.data (), numBytesPerValue);
@@ -8053,6 +8050,7 @@ namespace Tpetra {
     using Tpetra::Details::castAwayConstDualView;
     using Tpetra::Details::create_mirror_view_from_raw_host_array;
     using Tpetra::Details::PackTraits;
+    using Tpetra::Details::ScalarViewTraits;
     using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -8135,7 +8133,7 @@ namespace Tpetra {
       // for each row's data to contain the run-time size.  This is only
       // necessary if the size is not a compile-time constant.
       Scalar val;
-      numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
+      numBytesPerValue = PackTraits<ST>::packValueCount (val);
     }
 
     // Determine the maximum number of entries in any one row
@@ -8159,7 +8157,7 @@ namespace Tpetra {
       LO numEntLO = 0;
 
 #ifdef HAVE_TPETRA_DEBUG
-      const size_t theNumBytes = PackTraits<LO, HES>::packValueCount (numEntLO);
+      const size_t theNumBytes = PackTraits<LO>::packValueCount (numEntLO);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (theNumBytes > numBytes, std::logic_error, "theNumBytes = "
          << theNumBytes << " > numBytes = " << numBytes << ".");
@@ -8167,7 +8165,7 @@ namespace Tpetra {
 
       const char* const inBuf = imports_h.data () + offset;
       const size_t actualNumBytes =
-        PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
+        PackTraits<LO>::unpackValue (numEntLO, inBuf);
 
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -8206,9 +8204,9 @@ namespace Tpetra {
       // for each row's data to contain the run-time size.  This is only
       // necessary if the size is not a compile-time constant.
       Scalar val;
-      gblColInds = PackTraits<GO, HES>::allocateArray (gid, maxRowNumEnt, "gids");
-      lclColInds = PackTraits<LO, HES>::allocateArray (lid, maxRowNumEnt, "lids");
-      vals = PackTraits<ST, HES>::allocateArray (val, maxRowNumEnt, "vals");
+      gblColInds = ScalarViewTraits<GO, HES>::allocateArray (gid, maxRowNumEnt, "gids");
+      lclColInds = ScalarViewTraits<LO, HES>::allocateArray (lid, maxRowNumEnt, "lids");
+      vals = ScalarViewTraits<ST, HES>::allocateArray (val, maxRowNumEnt, "vals");
     }
 
     offset = 0;
@@ -8219,7 +8217,8 @@ namespace Tpetra {
       }
       LO numEntLO = 0;
       const char* const inBuf = imports_h.data () + offset;
-      const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
+      const size_t actualNumBytes =
+        PackTraits<LO>::unpackValue (numEntLO, inBuf);
       (void) actualNumBytes;
 
       const size_t numEnt = static_cast<size_t>(numEntLO);;

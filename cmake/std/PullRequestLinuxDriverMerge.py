@@ -80,6 +80,12 @@ def parseArgs():
 
 
 def merge_branch(source_url, source_branch, target_branch, sourceSHA):
+
+    source_url    = source_url.strip()
+    source_branch = source_branch.strip()
+    target_branch = target_branch.strip()
+    sourceSHA     = sourceSHA.strip()
+
     remote_list = subprocess.check_output(['git', 'remote', '-v'])
     if 'source_remote' in remote_list:
         print('git remote exists, removing it', file=sys.stdout)
@@ -110,6 +116,9 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
 
     actual_source_SHA = subprocess.check_output(['git', 'rev-parse',
                                                  'source_remote/' + source_branch])
+
+    actual_source_SHA = actual_source_SHA.strip()
+
     if actual_source_SHA != sourceSHA:
         print('The SHA ({source_sha}) for the last commit on branch {source_branch}'.format(source_sha=actual_source_SHA,
                                                                                             source_branch=source_branch),

@@ -40,9 +40,6 @@
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/environment/perf_util.hpp>
 
-#include <stk_unit_tests/stk_mesh_fixtures/GearsFixture.hpp>
-#include <stk_unit_tests/stk_mesh_fixtures/Gear.hpp>
-
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
@@ -56,12 +53,14 @@
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
-#include <stdexcept>
-#include <iomanip>
-#include <sstream>
-#include <cmath>
+#include "stk_unit_test_utils/stk_mesh_fixtures/Gear.hpp"
+#include "stk_unit_test_utils/stk_mesh_fixtures/GearsFixture.hpp"
 #include <algorithm>
+#include <cmath>
+#include <iomanip>
 #include <numeric>
+#include <sstream>
+#include <stdexcept>
 
 namespace {
 

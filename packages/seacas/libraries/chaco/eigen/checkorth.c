@@ -40,7 +40,7 @@
 /* Check orthogonality of vector set */
 void checkorth(double **mat, int n, int dim)
 {
-  int    i, j;      /* loop idices */
+  int    i, j;      /* loop indices */
   double measure;   /* Froebenius norm */
   double prod;      /* value of dot product */
   double worst;     /* greatest off-diagonal dot product */
@@ -111,7 +111,7 @@ void checkorth(double **mat, int n, int dim)
 /* Check orthogonality of vector set */
 void checkorth_float(float **mat, int n, int dim)
 {
-  int    i, j;      /* loop idices */
+  int    i, j;      /* loop indices */
   double measure;   /* Froebenius norm */
   double prod;      /* value of dot product */
   double worst;     /* greatest off-diagonal dot product */

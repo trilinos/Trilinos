@@ -60,6 +60,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -144,6 +145,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -228,6 +230,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -312,6 +315,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -396,6 +400,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
