@@ -75,8 +75,8 @@ void testMaps(
     }
 
     std::cout << "SHARED MAP IS RANDOM " 
-              << (whichTest == 0 ? "WITH" : "WITHOUT") << " OVERLAP "
-              << sharedMap->getNodeNumElements() << std::endl;
+              << (whichTest == 0 ? "WITH" : "WITHOUT") << " OVERLAP " << cnt
+              << std::endl;
   }
   else if (whichTest == 2) {
     // Deal out shared-map entries like playing cards (cyclic distribution)
@@ -87,8 +87,7 @@ void testMaps(
     for (int i = 0; i < gsize; i++) {
       if (i % halfnp == halfme) idx[cnt++] = i;
     }
-    std::cout << "SHARED MAP IS STRIDED AND DUPLICATED "
-              << sharedMap->getNodeNumElements() << std::endl;
+    std::cout << "SHARED MAP IS STRIDED AND DUPLICATED " << cnt << std::endl;
   }
 
   Tpetra::global_size_t dummy = 
