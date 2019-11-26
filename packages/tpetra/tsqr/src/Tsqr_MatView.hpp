@@ -385,6 +385,38 @@ namespace TSQR {
       }
     }
   }
+
+  template<class MatViewType>
+  std::pair<MatViewType, MatViewType>
+  partition_2x1 (const MatViewType& A,
+                 const typename MatViewType::ordinal_type nrows_top,
+                 const bool b_contiguous_blocks = false)
+  {
+    using ordinal_type = typename MatViewType::ordinal_type;
+    using pointer = typename MatViewType::pointer;
+
+    const ordinal_type ncols = A.extent(1);
+    pointer const A_top_ptr = A.data();
+    const ordinal_type nrows_bot = A.extent(0) - nrows_top;
+
+    pointer A_bot_ptr;
+    ordinal_type lda_top, lda_bot;
+    if (b_contiguous_blocks) {
+      lda_top = nrows_top;
+      lda_bot = nrows_bot;
+      A_bot_ptr = A_top_ptr + nrows_top * A.extent(1);
+    }
+    else { // assume column major (LayoutLeft, in Kokkos terms)
+      lda_top = A.stride(1);
+      lda_bot = A.stride(1);
+      A_bot_ptr = A_top_ptr + nrows_top;
+    }
+
+    MatViewType A_top (nrows_top, ncols, A_top_ptr, lda_top);
+    MatViewType A_bot (nrows_bot, ncols, A_bot_ptr, lda_bot);
+    return {A_top, A_bot};
+  }
+
 } // namespace TSQR
 
 

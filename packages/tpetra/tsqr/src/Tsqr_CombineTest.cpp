@@ -290,31 +290,35 @@ namespace TSQR {
       matgen.fill_random_R (numCols, R3.data(), R3.stride(1), &sigma_R3[0]);
       matgen.fill_random_svd (numRows, numCols, A.data(), A.stride(1), &sigma_A[0]);
 
-      if (false && debug)
-        {
-          cerr << endl << "First test problem:" << endl;
-          print_local_matrix (cerr, numCols, numCols, R1.data(), R1.stride(1));
-          print_local_matrix (cerr, numCols, numCols, R2.data(), R2.stride(1));
-          cerr << endl;
+      if (false && debug) {
+        cerr << endl << "First test problem:" << endl;
+        print_local_matrix (cerr, numCols, numCols, R1.data(), R1.stride(1));
+        print_local_matrix (cerr, numCols, numCols, R2.data(), R2.stride(1));
+        cerr << endl;
 
-          cerr << endl << "Second test problem:" << endl;
-          print_local_matrix (cerr, numCols, numCols, R3.data(), R3.stride(1));
-          print_local_matrix (cerr, numRows, numCols, A.data(), A.stride(1));
-          cerr << endl;
-        }
+        cerr << endl << "Second test problem:" << endl;
+        print_local_matrix (cerr, numCols, numCols, R3.data(), R3.stride(1));
+        print_local_matrix (cerr, numRows, numCols, A.data(), A.stride(1));
+        cerr << endl;
+      }
 
       // Space to put the original test problem, expressed as one
       // dense matrix rather than in two blocks.  These will be deep
       // copies of the test problems, since the test problem matrices
       // will be overwritten by the factorizations.
-      matrix_type A_R1R2 (Ordinal(2) * numCols, numCols, Scalar(0));
-      matrix_type A_R3A (numRows + numCols, numCols, Scalar(0));
+      matrix_type A_R1R2 (Ordinal(2) * numCols, numCols, Scalar {});
+      matrix_type A_R3A (numRows + numCols, numCols, Scalar {});
 
       // Copy [R1; R2] into A_R1R2.
-      copy_matrix (numCols, numCols, &A_R1R2(0, 0), A_R1R2.stride(1),
-                   R1.data(), R1.stride(1));
-      copy_matrix (numCols, numCols, &A_R1R2(numCols, 0), A_R1R2.stride(1),
-                   R2.data(), R2.stride(1));
+      {
+        auto A_R1R2_views = partition_2x1 (A_R1R2, numCols);
+        // copy_matrix (numCols, numCols, &A_R1R2(0, 0), A_R1R2.stride(1),
+        //              R1.data(), R1.stride(1));
+        // copy_matrix (numCols, numCols, &A_R1R2(numCols, 0), A_R1R2.stride(1),
+        //              R2.data(), R2.stride(1));
+        deep_copy (A_R1R2_views.first, R1);
+        deep_copy (A_R1R2_views.second, R2);
+      }
 
       // Copy [R3; A] into A_R3A.
       copy_matrix (numCols, numCols, &A_R3A(0, 0), A_R3A.stride(1),
