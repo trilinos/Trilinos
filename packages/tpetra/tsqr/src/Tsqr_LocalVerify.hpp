@@ -42,6 +42,7 @@
 
 #include "Tsqr_Util.hpp"
 #include "Tsqr_Impl_SystemBlas.hpp"
+#include "Tsqr_Matrix.hpp"
 #include <cmath>
 #include <limits>
 #include <utility> // std::pair, std::make_pair
@@ -214,18 +215,19 @@ namespace TSQR {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
 
-    std::vector<Scalar> AbsResid (nrows * ncols,
-                                  std::numeric_limits<Scalar>::quiet_NaN ());
-    const Ordinal AbsResid_stride = nrows;
+    MatView<Ordinal, const Scalar> A_view (nrows, ncols, A, lda);
+    Matrix<Ordinal, Scalar> AbsResid (nrows, ncols,
+      std::numeric_limits<Scalar>::quiet_NaN ());
     Impl::SystemBlas<Scalar> blas;
     const magnitude_type ONE (1);
 
     // A_copy := A_copy - Q * R
-    copy_matrix (nrows, ncols, &AbsResid[0], AbsResid_stride, A, lda);
+    deep_copy (AbsResid, A_view);
     blas.GEMM (NO_TRANS, NO_TRANS, nrows, ncols, ncols, -ONE, Q, ldq, R, ldr,
-               ONE, &AbsResid[0], AbsResid_stride);
+               ONE, AbsResid.data(), AbsResid.stride(1));
 
-    return local_frobenius_norm (nrows, ncols, &AbsResid[0], AbsResid_stride);
+    return local_frobenius_norm (nrows, ncols, AbsResid.data(),
+                                 AbsResid.stride(1));
   }
 
 

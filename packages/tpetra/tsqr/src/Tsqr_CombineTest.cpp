@@ -312,10 +312,6 @@ namespace TSQR {
       // Copy [R1; R2] into A_R1R2.
       {
         auto A_R1R2_views = partition_2x1 (A_R1R2, numCols);
-        // copy_matrix (numCols, numCols, &A_R1R2(0, 0), A_R1R2.stride(1),
-        //              R1.data(), R1.stride(1));
-        // copy_matrix (numCols, numCols, &A_R1R2(numCols, 0), A_R1R2.stride(1),
-        //              R2.data(), R2.stride(1));
         deep_copy (A_R1R2_views.first, R1);
         deep_copy (A_R1R2_views.second, R2);
       }

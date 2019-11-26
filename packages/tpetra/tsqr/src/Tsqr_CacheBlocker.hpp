@@ -326,16 +326,11 @@ namespace TSQR {
         if (A_out_rest.empty()) {
           throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
         }
-
         // This call modifies A_in_rest.
         const_mat_view_type A_in_cur = split_top_block (A_in_rest, false);
-
         // This call modifies A_out_rest.
         mat_view_type A_out_cur = split_top_block (A_out_rest, true);
-
-        copy_matrix (A_in_cur.extent(0), num_cols,
-                     A_out_cur.data(), A_out_cur.stride(1),
-                     A_in_cur.data(), A_in_cur.stride(1));
+        deep_copy (A_out_cur, A_in_cur);
       }
     }
 
@@ -360,16 +355,11 @@ namespace TSQR {
         if (A_out_rest.empty()) {
           throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
         }
-
         // This call modifies A_in_rest.
         const_mat_view_type A_in_cur = split_top_block (A_in_rest, true);
-
         // This call modifies A_out_rest.
         mat_view_type A_out_cur = split_top_block (A_out_rest, false);
-
-        copy_matrix (A_in_cur.extent(0), num_cols,
-                     A_out_cur.data(), A_out_cur.stride(1),
-                     A_in_cur.data(), A_in_cur.stride(1));
+        deep_copy (A_out_cur, A_in_cur);
       }
     }
 
