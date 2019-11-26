@@ -47,7 +47,6 @@
 #include "Tsqr_DistTsqrRB.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
-#include "Teuchos_ScalarTraits.hpp"
 
 #include <utility> // std::pair
 
@@ -71,11 +70,6 @@ namespace TSQR {
     typedef std::vector<std::vector<scalar_type> > VecVec;
     typedef std::pair<VecVec, VecVec> FactorOutput;
     typedef int rank_type;
-
-  private:
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-
-  public:
 
     /// \brief Constructor (that accepts a parameter list).
     ///
@@ -338,10 +332,16 @@ namespace TSQR {
                                  "you must first call init() with a valid "
                                  "MessengerBase instance.");
       const int myRank = messenger_->rank ();
-      fill_matrix (ncols_Q, ncols_Q, Q_mine, ldq_mine, STS::zero());
+
+      MatView<ordinal_type, scalar_type> Q_mine_view
+        (ncols_Q, ncols_Q, Q_mine, ldq_mine);
+      deep_copy (Q_mine_view, scalar_type {});
       if (myRank == 0) {
-        for (ordinal_type j = 0; j < ncols_Q; ++j)
-          Q_mine[j + j*ldq_mine] = STS::one();
+        for (ordinal_type j = 0; j < ncols_Q; ++j) {
+          // FIXME (26 Nov 2019) Eventually, we only want to write to
+          // a matrix through a Kokkos kernel or a TPL.
+          Q_mine[j + j*ldq_mine] = scalar_type (1.0);
+        }
       }
       apply (ApplyType::NoTranspose, ncols_Q, ncols_Q,
              Q_mine, ldq_mine, factor_output);
