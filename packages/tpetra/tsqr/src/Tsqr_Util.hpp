@@ -129,20 +129,6 @@ namespace TSQR {
     }
   }
 
-  template< class Ordinal, class Scalar >
-  void
-  fill_matrix (const Ordinal nrows,
-               const Ordinal ncols,
-               Scalar* const A,
-               const Ordinal lda,
-               const Scalar& default_val)
-  {
-    for (Ordinal j = 0; j < ncols; ++j) {
-      Scalar* const A_j = &A[j*lda];
-      std::fill (A_j, A_j + nrows, default_val);
-    }
-  }
-
   template< class Ordinal, class Scalar, class Generator >
   void
   generate_matrix (const Ordinal nrows,
