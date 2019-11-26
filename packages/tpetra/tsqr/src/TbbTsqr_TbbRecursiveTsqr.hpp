@@ -163,7 +163,7 @@ namespace TSQR {
       Partitioner<LocalOrdinal, Scalar> partitioner_;
 
       typedef MatView<LocalOrdinal, Scalar> mat_view_type;
-      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
+      typedef MatView<LocalOrdinal, const Scalar> const_mat_view_type;
       typedef std::pair<const_mat_view_type, const_mat_view_type> const_split_t;
       typedef std::pair<mat_view_type, mat_view_type> split_t;
       typedef std::pair<const_mat_view_type, mat_view_type> top_blocks_t;

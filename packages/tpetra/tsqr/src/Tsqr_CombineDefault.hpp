@@ -67,7 +67,7 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
-    typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
+    typedef MatView<Ordinal, const Scalar> const_mat_view_type;
     typedef MatView<Ordinal, Scalar> mat_view_type;
 
     /// \brief Does the R factor have a nonnegative diagonal?

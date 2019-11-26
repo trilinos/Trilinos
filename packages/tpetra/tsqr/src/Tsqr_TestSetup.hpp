@@ -73,28 +73,30 @@ namespace TSQR {
     distributedTestProblem (Generator& generator,
                             MatrixViewType& A_local,
                             MessengerBase<typename MatrixViewType::ordinal_type>* const ordinalComm,
-                            MessengerBase<typename MatrixViewType::scalar_type>* const scalarComm)
+                            MessengerBase<typename MatrixViewType::non_const_value_type>* const scalarComm)
     {
-      typedef typename MatrixViewType::ordinal_type ordinal_type;
-      typedef typename MatrixViewType::scalar_type scalar_type;
-      typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
+      using ordinal_type = typename MatrixViewType::ordinal_type;
+      using scalar_type =
+        typename MatrixViewType::non_const_value_type;
+      using magnitude_type =
+        typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
 
       const int myRank = scalarComm->rank();
       const ordinal_type ncols = A_local.extent(1);
-
       if (myRank == 0) {
         // Generate some singular values for the test problem.
         std::vector<magnitude_type> singular_values (ncols);
         singular_values[0] = 1.0;
-        for (ordinal_type k = 1; k < ncols; ++k)
-          singular_values[k] = singular_values[k-1] / double(2);
+        for (ordinal_type k = 1; k < ncols; ++k) {
+          singular_values[k] = singular_values[k-1] / magnitude_type(2.0);
+        }
 
         // Generate the test problem.  All MPI processes
         // participate, but only Proc 0 generates the (pseudo)random
         // numbers.
         TSQR::Random::randomGlobalMatrix (&generator, A_local,
-                                          &singular_values[0], ordinalComm,
-                                          scalarComm);
+                                          singular_values.data (),
+                                          ordinalComm, scalarComm);
       }
       else {
         // This helps C++ deduce the type; the values aren't read on
@@ -104,8 +106,8 @@ namespace TSQR {
         // All MPI processes participate in the distribution of the
         // test matrix.
         TSQR::Random::randomGlobalMatrix (&generator, A_local,
-                                          &singular_values[0], ordinalComm,
-                                          scalarComm);
+                                          singular_values.data (),
+                                          ordinalComm, scalarComm);
       }
     }
   } // namespace Test

@@ -56,43 +56,41 @@ namespace TSQR {
     template<class MatrixViewType>
     static void
     scaleMatrix (MatrixViewType& A,
-                 const typename MatrixViewType::scalar_type& denom)
+                 const typename MatrixViewType::non_const_value_type& denom)
     {
-      typedef typename MatrixViewType::ordinal_type ordinal_type;
-      typedef typename MatrixViewType::scalar_type scalar_type;
+      using LO = typename MatrixViewType::ordinal_type;
 
-      const ordinal_type nrows = A.extent(0);
-      const ordinal_type ncols = A.extent(1);
-      const ordinal_type lda = A.stride(1);
-
+      const LO nrows = A.extent(0);
+      const LO ncols = A.extent(1);
+      const LO lda = A.stride(1);
       if (nrows == lda) { // A is stored contiguously.
-        const ordinal_type nelts = nrows * ncols;
-        scalar_type* const A_ptr = A.data ();
-        for (ordinal_type k = 0; k < nelts; ++k) {
+        const LO nelts = nrows * ncols;
+        auto A_ptr = A.data ();
+        for (LO k = 0; k < nelts; ++k) {
           A_ptr[k] /= denom;
         }
       }
       else { // Each column of A is stored contiguously.
-        for (ordinal_type j = 0; j < ncols; ++j) {
-          scalar_type* const A_j = &A(0,j);
-          for (ordinal_type i = 0; i < nrows; ++i) {
+        for (LO j = 0; j < ncols; ++j) {
+          auto A_j = &A(0,j);
+          for (LO i = 0; i < nrows; ++i) {
             A_j[i] /= denom;
           }
         }
       }
     }
 
-    template< class MatrixViewType, class Generator >
+    template<class MatrixViewType, class Generator>
     void
     randomGlobalMatrix (Generator* const pGenerator,
                         MatrixViewType& A_local,
-                        const typename Teuchos::ScalarTraits< typename MatrixViewType::scalar_type >::magnitudeType singular_values[],
-                        MessengerBase< typename MatrixViewType::ordinal_type >* const ordinalMessenger,
-                        MessengerBase< typename MatrixViewType::scalar_type >* const scalarMessenger)
+                        const typename Teuchos::ScalarTraits<typename MatrixViewType::non_const_value_type>::magnitudeType singular_values[],
+                        MessengerBase< typename MatrixViewType::ordinal_type>* const ordinalMessenger,
+                        MessengerBase< typename MatrixViewType::non_const_value_type>* const scalarMessenger)
     {
       using Teuchos::NO_TRANS;
       using ordinal_type = typename MatrixViewType::ordinal_type;
-      using scalar_type = typename MatrixViewType::scalar_type;
+      using scalar_type = typename MatrixViewType::non_const_value_type;
       using STS = Teuchos::ScalarTraits<scalar_type>;
 
       const int rootProc = 0;

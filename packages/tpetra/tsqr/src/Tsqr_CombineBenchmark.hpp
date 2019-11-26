@@ -145,25 +145,25 @@ namespace TSQR {
                           const std::string& additionalData)
     {
       using std::endl;
+      using ordinal_type = typename CombineType::ordinal_type;
+      using scalar_type = typename CombineType::scalar_type;
+      using benchmarker_type =
+        CombineBenchmarker<ordinal_type, scalar_type, CombineType, TimerType>;
 
-      typedef typename CombineType::ordinal_type ordinal_type;
-      typedef typename CombineType::scalar_type scalar_type;
-      typedef CombineBenchmarker<ordinal_type, scalar_type, CombineType, TimerType>
-        benchmarker_type;
-
-      TEUCHOS_TEST_FOR_EXCEPTION(cacheBlockNumTrials < 1, std::invalid_argument,
-                         "The number of trials for the cache block benchmark "
-                         "must be positive, but you specified cacheBlockNum"
-                         "Trials = " << cacheBlockNumTrials << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(pairNumTrials < 1, std::invalid_argument,
-                         "The number of trials for the pair benchmark must be "
-                         "positive, but you specified pairNumTrials = "
-                         << pairNumTrials << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (cacheBlockNumTrials < 1, std::invalid_argument,
+         "The number of trials for the cache block benchmark must be "
+         "positive, but you specified cacheBlockNumTrials="
+         << cacheBlockNumTrials << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (pairNumTrials < 1, std::invalid_argument,
+         "The number of trials for the pair benchmark must be "
+         "positive, but you specified pairNumTrials="
+         << pairNumTrials << ".");
 
       benchmarker_type b (iseed);
       std::pair<double, double> results;
-      results.first =
-        b.benchmarkPair (numCols, pairNumTrials);
+      results.first = b.benchmarkPair (numCols, pairNumTrials);
       results.second =
         b.benchmarkCacheBlock (numRows, numCols, cacheBlockNumTrials);
 

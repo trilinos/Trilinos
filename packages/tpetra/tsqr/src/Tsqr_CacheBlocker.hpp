@@ -69,21 +69,20 @@ namespace TSQR {
   template<class Ordinal, class Scalar>
   class CacheBlocker {
   private:
-    typedef MatView<Ordinal, Scalar> mat_view_type;
-    typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
+    using mat_view_type = MatView<Ordinal, Scalar>;
+    using const_mat_view_type = MatView<Ordinal, const Scalar>;
 
     void
     validate ()
     {
-      if (nrows_cache_block_ < ncols_)
-        {
-          std::ostringstream os;
-          os << "The typical cache block size is too small.  Only "
-             << nrows_cache_block_ << " rows fit, but every cache block needs "
-            "at least as many rows as the number of columns " << ncols_
-             << " in the matrix.";
-          throw std::logic_error (os.str());
-        }
+      if (nrows_cache_block_ < ncols_) {
+        std::ostringstream os;
+        os << "The typical cache block size is too small.  Only "
+           << nrows_cache_block_ << " rows fit, but every cache block needs "
+          "at least as many rows as the number of columns " << ncols_
+           << " in the matrix.";
+        throw std::logic_error (os.str());
+      }
     }
 
   public:
@@ -105,17 +104,13 @@ namespace TSQR {
       nrows_ (num_rows),
       ncols_ (num_cols),
       strategy_ (strategy),
-      nrows_cache_block_ (strategy_.cache_block_num_rows (extent(1)))
+      nrows_cache_block_ (strategy_.cache_block_num_rows (ncols_))
     {
       validate ();
     }
 
     //! Default constructor, so that CacheBlocker is DefaultConstructible.
-    CacheBlocker () :
-      nrows_ (0),
-      ncols_ (0),
-      nrows_cache_block_ (strategy_.cache_block_num_rows (extent(1)))
-    {}
+    CacheBlocker () = default;
 
     //! Copy constructor
     CacheBlocker (const CacheBlocker& rhs) :
@@ -444,10 +439,10 @@ namespace TSQR {
 
   private:
     //! Number of rows in the matrix to block.
-    Ordinal nrows_;
+    Ordinal nrows_ = 0;
 
     //! Number of columns in the matrix to block.
-    Ordinal ncols_;
+    Ordinal ncols_ = 0;
 
     //! Strategy used to break the matrix into cache blocks.
     CacheBlockingStrategy<Ordinal, Scalar> strategy_;
@@ -458,7 +453,7 @@ namespace TSQR {
     /// quantity each time, but we choose to cache the computed value
     /// here.  For an explanation of "typical," see the documentation
     /// of \c nrows_cache_block().
-    Ordinal nrows_cache_block_;
+    Ordinal nrows_cache_block_ = 0;
 
     /// \brief Number of rows in a "typical" cache block.
     ///
@@ -483,21 +478,16 @@ namespace TSQR {
     public std::iterator<std::forward_iterator_tag, MatrixViewType>
   {
   public:
-    typedef MatrixViewType view_type;
-    typedef typename MatrixViewType::ordinal_type ordinal_type;
-    typedef typename MatrixViewType::scalar_type scalar_type;
+    using view_type = MatrixViewType;
+    using ordinal_type = typename MatrixViewType::ordinal_type;
+    using scalar_type = typename MatrixViewType::non_const_value_type;
 
     /// \brief Default constructor.
     ///
     /// \note To implementers: We only implement a default constructor
     ///   because all iterators (e.g., TrivialIterator) must be
     ///   DefaultConstructible.
-    CacheBlockRangeIterator () :
-      A_ (0, 0, NULL, 0),
-      curInd_ (0),
-      reverse_ (false),
-      contiguousCacheBlocks_ (false)
-    {}
+    CacheBlockRangeIterator () = default;
 
     /// \brief Standard constructor.
     ///
@@ -593,9 +583,9 @@ namespace TSQR {
   private:
     MatrixViewType A_;
     CacheBlocker<ordinal_type, scalar_type> blocker_;
-    ordinal_type curInd_;
-    bool reverse_;
-    bool contiguousCacheBlocks_;
+    ordinal_type curInd_ = 0;
+    bool reverse_ = false;
+    bool contiguousCacheBlocks_ = false;
   };
 
   /// \class CacheBlockRange
@@ -618,13 +608,12 @@ namespace TSQR {
   template<class MatrixViewType>
   class CacheBlockRange {
   public:
-    typedef MatrixViewType view_type;
-    typedef typename MatrixViewType::ordinal_type ordinal_type;
-    typedef typename MatrixViewType::scalar_type scalar_type;
+    using view_type = MatrixViewType;
+    using ordinal_type = typename MatrixViewType::ordinal_type;
+    using scalar_type = typename MatrixViewType::non_const_value_type;
 
-    /// \typedef iterator
-    /// \brief Type of an iterator over the range of cache blocks.
-    typedef CacheBlockRangeIterator<MatrixViewType> iterator;
+    //! Type of an iterator over the range of cache blocks.
+    using iterator = CacheBlockRangeIterator<MatrixViewType>;
 
     /// \brief Constructor
     ///

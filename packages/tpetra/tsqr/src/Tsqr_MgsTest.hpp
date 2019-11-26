@@ -83,12 +83,12 @@ namespace TSQR {
     template< class MgsType >
     class MgsVerifier {
     public:
-      typedef MgsType mgs_type;
-      typedef typename MgsType::ordinal_type ordinal_type;
-      typedef typename MgsType::scalar_type scalar_type;
-      typedef Matrix< ordinal_type, scalar_type > matrix_type;
-      typedef MessengerBase< scalar_type > messenger_type;
-      typedef Teuchos::RCP< messenger_type > messenger_ptr;
+      using mgs_type = MgsType;
+      using ordinal_type = typename MgsType::ordinal_type;
+      using scalar_type = typename MgsType::scalar_type;
+      using matrix_type = Matrix<ordinal_type, scalar_type>;
+      using messenger_type = MessengerBase<scalar_type>;
+      using messenger_ptr = Teuchos::RCP<messenger_type>;
 
       static void
       verify (mgs_type& orthogonalizer,
@@ -107,13 +107,14 @@ namespace TSQR {
                             R.data(), R.stride(1));
         if (b_debug) {
           messenger->barrier();
-          if (messenger->rank() == 0)
+          if (messenger->rank() == 0) {
             cerr << "-- Finished MGS::mgs" << endl;
+          }
         }
       }
     };
 
-    template< class Ordinal, class Scalar, class Generator >
+    template<class Ordinal, class Scalar, class Generator>
     void
     verifyMgs (const std::string& which,
                Generator& generator,
@@ -267,14 +268,15 @@ namespace TSQR {
     template<class MgsBase, class TimerType>
     static double // returns timing in s
     do_mgs_benchmark (MgsBase& orthogonalizer,
-                      Matrix< typename MgsBase::ordinal_type, typename MgsBase::scalar_type >& Q_local,
-                      Matrix< typename MgsBase::ordinal_type, typename MgsBase::scalar_type >& R,
+                      Matrix<typename MgsBase::ordinal_type,
+                             typename MgsBase::scalar_type>& Q_local,
+                      Matrix<typename MgsBase::ordinal_type,
+                             typename MgsBase::scalar_type>& R,
                       const int num_trials,
                       const bool human_readable)
     {
-      typedef typename MgsBase::ordinal_type ordinal_type;
       using std::cout;
-
+      using ordinal_type = typename MgsBase::ordinal_type;
       TSQR::Test::verifyTimerConcept<TimerType>();
 
       const ordinal_type nrows_local = Q_local.extent(0);

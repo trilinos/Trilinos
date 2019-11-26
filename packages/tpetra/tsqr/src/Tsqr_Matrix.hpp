@@ -64,13 +64,18 @@ namespace TSQR {
   template<class Ordinal, class Scalar>
   class Matrix {
   public:
-    using scalar_type = Scalar;
+    using non_const_value_type = typename std::remove_const<Scalar>::type;
+    static_assert (std::is_same<non_const_value_type, Scalar>::value,
+                   "Scalar must be nonconst.");
+    using const_value_type = const non_const_value_type;
     using ordinal_type = Ordinal;
-    using pointer = scalar_type*;
-    using const_pointer = const scalar_type*;
+    using pointer = Scalar*;
+    using const_pointer = const Scalar*;
+    using reference = Scalar&;
+    using const_reference = const Scalar&;
 
-    using mat_view_type = MatView<ordinal_type, scalar_type>;
-    using const_mat_view_type = ConstMatView<ordinal_type, scalar_type>;
+    using mat_view_type = MatView<ordinal_type, non_const_value_type>;
+    using const_mat_view_type = MatView<ordinal_type, const_value_type>;
 
   private:
     static bool
@@ -169,7 +174,7 @@ namespace TSQR {
     //! Constructor with dimensions and fill datum.
     Matrix (const ordinal_type num_rows,
             const ordinal_type num_cols,
-            const scalar_type& value) :
+            const non_const_value_type& value) :
       nrows_ (num_rows),
       ncols_ (num_cols),
       A_ (verified_alloc_size (num_rows, num_cols), value)
@@ -216,7 +221,8 @@ namespace TSQR {
     ///
     /// \param i [in] Zero-based row index of the matrix.
     /// \param j [in] Zero-based column index of the matrix.
-    scalar_type& operator() (const ordinal_type i, const ordinal_type j) {
+    reference operator() (const ordinal_type i,
+                          const ordinal_type j) {
       return A_[i + j*stride(1)];
     }
 
@@ -224,12 +230,13 @@ namespace TSQR {
     ///
     /// \param i [in] Zero-based row index of the matrix.
     /// \param j [in] Zero-based column index of the matrix.
-    const scalar_type& operator() (const ordinal_type i, const ordinal_type j) const {
+    const_reference operator() (const ordinal_type i,
+                                const ordinal_type j) const {
       return A_[i + j*stride(1)];
     }
 
     //! 1-D std::vector - style access.
-    scalar_type& operator[] (const ordinal_type i) {
+    reference operator[] (const ordinal_type i) {
       return A_[i];
     }
 
@@ -276,7 +283,7 @@ namespace TSQR {
     //! A const view of the matrix.
     const_mat_view_type const_view () const {
       return const_mat_view_type (extent(0), extent(1),
-                                  const_cast<const scalar_type*> (data()), stride(1));
+                                  const_cast<const_pointer> (data()), stride(1));
     }
 
     /// Change the dimensions of the matrix.  Reallocate if necessary.
@@ -311,7 +318,7 @@ namespace TSQR {
     /// The matrix is stored using one-dimensional storage with
     /// column-major (Fortran-style) indexing.  This makes Matrix
     /// compatible with the BLAS and LAPACK.
-    std::vector<scalar_type> A_;
+    std::vector<non_const_value_type> A_;
   };
 
   template<class LO, class SC, class SourceScalar>
@@ -319,7 +326,7 @@ namespace TSQR {
   deep_copy (Matrix<LO, SC>& tgt, const SourceScalar& src)
   {
     MatView<LO, SC> tgt_view (tgt.extent(0), tgt.extent(1),
-                            tgt.data(), tgt.stride(1));
+                              tgt.data(), tgt.stride(1));
     deep_copy (tgt_view, src);
   }
 

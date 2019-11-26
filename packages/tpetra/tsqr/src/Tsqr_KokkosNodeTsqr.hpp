@@ -364,8 +364,8 @@ namespace TSQR {
     template<class LocalOrdinal, class Scalar>
     class ApplyFirstPass {
     public:
-      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
-      typedef MatView<LocalOrdinal, Scalar> mat_view_type;
+      using const_mat_view_type = MatView<LocalOrdinal, const Scalar>;
+      using mat_view_type = MatView<LocalOrdinal, Scalar>;
 
     private:
       ApplyType applyType_;
@@ -439,8 +439,8 @@ namespace TSQR {
              const std::pair<LocalOrdinal, LocalOrdinal> cbIndices,
              const int partitionIndex) const
       {
-        typedef CacheBlockRange<const_mat_view_type> const_range_type;
-        typedef CacheBlockRange<mat_view_type> range_type;
+        using const_range_type = CacheBlockRange<const_mat_view_type>;
+        using range_type = CacheBlockRange<mat_view_type>;
         const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
         if (cbIndices.first >= cbIndices.second) {
@@ -695,10 +695,10 @@ namespace TSQR {
     template<class LocalOrdinal, class Scalar>
     class CacheBlockFunctor {
     private:
-      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
-      typedef MatView<LocalOrdinal, Scalar> mat_view_type;
-      typedef CacheBlockRange<const_mat_view_type> const_range_type;
-      typedef CacheBlockRange<mat_view_type> range_type;
+      using const_mat_view_type = MatView<LocalOrdinal, const Scalar>;
+      using mat_view_type = MatView<LocalOrdinal, Scalar>;
+      using const_range_type = CacheBlockRange<const_mat_view_type>;
+      using range_type = CacheBlockRange<mat_view_type>;
 
       const_mat_view_type A_in_;
       mat_view_type A_out_;
@@ -818,9 +818,9 @@ namespace TSQR {
     template<class LocalOrdinal, class Scalar>
     class MultFunctor {
     private:
-      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
-      typedef MatView<LocalOrdinal, Scalar> mat_view_type;
-      typedef CacheBlockRange<mat_view_type> range_type;
+      using const_mat_view_type = MatView<LocalOrdinal, const Scalar>;
+      using mat_view_type = MatView<LocalOrdinal, Scalar>;
+      using range_type = CacheBlockRange<mat_view_type>;
 
       mat_view_type Q_;
       const_mat_view_type B_;
@@ -1103,8 +1103,8 @@ namespace TSQR {
     typedef LocalOrdinal local_ordinal_type;
     typedef Scalar scalar_type;
 
-    typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
-    typedef MatView<LocalOrdinal, Scalar> mat_view_type;
+    using const_mat_view_type = MatView<LocalOrdinal, const Scalar>;
+    using mat_view_type = MatView<LocalOrdinal, Scalar>;
 
     /// \typedef FactorOutput
     /// \brief Part of the implicit Q representation returned by factor().

@@ -95,7 +95,7 @@ namespace TSQR {
   class Tsqr {
   public:
     typedef MatView<LocalOrdinal, Scalar> mat_view_type;
-    typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
+    typedef MatView<LocalOrdinal, const Scalar> const_mat_view_type;
     typedef Matrix<LocalOrdinal, Scalar> matrix_type;
 
     typedef Scalar scalar_type;

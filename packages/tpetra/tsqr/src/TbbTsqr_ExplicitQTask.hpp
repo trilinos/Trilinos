@@ -52,7 +52,7 @@ namespace TSQR {
     class ExplicitQTask : public tbb::task {
     public:
       typedef MatView<LocalOrdinal, Scalar> mat_view_type;
-      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
+      typedef MatView<LocalOrdinal, const Scalar> const_mat_view_type;
 
     private:
       typedef std::pair<mat_view_type, mat_view_type> split_t;

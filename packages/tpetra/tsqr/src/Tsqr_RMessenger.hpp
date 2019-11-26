@@ -134,14 +134,13 @@ namespace TSQR {
     void
     pack (const ConstMatrixViewType& R)
     {
-      typedef typename ConstMatrixViewType::scalar_type view_scalar_type;
-      typedef typename ConstMatrixViewType::ordinal_type view_ordinal_type;
-      typedef typename std::vector< Scalar >::iterator iter_type;
+      using view_scalar_type = typename ConstMatrixViewType::non_const_value_type;
+      using view_ordinal_type = typename ConstMatrixViewType::ordinal_type;
 
       const view_ordinal_type ncols = R.extent(1);
       const Ordinal buf_length = buffer_length (ncols);
       buffer_.resize (buf_length);
-      iter_type iter = buffer_.begin();
+      auto iter = buffer_.begin();
       for (view_ordinal_type j = 0; j < ncols; ++j) {
         const view_scalar_type* const R_j = &R(0,j);
         std::copy (R_j, R_j + (j+1), iter);
@@ -181,18 +180,17 @@ namespace TSQR {
   void
   scatterStack (const ConstMatrixViewType& R_stack,
                 MatrixViewType& R_local,
-                const Teuchos::RCP<MessengerBase<typename MatrixViewType::scalar_type> >& messenger)
+                const Teuchos::RCP<MessengerBase<typename MatrixViewType::non_const_value_type> >& messenger)
   {
-    typedef typename MatrixViewType::ordinal_type ordinal_type;
-    typedef typename MatrixViewType::scalar_type scalar_type;
-    typedef ConstMatView< ordinal_type, scalar_type > const_view_type;
+    using ordinal_type = typename MatrixViewType::ordinal_type;
+    using scalar_type = typename MatrixViewType::non_const_value_type;
+    using const_view_type = MatView<ordinal_type, const scalar_type>;
 
     const int nprocs = messenger->size();
     const int my_rank = messenger->rank();
 
     if (my_rank == 0) {
       const ordinal_type ncols = R_stack.extent(1);
-
       // Copy data from top ncols x ncols block of R_stack into R_local.
       const_view_type R_stack_view_first (ncols, ncols, R_stack.data(),
                                           R_stack.stride(1));
@@ -200,9 +198,9 @@ namespace TSQR {
 
       // Loop through all other processors, sending each the next
       // ncols x ncols block of R_stack.
-      RMessenger< ordinal_type, scalar_type > sender (messenger);
+      RMessenger<ordinal_type, scalar_type> sender (messenger);
       for (int destProc = 1; destProc < nprocs; ++destProc) {
-        const scalar_type* const R_ptr = R_stack.data() + destProc*ncols;
+        auto R_ptr = R_stack.data() + destProc*ncols;
         const_view_type R_stack_view_cur (ncols, ncols, R_ptr, R_stack.stride(1));
         sender.send (R_stack_view_cur, destProc);
       }
@@ -222,27 +220,26 @@ namespace TSQR {
   void
   gatherStack (MatrixViewType& R_stack,
                ConstMatrixViewType& R_local,
-               const Teuchos::RCP<MessengerBase<typename MatrixViewType::scalar_type> >& messenger)
+               const Teuchos::RCP<MessengerBase<typename MatrixViewType::non_const_value_type>>& messenger)
   {
-    typedef typename MatrixViewType::ordinal_type ordinal_type;
-    typedef typename MatrixViewType::scalar_type scalar_type;
-    typedef MatView<ordinal_type, scalar_type> mat_view_type;
+    using ordinal_type = typename MatrixViewType::ordinal_type;
+    using scalar_type = typename MatrixViewType::non_const_value_type;
+    using mat_view_type = MatView<ordinal_type, scalar_type>;
 
     const int nprocs = messenger->size();
     const int my_rank = messenger->rank();
 
     if (my_rank == 0) {
       const ordinal_type ncols = R_stack.extent(1);
-
       // Copy data from R_local into top ncols x ncols block of R_stack.
       mat_view_type R_stack_view_first (ncols, ncols, R_stack.data(),
                                         R_stack.stride(1));
       deep_copy (R_stack_view_first, R_local);
 
       // Loop through all other processors, fetching their matrix data.
-      RMessenger< ordinal_type, scalar_type > receiver (messenger);
+      RMessenger<ordinal_type, scalar_type> receiver (messenger);
       for (int srcProc = 1; srcProc < nprocs; ++srcProc) {
-        const scalar_type* const R_ptr = R_stack.data() + srcProc*ncols;
+        auto R_ptr = R_stack.data() + srcProc*ncols;
         mat_view_type R_stack_view_cur (ncols, ncols, R_ptr,
                                         R_stack.stride(1));
         // Fill (the lower triangle) with zeros, since

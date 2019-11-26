@@ -119,10 +119,10 @@ namespace TSQR {
     using ordinal_type = LocalOrdinal;
     using scalar_type = Scalar;
     using mat_view_type = MatView<LocalOrdinal, Scalar>;
-    using const_mat_view_type = ConstMatView<LocalOrdinal, Scalar>;
+    using const_mat_view_type = MatView<LocalOrdinal, const Scalar>;
     using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
     using FactorOutput = typename NodeTsqr<LocalOrdinal, Scalar,
-        std::vector<std::vector<Scalar>>>::factor_output_type;
+      std::vector<std::vector<Scalar>>>::factor_output_type;
 
   private:
     /// \brief Factor the first cache block of the matrix.

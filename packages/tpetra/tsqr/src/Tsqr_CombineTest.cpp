@@ -56,7 +56,6 @@
 #include <stdexcept>
 #include <vector>
 
-
 namespace TSQR {
   namespace Test {
 
@@ -210,7 +209,11 @@ namespace TSQR {
 
     template<class MatrixViewType>
     static
-    std::vector<typename Teuchos::ScalarTraits<typename MatrixViewType::scalar_type>::magnitudeType>
+    std::vector<
+      typename Teuchos::ScalarTraits<
+        typename MatrixViewType::non_const_value_type
+      >::magnitudeType
+    >
     localVerify (const MatrixViewType& A,
                  const MatrixViewType& Q,
                  const MatrixViewType& R)

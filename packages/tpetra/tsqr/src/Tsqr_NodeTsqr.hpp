@@ -93,7 +93,7 @@ namespace TSQR {
     typedef Scalar scalar_type;
     typedef FactorOutputType factor_output_type;
     typedef MatView<Ordinal, Scalar> mat_view_type;
-    typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
+    typedef MatView<Ordinal, const Scalar> const_mat_view_type;
 
     //! Constructor
     NodeTsqr() = default;
@@ -358,10 +358,10 @@ namespace TSQR {
     /// mat_view_type square (ncols, ncols, top.data(), top.stride(1));
     /// \endcode
     ///
-    /// Models for MatrixViewType are MatView and ConstMatView.
-    /// MatrixViewType must have member functions extent(0), extent(1),
-    /// data(), and stride(1), and its constructor must take the same four
-    /// arguments as the constructor of ConstMatView.
+    /// A model for MatrixViewType is MatView.  MatrixViewType must
+    /// have member functions extent(0), extent(1), data(), and
+    /// stride(1), and its constructor must take the same four
+    /// arguments as the constructor of MatView.
     template<class MatrixViewType>
     MatrixViewType
     top_block (const MatrixViewType& C,

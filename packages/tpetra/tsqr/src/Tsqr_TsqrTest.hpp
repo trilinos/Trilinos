@@ -59,13 +59,13 @@ namespace TSQR {
     template<class TsqrType>
     class TsqrVerifier {
     public:
-      typedef TsqrType tsqr_type;
-      typedef typename tsqr_type::scalar_type scalar_type;
-      typedef typename tsqr_type::ordinal_type ordinal_type;
-      typedef Matrix<ordinal_type, scalar_type> matrix_type;
-      typedef typename tsqr_type::FactorOutput factor_output_type;
-      typedef MessengerBase<scalar_type> messenger_type;
-      typedef Teuchos::RCP<messenger_type> messenger_ptr;
+      using tsqr_type = TsqrType;
+      using scalar_type = typename tsqr_type::scalar_type;
+      using ordinal_type = typename tsqr_type::ordinal_type;
+      using matrix_type = Matrix<ordinal_type, scalar_type>;
+      using factor_output_type = typename tsqr_type::FactorOutput;
+      using messenger_type = MessengerBase<scalar_type>;
+      using messenger_ptr = Teuchos::RCP<messenger_type>;
 
       static void
       verify (tsqr_type& tsqr,
@@ -99,34 +99,40 @@ namespace TSQR {
 
         const bool testFactorExplicit = true;
         if (testFactorExplicit) {
-          tsqr.factorExplicit (A_copy.view(), Q_local.view(), R.view(),
-                               contiguousCacheBlocks);
+          tsqr.factorExplicit (A_copy.view(), Q_local.view(),
+                               R.view(), contiguousCacheBlocks);
           if (b_debug) {
             scalarComm->barrier ();
-            if (scalarComm->rank () == 0)
+            if (scalarComm->rank () == 0) {
               cerr << "-- Finished Tsqr::factorExplicit" << endl;
+            }
           }
         }
         else {
           // Factor the (copy of the) matrix.
           factor_output_type factorOutput =
-            tsqr.factor (nrows_local, ncols, A_copy.data(), A_copy.stride(1),
-                         R.data(), R.stride(1), contiguousCacheBlocks);
+            tsqr.factor (nrows_local, ncols,
+                         A_copy.data(), A_copy.stride(1),
+                         R.data(), R.stride(1),
+                         contiguousCacheBlocks);
           if (b_debug) {
             scalarComm->barrier ();
-            if (scalarComm->rank () == 0)
+            if (scalarComm->rank () == 0) {
               cerr << "-- Finished Tsqr::factor" << endl;
+            }
           }
 
           // Compute the explicit Q factor in Q_local
           tsqr.explicit_Q (nrows_local,
-                           ncols, A_copy.data(), A_copy.stride(1), factorOutput,
+                           ncols, A_copy.data(), A_copy.stride(1),
+                           factorOutput,
                            ncols, Q_local.data(), Q_local.stride(1),
                            contiguousCacheBlocks);
           if (b_debug) {
             scalarComm->barrier ();
-            if (scalarComm->rank () == 0)
+            if (scalarComm->rank () == 0) {
               cerr << "-- Finished Tsqr::explicit_Q" << endl;
+            }
           }
         }
 
@@ -143,8 +149,9 @@ namespace TSQR {
 
           if (b_debug) {
             scalarComm->barrier ();
-            if (scalarComm->rank () == 0)
+            if (scalarComm->rank () == 0) {
               cerr << "-- Un-cache-blocked output Q factor" << endl;
+            }
           }
         }
       }
@@ -422,11 +429,15 @@ namespace TSQR {
     double
     do_tsqr_benchmark (const std::string& which,
                        TsqrBase& tsqr,
-                       const Teuchos::RCP< MessengerBase< typename TsqrBase::scalar_type > >& messenger,
-                       const Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& A_local,
-                       Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& A_copy,
-                       Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& Q_local,
-                       Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& R,
+                       const Teuchos::RCP<MessengerBase<typename TsqrBase::scalar_type>>& messenger,
+                       const Matrix<typename TsqrBase::ordinal_type,
+                                    typename TsqrBase::scalar_type>& A_local,
+                       Matrix<typename TsqrBase::ordinal_type,
+                              typename TsqrBase::scalar_type>& A_copy,
+                       Matrix<typename TsqrBase::ordinal_type,
+                              typename TsqrBase::scalar_type>& Q_local,
+                       Matrix<typename TsqrBase::ordinal_type,
+                              typename TsqrBase::scalar_type>& R,
                        const int ntrials,
                        const bool contiguousCacheBlocks,
                        const bool human_readable,

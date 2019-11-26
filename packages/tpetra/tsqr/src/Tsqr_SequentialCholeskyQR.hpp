@@ -65,7 +65,7 @@ namespace TSQR {
   class SequentialCholeskyQR {
   private:
     using mat_view_type = MatView<LocalOrdinal, Scalar>;
-    using const_mat_view_type = ConstMatView<LocalOrdinal, Scalar>;
+    using const_mat_view_type = MatView<LocalOrdinal, const Scalar>;
     using blas_type = Impl::SystemBlas<Scalar>;
 
   public:

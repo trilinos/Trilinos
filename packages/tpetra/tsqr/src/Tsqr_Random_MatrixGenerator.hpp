@@ -158,7 +158,7 @@ namespace TSQR {
       template< class MatrixViewType >
       void
       implicit_Q (MatrixViewType& Q,
-                  typename MatrixViewType::scalar_type tau[])
+                  typename MatrixViewType::non_const_value_type tau[])
       {
         implicit_Q (Q.extent(0), Q.extent(1), Q.data(), Q.stride(1), tau);
       }
