@@ -904,7 +904,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
 
   bool useSA = true;
   if(List.isParameter("default values")) {
-    std::string default_values = List.get("default values","Classical-AMG");
+    std::string default_values = List.get("default values","SA");
     if(default_values == "Classical-AMG")
       useSA = false;
   }
