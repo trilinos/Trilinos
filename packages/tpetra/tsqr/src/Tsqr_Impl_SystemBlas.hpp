@@ -1,6 +1,7 @@
 #ifndef TSQR_IMPL_SYSTEMBLAS_HPP
 #define TSQR_IMPL_SYSTEMBLAS_HPP
 
+#include "Tsqr_ConfigDefs.hpp"
 #include "Tsqr_Impl_RawBlas.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include <complex>
@@ -56,8 +57,11 @@ public: \
 
 TSQR_IMPL_SYSTEMBLAS_DECL( float )
 TSQR_IMPL_SYSTEMBLAS_DECL( double )
+
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
 TSQR_IMPL_SYSTEMBLAS_DECL( std::complex<float> )
 TSQR_IMPL_SYSTEMBLAS_DECL( std::complex<double> )
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
 } // namespace Impl
 } // namespace TSQR

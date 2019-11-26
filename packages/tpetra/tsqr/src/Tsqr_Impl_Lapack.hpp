@@ -1,6 +1,7 @@
 #ifndef TSQR_IMPL_LAPACK_HPP
 #define TSQR_IMPL_LAPACK_HPP
 
+#include "Tsqr_ConfigDefs.hpp"
 #include "Tsqr_Impl_RawQR.hpp"
 #include <complex>
 
@@ -69,8 +70,11 @@ public: \
 
 TSQR_IMPL_LAPACK_DECL( float )
 TSQR_IMPL_LAPACK_DECL( double )
+
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
 TSQR_IMPL_LAPACK_DECL( std::complex<float> )
 TSQR_IMPL_LAPACK_DECL( std::complex<double> )
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
 } // namespace Impl
 } // namespace TSQR

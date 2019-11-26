@@ -114,8 +114,11 @@ compute_explicit_Q(const int m, const int n, const int k, \
 
 TSQR_IMPL_LAPACK_IMPL( float )
 TSQR_IMPL_LAPACK_IMPL( double )
+
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
 TSQR_IMPL_LAPACK_IMPL( std::complex<float> )
 TSQR_IMPL_LAPACK_IMPL( std::complex<double> )
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
 } // namespace Impl
 } // namespace TSQR

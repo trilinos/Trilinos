@@ -89,8 +89,11 @@ TRSM(const Teuchos::ESide side, const Teuchos::EUplo uplo, \
 
 TSQR_IMPL_SYSTEMBLAS_IMPL( float )
 TSQR_IMPL_SYSTEMBLAS_IMPL( double )
+
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
 TSQR_IMPL_SYSTEMBLAS_IMPL( std::complex<float> )
 TSQR_IMPL_SYSTEMBLAS_IMPL( std::complex<double> )
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
 } // namespace Impl
 } // namespace TSQR
