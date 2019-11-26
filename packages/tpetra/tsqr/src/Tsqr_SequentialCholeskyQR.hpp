@@ -127,36 +127,36 @@ namespace TSQR {
       Matrix<LocalOrdinal, Scalar> ATA (ncols, ncols, Scalar {});
       FactorOutput retval (0);
 
-      if (contiguous_cache_blocks)
-        {
-          // Compute ATA := A^T * A, by iterating through the cache
-          // blocks of A from top to bottom.
-          //
-          // We say "A_rest" because it points to the remaining part of
-          // the matrix left to process; at the beginning, the "remaining"
-          // part is the whole matrix, but that will change as the
-          // algorithm progresses.
-          mat_view_type A_rest (nrows, ncols, A, lda);
-          // This call modifies A_rest (but not the actual matrix
-          // entries; just the dimensions and current position).
-          mat_view_type A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
-          // Process the first cache block: ATA := A_cur^T * A_cur
+      if (contiguous_cache_blocks) {
+        // Compute ATA := A^T * A, by iterating through the cache
+        // blocks of A from top to bottom.
+        //
+        // We say "A_rest" because it points to the remaining part of
+        // the matrix left to process; at the beginning, the
+        // "remaining" part is the whole matrix, but that will change
+        // as the algorithm progresses.
+        mat_view_type A_rest (nrows, ncols, A, lda);
+        // This call modifies A_rest (but not the actual matrix
+        // entries; just the dimensions and current position).
+        mat_view_type A_cur =
+          blocker.split_top_block (A_rest, contiguous_cache_blocks);
+        // Process the first cache block: ATA := A_cur^T * A_cur
+        //
+        // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
+        blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.extent (0),
+                   Scalar (1), A_cur.data (), A_cur.stride (1), A_cur.data (),
+                   A_cur.stride (1), Scalar (0), ATA.data (), ATA.stride (1));
+        // Process the remaining cache blocks in order.
+        while (! A_rest.empty ()) {
+          A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+          // ATA := ATA + A_cur^T * A_cur
           //
           // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
           blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.extent (0),
                      Scalar (1), A_cur.data (), A_cur.stride (1), A_cur.data (),
-                     A_cur.stride (1), Scalar (0), ATA.data (), ATA.stride (1));
-          // Process the remaining cache blocks in order.
-          while (! A_rest.empty ()) {
-            A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
-            // ATA := ATA + A_cur^T * A_cur
-            //
-            // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
-            blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.extent (0),
-                       Scalar (1), A_cur.data (), A_cur.stride (1), A_cur.data (),
-                       A_cur.stride (1), Scalar (1), ATA.data (), ATA.stride (1));
-          }
+                     A_cur.stride (1), Scalar (1), ATA.data (), ATA.stride (1));
         }
+      }
       else {
         // Compute ATA := A^T * A, using a single BLAS call.
         //
@@ -175,8 +175,11 @@ namespace TSQR {
       // CholeskyQR + symmetric eigensolver factorization.
 
       // Copy out the R factor
-      fill_matrix (ncols, ncols, R, ldr, Scalar {});
-      copy_upper_triangle (ncols, ncols, R, ldr, ATA.data(), ATA.stride(1));
+      {
+        mat_view_type R_out (ncols, ncols, R, ldr);
+        deep_copy (R_out, Scalar {});
+        copy_upper_triangle (ncols, ncols, R, ldr, ATA.data(), ATA.stride(1));
+      }
 
       // Compute A := A * R^{-1}.  We do this in place in A, using
       // BLAS' TRSM with the R factor (form POTRF) stored in the upper
