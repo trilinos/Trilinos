@@ -131,22 +131,6 @@ namespace TSQR {
 
   template< class Ordinal, class Scalar >
   void
-  copy_matrix (const Ordinal nrows,
-               const Ordinal ncols,
-               Scalar* const A,
-               const Ordinal lda,
-               const Scalar* const B,
-               const Ordinal ldb)
-  {
-    for (Ordinal j = 0; j < ncols; ++j) {
-      Scalar* const A_j = &A[j*lda];
-      const Scalar* const B_j = &B[j*ldb];
-      std::copy (B_j, B_j + nrows, A_j);
-    }
-  }
-
-  template< class Ordinal, class Scalar >
-  void
   fill_matrix (const Ordinal nrows,
                const Ordinal ncols,
                Scalar* const A,
