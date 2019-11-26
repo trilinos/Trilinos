@@ -178,8 +178,15 @@ namespace TSQR {
       // we only want to include the upper triangle in the
       // factorization.  Thus, only copy the upper triangle of R into
       // the appropriate place in the buffer.
-      copy_upper_triangle (n, n, &A_buf_(0, 0), A_buf_.stride(1), R, ldr);
-      copy_matrix (m, n, &A_buf_(n, 0), A_buf_.stride(1), A, lda);
+      MatView<Ordinal, Scalar> R_view (n, n, R, ldr);
+      MatView<Ordinal, Scalar> A_buf_top (n, n, A_buf_.data(),
+                                          A_buf_.stride(1));
+      deep_copy (A_buf_top, R_view);
+
+      MatView<Ordinal, Scalar> A_view (m, n, A, lda);
+      MatView<Ordinal, Scalar> A_buf_bot (m, n, &A_buf_(n, 0),
+                                          A_buf_.stride(1));
+      deep_copy (A_buf_bot, A_view);
 
       const int lwork = n;
       lapack_.compute_QR (numRows, n, A_buf_.data(), A_buf_.stride(1),
@@ -187,8 +194,9 @@ namespace TSQR {
       // Copy back the results.  R might be a view of the upper
       // triangle of a cache block, so only copy into the upper
       // triangle of R.
-      copy_upper_triangle (n, n, R, ldr, &A_buf_(0, 0), A_buf_.stride(1));
-      copy_matrix (m, n, A, lda, &A_buf_(n, 0), A_buf_.stride(1));
+      copy_upper_triangle (n, n, R, ldr, A_buf_top.data(),
+                           A_buf_top.stride(1));
+      deep_copy (A_view, A_buf_bot);
     }
 
     void
@@ -244,8 +252,17 @@ namespace TSQR {
                            &A_buf_(ncols_Q, 0), A_buf_.stride(1),
                            R_bot, ldr_bot);
       C_buf_.reshape (numRows, ncols_C);
-      copy_matrix (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.stride(1), C_top, ldc_top);
-      copy_matrix (ncols_Q, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.stride(1), C_bot, ldc_bot);
+
+      using view_type = MatView<Ordinal, Scalar>;
+      view_type C_top_view (ncols_Q, ncols_C, C_top, ldc_top);
+      view_type C_buf_top (ncols_Q, ncols_C,
+                           C_buf_.data (), C_buf_.stride (1));
+      deep_copy (C_buf_top, C_top_view);
+
+      view_type C_bot_view (ncols_Q, ncols_C, C_bot, ldc_bot);
+      view_type C_buf_bot (ncols_Q, ncols_C,
+                           &C_buf_(ncols_Q, 0), C_buf_.stride (1));
+      deep_copy (C_buf_bot, C_bot_view);
 
       const int lwork = ncols_Q;
       const std::string trans = apply_type.toString ();
@@ -254,10 +271,8 @@ namespace TSQR {
                               C_buf_.data(), C_buf_.stride(1),
                               work, lwork);
       // Copy back the results.
-      copy_matrix (ncols_Q, ncols_C, C_top, ldc_top,
-                   &C_buf_(0, 0), C_buf_.stride(1));
-      copy_matrix (ncols_Q, ncols_C, C_bot, ldc_bot,
-                   &C_buf_(ncols_Q, 0), C_buf_.stride(1));
+      deep_copy (C_top_view, C_buf_top);
+      deep_copy (C_bot_view, C_buf_bot);
     }
 
   private:
