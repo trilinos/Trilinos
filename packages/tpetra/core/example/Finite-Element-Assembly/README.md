@@ -27,4 +27,6 @@ Running The Example
 - `--num-elements-y` Number of elements to generate in the y-axis of the 2D grid.
 - `--verbose` Print out extra information to STDOUT.
 - `--timing`  Print out timing information at the end of execution.
+- `--with-insert-global-indices-fe` Execute the Insert FECrsMatrix Global Indices FEM Assembly kernel.
+- `--with-total-element-loop`  Execute the Total Element Loop FEM Assembly kernel.
 

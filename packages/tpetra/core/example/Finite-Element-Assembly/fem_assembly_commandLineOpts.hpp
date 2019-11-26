@@ -101,9 +101,34 @@ setCmdLineOpts (struct CmdLineOpts& opts,
   clp.setOption("repetitions", &(opts.repetitions), "Number of times to repeat the kernel.");
   clp.setOption("kokkos", "no-kokkos", &(opts.useKokkosAssembly), "Use Kokkos assembly.");
   clp.setOption("state-per-element",&(opts.numStateDoublesPerElement),"Number of doubles per element to store element state");
+  clp.setOption("with-insert-global-indices-fe", "without-insert-global-indices-fe", &(opts.execInsertGlobalIndicesFE),
+                "Execute the Insert FECrsMatrix Global Indices FEM Assembly kernel.");
+  clp.setOption("with-total-element-loop", "without-total-element-loop", &(opts.execTotalElementLoop),
+                "Execute the Total Element Loop FEM Assembly kernel.");
 }
 
-
+// Check the command-line options that were read in by
+// parseCmdLineOpts.  Return 0 if all correct, else return nonzero,
+// using the LAPACK error reporting convention of the negative of
+// the argument in its original order (starting with 1) as the error
+// code.  Print informative error messages to the given output
+// stream \c out.
+int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
+{
+  int err = 0;
+  // Currently we only have StaticProfile for TotalElementLoop
+  if(1 != (opts.execInsertGlobalIndicesFE + opts.execTotalElementLoop))
+  {
+    out << std::endl
+      << "  The FE assembly has two main modes, insert-global-indices-fe and total-element-loop." << std::endl
+      << "  Exactly one of them should be enabled in a given run." << std::endl
+      << "  --with-insert-global-indices-fe : Execute the FE Insert Global Indices example." << std::endl
+      << "  --with-total-element-loop       : Execute the Total Element Loop example." << std::endl
+      << std::endl;
+    err = -1;
+  }
+  return err;
+}
 
 // Actually read the command-line options from the command line,
 // using the argc and argv arguments to main().  Use the clp output
@@ -182,6 +207,9 @@ int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char*
         << "timing       : " << opts.timing           << endl
         << "saveMM       : " << opts.saveMM           << endl
         << "repetitions  : " << opts.repetitions      << endl
+        << endl
+        << "execInsertGlobalIndicesFE : " << opts.execInsertGlobalIndicesFE << endl
+        << "execTotalElementLoop      : " << opts.execTotalElementLoop    << endl
         << endl;
   }
 
