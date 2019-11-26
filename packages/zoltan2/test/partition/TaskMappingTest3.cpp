@@ -213,7 +213,7 @@ int main(int narg, char *arg[]){
 
     //if (narg != 3){
     //    std::cout << "Usage: " << arg[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << std::endl;
-    //    exit(1);
+    //    std::terminate();
     //}
     part_t numParts = 0;
     zscalar_t **partCenters = NULL;
@@ -418,9 +418,10 @@ int main(int narg, char *arg[]){
 
                 proc_to_task_xadj_, /*output*/
                 proc_to_task_adj_, /*output*/
-		
+
                 partArraysize,
-                partArray,
+                Kokkos::View<part_t*, Kokkos::HostSpace,
+                  Kokkos::MemoryUnmanaged>(partArray,(partArraysize == -1 ? 0 : partArraysize)),
                 machineDimensions, rank_per_node, divide_prime
                 );
         
