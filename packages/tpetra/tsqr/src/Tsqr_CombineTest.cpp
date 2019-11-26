@@ -352,8 +352,7 @@ namespace TSQR {
              << " by " << numCols << endl << endl;
       }
       Combine<Ordinal, Scalar> combiner;
-      combiner.factor_pair (numCols, R1.data(), R1.stride(1),
-                            R2.data(), R2.stride(1),
+      combiner.factor_pair (R1.view(), R2.view(),
                             tau_R1R2.data(), work.data());
       combiner.apply_pair (ApplyType("N"), numCols, numCols,
                            R2.data(), R2.stride(1), tau_R1R2.data(),

@@ -261,20 +261,18 @@ namespace TSQR {
           // Number of trials for factor_pair() and apply_pair().
           std::pair<int, double> result;
           result = c.calibratePair (numCols, accuracyFactor);
-          if (debug)
-            {
-              cerr << "- Pair number of trials: " << result.first << endl;
-              cerr << "- Pair calibration time: " << result.second << endl;
-            }
+          if (debug) {
+            cerr << "- Pair number of trials: " << result.first << endl;
+            cerr << "- Pair calibration time: " << result.second << endl;
+          }
           pairNumTrials = result.first;
 
           // Number of trials for factor_inner() and apply_inner().
           result = c.calibrateCacheBlock (numRows, numCols, accuracyFactor);
-          if (debug)
-            {
-              cerr << "- Cache block number of trials: " << result.first << endl;
-              cerr << "- Cache block calibration time: " << result.second << endl;
-            }
+          if (debug) {
+            cerr << "- Cache block number of trials: " << result.first << endl;
+            cerr << "- Cache block calibration time: " << result.second << endl;
+          }
           cacheBlockNumTrials = result.first;
 
           // Store the updated PRNG seed in the benchmark parameters.

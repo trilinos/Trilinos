@@ -151,11 +151,8 @@ namespace TSQR {
                   Scalar work[]) const;
 
     void
-    factor_pair (const Ordinal n,
-                 Scalar R_top[],
-                 const Ordinal ldr_top,
-                 Scalar R_bot[],
-                 const Ordinal ldr_bot,
+    factor_pair (const MatView<Ordinal, Scalar>& R_top,
+                 const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[]) const;
 
@@ -319,6 +316,16 @@ namespace TSQR {
     }
 
     void
+    factor_inner (const Ordinal m,
+                  const Ordinal n,
+                  Scalar R[],
+                  const Ordinal ldr,
+                  Scalar A[],
+                  const Ordinal lda,
+                  Scalar tau[],
+                  Scalar work[]) const;
+
+    void
     apply_inner (const ApplyType& applyType,
                  const Ordinal m,
                  const Ordinal ncols_C,
@@ -331,23 +338,9 @@ namespace TSQR {
                  Scalar C_bot[],
                  const Ordinal ldc_bot,
                  Scalar work[]) const;
-
     void
-    factor_inner (const Ordinal m,
-                  const Ordinal n,
-                  Scalar R[],
-                  const Ordinal ldr,
-                  Scalar A[],
-                  const Ordinal lda,
-                  Scalar tau[],
-                  Scalar work[]) const;
-
-    void
-    factor_pair (const Ordinal n,
-                 Scalar R_top[],
-                 const Ordinal ldr_top,
-                 Scalar R_bot[],
-                 const Ordinal ldr_bot,
+    factor_pair (const MatView<Ordinal, Scalar>& R_top,
+                 const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[]) const;
 
@@ -455,15 +448,12 @@ namespace TSQR {
     }
 
     void
-    factor_pair (const Ordinal n,
-                 Scalar R_top[],
-                 const Ordinal ldr_top,
-                 Scalar R_bot[],
-                 const Ordinal ldr_bot,
+    factor_pair (const MatView<Ordinal, Scalar>& R_top,
+                 const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[]) const
     {
-      return default_.factor_pair (n, R_top, ldr_top, R_bot, ldr_bot, tau, work);
+      return default_.factor_pair (R_top, R_bot, tau, work);
     }
 
     void
@@ -761,12 +751,9 @@ namespace TSQR {
 
   template< class Ordinal, class Scalar >
   void
-  CombineNative< Ordinal, Scalar, false >::
-  factor_pair (const Ordinal n,
-               Scalar R_top[],
-               const Ordinal ldr_top,
-               Scalar R_bot[],
-               const Ordinal ldr_bot,
+  CombineNative<Ordinal, Scalar, false>::
+  factor_pair (const MatView<Ordinal, Scalar>& R_top,
+               const MatView<Ordinal, Scalar>& R_bot,
                Scalar tau[],
                Scalar work[]) const
   {
@@ -774,27 +761,32 @@ namespace TSQR {
     using Kokkos::subview;
     using range_type = std::pair<Ordinal, Ordinal>;
 
-    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type> R_top_full (R_top, ldr_top, n);
-    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type> R_bot_full (R_bot, ldr_bot, n);
-    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> tau_view (tau, n);
-    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> work_view (work, n);
+    const Ordinal numCols = R_top.extent (1);
+    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type> R_top_full
+      (R_top.data(), R_top.stride (1), numCols);
+    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type> R_bot_full
+      (R_bot.data(), R_bot.stride (1), R_bot.extent (1));
+    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> tau_view
+      (tau, numCols);
+    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> work_view
+      (work, numCols);
 
-    if (ldr_top == n) {
-      if (ldr_bot == n) {
+    if (R_top.stride(1) == numCols) {
+      if (R_bot.stride(1) == numCols) {
         this->factor_pair (R_top_full, R_bot_full, tau_view, work_view);
       }
       else {
-        auto R_bot_view = subview (R_bot_full, range_type (0, n), ALL ());
+        auto R_bot_view = subview (R_bot_full, range_type (0, numCols), ALL ());
         this->factor_pair (R_top_full, R_bot_view, tau_view, work_view);
       }
     }
     else {
-      auto R_top_view = subview (R_top_full, range_type (0, n), ALL ());
-      if (ldr_bot == n) {
+      auto R_top_view = subview (R_top_full, range_type (0, numCols), ALL ());
+      if (R_bot.stride(1) == numCols) {
         this->factor_pair (R_top_view, R_bot_full, tau_view, work_view);
       }
       else {
-        auto R_bot_view = subview (R_bot_full, range_type (0, n), ALL ());
+        auto R_bot_view = subview (R_bot_full, range_type (0, numCols), ALL ());
         this->factor_pair (R_top_view, R_bot_view, tau_view, work_view);
       }
     }

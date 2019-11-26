@@ -269,25 +269,13 @@ namespace TSQR {
     ///
     /// Store the resulting R factor in R_top, and the resulting
     /// Householder reflectors implicitly in R_bot and tau.
-    ///
-    /// \param n [in]         Number of rows and columns of each of R_top and R_bot
-    /// \param R_top [inout]  n by n upper triangular matrix
-    /// \param ldr_top [in]   Leading dimension of R_top
-    /// \param R_bot [inout]  n by n upper triangular matrix
-    /// \param ldr_bot [in]   Leading dimension of R_bot
-    /// \param tau [out]      Scaling factors for Householder reflectors
-    /// \param work [out]     Workspace array (of length >= n)
-    ///
     void
-    factor_pair (const Ordinal n,
-                 Scalar R_top[],
-                 const Ordinal ldr_top,
-                 Scalar R_bot[],
-                 const Ordinal ldr_bot,
+    factor_pair (const MatView<Ordinal, Scalar>& R_top,
+                 const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[]) const
     {
-      impl_.factor_pair (n, R_top, ldr_top, R_bot, ldr_bot, tau, work);
+      impl_.factor_pair (R_top, R_bot, tau, work);
     }
 
     /// \brief Apply the result of \c factor_pair().

@@ -85,7 +85,11 @@ namespace TSQR {
       const int P_bot = std::max (P_mine, P_other);
       const LocalOrdinal nelts = ncols * ncols;
       const LocalOrdinal ldr = ncols;
+      MatView<LocalOrdinal, Scalar> R_mine_view
+        (ncols, ncols, R_mine.data (), ldr);
       vector< Scalar > R_other (nelts);
+      MatView<LocalOrdinal, Scalar> R_other_view
+        (ncols, ncols, R_other.data (), ldr);
       vector< Scalar > tau (ncols);
 
       // Send and receive R factor.
@@ -94,23 +98,17 @@ namespace TSQR {
 
       Combine<LocalOrdinal, Scalar> combine;
       if (P_mine == P_top) {
-        combine.factor_pair (ncols, R_mine.data(), ldr,
-                             R_other.data(), ldr,
+        combine.factor_pair (R_mine_view, R_other_view,
                              tau.data(), work.data());
         Q_factors.push_back (R_other);
         tau_arrays.push_back (tau);
       }
       else if (P_mine == P_bot) {
-        combine.factor_pair (ncols, R_other.data(), ldr,
-                             R_mine.data(), ldr,
+        combine.factor_pair (R_other_view, R_mine_view,
                              tau.data(), work.data());
         Q_factors.push_back (R_mine);
-
         // Make sure that the "bottom" processor gets the current R
         // factor, which is returned in R_mine.
-        using view_type = MatView<LocalOrdinal, Scalar>;
-        view_type R_mine_view (ncols, ncols, R_mine.data(), ldr);
-        view_type R_other_view (ncols, ncols, R_other.data(), ldr);
         deep_copy (R_mine_view, R_other_view);
         tau_arrays.push_back (tau);
       }
@@ -163,24 +161,21 @@ namespace TSQR {
               // If there aren't an even number of processors in the
               // original interval, then the last processor in the lower
               // interval has to skip this round.
-              if (b_even || my_rank < P_mid - 1)
-                {
-                  const int my_offset = my_rank - P_first;
-                  const int P_other = P_mid + my_offset;
-                  if (P_other < P_mid || P_other > P_last)
-                    throw std::logic_error ("P_other not in [P_mid,P_last] range");
-
-                  factor_pair (ncols, R_mine, my_rank, P_other, tag,
-                               messenger, Q_factors, tau_arrays, work);
+              if (b_even || my_rank < P_mid - 1) {
+                const int my_offset = my_rank - P_first;
+                const int P_other = P_mid + my_offset;
+                if (P_other < P_mid || P_other > P_last) {
+                  throw std::logic_error ("P_other not in [P_mid,P_last] range");
                 }
-
+                factor_pair (ncols, R_mine, my_rank, P_other, tag,
+                             messenger, Q_factors, tau_arrays, work);
+              }
               // If I'm skipping this round, get the "current" R factor
               // from P_mid.
-              if (! b_even && my_rank == P_mid - 1)
-                {
-                  const int theTag = 142; // magic constant
-                  messenger->recv (&R_mine[0], ncols*ncols, P_mid, theTag);
-                }
+              if (! b_even && my_rank == P_mid - 1) {
+                const int theTag = 142; // magic constant
+                messenger->recv (&R_mine[0], ncols*ncols, P_mid, theTag);
+              }
             }
           else // Interval [P_mid, P_last]
             {

@@ -702,9 +702,7 @@ namespace TSQR {
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_pair (numCols, R1.data(), R1.stride(1),
-                                R2.data(), R2.stride(1),
-                                tau.data(), work.data());
+          combiner.factor_pair (R1.view(), R2.view(), tau.data(), work.data());
           combiner.apply_pair (ApplyType("N"), numCols, numCols,
                                R2.data(), R2.stride(1), tau.data(),
                                &Q(0, 0), Q.stride(1),
@@ -734,8 +732,7 @@ namespace TSQR {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
           for (int trial = 0; trial < numTrials; ++trial) {
-            combiner.factor_pair (numCols, R1.data(), R1.stride(1),
-                                  R2.data(), R2.stride(1),
+            combiner.factor_pair (R1.view(), R2.view(),
                                   tau.data(), work.data());
             combiner.apply_pair (ApplyType("N"), numCols, numCols,
                                  R2.data(), R2.stride(1), tau.data(),
@@ -808,9 +805,7 @@ namespace TSQR {
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_pair (numCols, R1.data(), R1.stride(1),
-                                R2.data(), R2.stride(1),
-                                tau.data(), work.data());
+          combiner.factor_pair (R1.view(), R2.view(), tau.data(), work.data());
           combiner.apply_pair (ApplyType("N"), numCols, numCols,
                                R2.data(), R2.stride(1), tau.data(),
                                &Q(0, 0), Q.stride(1),
@@ -823,9 +818,7 @@ namespace TSQR {
         timer_type timer ("Combine pair");
         timer.start();
         for (int trial = 0; trial < numTrials; ++trial) {
-          combiner.factor_pair (numCols, R1.data(), R1.stride(1),
-                                R2.data(), R2.stride(1),
-                                tau.data(), work.data());
+          combiner.factor_pair (R1.view(), R2.view(), tau.data(), work.data());
           combiner.apply_pair (ApplyType("N"), numCols, numCols,
                                R2.data(), R2.stride(1), tau.data(),
                                &Q(0, 0), Q.stride(1),

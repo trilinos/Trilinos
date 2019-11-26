@@ -309,26 +309,23 @@ namespace TSQR {
                  const size_t P_bot,
                  mat_view& A_top,
                  mat_view& A_bot,
-                 std::vector< std::vector< Scalar > >& par_outputs,
+                 std::vector<std::vector<Scalar>>& par_outputs,
                  const bool contiguous_cache_blocks) const
     {
-      if (P_top == P_bot)
-        {
-          throw std::logic_error("factor_pair: should never get here!");
-          return; // to pacify the compiler
-        }
+      if (P_top == P_bot) {
+        throw std::logic_error("factor_pair: should never get here!");
+      }
       // We only read and write the upper ncols x ncols triangle of
       // each block.
       const LocalOrdinal ncols = A_top.extent(1);
-      if (A_bot.extent(1) != ncols)
+      if (A_bot.extent(1) != ncols) {
         throw std::logic_error("A_bot.extent(1) != A_top.extent(1)");
+      }
+      std::vector<Scalar>& tau = par_outputs[P_bot];
+      std::vector<Scalar> work (ncols);
 
-      std::vector< Scalar >& tau = par_outputs[P_bot];
-      std::vector< Scalar > work (ncols);
-
-      TSQR::Combine< LocalOrdinal, Scalar > combine_;
-      combine_.factor_pair (ncols, A_top.data(), A_top.stride(1),
-                            A_bot.data(), A_bot.stride(1), &tau[0], &work[0]);
+      TSQR::Combine<LocalOrdinal, Scalar> combine_;
+      combine_.factor_pair (A_top, A_bot, tau.data(), work.data());
     }
 
     template< class LocalOrdinal, class Scalar >

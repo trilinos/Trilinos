@@ -205,9 +205,7 @@ namespace TSQR {
         const LocalOrdinal ncols = A_top.extent(1);
         std::vector<Scalar>& tau = par_output_[P_bot];
         std::vector<Scalar> work (ncols);
-        combine_.factor_pair (ncols, A_top.data(), A_top.stride(1),
-                              A_bot.data(), A_bot.stride(1),
-                              tau.data(), work.data());
+        combine_.factor_pair (A_top, A_bot, tau.data(), work.data());
       }
 
       void

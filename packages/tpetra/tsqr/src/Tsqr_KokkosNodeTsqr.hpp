@@ -1552,9 +1552,7 @@ namespace TSQR {
       // The statement below only works if R_top and R_bot have a
       // nonzero (and the same) number of columns, but we have already
       // checked that above.
-      combine_.factor_pair (R_top.extent(1), R_top.data(), R_top.stride(1),
-                            R_bot.data(), R_bot.stride(1), tau.data(),
-                            work_.data());
+      combine_.factor_pair (R_top, R_bot, tau.data(), work_.data());
       return tau;
     }
 

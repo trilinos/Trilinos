@@ -209,35 +209,48 @@ namespace TSQR {
     }
 
     void
-    factor_pair (const Ordinal n,
-                 Scalar R_top[],
-                 const Ordinal ldr_top,
-                 Scalar R_bot[],
-                 const Ordinal ldr_bot,
+    factor_pair (const MatView<Ordinal, Scalar>& R_top,
+                 const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[])
     {
-      const Ordinal numRows = Ordinal(2) * n;
+      const Ordinal numRows = Ordinal(2) * R_top.extent (1);
+      const Ordinal numCols = R_top.extent (1);
 
-      A_buf_.reshape (numRows, n);
+      A_buf_.reshape (numRows, numCols);
       deep_copy (A_buf_, Scalar {});
+      MatView<Ordinal, Scalar> A_buf_top (numCols, numCols,
+                                          &A_buf_(0, 0),
+                                          A_buf_.stride(1));
+      MatView<Ordinal, Scalar> A_buf_bot (numCols, numCols,
+                                          &A_buf_(numCols, 0),
+                                          A_buf_.stride(1));
       // Copy the inputs into the compute buffer.  Only touch the
       // upper triangles of R_top and R_bot, since they each may be
       // views of some cache block (where the strict lower triangle
       // contains things we don't want to include in the
       // factorization).
-      copy_upper_triangle (n, n, &A_buf_(0, 0), A_buf_.stride(1), R_top, ldr_top);
-      copy_upper_triangle (n, n, &A_buf_(n, 0), A_buf_.stride(1), R_bot, ldr_bot);
+      copy_upper_triangle (numCols, numCols,
+                           A_buf_top.data(), A_buf_top.stride(1),
+                           R_top.data(), R_top.stride(1));
+      copy_upper_triangle (numCols, numCols,
+                           A_buf_bot.data(), A_buf_bot.stride(1),
+                           R_bot.data(), R_bot.stride(1));
 
-      const int lwork = n;
-      lapack_.compute_QR (numRows, n, A_buf_.data(), A_buf_.stride(1),
+      const int lwork = static_cast<int> (numCols);
+      lapack_.compute_QR (numRows, numCols,
+                          A_buf_.data(), A_buf_.stride(1),
                           tau, work, lwork);
       // Copy back the results.  Only read the upper triangles of the
       // two n by n row blocks of A_buf_ (this means we don't have to
       // zero out the strict lower triangles), and only touch the
       // upper triangles of R_top and R_bot.
-      copy_upper_triangle (n, n, R_top, ldr_top, &A_buf_(0, 0), A_buf_.stride(1));
-      copy_upper_triangle (n, n, R_bot, ldr_bot, &A_buf_(n, 0), A_buf_.stride(1));
+      copy_upper_triangle (numCols, numCols,
+                           R_top.data(), R_top.stride(1),
+                           A_buf_top.data(), A_buf_top.stride(1));
+      copy_upper_triangle (numCols, numCols,
+                           R_bot.data(), R_bot.stride(1),
+                           A_buf_bot.data(), A_buf_bot.stride(1));
     }
 
     void

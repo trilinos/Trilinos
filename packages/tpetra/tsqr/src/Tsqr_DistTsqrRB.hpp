@@ -388,13 +388,13 @@ namespace TSQR {
           matrix_type R_other (numCols, numCols);
           recv_R (R_other, P_mid);
 
-          std::vector< scalar_type > tau (numCols);
+          std::vector<scalar_type> tau (numCols);
           // Don't shrink the workspace array; doing so may
           // require expensive reallocation every time we send /
           // receive data.
           resizeWork (numCols);
-          combine_.factor_pair (numCols, R_mine.data(), R_mine.stride(1),
-                                R_other.data(), R_other.stride(1),
+
+          combine_.factor_pair (R_mine, R_other.view (),
                                 tau.data(), work_.data());
           QFactors.push_back (R_other);
           tauArrays.push_back (tau);
