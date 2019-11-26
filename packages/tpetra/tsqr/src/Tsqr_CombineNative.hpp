@@ -50,7 +50,7 @@
 #include "KokkosBlas2_gemv.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Tsqr_Impl_Lapack.hpp"
-#include "Tsqr_Matrix.hpp"
+#include "Tsqr_MatView.hpp"
 
 namespace TSQR {
 
@@ -98,16 +98,6 @@ namespace TSQR {
                   Scalar work[]) const
     {
       return default_.factor_first (A, tau, work);
-    }
-
-    void
-    factor_first (Matrix<Ordinal, Scalar>& A,
-                  Scalar tau[],
-                  Scalar work[]) const
-    {
-      MatView<Ordinal, Scalar> A_view
-        (A.extent (0), A.extent (1), A.data (), A.stride (1));
-      return factor_first (A_view, tau, work);
     }
 
     void
@@ -290,16 +280,6 @@ namespace TSQR {
     }
 
     void
-    factor_first (Matrix<Ordinal, Scalar>& A,
-                  Scalar tau[],
-                  Scalar work[]) const
-    {
-      MatView<Ordinal, Scalar> A_view
-        (A.extent (0), A.extent (1), A.data (), A.stride (1));
-      return factor_first (A_view, tau, work);
-    }
-
-    void
     apply_first (const ApplyType& applyType,
                  const Ordinal nrows,
                  const Ordinal ncols_C,
@@ -386,16 +366,6 @@ namespace TSQR {
                   Scalar work[]) const
     {
       return default_.factor_first (A, tau, work);
-    }
-
-    void
-    factor_first (Matrix<Ordinal, Scalar>& A,
-                  Scalar tau[],
-                  Scalar work[]) const
-    {
-      MatView<Ordinal, Scalar> A_view
-        (A.extent (0), A.extent (1), A.data (), A.stride (1));
-      return factor_first (A_view, tau, work);
     }
 
     void

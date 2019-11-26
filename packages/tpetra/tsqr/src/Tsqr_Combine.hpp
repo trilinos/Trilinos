@@ -136,16 +136,6 @@ namespace TSQR {
       return impl_.factor_first (A, tau, work);
     }
 
-    void
-    factor_first (Matrix<Ordinal, Scalar>& A,
-                  Scalar tau[],
-                  Scalar work[]) const
-    {
-      MatView<Ordinal, Scalar> A_view
-        (A.extent (0), A.extent (1), A.data (), A.stride (1));
-      return factor_first (A_view, tau, work);
-    }
-
     /// \brief Apply the result of \c factor_first().
     ///
     /// Apply the Q factor, as computed by factor_first() and stored
