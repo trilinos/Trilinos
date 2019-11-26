@@ -110,7 +110,7 @@ namespace TSQR {
       }
       else if (P_first == P_last) {
         std::pair<SeqOutput, mat_view> results =
-          seq_.factor (A.extent(0), A.extent(1), A.data(), A.lda(),
+          seq_.factor (A.extent(0), A.extent(1), A.data(), A.stride(1),
                        contiguous_cache_blocks);
         seq_outputs[P_first] = results.first;
         A_top = A;
@@ -137,7 +137,7 @@ namespace TSQR {
       // the topmost partition.
       if (depth == 0) {
         seq_.extract_R (A_top.extent(0), A_top.extent(1), A_top.data(),
-                        A_top.lda(), R, ldr, contiguous_cache_blocks);
+                        A_top.stride(1), R, ldr, contiguous_cache_blocks);
       }
       return A_top;
     }
@@ -188,8 +188,8 @@ namespace TSQR {
           const_mat_view Q_top = blocker.top_block (Q, contiguous_cache_blocks);
           mat_view C_top = blocker.top_block (C, contiguous_cache_blocks);
           top_blocks[P_first] =
-            std::make_pair (const_mat_view (Q_top.extent(1), Q_top.extent(1), Q_top.data(), Q_top.lda()),
-                            mat_view (C_top.extent(1), C_top.extent(1), C_top.data(), C_top.lda()));
+            std::make_pair (const_mat_view (Q_top.extent(1), Q_top.extent(1), Q_top.data(), Q_top.stride(1)),
+                            mat_view (C_top.extent(1), C_top.extent(1), C_top.data(), C_top.stride(1)));
         }
       else
         {
@@ -227,9 +227,9 @@ namespace TSQR {
       else if (P_first == P_last)
         {
           const std::vector< SeqOutput >& seq_outputs = factor_output.first;
-          seq_.apply ("N", Q.extent(0), Q.extent(1), Q.data(), Q.lda(),
+          seq_.apply ("N", Q.extent(0), Q.extent(1), Q.data(), Q.stride(1),
                       seq_outputs[P_first], C.extent(1), C.data(),
-                      C.lda(), contiguous_cache_blocks);
+                      C.stride(1), contiguous_cache_blocks);
         }
       else
         {
@@ -270,9 +270,9 @@ namespace TSQR {
       }
       else if (P_first == P_last) {
         const std::vector<SeqOutput>& seq_outputs = factor_output.first;
-        seq_.apply (op, Q.extent(0), Q.extent(1), Q.data(), Q.lda(),
+        seq_.apply (op, Q.extent(0), Q.extent(1), Q.data(), Q.stride(1),
                     seq_outputs[P_first], C.extent(1), C.data(),
-                    C.lda(), contiguous_cache_blocks);
+                    C.stride(1), contiguous_cache_blocks);
         return std::make_pair (Q, C);
       }
       else {
@@ -327,8 +327,8 @@ namespace TSQR {
       std::vector< Scalar > work (ncols);
 
       TSQR::Combine< LocalOrdinal, Scalar > combine_;
-      combine_.factor_pair (ncols, A_top.data(), A_top.lda(),
-                            A_bot.data(), A_bot.lda(), &tau[0], &work[0]);
+      combine_.factor_pair (ncols, A_top.data(), A_top.stride(1),
+                            A_bot.data(), A_bot.stride(1), &tau[0], &work[0]);
     }
 
     template< class LocalOrdinal, class Scalar >
@@ -351,9 +351,9 @@ namespace TSQR {
 
       TSQR::Combine<LocalOrdinal, Scalar> combine_;
       combine_.apply_pair (trans.c_str(), C_top.extent(1), Q_bot.extent(1),
-                           Q_bot.data(), Q_bot.lda(), &tau[0],
-                           C_top.data(), C_top.lda(),
-                           C_bot.data(), C_bot.lda(), &work[0]);
+                           Q_bot.data(), Q_bot.stride(1), &tau[0],
+                           C_top.data(), C_top.stride(1),
+                           C_bot.data(), C_bot.stride(1), &work[0]);
     }
 
     template< class LocalOrdinal, class Scalar >
@@ -368,7 +368,7 @@ namespace TSQR {
         return;
       else if (P_first == P_last)
         seq_.cache_block (A_out.extent(0), A_out.extent(1), A_out.data(),
-                          A_in.data(), A_in.lda());
+                          A_in.data(), A_in.stride(1));
       else
         {
           const size_t P_mid = (P_first + P_last) / 2;
@@ -396,7 +396,8 @@ namespace TSQR {
       }
       else if (P_first == P_last) {
         seq_.un_cache_block (A_out.extent(0), A_out.extent(1),
-                             A_out.data(), A_out.lda(), A_in.data());
+                             A_out.data(), A_out.stride(1),
+                             A_in.data());
       }
       else {
         const size_t P_mid = (P_first + P_last) / 2;

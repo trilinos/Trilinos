@@ -293,7 +293,8 @@ namespace TSQR {
         matrix_type A (numRows, numCols);
         std::vector<magnitude_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_svd (numRows, numCols, A.data(), A.lda(), sigmas.data());
+        matGen.fill_random_svd (numRows, numCols, A.data(),
+                                A.stride(1), sigmas.data());
 
         // A place to put the Q factor.
         matrix_type Q (numRows, numCols);
@@ -314,11 +315,11 @@ namespace TSQR {
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
           {
-            combiner.factor_first (numRows, numCols, A.data(), A.lda(),
+            combiner.factor_first (numRows, numCols, A.data(), A.stride(1),
                                    tau.data(), work.data());
             combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
-                                  A.data(), A.lda(), tau.data(),
-                                  Q.data(), Q.lda(), work.data());
+                                  A.data(), A.stride(1), tau.data(),
+                                  Q.data(), Q.stride(1), work.data());
           }
 
         // How much time numTrials runs must take in order for
@@ -344,11 +345,11 @@ namespace TSQR {
           timer.start();
           for (int trial = 0; trial < numTrials; ++trial)
             {
-              combiner.factor_first (numRows, numCols, A.data(), A.lda(),
+              combiner.factor_first (numRows, numCols, A.data(), A.stride(1),
                                      tau.data(), work.data());
               combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
-                                    A.data(), A.lda(), tau.data(),
-                                    Q.data(), Q.lda(), work.data());
+                                    A.data(), A.stride(1), tau.data(),
+                                    Q.data(), Q.stride(1), work.data());
             }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
@@ -377,10 +378,11 @@ namespace TSQR {
                       const Ordinal numCols,
                       const int numTrials)
       {
-        if (numRows == 0 || numCols == 0)
+        if (numRows == 0 || numCols == 0) {
           throw std::invalid_argument("Benchmarking does not make sense for "
                                       "a matrix with either zero rows or zero "
                                       "columns.");
+        }
         TEUCHOS_TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument,
                            "The number of trials must be positive, but "
                            "numTrials = " << numTrials << ".");
@@ -392,7 +394,8 @@ namespace TSQR {
         matrix_type A (numRows, numCols);
         std::vector<magnitude_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_svd (numRows, numCols, A.data(), A.lda(), sigmas.data());
+        matGen.fill_random_svd (numRows, numCols, A.data(),
+                                A.stride(1), sigmas.data());
 
         // A place to put the Q factor.
         matrix_type Q (numRows, numCols);
@@ -410,27 +413,25 @@ namespace TSQR {
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
-        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
-          {
-            combiner.factor_first (numRows, numCols, A.data(), A.lda(),
-                                   tau.data(), work.data());
-            combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
-                                  A.data(), A.lda(), tau.data(),
-                                  Q.data(), Q.lda(), work.data());
-          }
+        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
+          combiner.factor_first (numRows, numCols, A.data(), A.stride(1),
+                                 tau.data(), work.data());
+          combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
+                                A.data(), A.stride(1), tau.data(),
+                                Q.data(), Q.stride(1), work.data());
+        }
         //
         // The actual timing runs.
         //
         timer_type timer ("Combine first");
         timer.start();
-        for (int trial = 0; trial < numTrials; ++trial)
-          {
-            combiner.factor_first (numRows, numCols, A.data(), A.lda(),
-                                   tau.data(), work.data());
-            combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
-                                  A.data(), A.lda(), tau.data(),
-                                  Q.data(), Q.lda(), work.data());
-          }
+        for (int trial = 0; trial < numTrials; ++trial) {
+          combiner.factor_first (numRows, numCols, A.data(), A.stride(1),
+                                 tau.data(), work.data());
+          combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
+                                A.data(), A.stride(1), tau.data(),
+                                Q.data(), Q.stride(1), work.data());
+        }
         return timer.stop();
       }
 
@@ -478,12 +479,14 @@ namespace TSQR {
         matrix_type R (numCols, numCols);
         std::vector<magnitude_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R.data(), R.lda(), sigmas.data());
+        matGen.fill_random_R (numCols, R.data(),
+                              R.stride(1), sigmas.data());
 
         // Now generate a random cache block.
         matrix_type A (numRows, numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_svd (numRows, numCols, A.data(), A.lda(), sigmas.data());
+        matGen.fill_random_svd (numRows, numCols, A.data(),
+                                A.stride(1), sigmas.data());
 
         // A place to put the Q factor.
         matrix_type Q (numRows + numCols, numCols);
@@ -501,16 +504,15 @@ namespace TSQR {
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
-        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
-          {
-            combiner.factor_inner (numRows, numCols, R.data(), R.lda(),
-                                   A.data(), A.lda(), tau.data(), work.data());
-            combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
-                                  A.data(), A.lda(), tau.data(),
-                                  &Q(0, 0), Q.lda(),
-                                  &Q(numCols, 0), Q.lda(),
-                                  work.data());
-          }
+        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
+          combiner.factor_inner (numRows, numCols, R.data(), R.stride(1),
+                                 A.data(), A.stride(1), tau.data(), work.data());
+          combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
+                                A.data(), A.stride(1), tau.data(),
+                                &Q(0, 0), Q.stride(1),
+                                &Q(numCols, 0), Q.stride(1),
+                                work.data());
+        }
 
         // How much time numTrials runs must take in order for
         // numTrials to be considered sufficiently large.
@@ -533,16 +535,15 @@ namespace TSQR {
         do {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
-          for (int trial = 0; trial < numTrials; ++trial)
-            {
-              combiner.factor_inner (numRows, numCols, R.data(), R.lda(),
-                                     A.data(), A.lda(), tau.data(), work.data());
-              combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
-                                    A.data(), A.lda(), tau.data(),
-                                    &Q(0, 0), Q.lda(),
-                                    &Q(numCols, 0), Q.lda(),
-                                    work.data());
-            }
+          for (int trial = 0; trial < numTrials; ++trial) {
+            combiner.factor_inner (numRows, numCols, R.data(), R.stride(1),
+                                   A.data(), A.stride(1), tau.data(), work.data());
+            combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
+                                  A.data(), A.stride(1), tau.data(),
+                                  &Q(0, 0), Q.stride(1),
+                                  &Q(numCols, 0), Q.stride(1),
+                                  work.data());
+          }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
 
@@ -588,12 +589,12 @@ namespace TSQR {
         matrix_type R (numCols, numCols);
         std::vector<magnitude_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R.data(), R.lda(), sigmas.data());
+        matGen.fill_random_R (numCols, R.data(), R.stride(1), sigmas.data());
 
         // Now generate a random cache block.
         matrix_type A (numRows, numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_svd (numRows, numCols, A.data(), A.lda(), sigmas.data());
+        matGen.fill_random_svd (numRows, numCols, A.data(), A.stride(1), sigmas.data());
 
         // A place to put the Q factor.
         matrix_type Q (numRows + numCols, numCols);
@@ -611,31 +612,35 @@ namespace TSQR {
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
-        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
-          {
-            combiner.factor_inner (numRows, numCols, R.data(), R.lda(),
-                                   A.data(), A.lda(), tau.data(), work.data());
-            combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
-                                  A.data(), A.lda(), tau.data(),
-                                  &Q(0, 0), Q.lda(),
-                                  &Q(numCols, 0), Q.lda(),
-                                  work.data());
-          }
+        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
+          combiner.factor_inner (numRows, numCols,
+                                 R.data(), R.stride(1),
+                                 A.data(), A.stride(1), tau.data(),
+                                 work.data());
+          combiner.apply_inner (ApplyType("N"),
+                                numRows, numCols, numCols,
+                                A.data(), A.stride(1), tau.data(),
+                                &Q(0, 0), Q.stride(1),
+                                &Q(numCols, 0), Q.stride(1),
+                                work.data());
+        }
         //
         // The actual timing runs.
         //
         timer_type timer ("Combine cache block");
         timer.start();
-        for (int trial = 0; trial < numTrials; ++trial)
-          {
-            combiner.factor_inner (numRows, numCols, R.data(), R.lda(),
-                                   A.data(), A.lda(), tau.data(), work.data());
-            combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
-                                  A.data(), A.lda(), tau.data(),
-                                  &Q(0, 0), Q.lda(),
-                                  &Q(numCols, 0), Q.lda(),
-                                  work.data());
-          }
+        for (int trial = 0; trial < numTrials; ++trial) {
+          combiner.factor_inner (numRows, numCols,
+                                 R.data(), R.stride(1),
+                                 A.data(), A.stride(1),
+                                 tau.data(), work.data());
+          combiner.apply_inner (ApplyType("N"),
+                                numRows, numCols, numCols,
+                                A.data(), A.stride(1), tau.data(),
+                                &Q(0, 0), Q.stride(1),
+                                &Q(numCols, 0), Q.stride(1),
+                                work.data());
+        }
         return timer.stop();
       }
 
@@ -679,12 +684,12 @@ namespace TSQR {
         matrix_type R1 (numCols, numCols);
         std::vector<magnitude_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R1.data(), R1.lda(), sigmas.data());
+        matGen.fill_random_R (numCols, R1.data(), R1.stride(1), sigmas.data());
 
         // Now generate R2.
         matrix_type R2 (numCols, numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R2.data(), R2.lda(), sigmas.data());
+        matGen.fill_random_R (numCols, R2.data(), R2.stride(1), sigmas.data());
 
         // A place to put the Q factor of [R1; R2].
         matrix_type Q (2*numCols, numCols);
@@ -702,17 +707,16 @@ namespace TSQR {
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
-        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
-          {
-            combiner.factor_pair (numCols, R1.data(), R1.lda(),
-                                  R2.data(), R2.lda(),
-                                  tau.data(), work.data());
-            combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                                 R2.data(), R2.lda(), tau.data(),
-                                 &Q(0, 0), Q.lda(),
-                                 &Q(numCols, 0), Q.lda(),
-                                 work.data());
-          }
+        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
+          combiner.factor_pair (numCols, R1.data(), R1.stride(1),
+                                R2.data(), R2.stride(1),
+                                tau.data(), work.data());
+          combiner.apply_pair (ApplyType("N"), numCols, numCols,
+                               R2.data(), R2.stride(1), tau.data(),
+                               &Q(0, 0), Q.stride(1),
+                               &Q(numCols, 0), Q.stride(1),
+                               work.data());
+        }
 
         // How much time numTrials runs must take in order for
         // numTrials to be considered sufficiently large.
@@ -735,17 +739,16 @@ namespace TSQR {
         do {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
-          for (int trial = 0; trial < numTrials; ++trial)
-            {
-              combiner.factor_pair (numCols, R1.data(), R1.lda(),
-                                    R2.data(), R2.lda(),
-                                    tau.data(), work.data());
-              combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                                   R2.data(), R2.lda(), tau.data(),
-                                   &Q(0, 0), Q.lda(),
-                                   &Q(numCols, 0), Q.lda(),
-                                   work.data());
-            }
+          for (int trial = 0; trial < numTrials; ++trial) {
+            combiner.factor_pair (numCols, R1.data(), R1.stride(1),
+                                  R2.data(), R2.stride(1),
+                                  tau.data(), work.data());
+            combiner.apply_pair (ApplyType("N"), numCols, numCols,
+                                 R2.data(), R2.stride(1), tau.data(),
+                                 &Q(0, 0), Q.stride(1),
+                                 &Q(numCols, 0), Q.stride(1),
+                                 work.data());
+          }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
 
@@ -787,12 +790,12 @@ namespace TSQR {
         matrix_type R1 (numCols, numCols);
         std::vector<magnitude_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R1.data(), R1.lda(), sigmas.data());
+        matGen.fill_random_R (numCols, R1.data(), R1.stride(1), sigmas.data());
 
         // Now generate R2.
         matrix_type R2 (numCols, numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R2.data(), R2.lda(), sigmas.data());
+        matGen.fill_random_R (numCols, R2.data(), R2.stride(1), sigmas.data());
 
         // A place to put the Q factor of [R1; R2].
         matrix_type Q (2*numCols, numCols);
@@ -810,33 +813,31 @@ namespace TSQR {
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
-        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
-          {
-            combiner.factor_pair (numCols, R1.data(), R1.lda(),
-                                  R2.data(), R2.lda(),
-                                  tau.data(), work.data());
-            combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                                 R2.data(), R2.lda(), tau.data(),
-                                 &Q(0, 0), Q.lda(),
-                                 &Q(numCols, 0), Q.lda(),
-                                 work.data());
-          }
+        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
+          combiner.factor_pair (numCols, R1.data(), R1.stride(1),
+                                R2.data(), R2.stride(1),
+                                tau.data(), work.data());
+          combiner.apply_pair (ApplyType("N"), numCols, numCols,
+                               R2.data(), R2.stride(1), tau.data(),
+                               &Q(0, 0), Q.stride(1),
+                               &Q(numCols, 0), Q.stride(1),
+                               work.data());
+        }
         //
         // The actual timing runs.
         //
         timer_type timer ("Combine pair");
         timer.start();
-        for (int trial = 0; trial < numTrials; ++trial)
-          {
-            combiner.factor_pair (numCols, R1.data(), R1.lda(),
-                                  R2.data(), R2.lda(),
-                                  tau.data(), work.data());
-            combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                                 R2.data(), R2.lda(), tau.data(),
-                                 &Q(0, 0), Q.lda(),
-                                 &Q(numCols, 0), Q.lda(),
-                                 work.data());
-          }
+        for (int trial = 0; trial < numTrials; ++trial) {
+          combiner.factor_pair (numCols, R1.data(), R1.stride(1),
+                                R2.data(), R2.stride(1),
+                                tau.data(), work.data());
+          combiner.apply_pair (ApplyType("N"), numCols, numCols,
+                               R2.data(), R2.stride(1), tau.data(),
+                               &Q(0, 0), Q.stride(1),
+                               &Q(numCols, 0), Q.stride(1),
+                               work.data());
+        }
         return timer.stop();
       }
 

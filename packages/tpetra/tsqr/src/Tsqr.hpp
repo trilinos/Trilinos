@@ -284,7 +284,7 @@ namespace TSQR {
       // part of the QR factorization.
       {
         mat_view_type Q_top (numCols, numCols, Q_top_block.data(),
-                            Q_top_block.lda());
+                            Q_top_block.stride(1));
         mat_view_type R_view (numCols, numCols, R, LDR);
         distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
       }
@@ -374,7 +374,7 @@ namespace TSQR {
       // part of the QR factorization.
       {
         mat_view_type Q_top (numCols, numCols, Q_top_block.data(),
-                            Q_top_block.lda());
+                            Q_top_block.stride(1));
         mat_view_type R_view (numCols, numCols, R, LDR);
         distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
       }
@@ -453,7 +453,7 @@ namespace TSQR {
       deep_copy (R_view, Scalar {});
       NodeOutput nodeResults =
         nodeTsqr_->factor (nrows_local, ncols, A_local, lda_local,
-                          R_view.data(), R_view.lda(),
+                          R_view.data(), R_view.stride(1),
                           contiguousCacheBlocks);
       DistOutput distResults = distTsqr_->factor (R_view);
       return std::make_pair (nodeResults, distResults);
@@ -531,7 +531,7 @@ namespace TSQR {
 
       // View of the topmost ncols_C by ncols_C block of C.
       mat_view_type C_top_view (ncols_C, ncols_C, C_view_top_block.data(),
-                                C_view_top_block.lda());
+                                C_view_top_block.stride(1));
 
       if (! transposed) {
         // C_top (small compact storage) gets a deep copy of the top
@@ -540,7 +540,7 @@ namespace TSQR {
 
         // Compute in place on all processors' C_top blocks.
         distTsqr_->apply (applyType, C_top.extent(1), ncols_Q, C_top.data(),
-                          C_top.lda(), factor_output.second);
+                          C_top.stride(1), factor_output.second);
 
         // Copy the result from C_top back into the top ncols_C by
         // ncols_C block of C_local.
@@ -567,7 +567,7 @@ namespace TSQR {
 
         // Compute in place on all processors' C_top blocks.
         distTsqr_->apply (applyType, ncols_C, ncols_Q, C_top.data(),
-                          C_top.lda(), factor_output.second);
+                          C_top.stride(1), factor_output.second);
 
         // Copy the result from C_top back into the top ncols_C by
         // ncols_C block of C_local.
@@ -764,13 +764,13 @@ namespace TSQR {
       //
       matrix_type U (ncols, ncols, STS::zero());
       const ordinal_type rank =
-        reveal_R_rank (ncols, R, ldr, U.data(), U.lda(), tol);
+        reveal_R_rank (ncols, R, ldr, U.data(), U.stride(1), tol);
       if (rank < ncols) {
         // If R is not full rank: reveal_R_rank() already computed
         // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
         // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
         // := Q \cdot U\f$, respecting cache blocks of Q.
-        Q_times_B (nrows, ncols, Q, ldq, U.data(), U.lda(),
+        Q_times_B (nrows, ncols, Q, ldq, U.data(), U.stride(1),
                    contiguousCacheBlocks);
       }
       return rank;

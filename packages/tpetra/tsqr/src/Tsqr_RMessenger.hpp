@@ -194,7 +194,8 @@ namespace TSQR {
       const ordinal_type ncols = R_stack.extent(1);
 
       // Copy data from top ncols x ncols block of R_stack into R_local.
-      const_view_type R_stack_view_first (ncols, ncols, R_stack.data(), R_stack.lda());
+      const_view_type R_stack_view_first (ncols, ncols, R_stack.data(),
+                                          R_stack.stride(1));
       deep_copy (R_local, R_stack_view_first);
 
       // Loop through all other processors, sending each the next
@@ -202,7 +203,7 @@ namespace TSQR {
       RMessenger< ordinal_type, scalar_type > sender (messenger);
       for (int destProc = 1; destProc < nprocs; ++destProc) {
         const scalar_type* const R_ptr = R_stack.data() + destProc*ncols;
-        const_view_type R_stack_view_cur (ncols, ncols, R_ptr, R_stack.lda());
+        const_view_type R_stack_view_cur (ncols, ncols, R_ptr, R_stack.stride(1));
         sender.send (R_stack_view_cur, destProc);
       }
     }
@@ -234,14 +235,16 @@ namespace TSQR {
       const ordinal_type ncols = R_stack.extent(1);
 
       // Copy data from R_local into top ncols x ncols block of R_stack.
-      mat_view_type R_stack_view_first (ncols, ncols, R_stack.data(), R_stack.lda());
+      mat_view_type R_stack_view_first (ncols, ncols, R_stack.data(),
+                                        R_stack.stride(1));
       deep_copy (R_stack_view_first, R_local);
 
       // Loop through all other processors, fetching their matrix data.
       RMessenger< ordinal_type, scalar_type > receiver (messenger);
       for (int srcProc = 1; srcProc < nprocs; ++srcProc) {
         const scalar_type* const R_ptr = R_stack.data() + srcProc*ncols;
-        mat_view_type R_stack_view_cur (ncols, ncols, R_ptr, R_stack.lda());
+        mat_view_type R_stack_view_cur (ncols, ncols, R_ptr,
+                                        R_stack.stride(1));
         // Fill (the lower triangle) with zeros, since
         // RMessenger::recv() only writes to the upper triangle.
         deep_copy (R_stack_view_cur, scalar_type {});

@@ -338,72 +338,71 @@ namespace TSQR {
                   const rank_type P_mine,
                   const rank_type P_first,
                   const rank_type P_last,
-                  std::vector< matrix_type >& QFactors,
-                  std::vector< std::vector< scalar_type > >& tauArrays)
+                  std::vector<matrix_type>& QFactors,
+                  std::vector<std::vector<scalar_type>>& tauArrays)
     {
-      if (P_last < P_first)
-        {
-          std::ostringstream os;
-          os << "Programming error in factorReduce() recursion: interval "
-            "[P_first, P_last] is invalid: P_first = " << P_first
-             << ", P_last = " << P_last << ".";
-          throw std::logic_error (os.str());
-        }
-      else if (P_mine < P_first || P_mine > P_last)
-        {
-          std::ostringstream os;
-          os << "Programming error in factorReduce() recursion: P_mine (= "
-             << P_mine << ") is not in current process rank interval "
-             << "[P_first = " << P_first << ", P_last = " << P_last << "]";
-          throw std::logic_error (os.str());
-        }
-      else if (P_last == P_first)
+      if (P_last < P_first) {
+        std::ostringstream os;
+        os << "factorReduce: Interval [P_first=" << P_first
+           << ", P_last=" << P_last << "] is invalid.";
+        throw std::logic_error (os.str());
+      }
+      else if (P_mine < P_first || P_mine > P_last) {
+        std::ostringstream os;
+        os << "factorReduce: P_mine=" << P_mine << " is not in "
+           << "current process rank interval [P_first=" << P_first
+           << ", P_last=" << P_last << "]";
+        throw std::logic_error (os.str());
+      }
+      else if (P_last == P_first) {
         return; // skip singleton intervals (see explanation below)
-      else
-        {
-          // Recurse on two intervals: [P_first, P_mid-1] and [P_mid,
-          // P_last].  For example, if [P_first, P_last] = [0, 9],
-          // P_mid = floor( (0+9+1)/2 ) = 5 and the intervals are
-          // [0,4] and [5,9].
-          //
-          // If [P_first, P_last] = [4,6], P_mid = floor( (4+6+1)/2 )
-          // = 5 and the intervals are [4,4] (a singleton) and [5,6].
-          // The latter case shows that singleton intervals may arise.
-          // We treat them as a base case in the recursion.  Process 4
-          // won't be skipped completely, though; it will get combined
-          // with the result from [5,6].
+      }
+      else {
+        // Recurse on two intervals: [P_first, P_mid-1] and [P_mid,
+        // P_last].  For example, if [P_first, P_last] = [0, 9], P_mid
+        // = floor( (0+9+1)/2 ) = 5 and the intervals are [0,4] and
+        // [5,9].
+        //
+        // If [P_first, P_last] = [4,6], P_mid = floor( (4+6+1)/2 ) =
+        // 5 and the intervals are [4,4] (a singleton) and [5,6].  The
+        // latter case shows that singleton intervals may arise.  We
+        // treat them as a base case in the recursion.  Process 4
+        // won't be skipped completely, though; it will get combined
+        // with the result from [5,6].
 
-          // Adding 1 and doing integer division works like "ceiling."
-          const rank_type P_mid = (P_first + P_last + 1) / 2;
+        // Adding 1 and doing integer division works like "ceiling."
+        const rank_type P_mid = (P_first + P_last + 1) / 2;
 
-          if (P_mine < P_mid) // Interval [P_first, P_mid-1]
-            factorReduce (R_mine, P_mine, P_first, P_mid - 1,
-                          QFactors, tauArrays);
-          else // Interval [P_mid, P_last]
-            factorReduce (R_mine, P_mine, P_mid, P_last,
-                          QFactors, tauArrays);
-
-          // This only does anything if P_mine is either P_first or P_mid.
-          if (P_mine == P_first)
-            {
-              const ordinal_type numCols = R_mine.extent(1);
-              matrix_type R_other (numCols, numCols);
-              recv_R (R_other, P_mid);
-
-              std::vector< scalar_type > tau (numCols);
-              // Don't shrink the workspace array; doing so may
-              // require expensive reallocation every time we send /
-              // receive data.
-              resizeWork (numCols);
-              combine_.factor_pair (numCols, R_mine.data(), R_mine.lda(),
-                                    R_other.data(), R_other.lda(),
-                                    tau.data(), work_.data());
-              QFactors.push_back (R_other);
-              tauArrays.push_back (tau);
-            }
-          else if (P_mine == P_mid)
-            send_R (R_mine, P_first);
+        if (P_mine < P_mid) { // Interval [P_first, P_mid-1]
+          factorReduce (R_mine, P_mine, P_first, P_mid - 1,
+                        QFactors, tauArrays);
         }
+        else { // Interval [P_mid, P_last]
+          factorReduce (R_mine, P_mine, P_mid, P_last,
+                        QFactors, tauArrays);
+        }
+
+        // This only does anything if P_mine is either P_first or P_mid.
+        if (P_mine == P_first) {
+          const ordinal_type numCols = R_mine.extent(1);
+          matrix_type R_other (numCols, numCols);
+          recv_R (R_other, P_mid);
+
+          std::vector< scalar_type > tau (numCols);
+          // Don't shrink the workspace array; doing so may
+          // require expensive reallocation every time we send /
+          // receive data.
+          resizeWork (numCols);
+          combine_.factor_pair (numCols, R_mine.data(), R_mine.stride(1),
+                                R_other.data(), R_other.stride(1),
+                                tau.data(), work_.data());
+          QFactors.push_back (R_other);
+          tauArrays.push_back (tau);
+        }
+        else if (P_mine == P_mid) {
+          send_R (R_mine, P_first);
+        }
+      }
     }
 
     void
@@ -417,71 +416,71 @@ namespace TSQR {
                         std::vector< matrix_type >& QFactors,
                         std::vector< std::vector< scalar_type > >& tauArrays)
     {
-      if (P_last < P_first)
-        {
-          std::ostringstream os;
-          os << "Programming error in explicitQBroadcast() recursion: interval"
-            " [P_first, P_last] is invalid: P_first = " << P_first
-             << ", P_last = " << P_last << ".";
-          throw std::logic_error (os.str());
-        }
-      else if (P_mine < P_first || P_mine > P_last)
-        {
-          std::ostringstream os;
-          os << "Programming error in explicitQBroadcast() recursion: P_mine "
-            "(= " << P_mine << ") is not in current process rank interval "
-             << "[P_first = " << P_first << ", P_last = " << P_last << "]";
-          throw std::logic_error (os.str());
-        }
-      else if (P_last == P_first)
+      if (P_last < P_first) {
+        std::ostringstream os;
+        os << "explicitQBroadcast: interval [P_first=" << P_first
+           << ", P_last=" << P_last << "] is invalid.";
+        throw std::logic_error (os.str());
+      }
+      else if (P_mine < P_first || P_mine > P_last) {
+        std::ostringstream os;
+        os << "explicitQBroadcast: P_mine=" << P_mine << " is not "
+          "in current process rank interval [P_first = " << P_first
+           << ", P_last = " << P_last << "]";
+        throw std::logic_error (os.str());
+      }
+      else if (P_last == P_first) {
         return; // skip singleton intervals
-      else
-        {
-          // Adding 1 and integer division works like "ceiling."
-          const rank_type P_mid = (P_first + P_last + 1) / 2;
-          rank_type newpos = curpos;
-          if (P_mine == P_first)
-            {
-              if (curpos < 0)
-                {
-                  std::ostringstream os;
-                  os << "Programming error: On the current P_first (= "
-                     << P_first << ") proc: curpos (= " << curpos << ") < 0";
-                  throw std::logic_error (os.str());
-                }
-              // Q_impl, tau: implicitly stored local Q factor.
-              matrix_type& Q_impl = QFactors[curpos];
-              std::vector< scalar_type >& tau = tauArrays[curpos];
+      }
+      else {
+        // Adding 1 and integer division works like "ceiling."
+        const rank_type P_mid = (P_first + P_last + 1) / 2;
+        rank_type newpos = curpos;
+        if (P_mine == P_first) {
+          if (curpos < 0) {
+            std::ostringstream os;
+            os << "Programming error: On the current P_first (= "
+               << P_first << ") proc: curpos (= " << curpos << ") < 0";
+            throw std::logic_error (os.str());
+          }
+          // Q_impl, tau: implicitly stored local Q factor.
+          matrix_type& Q_impl = QFactors[curpos];
+          std::vector<scalar_type>& tau = tauArrays[curpos];
 
-              // Apply implicitly stored local Q factor to
-              //   [Q_mine;
-              //    Q_other]
-              // where Q_other = zeros(Q_mine.extent(0), Q_mine.extent(1)).
-              // Overwrite both Q_mine and Q_other with the result.
-              deep_copy (Q_other, scalar_type {});
-              combine_.apply_pair (ApplyType::NoTranspose,
-                                   Q_mine.extent(1), Q_impl.extent(1),
-                                   Q_impl.data(), Q_impl.lda(), tau.data(),
-                                   Q_mine.data(), Q_mine.lda(),
-                                   Q_other.data(), Q_other.lda(), work_.data());
-              // Send the resulting Q_other, and the final R factor, to P_mid.
-              send_Q_R (Q_other, R_mine, P_mid);
-              newpos = curpos - 1;
-            }
-          else if (P_mine == P_mid)
-            // P_first computed my explicit Q factor component.
-            // Receive it, and the final R factor, from P_first.
-            recv_Q_R (Q_mine, R_mine, P_first);
+          // Apply implicitly stored local Q factor to
+          //   [Q_mine;
+          //    Q_other]
+          // where Q_other = zeros(Q_mine.extent(0), Q_mine.extent(1)).
+          // Overwrite both Q_mine and Q_other with the result.
+          deep_copy (Q_other, scalar_type {});
+          combine_.apply_pair (ApplyType::NoTranspose,
+                               Q_mine.extent(1), Q_impl.extent(1),
+                               Q_impl.data(), Q_impl.stride(1),
+                               tau.data(),
+                               Q_mine.data(), Q_mine.stride(1),
+                               Q_other.data(), Q_other.stride(1),
+                               work_.data());
+          // Send the resulting Q_other, and the final R factor, to P_mid.
+          send_Q_R (Q_other, R_mine, P_mid);
+          newpos = curpos - 1;
+        }
+        else if (P_mine == P_mid) {
+          // P_first computed my explicit Q factor component.
+          // Receive it, and the final R factor, from P_first.
+          recv_Q_R (Q_mine, R_mine, P_first);
+        }
 
-          if (P_mine < P_mid) // Interval [P_first, P_mid-1]
-            explicitQBroadcast (R_mine, Q_mine, Q_other,
-                                P_mine, P_first, P_mid - 1,
-                                newpos, QFactors, tauArrays);
-          else // Interval [P_mid, P_last]
+        if (P_mine < P_mid) { // Interval [P_first, P_mid-1]
+          explicitQBroadcast (R_mine, Q_mine, Q_other,
+                              P_mine, P_first, P_mid - 1,
+                              newpos, QFactors, tauArrays);
+        }
+        else { // Interval [P_mid, P_last]
             explicitQBroadcast (R_mine, Q_mine, Q_other,
                                 P_mine, P_mid, P_last,
                                 newpos, QFactors, tauArrays);
         }
+      }
     }
 
     template< class ConstMatrixType1, class ConstMatrixType2 >

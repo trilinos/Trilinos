@@ -86,7 +86,7 @@ namespace TSQR {
           // Print the remote matrix data
           // out << "Processor " << my_rank << ":" << endl;
           print_local_matrix (out, A_local.extent(0), A_local.extent(1),
-                              A_local.data(), A_local.lda());
+                              A_local.data(), A_local.stride(1));
 
           // Space for remote matrix data.  Other processors are allowed
           // to have different nrows_local values; we make space as
@@ -130,7 +130,7 @@ namespace TSQR {
 
               // Print the remote matrix data
               // out << "Processor " << proc << ":" << endl;
-              print_local_matrix (out, dims[0], dims[0], A_remote.data(), A_remote.lda());
+              print_local_matrix (out, dims[0], dims[0], A_remote.data(), A_remote.stride(1));
             }
         }
       else

@@ -86,7 +86,7 @@ namespace TSQR {
         // If specified, rearrange cache blocks in the copy.
         if (contiguousCacheBlocks) {
           tsqr.cache_block (nrows_local, ncols, A_copy.data(),
-                            A_local.data(), A_local.lda());
+                            A_local.data(), A_local.stride(1));
           if (b_debug) {
             scalarComm->barrier ();
             if (scalarComm->rank () == 0)
@@ -110,8 +110,8 @@ namespace TSQR {
         else {
           // Factor the (copy of the) matrix.
           factor_output_type factorOutput =
-            tsqr.factor (nrows_local, ncols, A_copy.data(), A_copy.lda(),
-                         R.data(), R.lda(), contiguousCacheBlocks);
+            tsqr.factor (nrows_local, ncols, A_copy.data(), A_copy.stride(1),
+                         R.data(), R.stride(1), contiguousCacheBlocks);
           if (b_debug) {
             scalarComm->barrier ();
             if (scalarComm->rank () == 0)
@@ -120,8 +120,8 @@ namespace TSQR {
 
           // Compute the explicit Q factor in Q_local
           tsqr.explicit_Q (nrows_local,
-                           ncols, A_copy.data(), A_copy.lda(), factorOutput,
-                           ncols, Q_local.data(), Q_local.lda(),
+                           ncols, A_copy.data(), A_copy.stride(1), factorOutput,
+                           ncols, Q_local.data(), Q_local.stride(1),
                            contiguousCacheBlocks);
           if (b_debug) {
             scalarComm->barrier ();
@@ -137,7 +137,7 @@ namespace TSQR {
           // We can use A_copy as scratch space for un-cache-blocking
           // Q_local, since we're done using A_copy for other things.
           tsqr.un_cache_block (nrows_local, ncols, A_copy.data(),
-                               A_copy.lda(), Q_local.data());
+                               A_copy.stride(1), Q_local.data());
           // Overwrite Q_local with the un-cache-blocked Q factor.
           deep_copy (Q_local, A_copy);
 
@@ -321,7 +321,7 @@ namespace TSQR {
         scalarComm->barrier ();
         if (my_rank == 0) {
           cerr << endl << "R factor:" << endl;
-          print_local_matrix (cerr, ncols, ncols, R.data(), R.lda());
+          print_local_matrix (cerr, ncols, ncols, R.data(), R.stride(1));
           cerr << endl;
         }
         scalarComm->barrier ();
@@ -329,8 +329,8 @@ namespace TSQR {
 
       // Test accuracy of the resulting factorization
       std::vector< magnitude_type > results =
-        global_verify (nrows_local, ncols, A_local.data(), A_local.lda(),
-                       Q_local.data(), Q_local.lda(), R.data(), R.lda(),
+        global_verify (nrows_local, ncols, A_local.data(), A_local.stride(1),
+                       Q_local.data(), Q_local.stride(1), R.data(), R.stride(1),
                        scalarComm.get());
       if (b_debug) {
         scalarComm->barrier ();
@@ -443,7 +443,7 @@ namespace TSQR {
 
       if (contiguousCacheBlocks) {
         tsqr.cache_block (nrows_local, ncols, A_copy.data(),
-                          A_local.data(), A_local.lda());
+                          A_local.data(), A_local.stride(1));
         if (b_debug) {
           messenger->barrier ();
           if (messenger->rank () == 0) {
@@ -475,50 +475,46 @@ namespace TSQR {
 
       const bool testFactorExplicit = true;
       double tsqr_timing;
-      if (testFactorExplicit)
-        {
-          timer.start();
-          for (int trial_num = 0; trial_num < ntrials; ++trial_num)
-            tsqr.factorExplicit (A_copy.view(), Q_local.view(), R.view(),
-                                 contiguousCacheBlocks);
-          tsqr_timing = timer.stop();
-        }
-      else
-        {
-          timer.start();
-          for (int trial_num = 0; trial_num < ntrials; ++trial_num)
-            {
-              // Factor the matrix and compute the explicit Q factor.
-              // Don't worry about the fact that we're overwriting the
-              // input; this is a benchmark, not a numerical verification
-              // test.  (We have the latter implemented as tsqr_verify()
-              // in this file.)  For the same reason, don't worry about
-              // un-cache-blocking the output (when cache blocks are
-              // stored contiguously).
-              factor_output_type factor_output =
-                tsqr.factor (nrows_local, ncols, A_copy.data(), A_copy.lda(),
-                             R.data(), R.lda(), contiguousCacheBlocks);
-              tsqr.explicit_Q (nrows_local,
-                               ncols, A_copy.data(), A_copy.lda(), factor_output,
-                               ncols, Q_local.data(), Q_local.lda(),
+      if (testFactorExplicit) {
+        timer.start();
+        for (int trial_num = 0; trial_num < ntrials; ++trial_num)
+          tsqr.factorExplicit (A_copy.view(), Q_local.view(), R.view(),
                                contiguousCacheBlocks);
-              // Timings in debug mode likely won't make sense, because
-              // Proc 0 is outputting the debug messages to cerr.
-              // Nevertheless, we don't put any "if(b_debug)" calls in the
-              // timing loop.
-            }
-          // Compute the resulting total time (in seconds) to execute
-          // ntrials runs of Tsqr::factor() and Tsqr::explicit_Q().  The
-          // time may differ on different MPI processes.
-          tsqr_timing = timer.stop();
+        tsqr_timing = timer.stop();
+      }
+      else {
+        timer.start();
+        for (int trial_num = 0; trial_num < ntrials; ++trial_num) {
+          // Factor the matrix and compute the explicit Q factor.
+          // Don't worry about the fact that we're overwriting the
+          // input; this is a benchmark, not a numerical verification
+          // test.  (We have the latter implemented as tsqr_verify()
+          // in this file.)  For the same reason, don't worry about
+          // un-cache-blocking the output (when cache blocks are
+          // stored contiguously).
+          factor_output_type factor_output =
+            tsqr.factor (nrows_local, ncols, A_copy.data(), A_copy.stride(1),
+                         R.data(), R.stride(1), contiguousCacheBlocks);
+          tsqr.explicit_Q (nrows_local,
+                           ncols, A_copy.data(), A_copy.stride(1), factor_output,
+                           ncols, Q_local.data(), Q_local.stride(1),
+                           contiguousCacheBlocks);
+          // Timings in debug mode likely won't make sense, because
+          // Proc 0 is outputting the debug messages to cerr.
+          // Nevertheless, we don't put any "if(b_debug)" calls in the
+          // timing loop.
         }
+        // Compute the resulting total time (in seconds) to execute
+        // ntrials runs of Tsqr::factor() and Tsqr::explicit_Q().  The
+        // time may differ on different MPI processes.
+        tsqr_timing = timer.stop();
+      }
 
-      if (b_debug)
-        {
-          messenger->barrier();
-          if (messenger->rank() == 0)
-            cerr << "-- Finished timing loop" << endl;
-        }
+      if (b_debug) {
+        messenger->barrier();
+        if (messenger->rank() == 0)
+          cerr << "-- Finished timing loop" << endl;
+      }
       return tsqr_timing;
     }
 

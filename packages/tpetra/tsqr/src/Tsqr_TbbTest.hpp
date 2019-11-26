@@ -121,7 +121,7 @@ namespace TSQR {
       const Ordinal ldr = ncols;
 
       // Create a test problem
-      nodeTestProblem (generator, nrows, ncols, A.data(), A.lda(), true);
+      nodeTestProblem (generator, nrows, ncols, A.data(), A.stride(1), true);
 
       if (b_debug) {
         cerr << "-- Generated test problem" << endl;
@@ -137,7 +137,7 @@ namespace TSQR {
         }
       }
       else {
-        actor.cache_block (nrows, ncols, A_copy.data(), A.data(), A.lda());
+        actor.cache_block (nrows, ncols, A_copy.data(), A.data(), A.stride(1));
         if (b_debug) {
           cerr << "-- Reorganized test matrix to have contiguous "
             "cache blocks" << endl;
@@ -148,7 +148,7 @@ namespace TSQR {
           if (std::numeric_limits< Scalar >::has_quiet_NaN) {
             deep_copy (A2, std::numeric_limits< Scalar >::quiet_NaN());
           }
-          actor.un_cache_block (nrows, ncols, A2.data(), A2.lda(), A_copy.data());
+          actor.un_cache_block (nrows, ncols, A2.data(), A2.stride(1), A_copy.data());
           if (matrix_equal (A, A2)) {
             if (b_debug) {
               cerr << "-- Cache blocking test succeeded!" << endl;
@@ -166,13 +166,13 @@ namespace TSQR {
 
       // Factor the matrix and compute the explicit Q factor
       factor_output_type factor_output =
-        actor.factor (nrows, ncols, A_copy.data(), A_copy.lda(), R.data(),
-                      R.lda(), contiguous_cache_blocks);
+        actor.factor (nrows, ncols, A_copy.data(), A_copy.stride(1), R.data(),
+                      R.stride(1), contiguous_cache_blocks);
       if (b_debug) {
         cerr << "-- Finished TbbTsqr::factor" << endl;
       }
-      actor.explicit_Q (nrows, ncols, A_copy.data(), A_copy.lda(), factor_output,
-                        ncols, Q.data(), Q.lda(), contiguous_cache_blocks);
+      actor.explicit_Q (nrows, ncols, A_copy.data(), A_copy.stride(1), factor_output,
+                        ncols, Q.data(), Q.stride(1), contiguous_cache_blocks);
       if (b_debug) {
         cerr << "-- Finished TbbTsqr::explicit_Q" << endl;
       }
@@ -183,7 +183,7 @@ namespace TSQR {
       // cache blocks.
       if (contiguous_cache_blocks) {
         // Use A_copy as temporary storage for un-cache-blocking Q.
-        actor.un_cache_block (nrows, ncols, A_copy.data(), A_copy.lda(), Q.data());
+        actor.un_cache_block (nrows, ncols, A_copy.data(), A_copy.stride(1), Q.data());
         deep_copy (Q, A_copy);
         if (b_debug) {
           cerr << "-- Un-cache-blocked output Q factor" << endl;
@@ -193,7 +193,7 @@ namespace TSQR {
       // Print out the R factor
       if (b_debug) {
         cerr << endl << "-- R factor:" << endl;
-        print_local_matrix (cerr, ncols, ncols, R.data(), R.lda());
+        print_local_matrix (cerr, ncols, ncols, R.data(), R.stride(1));
         cerr << endl;
       }
 
@@ -298,13 +298,13 @@ namespace TSQR {
       deep_copy (R, scalar_type {});
 
       // Create a test problem
-      nodeTestProblem (generator, nrows, ncols, A.data(), A.lda(), false);
+      nodeTestProblem (generator, nrows, ncols, A.data(), A.stride(1), false);
 
       // Copy A into A_copy, since TSQR overwrites the input.  If
       // specified, rearrange the data in A_copy so that the data in
       // each cache block is contiguously stored.
       if (contiguous_cache_blocks) {
-        actor.cache_block (nrows, ncols, A_copy.data(), A.data(), A.lda());
+        actor.cache_block (nrows, ncols, A_copy.data(), A.data(), A.stride(1));
       }
       else {
         deep_copy (A_copy, A);
@@ -318,14 +318,14 @@ namespace TSQR {
         // resulting R factor into R.
         typedef typename node_tsqr_type::FactorOutput factor_output_type;
         factor_output_type factor_output =
-          actor.factor (nrows, ncols, A_copy.data(), A_copy.lda(),
-                        R.data(), R.lda(), contiguous_cache_blocks);
+          actor.factor (nrows, ncols, A_copy.data(), A_copy.stride(1),
+                        R.data(), R.stride(1), contiguous_cache_blocks);
         // Compute the explicit Q factor (which was stored
         // implicitly in A_copy and factor_output) and store in Q.
         // We don't need to un-cache-block the output, because we
         // aren't verifying it here.
-        actor.explicit_Q (nrows, ncols, A_copy.data(), A_copy.lda(),
-                          factor_output, ncols, Q.data(), Q.lda(),
+        actor.explicit_Q (nrows, ncols, A_copy.data(), A_copy.stride(1),
+                          factor_output, ncols, Q.data(), Q.stride(1),
                           contiguous_cache_blocks);
       }
 
@@ -339,14 +339,14 @@ namespace TSQR {
         // resulting R factor into R.
         typedef typename node_tsqr_type::FactorOutput factor_output_type;
         factor_output_type factor_output =
-          actor.factor (nrows, ncols, A_copy.data(), A_copy.lda(),
-                        R.data(), R.lda(), contiguous_cache_blocks);
+          actor.factor (nrows, ncols, A_copy.data(), A_copy.stride(1),
+                        R.data(), R.stride(1), contiguous_cache_blocks);
         // Compute the explicit Q factor (which was stored
         // implicitly in A_copy and factor_output) and store in Q.
         // We don't need to un-cache-block the output, because we
         // aren't verifying it here.
-        actor.explicit_Q (nrows, ncols, A_copy.data(), A_copy.lda(),
-                          factor_output, ncols, Q.data(), Q.lda(),
+        actor.explicit_Q (nrows, ncols, A_copy.data(), A_copy.stride(1),
+                          factor_output, ncols, Q.data(), Q.stride(1),
                           contiguous_cache_blocks);
       }
       const double tbb_tsqr_timing = timer.stop();

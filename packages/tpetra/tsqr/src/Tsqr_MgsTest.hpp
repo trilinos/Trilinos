@@ -103,8 +103,8 @@ namespace TSQR {
         // Factor the (copy of the) matrix.  On output, the explicit Q
         // factor (of A_local) is in Q_local and the R factor is in R.
         orthogonalizer.mgs (Q_local.extent(0), Q_local.extent(1),
-                            Q_local.data(), Q_local.lda(),
-                            R.data(), R.lda());
+                            Q_local.data(), Q_local.stride(1),
+                            R.data(), R.stride(1));
         if (b_debug) {
           messenger->barrier();
           if (messenger->rank() == 0)
@@ -211,7 +211,7 @@ namespace TSQR {
         scalarComm->barrier ();
         if (my_rank == 0) {
           cerr << endl << "R factor:" << endl;
-          print_local_matrix (cerr, ncols, ncols, R.data(), R.lda());
+          print_local_matrix (cerr, ncols, ncols, R.data(), R.stride(1));
           cerr << endl;
         }
         scalarComm->barrier ();
@@ -219,8 +219,8 @@ namespace TSQR {
 
       // Test accuracy of the resulting factorization
       std::vector<magnitude_type> results =
-        global_verify (nrows_local, ncols, A_local.data(), A_local.lda(),
-                       Q_local.data(), Q_local.lda(), R.data(), R.lda(),
+        global_verify (nrows_local, ncols, A_local.data(), A_local.stride(1),
+                       Q_local.data(), Q_local.stride(1), R.data(), R.stride(1),
                        scalarComm.get());
       if (b_debug) {
         scalarComm->barrier();
@@ -295,7 +295,7 @@ namespace TSQR {
         // benchmark, not a numerical verification test.  (We have the
         // latter implemented as mgs_verify() in this file.)
         orthogonalizer.mgs (nrows_local, ncols, Q_local.data(),
-                            Q_local.lda(), R.data(), R.lda());
+                            Q_local.stride(1), R.data(), R.stride(1));
         // Timings in debug mode likely won't make sense, because Proc
         // 0 is outputting the debug messages to cerr.  Nevertheless,
         // we don't put any "if(b_debug)" calls in the timing loop.

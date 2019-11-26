@@ -192,8 +192,8 @@ namespace TSQR {
         timer.start();
         const std::vector<SeqOutput>& seq_outputs = factor_output_.first;
         seq_.apply (apply_type_, Q_.extent(0), Q_.extent(1),
-                    Q_.data(), Q_.lda(), seq_outputs[P_first_],
-                    C_.extent(1), C_.data(), C_.lda(),
+                    Q_.data(), Q_.stride(1), seq_outputs[P_first_],
+                    C_.extent(1), C_.data(), C_.stride(1),
                     contiguous_cache_blocks_);
         my_seq_timing_ = timer.stop();
       }
@@ -214,9 +214,9 @@ namespace TSQR {
         std::vector<Scalar> work (C_top.extent(1));
         combine_.apply_pair (apply_type_,
                              C_top.extent(1), Q_bot.extent(1),
-                             Q_bot.data(), Q_bot.lda(), tau.data(),
-                             C_top.data(), C_top.lda(),
-                             C_bot.data(), C_bot.lda(), work.data());
+                             Q_bot.data(), Q_bot.stride(1), tau.data(),
+                             C_top.data(), C_top.stride(1),
+                             C_bot.data(), C_bot.stride(1), work.data());
       }
 
     };

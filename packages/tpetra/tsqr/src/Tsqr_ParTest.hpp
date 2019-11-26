@@ -235,7 +235,7 @@ namespace TSQR {
                   err_ << "-- Finished DistTsqr::factor" << endl;
               }
             // Compute the explicit Q factor
-            par.explicit_Q (numCols, Q_local.data(), Q_local.lda(), factorOutput);
+            par.explicit_Q (numCols, Q_local.data(), Q_local.stride(1), factorOutput);
             if (debug_) {
               scalarComm_->barrier();
               if (myRank == 0) {
@@ -244,8 +244,8 @@ namespace TSQR {
             }
             // Verify the factorization
             result_type result =
-              global_verify (numCols, numCols, A_local.data(), A_local.lda(),
-                             Q_local.data(), Q_local.lda(), R.data(), R.lda(),
+              global_verify (numCols, numCols, A_local.data(), A_local.stride(1),
+                             Q_local.data(), Q_local.stride(1), R.data(), R.stride(1),
                              scalarComm_.get());
             if (debug_) {
               scalarComm_->barrier();
@@ -279,15 +279,15 @@ namespace TSQR {
             printGlobalMatrix (err_, Q_local, scalarComm_.get(), ordinalComm_.get());
             if (myRank == 0) {
               err_ << std::endl << "Computed R factor:" << std::endl;
-              print_local_matrix (err_, R.extent(0), R.extent(1), R.data(), R.lda());
+              print_local_matrix (err_, R.extent(0), R.extent(1), R.data(), R.stride(1));
               err_ << std::endl;
             }
           }
 
           // Verify the factorization
           result_type result =
-            global_verify (numCols, numCols, A_local.data(), A_local.lda(),
-                           Q_local.data(), Q_local.lda(), R.data(), R.lda(),
+            global_verify (numCols, numCols, A_local.data(), A_local.stride(1),
+                           Q_local.data(), Q_local.stride(1), R.data(), R.stride(1),
                            scalarComm_.get());
           if (debug_) {
             scalarComm_->barrier();
@@ -574,7 +574,7 @@ namespace TSQR {
                 // overwritten on output)
                 factor_output_type factorOutput = par.factor (R.view());
                 // Compute the explicit Q factor
-                par.explicit_Q (numCols, Q_local.data(), Q_local.lda(), factorOutput);
+                par.explicit_Q (numCols, Q_local.data(), Q_local.stride(1), factorOutput);
               }
 
             // Now do the actual timing runs.  Benchmark DistTsqr
@@ -587,7 +587,7 @@ namespace TSQR {
                 // overwritten on output)
                 factor_output_type factorOutput = par.factor (R.view());
                 // Compute the explicit Q factor
-                par.explicit_Q (numCols, Q_local.data(), Q_local.lda(), factorOutput);
+                par.explicit_Q (numCols, Q_local.data(), Q_local.stride(1), factorOutput);
               }
             // Cumulative timing on this MPI process.
             // "Cumulative" means the elapsed time of numTrials executions.

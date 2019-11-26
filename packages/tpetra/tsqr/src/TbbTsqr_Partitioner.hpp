@@ -124,8 +124,8 @@ namespace TSQR {
           }
           else {
             pointer_type A_bot_ptr = A.data() + num_rows_top;
-            MatrixViewType A_top (num_rows_top, ncols, A.data(), A.lda());
-            MatrixViewType A_bot (num_rows_bot, ncols, A_bot_ptr, A.lda());
+            MatrixViewType A_top (num_rows_top, ncols, A.data(), A.stride(1));
+            MatrixViewType A_bot (num_rows_bot, ncols, A_bot_ptr, A.stride(1));
             return std::make_pair (A_top, A_bot);
           }
         }

@@ -160,7 +160,7 @@ namespace TSQR {
       implicit_Q (MatrixViewType& Q,
                   typename MatrixViewType::scalar_type tau[])
       {
-        implicit_Q (Q.extent(0), Q.extent(1), Q.data(), Q.lda(), tau);
+        implicit_Q (Q.extent(0), Q.extent(1), Q.data(), Q.stride(1), tau);
       }
 
       void
@@ -195,16 +195,16 @@ namespace TSQR {
         Scalar _lwork1, _lwork2;
         Impl::Lapack<Scalar> lapack;
         lapack.apply_Q_factor ('L', 'N', nrows, ncols, ncols,
-                               U.data(), U.lda(), tau_U.data(),
+                               U.data(), U.stride(1), tau_U.data(),
                                A, lda, &_lwork1, -1);
         if (STS::isComplex) {
           lapack.apply_Q_factor ('R', 'C', nrows, ncols, ncols,
-                                 V.data(), V.lda(), tau_V.data(),
+                                 V.data(), V.stride(1), tau_V.data(),
                                  A, lda, &_lwork2, -1);
         }
         else {
           lapack.apply_Q_factor ('R', 'T', nrows, ncols, ncols,
-                                 V.data(), V.lda(), tau_V.data(),
+                                 V.data(), V.stride(1), tau_V.data(),
                                  A, lda, &_lwork2, -1);
         }
 
@@ -215,16 +215,16 @@ namespace TSQR {
 
         // Apply U to the left side of A, and V^H to the right side of A.
         lapack.apply_Q_factor ('L', 'N', nrows, ncols, ncols,
-                               U.data(), U.lda(), tau_U.data(),
+                               U.data(), U.stride(1), tau_U.data(),
                                A, lda, work.data(), lwork);
         if (STS::isComplex) {
           lapack.apply_Q_factor ('R', 'C', nrows, ncols, ncols,
-                                 V.data(), V.lda(), tau_V.data(),
+                                 V.data(), V.stride(1), tau_V.data(),
                                  A, lda, work.data(), lwork);
         }
         else {
           lapack.apply_Q_factor ('R', 'T', nrows, ncols, ncols,
-                                 V.data(), V.lda(), tau_V.data(),
+                                 V.data(), V.stride(1), tau_V.data(),
                                  A, lda, work.data(), lwork);
         }
       }

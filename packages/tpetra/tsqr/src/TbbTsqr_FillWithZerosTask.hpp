@@ -125,7 +125,7 @@ namespace TSQR {
       {
         // Fill my partition with zeros.
         seq_.fill_with_zeros (C_.extent(0), C_.extent(1), C_.data(),
-                              C_.lda(), contiguous_cache_blocks_);
+                              C_.stride(1), contiguous_cache_blocks_);
       }
     };
   } // namespace TBB

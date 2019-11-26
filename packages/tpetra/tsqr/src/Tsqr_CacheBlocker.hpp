@@ -242,17 +242,16 @@ namespace TSQR {
     fill_with_zeros (MatrixViewType A,
                      const bool contiguous_cache_blocks) const
     {
-      // Note: if the cache blocks are stored contiguously, A.lda()
+      // Note: if the cache blocks are stored contiguously, A.stride(1)
       // won't be the correct leading dimension of A, but it won't
       // matter: we only ever operate on A_cur here, and A_cur's
       // leading dimension is set correctly by split_top_block().
-      while (! A.empty())
-        {
-          // This call modifies the matrix view A, but that's OK since
-          // we passed the input view by copy, not by reference.
-          MatrixViewType A_cur = split_top_block (A, contiguous_cache_blocks);
-          deep_copy (A_cur, Scalar {});
-        }
+      while (! A.empty()) {
+        // This call modifies the matrix view A, but that's OK since
+        // we passed the input view by copy, not by reference.
+        MatrixViewType A_cur = split_top_block (A, contiguous_cache_blocks);
+        deep_copy (A_cur, Scalar {});
+      }
     }
 
     /// \brief Fill the matrix A with zeros, respecting cache blocks.
@@ -328,20 +327,21 @@ namespace TSQR {
       // Leading dimension doesn't matter since A_out will be cache blocked.
       mat_view_type A_out_rest (num_rows, num_cols, A_out, lda_in);
 
-      while (! A_in_rest.empty())
-        {
-          if (A_out_rest.empty())
-            throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
-
-          // This call modifies A_in_rest.
-          const_mat_view_type A_in_cur = split_top_block (A_in_rest, false);
-
-          // This call modifies A_out_rest.
-          mat_view_type A_out_cur = split_top_block (A_out_rest, true);
-
-          copy_matrix (A_in_cur.extent(0), num_cols, A_out_cur.data(),
-                       A_out_cur.lda(), A_in_cur.data(), A_in_cur.lda());
+      while (! A_in_rest.empty()) {
+        if (A_out_rest.empty()) {
+          throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
         }
+
+        // This call modifies A_in_rest.
+        const_mat_view_type A_in_cur = split_top_block (A_in_rest, false);
+
+        // This call modifies A_out_rest.
+        mat_view_type A_out_cur = split_top_block (A_out_rest, true);
+
+        copy_matrix (A_in_cur.extent(0), num_cols,
+                     A_out_cur.data(), A_out_cur.stride(1),
+                     A_in_cur.data(), A_in_cur.stride(1));
+      }
     }
 
     //! "Un"-cache-block the given A_in matrix into A_out.
@@ -361,20 +361,21 @@ namespace TSQR {
       const_mat_view_type A_in_rest (num_rows, num_cols, A_in, lda_out);
       mat_view_type A_out_rest (num_rows, num_cols, A_out, lda_out);
 
-      while (! A_in_rest.empty())
-        {
-          if (A_out_rest.empty())
-            throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
-
-          // This call modifies A_in_rest.
-          const_mat_view_type A_in_cur = split_top_block (A_in_rest, true);
-
-          // This call modifies A_out_rest.
-          mat_view_type A_out_cur = split_top_block (A_out_rest, false);
-
-          copy_matrix (A_in_cur.extent(0), num_cols, A_out_cur.data(),
-                       A_out_cur.lda(), A_in_cur.data(), A_in_cur.lda());
+      while (! A_in_rest.empty()) {
+        if (A_out_rest.empty()) {
+          throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
         }
+
+        // This call modifies A_in_rest.
+        const_mat_view_type A_in_cur = split_top_block (A_in_rest, true);
+
+        // This call modifies A_out_rest.
+        mat_view_type A_out_cur = split_top_block (A_out_rest, false);
+
+        copy_matrix (A_in_cur.extent(0), num_cols,
+                     A_out_cur.data(), A_out_cur.stride(1),
+                     A_in_cur.data(), A_in_cur.stride(1));
+      }
     }
 
     /// \brief Return the cache block with index \c cache_block_index.
@@ -411,18 +412,20 @@ namespace TSQR {
       // result[2] = pointer offset (A.data() + result[2])
       // result[3] = leading dimension (a.k.a. stride) of the cache block
       std::vector<Ordinal> result =
-        strategy_.cache_block_details (cache_block_index, A.extent(0), A.extent(1),
-                                       A.lda(), nrows_cache_block(),
+        strategy_.cache_block_details (cache_block_index, A.extent(0),
+                                       A.extent(1), A.stride(1),
+                                       nrows_cache_block(),
                                        contiguous_cache_blocks);
-      if (result[1] == 0)
+      if (result[1] == 0) {
         // For some reason, the cache block is empty.
-        return MatrixViewType (0, 0, NULL, 0);
+        return MatrixViewType (0, 0, nullptr, 0);
+      }
 
       // We expect that ordinal_type is signed, so adding signed
       // (ordinal_type) to unsigned (pointer) may raise compiler
       // warnings.
       return MatrixViewType (result[1], A.extent(1),
-                             A.data() + static_cast<size_t>(result[2]),
+                             A.data() + size_t(result[2]),
                              result[3]);
     }
 

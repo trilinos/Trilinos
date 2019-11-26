@@ -75,9 +75,9 @@ namespace TSQR {
       return false;
     }
     const ptrdiff_t nrows (A.extent(0));
-    const ptrdiff_t A_lda (A.lda());
+    const ptrdiff_t A_lda (A.stride(1));
     const ptrdiff_t ncols (A.extent(1));
-    const ptrdiff_t B_lda (B.lda());
+    const ptrdiff_t B_lda (B.stride(1));
     const auto* A_j = A.data();
     const auto* B_j = B.data();
     for (ptrdiff_t j = 0; j < ncols; ++j, A_j += A_lda, B_j += B_lda) {
@@ -176,6 +176,14 @@ namespace TSQR {
     MatView (MatView&& view) = default;
     MatView& operator= (MatView&& view) = default;
 
+    constexpr ordinal_type extent(const int r) const noexcept {
+      return r == 0 ? nrows_ : (r == 1 ? ncols_ : ordinal_type(0));
+    }
+
+    constexpr ordinal_type stride(const int r) const noexcept {
+      return r == 0 ? ordinal_type(1) : (r == 1 ? lda_ : ordinal_type(0));
+    }
+
     reference
     operator() (const ordinal_type i,
                 const ordinal_type j) const
@@ -201,26 +209,11 @@ namespace TSQR {
         throw std::logic_error("Attempt to reference NULL data");
       }
 #endif // TSQR_MATVIEW_DEBUG
-      return A_[i + j*lda()];
+      return A_[i + j * this->stride(1)];
     }
 
-    constexpr ordinal_type extent(const int r) const noexcept {
-      return r == 0 ? nrows_ : (r == 1 ? ncols_ : ordinal_type(0));
-    }
-
-    constexpr ordinal_type stride(const int r) const noexcept {
-      return r == 0 ? ordinal_type(1) : (r == 1 ? lda_ : ordinal_type(0));
-    }
-
-    constexpr ordinal_type lda() const noexcept {
-      return stride(1);
-    }
-
-    /// \note The function is const, only because returning A_ doesn't
-    /// change any members of *this.  Of course one may use the
-    /// resulting pointer to fiddle with entries in the matrix, but
-    /// that doesn't affect the MatView's properties.
     pointer data() const { return A_; }
+
     bool empty() const { return extent(0) == 0 || extent(1) == 0; }
 
     /// Return a "row block" (submatrix of consecutive rows in the
@@ -240,7 +233,7 @@ namespace TSQR {
         }
       }
 #endif // TSQR_MATVIEW_DEBUG
-      return MatView (lastRow - firstRow + 1, extent(1), data() + firstRow, lda());
+      return MatView (lastRow - firstRow + 1, extent(1), data() + firstRow, stride(1));
     }
 
     /// Split off and return the top cache block of nrows_top rows.
@@ -285,8 +278,8 @@ namespace TSQR {
         A_rest_ptr = A_top_ptr + nrows_top * extent(1);
       }
       else {
-        lda_top = lda();
-        lda_rest = lda();
+        lda_top = stride(1);
+        lda_rest = stride(1);
         A_rest_ptr = A_top_ptr + nrows_top;
       }
       MatView A_top (nrows_top, extent(1), data(), lda_top);
@@ -322,8 +315,8 @@ namespace TSQR {
         A_bottom_ptr = A_rest_ptr + nrows_rest * extent(1);
       }
       else {
-        lda_bottom = lda();
-        lda_rest = lda();
+        lda_bottom = stride(1);
+        lda_rest = stride(1);
         A_bottom_ptr = A_rest_ptr + nrows_rest;
       }
       MatView A_bottom (nrows_bottom, extent(1), A_bottom_ptr, lda_bottom);
@@ -336,12 +329,12 @@ namespace TSQR {
 
     bool operator== (const MatView& rhs) const {
       return extent(0) == rhs.extent(0) && extent(1) == rhs.extent(1) &&
-        lda() == rhs.lda() && data() == rhs.data();
+        stride(1) == rhs.stride(1) && data() == rhs.data();
     }
 
     bool operator!= (const MatView& rhs) const {
       return extent(0) != rhs.extent(0) || extent(1) != rhs.extent(1) ||
-        lda() != rhs.lda() || data() != rhs.data();
+        stride(1) != rhs.stride(1) || data() != rhs.data();
     }
 
   private:
@@ -360,6 +353,7 @@ namespace TSQR {
     using scalar_type = Scalar;
     using ordinal_type = Ordinal;
     using pointer = const Scalar*;
+    using reference = const Scalar&;
 
     ConstMatView () = default;
 
@@ -385,8 +379,17 @@ namespace TSQR {
     ConstMatView (ConstMatView&&) = default;
     ConstMatView& operator= (ConstMatView&&) = default;
 
-    const scalar_type&
-    operator() (const ordinal_type i, const ordinal_type j) const
+    constexpr ordinal_type extent(const int r) const noexcept {
+      return r == 0 ? nrows_ : (r == 1 ? ncols_ : ordinal_type(0));
+    }
+
+    constexpr ordinal_type stride(const int r) const noexcept {
+      return r == 0 ? ordinal_type(1) : (r == 1 ? lda_ : ordinal_type(0));
+    }
+
+    reference
+    operator() (const ordinal_type i,
+                const ordinal_type j) const
     {
 #ifdef TSQR_MATVIEW_DEBUG
       if (std::numeric_limits<ordinal_type>::is_signed) {
@@ -409,14 +412,8 @@ namespace TSQR {
         throw std::logic_error("Attempt to reference NULL data");
       }
 #endif // TSQR_MATVIEW_DEBUG
-      return A_[i + j*lda()];
+      return A_[i + j * this->stride(1)];
     }
-
-    constexpr ordinal_type extent(const int r) const noexcept {
-      return r == 0 ? nrows_ : (r == 1 ? ncols_ : ordinal_type(0));
-    }
-
-    ordinal_type lda() const { return lda_; }
 
     pointer data() const { return A_; }
 
@@ -434,7 +431,7 @@ namespace TSQR {
       }
 #endif // TSQR_MATVIEW_DEBUG
       return ConstMatView (lastRow - firstRow + 1, extent(1),
-                           data() + firstRow, lda());
+                           data() + firstRow, stride(1));
     }
 
     /// \brief Split off and return the top block.  Modify *this to be
@@ -474,8 +471,8 @@ namespace TSQR {
         A_rest_ptr = A_top_ptr + nrows_top * extent(1);
       }
       else {
-        lda_top = lda();
-        lda_rest = lda();
+        lda_top = stride(1);
+        lda_rest = stride(1);
         A_rest_ptr = A_top_ptr + nrows_top;
       }
       ConstMatView A_top (nrows_top, extent(1), data(), lda_top);
@@ -511,8 +508,8 @@ namespace TSQR {
         A_bottom_ptr = A_rest_ptr + nrows_rest * extent(1);
       }
       else {
-        lda_bottom = lda();
-        lda_rest = lda();
+        lda_bottom = stride(1);
+        lda_rest = stride(1);
         A_bottom_ptr = A_rest_ptr + nrows_rest;
       }
       ConstMatView A_bottom (nrows_bottom, extent(1), A_bottom_ptr, lda_bottom);
@@ -525,12 +522,12 @@ namespace TSQR {
 
     bool operator== (const ConstMatView& rhs) const {
       return extent(0) == rhs.extent(0) && extent(1) == rhs.extent(1) &&
-        lda() == rhs.lda() && data() == rhs.data();
+        stride(1) == rhs.stride(1) && data() == rhs.data();
     }
 
     bool operator!= (const ConstMatView& rhs) const {
       return extent(0) != rhs.extent(0) || extent(1) != rhs.extent(1) ||
-        lda() != rhs.lda() || data() != rhs.data();
+        stride(1) != rhs.stride(1) || data() != rhs.data();
     }
 
   private:
@@ -547,7 +544,7 @@ namespace TSQR {
     using ordinal_type = typename MatView<LO, SC>::ordinal_type;
     const ordinal_type num_rows = tgt.extent(0);
     const ordinal_type num_cols = tgt.extent(1);
-    const ordinal_type stride = tgt.lda();
+    const ordinal_type stride = tgt.stride(1);
     auto* tgt_j = tgt.data();
     for (ordinal_type j = 0; j < num_cols; ++j, tgt_j += stride) {
       for (ordinal_type i = 0; i < num_rows; ++i) {

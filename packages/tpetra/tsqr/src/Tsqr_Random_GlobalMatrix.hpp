@@ -63,7 +63,7 @@ namespace TSQR {
 
       const ordinal_type nrows = A.extent(0);
       const ordinal_type ncols = A.extent(1);
-      const ordinal_type lda = A.lda();
+      const ordinal_type lda = A.stride(1);
 
       if (nrows == lda) { // A is stored contiguously.
         const ordinal_type nelts = nrows * ncols;
@@ -120,7 +120,7 @@ namespace TSQR {
         // Generate a random ncols by ncols upper triangular matrix R
         // with the given singular values.
         Matrix<ordinal_type, scalar_type> R (ncols, ncols, scalar_type {});
-        matGen.fill_random_R (ncols, R.data(), R.lda(), singular_values);
+        matGen.fill_random_R (ncols, R.data(), R.stride(1), singular_values);
 
         // Broadcast R to all the processors.
         scalarMessenger->broadcast (R.data(), ncols*ncols, rootProc);
@@ -128,7 +128,7 @@ namespace TSQR {
         // Generate (for myself) a random nrowsLocal x ncols
         // orthogonal matrix, stored in explicit form.
         Matrix<ordinal_type, scalar_type> Q_local (nrowsLocal, ncols);
-        matGen.explicit_Q (nrowsLocal, ncols, Q_local.data(), Q_local.lda());
+        matGen.explicit_Q (nrowsLocal, ncols, Q_local.data(), Q_local.stride(1));
 
         // Scale the (local) orthogonal matrix by the number of
         // processors P, to make the columns of the global matrix Q
@@ -147,9 +147,9 @@ namespace TSQR {
 
         // A_local := Q_local * R
         blas.GEMM (NO_TRANS, NO_TRANS, nrowsLocal, ncols, ncols,
-                   scalar_type(1), Q_local.data(), Q_local.lda(),
-                   R.data(), R.lda(),
-                   scalar_type(0), A_local.data(), A_local.lda());
+                   scalar_type(1), Q_local.data(), Q_local.stride(1),
+                   R.data(), R.stride(1),
+                   scalar_type(0), A_local.data(), A_local.stride(1));
 
         for (int recvProc = 1; recvProc < nprocs; ++recvProc) {
           // Ask the receiving processor how big (i.e., how many rows)
@@ -163,7 +163,7 @@ namespace TSQR {
 
           // Compute a random nrowsRemote * ncols orthogonal
           // matrix Q_local, for the current receiving processor.
-          matGen.explicit_Q (nrowsRemote, ncols, Q_local.data(), Q_local.lda());
+          matGen.explicit_Q (nrowsRemote, ncols, Q_local.data(), Q_local.stride(1));
 
           // Send Q_local to the current receiving processor.
           scalarMessenger->send (Q_local.data(), nrowsRemote*ncols, recvProc, 0);
@@ -201,9 +201,9 @@ namespace TSQR {
 
         // A_local := Q_local * R
         blas.GEMM (NO_TRANS, NO_TRANS, nrowsLocal, ncols, ncols,
-                   scalar_type(1), Q_local.data(), Q_local.lda(),
-                   R.data(), R.lda(),
-                   scalar_type(0), A_local.data(), A_local.lda());
+                   scalar_type(1), Q_local.data(), Q_local.stride(1),
+                   R.data(), R.stride(1),
+                   scalar_type(0), A_local.data(), A_local.stride(1));
       }
     }
   } // namespace Random

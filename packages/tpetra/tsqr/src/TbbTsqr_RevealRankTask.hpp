@@ -85,55 +85,56 @@ namespace TSQR {
         // doesn't suggest any orthogonality of the B input matrix,
         // though in this case B is U and U is orthogonal
         // (resp. unitary if Scalar is complex).
-        seq_.Q_times_B (Q_.extent(0), Q_.extent(1), Q_.data(), Q_.lda(),
-                        U_.data(), U_.lda(), contiguous_cache_blocks_);
+        seq_.Q_times_B (Q_.extent(0), Q_.extent(1),
+                        Q_.data(), Q_.stride(1),
+                        U_.data(), U_.stride(1),
+                        contiguous_cache_blocks_);
       }
 
       tbb::task* execute ()
       {
         using tbb::task;
 
-        if (P_first_ > P_last_ || Q_.empty())
-          return NULL; // shouldn't get here, but just in case...
-        else if (P_first_ == P_last_)
-          {
+        if (P_first_ > P_last_ || Q_.empty()) {
+          return nullptr; // shouldn't get here, but just in case...
+        }
+        else if (P_first_ == P_last_) {
+          execute_base_case ();
+          return nullptr;
+        }
+        else {
+          // Recurse on two intervals: [P_first, P_mid] and
+          // [P_mid+1, P_last]
+          const size_t P_mid = (P_first_ + P_last_) / 2;
+          split_type out_split =
+            partitioner_.split (Q_, P_first_, P_mid, P_last_,
+                                contiguous_cache_blocks_);
+          // The partitioner may decide that the current block Q_ has
+          // too few rows to be worth splitting.  In that case,
+          // out_split.second (the bottom block) will be empty.  We
+          // can deal with this by treating it as the base case.
+          if (out_split.second.empty() || out_split.second.extent(0) == 0) {
             execute_base_case ();
-            return NULL;
+            return nullptr;
           }
-        else
-          {
-            // Recurse on two intervals: [P_first, P_mid] and
-            // [P_mid+1, P_last]
-            const size_t P_mid = (P_first_ + P_last_) / 2;
-            split_type out_split =
-              partitioner_.split (Q_, P_first_, P_mid, P_last_,
-                                  contiguous_cache_blocks_);
-            // The partitioner may decide that the current block Q_
-            // has too few rows to be worth splitting.  In that case,
-            // out_split.second (the bottom block) will be empty.  We
-            // can deal with this by treating it as the base case.
-            if (out_split.second.empty() || out_split.second.extent(0) == 0) {
-              execute_base_case ();
-              return nullptr;
-            }
 
-            // "c": continuation task
-            tbb::empty_task& c =
-              *new( allocate_continuation() ) tbb::empty_task;
-            // Recurse on the split
-            RevealRankTask& topTask = *new( c.allocate_child() )
-              RevealRankTask (P_first_, P_mid, out_split.first, U_,
-                              seq_, contiguous_cache_blocks_);
-            RevealRankTask& botTask = *new( c.allocate_child() )
-              RevealRankTask (P_mid+1, P_last_, out_split.second, U_,
-                              seq_, contiguous_cache_blocks_);
-            // Set reference count of parent (in this case, the
-            // continuation task) to 2 (since 2 children -- no
-            // additional task since no waiting).
-            c.set_ref_count (2);
-            c.spawn (botTask);
-            return &topTask; // scheduler bypass optimization
-          }
+          // "c": continuation task
+          tbb::empty_task& c =
+            *new( allocate_continuation() ) tbb::empty_task;
+          // Recurse on the split
+          RevealRankTask& topTask = *new( c.allocate_child() )
+            RevealRankTask (P_first_, P_mid, out_split.first, U_,
+                            seq_, contiguous_cache_blocks_);
+          RevealRankTask& botTask = *new( c.allocate_child() )
+            RevealRankTask (P_mid+1, P_last_, out_split.second, U_,
+                            seq_, contiguous_cache_blocks_);
+          // Set reference count of parent (in this case, the
+          // continuation task) to 2 (since 2 children -- no
+          // additional task since no waiting).
+          c.set_ref_count (2);
+          c.spawn (botTask);
+          return &topTask; // scheduler bypass optimization
+        }
       }
 
     private:

@@ -327,7 +327,7 @@ namespace TSQR {
 
         // Copy the R factor out of A_top into R.
         seq_.extract_R (A_top.extent(0), A_top.extent(1), A_top.data(),
-                        A_top.lda(), R, ldr, contiguous_cache_blocks);
+                        A_top.stride(1), R, ldr, contiguous_cache_blocks);
 
         // Save the timings for future reference
         if (min_seq_timing < min_seq_factor_timing_)
@@ -514,15 +514,14 @@ namespace TSQR {
         const LocalOrdinal rank =
           reveal_R_rank (ncols, R, ldr, U.data(), U.ldu(), tol);
 
-        if (rank < ncols)
-          {
-            // If R is not full rank: reveal_R_rank() already computed
-            // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
-            // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
-            // := Q \cdot U\f$, respecting cache blocks of Q.
-            Q_times_B (nrows, ncols, Q, ldq, U.data(), U.lda(),
-                       contiguous_cache_blocks);
-          }
+        if (rank < ncols) {
+          // If R is not full rank: reveal_R_rank() already computed
+          // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
+          // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
+          // := Q \cdot U\f$, respecting cache blocks of Q.
+          Q_times_B (nrows, ncols, Q, ldq, U.data(), U.stride(1),
+                     contiguous_cache_blocks);
+        }
         return rank;
       }
 
@@ -644,9 +643,9 @@ namespace TSQR {
           mat_view_type C_top = seq_.top_block (C, contiguous_cache_blocks);
           top_blocks[P_first] =
             std::make_pair (const_mat_view_type (Q_top.extent(1), Q_top.extent(1),
-                                                 Q_top.data(), Q_top.lda()),
+                                                 Q_top.data(), Q_top.stride(1)),
                             mat_view_type (C_top.extent(1), C_top.extent(1),
-                                           C_top.data(), C_top.lda()));
+                                           C_top.data(), C_top.stride(1)));
         }
         else {
           // Recurse on two intervals: [P_first, P_mid] and [P_mid+1, P_last]
@@ -670,9 +669,9 @@ namespace TSQR {
             mat_view_type C_top = seq_.top_block (C, contiguous_cache_blocks);
             top_blocks[P_first] =
               std::make_pair (const_mat_view_type (Q_top.extent(1), Q_top.extent(1),
-                                                   Q_top.data(), Q_top.lda()),
+                                                   Q_top.data(), Q_top.stride(1)),
                               mat_view_type (C_top.extent(1), C_top.extent(1),
-                                             C_top.data(), C_top.lda()));
+                                             C_top.data(), C_top.stride(1)));
           }
           else {
             build_partition_array (P_first, P_mid, top_blocks,

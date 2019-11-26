@@ -144,8 +144,8 @@ namespace TSQR {
           //
           // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
           blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.extent (0),
-                     Scalar (1), A_cur.data (), A_cur.lda (), A_cur.data (),
-                     A_cur.lda (), Scalar (0), ATA.data (), ATA.lda ());
+                     Scalar (1), A_cur.data (), A_cur.stride (1), A_cur.data (),
+                     A_cur.stride (1), Scalar (0), ATA.data (), ATA.stride (1));
           // Process the remaining cache blocks in order.
           while (! A_rest.empty ()) {
             A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
@@ -153,8 +153,8 @@ namespace TSQR {
             //
             // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
             blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.extent (0),
-                       Scalar (1), A_cur.data (), A_cur.lda (), A_cur.data (),
-                       A_cur.lda (), Scalar (1), ATA.data (), ATA.lda ());
+                       Scalar (1), A_cur.data (), A_cur.stride (1), A_cur.data (),
+                       A_cur.stride (1), Scalar (1), ATA.data (), ATA.stride (1));
           }
         }
       else {
@@ -163,12 +163,12 @@ namespace TSQR {
         // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
         blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, nrows,
                    Scalar (1), A, lda, A, lda,
-                   Scalar (0), ATA.data (), ATA.lda ());
+                   Scalar (0), ATA.data (), ATA.stride (1));
       }
 
       // Compute the Cholesky factorization of ATA in place, so that
       // A^T * A = R^T * R, where R is ncols x ncols upper triangular.
-      lapack.POTRF ('U', ncols, ATA.data(), ATA.lda());
+      lapack.POTRF ('U', ncols, ATA.data(), ATA.stride(1));
       // FIXME (mfh 22 June 2010, mfh 21 Nov 2019) The right thing to
       // do on failure of above would be to resort to a rank-revealing
       // factorization, as Stathopoulos and Wu (2002) do with their
@@ -176,7 +176,7 @@ namespace TSQR {
 
       // Copy out the R factor
       fill_matrix (ncols, ncols, R, ldr, Scalar {});
-      copy_upper_triangle (ncols, ncols, R, ldr, ATA.data(), ATA.lda());
+      copy_upper_triangle (ncols, ncols, R, ldr, ATA.data(), ATA.stride(1));
 
       // Compute A := A * R^{-1}.  We do this in place in A, using
       // BLAS' TRSM with the R factor (form POTRF) stored in the upper
@@ -194,15 +194,17 @@ namespace TSQR {
 
         // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
         blas.TRSM (RIGHT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG,
-                   A_cur.extent (0), ncols, Scalar (1), ATA.data (), ATA.lda (),
-                   A_cur.data (), A_cur.lda ());
+                   A_cur.extent (0), ncols,
+                   Scalar (1.0), ATA.data (), ATA.stride (1),
+                   A_cur.data (), A_cur.stride (1));
 
         // Process the remaining cache blocks in order.
         while (! A_rest.empty ()) {
           A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
           blas.TRSM (RIGHT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG,
-                     A_cur.extent (0), ncols, Scalar (1), ATA.data (), ATA.lda (),
-                     A_cur.data (), A_cur.lda ());
+                     A_cur.extent (0), ncols,
+                     Scalar (1.0), ATA.data (), ATA.stride (1),
+                     A_cur.data (), A_cur.stride (1));
         }
       }
 
@@ -294,7 +296,7 @@ namespace TSQR {
     ///   must have at least as many rows as columns.  For a square
     ///   ncols by ncols block, as needed in TSQR::Tsqr::apply(), if
     ///   the output is ret, do mat_view_type(ncols, ncols, ret.data(),
-    ///   ret.lda()) to get an ncols by ncols block.
+    ///   ret.stride(1)) to get an ncols by ncols block.
     template< class MatrixViewType >
     MatrixViewType
     top_block (const MatrixViewType& C,

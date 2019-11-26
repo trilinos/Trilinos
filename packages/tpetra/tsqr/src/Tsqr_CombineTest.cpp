@@ -205,7 +205,7 @@ namespace TSQR {
     printMatrix (std::ostream& out,
                  const MatrixViewType& A)
     {
-      print_local_matrix (out, A.extent(0), A.extent(1), A.data(), A.lda());
+      print_local_matrix (out, A.extent(0), A.extent(1), A.data(), A.stride(1));
     }
 
     template<class MatrixViewType>
@@ -215,8 +215,8 @@ namespace TSQR {
                  const MatrixViewType& Q,
                  const MatrixViewType& R)
     {
-      return local_verify (A.extent(0), A.extent(1), A.data(), A.lda(),
-                           Q.data(), Q.lda(), R.data(), R.lda());
+      return local_verify (A.extent(0), A.extent(1), A.data(), A.stride(1),
+                           Q.data(), Q.stride(1), R.data(), R.stride(1));
     }
 
     /// \brief Test accuracy of TSQR::Combine
@@ -282,21 +282,21 @@ namespace TSQR {
       matrix_type R3 (numCols, numCols, Scalar(0));
       matrix_type A (numRows, numCols, Scalar(0));
       matgen_type matgen (gen);
-      matgen.fill_random_R (numCols, R1.data(), R1.lda(), &sigma_R1[0]);
-      matgen.fill_random_R (numCols, R2.data(), R2.lda(), &sigma_R2[0]);
-      matgen.fill_random_R (numCols, R3.data(), R3.lda(), &sigma_R3[0]);
-      matgen.fill_random_svd (numRows, numCols, A.data(), A.lda(), &sigma_A[0]);
+      matgen.fill_random_R (numCols, R1.data(), R1.stride(1), &sigma_R1[0]);
+      matgen.fill_random_R (numCols, R2.data(), R2.stride(1), &sigma_R2[0]);
+      matgen.fill_random_R (numCols, R3.data(), R3.stride(1), &sigma_R3[0]);
+      matgen.fill_random_svd (numRows, numCols, A.data(), A.stride(1), &sigma_A[0]);
 
       if (false && debug)
         {
           cerr << endl << "First test problem:" << endl;
-          print_local_matrix (cerr, numCols, numCols, R1.data(), R1.lda());
-          print_local_matrix (cerr, numCols, numCols, R2.data(), R2.lda());
+          print_local_matrix (cerr, numCols, numCols, R1.data(), R1.stride(1));
+          print_local_matrix (cerr, numCols, numCols, R2.data(), R2.stride(1));
           cerr << endl;
 
           cerr << endl << "Second test problem:" << endl;
-          print_local_matrix (cerr, numCols, numCols, R3.data(), R3.lda());
-          print_local_matrix (cerr, numRows, numCols, A.data(), A.lda());
+          print_local_matrix (cerr, numCols, numCols, R3.data(), R3.stride(1));
+          print_local_matrix (cerr, numRows, numCols, A.data(), A.stride(1));
           cerr << endl;
         }
 
@@ -308,16 +308,16 @@ namespace TSQR {
       matrix_type A_R3A (numRows + numCols, numCols, Scalar(0));
 
       // Copy [R1; R2] into A_R1R2.
-      copy_matrix (numCols, numCols, &A_R1R2(0, 0), A_R1R2.lda(),
-                   R1.data(), R1.lda());
-      copy_matrix (numCols, numCols, &A_R1R2(numCols, 0), A_R1R2.lda(),
-                   R2.data(), R2.lda());
+      copy_matrix (numCols, numCols, &A_R1R2(0, 0), A_R1R2.stride(1),
+                   R1.data(), R1.stride(1));
+      copy_matrix (numCols, numCols, &A_R1R2(numCols, 0), A_R1R2.stride(1),
+                   R2.data(), R2.stride(1));
 
       // Copy [R3; A] into A_R3A.
-      copy_matrix (numCols, numCols, &A_R3A(0, 0), A_R3A.lda(),
-                   R3.data(), R3.lda());
-      copy_matrix (numRows, numCols, &A_R3A(numCols, 0), A_R3A.lda(),
-                   A.data(), A.lda());
+      copy_matrix (numCols, numCols, &A_R3A(0, 0), A_R3A.stride(1),
+                   R3.data(), R3.stride(1));
+      copy_matrix (numRows, numCols, &A_R3A(numCols, 0), A_R3A.stride(1),
+                   A.data(), A.stride(1));
 
       // Space to put the explicit Q factors.
       matrix_type Q_R1R2 (Ordinal(2) * numCols, numCols, Scalar(0));
@@ -346,32 +346,32 @@ namespace TSQR {
              << " by " << numCols << endl << endl;
 
       Combine< Ordinal, Scalar > combiner;
-      combiner.factor_pair (numCols, R1.data(), R1.lda(), R2.data(), R2.lda(),
+      combiner.factor_pair (numCols, R1.data(), R1.stride(1), R2.data(), R2.stride(1),
                             &tau_R1R2[0], work.data());
       combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                           R2.data(), R2.lda(), &tau_R1R2[0],
-                           &Q_R1R2(0, 0), Q_R1R2.lda(),
-                           &Q_R1R2(numCols, 0), Q_R1R2.lda(),
+                           R2.data(), R2.stride(1), &tau_R1R2[0],
+                           &Q_R1R2(0, 0), Q_R1R2.stride(1),
+                           &Q_R1R2(numCols, 0), Q_R1R2.stride(1),
                            work.data());
       if (debug)
         {
           cerr << "Results of first test problem:" << endl;
           cerr << "-- Copy of test problem:" << endl;
           print_local_matrix (cerr, A_R1R2.extent(0), A_R1R2.extent(1),
-                              A_R1R2.data(), A_R1R2.lda());
+                              A_R1R2.data(), A_R1R2.stride(1));
           cerr << endl << "-- Q factor:" << endl;
           print_local_matrix (cerr, Q_R1R2.extent(0), Q_R1R2.extent(1),
-                              Q_R1R2.data(), Q_R1R2.lda());
+                              Q_R1R2.data(), Q_R1R2.stride(1));
           cerr << endl << "-- R factor:" << endl;
           print_local_matrix (cerr, R1.extent(0), R1.extent(1),
-                              R1.data(), R1.lda());
+                              R1.data(), R1.stride(1));
           cerr << endl;
         }
       const results_type firstResults =
         local_verify (A_R1R2.extent(0), A_R1R2.extent(1),
-                      A_R1R2.data(), A_R1R2.lda(),
-                      Q_R1R2.data(), Q_R1R2.lda(),
-                      R1.data(), R1.lda());
+                      A_R1R2.data(), A_R1R2.stride(1),
+                      Q_R1R2.data(), Q_R1R2.stride(1),
+                      R1.data(), R1.stride(1));
       if (debug)
         cerr << "\\| A - Q*R \\|_F = " << firstResults[0] << endl
              << "\\| I - Q'*Q \\|_F = " << firstResults[1] << endl
@@ -383,32 +383,32 @@ namespace TSQR {
              << "qr( [R3; A] ), with R3 " << numCols << " by " << numCols
              << " and A " << numRows << " by " << numCols << endl << endl;
 
-      combiner.factor_inner (numRows, numCols, R3.data(), R3.lda(),
-                             A.data(), A.lda(), &tau_R3A[0], work.data());
+      combiner.factor_inner (numRows, numCols, R3.data(), R3.stride(1),
+                             A.data(), A.stride(1), &tau_R3A[0], work.data());
       combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
-                            A.data(), A.lda(), &tau_R3A[0],
-                            &Q_R3A(0, 0), Q_R3A.lda(),
-                            &Q_R3A(numCols, 0), Q_R3A.lda(),
+                            A.data(), A.stride(1), &tau_R3A[0],
+                            &Q_R3A(0, 0), Q_R3A.stride(1),
+                            &Q_R3A(numCols, 0), Q_R3A.stride(1),
                             work.data());
       if (debug)
         {
           cerr << "Results of second test problem:" << endl;
           cerr << "-- Copy of test problem:" << endl;
           print_local_matrix (cerr, A_R3A.extent(0), A_R3A.extent(1),
-                              A_R3A.data(), A_R3A.lda());
+                              A_R3A.data(), A_R3A.stride(1));
           cerr << endl << "-- Q factor:" << endl;
           print_local_matrix (cerr, Q_R3A.extent(0), Q_R3A.extent(1),
-                              Q_R3A.data(), Q_R3A.lda());
+                              Q_R3A.data(), Q_R3A.stride(1));
           cerr << endl << "-- R factor:" << endl;
           print_local_matrix (cerr, R3.extent(0), R3.extent(1),
-                              R3.data(), R3.lda());
+                              R3.data(), R3.stride(1));
           cerr << endl;
         }
       const results_type secondResults =
         local_verify (A_R3A.extent(0), A_R3A.extent(1),
-                      A_R3A.data(), A_R3A.lda(),
-                      Q_R3A.data(), Q_R3A.lda(),
-                      R3.data(), R3.lda());
+                      A_R3A.data(), A_R3A.stride(1),
+                      Q_R3A.data(), Q_R3A.stride(1),
+                      R3.data(), R3.stride(1));
       if (debug)
         cerr << "\\| A - Q*R \\|_F = " << secondResults[0] << endl
              << "\\| I - Q'*Q \\|_F = " << secondResults[1] << endl
@@ -474,13 +474,13 @@ namespace TSQR {
       // Matrix consisting of two cache blocks.
       matrix_type A (Ordinal(2)*numRows, numCols, Scalar(0));
       // Views of the two cache blocks.
-      mat_view_type A1 (numRows, numCols, &A(0,0), A.lda());
-      mat_view_type A2 (numRows, numCols, &A(numRows,0), A.lda());
+      mat_view_type A1 (numRows, numCols, &A(0,0), A.stride(1));
+      mat_view_type A2 (numRows, numCols, &A(numRows,0), A.stride(1));
 
       // Fill the two cache blocks with random test problems.
       matgen_type matgen (gen);
-      matgen.fill_random_svd (numRows, numCols, A1.data(), A1.lda(), &sigma_A1[0]);
-      matgen.fill_random_svd (numRows, numCols, A2.data(), A2.lda(), &sigma_A2[0]);
+      matgen.fill_random_svd (numRows, numCols, A1.data(), A1.stride(1), &sigma_A1[0]);
+      matgen.fill_random_svd (numRows, numCols, A2.data(), A2.stride(1), &sigma_A2[0]);
 
       if (false && debug)
         {
@@ -508,8 +508,8 @@ namespace TSQR {
         Q(k, k) = Scalar(1);
 
       // Two cache blocks (as views) of Q.
-      mat_view_type Q1 (numRows, numCols, &Q(0,0), Q.lda());
-      mat_view_type Q2 (numRows, numCols, &Q(numRows,0), Q.lda());
+      mat_view_type Q1 (numRows, numCols, &Q(0,0), Q.stride(1));
+      mat_view_type Q2 (numRows, numCols, &Q(numRows,0), Q.stride(1));
 
       // Two tau factor arrays, one for each cache block.
       vector< Scalar > tau1 (numCols);
@@ -527,13 +527,13 @@ namespace TSQR {
 
       Combine< Ordinal, Scalar > combiner;
       // qr( A1 )
-      combiner.factor_first (numRows, numCols, A1.data(), A1.lda(),
+      combiner.factor_first (numRows, numCols, A1.data(), A1.stride(1),
                              &tau1[0], work.data());
       // View of numCols by numCols upper triangle of A1.
-      mat_view_type R1 (numCols, numCols, A1.data(), A1.lda());
+      mat_view_type R1 (numCols, numCols, A1.data(), A1.stride(1));
       // qr( [R1; A2] )
-      combiner.factor_inner (numRows, numCols, R1.data(), R1.lda(),
-                             A2.data(), A2.lda(), &tau2[0], work.data());
+      combiner.factor_inner (numRows, numCols, R1.data(), R1.stride(1),
+                             A2.data(), A2.stride(1), &tau2[0], work.data());
       // Extract (a deep copy of) the R factor.
       matrix_type R (R1);
       // Zero out everything below the diagonal of R.
@@ -545,13 +545,13 @@ namespace TSQR {
       // (working up the matrix A,) finishing with A1.
       combiner.apply_inner (ApplyType::NoTranspose,
                             numRows, numCols, numCols,
-                            A2.data(), A2.lda(), tau2.data(),
-                            Q1.data(), Q1.lda(),
-                            Q2.data(), Q2.lda(), work.data());
+                            A2.data(), A2.stride(1), tau2.data(),
+                            Q1.data(), Q1.stride(1),
+                            Q2.data(), Q2.stride(1), work.data());
       combiner.apply_first (ApplyType::NoTranspose,
                             numRows, numCols, numCols,
-                            A1.data(), A.lda(), tau1.data(),
-                            Q1.data(), Q1.lda(), work.data());
+                            A1.data(), A.stride(1), tau1.data(),
+                            Q1.data(), Q1.stride(1), work.data());
       if (debug) {
         cerr << "Results of first test problem:" << endl;
         cerr << "-- Test matrix A:" << endl;

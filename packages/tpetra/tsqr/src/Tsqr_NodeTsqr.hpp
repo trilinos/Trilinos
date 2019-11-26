@@ -324,7 +324,7 @@ namespace TSQR {
     /// \brief Return view of topmost cache block of C
     ///
     /// \param C [in] Matrix (view), supporting the usual extent(0),
-    ///   extent(1), data(), lda() interface.
+    ///   extent(1), data(), stride(1) interface.
     /// \param contiguousCacheBlocks [in] Whether the cache blocks
     ///   in C are stored contiguously.
     ///
@@ -335,7 +335,7 @@ namespace TSQR {
     /// follows:
     /// \code
     /// MatrixViewType top = this->top_block (C, contig);
-    /// mat_view_type square (ncols, ncols, top.data(), top.lda());
+    /// mat_view_type square (ncols, ncols, top.data(), top.stride(1));
     /// \endcode
     virtual const_mat_view_type
     const_top_block (const const_mat_view_type& C,
@@ -355,12 +355,12 @@ namespace TSQR {
     /// Tsqr::apply() need, do the following:
     /// \code
     /// MatrixViewType top = this->top_block (C, contig);
-    /// mat_view_type square (ncols, ncols, top.data(), top.lda());
+    /// mat_view_type square (ncols, ncols, top.data(), top.stride(1));
     /// \endcode
     ///
     /// Models for MatrixViewType are MatView and ConstMatView.
     /// MatrixViewType must have member functions extent(0), extent(1),
-    /// data(), and lda(), and its constructor must take the same four
+    /// data(), and stride(1), and its constructor must take the same four
     /// arguments as the constructor of ConstMatView.
     template<class MatrixViewType>
     MatrixViewType
@@ -372,7 +372,7 @@ namespace TSQR {
       // method.  The only cast from const to nonconst may be in the
       // return value, but there it's legitimate since we're just
       // using the same constness as C has.
-      const_mat_view_type C_view (C.extent(0), C.extent(1), C.data(), C.lda());
+      const_mat_view_type C_view (C.extent(0), C.extent(1), C.data(), C.stride(1));
       const_mat_view_type C_top =
         const_top_block (C_view, contiguous_cache_blocks);
       TEUCHOS_TEST_FOR_EXCEPTION(C_top.extent(0) < C_top.extent(1), std::logic_error,
@@ -384,7 +384,7 @@ namespace TSQR {
       using pointer = typename MatrixViewType::pointer;
       return MatrixViewType (C_top.extent(0), C_top.extent(1),
                              const_cast<pointer> (C_top.data()),
-                             C_top.lda());
+                             C_top.stride(1));
     }
 
     /// \brief Does factor() compute R with nonnegative diagonal?
@@ -519,9 +519,9 @@ namespace TSQR {
         "developers.";
 
       Scalar svd_lwork_scalar {};
-      lapack.GESVD ('A', 'A', ncols, ncols, B.data(), B.lda(),
-                    singular_values.data(), U_view.data(), U_view.lda(),
-                    VT.data(), VT.lda(), &svd_lwork_scalar, svd_lwork,
+      lapack.GESVD ('A', 'A', ncols, ncols, B.data(), B.stride(1),
+                    singular_values.data(), U_view.data(), U_view.stride(1),
+                    VT.data(), VT.stride(1), &svd_lwork_scalar, svd_lwork,
                     svd_rwork.data());
       // LAPACK returns the workspace array length as a Scalar.  We
       // have to convert it back to an Ordinal in order to allocate
@@ -561,9 +561,9 @@ namespace TSQR {
     // Compute SVD $B := U \Sigma V^*$.  B is overwritten, which is
     // why we copied R into B (so that we don't overwrite R if R is
     // full rank).
-    lapack.GESVD ('A', 'A', ncols, ncols, B.data(), B.lda(),
-                  singular_values.data(), U_view.data(), U_view.lda(),
-                  VT.data(), VT.lda(), svd_work.data(), svd_lwork,
+    lapack.GESVD ('A', 'A', ncols, ncols, B.data(), B.stride(1),
+                  singular_values.data(), U_view.data(), U_view.stride(1),
+                  VT.data(), VT.stride(1), svd_work.data(), svd_lwork,
                   svd_rwork.data());
     //
     // Compute the numerical rank of B, using the given relative
@@ -633,14 +633,14 @@ namespace TSQR {
     // Compute numerical rank of the R factor using the SVD.
     // Store the left singular vectors in U.
     const Ordinal rank =
-      reveal_R_rank (ncols, R, ldr, U.data(), U.ldu(), tol);
+      reveal_R_rank (ncols, R, ldr, U.data(), U.stride(1), tol);
 
     // If R is full rank, we're done.  Otherwise, reveal_R_rank()
     // already computed the SVD \f$R = U \Sigma V^*\f$ of (the
     // input) R, and overwrote R with \f$\Sigma V^*\f$.  Now, we
     // compute \f$Q := Q \cdot U\f$, respecting cache blocks of Q.
     if (rank < ncols) {
-      Q_times_B (nrows, ncols, Q, ldq, U.data(), U.lda(),
+      Q_times_B (nrows, ncols, Q, ldq, U.data(), U.stride(1),
                  contiguousCacheBlocks);
     }
     return rank;

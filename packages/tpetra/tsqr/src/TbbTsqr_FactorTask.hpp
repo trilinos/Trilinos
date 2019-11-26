@@ -189,23 +189,25 @@ namespace TSQR {
                    mat_view_type& A_bot)
       {
         const char thePrefix[] = "TSQR::TBB::Factor::factor_pair: ";
-        TEUCHOS_TEST_FOR_EXCEPTION(P_top == P_bot, std::logic_error,
-                           thePrefix << "Should never get here! P_top == P_bot (= "
-                           << P_top << "), that is, the indices of the thread "
-                           "partitions are the same.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (P_top == P_bot, std::logic_error, thePrefix << "Should "
+           "never get here! P_top == P_bot (= " << P_top << "), that "
+           "is, the indices of the thread partitions are the same.");
         // We only read and write the upper ncols x ncols triangle of
         // each block.
-        TEUCHOS_TEST_FOR_EXCEPTION(A_top.extent(1) != A_bot.extent(1), std::logic_error,
-                           thePrefix << "The top cache block A_top is "
-                           << A_top.extent(0) << " x " << A_top.extent(1)
-                           << ", and the bottom cache block A_bot is "
-                           << A_bot.extent(0) << " x " << A_bot.extent(1)
-                           << "; this means we can't factor [A_top; A_bot].");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (A_top.extent(1) != A_bot.extent(1), std::logic_error,
+           thePrefix << "The top cache block A_top is "
+           << A_top.extent(0) << " x " << A_top.extent(1)
+           << ", and the bottom cache block A_bot is "
+           << A_bot.extent(0) << " x " << A_bot.extent(1)
+           << "; this means we can't factor [A_top; A_bot].");
         const LocalOrdinal ncols = A_top.extent(1);
         std::vector<Scalar>& tau = par_output_[P_bot];
         std::vector<Scalar> work (ncols);
-        combine_.factor_pair (ncols, A_top.data(), A_top.lda(),
-                              A_bot.data(), A_bot.lda(), &tau[0], &work[0]);
+        combine_.factor_pair (ncols, A_top.data(), A_top.stride(1),
+                              A_bot.data(), A_bot.stride(1),
+                              tau.data(), work.data());
       }
 
       void
@@ -215,7 +217,7 @@ namespace TSQR {
         timer.start();
         seq_outputs_[P_first_] =
           seq_.factor (A_.extent(0), A_.extent(1), A_.data(),
-                       A_.lda(), contiguous_cache_blocks_);
+                       A_.stride(1), contiguous_cache_blocks_);
         // Assign the topmost cache block of the current partition to
         // *A_top_ptr_.  Every base case invocation does this, so that
         // we can combine subproblems.  The root task also does this,

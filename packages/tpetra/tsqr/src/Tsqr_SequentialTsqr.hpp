@@ -159,9 +159,9 @@ namespace TSQR {
                         std::vector<Scalar>& work) const
     {
       const LocalOrdinal ncols = A_top.extent(1);
-      combine.factor_first (A_top.extent(0), ncols, A_top.data(), A_top.lda(),
+      combine.factor_first (A_top.extent(0), ncols, A_top.data(), A_top.stride(1),
                             tau.data(), work.data());
-      return mat_view_type(ncols, ncols, A_top.data(), A_top.lda());
+      return mat_view_type(ncols, ncols, A_top.data(), A_top.stride(1));
     }
 
     /// Apply the Q factor of the first (topmost) cache blocks, as
@@ -178,8 +178,8 @@ namespace TSQR {
     {
       const LocalOrdinal nrowsLocal = Q_first.extent(0);
       combine.apply_first (applyType, nrowsLocal, C_first.extent(1),
-                           Q_first.extent(1), Q_first.data(), Q_first.lda(),
-                           tau.data(), C_first.data(), C_first.lda(), work.data());
+                           Q_first.extent(1), Q_first.data(), Q_first.stride(1),
+                           tau.data(), C_first.data(), C_first.stride(1), work.data());
     }
 
     void
@@ -197,9 +197,9 @@ namespace TSQR {
 
       combine.apply_inner (apply_type,
                            nrows_local, ncols_C, ncols_Q,
-                           Q_cur.data(), C_cur.lda(), tau.data(),
-                           C_top.data(), C_top.lda(),
-                           C_cur.data(), C_cur.lda(), work.data());
+                           Q_cur.data(), C_cur.stride(1), tau.data(),
+                           C_top.data(), C_top.stride(1),
+                           C_cur.data(), C_cur.stride(1), work.data());
     }
 
     void
@@ -212,8 +212,8 @@ namespace TSQR {
       const LocalOrdinal nrows_local = A_cur.extent(0);
       const LocalOrdinal ncols = A_cur.extent(1);
 
-      combine.factor_inner (nrows_local, ncols, R.data(), R.lda(),
-                            A_cur.data(), A_cur.lda(), tau.data(),
+      combine.factor_inner (nrows_local, ncols, R.data(), R.stride(1),
+                            A_cur.data(), A_cur.stride(1), tau.data(),
                             work.data());
     }
 
@@ -487,7 +487,7 @@ namespace TSQR {
       fill_matrix (ncols, ncols, R, ldr, Teuchos::ScalarTraits<Scalar>::zero());
 
       // Copy out the upper triangle of the R factor from A into R.
-      copy_upper_triangle (ncols, ncols, R, ldr, A_top.data(), A_top.lda());
+      copy_upper_triangle (ncols, ncols, R, ldr, A_top.data(), A_top.stride(1));
     }
 
     /// \brief Compute the QR factorization of the matrix A.
@@ -541,7 +541,7 @@ namespace TSQR {
       // R_view (a view of the topmost cache block of A) into the R
       // output argument.
       fill_matrix (ncols, ncols, R, ldr, Scalar(0));
-      copy_upper_triangle (ncols, ncols, R, ldr, R_view.data(), R_view.lda());
+      copy_upper_triangle (ncols, ncols, R, ldr, R_view.data(), R_view.stride(1));
       return tau_arrays;
     }
 
@@ -762,8 +762,8 @@ namespace TSQR {
         deep_copy (Q_cur_copy, Q_cur);
         // Q_cur := Q_cur_copy * B.
         blas.GEMM (NO_TRANS, NO_TRANS, Q_cur.extent (0), ncols, ncols,
-                   Scalar (1.0), Q_cur_copy.data (), Q_cur_copy.lda (),
-                   B, ldb, Scalar {}, Q_cur.data (), Q_cur.lda ());
+                   Scalar (1.0), Q_cur_copy.data (), Q_cur_copy.stride (1),
+                   B, ldb, Scalar {}, Q_cur.data (), Q_cur.stride (1));
       }
     }
 

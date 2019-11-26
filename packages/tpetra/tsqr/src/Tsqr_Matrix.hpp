@@ -186,8 +186,8 @@ namespace TSQR {
       A_ (verified_alloc_size (in.extent(0), in.extent(1)))
     {
       if (! in.empty()) {
-        copy_matrix (extent(0), extent(1), data(), lda(),
-                     in.data(), in.lda());
+        copy_matrix (extent(0), extent(1), data(), stride(1),
+                     in.data(), in.stride(1));
       }
     }
 
@@ -198,8 +198,8 @@ namespace TSQR {
     ///
     /// This constructor allocates a new matrix and copies the
     /// elements of the input view into the resulting new matrix.
-    /// MatrixViewType must have extent(0), extent(1), data(), and lda()
-    /// methods that match MatView's methods.
+    /// MatrixViewType must have extent(0), extent(1), data(), and
+    /// stride(1) methods that match MatView's methods.
     template<class MatrixViewType>
     Matrix (const MatrixViewType& in) :
       nrows_ (in.extent(0)),
@@ -207,8 +207,8 @@ namespace TSQR {
       A_ (verified_alloc_size (in.extent(0), in.extent(1)))
     {
       if (A_.size() != 0) {
-        copy_matrix (extent(0), extent(1), data(), lda(),
-                     in.data(), in.lda());
+        copy_matrix (extent(0), extent(1), data(), stride(1),
+                     in.data(), in.stride(1));
       }
     }
 
@@ -217,7 +217,7 @@ namespace TSQR {
     /// \param i [in] Zero-based row index of the matrix.
     /// \param j [in] Zero-based column index of the matrix.
     scalar_type& operator() (const ordinal_type i, const ordinal_type j) {
-      return A_[i + j*lda()];
+      return A_[i + j*stride(1)];
     }
 
     /// \brief Const reference to element (i,j) of the matrix.
@@ -225,7 +225,7 @@ namespace TSQR {
     /// \param i [in] Zero-based row index of the matrix.
     /// \param j [in] Zero-based column index of the matrix.
     const scalar_type& operator() (const ordinal_type i, const ordinal_type j) const {
-      return A_[i + j*lda()];
+      return A_[i + j*stride(1)];
     }
 
     //! 1-D std::vector - style access.
@@ -238,7 +238,7 @@ namespace TSQR {
     bool operator== (const MatrixViewType& B) const
     {
       if (data() != B.data() || extent(0) != B.extent(0) ||
-          extent(1) != B.extent(1) || lda() != B.lda()) {
+          extent(1) != B.extent(1) || stride(1) != B.stride(1)) {
         return false;
       } else {
         return true;
@@ -252,8 +252,6 @@ namespace TSQR {
     constexpr ordinal_type stride(const int r) const noexcept {
       return r == 0 ? ordinal_type(1) : (r == 1 ? nrows_ : ordinal_type(0));
     }
-
-    constexpr ordinal_type lda() const noexcept { return stride(1); }
 
     //! Whether the matrix is empty (has either zero rows or zero columns).
     bool empty() const { return extent(0) == 0 || extent(1) == 0; }
@@ -272,13 +270,13 @@ namespace TSQR {
 
     //! A non-const view of the matrix.
     mat_view_type view () {
-      return mat_view_type (extent(0), extent(1), data(), lda());
+      return mat_view_type (extent(0), extent(1), data(), stride(1));
     }
 
     //! A const view of the matrix.
     const_mat_view_type const_view () const {
       return const_mat_view_type (extent(0), extent(1),
-                                  const_cast<const scalar_type*> (data()), lda());
+                                  const_cast<const scalar_type*> (data()), stride(1));
     }
 
     /// Change the dimensions of the matrix.  Reallocate if necessary.
@@ -321,7 +319,7 @@ namespace TSQR {
   deep_copy (Matrix<LO, SC>& tgt, const SourceScalar& src)
   {
     MatView<LO, SC> tgt_view (tgt.extent(0), tgt.extent(1),
-                            tgt.data(), tgt.lda());
+                            tgt.data(), tgt.stride(1));
     deep_copy (tgt_view, src);
   }
 
@@ -334,7 +332,7 @@ namespace TSQR {
   {
     using mat_view_type = MatView<TargetOrdinal, TargetScalar>;
     mat_view_type tgt_view (tgt.extent(0), tgt.extent(1),
-                            tgt.data(), tgt.lda());
+                            tgt.data(), tgt.stride(1));
     deep_copy (tgt_view, src);
   }
 } // namespace TSQR

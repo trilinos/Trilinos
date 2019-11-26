@@ -137,13 +137,13 @@ namespace TSQR {
       A_buf_.reshape (numRows, ncols_Q);
       deep_copy (A_buf_, Scalar {});
       const_mat_view_type A_bot (m, ncols_Q, A, lda);
-      mat_view_type A_buf_bot (m, ncols_Q, &A_buf_(ncols_Q, 0), A_buf_.lda());
+      mat_view_type A_buf_bot (m, ncols_Q, &A_buf_(ncols_Q, 0), A_buf_.stride(1));
       deep_copy (A_buf_bot, A_bot);
 
       C_buf_.reshape (numRows, ncols_C);
       deep_copy (C_buf_, Scalar {});
-      mat_view_type C_buf_top (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.lda());
-      mat_view_type C_buf_bot (m, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.lda());
+      mat_view_type C_buf_top (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.stride(1));
+      mat_view_type C_buf_bot (m, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.stride(1));
       mat_view_type C_top_view (ncols_Q, ncols_C, C_top, ldc_top);
       mat_view_type C_bot_view (m, ncols_C, C_bot, ldc_bot);
       deep_copy (C_buf_top, C_top_view);
@@ -152,8 +152,8 @@ namespace TSQR {
       const std::string trans = apply_type.toString ();
       const int lwork = ncols_C;
       lapack_.apply_Q_factor ('L', trans[0], numRows, ncols_C, ncols_Q,
-                              A_buf_.data(), A_buf_.lda(), tau,
-                              C_buf_.data(), C_buf_.lda(),
+                              A_buf_.data(), A_buf_.stride(1), tau,
+                              C_buf_.data(), C_buf_.stride(1),
                               work, lwork);
       // Copy back the results.
       deep_copy (C_top_view, C_buf_top);
@@ -178,17 +178,17 @@ namespace TSQR {
       // we only want to include the upper triangle in the
       // factorization.  Thus, only copy the upper triangle of R into
       // the appropriate place in the buffer.
-      copy_upper_triangle (n, n, &A_buf_(0, 0), A_buf_.lda(), R, ldr);
-      copy_matrix (m, n, &A_buf_(n, 0), A_buf_.lda(), A, lda);
+      copy_upper_triangle (n, n, &A_buf_(0, 0), A_buf_.stride(1), R, ldr);
+      copy_matrix (m, n, &A_buf_(n, 0), A_buf_.stride(1), A, lda);
 
       const int lwork = n;
-      lapack_.compute_QR (numRows, n, A_buf_.data(), A_buf_.lda(),
+      lapack_.compute_QR (numRows, n, A_buf_.data(), A_buf_.stride(1),
                           tau, work, lwork);
       // Copy back the results.  R might be a view of the upper
       // triangle of a cache block, so only copy into the upper
       // triangle of R.
-      copy_upper_triangle (n, n, R, ldr, &A_buf_(0, 0), A_buf_.lda());
-      copy_matrix (m, n, A, lda, &A_buf_(n, 0), A_buf_.lda());
+      copy_upper_triangle (n, n, R, ldr, &A_buf_(0, 0), A_buf_.stride(1));
+      copy_matrix (m, n, A, lda, &A_buf_(n, 0), A_buf_.stride(1));
     }
 
     void
@@ -209,18 +209,18 @@ namespace TSQR {
       // views of some cache block (where the strict lower triangle
       // contains things we don't want to include in the
       // factorization).
-      copy_upper_triangle (n, n, &A_buf_(0, 0), A_buf_.lda(), R_top, ldr_top);
-      copy_upper_triangle (n, n, &A_buf_(n, 0), A_buf_.lda(), R_bot, ldr_bot);
+      copy_upper_triangle (n, n, &A_buf_(0, 0), A_buf_.stride(1), R_top, ldr_top);
+      copy_upper_triangle (n, n, &A_buf_(n, 0), A_buf_.stride(1), R_bot, ldr_bot);
 
       const int lwork = n;
-      lapack_.compute_QR (numRows, n, A_buf_.data(), A_buf_.lda(),
+      lapack_.compute_QR (numRows, n, A_buf_.data(), A_buf_.stride(1),
                           tau, work, lwork);
       // Copy back the results.  Only read the upper triangles of the
       // two n by n row blocks of A_buf_ (this means we don't have to
       // zero out the strict lower triangles), and only touch the
       // upper triangles of R_top and R_bot.
-      copy_upper_triangle (n, n, R_top, ldr_top, &A_buf_(0, 0), A_buf_.lda());
-      copy_upper_triangle (n, n, R_bot, ldr_bot, &A_buf_(n, 0), A_buf_.lda());
+      copy_upper_triangle (n, n, R_top, ldr_top, &A_buf_(0, 0), A_buf_.stride(1));
+      copy_upper_triangle (n, n, R_bot, ldr_bot, &A_buf_(n, 0), A_buf_.stride(1));
     }
 
     void
@@ -241,21 +241,23 @@ namespace TSQR {
       A_buf_.reshape (numRows, ncols_Q);
       deep_copy (A_buf_, Scalar {});
       copy_upper_triangle (ncols_Q, ncols_Q,
-                           &A_buf_(ncols_Q, 0), A_buf_.lda(),
+                           &A_buf_(ncols_Q, 0), A_buf_.stride(1),
                            R_bot, ldr_bot);
       C_buf_.reshape (numRows, ncols_C);
-      copy_matrix (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.lda(), C_top, ldc_top);
-      copy_matrix (ncols_Q, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.lda(), C_bot, ldc_bot);
+      copy_matrix (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.stride(1), C_top, ldc_top);
+      copy_matrix (ncols_Q, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.stride(1), C_bot, ldc_bot);
 
       const int lwork = ncols_Q;
       const std::string trans = apply_type.toString ();
       lapack_.apply_Q_factor ('L', trans[0], numRows, ncols_C, ncols_Q,
-                              A_buf_.data(), A_buf_.lda(), tau,
-                              C_buf_.data(), C_buf_.lda(),
+                              A_buf_.data(), A_buf_.stride(1), tau,
+                              C_buf_.data(), C_buf_.stride(1),
                               work, lwork);
       // Copy back the results.
-      copy_matrix (ncols_Q, ncols_C, C_top, ldc_top, &C_buf_(0, 0), C_buf_.lda());
-      copy_matrix (ncols_Q, ncols_C, C_bot, ldc_bot, &C_buf_(ncols_Q, 0), C_buf_.lda());
+      copy_matrix (ncols_Q, ncols_C, C_top, ldc_top,
+                   &C_buf_(0, 0), C_buf_.stride(1));
+      copy_matrix (ncols_Q, ncols_C, C_bot, ldc_bot,
+                   &C_buf_(ncols_Q, 0), C_buf_.stride(1));
     }
 
   private:
