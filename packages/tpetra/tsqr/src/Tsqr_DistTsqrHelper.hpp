@@ -89,37 +89,34 @@ namespace TSQR {
       vector< Scalar > tau (ncols);
 
       // Send and receive R factor.
-      messenger->swapData (&R_mine[0], &R_other[0], nelts, P_other, tag);
+      messenger->swapData (R_mine.data(), R_other.data(),
+                           nelts, P_other, tag);
 
-      Combine< LocalOrdinal, Scalar > combine;
-      if (P_mine == P_top)
-        {
-          combine.factor_pair (ncols, &R_mine[0], ldr, &R_other[0], ldr, &tau[0], &work[0]);
-          Q_factors.push_back (R_other);
-          tau_arrays.push_back (tau);
-        }
-      else if (P_mine == P_bot)
-        {
-          combine.factor_pair (ncols, &R_other[0], ldr, &R_mine[0], ldr, &tau[0], &work[0]);
-          Q_factors.push_back (R_mine);
-          // Make sure that the "bottom" processor gets the current R
-          // factor, which is returned in R_mine.
-          copy_matrix (ncols, ncols, &R_mine[0], ldr, &R_other[0], ldr);
-          tau_arrays.push_back (tau);
-        }
-      else
-        {
-          // mfh 16 Apr 2010: the troubles with assert statements are as follows:
-          //
-          // 1. They go away in a release build.
-          // 2. They don't often print out useful diagnostic information.
-          // 3. If you mistype the assert, like "assert(errcode = 1);" instead of
-          //    "assert(errcode == 1)", you'll get false positives.
-          ostringstream os;
-          os << "Should never get here: P_mine (= " << P_mine
-             << ") not one of P_top, P_bot = " << P_top << ", " << P_bot;
-          throw std::logic_error (os.str());
-        }
+      Combine<LocalOrdinal, Scalar> combine;
+      if (P_mine == P_top) {
+        combine.factor_pair (ncols, R_mine.data(), ldr,
+                             R_other.data(), ldr,
+                             tau.data(), work.data());
+        Q_factors.push_back (R_other);
+        tau_arrays.push_back (tau);
+      }
+      else if (P_mine == P_bot) {
+        combine.factor_pair (ncols, R_other.data(), ldr,
+                             R_mine.data(), ldr,
+                             tau.data(), work.data());
+        Q_factors.push_back (R_mine);
+        // Make sure that the "bottom" processor gets the current R
+        // factor, which is returned in R_mine.
+        copy_matrix (ncols, ncols, R_mine.data(), ldr,
+                     R_other.data(), ldr);
+        tau_arrays.push_back (tau);
+      }
+      else {
+        ostringstream os;
+        os << "Should never get here: P_mine (= " << P_mine
+           << ") not one of P_top, P_bot = " << P_top << ", " << P_bot;
+        throw std::logic_error (os.str());
+      }
     }
 
     void

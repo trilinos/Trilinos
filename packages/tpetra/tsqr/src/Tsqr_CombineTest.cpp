@@ -317,10 +317,11 @@ namespace TSQR {
       }
 
       // Copy [R3; A] into A_R3A.
-      copy_matrix (numCols, numCols, &A_R3A(0, 0), A_R3A.stride(1),
-                   R3.data(), R3.stride(1));
-      copy_matrix (numRows, numCols, &A_R3A(numCols, 0), A_R3A.stride(1),
-                   A.data(), A.stride(1));
+      {
+        auto A_R3A_views = partition_2x1 (A_R3A, numCols);
+        deep_copy (A_R3A_views.first, R3);
+        deep_copy (A_R3A_views.second, A);
+      }
 
       // Space to put the explicit Q factors.
       matrix_type Q_R1R2 (Ordinal(2) * numCols, numCols, Scalar(0));
@@ -329,6 +330,9 @@ namespace TSQR {
       // Fill the explicit Q factor matrices with the first numCols
       // columns of the identity matrix.
       for (Ordinal k = 0; k < numCols; ++k) {
+        // FIXME (mfh 26 Nov 2019) Eventually we want to get away from
+        // direct modification of the entries of a Matrix or MatView,
+        // in favor of only doing so with a Kokkos kernel or TPL.
         Q_R1R2(k, k) = Scalar(1.0);
         Q_R3A(k, k) = Scalar(1.0);
       }
