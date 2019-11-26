@@ -225,18 +225,20 @@ namespace TSQR {
 
     vector<Scalar> Resid (nrows_local * ncols, STS::nan());
     const LocalOrdinal ld_resid = nrows_local;
-
-    // Resid := A (deep copy)
-    copy_matrix (nrows_local, ncols, &Resid[0], ld_resid, A_local, lda_local);
+    MatView<LocalOrdinal, Scalar> Resid_view
+      (nrows_local, ncols, Resid.data (), ld_resid);
+    MatView<LocalOrdinal, const Scalar> A_view
+      (nrows_local, ncols, A_local, lda_local);
+    deep_copy (Resid_view, A_view);
 
     // Resid := Resid - Q*R
     blas.GEMM (NO_TRANS, NO_TRANS, nrows_local, ncols, ncols,
                -ONE, Q_local, ldq_local, R, ldr,
-               ONE, &Resid[0], ld_resid);
+               ONE, Resid.data(), ld_resid);
 
     const magnitude_type Resid_F =
-      global_frobenius_norm (nrows_local, ncols, &Resid[0], ld_resid, messenger);
-
+      global_frobenius_norm (nrows_local, ncols, Resid.data(),
+                             ld_resid, messenger);
     vector<magnitude_type> results (3);
     results[0] = Resid_F;
     results[1] = Orthog_F;

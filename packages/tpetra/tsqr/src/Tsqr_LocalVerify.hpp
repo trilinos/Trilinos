@@ -247,20 +247,21 @@ namespace TSQR {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
 
-    std::vector<Scalar> AbsResid (nrows * ncols, std::numeric_limits<Scalar>::quiet_NaN ());
-    const Ordinal AbsResid_stride = nrows;
-    Impl::SystemBlas<Scalar> blas;
-    const magnitude_type ONE (1.0);
+    MatView<Ordinal, const Scalar> A_view (nrows, ncols, A, lda);
+    Matrix<Ordinal, Scalar> AbsResid
+      (nrows, ncols, std::numeric_limits<Scalar>::quiet_NaN ());
+    deep_copy (AbsResid, A);
 
     // A_copy := A_copy - Q * R
-    copy_matrix (nrows, ncols, AbsResid.data(),
-                 AbsResid_stride, A, lda);
+    Impl::SystemBlas<Scalar> blas;
+    const magnitude_type ONE (1.0);
     blas.GEMM (NO_TRANS, NO_TRANS, nrows, ncols, ncols,
                -ONE, Q, ldq, R, ldr,
-               ONE, AbsResid.data(), AbsResid_stride);
+               ONE, AbsResid.data(), AbsResid.stride(1));
 
     const magnitude_type absolute_residual =
-      local_frobenius_norm (nrows, ncols, &AbsResid[0], AbsResid_stride);
+      local_frobenius_norm (nrows, ncols, AbsResid.data(),
+                            AbsResid.stride(1));
     return absolute_residual / A_norm_F;
   }
 

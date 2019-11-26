@@ -191,8 +191,11 @@ namespace TSQR {
       A_ (verified_alloc_size (in.extent(0), in.extent(1)))
     {
       if (! in.empty()) {
-        copy_matrix (extent(0), extent(1), data(), stride(1),
-                     in.data(), in.stride(1));
+        MatView<ordinal_type, non_const_value_type> this_view
+          (extent(0), extent(1), data(), stride(1));
+        MatView<ordinal_type, const_value_type> in_view
+          (in.extent(0), in.extent(1), in.data(), in.stride(1));
+        deep_copy (this_view, in_view);
       }
     }
 
@@ -212,8 +215,11 @@ namespace TSQR {
       A_ (verified_alloc_size (in.extent(0), in.extent(1)))
     {
       if (A_.size() != 0) {
-        copy_matrix (extent(0), extent(1), data(), stride(1),
-                     in.data(), in.stride(1));
+        MatView<ordinal_type, non_const_value_type> this_view
+          (extent(0), extent(1), data(), stride(1));
+        MatView<ordinal_type, const_value_type> in_view
+          (in.extent(0), in.extent(1), in.data(), in.stride(1));
+        deep_copy (this_view, in_view);
       }
     }
 
