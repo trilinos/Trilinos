@@ -328,96 +328,94 @@ namespace TSQR {
 
       // Fill the explicit Q factor matrices with the first numCols
       // columns of the identity matrix.
-      for (Ordinal k = 0; k < numCols; ++k)
-        {
-          Q_R1R2(k, k) = Scalar(1);
-          Q_R3A(k, k) = Scalar(1);
-        }
+      for (Ordinal k = 0; k < numCols; ++k) {
+        Q_R1R2(k, k) = Scalar(1.0);
+        Q_R3A(k, k) = Scalar(1.0);
+      }
 
       // tau factor arrays, one for each factorization test.
-      vector< Scalar > tau_R1R2 (numCols);
-      vector< Scalar > tau_R3A (numCols);
+      vector<Scalar> tau_R1R2 (numCols);
+      vector<Scalar> tau_R3A (numCols);
 
       // Workspace array for factorization and applying the Q factor.
       // We recycle this workspace for all tests.
-      vector< Scalar > work (numCols);
+      vector<Scalar> work (numCols);
 
-      if (debug)
+      if (debug) {
         cerr << endl << "----------------------------------------" << endl
              << "TSQR::Combine first test problem:" << endl
              << "qr( [R1; R2] ), with R1 and R2 " << numCols
              << " by " << numCols << endl << endl;
-
-      Combine< Ordinal, Scalar > combiner;
-      combiner.factor_pair (numCols, R1.data(), R1.stride(1), R2.data(), R2.stride(1),
-                            &tau_R1R2[0], work.data());
+      }
+      Combine<Ordinal, Scalar> combiner;
+      combiner.factor_pair (numCols, R1.data(), R1.stride(1),
+                            R2.data(), R2.stride(1),
+                            tau_R1R2.data(), work.data());
       combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                           R2.data(), R2.stride(1), &tau_R1R2[0],
+                           R2.data(), R2.stride(1), tau_R1R2.data(),
                            &Q_R1R2(0, 0), Q_R1R2.stride(1),
                            &Q_R1R2(numCols, 0), Q_R1R2.stride(1),
                            work.data());
-      if (debug)
-        {
-          cerr << "Results of first test problem:" << endl;
-          cerr << "-- Copy of test problem:" << endl;
-          print_local_matrix (cerr, A_R1R2.extent(0), A_R1R2.extent(1),
-                              A_R1R2.data(), A_R1R2.stride(1));
-          cerr << endl << "-- Q factor:" << endl;
-          print_local_matrix (cerr, Q_R1R2.extent(0), Q_R1R2.extent(1),
-                              Q_R1R2.data(), Q_R1R2.stride(1));
-          cerr << endl << "-- R factor:" << endl;
-          print_local_matrix (cerr, R1.extent(0), R1.extent(1),
-                              R1.data(), R1.stride(1));
-          cerr << endl;
-        }
+      if (debug) {
+        cerr << "Results of first test problem:" << endl;
+        cerr << "-- Copy of test problem:" << endl;
+        print_local_matrix (cerr, A_R1R2.extent(0), A_R1R2.extent(1),
+                            A_R1R2.data(), A_R1R2.stride(1));
+        cerr << endl << "-- Q factor:" << endl;
+        print_local_matrix (cerr, Q_R1R2.extent(0), Q_R1R2.extent(1),
+                            Q_R1R2.data(), Q_R1R2.stride(1));
+        cerr << endl << "-- R factor:" << endl;
+        print_local_matrix (cerr, R1.extent(0), R1.extent(1),
+                            R1.data(), R1.stride(1));
+        cerr << endl;
+      }
       const results_type firstResults =
         local_verify (A_R1R2.extent(0), A_R1R2.extent(1),
                       A_R1R2.data(), A_R1R2.stride(1),
                       Q_R1R2.data(), Q_R1R2.stride(1),
                       R1.data(), R1.stride(1));
-      if (debug)
+      if (debug) {
         cerr << "\\| A - Q*R \\|_F = " << firstResults[0] << endl
              << "\\| I - Q'*Q \\|_F = " << firstResults[1] << endl
              << "\\| A \\|_A = " << firstResults[2] << endl;
-
-      if (debug)
         cerr << endl << "----------------------------------------" << endl
              << "TSQR::Combine second test problem:" << endl
              << "qr( [R3; A] ), with R3 " << numCols << " by " << numCols
              << " and A " << numRows << " by " << numCols << endl << endl;
-
-      combiner.factor_inner (numRows, numCols, R3.data(), R3.stride(1),
-                             A.data(), A.stride(1), &tau_R3A[0], work.data());
+      }
+      combiner.factor_inner (numRows, numCols,
+                             R3.data(), R3.stride(1),
+                             A.data(), A.stride(1),
+                             tau_R3A.data(), work.data());
       combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
-                            A.data(), A.stride(1), &tau_R3A[0],
+                            A.data(), A.stride(1), tau_R3A.data(),
                             &Q_R3A(0, 0), Q_R3A.stride(1),
                             &Q_R3A(numCols, 0), Q_R3A.stride(1),
                             work.data());
-      if (debug)
-        {
-          cerr << "Results of second test problem:" << endl;
-          cerr << "-- Copy of test problem:" << endl;
-          print_local_matrix (cerr, A_R3A.extent(0), A_R3A.extent(1),
-                              A_R3A.data(), A_R3A.stride(1));
-          cerr << endl << "-- Q factor:" << endl;
-          print_local_matrix (cerr, Q_R3A.extent(0), Q_R3A.extent(1),
-                              Q_R3A.data(), Q_R3A.stride(1));
-          cerr << endl << "-- R factor:" << endl;
-          print_local_matrix (cerr, R3.extent(0), R3.extent(1),
-                              R3.data(), R3.stride(1));
-          cerr << endl;
-        }
+      if (debug) {
+        cerr << "Results of second test problem:" << endl;
+        cerr << "-- Copy of test problem:" << endl;
+        print_local_matrix (cerr, A_R3A.extent(0), A_R3A.extent(1),
+                            A_R3A.data(), A_R3A.stride(1));
+        cerr << endl << "-- Q factor:" << endl;
+        print_local_matrix (cerr, Q_R3A.extent(0), Q_R3A.extent(1),
+                            Q_R3A.data(), Q_R3A.stride(1));
+        cerr << endl << "-- R factor:" << endl;
+        print_local_matrix (cerr, R3.extent(0), R3.extent(1),
+                            R3.data(), R3.stride(1));
+        cerr << endl;
+      }
       const results_type secondResults =
         local_verify (A_R3A.extent(0), A_R3A.extent(1),
                       A_R3A.data(), A_R3A.stride(1),
                       Q_R3A.data(), Q_R3A.stride(1),
                       R3.data(), R3.stride(1));
-      if (debug)
+      if (debug) {
         cerr << "\\| A - Q*R \\|_F = " << secondResults[0] << endl
              << "\\| I - Q'*Q \\|_F = " << secondResults[1] << endl
              << "\\| A \\|_A = " << secondResults[2] << endl;
-
-      vector< magnitude_type > finalResults;
+      }
+      vector<magnitude_type> finalResults;
       finalResults.push_back (firstResults[0]);
       finalResults.push_back (firstResults[1]);
       finalResults.push_back (firstResults[2]);
@@ -428,11 +426,7 @@ namespace TSQR {
       return finalResults;
     }
 
-
-
-
-    /// \brief Simulate one combine step of Sequential TSQR
-    ///
+    //! Simulate one combine step of Sequential TSQR
     template<class Ordinal, class Scalar>
     static std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
     verifyCombineSeqTemplate (TSQR::Random::NormalGenerator<Ordinal, Scalar>& gen,
@@ -485,17 +479,16 @@ namespace TSQR {
       matgen.fill_random_svd (numRows, numCols, A1.data(), A1.stride(1), &sigma_A1[0]);
       matgen.fill_random_svd (numRows, numCols, A2.data(), A2.stride(1), &sigma_A2[0]);
 
-      if (false && debug)
-        {
-          cerr << endl << "Test problem:" << endl;
-          cerr << endl << "Original matrix:" << endl;
-          printMatrix (cerr, A);
-          cerr << endl << "First cache block:" << endl;
-          printMatrix (cerr, A1);
-          cerr << endl << "Second cache block:" << endl;
-          printMatrix (cerr, A2);
-          cerr << endl;
-        }
+      if (false && debug) {
+        cerr << endl << "Test problem:" << endl;
+        cerr << endl << "Original matrix:" << endl;
+        printMatrix (cerr, A);
+        cerr << endl << "First cache block:" << endl;
+        printMatrix (cerr, A1);
+        cerr << endl << "Second cache block:" << endl;
+        printMatrix (cerr, A2);
+        cerr << endl;
+      }
 
       // Copy of the resulting test problem, stored as one dense
       // matrix rather than as two blocks.  We will use A_copy to
@@ -507,42 +500,56 @@ namespace TSQR {
       matrix_type Q (Ordinal(2) * numRows, numCols, Scalar(0));
 
       // Fill Q with the first numCols columns of the identity matrix.
-      for (Ordinal k = 0; k < numCols; ++k)
-        Q(k, k) = Scalar(1);
+      for (Ordinal k = 0; k < numCols; ++k) {
+        // FIXME (mfh 26 Nov 2019) I'm assuming I can write to the
+        // Matrix or MatView on host, outside of Kokkos.  TSQR always
+        // assumed this, but if we want to use Kokkos, we'll need to
+        // get rid of that assumption.
+        Q(k, k) = Scalar(1.0);
+      }
 
       // Two cache blocks (as views) of Q.
       mat_view_type Q1 (numRows, numCols, &Q(0,0), Q.stride(1));
       mat_view_type Q2 (numRows, numCols, &Q(numRows,0), Q.stride(1));
 
       // Two tau factor arrays, one for each cache block.
-      vector< Scalar > tau1 (numCols);
-      vector< Scalar > tau2 (numCols);
+      vector<Scalar> tau1 (numCols);
+      vector<Scalar> tau2 (numCols);
 
       // Workspace array for factorization and applying the Q factor.
       // We recycle this workspace for all tests.
-      vector< Scalar > work (numCols);
+      vector<Scalar> work (numCols);
 
-      if (debug)
+      if (debug) {
         cerr << endl << "----------------------------------------" << endl
              << "TSQR::Combine SequentialTsqr simulation with 2 cache blocks:"
              << endl << "qr( [A1; A2] ), with A1 and A2 being each "
              << numRows << " by " << numCols << endl << endl;
-
-      Combine< Ordinal, Scalar > combiner;
+      }
+      Combine<Ordinal, Scalar> combiner;
       // qr( A1 )
-      combiner.factor_first (numRows, numCols, A1.data(), A1.stride(1),
-                             &tau1[0], work.data());
+      combiner.factor_first (numRows, numCols,
+                             A1.data(), A1.stride(1),
+                             tau1.data(), work.data());
       // View of numCols by numCols upper triangle of A1.
       mat_view_type R1 (numCols, numCols, A1.data(), A1.stride(1));
       // qr( [R1; A2] )
-      combiner.factor_inner (numRows, numCols, R1.data(), R1.stride(1),
-                             A2.data(), A2.stride(1), &tau2[0], work.data());
+      combiner.factor_inner (numRows, numCols,
+                             R1.data(), R1.stride(1),
+                             A2.data(), A2.stride(1),
+                             tau2.data(), work.data());
       // Extract (a deep copy of) the R factor.
       matrix_type R (R1);
       // Zero out everything below the diagonal of R.
-      for (Ordinal j = 0; j < numCols; ++j)
-        for (Ordinal i = j+1; i < numCols; ++i)
-          R(i,j) = Scalar(0);
+      for (Ordinal j = 0; j < numCols; ++j) {
+        for (Ordinal i = j+1; i < numCols; ++i) {
+          // FIXME (mfh 26 Nov 2019) I'm assuming I can write to the
+          // Matrix or MatView on host, outside of Kokkos.  TSQR
+          // always assumed this in the past, but if we want to use
+          // Kokkos, we'll need to get rid of that assumption.
+          R(i,j) = Scalar {};
+        }
+      }
 
       // Compute the explicit Q factor, by starting with A2 and
       // (working up the matrix A,) finishing with A1.
@@ -574,7 +581,6 @@ namespace TSQR {
       }
       return results;
     }
-
 
     void
     verifyCombine (const int numRows,
@@ -616,130 +622,125 @@ namespace TSQR {
       // output data.
       bool doPrintFieldNames = printFieldNames;
 
-      if (! simulateSequentialTsqr)
-        {
-          if (testReal)
-            {
-              {
-                NormalGenerator<int, float> normgenS (iseed);
-                const vector<float> resultsS =
-                  verifyCombineTemplate (normgenS, normgenS, numRows,
-                                         numCols, debug);
-                // Only print field names (if at all) once per run, for
-                // the first data type.
-                printResults (string("float"), numRows, numCols,
-                              resultsS, doPrintFieldNames);
-                // Print field names at most once.
-                doPrintFieldNames = false;
-                // Fetch the pseudorandom seed from the previous test.
-                normgenS.getSeed (iseed);
-              }
-              {
-                NormalGenerator<int, double> normgenD (iseed);
-                const vector<double> resultsD =
-                  verifyCombineTemplate (normgenD, normgenD, numRows,
-                                         numCols, debug);
-                printResults (string("double"), numRows, numCols,
-                              resultsD, doPrintFieldNames);
-                doPrintFieldNames = false;
-                normgenD.getSeed (iseed);
-              }
-            }
-
-          if (testComplex)
-            {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
-              {
-                NormalGenerator<int, complex<float> > normgenC (iseed);
-                NormalGenerator<int, float> normgenS (iseed);
-                const vector<float> resultsC =
-                  verifyCombineTemplate (normgenC, normgenS, numRows,
-                                         numCols, debug);
-                printResults (string("complex<float>"), numRows, numCols,
-                              resultsC, doPrintFieldNames);
-                doPrintFieldNames = false;
-                // Even though normgenC and normgenS each updated the
-                // random seed independently, for now we just fetch the
-                // updated seed from normgenC.  This should still
-                // produce reproducible results.
-                normgenC.getSeed (iseed);
-              }
-              {
-                NormalGenerator<int, complex<double> > normgenZ (iseed);
-                NormalGenerator<int, double> normgenD (iseed);
-                const vector<double> resultsZ =
-                  verifyCombineTemplate (normgenZ, normgenD, numRows,
-                                         numCols, debug);
-                printResults (string("complex<double>"), numRows, numCols,
-                              resultsZ, doPrintFieldNames);
-                doPrintFieldNames = false;
-                normgenZ.getSeed (iseed);
-              }
-#else // NOT HAVE_KOKKOSTSQR_COMPLEX
-              TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                                 "Trilinos was not built with "
-                                 "complex arithmetic support");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
-            }
+      if (! simulateSequentialTsqr) {
+        if (testReal) {
+          {
+            NormalGenerator<int, float> normgenS (iseed);
+            const vector<float> resultsS =
+              verifyCombineTemplate (normgenS, normgenS, numRows,
+                                     numCols, debug);
+            // Only print field names (if at all) once per run, for
+            // the first data type.
+            printResults (string("float"), numRows, numCols,
+                          resultsS, doPrintFieldNames);
+            // Print field names at most once.
+            doPrintFieldNames = false;
+            // Fetch the pseudorandom seed from the previous test.
+            normgenS.getSeed (iseed);
+          }
+          {
+            NormalGenerator<int, double> normgenD (iseed);
+            const vector<double> resultsD =
+              verifyCombineTemplate (normgenD, normgenD, numRows,
+                                     numCols, debug);
+            printResults (string("double"), numRows, numCols,
+                          resultsD, doPrintFieldNames);
+            doPrintFieldNames = false;
+            normgenD.getSeed (iseed);
+          }
         }
-      else // simulateSequentialTsqr
-        {
-          if (testReal)
-            {
-              {
-                NormalGenerator<int, float> normgenS (iseed);
-                const vector<float> resultsS =
-                  verifyCombineSeqTemplate (normgenS, normgenS, numRows,
-                                            numCols, debug);
-                printSimSeqTsqrResults (string("float"), numRows, numCols,
-                                        resultsS, doPrintFieldNames);
-                doPrintFieldNames = false;
-                normgenS.getSeed (iseed);
-              }
-              {
-                NormalGenerator<int, double> normgenD (iseed);
-                const vector<double> resultsD =
-                  verifyCombineSeqTemplate (normgenD, normgenD, numRows,
-                                            numCols, debug);
-                printSimSeqTsqrResults (string("double"), numRows, numCols,
-                                        resultsD, doPrintFieldNames);
-                doPrintFieldNames = false;
-                normgenD.getSeed (iseed);
-              }
-            }
 
-          if (testComplex)
-            {
+        if (testComplex)
+          {
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
-              {
-                NormalGenerator<int, complex<float> > normgenC (iseed);
-                NormalGenerator<int, float> normgenS (iseed);
-                const vector<float> resultsC =
-                  verifyCombineSeqTemplate (normgenC, normgenS, numRows,
-                                            numCols, debug);
-                printSimSeqTsqrResults (string("complex<float>"), numRows, numCols,
-                                        resultsC, doPrintFieldNames);
-                doPrintFieldNames = false;
-                normgenC.getSeed (iseed);
-              }
-              {
-                NormalGenerator<int, complex<double> > normgenZ (iseed);
-                NormalGenerator<int, double> normgenD (iseed);
-                const vector<double> resultsZ =
-                  verifyCombineSeqTemplate (normgenZ, normgenD, numRows,
-                                            numCols, debug);
-                printSimSeqTsqrResults (string("complex<double>"), numRows,
-                                        numCols, resultsZ, doPrintFieldNames);
-                doPrintFieldNames = false;
-                normgenZ.getSeed (iseed);
-              }
-#else // NOT HAVE_KOKKOSTSQR_COMPLEX
-              TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                                 "Trilinos was not built with "
-                                 "complex arithmetic support");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+            {
+              NormalGenerator<int, complex<float> > normgenC (iseed);
+              NormalGenerator<int, float> normgenS (iseed);
+              const vector<float> resultsC =
+                verifyCombineTemplate (normgenC, normgenS, numRows,
+                                       numCols, debug);
+              printResults (string("complex<float>"), numRows, numCols,
+                            resultsC, doPrintFieldNames);
+              doPrintFieldNames = false;
+              // Even though normgenC and normgenS each updated the
+              // random seed independently, for now we just fetch the
+              // updated seed from normgenC.  This should still
+              // produce reproducible results.
+              normgenC.getSeed (iseed);
             }
+            {
+              NormalGenerator<int, complex<double> > normgenZ (iseed);
+              NormalGenerator<int, double> normgenD (iseed);
+              const vector<double> resultsZ =
+                verifyCombineTemplate (normgenZ, normgenD, numRows,
+                                       numCols, debug);
+              printResults (string("complex<double>"), numRows, numCols,
+                            resultsZ, doPrintFieldNames);
+              doPrintFieldNames = false;
+              normgenZ.getSeed (iseed);
+            }
+#else // NOT HAVE_KOKKOSTSQR_COMPLEX
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                                       "Trilinos was not built with "
+                                       "complex arithmetic support");
+#endif // HAVE_KOKKOSTSQR_COMPLEX
+          }
+      }
+      else { // simulateSequentialTsqr
+        if (testReal) {
+          {
+            NormalGenerator<int, float> normgenS (iseed);
+            const vector<float> resultsS =
+              verifyCombineSeqTemplate (normgenS, normgenS, numRows,
+                                        numCols, debug);
+            printSimSeqTsqrResults (string("float"), numRows, numCols,
+                                    resultsS, doPrintFieldNames);
+            doPrintFieldNames = false;
+            normgenS.getSeed (iseed);
+          }
+          {
+            NormalGenerator<int, double> normgenD (iseed);
+            const vector<double> resultsD =
+              verifyCombineSeqTemplate (normgenD, normgenD, numRows,
+                                        numCols, debug);
+            printSimSeqTsqrResults (string("double"), numRows, numCols,
+                                    resultsD, doPrintFieldNames);
+            doPrintFieldNames = false;
+            normgenD.getSeed (iseed);
+          }
         }
+
+        if (testComplex) {
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
+          {
+            NormalGenerator<int, complex<float> > normgenC (iseed);
+            NormalGenerator<int, float> normgenS (iseed);
+            const vector<float> resultsC =
+              verifyCombineSeqTemplate (normgenC, normgenS, numRows,
+                                        numCols, debug);
+            printSimSeqTsqrResults (string("complex<float>"), numRows, numCols,
+                                    resultsC, doPrintFieldNames);
+            doPrintFieldNames = false;
+            normgenC.getSeed (iseed);
+          }
+          {
+            NormalGenerator<int, complex<double> > normgenZ (iseed);
+            NormalGenerator<int, double> normgenD (iseed);
+            const vector<double> resultsZ =
+              verifyCombineSeqTemplate (normgenZ, normgenD, numRows,
+                                        numCols, debug);
+            printSimSeqTsqrResults (string("complex<double>"), numRows,
+                                    numCols, resultsZ, doPrintFieldNames);
+            doPrintFieldNames = false;
+            normgenZ.getSeed (iseed);
+          }
+#else // NOT HAVE_KOKKOSTSQR_COMPLEX
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                                     "Trilinos was not built with "
+                                     "complex arithmetic support");
+#endif // HAVE_KOKKOSTSQR_COMPLEX
+        }
+      }
     }
   } // namespace Test
 } // namespace TSQR
