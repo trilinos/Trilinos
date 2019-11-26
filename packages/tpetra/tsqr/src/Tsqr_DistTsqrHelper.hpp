@@ -105,10 +105,13 @@ namespace TSQR {
                              R_mine.data(), ldr,
                              tau.data(), work.data());
         Q_factors.push_back (R_mine);
+
         // Make sure that the "bottom" processor gets the current R
         // factor, which is returned in R_mine.
-        copy_matrix (ncols, ncols, R_mine.data(), ldr,
-                     R_other.data(), ldr);
+        using view_type = MatView<LocalOrdinal, Scalar>;
+        view_type R_mine_view (ncols, ncols, R_mine.data(), ldr);
+        view_type R_other_view (ncols, ncols, R_other.data(), ldr);
+        deep_copy (R_mine_view, R_other_view);
         tau_arrays.push_back (tau);
       }
       else {
@@ -197,7 +200,7 @@ namespace TSQR {
               if (! b_even)
                 {
                   const int theTag = 142; // magic constant
-                  messenger->send (&R_mine[0], ncols*ncols, P_mid-1, theTag);
+                  messenger->send (R_mine.data(), ncols*ncols, P_mid-1, theTag);
                 }
             }
         }
