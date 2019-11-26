@@ -157,21 +157,6 @@ int parseCmdLineOpts(Teuchos::CommandLineProcessor& clp, int argc, char* argv[])
   }
 }
 
-// Check the command-line options that were read in by
-// parseCmdLineOpts.  Return 0 if all correct, else return nonzero,
-// using the LAPACK error reporting convention of the negative of
-// the argument in its original order (starting with 1) as the error
-// code.  Print informative error messages to the given output
-// stream \c out.
-int
-checkCmdLineOpts (std::ostream& out, const CmdLineOpts& opts)
-{
-  int err = 0;
-  // FIXME: Not implemented fully
-  return err;
-
-}
-
 int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char* argv[])
 {
   using std::endl;
