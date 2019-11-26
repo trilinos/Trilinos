@@ -909,14 +909,14 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
       useSA = false;
   }
 
+  // Setup the Fine Coordinates
+  ML_Aggregate_Viz_Stats fine_grid;
+  fine_grid.x=0; fine_grid.y=0; fine_grid.z=0; fine_grid.material=0;
+  RefMaxwell_SetupCoordinates(A_ML,List,fine_grid.x,fine_grid.y,fine_grid.z,fine_grid.material);
+  
   if(useSA) {
     /* Use SA */
 
-    // Setup the Fine Coordinates
-    ML_Aggregate_Viz_Stats fine_grid;
-    fine_grid.x=0; fine_grid.y=0; fine_grid.z=0; fine_grid.material=0;
-    RefMaxwell_SetupCoordinates(A_ML,List,fine_grid.x,fine_grid.y,fine_grid.z,fine_grid.material);
-    
     // FIXME:  We need to allow this later
     TEUCHOS_TEST_FOR_EXCEPTION(UseAux && UseMaterial, std::logic_error,"RefMaxwell_Aggregate_Nodes: Cannot use material and aux aggregation at the same time");
     
@@ -1007,11 +1007,6 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);
 
     /* Cleanup */
-    if(fine_grid.x) ML_free(fine_grid.x);
-    if(fine_grid.y) ML_free(fine_grid.y);
-    if(fine_grid.z) ML_free(fine_grid.z);
-    if(fine_grid.material) ML_free(fine_grid.material);
-    
     ML_qr_fix_Destroy();
     if(UseAux)      ML_Finalize_Aux(A_ML);
     if(UseMaterial) ML_Finalize_Aux(A_ML);
@@ -1022,6 +1017,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     ML_AMG *ml_amg;
     ML_AMG_Create( &ml_amg );
     ML_AMG_Set_Threshold(ml_amg,Threshold);
+    if(RowSum_Threshold > 0.0) ML_AMG_Set_RowSum_Threshold(ml_amg, RowSum_Threshold);
     ML_AMG_Set_MaxLevels(ml_amg,2);
     ML_AMG_Set_MaxCoarseSize(ml_amg,1);
     P = ML_Operator_Create(ml_comm);
@@ -1040,6 +1036,10 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     ML_CommInfoOP_Clone(&(AMGIdentity->getrow->pre_comm),A_ML->getrow->pre_comm);
     ML_2matmult(AMGIdentity, Pmatrix, P, ML_CSR_MATRIX );
 
+    /* Project down the coordinates, if we need to, using Ptent.  Note NumPDEs always = 1 */
+    if(fine_grid.x || fine_grid.y || fine_grid.z || fine_grid.material)
+      RefMaxwell_Project_Coordinates(1,P,&fine_grid,pack);    
+
     /* Cleanup */
     ML_Operator_Destroy(&AMGIdentity);
     ML_Operator_Destroy(&Pmatrix);
@@ -1055,6 +1055,11 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     }
   }
 
+  /* Cleanup */
+  if(fine_grid.x) ML_free(fine_grid.x);
+  if(fine_grid.y) ML_free(fine_grid.y);
+  if(fine_grid.z) ML_free(fine_grid.z);
+  if(fine_grid.material) ML_free(fine_grid.material);    
   ML_Operator_Destroy(&A_ML);
 
   return 0;
