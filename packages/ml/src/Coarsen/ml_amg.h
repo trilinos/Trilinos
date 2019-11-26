@@ -205,6 +205,10 @@ int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[],
 int ML_AMG_CompatibleRelaxation(int *CF_array,
            ML_Operator *Amat, int *Ncoarse, int limit);
 
+int ML_AMG_Identity_Getrows(ML_Operator *data, int N_requested_rows,
+                            int requested_rows[], int allocated_space, int columns[],
+                            double values[], int row_lengths[]);
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 }

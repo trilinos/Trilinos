@@ -369,6 +369,9 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   Teuchos::ParameterList List_AMG = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
   List_AMG.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("default values","Classical-AMG");
 
+  Teuchos::ParameterList List_AMG_sp = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
+  List_AMG_sp.sublist("refmaxwell: 11list").set("default values","Classical-AMG");
+
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
   int status1, status2 = 0;
@@ -443,6 +446,11 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   /* Test w/ classical */
   if(!Comm.MyPID()) printf("*** Test 18 ***\n");
   rpc_test_additive_newconstructor(Comm,List_AMG,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ classical special prolongator */
+  if(!Comm.MyPID()) printf("*** Test 19 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_AMG_sp,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
 
 
 

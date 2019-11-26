@@ -876,6 +876,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   if(OutputLevel>=15) very_verbose=verbose=true;
   if(OutputLevel > 5) {very_verbose=false;verbose=true;}
   else very_verbose=verbose=false;
+  int printlevel=ML_Get_PrintLevel();
 
   /* Wrap A in a ML_Operator */
   ML_Operator* A_ML = ML_Operator_Create(ml_comm);
@@ -901,102 +902,149 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   double MatThreshold      = List.get("aggregation: material: threshold",0.0);
   int  MaxMatLevels        = List.get("aggregation: material: max levels",10);
 
-  // Setup the Fine Coordinates
-  ML_Aggregate_Viz_Stats fine_grid;
-  fine_grid.x=0; fine_grid.y=0; fine_grid.z=0; fine_grid.material=0;
-  RefMaxwell_SetupCoordinates(A_ML,List,fine_grid.x,fine_grid.y,fine_grid.z,fine_grid.material);
-
-  // FIXME:  We need to allow this later
-  TEUCHOS_TEST_FOR_EXCEPTION(UseAux && UseMaterial, std::logic_error,"RefMaxwell_Aggregate_Nodes: Cannot use material and aux aggregation at the same time");
-
-  ML_Aggregate_Create(&MLAggr);
-  ML_Aggregate_Set_MaxLevels(MLAggr, 2);
-  ML_Aggregate_Set_StartLevel(MLAggr, 0);
-  ML_Aggregate_Set_Threshold(MLAggr, Threshold);
-  if(RowSum_Threshold > 0.0) ML_Aggregate_Set_RowSum_Threshold(MLAggr, RowSum_Threshold);
-  ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
-  MLAggr->cur_level = 0;
-  ML_Aggregate_Set_Reuse(MLAggr);
-  ML_Aggregate_Set_Do_QR(MLAggr,doQR);
-
-  if(DampingFactor > 0.0) {
-    ML_Aggregate_Set_DampingFactor(MLAggr,DampingFactor);  
-    ML_Aggregate_Set_DampingSweeps(MLAggr,PSmSweeps,0);
+  bool useSA = true;
+  if(List.isParameter("default values")) {
+    std::string default_values = List.get("default values","Classical-AMG");
+    if(default_values == "Classical-AMG")
+      useSA = false;
   }
 
-  if( EigType == "cg" )                ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
-  else if( EigType == "Anorm" )        ML_Operator_Set_SpectralNormScheme_Anorm(A_ML);
-  else if( EigType == "Anasazi" )      ML_Operator_Set_SpectralNormScheme_Anasazi(A_ML);
-  else if( EigType == "power-method" ) ML_Operator_Set_SpectralNormScheme_PowerMethod(A_ML);
-  else {
-    if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) block eigenvalue type(%s), resetting to cg\n",PrintMsg.c_str(),EigType.c_str());
-    ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
-  }
-  ML_Operator_Set_SpectralNorm_Iterations(A_ML, NumEigenIts);
+  if(useSA) {
+    /* Use SA */
 
-  MLAggr->keep_agg_information = 1;
-  P = ML_Operator_Create(ml_comm);
-
-  /* Process Teuchos Options */
-  if (CoarsenType == "Uncoupled")
-    ML_Aggregate_Set_CoarsenScheme_Uncoupled(MLAggr);
-  else if (CoarsenType == "Uncoupled-MIS"){
-    ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
-  }
-  else if (CoarsenType == "METIS"){
-    ML_Aggregate_Set_CoarsenScheme_METIS(MLAggr);
-    ML_Aggregate_Set_NodesPerAggr(0, MLAggr, 0, NodesPerAggr);
-  }/*end if*/
-  else {
-    if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) block aggregation type(%s), resetting to uncoupled-mis\n",PrintMsg.c_str(),CoarsenType.c_str());
-    ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
-  }
-
-  /* Setup Aux Data (aux) */
-  if(UseAux) {
-    A_ML->aux_data->enable=1;
-    A_ML->aux_data->threshold=AuxThreshold;
-    A_ML->aux_data->max_level=MaxAuxLevels;
-    ML_Init_Aux(A_ML,fine_grid.x,fine_grid.y,fine_grid.z);
-    if(verbose && !A.Comm().MyPID()) {
-      printf("%s Using auxiliary matrix\n",PrintMsg.c_str());
-      printf("%s aux threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
+    // Setup the Fine Coordinates
+    ML_Aggregate_Viz_Stats fine_grid;
+    fine_grid.x=0; fine_grid.y=0; fine_grid.z=0; fine_grid.material=0;
+    RefMaxwell_SetupCoordinates(A_ML,List,fine_grid.x,fine_grid.y,fine_grid.z,fine_grid.material);
+    
+    // FIXME:  We need to allow this later
+    TEUCHOS_TEST_FOR_EXCEPTION(UseAux && UseMaterial, std::logic_error,"RefMaxwell_Aggregate_Nodes: Cannot use material and aux aggregation at the same time");
+    
+    ML_Aggregate_Create(&MLAggr);
+    ML_Aggregate_Set_MaxLevels(MLAggr, 2);
+    ML_Aggregate_Set_StartLevel(MLAggr, 0);
+    ML_Aggregate_Set_Threshold(MLAggr, Threshold);
+    if(RowSum_Threshold > 0.0) ML_Aggregate_Set_RowSum_Threshold(MLAggr, RowSum_Threshold);
+    ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
+    MLAggr->cur_level = 0;
+    ML_Aggregate_Set_Reuse(MLAggr);
+    ML_Aggregate_Set_Do_QR(MLAggr,doQR);
+    
+    if(DampingFactor > 0.0) {
+      ML_Aggregate_Set_DampingFactor(MLAggr,DampingFactor);  
+      ML_Aggregate_Set_DampingSweeps(MLAggr,PSmSweeps,0);
     }
-  }
-
-  /* Setup Aux Data (material) */
-  if(UseMaterial) {
-    A_ML->aux_data->enable=1;
-    A_ML->aux_data->threshold=MatThreshold;
-    A_ML->aux_data->max_level=MaxMatLevels;
-    ML_Init_Material(A_ML,fine_grid.material);
-    if(verbose && !A.Comm().MyPID()) {
-      printf("%s Using material matrix\n",PrintMsg.c_str());
-      printf("%s material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
+    
+    if( EigType == "cg" )                ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
+    else if( EigType == "Anorm" )        ML_Operator_Set_SpectralNormScheme_Anorm(A_ML);
+    else if( EigType == "Anasazi" )      ML_Operator_Set_SpectralNormScheme_Anasazi(A_ML);
+    else if( EigType == "power-method" ) ML_Operator_Set_SpectralNormScheme_PowerMethod(A_ML);
+    else {
+      if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) block eigenvalue type(%s), resetting to cg\n",PrintMsg.c_str(),EigType.c_str());
+      ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
     }
+    ML_Operator_Set_SpectralNorm_Iterations(A_ML, NumEigenIts);
+    
+    MLAggr->keep_agg_information = 1;
+    P = ML_Operator_Create(ml_comm);
+    
+    /* Process Teuchos Options */
+    if (CoarsenType == "Uncoupled")
+      ML_Aggregate_Set_CoarsenScheme_Uncoupled(MLAggr);
+    else if (CoarsenType == "Uncoupled-MIS"){
+      ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
+    }
+    else if (CoarsenType == "METIS"){
+      ML_Aggregate_Set_CoarsenScheme_METIS(MLAggr);
+      ML_Aggregate_Set_NodesPerAggr(0, MLAggr, 0, NodesPerAggr);
+    }/*end if*/
+    else {
+      if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) block aggregation type(%s), resetting to uncoupled-mis\n",PrintMsg.c_str(),CoarsenType.c_str());
+      ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
+    }
+    
+    /* Setup Aux Data (aux) */
+    if(UseAux) {
+      A_ML->aux_data->enable=1;
+      A_ML->aux_data->threshold=AuxThreshold;
+      A_ML->aux_data->max_level=MaxAuxLevels;
+      ML_Init_Aux(A_ML,fine_grid.x,fine_grid.y,fine_grid.z);
+      if(verbose && !A.Comm().MyPID()) {
+        printf("%s Using auxiliary matrix\n",PrintMsg.c_str());
+        printf("%s aux threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
+      }
+    }
+    
+    /* Setup Aux Data (material) */
+    if(UseMaterial) {
+      A_ML->aux_data->enable=1;
+      A_ML->aux_data->threshold=MatThreshold;
+      A_ML->aux_data->max_level=MaxMatLevels;
+      ML_Init_Material(A_ML,fine_grid.material);
+      if(verbose && !A.Comm().MyPID()) {
+        printf("%s Using material matrix\n",PrintMsg.c_str());
+        printf("%s material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
+      }
+    }
+    
+    /* Aggregate Nodes */
+    if(verbose) ML_Set_PrintLevel(10);
+    NumAggregates = ML_Aggregate_Coarsen(MLAggr,A_ML, &P, ml_comm);
+    if(verbose) ML_Set_PrintLevel(printlevel);
+    
+    /* Project down the coordinates, if we need to, using Ptent.  Note NumPDEs always = 1 */
+    if(fine_grid.x || fine_grid.y || fine_grid.z || fine_grid.material)
+      RefMaxwell_Project_Coordinates(1,P,&fine_grid,pack);    
+
+    /* Do prolongator smoothing, if requested */
+    if(PSmSweeps && DampingFactor != 0.0) {
+      if(verbose && !A.Comm().MyPID()) printf("%s Smoothing Prolongator w/ Damping Factor %e\n",PrintMsg.c_str(),DampingFactor);
+      ML_Operator * smooP = ML_Operator_Create(ml_comm);
+      ML_Smooth_Prolongator(A_ML,MLAggr,PSmSweeps,P,smooP);
+      ML_Operator_Destroy(&P);
+      P = smooP;
+    }
+    if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);
+
+    /* Cleanup */
+    if(fine_grid.x) ML_free(fine_grid.x);
+    if(fine_grid.y) ML_free(fine_grid.y);
+    if(fine_grid.z) ML_free(fine_grid.z);
+    if(fine_grid.material) ML_free(fine_grid.material);
+    
+    ML_qr_fix_Destroy();
+    if(UseAux)      ML_Finalize_Aux(A_ML);
+    if(UseMaterial) ML_Finalize_Aux(A_ML);
+    
+  }
+  else {
+    /* Use Classical */
+    ML_AMG *ml_amg;
+    ML_AMG_Create( &ml_amg );
+    ML_AMG_Set_Threshold(ml_amg,Threshold);
+    ML_AMG_Set_MaxLevels(ml_amg,2);
+    ML_AMG_Set_MaxCoarseSize(ml_amg,1);
+    P = ML_Operator_Create(ml_comm);
+    ML_Operator * Pmatrix = ML_Operator_Create(ml_comm);
+
+    if(verbose) ML_Set_PrintLevel(10);
+    NumAggregates  = ML_AMG_Coarsen(ml_amg, A_ML, &Pmatrix, ml_comm);
+    if(verbose) ML_Set_PrintLevel(printlevel);
+
+    ML_Operator* AMGIdentity = ML_Operator_Create(ml_comm);
+    ML_Operator_Set_ApplyFuncData(AMGIdentity, A_ML->invec_leng,
+                                  A_ML->outvec_leng, (void*) A_ML,
+                                  A_ML->matvec->Nrows, NULL, 0);
+    ML_Operator_Set_Getrow(AMGIdentity, A_ML->getrow->Nrows,
+                           ML_AMG_Identity_Getrows);
+    ML_CommInfoOP_Clone(&(AMGIdentity->getrow->pre_comm),A_ML->getrow->pre_comm);
+    ML_2matmult(AMGIdentity, Pmatrix, P, ML_CSR_MATRIX );
+
+    /* Cleanup */
+    ML_Operator_Destroy(&AMGIdentity);
+    ML_Operator_Destroy(&Pmatrix);
   }
 
-  /* Aggregate Nodes */
-  int printlevel=ML_Get_PrintLevel();
-  if(verbose) ML_Set_PrintLevel(10);
-  NumAggregates = ML_Aggregate_Coarsen(MLAggr,A_ML, &P, ml_comm);
-
-  /* Project down the coordinates, if we need to, using Ptent.  Note NumPDEs always = 1 */
-  if(fine_grid.x || fine_grid.y || fine_grid.z || fine_grid.material)
-    RefMaxwell_Project_Coordinates(1,P,&fine_grid,pack);
-
-  /* Do prolongator smoothing, if requested */
-  if(PSmSweeps && DampingFactor != 0.0) {
-    if(verbose && !A.Comm().MyPID()) printf("%s Smoothing Prolongator w/ Damping Factor %e\n",PrintMsg.c_str(),DampingFactor);
-    ML_Operator * smooP = ML_Operator_Create(ml_comm);
-    ML_Smooth_Prolongator(A_ML,MLAggr,PSmSweeps,P,smooP);
-    ML_Operator_Destroy(&P);
-    P = smooP;
-  }
-
-
-  if(verbose) ML_Set_PrintLevel(printlevel);
-  if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);
   
   if(verbose){
     int globalAggs=0;
@@ -1007,15 +1055,6 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     }
   }
 
-  /* Cleanup */
-  if(fine_grid.x) ML_free(fine_grid.x);
-  if(fine_grid.y) ML_free(fine_grid.y);
-  if(fine_grid.z) ML_free(fine_grid.z);
-  if(fine_grid.material) ML_free(fine_grid.material);
-
-  ML_qr_fix_Destroy();
-  if(UseAux)      ML_Finalize_Aux(A_ML);
-  if(UseMaterial) ML_Finalize_Aux(A_ML);
   ML_Operator_Destroy(&A_ML);
 
   return 0;
