@@ -56,6 +56,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    ML_CommInfoOP *mat_comm;
    struct ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm *aggr_comm;
+   double rowsum_threshold;
 
    /* ============================================================= */
    /* get the machine information and matrix references             */
@@ -68,6 +69,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    Nrows          = Amatrix->outvec_leng;
    sys_unk_filter = 0;
    mat_comm       = Amatrix->getrow->pre_comm;
+   rowsum_threshold = ml_amg->rowsum_threshold;
 
    /* ============================================================= */
    /* if system AMG (unknown approach) is requested, communicate    */
@@ -235,6 +237,8 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    rowptr[0] = 0;
    for (i = 0; i < Nrows; i++)
    {
+      int itmp = total_nnz;
+      rowsum = 0;
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
                         &rowi_N, 0);
       if ( sys_unk_filter )
@@ -248,13 +252,17 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       rowmax = 0.0;
       if ( diag >= 0. )
       {
-         for (j = 0; j < rowi_N; j++)
-            if (rowi_col[j] != i) rowmax = ML_min(rowmax, rowi_val[j]);
+        for (j = 0; j < rowi_N; j++) {
+          if (rowi_col[j] != i) rowmax = ML_min(rowmax, rowi_val[j]);
+          rowsum+=rowi_col[j];
+        }
       }
       else
       {
-         for (j = 0; j < rowi_N; j++)
-            if (rowi_col[j] != i) rowmax = ML_max(rowmax, rowi_val[j]);
+        for (j = 0; j < rowi_N; j++) {
+          if (rowi_col[j] != i) rowmax = ML_max(rowmax, rowi_val[j]);
+          rowsum+=rowi_col[j];
+        }
       }
       rowmax *= epsilon;
       if ( diag >= 0. )
@@ -279,6 +287,16 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
             }
          }
       }
+      /* Reaction-diffusion dropping.  If the rowsum is sufficiently than the diagonal, then
+         we should be in a reaction-limited regime at this node and can afford to drop *all* 
+         connections, effectively turning this guy into a Dirichlet unknown.  We trust that
+         the smoother is sufficient for these unknowns - CMS 7/23/19 */
+      if(rowsum_threshold > 0.0 && fabs(rowsum) > fabs(diag) * rowsum_threshold) {
+        column[itmp]=i;
+        values[itmp]=diag;
+        total_nnz = itmp;
+      }
+
       rowptr[i+1] = total_nnz;
    }
    ML_free( rowi_col );

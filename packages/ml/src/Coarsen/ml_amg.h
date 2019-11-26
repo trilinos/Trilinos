@@ -96,6 +96,9 @@ typedef struct ML_AMG_Struct
                            struct AZ_MATRIX_STRUCT  *,
                            struct AZ_PREC_STRUCT *);
   */
+  /*cms*/
+  double rowsum_threshold;             /**< for dropping sub-CFL rows in reaction-diffusion */
+
 } ML_AMG;
 
 /* ************************************************************************* */
@@ -148,6 +151,8 @@ extern int  ML_AMG_Set_CoarsenScheme_MIS( ML_AMG *amg  );
 /* ------------------------------------------------------------------------- */
 
 extern int  ML_AMG_Set_Threshold( ML_AMG *amg, double epsilon );
+
+extern int ML_AMG_Set_RowSum_Threshold( ML_AMG *, double epsilon );
 
 /* ------------------------------------------------------------------------- */
 /* functions for performing coarsening                                       */
