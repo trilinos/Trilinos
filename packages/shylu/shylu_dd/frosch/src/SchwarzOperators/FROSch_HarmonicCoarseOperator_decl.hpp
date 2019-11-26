@@ -93,7 +93,10 @@ namespace FROSch {
         using GOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
         using GOVecView               = typename SchwarzOperator<SC,LO,GO,NO>::GOVecView;
         using GOVec2D                 = typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D;
+        
         using SCVec                   = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
+        using SCVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
+        using ConstSCVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
 
     public:
 

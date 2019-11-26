@@ -271,9 +271,11 @@ namespace FROSch {
             XMapPtr serialInterfaceMap = MapFactory<LO,GO,NO>::Build(nullSpaceBasis->getMap()->lib(),this->GammaDofs_[blockId].size(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
             XMultiVectorPtr interfaceNullspaceBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,nullSpaceBasis->getNumVectors());
             for (UN i=0; i<nullSpaceBasis->getNumVectors(); i++) {
+                SCVecPtr interfaceNullspaceBasisData = interfaceNullspaceBasis->getDataNonConst(i);
+                ConstSCVecPtr nullSpaceBasisData = nullSpaceBasis->getData(i);
                 for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                     for (UN j=0; j<interface->getNumNodes(); j++) {
-                        interfaceNullspaceBasis->getDataNonConst(i)[interface->getGammaDofID(j,k)] = nullSpaceBasis->getData(i)[nullSpaceBasis->getMap()->getLocalElement(interface->getGlobalDofID(j,k))];
+                        interfaceNullspaceBasisData[interface->getGammaDofID(j,k)] = nullSpaceBasisData[nullSpaceBasis->getMap()->getLocalElement(interface->getGlobalDofID(j,k))];
                     }
                 }
             }
