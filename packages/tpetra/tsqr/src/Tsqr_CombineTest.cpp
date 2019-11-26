@@ -532,9 +532,7 @@ namespace TSQR {
       }
       Combine<Ordinal, Scalar> combiner;
       // qr( A1 )
-      combiner.factor_first (numRows, numCols,
-                             A1.data(), A1.stride(1),
-                             tau1.data(), work.data());
+      combiner.factor_first (A1, tau1.data(), work.data());
       // View of numCols by numCols upper triangle of A1.
       mat_view_type R1 (numCols, numCols, A1.data(), A1.stride(1));
       // qr( [R1; A2] )

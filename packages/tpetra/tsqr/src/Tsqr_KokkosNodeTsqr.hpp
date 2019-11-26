@@ -173,8 +173,7 @@ namespace TSQR {
         // We should only call this if A_top.extent(1) > 0 and therefore
         // work.size() > 0, but we've already checked for that, so we
         // don't have to check again.
-        combine.factor_first (A_top.extent(0), A_top.extent(1), A_top.data(),
-                              A_top.stride(1), tau.data(), work.data());
+        combine.factor_first (A_top, tau.data(), work.data());
         return tau;
       }
 

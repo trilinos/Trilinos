@@ -50,6 +50,7 @@
 #include "KokkosBlas2_gemv.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Tsqr_Impl_Lapack.hpp"
+#include "Tsqr_Matrix.hpp"
 
 namespace TSQR {
 
@@ -92,14 +93,21 @@ namespace TSQR {
     }
 
     void
-    factor_first (const Ordinal nrows,
-                  const Ordinal ncols,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const
     {
-      return default_.factor_first (nrows, ncols, A, lda, tau, work);
+      return default_.factor_first (A, tau, work);
+    }
+
+    void
+    factor_first (Matrix<Ordinal, Scalar>& A,
+                  Scalar tau[],
+                  Scalar work[]) const
+    {
+      MatView<Ordinal, Scalar> A_view
+        (A.extent (0), A.extent (1), A.data (), A.stride (1));
+      return factor_first (A_view, tau, work);
     }
 
     void
@@ -277,14 +285,21 @@ namespace TSQR {
     }
 
     void
-    factor_first (const Ordinal nrows,
-                  const Ordinal ncols,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const
     {
-      return default_.factor_first (nrows, ncols, A, lda, tau, work);
+      return default_.factor_first (A, tau, work);
+    }
+
+    void
+    factor_first (Matrix<Ordinal, Scalar>& A,
+                  Scalar tau[],
+                  Scalar work[]) const
+    {
+      MatView<Ordinal, Scalar> A_view
+        (A.extent (0), A.extent (1), A.data (), A.stride (1));
+      return factor_first (A_view, tau, work);
     }
 
     void
@@ -373,14 +388,21 @@ namespace TSQR {
     }
 
     void
-    factor_first (const Ordinal nrows,
-                  const Ordinal ncols,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const
     {
-      return default_.factor_first (nrows, ncols, A, lda, tau, work);
+      return default_.factor_first (A, tau, work);
+    }
+
+    void
+    factor_first (Matrix<Ordinal, Scalar>& A,
+                  Scalar tau[],
+                  Scalar work[]) const
+    {
+      MatView<Ordinal, Scalar> A_view
+        (A.extent (0), A.extent (1), A.data (), A.stride (1));
+      return factor_first (A_view, tau, work);
     }
 
     void

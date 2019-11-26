@@ -129,14 +129,21 @@ namespace TSQR {
     ///   scaling factors for the Householder reflectors
     /// \param work [out] Workspace array of length ncols
     void
-    factor_first (const Ordinal nrows,
-                  const Ordinal ncols,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const
     {
-      return impl_.factor_first (nrows, ncols, A, lda, tau, work);
+      return impl_.factor_first (A, tau, work);
+    }
+
+    void
+    factor_first (Matrix<Ordinal, Scalar>& A,
+                  Scalar tau[],
+                  Scalar work[]) const
+    {
+      MatView<Ordinal, Scalar> A_view
+        (A.extent (0), A.extent (1), A.data (), A.stride (1));
+      return factor_first (A_view, tau, work);
     }
 
     /// \brief Apply the result of \c factor_first().

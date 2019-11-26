@@ -159,8 +159,7 @@ namespace TSQR {
                         std::vector<Scalar>& work) const
     {
       const LocalOrdinal ncols = A_top.extent(1);
-      combine.factor_first (A_top.extent(0), ncols, A_top.data(), A_top.stride(1),
-                            tau.data(), work.data());
+      combine.factor_first (A_top, tau.data(), work.data());
       return mat_view_type(ncols, ncols, A_top.data(), A_top.stride(1));
     }
 

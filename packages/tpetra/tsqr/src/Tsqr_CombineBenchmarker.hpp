@@ -313,14 +313,12 @@ namespace TSQR {
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
-        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
-          {
-            combiner.factor_first (numRows, numCols, A.data(), A.stride(1),
-                                   tau.data(), work.data());
-            combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
-                                  A.data(), A.stride(1), tau.data(),
-                                  Q.data(), Q.stride(1), work.data());
-          }
+        for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
+          combiner.factor_first (A, tau.data(), work.data());
+          combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
+                                A.data(), A.stride(1), tau.data(),
+                                Q.data(), Q.stride(1), work.data());
+        }
 
         // How much time numTrials runs must take in order for
         // numTrials to be considered sufficiently large.
@@ -343,14 +341,12 @@ namespace TSQR {
         do {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
-          for (int trial = 0; trial < numTrials; ++trial)
-            {
-              combiner.factor_first (numRows, numCols, A.data(), A.stride(1),
-                                     tau.data(), work.data());
-              combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
-                                    A.data(), A.stride(1), tau.data(),
-                                    Q.data(), Q.stride(1), work.data());
-            }
+          for (int trial = 0; trial < numTrials; ++trial) {
+            combiner.factor_first (A, tau.data(), work.data());
+            combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
+                                  A.data(), A.stride(1), tau.data(),
+                                  Q.data(), Q.stride(1), work.data());
+          }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
 
@@ -414,8 +410,7 @@ namespace TSQR {
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_first (numRows, numCols, A.data(), A.stride(1),
-                                 tau.data(), work.data());
+          combiner.factor_first (A, tau.data(), work.data());
           combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
                                 A.data(), A.stride(1), tau.data(),
                                 Q.data(), Q.stride(1), work.data());
@@ -426,8 +421,7 @@ namespace TSQR {
         timer_type timer ("Combine first");
         timer.start();
         for (int trial = 0; trial < numTrials; ++trial) {
-          combiner.factor_first (numRows, numCols, A.data(), A.stride(1),
-                                 tau.data(), work.data());
+          combiner.factor_first (A, tau.data(), work.data());
           combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
                                 A.data(), A.stride(1), tau.data(),
                                 Q.data(), Q.stride(1), work.data());
