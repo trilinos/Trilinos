@@ -81,7 +81,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 
 
   int hasRows=1;
-  if(choice != ML_AMESOS_SUPERLUDIST) {
+  if(0) {
 #   ifdef ML_MPI
     hasRows = MPI_UNDEFINED;
     if (Ke->invec_leng > 0 || Ke->outvec_leng > 0) hasRows = 1;
