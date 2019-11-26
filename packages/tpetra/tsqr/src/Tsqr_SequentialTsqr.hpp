@@ -484,7 +484,8 @@ namespace TSQR {
       const_mat_view_type A_top = this->top_block (A_view, contiguous_cache_blocks);
 
       // Fill R (including lower triangle) with zeros.
-      fill_matrix (ncols, ncols, R, ldr, Teuchos::ScalarTraits<Scalar>::zero());
+      mat_view_type R_view (ncols, ncols, R, ldr);
+      deep_copy (R_view, Scalar {});
 
       // Copy out the upper triangle of the R factor from A into R.
       copy_upper_triangle (ncols, ncols, R, ldr, A_top.data(), A_top.stride(1));
@@ -540,11 +541,11 @@ namespace TSQR {
       // Copy the R factor resulting from the factorization out of
       // R_view (a view of the topmost cache block of A) into the R
       // output argument.
-      fill_matrix (ncols, ncols, R, ldr, Scalar(0));
+      mat_view_type R_out (ncols, ncols, R, ldr);
+      deep_copy (R_out, Scalar {});
       copy_upper_triangle (ncols, ncols, R, ldr, R_view.data(), R_view.stride(1));
       return tau_arrays;
     }
-
 
     /// \brief The number of cache blocks that factor() would use.
     ///
