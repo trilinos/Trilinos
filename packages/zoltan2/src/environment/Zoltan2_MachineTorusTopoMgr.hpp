@@ -269,7 +269,7 @@ public:
     return true;
   }
 
-  virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) {
+  virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) const override {
     hops = 0;
     for (int i = 0; i < networkDim - 1; ++i) {
       pcoord_t distance = procCoords[i][rank1] - procCoords[i][rank2];

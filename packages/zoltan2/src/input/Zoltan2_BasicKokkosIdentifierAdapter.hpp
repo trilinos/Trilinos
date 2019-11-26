@@ -90,7 +90,6 @@ public:
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
-  typedef Kokkos::LayoutLeft weight_layout_t;
 
   /*! \brief Constructor
    *  \param ids should point to a View of identifiers.
@@ -105,32 +104,35 @@ public:
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this Adapter.
    */
-  BasicKokkosIdentifierAdapter(Kokkos::View<gno_t*> &ids,
-                            Kokkos::View<scalar_t**, weight_layout_t> &weights);
+  BasicKokkosIdentifierAdapter(
+    Kokkos::View<gno_t*, typename node_t::device_type> &ids,
+    Kokkos::View<scalar_t**, typename node_t::device_type> &weights);
 
   ////////////////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const { return idsView_.extent(0); }
+  size_t getLocalNumIDs() const {
+    return idsView_.extent(0);
+  }
 
-  void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const {ids = idsView_;}
+  void getIDsKokkosView(Kokkos::View<const gno_t *,
+    typename node_t::device_type> &ids) const {
+    ids = idsView_;
+  }
 
-  int getNumWeightsPerID() const { return weightsView_.extent(1); }
+  int getNumWeightsPerID() const {
+    return weightsView_.extent(1);
+  }
 
-  void getWeightsKokkosView(Kokkos::View<scalar_t *> &wgt, int idx = 0) const {
-    if (idx < 0 || scalar_t(idx) >= weightsView_.extent(0)) {
-      std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str());
-    }
-    wgt = Kokkos::subview(weightsView_, ALL, idx);
+  void getWeightsKokkosView(Kokkos::View<scalar_t **,
+    typename node_t::device_type> &wgts) const {
+    wgts = weightsView_;
   }
 
 private:
-  Kokkos::View<gno_t *> idsView_;
-  Kokkos::View<scalar_t **, weight_layout_t> weightsView_;
+  Kokkos::View<const gno_t *, typename node_t::device_type> idsView_;
+  Kokkos::View<scalar_t **, typename node_t::device_type> weightsView_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -139,8 +141,8 @@ private:
 
 template <typename User>
   BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
-    Kokkos::View<gno_t*> &ids,
-    Kokkos::View<scalar_t**, weight_layout_t> &weights):
+    Kokkos::View<gno_t*, typename node_t::device_type> &ids,
+    Kokkos::View<scalar_t**, typename node_t::device_type> &weights):
       idsView_(ids), weightsView_(weights) {
 }
   

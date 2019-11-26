@@ -141,14 +141,110 @@ private:
   const scalar_t *weights;
 };
 
-//////////////////////////////////////////////
-int main(int narg, char *arg[])
+//////////////////////////////////////////
+// Same adapter as above but now we supply the Kokkos calls, not the original
+// calls. This is to verify that backwards and forward compatibility are all
+// working properly.
+template <typename User>
+class KokkosVectorAdapter : public Zoltan2::VectorAdapter<User>
 {
-  Tpetra::ScopeGuard scope(&narg, &arg);
-  const Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int rank = comm->getRank(); 
-  int nprocs = comm->getSize();
+public:
+  typedef typename Zoltan2::InputTraits<User>::gno_t gno_t;
+  typedef typename Zoltan2::InputTraits<User>::scalar_t scalar_t;
+  typedef Tpetra::Map<>::node_type node_t;
+
+  KokkosVectorAdapter(
+    const size_t nids_,
+    const gno_t *gids_,
+    const int dim_,
+    const scalar_t *coords_,
+    const scalar_t *weights_ = NULL)
+  : nids(nids_), dim(dim_)
+  {
+    // create kokkos_gids in default memory space
+    {
+      typedef Kokkos::View<gno_t *, typename node_t::device_type> view_ids_t;
+      view_ids_t gids = view_ids_t(
+        Kokkos::ViewAllocateWithoutInitializing("gids"), nids);
+      typename view_ids_t::HostMirror host_gids =
+        Kokkos::create_mirror_view(gids);
+      for(size_t n = 0; n < nids; ++n) {
+        host_gids(n) = gids_[n];
+      }
+      Kokkos::deep_copy(gids, host_gids);
+      kokkos_gids = gids; // to const View
+    }
+
+    // create kokkos_weights in default memory space
+    if(weights_ != NULL)
+    {
+      typedef Kokkos::View<scalar_t **, typename node_t::device_type> view_weights_t;
+      kokkos_weights = view_weights_t(
+        Kokkos::ViewAllocateWithoutInitializing("weights"), nids, 0);
+      typename view_weights_t::HostMirror host_kokkos_weights =
+        Kokkos::create_mirror_view(kokkos_weights);
+      for(size_t n = 0; n < nids; ++n) {
+        host_kokkos_weights(n,0) = weights_[n];
+      }
+      Kokkos::deep_copy(kokkos_weights, host_kokkos_weights);
+    }
+
+    // create kokkos_coords in default memory space
+    {
+      typedef Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+        typename node_t::device_type> kokkos_coords_t;
+      kokkos_coords = kokkos_coords_t(
+        Kokkos::ViewAllocateWithoutInitializing("coords"), nids, dim);
+      typename kokkos_coords_t::HostMirror host_kokkos_coords =
+        Kokkos::create_mirror_view(kokkos_coords);
+      for(size_t n = 0; n < nids; ++n) {
+        for(int idx = 0; idx < dim; ++idx) {
+          host_kokkos_coords(n,idx) = coords_[n+idx*nids];
+        }
+      }
+      Kokkos::deep_copy(kokkos_coords, host_kokkos_coords);
+    }
+  }
+
+  size_t getLocalNumIDs() const { return nids; }
+
+  virtual void getIDsKokkosView(Kokkos::View<const gno_t *,
+    typename node_t::device_type> &ids) const {
+    ids = kokkos_gids;
+  }
+
+  int getNumWeightsPerID() const { return (kokkos_weights.size() != 0); }
+
+  virtual void getWeightsKokkosView(Kokkos::View<scalar_t **,
+    typename node_t::device_type> & wgt) const {
+    wgt = kokkos_weights;
+  }
+
+  int getNumEntriesPerID() const { return dim; }
+
+  virtual void getEntriesKokkosView(Kokkos::View<scalar_t **,
+    Kokkos::LayoutLeft, typename node_t::device_type> & coo) const {
+    coo = kokkos_coords;
+  }
+
+private:
+  const size_t nids;
+  Kokkos::View<const gno_t *, typename node_t::device_type> kokkos_gids;
+  const int dim;
+  Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>
+    kokkos_coords;
+  Kokkos::View<scalar_t **, typename node_t::device_type> kokkos_weights;
+};
+
+//////////////////////////////////////////////
+int run_test_strided_versus_contig(const std::string & algorithm) {
+
   int nFail = 0;
+
+  const Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
+  int rank = comm->getRank();
+  int nprocs = comm->getSize();
 
   typedef Tpetra::Map<> Map_t;
   typedef Map_t::local_ordinal_type localId_t;
@@ -158,13 +254,14 @@ int main(int narg, char *arg[])
   typedef Zoltan2::BasicUserTypes<scalar_t, localId_t, globalId_t> myTypes;
   typedef OldSchoolVectorAdapterStrided<myTypes> stridedAdapter_t;
   typedef OldSchoolVectorAdapterContig<myTypes> contigAdapter_t;
+  typedef KokkosVectorAdapter<myTypes> kokkosAdapter_t;
   typedef Zoltan2::EvaluatePartition<stridedAdapter_t> quality_t;
 
   ///////////////////////////////////////////////////////////////////////
   // Create input data.
 
   size_t localCount = 40;
-  int dim = 5;
+  int dim = 3; // no higher since we are testing rcb as a control which supports dim <= 3
 
   // Create coordinates strided
   scalar_t *cStrided = new scalar_t [dim * localCount];
@@ -192,7 +289,7 @@ int main(int narg, char *arg[])
   params.set("debug_level", "basic_status");
   params.set("error_check_level", "debug_mode_assertions");
 
-  params.set("algorithm", "multijagged");
+  params.set("algorithm", algorithm); // test runs multijagged and rcb
   params.set("num_global_parts", nprocs+1);
 
   ///////////////////////////////////////////////////////////////////////
@@ -231,15 +328,27 @@ int main(int narg, char *arg[])
    
   problem2->solve();
 
-  // compare strided vs contiguous
+  // Partition using contiguous coords to generate kokkos adapter
+  kokkosAdapter_t *ia3 = new kokkosAdapter_t(localCount,globalIds,dim,cContig);
+
+  Zoltan2::PartitioningProblem<kokkosAdapter_t> *problem3 =
+           new Zoltan2::PartitioningProblem<kokkosAdapter_t>(ia3, &params);
+
+  problem3->solve();
+
+  // compare strided vs contiguous vs kokkos
   size_t ndiff = 0;
   for (size_t i = 0; i < localCount; i++) {
-    if (problem1->getSolution().getPartListView()[i] != 
-        problem2->getSolution().getPartListView()[i]) {
+    if((problem1->getSolution().getPartListView()[i] !=
+        problem2->getSolution().getPartListView()[i]) ||
+       (problem2->getSolution().getPartListView()[i] !=
+        problem3->getSolution().getPartListView()[i]))
+    {
       std::cout << rank << " Error: differing parts for index " << i 
                 << problem1->getSolution().getPartListView()[i] << " "
-                << problem2->getSolution().getPartListView()[i] << std::endl;
-            
+                << problem2->getSolution().getPartListView()[i] << " "
+                << problem3->getSolution().getPartListView()[i] << std::endl;
+
       ndiff++;
     }
   }
@@ -249,8 +358,10 @@ int main(int narg, char *arg[])
   delete metricObject1;
   delete problem1;
   delete problem2;
+  delete problem3;
   delete ia1;
   delete ia2;
+  delete ia3;
    
   ///////////////////////////////////////////////////////////////////////
   // Test two:  weighted
@@ -320,10 +431,23 @@ int main(int narg, char *arg[])
 
   int gnFail;
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &nFail, &gnFail);
+  return gnFail;
+}
 
-  if (rank == 0) { 
-    if (gnFail == 0) std::cout << "PASS" << std::endl;
-    else  std::cout << "FAIL:  " << gnFail << " tests failed" << std::endl;
+
+int main(int narg, char *arg[])
+{
+  Tpetra::ScopeGuard scope(&narg, &arg);
+  const Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
+  int err = 0;
+
+  // err += run_test_strided_versus_contig("multijagged");
+  err += run_test_strided_versus_contig("rcb");
+
+  if (comm->getRank() == 0) {
+    if (err == 0) std::cout << "PASS" << std::endl;
+    else  std::cout << "FAIL:  " << err << " tests failed" << std::endl;
   }
 
   return 0;

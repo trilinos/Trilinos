@@ -372,14 +372,24 @@ struct UnpackCrsMatrixAndCombineFunctor {
 
     constexpr bool matrix_has_sorted_rows = true; // see #6282
     if (combine_mode == ADD) {
+      // NOTE (mfh 20 Nov 2019) Must assume atomic is required, unless
+      // different threads don't touch the same row (i.e., no
+      // duplicates in incoming LIDs list).
+      const bool use_atomic_updates = atomic;
       num_modified +=
         local_matrix.sumIntoValues (import_lid, lids_raw, num_ent,
-                                    vals_raw, matrix_has_sorted_rows, atomic);
+                                    vals_raw, matrix_has_sorted_rows,
+                                    use_atomic_updates);
     }
     else if (combine_mode == REPLACE) {
+      // NOTE (mfh 20 Nov 2019): It's never correct to use REPLACE
+      // combine mode with multiple incoming rows that touch the same
+      // target matrix entries, so we never need atomic updates.
+      const bool use_atomic_updates = false;
       num_modified +=
         local_matrix.replaceValues (import_lid, lids_raw, num_ent,
-                                    vals_raw, matrix_has_sorted_rows, atomic);
+                                    vals_raw, matrix_has_sorted_rows,
+                                    use_atomic_updates);
     }
     else {
       dst = Kokkos::make_pair (4, i); // invalid combine mode
@@ -535,8 +545,7 @@ unpackAndCombineIntoCrsMatrix(
     const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
     const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type import_lids,
     const Tpetra::CombineMode combine_mode,
-    const bool unpack_pids,
-    const bool atomic)
+    const bool unpack_pids)
 {
   typedef typename LocalMatrix::value_type ST;
   typedef typename LocalMap::local_ordinal_type LO;
@@ -598,6 +607,7 @@ unpackAndCombineIntoCrsMatrix(
   size_t num_bytes_per_value = PackTraits<ST>::packValueCount(ST());
 
   // Now do the actual unpack!
+  const bool atomic = XS::concurrency() != 1;
   unpack_functor_type f(local_matrix, local_map,
       imports, num_packets_per_lid, import_lids, offsets, combine_mode,
       max_num_ent, unpack_pids, num_bytes_per_value, atomic);
@@ -608,8 +618,6 @@ unpackAndCombineIntoCrsMatrix(
   TEUCHOS_TEST_FOR_EXCEPTION(x_h.first != 0, std::runtime_error,
       prefix << "UnpackCrsMatrixAndCombineFunctor reported error code "
              << x_h.first << " for the first bad row " << x_h.second);
-
-  return;
 }
 
 template<class LocalMatrix, class BufferDeviceType>
@@ -1095,8 +1103,7 @@ unpackCrsMatrixAndCombine(
     const Teuchos::ArrayView<const LO>& importLIDs,
     size_t /* constantNumPackets */,
     Distributor & /* distor */,
-    CombineMode combineMode,
-    const bool atomic)
+    CombineMode combineMode)
 {
   using Kokkos::View;
   typedef typename Node::device_type device_type;
@@ -1131,9 +1138,7 @@ unpackCrsMatrixAndCombine(
   // Now do the actual unpack!
   UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsMatrix(
       local_matrix, local_col_map, imports_d, num_packets_per_lid_d,
-      import_lids_d, combineMode, false, atomic);
-
-  return;
+      import_lids_d, combineMode, false);
 }
 
 template<typename ST, typename LO, typename GO, typename NT>
@@ -1147,8 +1152,7 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                                 typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
                               const size_t /* constantNumPackets */,
                               Distributor& /* distor */,
-                              const CombineMode combineMode,
-                              const bool atomic)
+                              const CombineMode combineMode)
 {
   using Tpetra::Details::castAwayConstDualView;
   using Kokkos::View;
@@ -1188,7 +1192,7 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
       local_map_type,
       buffer_device_type
     > (local_matrix, local_col_map, imports_d, num_packets_per_lid_d,
-       import_lids_d, combineMode, false, atomic);
+       import_lids_d, combineMode, false);
 }
 
 /// \brief Special version of Tpetra::Details::unpackCrsMatrixAndCombine
@@ -1522,8 +1526,7 @@ unpackAndCombineIntoCrsArrays (
     const Teuchos::ArrayView<const LO>&, \
     size_t, \
     Distributor&, \
-    CombineMode, \
-    const bool); \
+    CombineMode); \
   template void \
   Details::unpackCrsMatrixAndCombineNew<ST, LO, GO, NT> ( \
     const CrsMatrix<ST, LO, GO, NT>&, \
@@ -1532,8 +1535,7 @@ unpackAndCombineIntoCrsArrays (
     const Kokkos::DualView<const LO*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const size_t, \
     Distributor&, \
-    const CombineMode, \
-    const bool); \
+    const CombineMode); \
   template void \
   Details::unpackAndCombineIntoCrsArrays<ST, LO, GO, NT> ( \
     const CrsMatrix<ST, LO, GO, NT> &, \

@@ -95,7 +95,7 @@ public:
      *  set hops between rank1 and rank2
      *  return true if coordinates are available 
      */
-    virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) {
+    virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) const {
       return false;
     }
 
