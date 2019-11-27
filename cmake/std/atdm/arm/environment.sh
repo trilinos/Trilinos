@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on a Astra ATSE builds of Trilinos
+# Set up env on a ARM ATSE builds of Trilinos
 # This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
 ################################################################################
@@ -42,7 +42,7 @@ if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
   unset ATDM_CONFIG_KOKKOS_ARCH
 fi
 
-echo "Using Astra ATSE compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+echo "Using ARM ATSE compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 export ATDM_CONFIG_USE_NINJA=ON
 

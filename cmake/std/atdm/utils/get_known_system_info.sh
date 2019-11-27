@@ -96,12 +96,11 @@ elif [[ $realHostname == "waterman"* ]] ; then
   hostnameMatch=waterman
   hostnameMatchSystemName=waterman
 elif [[ $realHostname == "astra-"* ]] || [[ $realHostname =~ ast[0-9]+ ]] ; then
-  ATDM_HOSTNAME=astra
-  ATDM_SYSTEM_NAME=arm
+  hostnameMatch=astra
+  hostnameMatchSystemName=arm
 elif [[ $realHostname == "stria-"* ]] || [[ $realHostname =~ st[0-9]+ ]] ; then
-  ATDM_HOSTNAME=stria
-  ATDM_SYSTEM_NAME=arm
-
+  hostnameMatch=stria
+  hostnameMatchSystemName=arm
 # Specifically named cts1 systems
 elif [[ $realHostname == "serrano"* ]] || [[ $realHostname =~ ser[0-9]+ ]] ; then
   hostnameMatch=serrano
