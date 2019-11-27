@@ -915,7 +915,7 @@ int main_(int argc, char *argv[]) {
 //        printRegionalObject<Vector>("regB 1", regB, myRank, *fos);
 
         compRes = VectorFactory::Build(mapComp, true);
-        regionalToComposite(regRes, compRes, maxRegPerProc,
+        regionalToComposite(regRes, compRes,
                             rowImportPerGrp, Xpetra::ADD);
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
 
@@ -953,7 +953,7 @@ int main_(int argc, char *argv[]) {
     sleep(1);
 
     // ToDo (mayr.mt) Is this the right CombineMode?
-    regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::INSERT);
+    regionalToComposite(regX, compX, rowMapPerGrp, rowImportPerGrp, Xpetra::INSERT);
 
     std::cout << myRank << " | compX after V-cycle" << std::endl;
     sleep(1);

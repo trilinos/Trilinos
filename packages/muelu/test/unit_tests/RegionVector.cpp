@@ -240,7 +240,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
     // Create a composite vector
     RCP<Vector> compVec = VectorFactory::Build(dofMap, true);
 
-    regionalToComposite(regVec, compVec, maxRegPerProc, rowImportPerGrp, Xpetra::ADD);
+    regionalToComposite(regVec, compVec, rowImportPerGrp, Xpetra::ADD);
 
     if(numRanks == 1) {
       TEST_EQUALITY(compVec->getLocalLength(),  25);
@@ -309,7 +309,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
     // transform to composite layout while adding interface values via the Export() combine mode
     RCP<Vector> compInterfaceScalingSum = VectorFactory::Build(dofMap, true);
     regionalToComposite(interfaceScaling, compInterfaceScalingSum,
-                        maxRegPerProc, rowImportPerGrp, Xpetra::ADD);
+                        rowImportPerGrp, Xpetra::ADD);
 
     /* transform composite layout back to regional layout. Now, GIDs associated
      * with region interface should carry a scaling factor (!= 1).

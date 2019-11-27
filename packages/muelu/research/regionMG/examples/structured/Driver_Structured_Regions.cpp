@@ -814,7 +814,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
 
         compRes = VectorFactory::Build(dofMap, true);
-        regionalToComposite(regRes, compRes, maxRegPerProc,
+        regionalToComposite(regRes, compRes,
                             rowImportPerGrp, Xpetra::ADD);
 
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();

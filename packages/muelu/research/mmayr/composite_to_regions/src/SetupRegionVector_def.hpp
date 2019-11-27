@@ -132,7 +132,6 @@ void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void regionalToComposite(const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec, ///< Vector in region layout [in]
                          RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in/out]
-                         const int maxRegPerProc, ///< max number of regions per proc
                          const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp, ///< row importer in region layout [in]
                          const Xpetra::CombineMode combineMode ///< Combine mode for import/export [in]
                          )
@@ -143,6 +142,9 @@ void regionalToComposite(const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, Gl
    */
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::TimeMonitor;
+
+  // Get max number of regions per proc
+  const int maxRegPerProc = regVec.size();
 
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("regionalToComposite: 1 - compVec setup")));
 
@@ -211,7 +213,7 @@ void sumInterfaceValues(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrd
   TEUCHOS_ASSERT(!compVec.is_null());
 
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 1 - regionalToComposite")));
-  regionalToComposite(regVec, compVec, maxRegPerProc,
+  regionalToComposite(regVec, compVec,
                       rowImportPerGrp, Xpetra::ADD);
 
   tm = Teuchos::null;
