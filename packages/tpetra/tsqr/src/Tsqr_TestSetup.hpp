@@ -106,7 +106,7 @@ namespace TSQR {
         // All MPI processes participate in the distribution of the
         // test matrix.
         TSQR::Random::randomGlobalMatrix (&generator, A_local,
-                                          singular_values.data (),
+                                          singular_values,
                                           ordinalComm, scalarComm);
       }
     }
