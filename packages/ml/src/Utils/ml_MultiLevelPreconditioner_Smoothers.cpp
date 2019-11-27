@@ -1861,25 +1861,25 @@ myaztecParams = m_smootherAztecParams;
 
     } else if( MySmoother == "Amesos-LAPACK" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_LAPACK, MaxProcs, AddToDiag);
+                             ML_AMESOS_LAPACK, MaxProcs, AddToDiag,1);
     } else if( MySmoother == "Amesos-KLU" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_KLU, MaxProcs, AddToDiag);
+                             ML_AMESOS_KLU, MaxProcs, AddToDiag,1);
     } else if( MySmoother == "Amesos-UMFPACK" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_UMFPACK, MaxProcs, AddToDiag);
+                             ML_AMESOS_UMFPACK, MaxProcs, AddToDiag,1);
     } else if(  MySmoother == "Amesos-Superludist" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag);
+                             ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag,1);
     } else if(  MySmoother == "Amesos-Superlu" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_SUPERLU, MaxProcs, AddToDiag);
+                             ML_AMESOS_SUPERLU, MaxProcs, AddToDiag,1);
     } else if( MySmoother == "Amesos-MUMPS" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_MUMPS, MaxProcs, AddToDiag);
+                             ML_AMESOS_MUMPS, MaxProcs, AddToDiag,1);
     } else if( MySmoother == "Amesos-ScaLAPACK" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag);
+                             ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag,1);
 
     } else if( MySmoother == "do-nothing" ) {
 

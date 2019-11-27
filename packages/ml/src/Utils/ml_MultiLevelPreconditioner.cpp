@@ -3142,6 +3142,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   double Omega = List_.get("coarse: damping factor", 1.0);
   double AddToDiag = List_.get("coarse: add to diag", 1e-12);
   std::string PreOrPostSmoother = List_.get("coarse: pre or post","post");
+  int splitComm = (int) List_.get("coarse: split communicator",false);
   int pre_or_post;
 
   if( PreOrPostSmoother == "pre" ) pre_or_post = ML_PRESMOOTHER;
@@ -3331,26 +3332,26 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     ML_Gen_CoarseSolverSuperLU( ml_, LevelID_[NumLevels_-1]);
   else if( CoarseSolution == "Amesos-LAPACK" ) {
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_LAPACK, MaxProcs, AddToDiag);
+                           ML_AMESOS_LAPACK, MaxProcs, AddToDiag, splitComm);
   }
   else if( CoarseSolution == "Amesos-KLU" ) {
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_KLU, MaxProcs, AddToDiag);
+                           ML_AMESOS_KLU, MaxProcs, AddToDiag, splitComm);
   } else if( CoarseSolution == "Amesos-UMFPACK" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_UMFPACK, MaxProcs, AddToDiag);
+                           ML_AMESOS_UMFPACK, MaxProcs, AddToDiag, splitComm);
   else if(  CoarseSolution == "Amesos-Superludist" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag);
+                           ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag, splitComm);
   else if(  CoarseSolution == "Amesos-Superlu" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_SUPERLU, MaxProcs, AddToDiag);
+                           ML_AMESOS_SUPERLU, MaxProcs, AddToDiag, splitComm);
   else if( CoarseSolution == "Amesos-MUMPS" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_MUMPS, MaxProcs, AddToDiag);
+                           ML_AMESOS_MUMPS, MaxProcs, AddToDiag, splitComm);
   else if( CoarseSolution == "Amesos-ScaLAPACK" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag);
+                           ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag, splitComm);
 
  else if( CoarseSolution == "block Gauss-Seidel" ) {
     if( verbose_ ) std::cout << msg << "block Gauss-Seidel (sweeps="
