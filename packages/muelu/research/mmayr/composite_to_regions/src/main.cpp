@@ -867,12 +867,12 @@ int main_(int argc, char *argv[]) {
     }
 
     // transform composite vectors to regional layout
-    compositeToRegional(compX, quasiRegX, regX, rowMapPerGrp,
+    compositeToRegional(compX, quasiRegX, regX,
         revisedRowMapPerGrp, rowImportPerGrp);
 
     Array<RCP<Vector> > quasiRegB(maxRegPerProc);
     Array<RCP<Vector> > regB(maxRegPerProc);
-    compositeToRegional(compB, quasiRegB, regB, rowMapPerGrp,
+    compositeToRegional(compB, quasiRegB, regB,
         revisedRowMapPerGrp, rowImportPerGrp);
 
 //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);

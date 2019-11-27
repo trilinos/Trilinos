@@ -223,7 +223,6 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
     compositeToRegional(coarseCompositeGIDs,
                         coarseQuasiregionGIDs,
                         coarseRegionGIDs,
-                        quasiRegRowMaps[currentLevel - 1],
                         regRowMaps[currentLevel - 1],
                         regRowImporters[currentLevel - 1]);
 
@@ -444,7 +443,7 @@ void MakeInterfaceScalingFactors(const int maxRegPerProc,
      */
     Array<RCP<Vector> > quasiRegInterfaceScaling(maxRegPerProc); // Is that vector really needed?
     compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
-                        regInterfaceScalings[l], quasiRegRowMaps[l],
+                        regInterfaceScalings[l],
                         regRowMaps[l], regRowImporters[l]);
   }
 } // MakeInterfaceScalingFactors
@@ -934,7 +933,6 @@ void vCycle(const int l, ///< ID of current level
       // Transform back to region format
       Array<RCP<Vector> > quasiRegX(maxRegPerProc);
       compositeToRegional(compX, quasiRegX, fineRegX,
-                          quasiRegRowMaps[l],
                           regRowMaps[l],
                           regRowImporters[l]);
 
