@@ -6718,7 +6718,7 @@ int ML_build_ggb(ML *ml, void *data)
      break;
    case 2:
      /* amesos, now default is KLU */
-     ML_Gen_Smoother_Amesos(ml_ggb, 0, ML_AMESOS_KLU, -1, 0.0);
+     ML_Gen_Smoother_Amesos(ml_ggb, 0, ML_AMESOS_KLU, -1, 0.0, 1);
      break;
    case -2:
      fprintf(stderr,
