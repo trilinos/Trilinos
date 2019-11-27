@@ -93,7 +93,7 @@ namespace FROSch {
         FROSCH_ASSERT(!PartitionOfUnity_.is_null(),"Partition Of Unity is not set.");
         FROSCH_ASSERT(!PartitionOfUnityMaps_.is_null(),"Partition Of Unity Map is not set.");
 
-        LocalPartitionOfUnitySpace_ = CoarseSpacePtr(new CoarseSpace<SC,LO,GO,NO>());
+        LocalPartitionOfUnitySpace_ = CoarseSpacePtr(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
         XMultiVectorPtrVecPtr2D tmpBasis(PartitionOfUnity_.size());
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
@@ -142,8 +142,8 @@ namespace FROSch {
         // Kann man das schöner machen?
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
             if (!PartitionOfUnityMaps_[i].is_null()) {
-                if (!PartitionOfUnity_[i].is_null()) {
-                    for (UN j=0; j<maxNV[i]; j++) {
+                for (UN j=0; j<maxNV[i]; j++) {
+                    if (!PartitionOfUnity_[i].is_null()) {
                         //XMultiVectorPtrVecPtr tmpBasis2(PartitionOfUnity_[i]->getNumVectors());
                         XMultiVectorPtr entityBasis = MultiVectorFactory<SC,LO,GO,NO >::Build(PartitionOfUnity_[i]->getMap(),PartitionOfUnity_[i]->getNumVectors());
                         entityBasis->scale(ScalarTraits<SC>::zero());
@@ -152,11 +152,13 @@ namespace FROSch {
                                 entityBasis->getDataNonConst(k).deepCopy(tmpBasis[i][k]->getData(j)()); // Here, we copy data. Do we need to do this?
                             }
                         }
-                        LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i],entityBasis);
+                        LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i],null,entityBasis);
+                    } else {
+                        LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i]);
                     }
-                } else {
-                    LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i]);
                 }
+            } else {
+                if (this->MpiComm_->getRank()==0) std::cout << "FROSch::LocalPartitionOfUnityBasis : WARNING: PartitionOfUnityMaps_[i].is_null()" << std::endl;
             }
         }
 
