@@ -131,12 +131,8 @@ namespace TSQR {
                  Scalar work[]) const;
 
     void
-    factor_inner (const Ordinal m,
-                  const Ordinal n,
-                  Scalar R[],
-                  const Ordinal ldr,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const;
 
@@ -296,12 +292,8 @@ namespace TSQR {
     }
 
     void
-    factor_inner (const Ordinal m,
-                  const Ordinal n,
-                  Scalar R[],
-                  const Ordinal ldr,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const;
 
@@ -405,16 +397,12 @@ namespace TSQR {
     }
 
     void
-    factor_inner (const Ordinal m,
-                  const Ordinal n,
-                  Scalar R[],
-                  const Ordinal ldr,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const
     {
-      return default_.factor_inner (m, n, R, ldr, A, lda, tau, work);
+      return default_.factor_inner (R, A, tau, work);
     }
 
     void
@@ -549,12 +537,8 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   void
   CombineNative< Ordinal, Scalar, false >::
-  factor_inner (const Ordinal m,
-                const Ordinal n,
-                Scalar R[],
-                const Ordinal ldr,
-                Scalar A[],
-                const Ordinal lda,
+  factor_inner (const MatView<Ordinal, Scalar>& R,
+                const MatView<Ordinal, Scalar>& A,
                 Scalar tau[],
                 Scalar work[]) const
   {
@@ -566,12 +550,12 @@ namespace TSQR {
       Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>;
     using range_type = std::pair<Ordinal, Ordinal>;
 
-    mat_type A_full (A, lda, n);
-    mat_type A_view = subview (A_full, range_type (0, m), ALL ());
-    mat_type R_full (R, ldr, n);
-    mat_type R_view = subview (R_full, range_type (0, n), ALL ());
-    nonconst_vec_type tau_view (tau, n);
-    nonconst_vec_type work_view (work, n);
+    mat_type A_full (A.data(), A.stride(1), A.extent(1));
+    mat_type A_view = subview (A_full, range_type (0, A.extent(0)), ALL ());
+    mat_type R_full (R.data(), R.stride(1), R.extent(1));
+    mat_type R_view = subview (R_full, range_type (0, R.extent(1)), ALL ());
+    nonconst_vec_type tau_view (tau, R.extent(1));
+    nonconst_vec_type work_view (work, R.extent(1));
 
     this->factor_inner (R_view, A_view, tau_view, work_view);
   }

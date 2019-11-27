@@ -188,10 +188,7 @@ namespace TSQR {
         // We should only call this if A_top.extent(1) > 0 and therefore
         // tau.size() > 0 and work.size() > 0, but we've already
         // checked for that, so we don't have to check again.
-        combine.factor_inner (A_cur.extent(0), A_top.extent(1),
-                              A_top.data(), A_top.stride(1),
-                              A_cur.data(), A_cur.stride(1),
-                              tau.data(), work.data());
+        combine.factor_inner (A_top, A_cur, tau.data(), work.data());
         return tau;
       }
 

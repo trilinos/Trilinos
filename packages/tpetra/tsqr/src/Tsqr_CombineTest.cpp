@@ -386,9 +386,7 @@ namespace TSQR {
              << "qr( [R3; A] ), with R3 " << numCols << " by " << numCols
              << " and A " << numRows << " by " << numCols << endl << endl;
       }
-      combiner.factor_inner (numRows, numCols,
-                             R3.data(), R3.stride(1),
-                             A.data(), A.stride(1),
+      combiner.factor_inner (R3.view(), A.view(),
                              tau_R3A.data(), work.data());
       combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
                             A.data(), A.stride(1), tau_R3A.data(),
@@ -535,10 +533,7 @@ namespace TSQR {
       // View of numCols by numCols upper triangle of A1.
       mat_view_type R1 (numCols, numCols, A1.data(), A1.stride(1));
       // qr( [R1; A2] )
-      combiner.factor_inner (numRows, numCols,
-                             R1.data(), R1.stride(1),
-                             A2.data(), A2.stride(1),
-                             tau2.data(), work.data());
+      combiner.factor_inner (R1, A2, tau2.data(), work.data());
       // Extract (a deep copy of) the R factor.
       matrix_type R (R1);
       // Zero out everything below the diagonal of R.

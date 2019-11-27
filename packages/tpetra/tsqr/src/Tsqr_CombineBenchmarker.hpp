@@ -499,8 +499,8 @@ namespace TSQR {
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_inner (numRows, numCols, R.data(), R.stride(1),
-                                 A.data(), A.stride(1), tau.data(), work.data());
+          combiner.factor_inner (R.view(), A.view(),
+                                 tau.data(), work.data());
           combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
                                 A.data(), A.stride(1), tau.data(),
                                 &Q(0, 0), Q.stride(1),
@@ -530,8 +530,8 @@ namespace TSQR {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
           for (int trial = 0; trial < numTrials; ++trial) {
-            combiner.factor_inner (numRows, numCols, R.data(), R.stride(1),
-                                   A.data(), A.stride(1), tau.data(), work.data());
+            combiner.factor_inner (R.view(), A.view(),
+                                   tau.data(), work.data());
             combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
                                   A.data(), A.stride(1), tau.data(),
                                   &Q(0, 0), Q.stride(1),
@@ -607,10 +607,8 @@ namespace TSQR {
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_inner (numRows, numCols,
-                                 R.data(), R.stride(1),
-                                 A.data(), A.stride(1), tau.data(),
-                                 work.data());
+          combiner.factor_inner (R.view(), A.view(),
+                                 tau.data(), work.data());
           combiner.apply_inner (ApplyType("N"),
                                 numRows, numCols, numCols,
                                 A.data(), A.stride(1), tau.data(),
@@ -624,9 +622,7 @@ namespace TSQR {
         timer_type timer ("Combine cache block");
         timer.start();
         for (int trial = 0; trial < numTrials; ++trial) {
-          combiner.factor_inner (numRows, numCols,
-                                 R.data(), R.stride(1),
-                                 A.data(), A.stride(1),
+          combiner.factor_inner (R.view(), A.view(),
                                  tau.data(), work.data());
           combiner.apply_inner (ApplyType("N"),
                                 numRows, numCols, numCols,

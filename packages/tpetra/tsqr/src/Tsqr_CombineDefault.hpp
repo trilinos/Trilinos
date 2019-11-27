@@ -170,14 +170,27 @@ namespace TSQR {
     }
 
     void
-    factor_inner (const Ordinal m,
-                  const Ordinal n,
-                  Scalar R[],
-                  const Ordinal ldr,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[])
+    {
+      const Ordinal m = A.extent(0);
+      const Ordinal n = A.extent(1);
+      factor_inner_impl (m, n, R.data(), R.stride(1),
+                         A.data(), A.stride(1), tau, work);
+    }
+
+  private:
+    void
+    factor_inner_impl (const Ordinal m,
+                       const Ordinal n,
+                       Scalar R[],
+                       const Ordinal ldr,
+                       Scalar A[],
+                       const Ordinal lda,
+                       Scalar tau[],
+                       Scalar work[])
     {
       const Ordinal numRows = m + n;
 
@@ -208,6 +221,7 @@ namespace TSQR {
       deep_copy (A_view, A_buf_bot);
     }
 
+  public:
     void
     factor_pair (const MatView<Ordinal, Scalar>& R_top,
                  const MatView<Ordinal, Scalar>& R_bot,

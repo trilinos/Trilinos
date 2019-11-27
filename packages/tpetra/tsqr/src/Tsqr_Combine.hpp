@@ -228,13 +228,8 @@ namespace TSQR {
     /// A_k]$) entirely in $A_k$ (specifically, in all of $A_k$, not just
     /// below the diagonal).
     ///
-    /// \param m [in] Number of rows in the "bottom" block to factor.
-    ///   The number of rows in the top block doesn't matter, given the
-    ///   assumptions above, as long as $m_{k-1} \geq n$.
-    /// \param n [in] Number of columns (same in both blocks)
     /// \param R [inout] "Top" upper triangular n by n block $R_{k-1}$.
     ///   Overwritten with the new R factor $R_k$ of $[R_{k-1}; A_k]$.
-    /// \param ldr [in] Leading dimension of R
     /// \param A [inout] "Bottom" dense m by n block $A_k$.  Overwritten
     ///   with the Householder reflectors representing the Q factor of
     ///   $[R_{k-1}; A_k]$.
@@ -243,16 +238,12 @@ namespace TSQR {
     /// \param work [out] Workspace (length >= n; don't need lwork or
     ///   workspace query)
     void
-    factor_inner (const Ordinal m,
-                  const Ordinal n,
-                  Scalar R[],
-                  const Ordinal ldr,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const
     {
-      impl_.factor_inner (m, n, R, ldr, A, lda, tau, work);
+      impl_.factor_inner (R, A, tau, work);
     }
 
     /// \brief Factor the pair of square upper triangular matrices [R_top; R_bot].

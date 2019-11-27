@@ -208,12 +208,7 @@ namespace TSQR {
                     std::vector<Scalar>& tau,
                     std::vector<Scalar>& work) const
     {
-      const LocalOrdinal nrows_local = A_cur.extent(0);
-      const LocalOrdinal ncols = A_cur.extent(1);
-
-      combine.factor_inner (nrows_local, ncols, R.data(), R.stride(1),
-                            A_cur.data(), A_cur.stride(1), tau.data(),
-                            work.data());
+      combine.factor_inner (R, A_cur, tau.data(), work.data());
     }
 
   public:
