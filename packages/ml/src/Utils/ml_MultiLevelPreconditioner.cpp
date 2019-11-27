@@ -2122,21 +2122,33 @@ ComputePreconditioner(const bool CheckPreconditioner)
     if (!List_.get("energy minimization: enable", false))
       ML_CHK_ERR(SetSmoothingDamping());
 
-    if (List_.get("aggregation: aux: enable", false)) {
-      double Threshold   = List_.get("aggregation: aux: threshold", 0.0);
-      int MaxAuxLevels   = List_.get("aggregation: aux: max levels", 10);
-      ml_->Amat[LevelID_[0]].aux_data->threshold = Threshold;
+    bool use_aux_agg = List_.get("aggregation: aux: enable", false);
+    bool use_mat_agg = List_.get("aggregation: material: enable", false);
+    if (use_aux_agg && use_mat_agg){ 
+      double AuxThreshold = List_.get("aggregation: aux: threshold", 0.0);
+      int AuxMaxLevels    = List_.get("aggregation: aux: max levels", 10);
+      double MatThreshold = List_.get("aggregation: material: threshold", 0.0);
+      int MatMaxLevels    = List_.get("aggregation: material: max levels", 10);
+      ml_->Amat[LevelID_[0]].aux_data->threshold = AuxThreshold;
+      ml_->Amat[LevelID_[0]].aux_data->m_threshold = MatThreshold; 
       ml_->Amat[LevelID_[0]].aux_data->enable = 1;
-      ml_->Amat[LevelID_[0]].aux_data->max_level = MaxAuxLevels;
+      ml_->Amat[LevelID_[0]].aux_data->max_level = (MatMaxLevels < AuxMaxLevels) ? MatMaxLevels : AuxMaxLevels;
       ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
     }
-
-    if (List_.get("aggregation: material: enable", false)) {
-      double Threshold   = List_.get("aggregation: material: threshold", 0.0);
-      int MaxAuxLevels   = List_.get("aggregation: material: max levels", 10);
-      ml_->Amat[LevelID_[0]].aux_data->threshold = Threshold;
+    else if(use_aux_agg) {
+      double AuxThreshold = List_.get("aggregation: aux: threshold", 0.0);
+      int AuxMaxLevels    = List_.get("aggregation: aux: max levels", 10);
+      ml_->Amat[LevelID_[0]].aux_data->threshold = AuxThreshold;
       ml_->Amat[LevelID_[0]].aux_data->enable = 1;
-      ml_->Amat[LevelID_[0]].aux_data->max_level = MaxAuxLevels;
+      ml_->Amat[LevelID_[0]].aux_data->max_level = AuxMaxLevels;
+      ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
+    }
+    else if (use_mat_agg) {
+      double MatThreshold = List_.get("aggregation: material: threshold", 0.0);
+      int MatMaxLevels    = List_.get("aggregation: material: max levels", 10);
+      ml_->Amat[LevelID_[0]].aux_data->m_threshold = MatThreshold;
+      ml_->Amat[LevelID_[0]].aux_data->enable = 1;
+      ml_->Amat[LevelID_[0]].aux_data->max_level = MatMaxLevels;
       ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
     }
 
