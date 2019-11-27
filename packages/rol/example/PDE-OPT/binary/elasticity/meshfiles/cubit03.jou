@@ -1,0 +1,77 @@
+## /projects/cubit/claro.Lin64.15.3/bin/clarox
+## Cubit Version 15.3
+## Cubit Build 411343
+## Revised 2017-12-05 09:40:29 -0700 (Tue, 05 Dec 2017)
+## Running 12/07/2017 04:10:59 PM
+## Command Options:
+brick x 2 y 1 z 2
+#{Domain = Id("volume")}
+#{dx = 1/16}
+#{meshSize = dx}
+move volume {Domain} x 1 y 0.5 z 1
+create vertex 0 0 {1-dx} on curve 9
+#{v00 = Id("vertex")}
+create vertex 0 0 {1+dx} on curve 9
+#{v01 = Id("vertex")}
+create vertex {2*dx} 0 {1-dx} on surface 3
+#{v02 = Id("vertex")}
+create vertex {2*dx} 0 {1+dx} on surface 3
+#{v03 = Id("vertex")}
+create curve vertex {v00} vertex {v02} on surface 3
+#{c00 = Id("curve")}
+create curve vertex {v02} vertex {v03} on surface 3
+#{c01 = Id("curve")}
+create curve vertex {v03} vertex {v01} on surface 3
+#{c02 = Id("curve")}
+imprint curve {c00} {c01} {c02} with surface 3
+#{patchLC = Id("surface")}
+surface {patchLC} copy move x {1-dx} y 0 z 0
+surface {patchLC} copy move x {1-dx} y 0 z {1-dx}
+surface {patchLC} copy move x {1-dx} y 0 z {-1+dx}
+surface {patchLC} copy move x {2-2*dx} y 0 z 0
+imprint body all
+delete body 2 3 4 5
+sideset 1 add surface 1
+sideset 2 add surface 2
+sideset 3 add surface 4
+sideset 4 add surface 6
+sideset 5 add surface 5
+sideset 6 add surface 13
+sideset 7 add surface 8
+sideset 8 add surface 14
+sideset 9 add surface 15
+sideset 10 add surface 16
+sideset 11 add surface 17
+volume all size {meshSize}
+mesh volume all
+brick x 2 y 1 z 2
+#{Domain = Id("volume")}
+#{dx = 1/8}
+#{meshSize = dx}
+move volume {Domain} x 1 y 0.5 z 1
+#{v00 = Id("vertex")}
+#{v01 = Id("vertex")}
+#{v02 = Id("vertex")}
+#{v03 = Id("vertex")}
+#{c00 = Id("curve")}
+#{c01 = Id("curve")}
+#{c02 = Id("curve")}
+#{patchLC = Id("surface")}
+surface {patchLC} copy move x {1-dx} y 0 z 0
+surface {patchLC} copy move x {1-dx} y 0 z {1-dx}
+surface {patchLC} copy move x {1-dx} y 0 z {-1+dx}
+surface {patchLC} copy move x {2-2*dx} y 0 z 0
+imprint body all
+sideset 1 add surface 1
+sideset 2 add surface 2
+sideset 3 add surface 4
+sideset 4 add surface 6
+sideset 5 add surface 5
+sideset 6 add surface 13
+sideset 7 add surface 8
+sideset 8 add surface 14
+sideset 9 add surface 15
+sideset 10 add surface 16
+sideset 11 add surface 17
+volume all size {meshSize}
+mesh volume all

@@ -101,9 +101,9 @@ namespace MueLu {
     go away, while others should be moved to Xpetra.
   */
   template <class Scalar,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class Utilities_kokkos : public MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_UTILITIES_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -253,7 +253,7 @@ namespace MueLu {
 
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
-    static Kokkos::View<const bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
+    static Kokkos::View<bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
 
     /*! @brief Detect Dirichlet columns based on Dirichlet rows
 
@@ -265,7 +265,7 @@ namespace MueLu {
 
         @return boolean array.  The ith entry is true iff row i is a Dirichlet column.
     */
-    static Kokkos::View<const bool*, typename NO::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows);
+    static Kokkos::View<bool*, typename NO::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows);
 
 
     static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
@@ -404,9 +404,9 @@ namespace MueLu {
     }
 
     // todo: move this to UtilitiesBase::kokkos
-    static Kokkos::View<const bool*, typename Node::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
+    static Kokkos::View<bool*, typename Node::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
 
-    static Kokkos::View<const bool*, typename Node::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
+    static Kokkos::View<bool*, typename Node::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
 
     static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
 
@@ -574,7 +574,16 @@ namespace MueLu {
           // Compute the transpose A of the Tpetra matrix tpetraOp.
           RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
           Tpetra::RowMatrixTransposer<SC,LO,GO,NO> transposer(rcpFromRef(tpetraOp),label);
-          A = transposer.createTranspose(params);
+          {
+            using Teuchos::ParameterList;
+            using Teuchos::rcp;
+            RCP<ParameterList> transposeParams = params.is_null () ?
+              rcp (new ParameterList) :
+              rcp (new ParameterList (*params));
+            transposeParams->set ("sort", false);
+            A = transposer.createTranspose(transposeParams);
+          }
+
           RCP<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > AA   = rcp(new Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>(A));
           RCP<CrsMatrix>                             AAA  = rcp_implicit_cast<CrsMatrix>(AA);
           RCP<CrsMatrixWrap>                         AAAA = rcp(new CrsMatrixWrap(AAA));

@@ -14,7 +14,6 @@
 set (MueLu_UnitTestsEpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (MueLu_UnitTestsEpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (MueLu_UnitTestsTpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (KokkosCore_UnitTest_Serial_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
 # (Temporarily) Disable randomly failing ROL test (#3103)
 set (ROL_example_poisson-inversion_example_01_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")

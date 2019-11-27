@@ -58,16 +58,11 @@ template <class Real>
 class BatchStdVector : public StdVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  const ROL::Ptr<BatchManager<Real> > bman_;
-
-protected:
-  const ROL::Ptr<BatchManager<Real> > getBatchManager(void) const {
-    return bman_;
-  }
+  const Ptr<BatchManager<Real>> bman_;
 
 public:
-  BatchStdVector(const ROL::Ptr<std::vector<Real> > &vec,
-                 const ROL::Ptr<BatchManager<Real> > &bman)
+  BatchStdVector(const Ptr<std::vector<Real>> &vec,
+                 const Ptr<BatchManager<Real>> &bman)
    : StdVector<Real>(vec), bman_(bman) {}
    
   virtual Real dot(const Vector<Real> &x) const {
@@ -85,11 +80,11 @@ public:
     return sum_val;
   }
 
-  virtual ROL::Ptr<Vector<Real> > clone(void) const {
+  virtual Ptr<Vector<Real>> clone(void) const {
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint numMySamples = yval.size();
-    return ROL::makePtr<BatchStdVector>(
-           ROL::makePtr<std::vector<Real>>(numMySamples),bman_);
+    return makePtr<BatchStdVector>(
+           makePtr<std::vector<Real>>(numMySamples),bman_);
   }
 
   int dimension(void) const {
@@ -110,6 +105,10 @@ public:
     Real sum = 0.;
     bman_->reduceAll(&result,&sum,1,r);
     return sum;
+  }
+
+  const Ptr<BatchManager<Real>> getBatchManager(void) const {
+    return bman_;
   }
 };
 

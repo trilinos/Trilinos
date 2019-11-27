@@ -74,11 +74,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
   SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  SET(CTEST_BUILD_FLAGS     "-j35 -i" )
 
-  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
   SET_DEFAULT(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
-  SET(Trilinos_CTEST_DO_ALL_AT_ONCE FALSE)
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
 
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
@@ -87,6 +84,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_VERBOSE_MAKEFILE=ON"
 
     "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
+
+    "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
+    "-DTrilinos_ENABLE_Optika:BOOL=OFF"
 
     "-DHDF5_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_HDF5_ROOT}/include"
     "-DHDF5_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_HDF5_ROOT}/lib"
@@ -117,10 +117,12 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
         "-DTPL_ENABLE_MPI=ON"
             "-DMPI_BASE_DIR:PATH=$ENV{SEMS_OPENMPI_ROOT}"
-            "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket"
         "-DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so.3.2.1"
         "-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3.2.1"
        )
+
+    #NUMA memory binding doesn't work on rocketman currently; TODO: get libnumactl and enable binding again
+    #"-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;core\\\;--map-by\\\;core"
 
     SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
         "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )

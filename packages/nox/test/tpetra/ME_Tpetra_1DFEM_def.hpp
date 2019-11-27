@@ -317,18 +317,18 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
         J_diagonal_ = Teuchos::rcp(new tpetra_vec(xOwnedMap_));
     }
 
-    typedef Kokkos::HostSpace host_space;
+    //typedef Kokkos::HostSpace host_space;
     typedef typename tpetra_vec::execution_space execution_space;
 
     // Create ghosted objects
     if (is_null(uPtr_))
       uPtr_ = Teuchos::rcp(new tpetra_vec(xGhostedMap_));
-    uPtr_->template modify<host_space>();
-    uPtr_->doImport(*(tpetra_extract::getConstTpetraVector(inArgs.get_x())), *importer_, Tpetra::REPLACE);
+      uPtr_->modify_host();
+      uPtr_->doImport(*(tpetra_extract::getConstTpetraVector(inArgs.get_x())), *importer_, Tpetra::REPLACE);
 
     if (is_null(xPtr_)) {
       xPtr_ = Teuchos::rcp(new tpetra_vec(xGhostedMap_));
-      xPtr_->template modify<host_space>();
+      xPtr_->modify_host();
       xPtr_->doImport(*nodeCoordinates_, *importer_, Tpetra::INSERT);
     }
 

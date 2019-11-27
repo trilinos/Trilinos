@@ -11,7 +11,7 @@
 
 #include "KokkosKernels_TestUtils.hpp"
 
-using namespace KokkosBatched::Experimental;
+using namespace KokkosBatched;
 
 namespace Test {
 
@@ -143,17 +143,17 @@ int test_batched_gemm() {
     for (int i=0;i<10;++i) {                                                                                        
       //printf("Testing: LayoutLeft,  Blksize %d\n", i);
       int dimM=i; int dimN=2*i; int dimK=3*i;
-      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Experimental::Trans::NoTranspose>::value) &&
-        (std::is_same<typename ParamTagType::transB,KokkosBatched::Experimental::Trans::NoTranspose>::value)) {
+      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Trans::NoTranspose>::value) &&
+        (std::is_same<typename ParamTagType::transB,KokkosBatched::Trans::NoTranspose>::value)) {
           Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024, dimM, dimK, dimK, dimN, dimM, dimN); }
-      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Experimental::Trans::NoTranspose>::value) &&
-        (std::is_same<typename ParamTagType::transB,KokkosBatched::Experimental::Trans::Transpose>::value)) {
+      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Trans::NoTranspose>::value) &&
+        (std::is_same<typename ParamTagType::transB,KokkosBatched::Trans::Transpose>::value)) {
           Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024, dimM, dimK, dimN, dimK, dimM, dimN); }
-      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Experimental::Trans::Transpose>::value) &&
-        (std::is_same<typename ParamTagType::transB,KokkosBatched::Experimental::Trans::NoTranspose>::value)) {
+      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Trans::Transpose>::value) &&
+        (std::is_same<typename ParamTagType::transB,KokkosBatched::Trans::NoTranspose>::value)) {
           Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024, dimK, dimM, dimK, dimN, dimM, dimN); }
-      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Experimental::Trans::Transpose>::value) &&
-        (std::is_same<typename ParamTagType::transB,KokkosBatched::Experimental::Trans::Transpose>::value)) {
+      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Trans::Transpose>::value) &&
+        (std::is_same<typename ParamTagType::transB,KokkosBatched::Trans::Transpose>::value)) {
           Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024, dimK, dimM, dimN, dimK, dimM, dimN); }
     }
   }
@@ -169,17 +169,17 @@ int test_batched_gemm() {
     for (int i=0;i<10;++i) {                                                                                        
       //printf("Testing: LayoutLeft,  Blksize %d\n", i);
       int dimM=i; int dimN=2*i; int dimK=3*i;
-      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Experimental::Trans::NoTranspose>::value) &&
-        (std::is_same<typename ParamTagType::transB,KokkosBatched::Experimental::Trans::NoTranspose>::value)) {
+      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Trans::NoTranspose>::value) &&
+        (std::is_same<typename ParamTagType::transB,KokkosBatched::Trans::NoTranspose>::value)) {
           Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024, dimM, dimK, dimK, dimN, dimM, dimN); }
-      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Experimental::Trans::NoTranspose>::value) &&
-        (std::is_same<typename ParamTagType::transB,KokkosBatched::Experimental::Trans::Transpose>::value)) {
+      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Trans::NoTranspose>::value) &&
+        (std::is_same<typename ParamTagType::transB,KokkosBatched::Trans::Transpose>::value)) {
           Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024, dimM, dimK, dimN, dimK, dimM, dimN); }
-      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Experimental::Trans::Transpose>::value) &&
-        (std::is_same<typename ParamTagType::transB,KokkosBatched::Experimental::Trans::NoTranspose>::value)) {
+      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Trans::Transpose>::value) &&
+        (std::is_same<typename ParamTagType::transB,KokkosBatched::Trans::NoTranspose>::value)) {
           Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024, dimK, dimM, dimK, dimN, dimM, dimN); }
-      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Experimental::Trans::Transpose>::value) &&
-        (std::is_same<typename ParamTagType::transB,KokkosBatched::Experimental::Trans::Transpose>::value)) {
+      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Trans::Transpose>::value) &&
+        (std::is_same<typename ParamTagType::transB,KokkosBatched::Trans::Transpose>::value)) {
           Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024, dimK, dimM, dimN, dimK, dimM, dimN); }
     }
   }

@@ -56,15 +56,15 @@ namespace Test {
     
     inline
     void run() {
-      _A.sync<DeviceSpaceType>();
-      _B.sync<DeviceSpaceType>();
+      _A.sync_device();
+      _B.sync_device();
 
-      _C.sync<DeviceSpaceType>();
-      _C.modify<DeviceSpaceType>();
+      _C.sync_device();
+      _C.modify_device();
 
       Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
 
-      _C.sync<HostSpaceType>();
+      _C.sync_host();
     }
   };
 }
@@ -80,9 +80,9 @@ TEST( DenseLinearAlgebra, team_gemm_nn ) {
   matrix_type A1("A1", m, k), B1("B1", k, n), C1("C1", m, n);
   matrix_type A2("A2", m, k), B2("B2", k, n), C2("C2", m, n);
 
-  A1.modify<DeviceSpaceType>();
-  B1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  B1.modify_device();
+  C1.modify_device();
 
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
 
@@ -127,9 +127,9 @@ TEST( DenseLinearAlgebra, team_gemm_nt ) {
   matrix_type A2("A2", m, k), B2("B2", n, k), C2("C2", m, n);
 
   // test problem setup
-  A1.modify<DeviceSpaceType>();
-  B1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  B1.modify_device();
+  C1.modify_device();
 
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -253,9 +253,9 @@ TEST( DenseLinearAlgebra, team_gemm_tt ) {
   matrix_type A1("A1", k, m), B1("B1", n, k), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", n, k), C2("C2", m, n);
 
-  A1.modify<DeviceSpaceType>();
-  B1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  B1.modify_device();
+  C1.modify_device();
 
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -297,9 +297,9 @@ TEST( DenseLinearAlgebra, team_gemm_tc ) {
   matrix_type A1("A1", k, m), B1("B1", n, k), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", n, k), C2("C2", m, n);
 
-  A1.modify<DeviceSpaceType>();
-  B1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  B1.modify_device();
+  C1.modify_device();
   
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -341,9 +341,9 @@ TEST( DenseLinearAlgebra, team_gemm_cn ) {
   matrix_type A1("A1", k, m), B1("B1", k, n), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", k, n), C2("C2", m, n);
 
-  A1.modify<DeviceSpaceType>();
-  B1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  B1.modify_device();
+  C1.modify_device();
 
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -385,9 +385,9 @@ TEST( DenseLinearAlgebra, team_gemm_ct ) {
   matrix_type A1("A1", k, m), B1("B1", n, k), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", n, k), C2("C2", m, n);
 
-  A1.modify<DeviceSpaceType>();
-  B1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  B1.modify_device();
+  C1.modify_device();
 
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -429,9 +429,9 @@ TEST( DenseLinearAlgebra, team_gemm_cc ) {
   matrix_type A1("A1", k, m), B1("B1", n, k), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", n, k), C2("C2", m, n);
 
-  A1.modify<DeviceSpaceType>();
-  B1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  B1.modify_device();
+  C1.modify_device();
 
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -497,15 +497,15 @@ namespace Test {
     
     inline
     void run() {
-      _A.sync<DeviceSpaceType>();
-      _x.sync<DeviceSpaceType>();
+      _A.sync_device();
+      _x.sync_device();
       
-      _y.sync<DeviceSpaceType>();
-      _y.modify<DeviceSpaceType>();
+      _y.sync_device();
+      _y.modify_device();
 
       Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
 
-      _y.sync<HostSpaceType>();
+      _y.sync_host();
     }
   };
 }
@@ -520,9 +520,9 @@ TEST( DenseLinearAlgebra, team_gemv_n ) {
   matrix_type A1("A1", m, n), x1("B1", n, 1), y1("C1", m, 1);
   matrix_type A2("A2", m, n), x2("B2", n, 1), y2("C2", m, 1);
 
-  A1.modify<DeviceSpaceType>();
-  x1.modify<DeviceSpaceType>();
-  y1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  x1.modify_device();
+  y1.modify_device();
 
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -563,9 +563,9 @@ TEST( DenseLinearAlgebra, team_gemv_t ) {
   matrix_type A1("A1", m, n), x1("x1", m, 1), y1("y1", n, 1);
   matrix_type A2("A2", m, n), x2("x2", m, 1), y2("y2", n, 1);
 
-  A1.modify<DeviceSpaceType>();
-  x1.modify<DeviceSpaceType>();
-  y1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  x1.modify_device();
+  y1.modify_device();
 
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -606,9 +606,9 @@ TEST( DenseLinearAlgebra, team_gemv_c ) {
   matrix_type A1("A1", m, n), x1("x1", m, 1), y1("y1", n, 1);
   matrix_type A2("A2", m, n), x2("x2", m, 1), y2("y2", n, 1);
 
-  A1.modify<DeviceSpaceType>();
-  x1.modify<DeviceSpaceType>();
-  y1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  x1.modify_device();
+  y1.modify_device();
 
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -671,14 +671,14 @@ namespace Test {
     
     inline
     void run() {
-      _A.sync<DeviceSpaceType>();
+      _A.sync_device();
 
-      _C.sync<DeviceSpaceType>();
-      _C.modify<DeviceSpaceType>();
+      _C.sync_device();
+      _C.modify_device();
 
       Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
 
-      _C.sync<HostSpaceType>();
+      _C.sync_host();
     }
   };
 }
@@ -694,8 +694,8 @@ TEST( DenseLinearAlgebra, team_herk_un ) {
   matrix_type A1("A1", n, k), C1("C1", n, n);
   matrix_type A2("A2", n, k), C2("C2", n, n);
 
-  A1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  C1.modify_device();
   
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -735,8 +735,8 @@ TEST( DenseLinearAlgebra, team_herk_uc ) {
   matrix_type A1("A1", k, n), C1("C1", n, n);
   matrix_type A2("A2", k, n), C2("C2", n, n);
 
-  A1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  C1.modify_device();
   
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -776,8 +776,8 @@ TEST( DenseLinearAlgebra, team_herk_ln ) {
   matrix_type A1("A1", n, k), C1("C1", n, n);
   matrix_type A2("A2", n, k), C2("C2", n, n);
 
-  A1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  C1.modify_device();
   
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -817,8 +817,8 @@ TEST( DenseLinearAlgebra, team_herk_lc ) {
   matrix_type A1("A1", k, n), C1("C1", n, n);
   matrix_type A2("A2", k, n), C2("C2", n, n);
 
-  A1.modify<DeviceSpaceType>();
-  C1.modify<DeviceSpaceType>();
+  A1.modify_device();
+  C1.modify_device();
   
   Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
   
@@ -874,14 +874,14 @@ namespace Test {
     
     inline
     void run() {
-      _A.sync<DeviceSpaceType>();
+      _A.sync_device();
 
-      _b.sync<DeviceSpaceType>();
-      _b.modify<DeviceSpaceType>();
+      _b.sync_device();
+      _b.modify_device();
       
       Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
       
-      _b.sync<HostSpaceType>();
+      _b.sync_host();
     }
   };
 }
@@ -891,8 +891,8 @@ namespace Test {
     matrix_type A1("A1", m, m), b1("b1", m, 1);                         \
     matrix_type A2("A2", m, m), b2("b2", m, 1);                         \
                                                                         \
-    A1.modify<DeviceSpaceType>();                                       \
-    b1.modify<DeviceSpaceType>();                                       \
+    A1.modify_device();                                       \
+    b1.modify_device();                                       \
                                                                         \
     Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);      \
                                                                         \
@@ -1089,14 +1089,14 @@ namespace Test {
     
     inline
     void run() {
-      _A.sync<DeviceSpaceType>();
+      _A.sync_device();
 
-      _B.sync<DeviceSpaceType>();
-      _B.modify<DeviceSpaceType>();
+      _B.sync_device();
+      _B.modify_device();
       
       Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
 
-      _B.sync<HostSpaceType>();
+      _B.sync_host();
     }
   };
 }
@@ -1105,8 +1105,8 @@ namespace Test {
     matrix_type A1("A1", m, m), B1("b1", m, n);                         \
     matrix_type A2("A2", m, m), B2("b2", m, n);                         \
                                                                         \
-    A1.modify<DeviceSpaceType>();                                       \
-    B1.modify<DeviceSpaceType>();                                       \
+    A1.modify_device();                                       \
+    B1.modify_device();                                       \
                                                                         \
     Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);      \
                                                                         \
@@ -1328,12 +1328,12 @@ namespace Test {
     
     inline
     void run() {
-      _A.sync<DeviceSpaceType>();
-      _A.modify<DeviceSpaceType>();
+      _A.sync_device();
+      _A.modify_device();
       
       Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
 
-      _A.sync<HostSpaceType>();
+      _A.sync_host();
     }
   };
 }
@@ -1347,7 +1347,7 @@ TEST( DenseLinearAlgebra, team_chol_u ) {
   matrix_type A1("A1", m, m);
   matrix_type A2("A2", m, m);
 
-  A2.modify<HostSpaceType>();
+  A2.modify_host();
   
   for (int i=0;i<m;++i) 
     A2.h_view(i,i) = 4.0;
@@ -1356,7 +1356,7 @@ TEST( DenseLinearAlgebra, team_chol_u ) {
     A2.h_view(i+1,i) = -1.0;
   }
 
-  A1.modify<DeviceSpaceType>();  
+  A1.modify_device();  
   Kokkos::deep_copy(A1.d_view, A2.h_view);
   
   ::Test::Functor_TeamChol test(uplo,

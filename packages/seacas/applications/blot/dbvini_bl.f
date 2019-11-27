@@ -47,7 +47,7 @@ C   --   NVARGL - IN - the number of global variables
 C   --   NVARNP - IN - the number of nodal variables
 C   --   NVAREL - IN - the number of element variables
 
-      INTEGER NVARHI, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS
+      INTEGER NVARGL, NVARNP, NVAREL, NVARNS, NVARSS
 
 C   --Definition for the ENTRY routine parameters
       CHARACTER ITYP, TYP

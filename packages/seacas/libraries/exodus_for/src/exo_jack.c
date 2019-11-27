@@ -1924,9 +1924,9 @@ void F2C(exgcssf, EXGCSSF)(int *idexo, void_int *side_set_ids, void_int *num_ele
  */
 void F2C(expvp, EXPVP)(int *idexo, char *var_type, int *num_vars, int *ierr, int var_typelen)
 {
-  ex_entity_type obj_type;
-  obj_type = ex_var_type_to_ex_entity_type(*var_type);
-  *ierr    = ex_put_variable_param(*idexo, obj_type, *num_vars);
+  ex_entity_type obj_type = ex_var_type_to_ex_entity_type(*var_type);
+  *ierr                   = ex_put_variable_param(*idexo, obj_type, *num_vars);
+  EX_UNUSED(var_typelen);
 }
 
 /*!
@@ -1935,9 +1935,9 @@ void F2C(expvp, EXPVP)(int *idexo, char *var_type, int *num_vars, int *ierr, int
  */
 void F2C(exgvp, EXGVP)(int *idexo, char *var_type, int *num_vars, int *ierr, int var_typelen)
 {
-  ex_entity_type obj_type;
-  obj_type = ex_var_type_to_ex_entity_type(*var_type);
-  *ierr    = ex_get_variable_param(*idexo, obj_type, num_vars);
+  ex_entity_type obj_type = ex_var_type_to_ex_entity_type(*var_type);
+  *ierr                   = ex_get_variable_param(*idexo, obj_type, num_vars);
+  EX_UNUSED(var_typelen);
 }
 
 /*!
@@ -1951,8 +1951,7 @@ void F2C(expvan, EXPVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
                         * ptrs */
   char *         sptr; /* ptr to temp staging space for strings */
   int            i, slen;
-  ex_entity_type obj_type;
-  obj_type = ex_var_type_to_ex_entity_type(*var_type);
+  ex_entity_type obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
   *ierr = 0; /* default no error */
 
@@ -1989,6 +1988,7 @@ void F2C(expvan, EXPVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
   }
   free(sptr); /* Free up string staging area */
   free(aptr); /* Free up string ptr array */
+  EX_UNUSED(var_typelen);
 }
 /*!
  * read results variables names
@@ -2001,8 +2001,7 @@ void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
                         * ptrs */
   char *         sptr; /* ptr to temp staging space for strings */
   int            i, slen;
-  ex_entity_type obj_type;
-  obj_type = ex_var_type_to_ex_entity_type(*var_type);
+  ex_entity_type obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
   *ierr = 0; /* default no error */
 
@@ -2047,6 +2046,7 @@ void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
 
   free(sptr); /* Free up string staging area */
   free(aptr); /* Free up string ptr array */
+  EX_UNUSED(var_typelen);
 }
 
 /*!
@@ -2355,6 +2355,7 @@ void F2C(exinq, EXINQ)(int *idexo, int *req_info, void_int *ret_int, float *ret_
                        char *ret_char, int *ierr, int ret_charlen)
 {
   *ierr = ex_inquire(*idexo, (ex_inquiry)*req_info, ret_int, ret_float, ret_char);
+  EX_UNUSED(ret_charlen);
 }
 
 /*!
@@ -2378,6 +2379,8 @@ void F2C(excn2s, EXCN2S)(int *idexo, void_int *num_elem_per_set, void_int *num_n
   *ierr = ex_cvt_nodes_to_sides(*idexo, num_elem_per_set, num_nodes_per_set, NULL, /* unused */
                                 NULL,                                              /* unused */
                                 side_sets_elem_list, side_sets_node_list, side_sets_side_list);
+  EX_UNUSED(side_sets_elem_index);
+  EX_UNUSED(side_sets_node_index);
 }
 
 /*!
@@ -2498,9 +2501,9 @@ void F2C(expfrm, EXPFRM)(int *idexo, int *nframe, void_int *cfids, real *coord, 
 
 /*!
  *  Routine to return floating point word size
- * \sa ex_get_cpu_ws()
+ * \sa ex__get_cpu_ws()
  */
-int F2C(excpws, EXCPWS)() { return (ex_get_cpu_ws()); }
+int F2C(excpws, EXCPWS)() { return (ex__get_cpu_ws()); }
 
 /*!
  *  Routine to return large model setting
@@ -2646,9 +2649,8 @@ void F2C(exgvnm, EXGVNM)(int *idexo, char *var_type, int *var_index, char *var_n
 {
   char *sptr; /* ptr to temp staging space for string */
   int   slen;
-  *ierr = 0; /* default no error */
-  ex_entity_type obj_type;
-  obj_type = ex_var_type_to_ex_entity_type(*var_type);
+  *ierr                   = 0; /* default no error */
+  ex_entity_type obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (slen < 0) {
@@ -2676,6 +2678,7 @@ void F2C(exgvnm, EXGVNM)(int *idexo, char *var_type, int *var_index, char *var_n
   ex_fcdcpy(var_name, slen, sptr); /* copy string into Fortran buffer */
 
   free(sptr); /* Free up string staging area */
+  EX_UNUSED(var_typelen);
 }
 
 /*!
@@ -2751,9 +2754,8 @@ void F2C(expvnm, EXPVNM)(int *idexo, char *var_type, int *var_index, char *var_n
 {
   char *sptr; /* ptr to temp staging space for string */
   int   slen;
-  *ierr = 0; /* default no error */
-  ex_entity_type obj_type;
-  obj_type = ex_var_type_to_ex_entity_type(*var_type);
+  *ierr                   = 0; /* default no error */
+  ex_entity_type obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH); /* max str size */
   if (slen < 0) {
@@ -2778,6 +2780,7 @@ void F2C(expvnm, EXPVNM)(int *idexo, char *var_type, int *var_index, char *var_n
     return;
   }
   free(sptr); /* Free up string staging area */
+  EX_UNUSED(var_typelen);
 }
 
 /*!

@@ -34,11 +34,11 @@
  */
 
 #include "elb_allo.h"
-#include "elb_format.h" // for ST_ZU
-#include <cstdarg>      // for va_end, va_arg, va_list, etc
-#include <cstddef>      // for size_t
-#include <cstdio>       // for fprintf, stderr
-#include <cstdlib>      // for exit, malloc
+#include <cstdarg> // for va_end, va_arg, va_list, etc
+#include <cstddef> // for size_t
+#include <cstdio>  // for stderr
+#include <cstdlib> // for exit, malloc
+#include <fmt/ostream.h>
 
 static void *smalloc(size_t n);
 
@@ -49,10 +49,10 @@ static void *smalloc(size_t n);
  *
  * Example Usage:
  *
- *     typedef	struct
- *       {	int	bus1;
- *              int	bus2;
- *              int	dest;
+ *     typedef  struct
+ *       {      int     bus1;
+ *              int     bus2;
+ *              int     dest;
  *      }       POINT;
  *
  *      POINT    **points, corner;
@@ -80,27 +80,27 @@ void *array_alloc(int numdim, ...)
 {
   struct dim
   {
-    size_t index; /* Number of elements in the dimension	*/
-    size_t total; /* Total number of elements 		*/
-    size_t size;  /* Size of a single element in bytes	*/
-    size_t off;   /* offset from beginning of array	*/
-  } dim[3];       /* Info about each dimension 		*/
-  size_t  total;  /* Total size of the array		*/
-  void *  dfield; /* ptr to avoid lint complaints		*/
-  char *  field;  /* The multi-dimensional array		*/
-  char ** ptr;    /* Pointer offset			*/
-  char *  data;   /* Data offset				*/
-  va_list va;     /* Current pointer in the argument list	*/
+    size_t index; /* Number of elements in the dimension        */
+    size_t total; /* Total number of elements           */
+    size_t size;  /* Size of a single element in bytes  */
+    size_t off;   /* offset from beginning of array     */
+  } dim[3];       /* Info about each dimension          */
+  size_t  total;  /* Total size of the array            */
+  void *  dfield; /* ptr to avoid lint complaints               */
+  char *  field;  /* The multi-dimensional array                */
+  char ** ptr;    /* Pointer offset                     */
+  char *  data;   /* Data offset                                */
+  va_list va;     /* Current pointer in the argument list       */
 
   va_start(va, numdim);
 
   if (numdim <= 0) {
-    fprintf(stderr, "array_alloc ERROR: number of dimensions, %d, is <=0\n", numdim);
+    fmt::print(stderr, "array_alloc ERROR: number of dimensions, {}, is <=0\n", numdim);
     va_end(va);
     return nullptr;
   }
   if (numdim > 3) {
-    fprintf(stderr, "array_alloc ERROR: number of dimensions, %d, is > 3\n", numdim);
+    fmt::print(stderr, "array_alloc ERROR: number of dimensions, {}, is > 3\n", numdim);
     va_end(va);
     return nullptr;
   }
@@ -165,10 +165,10 @@ static void *smalloc(size_t n)
   }
 
   if (pntr == nullptr && n != 0) {
-    fprintf(stderr,
-            "smalloc: Out of space - number of bytes "
-            "requested = " ST_ZU "\n",
-            n);
+    fmt::print(stderr,
+               "smalloc: Out of space - number of bytes "
+               "requested = {:n}\n",
+               n);
     exit(0);
   }
   return (pntr);

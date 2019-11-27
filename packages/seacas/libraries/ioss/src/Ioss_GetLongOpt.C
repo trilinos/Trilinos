@@ -33,6 +33,7 @@
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 #include <Ioss_GetLongOpt.h>
 #include <cstring>
+#include <fmt/ostream.h>
 
 namespace Ioss {
   /** \brief Create an empty options database.
@@ -133,8 +134,7 @@ namespace Ioss {
         return t->value;
       }
     }
-    std::cerr << "GetLongOption::retrieve - unenrolled option ";
-    std::cerr << optmarker << opt << "\n";
+    fmt::print(stderr, "GetLongOption::retrieve - unenrolled option {}{}\n", optmarker, opt);
     return nullptr;
   }
 
@@ -210,11 +210,11 @@ namespace Ioss {
               if (matchStatus == PartialMatch) {
                 // First time, print the message header and the first
                 // matched duplicate...
-                std::cerr << "ERROR: " << pname << ": Multiple matches found for option '"
-                          << optmarker << strtok(token, "= ") << "'.\n";
-                std::cerr << "\t" << optmarker << pc->option << ": " << pc->description << "\n";
+                fmt::print(stderr, "ERROR: {}: Multiple matches found for option '{}{}'.\n", pname,
+                           optmarker, strtok(token, "= "));
+                fmt::print(stderr, "\t{}{}: {}\n", optmarker, pc->option, pc->description);
               }
-              std::cerr << "\t" << optmarker << t->option << ": " << t->description << "\n";
+              fmt::print(stderr, "\t{}{}:{}\n", optmarker, t->option, t->description);
               matchStatus = MultipleMatch;
             }
           }
@@ -233,8 +233,7 @@ namespace Ioss {
         }
       }
       else if (matchStatus == NoMatch) {
-        std::cerr << pname << ": unrecognized option ";
-        std::cerr << optmarker << strtok(token, "= ") << "\n";
+        fmt::print(stderr, "{}: unrecognized option {}{}\n", pname, optmarker, strtok(token, "= "));
         return -1; /* no match */
       }
       else if (matchStatus == MultipleMatch) {
@@ -264,7 +263,7 @@ namespace Ioss {
 
     while (token != nullptr) {
       if (token[0] != optmarker || (token[1] == optmarker && strlen(token) == 2)) {
-        std::cerr << name << ": nonoptions not allowed\n";
+        fmt::print(stderr, "{}: nonoptions not allowed\n", name);
         return -1; /* end of options */
       }
 
@@ -313,8 +312,7 @@ namespace Ioss {
         }
       }
       else if (matchStatus == NoMatch) {
-        std::cerr << name << ": unrecognized option ";
-        std::cerr << optmarker << strtok(token, "= ") << "\n";
+        fmt::print(stderr, "{}: unrecognized option {}{}\n", name, optmarker, strtok(token, "= "));
         return -1; /* no match */
       }
 
@@ -326,9 +324,9 @@ namespace Ioss {
 
   /* ----------------------------------------------------------------
      GetLongOption::setcell returns
-     -1	if there was an error
-     0	if the nexttoken was not consumed
-     1	if the nexttoken was consumed
+     -1 if there was an error
+     0  if the nexttoken was not consumed
+     1  if the nexttoken was consumed
      ------------------------------------------------------------------- */
 
   int GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
@@ -340,8 +338,7 @@ namespace Ioss {
     switch (c->type) {
     case GetLongOption::NoValue:
       if (*valtoken == '=') {
-        std::cerr << name << ": unsolicited value for flag ";
-        std::cerr << optmarker << c->option << "\n";
+        fmt::print(stderr, "{}: unsolicited value for flag {}{}\n", name, optmarker, c->option);
         return -1; /* unsolicited value specification */
       }
       // Set to a non-zero value.  Used to be "(char*) ~0", but that
@@ -371,8 +368,8 @@ namespace Ioss {
           c->value = nexttoken;
           return 1;
         }
-        std::cerr << name << ": mandatory value for ";
-        std::cerr << optmarker << c->option << " not specified\n";
+        fmt::print(stderr, "{}: mandatory value for {}{} not specified\n", name, optmarker,
+                   c->option);
         return -1; /* mandatory value not specified */
       }
     default: break;
@@ -388,16 +385,16 @@ namespace Ioss {
   {
     Cell *t;
 
-    outfile << "\nusage: " << pname << " " << ustring << "\n";
+    fmt::print(outfile, "\nusage: {} {}\n", pname, ustring);
     for (t = table; t != nullptr; t = t->next) {
-      outfile << "\t" << optmarker << t->option;
+      fmt::print(outfile, "\t{}{}", optmarker, t->option);
       if (t->type == GetLongOption::MandatoryValue) {
-        outfile << " <$val>";
+        fmt::print(outfile, " <$val>");
       }
       else if (t->type == GetLongOption::OptionalValue) {
-        outfile << " [$val]";
+        fmt::print(outfile, " [$val]");
       }
-      outfile << " (" << t->description << ")\n";
+      fmt::print(outfile, " ({})\n", t->description);
     }
     outfile.flush();
   }

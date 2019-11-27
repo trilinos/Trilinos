@@ -1,14 +1,15 @@
+#include "stk_balance/balance.hpp"
+#include "stk_balance/internal/DetectAndFixMechanisms.hpp"
+#include "stk_balance/internal/Zoltan2ParallelGraph.hpp"
+#include "stk_balance/internal/privateDeclarations.hpp"
+#include "stk_mesh/base/DestroyElements.hpp"
+#include "stk_mesh/base/Selector.hpp"
+#include "stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp"
+#include "stk_tools/mesh_tools/CustomAura.hpp"
+#include "stk_unit_test_utils/getOption.h"
 #include <gtest/gtest.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_util/parallel/Parallel.hpp>
-#include "stk_unit_test_utils/getOption.h"
-#include "stk_balance/internal/privateDeclarations.hpp"
-#include "stk_balance/balance.hpp"
-#include "stk_mesh/base/DestroyElements.hpp"
-#include "stk_balance/internal/DetectAndFixMechanisms.hpp"
-#include "stk_mesh/base/Selector.hpp"
-#include "stk_balance/internal/Zoltan2ParallelGraph.hpp"
-#include "stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp"
 
 namespace
 {
@@ -94,7 +95,7 @@ TEST_F(MechanismMesh2x2, move_components)
         stk::balance::GraphCreationSettings graphSettings;
         stk::mesh::impl::LocalIdMapper localIds(get_bulk(), stk::topology::ELEM_RANK);
 
-        stk::balance::internal::create_custom_ghosting(get_bulk(), graphSettings);
+        stk::tools::create_custom_aura(get_bulk(), get_bulk().mesh_meta_data().globally_shared_part(), "customAura");
 
         Zoltan2ParallelGraph zoltan2Graph;
         stk::balance::internal::fill_zoltan2_parallel_graph(get_bulk(), graphSettings, localIds, zoltan2Graph);

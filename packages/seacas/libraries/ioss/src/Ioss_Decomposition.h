@@ -202,8 +202,6 @@ namespace Ioss {
     void show_progress(const std::string &message) const
     {
       if (m_showProgress) {
-        // Use the output below for debugging...
-        // std::cerr << "[" << m_processor << "].... " << message << "\n";
         Ioss::ParallelUtils pu(m_comm);
         pu.progress(message);
       }

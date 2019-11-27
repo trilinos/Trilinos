@@ -87,10 +87,11 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
@@ -164,7 +165,7 @@ namespace MueLuTests {
     out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);
-    TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
+    TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 100*TMT::eps());
 
   } // Correctness test
 
@@ -175,10 +176,11 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
@@ -267,7 +269,7 @@ namespace MueLuTests {
     out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);
-    TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
+    TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 100*TMT::eps());
 
   } // ImplicitTranspose test
 

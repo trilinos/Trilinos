@@ -80,6 +80,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     ML_Coord2RBM(NumMyRows()/NumPDEEqns_, in_x_coord, in_y_coord, in_z_coord, NullSpacePtr,
         NumPDEEqns_, 0);
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr, RowMatrix_->NumMyRows());
+    // ML_Aggregate_Set_Nullspace copies NullSpacePtr, so we can delete it here
+    delete [] NullSpacePtr; NullSpacePtr = 0;
+
     if (verbose_) {
       std::cout << PrintMsg_ << "Null space type      = elasticity from coordinates" << std::endl;
       std::cout << PrintMsg_ << "  (This option ignores any user-specified nullspace dimension.)" << std::endl;
@@ -92,7 +95,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     NullSpaceDim = List_.get("null space: dimension", NumPDEEqns_);
     NullSpacePtr = List_.get("null space: vectors", NullSpacePtr);
 
-    if (NullSpacePtr == 0) {
+    if ( (NullSpacePtr == 0) && (RowMatrix_->NumMyRows() != 0) ) {
       if (Comm().MyPID() == 0)
         std::cerr << ErrorMsg_ << "Null space vectors is NULL!" << std::endl;
       ML_EXIT(EXIT_FAILURE);

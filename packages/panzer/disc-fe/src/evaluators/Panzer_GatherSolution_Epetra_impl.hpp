@@ -58,7 +58,7 @@
 #include "Panzer_GatherSolution_Input.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Teuchos
@@ -75,7 +75,7 @@
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_Epetra<panzer::Traits::Residual, TRAITS, LO, GO>::
 GatherSolution_Epetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+  const Teuchos::RCP<const panzer::GlobalIndexer>& indexer,
   const Teuchos::ParameterList& p)
   :
   globalIndexer_(indexer),
@@ -83,7 +83,7 @@ GatherSolution_Epetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::vector;
   using std::string;
@@ -133,7 +133,7 @@ GatherSolution_Epetra(
   if (numFields > 0)
     firstName = names[0];
   string n("GatherSolution (Epetra): " + firstName + " (" +
-    typeAsString<EvalT>() + ")");
+    print<EvalT>() + ")");
   this->setName(n);
 } // end of Initializing Constructor (Residual Specialization)
 
@@ -316,7 +316,7 @@ evaluateFields(
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_Epetra<panzer::Traits::Tangent, TRAITS, LO, GO>::
 GatherSolution_Epetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+  const Teuchos::RCP<const panzer::GlobalIndexer>& indexer,
   const Teuchos::ParameterList& p)
   :
   globalIndexer_(indexer),
@@ -324,7 +324,7 @@ GatherSolution_Epetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::string;
   using std::vector;
@@ -374,7 +374,7 @@ GatherSolution_Epetra(
   if (numFields > 0)
     firstName = names[0];
   string n("GatherSolution (Epetra): " + firstName + " (" +
-    typeAsString<EvalT>() + ")");
+    print<EvalT>() + ")");
   this->setName(n);
 } // end of Initializing Constructor (Tangent Specialization)
 
@@ -585,14 +585,14 @@ evaluateFields(
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, TRAITS, LO, GO>::
 GatherSolution_Epetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+  const Teuchos::RCP<const panzer::GlobalIndexer>& indexer,
   const Teuchos::ParameterList& p)
   :
   globalIndexer_(indexer)
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::string;
   using std::vector;
@@ -624,7 +624,7 @@ GatherSolution_Epetra(
     firstName = names[0];
   if (disableSensitivities_)
     n += ", No Sensitivities";
-  n += "): " + firstName + " (" + typeAsString<EvalT>() + ")";
+  n += "): " + firstName + " (" + print<EvalT>() + ")";
   this->setName(n);
 } // end of Initializing Constructor (Jacobian Specialization)
 

@@ -36,6 +36,17 @@
       <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
       <Parameter name="relaxation: sweeps" type="int" value="2"/>
     </ParameterList>
+
+    <Parameter name="repartition: enable" type="bool" value="true"/>
+    <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="200"/>
+    <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+    <Parameter name="repartition: remap parts" type="bool" value="true"/>
+    <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
+    <ParameterList name="repartition: params">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+    </ParameterList>
   </ParameterList>
 
 </ParameterList>

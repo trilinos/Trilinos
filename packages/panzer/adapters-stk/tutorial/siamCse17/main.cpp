@@ -127,7 +127,7 @@ buildSTKIOResponseLibrary(
   const std::vector<Teuchos::RCP<panzer::PhysicsBlock>>&        physicsBlocks,
   const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits>>& linObjFactory,
   const Teuchos::RCP<panzer::WorksetContainer>&                 wkstContainer,
-  const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>&          globalIndexer,
+  const Teuchos::RCP<panzer::GlobalIndexer>&          globalIndexer,
   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cmFactory,
   const Teuchos::RCP<panzer_stk::STK_Interface>&                mesh,
   const Teuchos::ParameterList&                                 closureModelPl,
@@ -181,7 +181,7 @@ main(
   using   panzer::StrPureBasisComp;
   using   panzer::StrPureBasisPair;
   using   panzer::Traits;
-  using   panzer::UniqueGlobalIndexer;
+  using   panzer::GlobalIndexer;
   using   panzer::WorksetContainer;
   using   panzer_stk::buildLOWSFactory;
   using   panzer_stk::SquareQuadMeshFactory;
@@ -345,11 +345,11 @@ main(
 
     // Build the degree of freedom manager and the linear object factory, which
     // creates the linear algebra objects (vectors/matrices) for the problem.
-    RCP<UniqueGlobalIndexer<int, int>> dofManager;
+    RCP<GlobalIndexer> dofManager;
     RCP<LinearObjFactory<Traits>> linObjFactory;
     {
       DOFManagerFactory<int, int> globalIndexerFactory;
-      dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(
+      dofManager = globalIndexerFactory.buildGlobalIndexer(
         opaqueWrapper(MPI_COMM_WORLD), physicsBlocks, connManager);
       linObjFactory =
         rcp(new BlockedEpetraLinearObjFactory<Traits, int>(comm, dofManager));
@@ -460,7 +460,7 @@ buildSTKIOResponseLibrary(
   const std::vector<Teuchos::RCP<panzer::PhysicsBlock>>&        physicsBlocks,
   const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits>>& linObjFactory,
   const Teuchos::RCP<panzer::WorksetContainer>&                 wkstContainer,
-  const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>&          globalIndexer,
+  const Teuchos::RCP<panzer::GlobalIndexer>&          globalIndexer,
   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cmFactory,
   const Teuchos::RCP<panzer_stk::STK_Interface>&                mesh,
   const Teuchos::ParameterList&                                 closureModelPl,

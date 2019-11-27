@@ -54,8 +54,8 @@
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GatherSolution_Input.hpp"
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Phalanx
@@ -78,7 +78,7 @@ template<typename TRAITS, typename LO, typename GO>
 panzer::
 GatherSolution_BlockedEpetra<panzer::Traits::Residual, TRAITS, LO, GO>::
 GatherSolution_BlockedEpetra(
-  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+  const std::vector<Teuchos::RCP<const GlobalIndexer>>&
     indexers,
   const Teuchos::ParameterList& p)
   :
@@ -87,7 +87,7 @@ GatherSolution_BlockedEpetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::string;
   using std::vector;
@@ -137,7 +137,7 @@ GatherSolution_BlockedEpetra(
   if (numFields > 0)
     firstName = names[0];
   string n("GatherSolution (BlockedEpetra): " + firstName + " (" +
-    typeAsString<EvalT>() + ")");
+    print<EvalT>() + ")");
   this->setName(n);
 } // end of Initializing Constructor (Residual Specialization)
 
@@ -329,7 +329,7 @@ evaluateFields(
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_BlockedEpetra<panzer::Traits::Tangent, TRAITS, LO, GO>::
 GatherSolution_BlockedEpetra(
-  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+  const std::vector<Teuchos::RCP<const GlobalIndexer>>&
     indexers,
   const Teuchos::ParameterList& p)
   :
@@ -338,7 +338,7 @@ GatherSolution_BlockedEpetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::string;
   using std::vector;
@@ -388,7 +388,7 @@ GatherSolution_BlockedEpetra(
   if (numFields > 0)
     firstName = names[0];
   string n("GatherSolution Tangent (BlockedEpetra): " + firstName + " (" +
-    typeAsString<EvalT>() + ")");
+    print<EvalT>() + ")");
   this->setName(n);
 } // end of Initializing Constructor (Tangent Specialization)
 
@@ -609,7 +609,7 @@ template<typename TRAITS, typename LO, typename GO>
 panzer::
 GatherSolution_BlockedEpetra<panzer::Traits::Jacobian, TRAITS, LO, GO>::
 GatherSolution_BlockedEpetra(
-  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+  const std::vector<Teuchos::RCP<const GlobalIndexer>>&
     indexers,
   const Teuchos::ParameterList& p)
   :
@@ -617,7 +617,7 @@ GatherSolution_BlockedEpetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::string;
   using std::vector;
@@ -649,7 +649,7 @@ GatherSolution_BlockedEpetra(
     firstName = names[0];
   if (disableSensitivities_)
     n += ", No Sensitivities";
-  n += "):  " + firstName + " (" + typeAsString<EvalT>() + ")";
+  n += "):  " + firstName + " (" + print<EvalT>() + ")";
   this->setName(n);
 } // end of Initializing Constructor (Jacobian Specialization)
 

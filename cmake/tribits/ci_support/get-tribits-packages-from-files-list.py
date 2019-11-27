@@ -109,4 +109,4 @@ projectCiFileChangeLogic = getProjectCiFileChangeLogic(options.projectDir)
 packagesList = getPackagesListFromFilePathsList(trilinosDependencies, filesList, True,
   projectCiFileChangeLogic)
 
-print ','.join(packagesList)
+print(','.join(packagesList))

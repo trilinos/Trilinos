@@ -31,6 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include "iqsort.h"
+#include <cstdint>
+#include <fmt/ostream.h>
 
 namespace {
   template <typename INT> void swap_(INT v[], size_t i, size_t j);
@@ -51,10 +53,12 @@ template <typename T, typename INT> void index_qsort(const T v[], INT iv[], size
   }
   iqsort(v, iv, 0, N - 1);
   iisort(v, iv, N);
+#if defined(DEBUG_QSORT)
   check(v, iv, N);
+#endif
 }
 
-// The following are not part of the public interface...
+// The following are not part of the public interFace...
 
 namespace {
   /* The following 'indexed qsort' routine is modified from Sedgewicks
@@ -133,14 +137,14 @@ namespace {
     size_t j;
     size_t ndx = 0;
 
-    T small = v[iv[0]];
+    T low = v[iv[0]];
     for (size_t i = 1; i < N; i++) {
-      if (v[iv[i]] < small) {
-        small = v[iv[i]];
-        ndx   = i;
+      if (v[iv[i]] < low) {
+        low = v[iv[i]];
+        ndx = i;
       }
     }
-    /* Put smallest value in slot 0 */
+    /* Put lowest value in slot 0 */
     swap_(iv, 0, ndx);
 
     for (size_t i = 1; i < N; i++) {
@@ -154,13 +158,11 @@ namespace {
 
   template <typename T, typename INT> void check(const T v[], INT iv[], size_t N)
   {
-#if defined(DEBUG_QSORT)
-    std::cerr << "Checking sort of " << N + 1 << " values\n";
+    fmt::print(stderr, "Checking sort of {:n} values\n", N + 1);
     size_t i;
     for (i = 1; i < N; i++) {
       SMART_ASSERT(v[iv[i - 1]] <= v[iv[i]]);
     }
-#endif
   }
 } // namespace
 

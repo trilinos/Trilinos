@@ -1,6 +1,7 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2002 Sandia Corporation.                              */
-/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    Copyright 2002 - 2008, 2010, 2011 National Technology &         */
+/*    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   */
+/*    of Contract DE-NA0003525 with NTESS, there is a                 */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
@@ -275,6 +276,7 @@ inline typename Vec<REAL,DIM>::const_iterator Vec<REAL,DIM>::end() const
 typedef Vec<double,3> Vector3d;
 typedef Vec<double,2> Vector2d;
 typedef Vec<double,1> Vector1d;
+typedef Vec<float,2> Float2d;
 typedef Vec<float,3> Float3d;
 
 }} 

@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -48,7 +49,14 @@ public:
   static const int Dim = 3;
 
   static KOKKOS_FUNCTION constexpr value_type max() { return Kokkos::Details::ArithTraits<T>::max() ;}
-  static KOKKOS_FUNCTION constexpr value_type min() { return Kokkos::Details::ArithTraits<T>::min() ;}
+  static KOKKOS_FUNCTION constexpr value_type min() {
+    // Kokkos documentation claims this function is equivalent to numeric_limits<T>::min() which returns the 
+    // smallest positive representatble real value.  However, ArithTraits<T>::min() actually returns the most 
+    // negative real value (which would be equilvalent to numeric_limits<T>::lowest).  If Kokkos ever changes
+    // the behavior of this min  function to be consistent with Kokkos documentation this class will break badly 
+    // as it is the 'lowest' value we really want here.  
+    return Kokkos::Details::ArithTraits<T>::min();
+  }
 
   KOKKOS_FUNCTION Box( point_type const& x_min_corner = point_type(max(), max(), max()),
        point_type const& x_max_corner = point_type(min(), min(), min()))
@@ -109,6 +117,13 @@ std::ostream& operator<<(std::ostream & out, Box<T> const& b)
 {
   out << "{" << b.min_corner() << "->" << b.max_corner() << "}";
   return out;
+}
+
+template<typename T>
+std::istream& operator>>(std::istream& in, Box<T>& b) {
+  char c;
+  in >> c >> b.min_corner() >> c >> c >> b.max_corner() >> c;
+  return in;
 }
 
 }} //namespace stk::search

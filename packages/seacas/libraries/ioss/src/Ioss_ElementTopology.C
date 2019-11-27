@@ -37,8 +37,8 @@
 
 #include <cassert> // for assert
 #include <cstddef> // for size_t
-
-#include <ostream> // for operator<<, basic_ostream, etc
+#include <fmt/ostream.h>
+#include <ostream> // for basic_ostream, etc
 #include <string>  // for string, char_traits, etc
 #include <utility> // for pair
 #include <vector>  // for vector
@@ -124,7 +124,7 @@ Ioss::ElementTopology *Ioss::ElementTopology::factory(const std::string &type, b
   if (iter == registry().end()) {
     if (!ok_to_fail) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: The topology type '" << type << "' is not supported.";
+      fmt::print(errmsg, "ERROR: The topology type '{}' is not supported.", type);
       IOSS_ERROR(errmsg);
     }
   }
@@ -158,7 +158,7 @@ unsigned int Ioss::ElementTopology::get_unique_id(const std::string &type)
   std::string  ltype    = Ioss::Utils::lowercase(type);
   auto         iter     = registry().find(ltype);
   if (iter == registry().end()) {
-    IOSS_WARNING << "WARNING: The topology type '" << type << "' is not supported.\n";
+    fmt::print(IOSS_WARNING, "WARNING: The topology type '{}' is not supported.\n", type);
   }
   else {
     Ioss::ElementTopology *inst = (*iter).second;

@@ -87,10 +87,11 @@ C
      &              0,' ',' ',1)
       END IF
       IRED = 0
-      DO 10 I = 1,3
-      DO 10 J = 1,3
-        S(I,J) = 0.0D0
- 10   CONTINUE
+      DO I = 1,3
+         DO J = 1,3
+            S(I,J) = 0.0D0
+         end do
+      end do
 C
 C  *********************************************************************
       IF (ITYPE .EQ. 13)THEN
@@ -637,10 +638,11 @@ C Zero the matrix
 C Note: constraint at X=Y=Z=0 implies a0 so only 3 equations
 C       remain to solve for a1, a2, and a3
 C
-          DO 400 I = 1, 3
-          DO 400 J = 1, 3
-            S(I,J) = 0.D+00
- 400      CONTINUE
+          DO I = 1, 3
+             DO J = 1, 3
+                S(I,J) = 0.D+00
+             end do
+          end do
 C
 C Fill up matrix for constrained linear least squares
 C

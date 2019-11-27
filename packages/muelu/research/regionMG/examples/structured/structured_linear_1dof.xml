@@ -8,10 +8,15 @@
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
+    <ParameterList name="myAmalgamationFact">
+      <Parameter name="factory"                             type="string" value="AmalgamationFactory"/>
+    </ParameterList>
+
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
       <Parameter name="aggregation: drop tol"               type="double" value="0.00"/>
+      <Parameter name="UnAmalgamationInfo"                  type="string" value="myAmalgamationFact"/>
     </ParameterList>
 
     <ParameterList name="myAggregationFact">
@@ -98,7 +103,7 @@
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
     <ParameterList name="All">
-      <Parameter name="PreSmoother"                         type="string"   value="myILU"/>
+      <Parameter name="PreSmoother"                         type="string"   value="NoSmoother"/>
       <Parameter name="PostSmoother"                        type="string"   value="NoSmoother"/>
       <Parameter name="Nullspace"                           type="string"   value="myNullspaceFact"/>
       <Parameter name="Aggregates"                          type="string"   value="myAggregationFact"/>

@@ -29,6 +29,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    mj_backwardcompat
+    SOURCES mj_backwardcompat.cpp
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
     fix4785
     SOURCES fix4785.cpp
     COMM serial mpi
@@ -137,9 +145,71 @@ TRIBITS_ADD_TEST(
 #    FAIL_REGULAR_EXPRESSION "FAIL"
 #  )
 
+IF (Tpetra_ENABLE_CUDA)
+
+TRIBITS_ADD_TEST(
+    mjTest
+    NAME mjTest_uvmOff
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "I=1.03 P=2,2 O=0 C=4 F=simple TB=1 UVM=0"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    mjTest
+    NAME mjTest_geomgen_uvmOff
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS
+    "P=2,2,2,2 C=16 O=1 F=GeomGenParam.txt TB=1 UVM=0"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    mjTest
+    NAME mjTest_geomgen_noholes_uvmOff
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS
+    "P=2,2,2,2 C=16 O=1 F=GeomGenParam_noholes.txt TB=1 UVM=0"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+#muelu like usecase, don't specify mjparts
+TRIBITS_ADD_TEST(
+    mjTest
+    NAME mjTest_geomgen_nomjparts_uvmOff
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS
+    "C=16 O=1 F=GeomGenParam_noholes.txt TB=1 UVM=0"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+#muelu like usecase, don't specify mjparts, odd parts
+TRIBITS_ADD_TEST(
+    mjTest
+    NAME mjTest_geomgen_nomjparts_odd_uvmOff
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS
+    "C=9 O=1 F=GeomGenParam_noholes.txt TB=1"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+ENDIF()
+
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  taskMapper3
-  SOURCES taskMappingTest3.cpp
+  TaskMappingTest3
+  SOURCES TaskMappingTest3.cpp
   NUM_MPI_PROCS 1
   COMM serial mpi
   ARGS
@@ -150,7 +220,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TaskMapper
+  TaskMappingTest
   SOURCES TaskMappingTest.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi

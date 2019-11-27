@@ -254,11 +254,11 @@ void KokkosSPGEMM
 
   //calculate how many flops per row is performed
   Kokkos::parallel_reduce( team_count_policy_t(a_row_cnt / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, overall_flops);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   //do a parallel prefix sum
   KokkosKernels::Impl::exclusive_parallel_prefix_sum<row_lno_temp_work_view_t, MyExecSpace>(a_row_cnt+1, c_flop_rowmap);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   std::cout << "overall_flops:" << overall_flops << std::endl;
 
@@ -277,7 +277,7 @@ void KokkosSPGEMM
   //fill the hypergraph values.
   //indices of nnzs for a and b nets, for c nets, the row and column index.
   Kokkos::parallel_for( team_fill_policy_t(a_row_cnt / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 }
 
 template <typename HandleType,

@@ -1,12 +1,14 @@
-#---------------------------------------------------------------
-#    Copyright 2006 - 2013 Sandia Corporation.
-#    Under the terms of Contract DE-AC04-94AL85000, there is a
-#    non-exclusive license for use of this work by or on behalf
-#    of the U.S. Government.  Export of this program may require
-#    a license from the United States Government.
-#---------------------------------------------------------------
+#--------------------------------------------------------------------
+#    Copyright 2002 - 2008, 2010, 2011 National Technology &         
+#    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   
+#    of Contract DE-NA0003525 with NTESS, there is a                 
+#    non-exclusive license for use of this work by or on behalf      
+#    of the U.S. Government.  Export of this program may require     
+#    a license from the United States Government.                    
+#--------------------------------------------------------------------
+
 #
-# http://www.boost.org/doc/libs/1_47_0/doc/html/bbv2/overview.html#bbv2.overview.targets
+# http://www.b-oost.org/doc/libs/1_47_0/doc/html/bbv2/overview.html#bbv2.overview.targets
 #
 #function-name main-target-name
 #    : sources
@@ -133,7 +135,7 @@ local xml-files =
   ;
 
 # This is currently a header-only library, so it must not use the lib rule.
-# http://www.boost.org/boost-build2/doc/html/bbv2/faq/header-only-libraries.html
+# http://www.b-oost.org/b-oost-build2/doc/html/bbv2/faq/header-only-libraries.html
 # If sources are added to this library change this target to use the lib rule instead.
 alias stk_transfer
   : # No sources defined for header-only libraries.

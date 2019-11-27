@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -59,6 +60,10 @@ public:
     size_t size() const
     {
         return graphEdges.size();
+    }
+    size_t capacity() const
+    {
+        return graphEdges.capacity();
     }
     void reserve(size_t size)
     {
@@ -105,6 +110,19 @@ public:
     void delete_vertex(stk::mesh::impl::LocalId id)
     {
         m_graphEdges.erase(m_graphEdges.begin()+id);
+    }
+
+    size_t heap_memory_in_bytes() const
+    {
+        int allocOverhead = 16;//may not always be 16, but this seems to be common...
+        size_t bytes = 0;
+        for(const GraphEdgesForElement& graphEdgesForElement : m_graphEdges) {
+            bytes += sizeof(GraphEdgesForElement)
+                     + sizeof(GraphEdge)*graphEdgesForElement.capacity()
+                     + allocOverhead;
+        }
+        bytes += (m_graphEdges.capacity()-m_graphEdges.size())*sizeof(GraphEdgesForElement);
+        return bytes;
     }
 
 private:

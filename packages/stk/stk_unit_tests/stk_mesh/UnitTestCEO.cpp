@@ -1,6 +1,7 @@
-// Copyright (c) 2014, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -35,11 +36,15 @@
 #include <iostream>                     // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/MeshUtils.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
+#include <stk_io/FillMesh.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <string>                       // for string
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
+
 #include "UnitTestCEOCommonUtils.hpp"
 #include "UnitTestCEO2Elem.hpp"
 #include "UnitTestCEO3Elem.hpp"
@@ -56,6 +61,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for EntityProcVec, EntityProc, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/GenerateALefRAMesh.hpp"
 namespace stk { namespace mesh { class Ghosting; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
@@ -120,6 +126,65 @@ TEST(CEO, change_entity_owner_2Elem2ProcMove)
     bulk.my_internal_change_entity_owner(entity_procs);
 
     CEOUtils::checkStatesAfterCEO_2Elem2ProcMove(bulk);
+}
+
+void check_sideset_orientation(const stk::mesh::BulkData& bulk,
+                               const std::vector<stk::mesh::SideSet*> & sidesets,
+                               const stk::mesh::EntityId expectedId,
+                               const stk::mesh::ConnectivityOrdinal expectedOrdinal)
+{
+    stk::mesh::SideSet sideSet = *sidesets[0];
+    stk::mesh::SideSetEntry sideSetEntry;
+    if (sideSet.size() > 0) {
+      sideSetEntry = sideSet[0];
+    }
+    EXPECT_EQ(expectedId, bulk.identifier(sideSetEntry.element));
+    EXPECT_EQ(expectedOrdinal, sideSetEntry.side);
+}
+
+TEST(CEO, change_entity_owner_2ElemWithSideset) {
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    const int pRank = stk::parallel_machine_rank(pm);
+    const int pSize = stk::parallel_machine_size(pm);
+
+    if(pSize != 2) return;
+
+    const std::string outputMeshName = "2ElemWithSideset.e";
+    const stk::mesh::EntityId expectedId = 2;
+    const stk::mesh::ConnectivityOrdinal expectedOrdinal = 5;
+
+    stk::mesh::MetaData meta(3);
+    stk::mesh::BulkData bulk(meta, pm);
+
+    stk::unit_test_util::create_AB_mesh_with_sideset_and_field(bulk, stk::unit_test_util::LEFT, stk::unit_test_util::DECREASING, "dummyField");
+
+    if (pRank == 0)
+    {
+        std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
+        ASSERT_EQ(1u, sidesets.size());
+        EXPECT_EQ(1u, sidesets[0]->size());
+
+        check_sideset_orientation(bulk, sidesets, expectedId, expectedOrdinal);
+    }
+
+    stk::mesh::EntityProcVec entityProc;
+    if (pRank == 0)
+    {
+      entityProc.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEMENT_RANK, expectedId), 1));
+    }
+    bulk.change_entity_owner(entityProc);
+
+    if (pRank == 0)
+    {
+      std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
+      EXPECT_EQ(1u, sidesets.size());
+      EXPECT_EQ(0u, sidesets[0]->size());
+    }
+    if (pRank == 1)
+    {
+      std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
+      check_sideset_orientation(bulk, sidesets, expectedId, expectedOrdinal);
+    }
 }
 
 void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
@@ -239,6 +304,58 @@ TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts_WithAura)
 TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts_WithoutAura)
 {
     test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST(CEO,moveElem_fieldDataOfNodes)
+{
+    stk::ParallelMachine comm{MPI_COMM_WORLD};
+    if(stk::parallel_machine_size(comm) == 2)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulk(meta, comm);
+        auto &field1 = meta.declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "field1");
+        stk::mesh::put_field_on_entire_mesh(field1);
+        stk::io::fill_mesh("generated:1x1x2", bulk);
+
+        stk::mesh::EntityVector sharedNodes;
+        stk::mesh::get_selected_entities(meta.globally_shared_part(), bulk.buckets(stk::topology::NODE_RANK), sharedNodes);
+        for(stk::mesh::Entity node : sharedNodes)
+        {
+            int *data = stk::mesh::field_data(field1, node);
+            *data = stk::parallel_machine_rank(comm);
+        }
+
+        stk::mesh::EntityProcVec thingsToChange;
+        if(stk::parallel_machine_rank(comm) == 1)
+        {
+            stk::mesh::EntityVector ownedElems;
+            stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), ownedElems);
+
+            ASSERT_EQ(1u, ownedElems.size());
+            stk::mesh::Entity elem{ownedElems[0]};
+            thingsToChange.push_back(stk::mesh::EntityProc(elem, 0));
+        }
+
+        if(stk::parallel_machine_rank(comm) == 0)
+        {
+            for(stk::mesh::Entity node : sharedNodes)
+            {
+                int *data = stk::mesh::field_data(field1, node);
+                EXPECT_EQ(0, *data);
+            }
+        }
+
+        bulk.change_entity_owner(thingsToChange);
+
+        if(stk::parallel_machine_rank(comm) == 0)
+        {
+            for(stk::mesh::Entity node : sharedNodes)
+            {
+                int *data = stk::mesh::field_data(field1, node);
+                EXPECT_EQ(0, *data);
+            }
+        }
+    }
 }
 
 }

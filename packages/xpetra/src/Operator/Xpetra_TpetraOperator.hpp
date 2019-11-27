@@ -49,6 +49,7 @@
 #include "Xpetra_TpetraConfigDefs.hpp"
 
 #include <Tpetra_Operator.hpp>
+#include <Tpetra_Details_residual.hpp>
 
 #include "Xpetra_Map.hpp"
 #include "Xpetra_TpetraMap.hpp"
@@ -60,10 +61,10 @@
 
 namespace Xpetra {
  
-  template <class Scalar        = Operator<>::scalar_type,
-            class LocalOrdinal  = typename Operator<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node          = typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraOperator : public Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node > {
   public:
     //@{
@@ -121,6 +122,17 @@ namespace Xpetra {
     //! TpetraOperator constructor to wrap a Tpetra::Operator object
     TpetraOperator(const Teuchos::RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &op) : op_(op) { } //TODO removed const
 
+    //! Gets the operator out
+    RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return op_;}
+
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+      Tpetra::Details::residual(*op_,toTpetra(X),toTpetra(B),toTpetra(R));
+    }
+
+
     //@}
 
   private:
@@ -131,7 +143,7 @@ namespace Xpetra {
 
 
 
-#if ((!defined(HAVE_TPETRA_INST_SERIAL)) && (!defined(HAVE_TPETRA_INST_INT_INT)))
+#if ((!defined(HAVE_TPETRA_INST_SERIAL)) && (!defined(HAVE_TPETRA_INST_INT_INT)) && defined(HAVE_XPETRA_EPETRA))
   // specialization for Tpetra Map on EpetraNode and GO=int
   template <>
   class TpetraOperator<double, int, int, EpetraNode>
@@ -189,13 +201,21 @@ namespace Xpetra {
     //! TpetraOperator constructor to wrap a Tpetra::Operator object
     TpetraOperator(const Teuchos::RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &op) { }
 
-    //@}
+    //! Gets the operator out
+    RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return Teuchos::null;}
+
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    }
+
+  //@}
 
   }; // TpetraOperator class
 #endif
 
 
-#if ((!defined(HAVE_TPETRA_INST_SERIAL)) && (!defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
+#if ((!defined(HAVE_TPETRA_INST_SERIAL)) && (!defined(HAVE_TPETRA_INST_INT_LONG_LONG)) && defined(HAVE_XPETRA_EPETRA))
   // specialization for Tpetra Map on EpetraNode and GO=int
   template <>
   class TpetraOperator<double, int, long long, EpetraNode>
@@ -253,6 +273,13 @@ namespace Xpetra {
     //! TpetraOperator constructor to wrap a Tpetra::Operator object
     TpetraOperator(const Teuchos::RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &op) { }
 
+    //! Gets the operator out
+    RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return Teuchos::null;}
+
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    }
     //@}
 
   }; // TpetraOperator class

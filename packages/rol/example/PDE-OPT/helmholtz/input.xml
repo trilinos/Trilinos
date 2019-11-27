@@ -46,8 +46,8 @@
     <Parameter name="Height"            type="double"  value="10.0"  />
     <Parameter name="X0"                type="double"  value="-5.0"  />
     <Parameter name="Y0"                type="double"  value="-5.0"  />
-    <Parameter name="NX"                type="int"     value="16"    />
-    <Parameter name="NY"                type="int"     value="16"    />
+    <Parameter name="NX"                type="int"     value="64"    />
+    <Parameter name="NY"                type="int"     value="64"    />
     <Parameter name="Partition type"    type="int"     value="1"     />
   </ParameterList>
 

@@ -37,11 +37,11 @@ c This is a test program for the Fortran binding of the EXODUS II
 c database write routines using double precision reals.
 c
 
-c	history -
-c	Original L.A. Schoof
-c	02/25/93 V.R. Yarberry - Added error checks for file creation.
-c	03/04/93 V.R. Yarberry - Fixed bug in expvtt test, ebids was not passed
-c	08/31/93 VRY - updated to match API version 2.00
+c       history -
+c       Original L.A. Schoof
+c       02/25/93 V.R. Yarberry - Added error checks for file creation.
+c       03/04/93 V.R. Yarberry - Fixed bug in expvtt test, ebids was not passed
+c       08/31/93 VRY - updated to match API version 2.00
 c
       include 'exodusII.inc'
 
@@ -82,7 +82,7 @@ c
 c  create EXODUS II files
 c
       exoid = excre ("test.exo",
-     1	 	     EXCLOB, cpu_word_size, io_word_size, ierr)
+     1               EXCLOB, cpu_word_size, io_word_size, ierr)
       write (iout,'("after excre for test.exo,id: ",i4,", err=",i3)')
      1           exoid, ierr
       write (iout,'("  cpu word size: ",i4," io word size: ",i4)')

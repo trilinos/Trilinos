@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -87,21 +88,30 @@ print_entity_key( const MetaData & meta_data, const EntityKey & key );
 
 bool is_topology_root_part(const Part & part);
 
-/** set a cell_topology on a part */
-void set_cell_topology( Part &part, const shards::CellTopology cell_topology);
+/** set a cell_topology on a part.  Please call set_topology() instead. */
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+STK_DEPRECATED void set_cell_topology( Part &part, const shards::CellTopology cell_topology);
+#endif
 
-/** set a cell_topology on a part */
+/** set a cell_topology on a part.  Please call set_topology<>() instead. */
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
 template<class Topology>
-inline void set_cell_topology(Part & part)
+STK_DEPRECATED inline void set_cell_topology(Part & part)
 {
   stk::mesh::set_cell_topology(part, shards::CellTopology(shards::getCellTopologyData<Topology>()));
 }
-
-stk::topology get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<const unsigned*, const unsigned*>& supersets);
-
+#endif
 
 /** set a stk::topology on a part */
 void set_topology(Part &part, stk::topology topology);
+
+template<stk::topology::topology_t Topology>
+inline void set_topology(Part & part)
+{
+  stk::mesh::set_topology(part, stk::topology::topology_type<Topology>());
+}
+
+stk::topology get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<const unsigned*, const unsigned*>& supersets);
 
 /** get the stk::topology given a Shards Cell Topology */
 stk::topology get_topology(shards::CellTopology shards_topology, unsigned spatial_dimension = 3);
@@ -322,7 +332,9 @@ public:
   /** \brief initialize
    *
    */
-  void initialize(size_t spatial_dimension, const std::vector<std::string> &rank_names = std::vector<std::string>());
+  void initialize(size_t spatial_dimension,
+                  const std::vector<std::string> &rank_names = std::vector<std::string>(),
+                  const std::string & coordinate_field_name = std::string());
 
   bool is_initialized() const
   { return !m_entity_rank_names.empty(); }
@@ -383,9 +395,12 @@ public:
    */
   FieldBase* get_field( stk::mesh::EntityRank entity_rank, const std::string& name ) const;
 
+  std::string coordinate_field_name() const;
+  void set_coordinate_field_name(const std::string & coordFieldName);
+
   /** \brief  Get/Set the coordinate field */
-  FieldBase const* coordinate_field() const;
-  void set_coordinate_field(FieldBase* coord_field) { m_coord_field = coord_field; }
+  const FieldBase * coordinate_field() const;
+  void set_coordinate_field(FieldBase* coord_field);
 
   /** \brief  Get all defined fields */
   const FieldVector & get_fields() const {
@@ -464,6 +479,12 @@ public:
   /** \brief  Query if the meta data manager is committed */
   bool is_commit() const { return m_commit ; }
 
+  /** \brief  Allow late field registration */
+  void enable_late_fields() { m_are_late_fields_enabled = true; }
+
+  /** \brief  Query if late fields are allowed */
+  bool are_late_fields_enabled() const { return m_are_late_fields_enabled; }
+
   /** \} */
   //------------------------------------
 
@@ -508,22 +529,28 @@ public:
                                   const void*      arg_init_value = NULL );
 
   /** \brief This function is used to register new cell topologies and their associated ranks with MetaData.
-   * Currently, several shards Cell Topologies are registered with appropriate ranks at initialization time.
-   * See:  internal_declare_known_cell_topology_parts for the whole list.
-   *
-   * Note:  This function also creates the root cell topology part which is accessible from get_cell_topology_root_part
+   *         Please call register_topology() instead.
    */
-  void register_cell_topology(const shards::CellTopology cell_topology, EntityRank in_entity_rank);
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+  STK_DEPRECATED void register_cell_topology(const shards::CellTopology cell_topology, EntityRank in_entity_rank);
+#endif
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+  STK_DEPRECATED shards::CellTopology register_super_cell_topology(stk::topology t);
+#endif
+
+  /** \brief  Register a new topology with MetaData and create the corresponding
+   *          root topology part.
+   */
   Part& register_topology(stk::topology stkTopo);
 
-  shards::CellTopology register_super_cell_topology(stk::topology t);
-
   /** \brief Return the root cell topology part associated with the given cell topology.
-   * This Part is created in register_cell_topology
+   * This Part is created in register_cell_topology.
+   * Please call get_topology_root_part() instead.
    */
-
-  Part &get_cell_topology_root_part(const shards::CellTopology cell_topology) const;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+  STK_DEPRECATED Part &get_cell_topology_root_part(const shards::CellTopology cell_topology) const;
+#endif
 
   /** \brief Return the topology part given a stk::topology.
    */
@@ -535,10 +562,15 @@ public:
    * The cell topology is set on a part through part subsetting with the root
    * cell topology part.
    */
-  shards::CellTopology get_cell_topology( const Part & part) const;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+  STK_DEPRECATED shards::CellTopology get_cell_topology( const Part & part) const;
+#endif
+
   stk::topology get_topology(const Part & part) const;
 
-  shards::CellTopology get_cell_topology( const std::string & topology_name) const;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
+  STK_DEPRECATED shards::CellTopology get_cell_topology( const std::string & topology_name) const;
+#endif
 
   void dump_all_meta_info(std::ostream& out = std::cout) const;
 
@@ -598,12 +630,11 @@ private:
 
   void assign_topology(Part& part, stk::topology stkTopo);
 
-  void assign_cell_topology( Part & part, shards::CellTopology topo);
-
   // Members
 
   BulkData* m_bulk_data;
   bool   m_commit ;
+  bool   m_are_late_fields_enabled;
   impl::PartRepository m_part_repo ;
   CSet   m_attributes ;
 
@@ -613,10 +644,11 @@ private:
   Part * m_aura_part ;
 
   impl::FieldRepository        m_field_repo ;
+  mutable std::string m_coord_field_name;
   mutable FieldBase* m_coord_field;
 
   std::vector< std::string >   m_entity_rank_names ;
-  std::vector<shards::CellTopologyManagedData*> m_created_topologies;
+  std::vector<shards::CellTopologyManagedData*> m_created_topologies;  // Delete after 2019-07-18
 
   unsigned m_spatial_dimension;
   SurfaceBlockMap m_surfaceToBlock;

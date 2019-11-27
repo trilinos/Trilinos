@@ -23,6 +23,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES cxx_main.cpp
   ARGS 
     "--verbose"
+    "--verbose --ortho=ICGS"
 #    "--debug"
 #    "--debug --shortrun"
 #    "--debug --testrecovery --nofullortho, --debug --testrecovery --fullortho"

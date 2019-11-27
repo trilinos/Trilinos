@@ -238,7 +238,7 @@ namespace Iogs {
      */
     virtual int64_t sideset_side_count_proc(int64_t id) const;
 
-    Ioss::IJK_t block_range(int64_t id) const
+    Ioss::IJK_t block_range(int64_t /* id */) const
     {
       return Ioss::IJK_t{{(int)numX, (int)numY, (int)numZ}};
     }

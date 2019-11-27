@@ -51,7 +51,7 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_IndexManager_kokkos.hpp"
@@ -130,7 +130,7 @@ namespace MueLuTests {
     currentLevel.Set("Nullspace",nullSpace);
 
 
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory_kokkos> StructuredAggFact = rcp(new StructuredAggregationFactory_kokkos());
@@ -217,7 +217,7 @@ namespace MueLuTests {
     currentLevel.Set("Nullspace",nullSpace);
 
 
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory_kokkos> StructuredAggFact = rcp(new StructuredAggregationFactory_kokkos());
@@ -250,11 +250,12 @@ namespace MueLuTests {
       return;
     }
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using RealValuedMultiVector = typename Xpetra::MultiVector<real_type, LO, GO, NO>;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using test_factory          = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -309,7 +310,7 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
 
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory_kokkos> StructuredAggFact = rcp(new StructuredAggregationFactory_kokkos());
@@ -341,12 +342,12 @@ namespace MueLuTests {
     coarseLevel.Release("Nullspace", TentativePFact.get());
 
     // check normalization and orthogonality of prolongator columns
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Ptent, true, *Ptent, false,out);
-    Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
+    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,Node> > PtentTPtent = Xpetra::MatrixMatrix<SC,LO,GO,Node>::Multiply(*Ptent, true, *Ptent, false,out);
+    Teuchos::RCP<Xpetra::Vector<SC,LO,GO,Node> > diagVec = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 1000*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  1000*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // UncoupledTentative3D

@@ -116,7 +116,7 @@ namespace {
       // this is what the file looks like: 1 3 4 9
       RCP<const map_type> rng = Tpetra::createUniformContigMap<LO, GO>(1,comm);
       RCP<const map_type> dom = Tpetra::createUniformContigMap<LO, GO>(4,comm);
-      RCP<crs_matrix_type> A = Tpetra::createCrsMatrix<SC, LO, GO>(rng);
+      RCP<crs_matrix_type> A = Tpetra::createCrsMatrix<SC, LO, GO>(rng, 4);
       if (myImageID == 0) {
         A->insertGlobalValues( 0, Teuchos::tuple<GO>(0,1,2,3), Teuchos::tuple<SC>(1.0,3.0,4.0,9.0) );
       }

@@ -35,7 +35,7 @@ C Add copyright and license notice to all files.
 C Permission to assert copyright has been granted; blot is now open source, BSD
 C
 C Revision 1.5  2000/07/11 16:50:23  gdsjaar
-C SGI had problems with logical statment function, inlined it
+C SGI had problems with logical statement function, inlined it
 C
 C Revision 1.4  1997/06/26 17:51:34  caforsy
 C Substituted if NeedsDoubleEscape for ifdef sun.  This define is needed on cougar, sun and ibm platforms

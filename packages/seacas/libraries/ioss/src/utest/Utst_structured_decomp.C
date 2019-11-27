@@ -5,19 +5,12 @@
 #include <cgns/Iocgns_StructuredZoneData.h>
 #include <cgns/Iocgns_Utils.h>
 #include <exception>
+#include <fmt/ostream.h>
 #include <map>
 #include <numeric>
 #include <vector>
 
 namespace {
-  void cleanup(std::vector<Iocgns::StructuredZoneData *> &zones)
-  {
-    for (auto &zone : zones) {
-      delete zone;
-      zone = nullptr;
-    }
-  }
-
   int64_t generate_guid(size_t id, int rank, int proc_count)
   {
     static size_t lpow2 = 0;
@@ -55,103 +48,143 @@ namespace {
     }
   }
 
-  // Helper function that drives all tests...
-  void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
-                          double load_balance_tolerance, size_t proc_count, double min_toler = 0.9,
-                          double max_toler = 1.0)
+} // namespace
+
+void cleanup(std::vector<Iocgns::StructuredZoneData *> &zones)
+{
+  for (auto &zone : zones) {
+    delete zone;
+    zone = nullptr;
+  }
+}
+
+// Helper function that drives all tests...
+void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
+                        double load_balance_tolerance, size_t proc_count, double min_toler = 0.9,
+                        double max_toler = 1.0)
+{
+#if IOSS_DEBUG_OUTPUT
+  bool verbose = true;
+#else
+  bool verbose = false;
+#endif
+
+  double total_work =
+      std::accumulate(zones.begin(), zones.end(), 0.0,
+                      [](double a, Iocgns::StructuredZoneData *b) { return a + b->work(); });
+
+  double avg_work = total_work / (double)proc_count;
+  SECTION("split_zones")
   {
-    double total_work =
-        std::accumulate(zones.begin(), zones.end(), 0.0,
-                        [](double a, Iocgns::StructuredZoneData *b) { return a + b->work(); });
+    Iocgns::Utils::pre_split(zones, avg_work, load_balance_tolerance, 0, proc_count, verbose);
 
-    double avg_work = total_work / (double)proc_count;
-    SECTION("split_zones")
+    double max_work = avg_work * load_balance_tolerance * max_toler;
+    for (const auto zone : zones) {
+      if (zone->is_active()) {
+        CHECK(zone->work() <= max_work);
+      }
+    }
+
+    for (size_t i = 0; i < zones.size(); i++) {
+      CHECK(zones[i]->m_zone == i + 1);
+    }
+
+    SECTION("assign_to_procs")
     {
-      Iocgns::Utils::pre_split(zones, avg_work, load_balance_tolerance, 0, proc_count);
-
-      double max_work = avg_work * load_balance_tolerance * max_toler;
-      for (const auto zone : zones) {
-        if (zone->is_active()) {
-          CHECK(zone->work() <= max_work);
-        }
-      }
-
-      for (size_t i = 0; i < zones.size(); i++) {
-        CHECK(zones[i]->m_zone == i + 1);
-      }
-
-      SECTION("assign_to_procs")
-      {
-        std::vector<size_t> work_vector(proc_count);
-        Iocgns::Utils::assign_zones_to_procs(zones, work_vector);
+      std::vector<size_t> work_vector(proc_count);
+      Iocgns::Utils::assign_zones_to_procs(zones, work_vector, verbose);
 
 #if 0
-	  std::cerr << "\nDecomposition for " << proc_count << " processors; Total work = " << total_work << " Average = " << avg_work << "\n";
-	  for (const auto zone : zones) {
-	    std::cerr << "Zone " << zone->m_name << "\tProc: " << zone->m_proc
-		      << "\tOrdinal: " << zone->m_ordinal[0] << "x" << zone->m_ordinal[1] << "x" << zone->m_ordinal[2]
-		      << " \tWork: " << zone->work() << "\n";
-	  }
+        fmt::print(stderr, "\nDecomposition for {} processors; Total work = {:n}, Average = {:n}\n",
+                   proc_count, (size_t)total_work, (size_t)avg_work);
+
+          for (const auto zone : zones) {
+            if (zone->is_active()) {
+              fmt::print(stderr, "Zone {}\tProc: {}\tOrdinal: {}x{}x{}\tWork: {:n}\n",
+                         zone->m_name, zone->m_proc, zone->m_ordinal[0], zone->m_ordinal[1],
+                         zone->m_ordinal[2], zone->work());
+            }
+          }
 #endif
-        // Each active zone must be on a processor
-        for (const auto zone : zones) {
-          if (zone->is_active()) {
-            CHECK(zone->m_proc >= 0);
-          }
+      // Each active zone must be on a processor
+      for (const auto zone : zones) {
+        if (zone->is_active()) {
+          CHECK(zone->m_proc >= 0);
         }
+      }
 
-        // Work must be min_work <= work <= max_work
-        double min_work = avg_work / load_balance_tolerance * min_toler;
-        for (auto work : work_vector) {
-          CHECK(work >= min_work);
-          CHECK(work <= max_work * max_toler);
+      // Work must be min_work <= work <= max_work
+      double min_work = avg_work / load_balance_tolerance * min_toler;
+      for (auto work : work_vector) {
+        CHECK(work >= min_work);
+        CHECK(work <= max_work * max_toler);
+      }
+
+      // A processor cannot have more than one zone with the same adam zone
+      std::set<std::pair<int, int>> proc_adam_map;
+      for (const auto zone : zones) {
+        if (zone->is_active()) {
+          auto success = proc_adam_map.insert(std::make_pair(zone->m_adam->m_zone, zone->m_proc));
+          CHECK(success.second);
         }
+      }
 
-        // A processor cannot have more than one zone with the same adam zone
-        std::set<std::pair<int, int>> proc_adam_map;
-        for (const auto zone : zones) {
-          if (zone->is_active()) {
-            auto success = proc_adam_map.insert(std::make_pair(zone->m_adam->m_zone, zone->m_proc));
-            CHECK(success.second);
-          }
-        }
+      // Zone Grid Connectivity Checks:
+      update_zgc_data(zones, proc_count);
 
-        // Zone Grid Connectivity Checks:
-        update_zgc_data(zones, proc_count);
-
-        // Zone Grid Connectivity instances can't connect to themselves...
-        for (auto &zone : zones) {
-          if (zone->is_active()) {
-            for (const auto &zgc : zone->m_zoneConnectivity) {
-              if (zgc.is_active()) {
-                CHECK(zgc.m_ownerZone != zgc.m_donorZone);
-                CHECK(zgc.m_ownerGUID != zgc.m_donorGUID);
-              }
+      // Zone Grid Connectivity instances can't connect to themselves...
+      for (auto &zone : zones) {
+        if (zone->is_active()) {
+          for (const auto &zgc : zone->m_zoneConnectivity) {
+            if (zgc.is_active()) {
+              CHECK(zgc.m_ownerZone != zgc.m_donorZone);
+              CHECK(zgc.m_ownerGUID != zgc.m_donorGUID);
             }
           }
         }
+      }
 
-        // Zone Grid Connectivity from_decomp instances must be symmetric...
-        // The GUID encodes the id and the processor,
-        std::map<std::pair<size_t, size_t>, int> is_symm;
-        for (auto &zone : zones) {
-          if (zone->is_active()) {
-            for (const auto &zgc : zone->m_zoneConnectivity) {
-              if (zgc.is_active() && zgc.is_from_decomp()) {
-                is_symm[std::make_pair(std::min(zgc.m_ownerGUID, zgc.m_donorGUID),
-                                       std::max(zgc.m_ownerGUID, zgc.m_donorGUID))]++;
-              }
+      // In Iocgns::Utils::common_write_meta_data, there is code to make
+      // sure that the zgc.m_connectionName  is unique for all zgc instances on
+      // a zone / processor pair (if !parallel_io which is file-per-processor)
+      // The uniquification appends a letter from 'A' to 'Z' to the name
+      // If the name is still not unique, repeats process with 'AA' to 'ZZ'
+      // Make sure that there are not more than 26 + 26*26 + 1 instances of the same
+      // name on a zone to ensure that this works...
+      for (auto &zone : zones) {
+        if (zone->is_active()) {
+          std::map<std::string, int> zgc_map;
+          for (const auto &zgc : zone->m_zoneConnectivity) {
+            if (zgc.is_active() && !zgc.is_from_decomp()) {
+              zgc_map[zgc.m_connectionName]++;
+            }
+          }
+          for (const auto &kk : zgc_map) {
+            CHECK(kk.second < 26 * 26 + 26 + 1);
+          }
+        }
+      } //
+
+      // Zone Grid Connectivity from_decomp instances must be symmetric...
+      // The GUID encodes the id and the processor,
+      std::map<std::pair<size_t, size_t>, int> is_symm;
+      for (auto &zone : zones) {
+        if (zone->is_active()) {
+          for (const auto &zgc : zone->m_zoneConnectivity) {
+            if (zgc.is_active() && zgc.is_from_decomp()) {
+              is_symm[std::make_pair(std::min(zgc.m_ownerGUID, zgc.m_donorGUID),
+                                     std::max(zgc.m_ownerGUID, zgc.m_donorGUID))]++;
             }
           }
         }
-        // Iterate `is_symm` and make sure all entries == 2
-        for (const auto &item : is_symm) {
-          CHECK(item.second == 2);
-        }
+      }
+      // Iterate `is_symm` and make sure all entries == 2
+      for (const auto &item : is_symm) {
+        CHECK(item.second == 2);
       }
     }
   }
-} // namespace
+}
 
 TEST_CASE("single block", "[single_block]")
 {
@@ -305,7 +338,7 @@ TEST_CASE("farmer plenum", "[farmer_plenum]")
 
   for (size_t proc_count = 2; proc_count < 20; proc_count++) {
     std::string name = "Plenum_ProcCount_" + std::to_string(proc_count);
-    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.75); }
   }
   cleanup(zones);
 }
@@ -451,7 +484,7 @@ TEST_CASE("grv", "[grv]")
     SECTION(name)
     {
       double load_balance_tolerance = 1.3;
-      check_split_assign(zones, load_balance_tolerance, proc_count, .7);
+      check_split_assign(zones, load_balance_tolerance, proc_count, .7, 1.1);
     }
   }
   cleanup(zones);
@@ -852,6 +885,42 @@ TEST_CASE("bc-257x129x2", "[bc-257x129x2]")
 
   for (size_t proc_count = 4; proc_count <= 84; proc_count += 4) {
     std::string name = "BC_ProcCount_" + std::to_string(proc_count);
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+  }
+  cleanup(zones);
+}
+
+TEST_CASE("carnes-mesh", "[carnes-mesh]")
+{
+  std::vector<Iocgns::StructuredZoneData *> zones;
+
+  // Failing for decomposition on 64 processors
+  int zone = 1;
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "66x2x200"));
+  zones.back()->m_lineOrdinal = 2;
+
+  double load_balance_tolerance = 1.5;
+
+  for (size_t proc_count = 4; proc_count <= 64; proc_count += 4) {
+    std::string name = "Carnes_ProcCount_" + std::to_string(proc_count);
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+  }
+  cleanup(zones);
+}
+
+TEST_CASE("carnes-blunt-wedge", "[carnes-blunt-wedge]")
+{
+  std::vector<Iocgns::StructuredZoneData *> zones;
+
+  // Failing for decomposition on 64 processors
+  int zone = 1;
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "80x74x1"));
+  zones.back()->m_lineOrdinal = 1;
+
+  double load_balance_tolerance = 1.75;
+
+  for (size_t proc_count = 4; proc_count <= 64; proc_count += 4) {
+    std::string name = "Carnes_BW_ProcCount_" + std::to_string(proc_count);
     SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
   cleanup(zones);

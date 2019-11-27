@@ -37,13 +37,11 @@
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
 #include <cstdlib> // for nullptr, exit, etc
-#include <cstring> // for memcpy
+#include <fmt/ostream.h>
 #include <generated/Iogn_GeneratedMesh.h>
-#include <iomanip>  // for operator<<, setw
-#include <iostream> // for operator<<, basic_ostream, etc
+#include <iostream>
 #include <numeric>
 #include <string>
-#include <string>      // for string, operator==, etc
 #include <sys/types.h> // for ssize_t
 #include <tokenize.h>  // for tokenize
 #include <vector>      // for vector
@@ -79,9 +77,11 @@ namespace Iogn {
 
     if (numX <= 0 || numY <= 0 || numZ <= 0) {
       if (myProcessor == 0) {
-        std::cerr << "ERROR: (Iogn::GeneratedMesh::GeneratedMesh)\n"
-                  << "       All interval counts must be greater than 0.\n"
-                  << "       numX = " << numX << ", numY = " << numY << ", numZ = " << numZ << "\n";
+        fmt::print(stderr,
+                   "ERROR: (Iogn::GeneratedMesh::GeneratedMesh)\n"
+                   "       All interval counts must be greater than 0.\n"
+                   "       numX = {}, numY = {}, numZ = {}\n",
+                   numX, numY, numZ);
       }
       std::exit(EXIT_FAILURE);
     }
@@ -103,12 +103,13 @@ namespace Iogn {
   {
     if (processorCount > numZ) {
       if (myProcessor == 0) {
-        std::cerr << "ERROR: (Iogn::GeneratedMesh::initialize)\n"
-                  << "       The number of mesh intervals in the Z direction (" << numZ << ")\n"
-                  << "       must be at least as large as the number of processors ("
-                  << processorCount << ").\n"
-                  << "       The current parameters do not meet that requirement. Execution will "
-                     "terminate.\n";
+        fmt::print(stderr,
+                   "ERROR: (Iogn::GeneratedMesh::initialize)\n"
+                   "       The number of mesh intervals in the Z direction ({})\n"
+                   "       must be at least as large as the number of processors ({}).\n"
+                   "       The current parameters do not meet that requirement. Execution will "
+                   "terminate.\n",
+                   numZ, processorCount);
       }
       std::exit(EXIT_FAILURE);
     }
@@ -183,9 +184,11 @@ namespace Iogn {
     // desired bounding box.
     if (numX == 0 || numY == 0 || numZ == 0) {
       if (myProcessor == 0) {
-        std::cerr << "ERROR: (Iogn::GeneratedMesh::set_bbox)\n"
-                  << "       All interval counts must be greater than 0.\n"
-                  << "       numX = " << numX << ", numY = " << numY << ", numZ = " << numZ << "\n";
+        fmt::print(stderr,
+                   "ERROR: (Iogn::GeneratedMesh::set_bbox)\n"
+                   "       All interval counts must be greater than 0.\n"
+                   "       numX = {}, numY = {}, numZ = {}\n",
+                   numX, numY, numZ);
       }
       std::exit(EXIT_FAILURE);
     }
@@ -235,7 +238,7 @@ namespace Iogn {
           case 'Y': add_shell_block(PY); break;
           case 'z': add_shell_block(MZ); break;
           case 'Z': add_shell_block(PZ); break;
-          default: std::cerr << "ERROR: Unrecognized shell location option '" << opt << "'.";
+          default: fmt::print(stderr, "ERROR: Unrecognized shell location option '{}'.", opt);
           }
         }
       }
@@ -251,7 +254,7 @@ namespace Iogn {
           case 'Y': add_nodeset(PY); break;
           case 'z': add_nodeset(MZ); break;
           case 'Z': add_nodeset(PZ); break;
-          default: std::cerr << "ERROR: Unrecognized nodeset location option '" << opt << "'.";
+          default: fmt::print(stderr, "ERROR: Unrecognized nodeset location option '{}'.", opt);
           }
         }
       }
@@ -267,7 +270,7 @@ namespace Iogn {
           case 'Y': add_sideset(PY); break;
           case 'z': add_sideset(MZ); break;
           case 'Z': add_sideset(PZ); break;
-          default: std::cerr << "ERROR: Unrecognized sideset location option '" << opt << "'.";
+          default: fmt::print(stderr, "ERROR: Unrecognized sideset location option '{}'.", opt);
           }
         }
       }
@@ -358,22 +361,22 @@ namespace Iogn {
       }
 
       else if (option[0] == "help") {
-        std::cerr << "\nValid Options for GeneratedMesh parameter string:\n"
-                  << "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
-                  << "\toffset:xoff, yoff, zoff\n"
-                  << "\tscale: xscl, yscl, zscl\n"
-                  << "\tzdecomp:n1,n2,n3,...,n#proc\n"
-                  << "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
-                  << "\trotate: axis,angle,axis,angle,...\n"
-                  << "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
-                  << "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
-                  << "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
-                  << "\ttets (split each hex into 6 tets)\n"
-                  << "\tvariables:type,count,...  "
-                     "type=global|element|node|nodal|nodeset|sideset|surface\n"
-                  << "\ttimes:count (number of timesteps to generate)\n"
-                  << "\tshow -- show mesh parameters\n"
-                  << "\thelp -- show this list\n\n";
+        fmt::print(stderr, "\nValid Options for GeneratedMesh parameter string:\n"
+                           "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
+                           "\toffset:xoff, yoff, zoff\n"
+                           "\tscale: xscl, yscl, zscl\n"
+                           "\tzdecomp:n1,n2,n3,...,n#proc\n"
+                           "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
+                           "\trotate: axis,angle,axis,angle,...\n"
+                           "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
+                           "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
+                           "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
+                           "\ttets (split each hex into 6 tets)\n"
+                           "\tvariables:type,count,...  "
+                           "type=global|element|node|nodal|nodeset|sideset|surface\n"
+                           "\ttimes:count (number of timesteps to generate)\n"
+                           "\tshow -- show mesh parameters\n"
+                           "\thelp -- show this list\n\n");
       }
 
       else if (option[0] == "show") {
@@ -381,7 +384,7 @@ namespace Iogn {
       }
 
       else {
-        std::cerr << "ERROR: Unrecognized option '" << option[0] << "'.  It will be ignored.\n";
+        fmt::print(stderr, "ERROR: Unrecognized option '{}'.  It will be ignored.\n", option[0]);
       }
     }
   }
@@ -389,29 +392,32 @@ namespace Iogn {
   void GeneratedMesh::show_parameters() const
   {
     if (myProcessor == 0) {
-      std::cerr << "\nMesh Parameters:\n"
-                << "\tIntervals: " << numX << " by " << numY << " by " << numZ << "\n"
-                << "\tX = " << sclX << " * (0.." << numX << ") + " << offX << "\tRange: " << offX
-                << " <= X <= " << offX + numX * sclX << "\n"
-                << "\tY = " << sclY << " * (0.." << numY << ") + " << offY << "\tRange: " << offY
-                << " <= Y <= " << offY + numY * sclY << "\n"
-                << "\tZ = " << sclZ << " * (0.." << numZ << ") + " << offZ << "\tRange: " << offZ
-                << " <= Z <= " << offZ + numZ * sclZ << "\n\n"
-                << "\tNode Count (total)    = " << std::setw(9) << node_count() << "\n"
-                << "\tElement Count (total) = " << std::setw(9) << element_count() << "\n"
-                << "\tBlock Count           = " << std::setw(9) << block_count() << "\n"
-                << "\tNodeSet Count         = " << std::setw(9) << nodeset_count() << "\n"
-                << "\tSideSet Count         = " << std::setw(9) << sideset_count() << "\n\n"
-                << "\tTimestep Count        = " << std::setw(9) << timestep_count() << "\n\n";
+      fmt::print(stderr,
+                 "\nMesh Parameters:\n"
+                 "\tIntervals: {} by {} by {}\n"
+                 "\tX = {} * (0..{}) + {}\tRange: {} <= X <= {}\n"
+                 "\tY = {} * (0..{}) + {}\tRange: {} <= Y <= {}\n"
+                 "\tZ = {} * (0..{}) + {}\tRange: {} <= Z <= {}\n\n"
+                 "\tNode Count (total)    = {:12n}\n"
+                 "\tElement Count (total) = {:12n}\n"
+                 "\tBlock Count           = {:12n}\n"
+                 "\tNodeSet Count         = {:12n}\n"
+                 "\tSideSet Count         = {:12n}\n"
+                 "\tTimestep Count        = {:12n}\n\n",
+                 numX, numY, numZ, sclX, numX, offX, offX, offX + numX * sclX, sclY, numY, offY,
+                 offY, offY + numY * sclY, sclZ, numZ, offZ, offZ, offZ + numZ * sclZ, node_count(),
+                 element_count(), block_count(), nodeset_count(), sideset_count(),
+                 timestep_count());
+
       if (doRotation) {
-        std::cerr << "\tRotation Matrix: \n\t" << std::scientific;
+        fmt::print(stderr, "\tRotation Matrix: \n\t");
         for (auto &elem : rotmat) {
           for (double jj : elem) {
-            std::cerr << std::setw(14) << jj << "\t";
+            fmt::print("{:14.e}\t", jj);
           }
-          std::cerr << "\n\t";
+          fmt::print("\n\t");
         }
-        std::cerr << std::fixed << "\n";
+        fmt::print("\n");
       }
     }
   }
@@ -1486,9 +1492,11 @@ namespace Iogn {
       variableCount[Ioss::SIDEBLOCK] = count;
     }
     else {
-      std::cerr << "ERROR: (Iogn::GeneratedMesh::set_variable_count)\n"
-                << "       Unrecognized variable type '" << type << "'. Valid types are:\n"
-                << "       global, element, node, nodal, nodeset, surface, sideset.\n";
+      fmt::print(stderr,
+                 "ERROR: (Iogn::GeneratedMesh::set_variable_count)\n"
+                 "       Unrecognized variable type '{}'. Valid types are:\n"
+                 "       global, element, node, nodal, nodeset, surface, sideset.\n",
+                 type);
     }
   }
 
@@ -1519,8 +1527,8 @@ namespace Iogn {
       n3 = 2;
     }
     else {
-      std::cerr << "\nInvalid axis specification '" << axis
-                << "'. Valid options are 'x', 'y', or 'z'\n";
+      fmt::print(stderr, "\nInvalid axis specification '{}'. Valid options are 'x', 'y', or 'z'\n",
+                 axis);
       return;
     }
 

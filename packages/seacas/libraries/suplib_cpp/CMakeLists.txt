@@ -15,6 +15,7 @@ SET(SOURCES
   GetLongOpt.C
   smart_assert.C
   timer.C
+  copyright.C
   SL_tokenize.C
   )
 

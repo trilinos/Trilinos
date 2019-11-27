@@ -88,7 +88,7 @@ Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >
 buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                           const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & linObjFactory,
                           const Teuchos::RCP<panzer::WorksetContainer> & wkstContainer,
-                          const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                          const Teuchos::RCP<panzer::GlobalIndexer> & globalIndexer,
                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                           const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                           const Teuchos::ParameterList & closure_model_pl,
@@ -242,11 +242,11 @@ int main(int argc, char *argv[])
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     // build the state dof manager and LOF
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
+    RCP<panzer::GlobalIndexer> dofManager;
     RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     {
-      panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-      dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+      panzer::DOFManagerFactory globalIndexerFactory;
+      dofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
       linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(comm,dofManager));
     }
 
@@ -362,7 +362,7 @@ Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >
 buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                           const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & linObjFactory,
                           const Teuchos::RCP<panzer::WorksetContainer> & wkstContainer,
-                          const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                          const Teuchos::RCP<panzer::GlobalIndexer> & globalIndexer,
                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                           const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                           const Teuchos::ParameterList & closure_model_pl,

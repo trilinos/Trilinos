@@ -98,8 +98,6 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    GO nx = 1000;
-
     std::string xmlFileName = "test.xml";
 
     if (lib == Xpetra::UseTpetra) {
@@ -111,6 +109,7 @@ namespace MueLuTests {
       typedef Tpetra::MultiVector<real_type,LO,GO,NO> dtpetra_multivector_type;
 
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -209,6 +208,7 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_EPETRA
 
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -304,8 +304,6 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    GO nx = 1000;
-
     Teuchos::ParameterList mylist;
     mylist.set("xml parameter file","test.xml");
 
@@ -314,6 +312,7 @@ namespace MueLuTests {
       typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -409,6 +408,7 @@ namespace MueLuTests {
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -498,8 +498,6 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    GO nx = 972;
-
     for (int k = 0; k < 2; k++) {
       std::string xmlFileName;
       if (k == 0) xmlFileName = "testPDE.xml";
@@ -512,6 +510,7 @@ namespace MueLuTests {
         int numPDEs=3;
 
         // Matrix
+        GO nx = 972;
         RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
         RCP<const Map > map = Op->getRowMap();
 
@@ -595,6 +594,7 @@ namespace MueLuTests {
         int numPDEs=3;
 
         // Matrix
+        GO nx = 972;
         RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
         RCP<const Map > map = Op->getRowMap();
 
@@ -688,7 +688,6 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    GO nx = 1000;
     std::string xmlFileName = "testReuse.xml";
 
     if (lib == Xpetra::UseTpetra) {
@@ -696,6 +695,7 @@ namespace MueLuTests {
       typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -742,6 +742,7 @@ namespace MueLuTests {
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 

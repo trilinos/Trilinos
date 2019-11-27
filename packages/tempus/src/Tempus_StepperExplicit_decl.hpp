@@ -13,6 +13,24 @@
 #include "Tempus_Stepper.hpp"
 
 
+template<class Scalar>
+class ExplicitODEParameters
+{
+  public:
+    /// Constructor
+    ExplicitODEParameters()
+      : timeStepSize_(Scalar(0.0)), stageNumber_(0)
+    {}
+    /// Constructor
+    ExplicitODEParameters(Scalar timeStepSize, int stageNumber = 0)
+      : timeStepSize_(timeStepSize), stageNumber_(stageNumber)
+    {}
+
+    Scalar                                timeStepSize_;
+    int                                   stageNumber_;
+};
+
+
 namespace Tempus {
 
 
@@ -41,19 +59,11 @@ public:
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Set solver via ParameterList solver name.
-    virtual void setSolver(std::string solverName);
-    /// Set solver via solver ParameterList.
     virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    /// Set solver.
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null);
+
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return Teuchos::null; }
-
-    virtual std::string getStepperType() const
-     { return stepperPL_->get<std::string>("Stepper Type"); }
 
     /// Pass initial guess to Newton solver (only relevant for implicit solvers)
     //  thus a no-op for explicit steppers.
@@ -66,37 +76,6 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()    const {return true;}
     virtual bool isMultiStepMethod()  const {return !isOneStepMethod();}
-
-    virtual bool getEmbedded() const
-      { return stepperPL_->get<bool>("Use Embedded", false); }
-
-    virtual void setUseFSAL(bool a) {stepperPL_->set<bool>("Use FSAL", a);}
-    virtual bool getUseFSAL() const
-      {
-        bool defaultUseFSAL =
-          this->getDefaultParameters()->template get<bool>("Use FSAL");
-        return stepperPL_->get<bool>("Use FSAL", defaultUseFSAL);
-      }
-
-    virtual void setICConsistency(std::string s)
-      {stepperPL_->set<std::string>("Initial Condition Consistency", s);}
-    virtual std::string getICConsistency() const
-      {
-        std::string defaultICConsistency = this->getDefaultParameters()->
-          template get<std::string>("Initial Condition Consistency");
-        return stepperPL_->get<std::string>("Initial Condition Consistency",
-                                            defaultICConsistency);
-      }
-
-    virtual void setICConsistencyCheck(bool c)
-      {stepperPL_->set<bool>("Initial Condition Consistency Check", c);}
-    virtual bool getICConsistencyCheck() const
-      {
-        bool defaultICConsistencyCheck = this->getDefaultParameters()->
-          template get<bool>("Initial Condition Consistency Check");
-        return stepperPL_->get<bool>("Initial Condition Consistency Check",
-                                     defaultICConsistencyCheck);
-      }
 
     /// Set x for Stepper storage.
     virtual void setStepperX(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
@@ -122,20 +101,19 @@ public:
     virtual void evaluateExplicitODE(
       Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDot,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
-      const Scalar time);
+      const Scalar time,
+      const Teuchos::RCP<ExplicitODEParameters<Scalar> > & p );
 
     /// Evaluate xDotDot = f(x, xDot, t).
     virtual void evaluateExplicitODE(
       Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xDot,
-      const Scalar time);
+      const Scalar time,
+      const Teuchos::RCP<ExplicitODEParameters<Scalar> > & p );
   //@}
 
-
 protected:
-
-  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
 
   /// Explicit ODE ModelEvaluator
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;

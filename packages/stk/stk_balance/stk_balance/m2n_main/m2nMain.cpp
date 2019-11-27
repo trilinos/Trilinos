@@ -15,6 +15,7 @@
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/environment/FileUtils.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
+#include <stk_util/util/string_utils.hpp>
 
 #include <string>
 #include <iostream>
@@ -64,7 +65,7 @@ std::string get_examples(const std::string &executableName)
 
 ParsedOptions parse_m2n_command_line(int argc, const char**argv, stk::CommandLineParserParallel &commandLine, MPI_Comm comm)
 {
-    std::string execName = stk::util::tailname(argv[0]);
+    std::string execName = stk::tailname(argv[0]);
     stk::parse_command_line(argc, argv, get_quick_example(execName, comm), get_examples(execName), commandLine, comm);
 
     std::string inFile = commandLine.get_option_value<std::string>(m2nOptions.infile.name);

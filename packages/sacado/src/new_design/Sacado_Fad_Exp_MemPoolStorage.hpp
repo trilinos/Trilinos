@@ -31,6 +31,7 @@
 #define SACADO_FAD_EXP_MEMPOOLSTORAGE_HPP
 
 #include <type_traits>
+#include <utility>
 #include <new>
 #include <cstring>
 
@@ -181,6 +182,7 @@ namespace Sacado {
       typedef typename std::remove_cv<T>::type value_type;
       static constexpr bool is_statically_sized = false;
       static constexpr int static_size = 0;
+      static constexpr bool is_view = false;
 
       //! Turn MemPoolStorage into a meta-function class usable with mpl::apply
       template <typename TT>
@@ -197,17 +199,18 @@ namespace Sacado {
       //! Default constructor
       KOKKOS_INLINE_FUNCTION
       MemPoolStorage() :
-        val_(), sz_(0), len_(0), dx_(NULL), myPool_(defaultPool_) {}
+        val_(), sz_(0), len_(0), dx_(nullptr), myPool_(defaultPool_) {}
 
       //! Constructor with value
       MemPoolStorage(const T & x) :
-        val_(x), sz_(0), len_(0), dx_(NULL), myPool_(defaultPool_) {}
+        val_(x), sz_(0), len_(0), dx_(nullptr), myPool_(defaultPool_) {}
 
       //! Constructor with size \c sz
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      MemPoolStorage(const int sz, const T & x, const DerivInit zero_out) :
+      MemPoolStorage(const int sz, const T & x,
+                     const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz), len_(sz), myPool_(defaultPool_) {
         if (zero_out == InitDerivArray)
           dx_ = mp_array<T>::get_and_fill(sz_, myPool_);
@@ -215,10 +218,31 @@ namespace Sacado {
           dx_ = mp_array<T>::get(sz_, myPool_);
       }
 
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      KOKKOS_INLINE_FUNCTION
+      MemPoolStorage(const int sz, const int i, const value_type & x) :
+        MemPoolStorage(sz, x, InitDerivArray) {
+        dx_[i]=1.;
+      }
+
       //! Copy constructor
       MemPoolStorage(const MemPoolStorage& x) :
         val_(x.val_), sz_(x.sz_), len_(x.sz_), myPool_(x.myPool_) {
         dx_ = mp_array<T>::get_and_fill(x.dx_, sz_, myPool_);
+      }
+
+      //! Move constructor
+      MemPoolStorage(MemPoolStorage&& x) :
+        val_(std::move(x.val_)), sz_(x.sz_), len_(x.len_), dx_(x.dx_),
+        myPool_(x.myPool_) {
+        x.sz_ = 0;
+        x.len_ = 0;
+        x.dx_ = nullptr;
       }
 
       //! Destructor
@@ -245,6 +269,20 @@ namespace Sacado {
           }
           else
             mp_array<T>::copy(x.dx_, dx_, sz_);
+        }
+        return *this;
+      }
+
+      //! Move assignment
+      MemPoolStorage& operator=(MemPoolStorage&& x) {
+        if (this != &x) {
+          if (len_ != 0)
+            mp_array<T>::destroy_and_release(dx_, len_, myPool_);
+          val_ = std::move(x.val_);
+          sz_ = x.sz_; x.sz_ = 0;
+          len_ = x.len_; x.len_ = 0;
+          dx_ = x.dx_; x.dx_ = nullptr;
+          myPool_ = x.myPool_;
         }
         return *this;
       }

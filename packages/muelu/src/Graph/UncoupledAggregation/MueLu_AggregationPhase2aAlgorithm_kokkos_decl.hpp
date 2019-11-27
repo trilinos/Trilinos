@@ -81,15 +81,17 @@ namespace MueLu {
 
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class AggregationPhase2aAlgorithm_kokkos :
     public MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AGGREGATIONPHASE2AALGORITHM_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
+    using memory_space = typename LWGraph_kokkos::memory_space;
+
     //! @name Constructors/Destructors.
     //@{
 
@@ -107,7 +109,23 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+    void BuildAggregates(const Teuchos::ParameterList& params,
+                         const LWGraph_kokkos& graph,
+                         Aggregates_kokkos& aggregates,
+                         Kokkos::View<unsigned*, memory_space>& aggStat,
+                         LO& numNonAggregatedNodes) const;
+
+    void BuildAggregatesRandom(const Teuchos::ParameterList& params,
+                               const LWGraph_kokkos& graph,
+                               Aggregates_kokkos& aggregates,
+                               Kokkos::View<unsigned*, memory_space>& aggStat,
+                               LO& numNonAggregatedNodes) const;
+
+    void BuildAggregatesDeterministic(const Teuchos::ParameterList& params,
+                                      const LWGraph_kokkos& graph,
+                                      Aggregates_kokkos& aggregates,
+                                      Kokkos::View<unsigned*, memory_space>& aggStat,
+                                      LO& numNonAggregatedNodes) const;
     //@}
 
     std::string description() const { return "Phase 2a (secondary)"; }

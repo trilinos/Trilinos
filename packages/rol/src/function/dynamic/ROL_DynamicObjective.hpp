@@ -46,7 +46,6 @@
 #define ROL_DYNAMICOBJECTIVE_HPP
 
 #include "ROL_DynamicFunction.hpp"
-#include "ROL_TimeStamp.hpp"
 
 
 /** @ingroup func_group
@@ -70,12 +69,16 @@
 namespace ROL {
 
 template<typename Real> 
-class DynamicObjective {
+class DynamicObjective : public DynamicFunction<Real> {
 public:
 
   using V  = Vector<Real>;
   using TS = TimeStamp<Real>;
 
+
+  DynamicObjective( std::initializer_list<std::string> zero_deriv_terms={} ) :
+    DynamicFunction<Real>( zero_deriv_terms ) {}
+  
   virtual ~DynamicObjective() {}
 
   virtual void update( const V& uo, const V& un, const V& z, const TS& timeStamp ) {
@@ -84,9 +87,9 @@ public:
     update_z( z, timeStamp );
   }
 
-  virtual void update_uo( const V& uo, const TS& timeStamp ) { }
-  virtual void update_un( const V& un, const TS& timeStamp ) { }
-  virtual void update_z(  const V& z,  const TS& timeStamp ) { }
+  using DynamicFunction<Real>::update_uo;
+  using DynamicFunction<Real>::update_un;
+  using DynamicFunction<Real>::update_z; 
 
   virtual Real value( const V& uo, const V& un, 
                       const V& z, const TS& timeStamp ) const = 0;

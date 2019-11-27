@@ -8,10 +8,15 @@
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
+    <ParameterList name="myAmalgamationFact">
+      <Parameter name="factory"                             type="string" value="AmalgamationFactory"/>
+    </ParameterList>
+
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
       <Parameter name="aggregation: drop tol"               type="double" value="0.00"/>
+      <Parameter name="UnAmalgamationInfo"                  type="string" value="myAmalgamationFact"/>
     </ParameterList>
 
     <ParameterList name="myAggregationFact">
@@ -87,6 +92,37 @@
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="myChebyshev">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"  type="string" value="CHEBYSHEV"/>
+      <ParameterList name="ParameterList">
+        <Parameter      name="chebyshev: degree"                    type="int"      value="2"/>
+        <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="7"/>
+        <Parameter      name="chebyshev: min eigenvalue"            type="double"   value="1.0"/>
+        <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="mySGS">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type" type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"             type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps"           type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor"   type="double" value="0.8"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="myJacobi">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type" type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"             type="string" value="Jacobi"/>
+        <Parameter name="relaxation: sweeps"           type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor"   type="double" value="0.6666"/>
+      </ParameterList>
+    </ParameterList>
+
   </ParameterList>
 
 
@@ -98,17 +134,23 @@
     <Parameter name="coarse: max size"                      type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
+    <ParameterList name="DataToWrite">
+       <!-- <Parameter name="Matrices"          type="string"   value="{0,1}"/> -->
+       <Parameter name="Prolongators"      type="string"   value="{1,2}"/>
+       <!-- <Parameter name="Restrictors"       type="string"   value="{1,2}"/> -->
+    </ParameterList>
+
     <ParameterList name="All">
-      <Parameter name="PreSmoother"                         type="string"   value="myILU"/>
-      <Parameter name="PostSmoother"                        type="string"   value="NoSmoother"/>
+      <Parameter name="PreSmoother"                         type="string"   value="myJacobi"/>
+      <Parameter name="PostSmoother"                        type="string"   value="myJacobi"/>
       <Parameter name="Nullspace"                           type="string"   value="myNullspaceFact"/>
       <Parameter name="Aggregates"                          type="string"   value="myAggregationFact"/>
       <Parameter name="lCoarseNodesPerDim"                  type="string"   value="myAggregationFact"/>
       <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
       <Parameter name="A"                                   type="string"   value="myRAPFact"/>
-      <!-- <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/> -->
-      <Parameter name="CoarseSolver"                        type="string"   value="myILU"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
+      <!-- <Parameter name="CoarseSolver"                        type="string"   value="myILU"/> -->
       <Parameter name="Coordinates"                         type="string"   value="myProlongatorFact"/>
       <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
       <Parameter name="numDimensions"                       type="string"   value="myCoordTransferFact"/>

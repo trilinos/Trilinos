@@ -40,6 +40,7 @@
 #include <cstddef> // for nullptr
 
 namespace Ioss {
+  const char *Tri7::name = "tri7";
   class St_Tri7 : public ElementVariableType
   {
   public:

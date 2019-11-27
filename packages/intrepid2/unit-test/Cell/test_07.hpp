@@ -62,7 +62,7 @@ namespace Intrepid2 {
     try {                                                               \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::logic_error &err) {                                      \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
@@ -105,16 +105,16 @@ namespace Intrepid2 {
     }                                                                   \
       
     template<typename cellTopologyTagType,
-             typename outputViewType,
+             typename OutputViewType,
              typename inputViewType>
     struct F_checkPointInclusion {
       double _offset;
-      outputViewType _output;
+      OutputViewType _output;
       inputViewType _input;
 
       KOKKOS_INLINE_FUNCTION
       F_checkPointInclusion(const double offset_, 
-                            outputViewType output_,
+                            OutputViewType output_,
                             inputViewType input_)
         : _offset(offset_), 
           _output(output_), 
@@ -199,7 +199,7 @@ namespace Intrepid2 {
           INTREPID2_TEST_CHECK_POINT_INCLUSION(offset, false, shards::Wedge<>,         Impl::Wedge<6>);
         }
 
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         //============================================================================================//
         // Wrap up test: check if the test broke down unexpectedly due to an exception                //
         //============================================================================================//

@@ -120,33 +120,38 @@ namespace Tpetra {
           // get build errors of the form "error: a built-in binary
           // operator applied to a scoped enumeration requires two
           // operands of the same type."
-          if (static_cast<Details::AccessMode> (am) ==
-              Details::AccessMode::WriteOnly) {
+          if (static_cast<AccessMode> (am) == AccessMode::WriteOnly) {
             LA.G_.clear_sync_state ();
           }
 
-          // The various templated methods want an execution space
-          // rather than a memory space.  Otherwise, DualView of
-          // CudaUVMSpace complains that HostSpace is not one of its
-          // two memory spaces.  (Both the device and the host Views
-          // of a DualView of CudaUVMSpace have memory_space =
-          // CudaUVMSpace.)
-          using execution_space = typename MemorySpace::execution_space;
+          // mfh 06 Jun 2019: It could be that
+          // Kokkos::DefaultHostExecutionSpace != the Vector's
+          // execution_space.  For example, the first could be
+          // Kokkos::OpenMP, but the second could be Kokkos::Serial.
+          // That's why we go through the trouble below.
+          //
+          // It's easier to use an execution space than a memory
+          // space.  Otherwise, DualView of CudaUVMSpace complains
+          // that HostSpace is not one of its two memory spaces.
+          // (Both the device and the host Views of a DualView of
+          // CudaUVMSpace have memory_space = CudaUVMSpace.)
+          using space = typename std::conditional<is_host,
+            typename dual_view_type::t_host::execution_space,
+            typename dual_view_type::t_dev::execution_space>::type;
 
-          if (LA.G_.template need_sync<execution_space> ()) {
-            LA.G_.template sync<execution_space> ();
+          if (LA.G_.template need_sync<space> ()) {
+            LA.G_.template sync<space> ();
           }
           // Intel 17.0.1 requires the static_cast.  Otherwise, you'll
           // get build errors of the form "error: a built-in binary
           // operator applied to a scoped enumeration requires two
           // operands of the same type."
-          if (static_cast<Details::AccessMode> (am) !=
-              Details::AccessMode::ReadOnly) {
-            LA.G_.template modify<execution_space> ();
+          if (static_cast<AccessMode> (am) != AccessMode::ReadOnly) {
+            LA.G_.template modify<space> ();
           }
 
           // See note about "copy back" above.
-          auto G_lcl_2d = LA.G_.template getLocalView<execution_space> ();
+          auto G_lcl_2d = LA.G_.template getLocalView<space> ();
           // This converts the View to const if applicable.
           // Once we can use C++14, switch to std::make_unique.
           return std::unique_ptr<master_local_view_type>
@@ -169,12 +174,18 @@ namespace Tpetra {
     {
     private:
       using global_object_type = Tpetra::Vector<SC, LO, GO, NT>;
-      using parent_global_object_type = Tpetra::MultiVector<SC, LO, GO, NT>;
+      using parent_global_object_type =
+        Tpetra::MultiVector<SC, LO, GO, NT>;
       using parent_local_access_type =
         LocalAccess<parent_global_object_type, MemorySpace, am>;
       using mv_gmlo = GetMasterLocalObject<parent_local_access_type>;
       using parent_master_local_view_type =
         typename mv_gmlo::master_local_view_type;
+      using dual_view_type =
+        typename parent_global_object_type::dual_view_type;
+      static constexpr bool is_host = std::is_same<
+        typename MemorySpace::execution_space::memory_space,
+        Kokkos::HostSpace>::value;
 
     public:
       using local_access_type =
@@ -205,35 +216,39 @@ namespace Tpetra {
           // get build errors of the form "error: a built-in binary
           // operator applied to a scoped enumeration requires two
           // operands of the same type."
-          if (static_cast<Details::AccessMode> (am) ==
-              Details::AccessMode::WriteOnly) {
+          if (static_cast<AccessMode> (am) == AccessMode::WriteOnly) {
             LA.G_.clear_sync_state ();
           }
 
-          // The various templated methods want an execution space
-          // rather than a memory space.  Otherwise, DualView of
-          // CudaUVMSpace complains that HostSpace is not one of its
-          // two memory spaces.  (Both the device and the host Views
-          // of a DualView of CudaUVMSpace have memory_space =
-          // CudaUVMSpace.)
-          using execution_space = typename MemorySpace::execution_space;
+          // mfh 06 Jun 2019: It could be that
+          // Kokkos::DefaultHostExecutionSpace != the Vector's
+          // execution_space.  For example, the first could be
+          // Kokkos::OpenMP, but the second could be Kokkos::Serial.
+          // That's why we go through the trouble below.
+          //
+          // It's easier to use an execution space than a memory
+          // space.  Otherwise, DualView of CudaUVMSpace complains
+          // that HostSpace is not one of its two memory spaces.
+          // (Both the device and the host Views of a DualView of
+          // CudaUVMSpace have memory_space = CudaUVMSpace.)
+          using space = typename std::conditional<is_host,
+            typename dual_view_type::t_host::execution_space,
+            typename dual_view_type::t_dev::execution_space>::type;
 
-          if (LA.G_.template need_sync<execution_space> ()) {
-            LA.G_.template sync<execution_space> ();
+          if (LA.G_.template need_sync<space> ()) {
+            LA.G_.template sync<space> ();
           }
           // Intel 17.0.1 requires the static_cast.  Otherwise, you'll
           // get build errors of the form "error: a built-in binary
           // operator applied to a scoped enumeration requires two
           // operands of the same type."
-          if (static_cast<Details::AccessMode> (am) !=
-              Details::AccessMode::ReadOnly) {
-            LA.G_.template modify<execution_space> ();
+          if (static_cast<AccessMode> (am) != AccessMode::ReadOnly) {
+            LA.G_.template modify<space> ();
           }
 
           // See note about "copy back" above.
-          auto G_lcl_2d = LA.G_.template getLocalView<execution_space> ();
+          auto G_lcl_2d = LA.G_.template getLocalView<space> ();
           auto G_lcl_1d = Kokkos::subview (G_lcl_2d, Kokkos::ALL (), 0);
-
           // This converts the View to const if applicable.
           // Once we can use C++14, switch to std::make_unique.
           return std::unique_ptr<master_local_view_type>

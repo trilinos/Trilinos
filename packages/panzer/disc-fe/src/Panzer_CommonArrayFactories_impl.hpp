@@ -95,7 +95,7 @@ template <typename Scalar,typename T0>
 PHX::MDField<Scalar> MDFieldArrayFactory::
 buildArray(const std::string & str,int d0) const
 { 
-  typedef PHX::KokkosViewFactory<Scalar,PHX::Device> ViewFactory;
+  typedef PHX::KokkosViewFactory<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> ViewFactory;
 
   PHX::MDField<Scalar> field = PHX::MDField<Scalar>(prefix_+str,Teuchos::rcp(new PHX::MDALayout<T0>(d0))); 
 
@@ -109,7 +109,7 @@ template <typename Scalar,typename T0,typename T1>
 PHX::MDField<Scalar> MDFieldArrayFactory::
 buildArray(const std::string & str,int d0,int d1) const
 { 
-  typedef PHX::KokkosViewFactory<Scalar,PHX::Device> ViewFactory;
+  typedef PHX::KokkosViewFactory<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> ViewFactory;
 
   PHX::MDField<Scalar> field = PHX::MDField<Scalar>(prefix_+str,Teuchos::rcp(new PHX::MDALayout<T0,T1 >(d0,d1))); 
 
@@ -123,7 +123,7 @@ template <typename Scalar,typename T0,typename T1,typename T2>
 PHX::MDField<Scalar> MDFieldArrayFactory::
 buildArray(const std::string & str,int d0,int d1,int d2) const
 { 
-  typedef PHX::KokkosViewFactory<Scalar,PHX::Device> ViewFactory;
+  typedef PHX::KokkosViewFactory<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> ViewFactory;
 
   PHX::MDField<Scalar> field = PHX::MDField<Scalar>(prefix_+str,Teuchos::rcp(new PHX::MDALayout<T0,T1,T2>(d0,d1,d2))); 
 
@@ -137,7 +137,7 @@ template <typename Scalar,typename T0,typename T1,typename T2,typename T3>
 PHX::MDField<Scalar> MDFieldArrayFactory::
 buildArray(const std::string & str,int d0,int d1,int d2,int d3) const
 { 
-  typedef PHX::KokkosViewFactory<Scalar,PHX::Device> ViewFactory;
+  typedef PHX::KokkosViewFactory<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> ViewFactory;
 
   PHX::MDField<Scalar> field = PHX::MDField<Scalar>(prefix_+str,Teuchos::rcp(new PHX::MDALayout<T0,T1,T2,T3>(d0,d1,d2,d3))); 
 
@@ -151,7 +151,7 @@ template <typename Scalar,typename T0,typename T1,typename T2,typename T3,typena
 PHX::MDField<Scalar> MDFieldArrayFactory::
 buildArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const
 { 
-  typedef PHX::KokkosViewFactory<Scalar,PHX::Device> ViewFactory;
+  typedef PHX::KokkosViewFactory<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> ViewFactory;
 
   PHX::MDField<Scalar> field = PHX::MDField<Scalar>(prefix_+str,Teuchos::rcp(new PHX::MDALayout<T0,T1,T2,T3,T4>(d0,d1,d2,d3,d4))); 
 
@@ -166,7 +166,7 @@ template <typename Scalar,typename T0>
 PHX::MDField<Scalar,T0> MDFieldArrayFactory::
 buildStaticArray(const std::string & str,int d0) const
 { 
-  typedef PHX::KokkosViewFactory<Scalar,PHX::Device> ViewFactory;
+  typedef PHX::KokkosViewFactory<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> ViewFactory;
 
   PHX::MDField<Scalar,T0> field = PHX::MDField<Scalar,T0>(prefix_+str,Teuchos::rcp(new PHX::MDALayout<T0>(d0))); 
 
@@ -180,7 +180,7 @@ template <typename Scalar,typename T0,typename T1>
 PHX::MDField<Scalar,T0,T1> MDFieldArrayFactory::
 buildStaticArray(const std::string & str,int d0,int d1) const
 { 
-  typedef PHX::KokkosViewFactory<Scalar,PHX::Device> ViewFactory;
+  typedef PHX::KokkosViewFactory<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> ViewFactory;
 
   PHX::MDField<Scalar,T0,T1> field = PHX::MDField<Scalar,T0,T1>(prefix_+str,Teuchos::rcp(new PHX::MDALayout<T0,T1>(d0,d1))); 
 
@@ -194,7 +194,7 @@ template <typename Scalar,typename T0,typename T1,typename T2>
 PHX::MDField<Scalar,T0,T1,T2> MDFieldArrayFactory::
 buildStaticArray(const std::string & str,int d0,int d1,int d2) const
 { 
-  typedef PHX::KokkosViewFactory<Scalar,PHX::Device> ViewFactory;
+  typedef PHX::KokkosViewFactory<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> ViewFactory;
 
   PHX::MDField<Scalar,T0,T1,T2> field = PHX::MDField<Scalar,T0,T1,T2>(prefix_+str,Teuchos::rcp(new PHX::MDALayout<T0,T1,T2>(d0,d1,d2))); 
 
@@ -208,7 +208,7 @@ template <typename Scalar,typename T0,typename T1,typename T2,typename T3>
 PHX::MDField<Scalar,T0,T1,T2,T3> MDFieldArrayFactory::
 buildStaticArray(const std::string & str,int d0,int d1,int d2,int d3) const
 { 
-  typedef PHX::KokkosViewFactory<Scalar,PHX::Device> ViewFactory;
+  typedef PHX::KokkosViewFactory<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> ViewFactory;
 
   PHX::MDField<Scalar,T0,T1,T2,T3> field = PHX::MDField<Scalar,T0,T1,T2,T3>(prefix_+str,Teuchos::rcp(new PHX::MDALayout<T0,T1,T2,T3>(d0,d1,d2,d3))); 
 
@@ -222,7 +222,7 @@ template <typename Scalar,typename T0,typename T1,typename T2,typename T3,typena
 PHX::MDField<Scalar,T0,T1,T2,T3,T4> MDFieldArrayFactory::
 buildStaticArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const
 { 
-  typedef PHX::KokkosViewFactory<Scalar,PHX::Device> ViewFactory;
+  typedef PHX::KokkosViewFactory<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> ViewFactory;
 
   PHX::MDField<Scalar,T0,T1,T2,T3,T4> field = PHX::MDField<Scalar,T0,T1,T2,T3,T4>(prefix_+str,Teuchos::rcp(new PHX::MDALayout<T0,T1,T2,T3,T4>(d0,d1,d2,d3,d4))); 
 

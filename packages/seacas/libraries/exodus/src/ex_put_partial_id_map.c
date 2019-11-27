@@ -51,9 +51,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
 
 /*!
  * writes out a portion of the entity numbering map to the database;
@@ -78,9 +75,9 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   const char *vmap        = NULL;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
-  if (num_entities == 0 && !ex_is_parallel(exoid)) {
+  if (num_entities == 0 && !ex__is_parallel(exoid)) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
@@ -163,10 +160,10 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
       }
       goto error_ret; /* exit define mode and return */
     }
-    ex_compress_variable(exoid, mapid, 1);
+    ex__compress_variable(exoid, mapid, 1);
 
     /* leave define mode  */
-    if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
+    if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -197,6 +194,6 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex_leavedef(exoid, __func__);
+  ex__leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

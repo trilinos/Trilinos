@@ -57,7 +57,7 @@ WorksetContainer::WorksetContainer()
 {}
 WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
                                    const std::map<std::string,WorksetNeeds> & needs)
-   : wkstFactory_(factory), worksetSize_(-1)
+   : wkstFactory_(factory), worksetSize_(0)
 {
   // thats all!
   ebToNeeds_ = needs;
@@ -165,7 +165,7 @@ WorksetContainer::getSideWorksets(const WorksetDescriptor & desc)
 
 
 void WorksetContainer::
-setGlobalIndexer(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi)
+setGlobalIndexer(const Teuchos::RCP<const panzer::GlobalIndexer> & ugi)
 {
   // apply the orientations for stored worksets
   applyOrientations(ugi);
@@ -191,7 +191,7 @@ addBasis(const std::string & type,int order,const std::string & rep_field)
 }
 
 void WorksetContainer::
-applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi)
+applyOrientations(const Teuchos::RCP<const panzer::GlobalIndexer> & ugi)
 {
   // this gurantees orientations won't accidently be applied twice.
   TEUCHOS_ASSERT(globalIndexer_==Teuchos::null);

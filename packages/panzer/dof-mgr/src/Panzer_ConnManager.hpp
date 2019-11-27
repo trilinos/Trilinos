@@ -58,7 +58,7 @@ class FieldPattern; // from DOFManager
   class ConnManager {
   public:
 
-    using GlobalOrdinal = panzer::Ordinal64;
+    using GlobalOrdinal = panzer::GlobalOrdinal;
     using LocalOrdinal = int;
 
     virtual ~ConnManager() {}

@@ -72,7 +72,7 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 
 template<class Scalar>
 void IntegratorBasic<Scalar>::setStepper(
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model)
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -114,13 +114,6 @@ template<class Scalar>
 void IntegratorBasic<Scalar>::setStepperWStepper(
   Teuchos::RCP<Stepper<Scalar> > newStepper)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  // Make integratorPL_ consistent with new stepper.
-  RCP<ParameterList> newStepperPL = newStepper->getNonconstParameterList();
-  integratorPL_->set("Stepper Name", newStepperPL->name());
-  tempusPL_->set(newStepperPL->name(), *newStepperPL);
   stepper_ = newStepper;
 }
 

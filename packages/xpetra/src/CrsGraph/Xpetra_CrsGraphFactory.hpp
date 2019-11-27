@@ -62,11 +62,9 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal/* = CrsGraph<>::local_ordinal_type*/,
-            class GlobalOrdinal/* =
-              typename CrsGraph<LocalOrdinal>::global_ordinal_type*/,
-            class Node/* =
-              typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type*/>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class CrsGraphFactory {
   private:
     //! Private constructor. This is a static class.

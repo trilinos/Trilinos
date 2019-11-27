@@ -76,6 +76,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   SCORECmds             SCOREC/mds                        ST
   SCORECparma           SCOREC/parma                      ST
   SCORECspr             SCOREC/spr                        ST
+  AvatarT               packages/avatart                  EX
   Zoltan                packages/zoltan                   PT
   Shards                packages/shards                   PT
   GlobiPack             packages/globipack                PT
@@ -112,6 +113,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Intrepid              packages/intrepid                 PT
   Intrepid2             packages/intrepid2                PT
   STK                   packages/stk                      PT # Depends on boost
+  Percept               packages/percept                  PT # Depends on boost
   SCORECapf_zoltan      SCOREC/zoltan                     ST
   SCORECapf_stk         SCOREC/stk                        ST
   SCORECma              SCOREC/ma                         ST
@@ -143,7 +145,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   )
 
 # Allow builds even if some packages are missing
-
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(AvatarT)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCOREC)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCOREClion)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECgmi)
@@ -158,6 +160,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_stk)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_zoltan)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECma)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECpumi)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Avatar)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MOOCHO)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Sundance)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(CTrilinos)

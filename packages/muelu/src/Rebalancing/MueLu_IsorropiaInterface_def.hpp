@@ -38,7 +38,6 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Graph.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -142,7 +141,9 @@ namespace MueLu {
       GO grid = rowMap->getGlobalElement(row);
 
       // translate grid to nodeid
-      GO nodeId = AmalgamationFactory::DOFGid2NodeId(grid, blockdim, offset, indexBase);
+      // JHU 2019-20-May this is identical to AmalgamationFactory::DOFGid2NodeId(), and is done
+      // to break a circular dependence when libraries are built statically
+      GO nodeId = (grid - offset - indexBase) / blockdim + indexBase;
 
       size_t nnz = A->getNumEntriesInLocalRow(row);
       Teuchos::ArrayView<const LO> indices;
@@ -155,7 +156,9 @@ namespace MueLu {
         GO gcid = colMap->getGlobalElement(indices[col]); // global column id
 
         if(vals[col]!=0.0) {
-          GO cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, blockdim, offset, indexBase);
+          // JHU 2019-20-May this is identical to AmalgamationFactory::DOFGid2NodeId(), and is done
+          // to break a circular dependence when libraries are built statically
+          GO cnodeId = (gcid - offset - indexBase) / blockdim + indexBase;
           cnodeIds->push_back(cnodeId);
           realnnz++; // increment number of nnz in matrix row
         }

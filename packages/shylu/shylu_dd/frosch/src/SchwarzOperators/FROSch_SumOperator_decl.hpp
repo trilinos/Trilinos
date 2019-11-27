@@ -44,81 +44,88 @@
 
 #include <FROSch_SchwarzOperator_def.hpp>
 
-namespace FROSch {
-    
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
-    class SumOperator : public SchwarzOperator<SC,LO,GO,NO> {
-        
-    public:
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVector MultiVector;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtr SchwarzOperatorPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtrVec SchwarzOperatorPtrVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtrVecPtr SchwarzOperatorPtrVecPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::BoolVec BoolVec;
 
-        
+namespace FROSch {
+
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+    class SumOperator : public SchwarzOperator<SC,LO,GO,NO> {
+
+    protected:
+
+        using CommPtr                   = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
+
+        using XMapPtr                   = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr              = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
+
+        using XMultiVector              = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVector;
+        using XMultiVectorPtr           = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
+
+        using SchwarzOperatorPtr        = typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtr;
+        using SchwarzOperatorPtrVec     = typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtrVec;
+        using SchwarzOperatorPtrVecPtr  = typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtrVecPtr;
+
+        using UN                        = typename SchwarzOperator<SC,LO,GO,NO>::UN;
+
+        using BoolVec                   = typename SchwarzOperator<SC,LO,GO,NO>::BoolVec;
+
+    public:
+
         SumOperator(CommPtr comm);
-        
+
         SumOperator(SchwarzOperatorPtrVecPtr operators);
-        
+
         ~SumOperator();
-        
+
         virtual int initialize();
-        
-        virtual int initialize(MapPtr repeatedMap);
-        
+
+        virtual int initialize(ConstXMapPtr repeatedMap);
+
         virtual int compute();
-        
-        virtual void apply(const MultiVector &x,
-                           MultiVector &y,
+
+        virtual void apply(const XMultiVector &x,
+                           XMultiVector &y,
                            bool usePreconditionerOnly,
-                           Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                           SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                           SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
-        
-        virtual ConstMapPtr getDomainMap() const;
-        
-        virtual ConstMapPtr getRangeMap() const;
-        
-        virtual void describe(Teuchos::FancyOStream &out,
-                              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-        
+                           ETransp mode=NO_TRANS,
+                           SC alpha=ScalarTraits<SC>::one(),
+                           SC beta=ScalarTraits<SC>::zero()) const;
+
+        virtual ConstXMapPtr getDomainMap() const;
+
+        virtual ConstXMapPtr getRangeMap() const;
+
+        virtual void describe(FancyOStream &out,
+                              const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
+
         virtual std::string description() const;
-        
+
         int addOperator(SchwarzOperatorPtr op);
-        
+
         int addOperators(SchwarzOperatorPtrVecPtr operators);
-        
+
         int resetOperator(UN iD,
-        		 	 	  SchwarzOperatorPtr op);
-        
+                          SchwarzOperatorPtr op);
+
         int enableOperator(UN iD,
-        				   bool enable);
+                           bool enable);
 
         UN getNumOperators();
 
     protected:
-        
-        SchwarzOperatorPtrVec OperatorVector_;
-        
-        BoolVec EnableOperators_;
 
+        SchwarzOperatorPtrVec OperatorVector_;
+
+        // Temp Vectors for apply()
+        mutable XMultiVectorPtr XTmp_;
+
+        BoolVec EnableOperators_;
     };
-    
+
 }
 
 #endif

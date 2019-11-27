@@ -40,13 +40,14 @@
 #include <Ioss_FileInfo.h> // for FileInfo
 #include <algorithm>       // for sort, transform
 #include <cctype>          // for tolower
-#include <cstddef>         // for size_t
-#include <cstdlib>         // for exit, strtod, EXIT_SUCCESS, etc
-#include <cstring>         // for strcmp
-#include <iosfwd>          // for ostream
-#include <iostream>        // for operator<<, basic_ostream, etc
-#include <utility>         // for pair, make_pair
-#include <vector>          // for vector
+#include <copyright.h>
+#include <cstddef> // for size_t
+#include <cstdlib> // for exit, strtod, EXIT_SUCCESS, etc
+#include <cstring> // for strcmp
+#include <fmt/format.h>
+#include <iosfwd>  // for ostream
+#include <utility> // for pair, make_pair
+#include <vector>  // for vector
 
 namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
@@ -95,24 +96,24 @@ void SystemInterface::enroll_options()
 
 #if 0
   options_.enroll("evar", GetLongOption::MandatoryValue,
-		  "(Not Yet Implemented) Comma-separated list of element variables to be output or ALL or NONE.\n"
-		  "\t\tVariables can be limited to certain blocks by appending a\n"
-		  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
-		  nullptr);
+                  "(Not Yet Implemented) Comma-separated list of element variables to be output or ALL or NONE.\n"
+                  "\t\tVariables can be limited to certain blocks by appending a\n"
+                  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
+                  nullptr);
 
   options_.enroll("nvar", GetLongOption::MandatoryValue,
-		  "(Not Yet Implemented) Comma-separated list of nodal variables to be output or ALL or NONE.\n"
-		  "\t\tVariables can be limited to certain nodes by appending a\n"
-		  "\t\tcolon followed by the node id.  E.g. -nvar disp:10:20",
-		  nullptr);
+                  "(Not Yet Implemented) Comma-separated list of nodal variables to be output or ALL or NONE.\n"
+                  "\t\tVariables can be limited to certain nodes by appending a\n"
+                  "\t\tcolon followed by the node id.  E.g. -nvar disp:10:20",
+                  nullptr);
 
   options_.enroll("nsetvar", GetLongOption::MandatoryValue,
-		  "(Not Yet Implemented) Comma-separated list of nodeset variables to be output or ALL or NONE.",
-		  nullptr);
+                  "(Not Yet Implemented) Comma-separated list of nodeset variables to be output or ALL or NONE.",
+                  nullptr);
 
   options_.enroll("ssetvar", GetLongOption::MandatoryValue,
-		  "(Not Yet Implemented) Comma-separated list of sideset variables to be output or ALL or NONE.",
-		  nullptr);
+                  "(Not Yet Implemented) Comma-separated list of sideset variables to be output or ALL or NONE.",
+                  nullptr);
 #endif
 
   options_.enroll("copyright", GetLongOption::NoValue, "Show copyright and license data.", nullptr);
@@ -128,16 +129,18 @@ bool SystemInterface::parse_options(int argc, char **argv)
   // Get options from environment variable also...
   char *options = getenv("exomatlab");
   if (options != nullptr) {
-    std::cerr << "\nThe following options were specified via the EXOMATLAB_OPTIONS environment "
-                 "variable:\n"
-              << "\t" << options << "\n\n";
+    fmt::print(stderr,
+               "\nThe following options were specified via the EXOMATLAB_OPTIONS environment "
+               "variable:\n\t{}\n\n",
+               options);
     options_.parse(options, options_.basename(*argv));
   }
 
   if (options_.retrieve("help") != nullptr) {
     options_.usage();
-    std::cerr << "\n\tCan also set options via EXOMATLAB_OPTIONS environment variable.\n";
-    std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for exomatlab support.<-<-<-\n";
+    fmt::print(stderr,
+               "\n\tCan also set options via EXOMATLAB_OPTIONS environment variable.\n"
+               "\n\t->->-> Send email to gdsjaar@sandia.gov for exomatlab support.<-<-<-\n");
 
     exit(EXIT_SUCCESS);
   }
@@ -211,39 +214,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    std::cerr << "\n"
-              << "Copyright(C) 2011-2017 National Technology & Engineering Solutions\n"
-              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-              << "NTESS, the U.S. Government retains certain rights in this software.\n"
-              << "\n"
-              << "Redistribution and use in source and binary forms, with or without\n"
-              << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n"
-              << "\n"
-              << "* Redistributions of source code must retain the above copyright\n"
-              << "   notice, this list of conditions and the following disclaimer.\n"
-              << "          \n"
-              << "* Redistributions in binary form must reproduce the above\n"
-              << "  copyright notice, this list of conditions and the following\n"
-              << "  disclaimer in the documentation and/or other materials provided\n"
-              << "  with the distribution.\n"
-              << "                        \n"
-              << "* Neither the name of NTESS nor the names of its\n"
-              << "  contributors may be used to endorse or promote products derived\n"
-              << "  from this software without specific prior written permission.\n"
-              << "                                                \n"
-              << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-              << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-              << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-              << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-              << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-              << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-              << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-              << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-              << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-              << "\n";
+    fmt::print("{}", copyright("2011-2019"));
     exit(EXIT_SUCCESS);
   }
 
@@ -259,7 +230,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
   else {
     options_.usage();
-    std::cerr << "\nERROR: no files specified\n\n";
+    fmt::print(stderr, "\nERROR: no files specified\n\n");
     return false;
   }
   return true;
@@ -267,9 +238,10 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
 void SystemInterface::show_version()
 {
-  std::cout << qainfo[0] << "\n"
-            << "\t(A code for outputting exodusII global variable data for use in matlab.)\n"
-            << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
+  fmt::print("{}\n"
+             "\t(A code for outputting exodusII global variable data for use in matlab.)\n"
+             "\t(Version: {}) Modified: {}\n",
+             qainfo[0], qainfo[2], qainfo[1]);
 }
 
 namespace {

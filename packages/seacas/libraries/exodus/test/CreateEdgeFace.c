@@ -224,28 +224,28 @@ int cCreateEdgeFace(int argc, char *argv[])
   edgeBlocks[0].num_entry           = 20;
   edgeBlocks[0].num_nodes_per_entry = 2;
   edgeBlocks[0].num_attribute       = 1;
-  strcpy(edgeBlocks[0].topology, "EDGE2");
+  ex_copy_string(edgeBlocks[0].topology, "EDGE2", MAX_STR_LENGTH + 1);
 
   faceBlocks[0].type                = EX_FACE_BLOCK;
   faceBlocks[0].id                  = 500;
   faceBlocks[0].num_entry           = 2;
   faceBlocks[0].num_nodes_per_entry = 4;
   faceBlocks[0].num_attribute       = 1;
-  strcpy(faceBlocks[0].topology, "QUAD4");
+  ex_copy_string(faceBlocks[0].topology, "QUAD4", MAX_STR_LENGTH + 1);
 
   faceBlocks[1].type                = EX_FACE_BLOCK;
   faceBlocks[1].id                  = 600;
   faceBlocks[1].num_entry           = 1;
   faceBlocks[1].num_nodes_per_entry = 4;
   faceBlocks[1].num_attribute       = 1;
-  strcpy(faceBlocks[1].topology, "QUAD4");
+  ex_copy_string(faceBlocks[1].topology, "QUAD4", MAX_STR_LENGTH + 1);
 
   faceBlocks[2].type                = EX_FACE_BLOCK;
   faceBlocks[2].id                  = 700;
   faceBlocks[2].num_entry           = 8;
   faceBlocks[2].num_nodes_per_entry = 4;
   faceBlocks[2].num_attribute       = 1;
-  strcpy(faceBlocks[2].topology, "QUAD4");
+  ex_copy_string(faceBlocks[2].topology, "QUAD4", MAX_STR_LENGTH + 1);
 
   elemBlocks[0].type                = EX_ELEM_BLOCK;
   elemBlocks[0].id                  = 200;
@@ -254,7 +254,7 @@ int cCreateEdgeFace(int argc, char *argv[])
   elemBlocks[0].num_edges_per_entry = 12;
   elemBlocks[0].num_faces_per_entry = 6;
   elemBlocks[0].num_attribute       = 2;
-  strcpy(elemBlocks[0].topology, "HEX8");
+  ex_copy_string(elemBlocks[0].topology, "HEX8", MAX_STR_LENGTH + 1);
 
   elemBlocks[1].type                = EX_ELEM_BLOCK;
   elemBlocks[1].id                  = 201;
@@ -263,7 +263,7 @@ int cCreateEdgeFace(int argc, char *argv[])
   elemBlocks[1].num_edges_per_entry = 0;
   elemBlocks[1].num_faces_per_entry = 0;
   elemBlocks[1].num_attribute       = 0;
-  strcpy(elemBlocks[1].topology, "TET4");
+  ex_copy_string(elemBlocks[1].topology, "TET4", MAX_STR_LENGTH + 1);
 
   varParams.edge_var_tab  = (int *)malloc(2 * sizeof(int));
   varParams.face_var_tab  = (int *)malloc(3 * sizeof(int));

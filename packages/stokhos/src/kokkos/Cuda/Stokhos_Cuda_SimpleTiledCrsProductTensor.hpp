@@ -266,7 +266,7 @@ public:
     const dim3 dGrid( row_count , 1 , 1 );
 
     const size_type shcap =
-      Kokkos::Impl::CudaTraits::SharedMemoryCapacity / 2;
+      Kokkos::Cuda().impl_internal_space_instance()->m_maxShmemPerBlock / 2;
     size_type bs =
       (shcap / sizeof(VectorScalar) - i_tile_size) / (4*jk_tile_size);
     if (bs % 2 == 0) --bs;
@@ -553,7 +553,7 @@ public:
     const dim3 dGrid( n_i_tile , row_count , 1 );
 
     const size_type shcap =
-      Kokkos::Impl::CudaTraits::SharedMemoryCapacity / 2;
+      Kokkos::Cuda().impl_internal_space_instance()->m_maxShmemPerBlock / 2;
     size_type bs = ((shcap / sizeof(VectorScalar)) / tile_size) / 4;
     if (bs % 2 == 0) --bs;
     const size_type block_size_max = 31;

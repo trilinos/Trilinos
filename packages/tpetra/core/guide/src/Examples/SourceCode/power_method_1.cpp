@@ -220,7 +220,7 @@ main (int argc, char *argv[])
     out << endl << "Creating the sparse matrix" << endl;
 
     // Create a Tpetra sparse matrix whose rows have distribution given by the Map.
-    RCP<crs_matrix_type> A (new crs_matrix_type (map, 0));
+    RCP<crs_matrix_type> A (new crs_matrix_type (map, 3));
 
     // Fill the sparse matrix, one row at a time.
     const scalar_type two = static_cast<scalar_type> (2.0);

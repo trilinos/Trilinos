@@ -43,9 +43,9 @@ bool MeshModification::modification_begin(const std::string description)
     return true;
 }
 
-bool MeshModification::modification_end()
+bool MeshModification::modification_end(modification_optimization opt)
 {
-    return this->internal_modification_end( MOD_END_SORT );
+    return this->internal_modification_end( opt );
 }
 
 bool MeshModification::resolve_node_sharing()
@@ -75,10 +75,12 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
     {
         // Resolve modification or deletion of shared entities
         // which can cause deletion of ghost entities.
-        m_bulkData.internal_resolve_shared_modify_delete();
+        stk::mesh::EntityVector entitiesNoLongerShared;
+        m_bulkData.internal_resolve_shared_modify_delete(entitiesNoLongerShared);
+
         // Resolve modification or deletion of ghost entities
         // by destroying ghost entities that have been touched.
-        m_bulkData.internal_resolve_ghosted_modify_delete();
+        m_bulkData.internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
         m_bulkData.update_comm_list_based_on_changes_in_comm_map();
 
         // Resolve creation of entities: discover sharing and set unique ownership.
@@ -90,7 +92,7 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
         // Resolve part membership for shared entities.
         // This occurs after resolving creation so created and shared
         // entities are resolved along with previously existing shared entities.
-        m_bulkData.internal_resolve_shared_membership();
+        m_bulkData.internal_resolve_shared_membership(entitiesNoLongerShared);
 
         // Regenerate the ghosting aura around all shared mesh entities.
         if(m_bulkData.is_automatic_aura_on())
@@ -160,7 +162,8 @@ bool MeshModification::internal_modification_end_after_node_sharing_resolution(m
     if(m_bulkData.parallel_size() > 1)
     {
         m_bulkData.internal_resolve_parallel_create_edges_and_faces();
-        m_bulkData.internal_resolve_shared_membership();
+        stk::mesh::EntityVector entitiesNoLongerShared;
+        m_bulkData.internal_resolve_shared_membership(entitiesNoLongerShared);
 
         if(m_bulkData.is_automatic_aura_on())
         {
@@ -208,7 +211,7 @@ void MeshModification::change_entity_owner( const EntityProcVec & arg_change)
 //  Ownership has been re-assigned as necessary for deletion
 //  of shared entities.
 
-void MeshModification::internal_resolve_shared_modify_delete()
+void MeshModification::internal_resolve_shared_modify_delete(stk::mesh::EntityVector & entitiesNoLongerShared)
 {
     ThrowRequireMsg(m_bulkData.parallel_size() > 1, "Do not call this in serial");
 
@@ -229,7 +232,7 @@ void MeshModification::internal_resolve_shared_modify_delete()
 
         Entity entity = i->comm_info.entity;
         EntityKey key = i->comm_info.key;
-        int owner = i->comm_info.owner;
+        const int owner = m_bulkData.parallel_owner_rank(entity);
         const bool locally_destroyed = !m_bulkData.is_valid(entity);
         bool remote_owner_destroyed = false;
 
@@ -301,7 +304,7 @@ void MeshModification::internal_resolve_shared_modify_delete()
         }
     }
 
-    m_bulkData.remove_entities_from_sharing(entitiesToRemoveFromSharing);
+    m_bulkData.remove_entities_from_sharing(entitiesToRemoveFromSharing, entitiesNoLongerShared);
 }
 
 void MeshModification::ensure_meta_data_is_committed()

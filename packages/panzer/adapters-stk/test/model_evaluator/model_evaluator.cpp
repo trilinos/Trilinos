@@ -91,7 +91,7 @@ namespace panzer {
     RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
     RCP<panzer::GlobalData> gd;
     RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
+    RCP<panzer::GlobalIndexer> dofManager;
     Teuchos::ParameterList user_data;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     Teuchos::RCP<panzer::EquationSetFactory> eqset_factory;
@@ -107,7 +107,7 @@ namespace panzer {
   struct RespFactoryFunc_Builder {
     MPI_Comm comm;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
-    Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer;
+    Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer;
 
     template <typename T>
     Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
@@ -116,7 +116,7 @@ namespace panzer {
 
   // store steady-state me for testing parameters
   // RCP<panzer::ModelEvaluator_Epetra> ss_me;
-  Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager_null;
+  Teuchos::RCP<panzer::GlobalIndexer> dofManager_null;
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
@@ -372,8 +372,6 @@ namespace panzer {
     double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
 
     // f1 == f2
-    // ROGER: This demonstrates the broken functionality!!!
-    // Uncomment line below when fixed!!!
     TEST_EQUALITY_CONST(testEqualityOfEpetraVectorValues(*f1,*f2,tol), true);
 
     // f2 == f4
@@ -646,8 +644,8 @@ namespace panzer {
     const Teuchos::RCP<panzer::ConnManager>
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    ap.dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
+    panzer::DOFManagerFactory globalIndexerFactory;
+    ap.dofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     ap.ep_lof = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),ap.dofManager));

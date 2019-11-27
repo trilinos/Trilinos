@@ -152,6 +152,9 @@ void Assembler<Real>::assemblePDEJacobian1(ROL::Ptr<Tpetra::CrsMatrix<>> &J1,
     pde->Jacobian_1(localVal,u_coeff,z_coeff,z_param);
     assembleFieldMatrix( J1, localVal );
     isJ1Transposed_ = false;
+    // Output
+    //Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<>> matWriter;
+    //matWriter.writeSparseFile("jacobian_1.txt", J1);
   }
   catch ( Exception::Zero & ez ) {
     throw Exception::Zero(">>> (Assembler::assemblePDEJacobian1): Jacobian is zero.");
@@ -1737,6 +1740,130 @@ void Assembler<Real>::assembleQoIHessVec33(ROL::Ptr<std::vector<Real>> &H33,
     throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec33): HessVec not implemented.");
   }
 }
+
+template<class Real>
+void Assembler<Real>::assembleQoIHessian11(ROL::Ptr<Tpetra::CrsMatrix<>> &H11,
+                                     const ROL::Ptr<QoI<Real>> &qoi,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                     const ROL::Ptr<const std::vector<Real>> & z_param) {
+  #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian11);
+  #endif
+  try {
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff, z_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Initialize Jacobian matrices
+    if ( H11 == ROL::nullPtr ) {
+      H11 = ROL::makePtr<Tpetra::CrsMatrix<>>(matH11Graph_);
+    }
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    qoi->Hessian_11(localVal,u_coeff,z_coeff,z_param);
+    assembleFieldMatrix( H11, localVal );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assembleQoIHessian11): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessian11): Hessian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assembleQoIHessian12(ROL::Ptr<Tpetra::CrsMatrix<>> &H12,
+                                     const ROL::Ptr<QoI<Real>> &qoi,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                     const ROL::Ptr<const std::vector<Real>> & z_param) {
+  #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian12);
+  #endif
+  try {
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff, z_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Initialize Jacobian matrices
+    if ( H12 == ROL::nullPtr ) {
+      H12 = ROL::makePtr<Tpetra::CrsMatrix<>>(matH12Graph_);
+    }
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    qoi->Hessian_12(localVal,u_coeff,z_coeff,z_param);
+    assembleFieldMatrix( H12, localVal );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assembleQoIHessian12): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessian12): Hessian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assembleQoIHessian21(ROL::Ptr<Tpetra::CrsMatrix<>> &H21,
+                                     const ROL::Ptr<QoI<Real>> &qoi,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                     const ROL::Ptr<const std::vector<Real>> & z_param) {
+  #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian21);
+  #endif
+  try {
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff, z_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Initialize Jacobian matrices
+    if ( H21 == ROL::nullPtr ) {
+      H21 = ROL::makePtr<Tpetra::CrsMatrix<>>(matH21Graph_);
+    }
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    qoi->Hessian_21(localVal,u_coeff,z_coeff,z_param);
+    assembleFieldMatrix( H21, localVal );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assembleQoIHessian21): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessian21): Hessian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assembleQoIHessian22(ROL::Ptr<Tpetra::CrsMatrix<>> &H22,
+                                     const ROL::Ptr<QoI<Real>> &qoi,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                     const ROL::Ptr<const std::vector<Real>> & z_param) {
+  #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian22);
+  #endif
+  try {
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff, z_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Initialize Jacobian matrices
+    if ( H22 == ROL::nullPtr ) {
+      H22 = ROL::makePtr<Tpetra::CrsMatrix<>>(matH11Graph_);
+    }
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    qoi->Hessian_22(localVal,u_coeff,z_coeff,z_param);
+    assembleFieldMatrix( H22, localVal );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assembleQoIHessian22): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessian22): Hessian not implemented.");
+  }
+}
 /***************************************************************************/
 /* End QoI assembly routines                                               */
 /***************************************************************************/
@@ -2001,18 +2128,18 @@ void Assembler<Real>::printMeshData(std::ostream &outStream) const {
     }
     meshfile.close();
     
-    meshfile.open("cell_to_node_tri.txt");
-    for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
-      for (int j=0; j<3; ++j) {
-        meshfile << cellToNodeMap(i,j) << "  ";
-      }
-      meshfile << std::endl;
-      for (int j=2; j<5; ++j) {
-        meshfile << cellToNodeMap(i,j%4) << "  ";
-      }
-      meshfile << std::endl;
-    }
-    meshfile.close();
+//    meshfile.open("cell_to_node_tri.txt");
+//    for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
+//      for (int j=0; j<3; ++j) {
+//        meshfile << cellToNodeMap(i,j) << "  ";
+//      }
+//      meshfile << std::endl;
+//      for (int j=2; j<5; ++j) {
+//        meshfile << cellToNodeMap(i,j%4) << "  ";
+//      }
+//      meshfile << std::endl;
+//    }
+//    meshfile.close();
    
     meshfile.open("nodes.txt");
     meshfile.precision(16);
@@ -2156,7 +2283,7 @@ const ROL::Ptr<DofManager<Real>> Assembler<Real>::getDofManager(void) const {
 }
 
 template<class Real>
-Teuchos::Array<int> Assembler<Real>::getCellIds(void) const {
+Teuchos::Array<typename Tpetra::Map<>::global_ordinal_type> Assembler<Real>::getCellIds(void) const {
   return myCellIds_;
 }
 /***************************************************************************/
@@ -2221,7 +2348,7 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   /****************************************************/
   // Partition the cells in the mesh.  We use a basic quasi-equinumerous partitioning,
   // where the remainder, if any, is assigned to the last processor.
-  Teuchos::Array<int> myGlobalIds;
+  Teuchos::Array<GO> myGlobalIds;
   cellOffsets_.assign(numProcs_, 0);
   int totalNumCells = meshMgr_->getNumCells();
   int cellsPerProc  = totalNumCells / numProcs_;
@@ -2293,15 +2420,14 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   myGlobalIds.erase( std::unique(myGlobalIds.begin(),myGlobalIds.end()),myGlobalIds.end() );
 
   // Build maps.
-  myOverlapStateMap_ = ROL::makePtr<Tpetra::Map<>>(
-                       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
-                       myGlobalIds, 0, comm_);
+  myOverlapStateMap_ = ROL::makePtr<Tpetra::Map<>>
+    (Teuchos::OrdinalTraits<GO>::invalid(), myGlobalIds, GO(0), comm_);
   //std::cout << std::endl << myOverlapMap_->getNodeElementList()<<std::endl;
   /** One can also use the non-member function:
       myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobalIds_, comm_);
       to build the overlap map.
   **/
-  myUniqueStateMap_ = Tpetra::createOneToOne<int,int>(myOverlapStateMap_);
+  myUniqueStateMap_ = Tpetra::createOneToOne(myOverlapStateMap_);
   //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
   myOverlapControlMap_  = myOverlapStateMap_;
   myUniqueControlMap_   = myUniqueStateMap_;
@@ -2314,12 +2440,35 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   /****************************************/
   /*** Assemble global graph structure. ***/
   /****************************************/
-  matJ1Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, 0);
+
+  // Make a GO copy to interface with Tpetra; currently dof manager uses int directly
   Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+  Teuchos::ArrayRCP<GO> cellDofsGO(cellDofsArrayRCP.size(), GO());
+  std::copy(cellDofsArrayRCP.getRawPtr(), cellDofsArrayRCP.getRawPtr()+cellDofsArrayRCP.size(), 
+            cellDofsGO.getRawPtr());
+  Teuchos::ArrayRCP<const GO> cellDofsGOArrayRCP = cellDofsGO.getConst();
+
+  // Estimate the max number of entries per row 
+  // using a map (row indicies can be non-contiguous)
+  GO maxEntriesPerRow(0);
+  {
+    std::map<GO,GO> numEntriesCount;
+    for (int i=0; i<numCells_; ++i) 
+      for (int j=0; j<numLocalDofs; ++j) 
+        numEntriesCount[GO(cellDofs(myCellIds_[i],j))] += numLocalDofs;
+    const auto rowIndexWithMaxEntries 
+      = std::max_element(std::begin(numEntriesCount), std::end(numEntriesCount), 
+                         [](const std::pair<GO,GO> &pa, const std::pair<GO,GO> &pb) {
+                           return pa.second < pb.second;
+                         });
+    if (!numEntriesCount.empty())
+      maxEntriesPerRow = rowIndexWithMaxEntries->second;
+  }
+  matJ1Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, maxEntriesPerRow);
   for (int i=0; i<numCells_; ++i) {
     for (int j=0; j<numLocalDofs; ++j) {
-      matJ1Graph_->insertGlobalIndices(cellDofs(myCellIds_[i],j),
-        cellDofsArrayRCP(myCellIds_[i]*numLocalDofs, numLocalDofs));
+      matJ1Graph_->insertGlobalIndices(GO(cellDofs(myCellIds_[i],j)),
+        cellDofsGOArrayRCP(myCellIds_[i]*numLocalDofs, numLocalDofs));
     }
   }
   matJ1Graph_->fillComplete();
@@ -2509,9 +2658,9 @@ void Assembler<Real>::assembleParamVector(ROL::Ptr<std::vector<Real>> &v,
                                           std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> &val) {
   int size = v->size();
   v->assign(size,0);
-  for (int i = 0; i < size; ++i) {
-    dofMgr_->transformToFieldPattern(val[i]);
-  }
+//  for (int i = 0; i < size; ++i) {
+//    dofMgr_->transformToFieldPattern(val[i]);
+//  }
   // Assembly
   std::vector<Real> myVal(size,0);
   for (int j = 0; j < size; ++j) {
@@ -2536,11 +2685,15 @@ void Assembler<Real>::assembleFieldMatrix(ROL::Ptr<Tpetra::CrsMatrix<>> &M,
   int numLocalDofs = cellDofs.dimension(1);
   int numLocalMatEntries = numLocalDofs * numLocalDofs;
   Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+  Teuchos::ArrayRCP<GO> cellDofsGO(cellDofsArrayRCP.size(), GO());
+  std::copy(cellDofsArrayRCP.getRawPtr(), cellDofsArrayRCP.getRawPtr()+cellDofsArrayRCP.size(), 
+            cellDofsGO.getRawPtr());
+  Teuchos::ArrayRCP<const GO> cellDofsGOArrayRCP = cellDofsGO.getConst();
   Teuchos::ArrayRCP<const Real> valArrayRCP = val->getData();
   for (int i=0; i<numCells_; ++i) {
     for (int j=0; j<numLocalDofs; ++j) {
-      M->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                             cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+      M->sumIntoGlobalValues(GO(cellDofs(myCellIds_[i],j)),
+                             cellDofsGOArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
                              valArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
     }
   }

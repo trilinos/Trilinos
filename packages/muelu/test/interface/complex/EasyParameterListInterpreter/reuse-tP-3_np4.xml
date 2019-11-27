@@ -1,5 +1,5 @@
 <ParameterList name="MueLu">
-  <Parameter name="multigrid algorithm"             type="string"   value="unsmoothed"/>
+  <!-- <Parameter name="multigrid algorithm"             type="string"   value="unsmoothed"/> -->
   <ParameterList name="level 1">
     <Parameter name="reuse: type"                   type="string"   value="tP"/>
   </ParameterList>

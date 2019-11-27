@@ -46,6 +46,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_Assert.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -250,7 +251,7 @@ int main(int argc, char *argv[]) {
 
     // Finish up
     int info = A->FillComplete();
-    assert( info==0 );
+    TEUCHOS_ASSERT( info==0 );
     A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
     // Create a identity matrix for the temporary mass matrix
@@ -261,11 +262,11 @@ int main(int argc, char *argv[]) {
       Indices[0] = i;
       NumEntries = 1;
       info = M->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_ASSERT( info==0 );
     }
     // Finish up
     info = M->FillComplete();
-    assert( info==0 );
+    TEUCHOS_ASSERT( info==0 );
     M->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
     //************************************

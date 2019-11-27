@@ -96,7 +96,7 @@ public:
   void
   gather (MV_out& X_out,
           const MV_in& X_in,
-          const Teuchos::ArrayView<const LO>& perm) const
+          const Teuchos::ArrayView<const LO> perm) const
   {
     using Teuchos::ArrayRCP;
     const size_t numRows = X_out.getLocalLength ();
@@ -111,10 +111,35 @@ public:
     }
   }
 
+  //Gather blocks (contiguous groups of blockSize rows)
+  //X_out and X_in are point indexed, but perm uses block indices.
+  //So X_out.getLocalLength() / blockSize gives the number of blocks.
+  void
+  gatherBlock (
+        MV_out& X_out,
+        const MV_in& X_in,
+        const Teuchos::ArrayView<const LO> perm,
+        LO blockSize) const
+  {
+    using Teuchos::ArrayRCP;
+    const size_t numBlocks = X_out.getLocalLength() / blockSize;
+    const size_t numVecs = X_in.getNumVectors ();
+    for (size_t j = 0; j < numVecs; ++j) {
+      ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
+      ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
+      for (size_t i = 0; i < numBlocks; ++i) {
+        const size_t i_perm = perm[i];
+        for (LO k = 0; k < blockSize; k++) {
+          X_out_j[i * blockSize + k] = X_in_j[i_perm * blockSize + k];
+        }
+      }
+    }
+  }
+
   void
   scatter (MV_in& X_in,
            const MV_out& X_out,
-           const Teuchos::ArrayView<const LO>& perm) const
+           const Teuchos::ArrayView<const LO> perm) const
   {
     using Teuchos::ArrayRCP;
     const size_t numRows = X_out.getLocalLength();
@@ -129,13 +154,35 @@ public:
     }
   }
 
+  void
+  scatterBlock (
+        MV_in& X_in,
+        const MV_out& X_out,
+        const Teuchos::ArrayView<const LO> perm,
+        LO blockSize) const
+  {
+    using Teuchos::ArrayRCP;
+    const size_t numBlocks = X_out.getLocalLength() / blockSize;
+    const size_t numVecs = X_in.getNumVectors ();
+    for (size_t j = 0; j < numVecs; ++j) {
+      ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
+      ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
+      for (size_t i = 0; i < numBlocks; ++i) {
+        const size_t i_perm = perm[i];
+        for (LO k = 0; k < blockSize; k++) {
+           X_in_j[i_perm * blockSize + k] = X_out_j[i * blockSize + k];
+        }
+      }
+    }
+  }
+
   /******************/
   /* View <==> View */
   /******************/
   template<typename InView, typename OutView>
-  void gatherViewToView(OutView& X_out,
-                        InView& X_in,
-                        const Teuchos::ArrayView<const LO>& perm) const
+  void gatherViewToView(OutView X_out,
+                        const InView X_in,
+                        const Teuchos::ArrayView<const LO> perm) const
   {
     //note: j is col, i is row
     for(size_t j = 0; j < X_out.extent(1); ++j) {
@@ -147,9 +194,9 @@ public:
   }
 
   template<typename InView, typename OutView>
-  void scatterViewToView(InView& X_in,
-                         OutView& X_out,
-                         const Teuchos::ArrayView<const LO>& perm) const
+  void scatterViewToView(InView X_in,
+                         const OutView X_out,
+                         const Teuchos::ArrayView<const LO> perm) const
   {
     for(size_t j = 0; j < X_out.extent(1); ++j) {
       for(size_t i = 0; i < X_out.extent(0); ++i) {
@@ -159,18 +206,55 @@ public:
     }
   }
 
+  template<typename InView, typename OutView>
+  void gatherViewToViewBlock(OutView X_out,
+                             const InView X_in,
+                             const Teuchos::ArrayView<const LO> perm,
+                             LO blockSize) const
+  {
+    //note: j is col, i is row
+    size_t numBlocks = X_out.extent(0) / blockSize;
+    for(size_t j = 0; j < X_out.extent(1); ++j) {
+      for(size_t i = 0; i < numBlocks; ++i) {
+        const LO i_perm = perm[i];
+        for(LO k = 0; k < blockSize; k++) {
+          X_out(i * blockSize + k, j) = X_in(i_perm * blockSize + k, j);
+        }
+      }
+    }
+  }
+
+  template<typename InView, typename OutView>
+  void scatterViewToViewBlock(InView X_in,
+                              const OutView X_out,
+                              const Teuchos::ArrayView<const LO> perm,
+                              LO blockSize) const
+  {
+    //note: j is col, i is row
+    size_t numBlocks = X_out.extent(0) / blockSize;
+    for(size_t j = 0; j < X_out.extent(1); ++j) {
+      for(size_t i = 0; i < numBlocks; ++i) {
+        const LO i_perm = perm[i];
+        for(LO k = 0; k < blockSize; k++) {
+          X_in(i_perm * blockSize + k, j) = X_out(i * blockSize + k, j);
+        }
+      }
+    }
+  }
+
   /*******************************/
   /* MV <==> View specialization */
   /*******************************/
   template<typename InView>
-  void gatherMVtoView(MV_out& X_out,
-                      InView& X_in,
-                      const Teuchos::ArrayView<const LO>& perm) const
+  void gatherMVtoView(MV_out X_out,
+                      InView X_in,
+                      const Teuchos::ArrayView<const LO> perm) const
   {
     //note: j is col, i is row
+    size_t numRows = X_out.getLocalLength();
     for(size_t j = 0; j < X_out.getNumVectors(); ++j) {
       Teuchos::ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
-      for(size_t i = 0; i < X_out.getLocalLength(); ++i) {
+      for(size_t i = 0; i < numRows; ++i) {
         const LO i_perm = perm[i];
         X_out_j[i] = X_in(i_perm, j);
       }
@@ -178,15 +262,53 @@ public:
   }
 
   template<typename InView>
-  void scatterMVtoView(InView& X_in,
-                       MV_out& X_out,
-                       const Teuchos::ArrayView<const LO>& perm) const
+  void scatterMVtoView(InView X_in,
+                       MV_out X_out,
+                       const Teuchos::ArrayView<const LO> perm) const
   {
+    size_t numRows = X_out.getLocalLength(); 
     for(size_t j = 0; j < X_in.extent(1); ++j) {
       Teuchos::ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
-      for(size_t i = 0; i < X_out.getLocalLength(); ++i) {
+      for(size_t i = 0; i < numRows; ++i) {
         const LO i_perm = perm[i];
         X_in(i_perm, j) = X_out_j[i];
+      }
+    }
+  }
+
+  template<typename InView>
+  void gatherMVtoViewBlock(MV_out X_out,
+                           InView X_in,
+                           const Teuchos::ArrayView<const LO> perm,
+                           LO blockSize) const
+  {
+    //note: j is col, i is row
+    size_t numBlocks = X_out.getLocalLength() / blockSize;
+    for(size_t j = 0; j < X_out.getNumVectors(); ++j) {
+      Teuchos::ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
+      for(size_t i = 0; i < numBlocks; ++i) {
+        const LO i_perm = perm[i];
+        for(LO k = 0; k < blockSize; k++) {
+          X_out_j[i * blockSize + k] = X_in(i_perm * blockSize + k, j);
+        }
+      }
+    }
+  }
+
+  template<typename InView>
+  void scatterMVtoViewBlock(InView X_in,
+                            MV_out X_out,
+                            const Teuchos::ArrayView<const LO> perm,
+                            LO blockSize) const
+  {
+    size_t numBlocks = X_out.getLocalLength() / blockSize;
+    for(size_t j = 0; j < X_in.extent(1); ++j) {
+      Teuchos::ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
+      for(size_t i = 0; i < numBlocks; ++i) {
+        const LO i_perm = perm[i];
+        for(LO k = 0; k < blockSize; k++) {
+          X_in(i_perm * blockSize + k, j) = X_out_j[i * blockSize + k];
+        }
       }
     }
   }

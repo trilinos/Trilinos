@@ -102,14 +102,14 @@ namespace MueLuTests {
           Teuchos::getValue<std::string>(paramValue);
           RUN;
           continue;
-        } catch (Teuchos::bad_any_cast) { }
+        } catch (Teuchos::bad_any_cast&) { }
 
         const Teuchos::ParameterList& sublist = Teuchos::getValue<Teuchos::ParameterList>(paramValue);
 
         // Test when sublist does not contain type
         try {
           sublist.get<std::string>("type");
-        } catch (Teuchos::Exceptions::InvalidParameterName) {
+        } catch (Teuchos::Exceptions::InvalidParameterName&) {
           RUN;
           continue;
         }

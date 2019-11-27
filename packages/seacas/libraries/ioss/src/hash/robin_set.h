@@ -51,7 +51,7 @@ namespace tsl {
    * for example) as we then compare the stored hashes before comparing the keys. When
    * `tsl::rh::power_of_two_growth_policy` is used as `GrowthPolicy`, it may also speed-up the
    * rehash process as we can avoid to recalculate the hash. When it is detected that storing the
-   * hash will not incur any memory penality due to alignement (i.e.
+   * hash will not incur any memory penalty due to alignment (i.e.
    * `sizeof(tsl::detail_robin_hash::bucket_entry<ValueType, true>) ==
    * sizeof(tsl::detail_robin_hash::bucket_entry<ValueType, false>)`) and
    * `tsl::rh::power_of_two_growth_policy` is used, the hash will be stored even if `StoreHash` is
@@ -63,6 +63,10 @@ namespace tsl {
    * number of buckets to a power of two and uses a mask to set the hash to a bucket instead of the
    * slow modulo. Other growth policies are available and you may define your own growth policy,
    * check `tsl::rh::power_of_two_growth_policy` for the interface.
+   *
+   * `Key` must be swappable.
+   *
+   * `Key` must be copy and/or move constructible.
    *
    * If the destructor of `Key` throws an exception, the behaviour of the class is undefined.
    *
@@ -113,62 +117,62 @@ namespace tsl {
      */
     robin_set() : robin_set(ht::DEFAULT_INIT_BUCKETS_SIZE) {}
 
-    explicit robin_set(size_type bucket_count_, const Hash &hash = Hash(),
+    explicit robin_set(size_type my_bucket_count, const Hash &hash = Hash(),
                        const KeyEqual &equal = KeyEqual(), const Allocator &alloc = Allocator())
-        : m_ht(bucket_count_, hash, equal, alloc, ht::DEFAULT_MAX_LOAD_FACTOR)
+        : m_ht(my_bucket_count, hash, equal, alloc)
     {
     }
 
-    robin_set(size_type bucket_count_, const Allocator &alloc)
-        : robin_set(bucket_count_, Hash(), KeyEqual(), alloc)
+    robin_set(size_type my_bucket_count, const Allocator &alloc)
+        : robin_set(my_bucket_count, Hash(), KeyEqual(), alloc)
     {
     }
 
-    robin_set(size_type bucket_count_, const Hash &hash, const Allocator &alloc)
-        : robin_set(bucket_count_, hash, KeyEqual(), alloc)
+    robin_set(size_type my_bucket_count, const Hash &hash, const Allocator &alloc)
+        : robin_set(my_bucket_count, hash, KeyEqual(), alloc)
     {
     }
 
     explicit robin_set(const Allocator &alloc) : robin_set(ht::DEFAULT_INIT_BUCKETS_SIZE, alloc) {}
 
     template <class InputIt>
-    robin_set(InputIt first, InputIt last, size_type bucket_count_ = ht::DEFAULT_INIT_BUCKETS_SIZE,
-              const Hash &hash = Hash(), const KeyEqual &equal = KeyEqual(),
-              const Allocator &alloc = Allocator())
-        : robin_set(bucket_count_, hash, equal, alloc)
+    robin_set(InputIt first, InputIt last,
+              size_type my_bucket_count = ht::DEFAULT_INIT_BUCKETS_SIZE, const Hash &hash = Hash(),
+              const KeyEqual &equal = KeyEqual(), const Allocator &alloc = Allocator())
+        : robin_set(my_bucket_count, hash, equal, alloc)
     {
       insert(first, last);
     }
 
     template <class InputIt>
-    robin_set(InputIt first, InputIt last, size_type bucket_count_, const Allocator &alloc)
-        : robin_set(first, last, bucket_count_, Hash(), KeyEqual(), alloc)
+    robin_set(InputIt first, InputIt last, size_type my_bucket_count, const Allocator &alloc)
+        : robin_set(first, last, my_bucket_count, Hash(), KeyEqual(), alloc)
     {
     }
 
     template <class InputIt>
-    robin_set(InputIt first, InputIt last, size_type bucket_count_, const Hash &hash,
+    robin_set(InputIt first, InputIt last, size_type my_bucket_count, const Hash &hash,
               const Allocator &alloc)
-        : robin_set(first, last, bucket_count_, hash, KeyEqual(), alloc)
+        : robin_set(first, last, my_bucket_count, hash, KeyEqual(), alloc)
     {
     }
 
     robin_set(std::initializer_list<value_type> init,
-              size_type bucket_count_ = ht::DEFAULT_INIT_BUCKETS_SIZE, const Hash &hash = Hash(),
+              size_type my_bucket_count = ht::DEFAULT_INIT_BUCKETS_SIZE, const Hash &hash = Hash(),
               const KeyEqual &equal = KeyEqual(), const Allocator &alloc = Allocator())
-        : robin_set(init.begin(), init.end(), bucket_count_, hash, equal, alloc)
+        : robin_set(init.begin(), init.end(), my_bucket_count, hash, equal, alloc)
     {
     }
 
-    robin_set(std::initializer_list<value_type> init, size_type bucket_count_,
+    robin_set(std::initializer_list<value_type> init, size_type my_bucket_count,
               const Allocator &alloc)
-        : robin_set(init.begin(), init.end(), bucket_count_, Hash(), KeyEqual(), alloc)
+        : robin_set(init.begin(), init.end(), my_bucket_count, Hash(), KeyEqual(), alloc)
     {
     }
 
-    robin_set(std::initializer_list<value_type> init, size_type bucket_count_, const Hash &hash,
+    robin_set(std::initializer_list<value_type> init, size_type my_bucket_count, const Hash &hash,
               const Allocator &alloc)
-        : robin_set(init.begin(), init.end(), bucket_count_, hash, KeyEqual(), alloc)
+        : robin_set(init.begin(), init.end(), my_bucket_count, hash, KeyEqual(), alloc)
     {
     }
 
@@ -213,12 +217,12 @@ namespace tsl {
 
     iterator insert(const_iterator hint, const value_type &value)
     {
-      return m_ht.insert(hint, value);
+      return m_ht.insert_hint(hint, value);
     }
 
     iterator insert(const_iterator hint, value_type &&value)
     {
-      return m_ht.insert(hint, std::move(value));
+      return m_ht.insert_hint(hint, std::move(value));
     }
 
     template <class InputIt> void insert(InputIt first, InputIt last) { m_ht.insert(first, last); }
@@ -257,7 +261,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup to the value if you already
+     * the same as hash_function()(key). Useful to speed-up the lookup to the value if you already
      * have the hash.
      */
     size_type erase(const key_type &key, std::size_t precalculated_hash)
@@ -280,7 +284,7 @@ namespace tsl {
      * @copydoc erase(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup to the value if you already
+     * the same as hash_function()(key). Useful to speed-up the lookup to the value if you already
      * have the hash.
      */
     template <class K, class KE = KeyEqual,
@@ -299,7 +303,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     size_type count(const Key &key, std::size_t precalculated_hash) const
@@ -322,7 +326,7 @@ namespace tsl {
      * @copydoc count(const K& key) const
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -336,7 +340,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     iterator find(const Key &key, std::size_t precalculated_hash)
@@ -369,7 +373,7 @@ namespace tsl {
      * @copydoc find(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -393,7 +397,7 @@ namespace tsl {
      * @copydoc find(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -407,7 +411,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     std::pair<iterator, iterator> equal_range(const Key &key, std::size_t precalculated_hash)
@@ -444,7 +448,7 @@ namespace tsl {
      * @copydoc equal_range(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -485,11 +489,23 @@ namespace tsl {
      *  Hash policy
      */
     float load_factor() const { return m_ht.load_factor(); }
-    float max_load_factor() const { return m_ht.max_load_factor(); }
-    void  max_load_factor(float ml) { m_ht.max_load_factor(ml); }
 
-    void rehash(size_type count_) { m_ht.rehash(count_); }
-    void reserve(size_type count_) { m_ht.reserve(count_); }
+    float min_load_factor() const { return m_ht.min_load_factor(); }
+    float max_load_factor() const { return m_ht.max_load_factor(); }
+
+    /**
+     * Set the `min_load_factor` to `ml`. When the `load_factor` of the set goes
+     * below `min_load_factor` after some erase operations, the set will be
+     * shrunk when an insertion occurs. The erase method itself never shrinks
+     * the set.
+     *
+     * The default value of `min_load_factor` is 0.0f, the set never shrinks by default.
+     */
+    void min_load_factor(float ml) { m_ht.min_load_factor(ml); }
+    void max_load_factor(float ml) { m_ht.max_load_factor(ml); }
+
+    void rehash(size_type new_count) { m_ht.rehash(new_count); }
+    void reserve(size_type new_count) { m_ht.reserve(new_count); }
 
     /*
      * Observers

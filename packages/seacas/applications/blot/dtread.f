@@ -95,7 +95,6 @@ C   --   Uses NUMNP, NUMEL, NELBLK of /DBNUMS/
       REAL VAR(NUMEL)
 
       CHARACTER TYP
-      INTEGER IX(3)
 
       DO 160 IVAR = MAX (NNDVAR, NEDVAR), 1, -1
 

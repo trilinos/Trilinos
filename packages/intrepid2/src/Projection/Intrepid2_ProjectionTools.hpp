@@ -191,7 +191,7 @@ public:
   template<typename BasisType,
   typename ortValueType,       class ...ortProperties>
   static void
-  getL2EvaluationPoints(typename BasisType::scalarViewType evaluationPoints,
+  getL2EvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
@@ -224,7 +224,7 @@ public:
   static void
   getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
       const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
-      const typename BasisType::scalarViewType evaluationPoints,
+      const typename BasisType::ScalarViewType evaluationPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
@@ -252,8 +252,8 @@ public:
   template<typename BasisType,
   typename ortValueType,       class ...ortProperties>
   static void
-  getHGradEvaluationPoints(typename BasisType::scalarViewType evaluationPoints,
-      typename BasisType::scalarViewType gradEvalPoints,
+  getHGradEvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
+      typename BasisType::ScalarViewType gradEvalPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
@@ -291,8 +291,8 @@ public:
   getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
       const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
       const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetGradAtGradEvalPoints,
-      const typename BasisType::scalarViewType evaluationPoints,
-      const typename BasisType::scalarViewType gradEvalPoints,
+      const typename BasisType::ScalarViewType evaluationPoints,
+      const typename BasisType::ScalarViewType gradEvalPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
@@ -320,8 +320,8 @@ public:
   template<typename BasisType,
   typename ortValueType,       class ...ortProperties>
   static void
-  getHCurlEvaluationPoints(typename BasisType::scalarViewType evaluationPoints,
-      typename BasisType::scalarViewType curlEvalPoints,
+  getHCurlEvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
+      typename BasisType::ScalarViewType curlEvalPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
@@ -361,8 +361,8 @@ public:
   getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
       const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
       const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetCurlAtCurlEvalPoints,
-      const typename BasisType::scalarViewType evaluationPoints,
-      const typename BasisType::scalarViewType curlEvalPoints,
+      const typename BasisType::ScalarViewType evaluationPoints,
+      const typename BasisType::ScalarViewType curlEvalPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
@@ -390,8 +390,8 @@ public:
   template<typename BasisType,
   typename ortValueType,       class ...ortProperties>
   static void
-  getHDivEvaluationPoints(typename BasisType::scalarViewType evaluationPoints,
-      typename BasisType::scalarViewType divEvalPoints,
+  getHDivEvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
+      typename BasisType::ScalarViewType divEvalPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
@@ -429,8 +429,8 @@ public:
   getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
       const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
       const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetDivAtDivEvalPoints,
-      const typename BasisType::scalarViewType evaluationPoints,
-      const typename BasisType::scalarViewType divEvalPoints,
+      const typename BasisType::ScalarViewType evaluationPoints,
+      const typename BasisType::ScalarViewType divEvalPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
@@ -454,7 +454,7 @@ public:
   template<typename BasisType,
   typename ortValueType,       class ...ortProperties>
   static void
-  getHVolEvaluationPoints(typename BasisType::scalarViewType evaluationPoints,
+  getHVolEvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
       const Kokkos::DynRankView<ortValueType, ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
@@ -486,7 +486,7 @@ public:
   static void
   getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
       const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
-      const typename BasisType::scalarViewType evaluationPoints,
+      const typename BasisType::ScalarViewType evaluationPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);

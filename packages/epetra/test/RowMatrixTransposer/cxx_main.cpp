@@ -281,7 +281,10 @@ int checkResults(Epetra_RowMatrix * A, Epetra_CrsMatrix * transA,
   Epetra_MultiVector resid(A->OperatorRangeMap(), 1);
 
   resid.Update(1.0, b1, -1.0, b2, 0.0);
-  int ierr0 = resid.Norm2(&residual);
+#ifndef NDEBUG
+  int ierr0 =
+#endif
+  resid.Norm2(&residual);
   assert(ierr0==0);
   if (verbose) cout << "Norm of b1 - b2 = " << residual << endl;
 

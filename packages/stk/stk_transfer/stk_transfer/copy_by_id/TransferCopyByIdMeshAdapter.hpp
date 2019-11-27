@@ -1,6 +1,7 @@
-// Copyright (c) 2015, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -47,16 +48,16 @@ public:
   typedef uint64_t Mesh_ID;
   typedef std::vector<Mesh_ID> MeshIDVector;
 
-  virtual const double* field_data(const Mesh_ID & id, const unsigned field_index) const =0;
-  virtual       double* field_data(const Mesh_ID & id, const unsigned field_index)       =0;
-  virtual unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const =0;
-  virtual unsigned num_fields() const =0;
-  virtual ParallelMachine comm() const =0;
+  virtual const void* field_data(const Mesh_ID & id, const unsigned field_index) const = 0;
+  virtual       void* field_data(const Mesh_ID & id, const unsigned field_index)       = 0;
+  virtual unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const = 0;
+  virtual unsigned num_fields() const = 0;
+  virtual ParallelMachine comm() const = 0;
 
-  virtual const MeshIDVector & get_mesh_ids() const =0;
-  virtual bool is_locally_owned(const Mesh_ID & id) const =0;
-  virtual void centroid(const Mesh_ID & id, double coords[3]) const =0;
-  virtual std::string print_mesh_id(const Mesh_ID& id) const =0;
+  virtual const MeshIDVector & get_mesh_ids() const = 0;
+  virtual bool is_locally_owned(const Mesh_ID & id) const = 0;
+  virtual void centroid(const Mesh_ID & id, double coords[3]) const = 0;
+  virtual std::string print_mesh_id(const Mesh_ID& id) const = 0;
   virtual ~TransferCopyByIdMeshAdapter() = default;
 };
 

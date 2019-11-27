@@ -70,7 +70,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                      \
+    catch (std::exception &err) {                                      \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -701,7 +701,7 @@ namespace Intrepid2 {
           // }
         }
 #endif
-      } catch(std::exception err) {
+      } catch (std::exception &err) {
         *outStream << "Unexpected Error = " << err.what() << "\n";
         errorFlag = -1000;
       }

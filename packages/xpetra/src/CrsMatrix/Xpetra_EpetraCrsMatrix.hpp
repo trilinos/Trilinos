@@ -189,6 +189,7 @@ public:
   global_size_t getGlobalNumEntries() const { return 0; }
   size_t getNodeNumEntries() const { return 0; }
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
   size_t getGlobalMaxNumRowEntries() const { return 0; }
   size_t getNodeMaxNumRowEntries() const { return 0; }
   bool isLocallyIndexed() const { return false; }
@@ -255,6 +256,14 @@ public:
 #endif
 #endif
 #endif
+
+  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const{ 
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+    apply(X,R);
+    R.update(one,B,negone);
+  }
 
 }; // EpetraCrsMatrixT class (specialization on GO=long, empty stub implementation)
 
@@ -779,6 +788,9 @@ public:
   //! Returns the current number of entries on this node in the specified local row.
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsMatrixT::getNumEntriesInLocalRow"); return mtx_->NumMyEntries(localRow); }
 
+  //! Returns the current number of entries on this node in the specified (locally owned) global row.
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsMatrixT::getNumEntriesInGlobalRow"); return mtx_->NumGlobalEntries(globalRow); }
+
   //! Returns the maximum number of entries across all rows/columns on all nodes.
   size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalMaxNumRowEntries"); return mtx_->GlobalMaxNumEntries(); }
 
@@ -1230,6 +1242,8 @@ public:
                                "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
   }
 
+
+
 private:
   mutable local_matrix_type localMatrix_;
   mutable bool              isInitializedLocalMatrix_ = false; // It's OK to use C++11 when Tpetra is enabled
@@ -1240,6 +1254,15 @@ private:
 #endif
 #endif
   //@}
+
+  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+
+    apply(X,R);
+    R.update(one,B,negone);
+  }
 
 private:
   //! The underlying actual matrix object
@@ -1775,6 +1798,9 @@ public:
   //! Returns the current number of entries on this node in the specified local row.
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsMatrixT::getNumEntriesInLocalRow"); return mtx_->NumMyEntries(localRow); }
 
+  //! Returns the current number of entries on this node in the specified (locally owned) global row.
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsMatrixT::getNumEntriesInGlobalRow"); return mtx_->NumGlobalEntries(globalRow); }
+
   //! Returns the maximum number of entries across all rows/columns on all nodes.
   size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalMaxNumRowEntries"); return mtx_->GlobalMaxNumEntries(); }
 
@@ -2223,6 +2249,7 @@ public:
                                "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
   }
 
+ 
 private:
   mutable local_matrix_type localMatrix_;
   mutable bool              isInitializedLocalMatrix_ = false;
@@ -2233,6 +2260,14 @@ private:
 #endif
 #endif
   //@}
+
+ void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+    apply(X,R);
+    R.update(one,B,negone);
+  }
 
 private:
   RCP<Epetra_CrsMatrix> mtx_;

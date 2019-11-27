@@ -48,10 +48,6 @@
 #include "Panzer_GatherOrientation_decl.hpp"
 #include "Panzer_GatherOrientation_impl.hpp"
 
-// these are limited to only single value scalar types, the blocked version must
-// use the vector input
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,int)
-
-#ifndef PANZER_ORDINAL64_IS_INT
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,panzer::Ordinal64)
-#endif
+// This is limited to only single value scalar types, the blocked
+// version must use the vector input
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,panzer::GlobalOrdinal)

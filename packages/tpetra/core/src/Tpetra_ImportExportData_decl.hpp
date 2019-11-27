@@ -147,16 +147,8 @@ namespace Tpetra {
     bool verbose_ = false;
 
     using execution_space = typename Node::device_type::execution_space;
-
-    // See #1088 for why this is not just device_type::memory_space.
-#ifdef KOKKOS_ENABLE_CUDA
-    using memory_space = typename std::conditional<
-      std::is_same<execution_space, Kokkos::Cuda>::value,
-      Kokkos::CudaSpace,
-      typename Node::device_type::memory_space>::type;
-#else
-    using memory_space = typename Node::device_type::memory_space;
-#endif // KOKKOS_ENABLE_CUDA
+    using memory_space =
+      ::Tpetra::Details::DefaultTypes::comm_buffer_memory_space<execution_space>;
     using device_type = Kokkos::Device<execution_space, memory_space>;
 
     /// \brief Index of target Map LIDs to which to permute.

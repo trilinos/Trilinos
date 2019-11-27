@@ -8,7 +8,7 @@
 
 namespace Tacho {
 
-    template<typename ValueType, typename ExecSpace>
+    template<typename ValueType, typename SchedulerType>
     struct DenseMatrixView {
     public:
       enum : ordinal_type { rank = 2 };
@@ -16,9 +16,10 @@ namespace Tacho {
       typedef ValueType value_type;
       typedef value_type non_const_value_type;
 
-      typedef ExecSpace execution_space;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::execution_space execution_space;
 
-      typedef Kokkos::Future<int,execution_space> future_type;
+      typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
 
     private:
       ordinal_type _offm, _offn, _m, _n, _rs, _cs;
@@ -95,7 +96,7 @@ namespace Tacho {
       void set_future(const future_type &f) { _future = f; }
 
       KOKKOS_INLINE_FUNCTION
-      void set_future() { _future.~future_type(); }
+      void set_future() { _future.clear(); }
       
       /// get methods
 

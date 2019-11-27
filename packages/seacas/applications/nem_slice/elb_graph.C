@@ -35,22 +35,21 @@
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Functions contained in this file:
- *	generate_graph()
- *	find_surnd_elems()
- *	find_adjacency()
+ *      generate_graph()
+ *      find_surnd_elems()
+ *      find_adjacency()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-#include "elb.h"        // for Problem_Description, etc
-#include "elb_elem.h"   // for get_elem_info, NNODES, etc
-#include "elb_err.h"    // for Gen_Error
-#include "elb_format.h" // for ST_ZU
+#include "copy_string_cpp.h"
+#include "elb.h"      // for Problem_Description, etc
+#include "elb_elem.h" // for get_elem_info, NNODES, etc
+#include "elb_err.h"  // for Gen_Error
 #include "elb_graph.h"
 #include "elb_util.h" // for in_list, find_inter
 #include <cassert>    // for assert
 #include <cstddef>    // for size_t
-#include <cstdio>     // for sprintf, printf
 #include <cstdlib>    // for free, malloc
-#include <cstring>    // for strcat, strcpy
-#include <iostream>   // for operator<<, basic_ostream, etc
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <sstream>
 #include <vector> // for vector
 
@@ -95,7 +94,7 @@ int generate_graph(Problem_Description *problem, Mesh_Description<INT> *mesh,
     return 0;
   }
   double time2 = get_time();
-  std::cerr << "Time to find surrounding elements: " << time2 - time1 << "\n";
+  fmt::print(stderr, "Time to find surrounding elements: {}s\n", time2 - time1);
 
   /* Find the adjacency, if required */
   if (problem->alloc_graph == ELB_TRUE) {
@@ -104,7 +103,7 @@ int generate_graph(Problem_Description *problem, Mesh_Description<INT> *mesh,
       return 0;
     }
     time1 = get_time();
-    std::cerr << "Time to find the adjacency: " << time1 - time2 << "\n";
+    fmt::print(stderr, "Time to find the adjacency: {}s\n", time2 - time1);
   }
   return 1;
 }
@@ -151,8 +150,8 @@ namespace {
     size_t v_size  = sizeof(std::vector<INT>);
     size_t vv_size = sizeof(std::vector<std::vector<INT>>);
     size_t total   = vv_size + mesh->num_nodes * v_size + sur_elem_total_size * sizeof(INT);
-    std::cerr << "\ttotal size of reverse connectivity array: " << sur_elem_total_size
-              << " entries (" << total << " bytes).\n";
+    fmt::print(stderr, "\ttotal size of reverse connectivity array: {:n} entries ({:n} bytes).\n",
+               sur_elem_total_size, total);
     vec_free(last_element);
 
     // Attempt to reserve an array with this size...
@@ -161,9 +160,10 @@ namespace {
       char *block = reinterpret_cast<char *>(malloc(total));
       if (block == nullptr) {
         std::ostringstream errmsg;
-        errmsg << "fatal: Could not allocate memory for reverse-connectivity array "
-                  "(find_surnd_elems) of size "
-               << total << "bytes.\n";
+        fmt::print(errmsg,
+                   "fatal: Could not allocate memory for reverse-connectivity array "
+                   "(find_surnd_elems) of size {} bytes.\n",
+                   total);
         Gen_Error(0, errmsg.str());
       }
       free(block);
@@ -172,7 +172,7 @@ namespace {
     graph->sur_elem.resize(mesh->num_nodes);
     for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
       if (surround_count[ncnt] == 0) {
-        std::cerr << "WARNING: Node = " << ncnt + 1 << " has no elements\n";
+        fmt::print(stderr, "WARNING: Node = {} has no elements\n", ncnt + 1);
       }
       else {
         graph->sur_elem[ncnt].reserve(surround_count[ncnt]);
@@ -182,8 +182,10 @@ namespace {
     }
     double time2 = get_time();
 
-    std::cerr << "\tmemory allocated...(" << time2 - time1 << " seconds)\n"
-              << "\tmax of " << graph->max_nsur << " elements per node\n";
+    fmt::print(stderr,
+               "\tmemory allocated...({} seconds)\n"
+               "\tmax of {} elements per node\n",
+               time2 - time1, graph->max_nsur);
 
     /* Find the surrounding elements for each node in the mesh */
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
@@ -358,8 +360,8 @@ namespace {
                   /* If tmp_element[entry] != ecnt, then entry is not in list... */
                   if ((size_t)tmp_element[entry] != ecnt) {
 #if 0
-		    assert(in_list(entry, (graph->nadj)-(graph->start[cnt]),
-				   (graph->adj)+(graph->start[cnt])) < 0);
+                    assert(in_list(entry, (graph->nadj)-(graph->start[cnt]),
+                                   (graph->adj)+(graph->start[cnt])) < 0);
 #endif
                     tmp_element[entry] = ecnt;
                     (graph->nadj)++;
@@ -372,7 +374,7 @@ namespace {
                     iret = in_list(entry, (graph->nadj) - (graph->start[cnt]),
                                    &graph->adj[graph->start[cnt]]);
                     assert(iret >= 0);
-                    weight->edges[iret + (graph->start[cnt])] += 1.0;
+                    weight->edges[iret + (graph->start[cnt])] += 1.0f;
                   }
                 }
               }
@@ -434,14 +436,14 @@ namespace {
                 /* copy the first array into temp storage */
 
 #if 0
-		/* nhold is the number of elements touching node 0 on
-		   the side of this element */
-		size_t nhold = graph->sur_elem[side_nodes[0]].size();
+                /* nhold is the number of elements touching node 0 on
+                   the side of this element */
+                size_t nhold = graph->sur_elem[side_nodes[0]].size();
 
-		/* Now that we have the number of elements touching
-		   side 0, get their element ids and store them in hold_elem */
-		for (size_t ncnt = 0; ncnt < nhold; ncnt++)
-		  hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
+                /* Now that we have the number of elements touching
+                   side 0, get their element ids and store them in hold_elem */
+                for (size_t ncnt = 0; ncnt < nhold; ncnt++)
+                  hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
 #endif
                 /*
                  * need to handle hex's differently because of
@@ -616,8 +618,6 @@ namespace {
                           sid =
                               get_side_id(mesh->elem_type[entry], mesh->connect[entry], side_cnt,
                                           mirror_nodes, problem->skip_checks, problem->partial_adj);
-
-                          /* printf("sid = %d\n",sid); */
                         }
 
                         if (sid > 0) {
@@ -644,39 +644,38 @@ namespace {
                            * too many errors with bad meshes, print out
                            * more information here for diagnostics
                            */
-                          char tmpstr[80];
-                          char cmesg[256];
-                          sprintf(cmesg,
-                                  "Error returned while getting side id for communication map.");
+                          std::string tmpstr;
+                          std::string cmesg;
+                          cmesg = "Error returned while getting side id for communication map.";
                           Gen_Error(0, cmesg);
-                          sprintf(cmesg, "Element 1: " ST_ZU "", (ecnt + 1));
+                          cmesg = fmt::format("Element 1: {}", (ecnt + 1));
                           Gen_Error(0, cmesg);
                           nnodes = get_elem_info(NNODES, etype);
-                          strcpy(cmesg, "connect table:");
+                          cmesg  = "connect table:";
                           for (int ii = 0; ii < nnodes; ii++) {
-                            sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[ecnt][ii] + 1));
-                            strcat(cmesg, tmpstr);
+                            tmpstr = fmt::format(" {}", (size_t)(mesh->connect[ecnt][ii] + 1));
+                            cmesg += tmpstr;
                           }
                           Gen_Error(0, cmesg);
-                          sprintf(cmesg, "side id: %d", (nscnt + 1));
+                          cmesg = fmt::format("side id: {}", (nscnt + 1));
                           Gen_Error(0, cmesg);
-                          strcpy(cmesg, "side nodes:");
+                          cmesg = "side nodes:";
                           for (int ii = 0; ii < side_cnt; ii++) {
-                            sprintf(tmpstr, " " ST_ZU "", (size_t)(side_nodes[ii] + 1));
-                            strcat(cmesg, tmpstr);
+                            tmpstr = fmt::format(" {}", (size_t)(side_nodes[ii] + 1));
+                            cmesg += tmpstr;
                           }
                           Gen_Error(0, cmesg);
-                          sprintf(cmesg, "Element 2: " ST_ZU "", (entry + 1));
+                          cmesg = fmt::format("Element 2: {}", (entry + 1));
                           Gen_Error(0, cmesg);
                           nnodes = get_elem_info(NNODES, etype2);
-                          strcpy(cmesg, "connect table:");
+                          cmesg  = "connect table:";
                           for (int ii = 0; ii < nnodes; ii++) {
-                            sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[entry][ii] + 1));
-                            strcat(cmesg, tmpstr);
+                            tmpstr = fmt::format(" {}", (size_t)(mesh->connect[entry][ii] + 1));
+                            cmesg += tmpstr;
                           }
                           Gen_Error(0, cmesg);
                           count++;
-                          printf("Now we have %d bad element connections.\n", count);
+                          fmt::print("Now we have {} bad element connections.\n", count);
                         } /* End "if (sid > 0)" */
 
                       } /* End: "if(ecnt != entry)" */
@@ -725,7 +724,7 @@ namespace {
                         }
                       }
                       else if (weight->type & EDGE_WGT) {
-                        weight->edges[iret + (graph->start[cnt])] += 1.0;
+                        weight->edges[iret + (graph->start[cnt])] += 1.0f;
                       }
                     }
                   } /* End: if(ecnt != entry) */
@@ -752,8 +751,9 @@ namespace {
     if ((size_t)graph->start[problem->num_vertices] != graph->nadj) {
       // Possibly an integer overflow... Output error message and stop.
       std::ostringstream errmsg;
-      errmsg << "fatal: Graph adjacency edge count (" << graph->nadj
-             << ") exceeds chaco 32-bit integer range.\n";
+      fmt::print(errmsg,
+                 "fatal: Graph adjacency edge count ({}) exceeds chaco 32-bit integer range.\n",
+                 graph->nadj);
       Gen_Error(0, errmsg.str());
       return 0;
     }

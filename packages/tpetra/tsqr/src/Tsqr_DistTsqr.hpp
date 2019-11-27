@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -45,13 +43,12 @@
 #ifndef __TSQR_Tsqr_DistTsqr_hpp
 #define __TSQR_Tsqr_DistTsqr_hpp
 
-#include <Tsqr_DistTsqrHelper.hpp>
-#include <Tsqr_DistTsqrRB.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <utility> // std::pair
+#include "Tsqr_DistTsqrHelper.hpp"
+#include "Tsqr_DistTsqrRB.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
+#include <utility> // std::pair
 
 namespace TSQR {
   /// \class DistTsqr
@@ -62,13 +59,8 @@ namespace TSQR {
   /// \tparam Scalar Value type for matrices to factor.
   ///
   /// This class combines the square R factors computed by the
-  /// intranode TSQR factorization (\c NodeTsqr subclass) on
-  /// individual MPI processes.
-  ///
-  /// It should be possible to instantiate
-  /// DistTsqr<LocalOrdinal,Scalar> for any LocalOrdinal and Scalar
-  /// types for which \c Combine<LocalOrdinal, Scalar> and \c
-  /// LAPACK<LocalOrdinal, Scalar> can be instantiated.
+  /// intranode TSQR factorization (NodeTsqr subclass) on individual
+  /// MPI processes.
   template<class LocalOrdinal, class Scalar>
   class DistTsqr : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
@@ -78,11 +70,6 @@ namespace TSQR {
     typedef std::vector<std::vector<scalar_type> > VecVec;
     typedef std::pair<VecVec, VecVec> FactorOutput;
     typedef int rank_type;
-
-  private:
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-
-  public:
 
     /// \brief Constructor (that accepts a parameter list).
     ///
@@ -281,10 +268,12 @@ namespace TSQR {
                                  "MessengerBase instance.");
       VecVec Q_factors, tau_arrays;
       DistTsqrHelper<ordinal_type, scalar_type> helper;
-      const ordinal_type ncols = R_mine.ncols();
+      const ordinal_type ncols = R_mine.extent(1);
 
-      std::vector< scalar_type > R_local (ncols*ncols);
-      copy_matrix (ncols, ncols, &R_local[0], ncols, R_mine.get(), R_mine.lda());
+      std::vector<scalar_type> R_local (ncols * ncols);
+      MatView<ordinal_type, scalar_type> R_local_view
+        (ncols, ncols, R_local.data(), ncols);
+      deep_copy (R_local_view, R_mine);
 
       const int P = messenger_->size();
       const int my_rank = messenger_->rank();
@@ -292,7 +281,7 @@ namespace TSQR {
       std::vector<scalar_type> work (ncols);
       helper.factor_helper (ncols, R_local, my_rank, 0, P-1, first_tag,
                             messenger_.get(), Q_factors, tau_arrays, work);
-      copy_matrix (ncols, ncols, R_mine.get(), R_mine.lda(), &R_local[0], ncols);
+      deep_copy (R_mine, R_local_view);
       return std::make_pair (Q_factors, tau_arrays);
     }
 
@@ -326,7 +315,7 @@ namespace TSQR {
       const int cur_pos = Q_factors.size() - 1;
       DistTsqrHelper<ordinal_type, scalar_type> helper;
       helper.apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
-                           &C_other[0], my_rank, 0, P-1, first_tag,
+                           C_other.data(), my_rank, 0, P-1, first_tag,
                            messenger_.get(), Q_factors, tau_arrays, cur_pos,
                            work);
     }
@@ -343,10 +332,16 @@ namespace TSQR {
                                  "you must first call init() with a valid "
                                  "MessengerBase instance.");
       const int myRank = messenger_->rank ();
-      fill_matrix (ncols_Q, ncols_Q, Q_mine, ldq_mine, STS::zero());
+
+      MatView<ordinal_type, scalar_type> Q_mine_view
+        (ncols_Q, ncols_Q, Q_mine, ldq_mine);
+      deep_copy (Q_mine_view, scalar_type {});
       if (myRank == 0) {
-        for (ordinal_type j = 0; j < ncols_Q; ++j)
-          Q_mine[j + j*ldq_mine] = STS::one();
+        for (ordinal_type j = 0; j < ncols_Q; ++j) {
+          // FIXME (26 Nov 2019) Eventually, we only want to write to
+          // a matrix through a Kokkos kernel or a TPL.
+          Q_mine[j + j*ldq_mine] = scalar_type (1.0);
+        }
       }
       apply (ApplyType::NoTranspose, ncols_Q, ncols_Q,
              Q_mine, ldq_mine, factor_output);

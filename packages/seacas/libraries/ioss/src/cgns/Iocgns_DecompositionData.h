@@ -38,6 +38,15 @@
 #include <unordered_map>
 #include <vector>
 
+#define USE_ROBIN
+#if defined USE_STD
+#include <unordered_map>
+#elif defined USE_HOPSCOTCH
+#include <hash/bhopscotch_map.h>
+#elif defined USE_ROBIN
+#include <hash/robin_map.h>
+#endif
+
 #include <cstddef>
 #include <cstdint>
 
@@ -80,13 +89,13 @@ namespace Iocgns {
   class DecompositionDataBase
   {
   public:
-    DecompositionDataBase(MPI_Comm comm) {}
+    DecompositionDataBase() {}
 
     virtual ~DecompositionDataBase();
-    virtual void   decompose_model(int serFilePtr, int filePtr, Ioss::MeshType mesh_type) = 0;
-    virtual size_t ioss_node_count() const                                                = 0;
-    virtual size_t ioss_elem_count() const                                                = 0;
-    virtual int    int_size() const                                                       = 0;
+    virtual void   decompose_model(int filePtr, Ioss::MeshType mesh_type) = 0;
+    virtual size_t ioss_node_count() const                                = 0;
+    virtual size_t ioss_elem_count() const                                = 0;
+    virtual int    int_size() const                                       = 0;
 
     virtual int    spatial_dimension() const = 0;
     virtual size_t global_node_count() const = 0;
@@ -130,7 +139,15 @@ namespace Iocgns {
 
     // Maps nodes shared between zones.
     // TODO: Currently each processor has same map; need to figure out how to reduce size
-    std::unordered_map<cgsize_t, cgsize_t> m_zoneSharedMap;
+#if defined USE_STD
+    using ZoneSharedMap = std::unordered_map<cgsize_t, cgsize_t>;
+#elif defined USE_HOPSCOTCH
+    //    using ZoneSharedMap = tsl::hopscotch_map<cgsize_t, cgsize_t>;
+    using ZoneSharedMap = tsl::bhopscotch_map<cgsize_t, cgsize_t>;
+#elif defined USE_ROBIN
+    using ZoneSharedMap = tsl::robin_map<cgsize_t, cgsize_t>;
+#endif
+    ZoneSharedMap m_zoneSharedMap;
   };
 
   template <typename INT> class DecompositionData : public DecompositionDataBase
@@ -141,7 +158,7 @@ namespace Iocgns {
 
     int int_size() const { return sizeof(INT); }
 
-    void decompose_model(int serFilePtr, int filePtr, Ioss::MeshType mesh_type);
+    void decompose_model(int filePtr, Ioss::MeshType mesh_type);
 
     int spatial_dimension() const { return m_decomposition.m_spatialDimension; }
 
@@ -196,7 +213,7 @@ namespace Iocgns {
                                   INT *data) const;
 
   private:
-    void decompose_structured(int serFilePtr, int filePtr);
+    void decompose_structured(int filePtr);
     void decompose_unstructured(int filePtr);
 
     void get_sideset_data(int filePtr);

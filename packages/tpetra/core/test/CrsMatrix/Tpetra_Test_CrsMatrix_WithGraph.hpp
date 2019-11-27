@@ -449,9 +449,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       V x(map,false), y(map,false);
       x.putScalar(SONE);
 
-      out << "Call localMultiply (local mat-vec) on the CrsMatrix; "
+      out << "Call localApply (local mat-vec) on the CrsMatrix; "
         "it should not throw" << endl;
-      TEST_NOTHROW( matrix.localMultiply(x,y,Teuchos::NO_TRANS,SONE,SZERO) );
+      TEST_NOTHROW( matrix.localApply(x,y,Teuchos::NO_TRANS,SONE,SZERO) );
 
       ArrayRCP<const Scalar> x_view = x.get1dView();
       ArrayRCP<const Scalar> y_view = y.get1dView();
@@ -875,7 +875,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 10;
     RCP<const Tpetra::Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
@@ -889,21 +888,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // no room for any more
       GO r = map->getMinGlobalIndex();
       TEST_THROW( matrix.insertGlobalValues( r, tuple(r+1), tuple(ST::one()) ), std::runtime_error );
-    }
-    if (numImages > 1) {
-      // add too many entries globally
-      MAT matrix(map, 1, Tpetra::StaticProfile);
-      // room for one on each row
-      for (GO r=map->getMinGlobalIndex(); r<=map->getMaxGlobalIndex(); ++r)
-      {
-        matrix.insertGlobalValues(r,tuple(r),tuple(ST::one()));
-      }
-      // always room for non-locals
-      GO r = map->getMaxGlobalIndex() + 1;
-      if (r > map->getMaxAllGlobalIndex()) r = map->getMinAllGlobalIndex();
-      TEST_NOTHROW( matrix.insertGlobalValues( r, tuple(r+1), tuple(ST::one()) ) );
-      // after communicating non-locals, failure trying to add them
-      TEST_THROW( matrix.globalAssemble(), std::runtime_error );
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;

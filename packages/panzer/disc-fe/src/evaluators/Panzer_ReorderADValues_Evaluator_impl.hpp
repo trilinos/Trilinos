@@ -48,7 +48,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 #include "Phalanx_DataLayout.hpp"
 
@@ -58,8 +58,8 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::vector<std::string> & inFieldNames,
                           const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
                           const std::string & /* elementBlock */,
-                          const UniqueGlobalIndexerBase & /* indexerSrc */,
-                          const UniqueGlobalIndexerBase & /* indexerDest */)
+                          const GlobalIndexer & /* indexerSrc */,
+                          const GlobalIndexer & /* indexerDest */)
 { 
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
 
@@ -85,8 +85,8 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::vector<std::string> & outDOFs,
                           const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
                           const std::string & /* elementBlock */,
-                          const UniqueGlobalIndexerBase & /* indexerSrc */,
-                          const UniqueGlobalIndexerBase & /* indexerDest */)
+                          const GlobalIndexer & /* indexerSrc */,
+                          const GlobalIndexer & /* indexerDest */)
 { 
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
   TEUCHOS_ASSERT(inDOFs.size()==outDOFs.size());
@@ -127,8 +127,8 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::vector<std::string> & inFieldNames,
                           const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
                           const std::string & elementBlock,
-                          const UniqueGlobalIndexerBase & indexerSrc,
-                          const UniqueGlobalIndexerBase & indexerDest)
+                          const GlobalIndexer & indexerSrc,
+                          const GlobalIndexer & indexerDest)
 { 
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
 
@@ -161,8 +161,8 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::vector<std::string> & outDOFs,
                           const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
                           const std::string & elementBlock,
-                          const UniqueGlobalIndexerBase & indexerSrc,
-                          const UniqueGlobalIndexerBase & indexerDest)
+                          const GlobalIndexer & indexerSrc,
+                          const GlobalIndexer & indexerDest)
 { 
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
   TEUCHOS_ASSERT(inDOFs.size()==outDOFs.size());
@@ -307,8 +307,8 @@ evaluateFields(typename TRAITS::EvalData /* workset */)
 template<typename TRAITS>
 void panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
 buildSrcToDestMap(const std::string & elementBlock,
-                  const UniqueGlobalIndexerBase & indexerSrc,
-                  const UniqueGlobalIndexerBase & indexerDest)
+                  const GlobalIndexer & indexerSrc,
+                  const GlobalIndexer & indexerDest)
 {
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   out.setOutputToRootOnly(0);
@@ -338,8 +338,8 @@ template<typename TRAITS>
 void panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
 buildSrcToDestMap(const std::string & elementBlock,
                   const std::map<int,int> & fieldNumberMaps,
-                  const UniqueGlobalIndexerBase & indexerSrc,
-                  const UniqueGlobalIndexerBase & indexerDest)
+                  const GlobalIndexer & indexerSrc,
+                  const GlobalIndexer & indexerDest)
 {
   int maxDest = -1;
   std::map<int,int> offsetMap; // map from source to destination offsets

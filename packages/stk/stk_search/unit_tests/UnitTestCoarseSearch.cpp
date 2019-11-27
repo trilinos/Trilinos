@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -130,90 +131,6 @@ void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm 
   expect_search_results(num_procs, proc_id, searchResults);
 }
 
-
-int IdentForTest(int id, int proc_id)
-{
-  return id + 1000 * proc_id;
-}
-
-void testCoarseSearchForAlgorithm_IntsForIdents(stk::search::SearchMethod algorithm, MPI_Comm comm)
-{
-  typedef stk::search::Point<double> Point;
-  typedef stk::search::Box<double> StkBox;
-  typedef std::vector< std::pair<StkBox, int > > BoxVector;
-
-  int num_procs = stk::parallel_machine_size(comm);
-  int proc_id   = stk::parallel_machine_rank(comm);
-
-  BoxVector local_domain, local_range;
-  // what if identifier is NOT unique
-
-  StkBox box;
-  int id = 0;
-
-  box = StkBox( Point(proc_id + 0.1, 0.0, 0.0), Point(proc_id + 0.9, 1.0, 1.0));
-  id = IdentForTest(proc_id * 4, proc_id);
-  local_domain.push_back(std::make_pair(box,id));
-
-  box = StkBox( Point(proc_id + 0.1, 2.0, 0.0), Point(proc_id + 0.9, 3.0, 1.0));
-  id = IdentForTest(proc_id * 4+1, proc_id);
-  local_domain.push_back(std::make_pair(box,id));
-
-  box = StkBox( Point(proc_id + 0.6, 0.5, 0.0), Point(proc_id + 1.4, 1.5, 1.0));
-  id = IdentForTest(proc_id * 4+2, proc_id);
-  local_range.push_back(std::make_pair(box,id));
-
-  box = StkBox( Point(proc_id + 0.6, 2.5, 0.0), Point(proc_id + 1.4, 3.5, 1.0));
-  id = IdentForTest(proc_id * 4+3, proc_id);
-  local_range.push_back(std::make_pair(box,id));
-
-  std::vector<std::pair<int, int> > searchResults;
-
-  stk::search::coarse_search_nonIdentProc<StkBox, int, StkBox, int>(local_domain, local_range, algorithm, comm, searchResults);
-
-  if (num_procs == 1) {
-    ASSERT_EQ( searchResults.size(), 2u);
-    EXPECT_EQ( searchResults[0].first, IdentForTest(0,0) );
-    EXPECT_EQ( searchResults[1].first, IdentForTest(1,0) );
-    EXPECT_EQ( searchResults[0].second,IdentForTest(2,0) );
-    EXPECT_EQ( searchResults[1].second,IdentForTest(3,0) );
-  }
-  else {
-    if (proc_id == 0) {
-      ASSERT_EQ( searchResults.size(), 2u);
-      EXPECT_EQ( searchResults[0].first, IdentForTest(0,0) );
-      EXPECT_EQ( searchResults[1].first, IdentForTest(1,0) );
-      EXPECT_EQ( searchResults[0].second, IdentForTest(2,0) );
-      EXPECT_EQ( searchResults[1].second, IdentForTest(3,0) );
-    }
-    else if (proc_id == num_procs - 1) {
-      ASSERT_EQ( searchResults.size(), 4u);
-      int prev = proc_id -1;
-      EXPECT_EQ( searchResults[0].first, IdentForTest(proc_id*4,proc_id) );
-      EXPECT_EQ( searchResults[1].first, IdentForTest(proc_id*4,proc_id) );
-      EXPECT_EQ( searchResults[2].first, IdentForTest(proc_id*4+1,proc_id) );
-      EXPECT_EQ( searchResults[3].first, IdentForTest(proc_id*4+1,proc_id) );
-      EXPECT_EQ( searchResults[0].second, IdentForTest(prev*4+2,prev) );
-      EXPECT_EQ( searchResults[1].second, IdentForTest(proc_id*4+2,proc_id) );
-      EXPECT_EQ( searchResults[2].second, IdentForTest(prev*4+3,prev) );
-      EXPECT_EQ( searchResults[3].second, IdentForTest(proc_id*4+3,proc_id) );
-
-    }
-    else {
-      ASSERT_EQ( searchResults.size(), 4u);
-      int prev = proc_id -1;
-      EXPECT_EQ( searchResults[0].first, IdentForTest(proc_id*4,proc_id) );
-      EXPECT_EQ( searchResults[1].first, IdentForTest(proc_id*4,proc_id) );
-      EXPECT_EQ( searchResults[2].first, IdentForTest(proc_id*4+1,proc_id) );
-      EXPECT_EQ( searchResults[3].first, IdentForTest(proc_id*4+1,proc_id) );
-      EXPECT_EQ( searchResults[0].second, IdentForTest(prev*4+2,prev) );
-      EXPECT_EQ( searchResults[1].second, IdentForTest(proc_id*4+2,proc_id) );
-      EXPECT_EQ( searchResults[2].second, IdentForTest(prev*4+3,prev) );
-      EXPECT_EQ( searchResults[3].second, IdentForTest(proc_id*4+3,proc_id) );
-    }
-  }
-}
-
 void testCoarseSearchForAlgorithmUsingFloatAABoxes(NewSearchMethod algorithm, MPI_Comm comm)
 {
   int num_procs = stk::parallel_machine_size(comm);
@@ -248,33 +165,9 @@ void testCoarseSearchForAlgorithmUsingFloatAABoxes(NewSearchMethod algorithm, MP
   expect_search_results(num_procs, proc_id, searchResults);
 }
 
-TEST(stk_search, coarse_search_noIdentProc_boost_rtree)
-{
-  testCoarseSearchForAlgorithm_IntsForIdents(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
-}
-
-//  
-//  rdjamis, Dec 12, 2016: Added this test w/ KDTREE and the unit test failed,
-//  needs to be addressed. Leaving it off for the time being
-//
-// TEST(stk_search, coarse_search_noIdentProc_kdtree)
-// {
-//   testCoarseSearchForAlgorithm_IntsForIdents(stk::search::KDTREE, MPI_COMM_WORLD);
-// }
-
-TEST(stk_search, coarse_search_boost_rtree)
-{
-  testCoarseSearchForAlgorithm(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
-}
-
 TEST(stk_search, coarse_search_kdtree)
 {
   testCoarseSearchForAlgorithm(stk::search::KDTREE, MPI_COMM_WORLD);
-}
-
-TEST(stk_search, coarse_search_boost_rtree_using_float_aa_boxes)
-{
-    testCoarseSearchForAlgorithmUsingFloatAABoxes(BOOST_RTREE, MPI_COMM_WORLD);
 }
 
 TEST(stk_search, coarse_search_kdtree_using_float_aa_boxes)
@@ -338,11 +231,6 @@ void testIdentProcWithSearch(stk::search::SearchMethod searchMethod)
     }
 }
 
-TEST(stk_search, coarse_search_boost_ident_proc_switch)
-{
-    testIdentProcWithSearch(stk::search::BOOST_RTREE);
-}
-
 TEST(stk_search, coarse_search_kdtree_ident_proc_switch)
 {
     testIdentProcWithSearch(stk::search::KDTREE);
@@ -400,11 +288,6 @@ void testCoarseSearchOnePoint(stk::search::SearchMethod searchMethod)
     }
 }
 
-TEST(stk_search, coarse_search_one_point_BOOST_RTREE)
-{
-    testCoarseSearchOnePoint(stk::search::BOOST_RTREE);
-}
-
 TEST(stk_search, coarse_search_one_point_KDTREE)
 {
     testCoarseSearchOnePoint(stk::search::KDTREE);
@@ -457,11 +340,6 @@ void testCoarseSearchForDeterminingSharingAllAllCase(stk::search::SearchMethod s
         EXPECT_EQ(procCounter, *iter);
         procCounter++;
     }
-}
-
-TEST(CoarseSearch, forDeterminingSharingAllAllCase_BOOST_RTREE)
-{
-  testCoarseSearchForDeterminingSharingAllAllCase(stk::search::BOOST_RTREE);
 }
 
 TEST(CoarseSearch, forDeterminingSharingAllAllCase_KDTREE)
@@ -565,11 +443,6 @@ void testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::Search
       const int expectedCount = ((p_rank == 0) || (p_rank == p_size - 1) ? 2 : 3);
       EXPECT_EQ(expectedCount, static_cast<int>(procCounter));
     }
-}
-
-TEST(CoarseSearch, forDeterminingSharingLinearAdjacentCase_BOOST_RTREE)
-{
-  testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::BOOST_RTREE);
 }
 
 TEST(CoarseSearch, forDeterminingSharingLinearAdjacentCase_KDTREE)

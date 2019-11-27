@@ -46,100 +46,110 @@
 #include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
 #include <FROSch_RGDSWCoarseOperator_def.hpp>
 
+
 namespace FROSch {
     
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
-    class RGDSWPreconditioner : public AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> {
-        
-    public:
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
+    using namespace Teuchos;
+    using namespace Xpetra;
 
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::RGDSWCoarseOperatorPtr RGDSWCoarseOperatorPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::UN UN;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
-        
-        
-        RGDSWPreconditioner(CrsMatrixPtr k,
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+    class RGDSWPreconditioner : public AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> {
+
+    protected:
+
+        using XMapPtr                   = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr              = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr             = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr        = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
+
+        using XMatrixPtr                = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr           = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMatrixPtr;
+
+        using XMultiVectorPtr           = typename SchwarzPreconditioner<SC,LO,GO,NO>::XMultiVectorPtr;
+        using ConstXMultiVectorPtr      = typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+
+        using ParameterListPtr          = typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr;
+
+        using RGDSWCoarseOperatorPtr    = typename SchwarzPreconditioner<SC,LO,GO,NO>::RGDSWCoarseOperatorPtr;
+
+        using UN                        = typename SchwarzPreconditioner<SC,LO,GO,NO>::UN;
+
+        using GOVecPtr                  = typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr;
+
+    public:
+
+        RGDSWPreconditioner(ConstXMatrixPtr k,
                             ParameterListPtr parameterList);
 
         int initialize(bool useDefaultParameters = true);
-        
-        int initialize(MapPtr repeatedMap,
+
+        int initialize(ConstXMapPtr repeatedMap,
                        bool useDefaultParameters = true);
-        
+
         int initialize(GOVecPtr &dirichletBoundaryDofs,
                        bool useDefaultParameters = true);
-        
-        int initialize(MapPtr repeatedMap,
+
+        int initialize(ConstXMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs,
                        bool useDefaultParameters = true);
-        
+
         int initialize(UN dimension,
                        int overlap);
-        
+
         int initialize(UN dimension,
                        int overlap,
-                       MapPtr repeatedMap);
-        
+                       ConstXMapPtr repeatedMap);
+
         int initialize(UN dimension,
                        int overlap,
-                       MapPtr repeatedMap,
+                       ConstXMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs);
-        
+
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       MapPtr repeatedMap);
-        
+                       ConstXMapPtr repeatedMap);
+
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       MapPtr repeatedMap,
+                       ConstXMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs);
-        
+
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       MapPtr repeatedMap,
-                       MultiVectorPtr &nodeList);
-        
+                       ConstXMapPtr repeatedMap,
+                       ConstXMultiVectorPtr &nodeList);
+
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
-                       MapPtr repeatedMap,
+                       ConstXMapPtr repeatedMap,
                        GOVecPtr &dirichletBoundaryDofs,
-                       MultiVectorPtr &nodeList);
-        
+                       ConstXMultiVectorPtr &nodeList);
+
         int compute();
-        
-        void describe(Teuchos::FancyOStream &out,
-                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-        
+
+        void describe(FancyOStream &out,
+                      const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
+
         std::string description() const; // @suppress("Type cannot be resolved")
         
+        virtual int resetMatrix(ConstXMatrixPtr &k);
+
     protected:
-        
-        RGDSWCoarseOperatorPtr CoarseLevelOperator_;
-        
+
+        RGDSWCoarseOperatorPtr CoarseOperator_;
     };
-    
+
 }
 
 #endif

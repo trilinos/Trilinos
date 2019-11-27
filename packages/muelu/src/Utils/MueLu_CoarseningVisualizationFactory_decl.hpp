@@ -86,7 +86,10 @@ namespace MueLu {
     The * in the @c requested column states that the data is requested as input with all dependencies (see CoarseningVisualizationFactory::DeclareInput).
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class CoarseningVisualizationFactory : public TwoLevelFactoryBase, public VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_COARSENINGVISUALIZATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

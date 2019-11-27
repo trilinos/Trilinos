@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,6 +37,24 @@
 
 namespace
 {
+TEST(SchedulerTest, noBonusTimeWithRestart)
+{
+    stk::util::Scheduler scheduler;
+
+    const stk::util::Time startTime = 0.0;
+    const stk::util::Time dt = 0.1;
+    scheduler.add_interval(startTime, dt);
+
+    const stk::util::Time terminationTime = 10;
+    scheduler.set_termination_time(terminationTime);
+
+    const stk::util::Step unusedStep = 0;
+    const stk::util::Time restartTime = 5.0;
+    scheduler.set_restart_time(restartTime);
+    EXPECT_TRUE(scheduler.is_it_time(5.0,unusedStep));
+    EXPECT_FALSE(scheduler.is_it_time(5.02,unusedStep));
+    EXPECT_TRUE(scheduler.is_it_time(5.1,unusedStep));
+}
 
 TEST(SchedulerTest, timeInterval)
 {

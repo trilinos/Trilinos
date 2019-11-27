@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -423,6 +424,74 @@ size_t get_entities(const stk::mesh::Part &part,
     return entities.size();
 }
 
+void pack_distribution_factor(const stk::mesh::BulkData& bulk,
+                              CommBuffer& buf,
+                              const stk::mesh::FieldBase* distFact,
+                              stk::mesh::Entity side)
+{
+    stk::mesh::EntityKey key = bulk.entity_key(side);
+    buf.pack<stk::mesh::EntityKey>(key);
+
+    const stk::mesh::Bucket & bucket = bulk.bucket(side);
+    const unsigned size = field_bytes_per_entity(*distFact, bucket);
+    if (size) {
+        unsigned char * const ptr = reinterpret_cast<unsigned char *>(stk::mesh::field_data(*distFact , side));
+        buf.pack<unsigned char>(ptr , size);
+    }
+}
+
+void unpack_distribution_factor(const stk::mesh::BulkData& bulk,
+                                CommBuffer& buf,
+                                const stk::mesh::FieldBase* distFact)
+{
+    stk::mesh::EntityKey key;
+    buf.unpack<stk::mesh::EntityKey>(key);
+
+    stk::mesh::Entity side = bulk.get_entity(key);
+    ThrowRequire(bulk.is_valid(side));
+    const stk::mesh::Bucket & bucket = bulk.bucket(side);
+    const unsigned size = field_bytes_per_entity( *distFact, bucket );
+    if (size)
+    {
+        unsigned char * ptr = reinterpret_cast<unsigned char *>( stk::mesh::field_data(*distFact , side));
+        buf.unpack<unsigned char>(ptr , size);
+    }
+}
+
+void communicate_shared_side_entity_fields(const stk::mesh::BulkData& bulk,
+                                           const stk::mesh::FieldBase* distFact,
+                                           std::vector<stk::mesh::Entity>& sides)
+{
+    stk::CommSparse comm(bulk.parallel());
+
+    for (stk::mesh::Entity side : sides) {
+        if (!bulk.bucket(side).owned())
+        {
+            CommBuffer & buffer = comm.send_buffer(bulk.parallel_owner_rank(side));
+            pack_distribution_factor(bulk, buffer, distFact, side);
+        }
+    }
+
+    comm.allocate_buffers();
+
+    for (stk::mesh::Entity side : sides) {
+        if (!bulk.bucket(side).owned())
+        {
+            CommBuffer & buffer = comm.send_buffer(bulk.parallel_owner_rank(side));
+            pack_distribution_factor(bulk, buffer, distFact, side);
+        }
+    }
+
+    comm.communicate();
+
+    for (int p = 0 ; p < bulk.parallel_size(); ++p) {
+        CommBuffer & buf = comm.recv_buffer(p);
+        while (buf.remaining()) {
+            unpack_distribution_factor(bulk, buf, distFact);
+        }
+    }
+}
+
 template <typename INT>
 void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
 {
@@ -481,6 +550,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
             const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*sb_part);
             if (df_field != nullptr) {
                 stk::io::field_data_from_ioss(bulk, df_field, sides, block, "distribution_factors");
+                communicate_shared_side_entity_fields(bulk, df_field, sides);
             }
 
             // Add all attributes as fields.

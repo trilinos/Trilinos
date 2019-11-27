@@ -45,7 +45,7 @@
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_PhysicsBlock.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_WorksetContainer.hpp"

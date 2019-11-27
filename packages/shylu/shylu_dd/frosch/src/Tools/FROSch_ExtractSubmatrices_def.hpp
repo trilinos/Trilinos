@@ -43,29 +43,35 @@
 #define _FROSCH_EXTRACTSUBMATRICES_DEF_HPP
 
 #include <FROSch_ExtractSubmatrices_decl.hpp>
+
+
 namespace FROSch {
     
+    using namespace Teuchos;
+    using namespace Xpetra;
+
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
-                                                                           Teuchos::RCP<Xpetra::Map<LO,GO,NO> > map)
+    RCP<const Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
+                                                                RCP<const Map<LO,GO,NO> > map)
     {
-        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > subdomainMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(map,2*globalMatrix->getGlobalMaxNumRowEntries());
-        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
-        subdomainMatrix->doImport(*globalMatrix,*scatter,Xpetra::ADD);
+        FROSCH_TIMER_START(extractLocalSubdomainMatrixTime,"ExtractLocalSubdomainMatrix");
+        RCP<Matrix<SC,LO,GO,NO> > subdomainMatrix = MatrixFactory<SC,LO,GO,NO>::Build(map,2*globalMatrix->getGlobalMaxNumRowEntries());
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
+        subdomainMatrix->doImport(*globalMatrix,*scatter,ADD);
         //cout << *subdomainMatrix << std::endl;
-        Teuchos::RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::MpiComm<LO>(MPI_COMM_SELF));
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > localSubdomainMap = Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),map->getNodeNumElements(),0,SerialComm);
-        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > localSubdomainMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap,globalMatrix->getNodeMaxNumRowEntries());
-        
+        RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
+        RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(map->lib(),map->getNodeNumElements(),0,SerialComm);
+        RCP<Matrix<SC,LO,GO,NO> > localSubdomainMatrix = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap,globalMatrix->getNodeMaxNumRowEntries());
+
         for (unsigned i=0; i<localSubdomainMap->getNodeNumElements(); i++) {
-            Teuchos::ArrayView<const GO> indices;
-            Teuchos::ArrayView<const SC> values;
+            ArrayView<const GO> indices;
+            ArrayView<const SC> values;
             subdomainMatrix->getGlobalRowView(map->getGlobalElement(i),indices,values);
-            
+
             LO size = indices.size();
             if (size>0) {
-                Teuchos::Array<GO> indicesLocal;
-                Teuchos::Array<SC> valuesLocal;
+                Array<GO> indicesLocal;
+                Array<SC> valuesLocal;
                 for (LO j=0; j<size; j++) {
                     GO localIndex = map->getLocalElement(indices[j]);
                     if (localIndex>=0) {
@@ -76,32 +82,33 @@ namespace FROSch {
                 localSubdomainMatrix->insertGlobalValues(i,indicesLocal(),valuesLocal());
             }
         }
-        localSubdomainMatrix->fillComplete();        
-        return localSubdomainMatrix;
+        localSubdomainMatrix->fillComplete();
+        return localSubdomainMatrix.getConst();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
-                                                                           Teuchos::RCP<Xpetra::Map<LO,GO,NO> > map,
-                                                                           SC value)
+    RCP<const Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
+                                                                RCP<const Map<LO,GO,NO> > map,
+                                                                SC value)
     {
-        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > subdomainMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(map,2*globalMatrix->getGlobalMaxNumRowEntries());
-        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
-        subdomainMatrix->doImport(*globalMatrix,*scatter,Xpetra::ADD);
+        FROSCH_TIMER_START(extractLocalSubdomainMatrixTime,"ExtractLocalSubdomainMatrix");
+        RCP<Matrix<SC,LO,GO,NO> > subdomainMatrix = MatrixFactory<SC,LO,GO,NO>::Build(map,2*globalMatrix->getGlobalMaxNumRowEntries());
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
+        subdomainMatrix->doImport(*globalMatrix,*scatter,ADD);
         //cout << *subdomainMatrix << std::endl;
-        Teuchos::RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::MpiComm<LO>(MPI_COMM_SELF));
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > localSubdomainMap = Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),map->getNodeNumElements(),0,SerialComm);
-        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > localSubdomainMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap,globalMatrix->getNodeMaxNumRowEntries());
-        
+        RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
+        RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(map->lib(),map->getNodeNumElements(),0,SerialComm);
+        RCP<Matrix<SC,LO,GO,NO> > localSubdomainMatrix = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap,globalMatrix->getNodeMaxNumRowEntries());
+
         for (unsigned i=0; i<localSubdomainMap->getNodeNumElements(); i++) {
-            Teuchos::ArrayView<const GO> indices;
-            Teuchos::ArrayView<const SC> values;
+            ArrayView<const GO> indices;
+            ArrayView<const SC> values;
             subdomainMatrix->getGlobalRowView(map->getGlobalElement(i),indices,values);
-            
+
             LO size = indices.size();
             if (size>0) {
-                Teuchos::Array<GO> indicesGlobal;
-                Teuchos::Array<SC> valuesLocal;
+                Array<GO> indicesGlobal;
+                Array<SC> valuesLocal;
                 for (LO j=0; j<size; j++) {
                     GO localIndex = map->getLocalElement(indices[j]);
                     if (localIndex>=0) {
@@ -113,28 +120,29 @@ namespace FROSch {
             }
         }
         localSubdomainMatrix->fillComplete();
-        return localSubdomainMatrix;
+        return localSubdomainMatrix.getConst();
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    int UpdateLocalSubdomainMatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
-                                   Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &map,
-                                   Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &localSubdomainMatrix)
+    int UpdateLocalSubdomainMatrix(RCP<Matrix<SC,LO,GO,NO> > globalMatrix,
+                                   RCP<Map<LO,GO,NO> > &map,
+                                   RCP<Matrix<SC,LO,GO,NO> > &localSubdomainMatrix)
     {
-        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > subdomainMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(map,2*globalMatrix->getGlobalMaxNumRowEntries());
-        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
-        subdomainMatrix->doImport(*globalMatrix,*scatter,Xpetra::ADD);
-        
+        FROSCH_TIMER_START(updateLocalSubdomainMatrixTime,"UpdateLocalSubdomainMatrix");
+        RCP<Matrix<SC,LO,GO,NO> > subdomainMatrix = MatrixFactory<SC,LO,GO,NO>::Build(map,2*globalMatrix->getGlobalMaxNumRowEntries());
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
+        subdomainMatrix->doImport(*globalMatrix,*scatter,ADD);
+
         localSubdomainMatrix->resumeFill();
         for (unsigned i=0; i<map->getNodeNumElements(); i++) {
-            Teuchos::ArrayView<const GO> indices;
-            Teuchos::ArrayView<const SC> values;
+            ArrayView<const GO> indices;
+            ArrayView<const SC> values;
             subdomainMatrix->getGlobalRowView(map->getGlobalElement(i),indices,values);
-            
+
             LO size = indices.size();
             if (size>0) {
-                Teuchos::Array<LO> indicesLocal;
-                Teuchos::Array<SC> valuesLocal;
+                Array<LO> indicesLocal;
+                Array<SC> valuesLocal;
                 for (LO j=0; j<size; j++) {
                     GO localIndex = map->getLocalElement(indices[j]);
                     if (localIndex>=0) {
@@ -146,47 +154,48 @@ namespace FROSch {
             }
         }
         localSubdomainMatrix->fillComplete();
-        
+
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    int BuildSubmatrices(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > k,
-                         Teuchos::ArrayView<GO> indI,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kII,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kIJ,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kJI,
-                         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kJJ)
+    int BuildSubmatrices(RCP<const Matrix<SC,LO,GO,NO> > k,
+                         ArrayView<GO> indI,
+                         RCP<Matrix<SC,LO,GO,NO> > &kII,
+                         RCP<Matrix<SC,LO,GO,NO> > &kIJ,
+                         RCP<Matrix<SC,LO,GO,NO> > &kJI,
+                         RCP<Matrix<SC,LO,GO,NO> > &kJJ)
     {
+        FROSCH_TIMER_START(buildSubmatricesTime,"BuildSubmatrices");
         // We need four Maps
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapI = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapILocal = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI.size(),0,k->getRowMap()->getComm());
-        
-        Teuchos::Array<GO> indJ;
+        RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
+        RCP<Map<LO,GO,NO> > mapILocal = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI.size(),0,k->getRowMap()->getComm());
+
+        Array<GO> indJ;
         for (unsigned i=0; i<k->getNodeNumRows(); i++) {
             if (mapI->getLocalElement(i)<0) {
                 indJ.push_back(i);
             }
         }
-        
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapJ = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indJ(),0,k->getRowMap()->getComm());
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapJLocal = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indJ.size(),0,k->getRowMap()->getComm());
-        Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > colMap = k->getColMap();
-        kII = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapILocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
-        kIJ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapILocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indJ.size()));
-        kJI = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapJLocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
-        kJJ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapJLocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indJ.size()));
-        
+
+        RCP<Map<LO,GO,NO> > mapJ = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indJ(),0,k->getRowMap()->getComm());
+        RCP<Map<LO,GO,NO> > mapJLocal = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indJ.size(),0,k->getRowMap()->getComm());
+        RCP<const Map<LO,GO,NO> > colMap = k->getColMap();
+        kII = MatrixFactory<SC,LO,GO,NO>::Build(mapILocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
+        kIJ = MatrixFactory<SC,LO,GO,NO>::Build(mapILocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indJ.size()));
+        kJI = MatrixFactory<SC,LO,GO,NO>::Build(mapJLocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
+        kJJ = MatrixFactory<SC,LO,GO,NO>::Build(mapJLocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indJ.size()));
+
         for (unsigned i=0; i<k->getNodeNumRows(); i++) {
-            Teuchos::ArrayView<const LO> indices;
-            Teuchos::ArrayView<const SC> values;
-            
+            ArrayView<const LO> indices;
+            ArrayView<const SC> values;
+
             k->getLocalRowView(i,indices,values);
             //cout << numEntries << std::endl;
-            Teuchos::Array<GO> indicesI;
-            Teuchos::Array<SC> valuesI;
-            Teuchos::Array<GO> indicesJ;
-            Teuchos::Array<SC> valuesJ;
+            Array<GO> indicesI;
+            Array<SC> valuesI;
+            Array<GO> indicesJ;
+            Array<SC> valuesJ;
             LO tmp1=mapI->getLocalElement(i);
             LO tmp2=0;
             if (tmp1>=0) {
@@ -219,37 +228,37 @@ namespace FROSch {
                 kJJ->insertGlobalValues(tmp1,indicesJ(),valuesJ());
             }
         }
-        
+
         kII->fillComplete(mapILocal,mapILocal);
         kIJ->fillComplete(mapJLocal,mapILocal);
         kJI->fillComplete(mapILocal,mapJLocal);
         kJJ->fillComplete(mapJLocal,mapJLocal);
-        
+
         return 0;
     }
-    template <class SC,class LO,class GO,class NO>
-    int BuildSubmatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > k,
-                       Teuchos::ArrayView<GO> indI,
-                       Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kII)
-    {
-                Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
-     
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapI = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
-        
-//        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapILocal = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI.size(),0,k->getRowMap()->getComm());
 
-        kII = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapI,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
+
+    template <class SC,class LO,class GO,class NO>
+    int BuildSubmatrix(RCP<Matrix<SC,LO,GO,NO> > k,
+                       ArrayView<GO> indI,
+                       RCP<Matrix<SC,LO,GO,NO> > &kII)
+    {
+        FROSCH_TIMER_START(buildSubmatrixTime,"BuildSubmatrix");
+        //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
+        RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
+
+        kII = MatrixFactory<SC,LO,GO,NO>::Build(mapI,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
         GO maxGID = mapI->getMaxAllGlobalIndex();
         GO minGID = mapI->getMinAllGlobalIndex();
         for (unsigned i=0; i<k->getNodeNumRows(); i++) {
-            Teuchos::ArrayView<const LO> indices;
-            Teuchos::ArrayView<const SC> values;
-            
+            ArrayView<const LO> indices;
+            ArrayView<const SC> values;
+
             k->getLocalRowView(i,indices,values);
-            //cout << numEntries << std::endl;
-            Teuchos::Array<GO> indicesI;
-            Teuchos::Array<SC> valuesI;
-            
+
+            Array<GO> indicesI;
+            Array<SC> valuesI;
+
             LO tmp1=mapI->getLocalElement(k->getRowMap()->getGlobalElement(i));
             GO tmp2=0;
             if (tmp1>=0) {
@@ -265,11 +274,46 @@ namespace FROSch {
             }
         }
         kII->fillComplete(mapI,mapI);
-        
+
         return 0;
     }
-    
 
+    template <class LO,class GO,class NO>
+    int BuildSubgraph(RCP<CrsGraph<LO,GO,NO> > k,
+                      ArrayView<GO> indI,
+                      RCP<CrsGraph<LO,GO,NO> > &kII)
+    {
+        FROSCH_TIMER_START(buildSubgraphTime,"BuildSubgraph");
+        //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
+        RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
+
+        kII = CrsGraphFactory<LO,GO,NO>::Build(mapI,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
+        GO maxGID = mapI->getMaxAllGlobalIndex();
+        GO minGID = mapI->getMinAllGlobalIndex();
+        for (unsigned i=0; i<k->getNodeNumRows(); i++) {
+            ArrayView<const LO> indices;
+
+            k->getLocalRowView(i,indices);
+
+            Array<GO> indicesI;
+
+            LO tmp1=mapI->getLocalElement(k->getRowMap()->getGlobalElement(i));
+            GO tmp2=0;
+            if (tmp1>=0) {
+                for (LO j=0; j<indices.size(); j++) {
+                    tmp2 = k->getColMap()->getGlobalElement(indices[j]);
+                    if (minGID<=tmp2 && tmp2<=maxGID) {
+                        indicesI.push_back(tmp2);
+                    }
+                }
+                //cout << k->getRowMap().Comm().getRank() << " " << tmp1 << " numEntries " << numEntries << " indicesI.size() " << indicesI.size() << " indicesJ.size() " << indicesJ.size() << std::endl;
+                kII->insertGlobalValues(mapI->getGlobalElement(tmp1),indicesI());
+            }
+        }
+        kII->fillComplete(mapI,mapI);
+
+        return 0;
+    }
 }
 
 #endif

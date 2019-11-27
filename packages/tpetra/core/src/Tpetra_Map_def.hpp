@@ -48,6 +48,8 @@
 #define TPETRA_MAP_DEF_HPP
 
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
+#include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_checkPointer.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_printOnce.hpp"
@@ -59,8 +61,75 @@
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include "Tpetra_Details_initializeKokkos.hpp"
+#include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <typeinfo>
+
+namespace { // (anonymous)
+
+  template<class ExecutionSpace>
+  void
+  checkMapInputArray (const char ctorName[],
+                      const void* indexList,
+                      const size_t indexListSize,
+                      const ExecutionSpace& execSpace,
+                      const Teuchos::Comm<int>* const comm)
+  {
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      using ::Tpetra::Details::pointerAccessibleFromExecutionSpace;
+      using Teuchos::outArg;
+      using Teuchos::REDUCE_MIN;
+      using Teuchos::reduceAll;
+      using std::endl;
+
+      const int myRank = comm == nullptr ? 0 : comm->getRank ();
+      const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+      std::ostringstream lclErrStrm;
+      int lclSuccess = 1;
+
+      if (indexListSize != 0 && indexList == nullptr) {
+        lclSuccess = 0;
+        if (verbose) {
+          lclErrStrm << "Proc " << myRank << ": indexList is null, "
+            "but indexListSize=" << indexListSize << " != 0." << endl;
+        }
+      }
+      else {
+        if (indexListSize != 0 && indexList != nullptr &&
+            ! pointerAccessibleFromExecutionSpace (indexList, execSpace)) {
+          lclSuccess = 0;
+          if (verbose) {
+            using ::Tpetra::Details::memorySpaceName;
+            const std::string memSpaceName = memorySpaceName (indexList);
+            const std::string execSpaceName =
+              Teuchos::TypeNameTraits<ExecutionSpace>::name ();
+            lclErrStrm << "Proc " << myRank << ": Input array is not "
+              "accessible from the required execution space " <<
+              execSpaceName << ".  As far as I can tell, array lives "
+              "in memory space " << memSpaceName << "." << endl;
+          }
+        }
+      }
+      int gblSuccess = 0; // output argument
+      reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      if (gblSuccess != 1) {
+        std::ostringstream gblErrStrm;
+        gblErrStrm << "Tpetra::Map constructor " << ctorName <<
+          " detected a problem with the input array "
+          "(raw array, Teuchos::ArrayView, or Kokkos::View) "
+          "of global indices." << endl;
+        if (verbose) {
+          using ::Tpetra::Details::gathervPrint;
+          gathervPrint (gblErrStrm, lclErrStrm.str (), *comm);
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::invalid_argument, gblErrStrm.str ());
+      }
+    }
+  }
+} // namespace (anonymous)
 
 namespace Tpetra {
 
@@ -467,6 +536,8 @@ namespace Tpetra {
     using Kokkos::LayoutLeft;
     using Kokkos::subview;
     using Kokkos::View;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
     using Teuchos::as;
     using Teuchos::broadcast;
     using Teuchos::outArg;
@@ -475,9 +546,9 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef global_size_t GST;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using GST = global_size_t;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
@@ -562,12 +633,15 @@ namespace Tpetra {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
       // doing so, fill in the LID -> GID table.
-      View<GO*, LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
-      auto lgMap_host = Kokkos::create_mirror_view (lgMap);
+      typename decltype (lgMap_)::non_const_type lgMap
+        (view_alloc ("lgMap", WithoutInitializing), numLocalElements_);
+      auto lgMap_host =
+        Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
 
       // The input array entryList_host is already on host, so we
       // don't need to take a host view of it.
-      // auto entryList_host = Kokkos::create_mirror_view (entryList);
+      // auto entryList_host =
+      //   Kokkos::create_mirror_view (Kokkos::HostSpace (), entryList);
       // Kokkos::deep_copy (entryList_host, entryList);
 
       firstContiguousGID_ = entryList_host[0];
@@ -621,7 +695,8 @@ namespace Tpetra {
         // FixedHashTable's constructor expects an owned device View,
         // so we must deep-copy the subview of the input indices.
         View<GO*, LayoutLeft, device_type>
-          nonContigGids ("nonContigGids", nonContigGids_host.size ());
+          nonContigGids (view_alloc ("nonContigGids", WithoutInitializing),
+                         nonContigGids_host.size ());
         Kokkos::deep_copy (nonContigGids, nonContigGids_host);
 
         glMap_ = global_to_local_table_type (nonContigGids,
@@ -637,7 +712,7 @@ namespace Tpetra {
 
       for ( ; i < numLocalElements_; ++i) {
         const GO curGid = entryList_host[i];
-        const LO curLid = as<LO> (i);
+        const LO curLid = static_cast<LO> (i);
         lgMap_host[curLid] = curGid; // LID -> GID table
 
         // While iterating through entryList, we compute its
@@ -742,7 +817,10 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     Tpetra::Details::initializeKokkos ();
-
+    checkMapInputArray ("(GST, const GO[], LO, GO, comm)",
+                        indexList, static_cast<size_t> (indexListSize),
+                        Kokkos::DefaultHostExecutionSpace (),
+                        comm.getRawPtr ());
     // Not quite sure if I trust all code to behave correctly if the
     // pointer is nonnull but the array length is nonzero, so I'll
     // make sure the raw pointer is null if the length is zero.
@@ -778,9 +856,11 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     Tpetra::Details::initializeKokkos ();
-
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
-
+    checkMapInputArray ("(GST, ArrayView, GO, comm)",
+                        entryList.getRawPtr (), numLclInds,
+                        Kokkos::DefaultHostExecutionSpace (),
+                        comm.getRawPtr ());
     // Not quite sure if I trust both ArrayView and View to behave
     // correctly if the pointer is nonnull but the array length is
     // nonzero, so I'll make sure it's null if the length is zero.
@@ -806,6 +886,8 @@ namespace Tpetra {
     using Kokkos::LayoutLeft;
     using Kokkos::subview;
     using Kokkos::View;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
     using Teuchos::arcp;
     using Teuchos::ArrayView;
     using Teuchos::as;
@@ -823,6 +905,10 @@ namespace Tpetra {
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     Tpetra::Details::initializeKokkos ();
+    checkMapInputArray ("(GST, Kokkos::View, GO, comm)",
+                        entryList.data (),
+                        static_cast<size_t> (entryList.extent (0)),
+                        execution_space (), comm.getRawPtr ());
 
     // The user has specified the distribution of indices over the
     // processes, via the input array of global indices on each
@@ -898,12 +984,16 @@ namespace Tpetra {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
       // doing so, fill in the LID -> GID table.
-      View<GO*, LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
-      auto lgMap_host = Kokkos::create_mirror_view (lgMap);
+      typename decltype (lgMap_)::non_const_type lgMap
+        (view_alloc ("lgMap", WithoutInitializing), numLocalElements_);
+      auto lgMap_host =
+        Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
 
-      // Creating the mirror view is trivial, and the deep_copy is a
-      // no-op, if entryList is on host already.
-      auto entryList_host = Kokkos::create_mirror_view (entryList);
+      using array_layout =
+        typename View<const GO*, device_type>::array_layout;
+      View<GO*, array_layout, Kokkos::HostSpace> entryList_host
+        (view_alloc ("entryList_host", WithoutInitializing),
+         entryList.extent(0));
       Kokkos::deep_copy (entryList_host, entryList);
 
       firstContiguousGID_ = entryList_host[0];
@@ -1533,10 +1623,13 @@ namespace Tpetra {
 
       const LO numElts = static_cast<LO> (getNodeNumElements ());
 
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
       lg_view_type lgMap ("lgMap", numElts);
       FillLgMap<LO, GO, DT> fillIt (lgMap, minMyGID_);
 
-      auto lgMapHost = Kokkos::create_mirror_view (lgMap);
+      auto lgMapHost =
+        Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
       Kokkos::deep_copy (lgMapHost, lgMap);
 
       // "Commit" the local-to-global lookup table we filled in above.
@@ -1546,7 +1639,7 @@ namespace Tpetra {
       // lgMapHost_ may be a UVM View, so insert a fence to ensure
       // coherent host access.  We only need to do this once, because
       // lgMapHost_ is immutable after initialization.
-      execution_space::fence ();
+      execution_space().fence ();
     }
 
     return lgMap_;
@@ -2114,7 +2207,7 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 TPETRA_DEPRECATED
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createLocalMapWithNode (const size_t numElements,
-                                const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+                                const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                 const Teuchos::RCP<Node>& /* node */
 )
 {
@@ -2336,13 +2429,36 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &M,
                         const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break)
 {
+  using ::Tpetra::Details::Behavior;
   using Teuchos::Array;
   using Teuchos::ArrayView;
+  using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Tpetra::Map<LO,GO,Node> map_type;
-  int myID = M->getComm()->getRank();
+  using Teuchos::toString;
+  using std::cerr;
+  using std::endl;
+  using LO = LocalOrdinal;
+  using GO = GlobalOrdinal;
+  using map_type = Tpetra::Map<LO, GO, Node>;
+  const char funcPrefix[] = "Tpetra::createOneToOne(Map,TieBreak): ";
+
+  const bool verbose = Behavior::verbose ("Map") ||
+    Behavior::verbose ("Directory");
+  std::unique_ptr<std::string> procPrefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Proc ";
+    if (M.is_null () || M->getComm ().is_null ()) {
+      os << "?";
+    }
+    else {
+      os << M->getComm ()->getRank ();
+    }
+    os << ": ";
+    procPrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    os << funcPrefix << "Start" << endl;
+    cerr << os.str ();
+  }
 
   // FIXME (mfh 20 Feb 2013) We should have a bypass for contiguous
   // Maps (which are 1-to-1 by construction).
@@ -2350,20 +2466,41 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   //Based off Epetra's one to one.
 
   Tpetra::Directory<LO, GO, Node> directory;
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << "Initialize Directory" << endl;
+    cerr << os.str ();
+  }
   directory.initialize (*M, tie_break);
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << "Done initializing Directory" << endl;
+    cerr << os.str ();
+  }
   size_t numMyElems = M->getNodeNumElements ();
   ArrayView<const GO> myElems = M->getNodeElementList ();
   Array<int> owner_procs_vec (numMyElems);
-
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << "Call Directory::getDirectoryEntries with "
+      "GIDs " << toString (myElems) << endl;
+    cerr << os.str ();
+  }
   directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << "Directory::getDirectoryEntries PIDs "
+      "result: " << toString (owner_procs_vec) << endl;
+    cerr << os.str ();
+  }
 
+  const int myRank = M->getComm()->getRank();
   Array<GO> myOwned_vec (numMyElems);
   size_t numMyOwnedElems = 0;
   for (size_t i = 0; i < numMyElems; ++i) {
-    GO GID = myElems[i];
-    int owner = owner_procs_vec[i];
-
-    if (myID == owner) {
+    const GO GID = myElems[i];
+    const int owner = owner_procs_vec[i];
+    if (myRank == owner) {
       myOwned_vec[numMyOwnedElems++] = GID;
     }
   }
@@ -2373,8 +2510,21 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   // valid for the new Map.  Why can't we reuse it?
   const global_size_t GINV =
     Tpetra::Details::OrdinalTraits<global_size_t>::invalid ();
-  return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
-                            M->getComm ()));
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << "Create Map with GIDs "
+       << toString (myOwned_vec) << endl;
+    cerr << os.str ();
+  }
+  RCP<const map_type> retMap
+    (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
+                   M->getComm ()));
+  if (verbose) {
+    std::ostringstream os;
+    os << *procPrefix << funcPrefix << "Done!" << endl;
+    cerr << os.str ();
+  }
+  return retMap;
 }
 
 //

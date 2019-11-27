@@ -71,7 +71,7 @@ namespace Intrepid2 {
     try {                                                               \
       ++nthrow;                                                         \
       S ;                                                               \
-    } catch (std::logic_error err) {                                    \
+    } catch (std::logic_error &err) {                                    \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -285,7 +285,7 @@ namespace Intrepid2 {
         // apply field signs (after the fact, as a post-processing step)
         fst::applyLeftFieldSigns(mass_matrices, field_signs);
         fst::applyRightFieldSigns(mass_matrices, field_signs);
-        DeviceSpaceType::fence();
+        DeviceSpaceType().fence();
 
         /*******************  STOP COMPUTATION ***********************/
 
@@ -383,7 +383,7 @@ namespace Intrepid2 {
 
         *outStream << "\n";
       }
-      catch (std::logic_error err) {
+      catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";

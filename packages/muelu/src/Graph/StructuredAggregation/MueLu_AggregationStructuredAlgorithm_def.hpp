@@ -336,7 +336,6 @@ namespace MueLu {
     Array<LO> ghostedIdx(3,0);
     Array<LO> coarseIdx(3,0);
     Array<LO> ijkRem(3,0);
-    int rate = 0;
     const LO coarsePointOffset[8][3] = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {1, 1, 0},
                                         {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1}};
 
@@ -347,15 +346,16 @@ namespace MueLu {
       for(int dim=0; dim < numDimensions; dim++){
         coarseIdx[dim] = ghostedIdx[dim] / geoData->getCoarseningRate(dim);
         ijkRem[dim]    = ghostedIdx[dim] % geoData->getCoarseningRate(dim);
-        if(ghostedIdx[dim] - geoData->getOffset(dim)
-           < geoData->getLocalFineNodesInDir(dim) - geoData->getCoarseningEndRate(dim)) {
-          rate = geoData->getCoarseningRate(dim);
+        if(coupled) {
+          if (geoData->getStartGhostedCoarseNode(dim)*geoData->getCoarseningRate(dim)
+                       > geoData->getStartIndex(dim)) {
+            --coarseIdx[dim];
+          }
         } else {
-          rate = geoData->getCoarseningEndRate(dim);
+          if(ghostedIdx[dim] == geoData->getLocalFineNodesInDir(dim) - 1) {
+            coarseIdx[dim] = geoData->getLocalCoarseNodesInDir(dim) - 1;
+          }
         }
-        if(ijkRem[dim] > (rate / 2)) {++coarseIdx[dim];}
-        if(coupled && (geoData->getStartGhostedCoarseNode(dim)*geoData->getCoarseningRate(dim)
-                       > geoData->getStartIndex(dim))) {--coarseIdx[dim];}
       }
 
       // Fill Graph

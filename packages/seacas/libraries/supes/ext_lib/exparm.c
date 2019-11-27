@@ -43,7 +43,7 @@
  *     the operating system. The job processing mode, batch or
  *     interactive, is identified; for this purpose an interactive job
  *     is defined as one where the standard input device is attended by
- *     the user who can respond to unforseen events. The number of
+ *     the user who can respond to unforeseen events. The number of
  *     character storage units and the number of numeric storage units
  *     in the smallest block of storage which contains an integral
  *     number of each are defined here. This routine further defines
@@ -77,6 +77,12 @@
 #include <unistd.h> /* isatty  */
 #endif
 #include <stdio.h> /* sprintf */
+
+#ifdef _MSC_VER
+#include <io.h>
+#include <sys/ioctl.h>
+#define isatty _isatty
+#endif
 
 static char *copy_string(char *dest, char const *source, long int elements)
 {

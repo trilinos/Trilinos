@@ -77,11 +77,12 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
                 const std::string & colMapFile,
                 const std::string & domainMapFile,
                 const std::string & rangeMapFile,
-                const std::string & coordFile, const std::string &nullFile,
+                const std::string & coordFile, const std::string &nullFile, const std::string &materialFile,
                 Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >          & map,
                 Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >      & A,
                 Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > & coordinates,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & nullspace,
+                Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & material,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & X,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & B,
                 const int numVectors,
@@ -97,8 +98,10 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
 
 
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
-  galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
+  galeriStream << "========================================================\n" << xpetraParameters;
   if (matrixFile.empty()) {
+
+    galeriStream << galeriParameters;
 
     // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
     //                                 d1  d2  d3
@@ -151,10 +154,10 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
       Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
     A = Pr->BuildMatrix();
+    nullspace = Pr->BuildNullspace();
 
     if (matrixType == "Elasticity2D" ||
         matrixType == "Elasticity3D") {
-      nullspace = Pr->BuildNullspace();
       A->SetFixedBlockSize((galeriParameters.GetMatrixType() == "Elasticity2D") ? 2 : 3);
     }
 
@@ -193,6 +196,9 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
 
     if (!nullFile.empty())
       nullspace = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(nullFile, map);
+
+    if (!materialFile.empty())
+      material = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(materialFile, map);
   }
 
   X = MultiVectorFactory::Build(map, numVectors);

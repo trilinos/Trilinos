@@ -243,10 +243,10 @@ int main( int argc, char *argv[] ) {
       }
     }
 
-    *outStream << "\nA = " << *A;
-    *outStream << "\nb = " << *b;
-    *outStream << "\nC = " << *C;
-    *outStream << "\nd = " << *d;
+    *outStream << "\nA = " << printMat(*A);
+    *outStream << "\nb = " << printMat(*b);
+    *outStream << "\nC = " << printMat(*C);
+    *outStream << "\nd = " << printMat(*d);
     
 
     auto x = rcp( new Vector{Nopt,1} );
@@ -275,7 +275,7 @@ int main( int argc, char *argv[] ) {
 
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

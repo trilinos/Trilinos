@@ -1,6 +1,7 @@
-# Copyright (c) 2013, Sandia Corporation.
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
+# Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+# Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+# DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+# in this software.
 # 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -14,10 +15,10 @@
 #       disclaimer in the documentation and/or other materials provided
 #       with the distribution.
 # 
-#     * Neither the name of Sandia Corporation nor the names of its
-#       contributors may be used to endorse or promote products derived
-#       from this software without specific prior written permission.
-# 
+#     * Neither the name of NTESS nor the names of its contributors
+#       may be used to endorse or promote products derived from this
+#       software without specific prior written permission.
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -65,6 +66,11 @@ FILE(GLOB SOURCES *.cpp)
 FILE(GLOB HEADERS_INTERNAL ${CMAKE_CURRENT_SOURCE_DIR}/internal/*.hpp)
 FILE(GLOB SOURCES_INTERNAL ${CMAKE_CURRENT_SOURCE_DIR}/internal/*.cpp)
 
+IF(NOT TPL_ENABLE_BoostLib)
+LIST(REMOVE_ITEM HEADERS_INTERNAL "${CMAKE_CURRENT_SOURCE_DIR}/internal/balanceCommandLine.hpp")
+LIST(REMOVE_ITEM SOURCES_INTERNAL "${CMAKE_CURRENT_SOURCE_DIR}/internal/balanceCommandLine.cpp")
+ENDIF()
+
 FILE(GLOB HEADERS_SEARCH_TOLERANCE ${CMAKE_CURRENT_SOURCE_DIR}/search_tolerance/*.hpp)
 
 FILE(GLOB HEADERS_SEARCH_TOLERANCE_ALGS ${CMAKE_CURRENT_SOURCE_DIR}/search_tolerance_algs/*.hpp)
@@ -88,12 +94,7 @@ TRIBITS_ADD_LIBRARY(
   DEPLIBS
   )
 
-# TRIBITS_ADD_LIBRARY(
-#   stk_balance_search_tolerance_algs
-#   NOINSTALLHEADERS ${HEADERS_SEARCH_TOLERANCE_ALGS} 
-#   SOURCES ${SOURCES_SEARCH_TOLERANCE_ALGS}
-#   DEPLIBS
-#   )
+IF(TPL_ENABLE_BoostLib)
 
 TRIBITS_ADD_EXECUTABLE(
     stk_balance
@@ -108,6 +109,8 @@ TRIBITS_ADD_EXECUTABLE(
     DEPLIBS
     NOEXEPREFIX INSTALLABLE
     )
+
+ENDIF()
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_balance)

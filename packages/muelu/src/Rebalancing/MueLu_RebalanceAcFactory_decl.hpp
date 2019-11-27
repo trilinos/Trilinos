@@ -67,10 +67,10 @@ namespace MueLu {
     @class RebalanceAcFactory
     @brief Factory for building coarse matrices.
   */
-  template <class Scalar = Xpetra::Matrix<>::scalar_type,
-            class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class RebalanceAcFactory : public TwoLevelFactoryBase {
 #undef MUELU_REBALANCEACFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

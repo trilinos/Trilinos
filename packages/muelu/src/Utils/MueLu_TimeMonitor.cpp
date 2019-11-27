@@ -89,7 +89,7 @@ namespace MueLu {
         if (nonnull(stackedTimer))
           stackedTimer->stop(timer_->name());
       }
-      catch (std::runtime_error) {
+      catch (std::runtime_error&) {
         std::ostringstream warning;
         warning <<
           "\n*********************************************************************\n"

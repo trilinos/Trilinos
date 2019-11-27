@@ -6,6 +6,8 @@
 
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
+#include "stk_tools/mesh_tools/CustomAura.hpp"
+
 namespace
 {
 
@@ -65,7 +67,7 @@ std::vector<stk::balance::GraphEdge> get_graph_edges_using_graph_settings(stk::m
         bulk.modification_end();
 
         stk::mesh::EntityProcVec entitiesToGhost ;
-        stk::balance::internal::fill_list_of_entities_to_send_for_aura_like_ghosting(bulk, entitiesToGhost);
+        stk::tools::fill_list_of_entities_to_send_for_aura_like_ghosting(bulk, bulk.mesh_meta_data().globally_shared_part(), entitiesToGhost);
         bulk.batch_add_to_ghosting(*customAura , entitiesToGhost);
     }
 
@@ -80,6 +82,7 @@ std::vector<stk::balance::GraphEdge> get_graph_edges_using_graph_settings(stk::m
     graphData.set_spatial_dim(bulk.mesh_meta_data().spatial_dimension());
 
     graphData.createGraphEdgesUsingNodeConnectivity(bulk,
+                                                    bulk.mesh_meta_data().locally_owned_part(),
                                                     graphSettings,
                                                     graphData.get_num_global_elements(),
                                                     graphEdges,

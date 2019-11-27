@@ -341,7 +341,6 @@ C
 C
       call debug('RDINPT')
       CALL RDINPT (A(NT1),IA(NAEB),IA(NBEB),IA(NMAP),A(NMAPS),IMP,MBLK)
-
 C
 C
 C ******************************************************************
@@ -622,7 +621,7 @@ C
          CALL MDEROR(NOUT)
          CALL ERROR('MAPVAR',
      &              'MEMORY MANAGER ERROR',
-     &              'JUST BEFOR INTERPOLATION LOOP',
+     &              'JUST BEFORE INTERPOLATION LOOP',
      &              0,' ',0,' ',' ',1)
       END IF
 
@@ -653,10 +652,7 @@ C
 C
 C
       DO 50 IM = 1, IMP
-        IMOFF = IM * 3
-        IDBLKA = IA(NMAP-3+IMOFF)
-        IDBLKB = IA(NMAP-2+IMOFF)
-        ISCHEM = IA(NMAP-1+IMOFF)
+        call getval(ia(nmap), im, idblka, idblkb, ischem)
         TOLSEA = A(NMAPS+IM-1)
 
         do 15 i=1, nblksa
@@ -685,13 +681,13 @@ C
         INSUB  = 1
         ICOMPL = 1
         IF (IM .GT. 1)THEN
-          IDBBM1 = IA(NMAP-5+IMOFF)
+          IDBBM1 = IA(NMAP-5)
           IF (IDBLKB .EQ. IDBBM1)THEN
             INSUB = 2
           END IF
         END IF
         IF (IM .LT. IMP)THEN
-          IDBBP1 = IA(NMAP+1+IMOFF)
+          IDBBP1 = IA(NMAP+1)
           IF (IDBLKB .EQ. IDBBP1)THEN
             ICOMPL = 0
           END IF
@@ -1728,9 +1724,17 @@ C NRSS=number of    real search scratch (=10)
 C
       DATA TOL,EPS,STRLMT,ITERMX/0.01,0.01,20.,20/
 C
-C TOL=difference in isoparametric coords after newton iteration (dont change)
+C TOL=difference in isoparametric coords after newton iteration (don't change)
 C EPS=tolerance used in checking if point is within element or coincident
 C     with a node
 C STRLMT=tolerance for isoparametric coords to lie within an element
 C
       END
+
+      subroutine getval(IMAP, IM, idblka, idblkb, ischem)
+      integer imap(3,*)
+      idblka = imap(1,im)
+      idblkb = imap(2,im)
+      ischem = imap(3,im)
+      return
+      end

@@ -1,6 +1,7 @@
-// Copyright (c) 2015, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -52,7 +53,6 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
   key_to_target_processor.clear();
   m_remote_keys.clear();
 
-  typedef TransferCopyByIdMeshAdapter::Mesh_ID Mesh_ID;
   typedef TransferCopyByIdMeshAdapter::MeshIDVector MeshIDVector;
   typedef stk::search::Point<float>  Point;
   typedef stk::search::Sphere<float> Sphere;
@@ -100,7 +100,7 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
   EntityProcRelationVec source_to_target_vector;
   stk::search::coarse_search(source_bbox_vector,
                              target_bbox_vector,
-                             stk::search::BOOST_RTREE,
+                             stk::search::KDTREE,
                              mesha.comm(),
                              source_to_target_vector
                              );

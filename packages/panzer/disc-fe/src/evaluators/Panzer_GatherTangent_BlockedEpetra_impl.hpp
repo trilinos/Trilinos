@@ -57,8 +57,8 @@
 #include "Panzer_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 
 // Phalanx
 #include "Phalanx_DataLayout.hpp"
@@ -79,7 +79,7 @@
 template<typename EvalT, typename TRAITS, typename LO, typename GO>
 panzer::GatherTangent_BlockedEpetra<EvalT, TRAITS, LO, GO>::
 GatherTangent_BlockedEpetra(
-  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+  const std::vector<Teuchos::RCP<const GlobalIndexer>>&
     indexers,
   const Teuchos::ParameterList& p)
   :
@@ -89,7 +89,7 @@ GatherTangent_BlockedEpetra(
 {
   using panzer::PureBasis;
   using PHX::MDField;
-  using PHX::typeAsString;
+  using PHX::print;
   using std::size_t;
   using std::string;
   using std::vector;
@@ -120,7 +120,7 @@ GatherTangent_BlockedEpetra(
   if (numFields > 0)
     firstName = names[0];
   string n("GatherTangent (Blocked Epetra):  " + firstName + " (" +
-    typeAsString<EvalT>() + ")");
+    print<EvalT>() + ")");
   this->setName(n);
 } // end of Initializing Constructor
 

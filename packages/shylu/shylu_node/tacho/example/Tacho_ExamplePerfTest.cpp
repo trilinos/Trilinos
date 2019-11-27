@@ -21,6 +21,30 @@
 #include "cholmod.h"
 #endif
 
+/// select a kokkos task scheudler
+/// - DeprecatedTaskScheduler, DeprecatedTaskSchedulerMultiple
+/// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
+#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskScheduler<T>;
+static const char * scheduler_name = "DeprecatedTaskScheduler";
+#endif
+#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskSchedulerMultiple<T>;
+static const char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
+static const char * scheduler_name = "TaskScheduler";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
+static const char * scheduler_name = "TaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
+static const char * scheduler_name = "ChaseLevTaskScheduler";
+#endif
+
 int main (int argc, char *argv[]) {
   int nthreads = 1; 
 
@@ -417,7 +441,10 @@ int main (int argc, char *argv[]) {
       ///
       /// tacho
       ///
-      Tacho::Solver<value_type,Kokkos::DefaultHostExecutionSpace> solver;
+      typedef TaskSchedulerType<Kokkos::DefaultHostExecutionSpace> scheduler_type;       
+      printf("Scheduler Type = %s\n", scheduler_name);
+
+      Tacho::Solver<value_type,scheduler_type> solver;
 
       //solver.setMatrixType(sym, posdef);
       solver.setVerbose(verbose);

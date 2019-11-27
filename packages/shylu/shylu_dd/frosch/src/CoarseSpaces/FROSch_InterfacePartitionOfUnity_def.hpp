@@ -44,51 +44,58 @@
 
 #include <FROSch_InterfacePartitionOfUnity_decl.hpp>
 
+
 namespace FROSch {
-    
+
+    using namespace Teuchos;
+    using namespace Xpetra;
+
     template <class SC,class LO,class GO,class NO>
     InterfacePartitionOfUnity<SC,LO,GO,NO>::InterfacePartitionOfUnity(CommPtr mpiComm,
                                                                       CommPtr serialComm,
                                                                       UN dimension,
                                                                       UN dofsPerNode,
-                                                                      MapPtr nodesMap,
-                                                                      MapPtrVecPtr dofsMaps,
-                                                                      ParameterListPtr parameterList) :
-    MpiComm_ (mpiComm),
-    SerialComm_ (serialComm),
-    DDInterface_ (new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap)),
-    ParameterList_ (parameterList),
-    LocalPartitionOfUnity_ (),
-    PartitionOfUnityMaps_ (),
-    Verbose_ (MpiComm_->getRank() == 0)
+                                                                      ConstXMapPtr nodesMap,
+                                                                      ConstXMapPtrVecPtr dofsMaps,
+                                                                      ParameterListPtr parameterList,
+                                                                      Verbosity verbosity,
+                                                                      UN levelID) :
+    PartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
+    DDInterface_ ()
     {
+        FROSCH_TIMER_START_LEVELID(interfacePartitionOfUnityTime,"InterfacePartitionOfUnity::InterfacePartitionOfUnity");
+        CommunicationStrategy communicationStrategy = CreateOneToOneMap;
+        if (!this->ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsMatrix")) {
+            communicationStrategy = CommCrsMatrix;
+        } else if (!this->ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsGraph")) {
+            communicationStrategy = CommCrsGraph;
+        } else if (!this->ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CreateOneToOneMap")) {
+            communicationStrategy = CreateOneToOneMap;
+        } else {
+            FROSCH_ASSERT(false,"FROSch::InterfacePartitionOfUnity : ERROR: Specify a valid communication strategy for the identification of the interface components.");
+        }
+
+        DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap.getConst(),this->Verbosity_,this->LevelID_,communicationStrategy));
         DDInterface_->resetGlobalDofs(dofsMaps);
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     InterfacePartitionOfUnity<SC,LO,GO,NO>::~InterfacePartitionOfUnity()
     {
-        
+
     }
-    
-    template <class SC,class LO,class GO,class NO>
-    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getLocalPartitionOfUnity() const
-    {
-        return LocalPartitionOfUnity_;
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getPartitionOfUnityMaps() const
-    {
-        return PartitionOfUnityMaps_;
-    }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstDDInterfacePtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getDDInterface() const
     {
         return DDInterface_.getConst();
     }
-    
+
+    template <class SC,class LO,class GO,class NO>
+    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getDDInterfaceNonConst() const
+    {
+        return DDInterface_;
+    }
 }
 
 #endif

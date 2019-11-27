@@ -1,10 +1,11 @@
-#---------------------------------------------------------------
-#    Copyright 2006 - 2010 Sandia Corporation.
-#    Under the terms of Contract DE-AC04-94AL85000, there is a
-#    non-exclusive license for use of this work by or on behalf
-#    of the U.S. Government.  Export of this program may require
-#    a license from the United States Government.
-#---------------------------------------------------------------
+#--------------------------------------------------------------------
+#    Copyright 2002 - 2008, 2010, 2011 National Technology &         
+#    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   
+#    of Contract DE-NA0003525 with NTESS, there is a                 
+#    non-exclusive license for use of this work by or on behalf      
+#    of the U.S. Government.  Export of this program may require     
+#    a license from the United States Government.                    
+#--------------------------------------------------------------------
 
 #
 # The signature for Boost.build rules is described here:
@@ -138,6 +139,7 @@ explicit install-user-lib ;
 install install-user-lib
   : stk_tools_lib
     stk_mesh_tools_lib
+    stk_transfer_utils_lib
   : <location>$(install-root)/stk/stk_tools/lib
   ;
 
@@ -151,6 +153,7 @@ exe stk_block_extractor
   :
     $(stk_tools-root)/stk_tools/block_extractor/main.cpp 
     stk_tools_lib
+    stk_transfer_utils_lib
     /sierra/stk_util//stk_util_command_line
     /mpi//mpi
   : <tag>@sierra-exec-tag
@@ -160,7 +163,9 @@ exe stk_tools_utest
   :
     [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/block_extractor/*.cpp ]
     [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/mesh_clone/*.cpp ]
+    [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/mesh_tools/*.cpp ]
     stk_tools_lib
+    stk_mesh_tools_lib
     /sierra/stk_unit_test_utils//stk_unit_main
   : <tag>@sierra-exec-tag
   ;
@@ -183,6 +188,7 @@ lib stk_tools_lib
     ]
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_io//stk_io
+    stk_transfer_utils_lib
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -205,6 +211,7 @@ lib stk_mesh_tools_lib
     ]
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_search//stk_search
+    /sierra/stk_io//stk_io
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -237,6 +244,25 @@ lib stk_pmesh_lib
   :
   :
     <include>$(stk_tools-root-inc)/stk_tools/pmesh_lib
+  ;
+
+lib stk_transfer_utils_lib
+  :
+    [ ifdevbuild
+        [ glob
+          $(stk_tools-root)/stk_tools/transfer_utils/*.cpp ]
+    ]
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_io//stk_io
+    /sierra/stk_util//stk_util_registry
+    /sierra/stk_transfer//stk_transfer_impl
+  :
+    [ ifuserbuild
+        <file>$(stk_tools-root)/lib/libstk_transfer_utils_lib.a
+    ]
+    [ ifdevbuild
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
   ;
 
 exe stk_tools_pmesh_unit_tester

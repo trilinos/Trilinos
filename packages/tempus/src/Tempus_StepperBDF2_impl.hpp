@@ -25,105 +25,75 @@ template<class Scalar> class StepperFactory;
 template<class Scalar>
 StepperBDF2<Scalar>::StepperBDF2()
 {
-  this->setParameterList(Teuchos::null);
-  this->modelWarning();
+  this->setStepperType(        "BDF2");
+  this->setUseFSAL(            this->getUseFSALDefault());
+  this->setICConsistency(      this->getICConsistencyDefault());
+  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setZeroInitialGuess(   false);
+
+  this->setObserver();
 }
 
 
 template<class Scalar>
 StepperBDF2<Scalar>::StepperBDF2(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  Teuchos::RCP<Teuchos::ParameterList> pList)
-{
-  this->setParameterList(pList);
+  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
+  bool useFSAL,
+  std::string ICConsistency,
+  bool ICConsistencyCheck,
+  bool zeroInitialGuess)
 
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
+{
+  this->setStepperType(        "BDF2");
+  this->setUseFSAL(            useFSAL);
+  this->setICConsistency(      ICConsistency);
+  this->setICConsistencyCheck( ICConsistencyCheck);
+  this->setZeroInitialGuess(   zeroInitialGuess);
+
+  this->setObserver(obs);
+
+  if (appModel != Teuchos::null) {
+
     this->setModel(appModel);
+    this->setSolver(solver);
+    this->setStartUpStepper(startUpStepper);
     this->initialize();
   }
 }
 
 
-/** \brief Set the startup stepper to a pre-defined stepper in the ParameterList
- *
- *  The startup stepper is set to stepperName sublist in the Stepper's
- *  ParameterList.  The stepperName sublist should already be defined
- *  in the Stepper's ParameterList.  Otherwise it will fail.
- */
+/// Set the startup stepper to a default stepper.
 template<class Scalar>
-void StepperBDF2<Scalar>::setStartUpStepper(std::string startupStepperName)
+void StepperBDF2<Scalar>::setStartUpStepper(std::string startupStepperType)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->wrapperModel_->getAppModel() == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperBDF2::setStartUpStepper()\n");
 
-  RCP<ParameterList> startupStepperPL =
-    Teuchos::sublist(this->stepperPL_, startupStepperName, true);
-  this->stepperPL_->set("Start Up Stepper Name", startupStepperName);
+  using Teuchos::RCP;
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
   startUpStepper_ =
-    sf->createStepper(startupStepperPL, this->wrapperModel_->getAppModel());
+    sf->createStepper(startupStepperType, this->wrapperModel_->getAppModel());
 }
 
 
-/** \brief Set the start up stepper to the supplied Parameter sublist.
- *
- *  This adds a new start up stepper Parameter sublist to the Stepper's
- *  ParameterList.  If the start up stepper sublist is null, it tests if
- *  the stepper sublist is set in the Stepper's ParameterList.
- */
+/// Set the start up stepper.
 template<class Scalar>
 void StepperBDF2<Scalar>::setStartUpStepper(
-  Teuchos::RCP<Teuchos::ParameterList> startupStepperPL)
+  Teuchos::RCP<Stepper<Scalar> > startUpStepper)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->wrapperModel_->getAppModel() == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperBDF2::setStartUpStepper()\n");
 
-  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
-  std::string startupStepperName =
-    stepperPL->get<std::string>("Start Up Stepper Name","None");
-  if (is_null(startupStepperPL)) {
-    // Create startUpStepper, otherwise keep current startUpStepper.
-    if (startUpStepper_ == Teuchos::null) {
-      if (startupStepperName != "None") {
-        // Construct from ParameterList
-        startupStepperPL =
-          Teuchos::sublist(this->stepperPL_, startupStepperName, true);
-        RCP<StepperFactory<Scalar> > sf =
-          Teuchos::rcp(new StepperFactory<Scalar>());
-        startUpStepper_ =
-          sf->createStepper(startupStepperPL,this->wrapperModel_->getAppModel());
-      } else {
-        // Construct default start-up Stepper
-        RCP<StepperFactory<Scalar> > sf =
-          Teuchos::rcp(new StepperFactory<Scalar>());
-        startUpStepper_ =
-          sf->createStepper("IRK 1 Stage Theta Method",
-                            this->wrapperModel_->getAppModel());
-
-        startupStepperName = startUpStepper_->description();
-        startupStepperPL = startUpStepper_->getNonconstParameterList();
-        this->stepperPL_->set("Start Up Stepper Name", startupStepperName);
-        this->stepperPL_->set(startupStepperName, *startupStepperPL);  // Add sublist
-      }
-    }
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION( startupStepperName == startupStepperPL->name(),
-      std::logic_error,
-         "Error - Trying to add a startup stepper that is already in "
-      << "ParameterList!\n"
-      << "  Stepper Type = "<< stepperPL->get<std::string>("Stepper Type")
-      << "\n" << "  Start Up Stepper Name  = "<<startupStepperName<<"\n");
-    startupStepperName = startupStepperPL->name();
-    this->stepperPL_->set("Start Up Stepper Name", startupStepperName);
-    this->stepperPL_->set(startupStepperName, *startupStepperPL);     // Add sublist
-    RCP<StepperFactory<Scalar> > sf =
-      Teuchos::rcp(new StepperFactory<Scalar>());
-    startUpStepper_ =
-      sf->createStepper(startupStepperPL, this->wrapperModel_->getAppModel());
-  }
+  startUpStepper_ = startUpStepper;
+  startUpStepper_->setModel(this->wrapperModel_->getAppModel());
+  startUpStepper_->initialize();
 }
 
 
@@ -131,20 +101,17 @@ template<class Scalar>
 void StepperBDF2<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (this->stepperObserver_ == Teuchos::null) {
-      stepperBDF2Observer_ =
-        Teuchos::rcp(new StepperBDF2Observer<Scalar>());
-      this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperBDF2Observer_);
-     }
-  } else {
-    this->stepperObserver_ = obs;
-    stepperBDF2Observer_ =
-      Teuchos::rcp_dynamic_cast<StepperBDF2Observer<Scalar> >(this->stepperObserver_);
-  }
+
+  if (this->stepperObserver_ == Teuchos::null)
+    this->stepperObserver_  =
+      Teuchos::rcp(new StepperObserverComposite<Scalar>());
+
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
+    obs = Teuchos::rcp(new StepperBDF2Observer<Scalar>());
+
+  this->stepperObserver_->addObserver(
+      Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> > (obs, true) );
+
 }
 
 
@@ -156,9 +123,6 @@ void StepperBDF2<Scalar>::initialize()
     "Error - Need to set the model, setModel(), before calling "
     "StepperBDF2::initialize()\n");
 
-  this->setParameterList(this->stepperPL_);
-  this->setSolver();
-  this->setStartUpStepper();
   this->setObserver();
   order_ = Scalar(2.0);
 }
@@ -217,7 +181,7 @@ void StepperBDF2<Scalar>::takeStep(
     //IKT, FIXME: add error checking regarding states being consecutive and
     //whether interpolated states are OK to use.
 
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    //this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
@@ -241,9 +205,11 @@ void StepperBDF2<Scalar>::takeStep(
     const Scalar alpha = getAlpha(dt, dtOld);
     const Scalar beta  = getBeta (dt);
 
-    Teuchos::RCP<ImplicitODEParameters<Scalar> > p =
-      Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
-                                                     SOLVE_FOR_X));
+    auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+      timeDer, dt, alpha, beta));
+
+    if (!Teuchos::is_null(stepperBDF2Observer_))
+      stepperBDF2Observer_->observeBeforeSolve(solutionHistory, *this);
 
     const Thyra::SolveStatus<Scalar> sStatus =
       this->solveImplicitODE(x, xDot, time, p);
@@ -256,7 +222,7 @@ void StepperBDF2<Scalar>::takeStep(
 
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(getOrder());
-    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    //this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -268,7 +234,7 @@ void StepperBDF2<Scalar>::computeStartUp(
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperBDF2::computeStartUp()");
   *out << "Warning -- Taking a startup step for BDF2 using '"
-       << startUpStepper_->description()<<"'!" << std::endl;
+       << startUpStepper_->getStepperType()<<"'!" << std::endl;
 
   //Take one step using startUpStepper_
   startUpStepper_->takeStep(solutionHistory);
@@ -288,16 +254,8 @@ StepperBDF2<Scalar>::
 getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
-    rcp(new StepperState<Scalar>(description()));
+    rcp(new StepperState<Scalar>(this->getStepperType()));
   return stepperState;
-}
-
-
-template<class Scalar>
-std::string StepperBDF2<Scalar>::description() const
-{
-  std::string name = "BDF2";
-  return(name);
 }
 
 
@@ -306,37 +264,8 @@ void StepperBDF2<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
-  out << description() << "::describe:" << std::endl
+  out << this->getStepperType() << "::describe:" << std::endl
       << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
-}
-
-
-template <class Scalar>
-void StepperBDF2<Scalar>::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& pList)
-{
-  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
-  if (pList == Teuchos::null) {
-    // Create default parameters if null, otherwise keep current parameters.
-    if (stepperPL == Teuchos::null) stepperPL = this->getDefaultParameters();
-  } else {
-    stepperPL = pList;
-  }
-  if (!(stepperPL->isParameter("Solver Name"))) {
-    stepperPL->set<std::string>("Solver Name", "Default Solver");
-    Teuchos::RCP<Teuchos::ParameterList> solverPL =
-      this->defaultSolverParameters();
-    stepperPL->set("Default Solver", *solverPL);
-  }
-  // Can not validate because of optional Parameters (e.g., Solver Name).
-  //stepperPL->validateParametersAndSetDefaults(*this->getValidParameters());
-
-  std::string stepperType = stepperPL->get<std::string>("Stepper Type");
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "BDF2", std::logic_error,
-       "Error - Stepper Type is not 'BDF2'!\n"
-    << "  Stepper Type = "<<stepperPL->get<std::string>("Stepper Type")<<"\n");
-
-  this->stepperPL_ = stepperPL;
 }
 
 
@@ -345,52 +274,16 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperBDF2<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", this->description());
-  this->getValidParametersBasic(pl);
-  pl->set<bool>("Initial Condition Consistency Check", false);
-  pl->set<bool>("Zero Initial Guess", false);
-  pl->set<std::string>("Solver Name", "",
-    "Name of ParameterList containing the solver specifications.");
-
-  return pl;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperBDF2<Scalar>::getDefaultParameters() const
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-  using Teuchos::rcp_const_cast;
-
-  RCP<ParameterList> pl =
-    rcp_const_cast<ParameterList>(this->getValidParameters());
-
+  getValidParametersBasic(pl, this->getStepperType());
+  pl->set<bool>("Initial Condition Consistency Check",
+                this->getICConsistencyCheckDefault());
   pl->set<std::string>("Solver Name", "Default Solver");
-  RCP<ParameterList> solverPL = this->defaultSolverParameters();
+  pl->set<bool>("Zero Initial Guess", false);
+  pl->set<std::string>("Start Up Stepper Type", "DIRK 1 Stage Theta Method");
+  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 
   return pl;
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperBDF2<Scalar>::getNonconstParameterList()
-{
-  return(this->stepperPL_);
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperBDF2<Scalar>::unsetParameterList()
-{
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
-  this->stepperPL_ = Teuchos::null;
-  return(temp_plist);
 }
 
 

@@ -227,6 +227,7 @@ namespace panzer
        *  \param[in] cell The cell in the `Workset` over which to integrate.
        */
       template<int NUM_FIELD_MULT>
+      KOKKOS_INLINE_FUNCTION
       void
       operator()(
         const FieldMultTag<NUM_FIELD_MULT>& tag,

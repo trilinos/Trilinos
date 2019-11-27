@@ -2,5 +2,6 @@
 #define PANZER_DOF_MGR_CONFIG_HPP
 
 #include "PanzerCore_config.hpp"
+#cmakedefine PANZER_HAVE_EPETRA
 
 #endif

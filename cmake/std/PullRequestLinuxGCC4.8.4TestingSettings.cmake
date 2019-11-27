@@ -27,5 +27,8 @@ set (ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_gdsw_MPI_4_DISABLE ON CACHE 
 set (ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_rgdsw_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (ShyLU_DDFROSch_test_frosch_interfacesets_2D_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
+# this build is different from the others in using static libraries
+set (BUILD_SHARED_LIBS OFF CACHE BOOL "Off by default for PR testing in GCC 4.8.4")
+
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 

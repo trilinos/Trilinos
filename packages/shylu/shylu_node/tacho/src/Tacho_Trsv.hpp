@@ -39,7 +39,6 @@ namespace Tacho {
       typedef typename future_type::value_type value_type;
       
     private:
-      scheduler_type _sched;
       dense_block_type _A, _B;
 
     public:
@@ -47,17 +46,15 @@ namespace Tacho {
       TaskFunctor_Trsv() = delete;
       
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Trsv(const scheduler_type &sched,
-                       const dense_block_type &A,
+      TaskFunctor_Trsv(const dense_block_type &A,
                        const dense_block_type &B) 
-        : _sched(sched), 
-          _A(A), 
+        : _A(A), 
           _B(B) {}
       
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
         const int ierr = Trsv<ArgUplo,ArgTrans,ArgAlgo>
-          ::invoke(_sched, member, ArgDiag(),_A, _B);
+          ::invoke(member, ArgDiag(),_A, _B);
 
         Kokkos::single(Kokkos::PerTeam(member), [&] () {
             _B.set_future();

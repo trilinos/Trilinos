@@ -97,10 +97,10 @@ namespace MueLu {
     restrictors, and coarse level discretizations.  Additionally, this class contains
     an apply method that supports V and W cycles.
   */
-  template <class Scalar        = Xpetra::Operator<>::scalar_type,
-            class LocalOrdinal  = typename Xpetra::Operator<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node          = typename Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class Hierarchy : public BaseClass {
 #undef MUELU_HIERARCHY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -146,16 +146,19 @@ namespace MueLu {
     //!
     static CycleType             GetDefaultCycle()                                     { return MasterList::getDefault<std::string>("cycle type") == "V" ? VCYCLE : WCYCLE; }
     static bool                  GetDefaultImplicitTranspose()                         { return MasterList::getDefault<bool>("transpose: use implicit");  }
+    static bool                  GetDefaultFuseProlongationAndUpdate()                 { return MasterList::getDefault<bool>("fuse prolongation and update"); }
     static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return MasterList::getDefault<int>("coarse: max size");   }
     static int                   GetDefaultMaxLevels()                                 { return MasterList::getDefault<int>("max levels");     }
     static bool                  GetDefaultPRrebalance()                               { return MasterList::getDefault<bool>("repartition: rebalance P and R");   }
 
     Xpetra::global_size_t        GetMaxCoarseSize() const                              { return maxCoarseSize_; }
     bool                         GetImplicitTranspose() const                          { return implicitTranspose_; }
+    bool                         GetFuseProlongationAndUpdate() const                  { return fuseProlongationAndUpdate_; }
 
     void                         SetMaxCoarseSize(Xpetra::global_size_t maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
     void                         SetPRrebalance(bool doPRrebalance)                    { doPRrebalance_ = doPRrebalance; }
     void                         SetImplicitTranspose(const bool& implicit)            { implicitTranspose_ = implicit; }
+    void                         SetFuseProlongationAndUpdate(const bool& fuse)        { fuseProlongationAndUpdate_ = fuse; }
 
     //@}
 
@@ -192,6 +195,8 @@ namespace MueLu {
 
     //! Helper function
     void CheckLevel(Level& level, int levelID);
+
+    void SetMatvecParams(RCP<ParameterList> matvecParams);
 
     //! Multi-level setup phase: build a new level of the hierarchy.
     /*!  This method is aimed to be used in a loop building the hierarchy level by level. See Hierarchy::Setup(manager, startLevel, numDesiredLevels) for an example of usage.
@@ -372,6 +377,10 @@ namespace MueLu {
     // transpose matrix-matrix product for RAP
     bool implicitTranspose_;
 
+    // Potential speed up of the solve by fusing prolongation and update steps.
+    // This can lead to more iterations to round-off error accumulation.
+    bool fuseProlongationAndUpdate_;
+
     // Potential speed up of the setup by skipping rebalancing of P and R, and
     // doing extra import during solve
     bool doPRrebalance_;
@@ -425,6 +434,7 @@ namespace MueLu {
     new_h->Levels_.resize(this->GetNumLevels());
     new_h->maxCoarseSize_     = maxCoarseSize_;
     new_h->implicitTranspose_ = implicitTranspose_;
+    new_h->fuseProlongationAndUpdate_ = fuseProlongationAndUpdate_;
     new_h->isPreconditioner_  = isPreconditioner_;
     new_h->isDumpingEnabled_  = isDumpingEnabled_;
     new_h->dumpLevel_         = dumpLevel_;

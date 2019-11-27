@@ -65,8 +65,11 @@ namespace MueLuTests {
     if (!TYPE_EQUAL(SC, double)) { out << "Skipping test for SC != double; no support for complex SC in Galeri::Xpetra branch" << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
@@ -110,7 +113,7 @@ namespace MueLuTests {
     oneVec->putScalar(Teuchos::ScalarTraits<Scalar>::one());
     res->putScalar(Teuchos::as<Scalar>(27)*Teuchos::ScalarTraits<Scalar>::one());
     Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(lapA)->apply(*oneVec,*res);
-    TEST_COMPARE(res->normInf(),<, 1e-13);
+    TEST_COMPARE(res->normInf(),<, 100*TMT::eps());
   } // VarLaplConstructor
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(VariableDofLaplacianFactory, VarLaplConstructor2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -121,8 +124,11 @@ namespace MueLuTests {
     if (!TYPE_EQUAL(GO, int)) { out << "Skipping test for GO != int"        << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
@@ -132,9 +138,6 @@ namespace MueLuTests {
     if ( comm->getSize() > 2 && lib == Xpetra::UseEpetra) { out << "Skipping test for more than 2 procs when using Epetra"        << std::endl; return; }
 
     GlobalOrdinal nx = 6, ny = 6;
-
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
-    typedef Xpetra::MultiVectorFactory<double,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
 
     // Describes the initial layout of matrix rows across processors.
     Teuchos::ParameterList galeriList;
@@ -187,7 +190,7 @@ namespace MueLuTests {
     oneVec->putScalar(Teuchos::ScalarTraits<Scalar>::one());
     res->putScalar(Teuchos::as<Scalar>(27)*Teuchos::ScalarTraits<Scalar>::one());
     Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(lapA)->apply(*oneVec,*res);
-    TEST_COMPARE(res->normInf(),<, 1e-13);
+    TEST_COMPARE(res->normInf(),<, 100*TMT::eps());
 
     Teuchos::ArrayRCP<LocalOrdinal> dofPresent2(3 * lapA->getRowMap()->getNodeNumElements(),1);
     for(decltype(dofPresent2.size()) i = 2; i < dofPresent2.size(); i = i+3) {
@@ -208,7 +211,7 @@ namespace MueLuTests {
     oneVec2->putScalar(Teuchos::ScalarTraits<Scalar>::one());
     res2->putScalar(Teuchos::as<Scalar>(27)*Teuchos::ScalarTraits<Scalar>::one());
     Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(lapA2)->apply(*oneVec2,*res2);
-    TEST_COMPARE(res2->normInf(),<, 1e-13);
+    TEST_COMPARE(res2->normInf(),<, 100*TMT::eps());
     TEST_EQUALITY(res->getMap()->isSameAs(*(res2->getMap())),true);
 
     //lapA2->describe(out, Teuchos::VERB_EXTREME);

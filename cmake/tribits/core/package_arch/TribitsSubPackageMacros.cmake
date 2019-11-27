@@ -38,6 +38,7 @@
 # @HEADER
 
 INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsReportInvalidTribitsUsage)
 
 
 #
@@ -81,27 +82,31 @@ MACRO(TRIBITS_SUBPACKAGE SUBPACKAGE_NAME_IN)
   IF (NOT CURRENTLY_PROCESSING_SUBPACKAGE)
   # we are in a package
 
-    MESSAGE(FATAL_ERROR "Cannot call TRIBITS_SUBPACKAGE() from a package."
-    " Use TRIBITS_PACKAGE() instead"
-    " ${CURRENT_PACKAGE_CMAKELIST_FILE}")
+    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+      "Cannot call TRIBITS_SUBPACKAGE() from a package."
+      " Use TRIBITS_PACKAGE() instead"
+      " ${CURRENT_PACKAGE_CMAKELIST_FILE}")
 
   ELSE()
   # We are in a subpackage
 
     # check to see if postprocess is called before subpackage
     IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-      MESSAGE(FATAL_ERROR "TRIBITS_SUBPACKAGE_POSTPROCESS() called before TRIBITS_SUBPACKAGE()")
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "TRIBITS_SUBPACKAGE_POSTPROCESS() called before TRIBITS_SUBPACKAGE()")
     ENDIF()
 
     # check to see if we have already called this macro
     IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
-      MESSAGE(FATAL_ERROR "Already called TRIBITS_SUBPACKGE() for the"
-	"${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Already called TRIBITS_SUBPACKGE() for the"
+	" ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
     ENDIF()
 
     # make sure the name in the macro call matches the name in the packages cmake file
     IF (NOT ${SUBPACKAGE_NAME_IN} STREQUAL ${SUBPACKAGE_NAME})
-      MESSAGE(FATAL_ERROR "Error, the package-defined subpackage name"
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Error, the package-defined subpackage name"
 	" '${SUBPACKAGE_NAME_IN}' is not the same as the subpackage name"
 	" '${SUBPACKAGE_NAME}' defined in the parent packages's"
 	" Dependencies.cmake file")
@@ -147,23 +152,26 @@ MACRO(TRIBITS_SUBPACKAGE_POSTPROCESS)
 
   # This is being called from a package
 
-    MESSAGE(FATAL_ERROR "Cannot call TRIBITS_SUBPACKAGE_POSTPROCESS() from a package."
-    " Use TRIBITS_PACKAGE_POSTPROCESS() instead"
-    " ${CURRENT_PACKAGE_CMAKELIST_FILE}")
+    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+      "Cannot call TRIBITS_SUBPACKAGE_POSTPROCESS() from a package."
+      " Use TRIBITS_PACKAGE_POSTPROCESS() instead"
+      " ${CURRENT_PACKAGE_CMAKELIST_FILE}")
 
   ELSE()
   # This is being caleld from a subpackage
 
     # check to make sure this has not already been called
     IF (${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-      MESSAGE(FATAL_ERROR "Already called TRIBITS_SUBPACKGE_POSTPROCESS() for the"
-        "${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Already called TRIBITS_SUBPACKGE_POSTPROCESS() for the"
+        " ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
     ENDIF()
   
     # make sure subpackage is called prior to subpackage postprocess
     IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
-      MESSAGE(FATAL_ERROR "TRIBITS_SUBPACKAGE() must be called before TRIBITS_SUBPACKAGE_POSTPROCESS()"
-        "for the ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "TRIBITS_SUBPACKAGE() must be called before TRIBITS_SUBPACKAGE_POSTPROCESS()"
+        " for the ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
     ENDIF()
 
   ENDIF()

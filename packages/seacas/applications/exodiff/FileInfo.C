@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -29,34 +29,44 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#include "FileInfo.h"
-#include <algorithm>   // for move
-#include <cstddef>     // for size_t
-#include <cstdio>      // for remove
-#include <cstdlib>     // for free, realpath
-#include <string>      // for string
-#include <sys/stat.h>  // for stat, lstat, S_ISDIR, etc
-#include <sys/types.h> // for off_t
-#include <unistd.h>    // for F_OK, R_OK, access, W_OK, etc
+#include <FileInfo.h>
+#include <cstddef>
+#include <string>
+
+#ifndef _MSC_VER
+#include <sys/unistd.h>
+#else
+#include <io.h>
+#define access _access
+#define R_OK 4 /* Test for read permission.  */
+#define W_OK 2 /* Test for write permission.  */
+#define X_OK 1 /* execute permission - unsupported in windows*/
+#define F_OK 0 /* Test for existence.  */
+#ifndef S_ISREG
+#define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
+#define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
+#endif
+#endif
+
+#include <cstdio>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace {
   bool internal_access(const std::string &name, int mode);
   bool do_stat(const std::string &filename, struct stat *s);
 } // namespace
 
-FileInfo::FileInfo() : filename_(""), exists_(false), readable_(false) {}
+FileInfo::FileInfo() = default;
 
-FileInfo::FileInfo(std::string my_filename)
-    : filename_(std::move(my_filename)), exists_(false), readable_(false)
+FileInfo::FileInfo(std::string my_filename) : filename_(std::move(my_filename))
 {
   readable_ = internal_access(filename_, R_OK);
   exists_   = readable_ || internal_access(filename_, F_OK);
 }
 
-FileInfo::FileInfo(const char *my_filename)
-    : filename_(std::string(my_filename)), exists_(false), readable_(false)
+FileInfo::FileInfo(const char *my_filename) : filename_(std::string(my_filename))
 {
   readable_ = internal_access(filename_, R_OK);
   exists_   = readable_ || internal_access(filename_, F_OK);
@@ -64,7 +74,7 @@ FileInfo::FileInfo(const char *my_filename)
 
 FileInfo::FileInfo(const FileInfo &copy_from) = default;
 
-FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename) : filename_("")
+FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename)
 {
   static std::string SLASH("/");
 
@@ -124,13 +134,14 @@ bool FileInfo::is_dir() const
 //: Returns TRUE if we are pointing to a symbolic link
 bool FileInfo::is_symlink() const
 {
+#ifndef _MSC_VER
   struct stat s
   {
   };
   if (lstat(filename_.c_str(), &s) == 0) {
     return S_ISLNK(s.st_mode);
   }
-
+#endif
   return false;
 }
 
@@ -256,7 +267,11 @@ const std::string FileInfo::basename() const
 
 const std::string FileInfo::realpath() const
 {
+#ifdef _MSC_VER
+  char *path = _fullpath(nullptr, filename_.c_str(), _MAX_PATH);
+#else
   char *path = ::realpath(filename_.c_str(), nullptr);
+#endif
   if (path != nullptr) {
     std::string temp(path);
     free(path);

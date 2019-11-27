@@ -31,6 +31,7 @@
 #define SACADO_FAD_EXP_STATICSTORAGE_HPP
 
 #include <type_traits>
+#include <utility>
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_StaticArrayTraits.hpp"
@@ -53,6 +54,7 @@ namespace Sacado {
       typedef typename std::remove_cv<T>::type value_type;
       static constexpr bool is_statically_sized = false;
       static constexpr int static_size = 0;
+      static constexpr bool is_view = false;
 
       //! Turn StaticStorage into a meta-function class usable with mpl::apply
       template <typename TT>
@@ -81,7 +83,8 @@ namespace Sacado {
        * Initializes derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      StaticStorage(const int sz, const T & x, const DerivInit zero_out) :
+      StaticStorage(const int sz, const T & x,
+                    const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz > Num)
@@ -91,6 +94,18 @@ namespace Sacado {
           ss_array<T>::zero(dx_, sz_);
       }
 
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      KOKKOS_INLINE_FUNCTION
+      StaticStorage(const int sz, const int i, const value_type & x) :
+        StaticStorage(sz, x, InitDerivArray) {
+        dx_[i]=1.;
+      }
+
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
       StaticStorage(const StaticStorage& x) :
@@ -98,6 +113,14 @@ namespace Sacado {
         //ss_array<T>::copy(x.dx_, dx_, sz_);
         for (int i=0; i<sz_; i++)
           dx_[i] = x.dx_[i];
+      }
+
+      //! Move constructor
+      KOKKOS_INLINE_FUNCTION
+      StaticStorage(StaticStorage&& x) :
+        val_(std::move(x.val_)), sz_(x.sz_) {
+        for (int i=0; i<sz_; i++)
+          dx_[i] = std::move(x.dx_[i]);
       }
 
       //! Destructor
@@ -113,6 +136,18 @@ namespace Sacado {
           //ss_array<T>::copy(x.dx_, dx_, sz_);
           for (int i=0; i<sz_; i++)
             dx_[i] = x.dx_[i];
+        }
+        return *this;
+      }
+
+      //! Move assignment
+      KOKKOS_INLINE_FUNCTION
+      StaticStorage& operator=(StaticStorage&& x) {
+        if (this != &x) {
+          val_ = std::move(x.val_);
+          sz_ = x.sz_;
+          for (int i=0; i<sz_; i++)
+            dx_[i] = std::move(x.dx_[i]);
         }
         return *this;
       }

@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -43,27 +41,22 @@
 #define __TSQR_TBB_CacheBlockTask_hpp
 
 #include <tbb/task.h>
-#include <TbbTsqr_Partitioner.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include "TbbTsqr_Partitioner.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
 
 namespace TSQR {
   namespace TBB {
-
     /// \class CacheBlockTask
     /// \brief TBB task for recursive TSQR cache blocking phase.
     ///
     /// "Cache blocking" here means copying the input matrix, which is
     /// stored with noncontiguous cache blocks, to the output matrix,
     /// which is stored with contiguous cache blocks.
-    ///
     template<class LocalOrdinal, class Scalar>
     class CacheBlockTask : public tbb::task {
     public:
       typedef MatView<LocalOrdinal, Scalar> mat_view_type;
-      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
+      typedef MatView<LocalOrdinal, const Scalar> const_mat_view_type;
       typedef std::pair<mat_view_type, mat_view_type> split_t;
       typedef std::pair<const_mat_view_type, const_mat_view_type> const_split_t;
 
@@ -84,11 +77,11 @@ namespace TSQR {
         using tbb::task;
 
         if (P_first_ > P_last_ || A_out_.empty() || A_in_.empty())
-          return NULL;
+          return nullptr;
         else if (P_first_ == P_last_)
           {
             execute_base_case ();
-            return NULL;
+            return nullptr;
           }
         else
           {
@@ -106,10 +99,10 @@ namespace TSQR {
             // the same way.)  In that case, out_split.second and
             // in_split.second (the bottom block) will be empty.  We
             // can deal with this by treating it as the base case.
-            if (out_split.second.empty() || out_split.second.nrows() == 0)
+            if (out_split.second.empty() || out_split.second.extent(0) == 0)
               {
                 execute_base_case ();
-                return NULL;
+                return nullptr;
               }
 
             // "c": continuation task
@@ -141,8 +134,8 @@ namespace TSQR {
       void
       execute_base_case ()
       {
-        seq_.cache_block (A_out_.nrows(), A_out_.ncols(),
-                          A_out_.get(), A_in_.get(), A_in_.lda());
+        seq_.cache_block (A_out_.extent(0), A_out_.extent(1),
+                          A_out_.data(), A_in_.data(), A_in_.stride(1));
       }
     };
 

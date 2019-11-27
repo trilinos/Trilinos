@@ -59,8 +59,9 @@ namespace MueLu {
                                  const int MyRank, const int NumRanks,
                                  const Array<GO> GFineNodesPerDir, const Array<LO> LFineNodesPerDir,
                                  const Array<LO> CoarseRate) :
-  IndexManager(comm, coupled, NumDimensions, interpolationOrder, GFineNodesPerDir, LFineNodesPerDir),
-  myRank(MyRank), numRanks(NumRanks) {
+    IndexManager(comm, coupled, NumDimensions, interpolationOrder, Array<GO>(3, -1), LFineNodesPerDir),
+    myRank(MyRank), numRanks(NumRanks)
+  {
 
     // Load coarse rate, being careful about formating
     for(int dim = 0; dim < 3; ++dim) {

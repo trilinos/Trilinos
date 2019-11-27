@@ -66,19 +66,10 @@
 
 namespace Xpetra {
 
-  // TODO: move that elsewhere
-  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  // const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> toTpetraCrsMatrix(const Xpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &);
-  //
-
-
-  template<class Scalar = CrsMatrix<>::scalar_type,
-           class LocalOrdinal =
-             typename CrsMatrix<Scalar>::local_ordinal_type,
-           class GlobalOrdinal =
-             typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-           class Node =
-             typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraCrsMatrix
     : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> //, public TpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
@@ -289,6 +280,9 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
 
+    //! Returns the current number of entries in the (locally owned) global row.
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
+
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     size_t getGlobalMaxNumRowEntries() const;
 
@@ -444,6 +438,11 @@ namespace Xpetra {
 #endif
 #endif
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
+    
    //@}
 
   private:
@@ -692,6 +691,9 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
 
+    //! Returns the current number of entries in the (locally owned) global row.
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
+
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     size_t getGlobalMaxNumRowEntries() const { return 0; }
 
@@ -842,6 +844,11 @@ namespace Xpetra {
 #endif
 #endif
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const { }
+    
    //@}
   }; // TpetraCrsMatrix class (specialization for GO=int, NO=EpetraNode)
 #endif
@@ -1086,6 +1093,9 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
 
+    //! Returns the current number of entries in the (locally owned) global row.
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
+
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     size_t getGlobalMaxNumRowEntries() const { return 0; }
 
@@ -1234,6 +1244,11 @@ namespace Xpetra {
                        const typename local_matrix_type::values_type& val) {    }
 #endif
 #endif
+
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const { }
 
    //@}
   }; // TpetraCrsMatrix class (specialization for GO=long long, NO=EpetraNode)

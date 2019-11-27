@@ -191,9 +191,12 @@ namespace MueLuTests {
                             Teuchos::FancyOStream & out, bool & success) {
 #include "MueLu_UseShortNames.hpp"
 
-        typedef Teuchos::ScalarTraits<SC> ST;
-        typename ST::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
-        TEST_EQUALITY(residualNorms < 1e-12, true);
+        using ST = Teuchos::ScalarTraits<SC>;
+        using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+        using MT = Teuchos::ScalarTraits<magnitude_type>;
+
+        magnitude_type residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
+        TEST_EQUALITY(residualNorms < 100*MT::eps(), true);
       }
 
     } // namespace Smoothers

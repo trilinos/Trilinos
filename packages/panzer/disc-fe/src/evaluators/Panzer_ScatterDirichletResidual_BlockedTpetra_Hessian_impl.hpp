@@ -55,7 +55,7 @@ namespace panzer {
 // **************************************************************
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
-ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */,
+ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & /* indexer */,
                                       const Teuchos::ParameterList& p)
 {
   std::string scatterName = p.get<std::string>("Scatter Name");

@@ -99,7 +99,7 @@ namespace Test {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -616,7 +616,7 @@ int DeRhamCommutativityHex(const bool verbose) {
       }
     } while(0);//std::next_permutation(&reorder[0]+4, &reorder[0]+8)); //reorder vertices of common face
 
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     std::cout << " Exeption\n";
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
@@ -953,7 +953,7 @@ int DeRhamCommutativityHex(const bool verbose) {
       }
     } while(0);//std::next_permutation(&reorder[0]+4, &reorder[0]+8)); //reorder vertices of common face
 
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     std::cout << " Exeption\n";
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
@@ -1274,7 +1274,7 @@ int DeRhamCommutativityHex(const bool verbose) {
       }
     } while(0);//std::next_permutation(&reorder[0]+4, &reorder[0]+8)); //reorder vertices of common face
 
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     std::cout << " Exeption\n";
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;

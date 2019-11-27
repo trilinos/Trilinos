@@ -144,7 +144,7 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
   typedef Tpetra::CrsMatrix<SC, LO, GO, NT> Matrix_t;
 
   Teuchos::OSTab tab0 (out);
-  out << "getIdentityMatrix" << endl;
+  out << "getIdentityMatrixWithMap" << endl;
   Teuchos::OSTab tab1 (out);
 
   out << "Create CrsMatrix" << endl;
@@ -206,7 +206,9 @@ add_test_results regular_add_test(
   toReturn.correctNorm = C->getFrobeniusNorm ();
 
   RCP<const Map_t > rowmap = AT ? A->getDomainMap() : A->getRowMap();
-  RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, 1));
+  size_t estSize = A->getGlobalMaxNumRowEntries() + B->getGlobalMaxNumRowEntries();
+         // estSize is upper bound for A, B; estimate only for AT, BT.
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, estSize));
 
   SC one = Teuchos::ScalarTraits<SC>::one();
   Tpetra::MatrixMatrix::Add(*A, AT, one, *B, BT, one, computedC);
@@ -361,7 +363,8 @@ mult_test_results multiply_test_manualfc(
   typedef Import<LO,GO,NT> Import_t;
   RCP<const Map_t> map = C->getRowMap();
 
-  RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 1));
+  size_t maxNumEntriesPerRow = C->getGlobalMaxNumRowEntries();
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(map, maxNumEntriesPerRow));
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, false);
   computedC->fillComplete(C->getDomainMap(), C->getRangeMap());
@@ -374,7 +377,8 @@ mult_test_results multiply_test_manualfc(
 #endif
   SC one = Teuchos::ScalarTraits<SC>::one();
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
+  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(),
+                                                                  maxNumEntriesPerRow);
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
@@ -452,7 +456,8 @@ mult_test_results multiply_test_autofc(
 #endif
 
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
+  RCP<Matrix_t> diffMatrix = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(), C->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
@@ -544,7 +549,9 @@ mult_test_results multiply_RAP_test_autofc(
 #endif
 
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(Ac->getRowMap());
+  RCP<Matrix_t> diffMatrix = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(Ac->getRowMap(), 
+                                         Ac->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedAc, false, one, diffMatrix);
   diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
 
@@ -605,7 +612,8 @@ mult_test_results multiply_RAP_reuse_test(
   Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC2);  
 
   // Only check the second "reuse" matrix
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(map,0);
+  RCP<Matrix_t> diffMatrix = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(map, Ac->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
 
@@ -659,13 +667,6 @@ mult_test_results multiply_reuse_test(
   rightScaling->norm2(norms);
   rightScaling->scale(1.0/norms[0]);
 
-  // computedC1 = leftScaling * (op(A)*op(B)) * rightScaling
-  RCP<Matrix_t> computedC1 = rcp( new Matrix_t(map, 1));
-  Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC1, false/*call_FillCompleteOnResult*/);
-  computedC1->fillComplete(C->getDomainMap(), C->getRangeMap());
-  computedC1->leftScale (*leftScaling);
-  computedC1->rightScale(*rightScaling);
-
   // As = leftScaling * op(A) =
   //   leftScaling * A, if AT=false
   //   A*leftScaling,   if AT=true
@@ -687,9 +688,18 @@ mult_test_results multiply_reuse_test(
   computedC2->resumeFill();
   Tpetra::MatrixMatrix::Multiply(*As, AT, *Bs, BT, *computedC2, true/*call_FillCompleteOnResult*/);
 
+  // computedC1 = leftScaling * (op(A)*op(B)) * rightScaling
+  RCP<Matrix_t> computedC1 = rcp( new Matrix_t(map, computedC2->getGlobalMaxNumRowEntries()));
+  Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC1, false/*call_FillCompleteOnResult*/);
+  computedC1->fillComplete(C->getDomainMap(), C->getRangeMap());
+  computedC1->leftScale (*leftScaling);
+  computedC1->rightScale(*rightScaling);
+
   // diffMatrix = computedC2 - computedC1
   SC one = Teuchos::ScalarTraits<SC>::one();
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
+  RCP<Matrix_t> diffMatrix = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(),
+                                         computedC2->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
@@ -733,12 +743,13 @@ mult_test_results jacobi_test(
   Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C);
 
   // Multiply + Add version
-  RCP<Matrix_t> C2 = rcp(new Matrix_t(B->getRowMap(),0));
+  RCP<Matrix_t> C2; 
   bool done=false;
 #ifdef HAVE_TPETRA_INST_OPENMP
     if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
       Teuchos::ParameterList p;
       p.set("openmp: jacobi algorithm","MSAK");
+      C2 = rcp(new Matrix_t(B->getRowMap(),0));
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
@@ -747,6 +758,7 @@ mult_test_results jacobi_test(
     if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
       Teuchos::ParameterList p;
       p.set("cuda: jacobi algorithm","MSAK");
+      C2 = rcp(new Matrix_t(B->getRowMap(),0));
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
@@ -758,12 +770,14 @@ mult_test_results jacobi_test(
 
       Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
       AB->leftScale(Dinv);
+      C2 = rcp(new Matrix_t(B->getRowMap(), 
+                            B->getGlobalMaxNumRowEntries() + AB->getGlobalMaxNumRowEntries())); // upper bound
       Tpetra::MatrixMatrix::Add(*AB,false,-one,*B,false,one,C2);
       if(!C2->isFillComplete()) C2->fillComplete(C->getDomainMap(),C->getRangeMap());
     }
 
   // Check the difference
-  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(),0));
+  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(), C->getGlobalMaxNumRowEntries()));
   Tpetra::MatrixMatrix::Add(*C, false, -one, *C2, false,one,C_check);
   C_check->fillComplete(B->getDomainMap(),B->getRangeMap());
 
@@ -822,7 +836,9 @@ mult_test_results jacobi_reuse_test(
 
   // diffMatrix = computedC2 - computedC1
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(computedC1->getRowMap());
+  RCP<Matrix_t> diffMatrix = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(computedC1->getRowMap(),
+                                         computedC1->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(computedC1->getDomainMap(), computedC1->getRangeMap());
 
@@ -1229,6 +1245,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
     }
   }
 
+
   newOut << "Call fillComplete on bMatrix" << endl;
   bMatrix->fillComplete(bDomainMap, bRangeMap);
 
@@ -1242,6 +1259,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
     bMatrix,
     comm,
     out);
+
   if(verbose){
     newOut << "Results:" << endl;
     newOut << "\tEpsilon: " << results.epsilon << endl;
@@ -1258,8 +1276,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   RCP<const Map_t > bTransRowMap =
     Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2,comm);
 
-  newOut << "Create and fill bTrans" << endl;
-  RCP<Matrix_t> bTrans = Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 1);
   Array<GO> bTransRangeElements;
   if(rank == 0){
     bTransRangeElements = tuple<GO>(
@@ -1278,15 +1294,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   RCP<const Map_t > bTransDomainMap =
     Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows, comm);
 
-  newOut << "Compute identity * transpose(bTrans)" << endl;
-  Tpetra::MatrixMatrix::Multiply(*identity2,false,*bMatrix, true, *bTrans, false);
-
-  newOut << "Call fillComplete on bTrans" << endl;
-  bTrans->fillComplete(bTransDomainMap, bTransRangeMap);
-
   newOut << "Create and fill bTransTest" << endl;
   RCP<Matrix_t > bTransTest =
-    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 1);
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 2);
 
   {
     Teuchos::ArrayView<const GO> gblRows = bRowMap->getNodeElementList ();
@@ -1300,13 +1310,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   newOut << "Call fillComplete on bTransTest" << endl;
   bTransTest->fillComplete(bTransDomainMap, bTransRangeMap);
 
+  newOut << "Create and fill bTrans" << endl;
+  RCP<Matrix_t> bTrans = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 
+                                         bTransTest->getGlobalMaxNumRowEntries());
+
+  newOut << "Compute identity * transpose(bTrans)" << endl;
+  Tpetra::MatrixMatrix::Multiply(*identity2,false,*bMatrix, true, *bTrans, false);
+
+  newOut << "Call fillComplete on bTrans" << endl;
+  bTrans->fillComplete(bTransDomainMap, bTransRangeMap);
+
   // FIXME (mfh 03 May 2016) I didn't write this output message.  I
   // don't know what it means, but I'm leaving it here in case it's
   // meaningful to someone.
   newOut << "Regular I*P^T" << endl;
 
   RCP<Matrix_t > bTransDiff =
-    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 1);
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, bTransTest->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add<SC,LO,GO,NT>(*bTransTest, false, -1.0, *bTrans, false, 1.0,bTransDiff);
 
   newOut << "Call fillComplete on bTransDiff" << endl;
@@ -1537,7 +1558,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
   TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
@@ -1569,6 +1590,90 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
     {
       TEUCHOS_TEST_FOR_EXCEPTION(valsCRS[2](Crowstart + j) != correctVals[colindsCRS[2](Crowstart + j)], std::logic_error,
           "Threaded addition of sorted Kokkos::CrsMatrix produced an incorrect value.");
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  using Teuchos::RCP;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  size_t nrows = 0;
+  RCP<const map_type> emptyMap = rcp(new map_type(nrows, 0, comm));
+  RCP<crs_matrix_type> A = rcp(new crs_matrix_type(emptyMap, 0));
+  A->fillComplete(emptyMap, emptyMap);
+  RCP<crs_matrix_type> B = rcp(new crs_matrix_type(emptyMap, 0));
+  B->fillComplete(emptyMap, emptyMap);
+  RCP<crs_matrix_type> C1 = rcp(new crs_matrix_type(emptyMap, 0));
+  SC one = Teuchos::ScalarTraits<SC>::one();
+  Tpetra::MatrixMatrix::add(one, false, *A, one, false, *B, *C1);
+  RCP<crs_matrix_type> C2 = Tpetra::MatrixMatrix::add
+    (one, false, *A, one, false, *B);
+  MT magZero = Teuchos::ScalarTraits<MT>::zero();
+  TEST_EQUALITY(C1->getFrobeniusNorm(), magZero);
+  TEST_EQUALITY(C2->getFrobeniusNorm(), magZero);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, GO, NT)
+{
+  using Teuchos::RCP;
+  using Teuchos::Array;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  LO nlocal = 5;
+  GO nrows = nlocal * comm->getSize();
+  GO indexBase = 4;
+  RCP<const map_type> rowMap = rcp(new map_type(nrows, 0, comm));
+  RCP<const map_type> domMap = rcp(new map_type(nrows, indexBase, comm));
+  //global rows range from 0 to nrows-1 (inclusive)
+  //global columns range from 4 to nrows+3 (inclusive)
+  SC one = Teuchos::ScalarTraits<SC>::one();
+  SC two = one + one;
+  RCP<crs_matrix_type> A = rcp(new crs_matrix_type(rowMap, nlocal));
+  for(GO r = 0; r < nrows; r++)
+  {
+    if(rowMap->isNodeGlobalElement(r))
+    {
+      Array<GO> cols(nlocal);
+      Array<SC> vals(nlocal);
+      for(LO i = 0; i < nlocal; i++)
+      {
+        cols[i] = indexBase + (r / nlocal) * nlocal + i;
+        vals[i] = one * MT(r + i);
+      }
+      A->insertGlobalValues(r, cols(), vals());
+    }
+  }
+  A->fillComplete(domMap, rowMap);
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add
+    (one, false, *A, one, false, *A);
+  //Verify global entries
+  for(GO r = 0; r < (GO) nrows; r++)
+  {
+    Array<GO> cols(nlocal + 10);
+    Array<SC> vals(nlocal + 10);
+    size_t numEntries;
+    C->getGlobalRowCopy(r, cols(), vals(), numEntries);
+    if(rowMap->isNodeGlobalElement(r))
+    {
+      TEST_EQUALITY((LO) numEntries, nlocal);
+      //row r is locally owned
+      for(size_t i = 0; i < numEntries; i++)
+      {
+        LO lclCol = domMap->getLocalElement(cols[i]);
+        TEST_EQUALITY(lclCol, (LO) i);
+        TEST_EQUALITY(cols[i], (GO) (indexBase + comm->getRank() * nlocal + i));
+        TEST_EQUALITY(vals[i], two * MT(r + lclCol));
+      }
+    }
+    else
+    {
+      TEST_EQUALITY(numEntries, 0);
     }
   }
 }
@@ -1651,7 +1756,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
   TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
@@ -1734,7 +1839,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_nonzero_indexbase, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

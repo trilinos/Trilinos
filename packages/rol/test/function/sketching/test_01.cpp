@@ -77,15 +77,21 @@ int main(int argc, char *argv[]) {
   // *** Test body.
   try {
 
-    int nrow = 128, ncol = 100, rank = 4, testrank = 6;
+    int nrow = 128, ncol = 100, rank = 1, testrank = 6;
     ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(nrow, 0.0);
     ROL::StdVector<RealT> x(x_ptr);
 
-    ROL::Sketch<RealT> sketch(x,ncol,rank);
-    bool flag = sketch.test(testrank,*outStream,2);
+    ROL::Sketch<RealT> sketch(x,ncol,rank,ROL::ROL_EPSILON<RealT>());
+    bool flag = true;
+    *outStream << std::endl;
+    for (int i = 0; i < testrank; ++i) {
+      *outStream << "Rank = " << i+1 << "  Test Rank = " << testrank << std::endl;
+      sketch.setRank(i+1);
+      flag = sketch.test(testrank,*outStream,1);
+    }
     errorFlag += (flag ? 0 : 1);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

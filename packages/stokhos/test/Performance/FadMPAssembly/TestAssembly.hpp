@@ -246,7 +246,7 @@ Perf fenl_assembly(
 
     comm_nodal_import( nodal_solution );
 
-    Device::fence();
+    Device().fence();
     perf.import_time = maximum( comm , wall_clock.seconds() );
 
     //--------------------------------
@@ -264,7 +264,7 @@ Perf fenl_assembly(
 
     //dirichlet.apply();
 
-    Device::fence();
+    Device().fence();
     perf.fill_time = maximum( comm , wall_clock.seconds() );
 
     //--------------------------------

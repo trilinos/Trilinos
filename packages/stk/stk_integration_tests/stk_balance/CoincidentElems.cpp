@@ -38,7 +38,7 @@ protected:
                                  const size_t numGlobalSides,
                                  const std::vector<SideTestUtil::Side>& expectedElemSides)
     {
-        EXPECT_NO_THROW(stk::balance::initial_decomp_and_balance(get_bulk(), graphOptions, fileName, "output_" + fileName));
+        EXPECT_NO_THROW(stk::balance::initial_decomp_and_balance(get_bulk(), graphOptions, fileName, "output_" + fileName, "RIB"));
         expect_coincidents_on_same_proc(elem1Id, elem2Id);
         expect_proper_face_connection(fileName, numGlobalSides, expectedElemSides);
     }

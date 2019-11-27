@@ -34,23 +34,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_FullTsqrTest_hpp
 #define __TSQR_Test_FullTsqrTest_hpp
 
-#include <Tsqr.hpp>
-#include <Tsqr_Random_NormalGenerator.hpp>
-#include <Tsqr_Random_GlobalMatrix.hpp>
-#include <Tsqr_TestSetup.hpp>
-//#include <TsqrFactory_SequentialTsqr.hpp>
-#include <Tsqr_GlobalVerify.hpp>
-#include <Tsqr_TeuchosMessenger.hpp>
+#include "Tsqr.hpp"
+#include "Tsqr_Random_NormalGenerator.hpp"
+#include "Tsqr_Random_GlobalMatrix.hpp"
+#include "Tsqr_TestSetup.hpp"
+#include "Tsqr_GlobalVerify.hpp"
+#include "Tsqr_TeuchosMessenger.hpp"
 #include "Tsqr_TestUtils.hpp"
-#include <Teuchos_ScalarTraits.hpp>
+#include "Teuchos_ScalarTraits.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -61,7 +58,6 @@ namespace TSQR {
 
     /// \class TsqrInaccurate
     /// \brief Signals that a TSQR test failed due to insufficient accuracy.
-    ///
     class TsqrInaccurate : public std::exception {
     public:
       //! Constructor
@@ -198,55 +194,53 @@ namespace TSQR {
         matrix_type R (numCols, numCols);
 
         // Start out by filling the test problem with zeros.
-        typedef Teuchos::ScalarTraits<scalar_type> STS;
-        A_local.fill (STS::zero());
-        A_copy.fill (STS::zero());
-        Q_local.fill (STS::zero());
-        R.fill (STS::zero());
+        deep_copy (A_local, Scalar {});
+        deep_copy (A_copy, Scalar {});
+        deep_copy (Q_local, Scalar {});
+        deep_copy (R, Scalar {});
 
         // Create some reasonable singular values for the test problem:
         // 1, 1/2, 1/4, 1/8, ...
-        typedef typename STS::magnitudeType magnitude_type;
+        using STS = Teuchos::ScalarTraits<scalar_type>;
+        using magnitude_type = typename STS::magnitudeType;
         std::vector<magnitude_type> singularValues (numCols);
-        typedef Teuchos::ScalarTraits<magnitude_type> STM;
+        using STM = Teuchos::ScalarTraits<magnitude_type>;
         {
           const magnitude_type scalingFactor = STM::one() + STM::one();
           magnitude_type curVal = STM::one();
-          typedef typename std::vector<magnitude_type>::iterator iter_type;
-          for (iter_type it = singularValues.begin();
-               it != singularValues.end(); ++it)
-            {
-              *it = curVal;
-              curVal = curVal / scalingFactor;
-            }
+          for (magnitude_type& singularValue : singularValues) {
+            singularValue = curVal;
+            curVal = curVal / scalingFactor;
+          }
         }
 
         // Construct a normal(0,1) pseudorandom number generator with
         // the given random seed.
         using TSQR::Random::NormalGenerator;
-        typedef NormalGenerator<ordinal_type, scalar_type> generator_type;
+        using generator_type = NormalGenerator<ordinal_type, scalar_type>;
         generator_type gen (randomSeed);
 
         // We need a Messenger for Ordinal-type data, so that we can
         // build a global random test matrix.
-        RCP<MessengerBase<ordinal_type> > ordinalMessenger =
-          rcp_implicit_cast<MessengerBase<ordinal_type> > (rcp (new TeuchosMessenger<ordinal_type> (comm)));
+        RCP<MessengerBase<ordinal_type>> ordinalMessenger =
+          rcp_implicit_cast<MessengerBase<ordinal_type>> (rcp (new TeuchosMessenger<ordinal_type> (comm)));
 
         // We also need a Messenger for Scalar-type data.  The TSQR
         // implementation already constructed one, but it's OK to
         // construct another one; TeuchosMessenger is just a thin
         // wrapper over the Teuchos::Comm object.
-        RCP<MessengerBase<scalar_type> > scalarMessenger =
-          rcp_implicit_cast<MessengerBase<scalar_type> > (rcp (new TeuchosMessenger<scalar_type> (comm)));
+        RCP<MessengerBase<scalar_type>> scalarMessenger =
+          rcp_implicit_cast<MessengerBase<scalar_type>> (rcp (new TeuchosMessenger<scalar_type> (comm)));
 
         {
           // Generate a global distributed matrix (whose part local to
           // this process is in A_local) with the given singular values.
           // This part has O(P) communication for P MPI processes.
           using TSQR::Random::randomGlobalMatrix;
-          // Help the C++ compiler with type inference.
-          mat_view_type A_local_view (A_local.nrows(), A_local.ncols(), A_local.get(), A_local.lda());
-          const magnitude_type* const singVals = (numCols == 0) ? NULL : &singularValues[0];
+          mat_view_type A_local_view (A_local.extent(0),
+                                      A_local.extent(1),
+                                      A_local.data(), A_local.stride(1));
+          const magnitude_type* const singVals = singularValues.data();
           randomGlobalMatrix<mat_view_type, generator_type> (&gen, A_local_view, singVals,
                                                              ordinalMessenger.getRawPtr(),
                                                              scalarMessenger.getRawPtr());
@@ -262,8 +256,8 @@ namespace TSQR {
         // we have to make a copy in order to validate the final
         // result.
         if (contiguousCacheBlocks) {
-          tsqr->cache_block (numRowsLocal, numCols, A_copy.get(),
-                             A_local.get(), A_local.lda());
+          tsqr->cache_block (numRowsLocal, numCols, A_copy.data(),
+                             A_local.data(), A_local.stride(1));
           if (debug) {
             Teuchos::barrier (*comm);
             if (myRank == 0)
@@ -278,10 +272,10 @@ namespace TSQR {
         // factoring the matrix, when only the explicit Q factor is
         // wanted.
         if (testFactorExplicit) {
-          tsqr->factorExplicitRaw (A_copy.nrows (), A_copy.ncols (),
-                                   A_copy.get (), A_copy.lda (),
-                                   Q_local.get (), Q_local.lda (),
-                                   R.get (), R.lda (),
+          tsqr->factorExplicitRaw (A_copy.extent (0), A_copy.extent (1),
+                                   A_copy.data (), A_copy.stride (1),
+                                   Q_local.data (), Q_local.stride (1),
+                                   R.data (), R.stride (1),
                                    contiguousCacheBlocks);
           if (debug) {
             Teuchos::barrier (*comm);
@@ -292,16 +286,16 @@ namespace TSQR {
         else {
           // Factor the (copy of the) matrix.
           factor_output_type factorOutput =
-            tsqr->factor (numRowsLocal, numCols, A_copy.get(), A_copy.lda(),
-                          R.get(), R.lda(), contiguousCacheBlocks);
+            tsqr->factor (numRowsLocal, numCols, A_copy.data(), A_copy.stride(1),
+                          R.data(), R.stride(1), contiguousCacheBlocks);
           if (debug) {
             Teuchos::barrier (*comm);
             if (myRank == 0)
               cerr << "-- Finished Tsqr::factor" << endl;
           }
           // Compute the explicit Q factor in Q_local.
-          tsqr->explicit_Q (numRowsLocal, numCols, A_copy.get(), A_copy.lda(),
-                            factorOutput, numCols, Q_local.get(), Q_local.lda(),
+          tsqr->explicit_Q (numRowsLocal, numCols, A_copy.data(), A_copy.stride(1),
+                            factorOutput, numCols, Q_local.data(), Q_local.stride(1),
                             contiguousCacheBlocks);
           if (debug) {
             Teuchos::barrier (*comm);
@@ -325,9 +319,9 @@ namespace TSQR {
           // actual numerical rank.
           const magnitude_type tol = STM::zero();
           const ordinal_type rank =
-            tsqr->revealRankRaw (Q_local.nrows (), Q_local.ncols (),
-                                 Q_local.get (), Q_local.lda (),
-                                 R.get (), R.lda (), tol,
+            tsqr->revealRankRaw (Q_local.extent (0), Q_local.extent (1),
+                                 Q_local.data (), Q_local.stride (1),
+                                 R.data (), R.stride (1), tol,
                                  contiguousCacheBlocks);
 
           magnitude_type two_to_the_numCols = STM::one();
@@ -365,8 +359,8 @@ namespace TSQR {
           // We can use A_copy as scratch space for
           // un-cache-blocking Q_local, since we're done using
           // A_copy for other things.
-          tsqr->un_cache_block (numRowsLocal, numCols, A_copy.get(),
-                                A_copy.lda(), Q_local.get());
+          tsqr->un_cache_block (numRowsLocal, numCols, A_copy.data(),
+                                A_copy.stride(1), Q_local.data());
           // Overwrite Q_local with the un-cache-blocked Q factor.
           deep_copy (Q_local, A_copy);
           if (debug) {
@@ -378,8 +372,8 @@ namespace TSQR {
 
         // Test accuracy of the factorization.
         const std::vector<magnitude_type> results =
-          global_verify (numRowsLocal, numCols, A_local.get(), A_local.lda(),
-                         Q_local.get(), Q_local.lda(), R.get(), R.lda(),
+          global_verify (numRowsLocal, numCols, A_local.data(), A_local.stride(1),
+                         Q_local.data(), Q_local.stride(1), R.data(), R.stride(1),
                          scalarMessenger.getRawPtr());
         if (debug) {
           Teuchos::barrier (*comm);
@@ -545,13 +539,6 @@ namespace TSQR {
     public:
       /// \typedef ordinal_type
       /// \brief The (local) Ordinal type to use for TSQR.
-      ///
-      /// This must be a type for which Teuchos::BLAS<ordinal_type,
-      /// Scalar> and Teuchos::LAPACK<ordinal_type, Scalar> each have
-      /// an instantiation.  That means a signed integer type.  LAPACK
-      /// and the BLAS can be built with signed 64-bit integers
-      /// (int64_t), but usually they are only built with signed
-      /// 32-bit integers (int).
       typedef int ordinal_type;
 
       /// \brief Return a valid parameter list for verifying Tsqr.

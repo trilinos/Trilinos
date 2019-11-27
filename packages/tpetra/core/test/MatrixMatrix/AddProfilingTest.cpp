@@ -70,32 +70,36 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Comm;
 
-#define NUM_ROWS 1000
-#define NNZ_PER_ROW 100
-#define TRIALS 5
+static const int numRows = 1000;
 
 //Produce a random matrix with given nnz per global row
 template<typename SC, typename LO, typename GO, typename NT>
-RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getTestMatrix(RCP<Tpetra::Map<LO, GO, NT>>& rowMap,
+RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getTestMatrix(RCP<Tpetra::Map<LO, GO, NT>>& domainRangeMap,
     RCP<Tpetra::Map<LO, GO, NT>>& colMap, int seed, RCP<const Comm<int>>& comm)
 {
-  //create a non-overlapping distributed row map
-  auto mat = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NT>(rowMap, colMap, NNZ_PER_ROW));
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  const LO maxNnzPerRow = 100;
+  //use the range map as row map (non-overlapping distribution)
+  auto mat = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NT>(domainRangeMap, colMap, maxNnzPerRow));
   //get consistent results between trials
   srand(comm->getRank() * 7 + 42 + seed);
-  auto myCols = colMap->getNodeElementList();
-  for(GO i = 0; i < NUM_ROWS; i++)
+  ArrayView<const GO> ownedRows = domainRangeMap->getNodeElementList();
+  ArrayView<const GO> ownedCols = colMap->getNodeElementList();
+  for(GO row : ownedRows)
   {
-    Teuchos::Array<SC> vals(NNZ_PER_ROW);
-    Teuchos::Array<GO> inds(NNZ_PER_ROW);
-    for(int j = 0; j < NNZ_PER_ROW; j++)
+    Teuchos::Array<SC> vals(maxNnzPerRow);
+    Teuchos::Array<GO> inds(maxNnzPerRow);
+    for(int j = 0; j < maxNnzPerRow; j++)
     {
-      vals[j] = ((double) (rand() % RAND_MAX));
-      inds[j] = myCols[rand() % myCols.size()];
+      //get random between 0.0 and 10.0
+      vals[j] = 10.0 * rand() / RAND_MAX;
+      inds[j] = ownedCols[rand() % ownedCols.size()];
     }
-    mat->insertGlobalValues(i, inds(), vals());
+    //No guarantee that the indices are unique, so use sumInto
+    mat->sumIntoGlobalValues(row, inds(), vals());
   }
-  mat->fillComplete(rowMap, rowMap);
+  mat->fillComplete(domainRangeMap, domainRangeMap);
   return mat;
 }
 
@@ -106,16 +110,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_AddProfiling, sorted, SC, LO, GO, NT)
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   if(comm->getRank() == 0)
     std::cout << "Running sorted add test on " << comm->getSize() << " MPI ranks.\n";
-  RCP<map_type> rowMap = rcp(new map_type(NUM_ROWS, 0, comm));
-  RCP<map_type> colMap = rcp(new map_type(NUM_ROWS, 0, comm));
+  RCP<map_type> rowMap = rcp(new map_type(numRows, 0, comm));
+  RCP<map_type> colMap = rcp(new map_type(numRows, 0, comm));
   RCP<crs_matrix_type> A = getTestMatrix<SC, LO, GO, NT>(rowMap, colMap, 1, comm);
   RCP<crs_matrix_type> B = getTestMatrix<SC, LO, GO, NT>(rowMap, colMap, 2, comm);
   Kokkos::Impl::Timer addTimer;
   auto one = Teuchos::ScalarTraits<SC>::one();
-  for(int i = 0; i < TRIALS; i++)
-    RCP<crs_matrix_type> C = MatrixMatrix::add(one, false, *A, one, false, *B);
+  RCP<crs_matrix_type> C = MatrixMatrix::add(one, false, *A, one, false, *B);
   double tkernel = addTimer.seconds();
-  std::cout << "sorted (kernel): addition took on avg " << (tkernel / TRIALS) << "s.\n";
+  std::cout << "sorted (kernel): addition took " << tkernel << "s.\n";
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_AddProfiling, different_col_maps, SC, LO, GO, NT)
@@ -125,9 +128,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_AddProfiling, different_col_maps, SC, L
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   if(comm->getRank() == 0)
     std::cout << "Running \"different col maps\" add test on " << comm->getSize() << " MPI ranks.\n";
-  RCP<map_type> rowMap = rcp(new map_type(NUM_ROWS, 0, comm));
+  RCP<map_type> rowMap = rcp(new map_type(numRows, 0, comm));
   //Number of random global columns to include in column map
-  GO colMapSize = NUM_ROWS / comm->getSize();
+  GO colMapSize = numRows / comm->getSize();
   auto getRandColMap = [&] (int seed) -> Teuchos::Array<GO>
   {
     srand(seed);
@@ -137,7 +140,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_AddProfiling, different_col_maps, SC, L
       GO col;
       do
       {
-        col = rand() % NUM_ROWS;
+        col = rand() % numRows;
       }
       while(cols.find(col) != cols.end());
       cols.insert(col);
@@ -146,24 +149,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_AddProfiling, different_col_maps, SC, L
     {
       int i = 0;
       for(auto c : cols)
-      {
         colList[i++] = c;
-      }
     }
     return colList;
   };
   Teuchos::Array<GO> colMapARaw = getRandColMap(comm->getRank() + 12342);
   Teuchos::Array<GO> colMapBRaw = getRandColMap(comm->getRank() + 87345);
-  RCP<map_type> colMapA = rcp(new map_type(NUM_ROWS, colMapARaw(), 0, comm));
-  RCP<map_type> colMapB = rcp(new map_type(NUM_ROWS, colMapBRaw(), 0, comm));
+  RCP<map_type> colMapA = rcp(new map_type(numRows, colMapARaw(), 0, comm));
+  RCP<map_type> colMapB = rcp(new map_type(numRows, colMapBRaw(), 0, comm));
   RCP<crs_matrix_type> A = getTestMatrix<SC, LO, GO, NT>(rowMap, colMapA, 1, comm);
   RCP<crs_matrix_type> B = getTestMatrix<SC, LO, GO, NT>(rowMap, colMapB, 2, comm);
   Kokkos::Impl::Timer addTimer;
   auto one = Teuchos::ScalarTraits<SC>::one();
-  for(int i = 0; i < TRIALS; i++)
-    RCP<crs_matrix_type> C = MatrixMatrix::add(one, false, *A, one, false, *B);
+  RCP<crs_matrix_type> C = MatrixMatrix::add(one, false, *A, one, false, *B);
   double tkernel = addTimer.seconds();
-  std::cout << "mismatched col maps (kernel): addition took on avg " << (tkernel / TRIALS) << "s.\n";
+  std::cout << "mismatched col maps (kernel): addition took " << tkernel << "s.\n";
 }
 
 #define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )			\

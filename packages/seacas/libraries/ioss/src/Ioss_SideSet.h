@@ -40,17 +40,11 @@
 #include <cstdint>               // for int64_t
 #include <string>                // for string
 #include <vector>                // for vector
-namespace Ioss {
-  class DatabaseIO;
-} // namespace Ioss
-namespace Ioss {
-  class Field;
-} // namespace Ioss
-namespace Ioss {
-  class SideBlock;
-} // namespace Ioss
 
 namespace Ioss {
+  class DatabaseIO;
+  class Field;
+  class SideBlock;
 
   using SideBlockContainer = std::vector<SideBlock *>;
 

@@ -104,10 +104,10 @@ namespace MueLu {
   };
 
 
-  template <class Scalar        = Xpetra::Matrix<>::scalar_type,
-            class LocalOrdinal  = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node          = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar        = MueLu::DefaultScalar,
+            class LocalOrdinal  = MueLu::DefaultLocalOrdinal,
+            class GlobalOrdinal = MueLu::DefaultGlobalOrdinal,
+            class Node          = MueLu::DefaultNode>
   class Q2Q1uPFactory : public PFactory {
 #include "MueLu_UseShortNames.hpp"
     typedef MyCptList_<LocalOrdinal> MyCptList;

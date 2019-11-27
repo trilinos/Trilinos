@@ -49,8 +49,6 @@
 */
 
 #include "ROL_Krylov.hpp"
-#include "ROL_LinearOperator.hpp"
-#include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_LAPACK.hpp"
 #include "ROL_LinearAlgebra.hpp"
@@ -65,39 +63,39 @@ class GMRES : public Krylov<Real> {
   typedef LA::Vector<Real> SDVector;
 
 private:
- 
+
   ROL::Ptr<Vector<Real> > r_;
   ROL::Ptr<Vector<Real> > z_;
   ROL::Ptr<Vector<Real> > w_;
-   
+
   ROL::Ptr<SDMatrix> H_;      // quasi-Hessenberg matrix
   ROL::Ptr<SDVector> cs_;     // Givens Rotations cosine components
   ROL::Ptr<SDVector> sn_;     // Givens Rotations sine components
-  ROL::Ptr<SDVector> s_;      
-  ROL::Ptr<SDVector> y_;      
-  ROL::Ptr<SDVector> cnorm_;   
+  ROL::Ptr<SDVector> s_;
+  ROL::Ptr<SDVector> y_;
+  ROL::Ptr<SDVector> cnorm_;
 
   ROL::Ptr<std::vector<Real> > res_;
-  
+
   bool isInitialized_;
   bool useInexact_;
   bool useInitialGuess_;    // If false, inital x will be ignored and zero vec used
- 
+  bool printIters_;
+  ROL::Ptr<std::ostream> outStream_;
+
   ROL::LAPACK<int,Real> lapack_;
 
 public:
-  
-  GMRES( ROL::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false) {
 
-    
-    
-    using std::vector; 
+  GMRES( ROL::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false), printIters_(false) {
+
+    using std::vector;
 
     Real zero(0);
 
     ROL::ParameterList &gList = parlist.sublist("General");
     ROL::ParameterList &kList = gList.sublist("Krylov");
-    
+
     useInexact_      = gList.get("Inexact Hessian-Times-A-Vector",false);
     useInitialGuess_ = kList.get("Use Initial Guess",false);
     int maxit = Krylov<Real>::getMaximumIteration();
@@ -105,20 +103,20 @@ public:
     H_     = ROL::makePtr<SDMatrix>( maxit+1, maxit );
     cs_    = ROL::makePtr<SDVector>( maxit );
     sn_    = ROL::makePtr<SDVector>( maxit );
-    s_     = ROL::makePtr<SDVector>( maxit+1 ); 
+    s_     = ROL::makePtr<SDVector>( maxit+1 );
     y_     = ROL::makePtr<SDVector>( maxit+1 );
-    cnorm_ = ROL::makePtr<SDVector>( maxit );   
+    cnorm_ = ROL::makePtr<SDVector>( maxit );
     res_   = ROL::makePtr<std::vector<Real>>(maxit+1,zero);
-       
+
   }
- 
+
   Real run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b,
             LinearOperator<Real> &M, int &iter, int &flag ) {
 
     Real absTol = Krylov<Real>::getAbsoluteTolerance();
     Real relTol = Krylov<Real>::getRelativeTolerance();
     int maxit = Krylov<Real>::getMaximumIteration();
- 
+
     flag = 0;
 
     Real zero(0), one(1);
@@ -139,7 +137,7 @@ public:
       A.apply(*r_,x,itol);
       r_->scale(-one);
       r_->plus(b);       // r = b-Ax
- 
+
     }
     else {
       x.zero();
@@ -152,6 +150,10 @@ public:
     std::vector<ROL::Ptr<Vector<Real > > > Z;
 
     (*res_)[0] = r_->norm();
+
+    if (printIters_) {
+      *outStream_ << "GMRES Iteration " << 0 << ", Residual = " << (*res_)[0] << "\n";
+    }
 
     // This should be a tolerance check
     Real rtol = std::min(absTol,relTol*(*res_)[0]);
@@ -168,8 +170,6 @@ public:
     (*s_)(0) = (*res_)[0];
 
     for( iter=0; iter<maxit; ++iter ) {
-
-      // std::cout << "iter = " << iter << "  rnorm = " << (*res_)[iter] << "  xnorm = " << x.norm() << "  bnorm = " << b.norm() << std::endl;
 
       if( useInexact_ ) {
         itol = rtol/(maxit*(*res_)[iter]);
@@ -225,7 +225,11 @@ public:
       (*H_)(iter,iter)   = (*cs_)(iter)*(*H_)(iter,iter) + (*sn_)(iter)*(*H_)(iter+1,iter);
       (*H_)(iter+1,iter) = zero;
       (*res_)[iter+1]    = std::abs((*s_)(iter+1));
- 
+
+      if (printIters_) {
+        *outStream_ << "GMRES Iteration " << iter+1 << ", Residual = " << (*res_)[iter+1] << "\n";
+      }
+
       // Update solution approximation.
       const char uplo = 'U';
       const char trans = 'N';
@@ -247,6 +251,7 @@ public:
         x.plus(*z_);
         break;
       }
+
     } // loop over iter
 
     if(iter == maxit) {
@@ -257,6 +262,13 @@ public:
 
     return (*res_)[iter+1];
   }
+
+  void enableOutput(std::ostream & outStream)  {
+    printIters_ = true;
+    outStream_ = ROL::makePtrFromRef(outStream);;
+  }
+
+  void disableOutput() {printIters_ = false;}
 
 }; // class GMRES
 

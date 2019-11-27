@@ -72,8 +72,8 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   ExplicitRK_Combined_FSA
-  NAME "ExplicitRK_Combined_FSA_RK_Explicit_2_Stage_2nd_Order_By_Runge"
-  ARGS "--method=\"RK Explicit 2 Stage 2nd order by Runge\""
+  NAME "ExplicitRK_Combined_FSA_RK_Explicit_Midpoint"
+  ARGS "--method=\"RK Explicit Midpoint\""
   NUM_MPI_PROCS 1
   )
 
@@ -81,6 +81,13 @@ TRIBITS_ADD_TEST(
   ExplicitRK_Combined_FSA
   NAME "ExplicitRK_Combined_FSA_RK_Explicit_Trapezoidal"
   ARGS "--method=\"RK Explicit Trapezoidal\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  ExplicitRK_Combined_FSA
+  NAME "ExplicitRK_Combined_FSA_Heuns_Method"
+  ARGS "--method=\"Heuns Method\""
   NUM_MPI_PROCS 1
   )
 
@@ -155,8 +162,8 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   ExplicitRK_Staggered_FSA
-  NAME "ExplicitRK_Staggered_FSA_RK_Explicit_2_Stage_2nd_Order_By_Runge"
-  ARGS "--method=\"RK Explicit 2 Stage 2nd order by Runge\""
+  NAME "ExplicitRK_Staggered_FSA_RK_Explicit_Midpoint"
+  ARGS "--method=\"RK Explicit Midpoint\""
   NUM_MPI_PROCS 1
   )
 
@@ -164,6 +171,13 @@ TRIBITS_ADD_TEST(
   ExplicitRK_Staggered_FSA
   NAME "ExplicitRK_Staggered_FSA_RK_Explicit_Trapezoidal"
   ARGS "--method=\"RK Explicit Trapezoidal\""
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  ExplicitRK_Staggered_FSA
+  NAME "ExplicitRK_Staggered_FSA_Heuns_Method"
+  ARGS "--method=\"Heuns Method\""
   NUM_MPI_PROCS 1
   )
 

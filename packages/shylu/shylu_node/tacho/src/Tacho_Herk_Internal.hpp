@@ -12,15 +12,13 @@ namespace Tacho {
 
     template<typename ArgUplo, typename ArgTrans>
     struct Herk<ArgUplo,ArgTrans,Algo::Internal> {
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeC>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(SchedulerType &sched,
-             MemberType &member,
+      invoke(MemberType &member,
              const ScalarType alpha,
              const ViewTypeA &A,
              const ScalarType beta,

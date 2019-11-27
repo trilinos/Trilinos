@@ -133,9 +133,9 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   TPETRA_DEPRECATED const ProfileType DynamicProfile = ProfileType(StaticProfile+1);
-#define TPETRA_DEFAULT_PROFILE_TYPE DynamicProfile
+#define TPETRA_DEFAULT_PROFILE_TYPE Tpetra::ProfileType(Tpetra::StaticProfile+1)  // DynamicProfile
 #else
-#define TPETRA_DEFAULT_PROFILE_TYPE StaticProfile
+#define TPETRA_DEFAULT_PROFILE_TYPE Tpetra::StaticProfile
 #endif
 
   /*! Optimize storage option */
@@ -216,12 +216,6 @@ namespace Tpetra {
 
 //! Namespace for %Tpetra example classes and methods
 namespace TpetraExamples {
-}
-
-namespace Tpetra {
-  //! Namespace for %Tpetra Reduction/Tranformation Interface
-  namespace RTI {
-  }
 }
 
 namespace Tpetra {

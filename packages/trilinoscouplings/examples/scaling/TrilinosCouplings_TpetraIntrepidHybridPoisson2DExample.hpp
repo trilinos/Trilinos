@@ -81,8 +81,8 @@ namespace TpetraIntrepidPoissonExample {
 // besides the default.
 //
 typedef double ST;
-typedef int    LO;
-typedef int    GO;
+typedef Tpetra::Map<>::local_ordinal_type   LO;
+typedef Tpetra::Map<>::global_ordinal_type  GO;
 typedef Tpetra::Map<>::node_type Node;
 
 //

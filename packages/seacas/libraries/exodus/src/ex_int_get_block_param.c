@@ -33,18 +33,12 @@
  *
  */
 
-#include <ctype.h>    // for toupper
-#include <inttypes.h> // for PRId64
-#include <stddef.h>   // for size_t
-#include <stdio.h>
-#include <string.h>    // for strncmp, strlen
-#include <sys/types.h> // for int64_t
-
 #include "exodusII.h"     // for ex_err, ex_block, etc
 #include "exodusII_int.h" // for elem_blk_parm, EX_FATAL, etc
+#include <ctype.h>
 
 /* Generic error message for element type/node count mapping...*/
-static int el_node_count_error(int exoid, struct elem_blk_parm elem_blk_parms)
+static int el_node_count_error(int exoid, struct ex__elem_blk_parm elem_blk_parms)
 {
   char errmsg[MAX_ERR_LENGTH];
   snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: An element of type '%s' with %d nodes is not valid.",
@@ -53,8 +47,8 @@ static int el_node_count_error(int exoid, struct elem_blk_parm elem_blk_parms)
   return (EX_FATAL);
 }
 
-int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
-                           struct elem_blk_parm *elem_blk_parm)
+int ex__get_block_param(int exoid, ex_entity_id id, int ndim,
+                        struct ex__elem_blk_parm *elem_blk_parm)
 {
   size_t m;
   char   errmsg[MAX_ERR_LENGTH];
@@ -65,7 +59,7 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
   block.id   = id;
   block.type = EX_ELEM_BLOCK;
 
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* read in an element block parameter */
   if ((ex_get_block_param(exoid, &block)) != EX_NOERR) {

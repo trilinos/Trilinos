@@ -321,7 +321,7 @@ namespace Tacho {
       void run() {
         double sum = 0;
         Kokkos::parallel_reduce(Kokkos::RangePolicy<SpaceType>(0,BufSize/sizeof(double)), *this, sum);
-        SpaceType::fence();
+        SpaceType().fence();
         FILE *fp = fopen("/dev/null", "w");
         fprintf(fp, "%f\n", sum);
         fclose(fp);
@@ -536,9 +536,9 @@ namespace Tacho {
     };
 
     template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>
-    using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::Unmanaged |
-                                              MemoryTraitsType::RandomAccess |
-                                              MemoryTraitsType::Atomic |
+    using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::is_unmanaged |
+                                              MemoryTraitsType::is_random_access |
+                                              MemoryTraitsType::is_atomic |
                                               flag>;
 
     template <typename ViewType>

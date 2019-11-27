@@ -58,12 +58,12 @@ namespace Intrepid2 {
     // output (N,P,D)
     // input  (P,D) - assumes that it has a set of points to amortize the function call cost for jacobi polynomial.
     template<EOperator opType>
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial<opType>::
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType  input,
                const ordinal_type   order,
                const double         alpha,
@@ -218,6 +218,7 @@ namespace Intrepid2 {
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >() );
     this->basisType_         = BASIS_FEM_HIERARCHICAL;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
+    this->functionSpace_     = FUNCTION_SPACE_HGRAD;
 
     // jacobi 
     this->alpha_ = alpha;    
@@ -240,7 +241,7 @@ namespace Intrepid2 {
         tags[i][3] = card;  // total number of DoFs 
       }
      
-      ordinal_type_array_1d_host tagView(&tags[0][0], card*4);
+      OrdinalTypeArray1DHost tagView(&tags[0][0], card*4);
  
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       // tags are constructed on host 

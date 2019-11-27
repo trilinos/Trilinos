@@ -2589,8 +2589,9 @@ int UserInputForTests::chaco_input_assign(
     }
 
     flag = 0;
-    if (assignment[0] > nvtxs)
-        flag = assignment[1];
+    int np = this->tcomm_->getSize();
+    if (assignment[0] >= np) flag = assignment[0];
+    srand(this->tcomm_->getRank());
     for (i = 1; i < nvtxs; i++) {
         j = fscanf(finassign, "%hd", &(assignment[i]));
         if (j != 1) {
@@ -2604,15 +2605,21 @@ int UserInputForTests::chaco_input_assign(
             fclose(finassign);
             return (1);
         }
-        if (assignment[i] > nvtxs) {    /* warn since probably an error */
+        if (assignment[i] >= np) {    // warn since perhaps an error -- initial part 
+                                      // assignment is greater than number of processors
             if (assignment[i] > flag)
                 flag = assignment[i];
+            assignment[i] = rand() % np;  // randomly assign vtx to a proc in this case
         }
     }
+    srand(rand());
 
     if (flag) {
-        printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
-        printf("         More assignment sets (%d) than vertices (%d)\n", flag, nvtxs);
+        printf("WARNING: Possible error in assignment file `%s'\n",
+                         inassignname);
+        printf("         Max assignment set (%d) greater than "
+                         "max processor rank (%d)\n", flag, np-1);
+        printf("         Some vertices given random initial assignments\n");
     }
 
     /* Check for spurious extra stuff in file. */
@@ -2806,9 +2813,15 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   // make domain map
   RCP<const map_t> domainMap = rcp(new map_t(global_nodes,0,this->tcomm_));
 
-  // make the element-node adjacency matrix
-  Teuchos::RCP<tcrsMatrix_t> C = rcp(new tcrsMatrix_t(rowMap,0));
+  // Get max number of nodes per element
+  int blks = this->pamgen_mesh->num_elem_blk;
+  int max_nodes_per_el = 0;
+  for(int i = 0; i < blks; i++)
+    if (this->pamgen_mesh->nodes_per_element[i] > max_nodes_per_el)
+      max_nodes_per_el = this->pamgen_mesh->nodes_per_element[i];
 
+  // make the element-node adjacency matrix
+  Teuchos::RCP<tcrsMatrix_t> C = rcp(new tcrsMatrix_t(rowMap,max_nodes_per_el));
 
   Array<zgno_t> g_el_ids(local_els);
   for (size_t k = 0; k < local_els; ++k) {
@@ -2819,8 +2832,6 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   for (size_t k = 0; k < local_nodes; ++k) {
     g_node_ids[k] = pamgen_mesh->global_node_numbers[k]-1;
   }
-
-  int blks = this->pamgen_mesh->num_elem_blk;
 
   zlno_t el_no = 0;
   zscalar_t one = static_cast<zscalar_t>(1);
@@ -2854,10 +2865,10 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   RCP<tcrsMatrix_t> A = rcp(new tcrsMatrix_t(rowMap,0));
   Tpetra::MatrixMatrix::Multiply(*C, false, *C, true, *A);
 
-  // remove entris not adjacent
+  // remove entries not adjacent
   // make graph
 //  if(rank == 0) std::cout << "Writing M_... " << std::endl;
-  this->M_ = rcp(new tcrsMatrix_t(rowMap,0));
+  this->M_ = rcp(new tcrsMatrix_t(rowMap, A->getGlobalMaxNumRowEntries()));
 
 //  if(rank == 0) std::cout << "\nSetting graph of connectivity..." << std::endl;
   Teuchos::ArrayView<const zgno_t> rowMapElementList =

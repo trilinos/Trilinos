@@ -142,6 +142,7 @@ IF ( NETCDF_NCDUMP_BINARY )
 
   TRIBITS_ADD_EXECUTABLE( testwt-localization NOEXEPREFIX NOEXESUFFIX SOURCES testwt-localization.C LINKER_LANGUAGE CXX)
 
+  IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   TRIBITS_ADD_ADVANCED_TEST(
    exodus_unit_tests
    TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
@@ -191,6 +192,7 @@ IF ( NETCDF_NCDUMP_BINARY )
      FINAL_PASS_REGULAR_EXPRESSION
     )
 #  endif()
+   endif()
 ELSE()
   MESSAGE(STATUS
       "WARNING: ${PACKAGE_NAME}: Exodus unit tests will not be run due to failure finding ncdump executable.")

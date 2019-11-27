@@ -4,11 +4,13 @@
 #include "SL_tokenize.h" // for tokenize
 #include <algorithm>     // for sort, transform
 #include <cctype>        // for tolower
-#include <cstddef>       // for size_t
-#include <cstdlib>       // for exit, strtol, EXIT_SUCCESS, etc
-#include <iostream>      // for operator<<, basic_ostream, etc
-#include <utility>       // for pair, make_pair
-#include <vector>        // for vector
+#include <copyright.h>
+#include <cstddef> // for size_t
+#include <cstdlib> // for exit, strtol, EXIT_SUCCESS, etc
+#include <fmt/format.h>
+#include <term_width.h>
+#include <utility> // for pair, make_pair
+#include <vector>  // for vector
 
 namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
@@ -116,7 +118,7 @@ void Excn::SystemInterface::enroll_options()
                   "0");
 
   options_.enroll("width", GetLongOption::MandatoryValue, "Width of output screen, default = 80",
-                  "80");
+                  nullptr);
 
   options_.enroll("copyright", GetLongOption::NoValue, "Show copyright and license data.", nullptr);
 }
@@ -131,16 +133,18 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   // Get options from environment variable also...
   char *options = getenv("CONJOIN_OPTIONS");
   if (options != nullptr) {
-    std::cerr
-        << "\nThe following options were specified via the CONJOIN_OPTIONS environment variable:\n"
-        << "\t" << options << "\n\n";
+    fmt::print(
+        stderr,
+        "\nThe following options were specified via the CONJOIN_OPTIONS environment variable:\n"
+        "\t{}\n\n",
+        options);
     options_.parse(options, options_.basename(*argv));
   }
 
   if (options_.retrieve("help") != nullptr) {
     options_.usage();
-    std::cerr << "\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n";
-    std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n";
+    fmt::print(stderr, "\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n"
+                       "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -164,8 +168,10 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
         aliveValue_ = value;
       }
       else {
-        std::cerr << "\nInvalid value specified for node and element status."
-                  << "\nValid values are '1' or '0'.  Found '" << value << "'\n";
+        fmt::print(stderr,
+                   "\nInvalid value specified for node and element status."
+                   "\nValid values are '1' or '0'.  Found '{}'\n",
+                   value);
         exit(EXIT_FAILURE);
       }
     }
@@ -203,6 +209,9 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("width");
     if (temp != nullptr) {
       screenWidth_ = strtol(temp, nullptr, 10);
+    }
+    else {
+      screenWidth_ = term_width();
     }
   }
 
@@ -282,37 +291,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    std::cerr << "\n"
-              << "Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions\n"
-              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-              << "NTESS, the U.S. Government retains certain rights in this software.\n"
-              << "\n"
-              << "Redistribution and use in source and binary forms, with or without\n"
-              << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n"
-              << "\n"
-              << "    * Redistributions of source code must retain the above copyright\n"
-              << "      notice, this list of conditions and the following disclaimer.\n"
-              << "\n"
-              << "    * Redistributions in binary form must reproduce the above\n"
-              << "      copyright notice, this list of conditions and the following\n"
-              << "      disclaimer in the documentation and/or other materials provided\n"
-              << "      with the distribution.\n"
-              << "    * Neither the name of NTESS nor the names of its\n"
-              << "      contributors may be used to endorse or promote products derived\n"
-              << "      from this software without specific prior written permission.\n"
-              << "\n"
-              << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-              << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-              << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-              << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-              << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-              << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-              << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-              << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-              << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n";
+    fmt::print("{}", copyright("2009-2019"));
     exit(EXIT_SUCCESS);
   }
 
@@ -323,7 +302,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     }
   }
   else {
-    std::cerr << "\nERROR: no files specified\n\n";
+    fmt::print(stderr, "\nERROR: no files specified\n\n");
     return false;
   }
   return true;
@@ -333,10 +312,11 @@ void Excn::SystemInterface::dump(std::ostream & /*unused*/) const {}
 
 void Excn::SystemInterface::show_version()
 {
-  std::cout
-      << qainfo[0] << "\n"
-      << "\t(A code for sequentially appending Exodus II databases. Supersedes conex and conex2.)\n"
-      << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
+  fmt::print(
+      "{}\n"
+      "\t(A code for sequentially appending Exodus II databases. Supersedes conex and conex2.)\n"
+      "\t(Version: {}) Modified: {}\n",
+      qainfo[0], qainfo[1], qainfo[2]);
 }
 
 namespace {

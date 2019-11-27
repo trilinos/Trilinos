@@ -75,7 +75,8 @@ public:
   }
 
   // Run Krylov Method
-  virtual Real run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
+  virtual Real run( Vector<Real> &x, LinearOperator<Real> &A,
+              const Vector<Real> &b, LinearOperator<Real> &M, 
                     int &iter, int &flag ) = 0;
 
   void resetAbsoluteTolerance(const Real absTol) {
@@ -99,7 +100,5 @@ public:
 };
 
 }
-
-#include "ROL_KrylovFactory.hpp"
 
 #endif

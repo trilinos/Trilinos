@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
    out << *patternI1 << std::endl;
 
    RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
 
    out << "GIDS" << std::endl;
    for(int i=0;i<4;i++) {
-      std::vector<int> gids;
+     std::vector<panzer::GlobalOrdinal> gids;
       dofManager->getElementGIDs(i,gids);
 
       TEST_EQUALITY(gids.size(),4);
@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
       out << std::endl;
    }
 
-   std::vector<int> total;
+   std::vector<panzer::GlobalOrdinal> total;
    dofManager->getOwnedIndices(total);
    TEST_EQUALITY(total.size(),12);
 

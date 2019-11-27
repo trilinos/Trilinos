@@ -37,7 +37,7 @@ c
 c This is a test program for the Fortran binding of the EXODUS II
 c database read routines
 c
-c	09/07/93 V.R. Yarberry - Modified for API 2.00
+c       09/07/93 V.R. Yarberry - Modified for API 2.00
       implicit none
 
       include 'exodusII.inc'
@@ -72,7 +72,7 @@ c
       exoid = exopen ("test-nsided.exo", EXREAD, cpu_ws, io_ws,
      *  vers, ierr)
       write (iout, '(/"after exopen, error = ",i3)')
-     1			ierr
+     1                  ierr
 
       write (iout, '("test-nsided.exo is an EXODUSII file; version ",
      1                f4.2)') vers

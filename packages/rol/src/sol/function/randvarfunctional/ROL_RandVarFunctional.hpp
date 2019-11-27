@@ -46,6 +46,7 @@
 
 #include "ROL_Vector.hpp"
 #include "ROL_Ptr.hpp"
+#include "ROL_SampleGenerator.hpp"
 #include "ROL_SampledScalar.hpp"
 #include "ROL_SampledVector.hpp"
 

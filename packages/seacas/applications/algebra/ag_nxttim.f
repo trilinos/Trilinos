@@ -39,7 +39,7 @@ C   --*** NXTTIM *** (ALGEBRA) Move current time variables to last time
 C   --   Written by Amy Gilkey - revised 12/10/87
 C   --
 C   --NXTTIM moves the values of the variables for the current time to the
-C   --location for the last time.  The move is implemented by swaping
+C   --location for the last time.  The move is implemented by swapping
 C   --the location pointers for the last and current time.
 C   --
 C   --Parameters:

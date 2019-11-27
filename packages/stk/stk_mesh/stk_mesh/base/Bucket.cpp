@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -269,9 +270,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_capacity(arg_capacity)
   , m_size(0)
   , m_bucket_id(bucket_id)
-// TODO: Move owner ranks to BulkData
   , m_entities(arg_capacity)
-  , m_owner_ranks(arg_capacity)
   , m_partition(nullptr)
   , m_node_kind(INVALID_CONNECTIVITY_TYPE)
   , m_edge_kind(INVALID_CONNECTIVITY_TYPE)
@@ -309,6 +308,21 @@ Bucket::~Bucket()
   m_mesh.destroy_bucket_callback(m_entity_rank, *this, m_capacity);
 }
 
+size_t Bucket::memory_size_in_bytes() const
+{
+  size_t bytes = sizeof(Bucket);
+  bytes += impl::capacity_in_bytes(m_entities);
+  bytes += m_fixed_node_connectivity.heap_memory_in_bytes();
+  bytes += m_fixed_edge_connectivity.heap_memory_in_bytes();
+  bytes += m_fixed_face_connectivity.heap_memory_in_bytes();
+  bytes += m_fixed_element_connectivity.heap_memory_in_bytes();
+  bytes += m_dynamic_node_connectivity.heap_memory_in_bytes();
+  bytes += m_dynamic_edge_connectivity.heap_memory_in_bytes();
+  bytes += m_dynamic_face_connectivity.heap_memory_in_bytes();
+  bytes += m_dynamic_element_connectivity.heap_memory_in_bytes();
+  bytes += m_dynamic_other_connectivity.heap_memory_in_bytes();
+  return bytes;
+}
 
 void Bucket::change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes)
 {
@@ -623,20 +637,22 @@ size_t Bucket::get_others_index_count(size_type bucket_ordinal, EntityRank rank)
 void Bucket::initialize_slot(size_type ordinal, Entity entity)
 {
   m_entities[ordinal]    = entity;
-  m_owner_ranks[ordinal] = 0;
   if (mesh().is_valid(entity)) {
     mesh().set_state(entity, Created);
   }
+}
+
+int Bucket::parallel_owner_rank(size_type ordinal) const
+{
+  return m_mesh.parallel_owner_rank(m_entities[ordinal]);
 }
 
 void Bucket::reset_entity_location(Entity entity, size_type to_ordinal, const FieldVector* fields)
 {
   Bucket & from_bucket = mesh().bucket(entity);
   const Bucket::size_type from_ordinal = mesh().bucket_ordinal(entity);
-  const int owner_rank = mesh().parallel_owner_rank(entity);
 
   m_entities[to_ordinal]    = entity;
-  m_owner_ranks[to_ordinal] = owner_rank;
 
   mesh().set_mesh_index(entity, this, to_ordinal);
 

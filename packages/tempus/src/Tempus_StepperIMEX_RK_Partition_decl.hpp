@@ -13,7 +13,7 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairPartIMEX_Basic.hpp"
-#include "Tempus_StepperIMEX_RKPartObserver.hpp"
+#include "Tempus_StepperRKObserverComposite.hpp"
 
 
 namespace Tempus {
@@ -230,45 +230,35 @@ public:
 
   /** \brief Default constructor.
    *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
-   *  - Requires subsequent setModel() and initialize() calls before calling
-   *    takeStep().
+   *  Requires subsequent setModel(), setSolver() and initialize()
+   *  calls before calling takeStep().
   */
   StepperIMEX_RK_Partition();
 
   /// Constructor to specialize Stepper parameters.
   StepperIMEX_RK_Partition(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    Teuchos::RCP<Teuchos::ParameterList> pList);
-
-  /// Constructor to use default Stepper parameters.
-  StepperIMEX_RK_Partition(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType = "Partitioned IMEX RK SSP2");
-
-  /// Constructor for StepperFactory.
-  StepperIMEX_RK_Partition(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& models,
-    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
+    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    std::string stepperType,
+    Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
+    Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
+    Scalar order);
 
   /// \name Basic stepper methods
   //@{
     /// Set both the explicit and implicit tableau from ParameterList
-    virtual void setTableaus(Teuchos::RCP<Teuchos::ParameterList> pList,
-                             std::string stepperType = "");
-
-    /// Set the explicit tableau from ParameterList
-    virtual void setExplicitTableau(std::string stepperType,
-                                    Teuchos::RCP<Teuchos::ParameterList> pList);
+    virtual void setTableaus(std::string stepperType = "",
+      Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau = Teuchos::null,
+      Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau = Teuchos::null);
 
     /// Set the explicit tableau from tableau
     virtual void setExplicitTableau(
       Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau);
-
-    /// Set the implicit tableau from ParameterList
-    virtual void setImplicitTableau(std::string stepperType,
-                                    Teuchos::RCP<Teuchos::ParameterList> pList);
 
     /// Set the implicit tableau from tableau
     virtual void setImplicitTableau(
@@ -290,6 +280,9 @@ public:
 
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperObserver_; }
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -326,18 +319,10 @@ public:
   /// Return beta  = d(x)/dx.
   virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
-  /// \name ParameterList methods
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const;
-  //@}
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
@@ -353,9 +338,10 @@ public:
     Scalar time, Scalar stepSize, Scalar stageNumber,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const;
 
+  void setOrder(Scalar order) { order_ = order; }
+
 protected:
 
-  std::string                                            description_;
   Teuchos::RCP<const RKButcherTableau<Scalar> >          explicitTableau_;
   Teuchos::RCP<const RKButcherTableau<Scalar> >          implicitTableau_;
 
@@ -367,7 +353,7 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperIMEX_RKPartObserver<Scalar> > stepperIMEX_RKPartObserver_;
+  Teuchos::RCP<StepperRKObserverComposite<Scalar> >      stepperObserver_;
 
 };
 

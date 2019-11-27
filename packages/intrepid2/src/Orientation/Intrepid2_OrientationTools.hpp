@@ -188,7 +188,7 @@ namespace Intrepid2 {
       */
       template<typename outPointViewType,
                typename refPointViewType>
-      inline
+      KOKKOS_INLINE_FUNCTION
       static void
       mapToModifiedReference(outPointViewType outPoints,
                              const refPointViewType refPoints,
@@ -247,7 +247,7 @@ namespace Intrepid2 {
           \param  cellOrt         [in]  - cell orientation number (zero is aligned with shards default configuration
       */
       template<typename JacobianViewType>
-      inline
+      KOKKOS_INLINE_FUNCTION
       static void
       getJacobianOfOrientationMap(JacobianViewType jacobian,
                              const unsigned cellTopoKey,
@@ -267,12 +267,12 @@ namespace Intrepid2 {
           \param  subcellOrt   [in]  - orientation number between 0 and 1
 
       */
-      template<typename outputViewType,
+      template<typename OutputViewType,
                typename subcellBasisType,
                typename cellBasisType>
       inline
       static void
-      getCoeffMatrix_HGRAD(outputViewType &output,
+      getCoeffMatrix_HGRAD(OutputViewType &output,
                            const subcellBasisType subcellBasis,
                            const cellBasisType cellBasis,
                            const ordinal_type subcellId,
@@ -287,12 +287,12 @@ namespace Intrepid2 {
           \param  subcellOrt   [in]  - orientation number between 0 and 1
 
       */
-      template<typename outputViewType,
+      template<typename OutputViewType,
                typename subcellBasisType,
                typename cellBasisType>
       inline
       static void
-      getCoeffMatrix_HCURL(outputViewType &output,
+      getCoeffMatrix_HCURL(OutputViewType &output,
                            const subcellBasisType subcellBasis,
                            const cellBasisType cellBasis,
                            const ordinal_type subcellId,
@@ -307,12 +307,12 @@ namespace Intrepid2 {
           \param  subcellOrt   [in]  - orientation number between 0 and 1
 
       */
-      template<typename outputViewType,
+      template<typename OutputViewType,
                typename subcellBasisType,
                typename cellBasisType>
       inline
       static void
-      getCoeffMatrix_HDIV(outputViewType &output,
+      getCoeffMatrix_HDIV(OutputViewType &output,
                           const subcellBasisType subcellBasis,
                           const cellBasisType cellBasis,
                           const ordinal_type subcellId,

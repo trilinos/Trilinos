@@ -68,10 +68,6 @@ namespace {
   using Tpetra::createNonContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createVector;
-  using Tpetra::createCrsMatrix;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -164,7 +160,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     //----------------------------------------------------------------------
     // put in diagonal, locally
     //----------------------------------------------------------------------
-    Tpetra::CrsMatrix<Scalar,LO,GO,Node> matrix(rmap,cmap,3,DynamicProfile);
+    Tpetra::ProfileType pftype = Tpetra::StaticProfile;
+    Tpetra::CrsMatrix<Scalar,LO,GO,Node> matrix(rmap,cmap,3,pftype);
     for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
       matrix.insertGlobalValues(r,tuple(r),tuple(ST::one()));
     }
@@ -177,6 +174,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     // fill, but do not pack, because we will add new entries below
     RCP<ParameterList> params = parameterList();
     params->set("Optimize Storage",false);
+    params->set("compute global constants",true);
     TEST_NOTHROW       ( matrix.fillComplete( params ) );
     TEST_EQUALITY_CONST( matrix.isFillComplete(),      true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
@@ -213,6 +211,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     }
     // fill, but do not pack, because we will add new entries below
     params->set("Optimize Storage",false);
+    params->set("compute global constants",true);
     TEST_NOTHROW       ( matrix.fillComplete( params ) );
     TEST_EQUALITY_CONST( matrix.isFillComplete(),      true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
@@ -254,6 +253,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     }
     // fill; it is okay to pack now
     params->set("Optimize Storage",true);
+    params->set("compute global constants",true);
     TEST_NOTHROW       ( matrix.fillComplete( params ) );
     TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), true );
@@ -296,5 +296,3 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
 
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 }
-
-

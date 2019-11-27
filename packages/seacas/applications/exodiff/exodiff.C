@@ -30,22 +30,6 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#define __STDC_FORMAT_MACROS
-#include <cinttypes>
-#ifndef PRId64
-#error "PRId64 not defined"
-#endif
-
-#if defined(__STDC_VERSION__)
-#if (__STDC_VERSION__ >= 199901L)
-#define ST_ZU "%zu"
-#else
-#define ST_ZU "%lu"
-#endif
-#else
-#define ST_ZU "%lu"
-#endif
-
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -53,6 +37,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <fmt/ostream.h>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -76,7 +61,7 @@
 
 #include "add_to_log.h"
 
-SystemInterface interface;
+SystemInterface interFace;
 
 struct TimeInterp
 {
@@ -108,14 +93,16 @@ bool Equal_Values(const double *values, size_t count, double *value);
 
 void Print_Banner(const char *prefix)
 {
-  std::cout << "\n"
-            << prefix << "  *****************************************************************\n"
-            << prefix << "             ";
+  fmt::print("\n"
+             "{0}  *****************************************************************\n"
+             "{0}             ",
+             prefix);
   SystemInterface::show_version();
-  std::cout << prefix << "             Authors:  Richard Drake, rrdrake@sandia.gov           \n"
-            << prefix << "                       Greg Sjaardema, gdsjaar@sandia.gov          \n"
-            << prefix << "             Run on    " << Date() << "\n"
-            << prefix << "  *****************************************************************\n\n";
+  fmt::print("{0}             Authors:  Richard Drake, rrdrake@sandia.gov           \n"
+             "{0}                       Greg Sjaardema, gdsjaar@sandia.gov          \n"
+             "{0}             Run on    {1}\n"
+             "{0}  *****************************************************************\n\n",
+             prefix, Date());
 }
 
 // TODO(gdsjaar):  - copy node & side sets
@@ -217,15 +204,16 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
 #endif
 #endif
 
+#ifndef _MSC_VER
 struct sigaction sigact; // the signal handler & blocked signals
-bool             checking_invalid = false;
-bool             invalid_data     = false;
+#endif
+bool checking_invalid = false;
+bool invalid_data     = false;
 extern "C" {
 void floating_point_exception_handler(int signo)
 {
   if (!checking_invalid) {
-    ERROR("caught floating point exception (" << signo << ")"
-                                              << " bad data?\n");
+    Error(fmt::format("caught floating point exception ({}) bad data?\n", signo));
     exit(1);
   }
   else {
@@ -242,10 +230,10 @@ namespace {
     }
 
     int   ws = 0, comp_ws = 8;
-    float dum = 0.0;
-    int   err = ex_open(file_name.c_str(), EX_READ, &comp_ws, &ws, &dum);
+    float dumb = 0.0;
+    int   err  = ex_open(file_name.c_str(), EX_READ, &comp_ws, &ws, &dumb);
     if (err < 0) {
-      ERROR("Couldn't open file \"" << file_name << "\".\n");
+      Error(fmt::format("Couldn't open file \"{}\".\n", file_name));
       return 0;
     }
     if ((ex_int64_status(err) & EX_ALL_INT64_DB) != 0) {
@@ -277,7 +265,7 @@ namespace {
       if (file.Time(i) <= time) {
         tbef = i;
       }
-      else if (interface.time_tol.type != IGNORE && !interface.time_tol.Diff(time, file.Time(i))) {
+      else if (interFace.time_tol.type != IGNORE_ && !interFace.time_tol.Diff(time, file.Time(i))) {
         tbef = i;
       }
       else {
@@ -285,7 +273,7 @@ namespace {
       }
     }
 
-    if (!interface.time_tol.Diff(time, file.Time(tbef))) {
+    if (!interFace.time_tol.Diff(time, file.Time(tbef))) {
       tprop.step1 = tprop.step2 = tbef;
       return tprop;
     }
@@ -304,27 +292,27 @@ namespace {
   template <typename INT> void output_init(ExoII_Read<INT> &file, int count, const char *prefix)
   {
     FileInfo fi(file.File_Name());
-    std::cout << prefix << "  FILE " << count << ": " << fi.realpath() << '\n'
-              << prefix << "   Title: " << file.Title() << '\n'
-              << prefix << "          Dim = " << file.Dimension()
-              << ", Blocks = " << file.Num_Elmt_Blocks() << ", Nodes = " << file.Num_Nodes()
-              << ", Elements = " << file.Num_Elmts() << ", Nodesets = " << file.Num_Node_Sets()
-              << ", Sidesets = " << file.Num_Side_Sets() << '\n'
-              << prefix << "          Vars: Global = " << file.Num_Global_Vars()
-              << ", Nodal = " << file.Num_Nodal_Vars() << ", Element = " << file.Num_Elmt_Vars()
-              << ", Nodeset = " << file.Num_NS_Vars() << ", Sideset = " << file.Num_SS_Vars()
-              << ", Times = " << file.Num_Times() << "\n\n";
+    fmt::print("{0}  FILE {15}: {1}\n"
+               "{0}   Title: {2}\n"
+               "{0}          Dim = {3}, Blocks = {4}, Nodes = {5}, Elements = {6}, Nodesets = {7}, "
+               "Sidesets = {8}\n"
+               "{0}          Vars: Global = {9}, Nodal = {10}, Element = {11}, Nodeset = {12}, "
+               "Sideset = {13}, Times = {14}\n\n",
+               prefix, fi.realpath(), file.Title(), file.Dimension(), file.Num_Elmt_Blocks(),
+               file.Num_Nodes(), file.Num_Elmts(), file.Num_Node_Sets(), file.Num_Side_Sets(),
+               file.Num_Global_Vars(), file.Num_Nodal_Vars(), file.Num_Elmt_Vars(),
+               file.Num_NS_Vars(), file.Num_SS_Vars(), file.Num_Times(), count);
   }
 
-  char buf[2048];
+  std::string buf;
 
   template <typename INT> bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2);
 } // namespace
 
 int main(int argc, char *argv[])
 {
-  interface.Set_Max_Names(DEFAULT_MAX_NUMBER_OF_NAMES);
-  bool ok = interface.parse_options(argc, argv);
+  interFace.Set_Max_Names(DEFAULT_MAX_NUMBER_OF_NAMES);
+  bool ok = interFace.parse_options(argc, argv);
 
   if (!ok) {
     exit(1);
@@ -333,55 +321,58 @@ int main(int argc, char *argv[])
   checking_invalid = false;
   invalid_data     = false;
 
+#ifndef _MSC_VER
   sigfillset(&(sigact.sa_mask));
   sigact.sa_handler = floating_point_exception_handler;
   if (sigaction(SIGFPE, &sigact, nullptr) == -1) {
     perror("sigaction failed");
   }
+#endif
+
 #if defined(LINUX) && defined(GNU)
   // for GNU, this seems to be needed to turn on trapping
   feenableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
 #endif
 
-  std::string file1_name   = interface.file1;
-  std::string file2_name   = interface.file2;
-  std::string diffile_name = interface.diff_file;
+  std::string file1_name   = interFace.file1;
+  std::string file2_name   = interFace.file2;
+  std::string diffile_name = interFace.diff_file;
 
-  if (interface.summary_flag && file1_name == "") {
-    ERROR("Summary option specified but an exodus "
-          "file was not specified.\n");
+  if (interFace.summary_flag && file1_name == "") {
+    Error(fmt::format("Summary option specified but an exodus "
+                      "file was not specified.\n"));
     exit(1);
   }
 
-  if (interface.summary_flag) {
+  if (interFace.summary_flag) {
     file2_name                     = "";
     diffile_name                   = "";
-    interface.glob_var_do_all_flag = true;
-    interface.node_var_do_all_flag = true;
-    interface.elmt_var_do_all_flag = true;
-    interface.elmt_att_do_all_flag = true;
-    interface.ns_var_do_all_flag   = true;
-    interface.ss_var_do_all_flag   = true;
-    interface.map_flag             = FILE_ORDER;
-    interface.quiet_flag           = false;
+    interFace.glob_var_do_all_flag = true;
+    interFace.node_var_do_all_flag = true;
+    interFace.elmt_var_do_all_flag = true;
+    interFace.elmt_att_do_all_flag = true;
+    interFace.ns_var_do_all_flag   = true;
+    interFace.ss_var_do_all_flag   = true;
+    interFace.map_flag             = FILE_ORDER;
+    interFace.quiet_flag           = false;
   }
 
-  if (!interface.quiet_flag && !interface.summary_flag) {
+  if (!interFace.quiet_flag && !interFace.summary_flag) {
     Print_Banner(" ");
   }
-  if (interface.summary_flag) {
+  if (interFace.summary_flag) {
     Print_Banner("#");
   }
 
   // Check integer sizes in input file(s)...
   int int_size = 4;
-  if (interface.ints_64_bits) {
+  if (interFace.ints_64_bits) {
     int_size = 8;
   }
   else if (get_int_size(file1_name) == 8) {
     int_size = 8;
   }
-  else if (!interface.summary_flag && get_int_size(file2_name) == 8) {
+  else if (!interFace.summary_flag && get_int_size(file2_name) == 8) {
     int_size = 8;
   }
 
@@ -406,7 +397,7 @@ int main(int argc, char *argv[])
   add_to_log(code.c_str(), 0);
 #endif
 
-  if (interface.exit_status_switch && diff_flag) {
+  if (interFace.exit_status_switch && diff_flag) {
     return 2;
   }
   else {
@@ -417,32 +408,32 @@ int main(int argc, char *argv[])
 namespace {
   template <typename INT> bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
   {
-    if (!interface.quiet_flag && !interface.summary_flag) {
-      std::cout << "Reading first file ... \n";
+    if (!interFace.quiet_flag && !interFace.summary_flag) {
+      fmt::print("Reading first file ... \n");
     }
     std::string serr = file1.Open_File();
     if (!serr.empty()) {
-      ERROR(serr << '\n');
+      Error(fmt::format("{}\n", serr));
       exit(1);
     }
-    if (!interface.summary_flag) {
-      if (!interface.quiet_flag) {
-        std::cout << "Reading second file ... \n";
+    if (!interFace.summary_flag) {
+      if (!interFace.quiet_flag) {
+        fmt::print("Reading second file ... \n");
       }
       serr = file2.Open_File();
-      if (serr != "") {
-        ERROR(serr << '\n');
+      if (!serr.empty()) {
+        Error(fmt::format("{}\n", serr));
         exit(1);
       }
     }
 
     // Check that the maximum number of names has not been exceeded...
-    if (file1.Num_Global_Vars() > interface.max_number_of_names ||
-        file1.Num_Nodal_Vars() > interface.max_number_of_names ||
-        file1.Num_NS_Vars() > interface.max_number_of_names ||
-        file1.Num_SS_Vars() > interface.max_number_of_names ||
-        file1.Num_Elmt_Vars() > interface.max_number_of_names) {
-      int max = file1.Num_Global_Vars();
+    if (file1.Num_Global_Vars() > interFace.max_number_of_names ||
+        file1.Num_Nodal_Vars() > interFace.max_number_of_names ||
+        file1.Num_NS_Vars() > interFace.max_number_of_names ||
+        file1.Num_SS_Vars() > interFace.max_number_of_names ||
+        file1.Num_Elmt_Vars() > interFace.max_number_of_names) {
+      size_t max = file1.Num_Global_Vars();
       if (file1.Num_Nodal_Vars() > max) {
         max = file1.Num_Nodal_Vars();
       }
@@ -456,22 +447,22 @@ namespace {
         max = file1.Num_Elmt_Vars();
       }
 
-      std::cout << "exodiff: Number of names in file 1 (" << max << ") is larger than "
-                << "current limit of " << interface.max_number_of_names
-                << ".  To increase, use \"-maxnames <int>\" on the command "
-                   "line or \"MAX NAMES <int>\" in the command file.  "
-                   "Aborting...\n";
+      fmt::print("exodiff: Number of names in file 1 ({}) is larger than "
+                 "current limit of {}.  To increase, use \"-maxnames <int>\" on the command "
+                 "line or \"MAX NAMES <int>\" in the command file.  "
+                 "Aborting...\n",
+                 max, interFace.max_number_of_names);
       exit(1);
     }
 
     // Check that the maximum number of names has not been exceeded...
-    if (!interface.summary_flag) {
-      if (file2.Num_Global_Vars() > interface.max_number_of_names ||
-          file2.Num_Nodal_Vars() > interface.max_number_of_names ||
-          file2.Num_NS_Vars() > interface.max_number_of_names ||
-          file2.Num_SS_Vars() > interface.max_number_of_names ||
-          file2.Num_Elmt_Vars() > interface.max_number_of_names) {
-        int max = file2.Num_Global_Vars();
+    if (!interFace.summary_flag) {
+      if (file2.Num_Global_Vars() > interFace.max_number_of_names ||
+          file2.Num_Nodal_Vars() > interFace.max_number_of_names ||
+          file2.Num_NS_Vars() > interFace.max_number_of_names ||
+          file2.Num_SS_Vars() > interFace.max_number_of_names ||
+          file2.Num_Elmt_Vars() > interFace.max_number_of_names) {
+        size_t max = file2.Num_Global_Vars();
         if (file2.Num_Nodal_Vars() > max) {
           max = file2.Num_Nodal_Vars();
         }
@@ -485,36 +476,36 @@ namespace {
           max = file2.Num_Elmt_Vars();
         }
 
-        std::cout << "exodiff: Number of names in file 2 (" << max << ") is larger than "
-                  << "current limit of " << interface.max_number_of_names
-                  << ".  To increase, use \"-maxnames <int>\" on the command "
-                     "line or \"MAX NAMES <int>\" in the command file.  "
-                     "Aborting...\n";
+        fmt::print("exodiff: Number of names in file 2 ({}) is larger than "
+                   "current limit of {}.  To increase, use \"-maxnames <int>\" on the command "
+                   "line or \"MAX NAMES <int>\" in the command file.  "
+                   "Aborting...\n",
+                   max, interFace.max_number_of_names);
         exit(1);
       }
     }
 
-    if (interface.summary_flag) {
+    if (interFace.summary_flag) {
       output_init(file1, 1, "#");
     }
     else {
-      if (!interface.quiet_flag) {
+      if (!interFace.quiet_flag) {
         output_init(file1, 1, "");
         output_init(file2, 2, "");
-        if (!interface.command_file.empty()) {
-          FileInfo fi(interface.command_file);
-          std::cout << "  COMMAND FILE: " << fi.realpath() << "\n\n";
+        if (!interFace.command_file.empty()) {
+          FileInfo fi(interFace.command_file);
+          fmt::print("  COMMAND FILE: {}\n\n", fi.realpath());
         }
       }
     }
 
-    if (!interface.summary_flag) {
+    if (!interFace.summary_flag) {
       bool is_same = Check_Global(file1, file2);
       if (!is_same) {
         file1.Close_File();
         file2.Close_File();
         DIFF_OUT("\nexodiff: Files are different\n");
-        return interface.exit_status_switch;
+        return interFace.exit_status_switch;
       }
     }
 
@@ -522,15 +513,15 @@ namespace {
     // into file2.  Similarly with elmt_map.
     INT *node_map = nullptr;
     INT *elmt_map = nullptr;
-    if (interface.map_flag == DISTANCE) {
+    if (interFace.map_flag == DISTANCE) {
       Compute_Maps(node_map, elmt_map, file1, file2);
     }
-    else if (interface.map_flag == PARTIAL) {
+    else if (interFace.map_flag == PARTIAL) {
       // Same as distance, but ok if not all nodes/elements are matched
       Compute_Partial_Maps(node_map, elmt_map, file1, file2);
     }
-    else if (interface.map_flag == USE_FILE_IDS) {
-      if (!interface.ignore_maps) {
+    else if (interFace.map_flag == USE_FILE_IDS) {
+      if (!interFace.ignore_maps) {
         // Node/element X in file 1 matches node/element X in file 2 no matter what order they are
         // in
         Compute_FileId_Maps(node_map, elmt_map, file1, file2);
@@ -545,7 +536,7 @@ namespace {
         std::iota(elmt_map, elmt_map + num_elem, 0);
       }
     }
-    else if (interface.map_flag == FILE_ORDER) {
+    else if (interFace.map_flag == FILE_ORDER) {
       // Match by implicit ordering... IDs in that ordering must match (checked later)
       size_t num_nodes = file1.Num_Nodes();
       node_map         = new INT[num_nodes];
@@ -556,10 +547,10 @@ namespace {
       std::iota(elmt_map, elmt_map + num_elem, 0);
     }
     else {
-      ERROR("Invalid map option.\n");
+      Error("Invalid map option.\n");
     }
 
-    if (interface.dump_mapping) {
+    if (interFace.dump_mapping) {
       Dump_Maps(node_map, elmt_map, file1);
     }
 
@@ -573,17 +564,18 @@ namespace {
     // global ids...
     const INT *node_id_map = nullptr;
     const INT *elem_id_map = nullptr;
-    if (!interface.ignore_maps) {
+    if (!interFace.ignore_maps) {
       file1.Load_Node_Map();
       file1.Load_Elmt_Map();
       node_id_map = file1.Get_Node_Map();
       elem_id_map = file1.Get_Elmt_Map();
-      if (!interface.summary_flag) {
-        bool diff = Compare_Maps(file1, file2, node_map, elmt_map, interface.map_flag == PARTIAL);
-        if (diff && (interface.map_flag == FILE_ORDER)) {
-          std::cerr << "exodiff: Exiting due to node/element mismatch with `-match_file_order` "
-                       "option enabled.\n";
-          if (interface.exit_status_switch) {
+      if (!interFace.summary_flag) {
+        bool diff = Compare_Maps(file1, file2, node_map, elmt_map, interFace.map_flag == PARTIAL);
+        if (diff && (interFace.map_flag == FILE_ORDER)) {
+          fmt::print(stderr,
+                     "exodiff: Exiting due to node/element mismatch with `-match_file_order` "
+                     "option enabled.\n");
+          if (interFace.exit_status_switch) {
             exit(2);
           }
           else {
@@ -605,41 +597,29 @@ namespace {
     }
 
     int out_file_id = -1;
-    if (!interface.summary_flag) {
-      std::string diffile_name = interface.diff_file;
+    if (!interFace.summary_flag) {
+      std::string diffile_name = interFace.diff_file;
       Check_Compatible_Meshes(file1, file2, (diffile_name == ""), node_map, elmt_map, node_id_map);
       // Doesn't return if meshes are not compatible...
 
       out_file_id = Create_File(file1, file2, diffile_name, &diff_flag);
     }
 
-    SMART_ASSERT(!(interface.summary_flag && out_file_id >= 0));
+    SMART_ASSERT(!(interFace.summary_flag && out_file_id >= 0));
 
-    if (!interface.quiet_flag && !interface.summary_flag) {
-      std::cout << "\n  ==============================================================\n";
-      if (!interface.ignore_maps) {
-        std::cout << "  NOTE: All node and element ids are reported as global ids.\n\n";
-      }
-      else {
-        std::cout << "  NOTE: All node and element ids are reported as local ids.\n\n";
-      }
-      if (interface.interpolating) {
-        std::cout << "  NOTE: Interpolation mode is enabled.\n\n";
-      }
-    }
-    else if (interface.summary_flag) {
-      std::cout << "\n# ==============================================================\n";
-      if (!interface.ignore_maps) {
-        std::cout << "#  NOTE: All node and element ids are reported as global ids.\n\n";
-      }
-      else {
-        std::cout << "#  NOTE: All node and element ids are reported as local ids.\n\n";
+    if (!interFace.quiet_flag || interFace.summary_flag) {
+      fmt::print("\n{0} ==============================================================\n"
+                 "{0}  NOTE: All node and element ids are reported as {1} ids.\n\n",
+                 interFace.summary_flag ? "#" : " ", interFace.ignore_maps ? "local" : "global");
+      if (interFace.interpolating) {
+        fmt::print("{}  NOTE: Interpolation mode is enabled.\n\n",
+                   interFace.summary_flag ? "#" : " ");
       }
     }
 
     double *var_vals = nullptr;
     if (out_file_id >= 0) {
-      size_t max_ent = interface.glob_var_names.size();
+      size_t max_ent = interFace.glob_var_names.size();
       if (file1.Num_Nodes() > max_ent) {
         max_ent = file1.Num_Nodes();
       }
@@ -654,20 +634,20 @@ namespace {
     Exo_Block<INT> **blocks2 = nullptr;
     if (elmt_map != nullptr) {
       blocks2 = new Exo_Block<INT> *[file2.Num_Elmt_Blocks()];
-      for (int b = 0; b < file2.Num_Elmt_Blocks(); ++b) {
+      for (size_t b = 0; b < file2.Num_Elmt_Blocks(); ++b) {
         blocks2[b] = file2.Get_Elmt_Block_by_Index(b);
       }
     }
 
     // Diff attributes...
-    if (!interface.ignore_attributes && elmt_map == nullptr && !interface.summary_flag) {
+    if (!interFace.ignore_attributes && elmt_map == nullptr && !interFace.summary_flag) {
       if (diff_element_attributes(file1, file2, elmt_map, elem_id_map, blocks2)) {
         diff_flag = true;
       }
     }
 
     // Diff sideset distribution factors...
-    if (!interface.ignore_sideset_df && !interface.summary_flag) {
+    if (!interFace.ignore_sideset_df && !interFace.summary_flag) {
       if (diff_sideset_df(file1, file2, elem_id_map)) {
         diff_flag = true;
       }
@@ -684,39 +664,39 @@ namespace {
     std::vector<MinMaxData> mm_ns;
     std::vector<MinMaxData> mm_ss;
 
-    if (interface.summary_flag) {
+    if (interFace.summary_flag) {
       int n;
-      if ((n = interface.glob_var_names.size()) > 0) {
+      if ((n = interFace.glob_var_names.size()) > 0) {
         mm_glob.resize(n);
         for (int i = 0; i < n; i++) {
           mm_glob[i].type = MinMaxData::mm_global;
         }
       }
-      if ((n = interface.node_var_names.size()) > 0) {
+      if ((n = interFace.node_var_names.size()) > 0) {
         mm_node.resize(n);
         for (int i = 0; i < n; i++) {
           mm_node[i].type = MinMaxData::mm_nodal;
         }
       }
-      if ((n = interface.elmt_var_names.size()) > 0) {
+      if ((n = interFace.elmt_var_names.size()) > 0) {
         mm_elmt.resize(n);
         for (int i = 0; i < n; i++) {
           mm_elmt[i].type = MinMaxData::mm_element;
         }
       }
-      if ((n = interface.elmt_att_names.size()) > 0) {
+      if ((n = interFace.elmt_att_names.size()) > 0) {
         mm_eatt.resize(n);
         for (int i = 0; i < n; i++) {
           mm_eatt[i].type = MinMaxData::mm_elematt;
         }
       }
-      if ((n = interface.ns_var_names.size()) > 0) {
+      if ((n = interFace.ns_var_names.size()) > 0) {
         mm_ns.resize(n);
         for (int i = 0; i < n; i++) {
           mm_ns[i].type = MinMaxData::mm_nodeset;
         }
       }
-      if ((n = interface.ss_var_names.size()) > 0) {
+      if ((n = interFace.ss_var_names.size()) > 0) {
         mm_ss.resize(n);
         for (int i = 0; i < n; i++) {
           mm_ss[i].type = MinMaxData::mm_sideset;
@@ -727,23 +707,23 @@ namespace {
       min_num_times =
           (file1.Num_Times() < file2.Num_Times() ? file1.Num_Times() : file2.Num_Times());
 
-      if (interface.interpolating) {
+      if (interFace.interpolating) {
         min_num_times = file1.Num_Times();
       }
 
-      if (interface.time_step_stop > 0 && interface.time_step_stop < min_num_times) {
-        min_num_times = interface.time_step_stop;
+      if (interFace.time_step_stop > 0 && interFace.time_step_stop < min_num_times) {
+        min_num_times = interFace.time_step_stop;
       }
     }
 
     // If explicit times are set, then only want to diff a single time at those
     // specified times....
-    if (interface.explicit_steps.first != 0 && interface.explicit_steps.second != 0) {
-      int ts1 = interface.explicit_steps.first;
+    if (interFace.explicit_steps.first != 0 && interFace.explicit_steps.second != 0) {
+      int ts1 = interFace.explicit_steps.first;
       if (ts1 == -1) {
         ts1 = file1.Num_Times();
       }
-      int ts2 = interface.explicit_steps.second;
+      int ts2 = interFace.explicit_steps.second;
       if (ts2 == -1) {
         ts2 = file2.Num_Times();
       }
@@ -753,17 +733,16 @@ namespace {
       t2.time       = file2.Time(ts2);
       t2.proportion = 0.0;
 
-      if (!interface.quiet_flag) {
+      if (!interFace.quiet_flag) {
         if (out_file_id >= 0) {
-          std::cout << "Processing explicit time steps. File 1 step = " << ts1
-                    << "  File 2 step = " << ts2 << '\n';
+          fmt::print("Processing explicit time steps. File 1 step = {}  File 2 step = {}\n", ts1,
+                     ts2);
         }
         else {
-          sprintf(
-              buf,
-              "  --------- Explicit Time step File 1: %d, %13.7e ~ File 2: %d, %13.7e ---------",
-              ts1, file1.Time(ts1), ts2, t2.time);
-          DIFF_OUT(buf, trmclr::green);
+          buf = fmt::format("  --------- Explicit Time step File 1: {}, {:13.7e} ~ File 2: {}, "
+                            "{:13.7e} ---------",
+                            ts1, file1.Time(ts1), ts2, t2.time);
+          DIFF_OUT(buf, fmt::color::green);
         }
       }
 
@@ -775,11 +754,11 @@ namespace {
       // If time_step_offset == -1, then determine the offset automatically.
       // Assumes file1 has more steps than file2 and that the last step(s)
       // on file2 match the last step(s) on file1.
-      if (interface.time_step_offset == -1) {
-        interface.time_step_offset = file1.Num_Times() - file2.Num_Times();
-        if (interface.time_step_offset < 0) {
-          ERROR("Second database must have less timesteps than "
-                << "first database.\n");
+      if (interFace.time_step_offset == -1) {
+        interFace.time_step_offset = file1.Num_Times() - file2.Num_Times();
+        if (interFace.time_step_offset < 0) {
+          Error("Second database must have less timesteps than "
+                "first database.\n");
           exit(1);
         }
       }
@@ -787,10 +766,10 @@ namespace {
       // If time_step_offset == -2, then determine the offset automatically.
       // Find the closest time on file1 to the first time on file2.
       // Assumes file1 has more steps than file2.
-      if (interface.time_step_offset == -2) {
+      if (interFace.time_step_offset == -2) {
         if (file1.Num_Times() < file2.Num_Times()) {
-          ERROR("Second database must have less timesteps than "
-                << "first database.\n");
+          Error("Second database must have less timesteps than "
+                "first database.\n");
           exit(1);
         }
 
@@ -805,58 +784,61 @@ namespace {
             mindiff = diff;
           }
         }
-        interface.time_step_offset = step - 1;
+        interFace.time_step_offset = step - 1;
       }
 
-      if (interface.time_step_offset > 0) {
-        if (interface.time_step_start > 0) {
-          std::cout << "The first " << interface.time_step_offset + interface.time_step_start - 1
-                    << " timesteps in the first database will be skipped because of time step "
-                       "offset and time step start settings.\n\n";
+      if (interFace.time_step_offset > 0) {
+        if (interFace.time_step_start > 0) {
+          fmt::print(
+              "The first {} timesteps in the first database will be skipped because of time step "
+              "offset and time step start settings.\n\n",
+              interFace.time_step_offset + interFace.time_step_start - 1);
         }
         else {
-          std::cout << "The first " << interface.time_step_offset
-                    << " timesteps in the first database will be skipped because of time step "
-                       "offset setting.\n\n";
+          fmt::print(
+              "The first {} timesteps in the first database will be skipped because of time step "
+              "offset setting.\n\n",
+              interFace.time_step_offset);
         }
       }
 
-      if (interface.time_step_start == -1) {
+      if (interFace.time_step_start == -1) {
         // Want to compare the last timestep on both databases...
         int time_step1             = file1.Num_Times();
         int time_step2             = file2.Num_Times();
-        interface.time_step_start  = time_step2;
-        interface.time_step_offset = time_step1 - time_step2;
-        min_num_times              = interface.time_step_start;
-        std::cout << "Comparing only the final step (step " << time_step1 << " on first, step "
-                  << time_step2 << " on second) on each database.\n\n";
+        interFace.time_step_start  = time_step2;
+        interFace.time_step_offset = time_step1 - time_step2;
+        min_num_times              = interFace.time_step_start;
+        fmt::print("Comparing only the final step (step {} on first, step {}"
+                   " on second) on each database.\n\n",
+                   time_step1, time_step2);
       }
-      else if (interface.time_step_start < 0) {
-        interface.time_step_start = min_num_times;
+      else if (interFace.time_step_start < 0) {
+        interFace.time_step_start = min_num_times;
       }
-      else if (interface.time_step_start < 1) {
-        interface.time_step_start = 1;
+      else if (interFace.time_step_start < 1) {
+        interFace.time_step_start = 1;
       }
 
-      if (interface.time_step_start > min_num_times && min_num_times > 0) {
-        ERROR("Time step options resulted in no timesteps being compared.\n");
+      if (interFace.time_step_start > min_num_times && min_num_times > 0) {
+        Error("Time step options resulted in no timesteps being compared.\n");
         diff_flag = true;
       }
 
-      for (int time_step = interface.time_step_start; time_step <= min_num_times;
-           time_step += interface.time_step_increment) {
-        if (timeStepIsExcluded(time_step) || interface.ignore_steps) {
+      for (int time_step = interFace.time_step_start; time_step <= min_num_times;
+           time_step += interFace.time_step_increment) {
+        if (timeStepIsExcluded(time_step) || interFace.ignore_steps) {
           continue;
         }
 
-        int time_step1 = time_step + interface.time_step_offset;
+        int time_step1 = time_step + interFace.time_step_offset;
         int time_step2 = time_step;
         SMART_ASSERT(time_step1 <= file1.Num_Times());
 
         TimeInterp t2;
-        if (!interface.summary_flag) {
+        if (!interFace.summary_flag) {
           t2 = get_surrounding_times(file1.Time(time_step1), file2);
-          if (!interface.interpolating) {
+          if (!interFace.interpolating) {
             t2.step1      = time_step2;
             t2.step2      = time_step2;
             t2.time       = file2.Time(time_step2);
@@ -866,79 +848,81 @@ namespace {
           SMART_ASSERT(t2.step2 <= file2.Num_Times());
         }
 
-        if (interface.summary_flag) {
+        if (interFace.summary_flag) {
           double t = file1.Time(time_step1);
           mm_time.spec_min_max(t, time_step1);
         }
-        else if (out_file_id >= 0 && !interface.quiet_flag) {
-          std::cout << "Processing time step " << time_step1 << "  (Difference in time values = "
-                    << (file1.Time(time_step1) - file2.Time(time_step2)) << ")\n";
+        else if (out_file_id >= 0 && !interFace.quiet_flag) {
+          fmt::print("Processing time step {}  (Difference in time values = {})\n", time_step1,
+                     (file1.Time(time_step1) - file2.Time(time_step2)));
         }
         else if (out_file_id < 0) {
-          if (!interface.quiet_flag) {
-            if (interface.interpolating) {
+          if (!interFace.quiet_flag) {
+            if (interFace.interpolating) {
               if (t2.step1 == -1) {
-                sprintf(buf,
-                        "  --------- Time step %d, %13.7e ~ Skipping - Before all times on "
-                        "file2 (INTERPOLATING)",
-                        time_step1, file1.Time(time_step1));
+                buf = fmt::format(
+                    "  --------- Time step {}, {:13.7e} ~ Skipping - Before all times on "
+                    "file2 (INTERPOLATING)",
+                    time_step1, file1.Time(time_step1));
               }
               else if (t2.step2 == -1) {
-                sprintf(buf,
-                        "  --------- Time step %d, %13.7e ~ Skipping - After all times on "
-                        "file2 (INTERPOLATING)",
-                        time_step1, file1.Time(time_step1));
+                buf = fmt::format(
+                    "  --------- Time step {}, {:13.7e} ~ Skipping - After all times on "
+                    "file2 (INTERPOLATING)",
+                    time_step1, file1.Time(time_step1));
               }
               else if (t2.step1 == t2.step2) {
-                sprintf(buf,
-                        "  --------- Time step %d, %13.7e ~ Matches step %d, %13.7e on file2 "
-                        "%s diff: %12.5e",
-                        time_step1, file1.Time(time_step1), t2.step1, file2.Time(t2.step1),
-                        interface.time_tol.abrstr(),
-                        FileDiff(file1.Time(time_step1), file2.Time(t2.step1),
-                                 interface.time_tol.type));
+                buf = fmt::format(
+                    "  --------- Time step {}, {:13.7e} ~ Matches step {}, {:13.7e} on file2 "
+                    "{} diff: {:12.5e}",
+                    time_step1, file1.Time(time_step1), t2.step1, file2.Time(t2.step1),
+                    interFace.time_tol.abrstr(),
+                    FileDiff(file1.Time(time_step1), file2.Time(t2.step1),
+                             interFace.time_tol.type));
               }
               else {
-                sprintf(buf,
-                        "  --------- Time step %d, %13.7e ~ Interpolating step %d, %13.7e and "
-                        "step %d, %13.7e, proportion %10.4e on file2",
-                        time_step1, file1.Time(time_step1), t2.step1, file2.Time(t2.step1),
-                        t2.step2, file2.Time(t2.step2), t2.proportion);
+                buf = fmt::format(
+                    "  --------- Time step {}, {:13.7e} ~ Interpolating step {}, {:13.7e} and "
+                    "step {}, {:13.7e}, proportion {:10.4e} on file2",
+                    time_step1, file1.Time(time_step1), t2.step1, file2.Time(t2.step1), t2.step2,
+                    file2.Time(t2.step2), t2.proportion);
               }
             }
             else {
-              sprintf(buf, "  --------- Time step %d, %13.7e ~ %13.7e, %s diff: %12.5e", time_step1,
-                      file1.Time(time_step1), file2.Time(time_step2), interface.time_tol.abrstr(),
-                      FileDiff(file1.Time(time_step1), file2.Time(time_step2),
-                               interface.time_tol.type));
+              buf = fmt::format("  --------- Time step {}, {:13.7e} ~ {:13.7e}, {} diff: {:12.5e}",
+                                time_step1, file1.Time(time_step1), file2.Time(time_step2),
+                                interFace.time_tol.abrstr(),
+                                FileDiff(file1.Time(time_step1), file2.Time(time_step2),
+                                         interFace.time_tol.type));
             }
-            std::cout << buf;
+            fmt::print("{}", buf);
           }
 
-          if (!interface.interpolating &&
-              interface.time_tol.Diff(file1.Time(time_step1), file2.Time(time_step2))) {
+          if (!interFace.interpolating &&
+              interFace.time_tol.Diff(file1.Time(time_step1), file2.Time(time_step2))) {
             diff_flag = true;
-            if (interface.quiet_flag) {
+            if (interFace.quiet_flag) {
               Die_TS(time_step1);
             }
             else {
               DIFF_OUT(" (FAILED) \n");
             }
           }
-          else if (!interface.quiet_flag) {
-            std::cout << " ---------\n";
+          else if (!interFace.quiet_flag) {
+            fmt::print(" ---------\n");
           }
-          if (interface.interpolating && time_step == min_num_times) {
+          if (interFace.interpolating && time_step == min_num_times) {
             // last time.  Check if final database times match within specified tolerance...
             int final2 = file2.Num_Times();
-            if (interface.final_time_tol.Diff(file1.Time(time_step1), file2.Time(final2))) {
+            if (interFace.final_time_tol.Diff(file1.Time(time_step1), file2.Time(final2))) {
               diff_flag = true;
               std::ostringstream diff;
-              diff << "\tFinal database times differ by "
-                   << FileDiff(file1.Time(time_step1), file2.Time(final2),
-                               interface.final_time_tol.type)
-                   << " which is not within specified " << interface.final_time_tol.typestr()
-                   << " tolerance of " << interface.final_time_tol.value << " (FAILED)";
+              fmt::print(diff,
+                         "\tFinal database times differ by {}  which is not within specified {}"
+                         " tolerance of {} (FAILED)",
+                         FileDiff(file1.Time(time_step1), file2.Time(final2),
+                                  interFace.final_time_tol.type),
+                         interFace.final_time_tol.typestr(), interFace.final_time_tol.value);
               DIFF_OUT(diff);
             }
           }
@@ -949,7 +933,7 @@ namespace {
           ex_put_time(out_file_id, time_step1, &t);
         }
 
-        if (interface.interpolating && (t2.step1 == -1 || t2.step2 == -1)) {
+        if (interFace.interpolating && (t2.step1 == -1 || t2.step2 == -1)) {
           continue;
         }
 
@@ -959,19 +943,19 @@ namespace {
       } // End of time step loop.
 
       // Make sure there is an operation to perform (compare times, variables, ...)
-      if (!interface.ignore_steps) {
-        if ((min_num_times == 0 && interface.coord_tol.type == IGNORE) ||
-            (min_num_times > 0 && interface.time_tol.type == IGNORE &&
-             interface.glob_var_names.empty() && interface.node_var_names.empty() &&
-             interface.elmt_var_names.empty() && interface.elmt_att_names.empty() &&
-             interface.ns_var_names.empty() && interface.ss_var_names.empty())) {
+      if (!interFace.ignore_steps) {
+        if ((min_num_times == 0 && interFace.coord_tol.type == IGNORE_) ||
+            (min_num_times > 0 && interFace.time_tol.type == IGNORE_ &&
+             interFace.glob_var_names.empty() && interFace.node_var_names.empty() &&
+             interFace.elmt_var_names.empty() && interFace.elmt_att_names.empty() &&
+             interFace.ns_var_names.empty() && interFace.ss_var_names.empty())) {
           DIFF_OUT("\nWARNING: No comparisons were performed during this execution.");
           diff_flag = true;
         }
       }
     }
 
-    if (interface.summary_flag) {
+    if (interFace.summary_flag) {
       output_summary(file1, mm_time, mm_glob, mm_node, mm_elmt, mm_ns, mm_ss, node_id_map,
                      elem_id_map);
     }
@@ -981,20 +965,20 @@ namespace {
     else if (diff_flag) {
       DIFF_OUT("\nexodiff: Files are different\n");
     }
-    else if (interface.ignore_steps && (file1.Num_Times() != 0 || file2.Num_Times() != 0)) {
+    else if (interFace.ignore_steps && (file1.Num_Times() != 0 || file2.Num_Times() != 0)) {
       DIFF_OUT("\nexodiff: Files are the same, but all transient data was ignored due to "
                "-ignore_steps option",
-               trmclr::green);
+               fmt::color::green);
     }
     else if (file1.Num_Times() != file2.Num_Times()) {
-      if ((file1.Num_Times() - interface.time_step_offset == file2.Num_Times()) ||
-          (interface.time_step_stop > 0) ||
-          (interface.explicit_steps.first != 0 && interface.explicit_steps.second != 0) ||
-          (interface.interpolating)) {
+      if ((file1.Num_Times() - interFace.time_step_offset == file2.Num_Times()) ||
+          (interFace.time_step_stop > 0) ||
+          (interFace.explicit_steps.first != 0 && interFace.explicit_steps.second != 0) ||
+          (interFace.interpolating)) {
         std::ostringstream diff;
-        diff << "\nexodiff: Files are the same\n"
-             << "         The number of timesteps are different but "
-             << "the timesteps that were compared are the same.\n";
+        fmt::print(diff, "\nexodiff: Files are the same\n"
+                         "         The number of timesteps are different but "
+                         "the timesteps that were compared are the same.\n");
         DIFF_OUT(diff);
       }
       else {
@@ -1002,14 +986,14 @@ namespace {
         diff_flag = true;
       }
     }
-    else if (interface.map_flag == PARTIAL) {
-      DIFF_OUT("\nexodiff: Files are the same (partial match selected)\n", trmclr::green);
+    else if (interFace.map_flag == PARTIAL) {
+      DIFF_OUT("\nexodiff: Files are the same (partial match selected)\n", fmt::color::green);
     }
     else {
-      DIFF_OUT("\nexodiff: Files are the same\n", trmclr::green);
+      DIFF_OUT("\nexodiff: Files are the same\n", fmt::color::green);
     }
 
-    if (!interface.ignore_maps) {
+    if (!interFace.ignore_maps) {
       file1.Free_Node_Map();
       file1.Free_Elmt_Map();
     }
@@ -1024,7 +1008,7 @@ namespace {
     delete[] elmt_map;
 
     file1.Close_File();
-    if (!interface.summary_flag) {
+    if (!interFace.summary_flag) {
       file2.Close_File();
     }
 
@@ -1033,17 +1017,17 @@ namespace {
 } // namespace
 double FileDiff(double v1, double v2, TOLERANCE_TYPE_enum type)
 {
-  if (type == IGNORE) { // ignore
+  if (type == IGNORE_) { // ignore
     return 0.0;
   }
-  else if (type == RELATIVE) { // relative diff
+  else if (type == RELATIVE_) { // relative diff
     if (v1 == 0.0 && v2 == 0.0) {
       return 0.0;
     }
     double max = fabs(v1) < fabs(v2) ? fabs(v2) : fabs(v1);
     return (v1 - v2) / max;
   }
-  else if (type == COMBINED) {
+  else if (type == COMBINED_) {
     // if (Abs(x - y) <= Max(absTol, relTol * Max(Abs(x), Abs(y))))
     // In the current implementation, absTol == relTol;
     // In summary, use abs tolerance if both values are less than 1.0;
@@ -1053,17 +1037,17 @@ double FileDiff(double v1, double v2, TOLERANCE_TYPE_enum type)
     double tol = 1.0 < max ? max : 1.0;
     return fabs(v1 - v2) / tol;
   }
-  else if (type == ABSOLUTE) {
+  else if (type == ABSOLUTE_) {
     return (v1 - v2);
   }
-  else if (type == EIGEN_REL) { // relative diff
+  else if (type == EIGEN_REL_) { // relative diff
     if (v1 == 0.0 && v2 == 0.0) {
       return 0.0;
     }
     double max = fabs(v1) < fabs(v2) ? fabs(v2) : fabs(v1);
     return (fabs(v1) - fabs(v2)) / max;
   }
-  else if (type == EIGEN_COM) {
+  else if (type == EIGEN_COM_) {
     // if (Abs(x - y) <= Max(absTol, relTol * Max(Abs(x), Abs(y))))
     // In the current implementation, absTol == relTol;
     // In summary, use abs tolerance if both values are less than 1.0;
@@ -1073,7 +1057,7 @@ double FileDiff(double v1, double v2, TOLERANCE_TYPE_enum type)
     double tol = 1.0 < max ? max : 1.0;
     return fabs(fabs(v1) - fabs(v2)) / tol;
   }
-  else if (type == EIGEN_ABS) {
+  else if (type == EIGEN_ABS_) {
     return (fabs(v1) - fabs(v2));
   }
   else {
@@ -1084,9 +1068,9 @@ double FileDiff(double v1, double v2, TOLERANCE_TYPE_enum type)
 void Die_TS(double ts)
 {
   std::ostringstream diff;
-  diff << "exodiff: Files are different (time step " << ts << ")";
+  fmt::print(diff, "exodiff: Files are different (time step {})", ts);
   DIFF_OUT(diff);
-  if (interface.exit_status_switch) {
+  if (interFace.exit_status_switch) {
     exit(2);
   }
   else {
@@ -1101,13 +1085,10 @@ template <typename INT> size_t global_elmt_num(ExoII_Read<INT> &file, size_t b_i
   size_t g = 0;
   for (size_t b = 0; b < file.Num_Elmt_Blocks(); ++b) {
     if (b_idx == b) {
-      // std::cout << "returning " << g << " + " << e_idx << " + 1\n";
       return g + e_idx + 1;
     }
     else {
       SMART_ASSERT(file.Get_Elmt_Block_by_Index(b) != 0);
-      // std::cout << "num elmts for block " << file.Get_Elmt_Block_by_Index(b)->Id()
-      //     << " = " << file.Get_Elmt_Block_by_Index(b)->Size() << '\n';
       g += file.Get_Elmt_Block_by_Index(b)->Size();
     }
   }
@@ -1118,7 +1099,7 @@ template <typename INT> size_t global_elmt_num(ExoII_Read<INT> &file, size_t b_i
 bool Invalid_Values(const double *values, size_t count)
 {
   bool valid = true;
-  if (!interface.ignore_nans) {
+  if (!interFace.ignore_nans) {
     checking_invalid = true;
     invalid_data     = false;
 
@@ -1149,6 +1130,7 @@ bool Invalid_Values(const double *values, size_t count)
 bool Equal_Values(const double *values, size_t count, double *value)
 {
   SMART_ASSERT(values != nullptr);
+  *value = values[0];
   return (std::adjacent_find(values, values + count, std::not_equal_to<double>()) ==
           values + count);
 }
@@ -1158,13 +1140,13 @@ const double *get_nodal_values(ExoII_Read<INT> &filen, int time_step, size_t idx
                                const std::string &name, bool *diff_flag)
 {
   const double *vals = nullptr;
-  if (fno == 1 || !interface.summary_flag) {
+  if (fno == 1 || !interFace.summary_flag) {
     filen.Load_Nodal_Results(time_step, idx);
     vals = filen.Get_Nodal_Results(idx);
 
     if (vals != nullptr) {
       if (Invalid_Values(vals, filen.Num_Nodes())) {
-        ERROR("NaN found for variable " << name << " in file " << fno << "\n");
+        Error(fmt::format("NaN found for variable '{}' in file {}\n", name, fno));
         *diff_flag = true;
       }
     }
@@ -1177,12 +1159,12 @@ const double *get_nodal_values(ExoII_Read<INT> &filen, const TimeInterp &t, size
                                const std::string &name, bool *diff_flag)
 {
   const double *vals = nullptr;
-  if (fno == 1 || !interface.summary_flag) {
+  if (fno == 1 || !interFace.summary_flag) {
     vals = filen.Get_Nodal_Results(t.step1, t.step2, t.proportion, idx);
 
     if (vals != nullptr) {
       if (Invalid_Values(vals, filen.Num_Nodes())) {
-        ERROR("NaN found for variable " << name << " in file " << fno << "\n");
+        Error(fmt::format("NaN found for variable '{}' in file {}\n", name, fno));
         *diff_flag = true;
       }
     }
@@ -1213,7 +1195,7 @@ void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, co
     *diff_flag = true;
   }
 
-  if (interface.map_flag != PARTIAL) {
+  if (interFace.map_flag != PARTIAL) {
     // Nodeset variables.
     if (diff_nodeset(file1, file2, time_step1, t2, out_file_id, node_id_map, mm_ns, var_vals)) {
       *diff_flag = true;
@@ -1225,9 +1207,9 @@ void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, co
     }
   }
   else {
-    if (!interface.ns_var_names.empty() || !interface.ss_var_names.empty()) {
-      std::cout << "WARNING: nodeset and sideset variables not (yet) "
-                   "compared for partial map\n";
+    if (!interFace.ns_var_names.empty() || !interFace.ss_var_names.empty()) {
+      fmt::print("WARNING: nodeset and sideset variables not (yet) "
+                 "compared for partial map\n");
     }
   }
 }
@@ -1237,7 +1219,7 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
                   int out_file_id, std::vector<MinMaxData> &mm_glob, double *gvals)
 {
   bool diff_flag = false;
-  if (interface.glob_var_names.empty()) {
+  if (interFace.glob_var_names.empty()) {
     return diff_flag;
   }
 
@@ -1245,16 +1227,16 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
   file1.Load_Global_Results(step1);
   const double *vals1 = file1.Get_Global_Results();
   if (vals1 == nullptr) {
-    ERROR("Could not find global variables on file 1.\n");
+    Error("Could not find global variables on file 1.\n");
     exit(1);
   }
 
   const double *vals2 = nullptr;
-  if (!interface.summary_flag) {
+  if (!interFace.summary_flag) {
     file2.Load_Global_Results(t2.step1, t2.step2, t2.proportion);
     vals2 = file2.Get_Global_Results();
     if (vals2 == nullptr) {
-      ERROR("Could not find global variables on file 2.\n");
+      Error("Could not find global variables on file 2.\n");
       exit(1);
     }
   }
@@ -1263,28 +1245,28 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
   // Output file containing differences...
   if (out_file_id >= 0) {
     SMART_ASSERT(gvals != nullptr);
-    for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
-      const std::string &name = (interface.glob_var_names)[out_idx];
-      int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
-      int idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
+    for (unsigned out_idx = 0; out_idx < interFace.glob_var_names.size(); ++out_idx) {
+      const std::string &name = (interFace.glob_var_names)[out_idx];
+      int idx1 = find_string(file1.Global_Var_Names(), name, interFace.nocase_var_names);
+      int idx2 = find_string(file2.Global_Var_Names(), name, interFace.nocase_var_names);
       if (idx1 < 0 || idx2 < 0 || vals2 == nullptr) {
-        ERROR("Unable to find global variable named '" << name << "' on database.\n");
+        Error(fmt::format("Unable to find global variable named '{}' on database.\n", name));
         exit(1);
       }
-      gvals[out_idx] = FileDiff(vals1[idx1], vals2[idx2], interface.output_type);
+      gvals[out_idx] = FileDiff(vals1[idx1], vals2[idx2], interFace.output_type);
     }
-    ex_put_var(out_file_id, t2.step1, EX_GLOBAL, 1, 0, interface.glob_var_names.size(), gvals);
+    ex_put_var(out_file_id, t2.step1, EX_GLOBAL, 1, 0, interFace.glob_var_names.size(), gvals);
     return diff_flag;
   }
 
   // --------------------------------------------------------------------
   // Summary output
-  if (interface.summary_flag) {
-    for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
-      const std::string &name = (interface.glob_var_names)[out_idx];
-      int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
+  if (interFace.summary_flag) {
+    for (unsigned out_idx = 0; out_idx < interFace.glob_var_names.size(); ++out_idx) {
+      const std::string &name = (interFace.glob_var_names)[out_idx];
+      int idx1 = find_string(file1.Global_Var_Names(), name, interFace.nocase_var_names);
       if (idx1 < 0) {
-        ERROR("Unable to find global variable named '" << name << "' on database.\n");
+        Error(fmt::format("Unable to find global variable named '{}' on database.\n", name));
         exit(1);
       }
 
@@ -1296,35 +1278,35 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
   // -------------------------------------------------------------------
   // Determine if any diffs and output to terminal
   int name_length = max_string_length(file1.Global_Var_Names()) + 1;
-  if (!interface.quiet_flag && !interface.glob_var_names.empty()) {
-    std::cout << "Global variables:\n";
+  if (!interFace.quiet_flag && !interFace.glob_var_names.empty()) {
+    fmt::print("Global variables:\n");
   }
-  for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
-    const std::string &name = (interface.glob_var_names)[out_idx];
-    int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
-    int idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
+  for (unsigned out_idx = 0; out_idx < interFace.glob_var_names.size(); ++out_idx) {
+    const std::string &name = (interFace.glob_var_names)[out_idx];
+    int idx1 = find_string(file1.Global_Var_Names(), name, interFace.nocase_var_names);
+    int idx2 = find_string(file2.Global_Var_Names(), name, interFace.nocase_var_names);
     if (idx1 < 0 || idx2 < 0) {
-      ERROR("Unable to find global variable named '" << name << "' on database.\n");
+      Error(fmt::format("Unable to find global variable named '{}' on database.\n", name));
       exit(1);
     }
 
     if (Invalid_Values(&vals1[idx1], 1)) {
-      ERROR("NaN found for variable " << name << " in file 1\n");
+      Error(fmt::format("NaN found for variable '{}' in file 1\n", name));
       diff_flag = true;
     }
 
     if (Invalid_Values(&vals2[idx2], 1)) {
-      ERROR("NaN found for variable " << name << " in file 2\n");
+      Error(fmt::format("NaN found for variable '{}' in file 2\n", name));
       diff_flag = true;
     }
 
-    if (interface.glob_var[out_idx].Diff(vals1[idx1], vals2[idx2])) {
+    if (interFace.glob_var[out_idx].Diff(vals1[idx1], vals2[idx2])) {
       diff_flag = true;
 
-      if (!interface.quiet_flag) {
-        sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (FAILED)", name_length, name.c_str(),
-                interface.glob_var[out_idx].abrstr(), vals1[idx1], vals2[idx2],
-                interface.glob_var[out_idx].Delta(vals1[idx1], vals2[idx2]));
+      if (!interFace.quiet_flag) {
+        buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (FAILED)", name,
+                          name_length, interFace.glob_var[out_idx].abrstr(), vals1[idx1],
+                          vals2[idx2], interFace.glob_var[out_idx].Delta(vals1[idx1], vals2[idx2]));
         DIFF_OUT(buf);
       }
       else {
@@ -1347,12 +1329,12 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, cons
   if (out_file_id >= 0) {
     SMART_ASSERT(nvals != nullptr);
     int step2 = t2.step1;
-    for (unsigned n_idx = 0; n_idx < interface.node_var_names.size(); ++n_idx) {
-      const std::string &name = (interface.node_var_names)[n_idx];
-      int idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
-      int idx2 = find_string(file2.Nodal_Var_Names(), name, interface.nocase_var_names);
+    for (unsigned n_idx = 0; n_idx < interFace.node_var_names.size(); ++n_idx) {
+      const std::string &name = (interFace.node_var_names)[n_idx];
+      int idx1 = find_string(file1.Nodal_Var_Names(), name, interFace.nocase_var_names);
+      int idx2 = find_string(file2.Nodal_Var_Names(), name, interFace.nocase_var_names);
       if (idx1 < 0 || idx2 < 0) {
-        ERROR("Unable to find nodal variable named '" << name << "' on database.\n");
+        Error(fmt::format("Unable to find nodal variable named '{}' on database.\n", name));
         exit(1);
       }
 
@@ -1360,12 +1342,12 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, cons
       const double *vals2 = get_nodal_values(file2, step2, idx2, 2, name, &diff_flag);
 
       if (vals1 == nullptr) {
-        ERROR("Could not find nodal variables on file 1\n");
+        Error("Could not find nodal variables on file 1\n");
         exit(1);
       }
 
       if (vals2 == nullptr) {
-        ERROR("Could not find nodal variables on file 2\n");
+        Error("Could not find nodal variables on file 2\n");
         exit(1);
       }
 
@@ -1375,7 +1357,7 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, cons
         // Should this node be processed...
         if (node_map == nullptr || node_map[n] >= 0) {
           INT n2   = node_map != nullptr ? node_map[n] : n;
-          nvals[n] = FileDiff(vals1[n], vals2[n2], interface.output_type);
+          nvals[n] = FileDiff(vals1[n], vals2[n2], interFace.output_type);
         }
         else {
           nvals[n] = 0.;
@@ -1392,18 +1374,18 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, cons
 
   // -------------------------------------------------------------------
   // Summary output
-  if (interface.summary_flag) {
-    for (unsigned n_idx = 0; n_idx < interface.node_var_names.size(); ++n_idx) {
-      const std::string &name = (interface.node_var_names)[n_idx];
-      int idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
+  if (interFace.summary_flag) {
+    for (unsigned n_idx = 0; n_idx < interFace.node_var_names.size(); ++n_idx) {
+      const std::string &name = (interFace.node_var_names)[n_idx];
+      int idx1 = find_string(file1.Nodal_Var_Names(), name, interFace.nocase_var_names);
       if (idx1 < 0) {
-        ERROR("Unable to find nodal variable named '" << name << "' on database.\n");
+        Error(fmt::format("Unable to find nodal variable named '{}' on database.\n", name));
         exit(1);
       }
       const double *vals1 = get_nodal_values(file1, step1, idx1, 1, name, &diff_flag);
 
       if (vals1 == nullptr) {
-        ERROR("Could not find nodal variables on file 1\n");
+        Error("Could not find nodal variables on file 1\n");
         exit(1);
       }
 
@@ -1417,20 +1399,20 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, cons
     return diff_flag;
   }
 
-  SMART_ASSERT(!interface.summary_flag && out_file_id < 0);
+  SMART_ASSERT(!interFace.summary_flag && out_file_id < 0);
   // ----------------------------------------------------------------------
   // Determine if any diffs and output to terminal
-  if (!interface.quiet_flag && !interface.node_var_names.empty()) {
-    std::cout << "Nodal variables:\n";
+  if (!interFace.quiet_flag && !interFace.node_var_names.empty()) {
+    fmt::print("Nodal variables:\n");
   }
   int name_length = max_string_length(file1.Nodal_Var_Names()) + 1;
 
-  for (unsigned n_idx = 0; n_idx < interface.node_var_names.size(); ++n_idx) {
-    const std::string &name = (interface.node_var_names)[n_idx];
-    int idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
-    int idx2 = find_string(file2.Nodal_Var_Names(), name, interface.nocase_var_names);
+  for (unsigned n_idx = 0; n_idx < interFace.node_var_names.size(); ++n_idx) {
+    const std::string &name = (interFace.node_var_names)[n_idx];
+    int idx1 = find_string(file1.Nodal_Var_Names(), name, interFace.nocase_var_names);
+    int idx2 = find_string(file2.Nodal_Var_Names(), name, interFace.nocase_var_names);
     if (idx1 < 0 || idx2 < 0) {
-      ERROR("Unable to find nodal variable named '" << name << "' on database.\n");
+      Error(fmt::format("Unable to find nodal variable named '{}' on database.\n", name));
       exit(1);
     }
 
@@ -1438,13 +1420,13 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, cons
     const double *vals2 = get_nodal_values(file2, t2, idx2, 2, name, &diff_flag);
 
     if (vals1 == nullptr) {
-      ERROR("Could not find nodal variable " << name << " on file 1\n");
+      Error(fmt::format("Could not find nodal variable '{}' on file 1.\n", name));
       diff_flag = true;
       continue;
     }
 
     if (vals2 == nullptr) {
-      ERROR("Could not find nodal variable " << name << " on file 2\n");
+      Error(fmt::format("Could not find nodal variable '{}' on file 2.\n", name));
       diff_flag = true;
       continue;
     }
@@ -1458,13 +1440,13 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, cons
       // Should this node be processed...
       if (node_map == nullptr || node_map[n] >= 0) {
         INT    n2 = node_map != nullptr ? node_map[n] : n;
-        double d  = interface.node_var[n_idx].Delta(vals1[n], vals2[n2]);
-        if (interface.show_all_diffs) {
-          if (d > interface.node_var[n_idx].value) {
+        double d  = interFace.node_var[n_idx].Delta(vals1[n], vals2[n2]);
+        if (interFace.show_all_diffs) {
+          if (d > interFace.node_var[n_idx].value) {
             diff_flag = true;
-            sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")", name_length,
-                    name.c_str(), interface.node_var[n_idx].abrstr(), vals1[n], vals2[n2], d,
-                    (size_t)id_map[n]);
+            buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})", name,
+                              name_length, interFace.node_var[n_idx].abrstr(), vals1[n], vals2[n2],
+                              d, id_map[n]);
             DIFF_OUT(buf);
           }
         }
@@ -1475,23 +1457,25 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, cons
       }
     } // End of node iteration...
 
-    if (interface.doL1Norm && norm.diff(1) > 0.0) {
-      sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
-              name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-      DIFF_OUT(buf, trmclr::green);
+    if (interFace.doL1Norm && norm.diff(1) > 0.0) {
+      buf =
+          fmt::format("   {:<{}} L1 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}", name,
+                      name_length, norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
+      DIFF_OUT(buf, fmt::color::green);
     }
-    if (interface.doL2Norm && norm.diff(2) > 0.0) {
-      sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
-              name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-      DIFF_OUT(buf, trmclr::green);
+    if (interFace.doL2Norm && norm.diff(2) > 0.0) {
+      buf =
+          fmt::format("   {:<{}} L2 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}", name,
+                      name_length, norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
+      DIFF_OUT(buf, fmt::color::green);
     }
 
-    if (max_diff.diff > interface.node_var[n_idx].value) {
+    if (max_diff.diff > interFace.node_var[n_idx].value) {
       diff_flag = true;
-      if (!interface.quiet_flag) {
-        sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")", name_length,
-                name.c_str(), interface.node_var[n_idx].abrstr(), max_diff.val1, max_diff.val2,
-                max_diff.diff, (size_t)id_map[max_diff.id]);
+      if (!interFace.quiet_flag) {
+        buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})", name,
+                          name_length, interFace.node_var[n_idx].abrstr(), max_diff.val1,
+                          max_diff.val2, max_diff.diff, id_map[max_diff.id]);
         DIFF_OUT(buf);
       }
       else {
@@ -1517,29 +1501,29 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
     SMART_ASSERT(evals != nullptr);
   }
 
-  if (out_file_id < 0 && !interface.quiet_flag && !interface.summary_flag &&
-      !interface.elmt_var_names.empty()) {
-    std::cout << "Element variables:\n";
+  if (out_file_id < 0 && !interFace.quiet_flag && !interFace.summary_flag &&
+      !interFace.elmt_var_names.empty()) {
+    fmt::print("Element variables:\n");
   }
 
-  int name_length = max_string_length(interface.elmt_var_names) + 1;
+  int name_length = max_string_length(interFace.elmt_var_names) + 1;
 
-  for (unsigned e_idx = 0; e_idx < interface.elmt_var_names.size(); ++e_idx) {
-    const std::string &name = (interface.elmt_var_names)[e_idx];
-    int vidx1               = find_string(file1.Elmt_Var_Names(), name, interface.nocase_var_names);
+  for (unsigned e_idx = 0; e_idx < interFace.elmt_var_names.size(); ++e_idx) {
+    const std::string &name = (interFace.elmt_var_names)[e_idx];
+    int vidx1               = find_string(file1.Elmt_Var_Names(), name, interFace.nocase_var_names);
     int vidx2               = 0;
-    if (!interface.summary_flag) {
-      vidx2 = find_string(file2.Elmt_Var_Names(), name, interface.nocase_var_names);
+    if (!interFace.summary_flag) {
+      vidx2 = find_string(file2.Elmt_Var_Names(), name, interFace.nocase_var_names);
     }
     if (vidx1 < 0 || vidx2 < 0) {
-      ERROR("Unable to find element variable named '" << name << "' on database.\n");
+      Error(fmt::format("Unable to find element variable named '{}' on database.\n", name));
       exit(1);
     }
 
     Norm norm;
 
     if (elmt_map != nullptr) { // Load variable for all blocks in file 2.
-      for (int b = 0; b < file2.Num_Elmt_Blocks(); ++b) {
+      for (size_t b = 0; b < file2.Num_Elmt_Blocks(); ++b) {
         Exo_Block<INT> *block2 = file2.Get_Elmt_Block_by_Index(b);
         block2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
       }
@@ -1548,7 +1532,7 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
     size_t   global_elmt_index = 0;
     DiffData max_diff;
     size_t   e2;
-    for (int b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
+    for (size_t b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
       Exo_Block<INT> *eblock1 = file1.Get_Elmt_Block_by_Index(b);
       if (!eblock1->is_valid_var(vidx1)) {
         global_elmt_index += eblock1->Size();
@@ -1560,8 +1544,8 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
 
       Exo_Block<INT> *eblock2 = nullptr;
       int             b2      = b;
-      if (elmt_map == nullptr && !interface.summary_flag) {
-        if (interface.by_name) {
+      if (elmt_map == nullptr && !interFace.summary_flag) {
+        if (interFace.by_name) {
           eblock2 = file2.Get_Elmt_Block_by_Name(eblock1->Name());
         }
         else {
@@ -1577,23 +1561,25 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       eblock1->Load_Results(step1, vidx1);
       const double *vals1 = eblock1->Get_Results(vidx1);
       if (vals1 == nullptr) {
-        ERROR("Could not find variable " << name << " in block " << eblock1->Id() << ", file 1\n");
+        Error(fmt::format("Could not find element variable '{}' in block {}, file 1.\n", name,
+                          eblock1->Id()));
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals1, eblock1->Size())) {
-        ERROR("NaN found for variable " << name << " in block " << eblock1->Id() << ", file 1\n");
+        Error(
+            fmt::format("NaN found for variable '{}' in block {}, file 1\n", name, eblock1->Id()));
         diff_flag = true;
       }
 
       double        v2    = 0;
       const double *vals2 = nullptr;
 
-      if (elmt_map == nullptr && !interface.summary_flag) {
+      if (elmt_map == nullptr && !interFace.summary_flag) {
         // Without mapping, get result for this block.
         size_t id = eblock1->Id();
-        if (interface.by_name) {
+        if (interFace.by_name) {
           eblock2 = file2.Get_Elmt_Block_by_Name(eblock1->Name());
         }
         else {
@@ -1603,14 +1589,15 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
         vals2 = eblock2->Get_Results(vidx2);
 
         if (vals2 == nullptr) {
-          ERROR("Could not find variable " << name << " in block " << eblock2->Id()
-                                           << ", file 2\n");
+          Error(fmt::format("Could not find element variable '{}' in block {}, file 2.\n", name,
+                            eblock2->Id()));
           diff_flag = true;
           continue;
         }
 
         if (Invalid_Values(vals2, eblock2->Size())) {
-          ERROR("NaN found for variable " << name << " in block " << eblock2->Id() << ", file 2\n");
+          Error(fmt::format("NaN found for variable '{}' in block {}, file 2\n", name,
+                            eblock2->Id()));
           diff_flag = true;
         }
       }
@@ -1627,7 +1614,7 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
         }
 
         if (el_flag >= 0) {
-          if (!interface.summary_flag) {
+          if (!interFace.summary_flag) {
             if (elmt_map == nullptr) {
               v2 = vals2[e];
             }
@@ -1647,25 +1634,25 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
             }
           }
 
-          if (interface.summary_flag) {
+          if (interFace.summary_flag) {
             mm_elmt[e_idx].spec_min_max(vals1[e], step1, global_elmt_index, block_id);
           }
           else if (out_file_id >= 0) {
-            evals[e] = FileDiff(vals1[e], v2, interface.output_type);
+            evals[e] = FileDiff(vals1[e], v2, interFace.output_type);
           }
-          else if (interface.show_all_diffs) {
-            double d = interface.elmt_var[e_idx].Delta(vals1[e], v2);
-            if (d > interface.elmt_var[e_idx].value) {
+          else if (interFace.show_all_diffs) {
+            double d = interFace.elmt_var[e_idx].Delta(vals1[e], v2);
+            if (d > interFace.elmt_var[e_idx].value) {
               diff_flag = true;
-              sprintf(buf,
-                      "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block " ST_ZU ", elmt " ST_ZU ")",
-                      name_length, name.c_str(), interface.elmt_var[e_idx].abrstr(), vals1[e], v2,
-                      d, block_id, (size_t)id_map[global_elmt_index]);
+              buf       = fmt::format(
+                  "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, elmt {})", name,
+                  name_length, interFace.elmt_var[e_idx].abrstr(), vals1[e], v2, d, block_id,
+                  id_map[global_elmt_index]);
               DIFF_OUT(buf);
             }
           }
           else {
-            double d = interface.elmt_var[e_idx].Delta(vals1[e], v2);
+            double d = interFace.elmt_var[e_idx].Delta(vals1[e], v2);
             max_diff.set_max(d, vals1[e], v2, global_elmt_index, block_id);
           }
           norm.add_value(vals1[e], v2);
@@ -1679,30 +1666,32 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       }
 
       eblock1->Free_Results();
-      if (!interface.summary_flag && elmt_map == nullptr) {
+      if (!interFace.summary_flag && elmt_map == nullptr) {
         eblock2->Free_Results();
       }
 
     } // End of element block loop.
 
-    if (interface.doL1Norm && norm.diff(1) > 0.0) {
-      sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
-              name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-      DIFF_OUT(buf, trmclr::green);
+    if (interFace.doL1Norm && norm.diff(1) > 0.0) {
+      buf =
+          fmt::format("   {:<{}} L1 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}", name,
+                      name_length, norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
+      DIFF_OUT(buf, fmt::color::green);
     }
-    if (interface.doL2Norm && norm.diff(2) > 0.0) {
-      sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
-              name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-      DIFF_OUT(buf, trmclr::green);
+    if (interFace.doL2Norm && norm.diff(2) > 0.0) {
+      buf =
+          fmt::format("   {:<{}} L2 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}", name,
+                      name_length, norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
+      DIFF_OUT(buf, fmt::color::green);
     }
 
-    if (!interface.summary_flag && max_diff.diff > interface.elmt_var[e_idx].value) {
+    if (!interFace.summary_flag && max_diff.diff > interFace.elmt_var[e_idx].value) {
       diff_flag = true;
 
-      if (!interface.quiet_flag) {
-        sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block " ST_ZU ", elmt " ST_ZU ")",
-                name_length, name.c_str(), interface.elmt_var[e_idx].abrstr(), max_diff.val1,
-                max_diff.val2, max_diff.diff, max_diff.blk, (size_t)id_map[max_diff.id]);
+      if (!interFace.quiet_flag) {
+        buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, elmt {})",
+                          name, name_length, interFace.elmt_var[e_idx].abrstr(), max_diff.val1,
+                          max_diff.val2, max_diff.diff, max_diff.blk, id_map[max_diff.id]);
         DIFF_OUT(buf);
       }
       else {
@@ -1726,26 +1715,26 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
 
   int name_length = max_string_length(file1.NS_Var_Names()) + 1;
 
-  if (out_file_id < 0 && !interface.quiet_flag && !interface.summary_flag &&
-      !interface.ns_var_names.empty()) {
-    std::cout << "Nodeset variables:\n";
+  if (out_file_id < 0 && !interFace.quiet_flag && !interFace.summary_flag &&
+      !interFace.ns_var_names.empty()) {
+    fmt::print("Nodeset variables:\n");
   }
-  for (unsigned e_idx = 0; e_idx < interface.ns_var_names.size(); ++e_idx) {
-    const std::string &name  = (interface.ns_var_names)[e_idx];
-    int                vidx1 = find_string(file1.NS_Var_Names(), name, interface.nocase_var_names);
+  for (unsigned e_idx = 0; e_idx < interFace.ns_var_names.size(); ++e_idx) {
+    const std::string &name  = (interFace.ns_var_names)[e_idx];
+    int                vidx1 = find_string(file1.NS_Var_Names(), name, interFace.nocase_var_names);
     int                vidx2 = 0;
-    if (!interface.summary_flag) {
-      vidx2 = find_string(file2.NS_Var_Names(), name, interface.nocase_var_names);
+    if (!interFace.summary_flag) {
+      vidx2 = find_string(file2.NS_Var_Names(), name, interFace.nocase_var_names);
     }
     if (vidx1 < 0 || vidx2 < 0) {
-      ERROR("Unable to find nodeset variable named '" << name << "' on database.\n");
+      Error(fmt::format("Unable to find nodeset variable named '{}' on database.\n", name));
       exit(1);
     }
 
     DiffData max_diff;
     Norm     norm;
 
-    for (int b = 0; b < file1.Num_Node_Sets(); ++b) {
+    for (size_t b = 0; b < file1.Num_Node_Sets(); ++b) {
       Node_Set<INT> *nset1 = file1.Get_Node_Set_by_Index(b);
       if (nset1->Size() == 0) {
         continue;
@@ -1755,9 +1744,9 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       }
 
       Node_Set<INT> *nset2 = nullptr;
-      if (!interface.summary_flag) {
+      if (!interFace.summary_flag) {
         size_t id = nset1->Id();
-        if (interface.by_name) {
+        if (interFace.by_name) {
           nset2 = file2.Get_Node_Set_by_Name(nset1->Name());
         }
         else {
@@ -1773,38 +1762,41 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       const double *vals1 = nset1->Get_Results(vidx1);
 
       if (vals1 == nullptr) {
-        ERROR("Could not find variable " << name << " in nodeset " << nset1->Id() << ", file 1\n");
+        Error(fmt::format("Could not find variable '{}' in nodeset {}, file 1.\n", name,
+                          nset1->Id()));
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals1, nset1->Size())) {
-        ERROR("NaN found for variable " << name << " in nodeset " << nset1->Id() << ", file 1\n");
+        Error(
+            fmt::format("NAN found for variable '{}' in nodeset {}, file 1.\n", name, nset1->Id()));
         diff_flag = true;
       }
 
       double  v2    = 0;
       double *vals2 = nullptr;
-      if (!interface.summary_flag) {
+      if (!interFace.summary_flag) {
         // Without mapping, get result for this nset
         nset2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
         vals2 = (double *)nset2->Get_Results(vidx2);
 
         if (vals2 == nullptr) {
-          ERROR("Could not find variable " << name << " in nodeset " << nset2->Id()
-                                           << ", file 2\n");
+          Error(fmt::format("Could not find variable '{}' in nodeset {}, file 2.\n", name,
+                            nset2->Id()));
           diff_flag = true;
           continue;
         }
 
         if (Invalid_Values(vals2, nset2->Size())) {
-          ERROR("NaN found for variable " << name << " in nodeset " << nset2->Id() << ", file 2\n");
+          Error(fmt::format("NAN found for variable '{}' in nodeset {}, file 2.\n", name,
+                            nset2->Id()));
           diff_flag = true;
         }
       }
 
       size_t ncount = nset1->Size();
-      if (interface.summary_flag || nset2->Size() == ncount) {
+      if (interFace.summary_flag || nset2->Size() == ncount) {
         for (size_t e = 0; e < ncount; ++e) {
           int idx1 = nset1->Node_Index(e);
           int idx2 = 0;
@@ -1812,30 +1804,30 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
           if (out_file_id >= 0) {
             vals[idx1] = 0.;
           }
-          if (!interface.summary_flag) {
+          if (!interFace.summary_flag) {
             idx2 = nset2->Node_Index(e);
             v2   = vals2[idx2];
           }
 
-          if (interface.summary_flag) {
+          if (interFace.summary_flag) {
             mm_ns[e_idx].spec_min_max(vals1[idx1], step1, e, nset1->Id());
           }
           else if (out_file_id >= 0) {
-            vals[idx1] = FileDiff(vals1[idx1], v2, interface.output_type);
+            vals[idx1] = FileDiff(vals1[idx1], v2, interFace.output_type);
           }
-          else if (interface.show_all_diffs) {
-            double d = interface.ns_var[e_idx].Delta(vals1[idx1], v2);
-            if (d > interface.ns_var[e_idx].value) {
+          else if (interFace.show_all_diffs) {
+            double d = interFace.ns_var[e_idx].Delta(vals1[idx1], v2);
+            if (d > interFace.ns_var[e_idx].value) {
               diff_flag = true;
-              sprintf(buf,
-                      "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", node " ST_ZU ")",
-                      name_length, name.c_str(), interface.ns_var[e_idx].abrstr(), vals1[idx1], v2,
-                      d, nset1->Id(), e);
+              buf =
+                  fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, node {})",
+                              name, name_length, interFace.ns_var[e_idx].abrstr(), vals1[idx1], v2,
+                              d, nset1->Id(), e);
               DIFF_OUT(buf);
             }
           }
           else {
-            double d = interface.ns_var[e_idx].Delta(vals1[idx1], v2);
+            double d = interFace.ns_var[e_idx].Delta(vals1[idx1], v2);
             max_diff.set_max(d, vals1[idx1], v2, e, nset1->Id());
           }
           norm.add_value(vals1[idx1], v2);
@@ -1847,39 +1839,41 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
         }
       }
       else {
-        sprintf(buf, "   %-*s     diff: nodeset node counts differ for nodeset " ST_ZU, name_length,
-                name.c_str(), (size_t)nset1->Id());
+        buf = fmt::format("   {:<{}}     diff: nodeset node counts differ for nodeset {}", name,
+                          name_length, nset1->Id());
         DIFF_OUT(buf);
         diff_flag = true;
       }
 
       nset1->Free_Results();
-      if (!interface.summary_flag) {
+      if (!interFace.summary_flag) {
         nset2->Free_Results();
       }
 
     } // End of nodeset loop.
 
-    if (interface.doL1Norm && norm.diff(1) > 0.0) {
-      sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
-              name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-      DIFF_OUT(buf, trmclr::green);
+    if (interFace.doL1Norm && norm.diff(1) > 0.0) {
+      buf =
+          fmt::format("   {:<{}} L1 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}", name,
+                      name_length, norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
+      DIFF_OUT(buf, fmt::color::green);
     }
-    if (interface.doL2Norm && norm.diff(2) > 0.0) {
-      sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
-              name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-      DIFF_OUT(buf, trmclr::green);
+    if (interFace.doL2Norm && norm.diff(2) > 0.0) {
+      buf =
+          fmt::format("   {:<{}} L2 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}", name,
+                      name_length, norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
+      DIFF_OUT(buf, fmt::color::green);
     }
 
-    if (!interface.summary_flag && max_diff.diff > interface.ns_var[e_idx].value) {
+    if (!interFace.summary_flag && max_diff.diff > interFace.ns_var[e_idx].value) {
       diff_flag = true;
 
-      if (!interface.quiet_flag) {
+      if (!interFace.quiet_flag) {
         Node_Set<INT> *nset = file1.Get_Node_Set_by_Id(max_diff.blk);
-        sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", node " ST_ZU ")",
-                name_length, name.c_str(), interface.ns_var[e_idx].abrstr(), max_diff.val1,
-                max_diff.val2, max_diff.diff, max_diff.blk,
-                (size_t)id_map[nset->Node_Id(max_diff.id) - 1]);
+        buf =
+            fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, node {})", name,
+                        name_length, interFace.ns_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
+                        max_diff.diff, max_diff.blk, id_map[nset->Node_Id(max_diff.id) - 1]);
         DIFF_OUT(buf);
       }
       else {
@@ -1902,26 +1896,26 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
 
   int name_length = max_string_length(file1.SS_Var_Names()) + 1;
 
-  if (out_file_id < 0 && !interface.quiet_flag && !interface.summary_flag &&
-      !interface.ss_var_names.empty()) {
-    std::cout << "Sideset variables:\n";
+  if (out_file_id < 0 && !interFace.quiet_flag && !interFace.summary_flag &&
+      !interFace.ss_var_names.empty()) {
+    fmt::print("Sideset variables:\n");
   }
   Norm norm;
 
-  for (unsigned e_idx = 0; e_idx < interface.ss_var_names.size(); ++e_idx) {
-    const std::string &name  = (interface.ss_var_names)[e_idx];
-    int                vidx1 = find_string(file1.SS_Var_Names(), name, interface.nocase_var_names);
+  for (unsigned e_idx = 0; e_idx < interFace.ss_var_names.size(); ++e_idx) {
+    const std::string &name  = (interFace.ss_var_names)[e_idx];
+    int                vidx1 = find_string(file1.SS_Var_Names(), name, interFace.nocase_var_names);
     int                vidx2 = 0;
-    if (!interface.summary_flag) {
-      vidx2 = find_string(file2.SS_Var_Names(), name, interface.nocase_var_names);
+    if (!interFace.summary_flag) {
+      vidx2 = find_string(file2.SS_Var_Names(), name, interFace.nocase_var_names);
     }
     if (vidx1 < 0 || vidx2 < 0) {
-      ERROR("Unable to find sideset variable named '" << name << "' on database.\n");
+      Error(fmt::format("Unable to find sideset variable named '{}' on database.\n", name));
       exit(1);
     }
 
     DiffData max_diff;
-    for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
+    for (size_t b = 0; b < file1.Num_Side_Sets(); ++b) {
       Side_Set<INT> *sset1 = file1.Get_Side_Set_by_Index(b);
       SMART_ASSERT(sset1 != nullptr);
       if (sset1->Size() == 0) {
@@ -1932,8 +1926,8 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       }
 
       Side_Set<INT> *sset2 = nullptr;
-      if (!interface.summary_flag) {
-        if (interface.by_name) {
+      if (!interFace.summary_flag) {
+        if (interFace.by_name) {
           sset2 = file2.Get_Side_Set_by_Name(sset1->Name());
         }
         else {
@@ -1948,68 +1942,70 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       const double *vals1 = sset1->Get_Results(vidx1);
 
       if (vals1 == nullptr) {
-        ERROR("Could not find variable " << name << " in sideset " << sset1->Id() << ", file 1\n");
+        Error(fmt::format("Could not find variable '{}' in sideset {}, file 1.\n", name,
+                          sset1->Id()));
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals1, sset1->Size())) {
-        ERROR("NaN found for variable " << name << " in sideset " << sset1->Id() << ", file 1\n");
+        Error(
+            fmt::format("NaN found for variable '{}' in sideset {}, file 1.\n", name, sset1->Id()));
         diff_flag = true;
       }
 
       double  v2    = 0;
       double *vals2 = nullptr;
-      if (!interface.summary_flag) {
+      if (!interFace.summary_flag) {
         sset2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
         vals2 = (double *)sset2->Get_Results(vidx2);
 
         if (vals2 == nullptr) {
-          ERROR("Could not find variable " << name << " in sideset " << sset2->Id()
-                                           << ", file 2\n");
+          Error(fmt::format("Could not find variable '{}' in sideset {}, file 2.\n", name,
+                            sset2->Id()));
           diff_flag = true;
           continue;
         }
 
         if (Invalid_Values(vals2, sset2->Size())) {
-          ERROR("NaN found for variable " << name << " in sideset " << sset2->Id() << ", file 2\n");
+          Error(fmt::format("NaN found for variable '{}' in sideset {}, file 2.\n", name,
+                            sset2->Id()));
           diff_flag = true;
         }
       }
 
       size_t ecount = sset1->Size();
-      if (interface.summary_flag || sset2->Size() == ecount) {
+      if (interFace.summary_flag || sset2->Size() == ecount) {
         for (size_t e = 0; e < ecount; ++e) {
           size_t ind1 = sset1->Side_Index(e);
           size_t ind2 = 0;
           if (out_file_id >= 0) {
             vals[ind1] = 0.;
           }
-          if (!interface.summary_flag) {
+          if (!interFace.summary_flag) {
             ind2 = sset2->Side_Index(e);
             v2   = vals2[ind2];
           }
 
-          if (interface.summary_flag) {
+          if (interFace.summary_flag) {
             mm_ss[e_idx].spec_min_max(vals1[ind1], step1, e, sset1->Id());
           }
           else if (out_file_id >= 0) {
-            vals[ind1] = FileDiff(vals1[ind1], v2, interface.output_type);
+            vals[ind1] = FileDiff(vals1[ind1], v2, interFace.output_type);
           }
-          else if (interface.show_all_diffs) {
-            double d = interface.ss_var[e_idx].Delta(vals1[ind1], v2);
-            if (d > interface.ss_var[e_idx].value) {
+          else if (interFace.show_all_diffs) {
+            double d = interFace.ss_var[e_idx].Delta(vals1[ind1], v2);
+            if (d > interFace.ss_var[e_idx].value) {
               diff_flag = true;
-              sprintf(buf,
-                      "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU ".%d)",
-                      name_length, name.c_str(), interface.ss_var[e_idx].abrstr(), vals1[ind1], v2,
-                      d, (size_t)sset1->Id(), (size_t)id_map[sset1->Side_Id(e).first - 1],
-                      (int)sset1->Side_Id(e).second);
+              buf       = fmt::format(
+                  "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, side {}.{})", name,
+                  name_length, interFace.ss_var[e_idx].abrstr(), vals1[ind1], v2, d, sset1->Id(),
+                  id_map[sset1->Side_Id(e).first - 1], (int)sset1->Side_Id(e).second);
               DIFF_OUT(buf);
             }
           }
           else {
-            double d = interface.ss_var[e_idx].Delta(vals1[ind1], v2);
+            double d = interFace.ss_var[e_idx].Delta(vals1[ind1], v2);
             max_diff.set_max(d, vals1[ind1], v2, e, sset1->Id());
           }
           norm.add_value(vals1[ind1], v2);
@@ -2020,39 +2016,41 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
         }
       }
       else {
-        sprintf(buf, "   %-*s     diff: sideset side counts differ for sideset " ST_ZU, name_length,
-                name.c_str(), (size_t)sset1->Id());
+        buf = fmt::format("   {:<{}}     diff: sideset side counts differ for sideset {}", name,
+                          name_length, sset1->Id());
         DIFF_OUT(buf);
         diff_flag = true;
       }
 
       sset1->Free_Results();
-      if (!interface.summary_flag) {
+      if (!interFace.summary_flag) {
         sset2->Free_Results();
       }
     } // End of sideset loop.
 
-    if (!interface.summary_flag && max_diff.diff > interface.ss_var[e_idx].value) {
+    if (!interFace.summary_flag && max_diff.diff > interFace.ss_var[e_idx].value) {
       diff_flag = true;
 
-      if (interface.doL1Norm && norm.diff(1) > 0.0) {
-        sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
-                name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-        DIFF_OUT(buf, trmclr::green);
+      if (interFace.doL1Norm && norm.diff(1) > 0.0) {
+        buf = fmt::format("   {:<{}} L1 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}",
+                          name, name_length, norm.diff(1), norm.left(1), norm.right(1),
+                          norm.relative(1));
+        DIFF_OUT(buf, fmt::color::green);
       }
-      if (interface.doL2Norm && norm.diff(2) > 0.0) {
-        sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
-                name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-        DIFF_OUT(buf, trmclr::green);
+      if (interFace.doL2Norm && norm.diff(2) > 0.0) {
+        buf = fmt::format("   {:<{}} L2 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}",
+                          name, name_length, norm.diff(2), norm.left(2), norm.right(2),
+                          norm.relative(2));
+        DIFF_OUT(buf, fmt::color::green);
       }
 
-      if (!interface.quiet_flag) {
+      if (!interFace.quiet_flag) {
         Side_Set<INT> *sset = file1.Get_Side_Set_by_Id(max_diff.blk);
-        sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU ".%d)",
-                name_length, name.c_str(), interface.ss_var[e_idx].abrstr(), max_diff.val1,
-                max_diff.val2, max_diff.diff, max_diff.blk,
-                (size_t)id_map[sset->Side_Id(max_diff.id).first - 1],
-                (int)sset->Side_Id(max_diff.id).second);
+        buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, side {}.{})",
+                          name, name_length, interFace.ss_var[e_idx].abrstr(), max_diff.val1,
+                          max_diff.val2, max_diff.diff, max_diff.blk,
+                          id_map[sset->Side_Id(max_diff.id).first - 1],
+                          (int)sset->Side_Id(max_diff.id).second);
         DIFF_OUT(buf);
       }
       else {
@@ -2072,16 +2070,16 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
   std::string name        = "Distribution Factors";
   int         name_length = name.length();
 
-  if (!interface.quiet_flag) {
-    std::cout << "Sideset Distribution Factors:\n";
+  if (!interFace.quiet_flag) {
+    fmt::print("Sideset Distribution Factors:\n");
   }
   DiffData max_diff;
-  for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
+  for (size_t b = 0; b < file1.Num_Side_Sets(); ++b) {
     Side_Set<INT> *sset1 = file1.Get_Side_Set_by_Index(b);
     SMART_ASSERT(sset1 != nullptr);
 
     Side_Set<INT> *sset2 = nullptr;
-    if (interface.by_name) {
+    if (interFace.by_name) {
       sset2 = file2.Get_Side_Set_by_Name(sset1->Name());
     }
     else {
@@ -2098,7 +2096,8 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
     const double *vals1 = sset1->Distribution_Factors();
 
     if (vals1 == nullptr) {
-      ERROR("Could not read distribution factors in sideset " << sset1->Id() << ", file 1\n");
+      Error(
+          fmt::format("Could not read distribution factors in sideset {}, file 1.\n", sset1->Id()));
       diff_flag = true;
       continue;
     }
@@ -2113,7 +2112,8 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
     {
       std::pair<INT, INT> range1 = sset1->Distribution_Factor_Range(ecount - 1);
       if (Invalid_Values(vals1, range1.second)) {
-        ERROR("NaN found for distribution factors in sideset " << sset1->Id() << ", file 1\n");
+        Error(fmt::format("NaN found for distribution factors in sideset {}, file 1.\n",
+                          sset1->Id()));
         diff_flag = true;
       }
 
@@ -2124,7 +2124,8 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
     double *vals2 = (double *)sset2->Distribution_Factors();
 
     if (vals2 == nullptr) {
-      ERROR("Could not read distribution factors in sideset " << sset2->Id() << ", file 2\n");
+      Error(
+          fmt::format("Could not read distribution factors in sideset {}, file 2.\n", sset2->Id()));
       diff_flag = true;
       continue;
     }
@@ -2132,7 +2133,8 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
     {
       std::pair<INT, INT> range2 = sset2->Distribution_Factor_Range(sset2->Size() - 1);
       if (Invalid_Values(vals2, range2.second)) {
-        ERROR("NaN found for distribution factors in sideset " << sset2->Id() << ", file 2\n");
+        Error(fmt::format("NaN found for distribution factors in sideset {}, file 2.\n",
+                          sset2->Id()));
         diff_flag = true;
       }
 
@@ -2154,29 +2156,28 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
           double v1 = vals1[range1.first + i];
           double v2 = vals2[range2.first + i];
 
-          if (interface.show_all_diffs) {
-            double d = interface.ss_df_tol.Delta(v1, v2);
-            if (d > interface.ss_df_tol.value) {
+          if (interFace.show_all_diffs) {
+            double d = interFace.ss_df_tol.Delta(v1, v2);
+            if (d > interFace.ss_df_tol.value) {
               diff_flag = true;
-              sprintf(buf,
-                      "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU
-                      ".%d-%d)",
-                      name_length, name.c_str(), interface.ss_df_tol.abrstr(), v1, v2, d,
-                      (size_t)sset1->Id(), (size_t)id_map[sset1->Side_Id(e).first - 1],
-                      (int)sset1->Side_Id(e).second, (int)i + 1);
+              buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, side {}"
+                                ".{}-{})",
+                                name, name_length, interFace.ss_df_tol.abrstr(), v1, v2, d,
+                                sset1->Id(), id_map[sset1->Side_Id(e).first - 1],
+                                (int)sset1->Side_Id(e).second, (int)i + 1);
               DIFF_OUT(buf);
             }
           }
           else {
-            double d = interface.ss_df_tol.Delta(v1, v2);
+            double d = interFace.ss_df_tol.Delta(v1, v2);
             max_diff.set_max(d, v1, v2, e, sset1->Id());
           }
         }
       }
     }
     else {
-      sprintf(buf, "   %-*s     diff: sideset side counts differ for sideset " ST_ZU, name_length,
-              name.c_str(), (size_t)sset1->Id());
+      buf = fmt::format("   {:<{}}     diff: sideset side counts differ for sideset {}", name,
+                        name_length, sset1->Id());
       DIFF_OUT(buf);
       diff_flag = true;
     }
@@ -2185,15 +2186,16 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
     sset2->Free_Distribution_Factors();
   } // End of sideset loop.
 
-  if (max_diff.diff > interface.ss_df_tol.value) {
+  if (max_diff.diff > interFace.ss_df_tol.value) {
     diff_flag = true;
 
-    if (!interface.quiet_flag) {
+    if (!interFace.quiet_flag) {
       Side_Set<INT> *sset = file1.Get_Side_Set_by_Id(max_diff.blk);
-      sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU ".%d)",
-              name_length, name.c_str(), interface.ss_df_tol.abrstr(), max_diff.val1, max_diff.val2,
-              max_diff.diff, max_diff.blk, (size_t)id_map[sset->Side_Id(max_diff.id).first - 1],
-              (int)sset->Side_Id(max_diff.id).second);
+      buf =
+          fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, side {}.{})", name,
+                      name_length, interFace.ss_df_tol.abrstr(), max_diff.val1, max_diff.val2,
+                      max_diff.diff, max_diff.blk, id_map[sset->Side_Id(max_diff.id).first - 1],
+                      (int)sset->Side_Id(max_diff.id).second);
       DIFF_OUT(buf);
     }
     else {
@@ -2212,14 +2214,14 @@ bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT
   bool diff_flag       = false;
 
   size_t global_elmt_offset = 0;
-  for (int b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
+  for (size_t b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
     Exo_Block<INT> *eblock1 = file1.Get_Elmt_Block_by_Index(b);
     SMART_ASSERT(eblock1 != nullptr);
 
     size_t block_id = eblock1->Id();
 
     Exo_Block<INT> *eblock2 = nullptr;
-    if (interface.by_name) {
+    if (interFace.by_name) {
       eblock2 = file2.Get_Elmt_Block_by_Name(eblock1->Name());
     }
     else {
@@ -2230,7 +2232,7 @@ bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT
 
     if (!diff_was_output && (eblock1->attr_count() > 0 || eblock2->attr_count() > 0)) {
       diff_was_output = true;
-      std::cout << "Element attributes:\n";
+      fmt::print("Element attributes:\n");
     }
 
     int name_length = max_string_length(eblock1->Attribute_Names()) + 1;
@@ -2246,10 +2248,10 @@ bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT
         continue;
       }
 
-      // Find name in interface.elmt_att_names
+      // Find name in interFace.elmt_att_names
       int tol_idx = -1;
-      for (unsigned e_idx = 0; e_idx < interface.elmt_att_names.size(); ++e_idx) {
-        if (name == (interface.elmt_att_names)[e_idx]) {
+      for (unsigned e_idx = 0; e_idx < interFace.elmt_att_names.size(); ++e_idx) {
+        if (name == (interFace.elmt_att_names)[e_idx]) {
           tol_idx = e_idx;
           break;
         }
@@ -2265,14 +2267,15 @@ bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT
       const double *vals1 = eblock1->Get_Attributes(idx1);
 
       if (vals1 == nullptr) {
-        ERROR("Could not find element attribute " << name << " in block " << eblock1->Id()
-                                                  << ", file 1\n");
+        Error(fmt::format("Could not find element attribute '{}' in block {}, file 1.\n", name,
+                          eblock1->Id()));
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals1, eblock1->Size())) {
-        ERROR("NaN found for attribute " << name << " in block " << eblock1->Id() << ", file 1\n");
+        Error(fmt::format("NaN found for element attribute '{}' in block {}, file 1.\n", name,
+                          eblock1->Id()));
         diff_flag = true;
       }
 
@@ -2281,57 +2284,60 @@ bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT
       const double *vals2 = eblock2->Get_Attributes(idx2);
 
       if (vals2 == nullptr) {
-        ERROR("Could not find element attribute " << name << " in block " << eblock2->Id()
-                                                  << ", file 2\n");
+        Error(fmt::format("Could not find element attribute '{}' in block {}, file 2.\n", name,
+                          eblock2->Id()));
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals2, eblock2->Size())) {
-        ERROR("NaN found for attribute " << name << " in block " << eblock2->Id() << ", file 2\n");
+        Error(fmt::format("NaN found for element attribute '{}' in block {}, file 2.\n", name,
+                          eblock2->Id()));
         diff_flag = true;
       }
 
       size_t ecount = eblock1->Size();
       for (size_t e = 0; e < ecount; ++e) {
 
-        if (interface.show_all_diffs) {
-          double d = interface.elmt_att[tol_idx].Delta(vals1[e], vals2[e]);
-          if (d > interface.elmt_att[tol_idx].value) {
+        if (interFace.show_all_diffs) {
+          double d = interFace.elmt_att[tol_idx].Delta(vals1[e], vals2[e]);
+          if (d > interFace.elmt_att[tol_idx].value) {
             diff_flag = true;
-            sprintf(buf,
-                    "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block " ST_ZU ", elmt " ST_ZU ")",
-                    name_length, name.c_str(), interface.elmt_att[tol_idx].abrstr(), vals1[e],
-                    vals2[e], d, block_id, (size_t)id_map[global_elmt_index]);
+            buf =
+                fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, elmt {})",
+                            name, name_length, interFace.elmt_att[tol_idx].abrstr(), vals1[e],
+                            vals2[e], d, block_id, id_map[global_elmt_index]);
             DIFF_OUT(buf);
           }
         }
         else {
-          double d = interface.elmt_att[tol_idx].Delta(vals1[e], vals2[e]);
+          double d = interFace.elmt_att[tol_idx].Delta(vals1[e], vals2[e]);
           max_diff.set_max(d, vals1[e], vals2[e], global_elmt_index, block_id);
         }
         norm.add_value(vals1[e], vals2[e]);
         ++global_elmt_index;
       }
 
-      if (interface.doL1Norm && norm.diff(1) > 0.0) {
-        sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
-                name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-        DIFF_OUT(buf, trmclr::green);
+      if (interFace.doL1Norm && norm.diff(1) > 0.0) {
+        buf = fmt::format("   {:<{}} L1 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}",
+                          name, name_length, norm.diff(1), norm.left(1), norm.right(1),
+                          norm.relative(1));
+        DIFF_OUT(buf, fmt::color::green);
       }
-      if (interface.doL2Norm && norm.diff(2) > 0.0) {
-        sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
-                name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-        DIFF_OUT(buf, trmclr::green);
+      if (interFace.doL2Norm && norm.diff(2) > 0.0) {
+        buf = fmt::format("   {:<{}} L2 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}",
+                          name, name_length, norm.diff(2), norm.left(2), norm.right(2),
+                          norm.relative(2));
+        DIFF_OUT(buf, fmt::color::green);
       }
 
-      if (!interface.summary_flag && max_diff.diff > interface.elmt_att[tol_idx].value) {
+      if (!interFace.summary_flag && max_diff.diff > interFace.elmt_att[tol_idx].value) {
         diff_flag = true;
 
-        if (!interface.quiet_flag) {
-          sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block " ST_ZU ", elmt " ST_ZU ")",
-                  name_length, name.c_str(), interface.elmt_att[tol_idx].abrstr(), max_diff.val1,
-                  max_diff.val2, max_diff.diff, max_diff.blk, (size_t)id_map[max_diff.id]);
+        if (!interFace.quiet_flag) {
+          buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, elmt {})",
+                            name, name_length, interFace.elmt_att[tol_idx].abrstr(), max_diff.val1,
+                            max_diff.val2, max_diff.diff, max_diff.blk, id_map[max_diff.id]);
           DIFF_OUT(buf);
         }
         else {
@@ -2356,131 +2362,119 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
   int name_length = 0;
   int i, n;
 
-  std::cout << "# NOTES:  - The min/max values are reporting the min/max "
-            << "in absolute value.\n"
-            << "#         - Time values (t) are 1-offset time step numbers.\n"
-            << "#         - Element block numbers are the block ids.\n"
-            << "#         - Node(n) and element(e) numbers are 1-offset.\n";
+  fmt::print("# NOTES:  - The min/max values are reporting the min/max in absolute value.\n"
+             "#         - Time values (t) are 1-offset time step numbers.\n"
+             "#         - Element block numbers are the block ids.\n"
+             "#         - Node(n) and element(e) numbers are 1-offset.\n");
 
-  if (interface.coord_sep) {
+  if (interFace.coord_sep) {
     double min_separation = Find_Min_Coord_Sep(file1);
-    std::cout << "\nCOORDINATES absolute 1.e-6    # min separation = " << min_separation << "\n";
+    fmt::print("\nCOORDINATES absolute 1.e-6    # min separation = {}\n", min_separation);
   }
   else {
-    std::cout << "\nCOORDINATES absolute 1.e-6    # min separation "
-                 "not calculated\n";
+    fmt::print("\nCOORDINATES absolute 1.e-6    # min separation not calculated\n");
   }
 
   if (file1.Num_Times() > 0) {
-    std::cout << "\nTIME STEPS relative 1.e-6 floor 0.0     # min: ";
-    sprintf(buf, "%15.8g @ t%d max: %15.8g @ t%d\n", mm_time.min_val, mm_time.min_step,
-            mm_time.max_val, mm_time.max_step);
-    DIFF_OUT(buf, trmclr::green);
+    fmt::print("\nTIME STEPS relative 1.e-6 floor 0.0     # min: ");
+    fmt::print("{:15.8g} @ t{} max: {:15.8g} @ t{}\n", mm_time.min_val, mm_time.min_step,
+               mm_time.max_val, mm_time.max_step);
   }
   else {
-    std::cout << "\n# No TIME STEPS\n";
+    fmt::print("\n# No TIME STEPS\n");
   }
 
-  n = interface.glob_var_names.size();
+  n = interFace.glob_var_names.size();
   if (n > 0) {
-    std::cout << "GLOBAL VARIABLES relative 1.e-6 floor 0.0\n";
-    name_length = max_string_length(interface.glob_var_names);
+    fmt::print("GLOBAL VARIABLES relative 1.e-6 floor 0.0\n");
+    name_length = max_string_length(interFace.glob_var_names);
     for (i = 0; i < n; ++i) {
-      sprintf(buf, "\t%-*s  # min: %15.8g @ t%d\tmax: %15.8g @ t%d\n", name_length,
-              ((interface.glob_var_names)[i]).c_str(), mm_glob[i].min_val, mm_glob[i].min_step,
-              mm_glob[i].max_val, mm_glob[i].max_step);
-      std::cout << buf;
+      fmt::print("\t{:<{}}  # min: {:15.8g} @ t{}\tmax: {:15.8g} @ t{}\n",
+                 ((interFace.glob_var_names)[i]), name_length, mm_glob[i].min_val,
+                 mm_glob[i].min_step, mm_glob[i].max_val, mm_glob[i].max_step);
     }
   }
   else {
-    std::cout << "\n# No GLOBAL VARIABLES\n";
+    fmt::print("\n# No GLOBAL VARIABLES\n");
   }
 
-  n = interface.node_var_names.size();
+  n = interFace.node_var_names.size();
   if (n > 0) {
-    std::cout << "\nNODAL VARIABLES relative 1.e-6 floor 0.0\n";
-    name_length = max_string_length(interface.node_var_names);
+    fmt::print("\nNODAL VARIABLES relative 1.e-6 floor 0.0\n");
+    name_length = max_string_length(interFace.node_var_names);
     for (i = 0; i < n; ++i) {
-      sprintf(buf, "\t%-*s  # min: %15.8g @ t%d,n" ST_ZU "\tmax: %15.8g @ t%d,n" ST_ZU "\n",
-              name_length, ((interface.node_var_names)[i]).c_str(), mm_node[i].min_val,
-              mm_node[i].min_step, (size_t)node_id_map[mm_node[i].min_id], mm_node[i].max_val,
-              mm_node[i].max_step, (size_t)node_id_map[mm_node[i].max_id]);
-      std::cout << buf;
+      fmt::print("\t{:<{}}  # min: {:15.8g} @ t{},n{}\tmax: {:15.8g} @ t{},n{}\n",
+                 ((interFace.node_var_names)[i]), name_length, mm_node[i].min_val,
+                 mm_node[i].min_step, node_id_map[mm_node[i].min_id], mm_node[i].max_val,
+                 mm_node[i].max_step, node_id_map[mm_node[i].max_id]);
     }
   }
   else {
-    std::cout << "\n# No NODAL VARIABLES\n";
+    fmt::print("\n# No NODAL VARIABLES\n");
   }
 
-  n = interface.elmt_var_names.size();
+  n = interFace.elmt_var_names.size();
   if (n > 0) {
-    std::cout << "\nELEMENT VARIABLES relative 1.e-6 floor 0.0\n";
-    name_length = max_string_length(interface.elmt_var_names);
+    fmt::print("\nELEMENT VARIABLES relative 1.e-6 floor 0.0\n");
+    name_length = max_string_length(interFace.elmt_var_names);
     for (i = 0; i < n; ++i) {
-      sprintf(buf,
-              "\t%-*s  # min: %15.8g @ t%d,b" ST_ZU ",e" ST_ZU "\tmax: %15.8g @ t%d,b" ST_ZU
-              ",e" ST_ZU "\n",
-              name_length, ((interface.elmt_var_names)[i]).c_str(), mm_elmt[i].min_val,
-              mm_elmt[i].min_step, mm_elmt[i].min_blk, (size_t)elem_id_map[mm_elmt[i].min_id],
-              mm_elmt[i].max_val, mm_elmt[i].max_step, mm_elmt[i].max_blk,
-              (size_t)elem_id_map[mm_elmt[i].max_id]);
-      std::cout << buf;
+      fmt::print("\t{:<{}}  # min: {:15.8g} @ t{},b{},e{}\tmax: {:15.8g} @ t{},b{}"
+                 ",e{}\n",
+                 ((interFace.elmt_var_names)[i]), name_length, mm_elmt[i].min_val,
+                 mm_elmt[i].min_step, mm_elmt[i].min_blk, elem_id_map[mm_elmt[i].min_id],
+                 mm_elmt[i].max_val, mm_elmt[i].max_step, mm_elmt[i].max_blk,
+                 elem_id_map[mm_elmt[i].max_id]);
     }
   }
   else {
-    std::cout << "\n# No ELEMENT VARIABLES\n";
+    fmt::print("\n# No ELEMENT VARIABLES\n");
   }
 
-  n = interface.ns_var_names.size();
+  n = interFace.ns_var_names.size();
   if (n > 0) {
-    std::cout << "\nNODESET VARIABLES relative 1.e-6 floor 0.0\n";
-    name_length = max_string_length(interface.ns_var_names);
+    fmt::print("\nNODESET VARIABLES relative 1.e-6 floor 0.0\n");
+    name_length = max_string_length(interFace.ns_var_names);
     for (i = 0; i < n; ++i) {
       Node_Set<INT> *nsmin = file1.Get_Node_Set_by_Id(mm_ns[i].min_blk);
       Node_Set<INT> *nsmax = file1.Get_Node_Set_by_Id(mm_ns[i].max_blk);
-      sprintf(buf,
-              "\t%-*s  # min: %15.8g @ t%d,s" ST_ZU ",n" ST_ZU "\tmax: %15.8g @ t%d,s" ST_ZU
-              ",n" ST_ZU "\n",
-              name_length, ((interface.ns_var_names)[i]).c_str(), mm_ns[i].min_val,
-              mm_ns[i].min_step, mm_ns[i].min_blk,
-              (size_t)node_id_map[nsmin->Node_Id(mm_ns[i].min_id) - 1], mm_ns[i].max_val,
-              mm_ns[i].max_step, mm_ns[i].max_blk,
-              (size_t)node_id_map[nsmax->Node_Id(mm_ns[i].max_id) - 1]);
-      std::cout << buf;
+      fmt::print("\t{:<{}}  # min: {:15.8g} @ t{},s{},n{}\tmax: {:15.8g} @ t{},s{}"
+                 ",n{}\n",
+                 ((interFace.ns_var_names)[i]), name_length, mm_ns[i].min_val, mm_ns[i].min_step,
+                 mm_ns[i].min_blk, node_id_map[nsmin->Node_Id(mm_ns[i].min_id) - 1],
+                 mm_ns[i].max_val, mm_ns[i].max_step, mm_ns[i].max_blk,
+                 node_id_map[nsmax->Node_Id(mm_ns[i].max_id) - 1]);
     }
   }
   else {
-    std::cout << "\n# No NODESET VARIABLES\n";
+    fmt::print("\n# No NODESET VARIABLES\n");
   }
 
-  n = interface.ss_var_names.size();
+  n = interFace.ss_var_names.size();
   if (n > 0) {
-    std::cout << "\nSIDESET VARIABLES relative 1.e-6 floor 0.0\n";
-    name_length = max_string_length(interface.ss_var_names);
+    fmt::print("\nSIDESET VARIABLES relative 1.e-6 floor 0.0\n");
+    name_length = max_string_length(interFace.ss_var_names);
     for (i = 0; i < n; ++i) {
       Side_Set<INT> *     ssmin    = file1.Get_Side_Set_by_Id(mm_ss[i].min_blk);
       Side_Set<INT> *     ssmax    = file1.Get_Side_Set_by_Id(mm_ss[i].max_blk);
-      std::pair<int, int> min_side = ssmin->Side_Id(mm_ss[i].min_id);
-      std::pair<int, int> max_side = ssmax->Side_Id(mm_ss[i].max_id);
-      sprintf(buf,
-              "\t%-*s  # min: %15.8g @ t%d,s" ST_ZU ",f" ST_ZU ".%d\tmax: %15.8g @ t%d,s" ST_ZU
-              ",f" ST_ZU ".%d\n",
-              name_length, ((interface.ss_var_names)[i]).c_str(), mm_ss[i].min_val,
-              mm_ss[i].min_step, mm_ss[i].min_blk, (size_t)elem_id_map[min_side.first - 1],
-              min_side.second, mm_ss[i].max_val, mm_ss[i].max_step, mm_ss[i].max_blk,
-              (size_t)elem_id_map[max_side.first - 1], max_side.second);
-      std::cout << buf;
+      std::pair<INT, INT> min_side = ssmin->Side_Id(mm_ss[i].min_id);
+      std::pair<INT, INT> max_side = ssmax->Side_Id(mm_ss[i].max_id);
+      fmt::print("\t{:<{}}  # min: {:15.8g} @ t{},s{},f{}.{}\tmax: {:15.8g} @ t{},s{}"
+                 ",f{}.{}\n",
+                 ((interFace.ss_var_names)[i]), name_length, mm_ss[i].min_val, mm_ss[i].min_step,
+                 mm_ss[i].min_blk, elem_id_map[min_side.first - 1], min_side.second,
+                 mm_ss[i].max_val, mm_ss[i].max_step, mm_ss[i].max_blk,
+                 elem_id_map[max_side.first - 1], max_side.second);
     }
   }
   else {
-    std::cout << "\n# No SIDESET VARIABLES\n";
+    fmt::print("\n# No SIDESET VARIABLES\n");
   }
-  std::cout << '\n';
+  fmt::print("\n");
 }
 
 int timeStepIsExcluded(int ts)
 {
-  for (auto &elem : interface.exclude_steps) {
+  for (auto &elem : interFace.exclude_steps) {
     if (ts == elem) {
       return 1;
     }

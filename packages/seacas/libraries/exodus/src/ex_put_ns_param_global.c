@@ -52,7 +52,6 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <stdio.h>
 
 #include <exodusII.h>
 #include <exodusII_int.h>
@@ -65,7 +64,7 @@ int ex_put_ns_param_global(int exoid, void_int *global_ids, void_int *node_cnts,
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* Get the variable ID for the vector of global node set IDs */
   if ((status = nc_inq_varid(exoid, VAR_NS_IDS_GLOBAL, &varid)) != NC_NOERR) {

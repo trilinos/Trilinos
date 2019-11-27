@@ -182,7 +182,7 @@ void CUSP_apply(
 
   Kokkos::Impl::Timer timer1;
   cusp::multiply(A,B,C);
-  KernelHandle::HandleExecSpace::fence();
+  KernelHandle::HandleExecSpace().fence();
   std::cout << "Actual CUSP SPMM Time:" << timer1.seconds() << std::endl;
 
 

@@ -224,7 +224,7 @@ c change colors
       if(i.eq.1) then
 
 c does the device support direct color
-c ...do it this wierd way cause i'm lazy - if one is only indexed
+c ...do it this weird way cause i'm lazy - if one is only indexed
 c     color, then treat them both as indexed color
 c        call xcsol( tk1id )
         call cqc( idum, idum, idum, idum, icmode, idum, idum, idum )

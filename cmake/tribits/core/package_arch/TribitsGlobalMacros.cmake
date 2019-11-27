@@ -51,6 +51,7 @@ INCLUDE(TribitsVerbosePrintVar)
 INCLUDE(TribitsProcessEnabledTpl)
 INCLUDE(TribitsInstallHeaders)
 INCLUDE(TribitsGetVersionDate)
+INCLUDE(TribitsReportInvalidTribitsUsage)
 
 # Standard TriBITS utilities includes
 INCLUDE(TribitsAddOptionAndDefine)
@@ -622,15 +623,31 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Relative CPU speed of the computer used to scale performance tests (default 1.0)."
     )
 
+  IF ("${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT ON)
+  ENDIF()
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE
     ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT}
     CACHE BOOL
-    "Determines if a variety of development mode checks are turned on by default or not." )
+    "Determines if a variety of development mode checks are turned on by default or not."
+    )
 
   ADVANCED_SET( ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES
     ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE}
     CACHE BOOL
     "Determines if asserts are performed on missing packages or not." )
+
+  IF ("${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT}" STREQUAL "")
+    IF (${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+      SET(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT FATAL_ERROR)
+    ELSE()
+      SET(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT IGNORE)
+    ENDIF()
+  ENDIF()
+  ADVANCED_SET( ${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE
+    "${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT}"
+    CACHE BOOL
+    "Assert correct usage of TriBITS.  Value values include 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', and 'IGNORE'.  Default '${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT}' " )
 
   ADVANCED_SET( ${PROJECT_NAME}_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES
     FALSE  CACHE  BOOL
@@ -2568,9 +2585,9 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
           INCLUDE("${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         ENDIF()
         IF (NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS)
-          MESSAGE(FATAL_ERROR
-            "ERROR: Forgot to call TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}"
-            )
+          TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+            "ERROR: Forgot to call TRIBITS_PACKAGE_POSTPROCESS() in"
+            " ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         ENDIF()
 
         LIST(APPEND ENABLED_PACKAGE_LIBS_TARGETS ${TRIBITS_PACKAGE}_libs)
@@ -2917,8 +2934,6 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
 
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_PBP_RUNNER "" CACHE FILEPATH
     "Program used to run cmake -P cmake_pbp_install.cmake to change user for 'install_package_by_package' target")
-  PRINT_VAR(${PROJECT_NAME}_INSTALL_PBP_RUNNER)
-
 
   ADD_CUSTOM_TARGET(install_package_by_package
    ${${PROJECT_NAME}_INSTALL_PBP_RUNNER}

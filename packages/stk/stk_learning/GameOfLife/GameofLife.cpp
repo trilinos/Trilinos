@@ -102,11 +102,11 @@ void GameofLife::write_mesh()
 //protected
 void GameofLife::update_this_element(stk::mesh::Entity elem)
 {
-    if (stk::topology::QUAD_4 == m_elemType)
+    if (stk::topology::QUAD_4_2D == m_elemType)
         update_quad(elem);
     else if (stk::topology::HEX_8 == m_elemType)
         update_hex(elem);
-    else if (stk::topology::TRIANGLE_3 == m_elemType)
+    else if (stk::topology::TRIANGLE_3_2D == m_elemType)
         update_tri(elem);
     else
         ThrowRequire(true);
