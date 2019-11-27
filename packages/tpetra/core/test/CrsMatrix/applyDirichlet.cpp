@@ -157,7 +157,7 @@ namespace { // (anonymous)
     for (LO k = 0; k < lclNumRows; ++k) {
       lclRowInds_v[k] = k;
     }
-    Kokkos::View<const crs_matrix_type::local_ordinal_type*, Kokkos::HostSpace> lclRowInds_h (lclRowInds.data (), lclNumRows);
+    Kokkos::View<const typename crs_matrix_type::local_ordinal_type*, Kokkos::HostSpace> lclRowInds_h (lclRowInds.data (), lclNumRows);
     // For now, just make sure that this compiles.
     Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows (eye, lclRowInds_h);
   }
