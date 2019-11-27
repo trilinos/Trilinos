@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -43,11 +41,8 @@
 #define __TSQR_TBB_ApplyTask_hpp
 
 #include <tbb/task.h>
-#include <TbbTsqr_Partitioner.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include "TbbTsqr_Partitioner.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
 
 namespace TSQR {
   namespace TBB {
@@ -59,7 +54,7 @@ namespace TSQR {
     class ApplyTask : public tbb::task {
     public:
       typedef MatView<LocalOrdinal, Scalar> mat_view_type;
-      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
+      typedef MatView<LocalOrdinal, const Scalar> const_mat_view_type;
       typedef std::pair<mat_view_type, mat_view_type> split_t;
       typedef std::pair<const_mat_view_type, const_mat_view_type> const_split_t;
       typedef std::pair<const_mat_view_type, mat_view_type> top_blocks_t;
@@ -133,7 +128,7 @@ namespace TSQR {
             // that case, Q_split.second and C_split.second (the
             // bottom block) will be empty.  We can deal with this by
             // treating it as the base case.
-            if (Q_split.second.empty() || Q_split.second.nrows() == 0)
+            if (Q_split.second.empty() || Q_split.second.extent(0) == 0)
               {
                 execute_base_case ();
                 return NULL;
@@ -196,9 +191,9 @@ namespace TSQR {
         TimerType timer("");
         timer.start();
         const std::vector<SeqOutput>& seq_outputs = factor_output_.first;
-        seq_.apply (apply_type_, Q_.nrows(), Q_.ncols(),
-                    Q_.get(), Q_.lda(), seq_outputs[P_first_],
-                    C_.ncols(), C_.get(), C_.lda(),
+        seq_.apply (apply_type_, Q_.extent(0), Q_.extent(1),
+                    Q_.data(), Q_.stride(1), seq_outputs[P_first_],
+                    C_.extent(1), C_.data(), C_.stride(1),
                     contiguous_cache_blocks_);
         my_seq_timing_ = timer.stop();
       }
@@ -216,11 +211,12 @@ namespace TSQR {
 
         const ParOutput& par_output = factor_output_.second;
         const std::vector<Scalar>& tau = par_output[P_bot];
-        std::vector<Scalar> work (C_top.ncols());
-        combine_.apply_pair (apply_type_, C_top.ncols(), Q_bot.ncols(),
-                             Q_bot.get(), Q_bot.lda(), &tau[0],
-                             C_top.get(), C_top.lda(),
-                             C_bot.get(), C_bot.lda(), &work[0]);
+        std::vector<Scalar> work (C_top.extent(1));
+        combine_.apply_pair (apply_type_,
+                             C_top.extent(1), Q_bot.extent(1),
+                             Q_bot.data(), Q_bot.stride(1), tau.data(),
+                             C_top.data(), C_top.stride(1),
+                             C_bot.data(), C_bot.stride(1), work.data());
       }
 
     };

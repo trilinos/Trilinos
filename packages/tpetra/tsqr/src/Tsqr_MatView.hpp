@@ -34,15 +34,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Tsqr_MatView_hpp
 #define __TSQR_Tsqr_MatView_hpp
-
-#include <cstring> // NULL
 
 // Define for bounds checking and other safety features, undefine for speed.
 // #define TSQR_MATVIEW_DEBUG 1
@@ -50,68 +46,53 @@
 #ifdef TSQR_MATVIEW_DEBUG
 #  include <limits>
 #endif // TSQR_MATVIEW_DEBUG
-
 #include <sstream>
 #include <stdexcept>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include <type_traits>
 
 namespace TSQR {
 
-  template< class MatrixViewType1, class MatrixViewType2 >
+  template<class Ordinal, class Scalar>
+  class MatView;
+
+  template<class LO, class SC, class SourceScalar>
   void
-  deep_copy (MatrixViewType1& A, const MatrixViewType2& B)
+  deep_copy (const MatView<LO, SC>& tgt,
+             const SourceScalar& src);
+
+  template<class TargetOrdinal, class TargetScalar,
+           class SourceOrdinal, class SourceScalar,
+           template<class LO, class SC> class SourceMat>
+  void
+  deep_copy (const MatView<TargetOrdinal, TargetScalar>& tgt,
+             const SourceMat<SourceOrdinal, SourceScalar>& src);
+
+  template<class FirstMatrixViewType, class SecondMatrixViewType>
+  bool
+  matrix_equal (const FirstMatrixViewType& A,
+                const SecondMatrixViewType& B)
   {
-    const typename MatrixViewType1::ordinal_type A_nrows = A.nrows ();
-    const typename MatrixViewType1::ordinal_type A_ncols = A.ncols ();
-    if (A_nrows != B.nrows () || A_ncols != B.ncols ()) {
-      using std::endl;
-      std::ostringstream os;
-      os << "deep_copy: dimensions of A (output matrix) and B (input matrix) "
-         << "are not compatible.  A is " << A.nrows () << " x " << A.ncols ()
-         << ", and B is " << B.nrows () << " x " << B.ncols () << ".";
-      throw std::invalid_argument(os.str());
+    if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
+      return false;
     }
-    for (typename MatrixViewType1::ordinal_type j = 0; j < A_ncols; ++j) {
-      typename MatrixViewType1::scalar_type* const A_j = &A(0,j);
-      const typename MatrixViewType2::scalar_type* const B_j = &B(0,j);
-      for (typename MatrixViewType1::ordinal_type i = 0; i < A_nrows; ++i) {
-        A_j[i] = B_j[i];
+    const ptrdiff_t nrows (A.extent(0));
+    const ptrdiff_t A_lda (A.stride(1));
+    const ptrdiff_t ncols (A.extent(1));
+    const ptrdiff_t B_lda (B.stride(1));
+    const auto* A_j = A.data();
+    const auto* B_j = B.data();
+    for (ptrdiff_t j = 0; j < ncols; ++j, A_j += A_lda, B_j += B_lda) {
+      for (ptrdiff_t i = 0; i < nrows; ++i) {
+        if (A_j[i] != B_j[i]) {
+          return false;
+        }
       }
     }
-  }
-
-  template< class FirstMatrixViewType, class SecondMatrixViewType >
-  bool
-  matrix_equal (FirstMatrixViewType& A, SecondMatrixViewType& B)
-  {
-    if (A.nrows() != B.nrows() || A.ncols() != B.ncols())
-      return false;
-
-    typedef typename FirstMatrixViewType::ordinal_type first_ordinal_type;
-    typedef typename SecondMatrixViewType::ordinal_type second_ordinal_type;
-    typedef typename FirstMatrixViewType::pointer_type first_pointer_type;
-    typedef typename SecondMatrixViewType::pointer_type second_pointer_type;
-
-    const first_ordinal_type nrows = A.nrows();
-    const first_ordinal_type A_lda = A.lda();
-    const first_ordinal_type ncols = A.ncols();
-    const second_ordinal_type B_lda = B.lda();
-
-    first_pointer_type A_j = A.get();
-    second_pointer_type B_j = B.get();
-
-    for (first_ordinal_type j = 0; j < ncols; ++j, A_j += A_lda, B_j += B_lda)
-      for (first_ordinal_type i = 0; i < nrows; ++i)
-        if (A_j[i] != B_j[i])
-          return false;
-
     return true;
   }
 
 #ifdef TSQR_MATVIEW_DEBUG
-  template< class Ordinal, class Scalar >
+  template<class Ordinal, class Scalar>
   class MatViewVerify {
   public:
     static void
@@ -154,120 +135,114 @@ namespace TSQR {
   };
 #endif // TSQR_MATVIEW_DEBUG
 
-
   // Forward declaration
-  template< class Ordinal, class Scalar >
-  class ConstMatView;
-
-  // Forward declaration
-  template< class Ordinal, class Scalar >
+  template<class Ordinal, class Scalar>
   class Matrix;
 
   /// \class MatView
   ///
   /// A read-and-write nonowning view of a column-oriented matrix.
-  template< class Ordinal, class Scalar >
+  template<class Ordinal, class Scalar>
   class MatView {
   public:
-    typedef Scalar scalar_type;
-    typedef Ordinal ordinal_type;
-    typedef Scalar* pointer_type;
+    using non_const_value_type = typename std::remove_const<Scalar>::type;
+    using const_value_type = const non_const_value_type;
+    using ordinal_type = Ordinal;
+    using pointer = Scalar*;
+    using const_pointer = const Scalar*;
+    using reference = Scalar&;
+    using const_reference = const Scalar&;
 
-    /// \note g++ with -Wall wants A_ to be initialized after lda_,
-    /// otherwise it emits a compiler warning.
-    MatView () : nrows_(0), ncols_(0), lda_(0), A_(NULL) {}
+    MatView () = default;
 
-    MatView (const Ordinal num_rows,
-             const Ordinal num_cols,
-             Scalar* const A,
-             const Ordinal leading_dim) :
+    MatView (const ordinal_type num_rows,
+             const ordinal_type num_cols,
+             pointer const A,
+             const ordinal_type leading_dim) :
       nrows_(num_rows),
       ncols_(num_cols),
       lda_(leading_dim),
       A_(A)
     {
 #ifdef TSQR_MATVIEW_DEBUG
-      MatViewVerify< Ordinal, Scalar >::verify (num_rows, num_cols, A, leading_dim);
+      MatViewVerify<ordinal_type, non_const_value_type>::
+        verify (num_rows, num_cols, A, leading_dim);
 #endif // TSQR_MATVIEW_DEBUG
     }
 
-    MatView (const MatView& view) :
-      nrows_(view.nrows()),
-      ncols_(view.ncols()),
-      lda_(view.lda()),
-      A_(view.get())
+    MatView (const MatView& view) = default;
+    MatView& operator= (const MatView& view) = default;
+    MatView (MatView&& view) = default;
+    MatView& operator= (MatView&& view) = default;
+
+    // Participates in overload resolution only if the type of
+    // rhs.data() is assignable to A_.
+    template<class InputScalarType>
+    MatView (const MatView<Ordinal, InputScalarType>& rhs) :
+      nrows_ (rhs.extent(0)),
+      ncols_ (rhs.extent(1)),
+      lda_ (rhs.stride(1)),
+      A_ (rhs.data())
     {}
 
-    //! Assignment operator: Does a shallow (pointer) assignment.
-    MatView& operator= (const MatView& view) {
-      if (this != &view) {
-        nrows_ = view.nrows ();
-        ncols_ = view.ncols ();
-        A_ = view.get ();
-        lda_ = view.lda ();
-      }
-      return *this;
+    constexpr ordinal_type extent(const int r) const noexcept {
+      return r == 0 ? nrows_ : (r == 1 ? ncols_ : ordinal_type(0));
     }
 
-    /// \note The function is const, only because returning a
-    /// reference to the matrix data doesn't change any members of
-    /// *this.  Of course one may use the resulting reference to
-    /// change an entry in the matrix, but that doesn't affect the
-    /// MatView's properties.
-    Scalar& operator() (const Ordinal i, const Ordinal j) const
+    constexpr ordinal_type stride(const int r) const noexcept {
+      return r == 0 ? ordinal_type(1) : (r == 1 ? lda_ : ordinal_type(0));
+    }
+
+    reference
+    operator() (const ordinal_type i,
+                const ordinal_type j) const
     {
 #ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits< Ordinal >::is_signed) {
-        if (i < 0 || i >= nrows()) {
+      if (std::numeric_limits<ordinal_type>::is_signed) {
+        if (i < 0 || i >= extent(0)) {
           throw std::invalid_argument("Row range invalid");
         }
-        else if (j < 0 || j >= ncols()) {
+        else if (j < 0 || j >= extent(1)) {
           throw std::invalid_argument("Column range invalid");
         }
       }
       else {
-        if (i >= nrows()) {
+        if (i >= extent(0)) {
           throw std::invalid_argument("Row range invalid");
         }
-        else if (j >= ncols()) {
+        else if (j >= extent(1)) {
           throw std::invalid_argument("Column range invalid");
         }
       }
-      if (A_ == NULL) {
+      if (A_ == nullptr) {
         throw std::logic_error("Attempt to reference NULL data");
       }
 #endif // TSQR_MATVIEW_DEBUG
-      return A_[i + j*lda()];
+      return A_[i + j * this->stride(1)];
     }
 
-    Ordinal nrows() const { return nrows_; }
-    Ordinal ncols() const { return ncols_; }
-    Ordinal lda() const { return lda_; }
+    pointer data() const { return A_; }
 
-    /// \note The function is const, only because returning A_ doesn't
-    /// change any members of *this.  Of course one may use the
-    /// resulting pointer to fiddle with entries in the matrix, but
-    /// that doesn't affect the MatView's properties.
-    pointer_type get() const { return A_; }
-    bool empty() const { return nrows() == 0 || ncols() == 0; }
+    bool empty() const { return extent(0) == 0 || extent(1) == 0; }
 
     /// Return a "row block" (submatrix of consecutive rows in the
     /// inclusive range [firstRow,lastRow]).
-    MatView row_block (const Ordinal firstRow, const Ordinal lastRow)
+    MatView row_block (const ordinal_type firstRow,
+                       const ordinal_type lastRow)
     {
 #ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits< Ordinal >::is_signed) {
-        if (firstRow < 0 || firstRow > lastRow || lastRow >= nrows()) {
+      if (std::numeric_limits<ordinal_type>::is_signed) {
+        if (firstRow < 0 || firstRow > lastRow || lastRow >= extent(0)) {
           throw std::invalid_argument ("Row range invalid");
         }
       }
       else {
-        if (firstRow > lastRow || lastRow >= nrows()) {
+        if (firstRow > lastRow || lastRow >= extent(0)) {
           throw std::invalid_argument ("Row range invalid");
         }
       }
 #endif // TSQR_MATVIEW_DEBUG
-      return MatView (lastRow - firstRow + 1, ncols(), get() + firstRow, lda());
+      return MatView (lastRow - firstRow + 1, extent(1), data() + firstRow, stride(1));
     }
 
     /// Split off and return the top cache block of nrows_top rows.
@@ -285,41 +260,38 @@ namespace TSQR {
     ///
     /// \return The top block of nrows_top rows.  Data is a shallow
     ///   copy of the data in *this.
-    MatView split_top (const Ordinal nrows_top,
-                       const bool b_contiguous_blocks = false)
+    MatView
+    split_top (const ordinal_type nrows_top,
+               const bool b_contiguous_blocks = false)
     {
 #ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits< Ordinal >::is_signed && nrows_top < 0)
-        {
-          std::ostringstream os;
-          os << "nrows_top (= " << nrows_top << ") < 0";
-          throw std::invalid_argument (os.str());
-        }
-      else if (nrows_top > nrows())
-        {
-          std::ostringstream os;
-          os << "nrows_top (= " << nrows_top << ") > nrows (= " << nrows() << ")";
-          throw std::invalid_argument (os.str());
-        }
+      if (std::numeric_limits<ordinal_type>::is_signed && nrows_top < 0) {
+        std::ostringstream os;
+        os << "nrows_top (= " << nrows_top << ") < 0";
+        throw std::invalid_argument (os.str());
+      }
+      else if (nrows_top > extent(0)) {
+        std::ostringstream os;
+        os << "nrows_top (= " << nrows_top << ") > nrows (= " << extent(0) << ")";
+        throw std::invalid_argument (os.str());
+      }
 #endif // TSQR_MATVIEW_DEBUG
 
-      Scalar* const A_top_ptr = get();
-      Scalar* A_rest_ptr;
-      const Ordinal nrows_rest = nrows() - nrows_top;
-      Ordinal lda_top, lda_rest;
-      if (b_contiguous_blocks)
-        {
-          lda_top = nrows_top;
-          lda_rest = nrows_rest;
-          A_rest_ptr = A_top_ptr + nrows_top * ncols();
-        }
-      else
-        {
-          lda_top = lda();
-          lda_rest = lda();
-          A_rest_ptr = A_top_ptr + nrows_top;
-        }
-      MatView A_top (nrows_top, ncols(), get(), lda_top);
+      pointer const A_top_ptr = data();
+      pointer A_rest_ptr;
+      const ordinal_type nrows_rest = extent(0) - nrows_top;
+      ordinal_type lda_top, lda_rest;
+      if (b_contiguous_blocks) {
+        lda_top = nrows_top;
+        lda_rest = nrows_rest;
+        A_rest_ptr = A_top_ptr + nrows_top * extent(1);
+      }
+      else {
+        lda_top = stride(1);
+        lda_rest = stride(1);
+        A_rest_ptr = A_top_ptr + nrows_top;
+      }
+      MatView A_top (nrows_top, extent(1), data(), lda_top);
       A_ = A_rest_ptr;
       nrows_ = nrows_rest;
       lda_ = lda_rest;
@@ -329,266 +301,131 @@ namespace TSQR {
 
     /// Split off and return the bottom block.  Modify *this to be the
     /// "rest" of the matrix.
-    MatView split_bottom (const Ordinal nrows_bottom,
-                          const bool b_contiguous_blocks = false)
+    MatView
+    split_bottom (const ordinal_type nrows_bottom,
+                  const bool b_contiguous_blocks = false)
     {
 #ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits< Ordinal >::is_signed && nrows_bottom < 0)
+      if (std::numeric_limits<ordinal_type>::is_signed && nrows_bottom < 0) {
         throw std::invalid_argument ("nrows_bottom < 0");
-      if (nrows_bottom > nrows())
+      }
+      if (nrows_bottom > extent(0)) {
         throw std::invalid_argument ("nrows_bottom > nrows");
+      }
 #endif // TSQR_MATVIEW_DEBUG
 
-      Scalar* const A_rest_ptr = get();
-      Scalar* A_bottom_ptr;
-      const Ordinal nrows_rest = nrows() - nrows_bottom;
-      Ordinal lda_bottom, lda_rest;
-      if (b_contiguous_blocks)
-        {
-          lda_bottom = nrows_bottom;
-          lda_rest = nrows() - nrows_bottom;
-          A_bottom_ptr = A_rest_ptr + nrows_rest * ncols();
-        }
-      else
-        {
-          lda_bottom = lda();
-          lda_rest = lda();
-          A_bottom_ptr = A_rest_ptr + nrows_rest;
-        }
-      MatView A_bottom (nrows_bottom, ncols(), A_bottom_ptr, lda_bottom);
+      pointer const A_rest_ptr = data();
+      pointer A_bottom_ptr;
+      const ordinal_type nrows_rest = extent(0) - nrows_bottom;
+      ordinal_type lda_bottom, lda_rest;
+      if (b_contiguous_blocks) {
+        lda_bottom = nrows_bottom;
+        lda_rest = extent(0) - nrows_bottom;
+        A_bottom_ptr = A_rest_ptr + nrows_rest * extent(1);
+      }
+      else {
+        lda_bottom = stride(1);
+        lda_rest = stride(1);
+        A_bottom_ptr = A_rest_ptr + nrows_rest;
+      }
+      MatView A_bottom (nrows_bottom, extent(1), A_bottom_ptr, lda_bottom);
       A_ = A_rest_ptr;
       nrows_ = nrows_rest;
       lda_ = lda_rest;
 
       return A_bottom;
-    }
-
-    void
-    fill (const scalar_type& value)
-    {
-      const ordinal_type num_rows = nrows();
-      const ordinal_type num_cols = ncols();
-      const ordinal_type stride = lda();
-
-      scalar_type* A_j = get();
-      for (ordinal_type j = 0; j < num_cols; ++j, A_j += stride)
-        for (ordinal_type i = 0; i < num_rows; ++i)
-          A_j[i] = value;
     }
 
     bool operator== (const MatView& rhs) const {
-      return nrows() == rhs.nrows() && ncols() == rhs.ncols() &&
-        lda() == rhs.lda() && get() == rhs.get();
+      return extent(0) == rhs.extent(0) && extent(1) == rhs.extent(1) &&
+        stride(1) == rhs.stride(1) && data() == rhs.data();
     }
 
     bool operator!= (const MatView& rhs) const {
-      return nrows() != rhs.nrows() || ncols() != rhs.ncols() ||
-        lda() != rhs.lda() || get() != rhs.get();
+      return extent(0) != rhs.extent(0) || extent(1) != rhs.extent(1) ||
+        stride(1) != rhs.stride(1) || data() != rhs.data();
     }
 
   private:
-    ordinal_type nrows_, ncols_, lda_;
-    scalar_type* A_;
+    ordinal_type nrows_ = 0;
+    ordinal_type ncols_ = 0;
+    ordinal_type lda_ = 0;
+    pointer A_ = nullptr;
   };
 
-
-  /// \class ConstMatView
-  ///
-  /// A read-only view of a column-oriented matrix.
-  ///
-  /// \note Implicit promotion of a MatView to a ConstMatView is
-  ///   forbidden, because it violates the expectation that
-  ///   ConstMatView points to a matrix that doesn't change during the
-  ///   computation.
-  template< class Ordinal, class Scalar >
-  class ConstMatView {
-  public:
-    typedef Scalar scalar_type;
-    typedef Ordinal ordinal_type;
-    typedef const Scalar* pointer_type;
-
-    ConstMatView () : nrows_(0), ncols_(0), lda_(0), A_(NULL) {}
-
-    /// \note g++ with -Wall wants A_ to be initialized after lda_,
-    /// otherwise it emits a compiler warning.
-    ConstMatView (const Ordinal num_rows,
-                  const Ordinal num_cols,
-                  const Scalar* const A,
-                  const Ordinal leading_dim) :
-      nrows_(num_rows),
-      ncols_(num_cols),
-      lda_(leading_dim),
-      A_(A)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      MatViewVerify< Ordinal, Scalar >::verify (num_rows, num_cols, A, leading_dim);
-#endif // TSQR_MATVIEW_DEBUG
-    }
-
-    ConstMatView (const ConstMatView& view) :
-      nrows_(view.nrows()),
-      ncols_(view.ncols()),
-      lda_(view.lda()),
-      A_(view.get())
-    {}
-
-    //! Assignment operator: Does a shallow (pointer) copy.
-    ConstMatView& operator= (const ConstMatView& view) {
-      if (this != &view) {
-        nrows_ = view.nrows();
-        ncols_ = view.ncols();
-        lda_ = view.lda();
-        A_ = view.get();
+  template<class LO, class SC, class SourceScalar>
+  void
+  deep_copy (const MatView<LO, SC>& tgt, const SourceScalar& src)
+  {
+    using ordinal_type = typename MatView<LO, SC>::ordinal_type;
+    const ordinal_type num_rows = tgt.extent(0);
+    const ordinal_type num_cols = tgt.extent(1);
+    const ordinal_type stride = tgt.stride(1);
+    auto* tgt_j = tgt.data();
+    for (ordinal_type j = 0; j < num_cols; ++j, tgt_j += stride) {
+      for (ordinal_type i = 0; i < num_rows; ++i) {
+        tgt_j[i] = src;
       }
-      return *this;
     }
+  }
 
-    const Scalar& operator() (const Ordinal i, const Ordinal j) const
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits< Ordinal >::is_signed) {
-        if (i < 0 || i >= nrows()) {
-            throw std::invalid_argument("Row range invalid");
-        }
-        else if (j < 0 || j >= ncols()) {
-            throw std::invalid_argument("Column range invalid");
-        }
+  template<class TargetOrdinal, class TargetScalar,
+           class SourceOrdinal, class SourceScalar,
+           template<class LO, class SC> class SourceMat>
+  void
+  deep_copy (const MatView<TargetOrdinal, TargetScalar>& tgt,
+             const SourceMat<SourceOrdinal, SourceScalar>& src)
+  {
+    const ptrdiff_t tgt_nrows (tgt.extent (0));
+    const ptrdiff_t tgt_ncols (tgt.extent (1));
+    if (tgt_nrows != ptrdiff_t (src.extent (0)) ||
+        tgt_ncols != ptrdiff_t (src.extent (1))) {
+      std::ostringstream os;
+      os << "TSQR::deep_copy: dimensions of tgt (output matrix) and "
+        "src (input matrix) are not compatible.  tgt is "
+         << tgt.extent (0) << " x " << tgt.extent (1) << ", but src "
+        "is " << src.extent (0) << " x " << src.extent (1) << ".";
+      throw std::invalid_argument (os.str ());
+    }
+    for (ptrdiff_t j = 0; j < tgt_ncols; ++j) {
+      auto* const tgt_j = &tgt(0,j);
+      const auto* const src_j = &src(0,j);
+      for (ptrdiff_t i = 0; i < tgt_nrows; ++i) {
+        tgt_j[i] = src_j[i];
       }
-      else {
-        if (i >= nrows()) {
-            throw std::invalid_argument("Row range invalid");
-        }
-        else if (j >= ncols()) {
-            throw std::invalid_argument("Column range invalid");
-        }
-      }
-      if (A_ == NULL) {
-        throw std::logic_error("Attempt to reference NULL data");
-      }
-#endif // TSQR_MATVIEW_DEBUG
-      return A_[i + j*lda()];
+    }
+  }
+
+  template<class MatViewType>
+  std::pair<MatViewType, MatViewType>
+  partition_2x1 (const MatViewType& A,
+                 const typename MatViewType::ordinal_type nrows_top,
+                 const bool b_contiguous_blocks = false)
+  {
+    using ordinal_type = typename MatViewType::ordinal_type;
+    using pointer = typename MatViewType::pointer;
+
+    const ordinal_type ncols = A.extent(1);
+    pointer const A_top_ptr = A.data();
+    const ordinal_type nrows_bot = A.extent(0) - nrows_top;
+
+    pointer A_bot_ptr;
+    ordinal_type lda_top, lda_bot;
+    if (b_contiguous_blocks) {
+      lda_top = nrows_top;
+      lda_bot = nrows_bot;
+      A_bot_ptr = A_top_ptr + nrows_top * A.extent(1);
+    }
+    else { // assume column major (LayoutLeft, in Kokkos terms)
+      lda_top = A.stride(1);
+      lda_bot = A.stride(1);
+      A_bot_ptr = A_top_ptr + nrows_top;
     }
 
-    Ordinal nrows() const { return nrows_; }
-    Ordinal ncols() const { return ncols_; }
-    Ordinal lda() const { return lda_; }
-    pointer_type get() const { return A_; }
-    bool empty() const { return nrows() == 0 || ncols() == 0; }
-
-    /// Return a "row block" (submatrix of consecutive rows in the
-    /// inclusive range [firstRow,lastRow]).
-    ConstMatView rowBlock (const Ordinal firstRow,
-                           const Ordinal lastRow) const
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (firstRow < 0 || lastRow >= nrows())
-        throw std::invalid_argument ("Row range invalid");
-#endif // TSQR_MATVIEW_DEBUG
-      return ConstMatView (lastRow - firstRow + 1, ncols(), get() + firstRow, lda());
-    }
-
-
-    /// Split off and return the top block.  Modify *this to be the
-    /// "rest" of the matrix.
-    ///
-    /// \note Only use this method to split off a single cache block.
-    ///   It breaks if you try to use it otherwise.
-    ///
-    /// \param nrows_top [in] Number of rows in the top block (which
-    ///   this method returns)
-    ///
-    /// \param b_contiguous_blocks [in] Whether or not the entries of
-    ///   the top block are stored contiguously in *this.  The default
-    ///   is no (false).
-    ///
-    /// \return The top block of nrows_top rows.  Data is a shallow
-    ///   copy of the data in *this.
-    ConstMatView split_top (const Ordinal nrows_top,
-                            const bool b_contiguous_blocks = false)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits< Ordinal >::is_signed && nrows_top < 0)
-        throw std::invalid_argument ("nrows_top < 0");
-      if (nrows_top > nrows())
-        throw std::invalid_argument ("nrows_top > nrows");
-#endif // TSQR_MATVIEW_DEBUG
-
-      pointer_type const A_top_ptr = get();
-      pointer_type A_rest_ptr;
-      const Ordinal nrows_rest = nrows() - nrows_top;
-      Ordinal lda_top, lda_rest;
-      if (b_contiguous_blocks)
-        {
-          lda_top = nrows_top;
-          lda_rest = nrows_rest;
-          A_rest_ptr = A_top_ptr + nrows_top * ncols();
-        }
-      else
-        {
-          lda_top = lda();
-          lda_rest = lda();
-          A_rest_ptr = A_top_ptr + nrows_top;
-        }
-      ConstMatView A_top (nrows_top, ncols(), get(), lda_top);
-      A_ = A_rest_ptr;
-      nrows_ = nrows_rest;
-      lda_ = lda_rest;
-
-      return A_top;
-    }
-
-
-    /// Split off and return the bottom block.  Modify *this to be the
-    /// "rest" of the matrix.
-    ConstMatView split_bottom (const Ordinal nrows_bottom,
-                               const bool b_contiguous_blocks = false)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits< Ordinal >::is_signed && nrows_bottom < 0)
-        throw std::invalid_argument ("nrows_bottom < 0");
-      if (nrows_bottom > nrows())
-        throw std::invalid_argument ("nrows_bottom > nrows");
-#endif // TSQR_MATVIEW_DEBUG
-
-      pointer_type const A_rest_ptr = get();
-      pointer_type A_bottom_ptr;
-      const ordinal_type nrows_rest = nrows() - nrows_bottom;
-      ordinal_type lda_bottom, lda_rest;
-      if (b_contiguous_blocks)
-        {
-          lda_bottom = nrows_bottom;
-          lda_rest = nrows() - nrows_bottom;
-          A_bottom_ptr = A_rest_ptr + nrows_rest * ncols();
-        }
-      else
-        {
-          lda_bottom = lda();
-          lda_rest = lda();
-          A_bottom_ptr = A_rest_ptr + nrows_rest;
-        }
-      ConstMatView A_bottom (nrows_bottom, ncols(), A_bottom_ptr, lda_bottom);
-      A_ = A_rest_ptr;
-      nrows_ = nrows_rest;
-      lda_ = lda_rest;
-
-      return A_bottom;
-    }
-
-    bool operator== (const ConstMatView& rhs) const {
-      return nrows() == rhs.nrows() && ncols() == rhs.ncols() &&
-        lda() == rhs.lda() && get() == rhs.get();
-    }
-
-    bool operator!= (const ConstMatView& rhs) const {
-      return nrows() != rhs.nrows() || ncols() != rhs.ncols() ||
-        lda() != rhs.lda() || get() != rhs.get();
-    }
-
-
-  private:
-    ordinal_type nrows_, ncols_, lda_;
-    pointer_type A_;
-  };
+    MatViewType A_top (nrows_top, ncols, A_top_ptr, lda_top);
+    MatViewType A_bot (nrows_bot, ncols, A_bot_ptr, lda_bot);
+    return {A_top, A_bot};
+  }
 
 } // namespace TSQR
 
