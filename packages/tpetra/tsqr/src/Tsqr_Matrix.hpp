@@ -331,9 +331,7 @@ namespace TSQR {
   void
   deep_copy (Matrix<LO, SC>& tgt, const SourceScalar& src)
   {
-    MatView<LO, SC> tgt_view (tgt.extent(0), tgt.extent(1),
-                              tgt.data(), tgt.stride(1));
-    deep_copy (tgt_view, src);
+    deep_copy (tgt.view(), src);
   }
 
   template<class TargetOrdinal, class TargetScalar,
@@ -343,36 +341,25 @@ namespace TSQR {
   deep_copy (Matrix<TargetOrdinal, TargetScalar>& tgt,
              const SourceMat<SourceOrdinal, SourceScalar>& src)
   {
-    using mat_view_type = MatView<TargetOrdinal, TargetScalar>;
-    mat_view_type tgt_view (tgt.extent(0), tgt.extent(1),
-                            tgt.data(), tgt.stride(1));
-    deep_copy (tgt_view, src);
+    deep_copy (tgt.view(), src);
   }
 
-  // Matrix is a container, so the version of data() that returns a
-  // nonconst pointer must be nonconst.
   template<class LO, class SC>
   std::pair<MatView<LO, SC>, MatView<LO, SC>>
   partition_2x1 (Matrix<LO, SC>& A,
                  const typename Matrix<LO, SC>::ordinal_type nrows_top,
                  const bool b_contiguous_blocks = false)
   {
-    MatView<LO, SC> A_view (A.extent(0), A.extent(1),
-                            A.data(), A.stride(1));
-    return partition_2x1 (A_view, nrows_top, b_contiguous_blocks);
+    return partition_2x1 (A.view(), nrows_top, b_contiguous_blocks);
   }
 
-  // Matrix is a container, so the version of data() that returns a
-  // nonconst pointer must be nonconst.
   template<class LO, class SC>
   std::pair<MatView<LO, const SC>, MatView<LO, const SC>>
   partition_2x1 (const Matrix<LO, SC>& A,
                  const typename Matrix<LO, SC>::ordinal_type nrows_top,
                  const bool b_contiguous_blocks = false)
   {
-    MatView<LO, const SC> A_view (A.extent(0), A.extent(1),
-                                  A.data(), A.stride(1));
-    return partition_2x1 (A_view, nrows_top, b_contiguous_blocks);
+    return partition_2x1 (A.view(), nrows_top, b_contiguous_blocks);
   }
 } // namespace TSQR
 
