@@ -164,7 +164,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
     Array<RCP<Vector> > regVec(maxRegPerProc);
     Array<Teuchos::RCP<Vector> > quasiRegVec(maxRegPerProc);
 
-    compositeToRegional(compVec, quasiRegVec, regVec, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+    compositeToRegional(compVec, quasiRegVec, regVec, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
     if(numRanks == 1){
       TEST_EQUALITY(regVec[0]->getLocalLength(),  25);
@@ -317,7 +317,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
     Array<RCP<Vector> > regVec(maxRegPerProc);
     Array<RCP<Vector> > quasiRegInterfaceScaling(maxRegPerProc);
     compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
-                        interfaceScaling, maxRegPerProc, rowMapPerGrp,
+                        interfaceScaling, rowMapPerGrp,
                         revisedRowMapPerGrp, rowImportPerGrp);
 
     if(numRanks == 1) {

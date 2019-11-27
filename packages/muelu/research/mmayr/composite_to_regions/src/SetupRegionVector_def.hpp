@@ -91,13 +91,16 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in]
                          Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& quasiRegVecs, ///< Vector in quasiRegional layout [in/out]
                          Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVecs, ///< Vector in regional layout [in/out]
-                         const int maxRegPerProc, ///< max number of regions per proc [in]
                          const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in region layout [in]
                          const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp, ///< revised row maps in region layout [in]
                          const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in]
                          )
 {
 #include "Xpetra_UseShortNames.hpp"
+
+  // Get max number of regions per proc
+  const int maxRegPerProc = regVecs.size();
+
   // quasiRegional layout
   for (int grpIdx = 0; grpIdx < maxRegPerProc; ++grpIdx) {
     // create empty vectors and fill it by extracting data from composite vector
@@ -206,8 +209,6 @@ void sumInterfaceValues(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrd
   RCP<Vector> compVec = VectorFactory::Build(compMap, true);
   TEUCHOS_ASSERT(!compVec.is_null());
 
-  Array<Teuchos::RCP<Vector> > quasiRegVec(maxRegPerProc);
-
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 1 - regionalToComposite")));
   regionalToComposite(regVec, compVec, maxRegPerProc,
                       rowImportPerGrp, Xpetra::ADD);
@@ -215,7 +216,8 @@ void sumInterfaceValues(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrd
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 2 - compositeToRegional")));
 
-  compositeToRegional(compVec, quasiRegVec, regVec, maxRegPerProc,
+  Array<Teuchos::RCP<Vector> > quasiRegVec(maxRegPerProc);
+  compositeToRegional(compVec, quasiRegVec, regVec,
                       rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
   tm = Teuchos::null;

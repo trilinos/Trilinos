@@ -717,12 +717,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // transform composite vectors to regional layout
     Array<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc);
     Array<Teuchos::RCP<Vector> > regX(maxRegPerProc);
-    compositeToRegional(X, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+    compositeToRegional(X, quasiRegX, regX, rowMapPerGrp,
                         revisedRowMapPerGrp, rowImportPerGrp);
 
     Array<RCP<Vector> > quasiRegB(maxRegPerProc);
     Array<RCP<Vector> > regB(maxRegPerProc);
-    compositeToRegional(B, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
+    compositeToRegional(B, quasiRegB, regB, rowMapPerGrp,
                         revisedRowMapPerGrp, rowImportPerGrp);
 #ifdef DUMP_LOCALX_AND_A
     FILE *fp;

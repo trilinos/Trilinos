@@ -551,7 +551,7 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
     createRegionalVector(quasiRegNspViolation, maxRegPerProc, rowMapPerGrp);
     createRegionalVector(regNspViolation, maxRegPerProc, revisedRowMapPerGrp);
     compositeToRegional(nspViolation, quasiRegNspViolation, regNspViolation,
-                        maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+                        rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
     /* The nullspace violation computed in the composite layout needs to be
      * transfered to the regional layout. Since we use this to compute
@@ -579,7 +579,7 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
        */
       Array<RCP<Vector> > quasiRegInterfaceScaling(maxRegPerProc);
       compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
-                          interfaceScaling, maxRegPerProc, rowMapPerGrp,
+                          interfaceScaling, rowMapPerGrp,
                           revisedRowMapPerGrp, rowImportPerGrp);
 
       // modify its interface entries

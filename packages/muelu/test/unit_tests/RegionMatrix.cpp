@@ -226,7 +226,7 @@ void test_matrix(const int maxRegPerProc,
   // Now build the region X vector
   Array<RCP<Vector> > quasiRegX(maxRegPerProc), quasiRegB(maxRegPerProc);
   Array<RCP<Vector> > regX(maxRegPerProc), regB(maxRegPerProc);
-  compositeToRegional(X, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+  compositeToRegional(X, quasiRegX, regX, rowMapPerGrp,
                       revisedRowMapPerGrp, rowImportPerGrp);
   regB[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
 
@@ -653,7 +653,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, MatVec, Scalar, LocalOrdinal, Gl
   // Create the region vectors and apply region A
   Array<RCP<Vector> > quasiRegX(maxRegPerProc), quasiRegB(maxRegPerProc);
   Array<RCP<Vector> > regX(maxRegPerProc), regB(maxRegPerProc);
-  compositeToRegional(X, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+  compositeToRegional(X, quasiRegX, regX, rowMapPerGrp,
                       revisedRowMapPerGrp, rowImportPerGrp);
   regB[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
   regionMat->apply(*regX[0], *regB[0], Teuchos::NO_TRANS, TST::one(), TST::zero());

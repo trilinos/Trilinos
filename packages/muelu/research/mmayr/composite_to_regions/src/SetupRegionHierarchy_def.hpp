@@ -217,12 +217,12 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
     }
 
     // We communicate the above GIDs to their duplicate so that we can replace GIDs of the region
-    // column map and form the quasiregion column map.
-    Array<RCP<Xpetra::Vector<MT, LO, GO, NO> > > coarseQuasiregionGIDs(1), coarseRegionGIDs(1);
+    // column map and form the quasiRegion column map.
+    Array<RCP<Xpetra::Vector<MT, LO, GO, NO> > > coarseQuasiregionGIDs(1);
+    Array<RCP<Xpetra::Vector<MT, LO, GO, NO> > > coarseRegionGIDs(1);
     compositeToRegional(coarseCompositeGIDs,
                         coarseQuasiregionGIDs,
                         coarseRegionGIDs,
-                        1,
                         quasiRegRowMaps[currentLevel - 1],
                         regRowMaps[currentLevel - 1],
                         regRowImporters[currentLevel - 1]);
@@ -444,7 +444,7 @@ void MakeInterfaceScalingFactors(const int maxRegPerProc,
      */
     Array<RCP<Vector> > quasiRegInterfaceScaling(maxRegPerProc); // Is that vector really needed?
     compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
-                        regInterfaceScalings[l], maxRegPerProc, quasiRegRowMaps[l],
+                        regInterfaceScalings[l], quasiRegRowMaps[l],
                         regRowMaps[l], regRowImporters[l]);
   }
 } // MakeInterfaceScalingFactors
@@ -934,7 +934,6 @@ void vCycle(const int l, ///< ID of current level
       // Transform back to region format
       Array<RCP<Vector> > quasiRegX(maxRegPerProc);
       compositeToRegional(compX, quasiRegX, fineRegX,
-                          maxRegPerProc,
                           quasiRegRowMaps[l],
                           regRowMaps[l],
                           regRowImporters[l]);
