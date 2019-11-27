@@ -454,6 +454,10 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setDoubleParameter("coarse: ifpack relative threshold",1.0,"Unlisted option",PL,dblParam);
   setDoubleParameter("coarse: ifpack absolute threshold",0.0,"Unlisted option",PL,dblParam);
 
+  /* Amesos support */  
+  PL->set("coarse: split communicator",false);
+  PL->set("smoother: split communicator",false);
+
   /* EXPERIMENTAL - RefMaxwell block parallelization */
   PL->set("partitioner: options",dummy);
   PL->sublist("partitioner: options").disableRecursiveValidation();
