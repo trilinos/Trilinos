@@ -555,9 +555,8 @@ namespace TSQR {
                             Q1.data(), Q1.stride(1),
                             Q2.data(), Q2.stride(1), work.data());
       combiner.apply_first (ApplyType::NoTranspose,
-                            numRows, numCols, numCols,
-                            A1.data(), A.stride(1), tau1.data(),
-                            Q1.data(), Q1.stride(1), work.data());
+                            A1, tau1.data(),
+                            Q1, work.data());
       if (debug) {
         cerr << "Results of first test problem:" << endl;
         cerr << "-- Test matrix A:" << endl;

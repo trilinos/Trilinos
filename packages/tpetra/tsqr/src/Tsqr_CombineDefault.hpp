@@ -106,16 +106,17 @@ namespace TSQR {
 
     void
     apply_first (const ApplyType& applyType,
-                 const Ordinal nrows,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_A,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C[],
-                 const Ordinal ldc,
+                 const MatView<Ordinal, Scalar>& C,
                  Scalar work[])
     {
+      const Ordinal nrows = A.extent(0);
+      const Ordinal ncols_C = C.extent(1);
+      const Ordinal ncols_A = A.extent(1);
+      const Ordinal lda = A.stride(1);
+      const Ordinal ldc = C.stride(1);
+
       // LAPACK has the nice feature that it only reads the first
       // letter of input strings that specify things like which side
       // to which to apply the operator, or whether to apply the
@@ -124,7 +125,8 @@ namespace TSQR {
       const std::string trans = applyType.toString ();
       const int lwork = ncols_C;
       lapack_.apply_Q_factor ('L', trans[0], nrows, ncols_C, ncols_A,
-                              A, lda, tau, C, ldc, work, lwork);
+                              A.data(), lda, tau, C.data(), ldc,
+                              work, lwork);
     }
 
     void

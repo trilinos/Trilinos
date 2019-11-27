@@ -390,9 +390,8 @@ namespace TSQR {
 
         // If we get this far, it's fair to assume that we have
         // checked whether tau and work have nonzero lengths.
-        combine.apply_first (applyType, C_top.extent(0), C_top.extent(1),
-                             Q_top.extent(1), Q_top.data(), Q_top.stride(1),
-                             tau.data(), C_top.data(), C_top.stride(1), work.data());
+        combine.apply_first (applyType, Q_top, tau.data(),
+                             C_top, work.data());
       }
 
       void

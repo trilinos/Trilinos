@@ -175,6 +175,16 @@ namespace TSQR {
     MatView (MatView&& view) = default;
     MatView& operator= (MatView&& view) = default;
 
+    // Participates in overload resolution only if the type of
+    // rhs.data() is assignable to A_.
+    template<class InputScalarType>
+    MatView (const MatView<Ordinal, InputScalarType>& rhs) :
+      nrows_ (rhs.extent(0)),
+      ncols_ (rhs.extent(1)),
+      lda_ (rhs.stride(1)),
+      A_ (rhs.data())
+    {}
+
     constexpr ordinal_type extent(const int r) const noexcept {
       return r == 0 ? nrows_ : (r == 1 ? ncols_ : ordinal_type(0));
     }

@@ -175,10 +175,8 @@ namespace TSQR {
                        mat_view_type& C_first,
                        std::vector<Scalar>& work) const
     {
-      const LocalOrdinal nrowsLocal = Q_first.extent(0);
-      combine.apply_first (applyType, nrowsLocal, C_first.extent(1),
-                           Q_first.extent(1), Q_first.data(), Q_first.stride(1),
-                           tau.data(), C_first.data(), C_first.stride(1), work.data());
+      combine.apply_first (applyType, Q_first, tau.data(),
+                           C_first, work.data());
     }
 
     void

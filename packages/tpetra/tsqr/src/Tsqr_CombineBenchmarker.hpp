@@ -315,9 +315,9 @@ namespace TSQR {
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
           combiner.factor_first (A.view(), tau.data(), work.data());
-          combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
-                                A.data(), A.stride(1), tau.data(),
-                                Q.data(), Q.stride(1), work.data());
+          combiner.apply_first (ApplyType("N"),
+                                A.view(), tau.data(),
+                                Q.view(), work.data());
         }
 
         // How much time numTrials runs must take in order for
@@ -343,9 +343,9 @@ namespace TSQR {
           timer.start();
           for (int trial = 0; trial < numTrials; ++trial) {
             combiner.factor_first (A.view(), tau.data(), work.data());
-            combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
-                                  A.data(), A.stride(1), tau.data(),
-                                  Q.data(), Q.stride(1), work.data());
+            combiner.apply_first (ApplyType("N"),
+                                  A.view(), tau.data(),
+                                  Q.view(), work.data());
           }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
@@ -411,9 +411,9 @@ namespace TSQR {
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
           combiner.factor_first (A.view(), tau.data(), work.data());
-          combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
-                                A.data(), A.stride(1), tau.data(),
-                                Q.data(), Q.stride(1), work.data());
+          combiner.apply_first (ApplyType("N"),
+                                A.view(), tau.data(),
+                                Q.view(), work.data());
         }
         //
         // The actual timing runs.
@@ -422,9 +422,9 @@ namespace TSQR {
         timer.start();
         for (int trial = 0; trial < numTrials; ++trial) {
           combiner.factor_first (A.view(), tau.data(), work.data());
-          combiner.apply_first (ApplyType("N"), numRows, numCols, numCols,
-                                A.data(), A.stride(1), tau.data(),
-                                Q.data(), Q.stride(1), work.data());
+          combiner.apply_first (ApplyType("N"),
+                                A.view(), tau.data(),
+                                Q.view(), work.data());
         }
         return timer.stop();
       }

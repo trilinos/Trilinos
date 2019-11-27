@@ -102,18 +102,12 @@ namespace TSQR {
 
     void
     apply_first (const ApplyType& applyType,
-                 const Ordinal nrows,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_A,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C[],
-                 const Ordinal ldc,
-                 Scalar work[]) const
+                 const MatView<Ordinal, Scalar>& C,
+                 Scalar work[])
     {
-      return default_.apply_first (applyType, nrows, ncols_C, ncols_A,
-                                   A, lda, tau, C, ldc, work);
+      return default_.apply_first (applyType, A, tau, C, work);
     }
 
     void
@@ -277,18 +271,12 @@ namespace TSQR {
 
     void
     apply_first (const ApplyType& applyType,
-                 const Ordinal nrows,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_A,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C[],
-                 const Ordinal ldc,
-                 Scalar work[]) const
+                 const MatView<Ordinal, Scalar>& C,
+                 Scalar work[])
     {
-      return default_.apply_first (applyType, nrows, ncols_C, ncols_A,
-                                   A, lda, tau, C, ldc, work);
+      return default_.apply_first (applyType, A, tau, C, work);
     }
 
     void
@@ -362,18 +350,12 @@ namespace TSQR {
 
     void
     apply_first (const ApplyType& applyType,
-                 const Ordinal nrows,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_A,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C[],
-                 const Ordinal ldc,
-                 Scalar work[]) const
+                 const MatView<Ordinal, Scalar>& C,
+                 Scalar work[])
     {
-      return default_.apply_first (applyType, nrows, ncols_C, ncols_A,
-                                   A, lda, tau, C, ldc, work);
+      return default_.apply_first (applyType, A, tau, C, work);
     }
 
     void
