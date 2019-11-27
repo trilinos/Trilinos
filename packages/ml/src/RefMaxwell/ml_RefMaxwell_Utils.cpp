@@ -6,6 +6,8 @@
 #include "ml_mat_formats.h"
 #include <fstream>
 
+#define ML_ABS(x) ( (x) < 0 ? -(x) : (x) )
+
 // ================================================ ====== ==== ==== == =
 int ML_Epetra::CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
@@ -272,7 +274,7 @@ static void ML_Init_Material(ML_Operator* A, double * material) {
   TEUCHOS_TEST_FOR_EXCEPTION(material == 0, std::logic_error,"ML_Init_Material: material vector not found");
 
   num_PDEs = A->num_PDEs;
-  threshold = A->aux_data->threshold;
+  threshold = A->aux_data->m_threshold;
 
   ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
   n = A->invec_leng;
@@ -318,6 +320,166 @@ static void ML_Init_Material(ML_Operator* A, double * material) {
 
  
 }
+/* ================================================ ====== ==== ==== == = */
+static void ML_Init_Aux_And_Material(ML_Operator* A, double * x_coord, double * y_coord, double * z_coord, double * mat_coord) {
+  int i, j, n, count, num_PDEs, BlockRow, BlockCol;
+  double threshold, mat_threshold;
+  int* columns;
+  double* values;
+  int allocated, entries = 0;
+  int N_dimensions;
+  int DiagID;
+  double DiagValue;
+  int** filter;
+  double dist;
+  double *LaplacianDiag;
+  int     Nghost;
+
+  /* Sanity Checks */
+  int dim=(x_coord!=0) + (y_coord!=0) + (z_coord!=0);
+  if(dim == 0 || ((!x_coord && (y_coord || z_coord)) || (x_coord && !y_coord && z_coord))){
+    std::cerr<<"Error: Coordinates not defined.  This is necessary for aux aggregation (found "<<dim<<" coordinates).\n";
+    exit(-1);
+  }
+  if (mat_coord == NULL) {
+    std::cerr<<"ML_Init_Aux_And_Material: Cannot use aux options without supplying coordinates and material coordinates\n";
+    exit(1);
+  }
+
+  num_PDEs = A->num_PDEs;
+  N_dimensions = dim;
+
+  threshold     = A->aux_data->threshold;
+  mat_threshold = A->aux_data->m_threshold;
+  ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  n = A->invec_leng;
+  Nghost = ML_CommInfoOP_Compute_TotalRcvLength(A->getrow->pre_comm);
+
+  LaplacianDiag = (double *) ML_allocate((A->getrow->Nrows+Nghost+1)*
+                                         sizeof(double));
+
+  A->aux_data->filtered_nnz = 0;
+  A->aux_data->unfiltered_nnz = 0;
+
+  filter = (int**) ML_allocate(sizeof(int*) * n);
+
+  allocated = 128;
+  columns = (int *)    ML_allocate(allocated * sizeof(int));
+  values  = (double *) ML_allocate(allocated * sizeof(double));
+
+  for (i = 0 ; i < n ; ++i) {
+    BlockRow = i;
+    DiagID = -1;
+    DiagValue = 0.0;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+
+    for (j = 0; j < entries; j++) {
+      BlockCol = columns[j];
+      if (BlockRow != BlockCol) {
+        dist = 0.0;
+        switch (N_dimensions) {
+        case 3:
+          dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
+        case 2:
+          dist += (y_coord[BlockRow] - y_coord[BlockCol]) * (y_coord[BlockRow] - y_coord[BlockCol]);
+        case 1:
+          dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
+        }
+
+        if (dist == 0.0) {
+          printf("node %d = %e ", i, x_coord[BlockRow]);
+          if (N_dimensions > 1) printf(" %e ", y_coord[BlockRow]);
+          if (N_dimensions > 2) printf(" %e ", z_coord[BlockRow]);
+          printf("\n");
+          printf("node %d = %e ", j, x_coord[BlockCol]);
+          if (N_dimensions > 1) printf(" %e ", y_coord[BlockCol]);
+          if (N_dimensions > 2) printf(" %e ", z_coord[BlockCol]);
+          printf("\n");
+          printf("Operator has inlen = %d and outlen = %d\n",
+                 A->invec_leng, A->outvec_leng);
+        }
+
+        dist = 1.0 / dist;
+        DiagValue += dist;
+      }
+      else if (columns[j] == i) {
+        DiagID = j;
+      }
+    }
+
+    if (DiagID == -1) {
+      fprintf(stderr, "ERROR: matrix has no diagonal!\n"
+              "ERROR: (file %s, line %d)\n",
+              __FILE__, __LINE__);
+      exit(EXIT_FAILURE);
+    }
+    LaplacianDiag[BlockRow] = DiagValue;
+  }
+  if ( A->getrow->pre_comm != NULL )
+     ML_exchange_bdry(LaplacianDiag,A->getrow->pre_comm,A->getrow->Nrows,
+                      A->comm, ML_OVERWRITE,NULL);
+
+
+  for (i = 0 ; i < n ; ++i) {
+    BlockRow = i;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+
+    for (j = 0; j < entries; j++) {
+      BlockCol = columns[j];
+      if (BlockRow != BlockCol) {
+        dist = 0.0;
+        switch (N_dimensions) {
+        case 3:
+          dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
+        case 2:
+          dist += (y_coord[BlockRow] - y_coord[BlockCol]) * (y_coord[BlockRow] - y_coord[BlockCol]);
+        case 1:
+          dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
+        }
+
+        dist = 1.0 / dist;
+        values[j] = dist;
+      }
+    }
+
+    count = 0;
+    for (j = 0 ; j < entries ; ++j) {
+      if (  (i != columns[j]) && (
+            (values[j]*values[j] < LaplacianDiag[BlockRow]*LaplacianDiag[columns[j]]*threshold*threshold) ||
+            (ML_ABS(log10(mat_coord[BlockRow]) - log10(mat_coord[BlockCol])) > mat_threshold) ) ) {
+        columns[count++] = columns[j];
+      }
+    }
+
+    /* insert the rows */
+    filter[BlockRow] = (int*) ML_allocate(sizeof(int) * (count + 1));
+    filter[BlockRow][0] = count;
+
+    for (j = 0 ; j < count ; ++j)
+      filter[BlockRow][j + 1] = columns[j];
+
+    A->aux_data->filtered_nnz += count;
+    A->aux_data->unfiltered_nnz += entries;
+
+  }
+
+  ML_free(columns);
+  ML_free(values);
+
+  ML_free(LaplacianDiag);
+
+  ML_Operator_UnAmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  A->aux_data->aux_func_ptr  = A->getrow->func_ptr;
+  A->getrow->func_ptr = ML_Aux_Getrow;
+  A->aux_data->filter = filter;
+  A->aux_data->filter_size = n;
+
+}
+
 
 // ================================================ ====== ==== ==== == =
 // Copied from ml_agg_genP.c
@@ -915,11 +1077,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   RefMaxwell_SetupCoordinates(A_ML,List,fine_grid.x,fine_grid.y,fine_grid.z,fine_grid.material);
   
   if(useSA) {
-    /* Use SA */
-
-    // FIXME:  We need to allow this later
-    TEUCHOS_TEST_FOR_EXCEPTION(UseAux && UseMaterial, std::logic_error,"RefMaxwell_Aggregate_Nodes: Cannot use material and aux aggregation at the same time");
-    
+    /* Use SA */    
     ML_Aggregate_Create(&MLAggr);
     ML_Aggregate_Set_MaxLevels(MLAggr, 2);
     ML_Aggregate_Set_StartLevel(MLAggr, 0);
@@ -963,8 +1121,18 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
       ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
     }
     
-    /* Setup Aux Data (aux) */
-    if(UseAux) {
+    if(UseAux && UseMaterial) {
+      /* Setup Aux Data (both Aux and Material) */
+      A_ML->aux_data->enable=1;
+      A_ML->aux_data->threshold=AuxThreshold;
+      A_ML->aux_data->m_threshold=MatThreshold;
+      A_ML->aux_data->max_level=std::min(MaxAuxLevels,MaxMatLevels);
+      ML_Init_Aux_And_Material(A_ML,fine_grid.x,fine_grid.y,fine_grid.z,fine_grid.material);
+      printf("%s Using aux+material matrix\n",PrintMsg.c_str());
+      printf("%s aux threshold = %e, material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold,A_ML->aux_data->m_threshold);
+    }
+    else if(UseAux) {
+      /* Setup Aux Data (aux) */
       A_ML->aux_data->enable=1;
       A_ML->aux_data->threshold=AuxThreshold;
       A_ML->aux_data->max_level=MaxAuxLevels;
@@ -974,16 +1142,15 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
         printf("%s aux threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
       }
     }
-    
-    /* Setup Aux Data (material) */
-    if(UseMaterial) {
+    else if(UseMaterial) {
+      /* Setup Aux Data (material) */
       A_ML->aux_data->enable=1;
-      A_ML->aux_data->threshold=MatThreshold;
+      A_ML->aux_data->m_threshold=MatThreshold;
       A_ML->aux_data->max_level=MaxMatLevels;
       ML_Init_Material(A_ML,fine_grid.material);
       if(verbose && !A.Comm().MyPID()) {
         printf("%s Using material matrix\n",PrintMsg.c_str());
-        printf("%s material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
+        printf("%s material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->m_threshold);
       }
     }
     
@@ -1008,8 +1175,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
 
     /* Cleanup */
     ML_qr_fix_Destroy();
-    if(UseAux)      ML_Finalize_Aux(A_ML);
-    if(UseMaterial) ML_Finalize_Aux(A_ML);
+    if(UseAux || UseMaterial)  ML_Finalize_Aux(A_ML);
     
   }
   else {

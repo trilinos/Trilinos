@@ -357,7 +357,7 @@ bool matrix_read(Epetra_ActiveComm &Comm){
 
   Teuchos::ParameterList List_Material    = Build_Teuchos_List(N,coord_ptr,"smoother: type","Chebyshev",0,1);
                                                                
-  List_Material.sublist("refmaxwell: 11list").set("aggregation: material: threshold",0.01);
+  List_Material.sublist("refmaxwell: 11list").set("aggregation: material: threshold",2.0);
   List_Material.sublist("refmaxwell: 11list").set("aggregation: material: enable",true);
   List_Material.sublist("refmaxwell: 11list").set("material coordinates",material_ptr);
 
@@ -375,6 +375,16 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   Teuchos::ParameterList List_AMG_sprs = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
   List_AMG_sprs.sublist("refmaxwell: 11list").set("default values","Classical-AMG");
   List_AMG_sprs.sublist("refmaxwell: 11list").set("aggregation: rowsum threshold",0.9);
+
+  Teuchos::ParameterList List_Material_And_Aux    = Build_Teuchos_List(N,coord_ptr,"smoother: type","Chebyshev",0,1,
+                                                                       "aggregation: aux: threshold",0.01, "aggregation: aux: enable",true);
+  List_Material_And_Aux.sublist("refmaxwell: 11list").set("aggregation: material: threshold",2.0);
+  List_Material_And_Aux.sublist("refmaxwell: 11list").set("aggregation: material: enable",true);
+  List_Material_And_Aux.sublist("refmaxwell: 11list").set("material coordinates",material_ptr);
+  List_Material_And_Aux.sublist("refmaxwell: 22list").set("aggregation: material: threshold",2.0);
+  List_Material_And_Aux.sublist("refmaxwell: 22list").set("aggregation: material: enable",true);
+  List_Material_And_Aux.sublist("refmaxwell: 22list").set("material coordinates",material_ptr);
+
 
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
@@ -458,7 +468,10 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   if(!Comm.MyPID()) printf("*** Test 20 ***\n");
   rpc_test_additive_newconstructor(Comm,List_AMG_sprs,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
 
-
+  /* Test w/ material and aux*/
+  lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 21 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_Material_And_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
 
   delete M0; delete M1e;
   delete D0e;delete Se;
