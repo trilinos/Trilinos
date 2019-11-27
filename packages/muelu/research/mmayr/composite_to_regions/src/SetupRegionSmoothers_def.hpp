@@ -116,7 +116,7 @@ void relaxationSmootherSetup(RCP<Teuchos::ParameterList> params,
     regionGrpMats[j]->getLocalDiagCopy(*diagReg[j]);
   }
 
-  sumInterfaceValues(diagReg, mapComp, maxRegPerProc, rowMapPerGrp,
+  sumInterfaceValues(diagReg, mapComp, rowMapPerGrp,
                      revisedRowMapPerGrp, rowImportPerGrp);
 
   for (int j = 0; j < maxRegPerProc; j++) {
@@ -251,7 +251,7 @@ calcNorm2(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
 {
 #include "Xpetra_UseShortNames.hpp"
   RCP<Vector> compVec = VectorFactory::Build(mapComp, true);
-  regionalToComposite(regVec, compVec, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::ADD);
+  regionalToComposite(regVec, compVec, rowImportPerGrp, Xpetra::ADD);
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm = compVec->norm2();
 
   return norm;
@@ -270,8 +270,8 @@ dotProd(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >&
 #include "Xpetra_UseShortNames.hpp"
   RCP<Vector> compX = VectorFactory::Build(mapComp, true);
   RCP<Vector> compY = VectorFactory::Build(mapComp, true);
-  regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::ADD);
-  regionalToComposite(regY, compY, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::ADD);
+  regionalToComposite(regX, compX, rowImportPerGrp, Xpetra::ADD);
+  regionalToComposite(regY, compY, rowImportPerGrp, Xpetra::ADD);
   SC dotVal = compX->dot(*compY);
 
   return dotVal;
@@ -315,7 +315,7 @@ powerMethod(RCP<Teuchos::ParameterList> params,
     for (int j = 0; j < maxRegPerProc; j++) { // step 1
       regionGrpMats[j]->apply(*regX[j], *regY[j]); // A.apply (x, y);
     }
-    sumInterfaceValues( regY, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp); // step 2
+    sumInterfaceValues( regY, mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp); // step 2
 
     // Scale by inverse of diagonal
     for (int j = 0; j < maxRegPerProc; j++){

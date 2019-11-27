@@ -226,7 +226,7 @@ void test_matrix(const int maxRegPerProc,
   // Now build the region X vector
   Array<RCP<Vector> > quasiRegX(maxRegPerProc), quasiRegB(maxRegPerProc);
   Array<RCP<Vector> > regX(maxRegPerProc), regB(maxRegPerProc);
-  compositeToRegional(X, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+  compositeToRegional(X, quasiRegX, regX,
                       revisedRowMapPerGrp, rowImportPerGrp);
   regB[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
 
@@ -237,8 +237,7 @@ void test_matrix(const int maxRegPerProc,
   // to composite format so it can be compared
   // with the original composite B vector.
   RCP<Vector> compB = VectorFactory::Build(A->getRowMap());
-  regionalToComposite(regB, compB, maxRegPerProc,
-                      rowMapPerGrp,
+  regionalToComposite(regB, compB,
                       rowImportPerGrp,
                       Xpetra::ADD);
 
@@ -260,7 +259,7 @@ void test_matrix(const int maxRegPerProc,
   /************************************/
   RCP<Matrix> compositeMatrix = MatrixFactory::Build(A->getRowMap(), 10, Xpetra::StaticProfile);
   // Transform region A into composite A.
-  regionalToComposite(regionGrpMats, maxRegPerProc,
+  regionalToComposite(regionGrpMats,
                       rowMapPerGrp, colMapPerGrp,
                       rowImportPerGrp, Xpetra::INSERT,
                       compositeMatrix);
@@ -538,7 +537,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
 
   // Finally do the revert operation: start with regionGrpMats and bring it to composite format
   RCP<Matrix> compositeMatrix = MatrixFactory::Build(dofMap, 10, Xpetra::StaticProfile);
-  regionalToComposite(regionGrpMats, maxRegPerProc,
+  regionalToComposite(regionGrpMats,
                       rowMapPerGrp, colMapPerGrp,
                       rowImportPerGrp, Xpetra::INSERT,
                       compositeMatrix);
@@ -652,9 +651,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, MatVec, Scalar, LocalOrdinal, Gl
   A->apply(*X, *B, Teuchos::NO_TRANS, TST::one(), TST::zero());
 
   // Create the region vectors and apply region A
-  Array<RCP<Vector> > quasiRegX(maxRegPerProc), quasiRegB(maxRegPerProc);
-  Array<RCP<Vector> > regX(maxRegPerProc), regB(maxRegPerProc);
-  compositeToRegional(X, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+  Array<RCP<Vector> > quasiRegX(maxRegPerProc);
+  Array<RCP<Vector> > quasiRegB(maxRegPerProc);
+  Array<RCP<Vector> > regX(maxRegPerProc);
+  Array<RCP<Vector> > regB(maxRegPerProc);
+  compositeToRegional(X, quasiRegX, regX,
                       revisedRowMapPerGrp, rowImportPerGrp);
   regB[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
   regionMat->apply(*regX[0], *regB[0], Teuchos::NO_TRANS, TST::one(), TST::zero());
@@ -662,8 +663,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, MatVec, Scalar, LocalOrdinal, Gl
   // Now create composite B using region B so we can compare
   // composite B with the original B
   RCP<Vector> compB = VectorFactory::Build(dofMap);
-  regionalToComposite(regB, compB, maxRegPerProc,
-                      rowMapPerGrp,
+  regionalToComposite(regB, compB,
                       rowImportPerGrp,
                       Xpetra::ADD);
 
