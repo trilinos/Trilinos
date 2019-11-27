@@ -150,6 +150,7 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   PL->sublist("smoother: self list").disableRecursiveValidation();
   setDoubleParameter("coarse: add to diag", 0.0,"Unlisted option",PL,dblParam);
   PL->set("coarse: split communicator",false);
+  PL->set("smoother: split communicator",false);
     
 
   // From ml_Multilevel_Smoothers.cpp:
