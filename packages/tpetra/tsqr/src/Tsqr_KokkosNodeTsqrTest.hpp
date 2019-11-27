@@ -34,25 +34,21 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_KokkosNodeTsqrTest_hpp
 #define __TSQR_Test_KokkosNodeTsqrTest_hpp
 
-#include <Tsqr_nodeTestProblem.hpp>
-#include <Tsqr_verifyTimerConcept.hpp>
-#include <Tsqr_Random_NormalGenerator.hpp>
-#include <Tsqr_LocalVerify.hpp>
-#include <Tsqr_Matrix.hpp>
-#include <Tsqr_KokkosNodeTsqr.hpp>
-
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-
+#include "Tsqr_nodeTestProblem.hpp"
+#include "Tsqr_verifyTimerConcept.hpp"
+#include "Tsqr_Random_NormalGenerator.hpp"
+#include "Tsqr_LocalVerify.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_KokkosNodeTsqr.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_Time.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include <algorithm>
 #include <iostream>
 #include <limits>
@@ -60,15 +56,12 @@
 
 namespace TSQR {
   namespace Test {
-
     /// \fn verifyKokkosNodeTsqr
     /// \brief Test accuracy of KokkosNodeTsqr's QR factorization.
     ///
     /// Test the accuracy of KokkosNodeTsqr's QR factorization on a
     /// numRows by numCols matrix, and print results to stdout.
     ///
-    /// \param node [in] The Kokkos Node instance on which to execute
-    ///   in parallel.
     /// \param gen [in/out] Pseudorandom number generator for the
     ///   normal(0,1) distribution.
     /// \param numRows [in] Number of rows in the test matrix.
@@ -87,11 +80,9 @@ namespace TSQR {
     ///   for a script to parse.
     /// \param debug [in] Whether to print extra debugging output to
     ///   stderr.
-    ///
-    template<class Ordinal, class Scalar, class NodeType>
+    template<class Ordinal, class Scalar>
     void
-    verifyKokkosNodeTsqr (const Teuchos::RCP<NodeType>& node,
-                          TSQR::Random::NormalGenerator<Ordinal, Scalar>& gen,
+    verifyKokkosNodeTsqr (TSQR::Random::NormalGenerator<Ordinal, Scalar>& gen,
                           const Ordinal numRows,
                           const Ordinal numCols,
                           const int numPartitions,
@@ -108,7 +99,7 @@ namespace TSQR {
       using std::cerr;
       using std::cout;
       using std::endl;
-      typedef TSQR::KokkosNodeTsqr<Ordinal, Scalar, NodeType> node_tsqr_type;
+      using node_tsqr_type = TSQR::KokkosNodeTsqr<Ordinal, Scalar>;
       typedef typename node_tsqr_type::FactorOutput factor_output_type;
       typedef Teuchos::ScalarTraits<Scalar> STS;
       typedef typename STS::magnitudeType magnitude_type;
@@ -123,52 +114,47 @@ namespace TSQR {
       params->set ("Cache Size Hint", cacheSizeHint);
       params->set ("Num Tasks", numPartitions);
       node_tsqr_type actor (params);
-      actor.setNode (node);
-      if (debug)
-        {
-          cerr << actor.description() << endl;
-          if (contiguousCacheBlocks)
-            cerr << "-- Test with contiguous cache blocks" << endl;
+      if (debug) {
+        cerr << actor.description() << endl;
+        if (contiguousCacheBlocks) {
+          cerr << "-- Test with contiguous cache blocks" << endl;
         }
+      }
 
       // Allocate space for test problem.
       matrix_type A (numRows, numCols);
       matrix_type A_copy (numRows, numCols);
       matrix_type Q (numRows, numCols);
       matrix_type R (numCols, numCols);
-      if (std::numeric_limits<Scalar>::has_quiet_NaN)
-        {
-          A.fill (std::numeric_limits<Scalar>::quiet_NaN());
-          A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
-          Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
-          R.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        }
-      else
-        {
-          A.fill (STS::zero());
-          A_copy.fill (STS::zero());
-          Q.fill (STS::zero());
-          R.fill (STS::zero());
-        }
+      if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+        deep_copy (A, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (A_copy, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (Q, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (R, std::numeric_limits<Scalar>::quiet_NaN());
+      }
+      else {
+        deep_copy (A, Scalar {});
+        deep_copy (A_copy, Scalar {});
+        deep_copy (Q, Scalar {});
+        deep_copy (R, Scalar {});
+      }
       const Ordinal lda = numRows;
       const Ordinal ldq = numRows;
       const Ordinal ldr = numCols;
 
       // Create a test problem
-      nodeTestProblem (gen, numRows, numCols, A.get(), A.lda(), true);
+      nodeTestProblem (gen, numRows, numCols, A.data(), A.stride(1), true);
 
-      if (debug)
-        {
-          cerr << "-- Generated test problem" << endl;
-          // Don't print the matrix if it's too big.
-          if (A.nrows() <= 30)
-            {
-              cerr << "A = " << endl;
-              print_local_matrix (cerr, A.nrows(), A.ncols(),
-                                  A.get(), A.lda());
-              cerr << endl << endl;
-            }
+      if (debug) {
+        cerr << "-- Generated test problem" << endl;
+        // Don't print the matrix if it's too big.
+        if (A.extent(0) <= 30) {
+          cerr << "A = " << endl;
+          print_local_matrix (cerr, A.extent(0), A.extent(1),
+                              A.data(), A.stride(1));
+          cerr << endl << endl;
         }
+      }
 
       // Copy A into A_copy, since TSQR overwrites the input.  If
       // specified, rearrange the data in A_copy so that the data in
@@ -178,24 +164,24 @@ namespace TSQR {
         if (debug) {
           cerr << "-- Copied test problem from A into A_copy" << endl;
           // Don't print the matrix if it's too big.
-          if (A_copy.nrows() <= 30) {
+          if (A_copy.extent(0) <= 30) {
             cerr << "A_copy = " << endl;
-            print_local_matrix (cerr, A_copy.nrows(), A_copy.ncols(),
-                                A_copy.get(), A_copy.lda());
+            print_local_matrix (cerr, A_copy.extent(0), A_copy.extent(1),
+                                A_copy.data(), A_copy.stride(1));
             cerr << endl << endl;
           }
         }
       }
       else {
-        actor.cache_block (numRows, numCols, A_copy.get(), A.get(), A.lda());
+        actor.cache_block (numRows, numCols, A_copy.data(), A.data(), A.stride(1));
         if (debug) {
           cerr << "-- Reorganized test matrix to have contiguous "
             "cache blocks" << endl;
           // Don't print the matrix if it's too big.
-          if (A_copy.nrows() <= 30) {
+          if (A_copy.extent(0) <= 30) {
             cerr << "A_copy = " << endl;
-            print_local_matrix (cerr, A_copy.nrows(), A_copy.ncols(),
-                                A_copy.get(), A_copy.lda());
+            print_local_matrix (cerr, A_copy.extent(0), A_copy.extent(1),
+                                A_copy.data(), A_copy.stride(1));
             cerr << endl << endl;
           }
         }
@@ -204,10 +190,10 @@ namespace TSQR {
         if (debug) {
           matrix_type A2 (numRows, numCols);
           if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-            A2.fill (std::numeric_limits<Scalar>::quiet_NaN());
+            deep_copy (A2, std::numeric_limits<Scalar>::quiet_NaN());
           }
 
-          actor.un_cache_block (numRows, numCols, A2.get(), A2.lda(), A_copy.get());
+          actor.un_cache_block (numRows, numCols, A2.data(), A2.stride(1), A_copy.data());
           if (matrix_equal (A, A2)) {
             if (debug)
               cerr << "-- Cache blocking test succeeded!" << endl;
@@ -217,13 +203,13 @@ namespace TSQR {
               cerr << "*** Cache blocking test failed! A != A2 ***"
                    << endl << endl;
               // Don't print the matrices if they are too big.
-              if (A.nrows() <= 30 && A2.nrows() <= 30) {
+              if (A.extent(0) <= 30 && A2.extent(0) <= 30) {
                 cerr << "A = " << endl;
-                print_local_matrix (cerr, A.nrows(), A.ncols(),
-                                    A.get(), A.lda());
+                print_local_matrix (cerr, A.extent(0), A.extent(1),
+                                    A.data(), A.stride(1));
                 cerr << endl << "A2 = " << endl;
-                print_local_matrix (cerr, A2.nrows(), A2.ncols(),
-                                    A2.get(), A2.lda());
+                print_local_matrix (cerr, A2.extent(0), A2.extent(1),
+                                    A2.data(), A2.stride(1));
                 cerr << endl;
               }
             }
@@ -237,7 +223,7 @@ namespace TSQR {
       if (debug) {
         cerr << "-- Filling R with zeros" << endl;
       }
-      R.fill (STS::zero());
+      deep_copy (R, Scalar {});
 
       if (debug) {
         cerr << "-- Calling factor()" << endl;
@@ -245,8 +231,8 @@ namespace TSQR {
 
       // Factor the matrix and compute the explicit Q factor
       factor_output_type factor_output =
-        actor.factor (numRows, numCols, A_copy.get(), A_copy.lda(),
-                      R.get(), R.lda(), contiguousCacheBlocks);
+        actor.factor (numRows, numCols, A_copy.data(), A_copy.stride(1),
+                      R.data(), R.stride(1), contiguousCacheBlocks);
       if (debug) {
         cerr << "-- Finished factor()" << endl;
         cerr << "-- Calling explicit_Q()" << endl;
@@ -258,15 +244,15 @@ namespace TSQR {
       {
         mat_view_type Q_top =
           actor.top_block (Q.view (), contiguousCacheBlocks);
-        mat_view_type Q_top_square (Q_top.ncols(), Q_top.ncols(),
-                                    Q_top.get(), Q_top.lda());
-        Q_top_square.fill (STS::zero ());
-        for (Ordinal j = 0; j < Q_top_square.ncols(); ++j) {
-          Q_top_square(j,j) = STS::one ();
+        mat_view_type Q_top_square (Q_top.extent(1), Q_top.extent(1),
+                                    Q_top.data(), Q_top.stride(1));
+        deep_copy (Q_top_square, Scalar {});
+        for (Ordinal j = 0; j < Q_top_square.extent(1); ++j) {
+          Q_top_square(j,j) = Scalar (1.0);
         }
       }
-      actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(),
-                        factor_output, numCols, Q.get(), Q.lda(),
+      actor.explicit_Q (numRows, numCols, A_copy.data(), A_copy.stride(1),
+                        factor_output, numCols, Q.data(), Q.stride(1),
                         contiguousCacheBlocks);
       if (debug) {
         cerr << "-- Finished explicit_Q()" << endl;
@@ -278,8 +264,8 @@ namespace TSQR {
       // cache blocks.
       if (contiguousCacheBlocks) {
         // Use A_copy as temporary storage for un-cache-blocking Q.
-        actor.un_cache_block (numRows, numCols, A_copy.get(),
-                              A_copy.lda(), Q.get());
+        actor.un_cache_block (numRows, numCols, A_copy.data(),
+                              A_copy.stride(1), Q.data());
         deep_copy (Q, A_copy);
         if (debug) {
           cerr << "-- Un-cache-blocked output Q factor" << endl;
@@ -289,21 +275,21 @@ namespace TSQR {
       // Print out the Q and R factors in debug mode.
       if (debug) {
         // Don't print the matrix if it's too big.
-        if (Q.nrows() <= 30) {
+        if (Q.extent(0) <= 30) {
           cerr << endl << "-- Q factor:" << endl;
-          print_local_matrix (cerr, Q.nrows(), Q.ncols(),
-                              Q.get(), Q.lda());
+          print_local_matrix (cerr, Q.extent(0), Q.extent(1),
+                              Q.data(), Q.stride(1));
           cerr << endl << endl;
         }
         cerr << endl << "-- R factor:" << endl;
-        print_local_matrix (cerr, numCols, numCols, R.get(), R.lda());
+        print_local_matrix (cerr, numCols, numCols, R.data(), R.stride(1));
         cerr << endl;
       }
 
       // Validate the factorization
       std::vector<magnitude_type> results =
-        local_verify (numRows, numCols, A.get(), lda,
-                      Q.get(), ldq, R.get(), ldr);
+        local_verify (numRows, numCols, A.data(), lda,
+                      Q.data(), ldq, R.data(), ldr);
       if (debug)
         cerr << "-- Finished local_verify" << endl;
 
@@ -361,8 +347,6 @@ namespace TSQR {
     /// to that of LAPACK's QR factorization.  Print results to
     /// stdout.
     ///
-    /// \param node [in] The Kokkos Node instance on which to execute
-    ///   in parallel.
     /// \param numTrials [in] Number of times to run the benchmark;
     ///   the timing result is cumulative over all trials.  Timing
     ///   over larger numbers of trials improves certainty of the
@@ -381,11 +365,9 @@ namespace TSQR {
     /// \param humanReadable [in] Whether to print output that is easy
     ///   for humans to read, or instead to print output that is easy
     ///   for a script to parse.
-    ///
-    template<class Ordinal, class Scalar, class NodeType>
+    template<class Ordinal, class Scalar>
     void
-    benchmarkKokkosNodeTsqr (const Teuchos::RCP<NodeType>& node,
-                             const int numTrials,
+    benchmarkKokkosNodeTsqr (const int numTrials,
                              const Ordinal numRows,
                              const Ordinal numCols,
                              const int numPartitions,
@@ -401,10 +383,8 @@ namespace TSQR {
       using std::cerr;
       using std::cout;
       using std::endl;
-      typedef TSQR::KokkosNodeTsqr<Ordinal, Scalar, NodeType> node_tsqr_type;
+      using node_tsqr_type = TSQR::KokkosNodeTsqr<Ordinal, Scalar>;
       typedef typename node_tsqr_type::FactorOutput factor_output_type;
-      typedef Teuchos::ScalarTraits<Scalar> STS;
-      // typedef typename STS::magnitudeType magnitude_type;
       typedef Teuchos::Time timer_type;
       typedef Matrix<Ordinal, Scalar> matrix_type;
 
@@ -419,7 +399,6 @@ namespace TSQR {
       params->set ("Cache Size Hint", cacheSizeHint);
       params->set ("Num Tasks", numPartitions);
       node_tsqr_type actor (params);
-      actor.setNode (node);
 
       // Allocate space for test problem.
       matrix_type A (numRows, numCols);
@@ -429,16 +408,16 @@ namespace TSQR {
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
-      R.fill (STS::zero());
+      deep_copy (R, Scalar {});
 
       // Create a test problem
-      nodeTestProblem (gen, numRows, numCols, A.get(), A.lda(), false);
+      nodeTestProblem (gen, numRows, numCols, A.data(), A.stride(1), false);
 
       // Copy A into A_copy, since TSQR overwrites the input.  If
       // specified, rearrange the data in A_copy so that the data in
       // each cache block is contiguously stored.
       if (contiguousCacheBlocks) {
-        actor.cache_block (numRows, numCols, A_copy.get(), A.get(), A.lda());
+        actor.cache_block (numRows, numCols, A_copy.data(), A.data(), A.stride(1));
       } else {
         deep_copy (A_copy, A);
       }
@@ -450,14 +429,14 @@ namespace TSQR {
         // Factor the matrix in-place in A_copy, and extract the
         // resulting R factor into R.
         factor_output_type factor_output =
-          actor.factor (numRows, numCols, A_copy.get(), A_copy.lda(),
-                        R.get(), R.lda(), contiguousCacheBlocks);
+          actor.factor (numRows, numCols, A_copy.data(), A_copy.stride(1),
+                        R.data(), R.stride(1), contiguousCacheBlocks);
         // Compute the explicit Q factor (which was stored
         // implicitly in A_copy and factor_output) and store in Q.
         // We don't need to un-cache-block the output, because we
         // aren't verifying it here.
-        actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(),
-                          factor_output, numCols, Q.get(), Q.lda(),
+        actor.explicit_Q (numRows, numCols, A_copy.data(), A_copy.stride(1),
+                          factor_output, numCols, Q.data(), Q.stride(1),
                           contiguousCacheBlocks);
       }
 
@@ -470,14 +449,14 @@ namespace TSQR {
         // Factor the matrix in-place in A_copy, and extract the
         // resulting R factor into R.
         factor_output_type factor_output =
-          actor.factor (numRows, numCols, A_copy.get(), A_copy.lda(),
-                        R.get(), R.lda(), contiguousCacheBlocks);
+          actor.factor (numRows, numCols, A_copy.data(), A_copy.stride(1),
+                        R.data(), R.stride(1), contiguousCacheBlocks);
         // Compute the explicit Q factor (which was stored
         // implicitly in A_copy and factor_output) and store in Q.
         // We don't need to un-cache-block the output, because we
         // aren't verifying it here.
-        actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(),
-                          factor_output, numCols, Q.get(), Q.lda(),
+        actor.explicit_Q (numRows, numCols, A_copy.data(), A_copy.stride(1),
+                          factor_output, numCols, Q.data(), Q.stride(1),
                           contiguousCacheBlocks);
       }
       const double timing = timer.stop();

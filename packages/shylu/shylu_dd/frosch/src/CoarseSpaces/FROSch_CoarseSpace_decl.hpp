@@ -61,39 +61,51 @@ namespace FROSch {
 
     protected:
 
-        using XMap                  = Map<LO,GO,NO>;
-        using XMapPtr               = RCP<XMap>;
-        using ConstXMapPtr          = RCP<const XMap>;
-        using XMapPtrVec            = Array<XMapPtr>;
+        using CommPtr                   = RCP<const Comm<int> >;
+        
+        using XMap                      = Map<LO,GO,NO>;
+        using XMapPtr                   = RCP<XMap>;
+        using ConstXMapPtr              = RCP<const XMap>;
+        using XMapPtrVec                = Array<XMapPtr>;
+        using ConstXMapPtrVec           = Array<ConstXMapPtr>;
 
-        using XMatrix               = Matrix<SC,LO,GO,NO>;
-        using XMatrixPtr            = RCP<XMatrix>;
+        using XMatrix                   = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr                = RCP<XMatrix>;
 
-        using XMultiVector          = MultiVector<SC,LO,GO,NO>;
-        using XMultiVectorPtr       = RCP<XMultiVector>;
-        using XMultiVectorPtrVec    = Array<XMultiVectorPtr>;
+        using XMultiVector              = MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr           = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr      = RCP<const XMultiVector>;
+        using ConstXMultiVectorPtrVec   = Array<ConstXMultiVectorPtr>;
+        
+        using ParameterListPtr          = RCP<ParameterList>;
 
-        using ParameterListPtr      = RCP<ParameterList>;
+        using UN                        = unsigned;
+        using UNVec                     = Array<UN>;
+        using ConstUNVecView            = ArrayView<const UN>;
 
-        using UN                    = unsigned;
+        using LOVec                     = Array<LO>;
+        using LOVecPtr                  = ArrayRCP<LO>;
+        using LOVecPtr2D                = ArrayRCP<LOVecPtr>;
+        
+        using GOVec                     = Array<GO>;
 
-        using LOVec                 = Array<LO>;
-        using GOVec                 = Array<GO>;
-        using LOVecPtr              = ArrayRCP<LO>;
-        using LOVecPtr2D            = ArrayRCP<LOVecPtr>;
-
-        using SCVec                 = Array<SC>;
+        using SCVec                     = Array<SC>;
+        using ConstSCVecPtr             = ArrayRCP<const SC>;
 
     public:
 
-        CoarseSpace();
+        CoarseSpace(CommPtr mpiComm,
+                    CommPtr serialComm);
 
-        int addSubspace(XMapPtr subspaceBasisMap,
-                        XMultiVectorPtr subspaceBasis = null);
+        int addSubspace(ConstXMapPtr subspaceBasisMap,
+                        ConstXMapPtr subspaceBasisMapUnique = null,
+                        ConstXMultiVectorPtr subspaceBasis = null,
+                        UN offset = 0);
 
         int assembleCoarseSpace();
 
         int buildGlobalBasisMatrix(ConstXMapPtr rowMap,
+                                   ConstXMapPtr rangeMap,
                                    ConstXMapPtr repeatedMap,
                                    SC treshold);
 
@@ -105,30 +117,42 @@ namespace FROSch {
         
         bool hasBasisMap() const;
 
-        XMapPtr getBasisMap() const;
+        ConstXMapPtr getBasisMap() const;
+        
+        bool hasBasisMapUnique() const;
+
+        ConstXMapPtr getBasisMapUnique() const;
 
         bool hasAssembledBasis() const;
 
-        XMultiVectorPtr getAssembledBasis() const;
+        ConstXMultiVectorPtr getAssembledBasis() const;
+
+        ConstUNVecView getLocalSubspaceSizes() const;
 
         bool hasGlobalBasisMatrix() const;
 
         XMatrixPtr getGlobalBasisMatrix() const;
 
-    protected:
+    protected:        
 
-        ConstXMapPtr SerialRowMap_;
+        CommPtr MpiComm_;
+        CommPtr SerialComm_;
+        
+        ConstXMapPtrVec UnassembledBasesMaps_;
+        ConstXMapPtrVec UnassembledBasesMapsUnique_;
 
-        XMapPtrVec UnassembledBasesMaps_;
-
-        XMultiVectorPtrVec UnassembledSubspaceBases_;
-
-        XMapPtr AssembledBasisMap_;
+        ConstXMultiVectorPtrVec UnassembledSubspaceBases_;
+        
+        LOVec Offsets_;
+        
+        ConstXMapPtr AssembledBasisMap_;
+        ConstXMapPtr AssembledBasisMapUnique_;
 
         XMultiVectorPtr AssembledBasis_;
 
+        UNVec LocalSubspacesSizes_;
+        
         XMatrixPtr GlobalBasisMatrix_;
-
     };
 
 }

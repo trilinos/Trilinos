@@ -152,7 +152,7 @@ namespace FROSch {
                 }
             }
 
-            this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
+            this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
             if (useForCoarseSpace) {
                 
@@ -177,12 +177,12 @@ namespace FROSch {
 
                 XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,this->DDInterface_->getRoots(),entitySetVector,distanceFunction);
                 for (UN i=0; i<translations.size(); i++) {
-                    this->InterfaceCoarseSpaces_[blockId]->addSubspace(this->DDInterface_->getRoots()->getEntityMap(),translations[i]);
+                    this->InterfaceCoarseSpaces_[blockId]->addSubspace(this->DDInterface_->getRoots()->getEntityMap(),null,translations[i]);
                 }
 
                 if (useRotations) {
                     XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,this->DDInterface_->getRoots(),entitySetVector,distanceFunction);
-                    for (UN i=0; i<rotations.size(); i++) {                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(this->DDInterface_->getRoots()->getEntityMap(),rotations[i]);
+                    for (UN i=0; i<rotations.size(); i++) {                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(this->DDInterface_->getRoots()->getEntityMap(),null,rotations[i]);
                     }
                 }
 

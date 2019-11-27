@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -46,12 +44,11 @@
 ///
 /// \warning Trilinos users should _not_ include this file directly.
 
-#include <Tsqr_ConfigDefs.hpp>
+#include "Tsqr_ConfigDefs.hpp"
 
 #ifdef HAVE_KOKKOSTSQR_TBB
 #  include "TbbTsqr.hpp"
 #endif // HAVE_KOKKOSTSQR_TBB
-
 
 namespace TSQR {
   namespace Trilinos {
