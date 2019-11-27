@@ -116,17 +116,21 @@ def print_input_variables(arguments):
 
 
 def confirmGitVersion():
+    """
+    """
     git_version_string = subprocess.check_output(['git', '--version'])
     git_version_number_string = git_version_string[git_version_string.rfind(' '):]
     major_git_version = int(git_version_number_string[:git_version_number_string.find('.')])
     minor_git_version = int(git_version_number_string[git_version_number_string.find('.')+1:
                                                       git_version_number_string.rfind('.')])
 
-    if major_git_version  <  2 or (major_git_version == 2 and
-                                   minor_git_version < 10):
+    if major_git_version  <  2 or (major_git_version == 2 and minor_git_version < 10):
         raise SystemExit("Git version  should be 2.10 or better - Exiting!")
     else:
         print(git_version_string)
+
+    return None
+
 
 
 def setBuildEnviron(arguments):
@@ -337,6 +341,7 @@ def setBuildEnviron(arguments):
 
     if 'sems-env' == moduleList[0]:
         module('use', '/projects/sems/modulefiles/projects')
+
     for mod in moduleList:
         if isinstance(mod, str):
             module('load', mod)
@@ -349,6 +354,7 @@ def setBuildEnviron(arguments):
 
     if 'OMPI_CC' in l_environMap:
         l_environMap['OMPI_CC'] = os.environ.get('CC', '')
+
     if 'OMPI_FC' in l_environMap:
         l_environMap['OMPI_FC'] = os.environ.get('FC', '')
 
@@ -358,6 +364,7 @@ def setBuildEnviron(arguments):
             os.environ[key] = value + os.pathsep + os.environ[key]
         else:
             os.environ[key] = value
+
     confirmGitVersion()
 
     print ("Environment:\n", file=sys.stdout)
@@ -372,6 +379,7 @@ def setBuildEnviron(arguments):
     print(module('list'))
 
 
+
 def getCDashTrack():
     returnValue = 'Pull Request'
     if 'PULLREQUEST_CDASH_TRACK' in os.environ:
@@ -383,6 +391,7 @@ def getCDashTrack():
         print('PULLREQUEST_CDASH_TRACK isn\'t set, using default value')
 
     return returnValue
+
 
 
 def get_memory_info():
@@ -413,9 +422,12 @@ def get_memory_info():
     return output
 
 
+
 def compute_n():
-    '''given the default and the hardware environment determine the
-     number of processors  to use'''
+    '''
+    Given the default and the hardware environment determine the
+    number of processors  to use
+    '''
     try:
         environment_weight = int(os.environ['JENKINS_JOB_WEIGHT'])
     except KeyError:
@@ -437,14 +449,6 @@ def compute_n():
 
     return parallel_level
 
-
-config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4TestingSettings.cmake',
-              'Trilinos_pullrequest_intel_17.0.1': 'PullRequestLinuxIntelTestingSettings.cmake',
-              'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
-              'Trilinos_pullrequest_gcc_7.2.0': 'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
-              'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
-              'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
-              'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
 
 
 def createPackageEnables(arguments):
@@ -484,7 +488,22 @@ PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' O
         print('There was an issue generating packageEnables.cmake.  '
               'The error code was: {}'.format(cpe.returncode))
 
+    return None
+
+
+
+config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4TestingSettings.cmake',
+              'Trilinos_pullrequest_intel_17.0.1': 'PullRequestLinuxIntelTestingSettings.cmake',
+              'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
+              'Trilinos_pullrequest_gcc_7.2.0': 'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
+              'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
+              'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
+              'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
+
+
 def run():
+    """
+    """
     return_value = True
     arguments = parse_args()
 
