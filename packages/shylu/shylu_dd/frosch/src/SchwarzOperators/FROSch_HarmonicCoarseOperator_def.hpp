@@ -461,9 +461,10 @@ namespace FROSch {
         XMultiVectorPtr mVPhiGamma = MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),coarseMap->getNodeNumElements());
         if (AssembledInterfaceCoarseSpace_->hasAssembledBasis()) {
             for (UN i=0; i<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); i++) {
+                ConstSCVecPtr AssembledInterfaceCoarseSpaceData = AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(i);
                 for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); j++) {
-                    mVPhiGamma->replaceLocalValue(j,i,AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(i)[j]);
-                    mVPhi->replaceLocalValue(indicesGammaDofsAll[j],i,AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(i)[j]);
+                    mVPhiGamma->replaceLocalValue(j,i,AssembledInterfaceCoarseSpaceData[j]);
+                    mVPhi->replaceLocalValue(indicesGammaDofsAll[j],i,AssembledInterfaceCoarseSpaceData[j]);
                 }
             }
         }
@@ -534,11 +535,10 @@ namespace FROSch {
             }
 
             for (UN j=0; j<numLocalBlockRows[i]; j++) {
+                ConstSCVecPtr mVPhiIData = mVPhiI->getData(itmp);
                 for (UN ii=0; ii<extensionBlocks.size(); ii++) {
                     for (LO k=bound[extensionBlocks[ii]]; k<bound[extensionBlocks[ii]+1]; k++) {
-                        indicesIDofsAll[k];
-                        mVPhiI->getData(itmp)[k];
-                        mVPhi->replaceLocalValue(indicesIDofsAll[k],itmp,mVPhiI->getData(itmp)[k]);
+                        mVPhi->replaceLocalValue(indicesIDofsAll[k],itmp,mVPhiIData[k]);
                     }
                 }
                 itmp++;

@@ -137,10 +137,11 @@ namespace FROSch {
                 for (UN i=0; i<UnassembledSubspaceBases_.size(); i++) {
                     if (!UnassembledSubspaceBases_[i].is_null()) {
                         for (UN j=0; j<UnassembledSubspaceBases_[i]->getNumVectors(); j++) {
+                            ConstSCVecPtr unassembledSubspaceBasesData = UnassembledSubspaceBases_[i]->getData(j);
                             for (UN k=0; k<UnassembledSubspaceBases_[i]->getLocalLength(); k++) {
                                 FROSCH_ASSERT(itmp<AssembledBasis_->getNumVectors(),"FROSch::CoarseSpace : ERROR: itmp>=AssembledBasis_->getNumVectors()");
                                 FROSCH_ASSERT(k+Offsets_[i]<AssembledBasis_->getLocalLength(),"FROSch::CoarseSpace : ERROR: k+Offsets_[i]>=AssembledBasis_->getLocalLength()");
-                                AssembledBasis_->replaceLocalValue(k+Offsets_[i],itmp,UnassembledSubspaceBases_[i]->getData(j)[k]);
+                                AssembledBasis_->replaceLocalValue(k+Offsets_[i],itmp,unassembledSubspaceBasesData[k]);
                             }
                             itmp++;
                         }

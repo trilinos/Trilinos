@@ -90,6 +90,7 @@ namespace FROSch {
         using GOVec                     = Array<GO>;
 
         using SCVec                     = Array<SC>;
+        using ConstSCVecPtr             = ArrayRCP<const SC>;
 
     public:
 

@@ -137,10 +137,11 @@ namespace FROSch {
             GO globID = 0;
             LO localID = 0;
             for (UN i=0; i<y.getNumVectors(); i++) {
+                ConstSCVecPtr YOverlapData = YOverlap_->getData(i);
                 for (UN j=0; j<y.getMap()->getNodeNumElements(); j++) {
                     globID = y.getMap()->getGlobalElement(j);
                     localID = YOverlap_->getMap()->getLocalElement(globID);
-                    XTmp_->getDataNonConst(i)[j] = YOverlap_->getData(i)[localID];
+                    XTmp_->getDataNonConst(i)[j] = YOverlapData[localID];
                 }
             }
         } else {
