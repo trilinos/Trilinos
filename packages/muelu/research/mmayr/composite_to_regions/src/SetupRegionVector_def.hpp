@@ -197,8 +197,6 @@ void regionalToComposite(const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, Gl
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void sumInterfaceValues(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec,
-                        const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > compMap,
-                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,///< row maps in region layout [in]
                         const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,///< revised row maps in region layout [in]
                         const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in])
                         )
@@ -208,6 +206,9 @@ void sumInterfaceValues(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrd
 
   // Get max number of regions per proc
   const int maxRegPerProc = regVec.size();
+
+  // Composite map is the same in every group, so just take the first one.
+  const RCP<const Map> compMap = rowImportPerGrp[0]->getSourceMap();
 
   RCP<Vector> compVec = VectorFactory::Build(compMap, true);
   TEUCHOS_ASSERT(!compVec.is_null());

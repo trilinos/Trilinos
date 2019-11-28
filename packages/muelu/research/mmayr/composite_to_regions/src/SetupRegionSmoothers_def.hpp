@@ -116,8 +116,7 @@ void relaxationSmootherSetup(RCP<Teuchos::ParameterList> params,
     regionGrpMats[j]->getLocalDiagCopy(*diagReg[j]);
   }
 
-  sumInterfaceValues(diagReg, mapComp, rowMapPerGrp,
-                     revisedRowMapPerGrp, rowImportPerGrp);
+  sumInterfaceValues(diagReg, revisedRowMapPerGrp, rowImportPerGrp);
 
   for (int j = 0; j < maxRegPerProc; j++) {
     diagReg[j]->reciprocal(*diagReg[j]);
@@ -315,7 +314,7 @@ powerMethod(RCP<Teuchos::ParameterList> params,
     for (int j = 0; j < maxRegPerProc; j++) { // step 1
       regionGrpMats[j]->apply(*regX[j], *regY[j]); // A.apply (x, y);
     }
-    sumInterfaceValues( regY, mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp); // step 2
+    sumInterfaceValues(regY, revisedRowMapPerGrp, rowImportPerGrp); // step 2
 
     // Scale by inverse of diagonal
     for (int j = 0; j < maxRegPerProc; j++){

@@ -798,8 +798,7 @@ void vCycle(const int l, ///< ID of current level
     tm = Teuchos::null;
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 5 - sum interface values")));
 
-    sumInterfaceValues(coarseRegB, compRowMaps[l+1],
-                       quasiRegRowMaps[l+1], regRowMaps[l+1], regRowImporters[l+1]);
+    sumInterfaceValues(coarseRegB, regRowMaps[l+1], regRowImporters[l+1]);
 
     tm = Teuchos::null;
 

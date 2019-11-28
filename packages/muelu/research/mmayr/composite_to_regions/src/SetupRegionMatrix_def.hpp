@@ -764,8 +764,7 @@ computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("computeResidual: 2 - sumInterfaceValues")));
 
-  sumInterfaceValues(regRes, mapComp, rowMapPerGrp,
-                     revisedRowMapPerGrp, rowImportPerGrp);
+  sumInterfaceValues(regRes, revisedRowMapPerGrp, rowImportPerGrp);
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("computeResidual: 3 - Rreg = Breg - Rreg")));
