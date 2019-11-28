@@ -34,29 +34,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_NodeTsqrFactory_hpp
 #define __TSQR_NodeTsqrFactory_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include "Tsqr_ConfigDefs.hpp"
+#include "Kokkos_DefaultNode.hpp"
 
 #ifdef HAVE_KOKKOSTSQR_TBB
-#  include <TbbTsqr.hpp>
+#  include "TbbTsqr.hpp"
 #endif // HAVE_KOKKOSTSQR_TBB
 
-#include <Tsqr_KokkosNodeTsqr.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
+#include "Tsqr_KokkosNodeTsqr.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
 
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ParameterListExceptions.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListExceptions.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 #include <stdexcept>
 

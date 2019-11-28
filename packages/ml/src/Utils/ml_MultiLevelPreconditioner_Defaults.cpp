@@ -133,6 +133,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
   List.set("coarse: max size",128);
   List.set("coarse: pre or post","post");
   List.set("coarse: sweeps",1);
+  List.set("coarse: split communicator",false);
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;

@@ -35,14 +35,12 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 */
 
-#include <Tsqr_GlobalTimeStats.hpp>
-#include <Tsqr_MessengerBase.hpp>
+#include "Tsqr_GlobalTimeStats.hpp"
+#include "Tsqr_MessengerBase.hpp"
 #include <stdexcept>
 
 namespace TSQR {

@@ -34,30 +34,25 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 /// \file Tsqr_NodeTsqr.hpp
 /// \brief Common interface and functionality for intranode TSQR.
-///
+
 #ifndef __TSQR_Tsqr_NodeTsqr_hpp
 #define __TSQR_Tsqr_NodeTsqr_hpp
 
-#include <Tsqr_ApplyType.hpp>
-#include <Tsqr_Matrix.hpp>
-
-#include <Teuchos_as.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_LAPACK.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-
+#include "Tsqr_ApplyType.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Teuchos_as.hpp"
+#include "Teuchos_Describable.hpp"
+#include "Tsqr_Impl_Lapack.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include <vector>
 
 namespace TSQR {
-
   /// \class NodeTsqr
   /// \brief Common interface and functionality for intranode TSQR.
   ///
@@ -91,7 +86,6 @@ namespace TSQR {
   /// would not be useful.  This is because ultimately each subclass
   /// is bound to a Kokkos Node type, and those only use compile-time
   /// polymorphism.
-  ///
   template<class Ordinal, class Scalar, class FactorOutputType>
   class NodeTsqr : public Teuchos::Describable {
   public:
@@ -99,13 +93,13 @@ namespace TSQR {
     typedef Scalar scalar_type;
     typedef FactorOutputType factor_output_type;
     typedef MatView<Ordinal, Scalar> mat_view_type;
-    typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
+    typedef MatView<Ordinal, const Scalar> const_mat_view_type;
 
     //! Constructor
-    NodeTsqr() {}
+    NodeTsqr() = default;
 
     //! Virtual destructor, for memory safety of derived classes.
-    virtual ~NodeTsqr() {}
+    virtual ~NodeTsqr() = default;
 
     /// \brief Whether this object is ready to perform computations.
     ///
@@ -327,11 +321,10 @@ namespace TSQR {
                      const bool contiguousCacheBlocks) const = 0;
 
   protected:
-
     /// \brief Return view of topmost cache block of C
     ///
-    /// \param C [in] Matrix (view), supporting the usual nrows(),
-    ///   ncols(), get(), lda() interface.
+    /// \param C [in] Matrix (view), supporting the usual extent(0),
+    ///   extent(1), data(), stride(1) interface.
     /// \param contiguousCacheBlocks [in] Whether the cache blocks
     ///   in C are stored contiguously.
     ///
@@ -342,14 +335,13 @@ namespace TSQR {
     /// follows:
     /// \code
     /// MatrixViewType top = this->top_block (C, contig);
-    /// mat_view_type square (ncols, ncols, top.get(), top.lda());
+    /// mat_view_type square (ncols, ncols, top.data(), top.stride(1));
     /// \endcode
     virtual const_mat_view_type
     const_top_block (const const_mat_view_type& C,
                      const bool contiguousCacheBlocks) const = 0;
 
   public:
-
     /// \brief Return view of topmost cache block of C.
     ///
     /// \param C [in] View of a matrix C.
@@ -359,17 +351,17 @@ namespace TSQR {
     /// Return a view of the topmost cache block (on this node) of the
     /// given matrix C.  This is not necessarily square, though it
     /// must have at least as many rows as columns.  For a view of the
-    /// first C.ncols() rows of that block, which methods like
+    /// first C.extent(1) rows of that block, which methods like
     /// Tsqr::apply() need, do the following:
     /// \code
     /// MatrixViewType top = this->top_block (C, contig);
-    /// mat_view_type square (ncols, ncols, top.get(), top.lda());
+    /// mat_view_type square (ncols, ncols, top.data(), top.stride(1));
     /// \endcode
     ///
-    /// Models for MatrixViewType are MatView and ConstMatView.
-    /// MatrixViewType must have member functions nrows(), ncols(),
-    /// get(), and lda(), and its constructor must take the same four
-    /// arguments as the constructor of ConstMatView.
+    /// A model for MatrixViewType is MatView.  MatrixViewType must
+    /// have member functions extent(0), extent(1), data(), and
+    /// stride(1), and its constructor must take the same four
+    /// arguments as the constructor of MatView.
     template<class MatrixViewType>
     MatrixViewType
     top_block (const MatrixViewType& C,
@@ -380,19 +372,19 @@ namespace TSQR {
       // method.  The only cast from const to nonconst may be in the
       // return value, but there it's legitimate since we're just
       // using the same constness as C has.
-      const_mat_view_type C_view (C.nrows(), C.ncols(), C.get(), C.lda());
+      const_mat_view_type C_view (C.extent(0), C.extent(1), C.data(), C.stride(1));
       const_mat_view_type C_top =
         const_top_block (C_view, contiguous_cache_blocks);
-      TEUCHOS_TEST_FOR_EXCEPTION(C_top.nrows() < C_top.ncols(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(C_top.extent(0) < C_top.extent(1), std::logic_error,
                          "The subclass of NodeTsqr has a bug in const_top_block"
                          "(); it returned a block with fewer rows than columns "
-                         "(" << C_top.nrows() << " rows and " << C_top.ncols()
+                         "(" << C_top.extent(0) << " rows and " << C_top.extent(1)
                          << " columns).  Please report this bug to the Kokkos "
                          "developers.");
-      typedef typename MatrixViewType::pointer_type ptr_type;
-      return MatrixViewType (C_top.nrows(), C_top.ncols(),
-                             const_cast<ptr_type> (C_top.get()),
-                             C_top.lda());
+      using pointer = typename MatrixViewType::pointer;
+      return MatrixViewType (C_top.extent(0), C_top.extent(1),
+                             const_cast<pointer> (C_top.data()),
+                             C_top.stride(1));
     }
 
     /// \brief Does factor() compute R with nonnegative diagonal?
@@ -504,7 +496,7 @@ namespace TSQR {
     // factor is full rank (expected to be the common case), we need
     // to leave it alone (so that it stays upper triangular).
     //
-    Teuchos::LAPACK<Ordinal, Scalar> lapack;
+    Impl::Lapack<Scalar> lapack;
     mat_view_type R_view (ncols, ncols, R, ldr);
     Matrix<Ordinal, Scalar> B (R_view); // B := R (deep copy)
     mat_view_type U_view (ncols, ncols, U, ldu);
@@ -514,30 +506,23 @@ namespace TSQR {
     std::vector<magnitude_type> svd_rwork (5*ncols);
     std::vector<magnitude_type> singular_values (ncols);
     Ordinal svd_lwork = -1; // -1 for LWORK query; will be changed
-    int svd_info = 0;
 
     // LAPACK workspace ("LWORK") query for SVD.  The workspace
     // ("WORK") array is always of Scalar type, even in the complex
     // case.
     {
       // Exception messages in this scope all start with this.
-      const char prefix[] = "In NodeTsqr::reveal_R_rank: LAPACK SVD (_GESVD) "
-        "workspace query returned ";
+      const char prefix[] = "In NodeTsqr::reveal_R_rank: LAPACK SVD "
+        "(_GESVD) workspace query returned ";
       // std::logic_error messages in this scope all end with this.
       const char postfix[] = ".  Please report this bug to the Kokkos "
         "developers.";
 
-      Scalar svd_lwork_scalar = STS::zero ();
-      lapack.GESVD ('A', 'A', ncols, ncols, B.get(), B.lda(),
-                    &singular_values[0], U_view.get(), U_view.lda(),
-                    VT.get(), VT.lda(), &svd_lwork_scalar, svd_lwork,
-                    &svd_rwork[0], &svd_info);
-      // Failure of the LAPACK workspace query is a logic error (a
-      // bug) because we have already validated the matrix
-      // dimensions above.
-      TEUCHOS_TEST_FOR_EXCEPTION(svd_info != 0, std::logic_error,
-                         prefix << "a nonzero INFO = " << svd_info
-                         << postfix);
+      Scalar svd_lwork_scalar {};
+      lapack.GESVD ('A', 'A', ncols, ncols, B.data(), B.stride(1),
+                    singular_values.data(), U_view.data(), U_view.stride(1),
+                    VT.data(), VT.stride(1), &svd_lwork_scalar, svd_lwork,
+                    svd_rwork.data());
       // LAPACK returns the workspace array length as a Scalar.  We
       // have to convert it back to an Ordinal in order to allocate
       // the workspace array and pass it in to LAPACK as the LWORK
@@ -555,22 +540,20 @@ namespace TSQR {
       // original Scalar result.  This should work unless Scalar and
       // Ordinal are user-defined types with weird definitions of
       // the type casts.
-      TEUCHOS_TEST_FOR_EXCEPTION(as<Scalar> (svd_lwork) != svd_lwork_scalar,
-                         std::logic_error,
-                         prefix << "a workspace array length (LWORK) of type "
-                         "Scalar=" << TypeNameTraits<Scalar>::name()
-                         << " that does not fit in an Ordinal="
-                         << TypeNameTraits<Ordinal>::name() << " type.  "
-                         "As a Scalar, LWORK=" << svd_lwork_scalar
-                         << ", but cast to Ordinal, LWORK=" << svd_lwork
-                         << postfix);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (as<Scalar> (svd_lwork) != svd_lwork_scalar, std::logic_error,
+         prefix << "a workspace array length (LWORK) of type Scalar="
+         << TypeNameTraits<Scalar>::name() << " that does not fit in "
+         << "Ordinal=" << TypeNameTraits<Ordinal>::name() << " type."
+         "  As a Scalar, LWORK=" << svd_lwork_scalar << ", but cast "
+         << "to Ordinal, LWORK=" << svd_lwork << postfix);
       // Make sure svd_lwork is nonnegative.  (Ordinal must be a
       // signed type, as we explain above, so this test should never
       // signal any unsigned-to-signed conversions from the compiler.
       // If it does, you're probably using the wrong Ordinal type.
-      TEUCHOS_TEST_FOR_EXCEPTION(svd_lwork < 0, std::logic_error,
-                         prefix << "a negative workspace array length (LWORK)"
-                         " = " << svd_lwork << postfix);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (svd_lwork < 0, std::logic_error, prefix << "a negative "
+         "workspace array length (LWORK) = " << svd_lwork << postfix);
     }
     // Allocate workspace for LAPACK's SVD routine.
     std::vector<Scalar> svd_work (svd_lwork);
@@ -578,10 +561,10 @@ namespace TSQR {
     // Compute SVD $B := U \Sigma V^*$.  B is overwritten, which is
     // why we copied R into B (so that we don't overwrite R if R is
     // full rank).
-    lapack.GESVD ('A', 'A', ncols, ncols, B.get(), B.lda(),
-                  &singular_values[0], U_view.get(), U_view.lda(),
-                  VT.get(), VT.lda(), &svd_work[0], svd_lwork,
-                  &svd_rwork[0], &svd_info);
+    lapack.GESVD ('A', 'A', ncols, ncols, B.data(), B.stride(1),
+                  singular_values.data(), U_view.data(), U_view.stride(1),
+                  VT.data(), VT.stride(1), svd_work.data(), svd_lwork,
+                  svd_rwork.data());
     //
     // Compute the numerical rank of B, using the given relative
     // tolerance and the computed singular values.  GESVD computes
@@ -642,22 +625,24 @@ namespace TSQR {
                const bool contiguousCacheBlocks) const
   {
     // Take the easy exit if available.
-    if (ncols == 0)
+    if (ncols == 0) {
       return 0;
+    }
     // Matrix to hold the left singular vectors of the R factor.
-    Matrix<Ordinal, Scalar> U (ncols, ncols, Scalar(0));
+    Matrix<Ordinal, Scalar> U (ncols, ncols, Scalar {});
     // Compute numerical rank of the R factor using the SVD.
     // Store the left singular vectors in U.
     const Ordinal rank =
-      reveal_R_rank (ncols, R, ldr, U.get(), U.ldu(), tol);
+      reveal_R_rank (ncols, R, ldr, U.data(), U.stride(1), tol);
 
     // If R is full rank, we're done.  Otherwise, reveal_R_rank()
     // already computed the SVD \f$R = U \Sigma V^*\f$ of (the
     // input) R, and overwrote R with \f$\Sigma V^*\f$.  Now, we
     // compute \f$Q := Q \cdot U\f$, respecting cache blocks of Q.
-    if (rank < ncols)
-      Q_times_B (nrows, ncols, Q, ldq, U.get(), U.lda(),
+    if (rank < ncols) {
+      Q_times_B (nrows, ncols, Q, ldq, U.data(), U.stride(1),
                  contiguousCacheBlocks);
+    }
     return rank;
   }
 

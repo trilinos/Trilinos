@@ -217,13 +217,12 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
     }
 
     // We communicate the above GIDs to their duplicate so that we can replace GIDs of the region
-    // column map and form the quasiregion column map.
-    Array<RCP<Xpetra::Vector<MT, LO, GO, NO> > > coarseQuasiregionGIDs(1), coarseRegionGIDs(1);
+    // column map and form the quasiRegion column map.
+    Array<RCP<Xpetra::Vector<MT, LO, GO, NO> > > coarseQuasiregionGIDs(1);
+    Array<RCP<Xpetra::Vector<MT, LO, GO, NO> > > coarseRegionGIDs(1);
     compositeToRegional(coarseCompositeGIDs,
                         coarseQuasiregionGIDs,
                         coarseRegionGIDs,
-                        1,
-                        quasiRegRowMaps[currentLevel - 1],
                         regRowMaps[currentLevel - 1],
                         regRowImporters[currentLevel - 1]);
 
@@ -304,7 +303,7 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc, const int numLevels,
   //      coarseCompOp->setAllToScalar(SC_ZERO);
   //      coarseCompOp->describe(*fos, Teuchos::VERB_EXTREME);
 
-  regionalToComposite(regMatrices[maxLevel], maxRegPerProc,
+  regionalToComposite(regMatrices[maxLevel],
                       quasiRegRowMaps[maxLevel], quasiRegColMaps[maxLevel],
                       regRowImporters[maxLevel], Xpetra::ADD,
                       coarseCompOp);
@@ -437,14 +436,14 @@ void MakeInterfaceScalingFactors(const int maxRegPerProc,
 
     // transform to composite layout while adding interface values via the Export() combine mode
     RCP<Vector> compInterfaceScalingSum = VectorFactory::Build(compRowMaps[l], true);
-    regionalToComposite(regInterfaceScalings[l], compInterfaceScalingSum, maxRegPerProc, quasiRegRowMaps[l], regRowImporters[l], Xpetra::ADD);
+    regionalToComposite(regInterfaceScalings[l], compInterfaceScalingSum, regRowImporters[l], Xpetra::ADD);
 
     /* transform composite layout back to regional layout. Now, GIDs associated
      * with region interface should carry a scaling factor (!= 1).
      */
     Array<RCP<Vector> > quasiRegInterfaceScaling(maxRegPerProc); // Is that vector really needed?
     compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
-                        regInterfaceScalings[l], maxRegPerProc, quasiRegRowMaps[l],
+                        regInterfaceScalings[l],
                         regRowMaps[l], regRowImporters[l]);
   }
 } // MakeInterfaceScalingFactors
@@ -799,7 +798,7 @@ void vCycle(const int l, ///< ID of current level
     tm = Teuchos::null;
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 5 - sum interface values")));
 
-    sumInterfaceValues(coarseRegB, compRowMaps[l+1], maxRegPerProc,
+    sumInterfaceValues(coarseRegB, compRowMaps[l+1],
                        quasiRegRowMaps[l+1], regRowMaps[l+1], regRowImporters[l+1]);
 
     tm = Teuchos::null;
@@ -868,7 +867,7 @@ void vCycle(const int l, ///< ID of current level
           fineRegB[j]->elementWiseMultiply(SC_ONE, *fineRegB[j], *inverseInterfaceScaling, SC_ZERO);
         }
 
-        regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
+        regionalToComposite(fineRegB, compRhs,
                             regRowImporters[l], Xpetra::ADD);
       }
 
@@ -934,8 +933,6 @@ void vCycle(const int l, ///< ID of current level
       // Transform back to region format
       Array<RCP<Vector> > quasiRegX(maxRegPerProc);
       compositeToRegional(compX, quasiRegX, fineRegX,
-                          maxRegPerProc,
-                          quasiRegRowMaps[l],
                           regRowMaps[l],
                           regRowImporters[l]);
 
