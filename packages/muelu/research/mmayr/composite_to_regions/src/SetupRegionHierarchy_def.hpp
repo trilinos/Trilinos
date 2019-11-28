@@ -603,8 +603,8 @@ void createRegionHierarchy(const int maxRegPerProc,
     levelName += std::to_string(l);
     ParameterList& levelList = hierarchyData->sublist(levelName, false, "list of data on current level");
     Teuchos::Array<RCP<Vector> > regRes(maxRegPerProc), regSol(maxRegPerProc);
-    createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
-    createRegionalVector(regSol, maxRegPerProc, revisedRowMapPerGrp);
+    createRegionalVector(regRes, revisedRowMapPerGrp);
+    createRegionalVector(regSol, revisedRowMapPerGrp);
     levelList.set<Teuchos::Array<RCP<Vector> > >("residual", regRes, "Cached residual vector");
     levelList.set<Teuchos::Array<RCP<Vector> > >("solution", regSol, "Cached solution vector");
   }
@@ -771,7 +771,7 @@ void vCycle(const int l, ///< ID of current level
     if(useCachedVectors) {
       regRes = levelList.get<Teuchos::Array<RCP<Vector> > >("residual");
     } else {
-      createRegionalVector(regRes, maxRegPerProc, regRowMaps[l]);
+      createRegionalVector(regRes, regRowMaps[l]);
     }
     computeResidual(regRes, fineRegX, fineRegB, regMatrices[l], compRowMaps[l],
                     quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);

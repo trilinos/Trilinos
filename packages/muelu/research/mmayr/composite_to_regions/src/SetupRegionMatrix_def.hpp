@@ -548,8 +548,8 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
 
     // move to regional layout
     Array<RCP<Vector> > quasiRegNspViolation(maxRegPerProc);
-    createRegionalVector(quasiRegNspViolation, maxRegPerProc, rowMapPerGrp);
-    createRegionalVector(regNspViolation, maxRegPerProc, revisedRowMapPerGrp);
+    createRegionalVector(quasiRegNspViolation, rowMapPerGrp);
+    createRegionalVector(regNspViolation, revisedRowMapPerGrp);
     compositeToRegional(nspViolation, quasiRegNspViolation, regNspViolation,
                         revisedRowMapPerGrp, rowImportPerGrp);
 

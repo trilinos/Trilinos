@@ -69,11 +69,14 @@ using Teuchos::Array;
 //! Create an empty vector in the regional layout
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void createRegionalVector(Teuchos::Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVecs, ///< regional vector to be filled
-                          const int maxRegPerProc, ///< max number of regions per process
                           const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp ///< regional map
                           )
 {
 #include "Xpetra_UseShortNames.hpp"
+
+  // Get max number of regions per process
+  const int maxRegPerProc = revisedRowMapPerGrp.size();
+
   regVecs.resize(maxRegPerProc);
   for (int j = 0; j < maxRegPerProc; j++)
     regVecs[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);

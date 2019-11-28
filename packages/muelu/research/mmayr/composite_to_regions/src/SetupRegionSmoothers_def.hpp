@@ -103,12 +103,12 @@ void relaxationSmootherSetup(RCP<Teuchos::ParameterList> params,
 {
 #include "Xpetra_UseShortNames.hpp"
   Array<RCP<Vector> > regRes(maxRegPerProc);
-  createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
+  createRegionalVector(regRes, revisedRowMapPerGrp);
 
   // extract diagonal from region matrices, recover true diagonal values, invert diagonal
 
   Array<RCP<Vector> > diagReg(maxRegPerProc);
-  createRegionalVector(diagReg, maxRegPerProc, revisedRowMapPerGrp);
+  createRegionalVector(diagReg, revisedRowMapPerGrp);
 
   for (int j = 0; j < maxRegPerProc; j++) {
     // extract inverse of diagonal from matrix
@@ -152,7 +152,7 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
   Array<RCP<Vector> > diag_inv = smootherParams->get<Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal");
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
-  createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
+  createRegionalVector(regRes, revisedRowMapPerGrp);
 
 
   for (int iter = 0; iter < maxIter; ++iter) {
@@ -198,7 +198,7 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
 
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
-  createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
+  createRegionalVector(regRes, revisedRowMapPerGrp);
 
   for (int iter = 0; iter < maxIter; ++iter) {
 
@@ -297,9 +297,9 @@ powerMethod(RCP<Teuchos::ParameterList> params,
   SC RQ_top, RQ_bottom, norm;
 
   Array<RCP<Vector> > regX(maxRegPerProc);
-  createRegionalVector(regX, maxRegPerProc, revisedRowMapPerGrp);
+  createRegionalVector(regX, revisedRowMapPerGrp);
   Array<RCP<Vector> > regY(maxRegPerProc);
-  createRegionalVector(regY, maxRegPerProc, revisedRowMapPerGrp);
+  createRegionalVector(regY, revisedRowMapPerGrp);
 
   for( int j = 0; j < maxRegPerProc; j++){
     regX[j]->randomize();
@@ -355,7 +355,7 @@ void chebyshevSetup(RCP<Teuchos::ParameterList> params,
   const Scalar SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
-  createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
+  createRegionalVector(regRes, revisedRowMapPerGrp);
 
   // extract diagonal from region matrices, recover true diagonal values, invert diagonal
   Teuchos::Array<RCP<Vector> > diag(maxRegPerProc);
@@ -415,12 +415,12 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
   const Scalar c = (lambdaMax - lambdaMin) / SC_TWO;// Ifpack2 calls this 1/delta
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
-  createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
+  createRegionalVector(regRes, revisedRowMapPerGrp);
 
   Array<RCP<Vector> > regP(maxRegPerProc);
-  createRegionalVector(regP, maxRegPerProc, revisedRowMapPerGrp);
+  createRegionalVector(regP, revisedRowMapPerGrp);
   Array<RCP<Vector> > regZ(maxRegPerProc);
-  createRegionalVector(regZ, maxRegPerProc, revisedRowMapPerGrp);
+  createRegionalVector(regZ, revisedRowMapPerGrp);
 
   Scalar alpha, beta;
 
