@@ -123,7 +123,7 @@ void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,
  *
  *  Starting from a \c Epetra_Vector in regional layout, we
  *  1. replace the regional map with the quasiRegional map
- *  2. export it into a vector with composite layout using the \c CombineMode \c Add.
+ *  2. export it into a vector with composite layout using the \c CombineMode \c Xpetra::ADD.
  *     Note: on-process values also have to be added to account for region interfaces inside a process.
  *
  *  \note We also need the capability to add processor-local values. This is not supported by
@@ -132,8 +132,7 @@ void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void regionalToComposite(const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec, ///< Vector in region layout [in]
                          RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in/out]
-                         const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp, ///< row importer in region layout [in]
-                         const Xpetra::CombineMode combineMode ///< Combine mode for import/export [in]
+                         const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in]
                          )
 {
   /* Let's fake an ADD combine mode that also adds local values by
@@ -169,7 +168,6 @@ void regionalToComposite(const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, Gl
       RCP<Vector> partialCompVec = VectorFactory::Build(rowImportPerGrp[0]->getSourceMap(), true);
       TEUCHOS_ASSERT(Teuchos::nonnull(partialCompVec));
       TEUCHOS_ASSERT(partialCompVec->getLocalLength() == compVecLocalLength);
-      // ToDo (mayr.mt) Use input variable 'combineMode'
       partialCompVec->doExport(*quasiRegVec, *(rowImportPerGrp[grpIdx]), Xpetra::ADD);
 
       tm = Teuchos::null;
@@ -214,8 +212,7 @@ void sumInterfaceValues(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrd
   TEUCHOS_ASSERT(!compVec.is_null());
 
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 1 - regionalToComposite")));
-  regionalToComposite(regVec, compVec,
-                      rowImportPerGrp, Xpetra::ADD);
+  regionalToComposite(regVec, compVec, rowImportPerGrp);
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 2 - compositeToRegional")));

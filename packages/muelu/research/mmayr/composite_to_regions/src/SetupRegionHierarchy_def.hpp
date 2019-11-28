@@ -436,7 +436,7 @@ void MakeInterfaceScalingFactors(const int maxRegPerProc,
 
     // transform to composite layout while adding interface values via the Export() combine mode
     RCP<Vector> compInterfaceScalingSum = VectorFactory::Build(compRowMaps[l], true);
-    regionalToComposite(regInterfaceScalings[l], compInterfaceScalingSum, regRowImporters[l], Xpetra::ADD);
+    regionalToComposite(regInterfaceScalings[l], compInterfaceScalingSum, regRowImporters[l]);
 
     /* transform composite layout back to regional layout. Now, GIDs associated
      * with region interface should carry a scaling factor (!= 1).
@@ -866,8 +866,7 @@ void vCycle(const int l, ///< ID of current level
           fineRegB[j]->elementWiseMultiply(SC_ONE, *fineRegB[j], *inverseInterfaceScaling, SC_ZERO);
         }
 
-        regionalToComposite(fineRegB, compRhs,
-                            regRowImporters[l], Xpetra::ADD);
+        regionalToComposite(fineRegB, compRhs, regRowImporters[l]);
       }
 
       if (coarseSolverType == "direct")

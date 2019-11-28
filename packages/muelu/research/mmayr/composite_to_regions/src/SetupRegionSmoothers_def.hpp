@@ -250,7 +250,7 @@ calcNorm2(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
 {
 #include "Xpetra_UseShortNames.hpp"
   RCP<Vector> compVec = VectorFactory::Build(mapComp, true);
-  regionalToComposite(regVec, compVec, rowImportPerGrp, Xpetra::ADD);
+  regionalToComposite(regVec, compVec, rowImportPerGrp);
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm = compVec->norm2();
 
   return norm;
@@ -269,8 +269,8 @@ dotProd(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >&
 #include "Xpetra_UseShortNames.hpp"
   RCP<Vector> compX = VectorFactory::Build(mapComp, true);
   RCP<Vector> compY = VectorFactory::Build(mapComp, true);
-  regionalToComposite(regX, compX, rowImportPerGrp, Xpetra::ADD);
-  regionalToComposite(regY, compY, rowImportPerGrp, Xpetra::ADD);
+  regionalToComposite(regX, compX, rowImportPerGrp);
+  regionalToComposite(regY, compY, rowImportPerGrp);
   SC dotVal = compX->dot(*compY);
 
   return dotVal;

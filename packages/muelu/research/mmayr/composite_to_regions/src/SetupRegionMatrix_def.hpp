@@ -571,8 +571,7 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
 
       // transform to composite layout while adding interface values via the Export() combine mode
       RCP<Vector> compInterfaceScalingSum = VectorFactory::Build(mapComp, true);
-      regionalToComposite(interfaceScaling, compInterfaceScalingSum,
-                          rowImportPerGrp, Xpetra::ADD);
+      regionalToComposite(interfaceScaling, compInterfaceScalingSum, rowImportPerGrp);
 
       /* transform composite layout back to regional layout. Now, GIDs associated
        * with region interface should carry a scaling factor (!= 1).
