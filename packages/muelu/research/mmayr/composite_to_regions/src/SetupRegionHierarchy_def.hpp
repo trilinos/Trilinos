@@ -660,9 +660,9 @@ void createRegionHierarchy(const int maxRegPerProc,
                               quasiRegRowMaps);
 
   for(int levelIdx = 0; levelIdx < numLevels; ++levelIdx) {
-    smootherSetup(smootherParams[levelIdx], maxRegPerProc, regRowMaps[levelIdx],
+    smootherSetup(smootherParams[levelIdx], regRowMaps[levelIdx],
                   regMatrices[levelIdx], regInterfaceScalings[levelIdx],
-                  compRowMaps[levelIdx], regRowMaps[levelIdx], regRowImporters[levelIdx]);
+                  regRowImporters[levelIdx]);
   }
 
 } // createRegionHierarchy
@@ -760,9 +760,8 @@ void vCycle(const int l, ///< ID of current level
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 1 - pre-smoother")));
 
     // pre-smoothing
-    smootherApply(smootherParams[l], maxRegPerProc, fineRegX, fineRegB, regMatrices[l],
-                  regInterfaceScalings[l], compRowMaps[l],
-                  quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
+    smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrices[l],
+                  regRowMaps[l], regRowImporters[l]);
 
     tm = Teuchos::null;
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 2 - compute residual")));
@@ -834,9 +833,8 @@ void vCycle(const int l, ///< ID of current level
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 8 - post-smoother")));
 
     // post-smoothing
-    smootherApply(smootherParams[l], maxRegPerProc, fineRegX, fineRegB, regMatrices[l],
-                  regInterfaceScalings[l], compRowMaps[l],
-                  quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
+    smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrices[l],
+                  regRowMaps[l], regRowImporters[l]);
 
     tm = Teuchos::null;
 
@@ -851,9 +849,8 @@ void vCycle(const int l, ///< ID of current level
 
     const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
     if (coarseSolverType == "smoother") {
-      smootherApply(smootherParams[l], maxRegPerProc, fineRegX, fineRegB, regMatrices[l],
-                  regInterfaceScalings[l], compRowMaps[l],
-                  quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
+      smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrices[l],
+                  regRowMaps[l], regRowImporters[l]);
     }
     else {
       // First get the Xpetra vectors from region to composite format
