@@ -9763,12 +9763,13 @@ namespace Tpetra {
 #endif
         Teuchos::RCP<Teuchos::ParameterList> plist = rcp(new Teuchos::ParameterList());
         // 25 Jul 2018: Test for equality with the non-isMM path's Import object.
-        MyImport = rcp ( new import_type (MyDomainMap,
-                                          MyColMap,
-                                          RemotePids,
-                                          userExportLIDs.view(0,iloc).getConst(),
-                                          userExportPIDs.view(0,iloc).getConst(),
-                                          plist)
+        if ((MyDomainMap != MyColMap) && (!MyDomainMap->isSameAs(*MyColMap)))
+          MyImport = rcp ( new import_type (MyDomainMap,
+                                            MyColMap,
+                                            RemotePids,
+                                            userExportLIDs.view(0,iloc).getConst(),
+                                            userExportPIDs.view(0,iloc).getConst(),
+                                            plist)
             );
 
         if (verbose) {
@@ -9804,7 +9805,8 @@ namespace Tpetra {
 #endif
       Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
       mypars->set("Timer Label","notMMFrom_tAFC");
-      MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
+      if ((MyDomainMap != MyColMap) && (!MyDomainMap->isSameAs(*MyColMap)))
+        MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
 
       if (verbose) {
         std::ostringstream os;

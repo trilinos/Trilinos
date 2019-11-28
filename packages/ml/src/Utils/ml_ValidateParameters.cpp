@@ -149,6 +149,10 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   PL->set("smoother: self list",dummy);
   PL->sublist("smoother: self list").disableRecursiveValidation();
   setDoubleParameter("coarse: add to diag", 0.0,"Unlisted option",PL,dblParam);
+  PL->set("coarse: split communicator",false);
+  PL->set("smoother: split communicator",false);
+    
+
   // From ml_Multilevel_Smoothers.cpp:
   setIntParameter("smoother: ParaSails matrix",0,"Unlisted option",PL,intParam);
   setIntParameter("smoother: ParaSails levels",0,"Unlisted option",PL,intParam);
@@ -449,6 +453,10 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setDoubleParameter("coarse: ifpack level-of-fill",0.0,"Unlisted option",PL,dblParam);
   setDoubleParameter("coarse: ifpack relative threshold",1.0,"Unlisted option",PL,dblParam);
   setDoubleParameter("coarse: ifpack absolute threshold",0.0,"Unlisted option",PL,dblParam);
+
+  /* Amesos support */  
+  PL->set("coarse: split communicator",false);
+  PL->set("smoother: split communicator",false);
 
   /* EXPERIMENTAL - RefMaxwell block parallelization */
   PL->set("partitioner: options",dummy);
