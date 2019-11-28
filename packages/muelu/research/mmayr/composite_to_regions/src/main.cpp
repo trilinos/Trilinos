@@ -909,8 +909,8 @@ int main_(int argc, char *argv[]) {
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
 
-        computeResidual(regRes, regX, regB, regionGrpMats, mapComp,
-                        rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+        computeResidual(regRes, regX, regB, regionGrpMats,
+            revisedRowMapPerGrp, rowImportPerGrp);
 
 //        printRegionalObject<Vector>("regB 1", regB, myRank, *fos);
 

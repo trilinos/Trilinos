@@ -773,8 +773,8 @@ void vCycle(const int l, ///< ID of current level
     } else {
       createRegionalVector(regRes, regRowMaps[l]);
     }
-    computeResidual(regRes, fineRegX, fineRegB, regMatrices[l], compRowMaps[l],
-                    quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
+    computeResidual(regRes, fineRegX, fineRegB, regMatrices[l],
+                    regRowMaps[l], regRowImporters[l]);
 
     tm = Teuchos::null;
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 3 - scale interface")));

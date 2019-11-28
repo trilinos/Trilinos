@@ -162,7 +162,7 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
      * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
      * 3. Compute r = B - tmp
      */
-    computeResidual( regRes, regX, regB, regionGrpMats, mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp );
+    computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
 
     // update solution according to Jacobi's method
     for (int j = 0; j < maxRegPerProc; j++) {
@@ -207,7 +207,7 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
      * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
      * 3. Compute r = B - tmp
      */
-    computeResidual( regRes, regX, regB, regionGrpMats, mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp );
+    computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
 
     // update the solution and the residual
 
@@ -426,7 +426,7 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
 
   for (int i = 0; i < maxIter; ++i) {
     // Compute residual vector
-    computeResidual( regRes, regX, regB, regionGrpMats, mapComp, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp );
+    computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
 
     //solve (Z, D_inv, R); // z = D_inv * R, that is, D \ R.
     for(int j = 0; j < maxRegPerProc; j++) {
