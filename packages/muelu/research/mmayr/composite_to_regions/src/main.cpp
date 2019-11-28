@@ -934,7 +934,7 @@ int main_(int argc, char *argv[]) {
       /////////////////////////////////////////////////////////////////////////
 
 //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-      vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
+      vCycle(0, numLevels,
              regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
              regInterfaceScalings, smootherParams, coarseCompOp);

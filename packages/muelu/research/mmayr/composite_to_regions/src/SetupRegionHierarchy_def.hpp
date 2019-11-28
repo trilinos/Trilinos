@@ -720,8 +720,6 @@ void createRegionHierarchy(const int maxRegPerProc,
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void vCycle(const int l, ///< ID of current level
             const int numLevels, ///< Total number of levels
-            const int maxCoarseIter, ///< max. sweeps on coarse level
-            const int maxRegPerProc, ///< Max number of regions per process
             Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& fineRegX, ///< solution
             Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > fineRegB, ///< right hand side
             Array<std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > > regMatrices, ///< Matrices in region layout
@@ -740,6 +738,9 @@ void vCycle(const int l, ///< ID of current level
   using Teuchos::TimeMonitor;
   const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar SC_ONE = Teuchos::ScalarTraits<Scalar>::one();
+
+  // Get max number of regions per process
+  const int maxRegPerProc = fineRegX.size();
 
   if (l < numLevels - 1) { // fine or intermediate levels
 
@@ -803,7 +804,7 @@ void vCycle(const int l, ///< ID of current level
     tm = Teuchos::null;
 
     // Call V-cycle recursively
-    vCycle(l+1, numLevels, maxCoarseIter, maxRegPerProc,
+    vCycle(l+1, numLevels,
            coarseRegX, coarseRegB, regMatrices, regProlong, compRowMaps,
            quasiRegRowMaps, regRowMaps, regRowImporters, regInterfaceScalings,
            smootherParams, coarseCompMat, coarseSolverData, hierarchyData);
