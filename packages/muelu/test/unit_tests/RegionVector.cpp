@@ -328,7 +328,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
       for (int j = 0; j < maxRegPerProc; j++){
         myScaling = interfaceScaling[j]->getData(0);
         for(size_t idx = 0; idx < interfaceScaling[j]->getLocalLength(); ++idx) {
-          TEST_FLOATING_EQUALITY(myScaling[idx], 1.0, 100*TMT::eps());
+          TEST_FLOATING_EQUALITY(myScaling[idx], TST::one(), 100*TMT::eps());
         }
       }
 
