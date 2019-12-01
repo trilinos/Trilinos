@@ -291,6 +291,11 @@ namespace FROSch {
                                             unsigned dofOrdering);
 
     template <class LO,class GO,class NO>
+    ArrayRCP<RCP<const Map<LO,GO,NO> > > BuildNodeMapsFromDofMaps(ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > >dofsMapsVecVec,
+                                                            ArrayRCP<unsigned> dofsPerNodeVec,
+                                                            ArrayRCP<DofOrdering> dofOrderingVec);
+
+    template <class LO,class GO,class NO>
     ArrayRCP<RCP<Map<LO,GO,NO> > > BuildSubMaps(RCP<const Map<LO,GO,NO> > &fullMap,
                                                 ArrayRCP<GO> maxSubGIDVec);
     

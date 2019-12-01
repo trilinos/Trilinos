@@ -928,6 +928,96 @@ namespace FROSch {
 //
 //          RCP<Map<LO,GO,NO> > fullMapNonConst = rcp_dynamic_cast<Map<LO,GO,NO> >(fullMap);
 //    }
+    template <class LO,class GO,class NO>
+    ArrayRCP<RCP<const Map<LO,GO,NO> > > BuildNodeMapsFromDofMaps(ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > > dofsMapsVecVec,
+                                                            ArrayRCP<unsigned> dofsPerNodeVec,
+                                                            ArrayRCP<DofOrdering> dofOrderingVec)
+    {
+        
+        typedef Map<LO,GO,NO> Map;
+        typedef RCP<const Map> MapConstPtr;
+        typedef ArrayRCP<MapConstPtr> MapConstPtrVecPtr;
+        
+        FROSCH_ASSERT(!dofsMapsVecVec.is_null(),"dofsMapsVecVec.is_null().");
+        FROSCH_ASSERT(dofsPerNodeVec.size()==dofOrderingVec.size() && dofsPerNodeVec.size()==dofsMapsVecVec.size(),"ERROR: Wrong number of maps, dof information and/or dof orderings");
+        unsigned nmbBlocks = dofsMapsVecVec.size();
+        for (unsigned i=0; i<nmbBlocks; i++){
+            FROSCH_ASSERT(dofOrderingVec[i]==NodeWise || dofOrderingVec[i]==DimensionWise,"ERROR: Specify a valid DofOrdering.");
+            FROSCH_ASSERT(dofsMapsVecVec[i].size() == dofsPerNodeVec[i] ,"ERROR: The number of dofsPerNode does not match the number of dofsMaps for a block.");
+        }
+        
+        RCP< const Comm< int > >     comm = dofsMapsVecVec[0][0]->getComm();
+        
+        //Check if the current block is a real block, or if dof indicies are consecutive over more than one block.
+        Array<bool> isMergedPrior( nmbBlocks, false );
+        Array<bool> isMergedAfter( nmbBlocks, false );
+        
+        for (unsigned block=1; block<nmbBlocks; block++) {
+            if ( dofsMapsVecVec[block-1][0]->getMaxAllGlobalIndex() > dofsMapsVecVec[block][0]->getMinAllGlobalIndex()) {// It is enough to compare the first dofMaps of each block
+                isMergedPrior[block] = true;
+                isMergedAfter[block-1] = true;
+            }
+        }
+        
+        //Determine offset for each block based on isMergedPrior and isMergedAfter.
+        Array<GO> blockOffset( nmbBlocks, ScalarTraits<GO>::zero() ); //if blocks are real blocks, this entry here will give provide the correct offset.
+        Array<GO> consBlockOffset( nmbBlocks, ScalarTraits<GO>::zero() );
+        Array<GO> consThisBlockOffset( nmbBlocks, ScalarTraits<GO>::zero() );
+        for (unsigned block=0; block<nmbBlocks; block++) {
+            
+            consBlockOffset[block] += dofsPerNodeVec[block]; //add own dofs
+            
+            unsigned i = block;
+            while (isMergedAfter[i]) {
+                consBlockOffset[block] += dofsPerNodeVec[i+1];
+                i++;
+            }
+            i = block;
+            while (isMergedPrior[i]) {
+                consBlockOffset[block] += dofsPerNodeVec[i-1];
+                i--;
+            }
+            
+            if ( !isMergedPrior[block] && block>0 ) {
+                blockOffset[block] += dofsMapsVecVec[block-1][dofsMapsVecVec[block-1].size()-1]->getMaxAllGlobalIndex(); //It is assumed that the last dofMap of a block has the highest GID of all block dof maps.
+                unsigned j = block;
+                while (isMergedAfter[j]) {
+                    blockOffset[j] = blockOffset[block];
+                    j++;
+                }
+            }
+        }
+        
+        MapConstPtrVecPtr nodeMapsVec( nmbBlocks );
+        // Build node maps for all blocks
+        for (unsigned block=0; block<nmbBlocks; block++) {
+            
+            if (dofOrderingVec[block] == NodeWise) {
+                ArrayView< const GO > globalIndices = dofsMapsVecVec[block][0]->getNodeElementList();
+                Array<GO> globalIndicesNode( globalIndices );
+                GO offset = dofsMapsVecVec[block][0]->getMinAllGlobalIndex();
+                for (unsigned i=0; i<globalIndicesNode.size(); i++){
+                    // multiplier is not correct if isMergedPrior==true because we substract minAllGIDBlock. We have to adjust for this later
+                    // was ist wenn mergedPrior und blockOffset existiert, dann ist multiplier falsch.
+                    GO multiplier = (globalIndicesNode[i] - offset) / (consBlockOffset[block]);
+                    GO rest = (globalIndicesNode[i] - offset) % (consBlockOffset[block]);
+                    globalIndicesNode[i] = multiplier + rest;
+                    
+                }
+                nodeMapsVec[block] = MapFactory<LO,GO,NO>::Build( dofsMapsVecVec[block][0]->lib(), -1,globalIndicesNode(), 0, dofsMapsVecVec[block][0]->getComm() );
+            }
+            else{ //DimensionWise
+                GO minGID = dofsMapsVecVec[block][0]->getMinAllGlobalIndex();
+                ArrayView< const GO > globalIndices = dofsMapsVecVec[block][0]->getNodeElementList();
+                Array<GO> globalIndicesNode( globalIndices );
+                for (unsigned i=0; i<globalIndicesNode.size(); i++)
+                    globalIndicesNode[i] -= minGID;
+                
+                nodeMapsVec[block] = MapFactory<LO,GO,NO>::Build( dofsMapsVecVec[block][0]->lib(), -1,globalIndicesNode(), 0, dofsMapsVecVec[block][0]->getComm() );
+            }
+        }
+        return nodeMapsVec;
+    }
 
     template <class LO,class GO,class NO>
     ArrayRCP<RCP<Map<LO,GO,NO> > > BuildSubMaps(RCP<const Map<LO,GO,NO> > &fullMap,
