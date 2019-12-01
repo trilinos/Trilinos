@@ -34,27 +34,21 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Tsqr_GlobalVerify_hpp
 #define __TSQR_Tsqr_GlobalVerify_hpp
 
-#include <Tsqr_LocalVerify.hpp>
-#include <Tsqr_MessengerBase.hpp>
-#include <Tsqr_Util.hpp>
-
-#include <Teuchos_BLAS.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "Tsqr_LocalVerify.hpp"
+#include "Tsqr_MessengerBase.hpp"
+#include "Tsqr_Util.hpp"
+#include "Tsqr_Impl_SystemBlas.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <utility> // std::pair
 #include <vector>
 
-
 namespace TSQR {
-
   /// \class GlobalSummer
   ///
   /// Compute a global sum of (magnitudes of) Scalar values, returning
@@ -150,22 +144,14 @@ namespace TSQR {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
 
-    // FIXME (mfh 20 Apr 2010) This is currently implemented using an
-    // all-reduction.  This may result in different processors getting
-    // slightly different answers, due to floating-point arithmetic
-    // roundoff.  We might not want this if we are using this function
-    // to test a routine.
-
-    magnitude_type localResult (0);
-    for (LocalOrdinal j = 0; j < ncols; j++)
-      {
-        const Scalar* const cur_col = &A_local[j*lda_local];
-        for (LocalOrdinal i = 0; i < nrows_local; ++i)
-          {
-            const magnitude_type abs_xi = STS::magnitude (cur_col[i]);
-            localResult = localResult + abs_xi * abs_xi;
-          }
+    magnitude_type localResult {};
+    for (LocalOrdinal j = 0; j < ncols; j++) {
+      const Scalar* const cur_col = &A_local[j*lda_local];
+      for (LocalOrdinal i = 0; i < nrows_local; ++i) {
+        const magnitude_type abs_xi = STS::magnitude (cur_col[i]);
+        localResult = localResult + abs_xi * abs_xi;
       }
+    }
     // GlobalSummmer() is a hack to let us use a Scalar - type
     // MessengerBase with magnitude_type inputs and outputs.
     // Otherwise we would need to carry around a
@@ -196,9 +182,9 @@ namespace TSQR {
     using std::pair;
     using std::vector;
 
-    const magnitude_type ZERO (0);
-    const magnitude_type ONE (1);
-    Teuchos::BLAS<LocalOrdinal, Scalar> blas;
+    const magnitude_type ZERO {};
+    const magnitude_type ONE (1.0);
+    Impl::SystemBlas<Scalar> blas;
 
     //
     // Compute $\| I - Q^T * Q \|_F$
@@ -239,18 +225,20 @@ namespace TSQR {
 
     vector<Scalar> Resid (nrows_local * ncols, STS::nan());
     const LocalOrdinal ld_resid = nrows_local;
-
-    // Resid := A (deep copy)
-    copy_matrix (nrows_local, ncols, &Resid[0], ld_resid, A_local, lda_local);
+    MatView<LocalOrdinal, Scalar> Resid_view
+      (nrows_local, ncols, Resid.data (), ld_resid);
+    MatView<LocalOrdinal, const Scalar> A_view
+      (nrows_local, ncols, A_local, lda_local);
+    deep_copy (Resid_view, A_view);
 
     // Resid := Resid - Q*R
     blas.GEMM (NO_TRANS, NO_TRANS, nrows_local, ncols, ncols,
                -ONE, Q_local, ldq_local, R, ldr,
-               ONE, &Resid[0], ld_resid);
+               ONE, Resid.data(), ld_resid);
 
     const magnitude_type Resid_F =
-      global_frobenius_norm (nrows_local, ncols, &Resid[0], ld_resid, messenger);
-
+      global_frobenius_norm (nrows_local, ncols, Resid.data(),
+                             ld_resid, messenger);
     vector<magnitude_type> results (3);
     results[0] = Resid_F;
     results[1] = Orthog_F;

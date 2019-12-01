@@ -222,6 +222,7 @@ int main(int argc, char *argv[]) {
   Epetra_Map* Map = CreateMap("Cartesian3D", Comm, GaleriList);
   Epetra_CrsMatrix* Matrix = CreateCrsMatrix("Laplace3D", Map, GaleriList);
   Epetra_MultiVector* Coords = CreateCartesianCoordinates("3D",Map,GaleriList);
+  Epetra_Vector material(Matrix->RowMap());
 
   Epetra_Vector LHS(*Map);
   Epetra_Vector RHS(*Map);
@@ -376,7 +377,6 @@ int main(int argc, char *argv[]) {
   // Material aggregation test
   // =========================== //
   if (Comm.MyPID() == 0) PrintLine();
-  Epetra_Vector material(Matrix->RowMap());
   material.PutScalar(1.0);
   Teuchos::ParameterList MaterialList;
   ML_Epetra::SetDefaults("SA",MaterialList);
@@ -388,6 +388,26 @@ int main(int argc, char *argv[]) {
   MaterialList.set("z-coordinates",(*Coords)[2]);
   TestMultiLevelPreconditioner("Material", MaterialList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
+
+  // =========================== //
+  // Material & Aux aggregation test
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  material.PutScalar(1.0);
+  material[0] = 1000;
+  Teuchos::ParameterList MaterialList2;
+  ML_Epetra::SetDefaults("SA",MaterialList2);
+  MaterialList2.set("aggregation: material: enable", true);
+  MaterialList2.set("aggregation: material: threshold", 2.0);
+  MaterialList2.set("aggregation: aux: enable", true);
+  MaterialList2.set("aggregation: aux: threshold", 1e-10);
+  MaterialList2.set("material coordinates", &(material[0]));
+  MaterialList2.set("x-coordinates",(*Coords)[0]);
+  MaterialList2.set("y-coordinates",(*Coords)[1]);
+  MaterialList2.set("z-coordinates",(*Coords)[2]);
+  TestMultiLevelPreconditioner("Material", MaterialList2, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+
 
   // =========================== //
   // Classical Test

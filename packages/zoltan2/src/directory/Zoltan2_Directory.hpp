@@ -283,17 +283,17 @@ class Zoltan2_Directory {
     // making this all work by templating but exactly how to do that cleanly
     // I am not sure. The class inheritance approach may be easier to understand
     // but it does mean the user has to pick the right class to use.
-    virtual bool is_Zoltan2_Directory_Vector() const                      = 0;
-    virtual void update_local_user(const user_t * pRaw, user_t & dst)     = 0;
-    virtual void user_to_raw(const user_t & src, user_t * pRaw) const     = 0;
-    virtual void raw_to_user(const user_t * pRaw, user_t & dst) const     = 0;
-    virtual size_t size_of_value_type() const                             = 0;
-    virtual size_t get_update_msg_size(const user_t & data) const         = 0;
-    virtual size_t get_update_msg_size(const user_t * pRaw) const         = 0;
+    virtual bool is_Zoltan2_Directory_Vector() const                  { return false; };
+    virtual void update_local_user(const user_t * pRaw, user_t & dst) {};
+    virtual void user_to_raw(const user_t & src, user_t * pRaw) const {};
+    virtual void raw_to_user(const user_t * pRaw, user_t & dst) const {};
+    virtual size_t size_of_value_type() const                         { return 0; };
+    virtual size_t get_update_msg_size(const user_t & data) const     { return 0; };
+    virtual size_t get_update_msg_size(const user_t * pRaw) const     { return 0; };
     virtual size_t get_local_find_msg_size(gid_t *gid,
-      bool throw_if_missing = true) const                                 = 0;
+      bool throw_if_missing = true) const                             { return 0; };
     virtual size_t get_incoming_find_msg_size(
-      Zoltan2_DD_Find_Msg<gid_t,lid_t>* msg) const                        = 0;
+      Zoltan2_DD_Find_Msg<gid_t,lid_t>* msg) const                    { return 0; };
 
   private:
     MPI_Comm getRawComm() {

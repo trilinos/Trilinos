@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -8012,16 +8010,13 @@ namespace Tpetra {
                           buffer_device_type>& numPacketsPerLID,
                         const size_t constantNumPackets,
                         Distributor & distor,
-                        const CombineMode combineMode,
-                        const bool atomic)
+                        const CombineMode combineMode)
   {
-    // Exception are caught and handled upstream, so we just call the
-    // implementations directly.
     if (this->isStaticGraph ()) {
       using ::Tpetra::Details::unpackCrsMatrixAndCombineNew;
       unpackCrsMatrixAndCombineNew (*this, imports, numPacketsPerLID,
                                     importLIDs, constantNumPackets,
-                                    distor, combineMode, atomic);
+                                    distor, combineMode);
     }
     else {
       this->unpackAndCombineImplNonStatic (importLIDs, imports,
@@ -9768,12 +9763,13 @@ namespace Tpetra {
 #endif
         Teuchos::RCP<Teuchos::ParameterList> plist = rcp(new Teuchos::ParameterList());
         // 25 Jul 2018: Test for equality with the non-isMM path's Import object.
-        MyImport = rcp ( new import_type (MyDomainMap,
-                                          MyColMap,
-                                          RemotePids,
-                                          userExportLIDs.view(0,iloc).getConst(),
-                                          userExportPIDs.view(0,iloc).getConst(),
-                                          plist)
+        if ((MyDomainMap != MyColMap) && (!MyDomainMap->isSameAs(*MyColMap)))
+          MyImport = rcp ( new import_type (MyDomainMap,
+                                            MyColMap,
+                                            RemotePids,
+                                            userExportLIDs.view(0,iloc).getConst(),
+                                            userExportPIDs.view(0,iloc).getConst(),
+                                            plist)
             );
 
         if (verbose) {
@@ -9809,7 +9805,8 @@ namespace Tpetra {
 #endif
       Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
       mypars->set("Timer Label","notMMFrom_tAFC");
-      MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
+      if ((MyDomainMap != MyColMap) && (!MyDomainMap->isSameAs(*MyColMap)))
+        MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
 
       if (verbose) {
         std::ostringstream os;

@@ -403,7 +403,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           replacementString = "Global matrix dimensions: <ignored>, Global nnz: <ignored>";
           run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
 
-          // Catch smoother complexity output from MueLu
+          // Catch operator/smoother complexity output from MueLu
+          stringToReplace = "Operator complexity = " + floatRegex;
+          replacementString = "Operator complexity = <ignored>";
+          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
           stringToReplace = "Smoother complexity = " + floatRegex;
           replacementString = "Smoother complexity = <ignored>";
           run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);

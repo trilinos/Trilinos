@@ -110,7 +110,6 @@ namespace Xpetra {
       if(transposeA)
         Aprime = transposer_type(Aprime).createTranspose();
       //Decide whether the fast code path can be taken.
-      /*
       if(A.isFillComplete() && B.isFillComplete())
       {
         RCP<tcrs_matrix_type> C = rcp(new tcrs_matrix_type(Aprime->getRowMap(), 0));
@@ -122,7 +121,6 @@ namespace Xpetra {
       }
       else
       {
-      */
         //Slow case - one or both operands are non-fill complete.
         //TODO: deprecate this.
         //Need to compute the explicit transpose before add if transposeA and/or transposeB.
@@ -152,7 +150,7 @@ namespace Xpetra {
             *Bprime, false, beta,
             C);
         return rcp(new CrsWrap(rcp_implicit_cast<CrsType>(rcp(new XTCrsType(C)))));
-      //}
+      }
     }
 #endif
   }

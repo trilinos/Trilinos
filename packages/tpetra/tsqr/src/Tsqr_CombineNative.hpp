@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -45,15 +43,14 @@
 #ifndef __TSQR_CombineNative_hpp
 #define __TSQR_CombineNative_hpp
 
-#include <Teuchos_LAPACK.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "Teuchos_ScalarTraits.hpp"
 #include "Tsqr_ApplyType.hpp"
 #include "Tsqr_CombineDefault.hpp"
-
 #include "Kokkos_Core.hpp"
 #include "KokkosBlas2_gemv.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "Tsqr_Impl_Lapack.hpp"
+#include "Tsqr_MatView.hpp"
 
 namespace TSQR {
 
@@ -81,13 +78,9 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
 
   private:
-    typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
     typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
   public:
-
-    CombineNative () {}
-
     /// Whether or not the QR factorizations computed by methods of
     /// this class produce an R factor with all nonnegative diagonal
     /// entries.  It depends on LAPACK because this implementation
@@ -96,35 +89,25 @@ namespace TSQR {
     /// of {LARFGP, LARFP}, which is necessary to ensure that the BETA
     /// output of the function is always nonnegative.
     static bool QR_produces_R_factor_with_nonnegative_diagonal() {
-      return /* lapack_type::QR_produces_R_factor_with_nonnegative_diagonal() */ false &&
-        combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      return combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     void
-    factor_first (const Ordinal nrows,
-                  const Ordinal ncols,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const
     {
-      return default_.factor_first (nrows, ncols, A, lda, tau, work);
+      return default_.factor_first (A, tau, work);
     }
 
     void
     apply_first (const ApplyType& applyType,
-                 const Ordinal nrows,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_A,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C[],
-                 const Ordinal ldc,
-                 Scalar work[]) const
+                 const MatView<Ordinal, Scalar>& C,
+                 Scalar work[])
     {
-      return default_.apply_first (applyType, nrows, ncols_C, ncols_A,
-                                   A, lda, tau, C, ldc, work);
+      return default_.apply_first (applyType, A, tau, C, work);
     }
 
     void
@@ -142,21 +125,14 @@ namespace TSQR {
                  Scalar work[]) const;
 
     void
-    factor_inner (const Ordinal m,
-                  const Ordinal n,
-                  Scalar R[],
-                  const Ordinal ldr,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const;
 
     void
-    factor_pair (const Ordinal n,
-                 Scalar R_top[],
-                 const Ordinal ldr_top,
-                 Scalar R_bot[],
-                 const Ordinal ldr_bot,
+    factor_pair (const MatView<Ordinal, Scalar>& R_top,
+                 const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[]) const;
 
@@ -197,7 +173,6 @@ namespace TSQR {
     using device_type = Kokkos::Device<execution_space, memory_space>;
 
   private:
-    typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
     typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
     void
@@ -208,12 +183,13 @@ namespace TSQR {
 
     void
     LARFG (const Ordinal n,
-           scalar_type* const alpha,
+           scalar_type& alpha,
            const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& x,
-           scalar_type* const tau) const
+           scalar_type& tau) const
     {
       constexpr Ordinal incx {1};
-      lapack_type ().LARFG (n, alpha, x.data (), incx, tau);
+      Impl::Lapack<scalar_type> lapack;
+      lapack.LARFG (n, alpha, x.data (), incx, tau);
     }
 
     magnitude_type
@@ -282,36 +258,32 @@ namespace TSQR {
     CombineNative () = default;
 
     static bool QR_produces_R_factor_with_nonnegative_diagonal() {
-      return /* lapack_type::QR_produces_R_factor_with_nonnegative_diagonal() */ false &&
-        combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      return combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     void
-    factor_first (const Ordinal nrows,
-                  const Ordinal ncols,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const
     {
-      return default_.factor_first (nrows, ncols, A, lda, tau, work);
+      return default_.factor_first (A, tau, work);
     }
 
     void
     apply_first (const ApplyType& applyType,
-                 const Ordinal nrows,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_A,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C[],
-                 const Ordinal ldc,
-                 Scalar work[]) const
+                 const MatView<Ordinal, Scalar>& C,
+                 Scalar work[])
     {
-      return default_.apply_first (applyType, nrows, ncols_C, ncols_A,
-                                   A, lda, tau, C, ldc, work);
+      return default_.apply_first (applyType, A, tau, C, work);
     }
+
+    void
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
+                  Scalar tau[],
+                  Scalar work[]) const;
 
     void
     apply_inner (const ApplyType& applyType,
@@ -326,23 +298,9 @@ namespace TSQR {
                  Scalar C_bot[],
                  const Ordinal ldc_bot,
                  Scalar work[]) const;
-
     void
-    factor_inner (const Ordinal m,
-                  const Ordinal n,
-                  Scalar R[],
-                  const Ordinal ldr,
-                  Scalar A[],
-                  const Ordinal lda,
-                  Scalar tau[],
-                  Scalar work[]) const;
-
-    void
-    factor_pair (const Ordinal n,
-                 Scalar R_top[],
-                 const Ordinal ldr_top,
-                 Scalar R_bot[],
-                 const Ordinal ldr_bot,
+    factor_pair (const MatView<Ordinal, Scalar>& R_top,
+                 const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[]) const;
 
@@ -375,42 +333,29 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
 
   private:
-    typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
     typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
   public:
-    CombineNative () {}
-
     static bool QR_produces_R_factor_with_nonnegative_diagonal() {
-      return /* lapack_type::QR_produces_R_factor_with_nonnegative_diagonal() */ false &&
-        combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      return combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     void
-    factor_first (const Ordinal nrows,
-                  const Ordinal ncols,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const
     {
-      return default_.factor_first (nrows, ncols, A, lda, tau, work);
+      return default_.factor_first (A, tau, work);
     }
 
     void
     apply_first (const ApplyType& applyType,
-                 const Ordinal nrows,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_A,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C[],
-                 const Ordinal ldc,
-                 Scalar work[]) const
+                 const MatView<Ordinal, Scalar>& C,
+                 Scalar work[])
     {
-      return default_.apply_first (applyType, nrows, ncols_C, ncols_A,
-                                   A, lda, tau, C, ldc, work);
+      return default_.apply_first (applyType, A, tau, C, work);
     }
 
     void
@@ -434,28 +379,21 @@ namespace TSQR {
     }
 
     void
-    factor_inner (const Ordinal m,
-                  const Ordinal n,
-                  Scalar R[],
-                  const Ordinal ldr,
-                  Scalar A[],
-                  const Ordinal lda,
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const
     {
-      return default_.factor_inner (m, n, R, ldr, A, lda, tau, work);
+      return default_.factor_inner (R, A, tau, work);
     }
 
     void
-    factor_pair (const Ordinal n,
-                 Scalar R_top[],
-                 const Ordinal ldr_top,
-                 Scalar R_bot[],
-                 const Ordinal ldr_bot,
+    factor_pair (const MatView<Ordinal, Scalar>& R_top,
+                 const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[]) const
     {
-      return default_.factor_pair (n, R_top, ldr_top, R_bot, ldr_bot, tau, work);
+      return default_.factor_pair (R_top, R_bot, tau, work);
     }
 
     void
@@ -560,7 +498,7 @@ namespace TSQR {
       auto A_1k = subview (A_view, ALL (), k);
       auto A_1kp1 = subview (A_view, range_type (0, m), range_type (k+1, n));
 
-      this->LARFG (m + 1, &R_kk, A_1k, &tau_view[k]);
+      this->LARFG (m + 1, R_kk, A_1k, tau_view[k]);
       this->GEMV ("T", ONE, A_1kp1, A_1k, ZERO, work_view);
 
       for (Ordinal j = k+1; j < n; ++j) {
@@ -574,19 +512,15 @@ namespace TSQR {
     Scalar& R_nn = R_view(n-1, n-1);
     auto A_1n = subview (A_view, ALL (), n-1);
 
-    this->LARFG (m+1, &R_nn, A_1n, &tau_view[n-1]);
+    this->LARFG (m+1, R_nn, A_1n, tau_view[n-1]);
   }
 
 
   template< class Ordinal, class Scalar >
   void
   CombineNative< Ordinal, Scalar, false >::
-  factor_inner (const Ordinal m,
-                const Ordinal n,
-                Scalar R[],
-                const Ordinal ldr,
-                Scalar A[],
-                const Ordinal lda,
+  factor_inner (const MatView<Ordinal, Scalar>& R,
+                const MatView<Ordinal, Scalar>& A,
                 Scalar tau[],
                 Scalar work[]) const
   {
@@ -598,12 +532,12 @@ namespace TSQR {
       Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>;
     using range_type = std::pair<Ordinal, Ordinal>;
 
-    mat_type A_full (A, lda, n);
-    mat_type A_view = subview (A_full, range_type (0, m), ALL ());
-    mat_type R_full (R, ldr, n);
-    mat_type R_view = subview (R_full, range_type (0, n), ALL ());
-    nonconst_vec_type tau_view (tau, n);
-    nonconst_vec_type work_view (work, n);
+    mat_type A_full (A.data(), A.stride(1), A.extent(1));
+    mat_type A_view = subview (A_full, range_type (0, A.extent(0)), ALL ());
+    mat_type R_full (R.data(), R.stride(1), R.extent(1));
+    mat_type R_view = subview (R_full, range_type (0, R.extent(1)), ALL ());
+    nonconst_vec_type tau_view (tau, R.extent(1));
+    nonconst_vec_type work_view (work, R.extent(1));
 
     this->factor_inner (R_view, A_view, tau_view, work_view);
   }
@@ -729,7 +663,7 @@ namespace TSQR {
 
       // k+2: 1 element in R_top (R_top(k,k)), and k+1 elements in
       // R_bot (R_bot(1:k,k), in 1-based indexing notation).
-      this->LARFG (k+2, &R_top_kk, R_bot_1k, &tau_view[k]);
+      this->LARFG (k+2, R_top_kk, R_bot_1k, tau_view[k]);
       // One-based indexing, Matlab version of the GEMV call below:
       // work(1:k) := R_bot(1:k,k+1:n)' * R_bot(1:k,k)
 
@@ -747,18 +681,15 @@ namespace TSQR {
 
     // n+1: 1 element in R_top (n,n), and n elements in R_bot (the
     // whole last column).
-    this->LARFG (n+1, &R_top_nn, R_bot_1n, &tau_view[n-1]);
+    this->LARFG (n+1, R_top_nn, R_bot_1n, tau_view[n-1]);
   }
 
 
   template< class Ordinal, class Scalar >
   void
-  CombineNative< Ordinal, Scalar, false >::
-  factor_pair (const Ordinal n,
-               Scalar R_top[],
-               const Ordinal ldr_top,
-               Scalar R_bot[],
-               const Ordinal ldr_bot,
+  CombineNative<Ordinal, Scalar, false>::
+  factor_pair (const MatView<Ordinal, Scalar>& R_top,
+               const MatView<Ordinal, Scalar>& R_bot,
                Scalar tau[],
                Scalar work[]) const
   {
@@ -766,27 +697,32 @@ namespace TSQR {
     using Kokkos::subview;
     using range_type = std::pair<Ordinal, Ordinal>;
 
-    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type> R_top_full (R_top, ldr_top, n);
-    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type> R_bot_full (R_bot, ldr_bot, n);
-    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> tau_view (tau, n);
-    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> work_view (work, n);
+    const Ordinal numCols = R_top.extent (1);
+    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type> R_top_full
+      (R_top.data(), R_top.stride (1), numCols);
+    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type> R_bot_full
+      (R_bot.data(), R_bot.stride (1), R_bot.extent (1));
+    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> tau_view
+      (tau, numCols);
+    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> work_view
+      (work, numCols);
 
-    if (ldr_top == n) {
-      if (ldr_bot == n) {
+    if (R_top.stride(1) == numCols) {
+      if (R_bot.stride(1) == numCols) {
         this->factor_pair (R_top_full, R_bot_full, tau_view, work_view);
       }
       else {
-        auto R_bot_view = subview (R_bot_full, range_type (0, n), ALL ());
+        auto R_bot_view = subview (R_bot_full, range_type (0, numCols), ALL ());
         this->factor_pair (R_top_full, R_bot_view, tau_view, work_view);
       }
     }
     else {
-      auto R_top_view = subview (R_top_full, range_type (0, n), ALL ());
-      if (ldr_bot == n) {
+      auto R_top_view = subview (R_top_full, range_type (0, numCols), ALL ());
+      if (R_bot.stride(1) == numCols) {
         this->factor_pair (R_top_view, R_bot_full, tau_view, work_view);
       }
       else {
-        auto R_bot_view = subview (R_bot_full, range_type (0, n), ALL ());
+        auto R_bot_view = subview (R_bot_full, range_type (0, numCols), ALL ());
         this->factor_pair (R_top_view, R_bot_view, tau_view, work_view);
       }
     }

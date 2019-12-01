@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
 // ************************************************************************
 //@HEADER
 
@@ -47,11 +45,10 @@
 ///
 /// \warning TSQR users should _not_ include this file directly.
 
-#include <Tsqr_NodeTsqrFactory.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Tsqr_MessengerBase.hpp>
-#include <Tsqr.hpp>
-
+#include "Tsqr_NodeTsqrFactory.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Tsqr_MessengerBase.hpp"
+#include "Tsqr.hpp"
 
 namespace TSQR {
   namespace Trilinos {
@@ -125,21 +122,21 @@ namespace TSQR {
       /// \return The node_tsqr_type instance that implements TSQR.
       Teuchos::RCP<tsqr_type>
       makeTsqr (const Teuchos::RCP<Teuchos::ParameterList>& plist,
-		Teuchos::RCP<node_tsqr_type>& nodeTsqr,
-		Teuchos::RCP<dist_tsqr_type>& distTsqr)
+                Teuchos::RCP<node_tsqr_type>& nodeTsqr,
+                Teuchos::RCP<dist_tsqr_type>& distTsqr)
       {
-	using Teuchos::RCP;
-	using Teuchos::rcp;
+        using Teuchos::RCP;
+        using Teuchos::rcp;
 
-	nodeTsqr = makeNodeTsqr (plist);
-	distTsqr = makeDistTsqr (plist);
-	return rcp (new tsqr_type (nodeTsqr, distTsqr));
+        nodeTsqr = makeNodeTsqr (plist);
+        distTsqr = makeDistTsqr (plist);
+        return rcp (new tsqr_type (nodeTsqr, distTsqr));
       }
 
       void
       prepareTsqr
 
-		const Teuchos::RCP<scalar_messenger_type>& messenger,
+                const Teuchos::RCP<scalar_messenger_type>& messenger,
 
       //! Virtual destructor for memory safety of derived classes.
       virtual ~TsqrFactory () {};
@@ -147,7 +144,7 @@ namespace TSQR {
     private:
       /// \brief Instantiate and return the TSQR's intranode object.
       ///
-      /// \param plist [in/out] Same as the epinonymous input of 
+      /// \param plist [in/out] Same as the epinonymous input of
       ///   \c makeTsqr().
       ///
       /// \return The node_tsqr_type object that TSQR will use for the
@@ -167,7 +164,7 @@ namespace TSQR {
       virtual Teuchos::RCP<node_tsqr_type>
       makeNodeTsqr (const Teuchos::RCP<Teuchos::ParameterList>& plist) const
       {
-	return Teuchos::rcp (new node_tsqr_type (plist));
+        return Teuchos::rcp (new node_tsqr_type (plist));
       }
 
       /// \brief Instantiate and return TSQR's internode object.
@@ -175,7 +172,7 @@ namespace TSQR {
       /// \param messenger [in] Object used by TSQR for communicating
       ///   between MPI processes.
       ///
-      /// \param plist [in/out] Same as the epinonymous input of 
+      /// \param plist [in/out] Same as the epinonymous input of
       ///   \c makeTsqr().
       ///
       /// \return The dist_tsqr_type object that TSQR will use for the
@@ -188,10 +185,10 @@ namespace TSQR {
       ///   varies for different dist_tsqr_type types.
       virtual Teuchos::RCP<dist_tsqr_type>
       makeDistTsqr (const Teuchos::RCP<scalar_messenger_type>& messenger,
-		    const Teuchos::RCP<Teuchos::ParameterList>& plist) const
+                    const Teuchos::RCP<Teuchos::ParameterList>& plist) const
       {
-	(void) plist;
-	return Teuchos::rcp (new dist_tsqr_type (messenger));
+        (void) plist;
+        return Teuchos::rcp (new dist_tsqr_type (messenger));
       }
     };
   } // namespace Trilinos

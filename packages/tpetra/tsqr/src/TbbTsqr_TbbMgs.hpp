@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -48,26 +46,15 @@
 #include <numeric>
 #include <utility> // std::pair
 
-#include <Tsqr_MessengerBase.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Tsqr_Util.hpp>
-
-#include <Teuchos_RCP.hpp>
+#include "Tsqr_MessengerBase.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Tsqr_Util.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 #include <tbb/partitioner.h>
-
-// #define TBB_MGS_DEBUG 1
-#ifdef TBB_MGS_DEBUG
-#  include <iostream>
-using std::cerr;
-using std::endl;
-#endif // TBB_MGS_DEBUG
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace TBB {
@@ -397,19 +384,8 @@ namespace TSQR {
         for (LocalOrdinal i = 0; i < j; ++i) {
           const Scalar* const q = &A_local[i*lda_local];
           R[i + j*ldr] = ops.project (nrows_local, q, v);
-#ifdef TBB_MGS_DEBUG
-          if (my_rank == 0) {
-            cerr << "(i,j) = (" << i << "," << j << "): coeff = "
-                 << R[i + j*ldr] << endl;
-          }
-#endif // TBB_MGS_DEBUG
         }
         const magnitude_type denom = ops.norm2 (nrows_local, v);
-#ifdef TBB_MGS_DEBUG
-        if (my_rank == 0) {
-          cerr << "j = " << j << ": denom = " << denom << endl;
-        }
-#endif // TBB_MGS_DEBUG
 
         // FIXME (mfh 29 Apr 2010)
         //

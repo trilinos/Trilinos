@@ -54,6 +54,7 @@ namespace Sacado {
       typedef typename std::remove_cv<T>::type value_type;
       static constexpr bool is_statically_sized = true;
       static constexpr int static_size = Num;
+      static constexpr bool is_view = false;
 
       //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
       template <typename TT>
@@ -82,7 +83,8 @@ namespace Sacado {
        * Initializes derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      StaticFixedStorage(const int sz, const T & x, const DerivInit zero_out) :
+      StaticFixedStorage(const int sz, const T & x,
+                         const DerivInit zero_out = InitDerivArray) :
         val_(x) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz != Num)
@@ -90,6 +92,18 @@ namespace Sacado {
 #endif
         if (zero_out == InitDerivArray)
           ss_array<T>::zero(dx_, Num);
+      }
+
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      KOKKOS_INLINE_FUNCTION
+      StaticFixedStorage(const int sz, const int i, const value_type & x) :
+        StaticFixedStorage(sz, x, InitDerivArray) {
+        dx_[i]=1.;
       }
 
       //! Copy constructor

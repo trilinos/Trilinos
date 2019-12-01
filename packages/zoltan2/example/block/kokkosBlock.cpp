@@ -75,6 +75,7 @@ int main(int narg, char *arg[]) {
   typedef Map_t::local_ordinal_type localId_t;
   typedef Map_t::global_ordinal_type globalId_t;
   typedef Tpetra::Details::DefaultTypes::scalar_type scalar_t;
+  typedef Tpetra::Map<>::node_type node_t;
 
   ///////////////////////////////////////////////////////////////////////
   // Generate some input data.
@@ -82,7 +83,11 @@ int main(int narg, char *arg[]) {
   int localCount = 40 * (rank + 1);
   int totalCount = 20 * nprocs * (nprocs + 1);
   int targetCount = totalCount / nprocs;
-  Kokkos::View<globalId_t*> globalIds("globalIds", localCount);
+
+  Kokkos::View<globalId_t*, typename node_t::device_type>
+    globalIds(Kokkos::ViewAllocateWithoutInitializing("globalIds"), localCount);
+  typename decltype(globalIds)::HostMirror
+    host_globalIds = Kokkos::create_mirror_view(globalIds);
 
   if (rank == 0) {
     for (int i = 0, num = 40; i < nprocs ; i++, num += 40) {
@@ -96,18 +101,19 @@ int main(int narg, char *arg[]) {
   }
 
   for (int i = 0; i < localCount; i++) {
-    globalIds(i) = offset++;
+    host_globalIds(i) = offset++;
   }
+  Kokkos::deep_copy(globalIds, host_globalIds);
 
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 input adapter with no weights
 
   typedef Zoltan2::BasicUserTypes<scalar_t, localId_t, globalId_t> myTypes;
   typedef Zoltan2::BasicKokkosIdentifierAdapter<myTypes> inputAdapter_t;
-  typedef typename Zoltan2::BasicKokkosIdentifierAdapter<myTypes>::weight_layout_t Layout;
 
   const int nWeights = 1;
-  Kokkos::View<scalar_t **, Layout> weights("weights", localCount, nWeights);
+  Kokkos::View<scalar_t **, typename node_t::device_type>
+    weights("weights", localCount, nWeights);
   for (int index = 0; index < localCount; index++) {
     weights(index, 0) = 1; // Error check relies on uniform weights
   }
@@ -141,22 +147,27 @@ int main(int narg, char *arg[]) {
   // Check and print the solution.
   // Count number of IDs assigned to each part; compare to targetCount
 
-  Kokkos::View<globalId_t *> ids;
+  Kokkos::View<const globalId_t *, typename node_t::device_type> ids;
   ia.getIDsKokkosView(ids);
 
-  Kokkos::View<int*> partCounts("partCounts", nprocs);
+  typename decltype(ids)::HostMirror host_ids =
+    Kokkos::create_mirror_view(ids);
+  Kokkos::deep_copy(host_ids, ids);
 
-  Kokkos::View<int*> globalPartCounts("globalPartCounts", nprocs);
+  Kokkos::View<int*, Kokkos::HostSpace> partCounts("partCounts", nprocs);
+
+  Kokkos::View<int*, Kokkos::HostSpace>
+    globalPartCounts("globalPartCounts", nprocs);
 
   for (size_t i = 0; i < ia.getLocalNumIDs(); i++) {
     int pp = problem->getSolution().getPartListView()[i];
-    std::cout << rank << " LID " << i << " GID " << ids(i)
+    std::cout << rank << " LID " << i << " GID " << host_ids(i)
               << " PART " << pp << std::endl;
     partCounts(pp)++;
   }
 
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, nprocs,
-      &partCounts(0), &globalPartCounts(0));
+      partCounts.data(), globalPartCounts.data());
 
   if (rank == 0) {
     int ierr = 0;

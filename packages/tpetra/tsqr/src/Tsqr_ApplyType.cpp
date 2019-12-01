@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,14 +34,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
 // ************************************************************************
 //@HEADER
 
-#include <Tsqr_ApplyType.hpp>
+#include "Tsqr_ApplyType.hpp"
 #include <stdexcept>
-
 
 namespace TSQR {
   ApplyType::ApplyType (const std::string& op) :
@@ -64,7 +61,7 @@ namespace TSQR {
   const ApplyType ApplyType::Transpose = ApplyType ("T");
   const ApplyType ApplyType::ConjugateTranspose = ApplyType ("C");
 
-  std::string 
+  std::string
   ApplyType::enumToLapackString (const ApplyType::ApplyType_ theType)
   {
     if (theType == NoTranspose_)
@@ -77,26 +74,26 @@ namespace TSQR {
       throw std::logic_error("Invalid ApplyType: should never get here");
   }
 
-  bool 
-  ApplyType::decide_transposed (const std::string& op) const 
+  bool
+  ApplyType::decide_transposed (const std::string& op) const
   {
     if (op[0] == 'N' || op[0] == 'n')
       return false;
     else
       {
-	const char validTransposeLetters[] = "TtCcHh";
-	const int numValidTransposeLetters = 6;
+        const char validTransposeLetters[] = "TtCcHh";
+        const int numValidTransposeLetters = 6;
 
-	for (int k = 0; k < numValidTransposeLetters; ++k)
-	  if (op[0] == validTransposeLetters[k])
-	    return true;
+        for (int k = 0; k < numValidTransposeLetters; ++k)
+          if (op[0] == validTransposeLetters[k])
+            return true;
 
-	throw std::invalid_argument ("Invalid \"op\" argument \"" + op + "\"");
+        throw std::invalid_argument ("Invalid \"op\" argument \"" + op + "\"");
       }
   }
 
   ApplyType::ApplyType_
-  ApplyType::decide_apply_type (const std::string& op) const 
+  ApplyType::decide_apply_type (const std::string& op) const
   {
     if (op[0] == 'T' || op[0] == 't')
       return Transpose_;

@@ -692,7 +692,7 @@ namespace FROSch {
                     commMat->fillComplete(domainMap,NodesMap_);
                     commMatTmp->doExport(*commMat,*commExporter,INSERT);
                     commMatTmp->fillComplete(domainMap,UniqueNodesMap_);
-                    commMat = MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
+                    commMat = MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,as<LO>(0));
                     commMat->doImport(*commMatTmp,*commExporter,INSERT);
 
                     componentsSubdomains = IntVecVecPtr(NumMyNodes_);
@@ -726,7 +726,7 @@ namespace FROSch {
                     commGraph->fillComplete(domainMap,NodesMap_); // AH 08/07/2019: Can we remove some fillComplete?
                     commGraphTmp->doExport(*commGraph,*commExporter,INSERT);
                     commGraphTmp->fillComplete(domainMap,UniqueNodesMap_);
-                    commGraph = CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10);
+                    commGraph = CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,as<LO>(0));
                     commGraph->doImport(*commGraphTmp,*commExporter,INSERT);
 
                     componentsSubdomains = IntVecVecPtr(NumMyNodes_);

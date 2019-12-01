@@ -34,24 +34,19 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_SeqTest_hpp
 #define __TSQR_Test_SeqTest_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
-
+#include "Tsqr_ConfigDefs.hpp"
 #include <cstring> // size_t definition
 #include <string>
 #include <iostream>
 
-
 namespace TSQR {
   namespace Test {
-
     /// \brief Test accuracy of SequentialTsqr.
     ///
     /// Test the accuracy of our sequential TSQR implementation
