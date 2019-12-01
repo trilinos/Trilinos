@@ -115,7 +115,7 @@ namespace FROSch {
         reduceAll(*this->MpiComm_,REDUCE_MAX,int(buildUniqueMap),ptr(&buildUniqueMapMax));
         
         if (buildUniqueMapMax>0) {
-            if (this->MpiComm_->getRank()==0) std::cout << "FROSch::CoarseSpace : WARNING: We re-build a unique map of the AssembledBasisMap_." << std::endl;
+            if (this->MpiComm_->getRank()==0) std::cout << "FROSch::CoarseSpace : WARNING: We re-build a unique map of AssembledBasisMap_." << std::endl;
             AssembledBasisMapUnique_ = BuildUniqueMap<LO,GO,NO>(AssembledBasisMap_);
         } else {
             AssembledBasisMapUnique_ = AssembleMaps(UnassembledBasesMapsUnique_(),partMappings);
@@ -150,10 +150,10 @@ namespace FROSch {
             }
         }
 
-        UnassembledBasesMaps_.resize(0);
-        UnassembledBasesMapsUnique_.resize(0);
-        UnassembledSubspaceBases_.resize(0);
-        Offsets_.resize(0);
+        UnassembledBasesMaps_.clear();
+        UnassembledBasesMapsUnique_.clear();
+        UnassembledSubspaceBases_.clear();
+        Offsets_.clear();
         
         UnassembledBasesMaps_.push_back(AssembledBasisMap_);
         UnassembledBasesMapsUnique_.push_back(AssembledBasisMapUnique_);
@@ -180,8 +180,8 @@ namespace FROSch {
         SCVec values;
 
         for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {
-            indices.resize(0);
-            values.resize(0);
+            indices.clear();
+            values.clear();
             for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
                 valueTmp=AssembledBasis_->getData(j)[i];
                 if (fabs(valueTmp)>treshold) {
@@ -205,15 +205,15 @@ namespace FROSch {
 //        FROSCH_ASSERT(UnassembledBasesMaps_.size()>0,"UnassembledBasesMaps_.size()==0");
 //        FROSCH_ASSERT(UnassembledSubspaceBases_.size()>0,"UnassembledSubspaceBases_.size()==0");
 
-        UnassembledBasesMaps_.resize(0);
-        UnassembledBasesMapsUnique_.resize(0);
-        UnassembledSubspaceBases_.resize(0);
+        UnassembledBasesMaps_.clear();
+        UnassembledBasesMapsUnique_.clear();
+        UnassembledSubspaceBases_.clear();
 
         AssembledBasisMap_.reset();
         AssembledBasisMapUnique_.reset();
         AssembledBasis_.reset();
         
-        LocalSubspacesSizes_.resize(0);
+        LocalSubspacesSizes_.clear();
         
         GlobalBasisMatrix_.reset();
 

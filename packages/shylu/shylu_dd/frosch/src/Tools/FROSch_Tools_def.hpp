@@ -495,22 +495,20 @@ namespace FROSch {
     RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConst(RCP<const CrsGraph<LO,GO,NO> > graph)
     {
         FROSCH_TIMER_START(buildRepeatedMapNonConstTime,"BuildRepeatedMapNonConst");
-        RCP<Map<LO,GO,NO> > uniqueMap = MapFactory<LO,GO,NO>::Build(graph->getRowMap(),1);
-        RCP<const Map<LO,GO,NO> > overlappingMap = uniqueMap.getConst();
-        ExtendOverlapByOneLayer<LO,GO,NO>(graph,overlappingMap,graph,overlappingMap);
+        RCP<const Map<LO,GO,NO> > uniqueMap = graph->getRowMap();
+        RCP<const Map<LO,GO,NO> > overlappingMap;
+        ExtendOverlapByOneLayer<LO,GO,NO>(graph,uniqueMap,graph,overlappingMap);
         
-        RCP<CrsGraph<LO,GO,NO> > tmpGraphUnique = CrsGraphFactory<LO,GO,NO>::Build(uniqueMap,10);
+        RCP<CrsGraph<LO,GO,NO> > tmpGraphUnique = CrsGraphFactory<LO,GO,NO>::Build(uniqueMap,1);
         Array<GO> myPID(1,uniqueMap->getComm()->getRank());
         for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
             tmpGraphUnique->insertGlobalIndices(uniqueMap->getGlobalElement(i),myPID());
         }
         RCP<Map<LO,GO,NO> > domainMap = MapFactory<LO,GO,NO>::Build(uniqueMap->lib(),-1,myPID(),0,uniqueMap->getComm());
         tmpGraphUnique->fillComplete(domainMap,uniqueMap);
-        
-        RCP<CrsGraph<LO,GO,NO> > tmpGraphOverlap = CrsGraphFactory<LO,GO,NO>::Build(overlappingMap,10);
-        RCP<Export<LO,GO,NO> > exporter = ExportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
-        tmpGraphOverlap->doExport(*tmpGraphUnique,*exporter,INSERT);
-        
+        RCP<CrsGraph<LO,GO,NO> > tmpGraphOverlap = CrsGraphFactory<LO,GO,NO>::Build(overlappingMap,as<LO>(0));
+        RCP<Import<LO,GO,NO> > importer = ImportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
+        tmpGraphOverlap->doImport(*tmpGraphUnique,*importer,ADD);
         ArrayView<const GO> indices;
         Array<GO> repeatedIndices(0);
         for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
