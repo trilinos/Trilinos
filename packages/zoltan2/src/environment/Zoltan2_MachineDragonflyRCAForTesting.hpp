@@ -546,7 +546,7 @@ public:
 
   // Return (approx) hop count from rank1 to rank2. Does not account for 
   // Dragonfly's dynamic routing.
-  virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) {
+  virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) const override {
     hops = 0;
       
     if (rank1 == rank2)

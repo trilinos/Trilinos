@@ -44,14 +44,12 @@ namespace Sacado {
     //! Forward-mode AD class templated on the storage for the derivative array
     /*!
      * This class provides a general forward mode AD implementation for any
-     * type of derivative array storage.  It does not incorporate expression
-     * templates.
+     * type of derivative array storage.
      */
     template <typename Storage>
     class GeneralFad :
-      //public Storage, // Brings in value, derivative storage
       public Expr< GeneralFad<Storage> >, // Brings in expression interface
-      public Extender<Storage> // Brings in interface extensions
+      public Extender<Storage> // Brings in interface extensions & storage
     {
     public:
 
@@ -69,6 +67,9 @@ namespace Sacado {
 
       //! Typename of scalar's (which may be different from T)
       typedef typename ScalarType<value_type>::type scalar_type;
+
+      //! Whether we are a view
+      static constexpr bool is_view = Storage::is_view;
 
       //! Turn GeneralFad into a meta-function class usable with mpl::apply
       template <typename T>
@@ -89,39 +90,11 @@ namespace Sacado {
        */
       //@{
 
+       //! Inherit Storage's and Extender's constructors
+      using ExtenderType::ExtenderType;
+
       //! Default constructor
       GeneralFad() = default;
-
-      //! Constructor with value
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      GeneralFad(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
-        ExtenderType(x) {}
-
-      //! Constructor with size \c sz
-      /*!
-       * Initializes derivative array 0 of length \c sz
-       */
-      KOKKOS_INLINE_FUNCTION
-      GeneralFad(const int sz, const value_type & x,
-                 const DerivInit zero_out = InitDerivArray) :
-        ExtenderType(sz, x, zero_out) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      KOKKOS_INLINE_FUNCTION
-      GeneralFad(const int sz, const int i, const value_type & x) :
-        ExtenderType(sz, x, InitDerivArray) {
-        this->fastAccessDx(i)=1.;
-      }
-
-      //! Constructor with supplied storage \c s
-      KOKKOS_INLINE_FUNCTION
-      GeneralFad(const Storage& s) : ExtenderType(s) {}
 
       //! Copy constructor
       GeneralFad(const GeneralFad& x) = default;
@@ -129,18 +102,20 @@ namespace Sacado {
       //! Move constructor
       GeneralFad(GeneralFad&& x) = default;
 
-      //! Copy constructor from any Expression object
+      //! Constructor with value (disabled for ViewFad)
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      GeneralFad(const Expr<S>& x, SACADO_EXP_ENABLE_EXPR_CTOR_DECL)  :
+      GeneralFad(const S & x, SACADO_EXP_ENABLE_VALUE_CTOR_DECL) :
+        ExtenderType(x) {}
+
+      //! Copy constructor from any Expression object (disabled for ViewFad)
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      GeneralFad(const Expr<S>& x, SACADO_EXP_ENABLE_EXPR_CTOR_DECL) :
         ExtenderType(x.derived().size(), value_type(0.), NoInitDerivArray)
       {
         ExprAssign<GeneralFad>::assign_equal(*this, x.derived());
       }
-
-      //! Inherit Storage's constructors
-      //using Storage::Storage;
-      using ExtenderType::ExtenderType;
 
       //! Destructor
       ~GeneralFad() = default;
@@ -356,6 +331,11 @@ namespace Sacado {
 
   } // namespace Exp
   } // namespace Fad
+
+  template <typename S>
+  struct IsView< Fad::Exp::GeneralFad<S> > {
+    static constexpr bool value =  Fad::Exp::GeneralFad<S>::is_view;
+  };
 
   template <typename S>
   struct IsFad< Fad::Exp::GeneralFad<S> > {

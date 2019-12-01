@@ -34,26 +34,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_TBB_TbbRecursiveTsqr_Def_hpp
 #define __TSQR_TBB_TbbRecursiveTsqr_Def_hpp
 
-#include <TbbTsqr_TbbRecursiveTsqr.hpp>
-#include <Tsqr_Util.hpp>
-
-// #define TBB_DEBUG 1
-#ifdef TBB_DEBUG
-#  include <iostream>
-using std::cerr;
-using std::endl;
-#endif // TBB_DEBUG
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include "TbbTsqr_TbbRecursiveTsqr.hpp"
+#include "Tsqr_Util.hpp"
 
 namespace TSQR {
   namespace TBB {
@@ -71,19 +59,13 @@ namespace TSQR {
       }
       else if (P_first == P_last) {
         CacheBlocker< LocalOrdinal, Scalar >
-          blocker (Q_out.nrows(), Q_out.ncols(),
+          blocker (Q_out.extent(0), Q_out.extent(1),
                    seq_.cache_blocking_strategy());
-#ifdef TBB_DEBUG
-        cerr << "explicit_Q_helper: On P_first = " << P_first
-             << ", filling Q_out with zeros:" << endl
-             << "Q_out is " << Q_out.nrows() << " x " << Q_out.ncols()
-             << " with leading dimension " << Q_out.lda() << endl;
-#endif // TBB_DEBUG
         // Fill my partition with zeros.
         blocker.fill_with_zeros (Q_out, contiguous_cache_blocks);
 
         // If our partition is the first (topmost), fill it with
-        // the first Q_out.ncols() columns of the identity matrix.
+        // the first Q_out.extent(1) columns of the identity matrix.
         if (P_first == 0) {
           // Fetch the topmost cache block of my partition.  Its
           // leading dimension should be set correctly by
@@ -91,7 +73,7 @@ namespace TSQR {
           mat_view Q_out_top =
             blocker.top_block (Q_out, contiguous_cache_blocks);
 
-          for (LocalOrdinal j = 0; j < Q_out_top.ncols(); ++j)
+          for (LocalOrdinal j = 0; j < Q_out_top.extent(1); ++j)
             Q_out_top(j,j) = Scalar(1);
         }
       }
@@ -128,7 +110,7 @@ namespace TSQR {
       }
       else if (P_first == P_last) {
         std::pair<SeqOutput, mat_view> results =
-          seq_.factor (A.nrows(), A.ncols(), A.get(), A.lda(),
+          seq_.factor (A.extent(0), A.extent(1), A.data(), A.stride(1),
                        contiguous_cache_blocks);
         seq_outputs[P_first] = results.first;
         A_top = A;
@@ -154,14 +136,8 @@ namespace TSQR {
       // If we're completely done, extract the final R factor from
       // the topmost partition.
       if (depth == 0) {
-#ifdef TBB_DEBUG
-        cerr << "factor_helper: On P_first = " << P_first
-             << ", extracting R:" << endl
-             << "A_top is " << A_top.nrows() << " x " << A_top.ncols()
-             << " with leading dimension " << A_top.lda();
-#endif // TBB_DEBUG
-        seq_.extract_R (A_top.nrows(), A_top.ncols(), A_top.get(),
-                        A_top.lda(), R, ldr, contiguous_cache_blocks);
+        seq_.extract_R (A_top.extent(0), A_top.extent(1), A_top.data(),
+                        A_top.stride(1), R, ldr, contiguous_cache_blocks);
       }
       return A_top;
     }
@@ -204,23 +180,16 @@ namespace TSQR {
                            mat_view& C,
                            const bool contiguous_cache_blocks) const
     {
-#ifdef TBB_DEBUG
-      cerr << "build_partition_array: [" << P_first << ", " << P_last << "]:" << endl
-           << "Q is " << Q.nrows() << " x " << Q.ncols() << " w/ LDA = "
-           << Q.lda() << endl << "C is " << C.nrows() << " x " << C.ncols()
-           << " w/ LDA = " << C.lda() << endl;
-#endif // TBB_DEBUG
-
       if (P_first > P_last)
         return;
       else if (P_first == P_last)
         {
-          CacheBlocker< LocalOrdinal, Scalar > blocker (Q.nrows(), Q.ncols(), seq_.cache_blocking_strategy());
+          CacheBlocker< LocalOrdinal, Scalar > blocker (Q.extent(0), Q.extent(1), seq_.cache_blocking_strategy());
           const_mat_view Q_top = blocker.top_block (Q, contiguous_cache_blocks);
           mat_view C_top = blocker.top_block (C, contiguous_cache_blocks);
           top_blocks[P_first] =
-            std::make_pair (const_mat_view (Q_top.ncols(), Q_top.ncols(), Q_top.get(), Q_top.lda()),
-                            mat_view (C_top.ncols(), C_top.ncols(), C_top.get(), C_top.lda()));
+            std::make_pair (const_mat_view (Q_top.extent(1), Q_top.extent(1), Q_top.data(), Q_top.stride(1)),
+                            mat_view (C_top.extent(1), C_top.extent(1), C_top.data(), C_top.stride(1)));
         }
       else
         {
@@ -252,24 +221,15 @@ namespace TSQR {
                   const bool contiguous_cache_blocks) const
     {
       typedef std::pair< const_mat_view, mat_view > apply_t;
-#ifdef TBB_DEBUG
-      cerr << "apply_helper: [" << P_first << ", " << P_last << "]:" << endl
-           << "Q is " << Q.nrows() << " x " << Q.ncols() << " w/ LDA = "
-           << Q.lda() << endl << "C is " << C.nrows() << " x " << C.ncols()
-           << " w/ LDA = " << C.lda() << endl;
-#endif // TBB_DEBUG
 
       if (apply_helper_empty (P_first, P_last, Q, C))
         return;
       else if (P_first == P_last)
         {
           const std::vector< SeqOutput >& seq_outputs = factor_output.first;
-          seq_.apply ("N", Q.nrows(), Q.ncols(), Q.get(), Q.lda(),
-                      seq_outputs[P_first], C.ncols(), C.get(),
-                      C.lda(), contiguous_cache_blocks);
-#ifdef TBB_DEBUG
-          cerr << "BOO!!!" << endl;
-#endif // TBB_DEBUG
+          seq_.apply ("N", Q.extent(0), Q.extent(1), Q.data(), Q.stride(1),
+                      seq_outputs[P_first], C.extent(1), C.data(),
+                      C.stride(1), contiguous_cache_blocks);
         }
       else
         {
@@ -310,9 +270,9 @@ namespace TSQR {
       }
       else if (P_first == P_last) {
         const std::vector<SeqOutput>& seq_outputs = factor_output.first;
-        seq_.apply (op, Q.nrows(), Q.ncols(), Q.get(), Q.lda(),
-                    seq_outputs[P_first], C.ncols(), C.get(),
-                    C.lda(), contiguous_cache_blocks);
+        seq_.apply (op, Q.extent(0), Q.extent(1), Q.data(), Q.stride(1),
+                    seq_outputs[P_first], C.extent(1), C.data(),
+                    C.stride(1), contiguous_cache_blocks);
         return std::make_pair (Q, C);
       }
       else {
@@ -349,26 +309,23 @@ namespace TSQR {
                  const size_t P_bot,
                  mat_view& A_top,
                  mat_view& A_bot,
-                 std::vector< std::vector< Scalar > >& par_outputs,
+                 std::vector<std::vector<Scalar>>& par_outputs,
                  const bool contiguous_cache_blocks) const
     {
-      if (P_top == P_bot)
-        {
-          throw std::logic_error("factor_pair: should never get here!");
-          return; // to pacify the compiler
-        }
+      if (P_top == P_bot) {
+        throw std::logic_error("factor_pair: should never get here!");
+      }
       // We only read and write the upper ncols x ncols triangle of
       // each block.
-      const LocalOrdinal ncols = A_top.ncols();
-      if (A_bot.ncols() != ncols)
-        throw std::logic_error("A_bot.ncols() != A_top.ncols()");
+      const LocalOrdinal ncols = A_top.extent(1);
+      if (A_bot.extent(1) != ncols) {
+        throw std::logic_error("A_bot.extent(1) != A_top.extent(1)");
+      }
+      std::vector<Scalar>& tau = par_outputs[P_bot];
+      std::vector<Scalar> work (ncols);
 
-      std::vector< Scalar >& tau = par_outputs[P_bot];
-      std::vector< Scalar > work (ncols);
-
-      TSQR::Combine< LocalOrdinal, Scalar > combine_;
-      combine_.factor_pair (ncols, A_top.get(), A_top.lda(),
-                            A_bot.get(), A_bot.lda(), &tau[0], &work[0]);
+      TSQR::Combine<LocalOrdinal, Scalar> combine_;
+      combine_.factor_pair (A_top, A_bot, tau.data(), work.data());
     }
 
     template< class LocalOrdinal, class Scalar >
@@ -387,13 +344,13 @@ namespace TSQR {
         throw std::logic_error ("apply_pair: should never get here!");
       }
       const std::vector<Scalar>& tau = tau_arrays[P_bot];
-      std::vector<Scalar> work (C_top.ncols());
+      std::vector<Scalar> work (C_top.extent(1));
 
       TSQR::Combine<LocalOrdinal, Scalar> combine_;
-      combine_.apply_pair (trans.c_str(), C_top.ncols(), Q_bot.ncols(),
-                           Q_bot.get(), Q_bot.lda(), &tau[0],
-                           C_top.get(), C_top.lda(),
-                           C_bot.get(), C_bot.lda(), &work[0]);
+      combine_.apply_pair (trans.c_str(), C_top.extent(1), Q_bot.extent(1),
+                           Q_bot.data(), Q_bot.stride(1), &tau[0],
+                           C_top.data(), C_top.stride(1),
+                           C_bot.data(), C_bot.stride(1), &work[0]);
     }
 
     template< class LocalOrdinal, class Scalar >
@@ -407,8 +364,8 @@ namespace TSQR {
       if (P_first > P_last)
         return;
       else if (P_first == P_last)
-        seq_.cache_block (A_out.nrows(), A_out.ncols(), A_out.get(),
-                          A_in.get(), A_in.lda());
+        seq_.cache_block (A_out.extent(0), A_out.extent(1), A_out.data(),
+                          A_in.data(), A_in.stride(1));
       else
         {
           const size_t P_mid = (P_first + P_last) / 2;
@@ -435,8 +392,9 @@ namespace TSQR {
         return;
       }
       else if (P_first == P_last) {
-        seq_.un_cache_block (A_out.nrows(), A_out.ncols(), A_out.get(),
-                             A_out.lda(), A_in.get());
+        seq_.un_cache_block (A_out.extent(0), A_out.extent(1),
+                             A_out.data(), A_out.stride(1),
+                             A_in.data());
       }
       else {
         const size_t P_mid = (P_first + P_last) / 2;

@@ -35,13 +35,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 */
 
-#include <Tsqr_StatTimeMonitor.hpp>
+#include "Tsqr_StatTimeMonitor.hpp"
 
 namespace TSQR {
 
@@ -60,21 +58,5 @@ namespace TSQR {
     const double curTime = timer_.stop();
     stats_.update (curTime);
   }
-
-#if 0
-  /// \brief Return total elapsed time of a particular timer
-  ///
-  /// Return the total elapsed time of a particular timer.
-  /// Ensures that the timer is not running (which would break
-  /// totalElapsedTime()).
-  static double
-  fetchTime (const Teuchos::RCP< Teuchos::Time >& timer)
-  {
-    if (timer->isRunning())
-      timer->stop();
-    return timer->totalElapsedTime();
-  }
-#endif // 0
-
 
 } // namespace TSQR

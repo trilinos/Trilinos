@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 */
@@ -44,7 +42,7 @@
 #ifndef __TSQR_GlobalTimeStats_hpp
 #define __TSQR_GlobalTimeStats_hpp
 
-#include <Tsqr_TimeStats.hpp>
+#include "Tsqr_TimeStats.hpp"
 
 namespace TSQR {
 

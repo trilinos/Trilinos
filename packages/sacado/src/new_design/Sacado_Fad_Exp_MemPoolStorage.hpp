@@ -182,6 +182,7 @@ namespace Sacado {
       typedef typename std::remove_cv<T>::type value_type;
       static constexpr bool is_statically_sized = false;
       static constexpr int static_size = 0;
+      static constexpr bool is_view = false;
 
       //! Turn MemPoolStorage into a meta-function class usable with mpl::apply
       template <typename TT>
@@ -208,12 +209,25 @@ namespace Sacado {
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      MemPoolStorage(const int sz, const T & x, const DerivInit zero_out) :
+      MemPoolStorage(const int sz, const T & x,
+                     const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz), len_(sz), myPool_(defaultPool_) {
         if (zero_out == InitDerivArray)
           dx_ = mp_array<T>::get_and_fill(sz_, myPool_);
         else
           dx_ = mp_array<T>::get(sz_, myPool_);
+      }
+
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      KOKKOS_INLINE_FUNCTION
+      MemPoolStorage(const int sz, const int i, const value_type & x) :
+        MemPoolStorage(sz, x, InitDerivArray) {
+        dx_[i]=1.;
       }
 
       //! Copy constructor

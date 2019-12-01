@@ -68,9 +68,9 @@ static string fnParams[NUMFN][3]={
 
 // Value is a particular string
 #ifdef HAVE_ZOLTAN2_PULP
-#define NUMSTR 36
+#define NUMSTR 37
 #else
-#define NUMSTR 34
+#define NUMSTR 35
 #endif
 
 static string strParams[NUMSTR][3]={
@@ -112,6 +112,7 @@ static string strParams[NUMSTR][3]={
   {"num_local_parts", "0", "invalid_value"},                   // EnhancedNumberValidator
   {"mj_premigration_option", "1", "invalid_value"},               // EnhancedNumberValidator
   {"mj_migration_option", "2", "invalid_value"},               // EnhancedNumberValidator
+  {"mj_num_teams", "60", "invalid_value"},                      // EnhancedNumberValidator
 };
 
 template <typename T>

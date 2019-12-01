@@ -64,6 +64,7 @@ namespace Sacado {
       typedef typename std::remove_cv<T>::type value_type;
       static constexpr bool is_statically_sized = (static_length > 0);
       static constexpr int static_size = static_length;
+      static constexpr bool is_view = true;
       typedef U base_fad_type;
 
       //! Turn ViewStorage into a meta-function class usable with mpl::apply
@@ -81,16 +82,6 @@ namespace Sacado {
       //! Default constructor (needed to satisfy interface)
       KOKKOS_INLINE_FUNCTION
       ViewStorage() :
-        sz_(0), stride_(0), val_(0), dx_(0) {}
-
-      //! Constructor with value (needed to satisfy interface)
-      KOKKOS_INLINE_FUNCTION
-      ViewStorage(const T & x) :
-        sz_(0), stride_(0), val_(0), dx_(0) {}
-
-      //! Constructor with size \c sz (needed to satisfy interface)
-      KOKKOS_INLINE_FUNCTION
-      ViewStorage(const int sz, const T & x, const DerivInit zero_out) :
         sz_(0), stride_(0), val_(0), dx_(0) {}
 
       //! Constructor
