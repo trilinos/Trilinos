@@ -464,8 +464,8 @@
     <parameter>
       <name>aggregation: coloring algorithm</name>
       <type>string</type>
-      <default>default</default>
-      <description>Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently always set to COLORING_D2_SERIAL.</description>
+      <default>serial</default>
+      <description>Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
