@@ -807,15 +807,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
         {
-          computeResidual(regRes, regX, regB, regionGrpMats, dofMap,
-              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+          computeResidual(regRes, regX, regB, regionGrpMats,
+              revisedRowMapPerGrp, rowImportPerGrp);
 
           scaleInterfaceDOFs(regRes, regInterfaceScalings[0], true);
         }
 
         compRes = VectorFactory::Build(dofMap, true);
-        regionalToComposite(regRes, compRes,
-                            rowImportPerGrp, Xpetra::ADD);
+        regionalToComposite(regRes, compRes, rowImportPerGrp);
 
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
         if(cycle == 0) { normResIni = normRes; }
@@ -839,7 +838,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         /////////////////////////////////////////////////////////////////////////
 
         //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-        vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
+        vCycle(0, numLevels,
                regX, regB, regMatrices,
                regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
                regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData, hierarchyData);

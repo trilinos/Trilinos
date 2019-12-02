@@ -909,14 +909,13 @@ int main_(int argc, char *argv[]) {
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
 
-        computeResidual(regRes, regX, regB, regionGrpMats, mapComp,
-                        rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+        computeResidual(regRes, regX, regB, regionGrpMats,
+            revisedRowMapPerGrp, rowImportPerGrp);
 
 //        printRegionalObject<Vector>("regB 1", regB, myRank, *fos);
 
         compRes = VectorFactory::Build(mapComp, true);
-        regionalToComposite(regRes, compRes,
-                            rowImportPerGrp, Xpetra::ADD);
+        regionalToComposite(regRes, compRes, rowImportPerGrp);
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
 
         // Output current residual norm to screen (on proc 0 only)
@@ -935,7 +934,7 @@ int main_(int argc, char *argv[]) {
       /////////////////////////////////////////////////////////////////////////
 
 //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-      vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
+      vCycle(0, numLevels,
              regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
              regInterfaceScalings, smootherParams, coarseCompOp);
@@ -953,7 +952,7 @@ int main_(int argc, char *argv[]) {
     sleep(1);
 
     // ToDo (mayr.mt) Is this the right CombineMode?
-    regionalToComposite(regX, compX, rowMapPerGrp, rowImportPerGrp, Xpetra::INSERT);
+    regionalToComposite(regX, compX, rowImportPerGrp);
 
     std::cout << myRank << " | compX after V-cycle" << std::endl;
     sleep(1);
