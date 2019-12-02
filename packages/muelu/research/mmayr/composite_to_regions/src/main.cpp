@@ -888,7 +888,6 @@ int main_(int argc, char *argv[]) {
 
     // define max iteration counts
     const int maxVCycle = 200;
-    const int maxCoarseIter = 100;
 
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
