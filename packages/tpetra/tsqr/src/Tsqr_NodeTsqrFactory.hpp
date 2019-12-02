@@ -37,8 +37,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_NodeTsqrFactory_hpp
-#define __TSQR_NodeTsqrFactory_hpp
+#ifndef TSQR_NODETSQRFACTORY_HPP
+#define TSQR_NODETSQRFACTORY_HPP
 
 #include "Tsqr_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
@@ -87,48 +87,9 @@ namespace TSQR {
   template<class Node, class Scalar, class LocalOrdinal>
   class NodeTsqrFactory {
   public:
-    //! The Kokkos Node type.
-    typedef Node node_type;
-    //! Pointer (RCP) to node_type.
-    typedef Teuchos::RCP<node_type> node_ptr;
-
     //! The NodeTsqr subclass corresponding to the Kokkos Node type.
-    typedef SequentialTsqr<LocalOrdinal, Scalar> node_tsqr_type;
-
-    /// \brief Default parameter list for intranode TSQR.
-    ///
-    /// \note The default implementation returns an empty (not null)
-    ///   parameter list.  Each specialization for a specific Node
-    ///   type redefines this method to return a parameter list
-    ///   appropriate for that Node type's TSQR implementation.
-    static Teuchos::RCP<const Teuchos::ParameterList>
-    getDefaultParameters ()
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
-      RCP<ParameterList> params = parameterList ("NodeTsqr");
-      // Create a temporary node_tsqr_type instance in order to get
-      // default parameters.  The empty input parameter list will get
-      // filled in with default values of missing parameters.
-      node_tsqr_type nodeTsqr (params);
-
-      return params;
-    }
-
-    /// \brief Return a pointer to the intranode TSQR implementation.
-    ///
-    /// \param node [in/out] Pointer to the Kokkos Node instance.
-    ///
-    /// \param plist [in/out] Parameter list for configuring the
-    ///   NodeTsqr implementation.
-    static Teuchos::RCP<node_tsqr_type>
-    makeNodeTsqr (const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    {
-      return rcp (new node_tsqr_type (plist));
-    }
+    using node_tsqr_type = SequentialTsqr<LocalOrdinal, Scalar>;
   };
 } // namespace TSQR
 
-#endif // __TSQR_NodeTsqrFactory_hpp
+#endif // TSQR_NODETSQRFACTORY_HPP
