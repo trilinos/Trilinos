@@ -47,7 +47,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   mutrino   # Will be repalced by 'ats1'
   waterman
   serrano   # Will be replaced by 'cts1'
-  arm
+  van1-tx2
   tlcc2
   sems-rhel7
   sems-rhel6
@@ -95,12 +95,6 @@ elif [[ $realHostname == "mutrino"* ]] ; then
 elif [[ $realHostname == "waterman"* ]] ; then
   hostnameMatch=waterman
   hostnameMatchSystemName=waterman
-elif [[ $realHostname == "astra-"* ]] || [[ $realHostname =~ ast[0-9]+ ]] ; then
-  hostnameMatch=astra
-  hostnameMatchSystemName=arm
-elif [[ $realHostname == "stria-"* ]] || [[ $realHostname =~ st[0-9]+ ]] ; then
-  hostnameMatch=stria
-  hostnameMatchSystemName=arm
 # Specifically named cts1 systems
 elif [[ $realHostname == "serrano"* ]] || [[ $realHostname =~ ser[0-9]+ ]] ; then
   hostnameMatch=serrano
@@ -166,6 +160,12 @@ if [[ "${SNLSYSTEM}" == "cee" ]] ; then
     systemNameTypeMatchedList+=(cee-rhel6)
     systemNameTypeMatchedListHostNames[cee-rhel6]=cee-rhel6
   fi
+fi
+
+# Vanguard1 Thunderbird X2 (Astsra) systems
+if [[ "${SNLSYSTEM}" == "astra" ]] ; then
+  systemNameTypeMatchedList+=(van1-tx2)
+  systemNameTypeMatchedListHostNames[van1-tx2]=${SNLCLUSTER}
 fi
 
 # If the user puts 'spack-rhel' in the build name, assume that the modules are

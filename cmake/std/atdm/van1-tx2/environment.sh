@@ -6,40 +6,24 @@
 ################################################################################
 
 #
-# Deal with compiler versions
-#
-
-if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
-  export ATDM_CONFIG_COMPILER=GNU-7.2.0
-elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-19.2"* ]]; then
-    export ATDM_CONFIG_COMPILER=ARM-19.2
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
-  if [[ "$ATDM_CONFIG_COMPILER" == "GNU" ]] ; then
-    export ATDM_CONFIG_COMPILER=GNU-7.2.0
-elif [[ "$ATDM_CONFIG_COMPILER" != "GNU-7.2.0" ]] ; then
-    echo
-    echo "***"
-    echo "*** ERROR: GNU COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
-    echo "*** Only GNU compilers supported on this system are:"
-    echo "***   gnu (defaults to gnu-7.2.0)"
-    echo "***   gnu-7.2.0 (default)"
-    echo "***"
-    return
-  fi
-else
-  echo
-  echo "***"
-  echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
-  echo "***"
-  return
-fi
-
-#
 # Allow KOKKOS_ARCH which is needed for CUDA builds
 #
 
-if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
-  unset ATDM_CONFIG_KOKKOS_ARCH
+if   [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "ARMv8-TX2" ]] \
+  || [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] \
+  || [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "" ]] \
+  ; then
+  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
+else
+   echo
+  echo "***"
+  echo "*** ERROR: Selected KOKKOS_ARCH=${ATDM_CONFIG_KOKKOS_ARCH} is not supported"
+  echo "*** The only supported KOKKOS_ARCH for the 'van1-tx2' system is:"
+  echo "***"
+  echo "***   ARMv8-TX2"
+  echo "***"  
+  return
+
 fi
 
 echo "Using ARM ATSE compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
@@ -72,7 +56,7 @@ else
   export OMP_NUM_THREADS=1
 fi
 
-if [[ "$ATDM_CONFIG_COMPILER" == "ARM-19.2" ]]; then
+if [[ "$ATDM_CONFIG_COMPILER" == "ARM-19.2_OPENMPI-3.1.4" ]]; then
   module load devpack-arm/20190618
   module load armpl/19.2.0
   module load ninja
@@ -82,8 +66,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-19.2" ]]; then
   export OMPI_CC=`which armclang`
   export OMPI_CXX=`which armclang++`
   export OMPI_FC=`which armflang`
-  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
+elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-3.1.4" ]] ; then
   module load devpack-gnu7/20190618
   module load openblas/0.3.4
   module load ninja
@@ -93,7 +76,6 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
   export LAPACK_ROOT="${OPENBLAS_LIB}"
   export ATDM_CONFIG_LAPACK_LIBS="-L${OPENBLAS_LIB};-lopenblas;-lgfortran;-lgomp"
   export ATDM_CONFIG_BLAS_LIBS="-L${OPENBLAS_LIB};-lopenblas;-lgfortran;-lgomp"
-  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
 else
   echo
   echo "***"
@@ -125,4 +107,6 @@ export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
 export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
+
+# Done setting up env!
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
