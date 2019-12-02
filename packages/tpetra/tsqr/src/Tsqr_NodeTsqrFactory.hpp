@@ -128,14 +128,6 @@ namespace TSQR {
     {
       return rcp (new node_tsqr_type (plist));
     }
-
-    /// \brief Prepare the NodeTsqr instance for use.
-    ///
-    /// \pre <tt> ! nodeTsqr.is_null() </tt>
-    /// \post <tt> nodeTsqr->ready() </tt>
-    static void
-    prepareNodeTsqr (const Teuchos::RCP<node_tsqr_type>& /* nodeTsqr */)
-    {}
   };
 } // namespace TSQR
 

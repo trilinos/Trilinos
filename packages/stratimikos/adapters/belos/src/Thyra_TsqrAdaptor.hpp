@@ -265,12 +265,6 @@ namespace Thyra {
 #endif // HAVE_MPI
     }
 
-    /// \brief Finish intraprocess TSQR initialization.
-    ///
-    /// \note It's OK to call this method more than once; it is idempotent.
-    void
-    prepareNodeTsqr (const MV& /* X */) {}
-
     /// \brief Finish interprocess TSQR initialization.
     ///
     /// Input X is a valid Thyra::MultiVectorBase instance whose

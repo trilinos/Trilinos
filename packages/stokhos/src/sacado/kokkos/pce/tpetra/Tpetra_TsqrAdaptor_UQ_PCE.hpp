@@ -289,18 +289,8 @@ namespace Tpetra {
     {
       if (! ready_) {
         prepareDistTsqr (mv);
-        prepareNodeTsqr (mv);
         ready_ = true;
       }
-    }
-
-    /// \brief Finish intraprocess TSQR initialization.
-    ///
-    /// \note It's OK to call this method more than once; it is idempotent.
-    void
-    prepareNodeTsqr (const MV& mv)
-    {
-      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_);
     }
 
     /// \brief Finish interprocess TSQR initialization.
