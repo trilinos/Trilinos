@@ -31,6 +31,7 @@ ADD_SUBDIRECTORIES(
   Sort
   Utils
   RowMatrixTransposer
+  Tsqr
   TypeStack
   )
 

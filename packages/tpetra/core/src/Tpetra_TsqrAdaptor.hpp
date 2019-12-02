@@ -34,13 +34,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
-#ifndef __Tpetra_TsqrAdaptor_hpp
-#define __Tpetra_TsqrAdaptor_hpp
+#ifndef TPETRA_TSQRADAPTOR_HPP
+#define TPETRA_TSQRADAPTOR_HPP
 
 /// \file Tpetra_TsqrAdaptor.hpp
 /// \brief Adaptor from Tpetra::MultiVector to TSQR
@@ -59,14 +57,13 @@
 #  include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #  include <stdexcept>
 
-
 namespace Tpetra {
 
   /// \class TsqrAdaptor
   /// \brief Adaptor from Tpetra::MultiVector to TSQR
   /// \author Mark Hoemmen
   ///
-  /// \tparam MV A specialization of \c Tpetra::MultiVector.
+  /// \tparam MV A specialization of MultiVector.
   ///
   /// TSQR (Tall Skinny QR factorization) is an orthogonalization
   /// kernel that is as accurate as Householder QR, yet requires only
@@ -82,23 +79,21 @@ namespace Tpetra {
   /// the Kokkos Node type of the multivector.
   ///
   /// \warning The current implementation of this adaptor requires
-  ///   that all Tpetra::MultiVector inputs use the same communicator
-  ///   object (that is, the same Epetra_Comm) and map.
+  ///   that all Tpetra::MultiVector inputs use the same Map.
   template<class MV>
   class TsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
-    typedef typename MV::scalar_type scalar_type;
-    typedef typename MV::local_ordinal_type ordinal_type;
-    typedef typename MV::node_type node_type;
-    typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
-    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+    using scalar_type = typename MV::scalar_type;
+    using ordinal_type = typename MV::local_ordinal_type;
+    using dense_matrix_type = Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>;
+    using magnitude_type = typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
 
   private:
-    //typedef TSQR::MatView<ordinal_type, scalar_type> matview_type;
-    typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_tsqr_factory_type;
-    typedef typename node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
-    typedef TSQR::DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
-    typedef TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
+    using node_tsqr_factory_type =
+      TSQR::NodeTsqrFactory<typename MV::node_type, scalar_type, ordinal_type>;
+    using node_tsqr_type = typename node_tsqr_factory_type::node_tsqr_type;
+    using dist_tsqr_type = TSQR::DistTsqr<ordinal_type, scalar_type>;
+    using tsqr_type = TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type>;
 
   public:
     /// \brief Constructor (that accepts a parameter list).
@@ -226,8 +221,8 @@ namespace Tpetra {
       A.modify_host ();
       Q.sync_host ();
       Q.modify_host ();
-      auto A_view = A.template getLocalView<Kokkos::HostSpace> ();
-      auto Q_view = Q.template getLocalView<Kokkos::HostSpace> ();
+      auto A_view = A.getLocalViewHost ();
+      auto Q_view = Q.getLocalViewHost ();
       scalar_type* const A_ptr =
         reinterpret_cast<scalar_type*> (A_view.data ());
       scalar_type* const Q_ptr =
@@ -287,7 +282,7 @@ namespace Tpetra {
 
       Q.sync_host ();
       Q.modify_host ();
-      auto Q_view = Q.template getLocalView<Kokkos::HostSpace> ();
+      auto Q_view = Q.getLocalViewHost ();
       scalar_type* const Q_ptr =
         reinterpret_cast<scalar_type*> (Q_view.data ());
       const bool contiguousCacheBlocks = false;
@@ -344,16 +339,16 @@ namespace Tpetra {
       }
     }
 
-    /// \brief Finish intranode TSQR initialization.
+    /// \brief Finish intraprocess TSQR initialization.
     ///
     /// \note It's OK to call this method more than once; it is idempotent.
     void
     prepareNodeTsqr (const MV& mv)
     {
-      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, mv.getMap()->getNode());
+      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_);
     }
 
-    /// \brief Finish internode TSQR initialization.
+    /// \brief Finish interprocess TSQR initialization.
     ///
     /// \param mv [in] A valid Tpetra::MultiVector instance whose
     ///   communicator wrapper we will use to prepare TSQR.
@@ -378,5 +373,5 @@ namespace Tpetra {
 
 #endif // HAVE_TPETRA_TSQR
 
-#endif // __Tpetra_TsqrAdaptor_hpp
+#endif // TPETRA_TSQRADAPTOR_HPP
 

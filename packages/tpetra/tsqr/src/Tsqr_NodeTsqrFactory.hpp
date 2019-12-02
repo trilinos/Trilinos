@@ -131,24 +131,13 @@ namespace TSQR {
       return rcp (new node_tsqr_type (plist));
     }
 
-    /// \brief Prepare the NodeTsqr instance for use by setting its
-    ///   Kokkos \c Node instance.
+    /// \brief Prepare the NodeTsqr instance for use.
     ///
-    /// Some NodeTsqr subclasses can't compute anything until they
-    /// have a pointer to a Kokkos Node instance.  Call this method
-    /// before invoking any computational methods of the NodeTsqr
-    /// subclass instance.
-    ///
-    /// \pre <tt> ! nodeTsqr.is_null() && ! node.is_null() </tt>
+    /// \pre <tt> ! nodeTsqr.is_null() </tt>
     /// \post <tt> nodeTsqr->ready() </tt>
     static void
-    prepareNodeTsqr (const Teuchos::RCP<node_tsqr_type>& nodeTsqr,
-                     const Teuchos::RCP<node_type>& node)
-    {
-      // SequentialTsqr doesn't need the Kokkos Node instance.
-      (void) nodeTsqr;
-      (void) node;
-    }
+    prepareNodeTsqr (const Teuchos::RCP<node_tsqr_type>& /* nodeTsqr */)
+    {}
   };
 } // namespace TSQR
 
