@@ -3154,7 +3154,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   double Omega = List_.get("coarse: damping factor", 1.0);
   double AddToDiag = List_.get("coarse: add to diag", 1e-12);
   std::string PreOrPostSmoother = List_.get("coarse: pre or post","post");
-  int splitComm = (int) List_.get("coarse: split communicator",false);
+  int splitComm = (int) List_.get("coarse: split communicator",true);
   int pre_or_post;
 
   if( PreOrPostSmoother == "pre" ) pre_or_post = ML_PRESMOOTHER;
