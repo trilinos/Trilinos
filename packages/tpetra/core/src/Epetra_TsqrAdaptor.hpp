@@ -131,23 +131,25 @@ namespace Epetra {
     /// \note TSQR lives in the Kokkos package, which requires the
     ///   Teuchos package, so it's acceptable for us to require
     ///   Teuchos components.
-    typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
+    using dense_matrix_type =
+      Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>;
 
     /// \typedef magnitude_type
     ///
     /// Epetra_MultiVector's "Scalar" type is real.  TSQR supports
     /// complex arithmetic as well, in which magnitude_type would
     /// differ from scalar_type.
-    typedef double magnitude_type;
+    using magnitude_type = double;
 
   private:
-    typedef TSQR::MatView<ordinal_type, scalar_type> matview_type;
-    typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_tsqr_factory_type;
+    using matview_type = TSQR::MatView<ordinal_type, scalar_type>;
+    using node_tsqr_factory_type =
+      TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type>;
     // Don't need a "typename" here, because there are no template
     // parameters involved in the type definition.
-    typedef node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
-    typedef TSQR::DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
-    typedef TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
+    using node_tsqr_type = node_tsqr_factory_type::node_tsqr_type;
+    using dist_tsqr_type = TSQR::DistTsqr<ordinal_type, scalar_type>;
+    using tsqr_type = TSQR::Tsqr<ordinal_type, scalar_type>;
 
   public:
     /// \brief Constructor (that accepts a parameter list).

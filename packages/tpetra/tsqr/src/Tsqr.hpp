@@ -90,8 +90,7 @@ namespace TSQR {
   ///   distributed linear algebra libraries, such as Tpetra, the
   ///   local and global ordinal types may be different.
   template<class LocalOrdinal,
-           class Scalar,
-           class NodeTsqrType = SequentialTsqr<LocalOrdinal, Scalar>>
+           class Scalar>
   class Tsqr {
   public:
     typedef MatView<LocalOrdinal, Scalar> mat_view_type;
@@ -103,16 +102,16 @@ namespace TSQR {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
 
-    typedef NodeTsqrType node_tsqr_type;
-    typedef DistTsqr<LocalOrdinal, Scalar> dist_tsqr_type;
+    using node_tsqr_type = NodeTsqr<LocalOrdinal, Scalar>;
+    using dist_tsqr_type = DistTsqr<LocalOrdinal, Scalar>;
     typedef typename Teuchos::RCP<node_tsqr_type> node_tsqr_ptr;
     typedef typename Teuchos::RCP<dist_tsqr_type> dist_tsqr_ptr;
     /// \typedef rank_type
     /// \brief "Rank" here means MPI rank, not linear algebra rank.
     typedef typename dist_tsqr_type::rank_type rank_type;
 
-    typedef typename node_tsqr_type::FactorOutput NodeOutput;
-    typedef typename dist_tsqr_type::FactorOutput DistOutput;
+    using NodeOutput = typename node_tsqr_type::factor_output_type;
+    using DistOutput = typename dist_tsqr_type::FactorOutput;
 
     /// \typedef FactorOutput
     /// \brief Return value of \c factor().
@@ -120,7 +119,8 @@ namespace TSQR {
     /// Part of the implicit representation of the Q factor returned
     /// by \c factor().  The other part of that representation is
     /// stored in the A matrix on output.
-    typedef std::pair<NodeOutput, DistOutput> FactorOutput;
+    using FactorOutput =
+      std::pair<Teuchos::RCP<NodeOutput>, DistOutput>;
 
     /// \brief Constructor
     ///
@@ -134,14 +134,6 @@ namespace TSQR {
       nodeTsqr_ (nodeTsqr),
       distTsqr_ (distTsqr)
     {}
-
-    /// \brief Get the intranode part of TSQR.
-    ///
-    /// Sometimes we need this in order to do post-construction
-    /// initialization.
-    Teuchos::RCP<node_tsqr_type> getNodeTsqr () {
-      return nodeTsqr_;
-    }
 
     /// \brief Cache size hint in bytes used by the intranode part of TSQR.
     ///
@@ -346,7 +338,7 @@ namespace TSQR {
       }
       // Compute the local QR factorization, in place in A, with the R
       // factor written to R.
-      NodeOutput nodeResults =
+      auto nodeResults =
         nodeTsqr_->factor (numRows, numCols, A, LDA, R, LDR,
                            contiguousCacheBlocks);
       // Prepare the output matrix Q by filling with zeros.
@@ -383,7 +375,7 @@ namespace TSQR {
       // factor.
       nodeTsqr_->apply (ApplyType::NoTranspose,
                         numRows, numCols, A, LDA,
-                        nodeResults, numCols, Q, LDQ,
+                        *nodeResults, numCols, Q, LDQ,
                         contiguousCacheBlocks);
 
       // If necessary, and if the user asked, force the R factor to
@@ -451,12 +443,12 @@ namespace TSQR {
     {
       mat_view_type R_view (ncols, ncols, R, ldr);
       deep_copy (R_view, Scalar {});
-      NodeOutput nodeResults =
+      auto nodeResults =
         nodeTsqr_->factor (nrows_local, ncols, A_local, lda_local,
-                          R_view.data(), R_view.stride(1),
-                          contiguousCacheBlocks);
+                           R_view.data(), R_view.stride(1),
+                           contiguousCacheBlocks);
       DistOutput distResults = distTsqr_->factor (R_view);
-      return std::make_pair (nodeResults, distResults);
+      return {nodeResults, distResults};
     }
 
     /// \brief Apply Q factor to the global dense matrix C
@@ -496,7 +488,6 @@ namespace TSQR {
     ///
     /// \param contiguousCacheBlocks [in] Whether or not the cache
     ///   blocks of Q and C are stored contiguously.
-    ///
     void
     apply (const std::string& op,
            const LocalOrdinal nrows_local,
@@ -539,25 +530,24 @@ namespace TSQR {
         matrix_type C_top (C_top_view);
 
         // Compute in place on all processors' C_top blocks.
-        distTsqr_->apply (applyType, C_top.extent(1), ncols_Q, C_top.data(),
-                          C_top.stride(1), factor_output.second);
+        distTsqr_->apply (applyType, C_top.extent(1), ncols_Q,
+                          C_top.data(), C_top.stride(1),
+                          factor_output.second);
 
         // Copy the result from C_top back into the top ncols_C by
         // ncols_C block of C_local.
         deep_copy (C_top_view, C_top);
 
-        // Apply the local Q factor (in Q_local and
-        // factor_output.first) to C_local.
+        // Apply the local Q factor to C_local.
         nodeTsqr_->apply (applyType, nrows_local, ncols_Q,
-                          Q_local, ldq_local, factor_output.first,
+                          Q_local, ldq_local, *(factor_output.first),
                           ncols_C, C_local, ldc_local,
                           contiguousCacheBlocks);
       }
       else {
-        // Apply the (transpose of the) local Q factor (in Q_local
-        // and factor_output.first) to C_local.
+        // Apply the (transpose of the) local Q factor to C_local.
         nodeTsqr_->apply (applyType, nrows_local, ncols_Q,
-                          Q_local, ldq_local, factor_output.first,
+                          Q_local, ldq_local, *(factor_output.first),
                           ncols_C, C_local, ldc_local,
                           contiguousCacheBlocks);
 

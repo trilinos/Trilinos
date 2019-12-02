@@ -86,11 +86,12 @@ namespace Tpetra {
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   private:
-    //typedef TSQR::MatView<ordinal_type, scalar_type> matview_type;
-    typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_tsqr_factory_type;
-    typedef typename node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
-    typedef TSQR::DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
-    typedef TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
+    using node_tsqr_factory_type =
+      TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type>;
+    using node_tsqr_type =
+      typename node_tsqr_factory_type::node_tsqr_type;
+    using dist_tsqr_type = TSQR::DistTsqr<ordinal_type, scalar_type>;
+    using tsqr_type = TSQR::Tsqr<ordinal_type, scalar_type>;
 
   public:
     /// \brief Constructor (that accepts a parameter list).

@@ -40,8 +40,8 @@
 /// \file Tsqr_SequentialTsqr.hpp
 /// \brief Implementation of the sequential cache-blocked part of TSQR.
 
-#ifndef __TSQR_Tsqr_SequentialTsqr_hpp
-#define __TSQR_Tsqr_SequentialTsqr_hpp
+#ifndef TSQR_SEQUENTIALTSQR_HPP
+#define TSQR_SEQUENTIALTSQR_HPP
 
 #include "Tsqr_ApplyType.hpp"
 #include "Tsqr_Matrix.hpp"
@@ -64,6 +64,31 @@
 #include <vector>
 
 namespace TSQR {
+  namespace Impl {
+    template<class LocalOrdinal, class Scalar>
+    class SequentialTsqrFactorOutput :
+      public NodeFactorOutput<LocalOrdinal, Scalar>
+    {
+    private:
+      using my_data_type = std::vector<std::vector<Scalar>>;
+    public:
+      SequentialTsqrFactorOutput () = default;
+      ~SequentialTsqrFactorOutput () override = default;
+
+      void add_and_consume (std::vector<Scalar>&& tau) {
+        data_.emplace_back (tau);
+      }
+      typename my_data_type::const_iterator begin() const {
+        return data_.begin();
+      }
+      typename my_data_type::const_reverse_iterator rbegin() const {
+        return data_.rbegin();
+      }
+    private:
+      my_data_type data_;
+    };
+  } // namespace Impl
+
   /// \class SequentialTsqr
   /// \brief Sequential cache-blocked TSQR factorization.
   /// \author Mark Hoemmen
@@ -105,24 +130,29 @@ namespace TSQR {
   /// we built other intranode TSQR factorizations that do effectively
   /// exploit thread-level parallelism, such as \c TbbTsqr.
   ///
-  /// \note To implementers: SequentialTsqr cannot currently be a \c
+  /// \note To implementers: SequentialTsqr cannot currently be a
   ///   Teuchos::ParameterListAcceptorDefaultBase, because the latter
   ///   uses RCP, and RCPs (more specifically, their reference counts)
-  ///   are not currently thread safe.  \c TbbTsqr uses SequentialTsqr
-  ///   in parallel to implement each thread's cache-blocked TSQR.
-  ///   This can be fixed as soon as RCPs are made thread safe.
+  ///   are not currently thread safe.  TbbTsqr uses SequentialTsqr in
+  ///   parallel to implement each thread's cache-blocked TSQR.  This
+  ///   can be fixed as soon as RCPs are made thread safe.
   template<class LocalOrdinal, class Scalar>
   class SequentialTsqr :
-    public NodeTsqr<LocalOrdinal, Scalar, std::vector<std::vector<Scalar>>>
+    public NodeTsqr<LocalOrdinal, Scalar>
   {
+  private:
+    using base_type = NodeTsqr<LocalOrdinal, Scalar>;
+    using my_factor_output_type =
+      Impl::SequentialTsqrFactorOutput<LocalOrdinal, Scalar>;
+
   public:
-    using ordinal_type = LocalOrdinal;
-    using scalar_type = Scalar;
-    using mat_view_type = MatView<LocalOrdinal, Scalar>;
-    using const_mat_view_type = MatView<LocalOrdinal, const Scalar>;
-    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
-    using FactorOutput = typename NodeTsqr<LocalOrdinal, Scalar,
-      std::vector<std::vector<Scalar>>>::factor_output_type;
+    using ordinal_type = typename base_type::ordinal_type;
+    using scalar_type = typename base_type::scalar_type;
+    using mat_view_type = typename base_type::mat_view_type;
+    using const_mat_view_type =
+      typename base_type::const_mat_view_type;
+    using magnitude_type = typename base_type::magnitude_type;
+    using factor_output_type = typename base_type::factor_output_type;
 
   private:
     /// \brief Factor the first cache block of the matrix.
@@ -414,8 +444,8 @@ namespace TSQR {
     ///
     /// \return Part of the representation of the implicitly stored Q
     ///   factor.  The complete representation includes A (on output).
-    ///   The FactorOutput and A go together.
-    FactorOutput
+    ///   The return value and A go together.
+    Teuchos::RCP<factor_output_type>
     factor (const LocalOrdinal nrows,
             const LocalOrdinal ncols,
             Scalar A[],
@@ -425,7 +455,7 @@ namespace TSQR {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
       Combine<LocalOrdinal, Scalar> combine;
       std::vector<Scalar> work (ncols);
-      FactorOutput tau_arrays;
+      Teuchos::RCP<my_factor_output_type> tau_arrays (new my_factor_output_type);
 
       // We say "A_rest" because it points to the remaining part of
       // the matrix left to factor; at the beginning, the "remaining"
@@ -443,13 +473,13 @@ namespace TSQR {
       // Factor the topmost block of A.
       std::vector<Scalar> tau_first (ncols);
       mat_view_type R_view = factor_first_block (combine, A_cur, tau_first, work);
-      tau_arrays.push_back (tau_first);
+      tau_arrays->add_and_consume (tau_first);
 
       while (! A_rest.empty()) {
         A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
         std::vector<Scalar> tau (ncols);
         combine_factor (combine, R_view, A_cur, tau, work);
-        tau_arrays.push_back (tau);
+        tau_arrays->add_and_consume (tau);
       }
       return tau_arrays;
     }
@@ -491,7 +521,7 @@ namespace TSQR {
     /// in \c Tsqr.  The five-argument version is more useful when
     /// using SequentialTsqr inside of another intranode TSQR
     /// implementation, such as \c TbbTsqr.
-    FactorOutput
+    Teuchos::RCP<factor_output_type>
     factor (const LocalOrdinal nrows,
             const LocalOrdinal ncols,
             Scalar A[],
@@ -503,7 +533,7 @@ namespace TSQR {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
       Combine<LocalOrdinal, Scalar> combine;
       std::vector<Scalar> work (ncols);
-      FactorOutput tau_arrays;
+      Teuchos::RCP<my_factor_output_type> tau_arrays (new my_factor_output_type);
 
       // We say "A_rest" because it points to the remaining part of
       // the matrix left to factor; at the beginning, the "remaining"
@@ -521,13 +551,13 @@ namespace TSQR {
       // Factor the topmost block of A.
       std::vector<Scalar> tau_first (ncols);
       mat_view_type R_view = factor_first_block (combine, A_cur, tau_first, work);
-      tau_arrays.push_back (tau_first);
+      tau_arrays->add_and_consume (std::move (tau_first));
 
       while (! A_rest.empty()) {
         A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
         std::vector<Scalar> tau (ncols);
         combine_factor (combine, R_view, A_cur, tau, work);
-        tau_arrays.push_back (tau);
+        tau_arrays->add_and_consume (std::move (tau));
       }
 
       // Copy the R factor resulting from the factorization out of
@@ -592,26 +622,50 @@ namespace TSQR {
            const LocalOrdinal ncols_Q,
            const Scalar Q[],
            const LocalOrdinal ldq,
-           const FactorOutput& factor_output,
+           const factor_output_type& factor_output,
            const LocalOrdinal ncols_C,
            Scalar C[],
            const LocalOrdinal ldc,
            const bool contiguous_cache_blocks) const
     {
+      const char prefix[] = "TSQR::SequentialTsqr::apply: ";
+
       // Quick exit and error tests
       if (ncols_Q == 0 || ncols_C == 0 || nrows == 0) {
         return;
       }
       else if (ldc < nrows) {
         std::ostringstream os;
-        os << "SequentialTsqr::apply: ldc (= " << ldc << ") < nrows (= " << nrows << ")";
+        os << prefix << "ldc (= " << ldc << ") < nrows (= "
+           << nrows << ")";
         throw std::invalid_argument (os.str());
       }
       else if (ldq < nrows) {
         std::ostringstream os;
-        os << "SequentialTsqr::apply: ldq (= " << ldq << ") < nrows (= " << nrows << ")";
+        os << prefix << "ldq (= " << ldq << ") < nrows (= "
+           << nrows << ")";
         throw std::invalid_argument (os.str());
       }
+
+      const my_factor_output_type& tau_arrays = [&] () {
+        const my_factor_output_type* tau_arrays_ptr =
+          dynamic_cast<const my_factor_output_type*> (&factor_output);
+        if (tau_arrays_ptr == nullptr) {
+          using Teuchos::demangleName;
+          using Teuchos::TypeNameTraits;
+          using Teuchos::typeName;
+          std::ostringstream os;
+          os << prefix << "Input factor_output_type object was not "
+            "created by the same type of SequentialTsqr object as "
+            "this one.  This object has type " << typeName (*this) <<
+            " and its subclass of factor_output_type has type " <<
+            TypeNameTraits<my_factor_output_type>::name () << ", but "
+            "the input factor_output_type object has dynamic type "
+            << demangleName (typeid (factor_output).name ());
+          throw std::invalid_argument (os.str ());
+        }
+        return *tau_arrays_ptr;
+      } ();
 
       // If contiguous cache blocks are used, then we have to use the
       // same convention as we did for factor().  Otherwise, we are
@@ -621,7 +675,6 @@ namespace TSQR {
       Combine<LocalOrdinal, Scalar> combine;
 
       const bool transposed = apply_type.transposed();
-      const FactorOutput& tau_arrays = factor_output; // rename for encapsulation
       std::vector<Scalar> work (ncols_C);
 
       // We say "*_rest" because it points to the remaining part of
@@ -682,7 +735,7 @@ namespace TSQR {
                 const LocalOrdinal ncols_Q,
                 const Scalar Q[],
                 const LocalOrdinal ldq,
-                const FactorOutput& factor_output,
+                const factor_output_type& factor_output,
                 const LocalOrdinal ncols_C,
                 Scalar C[],
                 const LocalOrdinal ldc,
@@ -872,4 +925,4 @@ namespace TSQR {
 
 } // namespace TSQR
 
-#endif // __TSQR_Tsqr_SequentialTsqr_hpp
+#endif // TSQR_SEQUENTIALTSQR_HPP

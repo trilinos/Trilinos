@@ -100,7 +100,6 @@ namespace TSQR {
       using std::cout;
       using std::endl;
       using node_tsqr_type = TSQR::KokkosNodeTsqr<Ordinal, Scalar>;
-      typedef typename node_tsqr_type::FactorOutput factor_output_type;
       typedef Teuchos::ScalarTraits<Scalar> STS;
       typedef typename STS::magnitudeType magnitude_type;
       // typedef Teuchos::Time timer_type;
@@ -230,7 +229,7 @@ namespace TSQR {
       }
 
       // Factor the matrix and compute the explicit Q factor
-      factor_output_type factor_output =
+      auto factor_output =
         actor.factor (numRows, numCols, A_copy.data(), A_copy.stride(1),
                       R.data(), R.stride(1), contiguousCacheBlocks);
       if (debug) {
@@ -251,9 +250,9 @@ namespace TSQR {
           Q_top_square(j,j) = Scalar (1.0);
         }
       }
-      actor.explicit_Q (numRows, numCols, A_copy.data(), A_copy.stride(1),
-                        factor_output, numCols, Q.data(), Q.stride(1),
-                        contiguousCacheBlocks);
+      actor.explicit_Q (numRows, numCols, A_copy.data(),
+                        A_copy.stride(1), *factor_output, numCols,
+                        Q.data(), Q.stride(1), contiguousCacheBlocks);
       if (debug) {
         cerr << "-- Finished explicit_Q()" << endl;
       }
@@ -384,7 +383,6 @@ namespace TSQR {
       using std::cout;
       using std::endl;
       using node_tsqr_type = TSQR::KokkosNodeTsqr<Ordinal, Scalar>;
-      typedef typename node_tsqr_type::FactorOutput factor_output_type;
       typedef Teuchos::Time timer_type;
       typedef Matrix<Ordinal, Scalar> matrix_type;
 
@@ -417,8 +415,10 @@ namespace TSQR {
       // specified, rearrange the data in A_copy so that the data in
       // each cache block is contiguously stored.
       if (contiguousCacheBlocks) {
-        actor.cache_block (numRows, numCols, A_copy.data(), A.data(), A.stride(1));
-      } else {
+        actor.cache_block (numRows, numCols, A_copy.data(),
+                           A.data(), A.stride(1));
+      }
+      else {
         deep_copy (A_copy, A);
       }
 
@@ -428,15 +428,19 @@ namespace TSQR {
       for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
         // Factor the matrix in-place in A_copy, and extract the
         // resulting R factor into R.
-        factor_output_type factor_output =
-          actor.factor (numRows, numCols, A_copy.data(), A_copy.stride(1),
-                        R.data(), R.stride(1), contiguousCacheBlocks);
+        auto factor_output =
+          actor.factor (numRows, numCols,
+                        A_copy.data(), A_copy.stride(1),
+                        R.data(), R.stride(1),
+                        contiguousCacheBlocks);
         // Compute the explicit Q factor (which was stored
         // implicitly in A_copy and factor_output) and store in Q.
         // We don't need to un-cache-block the output, because we
         // aren't verifying it here.
-        actor.explicit_Q (numRows, numCols, A_copy.data(), A_copy.stride(1),
-                          factor_output, numCols, Q.data(), Q.stride(1),
+        actor.explicit_Q (numRows, numCols,
+                          A_copy.data(), A_copy.stride(1),
+                          *factor_output,
+                          numCols, Q.data(), Q.stride(1),
                           contiguousCacheBlocks);
       }
 
@@ -448,15 +452,19 @@ namespace TSQR {
       for (int trialNum = 0; trialNum < numTrials; ++trialNum) {
         // Factor the matrix in-place in A_copy, and extract the
         // resulting R factor into R.
-        factor_output_type factor_output =
-          actor.factor (numRows, numCols, A_copy.data(), A_copy.stride(1),
-                        R.data(), R.stride(1), contiguousCacheBlocks);
+        auto factor_output =
+          actor.factor (numRows, numCols,
+                        A_copy.data(), A_copy.stride(1),
+                        R.data(), R.stride(1),
+                        contiguousCacheBlocks);
         // Compute the explicit Q factor (which was stored
         // implicitly in A_copy and factor_output) and store in Q.
         // We don't need to un-cache-block the output, because we
         // aren't verifying it here.
-        actor.explicit_Q (numRows, numCols, A_copy.data(), A_copy.stride(1),
-                          factor_output, numCols, Q.data(), Q.stride(1),
+        actor.explicit_Q (numRows, numCols,
+                          A_copy.data(), A_copy.stride(1),
+                          *factor_output,
+                          numCols, Q.data(), Q.stride(1),
                           contiguousCacheBlocks);
       }
       const double timing = timer.stop();

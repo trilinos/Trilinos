@@ -279,12 +279,12 @@ namespace TSQR {
       if (which == "MpiTbbTSQR") {
 #ifdef HAVE_KOKKOSTSQR_TBB
         using Teuchos::RCP;
-        typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
-        typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
-        typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
+        typedef TSQR::TBB::TbbTsqr<Ordinal, Scalar> node_tsqr_type;
+        typedef TSQR::DistTsqr<Ordinal, Scalar> dist_tsqr_type;
+        using tsqr_type = Tsqr<Ordinal, Scalar>;
 
-        RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (num_cores, cache_size_hint));
-        RCP< dist_tsqr_type > dist_tsqr (new dist_tsqr_type (scalarComm));
+        RCP<node_tsqr_type> node_tsqr (new node_tsqr_type (num_cores, cache_size_hint));
+        RCP<dist_tsqr_type> dist_tsqr (new dist_tsqr_type (scalarComm));
         tsqr_type tsqr (node_tsqr, dist_tsqr);
 
         // Compute the factorization and explicit Q factor.
@@ -301,7 +301,7 @@ namespace TSQR {
         using Teuchos::RCP;
         typedef SequentialTsqr< Ordinal, Scalar > node_tsqr_type;
         typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
-        typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
+        using tsqr_type = Tsqr<Ordinal, Scalar>;
 
         RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (cache_size_hint));
         RCP< dist_tsqr_type > dist_tsqr (new dist_tsqr_type (scalarComm));
@@ -667,12 +667,12 @@ namespace TSQR {
       if (which == "MpiTbbTSQR") {
 #ifdef HAVE_KOKKOSTSQR_TBB
         using Teuchos::RCP;
-        typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
-        typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
-        typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
+        typedef TSQR::TBB::TbbTsqr<Ordinal, Scalar> node_tsqr_type;
+        typedef TSQR::DistTsqr<Ordinal, Scalar> dist_tsqr_type;
+        using tsqr_type = Tsqr<Ordinal, Scalar>;
 
-        RCP< node_tsqr_type > nodeTsqr (new node_tsqr_type (num_cores, cache_size_hint));
-        RCP< dist_tsqr_type > distTsqr (new dist_tsqr_type (scalarComm));
+        RCP<node_tsqr_type> nodeTsqr (new node_tsqr_type (num_cores, cache_size_hint));
+        RCP<dist_tsqr_type> distTsqr (new dist_tsqr_type (scalarComm));
         tsqr_type tsqr (nodeTsqr, distTsqr);
 
         // Run the benchmark.
@@ -692,7 +692,7 @@ namespace TSQR {
         using Teuchos::RCP;
         using node_tsqr_type = SequentialTsqr<Ordinal, Scalar>;
         using dist_tsqr_type = TSQR::DistTsqr<Ordinal, Scalar>;
-        using tsqr_type = typedef Tsqr<Ordinal, Scalar, node_tsqr_type, dist_tsqr_type>;
+        using tsqr_type = Tsqr<Ordinal, Scalar>;
 
         // Set up TSQR.
         RCP<node_tsqr_type> nodeTsqr (new node_tsqr_type (cache_size_hint));

@@ -93,7 +93,7 @@ namespace Tpetra {
       TSQR::NodeTsqrFactory<typename MV::node_type, scalar_type, ordinal_type>;
     using node_tsqr_type = typename node_tsqr_factory_type::node_tsqr_type;
     using dist_tsqr_type = TSQR::DistTsqr<ordinal_type, scalar_type>;
-    using tsqr_type = TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type>;
+    using tsqr_type = TSQR::Tsqr<ordinal_type, scalar_type>;
 
   public:
     /// \brief Constructor (that accepts a parameter list).

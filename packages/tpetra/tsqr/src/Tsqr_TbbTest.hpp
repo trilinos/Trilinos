@@ -86,10 +86,8 @@ namespace TSQR {
                    const bool b_debug = false)
     {
       typedef Teuchos::Time timer_type;
-      typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, timer_type > node_tsqr_type;
+      typedef TSQR::TBB::TbbTsqr<Ordinal, Scalar, timer_type> node_tsqr_type;
       typedef typename node_tsqr_type::FactorOutput factor_output_type;
-      typedef Teuchos::ScalarTraits<Scalar> STS;
-      typedef typename STS::magnitudeType magnitude_type;
       using std::cerr;
       using std::cout;
       using std::endl;
@@ -198,7 +196,7 @@ namespace TSQR {
       }
 
       // Validate the factorization
-      std::vector< magnitude_type > results =
+      auto results =
         local_verify (nrows, ncols, A.data(), lda, Q.data(), ldq, R.data(), ldr);
       if (b_debug) {
         cerr << "-- Finished local_verify" << endl;
@@ -278,8 +276,8 @@ namespace TSQR {
       typedef Teuchos::Time timer_type;
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
-      typedef Matrix< ordinal_type, scalar_type > matrix_type;
-      typedef TbbTsqr< ordinal_type, scalar_type, timer_type > node_tsqr_type;
+      typedef Matrix<ordinal_type, scalar_type> matrix_type;
+      typedef TbbTsqr<ordinal_type, scalar_type, timer_type> node_tsqr_type;
 
       // Pseudorandom normal(0,1) generator.  Default seed is OK,
       // because this is a benchmark, not an accuracy test.

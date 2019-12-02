@@ -104,7 +104,7 @@ namespace TSQR {
       typedef int ordinal_type;
       typedef SequentialTsqr<ordinal_type, scalar_type> node_tsqr_type;
       typedef DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
-      typedef Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
+      using tsqr_type = Tsqr<ordinal_type, scalar_type>;
 
     private:
 

@@ -1008,8 +1008,11 @@ namespace TSQR {
   /// parts of the implicit Q representation in order to do their
   /// work.
   template<class LocalOrdinal, class Scalar>
-  struct KokkosNodeTsqrFactorOutput {
-    typedef MatView<LocalOrdinal, Scalar> mat_view_type;
+  class KokkosNodeTsqrFactorOutput :
+    public Impl::NodeFactorOutput<LocalOrdinal, Scalar>
+  {
+  public:
+    using mat_view_type = MatView<LocalOrdinal, Scalar>;
 
     /// \brief Constructor
     ///
@@ -1025,16 +1028,19 @@ namespace TSQR {
     {
       // Protect the cast to size_t from a negative number of
       // partitions.
-      TEUCHOS_TEST_FOR_EXCEPTION(theNumPartitions < 1, std::invalid_argument,
-                         "TSQR::KokkosNodeTsqrFactorOutput: Invalid number of "
-                         "partitions " << theNumPartitions << "; number of "
-                         "partitions must be a positive integer.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (theNumPartitions < 1, std::invalid_argument,
+         "TSQR::KokkosNodeTsqrFactorOutput: Invalid number of "
+         "partitions " << theNumPartitions << "; number of "
+         "partitions must be a positive integer.");
       // If there's only one partition, we don't even need a second
       // pass (it's just sequential TSQR), and we don't need a TAU
       // array for the top partition.
-      secondPassTauArrays.resize (size_t (theNumPartitions-1));
+      secondPassTauArrays.resize (size_t (theNumPartitions - 1));
       topBlocks.resize (size_t (theNumPartitions));
     }
+
+    ~KokkosNodeTsqrFactorOutput () override = default;
 
     //! Total number of cache blocks in the matrix (over all partitions).
     int numCacheBlocks() const { return firstPassTauArrays.size(); }
@@ -1091,19 +1097,22 @@ namespace TSQR {
   /// </ul>
   template<class LocalOrdinal, class Scalar>
   class KokkosNodeTsqr :
-    public NodeTsqr<LocalOrdinal, Scalar, KokkosNodeTsqrFactorOutput<LocalOrdinal, Scalar>>,
+    public NodeTsqr<LocalOrdinal, Scalar>,
     public Teuchos::ParameterListAcceptorDefaultBase
   {
+  private:
+    using base_type = NodeTsqr<LocalOrdinal, Scalar>;
+    using my_factor_output_type =
+      KokkosNodeTsqrFactorOutput<LocalOrdinal, Scalar>;
+
   public:
-    typedef LocalOrdinal local_ordinal_type;
-    typedef Scalar scalar_type;
-
-    using const_mat_view_type = MatView<LocalOrdinal, const Scalar>;
-    using mat_view_type = MatView<LocalOrdinal, Scalar>;
-
-    /// \typedef FactorOutput
-    /// \brief Part of the implicit Q representation returned by factor().
-    typedef typename NodeTsqr<LocalOrdinal, Scalar, KokkosNodeTsqrFactorOutput<LocalOrdinal, Scalar> >::factor_output_type FactorOutput;
+    using local_ordinal_type = typename base_type::ordinal_type;
+    using scalar_type = typename base_type::scalar_type;
+    using mat_view_type = typename base_type::mat_view_type;
+    using const_mat_view_type =
+      typename base_type::const_mat_view_type;
+    using magnitude_type = typename base_type::magnitude_type;
+    using factor_output_type = typename base_type::factor_output_type;
 
     /// \brief Constructor (with user-specified parameters).
     ///
@@ -1229,7 +1238,7 @@ namespace TSQR {
       return defaultParams_;
     }
 
-    FactorOutput
+    Teuchos::RCP<factor_output_type>
     factor (const LocalOrdinal numRows,
             const LocalOrdinal numCols,
             Scalar A[],
@@ -1240,7 +1249,10 @@ namespace TSQR {
     {
       mat_view_type A_view (numRows, numCols, A, lda);
       mat_view_type R_view (numCols, numCols, R, ldr);
-      return factorImpl (A_view, R_view, contiguousCacheBlocks);
+
+      Teuchos::RCP<my_factor_output_type> result =
+        factorImpl (A_view, R_view, contiguousCacheBlocks);
+      return Teuchos::rcp_implicit_cast<factor_output_type> (result);
     }
 
     void
@@ -1249,7 +1261,7 @@ namespace TSQR {
            const LocalOrdinal ncols_Q,
            const Scalar Q[],
            const LocalOrdinal ldq,
-           const FactorOutput& factorOutput,
+           const factor_output_type& factorOutputBase,
            const LocalOrdinal ncols_C,
            Scalar C[],
            const LocalOrdinal ldc,
@@ -1257,6 +1269,8 @@ namespace TSQR {
     {
       const_mat_view_type Q_view (nrows, ncols_Q, Q, ldq);
       mat_view_type C_view (nrows, ncols_C, C, ldc);
+      const my_factor_output_type& factorOutput =
+        dynamic_cast<const my_factor_output_type&> (factorOutputBase);
       applyImpl (applyType, Q_view, factorOutput, C_view,
                  false, contiguousCacheBlocks);
     }
@@ -1266,7 +1280,7 @@ namespace TSQR {
                 const LocalOrdinal ncols_Q,
                 const Scalar Q[],
                 const LocalOrdinal ldq,
-                const FactorOutput& factorOutput,
+                const factor_output_type& factorOutputBase,
                 const LocalOrdinal ncols_C,
                 Scalar C[],
                 const LocalOrdinal ldc,
@@ -1274,6 +1288,8 @@ namespace TSQR {
     {
       const_mat_view_type Q_view (nrows, ncols_Q, Q, ldq);
       mat_view_type C_view (nrows, ncols_C, C, ldc);
+      const my_factor_output_type& factorOutput =
+        dynamic_cast<const my_factor_output_type&> (factorOutputBase);
       applyImpl (ApplyType::NoTranspose, Q_view, factorOutput,
                  C_view, true, contiguousCacheBlocks);
     }
@@ -1399,7 +1415,7 @@ namespace TSQR {
       return Kokkos::DefaultHostExecutionSpace::concurrency ();
     }
 
-    FactorOutput
+    Teuchos::RCP<my_factor_output_type>
     factorImpl (mat_view_type A,
                 mat_view_type R,
                 const bool contiguousCacheBlocks) const
@@ -1415,7 +1431,7 @@ namespace TSQR {
         TEUCHOS_TEST_FOR_EXCEPTION
           (! R.empty (), std::logic_error, prefix << "A is empty, "
            "but R is not." << suffix);
-        return FactorOutput (0, 0);
+        return Teuchos::rcp (new my_factor_output_type (0, 0));
       }
       const LO numRowsPerCacheBlock =
         strategy_.cache_block_num_rows (A.extent(1));
@@ -1424,10 +1440,12 @@ namespace TSQR {
       //
       // Compute the first factorization pass (over partitions).
       //
-      FactorOutput result (numCacheBlocks, numPartitions_);
+      using Teuchos::RCP;
+      RCP<my_factor_output_type> result
+        (new my_factor_output_type (numCacheBlocks, numPartitions_));
       using first_pass_type = details::FactorFirstPass<LO, Scalar>;
-      first_pass_type firstPass (A, result.firstPassTauArrays,
-                                 result.topBlocks, strategy_,
+      first_pass_type firstPass (A, result->firstPassTauArrays,
+                                 result->topBlocks, strategy_,
                                  numPartitions_, contiguousCacheBlocks);
       Kokkos::parallel_for ("KokkosNodeTsqr::factorImpl::firstPass",
                             range, firstPass);
@@ -1439,14 +1457,14 @@ namespace TSQR {
       // oversubscription, you should parallelize this step with
       // multiple passes.  Note that we can't use parallel_reduce,
       // because the tree topology matters.
-      factorSecondPass (result.topBlocks, result.secondPassTauArrays,
+      factorSecondPass (result->topBlocks, result->secondPassTauArrays,
                         numPartitions_);
 
       // The "topmost top block" contains the resulting R factor.
-      const mat_view_type& R_top = result.topBlocks[0];
+      const mat_view_type& R_top = result->topBlocks[0];
       TEUCHOS_TEST_FOR_EXCEPTION
         (R_top.empty (), std::logic_error, prefix << "After "
-         "factorSecondPass: result.topBlocks[0] is an empty view."
+         "factorSecondPass: result->topBlocks[0] is an empty view."
          << suffix);
       mat_view_type R_top_square (R_top.extent(1), R_top.extent(1),
                                   R_top.data(), R_top.stride(1));
@@ -1460,7 +1478,7 @@ namespace TSQR {
     void
     applyImpl (const ApplyType& applyType,
                const const_mat_view_type& Q,
-               const FactorOutput& factorOutput,
+               const my_factor_output_type& factorOutput,
                const mat_view_type& C,
                const bool explicitQ,
                const bool contiguousCacheBlocks) const
@@ -1480,6 +1498,7 @@ namespace TSQR {
          << factorOutput.numPartitions() << ".  This likely means "
          "that the given factorOutput object comes from a different "
          "instance of KokkosNodeTsqr." << suffix);
+
       const int numParts = numPartitions_;
       first_pass_type firstPass (applyType, Q,
                                  factorOutput.firstPassTauArrays,
@@ -1609,8 +1628,8 @@ namespace TSQR {
 
     void
     applySecondPass (const ApplyType& applyType,
-                     const FactorOutput& factorOutput,
-                     std::vector<mat_view_type >& topBlocksOfC,
+                     const my_factor_output_type& factorOutput,
+                     std::vector<mat_view_type>& topBlocksOfC,
                      const CacheBlockingStrategy<LocalOrdinal, Scalar>& strategy,
                      const bool explicitQ) const
     {

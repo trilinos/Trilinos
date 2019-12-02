@@ -102,7 +102,7 @@ namespace TSQR {
       typedef DistTsqrType dist_tsqr_type;
 
       typedef MessengerBase<S> scalar_messenger_type;
-      typedef Tsqr<LO, S, node_tsqr_type> tsqr_type;
+      typedef Tsqr<LO, S> tsqr_type;
 
       /// \brief Instantiate and return the TSQR implementation.
       ///

@@ -53,6 +53,14 @@
 #include <vector>
 
 namespace TSQR {
+  namespace Impl {
+    template<class Ordinal, class Scalar>
+    class NodeFactorOutput {
+    public:
+      virtual ~NodeFactorOutput() = default;
+    };
+  } // namespace Impl
+
   /// \class NodeTsqr
   /// \brief Common interface and functionality for intranode TSQR.
   ///
@@ -63,37 +71,16 @@ namespace TSQR {
   /// \tparam Ordinal The (local) Ordinal type; the type of indices
   ///   into a matrix on a node
   /// \tparam Scalar Tthe type of elements stored in the matrix
-  /// \tparam FactorOutputType The type returned by factor().
-  ///
-  /// We template on FactorOutputType for compile-time polymorphism.
-  /// This lets subclasses define the \c factor() method, without
-  /// constraining them to inherit their particular FactorOutputType
-  /// from a common abstract base class.  FactorOutputType is meant to
-  /// be either just a simple composition of std::pair and
-  /// std::vector, or a simple struct.  Its contents are specific to
-  /// each intranode TSQR implementation.  and are not intended to be
-  /// polymorphic, so it would not make sense for all the different
-  /// FactorOutputType types to inherit from a common base class.
-  ///
-  /// Templating on FactorOutputType means that we can't use run-time
-  /// polymorphism to swap between NodeTsqr subclasses, since the
-  /// latter are really subclasses of different NodeTsqr
-  /// instantiations (i.e., different FactorOutputType types).
-  /// However, inheriting from different specializations of NodeTsqr
-  /// does enforce correct compile-time polymorphism in a syntactic
-  /// way.  It also avoids repeated code for common functionality.
-  /// Full run-time polymorphism of different NodeTsqr subclasses
-  /// would not be useful.  This is because ultimately each subclass
-  /// is bound to a Kokkos Node type, and those only use compile-time
-  /// polymorphism.
-  template<class Ordinal, class Scalar, class FactorOutputType>
+  template<class Ordinal, class Scalar>
   class NodeTsqr : public Teuchos::Describable {
   public:
-    typedef Ordinal ordinal_type;
-    typedef Scalar scalar_type;
-    typedef FactorOutputType factor_output_type;
-    typedef MatView<Ordinal, Scalar> mat_view_type;
-    typedef MatView<Ordinal, const Scalar> const_mat_view_type;
+    using ordinal_type = Ordinal;
+    using scalar_type = Scalar;
+    using magnitude_type =
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using factor_output_type = Impl::NodeFactorOutput<Ordinal, Scalar>;
+    using mat_view_type = MatView<Ordinal, Scalar>;
+    using const_mat_view_type = MatView<Ordinal, const Scalar>;
 
     //! Constructor
     NodeTsqr() = default;
@@ -162,7 +149,7 @@ namespace TSQR {
     ///
     /// \return Part of the implicit representation of the Q factor.
     ///   The other part is the A matrix on output.
-    virtual factor_output_type
+    virtual Teuchos::RCP<factor_output_type>
     factor (const Ordinal nrows,
             const Ordinal ncols,
             Scalar A[],
@@ -203,7 +190,7 @@ namespace TSQR {
            const Ordinal ncols_Q,
            const Scalar Q[],
            const Ordinal ldq,
-           const FactorOutputType& factorOutput,
+           const factor_output_type& factorOutput,
            const Ordinal ncols_C,
            Scalar C[],
            const Ordinal ldc,
@@ -454,9 +441,9 @@ namespace TSQR {
   };
 
 
-  template<class Ordinal, class Scalar, class FactorOutputType>
+  template<class Ordinal, class Scalar>
   Ordinal
-  NodeTsqr<Ordinal, Scalar, FactorOutputType>::
+  NodeTsqr<Ordinal, Scalar>::
   reveal_R_rank (const Ordinal ncols,
                  Scalar R[],
                  const Ordinal ldr,
@@ -467,7 +454,6 @@ namespace TSQR {
     using Teuchos::as;
     using Teuchos::TypeNameTraits;
     typedef Teuchos::ScalarTraits<Scalar> STS;
-    typedef typename STS::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
     TEUCHOS_TEST_FOR_EXCEPTION(tol < 0, std::invalid_argument,
@@ -612,9 +598,9 @@ namespace TSQR {
     return rank;
   }
 
-  template<class Ordinal, class Scalar, class FactorOutputType>
+  template<class Ordinal, class Scalar>
   Ordinal
-  NodeTsqr<Ordinal, Scalar, FactorOutputType>::
+  NodeTsqr<Ordinal, Scalar>::
   reveal_rank (const Ordinal nrows,
                const Ordinal ncols,
                Scalar Q[],

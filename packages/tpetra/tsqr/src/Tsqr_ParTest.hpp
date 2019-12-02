@@ -198,67 +198,66 @@ namespace TSQR {
         // Generate test problem.
         Matrix< Ordinal, Scalar > A_local, Q_local, R;
         testProblem (A_local, Q_local, R, numCols);
-        if (debug_)
-          {
-            scalarComm_->barrier();
-            if (myRank == 0)
-              err_ << "-- Generated test problem." << endl;
-            scalarComm_->barrier();
+        if (debug_) {
+          scalarComm_->barrier();
+          if (myRank == 0) {
+            err_ << "-- Generated test problem." << endl;
           }
+          scalarComm_->barrier();
+        }
 
         // Set up TSQR implementation.
         DistTsqr<Ordinal, Scalar> par;
         par.init (scalarComm_);
-        if (debug_)
-          {
-            scalarComm_->barrier();
-            if (myRank == 0)
-              err_ << "-- DistTsqr object initialized" << endl << endl;
+        if (debug_) {
+          scalarComm_->barrier();
+          if (myRank == 0) {
+            err_ << "-- DistTsqr object initialized" << endl << endl;
           }
+        }
 
         // Whether we've printed field names (i.e., column headers)
         // yet.  Only matters for non-humanReadable output.
         bool printedFieldNames = false;
 
         // Test DistTsqr::factor() and DistTsqr::explicit_Q().
-        if (testFactorImplicit_)
-          {
-            // Factor the matrix A (copied into R, which will be
-            // overwritten on output)
-            typedef typename DistTsqr<Ordinal, Scalar>::FactorOutput
-              factor_output_type;
-            factor_output_type factorOutput = par.factor (R.view());
-            if (debug_)
-              {
-                scalarComm_->barrier();
-                if (myRank == 0)
-                  err_ << "-- Finished DistTsqr::factor" << endl;
-              }
-            // Compute the explicit Q factor
-            par.explicit_Q (numCols, Q_local.data(), Q_local.stride(1), factorOutput);
-            if (debug_) {
-              scalarComm_->barrier();
-              if (myRank == 0) {
-                err_ << "-- Finished DistTsqr::explicit_Q" << endl;
-              }
+        if (testFactorImplicit_) {
+          // Factor the matrix A (copied into R, which will be
+          // overwritten on output)
+          typedef typename DistTsqr<Ordinal, Scalar>::FactorOutput
+            factor_output_type;
+          factor_output_type factorOutput = par.factor (R.view());
+          if (debug_) {
+            scalarComm_->barrier();
+            if (myRank == 0) {
+              err_ << "-- Finished DistTsqr::factor" << endl;
             }
-            // Verify the factorization
-            result_type result =
-              global_verify (numCols, numCols, A_local.data(), A_local.stride(1),
-                             Q_local.data(), Q_local.stride(1), R.data(), R.stride(1),
-                             scalarComm_.get());
-            if (debug_) {
-              scalarComm_->barrier();
-              if (myRank == 0) {
-                err_ << "-- Finished global_verify" << endl;
-              }
-            }
-            reportResults ("DistTsqr", numCols, result,
-                           additionalFieldNames, additionalData,
-                           printFieldNames && (! printedFieldNames));
-            if (printFieldNames && (! printedFieldNames))
-              printedFieldNames = true;
           }
+          // Compute the explicit Q factor
+          par.explicit_Q (numCols, Q_local.data(), Q_local.stride(1), factorOutput);
+          if (debug_) {
+            scalarComm_->barrier();
+            if (myRank == 0) {
+              err_ << "-- Finished DistTsqr::explicit_Q" << endl;
+            }
+          }
+          // Verify the factorization
+          result_type result =
+            global_verify (numCols, numCols, A_local.data(), A_local.stride(1),
+                           Q_local.data(), Q_local.stride(1), R.data(), R.stride(1),
+                           scalarComm_.get());
+          if (debug_) {
+            scalarComm_->barrier();
+            if (myRank == 0) {
+              err_ << "-- Finished global_verify" << endl;
+            }
+          }
+          reportResults ("DistTsqr", numCols, result,
+                         additionalFieldNames, additionalData,
+                         printFieldNames && (! printedFieldNames));
+          if (printFieldNames && (! printedFieldNames))
+            printedFieldNames = true;
+        }
 
         // Test DistTsqr::factorExplicit()
         if (testFactorExplicit_) {

@@ -234,9 +234,7 @@ namespace TSQR {
       }
 
       // Factor the matrix and compute the explicit Q factor
-      typedef typename SequentialTsqr<Ordinal, Scalar>::FactorOutput
-        factor_output_type;
-      factor_output_type factorOutput =
+      auto factorOutput =
         actor.factor (nrows, ncols, A_copy.data(), A_copy.stride(1),
                       R.data(), R.stride(1), contiguous_cache_blocks);
       if (b_debug) {
@@ -252,7 +250,7 @@ namespace TSQR {
         fileOut.close ();
       }
 
-      actor.explicit_Q (nrows, ncols, A_copy.data(), lda, factorOutput,
+      actor.explicit_Q (nrows, ncols, A_copy.data(), lda, *factorOutput,
                         ncols, Q.data(), Q.stride(1), contiguous_cache_blocks);
       if (b_debug) {
         cerr << "-- Finished SequentialTsqr::explicit_Q" << endl;
@@ -939,8 +937,9 @@ namespace TSQR {
           // this doesn't happen in place: the implicit Q factor is
           // stored in A_copy, and the explicit Q factor is written to
           // Q.
-          actor.explicit_Q (numRows, numCols, A_copy.data(), lda, factorOutput,
-                            numCols, Q.data(), ldq, contiguousCacheBlocks);
+          actor.explicit_Q (numRows, numCols, A_copy.data(), lda,
+                            *factorOutput, numCols, Q.data(), ldq,
+                            contiguousCacheBlocks);
         }
         const double seqTsqrTiming = timer.stop();
         reportResults (numTrials, numRows, numCols, actor.cache_size_hint(),
