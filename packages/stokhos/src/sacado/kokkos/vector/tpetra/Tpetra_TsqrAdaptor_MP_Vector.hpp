@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -48,18 +46,18 @@
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
-#  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
-#  include <Tsqr.hpp> // full (internode + intranode) TSQR
-#  include <Tsqr_DistTsqr.hpp> // internode TSQR
+#  include "Tsqr_NodeTsqrFactory.hpp" // create intranode TSQR object
+#  include "Tsqr.hpp" // full (internode + intranode) TSQR
+#  include "Tsqr_DistTsqr.hpp" // internode TSQR
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
-#  include <Tsqr_TeuchosMessenger.hpp>
-#  include <Tpetra_MultiVector.hpp>
-#  include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
+#  include "Tsqr_TeuchosMessenger.hpp"
+#  include "Tpetra_MultiVector.hpp"
+#  include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #  include <stdexcept>
 
 // Base TsqrAdator template we will specialize
-#  include <Tpetra_TsqrAdaptor.hpp>
+#  include "Tpetra_TsqrAdaptor.hpp"
 
 namespace Tpetra {
 
@@ -81,13 +79,13 @@ namespace Tpetra {
     typedef typename mp_scalar_type::scalar_type scalar_type;
     typedef typename mp_scalar_type::ordinal_type mp_ordinal_type;
     typedef typename MV::local_ordinal_type ordinal_type;
-    typedef typename MV::node_type node_type;
     typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   private:
     using node_tsqr_factory_type =
-      TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type>;
+      TSQR::NodeTsqrFactory<scalar_type, ordinal_type,
+                            typename MV::device_type>;
     using node_tsqr_type =
       typename node_tsqr_factory_type::node_tsqr_type;
     using dist_tsqr_type = TSQR::DistTsqr<ordinal_type, scalar_type>;

@@ -40,7 +40,6 @@
 #ifndef EPETRA_TSQRADAPTOR_HPP
 #define EPETRA_TSQRADAPTOR_HPP
 
-///
 /// \file Epetra_TsqrAdaptor.hpp
 /// \brief Epetra_MultiVector to TSQR adaptor
 ///
@@ -52,24 +51,21 @@
 /// Trilinos to get the correct list of libraries against which to
 /// link, but we make this easy temporary fix now so they have time to
 /// fix their build systems later.
-///
 
-#include <Tpetra_ConfigDefs.hpp>
+#include "Tpetra_ConfigDefs.hpp"
 
 #if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
-#include <Kokkos_DefaultNode.hpp> // Include minimal Kokkos Node types
-#include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
-#include <Tsqr.hpp> // full (internode + intranode) TSQR
-#include <Tsqr_DistTsqr.hpp> // internode TSQR
-#include <Epetra_Comm.h>
+#include "Tsqr_NodeTsqrFactory.hpp" // create intranode TSQR object
+#include "Tsqr.hpp" // full (internode + intranode) TSQR
+#include "Tsqr_DistTsqr.hpp" // internode TSQR
+#include "Epetra_Comm.h"
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
-#include <Epetra_TsqrMessenger.hpp>
-#include <Epetra_MultiVector.h>
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
+#include "Epetra_TsqrMessenger.hpp"
+#include "Epetra_MultiVector.h"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include <stdexcept>
-
 
 namespace Epetra {
 
@@ -117,11 +113,14 @@ namespace Epetra {
     /// both are int.
     typedef int ordinal_type;
 
-    /// \typedef node_type
+    /// \typedef device_type
     ///
-    /// TSQR depends on a Kokkos Node type.  We just use the default
-    /// Node type here.
-    typedef Tpetra::Details::DefaultTypes::node_type node_type;
+    /// TSQR depends on a Kokkos::Device type.  For Epetra, use a
+    /// host-only type.  Typical types are Kokkos::Serial or
+    /// Kokkos::OpenMP, depending on build settings.
+    using device_type =
+      Kokkos::Device<Kokkos::DefaultHostExecutionSpace,
+                     Kokkos::HostSpace>;
 
     /// \typedef dense_matrix_type
     ///
@@ -144,7 +143,7 @@ namespace Epetra {
   private:
     using matview_type = TSQR::MatView<ordinal_type, scalar_type>;
     using node_tsqr_factory_type =
-      TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type>;
+      TSQR::NodeTsqrFactory<scalar_type, ordinal_type, device_type>;
     // Don't need a "typename" here, because there are no template
     // parameters involved in the type definition.
     using node_tsqr_type = node_tsqr_factory_type::node_tsqr_type;

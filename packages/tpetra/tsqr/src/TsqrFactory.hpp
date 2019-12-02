@@ -45,10 +45,10 @@
 ///
 /// \warning TSQR users should _not_ include this file directly.
 
-#include "Tsqr_NodeTsqrFactory.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Tsqr_MessengerBase.hpp"
 #include "Tsqr.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace TSQR {
   namespace Trilinos {

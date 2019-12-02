@@ -85,13 +85,17 @@ namespace Tpetra {
   public:
     using scalar_type = typename MV::scalar_type;
     using ordinal_type = typename MV::local_ordinal_type;
-    using dense_matrix_type = Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>;
-    using magnitude_type = typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
+    using dense_matrix_type =
+      Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>;
+    using magnitude_type =
+      typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
 
   private:
     using node_tsqr_factory_type =
-      TSQR::NodeTsqrFactory<typename MV::node_type, scalar_type, ordinal_type>;
-    using node_tsqr_type = typename node_tsqr_factory_type::node_tsqr_type;
+      TSQR::NodeTsqrFactory<scalar_type, ordinal_type,
+                            typename MV::device_type>;
+    using node_tsqr_type =
+      typename node_tsqr_factory_type::node_tsqr_type;
     using dist_tsqr_type = TSQR::DistTsqr<ordinal_type, scalar_type>;
     using tsqr_type = TSQR::Tsqr<ordinal_type, scalar_type>;
 

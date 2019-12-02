@@ -62,29 +62,31 @@
 namespace TSQR {
 
   /// \class NodeTsqrFactory
-  /// \brief Factory for creating an instance of the right \c NodeTsqr subclass.
+  /// \brief Factory for creating an instance of the right NodeTsqr
+  ///   subclass.
   /// \author Mark Hoemmen
   ///
-  /// \tparam Node The Kokkos Node type
-  /// \tparam Scalar The type of entries in the matrices to factor
-  /// \tparam LocalOrdinal The type of local indices in the matrices to factor
+  /// \tparam Scalar The type of entries in the matrices to factor.
+  /// \tparam LocalOrdinal The type of local indices in the matrices
+  ///   to factor.
+  /// \tparam Device Kokkos::Device specialization used by the
+  ///   matrices to factor.
   ///
-  /// This class maps from a particular Kokkos \c Node type, to the
-  /// corresponding \c NodeTsqr subclass.  It lets you construct a
-  /// default ParameterList for that \c NodeTsqr subclass, as well as
-  /// an instance of the \c NodeTsqr subclass.  It also provides
-  /// typedefs for template metaprogramming.
+  /// This class maps from (Scalar, LocalOrdinal, Device), to the
+  /// corresponding NodeTsqr subclass.  It lets you construct a
+  /// default ParameterList for that NodeTsqr subclass, as well as an
+  /// instance of the NodeTsqr subclass.  It also provides type
+  /// aliases for template metaprogramming.
   ///
-  /// The "right" \c NodeTsqr subclass is a function of the \c Node
-  /// template parameter, and possibly also of the other template
-  /// parameters.
+  /// The "right" NodeTsqr subclass is a function of Device, and
+  /// possibly also of the other template parameters.
   ///
   /// \note If this class does <i>not</i> have a partial
-  ///   specialization for your \c Node type, it defaults to use
+  ///   specialization for your Device type, it defaults to use
   ///   SequentialTsqr.  That class does <i>not</i> use threads, and
   ///   only knows how to deal with host data; it cannot handle GPU
   ///   device-resident data.  Thus, it may perform poorly.
-  template<class Node, class Scalar, class LocalOrdinal>
+  template<class Scalar, class LocalOrdinal, class Device>
   class NodeTsqrFactory {
   public:
     //! The NodeTsqr subclass corresponding to the Kokkos Node type.
