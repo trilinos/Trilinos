@@ -306,10 +306,7 @@ namespace Thyra {
     ///   All multivector objects used with this adapter must have the
     ///   same communicator and Kokkos Node instance (if applicable).
     void
-    prepareTsqr (const MV& /* X */)
-    {
-      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
-    }
+    prepareTsqr (const MV& /* X */) {}
   };
 
 } // namespace Tpetra

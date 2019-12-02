@@ -124,10 +124,8 @@ namespace TSQR {
     /// \param plist [in/out] Parameter list for configuring the
     ///   NodeTsqr implementation.
     static Teuchos::RCP<node_tsqr_type>
-    makeNodeTsqr (const Teuchos::RCP<node_type>& node,
-                  const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    makeNodeTsqr (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
-      (void) node;
       return rcp (new node_tsqr_type (plist));
     }
 
