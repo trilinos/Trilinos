@@ -771,9 +771,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
     /////////////////////////////////////////////////////////////////////////
 
-    // define max iteration counts
-    const int maxCoarseIter = 100;
-
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
     if (myRank == 0)
@@ -795,7 +792,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // Richardson iterations
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni = Teuchos::ScalarTraits<Scalar>::zero();
     const int old_precision = std::cout.precision();
     std::cout << std::setprecision(8) << std::scientific;
     int cycle = 0;
