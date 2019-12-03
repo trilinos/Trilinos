@@ -514,11 +514,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
         in_x_coord = List_.get("node: x-coordinates", (double *)0);
         in_y_coord = List_.get("node: y-coordinates", (double *)0);
         in_z_coord = List_.get("node: z-coordinates", (double *)0);
+        in_mat_coord = NULL;
       }
       else {
         in_x_coord = NULL;
         in_y_coord = NULL;
         in_z_coord = NULL;
+        in_mat_coord = NULL;
       }
       break;
     }

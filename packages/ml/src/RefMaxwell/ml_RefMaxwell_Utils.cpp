@@ -6,6 +6,8 @@
 #include "ml_mat_formats.h"
 #include <fstream>
 
+#define ML_ABS(x) ( (x) < 0 ? -(x) : (x) )
+
 // ================================================ ====== ==== ==== == =
 int ML_Epetra::CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
@@ -239,7 +241,6 @@ int ML_Epetra::RefMaxwell_SetupCoordinates(ML_Operator* A,
   return(0);
 }
 
-
 // ================================================ ====== ==== ==== == =
 static int RefMaxwell_SetupCoordinates(ML_Operator* A, Teuchos::ParameterList &List_, double *&coordx, double *&coordy, double *&coordz, double*& material)
 
@@ -272,7 +273,7 @@ static void ML_Init_Material(ML_Operator* A, double * material) {
   TEUCHOS_TEST_FOR_EXCEPTION(material == 0, std::logic_error,"ML_Init_Material: material vector not found");
 
   num_PDEs = A->num_PDEs;
-  threshold = A->aux_data->threshold;
+  threshold = A->aux_data->m_threshold;
 
   ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
   n = A->invec_leng;
@@ -318,6 +319,166 @@ static void ML_Init_Material(ML_Operator* A, double * material) {
 
  
 }
+/* ================================================ ====== ==== ==== == = */
+static void ML_Init_Aux_And_Material(ML_Operator* A, double * x_coord, double * y_coord, double * z_coord, double * mat_coord) {
+  int i, j, n, count, num_PDEs, BlockRow, BlockCol;
+  double threshold, mat_threshold;
+  int* columns;
+  double* values;
+  int allocated, entries = 0;
+  int N_dimensions;
+  int DiagID;
+  double DiagValue;
+  int** filter;
+  double dist;
+  double *LaplacianDiag;
+  int     Nghost;
+
+  /* Sanity Checks */
+  int dim=(x_coord!=0) + (y_coord!=0) + (z_coord!=0);
+  if(dim == 0 || ((!x_coord && (y_coord || z_coord)) || (x_coord && !y_coord && z_coord))){
+    std::cerr<<"Error: Coordinates not defined.  This is necessary for aux aggregation (found "<<dim<<" coordinates).\n";
+    exit(-1);
+  }
+  if (mat_coord == NULL) {
+    std::cerr<<"ML_Init_Aux_And_Material: Cannot use aux options without supplying coordinates and material coordinates\n";
+    exit(1);
+  }
+
+  num_PDEs = A->num_PDEs;
+  N_dimensions = dim;
+
+  threshold     = A->aux_data->threshold;
+  mat_threshold = A->aux_data->m_threshold;
+  ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  n = A->invec_leng;
+  Nghost = ML_CommInfoOP_Compute_TotalRcvLength(A->getrow->pre_comm);
+
+  LaplacianDiag = (double *) ML_allocate((A->getrow->Nrows+Nghost+1)*
+                                         sizeof(double));
+
+  A->aux_data->filtered_nnz = 0;
+  A->aux_data->unfiltered_nnz = 0;
+
+  filter = (int**) ML_allocate(sizeof(int*) * n);
+
+  allocated = 128;
+  columns = (int *)    ML_allocate(allocated * sizeof(int));
+  values  = (double *) ML_allocate(allocated * sizeof(double));
+
+  for (i = 0 ; i < n ; ++i) {
+    BlockRow = i;
+    DiagID = -1;
+    DiagValue = 0.0;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+
+    for (j = 0; j < entries; j++) {
+      BlockCol = columns[j];
+      if (BlockRow != BlockCol) {
+        dist = 0.0;
+        switch (N_dimensions) {
+        case 3:
+          dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
+        case 2:
+          dist += (y_coord[BlockRow] - y_coord[BlockCol]) * (y_coord[BlockRow] - y_coord[BlockCol]);
+        case 1:
+          dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
+        }
+
+        if (dist == 0.0) {
+          printf("node %d = %e ", i, x_coord[BlockRow]);
+          if (N_dimensions > 1) printf(" %e ", y_coord[BlockRow]);
+          if (N_dimensions > 2) printf(" %e ", z_coord[BlockRow]);
+          printf("\n");
+          printf("node %d = %e ", j, x_coord[BlockCol]);
+          if (N_dimensions > 1) printf(" %e ", y_coord[BlockCol]);
+          if (N_dimensions > 2) printf(" %e ", z_coord[BlockCol]);
+          printf("\n");
+          printf("Operator has inlen = %d and outlen = %d\n",
+                 A->invec_leng, A->outvec_leng);
+        }
+
+        dist = 1.0 / dist;
+        DiagValue += dist;
+      }
+      else if (columns[j] == i) {
+        DiagID = j;
+      }
+    }
+
+    if (DiagID == -1) {
+      fprintf(stderr, "ERROR: matrix has no diagonal!\n"
+              "ERROR: (file %s, line %d)\n",
+              __FILE__, __LINE__);
+      exit(EXIT_FAILURE);
+    }
+    LaplacianDiag[BlockRow] = DiagValue;
+  }
+  if ( A->getrow->pre_comm != NULL )
+     ML_exchange_bdry(LaplacianDiag,A->getrow->pre_comm,A->getrow->Nrows,
+                      A->comm, ML_OVERWRITE,NULL);
+
+
+  for (i = 0 ; i < n ; ++i) {
+    BlockRow = i;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+
+    for (j = 0; j < entries; j++) {
+      BlockCol = columns[j];
+      if (BlockRow != BlockCol) {
+        dist = 0.0;
+        switch (N_dimensions) {
+        case 3:
+          dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
+        case 2:
+          dist += (y_coord[BlockRow] - y_coord[BlockCol]) * (y_coord[BlockRow] - y_coord[BlockCol]);
+        case 1:
+          dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
+        }
+
+        dist = 1.0 / dist;
+        values[j] = dist;
+      }
+    }
+
+    count = 0;
+    for (j = 0 ; j < entries ; ++j) {
+      if (  (i != columns[j]) && (
+            (values[j]*values[j] < LaplacianDiag[BlockRow]*LaplacianDiag[columns[j]]*threshold*threshold) ||
+            (ML_ABS(log10(mat_coord[BlockRow]) - log10(mat_coord[BlockCol])) > mat_threshold) ) ) {
+        columns[count++] = columns[j];
+      }
+    }
+
+    /* insert the rows */
+    filter[BlockRow] = (int*) ML_allocate(sizeof(int) * (count + 1));
+    filter[BlockRow][0] = count;
+
+    for (j = 0 ; j < count ; ++j)
+      filter[BlockRow][j + 1] = columns[j];
+
+    A->aux_data->filtered_nnz += count;
+    A->aux_data->unfiltered_nnz += entries;
+
+  }
+
+  ML_free(columns);
+  ML_free(values);
+
+  ML_free(LaplacianDiag);
+
+  ML_Operator_UnAmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  A->aux_data->aux_func_ptr  = A->getrow->func_ptr;
+  A->getrow->func_ptr = ML_Aux_Getrow;
+  A->aux_data->filter = filter;
+  A->aux_data->filter_size = n;
+
+}
+
 
 // ================================================ ====== ==== ==== == =
 // Copied from ml_agg_genP.c
@@ -876,6 +1037,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   if(OutputLevel>=15) very_verbose=verbose=true;
   if(OutputLevel > 5) {very_verbose=false;verbose=true;}
   else very_verbose=verbose=false;
+  int printlevel=ML_Get_PrintLevel();
 
   /* Wrap A in a ML_Operator */
   ML_Operator* A_ML = ML_Operator_Create(ml_comm);
@@ -886,12 +1048,12 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   double Threshold         = List.get("aggregation: threshold", 0.0);
   double RowSum_Threshold  = List.get("aggregation: rowsum threshold", -1.0);
   double DampingFactor     = List.get("aggregation: damping factor", 0.0);
-  int PSmSweeps            = List.get("aggregation: smoothing sweeps", 1);
+  int PSmSweeps            = List.get("aggregation: smoothing sweeps", DampingFactor == 0.0 ? 0 : 1);
   std::string EigType      = List.get("eigen-analysis: type","cg");
   int NumEigenIts          = List.get("eigen-analysis: iterations",10);
   int NodesPerAggr         = List.get("aggregation: nodes per aggregate",
                                       ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
-  int doQR                 = (int) List.get("aggregation: do qr",false);
+  int doQR                 = (int) List.get("aggregation: do qr",true);
 
   bool UseAux              = List.get("aggregation: aux: enable",false);
   double AuxThreshold      = List.get("aggregation: aux: threshold",0.0);
@@ -901,99 +1063,153 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   double MatThreshold      = List.get("aggregation: material: threshold",0.0);
   int  MaxMatLevels        = List.get("aggregation: material: max levels",10);
 
+  bool useSA = true;
+  if(List.isParameter("default values")) {
+    std::string default_values = List.get("default values","SA");
+    if(default_values == "Classical-AMG")
+      useSA = false;
+  }
+
   // Setup the Fine Coordinates
   ML_Aggregate_Viz_Stats fine_grid;
   fine_grid.x=0; fine_grid.y=0; fine_grid.z=0; fine_grid.material=0;
   RefMaxwell_SetupCoordinates(A_ML,List,fine_grid.x,fine_grid.y,fine_grid.z,fine_grid.material);
-
-  // FIXME:  We need to allow this later
-  TEUCHOS_TEST_FOR_EXCEPTION(UseAux && UseMaterial, std::logic_error,"RefMaxwell_Aggregate_Nodes: Cannot use material and aux aggregation at the same time");
-
-  ML_Aggregate_Create(&MLAggr);
-  ML_Aggregate_Set_MaxLevels(MLAggr, 2);
-  ML_Aggregate_Set_StartLevel(MLAggr, 0);
-  ML_Aggregate_Set_Threshold(MLAggr, Threshold);
-  ML_Aggregate_Set_RowSum_Threshold(MLAggr, RowSum_Threshold);
-  ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
-  MLAggr->cur_level = 0;
-  ML_Aggregate_Set_Reuse(MLAggr);
-  ML_Aggregate_Set_Do_QR(MLAggr,doQR);
-
-  ML_Aggregate_Set_DampingFactor(MLAggr,DampingFactor);  
-  ML_Aggregate_Set_DampingSweeps(MLAggr,PSmSweeps,0);
-  if( EigType == "cg" )                ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
-  else if( EigType == "Anorm" )        ML_Operator_Set_SpectralNormScheme_Anorm(A_ML);
-  else if( EigType == "Anasazi" )      ML_Operator_Set_SpectralNormScheme_Anasazi(A_ML);
-  else if( EigType == "power-method" ) ML_Operator_Set_SpectralNormScheme_PowerMethod(A_ML);
-  else {
-    if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) block eigenvalue type(%s), resetting to cg\n",PrintMsg.c_str(),EigType.c_str());
-    ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
-  }
-  ML_Operator_Set_SpectralNorm_Iterations(A_ML, NumEigenIts);
-
-  MLAggr->keep_agg_information = 1;
-  P = ML_Operator_Create(ml_comm);
-
-  /* Process Teuchos Options */
-  if (CoarsenType == "Uncoupled")
-    ML_Aggregate_Set_CoarsenScheme_Uncoupled(MLAggr);
-  else if (CoarsenType == "Uncoupled-MIS"){
-    ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
-  }
-  else if (CoarsenType == "METIS"){
-    ML_Aggregate_Set_CoarsenScheme_METIS(MLAggr);
-    ML_Aggregate_Set_NodesPerAggr(0, MLAggr, 0, NodesPerAggr);
-  }/*end if*/
-  else {
-    if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) block aggregation type(%s), resetting to uncoupled-mis\n",PrintMsg.c_str(),CoarsenType.c_str());
-    ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
-  }
-
-  /* Setup Aux Data (aux) */
-  if(UseAux) {
-    A_ML->aux_data->enable=1;
-    A_ML->aux_data->threshold=AuxThreshold;
-    A_ML->aux_data->max_level=MaxAuxLevels;
-    ML_Init_Aux(A_ML,fine_grid.x,fine_grid.y,fine_grid.z);
-    if(verbose && !A.Comm().MyPID()) {
-      printf("%s Using auxiliary matrix\n",PrintMsg.c_str());
-      printf("%s aux threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
+  
+  if(useSA) {
+    /* Use SA */    
+    ML_Aggregate_Create(&MLAggr);
+    ML_Aggregate_Set_MaxLevels(MLAggr, 2);
+    ML_Aggregate_Set_StartLevel(MLAggr, 0);
+    ML_Aggregate_Set_Threshold(MLAggr, Threshold);
+    if(RowSum_Threshold > 0.0) ML_Aggregate_Set_RowSum_Threshold(MLAggr, RowSum_Threshold);
+    ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
+    MLAggr->cur_level = 0;
+    ML_Aggregate_Set_Reuse(MLAggr);
+    ML_Aggregate_Set_Do_QR(MLAggr,doQR);
+    
+    if(DampingFactor > 0.0) {
+      ML_Aggregate_Set_DampingFactor(MLAggr,DampingFactor);  
+      ML_Aggregate_Set_DampingSweeps(MLAggr,PSmSweeps,0);
     }
-  }
-
-  /* Setup Aux Data (material) */
-  if(UseMaterial) {
-    A_ML->aux_data->enable=1;
-    A_ML->aux_data->threshold=MatThreshold;
-    A_ML->aux_data->max_level=MaxMatLevels;
-    ML_Init_Material(A_ML,fine_grid.material);
-    if(verbose && !A.Comm().MyPID()) {
-      printf("%s Using material matrix\n",PrintMsg.c_str());
-      printf("%s material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
+    
+    if( EigType == "cg" )                ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
+    else if( EigType == "Anorm" )        ML_Operator_Set_SpectralNormScheme_Anorm(A_ML);
+    else if( EigType == "Anasazi" )      ML_Operator_Set_SpectralNormScheme_Anasazi(A_ML);
+    else if( EigType == "power-method" ) ML_Operator_Set_SpectralNormScheme_PowerMethod(A_ML);
+    else {
+      if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) block eigenvalue type(%s), resetting to cg\n",PrintMsg.c_str(),EigType.c_str());
+      ML_Operator_Set_SpectralNormScheme_Calc(A_ML);
     }
+    ML_Operator_Set_SpectralNorm_Iterations(A_ML, NumEigenIts);
+    
+    MLAggr->keep_agg_information = 1;
+    P = ML_Operator_Create(ml_comm);
+    
+    /* Process Teuchos Options */
+    if (CoarsenType == "Uncoupled")
+      ML_Aggregate_Set_CoarsenScheme_Uncoupled(MLAggr);
+    else if (CoarsenType == "Uncoupled-MIS"){
+      ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
+    }
+    else if (CoarsenType == "METIS"){
+      ML_Aggregate_Set_CoarsenScheme_METIS(MLAggr);
+      ML_Aggregate_Set_NodesPerAggr(0, MLAggr, 0, NodesPerAggr);
+    }/*end if*/
+    else {
+      if(!A.Comm().MyPID()) printf("%s Unsupported (1,1) block aggregation type(%s), resetting to uncoupled-mis\n",PrintMsg.c_str(),CoarsenType.c_str());
+      ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
+    }
+    
+    if(UseAux && UseMaterial) {
+      /* Setup Aux Data (both Aux and Material) */
+      A_ML->aux_data->enable=1;
+      A_ML->aux_data->threshold=AuxThreshold;
+      A_ML->aux_data->m_threshold=MatThreshold;
+      A_ML->aux_data->max_level=std::min(MaxAuxLevels,MaxMatLevels);
+      ML_Init_Aux_And_Material(A_ML,fine_grid.x,fine_grid.y,fine_grid.z,fine_grid.material);
+      printf("%s Using aux+material matrix\n",PrintMsg.c_str());
+      printf("%s aux threshold = %e, material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold,A_ML->aux_data->m_threshold);
+    }
+    else if(UseAux) {
+      /* Setup Aux Data (aux) */
+      A_ML->aux_data->enable=1;
+      A_ML->aux_data->threshold=AuxThreshold;
+      A_ML->aux_data->max_level=MaxAuxLevels;
+      ML_Init_Aux(A_ML,fine_grid.x,fine_grid.y,fine_grid.z);
+      if(verbose && !A.Comm().MyPID()) {
+        printf("%s Using auxiliary matrix\n",PrintMsg.c_str());
+        printf("%s aux threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->threshold);
+      }
+    }
+    else if(UseMaterial) {
+      /* Setup Aux Data (material) */
+      A_ML->aux_data->enable=1;
+      A_ML->aux_data->m_threshold=MatThreshold;
+      A_ML->aux_data->max_level=MaxMatLevels;
+      ML_Init_Material(A_ML,fine_grid.material);
+      if(verbose && !A.Comm().MyPID()) {
+        printf("%s Using material matrix\n",PrintMsg.c_str());
+        printf("%s material threshold = %e\n",PrintMsg.c_str(),A_ML->aux_data->m_threshold);
+      }
+    }
+    
+    /* Aggregate Nodes */
+    if(verbose) ML_Set_PrintLevel(10);
+    NumAggregates = ML_Aggregate_Coarsen(MLAggr,A_ML, &P, ml_comm);
+    if(verbose) ML_Set_PrintLevel(printlevel);
+    
+    /* Project down the coordinates, if we need to, using Ptent.  Note NumPDEs always = 1 */
+    if(fine_grid.x || fine_grid.y || fine_grid.z || fine_grid.material)
+      RefMaxwell_Project_Coordinates(1,P,&fine_grid,pack);    
+
+    /* Do prolongator smoothing, if requested */
+    if(PSmSweeps && DampingFactor != 0.0) {
+      if(verbose && !A.Comm().MyPID()) printf("%s Smoothing Prolongator w/ Damping Factor %e\n",PrintMsg.c_str(),DampingFactor);
+      ML_Operator * smooP = ML_Operator_Create(ml_comm);
+      ML_Smooth_Prolongator(A_ML,MLAggr,PSmSweeps,P,smooP);
+      ML_Operator_Destroy(&P);
+      P = smooP;
+    }
+    if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);
+
+    /* Cleanup */
+    ML_qr_fix_Destroy();
+    if(UseAux || UseMaterial)  ML_Finalize_Aux(A_ML);
+    
+  }
+  else {
+    /* Use Classical */
+    ML_AMG *ml_amg;
+    ML_AMG_Create( &ml_amg );
+    ML_AMG_Set_Threshold(ml_amg,Threshold);
+    if(RowSum_Threshold > 0.0) ML_AMG_Set_RowSum_Threshold(ml_amg, RowSum_Threshold);
+    ML_AMG_Set_MaxLevels(ml_amg,2);
+    ML_AMG_Set_MaxCoarseSize(ml_amg,1);
+    P = ML_Operator_Create(ml_comm);
+    ML_Operator * Pmatrix = ML_Operator_Create(ml_comm);
+
+    if(verbose) ML_Set_PrintLevel(10);
+    NumAggregates  = ML_AMG_Coarsen(ml_amg, A_ML, &Pmatrix, ml_comm);
+    if(verbose) ML_Set_PrintLevel(printlevel);
+
+    ML_Operator* AMGIdentity = ML_Operator_Create(ml_comm);
+    ML_Operator_Set_ApplyFuncData(AMGIdentity, A_ML->invec_leng,
+                                  A_ML->outvec_leng, (void*) A_ML,
+                                  A_ML->matvec->Nrows, NULL, 0);
+    ML_Operator_Set_Getrow(AMGIdentity, A_ML->getrow->Nrows,
+                           ML_AMG_Identity_Getrows);
+    ML_CommInfoOP_Clone(&(AMGIdentity->getrow->pre_comm),A_ML->getrow->pre_comm);
+    ML_2matmult(AMGIdentity, Pmatrix, P, ML_CSR_MATRIX );
+
+    /* Project down the coordinates, if we need to, using Ptent.  Note NumPDEs always = 1 */
+    if(fine_grid.x || fine_grid.y || fine_grid.z || fine_grid.material)
+      RefMaxwell_Project_Coordinates(1,P,&fine_grid,pack);    
+
+    /* Cleanup */
+    ML_Operator_Destroy(&AMGIdentity);
+    ML_Operator_Destroy(&Pmatrix);
   }
 
-  /* Aggregate Nodes */
-  int printlevel=ML_Get_PrintLevel();
-  if(verbose) ML_Set_PrintLevel(10);
-  NumAggregates = ML_Aggregate_Coarsen(MLAggr,A_ML, &P, ml_comm);
-
-  /* Project down the coordinates, if we need to, using Ptent.  Note NumPDEs always = 1 */
-  if(fine_grid.x || fine_grid.y || fine_grid.z || fine_grid.material)
-    RefMaxwell_Project_Coordinates(1,P,&fine_grid,pack);
-
-  /* Do prolongator smoothing, if requested */
-  if(PSmSweeps && DampingFactor != 0.0) {
-    if(verbose && !A.Comm().MyPID()) printf("%s Smoothing Prolongator w/ Damping Factor %e\n",PrintMsg.c_str(),DampingFactor);
-    ML_Operator * smooP = ML_Operator_Create(ml_comm);
-    ML_Smooth_Prolongator(A_ML,MLAggr,PSmSweeps,P,smooP);
-    ML_Operator_Destroy(&P);
-    P = smooP;
-  }
-
-
-  if(verbose) ML_Set_PrintLevel(printlevel);
-  if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);
   
   if(verbose){
     int globalAggs=0;
@@ -1008,11 +1224,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   if(fine_grid.x) ML_free(fine_grid.x);
   if(fine_grid.y) ML_free(fine_grid.y);
   if(fine_grid.z) ML_free(fine_grid.z);
-  if(fine_grid.material) ML_free(fine_grid.material);
-
-  ML_qr_fix_Destroy();
-  if(UseAux)      ML_Finalize_Aux(A_ML);
-  if(UseMaterial) ML_Finalize_Aux(A_ML);
+  if(fine_grid.material) ML_free(fine_grid.material);    
   ML_Operator_Destroy(&A_ML);
 
   return 0;

@@ -34,13 +34,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
-#ifndef __Epetra_TsqrAdaptor_hpp
-#define __Epetra_TsqrAdaptor_hpp
+#ifndef EPETRA_TSQRADAPTOR_HPP
+#define EPETRA_TSQRADAPTOR_HPP
 
 ///
 /// \file Epetra_TsqrAdaptor.hpp
@@ -346,21 +344,16 @@ namespace Epetra {
       }
     }
 
-    /// \brief Finish intranode TSQR initialization.
+    /// \brief Finish intraprocess TSQR initialization.
     ///
     /// \note It's OK to call this method more than once; it is idempotent.
     void
-    prepareNodeTsqr (const MV& mv)
+    prepareNodeTsqr (const MV& /* mv */)
     {
-      (void) mv; // Epetra objects don't have a Kokkos Node.
-
-      // Create Node with empty ParameterList.
-      Teuchos::ParameterList plist;
-      Teuchos::RCP<node_type> node (new node_type (plist));
-      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, node);
+      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_);
     }
 
-    /// \brief Finish internode TSQR initialization.
+    /// \brief Finish interprocess TSQR initialization.
     ///
     /// \param mv [in] A multivector, from which to extract the
     ///   Epetra_Comm communicator wrapper to use to initialize TSQR.
@@ -387,5 +380,5 @@ namespace Epetra {
 
 #endif // defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
-#endif // __Epetra_TsqrAdaptor_hpp
+#endif // EPETRA_TSQRADAPTOR_HPP
 

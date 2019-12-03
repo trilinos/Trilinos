@@ -141,6 +141,7 @@ namespace FROSch {
         using ConstUN                           = const UN;
         using UNVec                             = Array<UN>;
         using UNVecPtr                          = ArrayRCP<UN>;
+        using ConstUNVecView                    = ArrayView<const UN>;
 
         using LOVec                             = Array<LO>;
         using LOVecPtr                          = ArrayRCP<LO>;

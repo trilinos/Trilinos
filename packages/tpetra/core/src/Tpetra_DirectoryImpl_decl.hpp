@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -182,7 +180,7 @@ namespace Tpetra {
       //@{
 
       //! A one-line human-readable description of this object.
-      std::string description () const;
+      std::string description () const override;
       //@}
     protected:
       //! Find process IDs and (optionally) local IDs for the given global IDs.
@@ -230,7 +228,7 @@ namespace Tpetra {
       //@{
 
       //! A one-line human-readable description of this object.
-      std::string description () const;
+      std::string description () const override;
       //@}
 
     protected:
@@ -268,7 +266,7 @@ namespace Tpetra {
       //@{
 
       //! A one-line human-readable description of this object.
-      std::string description () const;
+      std::string description () const override;
       //@}
 
     protected:
@@ -333,7 +331,7 @@ namespace Tpetra {
       //@{
 
       //! A one-line human-readable description of this object.
-      std::string description () const;
+      std::string description () const override;
       //@}
     protected:
       //! Find process IDs and (optionally) local IDs for the given global IDs.

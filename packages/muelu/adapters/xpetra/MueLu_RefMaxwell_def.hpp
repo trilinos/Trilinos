@@ -259,6 +259,13 @@ namespace MueLu {
       M1_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
     }
 
+    if (IsPrint(Statistics2)) {
+      RCP<ParameterList> params = rcp(new ParameterList());;
+      params->set("printLoadBalancingInfo", true);
+      params->set("printCommInfo",          true);
+      GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*SM_Matrix_, "SM_Matrix", params);
+    }
+
     if (!reuse) {
       // clean rows associated with boundary conditions
       // Find rows with only 1 or 2 nonzero entries, record them in BCrows_.
@@ -469,6 +476,7 @@ namespace MueLu {
     bool doRebalancing = false;
 #ifdef HAVE_MPI
     doRebalancing = parameterList_.get<bool>("refmaxwell: subsolves on subcommunicators", MasterList::getDefault<bool>("refmaxwell: subsolves on subcommunicators"));
+    int rebalanceStriding = parameterList_.get<int>("refmaxwell: subsolves striding", -1);
     int numProcsAH, numProcsA22;
 #endif
     {
@@ -488,6 +496,10 @@ namespace MueLu {
         TEUCHOS_ASSERT(numProcsAH+numProcsA22<=numProcs);
         numProcsAH = std::max(numProcsAH, 1);
         numProcsA22 = std::max(numProcsA22, 1);
+        if (rebalanceStriding >= 1) {
+          TEUCHOS_ASSERT(rebalanceStriding*numProcsAH<=numProcs);
+          TEUCHOS_ASSERT(rebalanceStriding*numProcsA22<=numProcs);
+        }
       } else
         doRebalancing = false;
 
@@ -549,6 +561,12 @@ namespace MueLu {
           ParameterList repartParams;
           repartParams.set("repartition: print partition distribution", precList11_.get<bool>("repartition: print partition distribution", false));
           repartParams.set("repartition: remap parts", precList11_.get<bool>("repartition: remap parts", true));
+          if (rebalanceStriding >= 1) {
+            bool acceptPart = (SM_Matrix_->getDomainMap()->getComm()->getRank() % rebalanceStriding) == 0;
+            if (SM_Matrix_->getDomainMap()->getComm()->getRank() >= numProcsAH*rebalanceStriding)
+              acceptPart = false;
+            repartParams.set("repartition: remap accept partition", acceptPart);
+          }
           repartFactory->SetParameterList(repartParams);
           // repartFactory->SetFactory("number of partitions", repartheurFactory);
           repartFactory->SetFactory("Partition", partitioner);
@@ -621,6 +639,12 @@ namespace MueLu {
 #endif
       if (!AH_.is_null()) {
         int oldRank = SetProcRankVerbose(AH_->getDomainMap()->getComm()->getRank());
+        if (IsPrint(Statistics2)) {
+          RCP<ParameterList> params = rcp(new ParameterList());;
+          params->set("printLoadBalancingInfo", true);
+          params->set("printCommInfo",          true);
+          GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*AH_, "AH", params);
+        }
         if (!reuse) {
           ParameterList& userParamList = precList11_.sublist("user data");
           userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
@@ -746,7 +770,15 @@ namespace MueLu {
             ParameterList repartParams;
             repartParams.set("repartition: print partition distribution", precList22_.get<bool>("repartition: print partition distribution", false));
             repartParams.set("repartition: remap parts", precList22_.get<bool>("repartition: remap parts", true));
-            repartParams.set("repartition: remap accept partition", AH_.is_null());
+            if (rebalanceStriding >= 1) {
+              bool acceptPart = ((SM_Matrix_->getDomainMap()->getComm()->getSize()-1-SM_Matrix_->getDomainMap()->getComm()->getRank()) % rebalanceStriding) == 0;
+              if (SM_Matrix_->getDomainMap()->getComm()->getSize()-1-SM_Matrix_->getDomainMap()->getComm()->getRank() >= numProcsA22*rebalanceStriding)
+                acceptPart = false;
+              if (acceptPart)
+                TEUCHOS_ASSERT(AH_.is_null());
+              repartParams.set("repartition: remap accept partition", acceptPart);
+            } else
+              repartParams.set("repartition: remap accept partition", AH_.is_null());
             repartFactory->SetParameterList(repartParams);
             repartFactory->SetFactory("A", rapFact);
             // repartFactory->SetFactory("number of partitions", repartheurFactory);
@@ -857,6 +889,12 @@ namespace MueLu {
       if (!A22_.is_null()) {
         A22_->setObjectLabel("RefMaxwell (2,2)");
         int oldRank = SetProcRankVerbose(A22_->getDomainMap()->getComm()->getRank());
+        if (IsPrint(Statistics2)) {
+          RCP<ParameterList> params = rcp(new ParameterList());;
+          params->set("printLoadBalancingInfo", true);
+          params->set("printCommInfo",          true);
+          GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*A22_, "A22", params);
+        }
         if (!reuse) {
           ParameterList& userParamList = precList22_.sublist("user data");
           userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);

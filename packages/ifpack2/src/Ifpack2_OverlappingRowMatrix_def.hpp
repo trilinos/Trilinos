@@ -844,7 +844,7 @@ OverlappingRowMatrix<MatrixType>::getExtMatrix() const
 }
 
 template<class MatrixType>
-Teuchos::ArrayView<size_t> OverlappingRowMatrix<MatrixType>::getExtHaloStarts()
+Teuchos::ArrayView<const size_t> OverlappingRowMatrix<MatrixType>::getExtHaloStarts() const
 {
   return ExtHaloStarts_();
 }

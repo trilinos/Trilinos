@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
   for (level = MaxMgLevels-1; level > coarsest_level; level--)
     ML_Gen_Smoother_Cheby(ml, level, ML_BOTH, 30., 3);
 
-  ML_Gen_Smoother_Amesos(ml, coarsest_level, ML_AMESOS_KLU, 1, 0.0);
+  ML_Gen_Smoother_Amesos(ml, coarsest_level, ML_AMESOS_KLU, 1, 0.0, 1);
 
   /* Must be called before invoking the preconditioner */
   ML_Gen_Solver(ml, ML_MGV, MaxMgLevels-1, coarsest_level);

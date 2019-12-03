@@ -186,7 +186,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   if(!mcoord && dim!=(xcoord!=0) + (ycoord!=0) + (zcoord!=0) ) build_coarse_coords=false;
   
   /* Do the aggregation */
-  ML_Aggregate_Struct * MLAggr;
+  ML_Aggregate_Struct * MLAggr=0;
   ML_Operator *P;
   int NumAggregates;
   int rv=ML_Epetra::RefMaxwell_Aggregate_Nodes(*TMT_Matrix_,List_,ml_comm_,std::string("EMFP (level 0) :"),
@@ -283,7 +283,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 
 
   /* Cleanup */
-  ML_Aggregate_Destroy(&MLAggr);
+  if(MLAggr) ML_Aggregate_Destroy(&MLAggr);
   ML_Operator_Destroy(&P);
   ML_Operator_Destroy(&AbsD0_ML);
   ML_Operator_Destroy(&AbsD0P);
@@ -353,7 +353,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   //  Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix);
   int nnz=100;
   double time;
-  ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,true,time,0,verbose_);
+  ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,true,time,0,very_verbose_);
   // NTS: This is a hack to get around the sticking ones on the diagonal issue;
 
   /* Cleanup */

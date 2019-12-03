@@ -276,7 +276,7 @@ namespace MueLu {
       RCP<RealValuedMultiVector> Coords = List.get<RCP<RealValuedMultiVector> >("Coordinates", Teuchos::null);
       RCP<Matrix> D0_Matrix = List.get<RCP<Matrix> >("D0");
       RCP<Matrix> Ms_Matrix;
-      if (List.isType<Matrix>("Ms"))
+      if (List.isType<RCP<Matrix> >("Ms"))
         Ms_Matrix = List.get<RCP<Matrix> >("Ms");
       else
         Ms_Matrix = List.get<RCP<Matrix> >("M1");

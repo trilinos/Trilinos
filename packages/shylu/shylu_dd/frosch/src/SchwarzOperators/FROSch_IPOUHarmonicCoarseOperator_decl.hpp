@@ -111,6 +111,7 @@ namespace FROSch {
 
         using SCVec                             = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
         using SCVecPtr                          = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
+        using ConstSCVecPtr                     = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
 
         using BoolVecPtr                        = typename SchwarzOperator<SC,LO,GO,NO>::BoolVecPtr;
 

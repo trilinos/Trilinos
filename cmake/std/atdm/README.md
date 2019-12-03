@@ -48,7 +48,7 @@ $ cmake \
 
 $ make NP=16  # Uses ninja -j16
 
-$ ctest -j16  # Might need to be run with srun or some other command, see below
+$ ctest -j4  # Might need to be run with srun or some other command, see below
 ```
 
 The command:
@@ -640,7 +640,7 @@ $ cmake \
 
 $ make NP=16
 
-$ bsub -x -Is -q rhel7F -n 16 ctest -j16
+$ bsub -x -Is -q rhel7F -n 16 ctest -j4
 ```
 
 The ATDM configuration of Trilinos is set up to run on the Firestone nodes
@@ -688,7 +688,7 @@ $ cmake \
 
 $ make NP=16
 
-$ srun ctest -j16
+$ srun ctest -j4
 ```
 
 **NOTE:** While the above example shows loading the environment, configuring
@@ -732,7 +732,7 @@ $ cmake \
 
 $ make NP=16
 
-$ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j16
+$ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j4
 ```
 
 To get information on <YOUR_WCID> used above, there is a WC tool tab on
@@ -1013,7 +1013,7 @@ $ cmake \
 
 $ make NP=20
 
-$ bsub -x -Is -n 20 ctest -j20
+$ bsub -x -Is -n 20 ctest -j4
 ```
 
 **NOTE:** While the above example shows loading the environment, configuring

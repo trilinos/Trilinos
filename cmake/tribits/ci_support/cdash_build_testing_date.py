@@ -74,8 +74,8 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
   
   clp.add_option(
     "--cdash-project-start-time", dest="cdashProjectStartTimeUtcStr", type="string", default="",
-    help="Starting time for the CDash testing day in 'HH:MM' in UTC."\
-      + " Check the CDash project settings for the testing date." )
+    help="Starting time for the CDash testing day in 'hh:mmm' in UTC."\
+      + " Check the CDash project settings for the testing day start time." )
   
   clp.add_option(
     "--day-incr", dest="dayIncrInt", type="int", default="0",
@@ -175,6 +175,12 @@ def getDateStrFromDateTime(dateTime):
   return dateTime.strftime("%Y-%m-%d")
 
 
+# Return the datetime object for just <YYYY>-<MM>-<DD> for an input datetime
+# object.
+def getDateOnlyFromDateTime(dateTime):
+  return datetime.datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
+
+
 # Compute the CDash testing day for a given build using its 'buildstarttime'
 # field and the testing day start time and return it as a datetime object.
 #
@@ -253,8 +259,11 @@ def getTestingDayDateFromBuildStartTimeStr(
 # then the relative CDash build date time would be 2018-01-22:00:10 UTC and
 # the testing day would be 2018-01-22.
 #
-# To extract the "<YYYY>-<MM>-<DD>" string, use the function
-# getDateStrFromDateTime().
+# To extract just the year, month and day from the returned datetime object as
+# a datetime object, use the function getDateOnlyFromDateTime().
+#
+# To extract the "<YYYY>-<MM>-<DD>" string from teh returned datetime object,
+# use the function getDateStrFromDateTime().
 # 
 def getRelativeCDashBuildStartTime(
   cdashBuildStartTimeUtc,   # CDash build start time in UTC (datetime objet)
@@ -272,8 +281,24 @@ def getRelativeCDashBuildStartTime(
 # This function just converts the input command-line args and then calls
 # getRelativeCDashBuildStartTime().
 #
+# Arguments:
+#
+# cdashBuildStartTimeStr [in] Reference build start time in
+# "YYY-MM-DDThh:mm:ss TZ".  If 'None', then is taken from
+# getCurrentDateTimeUtc().
+#
+# cdashProjectStartTimeUtcStr [in] CDash project build start time in
+# UTC in the format "hh:mm".
+#
+# dayIncrInt [in] Integer for the day to return relative to
+# cdashProjectStartTimeUtcStr.  The current testing day would be 0.  Yesterday
+# would be -1 and so on.
+#
+# debugLevel [in] If 0, then no debugging.  If > 0, then debug output will be
+# printed.
+#
 def getRelativeCDashBuildStartTimeFromCmndLineArgs(
-  cdashBuildStartTimeStr,  # If 'None', then is taken from getCurrentDateTimeUtc()
+  cdashBuildStartTimeStr,
   cdashProjectStartTimeUtcStr,
   dayIncrInt,
   debugLevel=0,

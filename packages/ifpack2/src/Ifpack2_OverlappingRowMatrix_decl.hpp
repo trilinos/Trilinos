@@ -337,7 +337,7 @@ public:
 
   Teuchos::RCP<const row_matrix_type> getExtMatrix() const;
 
-  Teuchos::ArrayView<size_t> getExtHaloStarts();
+  Teuchos::ArrayView<const size_t> getExtHaloStarts() const;
 
 private:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;

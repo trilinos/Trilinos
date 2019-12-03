@@ -238,7 +238,7 @@ namespace FROSch {
     RCP<const Map<LO,GO,NO> > SortMapByGlobalIndex(RCP<const Map<LO,GO,NO> > inputMap);
 
     template <class LO,class GO,class NO>
-    RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
+    RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<const Map<LO,GO,NO> > > mapVector,
                                      ArrayRCP<ArrayRCP<LO> > &partMappings);
     
     template <class LO,class GO,class NO>

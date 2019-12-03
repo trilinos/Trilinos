@@ -117,11 +117,13 @@ public:
   /// \param G [in] An existing graph.
   /// \param levelFill [in] The level of fill to compute; the k of ILU(k).
   /// \param levelOverlap [in] The level of overlap between subdomains.
+  /// \param overalloc [in] The estimated number of nonzeros per row in the resulting matrices is (maxNodeNumRowEntries of the input * overalloc^levelFill).  Must be greater than 1.  Smaller values are more conservative with memory, but may require recomputation if the estimate is too low.  Default value is two.
   ///
   /// \note Actual construction occurs in initialize().
   IlukGraph (const Teuchos::RCP<const GraphType>& G,
              const int levelFill,
-             const int levelOverlap);
+             const int levelOverlap,
+             const double overalloc = 2.);
 
   //! IlukGraph Destructor
   virtual ~IlukGraph ();
@@ -200,6 +202,7 @@ private:
   Teuchos::RCP<const crs_graph_type> OverlapGraph_;
   int LevelFill_;
   int LevelOverlap_;
+  const double Overalloc_;
   Teuchos::RCP<crs_graph_type> L_Graph_;
   Teuchos::RCP<crs_graph_type> U_Graph_;
   size_t NumMyDiagonals_;
@@ -211,13 +214,18 @@ template<class GraphType>
 IlukGraph<GraphType>::
 IlukGraph (const Teuchos::RCP<const GraphType>& G,
            const int levelFill,
-           const int levelOverlap)
+           const int levelOverlap,
+           const double overalloc)
   : Graph_ (G),
     LevelFill_ (levelFill),
     LevelOverlap_ (levelOverlap),
+    Overalloc_ (overalloc),
     NumMyDiagonals_ (0),
     NumGlobalDiagonals_ (0)
-{}
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(Overalloc_ <= 1., std::runtime_error,
+    "Ifpack2::IlukGraph: FATAL: overalloc must be greater than 1.")
+}
 
 
 template<class GraphType>
@@ -268,223 +276,240 @@ void IlukGraph<GraphType>::initialize()
   const int NumMyRows = OverlapGraph_->getRowMap ()->getNodeNumElements ();
 
   // Heuristic to get the maximum number of entries per row.
-  const int MaxNumEntriesPerRow = (LevelFill_ == 0)
-                                ? MaxNumIndices
-                                : MaxNumIndices + 5*LevelFill_;
-  L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
-                                      OverlapGraph_->getRowMap (), MaxNumEntriesPerRow));
-  U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
-                                      OverlapGraph_->getRowMap (), MaxNumEntriesPerRow));
+  size_t MaxNumEntriesPerRow = (LevelFill_ == 0)
+                             ? MaxNumIndices  // No additional storage needed
+                             : ceil(static_cast<double>(MaxNumIndices) 
+                                  * pow(Overalloc_,LevelFill_));
 
-  Array<local_ordinal_type> L (MaxNumIndices);
-  Array<local_ordinal_type> U (MaxNumIndices);
+  bool insertError;  // No error found yet while inserting entries
+  do {
+    insertError = false;
+    L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
+                                        OverlapGraph_->getRowMap (),
+                                        MaxNumEntriesPerRow));
+    U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
+                                        OverlapGraph_->getRowMap (),
+                                        MaxNumEntriesPerRow));
 
-  // First we copy the user's graph into L and U, regardless of fill level
+    Array<local_ordinal_type> L (MaxNumIndices);
+    Array<local_ordinal_type> U (MaxNumIndices);
 
-  NumMyDiagonals_ = 0;
+    // First we copy the user's graph into L and U, regardless of fill level
 
-  for (int i = 0; i< NumMyRows; ++i) {
-    ArrayView<const local_ordinal_type> my_indices;
-    OverlapGraph_->getLocalRowView (i, my_indices);
+    NumMyDiagonals_ = 0;
 
-    // Split into L and U (we don't assume that indices are ordered).
+    for (int i = 0; i< NumMyRows; ++i) {
+      ArrayView<const local_ordinal_type> my_indices;
+      OverlapGraph_->getLocalRowView (i, my_indices);
 
-    NumL = 0;
-    NumU = 0;
-    DiagFound = false;
-    NumIn = my_indices.size();
+      // Split into L and U (we don't assume that indices are ordered).
 
-    for (size_t j = 0; j < NumIn; ++j) {
-      const local_ordinal_type k = my_indices[j];
+      NumL = 0;
+      NumU = 0;
+      DiagFound = false;
+      NumIn = my_indices.size();
 
-      if (k<NumMyRows) { // Ignore column elements that are not in the square matrix
+      for (size_t j = 0; j < NumIn; ++j) {
+        const local_ordinal_type k = my_indices[j];
 
-        if (k==i) {
-          DiagFound = true;
+        if (k<NumMyRows) { // Ignore column elements that are not in the square matrix
+
+          if (k==i) {
+            DiagFound = true;
+          }
+          else if (k < i) {
+            L[NumL] = k;
+            NumL++;
+          }
+          else {
+            U[NumU] = k;
+            NumU++;
+          }
         }
-        else if (k < i) {
-          L[NumL] = k;
-          NumL++;
-        }
-        else {
-          U[NumU] = k;
-          NumU++;
-        }
+      }
+
+      // Check in things for this row of L and U
+
+      if (DiagFound) {
+        ++NumMyDiagonals_;
+      }
+      if (NumL) {
+        ArrayView<const local_ordinal_type> L_view = L.view (0, NumL);
+        L_Graph_->insertLocalIndices (i, L_view);
+      }
+      if (NumU) {
+        ArrayView<const local_ordinal_type> U_view = U.view (0, NumU);
+        U_Graph_->insertLocalIndices (i, U_view);
       }
     }
 
-    // Check in things for this row of L and U
+    if (LevelFill_ > 0) {
+      // Complete Fill steps
+      RCP<const map_type> L_DomainMap = OverlapGraph_->getRowMap ();
+      RCP<const map_type> L_RangeMap = Graph_->getRangeMap ();
+      RCP<const map_type> U_DomainMap = Graph_->getDomainMap ();
+      RCP<const map_type> U_RangeMap = OverlapGraph_->getRowMap ();
+      RCP<Teuchos::ParameterList> params = Teuchos::parameterList ();
+      params->set ("Optimize Storage",false);
+      L_Graph_->fillComplete (L_DomainMap, L_RangeMap, params);
+      U_Graph_->fillComplete (U_DomainMap, U_RangeMap, params);
+      L_Graph_->resumeFill ();
+      U_Graph_->resumeFill ();
 
-    if (DiagFound) {
-      ++NumMyDiagonals_;
-    }
-    if (NumL) {
-      ArrayView<const local_ordinal_type> L_view = L.view (0, NumL);
-      L_Graph_->insertLocalIndices (i, L_view);
-    }
-    if (NumU) {
-      ArrayView<const local_ordinal_type> U_view = U.view (0, NumU);
-      U_Graph_->insertLocalIndices (i, U_view);
-    }
-  }
+      // At this point L_Graph and U_Graph are filled with the pattern of input graph,
+      // sorted and have redundant indices (if any) removed.  Indices are zero based.
+      // LevelFill is greater than zero, so continue...
 
-  if (LevelFill_ > 0) {
-    // Complete Fill steps
-    RCP<const map_type> L_DomainMap = OverlapGraph_->getRowMap ();
-    RCP<const map_type> L_RangeMap = Graph_->getRangeMap ();
-    RCP<const map_type> U_DomainMap = Graph_->getDomainMap ();
-    RCP<const map_type> U_RangeMap = OverlapGraph_->getRowMap ();
-    RCP<Teuchos::ParameterList> params = Teuchos::parameterList ();
-    params->set ("Optimize Storage",false);
-    L_Graph_->fillComplete (L_DomainMap, L_RangeMap, params);
-    U_Graph_->fillComplete (U_DomainMap, U_RangeMap, params);
-    L_Graph_->resumeFill ();
-    U_Graph_->resumeFill ();
+      int MaxRC = NumMyRows;
+      std::vector<std::vector<int> > Levels(MaxRC);
+      std::vector<int> LinkList(MaxRC);
+      std::vector<int> CurrentLevel(MaxRC);
+      Array<local_ordinal_type> CurrentRow (MaxRC + 1);
+      std::vector<int> LevelsRowU(MaxRC);
 
-    // At this point L_Graph and U_Graph are filled with the pattern of input graph,
-    // sorted and have redundant indices (if any) removed.  Indices are zero based.
-    // LevelFill is greater than zero, so continue...
+      try {
+        for (int i = 0; i < NumMyRows; ++i) {
+          int First, Next;
 
-    int MaxRC = NumMyRows;
-    std::vector<std::vector<int> > Levels(MaxRC);
-    std::vector<int> LinkList(MaxRC);
-    std::vector<int> CurrentLevel(MaxRC);
-    Array<local_ordinal_type> CurrentRow (MaxRC + 1);
-    std::vector<int> LevelsRowU(MaxRC);
+          // copy column indices of row into workspace and sort them
 
-    for (int i = 0; i < NumMyRows; ++i) {
-      int First, Next;
+          size_t LenL = L_Graph_->getNumEntriesInLocalRow(i);
+          size_t LenU = U_Graph_->getNumEntriesInLocalRow(i);
+          size_t Len = LenL + LenU + 1;
 
-      // copy column indices of row into workspace and sort them
+          CurrentRow.resize(Len);
 
-      size_t LenL = L_Graph_->getNumEntriesInLocalRow(i);
-      size_t LenU = U_Graph_->getNumEntriesInLocalRow(i);
-      size_t Len = LenL + LenU + 1;
+          L_Graph_->getLocalRowCopy(i, CurrentRow(), LenL);  // Get L Indices
+          CurrentRow[LenL] = i;                              // Put in Diagonal
+          if (LenU > 0) {
+            ArrayView<local_ordinal_type> URowView = CurrentRow.view (LenL+1,
+                                                                      LenU);
+            // Get U Indices
+            U_Graph_->getLocalRowCopy (i, URowView, LenU);
+          }
 
-      CurrentRow.resize(Len);
+          // Construct linked list for current row
 
-      L_Graph_->getLocalRowCopy(i, CurrentRow(), LenL);      // Get L Indices
-      CurrentRow[LenL] = i;                                     // Put in Diagonal
-      if (LenU > 0) {
-        ArrayView<local_ordinal_type> URowView = CurrentRow.view (LenL+1, LenU);
-        // Get U Indices
-        U_Graph_->getLocalRowCopy (i, URowView, LenU);
-      }
+          for (size_t j=0; j<Len-1; j++) {
+            LinkList[CurrentRow[j]] = CurrentRow[j+1];
+            CurrentLevel[CurrentRow[j]] = 0;
+          }
 
-      // Construct linked list for current row
+          LinkList[CurrentRow[Len-1]] = NumMyRows;
+          CurrentLevel[CurrentRow[Len-1]] = 0;
 
-      for (size_t j=0; j<Len-1; j++) {
-        LinkList[CurrentRow[j]] = CurrentRow[j+1];
-        CurrentLevel[CurrentRow[j]] = 0;
-      }
+          // Merge List with rows in U
 
-      LinkList[CurrentRow[Len-1]] = NumMyRows;
-      CurrentLevel[CurrentRow[Len-1]] = 0;
+          First = CurrentRow[0];
+          Next = First;
+          while (Next < i) {
+            int PrevInList = Next;
+            int NextInList = LinkList[Next];
+            int RowU = Next;
+            // Get Indices for this row of U
+            ArrayView<const local_ordinal_type> IndicesU;
+            U_Graph_->getLocalRowView (RowU, IndicesU);
+            // FIXME (mfh 23 Dec 2013) size() returns ptrdiff_t, not int.
+            int LengthRowU = IndicesU.size ();
 
-      // Merge List with rows in U
+            int ii;
 
-      First = CurrentRow[0];
-      Next = First;
-      while (Next < i) {
-        int PrevInList = Next;
-        int NextInList = LinkList[Next];
-        int RowU = Next;
-        // Get Indices for this row of U
-        ArrayView<const local_ordinal_type> IndicesU;
-        U_Graph_->getLocalRowView (RowU, IndicesU);
-        // FIXME (mfh 23 Dec 2013) size() returns ptrdiff_t, not int.
-        int LengthRowU = IndicesU.size ();
+            // Scan RowU
 
-        int ii;
-
-        // Scan RowU
-
-        for (ii = 0; ii < LengthRowU; /*nop*/) {
-          int CurInList = IndicesU[ii];
-          if (CurInList < NextInList) {
-            // new fill-in
-            int NewLevel = CurrentLevel[RowU] + Levels[RowU][ii+1] + 1;
-            if (NewLevel <= LevelFill_) {
-              LinkList[PrevInList]  = CurInList;
-              LinkList[CurInList] = NextInList;
-              PrevInList = CurInList;
-              CurrentLevel[CurInList] = NewLevel;
+            for (ii = 0; ii < LengthRowU; /*nop*/) {
+              int CurInList = IndicesU[ii];
+              if (CurInList < NextInList) {
+                // new fill-in
+                int NewLevel = CurrentLevel[RowU] + Levels[RowU][ii+1] + 1;
+                if (NewLevel <= LevelFill_) {
+                  LinkList[PrevInList]  = CurInList;
+                  LinkList[CurInList] = NextInList;
+                  PrevInList = CurInList;
+                  CurrentLevel[CurInList] = NewLevel;
+                }
+                ii++;
+              }
+              else if (CurInList == NextInList) {
+                PrevInList = NextInList;
+                NextInList = LinkList[PrevInList];
+                int NewLevel = CurrentLevel[RowU] + Levels[RowU][ii+1] + 1;
+                CurrentLevel[CurInList] = std::min (CurrentLevel[CurInList],
+                                                    NewLevel);
+                ii++;
+              }
+              else { // (CurInList > NextInList)
+                PrevInList = NextInList;
+                NextInList = LinkList[PrevInList];
+              }
             }
-            ii++;
+            Next = LinkList[Next];
           }
-          else if (CurInList == NextInList) {
-            PrevInList = NextInList;
-            NextInList = LinkList[PrevInList];
-            int NewLevel = CurrentLevel[RowU] + Levels[RowU][ii+1] + 1;
-            CurrentLevel[CurInList] = std::min (CurrentLevel[CurInList], NewLevel);
-            ii++;
+
+          // Put pattern into L and U
+
+          CurrentRow.resize (0);
+
+          Next = First;
+
+          // Lower
+
+          while (Next < i) {
+            CurrentRow.push_back (Next);
+            Next = LinkList[Next];
           }
-          else { // (CurInList > NextInList)
-            PrevInList = NextInList;
-            NextInList = LinkList[PrevInList];
+
+          // FIXME (mfh 23 Dec 2013) It's not clear to me that
+          // removeLocalIndices works like people expect it to work.  In
+          // particular, it does not actually change the column Map.
+          L_Graph_->removeLocalIndices (i); // Delete current set of Indices
+          if (CurrentRow.size() > 0) {
+            L_Graph_->insertLocalIndices (i, CurrentRow ());
+          }
+
+          // Diagonal
+
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            Next != i, std::runtime_error,
+            "Ifpack2::IlukGraph::initialize: FATAL: U has zero diagonal")
+
+          LevelsRowU[0] = CurrentLevel[Next];
+          Next = LinkList[Next];
+
+          // Upper
+
+          CurrentRow.resize (0);
+          LenU = 0;
+
+          while (Next < NumMyRows) {
+            LevelsRowU[LenU+1] = CurrentLevel[Next];
+            CurrentRow.push_back (Next);
+            ++LenU;
+            Next = LinkList[Next];
+          }
+
+          // FIXME (mfh 23 Dec 2013) It's not clear to me that
+          // removeLocalIndices works like people expect it to work.  In
+          // particular, it does not actually change the column Map.
+
+          U_Graph_->removeLocalIndices (i); // Delete current set of Indices
+          if (LenU > 0) {
+            U_Graph_->insertLocalIndices (i, CurrentRow ());
+          }
+
+          // Allocate and fill Level info for this row
+          Levels[i] = std::vector<int> (LenU+1);
+          for (size_t jj=0; jj<LenU+1; jj++) {
+            Levels[i][jj] = LevelsRowU[jj];
           }
         }
-        Next = LinkList[Next];
       }
-
-      // Put pattern into L and U
-
-      CurrentRow.resize (0);
-
-      Next = First;
-
-      // Lower
-
-      while (Next < i) {
-        CurrentRow.push_back (Next);
-        Next = LinkList[Next];
-      }
-
-      // FIXME (mfh 23 Dec 2013) It's not clear to me that
-      // removeLocalIndices works like people expect it to work.  In
-      // particular, it does not actually change the column Map.
-      L_Graph_->removeLocalIndices (i); // Delete current set of Indices
-      if (CurrentRow.size() > 0) {
-        L_Graph_->insertLocalIndices (i, CurrentRow ());
-      }
-
-      // Diagonal
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        Next != i, std::runtime_error,
-        "Ifpack2::IlukGraph::initialize: FATAL: U has zero diagonal")
-
-      LevelsRowU[0] = CurrentLevel[Next];
-      Next = LinkList[Next];
-
-      // Upper
-
-      CurrentRow.resize (0);
-      LenU = 0;
-
-      while (Next < NumMyRows) {
-        LevelsRowU[LenU+1] = CurrentLevel[Next];
-        CurrentRow.push_back (Next);
-        ++LenU;
-        Next = LinkList[Next];
-      }
-
-      // FIXME (mfh 23 Dec 2013) It's not clear to me that
-      // removeLocalIndices works like people expect it to work.  In
-      // particular, it does not actually change the column Map.
-
-      U_Graph_->removeLocalIndices (i); // Delete current set of Indices
-      if (LenU > 0) {
-        U_Graph_->insertLocalIndices (i, CurrentRow ());
-      }
-
-      // Allocate and fill Level info for this row
-      Levels[i] = std::vector<int> (LenU+1);
-      for (size_t jj=0; jj<LenU+1; jj++) {
-        Levels[i][jj] = LevelsRowU[jj];
+      catch (std::runtime_error &e) {
+        insertError = true;
+        MaxNumEntriesPerRow = ceil(static_cast<double>(MaxNumEntriesPerRow) * 
+                                   Overalloc_);
       }
     }
-  }
+  } while (insertError);  // do until all insertions complete successfully
 
   // Complete Fill steps
   RCP<const map_type> L_DomainMap = OverlapGraph_->getRowMap ();
