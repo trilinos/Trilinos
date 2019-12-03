@@ -5,6 +5,7 @@ Finite Element Mesh Assembly
 Files
 ------
 
+### Common Files
 - `fem_assembly_typedefs.hpp`
   - Type definitions for the FEM Assembly examples.
 - `fem_assembly_Element.hpp`
@@ -15,8 +16,17 @@ Files
   - Provides helpers for processing command line options.
 - `fem_assembly_main`
   - Contains the main() function for the application.
+
+### Finite Element Mesh Assembly Example Sources
+
 - `fem_assembly_TotalElementLoop.hpp`
-  - StaticProfile version of the Total Element Loop example.
+  - Each process contains information from both its owned elements and its ghost elements so mesh construction
+    is possible without requiring communication.
+- `fem_assembly_InsertGlobalIndices_FE.hpp`
+  - Constructs an FECrsGraph by looping over the _owned_ elements and inserting the representations of the
+    connectivity of each element into the graph using their global ids. Uses a Kokkos kernel locally
+    and lets Tpetra handle the communication.
+
 
 Running The Example
 -------------------

@@ -263,7 +263,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm) );
     RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
-if ( (T & 1) != 1 ) continue;
+      if ( (T & 1) != 1 ) continue;
       Tpetra::ProfileType pftype = Tpetra::StaticProfile;
       params->set("Optimize Storage",((T & 2) == 2));
       MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary

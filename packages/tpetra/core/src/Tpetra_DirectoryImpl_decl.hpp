@@ -176,7 +176,7 @@ namespace Tpetra {
 
       bool isOneToOne (const Teuchos::Comm<int>& comm) const override;
 
-//! @name Implementation of Teuchos::Describable.
+      //! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.
@@ -224,7 +224,7 @@ namespace Tpetra {
         return true;
       }
 
-//! @name Implementation of Teuchos::Describable.
+      //! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.
@@ -262,7 +262,7 @@ namespace Tpetra {
         return true;
       }
 
-//! @name Implementation of Teuchos::Describable.
+      //! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.
@@ -327,7 +327,7 @@ namespace Tpetra {
 
       bool isOneToOne (const Teuchos::Comm<int>& comm) const override;
 
-//! @name Implementation of Teuchos::Describable.
+      //! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.

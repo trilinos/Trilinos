@@ -473,21 +473,6 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   if(!Comm.MyPID()) printf("*** Test 21 ***\n");
   rpc_test_additive_newconstructor(Comm,List_Material_And_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
 
-  /* Test w/ material */
-  lhs.PutScalar(0.0);
-  if(!Comm.MyPID()) printf("*** Test 16 ***\n");
-  rpc_test_additive_newconstructor(Comm,List_Material,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
-
-  /* Test w/ smooth special prolongator */
-  if(!Comm.MyPID()) printf("*** Test 17 ***\n");
-  rpc_test_additive_newconstructor(Comm,List_SmoothSP,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
-
-  /* Test w/ classical */
-  if(!Comm.MyPID()) printf("*** Test 18 ***\n");
-  rpc_test_additive_newconstructor(Comm,List_AMG,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
-
-
-
   delete M0; delete M1e;
   delete D0e;delete Se;
   delete SM;

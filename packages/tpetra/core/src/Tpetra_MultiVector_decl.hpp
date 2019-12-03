@@ -791,15 +791,7 @@ namespace Tpetra {
     ///   assignment, and move assignment.
     virtual ~MultiVector () = default;
 
-    /// \brief Return a deep copy of this MultiVector, with a
-    ///   different Node type.
-    ///
-    /// \param node2 [in/out] The new Node type.
-    ///
-    /// \warning We prefer that you use Tpetra::deep_copy (see below)
-    ///   rather than this method.  This method will go away at some
-    ///   point.
-//! Swap contents of \c mv with contents of \c *this.
+    //! Swap contents of \c mv with contents of \c *this.
     void swap (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
 
     //@}

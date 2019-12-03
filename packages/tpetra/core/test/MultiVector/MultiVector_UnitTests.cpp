@@ -4791,9 +4791,11 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE )
 
-#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+  #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
     UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )
-typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;
+
+
+  typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;
   typedef Tpetra::Map<>::global_ordinal_type default_global_ordinal_type;
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)

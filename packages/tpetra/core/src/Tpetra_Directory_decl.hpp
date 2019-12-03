@@ -169,7 +169,7 @@ namespace Tpetra {
     /// such as a MultiVector or CrsMatrix (distributed over a given
     /// Map) for a different Kokkos Node type, for example if creating
     /// a host (CPU) copy of a device (GPU) object.
-//@}
+    //@}
     //! @name Implementation of Teuchos::Describable.
     //@{
 

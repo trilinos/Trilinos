@@ -133,7 +133,7 @@ namespace { // (anonymous)
     // Buffer for storing output of getGlobalRowCopy.
     Teuchos::Array<GO> gblColIndsBuf (maxNumEntPerRow);
 
-const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
+    const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
     for (auto profileType_src : profileTypes) {
       crs_graph_type graph_src (rowMap_src, maxNumEntPerRow, profileType_src);
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {

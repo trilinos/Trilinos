@@ -432,11 +432,6 @@ namespace { // (anonymous)
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, ActiveFill, LO, GO , Node )
-  {
-  }
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, Typedefs, LO, GO , Node )
   {
     using Teuchos::Comm;
@@ -603,7 +598,6 @@ namespace { // (anonymous)
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyFillComplete, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs,          LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K,      LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill,        LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests,      LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC,     LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices,     LO, GO, NODE ) \

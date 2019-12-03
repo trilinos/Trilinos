@@ -100,7 +100,7 @@ RCP<crs_matrix_type>
 createTestMatrix (RCP<const Comm<int>> comm, const LO lclNumRows)
 {
   RCP<crs_matrix_type> A;
-A = rcp (new crs_matrix_type (makeRowMap (comm, lclNumRows),
+  A = rcp (new crs_matrix_type (makeRowMap (comm, lclNumRows),
                                 makeColumnMap (comm), size_t (1)));
 
   constexpr LO numEnt = 1;

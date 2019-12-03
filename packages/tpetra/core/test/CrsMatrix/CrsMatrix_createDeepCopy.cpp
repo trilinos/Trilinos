@@ -632,7 +632,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, createDeepCopy, SC, LO, GO, NT )
   {
     myOut << "Test CrsMatrix created with row Map" << endl;
     Teuchos::OSTab tab1 (myOut);
-RCP<crs_matrix_type> A
+    RCP<crs_matrix_type> A
       (new crs_matrix_type (rowMap, 1));
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -687,7 +687,7 @@ RCP<crs_matrix_type> A
     Teuchos::OSTab tab1 (myOut);
 
     RCP<const map_type> colMap = rowMap;
-RCP<crs_matrix_type> A
+    RCP<crs_matrix_type> A
       (new crs_matrix_type (rowMap, colMap, 1));
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {

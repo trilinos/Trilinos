@@ -287,7 +287,7 @@ namespace {
       TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
     }
 
-int lclSuccess = success ? 1 : 0;
+    int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
 
@@ -407,9 +407,9 @@ int lclSuccess = success ? 1 : 0;
       }
 
       for (int T=0; T<4; ++T) {
-if ( (T & 1) != 1 ) continue;
+        if ( (T & 1) != 1 ) continue;
         ProfileType pftype = StaticProfile;
-params->set("Optimize Storage",((T & 2) == 2));
+        params->set("Optimize Storage",((T & 2) == 2));
         GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
         Array<GO> GCopy(4); Array<LO> LCopy(4);
         ArrayView<const GO> GView;
@@ -802,9 +802,9 @@ params->set("Optimize Storage",((T & 2) == 2));
     GO mymiddle = map->getGlobalElement(1);  // get my middle row
 
     for (int T=0; T<4; ++T) {
-if ( (T & 1) != 1 ) continue;
+      if ( (T & 1) != 1 ) continue;
       ProfileType pftype = StaticProfile;
-RCP<ParameterList> params = parameterList ();
+      RCP<ParameterList> params = parameterList ();
       params->set("Optimize Storage",((T & 2) == 2));
 
       // Test (GitHub Issue) #2565 fix, while we're at it.
@@ -903,9 +903,9 @@ RCP<ParameterList> params = parameterList ();
       }
       Teuchos::OSTab tab1 (out);
 
-const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
-for (ProfileType pftype : profileTypes) {
-Teuchos::OSTab tab2 (out);
+      const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
+      for (ProfileType pftype : profileTypes) {
+        Teuchos::OSTab tab2 (out);
         for (bool optimizeStorage : {false, true}) {
           out << "Optimize Storage: " << (optimizeStorage ? "true" : "false")
               << endl;
