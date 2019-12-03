@@ -254,6 +254,7 @@ public:
   ///   declarations for copy construction, move construction, copy
   ///   assignment, and move assignment.
   virtual ~Vector () = default;
+  //@}
 
   //! @name Post-construction modification routines
   //@{
