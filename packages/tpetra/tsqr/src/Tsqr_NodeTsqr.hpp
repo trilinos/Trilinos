@@ -48,6 +48,8 @@
 #include "Teuchos_as.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Tsqr_Impl_Lapack.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include <vector>
@@ -87,6 +89,14 @@ namespace TSQR {
 
     //! Virtual destructor, for memory safety of derived classes.
     virtual ~NodeTsqr() = default;
+
+    //! List of valid parameters for the NodeTsqr subclass.
+    virtual Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters () const = 0;
+
+    //! Validate and read in parameters.
+    virtual void
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& paramList) = 0;
 
     /// \brief Whether this object is ready to perform computations.
     ///

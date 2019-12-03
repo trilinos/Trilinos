@@ -41,23 +41,12 @@
 #define TSQR_NODETSQRFACTORY_HPP
 
 #include "Tsqr_ConfigDefs.hpp"
-#include "Kokkos_DefaultNode.hpp"
-
 #ifdef HAVE_KOKKOSTSQR_TBB
 #  include "TbbTsqr.hpp"
 #endif // HAVE_KOKKOSTSQR_TBB
-
 #include "Tsqr_KokkosNodeTsqr.hpp"
 #include "Tsqr_SequentialTsqr.hpp"
-
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_TypeNameTraits.hpp"
-
-#include <stdexcept>
-
 
 namespace TSQR {
 
@@ -89,8 +78,38 @@ namespace TSQR {
   template<class Scalar, class LocalOrdinal, class Device>
   class NodeTsqrFactory {
   public:
-    //! The NodeTsqr subclass corresponding to the Kokkos Node type.
-    using node_tsqr_type = SequentialTsqr<LocalOrdinal, Scalar>;
+    using node_tsqr_type = NodeTsqr<LocalOrdinal, Scalar>;
+
+    static Teuchos::RCP<node_tsqr_type> getNodeTsqr ()
+    {
+      using execution_space = typename Device::execution_space;
+      using host_serial_node_tsqr_type =
+        SequentialTsqr<LocalOrdinal, Scalar>;
+      using host_parallel_node_tsqr_type =
+        KokkosNodeTsqr<LocalOrdinal, Scalar>;
+
+#ifdef KOKKOS_ENABLE_CUDA
+      constexpr bool is_cuda =
+        std::is_same<execution_space, Kokkos::Cuda>::value;
+#else
+      constexpr bool is_cuda = false;
+#endif // KOKKOS_ENABLE_CUDA
+      if (is_cuda) {
+        // FIXME (mfh 02 Dec 2019): We don't yet have a CUDA option.
+        // Just run SequentialTsqr (on host) for now.  This need not
+        // necessarily rely on UVM, since the adapter can access the
+        // host version of the data.
+        return Teuchos::rcp (new host_serial_node_tsqr_type);
+      }
+
+      execution_space execSpace;
+      if (execSpace.concurrency () == 1) {
+        return Teuchos::rcp (new host_serial_node_tsqr_type);
+      }
+      else {
+        return Teuchos::rcp (new host_parallel_node_tsqr_type);
+      }
+    }
   };
 } // namespace TSQR
 

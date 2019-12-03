@@ -47,8 +47,6 @@
 #include "Tsqr_Combine.hpp"
 #include "Tsqr_NodeTsqr.hpp"
 #include "Tsqr_Impl_SystemBlas.hpp"
-
-#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace TSQR {
@@ -1097,8 +1095,7 @@ namespace TSQR {
   /// </ul>
   template<class LocalOrdinal, class Scalar>
   class KokkosNodeTsqr :
-    public NodeTsqr<LocalOrdinal, Scalar>,
-    public Teuchos::ParameterListAcceptorDefaultBase
+    public NodeTsqr<LocalOrdinal, Scalar>
   {
   private:
     using base_type = NodeTsqr<LocalOrdinal, Scalar>;
@@ -1147,12 +1144,12 @@ namespace TSQR {
     /// \brief Validate and read in parameters.
     ///
     /// \param paramList [in/out] On input: non-null parameter list
-    ///   containing zero or more of the parameters in \c
+    ///   containing zero or more of the parameters in the result of
     ///   getValidParameters().  On output: missing parameters (i.e.,
-    ///   parameters in \c getValidParameters() but not in the input
-    ///   list) are filled in with default values.
+    ///   parameters in the result of getValidParameters() but not in
+    ///   the input list) are filled in with default values.
     void
-    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& paramList)
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& paramList) override
     {
       using Teuchos::ParameterList;
       using Teuchos::parameterList;
@@ -1191,9 +1188,6 @@ namespace TSQR {
       // Recreate the cache blocking strategy.
       typedef CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_type;
       strategy_ = strategy_type (cacheSizeHint, sizeOfScalar);
-
-      // Save the input parameter list.
-      setMyParamList (plist);
     }
 
     /// \brief Default valid parameter list.
@@ -1201,7 +1195,7 @@ namespace TSQR {
     /// The returned list contains all parameters accepted by \c
     /// KokkosNodeTsqr, with their default values and documentation.
     Teuchos::RCP<const Teuchos::ParameterList>
-    getValidParameters() const
+    getValidParameters() const override
     {
       using Teuchos::ParameterList;
       using Teuchos::parameterList;

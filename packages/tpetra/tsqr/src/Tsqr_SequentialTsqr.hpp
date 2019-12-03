@@ -306,14 +306,14 @@ namespace TSQR {
       setParameterList (params);
     }
 
-    /// \brief Valid default parameters for SequentialTsqr.
+    /// \brief List of valid parameters for SequentialTsqr.
     ///
     /// \note This object has to create a new parameter list each
     ///   time, since it cannot cache an RCP (due to thread safety --
     ///   TbbTsqr invokes multiple instances of SequentialTsqr in
     ///   parallel).
     Teuchos::RCP<const Teuchos::ParameterList>
-    getValidParameters () const
+    getValidParameters () const override
     {
       using Teuchos::ParameterList;
       using Teuchos::parameterList;

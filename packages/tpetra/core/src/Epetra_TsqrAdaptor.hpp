@@ -146,7 +146,7 @@ namespace Epetra {
       TSQR::NodeTsqrFactory<scalar_type, ordinal_type, device_type>;
     // Don't need a "typename" here, because there are no template
     // parameters involved in the type definition.
-    using node_tsqr_type = node_tsqr_factory_type::node_tsqr_type;
+    using node_tsqr_type = TSQR::NodeTsqr<ordinal_type, scalar_type>;
     using dist_tsqr_type = TSQR::DistTsqr<ordinal_type, scalar_type>;
     using tsqr_type = TSQR::Tsqr<ordinal_type, scalar_type>;
 
@@ -158,7 +158,7 @@ namespace Epetra {
     ///   implementation.  For details, call \c getValidParameters()
     ///   and examine the documentation embedded therein.
     TsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-      nodeTsqr_ (new node_tsqr_type),
+      nodeTsqr_ (node_tsqr_factory_type::getNodeTsqr ()),
       distTsqr_ (new dist_tsqr_type),
       tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
       ready_ (false)
@@ -168,7 +168,7 @@ namespace Epetra {
 
     //! Constructor (that uses default parameters).
     TsqrAdaptor () :
-      nodeTsqr_ (new node_tsqr_type),
+      nodeTsqr_ (node_tsqr_factory_type::getNodeTsqr ()),
       distTsqr_ (new dist_tsqr_type),
       tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
       ready_ (false)
