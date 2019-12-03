@@ -1557,7 +1557,7 @@ namespace Tpetra {
     typedef typename row_map_type::non_const_type non_const_row_map_type;
     typedef typename local_matrix_type::values_type values_type;
 #ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "fillLocalMatrix (called from fillComplete): ";
+    // const char tfecfFuncName[] = "fillLocalMatrix (called from fillComplete): ";
 #endif // HAVE_TPETRA_DEBUG
     ProfilingRegion regionFLM ("Tpetra::CrsMatrix::fillLocalMatrix");
 
@@ -1806,7 +1806,6 @@ namespace Tpetra {
                           const size_t numInputEnt)
   {
     typedef impl_scalar_type IST;
-    typedef GlobalOrdinal GO;
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "insertGlobalValuesImpl: ";
     const size_t origNumEnt = graph.getNumEntriesInLocalRow (rowInfo.localRow);
@@ -3509,7 +3508,6 @@ namespace Tpetra {
   scale (const Scalar& alpha)
   {
     typedef LocalOrdinal LO;
-    typedef typename Teuchos::Array<Scalar>::size_type size_type;
     const char tfecfFuncName[] = "scale: ";
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
 
@@ -3554,13 +3552,11 @@ namespace Tpetra {
     // it is easiest to replace all allocated values, instead of replacing only the ones with valid entries
     // however, if there are no valid entries, we can short-circuit
     // furthermore, if the values aren't allocated, we can short-circuit (no entry have been inserted so far)
-    const size_t nlrs = staticGraph_->getNodeNumRows();
     const size_t numEntries = staticGraph_->getNodeNumEntries();
     if (! staticGraph_->indicesAreAllocated () || numEntries == 0) {
       // do nothing
     }
     else {
-      const ProfileType profType = staticGraph_->getProfileType ();
       // FIXME (mfh 24 Dec 2014) Once CrsMatrix implements DualView
       // semantics, this would be the place to mark memory as
       // modified.
