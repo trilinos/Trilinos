@@ -666,7 +666,7 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap = buildOverlappingRowMap<map_type> (out, success, verbose, comm);
 
     RCP<CrsMatrixType> A;
-{
+    {
       using Teuchos::rcp_const_cast;
       typedef typename CrsMatrixType::crs_graph_type crs_graph_type;
       RCP<crs_graph_type> G (new crs_graph_type (rowMap, 5));
@@ -998,9 +998,9 @@ namespace { // (anonymous)
       out << "Target matrix is correct!" << endl;
     }
 
-const Tpetra::ProfileType pftypes[1] = {Tpetra::StaticProfile};
+    const Tpetra::ProfileType pftypes[1] = {Tpetra::StaticProfile};
     for (Tpetra::ProfileType profileType : pftypes) {
-out << ">>> Target matrix is {StaticProfile, locally indexed}" << endl;
+      out << ">>> Target matrix is {StaticProfile, locally indexed}" << endl;
       Teuchos::OSTab tab2 (out);
 
       const size_t maxNumEntPerRow = 10; // needs to be an upper bound
@@ -1121,8 +1121,8 @@ out << ">>> Target matrix is {StaticProfile, locally indexed}" << endl;
     out << "testCrsMatrixExport" << endl;
     Teuchos::OSTab tab1 (out);
 
-for (bool staticGraph : {true})
-{
+    for (bool staticGraph : {true})
+    {
       out << "Source matrix: staticGraph=" << (staticGraph ? "true" : "false")
           << endl;
       RCP<crs_matrix_type> A_overlapping =

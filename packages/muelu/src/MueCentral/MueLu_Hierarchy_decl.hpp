@@ -332,7 +332,7 @@ namespace MueLu {
       dumpFile_  = filename;
     }
 
-void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
+    void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
 
     // force recreation of cached description_ next time description() is called: 

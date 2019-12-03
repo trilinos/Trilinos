@@ -215,13 +215,13 @@ namespace Tpetra {
     }
     else { // the row Maps of A and B are not the same
       // Construct the result matrix C.
-// true: !A_rowMap->isSameAs (*B_rowMap)
+      // true: !A_rowMap->isSameAs (*B_rowMap)
       TEUCHOS_TEST_FOR_EXCEPTION(true,
 				 std::invalid_argument,
 				 "Tpetra::RowMatrix::add: The row maps must be the same for statically "
 				 "allocated matrices in order to be sure that there is sufficient space "
 				 "to do the addition");
-}
+    }
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,

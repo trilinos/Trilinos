@@ -101,7 +101,7 @@ namespace MueLu {
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
-//! @name MueLu specific
+    //! @name MueLu specific
     //@{
 
     //! Direct access to the underlying MueLu::Hierarchy.

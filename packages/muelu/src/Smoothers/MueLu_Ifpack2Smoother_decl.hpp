@@ -187,7 +187,7 @@ namespace MueLu {
 
     //@}
 
-//! @name Overridden from Teuchos::Describable
+    //! @name Overridden from Teuchos::Describable
     //@{
 
     //! Return a simple one-line description of this object.
@@ -265,7 +265,7 @@ namespace MueLu {
     void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const {}
     RCP<SmootherPrototype> Copy() const { return Teuchos::null;}
 
-std::string description() const { return std::string(""); }
+    std::string description() const { return std::string(""); }
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {}
 
     //! Get a rough estimate of cost per iteration

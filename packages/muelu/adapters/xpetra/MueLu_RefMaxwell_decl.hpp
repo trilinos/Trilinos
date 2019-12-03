@@ -329,7 +329,7 @@ namespace MueLu {
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
-void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
 
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector & X,

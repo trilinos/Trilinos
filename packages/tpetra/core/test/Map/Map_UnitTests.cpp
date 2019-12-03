@@ -404,7 +404,7 @@ namespace {
     TEST_EQUALITY( gblSuccess, 1 );
   }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, ZeroLocalElements, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, ZeroLocalElements, LO, GO )
   {
     typedef Tpetra::Map<LO,GO> M;
 
@@ -488,7 +488,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, ZeroLocalElements, LO, GO )
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ZeroLocalElements, LO, GO )
 #endif // HAVE_TPETRA_DEBUG
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP)
 

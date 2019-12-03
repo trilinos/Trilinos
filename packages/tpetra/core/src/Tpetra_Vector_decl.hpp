@@ -255,16 +255,6 @@ public:
   ///   assignment, and move assignment.
   virtual ~Vector () = default;
 
-  //@}
-  //! \name Clone method
-  //@{
-
-  /// \brief Return a deep copy of <tt>*this</tt> with a different
-  ///   Node type (and therefore a different Device type).
-  /// \tparam Node2 The returned Vector's Node type.
-  ///
-  /// \param node2 [in] The returned Vector's Kokkos Node instance.
-//@}
   //! @name Post-construction modification routines
   //@{
 

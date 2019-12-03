@@ -138,7 +138,7 @@ namespace MueLu {
     friend class TrilinosSmoother;
 #endif
 
-//! Convert an Ifpack2 preconditioner name to Ifpack
+    //! Convert an Ifpack2 preconditioner name to Ifpack
     // As a temporary solution.
     // See https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c5 for what I proposed to do
     static std::string Ifpack2ToIfpack1Type(const std::string& type);

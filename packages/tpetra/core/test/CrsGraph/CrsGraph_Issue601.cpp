@@ -97,7 +97,7 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap =
       rcp (new map_type (INV, myGblRowInds (), indexBase, comm));
 
-const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
+    const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
     bool insertLocalEntryValues[] = { true, false };
 
     // Test both dynamic and static profile.
