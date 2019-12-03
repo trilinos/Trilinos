@@ -771,9 +771,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
     /////////////////////////////////////////////////////////////////////////
 
-    // define max iteration counts
-    const int maxCoarseIter = 100;
-
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
     if (myRank == 0)
@@ -795,7 +792,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // Richardson iterations
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni = Teuchos::ScalarTraits<Scalar>::zero();
     const int old_precision = std::cout.precision();
     std::cout << std::setprecision(8) << std::scientific;
     int cycle = 0;
@@ -807,15 +804,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
         {
-          computeResidual(regRes, regX, regB, regionGrpMats, dofMap,
-              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+          computeResidual(regRes, regX, regB, regionGrpMats,
+              revisedRowMapPerGrp, rowImportPerGrp);
 
           scaleInterfaceDOFs(regRes, regInterfaceScalings[0], true);
         }
 
         compRes = VectorFactory::Build(dofMap, true);
-        regionalToComposite(regRes, compRes,
-                            rowImportPerGrp, Xpetra::ADD);
+        regionalToComposite(regRes, compRes, rowImportPerGrp);
 
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
         if(cycle == 0) { normResIni = normRes; }
@@ -839,7 +835,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         /////////////////////////////////////////////////////////////////////////
 
         //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-        vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
+        vCycle(0, numLevels,
                regX, regB, regMatrices,
                regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
                regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData, hierarchyData);

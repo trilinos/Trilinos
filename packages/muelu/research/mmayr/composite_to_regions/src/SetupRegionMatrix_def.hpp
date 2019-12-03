@@ -548,8 +548,8 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
 
     // move to regional layout
     Array<RCP<Vector> > quasiRegNspViolation(maxRegPerProc);
-    createRegionalVector(quasiRegNspViolation, maxRegPerProc, rowMapPerGrp);
-    createRegionalVector(regNspViolation, maxRegPerProc, revisedRowMapPerGrp);
+    createRegionalVector(quasiRegNspViolation, rowMapPerGrp);
+    createRegionalVector(regNspViolation, revisedRowMapPerGrp);
     compositeToRegional(nspViolation, quasiRegNspViolation, regNspViolation,
                         revisedRowMapPerGrp, rowImportPerGrp);
 
@@ -571,8 +571,7 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
 
       // transform to composite layout while adding interface values via the Export() combine mode
       RCP<Vector> compInterfaceScalingSum = VectorFactory::Build(mapComp, true);
-      regionalToComposite(interfaceScaling, compInterfaceScalingSum,
-                          rowImportPerGrp, Xpetra::ADD);
+      regionalToComposite(interfaceScaling, compInterfaceScalingSum, rowImportPerGrp);
 
       /* transform composite layout back to regional layout. Now, GIDs associated
        * with region interface should carry a scaling factor (!= 1).
@@ -738,8 +737,6 @@ computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
                 const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regX, ///< left-hand side (solution)
                 const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regB, ///< right-hand side (forcing term)
                 const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
-                const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp, ///< composite map, computed by removing GIDs > numDofs in revisedRowMapPerGrp
-                const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in region layout [in] requires the mapping of GIDs on fine mesh to "filter GIDs"
                 const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp, ///< revised row maps in region layout [in] (actually extracted from regionGrpMats)
                 const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in]
     )
@@ -764,8 +761,7 @@ computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("computeResidual: 2 - sumInterfaceValues")));
 
-  sumInterfaceValues(regRes, mapComp, rowMapPerGrp,
-                     revisedRowMapPerGrp, rowImportPerGrp);
+  sumInterfaceValues(regRes, revisedRowMapPerGrp, rowImportPerGrp);
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("computeResidual: 3 - Rreg = Breg - Rreg")));

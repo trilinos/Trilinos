@@ -503,9 +503,6 @@ private:
   // if the target parts are uniform
   Kokkos::View<bool *, Kokkos::HostSpace> mj_uniform_parts;
 
-  // target part weight sizes.
-  Kokkos::View<mj_scalar_t **, device_t> mj_part_sizes;
-
   // if the coordinates have uniform weights
   Kokkos::View<bool *, Kokkos::HostSpace> mj_uniform_weights;
 
@@ -1009,8 +1006,6 @@ public:
    * \param mj_uniform_weights: if weight index [i] has uniform weight or not.
    * \param mj_weights: the two dimensional array for weights
    * \param mj_uniform_parts: if the target partitioning aims uniform parts
-   * \param mj_part_sizes: if the target partitioning does not aim uniform
-   * parts, then weight of each part.
    * \param result_assigned_part_ids: Output - the result partids corresponding
    * to the coordinates given im result_mj_gnos.
    * \param result_mj_gnos: Output - the result coordinate global id's
@@ -1034,7 +1029,6 @@ public:
     Kokkos::View<bool*, Kokkos::HostSpace> & mj_uniform_weights,
     Kokkos::View<mj_scalar_t**, device_t> & mj_weights,
     Kokkos::View<bool*, Kokkos::HostSpace> & mj_uniform_parts,
-    Kokkos::View<mj_scalar_t**, device_t> & mj_part_sizes,
     Kokkos::View<mj_part_t*, device_t> & result_assigned_part_ids,
     Kokkos::View<mj_gno_t*, device_t> & result_mj_gnos);
 
@@ -1575,13 +1569,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   this->mj_uniform_weights(0) = true;
 
   this->mj_weights = Kokkos::View<mj_scalar_t**, device_t>
-    ("weights", 1);
+    ("weights", 1, 1);
 
   this->mj_uniform_parts =
     Kokkos::View<bool*, Kokkos::HostSpace>("uniform parts", 1);
   this->mj_uniform_parts(0) = true;
-
-  this->mj_part_sizes = Kokkos::View<mj_scalar_t**, device_t> ("part sizes", 1);
 
   this->set_part_specifications();
 
@@ -2076,7 +2068,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     this->part_xadj = this->new_part_xadj;
     this->host_part_xadj = Kokkos::create_mirror_view(part_xadj);
     Kokkos::deep_copy(host_part_xadj, part_xadj); // keep in sync
-    this->new_part_xadj = Kokkos::View<mj_lno_t*, device_t>("empty");
+    this->new_part_xadj = Kokkos::View<mj_lno_t*, device_t>("empty", 0);
   }
 
   Kokkos::deep_copy(initial_adjList_output_adjlist, coordinate_permutations);
@@ -2604,9 +2596,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   this->new_coordinate_permutations = Kokkos::View<mj_lno_t*, device_t>(
     Kokkos::ViewAllocateWithoutInitializing("num_local_coords"),
     this->num_local_coords);
-  // TODO empty is ok for NULL replacement?
+
   this->assigned_part_ids = Kokkos::View<mj_part_t*, device_t>(
-    Kokkos::ViewAllocateWithoutInitializing("assigned parts"));
+    Kokkos::ViewAllocateWithoutInitializing("assigned parts"), 0);
   if(this->num_local_coords > 0) {
     this->assigned_part_ids = Kokkos::View<mj_part_t*, device_t>(
       Kokkos::ViewAllocateWithoutInitializing("assigned part ids"),
@@ -2625,7 +2617,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
   // the ends points of the output, this is allocated later.
   this->new_part_xadj = Kokkos::View<mj_lno_t*, device_t>(
-    Kokkos::ViewAllocateWithoutInitializing("empty"));
+    Kokkos::ViewAllocateWithoutInitializing("empty"), 0);
 
   // only store this much if cuts are needed to be stored.
   this->all_cut_coordinates = Kokkos::View<mj_scalar_t*, device_t>(
@@ -2634,13 +2626,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
   // how much weight percentage should a MPI put left side of the each cutline
   this->process_cut_line_weight_to_put_left = Kokkos::View<mj_scalar_t*,
-    device_t>(Kokkos::ViewAllocateWithoutInitializing("empty"));
+    device_t>(Kokkos::ViewAllocateWithoutInitializing("empty"), 0);
 
   // how much weight percentage should each thread in MPI put left side of
   // each outline
   this->thread_cut_line_weight_to_put_left =
     Kokkos::View<mj_scalar_t*, device_t>(
-    Kokkos::ViewAllocateWithoutInitializing("empty"));
+    Kokkos::ViewAllocateWithoutInitializing("empty"), 0);
 
   // distribute_points_on_cut_lines = false;
   if(this->distribute_points_on_cut_lines) {
@@ -7751,8 +7743,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
  * \param mj_uniform_weights: if weight index [i] has uniform weight or not.
  * \param mj_weights: the two dimensional array for weights
  * \param mj_uniform_parts: if the target partitioning aims uniform parts
- * \param mj_part_sizes: if the target partitioning does not aim uniform parts,
- * then weight of each part.
  * \param result_assigned_part_ids: Output - 1D pointer, should be provided as
  * null. Memory is given in the function. the result partids corresponding to
  * the coordinates given in result_mj_gnos.
@@ -7781,7 +7771,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   Kokkos::View<bool*, Kokkos::HostSpace> & mj_uniform_weights_,
   Kokkos::View<mj_scalar_t**, device_t> & mj_weights_,
   Kokkos::View<bool*, Kokkos::HostSpace> & mj_uniform_parts_,
-  Kokkos::View<mj_scalar_t**, device_t> & mj_part_sizes_,
   Kokkos::View<mj_part_t *, device_t> & result_assigned_part_ids_,
   Kokkos::View<mj_gno_t*, device_t> & result_mj_gnos_)
 {
@@ -7810,7 +7799,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   this->mj_uniform_weights = mj_uniform_weights_;
   this->mj_weights = mj_weights_;
   this->mj_uniform_parts = mj_uniform_parts_;
-  this->mj_part_sizes = mj_part_sizes_;
+
   // this->set_input_data();
 
   this->set_part_specifications();
@@ -8332,7 +8321,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       this->host_part_xadj = Kokkos::create_mirror_view(part_xadj);
       Kokkos::deep_copy(host_part_xadj, part_xadj); // keep in sync
 
-      this->new_part_xadj = Kokkos::View<mj_lno_t*, device_t>("empty");
+      this->new_part_xadj = Kokkos::View<mj_lno_t*, device_t>("empty", 0);
       this->mj_env->timerStop(MACRO_TIMERS,
         mj_timer_base_string + "Problem_Partitioning_" + istring);
     }
@@ -8526,9 +8515,6 @@ private:
 
   // if the target parts are uniform
   Kokkos::View<bool*, Kokkos::HostSpace> mj_uniform_parts;
-
-  // target part weight sizes.
-  Kokkos::View<mj_scalar_t**, device_t> mj_part_sizes;
 
   // Nonuniform first level partitioning
   // Currently used for Dragonfly task mapping by partitioning Dragonfly RCA
@@ -9079,7 +9065,6 @@ void Zoltan2_AlgMJ<Adapter>::partition(
         this->mj_uniform_weights,
         result_mj_weights,
         this->mj_uniform_parts,
-        this->mj_part_sizes,
         result_assigned_part_ids,
         result_mj_gnos
       );
@@ -9200,8 +9185,6 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
   // raw pointer addresess will be obtained from multivector.
   this->mj_uniform_parts = Kokkos::View<bool *, Kokkos::HostSpace>(
     "uniform parts", criteria_dim);
-  this->mj_part_sizes = Kokkos::View<mj_scalar_t **, device_t>(
-    "part sizes", criteria_dim);
   this->mj_uniform_weights = Kokkos::View<bool *, Kokkos::HostSpace>(
     "uniform weights", criteria_dim);
 
@@ -9257,7 +9240,7 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
 
   if(this->num_weights_per_coord == 0) {
     this->mj_uniform_weights(0) = true;
-    Kokkos::resize(this->mj_weights, 0);
+    Kokkos::resize(this->mj_weights, 0, 0);
   }
   else{
     this->mj_weights = wgts;
