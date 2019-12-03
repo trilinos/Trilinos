@@ -241,6 +241,7 @@ int ML_Epetra::RefMaxwell_SetupCoordinates(ML_Operator* A,
   return(0);
 }
 
+
 // ================================================ ====== ==== ==== == =
 static int RefMaxwell_SetupCoordinates(ML_Operator* A, Teuchos::ParameterList &List_, double *&coordx, double *&coordy, double *&coordz, double*& material)
 
