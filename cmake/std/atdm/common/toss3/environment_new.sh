@@ -27,6 +27,7 @@ module purge
 module load sems-env
 module load atdm-env
 module load atdm-ninja_fortran/1.7.2
+module load sparc-git/2.19.1
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
