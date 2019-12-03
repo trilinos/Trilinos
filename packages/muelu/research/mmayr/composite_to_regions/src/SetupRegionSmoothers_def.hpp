@@ -102,6 +102,9 @@ void relaxationSmootherSetup(RCP<Teuchos::ParameterList> params,
                  const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) ///< row importer in region layout [in]
 {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Relaxation Setup")));
+
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
 
@@ -145,6 +148,9 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
     )
 {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Jacobi Iterate")));
+
   // const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar SC_ONE = Teuchos::ScalarTraits<Scalar>::one();
 
@@ -193,6 +199,9 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
                )
 {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Gauss-Seidel Iterate")));
+
   const int maxIter    = smootherParams->get<int>   ("smoother: sweeps");
   const double damping = smootherParams->get<double>("smoother: damping");
   Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal");
@@ -352,6 +361,9 @@ void chebyshevSetup(RCP<Teuchos::ParameterList> params,
                    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
                    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Chebyshev Setup")));
+
   const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
 
@@ -401,6 +413,9 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
                    )
 {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Chebyshev Iterate")));
+
   const int maxIter      = params->get<int>   ("smoother: sweeps");
   const Scalar eigRatio  = params->get<double>("smoother: eigRatio");
   const Scalar lambdaMax = params->get<Scalar>("chebyshev: lambda max");
@@ -466,6 +481,9 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
                    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in region layout [in] requires the mapping of GIDs on fine mesh to "filter GIDs"
                    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) ///< row importer in region layout [in]
 {
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Smoother: 1 - Setup")));
+
   const std::string type = params->get<std::string>("smoother: type");
 
   std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
@@ -506,6 +524,9 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
                    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
                    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
                    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) {
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Smoother: 2 - Apply")));
+
   const std::string type = params->get<std::string>("smoother: type");
 
   std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
