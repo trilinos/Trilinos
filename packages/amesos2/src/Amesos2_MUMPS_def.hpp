@@ -502,6 +502,8 @@ namespace Amesos2
   void
   MUMPS<Matrix,Vector>::MUMPS_ERROR()const
   {
+    using Teuchos::Comm;
+    using Teuchos::RCP;
     bool Wrong = ((mumps_par.info[0] != 0) || (mumps_par.infog[0] != 0)) && (this->rank_ < this->nprocs_);
     if(Wrong){
       if (this->rank_==0) {
@@ -515,12 +517,17 @@ namespace Amesos2
         std::cerr << "Amesos_Mumps : On process " << this->matrixA_->getComm()->getRank()
         << ", INFO(2) = " << mumps_par.info[1] << std::endl;
       }
-      if (this->rank_==0) {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,
-                                   std::runtime_error,
-                                   "MUMPS error");
-      }
+      
+      
     }
+    // Throw on all ranks
+    int WrongInt = Wrong;
+    RCP<const Comm<int> > matComm = this->matrixA_->getComm();
+    Teuchos::broadcast<int,int>(*matComm,0,1,&WrongInt);
+    TEUCHOS_TEST_FOR_EXCEPTION(WrongInt>0,
+                               std::runtime_error,
+                               "MUMPS error");
+    
   }//end MUMPS_ERROR()
 
 
