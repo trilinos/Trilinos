@@ -143,6 +143,9 @@ if [[ "${SEMS_PLATFORM}" == "rhel6-x86_64" ]] ; then
 elif [[ "${SEMS_PLATFORM}" == "rhel7-x86_64" ]] ; then
   systemNameTypeMatchedList+=(sems-rhel7)
   systemNameTypeMatchedListHostNames[sems-rhel7]=sems-rhel7
+elif [[ "${SNLSYSTEM}" == "astra" ]] ; then
+  echo "Don't call get-platform on 'astra' systems" > /dev/null
+  # Above logic avoids an 'ERROR: Unrecognized cluster <name>' on these systems
 elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
   ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
   if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
