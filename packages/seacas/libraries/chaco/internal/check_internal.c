@@ -72,8 +72,8 @@ void check_internal(struct vtx_data **graph,      /* graph data structure */
       printf("int_list out of order, k=%d, set = %d, old_val=%d, val = %d\n", k, set, old_val, val);
     }
     if (ptr->prev != old_ptr) {
-      printf(" int_list back link screwed up, set=%d, k=%d, old_ptr=%ld, ptr->prev = %ld\n", set, k,
-             (long)old_ptr, (long)ptr->prev);
+      printf(" int_list back link screwed up, set=%d, k=%d, old_ptr=%lld, ptr->prev = %lld\n", set,
+             k, (long long)old_ptr, (long long)ptr->prev);
     }
     old_ptr = ptr;
     old_val = val;
@@ -85,8 +85,8 @@ void check_internal(struct vtx_data **graph,      /* graph data structure */
       vtx = ((int)(ptr2 - vtx_elems)) / size;
       vwgt_sum += graph[vtx]->vwgt;
       if (ptr2->prev != old_ptr2) {
-        printf(" set_list back link screwed up, set=%d, k=%d, old_ptr2=%ld, ptr2->prev = %ld\n",
-               set, k, (long)old_ptr2, (long)ptr2->prev);
+        printf(" set_list back link screwed up, set=%d, k=%d, old_ptr2=%lld, ptr2->prev = %lld\n",
+               set, k, (long long)old_ptr2, (long long)ptr2->prev);
       }
       old_ptr2 = ptr2;
 

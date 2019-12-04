@@ -4,18 +4,19 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <vector>                       // for vector
 #include "UnitTestSkinMeshUseCaseUtils.hpp"  // for get_skin_parts, etc
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
+
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, PartVector, etc
 #include "stk_unit_test_utils/ElemGraphTestUtils.hpp"  // for skin_part, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
 namespace stk { namespace mesh { class Part; } }
 
 

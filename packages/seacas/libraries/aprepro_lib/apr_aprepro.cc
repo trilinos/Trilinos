@@ -51,7 +51,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.11 (2019/02/27)";
+  const char *       version_string = "5.14 (2019/11/20)";
 
   void output_copyright();
 
@@ -520,7 +520,8 @@ namespace SEAMS {
           << "  --comment=char or -c=char: Change comment character to 'char'      \n"
           << "      --copyright or -C: Print copyright message                 \n"
           << "   --keep_history or -k: Keep a history of aprepro substitutions.\n"
-          << "          --quiet or -q: (ignored)                               \n"
+          << "                         (not for general interactive use)       \n"
+          << "          --quiet or -q: (deprecated, option is ignored)         \n"
           << "                var=val: Assign value 'val' to variable 'var'    \n"
           << "                         Use var=\\\"sval\\\" for a string variable\n\n"
           << "\tUnits Systems: si, cgs, cgs-ev, shock, swap, ft-lbf-s, ft-lbm-s, in-lbf-s\n"
@@ -719,8 +720,8 @@ namespace SEAMS {
                               << "}\t(immutable)" << '\n';
               }
               else if (ptr->type == Parser::token::SVAR) {
-                if (index(ptr->value.svar.c_str(), '\n') != nullptr ||
-                    index(ptr->value.svar.c_str(), '"') != nullptr) {
+                if (strchr(ptr->value.svar.c_str(), '\n') != nullptr ||
+                    strchr(ptr->value.svar.c_str(), '"') != nullptr) {
                   (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name
                                 << "\t= '" << ptr->value.svar << "'}" << '\n';
                 }
@@ -730,8 +731,8 @@ namespace SEAMS {
                 }
               }
               else if (ptr->type == Parser::token::IMMSVAR) {
-                if (index(ptr->value.svar.c_str(), '\n') != nullptr ||
-                    index(ptr->value.svar.c_str(), '"') != nullptr) {
+                if (strchr(ptr->value.svar.c_str(), '\n') != nullptr ||
+                    strchr(ptr->value.svar.c_str(), '"') != nullptr) {
                   (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name
                                 << "\t= '" << ptr->value.svar << "'}\t(immutable)" << '\n';
                 }

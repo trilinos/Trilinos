@@ -49,7 +49,7 @@ void PrintLine()
 int TestMultiLevelPreconditioner(char ProblemType[],
 				 Teuchos::ParameterList & MLList,
 				 Epetra_LinearProblem & Problem, double & TotalErrorResidual,
-				 double & TotalErrorExactSol,bool cg=false)
+				 double & TotalErrorExactSol,bool cg=false, bool useNS=true)
 {
 
   Epetra_MultiVector* lhs = Problem.GetLHS();
@@ -83,15 +83,17 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   MLList.set("x-coordinates",&((*coord1)[0]));
   MLList.set("y-coordinates",&((*coord2)[0]));
   MLList.set("z-coordinates",&((*coord3)[0]));
-  MLList.set("null space: type","pre-computed");
-  MLList.set("null space: add default vectors",false);
-  MLList.set("null space: dimension",6);
+  double *rbm;
+  if(useNS) {
+    MLList.set("null space: type","pre-computed");
+    MLList.set("null space: add default vectors",false);
+    MLList.set("null space: dimension",6);
 
-
-  // Nullspace
-  double *rbm = new double[7*A->NumMyRows()];
-  ML_Coord2RBM(coord1->MyLength(),&((*coord1)[0]),&((*coord2)[0]),&((*coord3)[0]),rbm,3,0);
-  MLList.set("null space: vectors",rbm);
+    // Nullspace
+    rbm = new double[7*A->NumMyRows()];
+    ML_Coord2RBM(coord1->MyLength(),&((*coord1)[0]),&((*coord2)[0]),&((*coord3)[0]),rbm,3,0);
+    MLList.set("null space: vectors",rbm);
+  }    
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
@@ -106,7 +108,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   solver.Iterate(1550, 1e-12);
 
   delete MLPrec;
-  delete [] rbm;
+  if(useNS)  delete [] rbm;
 
   // ==================================================== //
   // compute difference between exact solution and ML one //
@@ -155,6 +157,11 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
+  int run=-1;
+  if(argc > 1) {
+    run = atoi(argv[1]);
+  }
+    
   // initialize the random number generator
 
   int ml_one = 1;
@@ -191,9 +198,11 @@ int main(int argc, char *argv[]) {
   MLList.set("smoother: type", "Gauss-Seidel");
   char mystring[80];
   strcpy(mystring,"SA");
+#if 0
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
+  // ============================================== //
   // default options for SA, efficient symmetric GS //
   // ============================================== //
 
@@ -243,7 +252,44 @@ int main(int argc, char *argv[]) {
   MLList.set("z-coordinates",&((*coord3)[0]));
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
-  
+#endif
+  // =========================== //
+  // No QR test                  //
+  // =========================== //
+  if(run==-1 || run==1) {
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type", "Chebyshev");
+  MLList.set("aggregation: type","Uncoupled");
+  MLList.set("aggregation: do qr",false);
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol,false,false);
+  }
+  // =========================== //
+  // Partial Dirichlet Test      //
+  // =========================== //
+  if(run==-1 || run==2) {
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  {
+    int NumEntries;
+    double *values;
+    int *indices;
+    // Dirichlet the first row
+    int grid = Matrix->GRID(0);
+    Matrix->ExtractMyRowView(0,NumEntries,values,indices);
+    for(int j=0; j<NumEntries; j++)
+      if(grid == Matrix->GCID(indices[j])) values[j] = 1.0;
+      else values[j] = 0.0;
+  }
+  MLList.set("smoother: type", "Chebyshev");
+  MLList.set("aggregation: type","Uncoupled");
+  MLList.set("aggregation: do qr",false);
+  MLList.set("aggregation: coarsen partial dirichlet dofs",false);
+  MLList.set("print hierarchy", -1);
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol,false,false);
+  }
 
   // ===================== //
   // print out total error //

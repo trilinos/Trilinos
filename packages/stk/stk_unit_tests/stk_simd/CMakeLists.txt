@@ -22,7 +22,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_TEST(
    simd_unit_tests
    NAME STKSimd_Simd
-   ARGS "--gtest_filter=StkSimd.Simd_fmadd"
+   ARGS "--gtest_filter=StkSimd.SimdAddSubtractMultDivide"
    COMM serial mpi
    PASS_REGULAR_EXPRESSION "PASS"
    FAIL_REGULAR_EXPRESSION "FAIL"

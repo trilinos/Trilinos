@@ -49,10 +49,10 @@ c Revision 1.1  90/11/12  14:09:26  gdsjaar
 c Initial revision
 c
 
-C   --*** CHGINT *** (GJOIN) Changes all occurances in list
+C   --*** CHGINT *** (GJOIN) Changes all occurrences in list
 C   --   Written by Amy Gilkey - revised 09/29/87
 C   --
-C   --CHGINT changes all occurances of an integer in a list to a given
+C   --CHGINT changes all occurrences of an integer in a list to a given
 C   --integer.
 C   --
 C   --Parameters:

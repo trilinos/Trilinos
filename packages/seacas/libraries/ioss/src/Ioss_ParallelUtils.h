@@ -97,6 +97,8 @@ namespace Ioss {
     int      parallel_size() const;
     int      parallel_rank() const;
 
+    void barrier() const;
+
     /*!
      * Global OR of attribute strings, the processors which have no
      * knowledge of the value should initialize to '0' and the

@@ -48,7 +48,7 @@ C   --*** CNVMAX *** (DETOUR) Calculate nodal variable min/max and count number
 C   --   Written by Amy Gilkey - revised 03/09/88
 C   --
 C   --CNVMAX calculates the minimum and maximum value of a nodal variable
-C   --and counts the number of occurances of the minimum and maximum.
+C   --and counts the number of occurrences of the minimum and maximum.
 C   --
 C   --Parameters:
 C   --   NUMNPF - IN - the number of nodes

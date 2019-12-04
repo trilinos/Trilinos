@@ -34,29 +34,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_NodeTsqrFactory_hpp
 #define __TSQR_NodeTsqrFactory_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include "Tsqr_ConfigDefs.hpp"
+#include "Kokkos_DefaultNode.hpp"
 
 #ifdef HAVE_KOKKOSTSQR_TBB
-#  include <TbbTsqr.hpp>
+#  include "TbbTsqr.hpp"
 #endif // HAVE_KOKKOSTSQR_TBB
 
-#include <Tsqr_KokkosNodeTsqr.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
+#include "Tsqr_KokkosNodeTsqr.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
 
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ParameterListExceptions.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListExceptions.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 #include <stdexcept>
 
@@ -133,24 +131,13 @@ namespace TSQR {
       return rcp (new node_tsqr_type (plist));
     }
 
-    /// \brief Prepare the NodeTsqr instance for use by setting its
-    ///   Kokkos \c Node instance.
+    /// \brief Prepare the NodeTsqr instance for use.
     ///
-    /// Some NodeTsqr subclasses can't compute anything until they
-    /// have a pointer to a Kokkos Node instance.  Call this method
-    /// before invoking any computational methods of the NodeTsqr
-    /// subclass instance.
-    ///
-    /// \pre <tt> ! nodeTsqr.is_null() && ! node.is_null() </tt>
+    /// \pre <tt> ! nodeTsqr.is_null() </tt>
     /// \post <tt> nodeTsqr->ready() </tt>
     static void
-    prepareNodeTsqr (const Teuchos::RCP<node_tsqr_type>& nodeTsqr,
-                     const Teuchos::RCP<node_type>& node)
-    {
-      // SequentialTsqr doesn't need the Kokkos Node instance.
-      (void) nodeTsqr;
-      (void) node;
-    }
+    prepareNodeTsqr (const Teuchos::RCP<node_tsqr_type>& /* nodeTsqr */)
+    {}
   };
 } // namespace TSQR
 

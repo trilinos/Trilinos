@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -1526,8 +1524,9 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
     using IST = impl_scalar_type;
+    const char longFuncName[] = "Tpetra::MultiVector::unpackAndCombine";
     const char tfecfFuncName[] = "unpackAndCombine: ";
-    ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombine");
+    ProfilingRegion regionUAC (longFuncName);
 
     // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
     // have the option to check indices.  We do so when Tpetra is in
@@ -1544,7 +1543,7 @@ namespace Tpetra {
       auto comm = map.is_null () ? Teuchos::null : map->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": MV::packAndPrepare: ";
+      os << "Proc " << myRank << ": " << longFuncName << ": ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
       os << "Start" << endl;
       std::cerr << os.str ();
@@ -4604,11 +4603,10 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
+  isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& vec) const
+  {
     using ::Tpetra::Details::PackTraits;
     using ST = impl_scalar_type;
-    using HES =
-      typename Kokkos::View<int*, device_type>::HostMirror::execution_space;
 
     const size_t l1 = this->getLocalLength();
     const size_t l2 = vec.getLocalLength();
@@ -4621,8 +4619,8 @@ namespace Tpetra {
 
     auto v1 = this->getLocalViewHost ();
     auto v2 = vec.getLocalViewHost ();
-    if (PackTraits<ST, HES>::packValueCount (v1(0,0)) !=
-        PackTraits<ST, HES>::packValueCount (v2(0,0))) {
+    if (PackTraits<ST>::packValueCount (v1(0,0)) !=
+        PackTraits<ST>::packValueCount (v2(0,0))) {
       return false;
     }
 

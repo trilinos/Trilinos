@@ -357,20 +357,14 @@ bool EntityCommDatabase::cached_find(const EntityKey& key) const
 }
 
 
-void EntityCommDatabase::insert(const EntityKey& key)
+const EntityComm* EntityCommDatabase::insert(const EntityKey& key)
 {
   if (!cached_find(key)) {
     m_last_lookup = m_comm_map.insert(std::make_pair(key, EntityComm())).first;
   }
+  return &(m_last_lookup->second);
 }
 
-
-int EntityCommDatabase::owner_rank( const EntityKey & key ) const
-{
-  if (!cached_find(key)) return InvalidProcessRank;
-
-  return m_last_lookup->second.owner_rank;
-}
 
 PairIterEntityComm EntityCommDatabase::shared_comm_info( const EntityKey & key ) const
 {
@@ -422,18 +416,18 @@ PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key, const Ghosti
 }
 
 
-bool EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & val, int owner )
+std::pair<EntityComm*,bool> EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & val, int /*owner*/ )
 {
   insert(key);
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
-  m_last_lookup->second.owner_rank = owner;
 
   EntityCommInfoVector::iterator i =
     std::lower_bound( comm_map.begin() , comm_map.end() , val );
 
-  const bool result = ((i == comm_map.end()) || (val != *i));
+  const bool didInsert = ((i == comm_map.end()) || (val != *i));
+  std::pair<EntityComm*,bool> result = std::make_pair(&(m_last_lookup->second), didInsert);
 
-  if ( result ) {
+  if ( didInsert ) {
     comm_map.insert( i , val );
   }
 
@@ -536,20 +530,6 @@ bool EntityCommDatabase::comm_clear(const EntityKey & key)
     }
     return did_clear;
 }
-
-
-bool EntityCommDatabase::change_owner_rank(const EntityKey& key, int owner)
-{
-  // Do not add key to map, only update rank if it was already in the map
-  if (cached_find(key)) {
-    const int orig_owner = m_last_lookup->second.owner_rank;
-    m_last_lookup->second.owner_rank = owner;
-    return orig_owner != owner;
-  }
-  return false;
-}
-
-
 
 } // namespace mesh
 }

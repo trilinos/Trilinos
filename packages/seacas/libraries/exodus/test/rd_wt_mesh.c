@@ -54,6 +54,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#if defined(_MSC_VER)
+#include <windows.h>
+#define sleep(a) Sleep(a * 1000)
+#endif
+
 #include "exodusII.h"
 
 #define DEFAULT_NUM_FIELDS 0

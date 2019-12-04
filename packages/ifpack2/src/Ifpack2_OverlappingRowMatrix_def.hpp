@@ -93,9 +93,12 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   RCP<crs_graph_type>  TmpGraph;
   RCP<import_type>     TmpImporter;
   RCP<const map_type>  RowMap, ColMap;
+  ExtHaloStarts_.resize(OverlapLevel_+1);
 
   // The big import loop
   for (int overlap = 0 ; overlap < OverlapLevel_ ; ++overlap) {
+    ExtHaloStarts_[overlap] = (size_t) ExtElements.size();
+
     // Get the current maps
     if (overlap == 0) {
       RowMap = A_->getRowMap ();
@@ -144,7 +147,9 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
       TmpGraph->doImport (*A_crsGraph, *TmpImporter, Tpetra::INSERT);
       TmpGraph->fillComplete (A_->getDomainMap (), TmpMap);
     }
-  }
+  } // end overlap loop
+  ExtHaloStarts_[OverlapLevel_] = (size_t) ExtElements.size();
+
 
   // build the map containing all the nodes (original
   // matrix + extended matrix)
@@ -838,6 +843,19 @@ Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename 
 OverlappingRowMatrix<MatrixType>::getUnderlyingMatrix() const
 {
   return A_;
+}
+
+template<class MatrixType>
+Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
+OverlappingRowMatrix<MatrixType>::getExtMatrix() const
+{
+  return ExtMatrix_;
+}
+
+template<class MatrixType>
+Teuchos::ArrayView<const size_t> OverlappingRowMatrix<MatrixType>::getExtHaloStarts() const
+{
+  return ExtHaloStarts_();
 }
 
 

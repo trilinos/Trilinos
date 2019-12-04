@@ -34,15 +34,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_TBB_Partitioner_hpp
 #define __TSQR_TBB_Partitioner_hpp
 
-#include <Tsqr_MatView.hpp>
+#include "Tsqr_MatView.hpp"
 
 #include <cstring> // size_t
 #include <sstream>
@@ -50,13 +48,9 @@
 #include <utility>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
   namespace TBB {
-
-    template< class Ordinal, class Scalar >
+    template<class Ordinal, class Scalar>
     class Partitioner {
     private:
       bool
@@ -67,20 +61,18 @@ namespace TSQR {
         using std::invalid_argument;
         using std::ostringstream;
 
-        if (nrows < ncols)
-          {
-            ostringstream os;
-            os << "Partitioner::should_split: nrows (= " << nrows
-               << ") < ncols (= " << ncols << ")";
-            throw invalid_argument (os.str());
-          }
-        else if (num_partitions == 0)
-          {
-            ostringstream os;
-            os << "Partitioner::should_split: nrows (= " << nrows
-               << ") < ncols (= " << ncols << ")";
-            throw invalid_argument (os.str());
-          }
+        if (nrows < ncols) {
+          ostringstream os;
+          os << "Partitioner::should_split: nrows (= " << nrows
+             << ") < ncols (= " << ncols << ")";
+          throw invalid_argument (os.str());
+        }
+        else if (num_partitions == 0) {
+          ostringstream os;
+          os << "Partitioner::should_split: nrows (= " << nrows
+             << ") < ncols (= " << ncols << ")";
+          throw invalid_argument (os.str());
+        }
         // FIXME (mfh 11 Jul 2010) Need more overflow checks here.
         return static_cast<size_t>(nrows) / num_partitions >= static_cast<size_t>(ncols);
       }
@@ -97,14 +89,14 @@ namespace TSQR {
              const size_t P_last,
              const bool contiguous_cache_blocks) const
       {
-        typedef typename MatrixViewType::ordinal_type ordinal_type;
-        typedef typename MatrixViewType::pointer_type pointer_type;
+        using ordinal_type = typename MatrixViewType::ordinal_type;
+        using pointer_type = typename MatrixViewType::pointer;
 
         const size_t num_partitions_top = P_mid - P_first + 1;
         //const size_t num_partitions_bottom = P_last - P_mid;
         const size_t num_partitions = P_last - P_first + 1;
-        const ordinal_type nrows = A.nrows();
-        const ordinal_type ncols = A.ncols();
+        const ordinal_type nrows = A.extent(0);
+        const ordinal_type ncols = A.extent(1);
 
         if (! should_split (nrows, ncols, num_partitions)) {
           return std::make_pair (MatrixViewType(A), MatrixViewType());
@@ -125,15 +117,15 @@ namespace TSQR {
           // is for splitting off a single cache block.  Each half
           // of the split may contain more than one cache block.
           if (contiguous_cache_blocks) {
-            pointer_type A_bot_ptr = A.get() + num_rows_top * ncols;
-            MatrixViewType A_top (num_rows_top, ncols, A.get(), num_rows_top);
+            pointer_type A_bot_ptr = A.data() + num_rows_top * ncols;
+            MatrixViewType A_top (num_rows_top, ncols, A.data(), num_rows_top);
             MatrixViewType A_bot (num_rows_bot, ncols, A_bot_ptr, num_rows_bot);
             return std::make_pair (A_top, A_bot);
           }
           else {
-            pointer_type A_bot_ptr = A.get() + num_rows_top;
-            MatrixViewType A_top (num_rows_top, ncols, A.get(), A.lda());
-            MatrixViewType A_bot (num_rows_bot, ncols, A_bot_ptr, A.lda());
+            pointer_type A_bot_ptr = A.data() + num_rows_top;
+            MatrixViewType A_top (num_rows_top, ncols, A.data(), A.stride(1));
+            MatrixViewType A_bot (num_rows_bot, ncols, A_bot_ptr, A.stride(1));
             return std::make_pair (A_top, A_bot);
           }
         }

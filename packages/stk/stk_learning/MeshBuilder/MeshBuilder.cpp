@@ -5,9 +5,7 @@
  *      Author: jonchu
  */
 #include "MeshBuilder.hpp"
-#include <stddef.h>                     // for size_t
-#include <vector>                       // for allocator, vector
-#include "stk_learning/MeshBuilder/CoordinateSets.hpp"
+#include "MeshBuilder/CoordinateSets.hpp"
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_io/IossBridge.hpp"        // for put_io_part_attribute
@@ -22,6 +20,8 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
+#include <stddef.h>                     // for size_t
+#include <vector>                       // for allocator, vector
 
 // change for meshing big things
 const double zOffset = 1;

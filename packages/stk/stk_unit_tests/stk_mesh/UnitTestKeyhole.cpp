@@ -32,12 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, EXPECT_TRUE, etc
-#include <stddef.h>                     // for size_t
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
-#include <string>                       // for operator<<, char_traits
+#include "SetupKeyholeMesh.hpp"
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -46,7 +41,12 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp"
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_TRUE, etc
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
+#include <string>                       // for operator<<, char_traits
 namespace stk { namespace mesh { class Part; } }
 
 TEST(UnitTestKeyhole, NodeParts_case1)

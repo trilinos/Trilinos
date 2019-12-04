@@ -89,7 +89,7 @@ namespace MueLu {
       RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> > coordinates = Teuchos::null;
       try {
         coordinates = TpetraMultiVector_To_XpetraMultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates"));
-      } catch(Teuchos::Exceptions::InvalidParameterType) {
+      } catch(Teuchos::Exceptions::InvalidParameterType&) {
         coordinates = userList.get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates");
       }
       userList.set<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> > >("Coordinates", coordinates);
@@ -99,7 +99,7 @@ namespace MueLu {
       RCP<MultiVector> nullspace = Teuchos::null;
       try {
         nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace"));
-      } catch(Teuchos::Exceptions::InvalidParameterType) {
+      } catch(Teuchos::Exceptions::InvalidParameterType&) {
         nullspace = userList.get<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace");
       }
       userList.set<RCP<MultiVector> >("Nullspace", nullspace);

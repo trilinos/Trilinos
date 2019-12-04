@@ -35,8 +35,8 @@ C
       QAINFO(2) = '        '
       QAINFO(3) = '        '
 
-      QAINFO(2)(:8) = '20190204'
-      QAINFO(3)(:8) = '    3.03'
+      QAINFO(2)(:8) = '20190829'
+      QAINFO(3)(:8) = '    3.04'
 C
 c..Dynamic dimensioning of block names+other changes
 c..compress output of distribution factors
@@ -59,7 +59,7 @@ c..One more try on limits fix.
 c..when global ids output, show message. Turn of warning for no node/el map
 c..Split range check into zero and out-of-range checks
 c..Make printing of database metadata happen faster
-c..Add invers connectivity (invcon) function
+c..Add inverse connectivity (invcon) function
 c..Add more error checking; fix map error checking
 c..Better output of ss/ns dist factors when not stored in file; remove warnings
 c..Check for unique sideset/nodeset ids
@@ -77,7 +77,7 @@ c..Add node selection by block; sset and nset defined variable output
 c..Fix bug in prnps
 c..Fix problem printing nodal point variables
 c..Eliminate empty sset and nset warnings.
-c..Print ssfactors with element/side info if homogenous
+c..Print ssfactors with element/side info if homogeneous
 c..Widen output format for connectivity and map output
 c..Fix incorrect scratch array allocation for nodeset variables
 c..Filter reading empty ss and element block variables
@@ -100,3 +100,4 @@ c..Fix invcon output with mapped element ids
 c..Change name to `explore`
 c..Fix minmax to work more than once
 c..Work with experimental exodus (transient data only)
+c..thousands-separated output of initial data

@@ -34,31 +34,28 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 /// \file Tsqr_SequentialTsqr.hpp
 /// \brief Implementation of the sequential cache-blocked part of TSQR.
-///
+
 #ifndef __TSQR_Tsqr_SequentialTsqr_hpp
 #define __TSQR_Tsqr_SequentialTsqr_hpp
 
-#include <Tsqr_ApplyType.hpp>
-#include <Tsqr_Matrix.hpp>
-#include <Tsqr_CacheBlockingStrategy.hpp>
-#include <Tsqr_CacheBlocker.hpp>
-#include <Tsqr_Combine.hpp>
-#include <Tsqr_LocalVerify.hpp>
-#include <Tsqr_NodeTsqr.hpp>
-#include <Tsqr_Util.hpp>
-
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ParameterListExceptions.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "Tsqr_ApplyType.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_CacheBlockingStrategy.hpp"
+#include "Tsqr_CacheBlocker.hpp"
+#include "Tsqr_Combine.hpp"
+#include "Tsqr_LocalVerify.hpp"
+#include "Tsqr_NodeTsqr.hpp"
+#include "Tsqr_Util.hpp"
+#include "Tsqr_Impl_SystemBlas.hpp"
+#include "Teuchos_Describable.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListExceptions.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <algorithm>
 #include <limits>
 #include <sstream>
@@ -66,9 +63,7 @@
 #include <utility> // std::pair
 #include <vector>
 
-
 namespace TSQR {
-
   /// \class SequentialTsqr
   /// \brief Sequential cache-blocked TSQR factorization.
   /// \author Mark Hoemmen
@@ -116,35 +111,27 @@ namespace TSQR {
   ///   are not currently thread safe.  \c TbbTsqr uses SequentialTsqr
   ///   in parallel to implement each thread's cache-blocked TSQR.
   ///   This can be fixed as soon as RCPs are made thread safe.
-  ///
   template<class LocalOrdinal, class Scalar>
   class SequentialTsqr :
-    public NodeTsqr<LocalOrdinal, Scalar, std::vector<std::vector<Scalar> > >
+    public NodeTsqr<LocalOrdinal, Scalar, std::vector<std::vector<Scalar>>>
   {
   public:
-    typedef LocalOrdinal ordinal_type;
-    typedef Scalar scalar_type;
-
-    typedef MatView<LocalOrdinal, Scalar> mat_view_type;
-    typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
-
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
-    typedef typename NodeTsqr<LocalOrdinal, Scalar, std::vector<std::vector<Scalar> > >::factor_output_type FactorOutput;
+    using ordinal_type = LocalOrdinal;
+    using scalar_type = Scalar;
+    using mat_view_type = MatView<LocalOrdinal, Scalar>;
+    using const_mat_view_type = MatView<LocalOrdinal, const Scalar>;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using FactorOutput = typename NodeTsqr<LocalOrdinal, Scalar,
+      std::vector<std::vector<Scalar>>>::factor_output_type;
 
   private:
-    typedef typename FactorOutput::const_iterator FactorOutputIter;
-    typedef typename FactorOutput::const_reverse_iterator FactorOutputReverseIter;
-    typedef std::pair<mat_view_type, mat_view_type> block_pair_type;
-    typedef std::pair<const_mat_view_type, const_mat_view_type> const_block_pair_type;
-    typedef Teuchos::BLAS<LocalOrdinal, Scalar> blas_type;
-
     /// \brief Factor the first cache block of the matrix.
     ///
     /// Compute the QR factorization of the first cache block A_top.
     /// Overwrite the upper triangle of A_top with the R factor, and
     /// return a view of the R factor (stored in place in A_top).
     /// Overwrite the (strict) lower triangle of A_top, and the
-    /// A_top.ncols() entries of tau, with an implicit representation
+    /// A_top.extent(1) entries of tau, with an implicit representation
     /// of the Q factor.
     ///
     /// \param combine [in/out] Implementation of linear algebra
@@ -152,16 +139,16 @@ namespace TSQR {
     ///   implementations use scratch space.
     ///
     /// \param A_top [in/out] On input: the first (topmost) cache
-    ///   block of the matrix.  Prerequisite: A_top.nrows() >=
-    ///   A.top.ncols().  On output, the upper triangle of A_top is
+    ///   block of the matrix.  Prerequisite: A_top.extent(0) >=
+    ///   A.top.extent(1).  On output, the upper triangle of A_top is
     ///   overwritten with the R factor, and the lower trapezoid of
     ///   A_top is overwritten with part of the implicit
     ///   representation of the Q factor.
     ///
-    /// \param tau [out] Array of length >= A_top.ncols().  On output:
+    /// \param tau [out] Array of length >= A_top.extent(1).  On output:
     ///   the TAU array (see the LAPACK documentation for _GEQRF).
     ///
-    /// \param work [out] Workspace array of length >= A_top.ncols().
+    /// \param work [out] Workspace array of length >= A_top.extent(1).
     ///
     /// \return A view of the upper triangle of A_top, containing the
     ///   R factor.
@@ -171,10 +158,9 @@ namespace TSQR {
                         std::vector<Scalar>& tau,
                         std::vector<Scalar>& work) const
     {
-      const LocalOrdinal ncols = A_top.ncols();
-      combine.factor_first (A_top.nrows(), ncols, A_top.get(), A_top.lda(),
-                            &tau[0], &work[0]);
-      return mat_view_type(ncols, ncols, A_top.get(), A_top.lda());
+      const LocalOrdinal ncols = A_top.extent(1);
+      combine.factor_first (A_top, tau.data(), work.data());
+      return mat_view_type(ncols, ncols, A_top.data(), A_top.stride(1));
     }
 
     /// Apply the Q factor of the first (topmost) cache blocks, as
@@ -189,10 +175,8 @@ namespace TSQR {
                        mat_view_type& C_first,
                        std::vector<Scalar>& work) const
     {
-      const LocalOrdinal nrowsLocal = Q_first.nrows();
-      combine.apply_first (applyType, nrowsLocal, C_first.ncols(),
-                           Q_first.ncols(), Q_first.get(), Q_first.lda(),
-                           &tau[0], C_first.get(), C_first.lda(), &work[0]);
+      combine.apply_first (applyType, Q_first, tau.data(),
+                           C_first, work.data());
     }
 
     void
@@ -204,15 +188,15 @@ namespace TSQR {
                    mat_view_type& C_cur,
                    std::vector<Scalar>& work) const
     {
-      const LocalOrdinal nrows_local = Q_cur.nrows();
-      const LocalOrdinal ncols_Q = Q_cur.ncols();
-      const LocalOrdinal ncols_C = C_cur.ncols();
+      const LocalOrdinal nrows_local = Q_cur.extent(0);
+      const LocalOrdinal ncols_Q = Q_cur.extent(1);
+      const LocalOrdinal ncols_C = C_cur.extent(1);
 
       combine.apply_inner (apply_type,
                            nrows_local, ncols_C, ncols_Q,
-                           Q_cur.get(), C_cur.lda(), &tau[0],
-                           C_top.get(), C_top.lda(),
-                           C_cur.get(), C_cur.lda(), &work[0]);
+                           Q_cur.data(), C_cur.stride(1), tau.data(),
+                           C_top.data(), C_top.stride(1),
+                           C_cur.data(), C_cur.stride(1), work.data());
     }
 
     void
@@ -222,12 +206,7 @@ namespace TSQR {
                     std::vector<Scalar>& tau,
                     std::vector<Scalar>& work) const
     {
-      const LocalOrdinal nrows_local = A_cur.nrows();
-      const LocalOrdinal ncols = A_cur.ncols();
-
-      combine.factor_inner (nrows_local, ncols, R.get(), R.lda(),
-                            A_cur.get(), A_cur.lda(), &tau[0],
-                            &work[0]);
+      combine.factor_inner (R, A_cur, tau.data(), work.data());
     }
 
   public:
@@ -356,14 +335,17 @@ namespace TSQR {
       size_t cacheSizeHint = 0;
       size_t sizeOfScalar = sizeof(Scalar);
 
-      try {
+      if (params->isType<size_t> (cacheSizeHintName)) {
         cacheSizeHint = params->get<size_t> (cacheSizeHintName);
-      } catch (InvalidParameter&) {
+      }
+      else {
         params->set (cacheSizeHintName, cacheSizeHint);
       }
-      try {
+
+      if (params->isType<size_t> (sizeOfScalarName)) {
         sizeOfScalar = params->get<size_t> (sizeOfScalarName);
-      } catch (InvalidParameter&) {
+      }
+      else {
         params->set (sizeOfScalarName, sizeOfScalar);
       }
 
@@ -395,7 +377,7 @@ namespace TSQR {
     ///
     /// See the \c NodeTsqr documentation for details.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      typedef Combine<LocalOrdinal, Scalar> combine_type;
+      using combine_type = Combine<LocalOrdinal, Scalar>;
       return combine_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
@@ -463,13 +445,12 @@ namespace TSQR {
       mat_view_type R_view = factor_first_block (combine, A_cur, tau_first, work);
       tau_arrays.push_back (tau_first);
 
-      while (! A_rest.empty())
-        {
-          A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
-          std::vector<Scalar> tau (ncols);
-          combine_factor (combine, R_view, A_cur, tau, work);
-          tau_arrays.push_back (tau);
-        }
+      while (! A_rest.empty()) {
+        A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+        std::vector<Scalar> tau (ncols);
+        combine_factor (combine, R_view, A_cur, tau, work);
+        tau_arrays.push_back (tau);
+      }
       return tau_arrays;
     }
 
@@ -495,10 +476,11 @@ namespace TSQR {
       const_mat_view_type A_top = this->top_block (A_view, contiguous_cache_blocks);
 
       // Fill R (including lower triangle) with zeros.
-      fill_matrix (ncols, ncols, R, ldr, Teuchos::ScalarTraits<Scalar>::zero());
+      mat_view_type R_view (ncols, ncols, R, ldr);
+      deep_copy (R_view, Scalar {});
 
       // Copy out the upper triangle of the R factor from A into R.
-      copy_upper_triangle (ncols, ncols, R, ldr, A_top.get(), A_top.lda());
+      copy_upper_triangle (ncols, ncols, R, ldr, A_top.data(), A_top.stride(1));
     }
 
     /// \brief Compute the QR factorization of the matrix A.
@@ -541,22 +523,21 @@ namespace TSQR {
       mat_view_type R_view = factor_first_block (combine, A_cur, tau_first, work);
       tau_arrays.push_back (tau_first);
 
-      while (! A_rest.empty())
-        {
-          A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
-          std::vector< Scalar > tau (ncols);
-          combine_factor (combine, R_view, A_cur, tau, work);
-          tau_arrays.push_back (tau);
-        }
+      while (! A_rest.empty()) {
+        A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+        std::vector<Scalar> tau (ncols);
+        combine_factor (combine, R_view, A_cur, tau, work);
+        tau_arrays.push_back (tau);
+      }
 
       // Copy the R factor resulting from the factorization out of
       // R_view (a view of the topmost cache block of A) into the R
       // output argument.
-      fill_matrix (ncols, ncols, R, ldr, Scalar(0));
-      copy_upper_triangle (ncols, ncols, R, ldr, R_view.get(), R_view.lda());
+      mat_view_type R_out (ncols, ncols, R, ldr);
+      deep_copy (R_out, Scalar {});
+      copy_upper_triangle (ncols, ncols, R, ldr, R_view.data(), R_view.stride(1));
       return tau_arrays;
     }
-
 
     /// \brief The number of cache blocks that factor() would use.
     ///
@@ -588,17 +569,17 @@ namespace TSQR {
       LocalOrdinal count = 0;
 
       const_mat_view_type A_rest (nrows, ncols, A, lda);
-      if (A_rest.empty())
+      if (A_rest.empty()) {
         return count;
+      }
 
       const_mat_view_type A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
       ++count; // first factor step
 
-      while (! A_rest.empty())
-        {
-          A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
-          ++count; // next factor step
-        }
+      while (! A_rest.empty()) {
+        A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+        ++count; // next factor step
+      }
       return count;
     }
 
@@ -618,27 +599,25 @@ namespace TSQR {
            const bool contiguous_cache_blocks) const
     {
       // Quick exit and error tests
-      if (ncols_Q == 0 || ncols_C == 0 || nrows == 0)
+      if (ncols_Q == 0 || ncols_C == 0 || nrows == 0) {
         return;
-      else if (ldc < nrows)
-        {
-          std::ostringstream os;
-          os << "SequentialTsqr::apply: ldc (= " << ldc << ") < nrows (= " << nrows << ")";
-          throw std::invalid_argument (os.str());
-        }
-      else if (ldq < nrows)
-        {
-          std::ostringstream os;
-          os << "SequentialTsqr::apply: ldq (= " << ldq << ") < nrows (= " << nrows << ")";
-          throw std::invalid_argument (os.str());
-        }
+      }
+      else if (ldc < nrows) {
+        std::ostringstream os;
+        os << "SequentialTsqr::apply: ldc (= " << ldc << ") < nrows (= " << nrows << ")";
+        throw std::invalid_argument (os.str());
+      }
+      else if (ldq < nrows) {
+        std::ostringstream os;
+        os << "SequentialTsqr::apply: ldq (= " << ldq << ") < nrows (= " << nrows << ")";
+        throw std::invalid_argument (os.str());
+      }
 
       // If contiguous cache blocks are used, then we have to use the
       // same convention as we did for factor().  Otherwise, we are
       // free to choose the cache block dimensions as we wish in
       // apply(), independently of what we did in factor().
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols_Q, strategy_);
-      Teuchos::LAPACK<LocalOrdinal, Scalar> lapack;
       Combine<LocalOrdinal, Scalar> combine;
 
       const bool transposed = apply_type.transposed();
@@ -663,40 +642,36 @@ namespace TSQR {
       // not modified.
       mat_view_type C_top = blocker.top_block (C_rest, contiguous_cache_blocks);
 
-      if (transposed)
-        {
-          const_mat_view_type Q_cur = blocker.split_top_block (Q_rest, contiguous_cache_blocks);
-          mat_view_type C_cur = blocker.split_top_block (C_rest, contiguous_cache_blocks);
+      if (transposed) {
+        const_mat_view_type Q_cur = blocker.split_top_block (Q_rest, contiguous_cache_blocks);
+        mat_view_type C_cur = blocker.split_top_block (C_rest, contiguous_cache_blocks);
 
-          // Apply the topmost block of Q.
-          FactorOutputIter tau_iter = tau_arrays.begin();
-          const std::vector<Scalar>& tau = *tau_iter++;
-          apply_first_block (combine, apply_type, Q_cur, tau, C_cur, work);
+        // Apply the topmost block of Q.
+        auto tau_iter = tau_arrays.begin();
+        const std::vector<Scalar>& tau = *tau_iter++;
+        apply_first_block (combine, apply_type, Q_cur, tau, C_cur, work);
 
-          while (! Q_rest.empty())
-            {
-              Q_cur = blocker.split_top_block (Q_rest, contiguous_cache_blocks);
-              C_cur = blocker.split_top_block (C_rest, contiguous_cache_blocks);
-              combine_apply (combine, apply_type, Q_cur, *tau_iter++, C_top, C_cur, work);
-            }
+        while (! Q_rest.empty()) {
+          Q_cur = blocker.split_top_block (Q_rest, contiguous_cache_blocks);
+          C_cur = blocker.split_top_block (C_rest, contiguous_cache_blocks);
+          combine_apply (combine, apply_type, Q_cur, *tau_iter++, C_top, C_cur, work);
         }
-      else
-        {
-          // Start with the last local Q factor and work backwards up the matrix.
-          FactorOutputReverseIter tau_iter = tau_arrays.rbegin();
+      }
+      else {
+        // Start with the last local Q factor and work backwards up the matrix.
+        auto tau_iter = tau_arrays.rbegin();
 
-          const_mat_view_type Q_cur = blocker.split_bottom_block (Q_rest, contiguous_cache_blocks);
-          mat_view_type C_cur = blocker.split_bottom_block (C_rest, contiguous_cache_blocks);
+        const_mat_view_type Q_cur = blocker.split_bottom_block (Q_rest, contiguous_cache_blocks);
+        mat_view_type C_cur = blocker.split_bottom_block (C_rest, contiguous_cache_blocks);
 
-          while (! Q_rest.empty())
-            {
-              combine_apply (combine, apply_type, Q_cur, *tau_iter++, C_top, C_cur, work);
-              Q_cur = blocker.split_bottom_block (Q_rest, contiguous_cache_blocks);
-              C_cur = blocker.split_bottom_block (C_rest, contiguous_cache_blocks);
-            }
-          // Apply to last (topmost) cache block.
-          apply_first_block (combine, apply_type, Q_cur, *tau_iter++, C_cur, work);
+        while (! Q_rest.empty()) {
+          combine_apply (combine, apply_type, Q_cur, *tau_iter++, C_top, C_cur, work);
+          Q_cur = blocker.split_bottom_block (Q_rest, contiguous_cache_blocks);
+          C_cur = blocker.split_bottom_block (C_rest, contiguous_cache_blocks);
         }
+        // Apply to last (topmost) cache block.
+        apply_first_block (combine, apply_type, Q_cur, *tau_iter++, C_cur, work);
+      }
     }
 
     /// \brief Compute the explicit Q factor from the result of factor().
@@ -725,8 +700,9 @@ namespace TSQR {
       // itself contains the first ncols_C columns of the identity
       // matrix.
       fill_with_zeros (nrows, ncols_C, C, ldc, contiguous_cache_blocks);
-      for (LocalOrdinal j = 0; j < ncols_C; ++j)
-        C_top(j, j) = Scalar(1);
+      for (LocalOrdinal j = 0; j < ncols_C; ++j) {
+        C_top(j, j) = Scalar(1.0);
+      }
 
       // Apply the Q factor to C, to extract the first ncols_C columns
       // of Q in explicit form.
@@ -764,7 +740,7 @@ namespace TSQR {
       // restructuring of this code would parallelize nicely using
       // OpenMP.
       CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
-      blas_type blas;
+      Impl::SystemBlas<Scalar> blas;
       mat_view_type Q_rest (nrows, ncols, Q, ldq);
       Matrix<LocalOrdinal, Scalar>
         Q_cur_copy (LocalOrdinal(0), LocalOrdinal(0)); // will be resized
@@ -775,12 +751,12 @@ namespace TSQR {
         // GEMM doesn't like aliased arguments, so we use a copy.
         // We only copy the current cache block, rather than all of
         // Q; this saves memory.
-        Q_cur_copy.reshape (Q_cur.nrows (), ncols);
+        Q_cur_copy.reshape (Q_cur.extent (0), ncols);
         deep_copy (Q_cur_copy, Q_cur);
         // Q_cur := Q_cur_copy * B.
-        blas.GEMM (NO_TRANS, NO_TRANS, Q_cur.nrows (), ncols, ncols,
-                   Scalar (1), Q_cur_copy.get (), Q_cur_copy.lda (), B, ldb,
-                   Scalar (0), Q_cur.get (), Q_cur.lda ());
+        blas.GEMM (NO_TRANS, NO_TRANS, Q_cur.extent (0), ncols, ncols,
+                   Scalar (1.0), Q_cur_copy.data (), Q_cur_copy.stride (1),
+                   B, ldb, Scalar {}, Q_cur.data (), Q_cur.stride (1));
       }
     }
 
@@ -856,7 +832,6 @@ namespace TSQR {
     }
 
   protected:
-
     /// \brief Return the topmost cache block of the matrix C.
     ///
     /// NodeTsqr's top_block() method must be implemented using
@@ -879,7 +854,7 @@ namespace TSQR {
       // are stored contiguously, the CacheBlocker knows the right
       // layout, based on the cache blocking strategy.
       typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
-      blocker_type blocker (C.nrows(), C.ncols(), strategy_);
+      blocker_type blocker (C.extent(0), C.extent(1), strategy_);
 
       // C_top_block is a view of the topmost cache block of C.
       // C_top_block should have >= ncols rows, otherwise either cache

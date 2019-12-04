@@ -42,52 +42,43 @@
 // @HEADER
 
 /*! \file  example_01.cpp
+    \brief Example demonstrating optimzation over a complex field using
+           the Rayleigh quotient for a Hermitian matrix as an objective
+
+           Random (complex-valued) initial guesses for \f$z\$f are
+           expected to converge to the eigenvector corresponding to 
+           the minimum eigenvalue.
 */
 
-#define USE_HESSVEC 1
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_RandomVector.hpp"
-#include "ROL_StatusTest.hpp"
-#include "ROL_StdVector.hpp"
-#include "ROL_Zakharov.hpp"
-#include "ROL_ParameterListConverters.hpp"
-#include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-
-#include "example_01.hpp"
-
-#include <iostream>
-#include <complex>
 #include <cmath>
 
-typedef double              RealT;
-typedef std::complex<RealT> ComplexT;
+#include "Teuchos_GlobalMPISession.hpp"
+
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_ComplexStdVector.hpp"
+#include "HermitianMatrix.hpp"
+#include "RayleighQuotient.hpp"
+#include "OrthogonalProjector.hpp"
 
 
 int main(int argc, char *argv[]) {
 
-  using namespace Teuchos;
+  using namespace  ROL;
+  using RealT     = double;              
 
-  using ROL::rol_cast;
-
-  typedef std::vector<ComplexT>          vector;
-  typedef ROL::StdVector<RealT,ComplexT> SV;
-
-  typedef typename vector::size_type uint;
-
-  GlobalMPISession mpiSession(&argc, &argv);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::Ptr<std::ostream> outStream;
-  ROL::nullstream bhs; // outputs nothing
+  Ptr<std::ostream> os_ptr;
+  nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makePtrFromRef(std::cout);
+    os_ptr = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makePtrFromRef(bhs);
+    os_ptr = ROL::makePtrFromRef(bhs);
+
+  auto& os = *os_ptr;
 
   int errorFlag  = 0;
 
@@ -95,30 +86,52 @@ int main(int argc, char *argv[]) {
  
   try {
 
-    uint     N  = 10;
-    RealT    pi = std::acos(-1);
-    ComplexT i(RealT(0),RealT(1));
+    auto A = HermitianMatrix<RealT>::example_Matrix();
+    auto d = HermitianMatrix<RealT>::example_eigenvalues();
+    auto Z = HermitianMatrix<RealT>::example_eigenvectors();
+    auto N = A.size();
 
-    ROL::Ptr<vector> xp = ROL::makePtr<vector>(N);
+    os << "Test Matrix A:" << std::endl;
+    os << A;
 
-    RealT scale = 1.0/std::sqrt(N);    
-
-    for(uint k=0;k<N;++k) {
-      RealT theta = 2.0*pi*k/N;
-      (*xp)[k] = scale*std::exp(i*theta);
-      std::cout << std::setw(16) << rol_cast<ComplexT,RealT>((*xp)[k]) 
-                << std::setw(16) << rol_cast<ComplexT,RealT>(i*(*xp)[k]) << std::endl;
-
-    }
+    os << "The eigendecomposition AZ=ZD has the eigenvalues " << std::endl;
+    os << "D = diag([" << d[0] << "," << d[1] << "," 
+                       << d[2] << "," << d[3] << "])" << std::endl;
  
-    SV x(xp);
-    
-    
-    std::cout << x.dot(x) << std::endl;
+    ParameterList parlist;
+    auto& steplist = parlist.sublist("Step");
+    steplist.set("Type", "Trust Region");
 
+    auto& trlist = steplist.sublist("Trust Region");
+    trlist.set("Subproblem Solver", "Truncated CG");
+        
+    auto z   = makePtr<ComplexStdVector<RealT>>(N);
+    auto obj = makePtr<RayleighQuotient<RealT>>(A);
+
+    z->randomize();
+
+    auto problem = OptimizationProblem<RealT>(obj,z);
+    auto solver  = OptimizationSolver<RealT>(problem,parlist);
+    solver.solve(os); 
+
+    os << "Optimal z:" << std::endl;
+    
+    z->set(*(problem.getSolutionVector()));
+    z->print(os);
+    
+    auto tol = std::sqrt(ROL_EPSILON<RealT>());
+
+    auto value_opt   = obj->value(*z,tol);
+    auto value_error = std::abs(d[0]-value_opt);
+
+    errorFlag += value_error > tol;
+
+    os << "rho(z_opt): " << std::setprecision(12) << value_opt << std::endl;
+    os << "Minimum eigenvalue error: " << std::setprecision(12) << value_error << std::endl;
+        
   }
   catch (std::logic_error& err) {
-    *outStream << err.what() << "\n";
+    os << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
 

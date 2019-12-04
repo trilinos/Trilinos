@@ -41,25 +41,51 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <fmt/chrono.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <fmt/time.h>
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <sys/select.h>
 #include <tokenize.h>
 #include <vector>
 
 #ifndef _WIN32
+#include <sys/ioctl.h>
 #include <sys/utsname.h>
 #endif
 
+#ifndef _POSIX_SOURCE
+#define _POSIX_SOURCE
+#endif
+#include <cstdio>
+
+#if defined(_MSC_VER)
+#include <io.h>
+#define isatty _isatty
+#endif
+
+// For memory utilities...
+#if defined(_WIN32)
+#include <psapi.h>
+#include <windows.h>
+
+#elif defined(__unix__) || defined(__unix) || defined(unix) ||                                     \
+    (defined(__APPLE__) && defined(__MACH__))
+#include <sys/resource.h>
+#include <unistd.h>
+
 #if defined(__APPLE__) && defined(__MACH__)
-#include <mach/kern_return.h> // for kern_return_t
 #include <mach/mach.h>
-#include <mach/message.h> // for mach_msg_type_number_t
-#include <mach/task_info.h>
+
+#elif (defined(_AIX) || defined(__TOS__AIX__)) ||                                                  \
+    (defined(__sun__) || defined(__sun) || defined(sun) && (defined(__SVR4) || defined(__svr4__)))
+#include <fcntl.h>
+#include <procfs.h>
+
+#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
+#include <stdio.h>
+#endif
 #endif
 
 #if defined(BGQ_LWK) && defined(__linux__)
@@ -73,6 +99,8 @@
 
 // For copy_database...
 namespace {
+  auto initial_time = std::chrono::high_resolution_clock::now();
+
   size_t max_field_size = 0;
 
   struct DataPool
@@ -228,16 +256,6 @@ namespace {
 
 } // namespace
 
-/** \brief Get formatted time and date strings.
- *
- *  Fill time_string and date_string with current time and date
- *  formatted as "HH:MM:SS" for time and "yy/mm/dd" or "yyyy/mm/dd"
- *  for date.
- *
- *  \param[out] time_string The formatted time string.
- *  \param[out] date_string The formatted date string.
- *  \param[in] length Use 8 for short-year date format, or 10 for long-year date format.
- */
 void Ioss::Utils::time_and_date(char *time_string, char *date_string, size_t length)
 {
   time_t      calendar_time = time(nullptr);
@@ -306,6 +324,42 @@ int64_t Ioss::Utils::extract_id(const std::string &name_id)
   return id;
 }
 
+std::string Ioss::Utils::format_id_list(const std::vector<size_t> &ids, const std::string &rng_sep,
+                                        const std::string &seq_sep)
+{
+  // Based on function from cubit (but I wrote original cubit version long time ago... ;-)
+  if (ids.empty()) {
+    return "";
+  }
+
+  // PRECONDITION: `ids` is monotonically increasing -- will throw IOSS_ERROR if violated.
+  if (!std::is_sorted(ids.begin(), ids.end(), [](size_t a, size_t b) { return a <= b; })) {
+    std::ostringstream errmsg;
+    fmt::print(errmsg,
+               "INTERNAL ERROR: ({}) The `ids` vector is not in monotonically increasing order as "
+               "required.\n",
+               __func__);
+    IOSS_ERROR(errmsg);
+  }
+
+  size_t             num = 0;
+  std::ostringstream ret_str;
+  while (num < ids.size()) {
+    fmt::print(ret_str, "{}{}", num == 0 ? "" : seq_sep, ids[num]);
+    size_t begin    = ids[num]; // first id in range of 1 or more ids
+    size_t previous = ids[num]; // last id in range of 1 or more ids
+    // Gather a range or single value... (begin .. previous)
+    while (previous == ids[num] && ++num < ids.size() && ids[num] == previous + 1) {
+      previous++;
+    }
+
+    if (begin != previous) {
+      fmt::print(ret_str, "{}{}", previous == begin + 1 ? seq_sep : rng_sep, previous);
+    }
+  }
+  return ret_str.str();
+}
+
 std::string Ioss::Utils::encode_entity_name(const std::string &entity_type, int64_t id)
 {
   // ExodusII stores block, nodeset, and sideset ids as integers
@@ -333,19 +387,6 @@ void Ioss::Utils::delete_name_array(char **names, int count)
   delete[] names;
 }
 
-/** \brief Process the base element type 'base' which has
- *         'nodes_per_element' nodes and a spatial dimension of 'spatial'
- *         into a form that the IO system can (hopefully) recognize.
- *
- *  Lowercases the name; converts spaces to '_', adds
- *  nodes_per_element at end of name (if not already there), and
- *  does some other transformations to remove some exodusII ambiguity.
- *
- *  \param[in] base The element base name.
- *  \param[in] nodes_per_element The number of nodes per element.
- *  \param[in] spatial The spatial dimension of the element.
- *  \returns The Ioss-formatted element name.
- */
 std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_element, int spatial)
 {
   std::string type = base;
@@ -403,7 +444,7 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
     }
   }
 
-  if (std::strncmp(type.c_str(), "super", 5) == 0) {
+  if (Ioss::Utils::substr_equal("super", type)) {
     // A super element can have a varying number of nodes.  Create
     // an IO element type for this super element just so the IO
     // system can read a mesh containing super elements.  This
@@ -415,16 +456,6 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
   return type;
 }
 
-/** \brief Get a filename relative to the specified working directory (if any)
- *         of the current execution.
- *
- *  Working_directory must end with '/' or be empty.
- *
- *  \param[in] relative_filename The file path to be appended to the working directory path.
- *  \param[in] type The file type. "generated" file types are treated differently.
- *  \param[in] working_directory the path to which the relative_filename path is appended.
- *  \returns The full path (working_directory + relative_filename)
- */
 std::string Ioss::Utils::local_filename(const std::string &relative_filename,
                                         const std::string &type,
                                         const std::string &working_directory)
@@ -459,9 +490,7 @@ namespace {
     // the 'N' in the Real[N] field.  Dividing 'which_names.size()' by
     // 'N' will give the number of components in the inner field.
 
-    char suffix[2];
-    suffix[0] = suffix_separator;
-    suffix[1] = 0;
+    char suffix[2] = {suffix_separator, '\0'};
 
     std::vector<std::string> tokens =
         Ioss::tokenize(names[which_names[which_names.size() - 1]], suffix);
@@ -524,9 +553,7 @@ namespace {
     // and see if it defines a valid type...
     std::vector<Ioss::Suffix> suffices;
 
-    char suffix[2];
-    suffix[0] = suffix_separator;
-    suffix[1] = 0;
+    char suffix[2] = {suffix_separator, '\0'};
 
     for (int which_name : which_names) {
       std::vector<std::string> tokens     = Ioss::tokenize(names[which_name], suffix);
@@ -845,14 +872,6 @@ void Ioss::Utils::get_fields(int64_t entity_count, // The number of objects in t
   }
 }
 
-/** \brief Get a string containing 'uname' output.
- *
- *  This output contains information about the current computing platform.
- *  This is used as information data in the created results file to help
- *  in tracking when/where/... the file was created.
- *
- *  \returns The platform information string.
- */
 std::string Ioss::Utils::platform_information()
 {
 #ifndef _WIN32
@@ -864,17 +883,22 @@ std::string Ioss::Utils::platform_information()
       fmt::format("Node: {0}, OS: {1} {2}, {3}, Machine: {4}", sys_info.nodename, sys_info.sysname,
                   sys_info.release, sys_info.version, sys_info.machine);
 #else
-  std::string info = "Node: Unknown, OS: Unknown, Machine: Unknown";
+  std::string                 info = "Node: Unknown, OS: Unknown, Machine: Unknown";
 #endif
   return info;
 }
 
-/** \brief Return amount of memory being used on this processor */
 size_t Ioss::Utils::get_memory_info()
 {
+  // Code from http://nadeausoftware.com/sites/NadeauSoftware.com/files/getRSS.c
   size_t memory_usage = 0;
-#if defined(__APPLE__) && defined(__MACH__)
-  static size_t               original = 0;
+#if defined(_WIN32)
+  /* Windows -------------------------------------------------- */
+  PROCESS_MEMORY_COUNTERS info;
+  GetProcessMemoryInfo(GetCurrentProcess(), &info, sizeof(info));
+  memory_usage = (size_t)info.WorkingSetSize;
+
+#elif defined(__APPLE__) && defined(__MACH__)
   kern_return_t               error;
   mach_msg_type_number_t      outCount;
   mach_task_basic_info_data_t taskinfo{};
@@ -884,42 +908,45 @@ size_t Ioss::Utils::get_memory_info()
   error                 = task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
                     reinterpret_cast<task_info_t>(&taskinfo), &outCount);
   if (error == KERN_SUCCESS) {
-    // type is mach_vm_size_t
-    if (original == 0) {
-      original = taskinfo.virtual_size;
-    }
-    memory_usage = taskinfo.virtual_size - original;
+    memory_usage = taskinfo.resident_size;
   }
 #elif __linux__
 #if defined(BGQ_LWK)
-  uint64_t    heap;
+  uint64_t heap;
   Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
-  memory_usage      = heap;
+  memory_usage = heap;
 #else
-  std::string line(128, '\0');
+  // On Linux, the /proc pseudo-file system contains a directory for
+  // each running or zombie process. The /proc/[pid]/stat,
+  // /proc/[pid]/statm, and /proc/[pid]/status pseudo-files for the
+  // process with id [pid] all contain a process's current resident
+  // set size, among other things. But the /proc/[pid]/statm
+  // pseudo-file is the easiest to read since it contains a single
+  // line of text with white-space delimited values:
+  //
+  // * total program size
+  // * resident set size
+  // * shared pages
+  // * text (code) size
+  // * library size
+  // * data size (heap + stack)
+  // * dirty pages
+  //
+  // The second value provides the process's current resident set size
+  // in pages. To get the field for the current process, open
+  // /proc/self/statm and parse the second integer value. Multiply the
+  // field by the page size from sysconf( ).
 
-  /* Read memory size data from /proc/self/status
-   * run "man proc" to get info on the contents of /proc/self/status
-   */
-  std::ifstream proc_status("/proc/self/status");
-  if (!proc_status) {
-    return memory_usage;
+  long  rss = 0L;
+  FILE *fp  = NULL;
+  if ((fp = fopen("/proc/self/statm", "r")) == NULL)
+    return (size_t)0L; // Can't open? */
+  if (fscanf(fp, "%*s%ld", &rss) != 1) {
+    fclose(fp);
+    return (size_t)0L; // Can't read? */
   }
-
-  while (1) {
-    if (!std::getline(proc_status, line)) {
-      return memory_usage;
-    }
-
-    if (line.substr(0, 6) == "VmRSS:") {
-      std::string        vmrss = line.substr(7);
-      std::istringstream iss(vmrss);
-      iss >> memory_usage;
-      memory_usage *= 1024;
-      break;
-    }
-  }
-  proc_status.close();
+  fclose(fp);
+  memory_usage = (size_t)rss * (size_t)sysconf(_SC_PAGESIZE);
 #endif
 #endif
   return memory_usage;
@@ -927,43 +954,41 @@ size_t Ioss::Utils::get_memory_info()
 
 size_t Ioss::Utils::get_hwm_memory_info()
 {
+  // Code from http://nadeausoftware.com/sites/NadeauSoftware.com/files/getRSS.c
   size_t memory_usage = 0;
-#if defined(__linux__)
-#if defined(BGQ_LWK)
+#if defined(_WIN32)
+  /* Windows -------------------------------------------------- */
+  PROCESS_MEMORY_COUNTERS info;
+  GetProcessMemoryInfo(GetCurrentProcess(), &info, sizeof(info));
+  memory_usage = (size_t)info.PeakWorkingSetSize;
 
-#else
-  std::string line(128, '\0');
-
-  /* Read memory size data from /proc/self/status
-   * run "man proc" to get info on the contents of /proc/self/status
-   */
-  std::ifstream proc_status("/proc/self/status");
-  if (!proc_status)
-    return memory_usage;
-
-  while (1) {
-
-    if (!std::getline(proc_status, line))
-      return memory_usage;
-    if (line.substr(0, 6) == "VmHWM:") {
-      std::string        vmrss = line.substr(7);
-      std::istringstream iss(vmrss);
-      iss >> memory_usage;
-      memory_usage *= 1024;
-      break;
-    }
+#elif (defined(_AIX) || defined(__TOS__AIX__)) ||                                                  \
+    (defined(__sun__) || defined(__sun) || defined(sun) && (defined(__SVR4) || defined(__svr4__)))
+  /* AIX and Solaris ------------------------------------------ */
+  struct psinfo psinfo;
+  int           fd = -1;
+  if ((fd = open("/proc/self/psinfo", O_RDONLY)) == -1)
+    return (size_t)0L; /* Can't open? */
+  if (read(fd, &psinfo, sizeof(psinfo)) != sizeof(psinfo)) {
+    close(fd);
+    return (size_t)0L; /* Can't read? */
   }
-  proc_status.close();
+  close(fd);
+  memory_usage = (size_t)(psinfo.pr_rssize * 1024L);
+
+#elif (defined(__APPLE__) && defined(__MACH__)) || (defined(__linux__) && !defined(BGQ_LWK))
+  /* BSD, Linux, and OSX -------------------------------------- */
+  struct rusage rusage;
+  getrusage(RUSAGE_SELF, &rusage);
+#if defined(__APPLE__) && defined(__MACH__)
+  memory_usage = (size_t)rusage.ru_maxrss;
+#else
+  memory_usage = (size_t)(rusage.ru_maxrss * 1024L);
 #endif
 #endif
   return memory_usage;
 }
 
-/** \brief Determine whether an entity has the property "omitted."
- *
- *  \param[in] block The entity.
- *  \returns True if the entity has the property "omitted."
- */
 bool Ioss::Utils::block_is_omitted(Ioss::GroupingEntity *block)
 {
   bool omitted = false;
@@ -1062,21 +1087,6 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &            face_is_
   }
 }
 
-/** \brief Get the appropriate index offset for the sides of elements in a SideBlock.
- *
- *  And yet another idiosyncrasy of sidesets...
- *  The side of an element (especially shells) can be
- *  either a face or an edge in the same sideset.  The
- *  ordinal of an edge is (local_edge_number+numfaces) on the
- *  database, but needs to be (local_edge_number) for Sierra...
- *
- *  If the sideblock has a "parent_element_topology" and a
- *  "topology", then we can determine whether to offset the
- *  side ordinals...
- *
- *  \param[in] sb Compute the offset for element sides in this SideBlock
- *  \returns The offset.
- */
 int64_t Ioss::Utils::get_side_offset(const Ioss::SideBlock *sb)
 {
 
@@ -1116,26 +1126,10 @@ unsigned int Ioss::Utils::hash(const std::string &name)
 
 double Ioss::Utils::timer()
 {
-#ifdef SEACAS_HAVE_MPI
-  return MPI_Wtime();
-#else
-  static auto begin = std::chrono::high_resolution_clock::now();
-
   auto now = std::chrono::high_resolution_clock::now();
-  return std::chrono::duration<double>(now - begin).count();
-#endif
+  return std::chrono::duration<double>(now - initial_time).count();
 }
 
-/** \brief Convert an input file to a vector of strings containing one string for each line of the
- * file.
- *
- *  Should only be called by a single processor or each processor will be accessing the file
- *  at the same time...
- *
- *  \param[in] file_name The name of the file.
- *  \param[out] lines The vector of strings containing the lines of the file
- *  \param[in] max_line_length The maximum number of characters in any line of the file.
- */
 void Ioss::Utils::input_file(const std::string &file_name, std::vector<std::string> *lines,
                              size_t max_line_length)
 {
@@ -1170,58 +1164,29 @@ void Ioss::Utils::input_file(const std::string &file_name, std::vector<std::stri
   }
 }
 
-/** \brief Case-insensitive string comparison.
- *
- *  \param[in] s1 First string
- *  \param[in] s2 Second string
- *  \returns 0 if strings are equal, nonzero otherwise.
- */
-int Ioss::Utils::case_strcmp(const std::string &s1, const std::string &s2)
+bool Ioss::Utils::str_equal(const std::string &s1, const std::string &s2)
 {
-  const char *c1 = s1.c_str();
-  const char *c2 = s2.c_str();
-  for (;; c1++, c2++) {
-    if (std::tolower(*c1) != std::tolower(*c2)) {
-      return (std::tolower(*c1) - std::tolower(*c2));
-    }
-    if (*c1 == '\0') {
-      return 0;
-    }
-  }
+  return (s1.size() == s2.size()) &&
+         std::equal(s1.begin(), s1.end(), s2.begin(),
+                    [](char a, char b) { return std::tolower(a) == std::tolower(b); });
 }
 
-/** \brief Convert a string to upper case.
- *
- *  \param[in] name The string to convert.
- *  \returns The converted string.
- */
+bool Ioss::Utils::substr_equal(const std::string &prefix, const std::string &str)
+{
+  return (str.size() >= prefix.size()) && str_equal(prefix, str.substr(0, prefix.size()));
+}
+
 std::string Ioss::Utils::uppercase(std::string name)
 {
   std::transform(name.begin(), name.end(), name.begin(), [](char c) { return std::toupper(c); });
   return name;
 }
 
-/** \brief Convert a string to lower case.
- *
- *  \param[in] name The string to convert.
- *  \returns The converted string.
- */
 std::string Ioss::Utils::lowercase(std::string name)
 {
   std::transform(name.begin(), name.end(), name.begin(), [](char c) { return std::tolower(c); });
   return name;
 }
-
-/** \brief Check whether property 'prop_name' exists and if so, set 'prop_value'
- *
- * based on the property value.  Either "TRUE", "YES", "ON", or nonzero for true;
- * or "FALSE", "NO", "OFF", or 0 for false.
- * \param[in] properties the Ioss::PropertyManager containing the properties to be checked.
- * \param[in] prop_name the name of the property to check whether it exists and if so, set its
- * value.
- * \param[out] prop_value if prop_name exists and has a valid value, set prop_value accordingly.
- * \returns true/false depending on whether property found and value set.
- */
 
 bool Ioss::Utils::check_set_bool_property(const Ioss::PropertyManager &properties,
                                           const std::string &prop_name, bool &prop_value)
@@ -1253,13 +1218,6 @@ bool Ioss::Utils::check_set_bool_property(const Ioss::PropertyManager &propertie
   return found_property;
 }
 
-/** \brief Convert a string to lower case, and convert spaces to '_'.
- *
- *  The conversion is performed in place.
- *
- *  \param[in,out] name On input, the string to convert. On output, the converted string.
- *
- */
 void Ioss::Utils::fixup_name(char *name)
 {
   assert(name != nullptr);
@@ -1273,13 +1231,6 @@ void Ioss::Utils::fixup_name(char *name)
   }
 }
 
-/** \brief Convert a string to lower case, and convert spaces to '_'.
- *
- *  The conversion is performed in place.
- *
- *  \param[in,out] name On input, the string to convert. On output, the converted string.
- *
- */
 void Ioss::Utils::fixup_name(std::string &name)
 {
   name = Ioss::Utils::lowercase(name);
@@ -1300,12 +1251,10 @@ namespace {
   std::string two_letter_hash(const char *symbol)
   {
     const int    HASHSIZE = 673; // Largest prime less than 676 (26*26)
-    char         word[3];
     unsigned int hashval;
-    unsigned int g;
     for (hashval = 0; *symbol != '\0'; symbol++) {
-      hashval = (hashval << 4) + *symbol;
-      g       = hashval & 0xf0000000;
+      hashval        = (hashval << 4) + *symbol;
+      unsigned int g = hashval & 0xf0000000;
       if (g != 0) {
         hashval = hashval ^ (g >> 24);
         hashval = hashval ^ g;
@@ -1314,39 +1263,11 @@ namespace {
 
     // Convert to base-26 'number'
     hashval %= HASHSIZE;
-    word[0] = char(hashval / 26) + 'a';
-    word[1] = char(hashval % 26) + 'a';
-    word[2] = '\0';
+    char word[3] = {char(hashval / 26 + 'a'), char(hashval % 26 + 'a'), '\0'};
     return (std::string(word));
   }
 } // namespace
 
-/** \brief Tries to shorten long variable names to an acceptable length, and converts to
- *         lowercase and spaces to '_'
- *
- *   Many databases have a maximum length for variable names which can
- *   cause a problem with variable name length.
- *
- *   This routine tries to shorten long variable names to an acceptable
- *   length ('max_var_len' characters max).  If the name is already less than
- *   this length, it is returned unchanged except for the appending of the hash...
- *
- *   Since there is a (good) chance that two shortened names will match,
- *   a 2-letter 'hash' code is appended to the end of the variable
- *   name. This can be treated as a 2-digit base 26 number
- *
- *   So, we shorten the name to a maximum of 'max_var_len-3' characters and
- *   append a dot ('.') and 2 character hash.
- *
- *   But, we also have to deal with the suffices that Ioex_DatabaseIO
- *   appends on non-scalar values.  For the 'standard' types, the
- *   maximum suffix is 4 characters (underscore + 1, 2, or 3 characters).
- *   So...shorten name to maximum of 'max_var_len-3-{3|4|n}' characters
- *   depending on the number of components.
- *
- *   This function also converts name to lowercase and converts spaces
- *   to '_'.
- */
 std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t component_count,
                                              size_t copies, size_t max_var_len)
 {
@@ -1366,52 +1287,15 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
   if (component_count <= 1) {
     comp_len = 0;
   }
-  else if (component_count < 100) {
-    comp_len = 3;
-  }
-  else if (component_count < 1000) {
-    comp_len = 4; //   _000
-  }
-  else if (component_count < 10000) {
-    comp_len = 5; //  _0000
-  }
-  else if (component_count < 100000) {
-    comp_len = 6; // _00000
-  }
   else {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "Variable '{}' has {:n} components which is larger than the current maximum"
-               " of 100,000. Please contact developer.",
-               name, component_count);
-    IOSS_ERROR(errmsg);
+    comp_len = number_width(component_count) + 1; // _00000
   }
 
   if (copies <= 1) {
     copy_len = 0;
   }
-  else if (copies < 10) {
-    copy_len = 2;
-  }
-  else if (copies < 100) {
-    copy_len = 3;
-  }
-  else if (copies < 1000) {
-    copy_len = 4; //   _000
-  }
-  else if (copies < 10000) {
-    copy_len = 5; //  _0000
-  }
-  else if (copies < 100000) {
-    copy_len = 6; // _00000
-  }
   else {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "Variable '{}' has {:n} copies which is larger than the current maximum"
-               " of 100,000. Please contact developer.",
-               name, copies);
-    IOSS_ERROR(errmsg);
+    copy_len = number_width(copies) + 1; // _00000
   }
 
   size_t maxlen = max_var_len - comp_len - copy_len;
@@ -1449,15 +1333,6 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
   return lowercase(new_str);
 }
 
-/** \brief Create a nominal mesh for use in history databases.
- *
- *  The model for a history file is a single sphere element (1 node, 1 element).
- *  This is needed for some applications that read this file that require a
- *  "mesh" even though a history file is just a collection of global variables
- *  with no real mesh. This routine will add the mesh portion to a history file.
- *
- *  \param[in,out] region The region on which the nominal mesh is to be defined.
- */
 void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
 {
   Ioss::DatabaseIO *db = region->get_database();
@@ -1517,6 +1392,23 @@ int Ioss::Utils::log_power_2(uint64_t value)
   value |= value >> 16;
   value |= value >> 32;
   return tab64[(((value - (value >> 1)) * 0x07EDD5E59A4E28C2)) >> 58];
+}
+
+int Ioss::Utils::term_width()
+{
+  int cols = 100;
+  if (isatty(fileno(stdout))) {
+#ifdef TIOCGSIZE
+    struct ttysize ts;
+    ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
+    cols = ts.ts_cols;
+#elif defined(TIOCGWINSZ)
+    struct winsize ts;
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
+    cols = ts.ws_col;
+#endif /* TIOCGSIZE */
+  }
+  return cols;
 }
 
 void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_region,
@@ -1926,18 +1818,23 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     region.end_state(istep);
     output_region.end_state(ostep);
     if (options.delay > 0.0) {
+#ifndef _MSC_VER
       struct timespec delay;
       delay.tv_sec  = (int)options.delay;
       delay.tv_nsec = (options.delay - delay.tv_sec) * 1000000000L;
       nanosleep(&delay, nullptr);
+#else
+      Sleep((int)(options.delay * 1000));
+#endif
     }
   }
   if (options.debug && rank == 0) {
     fmt::print(stderr, "END STATE_TRANSIENT... \n");
   }
-  dbi->progress("END STATE_TRANSIENT ... ");
+  dbi->progress("END STATE_TRANSIENT (begin) ... ");
 
   output_region.end_mode(Ioss::STATE_TRANSIENT);
+  dbi->progress("END STATE_TRANSIENT (end) ... ");
   Ioss::Utils::clear(data_pool.data);
 }
 
@@ -2316,8 +2213,7 @@ namespace {
         max_field_size = field.get_size();
       }
       if (field_name != "ids" && !oge->field_exists(field_name) &&
-          (prefix.empty() ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+          Ioss::Utils::substr_equal(prefix, field_name)) {
         // If the field does not already exist, add it to the output node block
         oge->field_add(field);
       }
@@ -2351,8 +2247,7 @@ namespace {
       if (field_name == "ids") {
         continue;
       }
-      if ((prefix.empty() ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+      if (Ioss::Utils::substr_equal(prefix, field_name)) {
         assert(oge->field_exists(field_name));
         transfer_field_data_internal(ige, oge, pool, field_name, options);
       }
@@ -2672,14 +2567,14 @@ namespace {
     region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
     auto &sblocks = region.get_structured_blocks();
     for (auto &sb : sblocks) {
-      sb->field_add(Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT,
-                                sb->entity_count()));
+      sb->field_add(
+          Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT));
     }
 
     auto &eblocks = region.get_element_blocks();
     for (auto &eb : eblocks) {
-      eb->field_add(Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT,
-                                eb->entity_count()));
+      eb->field_add(
+          Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT));
     }
     region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
@@ -2701,5 +2596,4 @@ namespace {
     region.end_state(step);
     region.end_mode(Ioss::STATE_TRANSIENT);
   }
-
 } // namespace

@@ -31,14 +31,14 @@ void StepperDIRK<Scalar>::setupDefault()
   this->setUseEmbedded(        this->getUseEmbeddedDefault());
   this->setZeroInitialGuess(   false);
 
-  stepperDIRKObserver_ = Teuchos::rcp(new StepperDIRKObserver<Scalar>());
+  stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
 }
 
 
 template<class Scalar>
 void StepperDIRK<Scalar>::setup(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperDIRKObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   bool useFSAL,
   std::string ICConsistency,
@@ -52,7 +52,7 @@ void StepperDIRK<Scalar>::setup(
   this->setUseEmbedded(        useEmbedded);
   this->setZeroInitialGuess(   zeroInitialGuess);
 
-  stepperDIRKObserver_ = Teuchos::rcp(new StepperDIRKObserver<Scalar>());
+  stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
   this->setObserver(obs);
 
   if (appModel != Teuchos::null) {
@@ -86,20 +86,29 @@ template<class Scalar>
 void StepperDIRK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (this->stepperObserver_ == Teuchos::null) {
-      stepperDIRKObserver_ =
-        Teuchos::rcp(new StepperDIRKObserver<Scalar>());
-      this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperDIRKObserver_);
-     }
+
+  if (this->stepperObserver_ == Teuchos::null)
+    this->stepperObserver_  =
+      Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
+
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
+    return;
+
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
+     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
+
+  // Check that this casts to prevent a runtime error if it doesn't
+  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
+    this->stepperObserver_->addObserver(
+         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
   } else {
-    this->stepperObserver_ = obs;
-    stepperDIRKObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperDIRKObserver<Scalar> >(this->stepperObserver_);
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,0,"setObserver");
+    *out << "Tempus::StepperIMEX_RK::setObserver: Warning: An observer has been provided that";
+    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
+    *out << " In the future, this will result in a runtime error!" << std::endl;
   }
+
 }
 
 
@@ -122,9 +131,9 @@ void StepperDIRK<Scalar>::initialize()
 
   this->setObserver();
 
-  TEUCHOS_TEST_FOR_EXCEPTION( this->stepperDIRKObserver_ == Teuchos::null,
+  TEUCHOS_TEST_FOR_EXCEPTION( this->stepperObserver_ == Teuchos::null,
     std::logic_error,
-    "Error - stepperDIRKObserver is null!\n");
+    "Error - StepperRKObserver is null!\n");
 
   // Initialize the stage vectors
   const int numStages = tableau_->numStages();
@@ -197,8 +206,11 @@ void StepperDIRK<Scalar>::takeStep(
     bool pass = true;
     Thyra::SolveStatus<Scalar> sStatus;
     for (int i=0; i < numStages; ++i) {
-      if (!Teuchos::is_null(stepperDIRKObserver_))
-        stepperDIRKObserver_->observeBeginStage(solutionHistory, *this);
+        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+
+        // ???: is it a good idea to leave this (no-op) here?
+        this->stepperObserver_
+            ->observeBeforeImplicitExplicitly(solutionHistory, *this);
 
       if ( i == 0 && this->getUseFSAL() &&
            workingState->getNConsecutiveFailures() == 0 ) {
@@ -235,8 +247,7 @@ void StepperDIRK<Scalar>::takeStep(
               inArgs.set_x_dot(Teuchos::null);
             outArgs.set_f(stageXDot_[i]);
 
-            if (!Teuchos::is_null(stepperDIRKObserver_))
-              stepperDIRKObserver_->observeBeforeExplicit(solutionHistory,*this);
+            this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
             this->wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
           }
         } else {
@@ -252,22 +263,19 @@ void StepperDIRK<Scalar>::takeStep(
           auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
             timeDer, dt, alpha, beta, SOLVE_FOR_X, i));
 
-          if (!Teuchos::is_null(stepperDIRKObserver_))
-            stepperDIRKObserver_->observeBeforeSolve(solutionHistory, *this);
+          this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 
           sStatus = this->solveImplicitODE(stageX_, stageXDot_[i], ts, p);
 
           if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass=false;
 
-          if (!Teuchos::is_null(stepperDIRKObserver_))
-            stepperDIRKObserver_->observeAfterSolve(solutionHistory, *this);
+          this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
 
           timeDer->compute(stageX_, stageXDot_[i]);
         }
       }
 
-      if (!Teuchos::is_null(stepperDIRKObserver_))
-        stepperDIRKObserver_->observeEndStage(solutionHistory, *this);
+      this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: x_n = x_n-1 + Sum{ dt*b(i) * f(i) }
@@ -356,11 +364,6 @@ StepperDIRK<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   this->getValidParametersBasicDIRK(pl);
-
-  //this->getValidParametersBasic(pl);
-  //pl->set<bool>("Initial Condition Consistency Check", false);
-  //pl->set<bool>("Zero Initial Guess", false);
-  //pl->set<bool>("Reset Initial Guess", true);
 
   return pl;
 }

@@ -34,17 +34,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Random_MatrixGenerator_hpp
 #define __TSQR_Random_MatrixGenerator_hpp
 
-#include <Tsqr_Matrix.hpp>
-#include <Teuchos_LAPACK.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_Impl_Lapack.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <algorithm>
 #include <limits>
 #include <sstream>
@@ -98,19 +96,15 @@ namespace TSQR {
         this->fill_random (nrows, ncols, Q, ldq);
 
         // Get ready for QR factorization
-        Teuchos::LAPACK<Ordinal, Scalar> lapack;
+        Impl::Lapack<Scalar> lapack;
         std::vector<Scalar> tau (std::min(nrows, ncols));
 
         // Workspace query
         Scalar _lwork1, _lwork2;
-        int info = 0;
-        lapack.GEQRF (nrows, ncols, Q, ldq, &tau[0], &_lwork1, -1, &info);
-        if (info != 0)
-          throw std::logic_error("LAPACK GEQRF LWORK query failed");
-
-        lapack.UNGQR (nrows, ncols, ncols, Q, ldq, &tau[0], &_lwork2, -1, &info);
-        if (info != 0)
-          throw std::logic_error("LAPACK UNGQR LWORK query failed");
+        lapack.compute_QR (nrows, ncols, Q, ldq, tau.data(), &_lwork1, -1);
+        lapack.compute_explicit_Q (nrows, ncols, ncols,
+                                   Q, ldq, tau.data(),
+                                   &_lwork2, -1);
 
         // Allocate workspace.  abs() returns a magnitude_type, and we
         // can compare those using std::max.  If Scalar is complex,
@@ -119,23 +113,14 @@ namespace TSQR {
                                                      STS::magnitude (_lwork2)));
         std::vector<Scalar> work (lwork);
 
-        // Factor the input matrix
-        lapack.GEQRF (nrows, ncols, Q, ldq, &tau[0], &work[0], lwork, &info);
-        if (info != 0) {
-          std::ostringstream os;
-          os << "LAPACK GEQRF failed with INFO = " << info;
-          throw std::runtime_error (os.str ());
-        }
+        lapack.compute_QR (nrows, ncols, Q, ldq, tau.data(),
+                           work.data(), lwork);
 
         // Compute explicit Q factor in place
-        lapack.UNGQR (nrows, ncols, ncols, Q, ldq, &tau[0], &work[0], lwork, &info);
-        if (info != 0) {
-          std::ostringstream os;
-          os << "LAPACK UNGQR failed with INFO = " << info;
-          throw std::runtime_error (os.str ());
-        }
+        lapack.compute_explicit_Q (nrows, ncols, ncols,
+                                   Q, ldq, tau.data(),
+                                   work.data(), lwork);
       }
-
 
       /// Fill the nrows by ncols matrix Q (in column-major order, with
       /// leading dimension ldq >= nrows) with a random orthogonal
@@ -156,31 +141,26 @@ namespace TSQR {
         this->fill_random (nrows, ncols, Q, ldq);
 
         // Get ready for QR factorization
-        Teuchos::LAPACK<Ordinal, Scalar> lapack;
+        Impl::Lapack<Scalar> lapack;
 
         // Workspace query
         Scalar _lwork1;
-        int info = 0;
-        lapack.GEQRF (nrows, ncols, Q, ldq, tau, &_lwork1, -1, &info);
-        if (info != 0)
-          throw std::logic_error("LAPACK GEQRF LWORK query failed");
+        lapack.compute_QR (nrows, ncols, Q, ldq, tau, &_lwork1, -1);
 
         // Allocate workspace.
         const Ordinal lwork = checkedCast (STS::magnitude (_lwork1));
-        std::vector< Scalar > work (lwork);
+        std::vector<Scalar> work (lwork);
 
-        // Factor the input matrix
-        lapack.GEQRF (nrows, ncols, Q, ldq, tau, &work[0], lwork, &info);
-        if (info != 0)
-          throw std::runtime_error("LAPACK GEQRF failed");
+        lapack.compute_QR (nrows, ncols, Q, ldq, tau,
+                           work.data(), lwork);
       }
 
       template< class MatrixViewType >
       void
       implicit_Q (MatrixViewType& Q,
-                  typename MatrixViewType::scalar_type tau[])
+                  typename MatrixViewType::non_const_value_type tau[])
       {
-        implicit_Q (Q.nrows(), Q.ncols(), Q.get(), Q.lda(), tau);
+        implicit_Q (Q.extent(0), Q.extent(1), Q.data(), Q.stride(1), tau);
       }
 
       void
@@ -201,65 +181,53 @@ namespace TSQR {
         // Fill A with zeros, and then make its diagonal the given set
         // of singular values.
         mat_view_type A_view (nrows, ncols, A, lda);
-        A_view.fill (Scalar (0));
-        for (Ordinal j = 0; j < ncols; ++j)
-          // Promote magnitude_type to Scalar here.
+        deep_copy (A_view, Scalar {});
+        for (Ordinal j = 0; j < ncols; ++j) {
           A_view(j,j) = Scalar (singular_values[j]);
+        }
 
         // Generate random orthogonal U (nrows by ncols) and V (ncols by
         // ncols).  Keep them stored implicitly.
-        implicit_Q (U, &tau_U[0]);
-        implicit_Q (V, &tau_V[0]);
+        implicit_Q (U, tau_U.data());
+        implicit_Q (V, tau_V.data());
 
         // Workspace query for ORMQR.
         Scalar _lwork1, _lwork2;
-        int info = 0;
-        Teuchos::LAPACK< Ordinal, Scalar > lapack;
-        lapack.UNMQR ('L', 'N', nrows, ncols, ncols, U.get(), U.lda(), &tau_U[0],
-                      A, lda, &_lwork1, -1, &info);
-        if (info != 0) {
-          std::ostringstream os;
-          os << "LAPACK ORMQR LWORK query failed with INFO = " << info
-             << ": called ORMQR(\"L\", \"N\", " << nrows << ", " << ncols
-             << ", " << ncols << ", NULL, " << U.lda() << ", NULL, NULL, "
-             << lda << ", WORK, -1, &INFO)";
-          throw std::logic_error(os.str());
-        }
+        Impl::Lapack<Scalar> lapack;
+        lapack.apply_Q_factor ('L', 'N', nrows, ncols, ncols,
+                               U.data(), U.stride(1), tau_U.data(),
+                               A, lda, &_lwork1, -1);
         if (STS::isComplex) {
-          lapack.UNMQR ('R', 'C', nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0],
-                        A, lda, &_lwork2, -1, &info);
+          lapack.apply_Q_factor ('R', 'C', nrows, ncols, ncols,
+                                 V.data(), V.stride(1), tau_V.data(),
+                                 A, lda, &_lwork2, -1);
         }
         else {
-          lapack.UNMQR ('R', 'T', nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0],
-                        A, lda, &_lwork2, -1, &info);
-        }
-        if (info != 0) {
-          throw std::logic_error("LAPACK ORMQR LWORK query failed");
+          lapack.apply_Q_factor ('R', 'T', nrows, ncols, ncols,
+                                 V.data(), V.stride(1), tau_V.data(),
+                                 A, lda, &_lwork2, -1);
         }
 
         // Allocate workspace.
         Ordinal lwork = checkedCast (std::max (STS::magnitude (_lwork1),
                                                STS::magnitude (_lwork2)));
-        std::vector< Scalar > work (lwork);
+        std::vector<Scalar> work (lwork);
 
         // Apply U to the left side of A, and V^H to the right side of A.
-        lapack.UNMQR ('L', 'N', nrows, ncols, ncols, U.get(), U.lda(), &tau_U[0],
-                      A, lda, &work[0], lwork, &info);
-        if (info != 0)
-          throw std::runtime_error("LAPACK ORMQR failed (first time)");
+        lapack.apply_Q_factor ('L', 'N', nrows, ncols, ncols,
+                               U.data(), U.stride(1), tau_U.data(),
+                               A, lda, work.data(), lwork);
         if (STS::isComplex) {
-          lapack.UNMQR ('R', 'C', nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0],
-                        A, lda, &work[0], lwork, &info);
+          lapack.apply_Q_factor ('R', 'C', nrows, ncols, ncols,
+                                 V.data(), V.stride(1), tau_V.data(),
+                                 A, lda, work.data(), lwork);
         }
         else {
-          lapack.UNMQR ('R', 'T', nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0],
-                        A, lda, &work[0], lwork, &info);
-        }
-        if (info != 0) {
-          throw std::runtime_error("LAPACK ORMQR failed (second time)");
+          lapack.apply_Q_factor ('R', 'T', nrows, ncols, ncols,
+                                 V.data(), V.stride(1), tau_V.data(),
+                                 A, lda, work.data(), lwork);
         }
       }
-
 
       /// \brief Fill in a random upper triangular matrix
       ///
@@ -287,43 +255,43 @@ namespace TSQR {
         fill_random_svd (n, n, R, ldr, singular_values);
 
         // Compute the QR factorization in place of R (which isn't upper triangular yet).
-        std::vector< Scalar > tau (n);
+        std::vector<Scalar> tau (n);
 
         // Workspace size query for QR factorization.
         Scalar _lwork1;
-        int info = 0;
-        Teuchos::LAPACK< Ordinal, Scalar > lapack;
-        lapack.GEQRF (n, n, R, ldr, &tau[0], &_lwork1, -1, &info);
-        if (info != 0)
-          throw std::logic_error("LAPACK GEQRF LWORK query failed");
+        Impl::Lapack<Scalar> lapack;
+        lapack.compute_QR (n, n, R, ldr, tau.data(), &_lwork1, -1);
 
         // Allocate workspace
         Ordinal lwork = checkedCast (STS::magnitude (_lwork1));
-        std::vector< Scalar > work (lwork);
+        std::vector<Scalar> work (lwork);
 
         // Compute QR factorization (implicit representation in place).
-        lapack.GEQRF (n, n, R, ldr, &tau[0], &work[0], lwork, &info);
-        if (info != 0)
-          throw std::runtime_error("LAPACK GEQRF failed");
+        lapack.compute_QR (n, n, R, ldr, tau.data(), work.data(), lwork);
 
         // Zero out the stuff below the diagonal of R, leaving just the R factor.
-        for (Ordinal j = 0; j < n; ++j)
-          for (Ordinal i = j+1; i < n; ++i)
-            R[i + j*ldr] = Scalar(0);
+        for (Ordinal j = 0; j < n; ++j) {
+          for (Ordinal i = j+1; i < n; ++i) {
+            R[i + j*ldr] = Scalar {};
+          }
+        }
       }
 
     private:
       static Ordinal
       checkedCast (const magnitude_type& x)
       {
-        if (x < std::numeric_limits< Ordinal >::min() || x > std::numeric_limits< Ordinal >::max())
+        if (x < std::numeric_limits<Ordinal>::min() || x > std::numeric_limits<Ordinal>::max()) {
           throw std::range_error("Scalar input cannot be safely cast to an Ordinal");
+        }
         else if (std::numeric_limits< magnitude_type >::is_signed &&
                  x < magnitude_type(0) &&
-                 ! std::numeric_limits< Ordinal >::is_signed)
+                 ! std::numeric_limits<Ordinal>::is_signed) {
           throw std::range_error("Scalar input is negative, but Ordinal is unsigned");
-        else
-          return static_cast< Ordinal > (x);
+        }
+        else {
+          return static_cast<Ordinal> (x);
+        }
       }
 
       Generator& gen_;

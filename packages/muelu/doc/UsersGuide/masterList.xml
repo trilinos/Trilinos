@@ -454,10 +454,18 @@
     </parameter>
 
     <parameter>
-      <name>aggregation: phase 1 algorithm</name>
+      <name>aggregation: deterministic</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: coloring algorithm</name>
       <type>string</type>
-      <default>Serial</default>
-      <description>Choice of algorithm for aggregation phase 1.</description>
+      <default>serial</default>
+      <description>Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -723,6 +731,15 @@
       <MHD>true</MHD>
       <description>Use implicit transpose for the restriction operator.</description>
       <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>restriction: scale nullspace</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Block-diagonally scale (based on number of PDEs) the nullspace for the restriction only.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
     </parameter>
 
     <parameter>
@@ -997,6 +1014,14 @@
       <type>bool</type>
       <default>true</default>
       <description>If false, skip local QR decomposition phase of smoothed aggregation.</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>tentative: constant column sums</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>If true, scale the column sums to one (before applying nullspace).</description>
       <visible>false</visible>
     </parameter>
 

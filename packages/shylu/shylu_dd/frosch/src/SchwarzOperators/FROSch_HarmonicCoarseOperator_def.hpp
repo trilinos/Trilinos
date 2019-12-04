@@ -56,6 +56,7 @@ namespace FROSch {
     CoarseOperator<SC,LO,GO,NO> (k,parameterList),
     ExtensionSolver_ (),
     InterfaceCoarseSpaces_ (0),
+    AssembledInterfaceCoarseSpace_ (new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_)),
     Dimensions_ (0),
     DofsPerNode_ (0),
     GammaDofs_ (0),
@@ -70,7 +71,7 @@ namespace FROSch {
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeCoarseSpace(CoarseSpacePtr coarseSpace)
     {
         FROSCH_TIMER_START_LEVELID(computeCoarseSpaceTime,"HarmonicCoarseOperator::computeCoarseSpace");
-        XMapPtr repeatedMap = assembleSubdomainMap();
+        XMapPtr repeatedMap = AssembleSubdomainMap(NumberOfBlocks_,DofsMaps_,DofsPerNode_);
 
         // Build local saddle point problem
         ConstXMatrixPtr repeatedMatrix = ExtractLocalSubdomainMatrix(this->K_.getConst(),repeatedMap.getConst()); // AH 12/11/2018: Should this be in initalize?
@@ -97,61 +98,39 @@ namespace FROSch {
 
         BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
 
-        // Assemble coarse map
-        XMapPtr coarseMap = assembleCoarseMap(); // AH 12/11/2018: Should this be in initalize?
-
         // Build the saddle point harmonic extensions
-        XMultiVectorPtr localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),coarseMap,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
-
-        coarseSpace->addSubspace(coarseMap,localCoarseSpaceBasis);
+        XMultiVectorPtr localCoarseSpaceBasis;
+        if (AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()) {
+            localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),AssembledInterfaceCoarseSpace_->getBasisMap(),indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
+            
+            coarseSpace->addSubspace(AssembledInterfaceCoarseSpace_->getBasisMap(),AssembledInterfaceCoarseSpace_->getBasisMapUnique(),localCoarseSpaceBasis);
+        } else {
+            if (this->Verbose_) std::cout << "FROSch::HarmonicCoarseOperator : WARNING: The Coarse Space is empty. No extensions are computed" << std::endl;
+        }
 
         return repeatedMap;
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleCoarseMap()
+    int HarmonicCoarseOperator<SC,LO,GO,NO>::assembleInterfaceCoarseSpace()
     {
-        FROSCH_TIMER_START_LEVELID(assembleCoarseMapTime,"HarmonicCoarseOperator::assembleCoarseMap");
-        GOVec mapVector(0);
-        GO tmp = 0;
+        FROSCH_TIMER_START_LEVELID(assembleInterfaceCoarseSpaceTime,"HarmonicCoarseOperator::assembleInterfaceCoarseSpace");
+        LO ii=0;
         for (UN i=0; i<NumberOfBlocks_; i++) {
-            if (InterfaceCoarseSpaces_[i]->hasBasisMap()) {
-                for (UN j=0; j<InterfaceCoarseSpaces_[i]->getBasisMap()->getNodeNumElements(); j++) {
-                    mapVector.push_back(InterfaceCoarseSpaces_[i]->getBasisMap()->getGlobalElement(j)+tmp);
-                }
-                if (InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()>=0) {
-                    tmp += InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()+1;
+            if (!InterfaceCoarseSpaces_[i].is_null()) {
+                if (InterfaceCoarseSpaces_[i]->hasBasisMap()) {
+                    FROSCH_ASSERT(InterfaceCoarseSpaces_[i]->hasBasisMapUnique(),"FROSch::HarmonicCoarseOperator : ERROR: !InterfaceCoarseSpaces_[i]->hasAssembledBasis()");
+                    this->AssembledInterfaceCoarseSpace_->addSubspace(InterfaceCoarseSpaces_[i]->getBasisMap(),InterfaceCoarseSpaces_[i]->getBasisMapUnique(),InterfaceCoarseSpaces_[i]->getAssembledBasis(),ii);
                 }
             }
+            ii += InterfaceCoarseSpaces_[i]->getAssembledBasis()->getLocalLength();
+            InterfaceCoarseSpaces_[i].reset();
         }
-        return MapFactory<LO,GO,NO>::Build(DofsMaps_[0][0]->lib(),-1,mapVector(),0,this->MpiComm_);
+        return this->AssembledInterfaceCoarseSpace_->assembleCoarseSpace();
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleSubdomainMap()
-    {
-        FROSCH_TIMER_START_LEVELID(assembleSubdomainMapTime,"HarmonicCoarseOperator::assembleSubdomainMap");
-        FROSCH_ASSERT(DofsMaps_.size()==NumberOfBlocks_,"DofsMaps_.size()!=NumberOfBlocks_");
-        FROSCH_ASSERT(DofsPerNode_.size()==NumberOfBlocks_,"DofsPerNode_.size()!=NumberOfBlocks_");
-
-        GOVec mapVector(0);
-        for (UN i=0; i<NumberOfBlocks_; i++) {
-            FROSCH_ASSERT(DofsMaps_[i].size()==DofsPerNode_[i],"DofsMaps_[i].size()!=DofsPerNode_[i]");
-            UN numMyElements = DofsMaps_[i][0]->getNodeNumElements();
-            for (UN j=1; j<DofsPerNode_[i]; j++) {
-                FROSCH_ASSERT(DofsMaps_[i][j]->getNodeNumElements()==(unsigned) numMyElements,"DofsMaps_[i][j]->getNodeNumElements()==numMyElements");
-            }
-            for (UN j=0; j<numMyElements; j++) {
-                for (UN k=0; k<DofsPerNode_[i]; k++) {
-                    mapVector.push_back(DofsMaps_[i][k]->getGlobalElement(j));
-                }
-            }
-        }
-        return MapFactory<LO,GO,NO>::Build(DofsMaps_[0][0]->lib(),-1,mapVector(),0,this->MpiComm_);
-    }
-
-    template <class SC,class LO,class GO,class NO>
-    int  HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap)
+    int HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap)
     {
         FROSCH_TIMER_START_LEVELID(addZeroCoarseSpaceBlockTime,"HarmonicCoarseOperator::addZeroCoarseSpaceBlock");
         // Das könnte man noch ändern
@@ -179,7 +158,7 @@ namespace FROSch {
         XMultiVectorPtr mVPhiGamma;
         XMapPtr blockCoarseMap;
         if (useForCoarseSpace) {
-            InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
+            InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
             //Epetra_SerialComm serialComm;
             XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getNodeNumElements(),0,this->SerialComm_);
@@ -216,7 +195,7 @@ namespace FROSch {
                                                                     UN dimension,
                                                                     ConstXMapPtr nodesMap,
                                                                     ConstXMultiVectorPtr nodeList,
-                                                                    EntitySetPtr interior)
+                                                                    EntitySetConstPtr interior)
     {
         FROSCH_TIMER_START_LEVELID(computeVolumeFunctionsTime,"HarmonicCoarseOperator::computeVolumeFunctions");
         // Process the parameter list
@@ -241,18 +220,18 @@ namespace FROSch {
         }
 
         if (useForCoarseSpace) {
-            InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
+            InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
             interior->buildEntityMap(nodesMap);
 
             XMultiVectorPtrVecPtr translations = computeTranslations(blockId,interior);
             for (UN i=0; i<translations.size(); i++) {
-                this->InterfaceCoarseSpaces_[blockId]->addSubspace(interior->getEntityMap(),translations[i]);
+                this->InterfaceCoarseSpaces_[blockId]->addSubspace(interior->getEntityMap(),null,translations[i]);
             }
             if (useRotations) {
                 XMultiVectorPtrVecPtr rotations = computeRotations(blockId,dimension,nodeList,interior);
                 for (UN i=0; i<rotations.size(); i++) {
-                    this->InterfaceCoarseSpaces_[blockId]->addSubspace(interior->getEntityMap(),rotations[i]);
+                    this->InterfaceCoarseSpaces_[blockId]->addSubspace(interior->getEntityMap(),null,rotations[i]);
                 }
             }
 
@@ -265,15 +244,13 @@ namespace FROSch {
             }
 
             if (this->MpiComm_->getRank() == 0) {
-                std::cout << "\n\
-                --------------------------------------------\n\
-                # volumes:               --- " << numEntitiesGlobal << "\n\
-                --------------------------------------------\n\
-                Coarse space:\n\
-                --------------------------------------------\n\
-                volume: translations      --- " << 1 << "\n\
-                volume: rotations         --- " << useRotations << "\n\
-                --------------------------------------------\n";
+                std::cout << std::boolalpha << "\n\
+    ------------------------------------------------------------------------------\n\
+     GDSW coarse space\n\
+    ------------------------------------------------------------------------------\n\
+      Volumes: translations                       --- " << useForCoarseSpace << "\n\
+      Volumes: rotations                          --- " << useRotations << "\n\
+    ------------------------------------------------------------------------------\n" << std::noboolalpha;
             }
         }
         return 0;
@@ -281,7 +258,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeTranslations(UN blockId,
-                                                                                                                                 EntitySetPtr entitySet)
+                                                                                                                                 EntitySetConstPtr entitySet)
     {
         FROSCH_TIMER_START_LEVELID(computeTranslationsTime,"HarmonicCoarseOperator::computeTranslations");
         XMultiVectorPtrVecPtr translations(this->DofsPerNode_[blockId]);
@@ -308,11 +285,12 @@ namespace FROSch {
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeRotations(UN blockId,
                                                                                                                               UN dimension,
                                                                                                                               ConstXMultiVectorPtr nodeList,
-                                                                                                                              EntitySetPtr entitySet)
+                                                                                                                              EntitySetConstPtr entitySet,
+                                                                                                                              UN discardRotations)
     {
         FROSCH_TIMER_START_LEVELID(computeRotationsTime,"HarmonicCoarseOperator::computeRotations");
-        FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
-        FROSCH_ASSERT(dimension==this->DofsPerNode_[blockId],"dimension!=this->DofsPerNode_[blockId]");
+        FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"FROSch::HarmonicCoarseOperator : ERROR: Dimension of the nodeList is wrong.");
+        FROSCH_ASSERT(dimension==this->DofsPerNode_[blockId],"FROSch::HarmonicCoarseOperator : ERROR: Dimension!=this->DofsPerNode_[blockId]");
 
         UN rotationsPerEntity = 0;
         switch (dimension) {
@@ -326,7 +304,7 @@ namespace FROSch {
                 rotationsPerEntity = 3;
                 break;
             default:
-                FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
+                FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator : ERROR: The dimension is neither 2 nor 3!");
                 break;
         }
 
@@ -341,37 +319,124 @@ namespace FROSch {
         }
 
         SC x,y,z,rx,ry,rz;
+        SCVec rx0(3,0.0),ry0(3,0.0),rz0(3,0.0),errx(3,0.0),erry(3,0.0),errz(3,0.0);
         for (UN i=0; i<entitySet->getNumEntities(); i++) {
+            // Compute values for the first node to check if rotation is constant
+            x = nodeList->getData(0)[entitySet->getEntity(i)->getLocalNodeID(0)];
+            y = nodeList->getData(1)[entitySet->getEntity(i)->getLocalNodeID(0)];
+            
+            rx0[0] = y;
+            ry0[0] = -x;
+            if (dimension == 3) {
+                z = nodeList->getData(2)[entitySet->getEntity(i)->getLocalNodeID(0)];
+                
+                rz0[0] = 0;
+                
+                rx0[1] = -z;
+                ry0[1] = 0;
+                rz0[1] = x;
+                
+                rx0[2] = 0;
+                ry0[2] = z;
+                rz0[2] = -y;
+            }
             for (UN j=0; j<entitySet->getEntity(i)->getNumNodes(); j++) {
                 x = nodeList->getData(0)[entitySet->getEntity(i)->getLocalNodeID(j)];
                 y = nodeList->getData(1)[entitySet->getEntity(i)->getLocalNodeID(j)];
 
-                // Rotation 1
-                rx = y;
+                ////////////////
+                // Rotation 1 //
+                ////////////////
+                rx = y; 
                 ry = -x;
-                rz = 0;
                 rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
                 rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
+                
+                // Compute difference (Euclidean norm of error to constant function)
+                errx[0] += (rx0[0]-rx)*(rx0[0]-rx);
+                erry[0] += (ry0[0]-ry)*(ry0[0]-ry);
+                
                 if (dimension == 3) {
                     z = nodeList->getData(2)[entitySet->getEntity(i)->getLocalNodeID(j)];
-
+                    
+                    rz = 0;
                     rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
+                    
+                    // Compute difference (Euclidean norm of error to constant function)
+                    errz[0] += (rz0[0]-rz)*(rz0[0]-rz);
 
-                    // Rotation 2
+                    ////////////////
+                    // Rotation 2 //
+                    ////////////////
                     rx = -z;
                     ry = 0;
                     rz = x;
                     rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
                     rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
                     rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
+                    
+                    // Compute difference (Euclidean norm of error to constant function)
+                    errx[1] += (rx0[1]-rx)*(rx0[1]-rx);
+                    erry[1] += (ry0[1]-ry)*(ry0[1]-ry);
+                    errz[1] += (rz0[1]-rz)*(rz0[1]-rz);
 
-                    // Rotation 3
+                    ////////////////
+                    // Rotation 3 //
+                    ////////////////
                     rx = 0;
                     ry = z;
                     rz = -y;
                     rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
                     rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
                     rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
+                    
+                    // Compute difference (Euclidean norm of error to constant function)
+                    errx[2] += (rx0[2]-rx)*(rx0[2]-rx);
+                    erry[2] += (ry0[2]-ry)*(ry0[2]-ry);
+                    errz[2] += (rz0[2]-rz)*(rz0[2]-rz);
+                }
+            }
+            
+            // If error to constant function is almost zero => scale rotation with zero
+            SC err;
+            UN numZeroRotations = 0;
+            switch (dimension) {
+                case 2:
+                    err = errx[0]+erry[0];
+                    err = ScalarTraits<SC>::squareroot(err);
+                    if (std::fabs(err)<1.0e-12) {
+                        FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator : ERROR: In 2D, no rotation can be constant!");
+                        rotations[0]->getVectorNonConst(i)->scale(ScalarTraits<SC>::zero());
+                        numZeroRotations++;
+                    }
+                    break;
+                case 3:
+                    for (UN j=0; j<3; j++) {
+                        err = errx[j]+erry[j]+errz[j];
+                        err = ScalarTraits<SC>::squareroot(err);
+                        if (std::fabs(err)<1.0e-12) {
+                            rotations[j]->getVectorNonConst(i)->scale(ScalarTraits<SC>::zero());
+                            numZeroRotations++;
+                        }
+                    }
+                    break;
+                default:
+                    FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator : ERROR: The dimension is neither 1 nor 2 nor 3!");
+                    break;
+            }
+            // If necessary, discard additional rotations
+            UN rotationsToDiscard = discardRotations - numZeroRotations;
+            if (rotationsToDiscard<0) {
+                if (this->Verbose_) std::cout << "FROSch::HarmonicCoarseOperator : WARNING: More rotations have been discarded than expected." << std::endl;
+            } else if (rotationsToDiscard>0) {
+                UN it=0;
+                UN rotationsDiscarded=0;
+                while (rotationsDiscarded<rotationsToDiscard) {
+                    if (rotations[it]->getVector(i)->norm2()>1.0e-12) {
+                        rotations[it]->getVectorNonConst(i)->scale(ScalarTraits<SC>::zero());
+                        rotationsDiscarded++;
+                    }
+                    it++;
                 }
             }
         }
@@ -394,26 +459,35 @@ namespace FROSch {
 
         //Build mVPhiGamma
         XMultiVectorPtr mVPhiGamma = MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),coarseMap->getNodeNumElements());
-        LO jj=0;
-        LO kk=0;
-        UNVec numLocalBlockRows(NumberOfBlocks_);
-        for (UN i=0; i<NumberOfBlocks_; i++) {
-            UN j = 0;
-            UN k = 0;
-            if (InterfaceCoarseSpaces_[i]->hasAssembledBasis()) {
-                numLocalBlockRows[i] = InterfaceCoarseSpaces_[i]->getAssembledBasis()->getNumVectors();
-                for (j=0; j<numLocalBlockRows[i]; j++) {
-                    for (k=0; k<InterfaceCoarseSpaces_[i]->getAssembledBasis()->getLocalLength(); k++) {
-                        mVPhiGamma->replaceLocalValue(k+kk,j+jj,InterfaceCoarseSpaces_[i]->getAssembledBasis()->getData(j)[k]);
-                        mVPhi->replaceLocalValue(indicesGammaDofsAll[k+kk],j+jj,InterfaceCoarseSpaces_[i]->getAssembledBasis()->getData(j)[k]);
-                    }
+        if (AssembledInterfaceCoarseSpace_->hasAssembledBasis()) {
+            for (UN i=0; i<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); i++) {
+                ConstSCVecPtr AssembledInterfaceCoarseSpaceData = AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(i);
+                for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); j++) {
+                    mVPhiGamma->replaceLocalValue(j,i,AssembledInterfaceCoarseSpaceData[j]);
+                    mVPhi->replaceLocalValue(indicesGammaDofsAll[j],i,AssembledInterfaceCoarseSpaceData[j]);
                 }
-            } else { // Das ist für den Fall, dass keine Basisfunktionen für einen Block gebaut werden sollen
-                k=GammaDofs_[i].size();
             }
-            jj += j;
-            kk += k;
         }
+//        LO jj=0;
+//        LO kk=0;
+//        UNVec numLocalBlockRows(NumberOfBlocks_);
+//        for (UN i=0; i<NumberOfBlocks_; i++) {
+//            UN j = 0;
+//            UN k = 0;
+//            if (InterfaceCoarseSpaces_[i]->hasAssembledBasis()) {
+//                numLocalBlockRows[i] = InterfaceCoarseSpaces_[i]->getAssembledBasis()->getNumVectors();
+//                for (j=0; j<numLocalBlockRows[i]; j++) {
+//                    for (k=0; k<InterfaceCoarseSpaces_[i]->getAssembledBasis()->getLocalLength(); k++) {
+//                        mVPhiGamma->replaceLocalValue(k+kk,j+jj,InterfaceCoarseSpaces_[i]->getAssembledBasis()->getData(j)[k]);
+//                        mVPhi->replaceLocalValue(indicesGammaDofsAll[k+kk],j+jj,InterfaceCoarseSpaces_[i]->getAssembledBasis()->getData(j)[k]);
+//                    }
+//                }
+//            } else { // Das ist für den Fall, dass keine Basisfunktionen für einen Block gebaut werden sollen
+//                k=GammaDofs_[i].size();
+//            }
+//            jj += j;
+//            kk += k;
+//        }
         // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); this->Phi_->describe(*fancy,VERB_EXTREME);
         // Hier Multiplikation kIGamma*PhiGamma
         kIGamma->apply(*mVPhiGamma,*mVtmp);
@@ -421,10 +495,12 @@ namespace FROSch {
         mVtmp->scale(-ScalarTraits<SC>::one());
 
         // Jetzt der solver für kII
-        ExtensionSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(kII,sublist(this->ParameterList_,"ExtensionSolver")));
-        ExtensionSolver_->initialize();
-        ExtensionSolver_->compute();
-        ExtensionSolver_->apply(*mVtmp,*mVPhiI);
+        if (indicesIDofsAll.size()>0) {
+            ExtensionSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(kII,sublist(this->ParameterList_,"ExtensionSolver")));
+            ExtensionSolver_->initialize();
+            ExtensionSolver_->compute();
+            ExtensionSolver_->apply(*mVtmp,*mVPhiI);
+        }
 
         GOVec priorIndex(NumberOfBlocks_,0);
         GOVec postIndex(NumberOfBlocks_,0);
@@ -437,6 +513,8 @@ namespace FROSch {
         }
 
         LO itmp = 0;
+        ConstUNVecView numLocalBlockRows = AssembledInterfaceCoarseSpace_->getLocalSubspaceSizes();
+        FROSCH_ASSERT(numLocalBlockRows.size()==NumberOfBlocks_,"FROSch::HarmonicCoarseOperator : ERROR: numLocalBlockRows.size()!=NumberOfBlocks_");
         for (UN i=0; i<NumberOfBlocks_; i++) {
             std::stringstream blockIdStringstream;
             blockIdStringstream << i+1;
@@ -457,11 +535,10 @@ namespace FROSch {
             }
 
             for (UN j=0; j<numLocalBlockRows[i]; j++) {
+                ConstSCVecPtr mVPhiIData = mVPhiI->getData(itmp);
                 for (UN ii=0; ii<extensionBlocks.size(); ii++) {
                     for (LO k=bound[extensionBlocks[ii]]; k<bound[extensionBlocks[ii]+1]; k++) {
-                        indicesIDofsAll[k];
-                        mVPhiI->getData(itmp)[k];
-                        mVPhi->replaceLocalValue(indicesIDofsAll[k],itmp,mVPhiI->getData(itmp)[k]);
+                        mVPhi->replaceLocalValue(indicesIDofsAll[k],itmp,mVPhiIData[k]);
                     }
                 }
                 itmp++;

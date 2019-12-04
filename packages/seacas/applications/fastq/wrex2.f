@@ -268,7 +268,7 @@ C ... Convert sideset nodes to sideset sides
  140     continue
          call mddel('ISIDES')
       end if
-C     SUCCESSFULL WRITE COMPLETED
+C     SUCCESSFUL WRITE COMPLETED
       CALL MESAGE (' ')
       CALL MESAGE ('ExodusII output file successfully written')
 C ... Title is char*72, dbpini and exodusII expect char*80
@@ -303,17 +303,17 @@ C     ERROR DURING WRITE PROBLEMS
 
       END
 
-      subroutine trnlnk(LINK, NXK, NNXK, INDEX, NNODE, IBEG, IEND,USIND)
+      subroutine trnlnk(LINK, NXK, NNXK, INDEX, NNODE, IBEG, IEND,USING)
       integer link(nnode, *)
       integer nxk(nnxk, *)
       integer index(*)
-      logical usind
+      logical using
 
       ii = 0
       do 20 i = ibeg, iend
         ii = ii + 1
         do 10 j = 1, nnode
-          if (usind) then
+          if (using) then
              link(j,ii) = nxk(index(j), i)
           else
              link(j,ii) = nxk(j, i)

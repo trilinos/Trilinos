@@ -339,6 +339,10 @@ public:
 
   virtual Teuchos::RCP<const row_matrix_type> getUnderlyingMatrix() const;
 
+  Teuchos::RCP<const row_matrix_type> getExtMatrix() const;
+
+  Teuchos::ArrayView<const size_t> getExtHaloStarts() const;
+
 private:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
@@ -364,6 +368,7 @@ private:
   Teuchos::RCP<const crs_matrix_type> ExtMatrix_;
   Teuchos::RCP<const map_type>        ExtMap_;
   Teuchos::RCP<const import_type>     ExtImporter_;
+  Teuchos::Array<size_t>              ExtHaloStarts_;
 
   //! Graph of the matrix (as returned by getGraph()).
   Teuchos::RCP<const row_graph_type> graph_;

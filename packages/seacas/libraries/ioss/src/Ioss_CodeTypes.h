@@ -39,6 +39,14 @@
 #include <string>
 #include <vector>
 
+#if defined(_MSC_VER)
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t long
+#endif
+#endif
+
 namespace Ioss {
   using IntVector   = std::vector<int>;
   using Int64Vector = std::vector<int64_t>;

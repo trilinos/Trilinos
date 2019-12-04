@@ -175,7 +175,7 @@ namespace Ioss {
 
     /** Determine whether Cray Datawarp module is loaded and we have BB capacity allocated for this
      * job ( i.e: DW_JOB_STRIPED is set) && IOSS property to use DATAWARP is set to Y/YES (i.e
-     * enviromental variable ENABLE_DATAWARP) . If we are using DW then set some pathnames for
+     * environmental variable ENABLE_DATAWARP) . If we are using DW then set some pathnames for
      * writing directly to BB instead of PFS(i.e Lustre)
      */
     void check_setDW() const;
@@ -201,6 +201,9 @@ namespace Ioss {
      * \ returns The file-per-processor name for a file on this processor.
      */
     const std::string &decoded_filename() const;
+
+    /** Return a string specifying underlying format of database (exodus, cgns, ...) */
+    virtual const std::string get_format() const = 0;
 
     /** \brief Determine whether the database is an input database.
      *
@@ -388,7 +391,7 @@ namespace Ioss {
     // pure virtual get_field_internal and put_field_internal functions,
     // but this lets me add some debug/checking/common code to the
     // functions without having to do it in the calling code or in the
-    // derived classes code.  This also fulfills the hueristic that a
+    // derived classes code.  This also fulfills the heuristic that a
     // public interface should not contain pure virtual functions.
     template <typename T>
     int64_t get_field(const T *reg, const Field &field, void *data, size_t data_size) const
@@ -445,7 +448,7 @@ namespace Ioss {
       lowerCaseVariableNames = true_false;
     }
 
-    /* \brief Set the method used to split sidesets into homogenous blocks.
+    /* \brief Set the method used to split sidesets into homogeneous blocks.
      *
      *  \param[in] split_type The desired method.
      *
@@ -609,7 +612,7 @@ namespace Ioss {
     /*!
      * `bbName` is a temporary swizzled name which resides inside Burst Buffer namespace.
      * This is a private trivial mapped name vs original `DBFilename` (which resides in
-     * permament storage backed by parallel filesystem.
+     * permanent storage backed by parallel filesystem.
      * `dwPath` is global BB mountpoint for current job with requested capacity via SLURM \c \#DW
      * directive. `usingDataWarp`  -- a boolean, for convenience of use so that we don't have to do
      * getenv() calls to see if BB present.
@@ -617,12 +620,10 @@ namespace Ioss {
     mutable std::string bbName{};
     mutable std::string pfsName{};
     mutable std::string dwPath{};
-    mutable bool        usingDataWarp{false};
 
     mutable Ioss::State dbState{STATE_INVALID};
 
-    bool isParallel{false}; //!< true if running in parallel
-    int  myProcessor{0};    //!< number of processor this database is for
+    int myProcessor{0}; //!< number of processor this database is for
 
     int64_t nodeCount{0};
     int64_t elementCount{0};
@@ -650,13 +651,6 @@ namespace Ioss {
 
     mutable int overlayCount{0};
 
-    /*! EXPERIMENTAL If this is true, then each state (timestep)
-     *  output will be directed to a separate file.  Currently this is
-     *  only implemented for the exodus (parallel or serial, single
-     *  file or fpp) database type.
-     */
-    mutable bool filePerState{false};
-
     /*! Scale the time read/written from/to the file by the specified
       scaleFactor.  If the datbase times are 0.1, 0.2, 0.3 and the
       scaleFactor is 20, then the application will think that the
@@ -669,9 +663,20 @@ namespace Ioss {
 
     Ioss::SurfaceSplitType splitType{SPLIT_BY_TOPOLOGIES};
     Ioss::DatabaseUsage    dbUsage;
+
     mutable Ioss::DataSize dbIntSizeAPI{USE_INT32_API};
-    mutable bool           lowerCaseVariableNames{true};
-    bool                   usingParallelIO{false};
+
+    /*! EXPERIMENTAL If this is true, then each state (timestep)
+     *  output will be directed to a separate file.  Currently this is
+     *  only implemented for the exodus (parallel or serial, single
+     *  file or fpp) database type.
+     */
+    mutable bool filePerState{false};
+    mutable bool usingDataWarp{false};
+    bool         isParallel{false}; //!< true if running in parallel
+
+    mutable bool lowerCaseVariableNames{true};
+    bool         usingParallelIO{false};
 
     // List of element blocks that should be omitted or included from
     // this model.  Surfaces will take this into account while

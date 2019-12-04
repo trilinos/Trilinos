@@ -48,7 +48,7 @@ C
 C***********************************************************************
 C
 C  SUBROUTINE GETPLP = PRODUCES THE LIST OF NODES FROM POINT IP1
-C                      THRU LINE TO POINT IP2
+C                      THROUGH LINE TO POINT IP2
 C
 C***********************************************************************
 C

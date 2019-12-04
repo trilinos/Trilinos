@@ -63,9 +63,7 @@ Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database, const std::s
       hash_(Ioss::Utils::hash(my_name))
 {
   properties.add(Ioss::Property("name", my_name));
-
   properties.add(Ioss::Property("entity_count", entity_cnt));
-
   properties.add(Ioss::Property(this, "attribute_count", Ioss::Property::INTEGER));
 
   if (my_name != "null_entity") {
@@ -198,7 +196,13 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
 {
   size_t entity_size = entity_count();
   size_t field_size  = new_field.raw_count();
-  if (entity_size != field_size && type() != REGION) {
+  if (field_size == 0 && entity_size != 0) {
+    // Set field size to match entity size...
+    Ioss::Field tmp_field(new_field);
+    tmp_field.reset_count(entity_size);
+    fields.add(tmp_field);
+  }
+  else if (entity_size != field_size && type() != REGION) {
     std::string        filename = get_database()->get_filename();
     std::ostringstream errmsg;
     fmt::print(errmsg,
@@ -208,7 +212,9 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
                type_string(), name(), entity_size, new_field.get_name(), field_size, filename);
     IOSS_ERROR(errmsg);
   }
-  fields.add(new_field);
+  else {
+    fields.add(new_field);
+  }
 }
 
 /** \brief Read field data from the database file into memory using a pointer.
@@ -219,13 +225,13 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
  *  \returns The number of values read.
  *
  */
-int Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *data,
-                                         size_t data_size) const
+int64_t Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *data,
+                                             size_t data_size) const
 {
   verify_field_exists(field_name, "input");
 
   Ioss::Field field  = get_field(field_name);
-  int         retval = internal_get_field_data(field, data, data_size);
+  int64_t     retval = internal_get_field_data(field, data, data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0) {
@@ -243,8 +249,8 @@ int Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *da
  *  \returns The number of values written.
  *
  */
-int Ioss::GroupingEntity::put_field_data(const std::string &field_name, void *data,
-                                         size_t data_size) const
+int64_t Ioss::GroupingEntity::put_field_data(const std::string &field_name, void *data,
+                                             size_t data_size) const
 {
   verify_field_exists(field_name, "input");
 

@@ -93,6 +93,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
   COMM mpi serial
+  XHOSTTYPE Windows
   )
 
 if (TPL_ENABLE_MPI)
@@ -106,8 +107,8 @@ if (TPL_ENABLE_MPI)
         NUM_MPI_PROCS ${NPROCS}
      TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
   COMM mpi
+  XHOSTTYPE Windows
   )
-endif()
 endif()
 
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus64
@@ -158,8 +159,16 @@ ELSE()
 ENDIF()
 ENDIF()
 ENDIF()
+ENDIF()
 
 IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)
+# This test makes sure that the adjacency information (what element blocks are adjacent to what other
+# element blocks and what sidesets touch which element blocks) is the same for reading an exodus mesh
+# and for reading a internally generated pamgen mesh (the exodus mesh is also from the same pamgen input
+# file, so the meshes should be identical). Should be able to just compare the io_info output from both
+# runs, but on some platforms, we are getting some KOKKOS/CUDA/? debug information which messes up the
+# comparison.  So...we just grep the output files for the word 'element' which gets the adjacency information
+# that we need to ensure the same information is generated on both (and some other information also)
 TRIBITS_ADD_ADVANCED_TEST(pamgen_exodus_io_info
    TEST_0 EXEC io_shell ARGS --in_type pamgen ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i pamgen.e
      NOEXEPREFIX NOEXESUFFIX
@@ -172,8 +181,8 @@ TRIBITS_ADD_ADVANCED_TEST(pamgen_exodus_io_info
      OUTPUT_FILE info_pamgen.tmp
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
-   TEST_3 CMND grep ARGS -v pamgen info_pamgen.tmp OUTPUT_FILE info_pamgen.out
-   TEST_4 CMND grep ARGS -v pamgen info_exodus.tmp OUTPUT_FILE info_exodus.out
+   TEST_3 CMND grep ARGS element info_pamgen.tmp OUTPUT_FILE info_pamgen.out
+   TEST_4 CMND grep ARGS element info_exodus.tmp OUTPUT_FILE info_exodus.out
    TEST_5 CMND diff ARGS info_exodus.out info_pamgen.out
   COMM mpi serial
   )
@@ -281,6 +290,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
      NUM_MPI_PROCS ${NPROCS}
    TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic -map -dumpmap ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.g
   COMM mpi serial
+  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_single_block
@@ -292,6 +302,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_single_block
      NUM_MPI_PROCS ${NPROCS}
    TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic -map ${CMAKE_CURRENT_SOURCE_DIR}/test/cube.g cube.g
   COMM mpi serial
+  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
@@ -303,6 +314,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
      NUM_MPI_PROCS ${NPROCS}
    TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic -map ${CMAKE_CURRENT_SOURCE_DIR}/test/two-block.g two-block.g
   COMM mpi serial
+  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(unstructured_cgns_to_exodus
@@ -311,6 +323,7 @@ TRIBITS_ADD_ADVANCED_TEST(unstructured_cgns_to_exodus
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_generated.gold exodus_generated.e
   COMM mpi serial
+  XHOSTTYPE Windows
   )
 
 IF ($(TPL_ENABLE_MPI))
@@ -320,6 +333,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
   COMM mpi
+  XHOSTTYPE Windows
   )
 ELSE()
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
@@ -327,6 +341,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
      NOEXEPREFIX NOEXESUFFIX
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
   COMM serial
+  XHOSTTYPE Windows
   )
 ENDIF()
 ENDIF()

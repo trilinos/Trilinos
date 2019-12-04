@@ -66,6 +66,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     [HOSTTYPE <hosttype0> <hosttype1> ...]
 #     [XHOSTTYPE <hosttype0> <hosttype1> ...]
 #     [EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...]
+#     [DISABLED <messageWhyDisabled>]
 #     [STANDARD_PASS_OUTPUT
 #       | PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
 #     [FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
@@ -294,6 +295,24 @@ INCLUDE(TribitsAddTestHelpers)
 #
 #     If specified, gives the names of CMake variables that must evaluate to
 #     true, or the test will not be added.
+#
+#   ``DISABLED <messageWhyDisabled>``
+#
+#     If ``<messageWhyDisabled>`` is non-empty and does not evaluate to FALSE,
+#     then the test will be added by ``add_test()`` (so CTest will see it) but
+#     the ctest test property ``DISABLED`` will be set.  Therefore, CTest will
+#     not run the test and will instead list it as "Not Run" when tests are
+#     run locally and when submitting test results to CDash (with test details
+#     "Not Run (Disabled)").  Also, the message ``<messageWhyDisabled>`` will
+#     be printed to STDOUT by cmake after the line stating the test was added
+#     when ``${PROJECT_NAME}_TRACE_ADD_TEST=ON`` is set.  If
+#     ``<messageWhyDisabled>`` evaluates to FALSE in CMake (e.g. "FALSE",
+#     "false", "NO", "no", "0", "", etc.), then the ``DISABLED`` property will
+#     not be set.  This property can also be set with the CMake cache var ``-D
+#     <fullTestName>_SET_DISABLED_AND_MSG="<msgSetByVar>"`` and in fact that
+#     var will override the value of ``<messageWhyDisabled>`` passed in here
+#     (if ``<msgSetByVar>`` is non-empty).  This allows a user to enable tests
+#     that are disabled in the CMakeList.txt files using this input.
 #
 #   ``STANDARD_PASS_OUTPUT``
 #
@@ -786,7 +805,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
      # options
      "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;RUN_SERIAL"
      #one_value_keywords
-     ""
+     "DISABLED"
      #multi_value_keywords
 "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TESTS_NAMES_OUT"
      ${ARGN}
@@ -819,7 +838,6 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   #
   # Get test name
   #
-
 
   # If requested create a modifier for the name that will be inserted between
   # the package name and the given name or exe_name for the test
@@ -862,6 +880,9 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   IF (NOT ADD_THE_TEST)
     RETURN()
   ENDIF()
+
+  TRIBITS_SET_DISABLED_AND_MSG(${TEST_NAME} "${PARSE_DISABLED}"
+    SET_DISABLED_AND_MSG)  # Adds the test but sets DISABLED test prop!
 
   #
   # C) Set the name and path of the binary that will be run
@@ -944,7 +965,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
         "${EXECUTABLE_PATH}" "${PARSE_CATEGORIES}"  "${NUM_PROCS_USED}"
         "${NUM_TOTAL_CORES_USED}"
-        ${PARSE_RUN_SERIAL}  ADDED_TEST_NAME  ${INARGS}
+        ${PARSE_RUN_SERIAL} "${SET_DISABLED_AND_MSG}" ADDED_TEST_NAME  ${INARGS}
 	"${${TEST_NAME_INSTANCE}_EXTRA_ARGS}" )
       IF(PARSE_ADDED_TESTS_NAMES_OUT AND ADDED_TEST_NAME)
         LIST(APPEND ADDED_TESTS_NAMES_OUT ${ADDED_TEST_NAME})
@@ -980,7 +1001,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
         "${EXECUTABLE_PATH}" "${PARSE_CATEGORIES}" "${NUM_PROCS_USED}" 
         "${NUM_TOTAL_CORES_USED}"
         ${PARSE_CREATE_WORKING_DIR}
-        ${PARSE_RUN_SERIAL}   ADDED_TEST_NAME  ${INARGS}
+        ${PARSE_RUN_SERIAL} "${SET_DISABLED_AND_MSG}" ADDED_TEST_NAME  ${INARGS}
 	"${${TEST_NAME_INSTANCE}_EXTRA_ARGS}"
         )
       IF(PARSE_ADDED_TESTS_NAMES_OUT AND ADDED_TEST_NAME)

@@ -61,8 +61,8 @@ namespace FROSch {
                                                                                 Verbosity verbosity,
                                                                                 UN levelID) :
     GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
-    UseCoarseNodes_ (false),
-    CoarseNodes_ (),
+    UseRoots_ (false),
+    Roots_ (),
     EntitySetVector_ (),
     DistanceFunction_ (ConstantDistanceFunction)
     {
@@ -74,11 +74,11 @@ namespace FROSch {
         this->UseFaces_ = false;
 
         if (!this->ParameterList_->get("Type","Full").compare("Full")) {
-            UseCoarseNodes_ = true;
-        } else if (!this->ParameterList_->get("Type","Full").compare("CoarseNodes")) {
-            UseCoarseNodes_ = true;
+            UseRoots_ = true;
+        } else if (!this->ParameterList_->get("Type","Full").compare("Roots")) {
+            UseRoots_ = true;
         } else if (!this->ParameterList_->get("Type","Full").compare("Custom")) {
-            UseCoarseNodes_ = this->ParameterList_->sublist("Custom").get("CoarseNodes",false);
+            UseRoots_ = this->ParameterList_->sublist("Custom").get("Roots",false);
         } else {
             FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
         }
@@ -104,21 +104,22 @@ namespace FROSch {
 
         this->DDInterface_->buildEntityHierarchy();
 
-        this->DDInterface_->computeDistancesToCoarseNodes(this->DDInterface_->getDimension(),nodeList,DistanceFunction_);
+        this->DDInterface_->computeDistancesToRoots(this->DDInterface_->getDimension(),nodeList,DistanceFunction_);
 
         this->DDInterface_->buildEntityMaps(false,
                                             false,
                                             false,
                                             false,
                                             false,
-                                            UseCoarseNodes_);
+                                            UseRoots_,
+                                            false);
 
         EntitySetVector_ = this->DDInterface_->getEntitySetVector();
 
         // Map
-        if (UseCoarseNodes_) {
-            CoarseNodes_ = this->DDInterface_->getCoarseNodes();
-            this->PartitionOfUnityMaps_[0] = CoarseNodes_->getEntityMap();
+        if (UseRoots_) {
+            Roots_ = this->DDInterface_->getRoots();
+            this->PartitionOfUnityMaps_[0] = Roots_->getEntityMap();
         }
 
         if (this->MpiComm_->getRank() == 0) {
@@ -126,31 +127,31 @@ namespace FROSch {
     ------------------------------------------------------------------------------\n\
      RGDSW Interface Partition Of Unity (RGDSW IPOU)\n\
     ------------------------------------------------------------------------------\n\
-      Coarse nodes                               --- " << UseCoarseNodes_ << "\n\
+      Roots                                      --- " << UseRoots_ << "\n\
     ------------------------------------------------------------------------------\n" << std::noboolalpha;
         }
 
         // Build Partition Of Unity Vectors
         XMapPtr serialInterfaceMap = MapFactory<LO,GO,NO>::Build(this->DDInterface_->getNodesMap()->lib(),numInterfaceDofs,0,this->SerialComm_);
 
-        if (UseCoarseNodes_ && CoarseNodes_->getNumEntities()>0) {
-            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,CoarseNodes_->getNumEntities());
+        if (UseRoots_ && Roots_->getNumEntities()>0) {
+            XMultiVectorPtr tmpVector = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Roots_->getNumEntities());
 
             // Loop over EntitySetVector_
             for (UN i=0; i<EntitySetVector_.size(); i++) {
                 // Loop over entities
                 for (UN j=0; j<EntitySetVector_[i]->getNumEntities(); j++) {
                     InterfaceEntityPtr tmpEntity = EntitySetVector_[i]->getEntity(j);
-                    LO coarseNodeID = tmpEntity->getCoarseNodeID();
-                    UN numCoarseNodes = tmpEntity->getCoarseNodes()->getNumEntities();
-                    if (coarseNodeID==-1) {
-                        FROSCH_ASSERT(numCoarseNodes!=0,"coarseNodeID==-1 but numCoarseNodes==0!");
-                        for (UN m=0; m<numCoarseNodes; m++) {
-                            InterfaceEntityPtr tmpCoarseNode = tmpEntity->getCoarseNodes()->getEntity(m);
-                            LO index = tmpCoarseNode->getCoarseNodeID();
+                    LO rootID = tmpEntity->getRootID();
+                    UN numRoots = tmpEntity->getRoots()->getNumEntities();
+                    if (rootID==-1) {
+                        FROSCH_ASSERT(numRoots!=0,"rootID==-1 but numRoots==0!");
+                        for (UN m=0; m<numRoots; m++) {
+                            InterfaceEntityPtr tmpRoot = tmpEntity->getRoots()->getEntity(m);
+                            LO index = tmpRoot->getRootID();
                             // Offspring: loop over nodes
                             for (UN l=0; l<tmpEntity->getNumNodes(); l++) {
-                                SC value = tmpEntity->getDistanceToCoarseNode(l,m)/tmpEntity->getDistanceToCoarseNode(l,numCoarseNodes);
+                                SC value = tmpEntity->getDistanceToRoot(l,m)/tmpEntity->getDistanceToRoot(l,numRoots);
                                 for (UN k=0; k<dofsPerNode; k++) {
                                     tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),index,value*ScalarTraits<SC>::one());
                                 }
@@ -160,7 +161,7 @@ namespace FROSch {
                         // Coarse node: loop over nodes
                         for (UN l=0; l<EntitySetVector_[i]->getEntity(j)->getNumNodes(); l++) {
                             for (UN k=0; k<dofsPerNode; k++) {
-                                tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),coarseNodeID,ScalarTraits<SC>::one());
+                                tmpVector->replaceLocalValue(tmpEntity->getGammaDofID(l,k),rootID,ScalarTraits<SC>::one());
                             }
                         }
                     }

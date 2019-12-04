@@ -81,6 +81,7 @@ namespace FROSch {
         using UN                            = unsigned;
 
         using GOVec                         = Array<GO>;
+        using GOVecView                     = ArrayView<GO>;
 
         using SCVec                         = Array<SC>;
         using SCVecPtr                      = ArrayRCP<SC>;
@@ -97,21 +98,27 @@ namespace FROSch {
 
         int addEntitySet(EntitySetPtr entitySet);
 
+        EntitySetPtr deepCopy();
+        
         int buildEntityMap(ConstXMapPtr localToGlobalNodesMap);
 
         int findAncestorsInSet(EntitySetPtr entitySet);
 
+        EntitySetPtr findRoots();
+        
+        EntitySetPtr findLeafs();
+        
         int clearAncestors();
 
         int clearOffspring();
 
-        EntitySetPtr findCoarseNodes();
+        int clearRoots();
+        
+        int clearLeafs();
 
-        int clearCoarseNodes();
-
-        int computeDistancesToCoarseNodes(UN dimension,
-                                          ConstXMultiVectorPtr &nodeList = null,
-                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
+        int computeDistancesToRoots(UN dimension,
+                                    ConstXMultiVectorPtr &nodeList = null,
+                                    DistanceFunction distanceFunction = ConstantDistanceFunction);
 
         int divideUnconnectedEntities(ConstXMatrixPtr matrix,
                                       int pID);
@@ -127,6 +134,8 @@ namespace FROSch {
 
         int removeEntity(UN iD);
 
+        int removeNodesWithDofs(GOVecView dirichletBoundaryDofs);
+        
         int removeEmptyEntities();
 
         int sortUnique();
@@ -146,7 +155,9 @@ namespace FROSch {
 
         int setUniqueIDToFirstGlobalNodeID();
 
-        int setCoarseNodeID();
+        int setRootID();
+        
+        int setLeafID();
 
         int resetEntityType(EntityType type);
 

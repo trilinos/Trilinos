@@ -365,10 +365,10 @@ namespace MueLu {
     typedef Teuchos::TabularOutputter TTO;
     TTO outputter(out);
     outputter.pushFieldSpec("data name",                TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
-    outputter.pushFieldSpec("gen. factory addr.",       TTO::STRING, TTO::LEFT, TTO::GENERAL, 18);
+    outputter.pushFieldSpec("gen. factory addr.",       TTO::STRING, TTO::LEFT, TTO::GENERAL, 40);
     outputter.pushFieldSpec("req",                      TTO::INT,    TTO::LEFT, TTO::GENERAL, 3);
     outputter.pushFieldSpec("keep",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 5);
-    outputter.pushFieldSpec("type",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 15);
+    outputter.pushFieldSpec("type",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 18);
     outputter.pushFieldSpec("data",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 14);
     outputter.pushFieldSpec("req'd by",                 TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
     outputter.outputHeader();
@@ -389,12 +389,16 @@ namespace MueLu {
         //         ss1 << (*kt)->description();
         //         outputter.outputField((ss1.str()).substr(0,30));
 
-        // factory ptr
-        if (factory == NoFactory::get())
+        if (factory == NoFactory::get()) {
           outputter.outputField("NoFactory");
-        else
-          outputter.outputField(factory);
-
+        }
+        else {
+          std::ostringstream oss; oss << factory->ShortClassName() << "["<<factory->GetID()<<"]";
+#ifdef HAVE_MUELU_DEBUG
+          oss<<"(" << factory <<")";
+#endif
+          outputter.outputField(oss.str());
+        }
 
         int reqcount = NumRequests(factory, ename); // request counter
         outputter.outputField(reqcount);
@@ -452,8 +456,12 @@ namespace MueLu {
         std::ostringstream ss;
         for (container_type::const_iterator ct = requestedBy.begin(); ct != requestedBy.end(); ct++) {
           if (ct != requestedBy.begin()) ss << ",";
-          ss << ct->first;
-          if (ct->second > 1) ss << "(" << ct->second << ")";
+          ss << ct->first->ShortClassName() <<"["<<ct->first->GetID()<<"]";
+#ifdef HAVE_MUELU_DEBUG
+          ss<<"("<<ct->first<<")";
+#endif
+
+          if (ct->second > 1) ss << "x" << ct->second;
         }
         outputter.outputField(ss.str());
 
@@ -472,7 +480,8 @@ namespace MueLu {
       for (TwoKeyMap::const_iterator it1 = map_.begin(); it1 != map_.end(); it1++) {
         if (vindices.find(it1->first) == vindices.end()) {
           BoostVertex boost_vertex = boost::add_vertex(graph);
-          boost::put("label", dp, boost_vertex, it1->first->description());
+          std::ostringstream oss; oss<<it1->first->ShortClassName() << "[" << it1->first->GetID() << "]";
+          boost::put("label", dp, boost_vertex, oss.str());
           vindices[it1->first] = vind++;
         }
 
@@ -482,7 +491,8 @@ namespace MueLu {
             if (vindices.find(rit->first) == vindices.end()) {
               // requested by factory which is unknown
               BoostVertex boost_vertex = boost::add_vertex(graph);
-	      boost::put("label", dp, boost_vertex, rit->first->description());
+              std::ostringstream oss; oss<<rit->first->ShortClassName() << "[" << rit->first->GetID() << "]";
+	      boost::put("label", dp, boost_vertex, oss.str());
               vindices[rit->first] = vind++;
             }
 

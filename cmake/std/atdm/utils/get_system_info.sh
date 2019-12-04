@@ -26,6 +26,11 @@ if [ "$called" == "$0" ] ; then
   exit 1
 fi
 
+if [ -z "$ATDM_CONFIG_SCRIPT_DIR" ] ; then
+  echo "Error, must set ATDM_CONFIG_SCRIPT_DIR in env!"
+  return
+fi
+
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/unset_atdm_config_vars_system_info.sh
 
 # First, look for a custom system configuration

@@ -184,19 +184,38 @@ namespace MueLu {
       this->GetOStream(Runtime1) << "MueLu::Amesos2Smoother::Setup(): fixing nullspace" << std::endl;
 
       rowMap = A->getRowMap();
-
-      TEUCHOS_TEST_FOR_EXCEPTION(rowMap->getComm()->getSize() > 1, Exceptions::RuntimeError,
-        "MueLu::Amesos2Smoother::Setup Fixing nullspace for coarse matrix for Amesos2 for multiple processors has not been implemented yet.");
+      size_t M = rowMap->getGlobalNumElements();
 
       RCP<MultiVector> Nullspace = Factory::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
 
       TEUCHOS_TEST_FOR_EXCEPTION(Nullspace->getNumVectors() > 1, Exceptions::RuntimeError,
         "MueLu::Amesos2Smoother::Setup Fixing nullspace for coarse matrix for Amesos2 for nullspace of dim > 1 has not been implemented yet.");
 
-      ArrayRCP<const SC> nullspaceRCP;
-      ArrayView<const SC> nullspace;
+      RCP<MultiVector> NullspaceImp;
+      RCP<const Map> colMap;
+      RCP<const Import> importer;
+      if (rowMap->getComm()->getSize() > 1) {
+        this->GetOStream(Warnings0) << "MueLu::Amesos2Smoother::Setup(): Applying nullspace fix on distributed matrix. Try rebalancing to single rank!" << std::endl;
+        ArrayRCP<GO> elements_RCP;
+        elements_RCP.resize(M);
+        ArrayView<GO> elements = elements_RCP();
+        for (size_t k = 0; k<M; k++)
+          elements[k] = Teuchos::as<GO>(k);
+        colMap = MapFactory::Build(rowMap->lib(),M*rowMap->getComm()->getSize(),elements,Teuchos::ScalarTraits<GO>::zero(),rowMap->getComm());
+        importer = ImportFactory::Build(rowMap,colMap);
+        NullspaceImp = MultiVectorFactory::Build(colMap, Nullspace->getNumVectors());
+        NullspaceImp->doImport(*Nullspace,*importer,Xpetra::INSERT);
+      } else {
+        NullspaceImp = Nullspace;
+        colMap = rowMap;
+      }
+
+      ArrayRCP<const SC> nullspaceRCP, nullspaceImpRCP;
+      ArrayView<const SC> nullspace, nullspaceImp;
       nullspaceRCP = Nullspace->getData(0);
       nullspace = nullspaceRCP();
+      nullspaceImpRCP = NullspaceImp->getData(0);
+      nullspaceImp = nullspaceImpRCP();
 
       RCP<CrsMatrixWrap> Acrs = rcp_dynamic_cast<CrsMatrixWrap>(A);
 
@@ -212,38 +231,44 @@ namespace MueLu {
       ArrayRCP<LO>     newColIndices_RCP;
       ArrayRCP<SC>     newValues_RCP;
 
-      size_t N = rowMap->getGlobalNumElements();
+      size_t N = rowMap->getNodeNumElements();
       newRowPointers_RCP.resize(N+1);
-      newColIndices_RCP.resize(N*N);
-      newValues_RCP.resize(N*N);
+      newColIndices_RCP.resize(N*M);
+      newValues_RCP.resize(N*M);
 
       ArrayView<size_t> newRowPointers = newRowPointers_RCP();
       ArrayView<LO>     newColIndices  = newColIndices_RCP();
       ArrayView<SC>     newValues      = newValues_RCP();
 
+      SC normalization = Nullspace->getVector(0)->norm2();
+      normalization = Teuchos::ScalarTraits<Scalar>::one()/(normalization*normalization);
+
+      // form nullspace * nullspace^T
       for (size_t i = 0; i < N; i++) {
-        newRowPointers[i] = i*N;
-        for (size_t j = 0; j < N; j++) {
-          newColIndices[i*N+j] = Teuchos::as<LO>(j);
-          newValues[i*N+j] = nullspace[i]*Teuchos::ScalarTraits<Scalar>::conjugate(nullspace[j]);
+        newRowPointers[i] = i*M;
+        for (size_t j = 0; j < M; j++) {
+          newColIndices[i*M+j] = Teuchos::as<LO>(j);
+          newValues[i*M+j] = normalization * nullspace[i]*Teuchos::ScalarTraits<Scalar>::conjugate(nullspaceImp[j]);
         }
       }
-      newRowPointers[N] = N*N;
+      newRowPointers[N] = N*M;
 
+      // add A
       for (size_t i = 0; i < N; i++) {
         for (size_t jj = rowPointers[i]; jj < rowPointers[i+1]; jj++) {
-          LO j = colIndices[jj];
+          LO j = colMap->getLocalElement(A->getColMap()->getGlobalElement(colIndices[jj]));
           SC v = values[jj];
-          newValues[i*N+j] += v;
+          newValues[i*M+j] += v;
         }
       }
 
-      RCP<Matrix>    newA    = rcp(new CrsMatrixWrap(rowMap, rowMap, 0, Xpetra::StaticProfile));
+      RCP<Matrix>    newA    = rcp(new CrsMatrixWrap(rowMap, colMap, 0, Xpetra::StaticProfile));
       RCP<CrsMatrix> newAcrs = rcp_dynamic_cast<CrsMatrixWrap>(newA)->getCrsMatrix();
 
       using Teuchos::arcp_const_cast;
       newAcrs->setAllValues(arcp_const_cast<size_t>(newRowPointers_RCP), arcp_const_cast<LO>(newColIndices_RCP), arcp_const_cast<SC>(newValues_RCP));
-      newAcrs->expertStaticFillComplete(rowMap, rowMap);
+      newAcrs->expertStaticFillComplete(A->getDomainMap(), A->getRangeMap(),
+                                        importer, A->getCrsGraph()->getExporter());
 
       factorA = newA;
     } else {

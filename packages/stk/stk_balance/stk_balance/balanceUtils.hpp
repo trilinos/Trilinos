@@ -102,6 +102,7 @@ public:
     virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance);
 
     virtual double getToleranceForParticleSearch() const;
+    virtual double getAbsoluteToleranceForParticleSearch(stk::mesh::Entity particle) const;
     virtual double getGraphEdgeWeightForSearch() const;
     virtual bool getEdgesForParticlesUsingSearch() const;
     virtual double getVertexWeightMultiplierForVertexInSearch() const;
@@ -164,7 +165,7 @@ public:
                              m_spiderConnectivityCountField(nullptr)
     {}
 
-    virtual ~GraphCreationSettings() {}
+    virtual ~GraphCreationSettings() = default;
 
     size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const override;
 

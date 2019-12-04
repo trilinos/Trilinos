@@ -55,18 +55,17 @@ INCLUDE_DIRECTORIES(${DIR}/Transfers/User)
 INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
 INCLUDE_DIRECTORIES(${DIR}/../adapters/xpetra)
-if (${PACKAGE_NAME}_ENABLE_Epetra)
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/epetra)
 ENDIF()
-if (${PACKAGE_NAME}_ENABLE_Tpetra)
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/tpetra)
 ENDIF()
-if (${PACKAGE_NAME}_ENABLE_AmgX)
+IF (${PACKAGE_NAME}_ENABLE_AmgX)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/amgx)
 ENDIF()
-
-if (${PACKAGE_NAME}_ENABLE_Intrepid2)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
+IF (${PACKAGE_NAME}_ENABLE_Intrepid2)
+  INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
 ENDIF()
 
 # Function to generate ETI (explicit template instantiation) files
@@ -124,7 +123,7 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE
   SET(MueLu_ETI_EpetraGuards "#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))")
     SET(MueLu_ETI_EpetraGuards_END "#endif")
   ENDIF()
-        
+
   # loop over all ETI_CLASSES
   SET(SRCS "")
   FOREACH(CLASS ${ETI_CLASSES})
@@ -134,7 +133,7 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE
       string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
       #MESSAGE("New class name = ${CLASS_NAME}")
       set (CONDITION_NAME "")
-      set (CONDITION_NAME_END "")      
+      set (CONDITION_NAME_END "")
     ELSE()
       string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
       #MESSAGE("New class name = ${CLASS_NAME}")
@@ -148,11 +147,11 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE
       #MESSAGE("New condition name = ${CONDITION_NAME}")
       set (CONDITION_NAME_END "#endif")
     ENDIF()
-    
+
     string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS_NAME}")
     string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
     string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
-    
+
     # If Epetra is enabled, instantiate it on <double,int,int,EpetraNode>
     # Note: no Epetra64 support in MueLu
     # EpetraNode is defined in the template file depending on the enabled
@@ -166,7 +165,7 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE
         SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_Epetra.cpp)
       ENDIF()
     ENDIF()
-    
+
     # If Tpetra is enabled create the cpp file for all combinations of template parameters
     IF (${PACKAGE_NAME}_ENABLE_Tpetra)
       FOREACH(NT ${MueLu_ETI_NODES})
@@ -178,24 +177,24 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE
         FOREACH(LO ${MueLu_ETI_LORDS})
           TPETRA_MANGLE_TEMPLATE_PARAMETER(LO_MANGLED "${LO}")
           TPETRA_SLG_MACRO_NAME(LO_MACRO_NAME "${LO}")
-          
+
           IF(${SKIP_SCALAR_INSTANTIATION})
             CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
-            SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)           
+            SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
           ELSE()
             FOREACH(SC ${MueLu_ETI_SCALARS})
             TPETRA_MANGLE_TEMPLATE_PARAMETER(SC_MANGLED "${SC}")
             TPETRA_SLG_MACRO_NAME(SC_MACRO_NAME "${SC}")
             TPETRA_SC_MACRO_EXPR(SC_MACRO_EXPR "${SC}" "${GO}" "${SC_MACRO_NAME}")
-    
+
             CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_SC_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
-          SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)   
+          SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
             ENDFOREACH() # SC
           ENDIF() # skip loop over SC
         ENDFOREACH() # LO
       ENDFOREACH() # GO
     ENDFOREACH() # NT
-    
+
     ENDIF()
   ENDFOREACH()
   SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
@@ -205,24 +204,23 @@ ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
 ## MUELU_ETI_CPP_SOURCES collects all filenames of the MueLu ETI *.cpp files
 ## These are later added to the gloabl list of source files (SOURCES)
 ##
-SET(MUELU_ETI_CPP_SOURCES_SLGN "")
-SET(MUELU_ETI_CPP_SOURCES_LGN "")
+SET(MUELU_ETI_CPP_SOURCES "")
 
 ##
 ## only build ETI *.cpp files if ETI is enabled.
 ##
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ##
-  ## MUELU_SC_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI 
-  ## *.cpp files have to be generated for. Contains basically all MueLu 
+  ## MUELU_SC_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI
+  ## *.cpp files have to be generated for. Contains basically all MueLu
   ## classes (with some exceptions, though).
   ##
   GLOBAL_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES  )
   INCLUDE(Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
 
   ##
-  ## MUELU_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI 
-  ## *.cpp files have to be generated for. Contains basically all MueLu 
+  ## MUELU_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI
+  ## *.cpp files have to be generated for. Contains basically all MueLu
   ## classes (with some exceptions, though).
   ##
   GLOBAL_SET ( MUELU_LO_GO_NO_ETI_CLASSES  )
@@ -234,15 +232,15 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_SC_LO_GO_NO_SRC
     0)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES_SLGN ${MueLu_ETI_SC_LO_GO_NO_SRC})
-  
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
+
   MUELU_PROCESS_ETI_TEMPLATE(
     "Utils/ExplicitInstantiation"
     "${MUELU_LO_GO_NO_ETI_CLASSES}"
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_LO_GO_NO_SRC
     1)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES_LGN ${MueLu_ETI_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
 ENDIF()
 
 ELSE() # do not split cpp files
@@ -265,7 +263,7 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOU
       string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
       #MESSAGE("New class name = ${CLASS_NAME}")
       set (CONDITION_NAME "")
-      set (CONDITION_NAME_END "")      
+      set (CONDITION_NAME_END "")
     ELSE()
       string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
       #MESSAGE("New class name = ${CLASS_NAME}")
@@ -279,17 +277,17 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOU
       #MESSAGE("New condition name = ${CONDITION_NAME}")
       set (CONDITION_NAME_END "#endif")
     ENDIF()
-    
+
     string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS_NAME}")
     string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
     string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
-    
-    # the following generates one cpp file for all instantiations and 
+
+    # the following generates one cpp file for all instantiations and
     # enabled configurations
     CONFIGURE_FILE(${TEMPLATE_FILE} ${FINAL_FILE_NAME})
     #MESSAGE("Configure file ${FINAL_FILE_NAME} using template ${TEMPLATE_FILE}")
     SET(SRCS ${SRCS} ${FINAL_FILE_NAME})
-    
+
   ENDFOREACH()
   SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
 ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
@@ -298,24 +296,23 @@ ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
 ## MUELU_ETI_CPP_SOURCES collects all filenames of the MueLu ETI *.cpp files
 ## These are later added to the gloabl list of source files (SOURCES)
 ##
-SET(MUELU_ETI_CPP_SOURCES_SLGN "")
-SET(MUELU_ETI_CPP_SOURCES_LGN "")
+SET(MUELU_ETI_CPP_SOURCES "")
 
 ##
 ## only build ETI *.cpp files if ETI is enabled.
 ##
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ##
-  ## MUELU_SC_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI 
-  ## *.cpp files have to be generated for. Contains basically all MueLu 
+  ## MUELU_SC_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI
+  ## *.cpp files have to be generated for. Contains basically all MueLu
   ## classes (with some exceptions, though).
   ##
   GLOBAL_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES  )
   INCLUDE(Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
 
   ##
-  ## MUELU_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI 
-  ## *.cpp files have to be generated for. Contains basically all MueLu 
+  ## MUELU_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI
+  ## *.cpp files have to be generated for. Contains basically all MueLu
   ## classes (with some exceptions, though).
   ##
   GLOBAL_SET ( MUELU_LO_GO_NO_ETI_CLASSES  )
@@ -326,14 +323,14 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_SC_LO_GO_NO_SRC)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES_SLGN ${MueLu_ETI_SC_LO_GO_NO_SRC})
-  
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
+
   MUELU_PROCESS_ETI_TEMPLATE(
     "${MUELU_LO_GO_NO_ETI_CLASSES}"
     Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_LO_GO_NO_SRC)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES_LGN ${MueLu_ETI_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
 ENDIF()
 
 ENDIF() # split ETI files
@@ -354,32 +351,9 @@ LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 
 
 ###############################################
-SET(SOURCES ${MUELU_ETI_CPP_SOURCES_SLGN})
+SET(SOURCES ${MUELU_ETI_CPP_SOURCES})
 APPEND_GLOB(SOURCES */*.cpp)
-LIST(REMOVE_ITEM SOURCES ${DIR}/Graph/Containers/MueLu_LinkedList.cpp)
-SET(SOURCES_LGN ${MUELU_ETI_CPP_SOURCES_LGN})
-APPEND_GLOB(SOURCES_LGN ${DIR}/Graph/Containers/MueLu_LinkedList.cpp)
-
-#APPEND_GLOB(SOURCES ${MUELU_ETI_CPP_SOURCES})  # append ETI cpp sources (if any)
-
-## TODO are the following lines necessary???
-#APPEND_GLOB(SOURCES */*/*.cpp) -> ExplicitInstantiation files must be included only if explicit instantiation is enabled
-# JHU 2019-Apr-12 None of the following directories have *.cpp files.
-#APPEND_GLOB(SOURCES Smoothers/BlockedSmoothers/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/BlackBox/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/BlockedTransfers/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Energy-Minimization/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Energy-Minimization/Solvers/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/GeneralGeometric/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Geometric-Interpolation/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
-#APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
-#APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
-
-#MESSAGE("ETI_SOURCES = ${MUELU_ETI_CPP_SOURCES}")
-#MESSAGE("SOURCES = ${SOURCES}")
+APPEND_GLOB(SOURCES ${DIR}/Graph/Containers/MueLu_LinkedList.cpp)
 
 #
 # Explicit instantiation
@@ -419,10 +393,10 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/User NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/SemiCoarsen NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Utils NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/xpetra NOSIERRABJAM)
-if (${PACKAGE_NAME}_ENABLE_Tpetra)
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
 ENDIF()
-if (${PACKAGE_NAME}_ENABLE_Intrepid2)
+IF (${PACKAGE_NAME}_ENABLE_Intrepid2)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/PCoarsen NOSIERRABJAM)
 ENDIF()
 
@@ -448,8 +422,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
 LIST(REMOVE_ITEM SOURCES ${SOURCES_INTERFACE})
-LIST(REMOVE_ITEM SOURCES_LGN ${SOURCES_INTERFACE})
-
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
@@ -468,35 +440,7 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  muelu_lgn
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES_LGN}
-  )
-
-TRIBITS_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS muelu_lgn
   )
-
-
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

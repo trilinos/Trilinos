@@ -104,6 +104,7 @@ namespace FROSch {
 
         using XImport                           = Import<LO,GO,NO>;
         using XImportPtr                        = RCP<XImport>;
+        using XImportPtrVecPtr                  = ArrayRCP<XImportPtr>;
 
         using XExport                           = Export<LO,GO,NO>;
         using XExportPtr                        = RCP<XExport>;
@@ -114,6 +115,7 @@ namespace FROSch {
         using DDInterfacePtr                    = RCP<DDInterface<SC,LO,GO,NO> >;
 
         using EntitySetPtr                      = RCP<EntitySet<SC,LO,GO,NO> >;
+        using EntitySetConstPtr                 = const EntitySetPtr;
         using EntitySetPtrVecPtr                = ArrayRCP<EntitySetPtr>;
         using EntitySetPtrConstVecPtr           = const EntitySetPtrVecPtr;
 
@@ -122,6 +124,7 @@ namespace FROSch {
 
         using InterfaceEntityPtr                = RCP<InterfaceEntity<SC,LO,GO,NO> >;
 
+        using PartitionOfUnityPtr               = RCP<PartitionOfUnity<SC,LO,GO,NO> >;
         using InterfacePartitionOfUnityPtr      = RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> >;
 
         using LocalPartitionOfUnityBasisPtr     = RCP<LocalPartitionOfUnityBasis<SC,LO,GO,NO> >;
@@ -135,8 +138,10 @@ namespace FROSch {
         using DofOrderingVecPtr                 = ArrayRCP<DofOrdering>;
 
         using UN                                = unsigned;
+        using ConstUN                           = const UN;
         using UNVec                             = Array<UN>;
         using UNVecPtr                          = ArrayRCP<UN>;
+        using ConstUNVecView                    = ArrayView<const UN>;
 
         using LOVec                             = Array<LO>;
         using LOVecPtr                          = ArrayRCP<LO>;
@@ -201,6 +206,11 @@ namespace FROSch {
 
         int resetMatrix(ConstXMatrixPtr &k);
 
+      
+        virtual void residual(const XMultiVector & X,
+                              const XMultiVector & B,
+                              XMultiVector& R) const;
+
     protected:
 
         CommPtr MpiComm_;
@@ -215,7 +225,7 @@ namespace FROSch {
         bool IsInitialized_;
         bool IsComputed_;
 
-        UN LevelID_;
+        ConstUN LevelID_;
     };
 
 }

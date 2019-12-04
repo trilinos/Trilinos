@@ -75,8 +75,10 @@ struct ex__obj_stats *exoII_nm  = 0;
 static char  ret_string[10 * (MAX_VAR_NAME_LENGTH + 1)];
 static char *cur_string = &ret_string[0];
 
+#ifndef _MSC_VER
 #if NC_HAS_HDF5
 extern int H5get_libversion(unsigned *, unsigned *, unsigned *);
+#endif
 #endif
 
 #if NC_HAS_PNETCDF
@@ -113,12 +115,14 @@ void ex_print_config(void)
 #if NC_HAS_CDF5
   fprintf(stderr, "\t\tCDF5 enabled\n");
 #endif
+#ifndef _MSC_VER
 #if NC_HAS_HDF5
   {
     unsigned major, minor, release;
     H5get_libversion(&major, &minor, &release);
     fprintf(stderr, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
   }
+#endif
 #endif
 #if NC_HAS_PARALLEL
   fprintf(stderr, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
@@ -1842,7 +1846,7 @@ int ex__handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   /* Check parallel io mode.  Valid is NC_MPIPOSIX or NC_MPIIO or NC_PNETCDF
    * Exodus uses different flag values; map to netcdf values
    *
-   * NOTE: In curent versions of NetCDF, MPIPOSIX and MPIIO are ignored and the
+   * NOTE: In current versions of NetCDF, MPIPOSIX and MPIIO are ignored and the
    *       underlying format is either NC_PNETCDF or NC_NETCDF4 (hdf5-based)
    *       They map NC_MPIIO to NC_PNETCDF, but in the past, exodus mapped EX_MPIIO
    *       to EX_NETCDF4.
@@ -2031,6 +2035,9 @@ int ex__populate_header(int exoid, const char *path, int my_mode, int is_paralle
   char  errmsg[MAX_ERR_LENGTH];
   int   int64_status = my_mode & (EX_ALL_INT64_DB | EX_ALL_INT64_API);
 
+  int format = 0;
+  int mode;
+
   /* turn off automatic filling of netCDF variables */
   if ((status = nc_set_fill(exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to set nofill mode in file id %d", exoid);
@@ -2061,21 +2068,14 @@ int ex__populate_header(int exoid, const char *path, int my_mode, int is_paralle
   /* initialize floating point size conversion.  since creating new file,
    * i/o wordsize attribute from file is zero.
    */
-  if (my_mode & EX_PNETCDF) {
+  /* Determine format being used for underlying NetCDF file */
+  nc_inq_format_extended(exoid, &format, &mode);
+
+  if (format & NC_FORMAT_PNETCDF) {
     is_pnetcdf = 1;
   }
 
-  if (my_mode & EX_NETCDF4) {
-    is_hdf5 = 1;
-  }
-
-  /*
-   * NetCDF has deprecated use of MPIIO and MPIPOSIX and instead rely
-   * on explicitly specifying either NetCDF-4 of PNetCDF output. For
-   * backward-compatibility, we map the MPIIO and MPIPOSIX over to
-   * NetCDF4 which is hdf5-based...
-   */
-  if (is_parallel && ((my_mode & EX_MPIIO) || (my_mode & EX_MPIPOSIX))) {
+  if (format & NC_FORMAT_NC_HDF5) {
     is_hdf5 = 1;
   }
 

@@ -16,13 +16,37 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-# Performance and accuracy test suite for TSQR::SequentialTsqr
-# (sequential cache-blocked TSQR).
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+# Test TSQR::SequentialTsqr (sequential cache-blocked TSQR).
+TRIBITS_ADD_EXECUTABLE(
   SequentialTsqr
   SOURCES Tsqr_TestSeqTsqr.cpp
   COMM serial mpi
-  ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-blocks"
+  )
+
+TRIBITS_ADD_TEST(
+  SequentialTsqr
+  NAME SequentialTsqr_contiguousCacheBlocks
+  COMM serial mpi
+  ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=5000 --contiguous-cache-blocks"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  SequentialTsqr
+  NAME SequentialTsqr_noncontiguousCacheBlocks
+  COMM serial mpi
+  ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=5000"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+# Performance and accuracy test suite for TSQR::KokkosNodeTsqr
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  KokkosHostTsqr
+  SOURCES Tsqr_TestKokkosNodeTsqr.cpp
+  COMM serial mpi
+  ARGS "--verify --numRows=100000 --numCols=10"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   )

@@ -322,6 +322,79 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MUMPS, SolveTwice, SCALAR, LO, GO )
+  {
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef ScalarTraits<SCALAR> ST;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+  
+    const size_t numVecs = 1;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+
+
+    printf("Consider Matrix 1 \n");
+    RCP<MAT> A =
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm);
+
+
+    RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
+    RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
+
+    RCP<MV> X = rcp(new MV(dmnmap,numVecs));
+    RCP<MV> B = rcp(new MV(rngmap,numVecs));
+    RCP<MV> Xhat = rcp(new MV(dmnmap,numVecs));
+    X->setObjectLabel("X");
+    B->setObjectLabel("B");
+    Xhat->setObjectLabel("Xhat");
+    X->randomize();
+
+    printf("Got to multiply\n");
+
+    A->apply(*X,*B);            // no transpose
+
+    Xhat->randomize();
+    Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+
+
+    // Solve A*Xhat = B for Xhat using MUMPS solver
+    RCP<Amesos2::Solver<MAT,MV> > solver
+      = Amesos2::create<MAT,MV>("MUMPS", A, Xhat, B );
+
+
+    printf("tester, called sym \n");
+    solver->symbolicFactorization();
+    printf("tester, called num \n");
+    solver->numericFactorization();
+    printf("tester, called solve \n");
+    solver->solve();
+
+    Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+
+    // Check result of solve
+    Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
+    Xhat->norm2(xhatnorms());
+    X->norm2(xnorms());
+    TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
+    
+    printf("tester, called num again (with same matrix)\n");
+    solver->numericFactorization();
+    printf("tester, called solve again  \n");
+    solver->solve();
+
+    Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+
+    // Check result of solve    
+    Xhat->norm2(xhatnorms());
+    X->norm2(xnorms());
+    TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
+  }
+
  /* TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, SolveTrans, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
@@ -599,7 +672,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, Initialization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, SymbolicFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, NumericFactorization, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, Solve, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, Solve, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, SolveTwice, SCALAR, LO, GO )
 
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \

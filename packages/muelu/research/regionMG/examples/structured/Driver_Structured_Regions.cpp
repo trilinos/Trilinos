@@ -124,9 +124,10 @@
 #endif
 
 // Region MG headers
+#include "SetupRegionUtilities.hpp"
+#include "SetupRegionVector_def.hpp"
+#include "SetupRegionMatrix_def.hpp"
 #include "SetupRegionHierarchy_def.hpp"
-
-#include "Driver_Structured_Interface.hpp"
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -165,13 +166,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string convergenceLog     = "residual_norm.txt"; clp.setOption("convergence-log",       &convergenceLog,    "file in which the convergence history of the linear solver is stored");
   int         maxIts             = 200;                 clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   std::string smootherType       = "Jacobi";            clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
-  int         smootherIts        =  20;                 clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
+  int         smootherIts        = 2;                   clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
   double      smootherDamp       = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
+  double      smootherEigRatio   = 2.0;                 clp.setOption("smootherEigRatio",      &smootherEigRatio,  "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
   double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
-  bool        directCoarseSolver = true;                clp.setOption("direct-coarse-solver", "amg-coarse-solver", &directCoarseSolver, "Type of solver for composite coarse level operator");
-  std::string unstructured       = "{}";                clp.setOption("unstructured",          &unstructured,   "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
+  std::string coarseSolverType   = "direct";            clp.setOption("coarseSolverType",      &coarseSolverType,  "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
+  std::string unstructured       = "{}";                clp.setOption("unstructured",          &unstructured,      "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
   std::string coarseAmgXmlFile   = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,  "Read parameters for AMG as coarse level solve from this xml file.");
 #ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                      clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
@@ -216,6 +218,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   smootherParams[0]->set("smoother: type",    smootherType);
   smootherParams[0]->set("smoother: sweeps",  smootherIts);
   smootherParams[0]->set("smoother: damping", smootherDamp);
+  smootherParams[0]->set("smoother: eigRatio", smootherEigRatio);
 
   bool useUnstructured = false;
   Array<LO> unstructuredRanks = Teuchos::fromStringToArray<LO>(unstructured);
@@ -244,11 +247,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Build Composite Matrix")));
 
 
-  RCP<Matrix>      A;
-  RCP<Xpetra::Map<LO,GO,NO> > nodeMap, dofMap;
+  RCP<Matrix> A;
+  RCP<Map>    nodeMap, dofMap;
+  RCP<Vector> X, B;
   RCP<MultiVector>           nullspace;
   RCP<RealValuedMultiVector> coordinates;
-  RCP<Vector> X, B;
 
   galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
 
@@ -413,35 +416,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     procsPerDim[2] = galeriList.get<GO>("mz");
   }
 
-  Teuchos::Array<GO> startIndices(3);
-  Teuchos::Array<GO> endIndices(3);
-  const GO startGID = dofMap->getMinGlobalIndex() / numDofsPerNode;
-  startIndices[2] = startGID / (gNodesPerDim[1]*gNodesPerDim[0]);
-  const GO rem    = startGID % (gNodesPerDim[1]*gNodesPerDim[0]);
-  startIndices[1] = rem / gNodesPerDim[0];
-  startIndices[0] = rem % gNodesPerDim[0];
-  endIndices[0] = startIndices[0] + lNodesPerDim[0] - 1;
-  endIndices[1] = startIndices[1] + lNodesPerDim[1] - 1;
-  endIndices[2] = startIndices[2] + lNodesPerDim[2] - 1;
-
   const LO numLocalCompositeNodes = lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2];
-
-  int leftBC = 0, rightBC = 0, frontBC = 0, backBC = 0, bottomBC = 0, topBC = 0;
-  if(startIndices[0] == 0) {leftBC = 1;}
-  if(startIndices[1] == 0) {frontBC = 1;}
-  if(startIndices[2] == 0) {bottomBC = 1;}
-
-  if(endIndices[0] == gNodesPerDim[0] - 1) {rightBC = 1;}
-  if(endIndices[1] == gNodesPerDim[1] - 1) {backBC = 1;}
-  if(endIndices[2] == gNodesPerDim[2] - 1) {topBC = 1;}
-
-  // std::cout << "p=" << myRank << " | startGID= " << startGID
-  //           << ", startIndices: " << startIndices
-  //           << ", endIndices: " << endIndices
-  //           << ", gNodesPerDim: " << gNodesPerDim
-  //           << ", BCs={" << leftBC << ", " << rightBC << ", "
-  //           << frontBC << ", " << backBC << ", "
-  //           << bottomBC << ", " << topBC << "}" << std::endl;
 
   // Rule for boundary duplication
   // For any two ranks that share an interface:
@@ -449,757 +424,24 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // First we count how many nodes the region needs to send and receive
   // and allocate arrays accordingly
-  const int maxRegPerProc = 1;
+  Array<int> boundaryConditions;
   int maxRegPerGID = 0;
-  LO numReceive = 0, numSend = 0;
-  Array<GO>  receiveGIDs;
-  Array<int> receivePIDs;
-  Array<LO>  receiveLIDs;
+  int numInterfaces = 0;
+  LO numLocalRegionNodes = 0;
   Array<GO>  sendGIDs;
   Array<int> sendPIDs;
-  Array<LO>  sendLIDs;
-  Array<LO>  interfaceLIDs;
-  Array<LO>  nodesPerDimensions;
-  int numInterfaces = 0;
-  if(numDimensions == 1) {
-    maxRegPerGID = 2;
-    if(leftBC == 0) {
-      numReceive = 1;
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
+  Array<LO>  rNodesPerDim(3);
+  Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
+  Array<GO>  quasiRegionGIDs;
+  Array<GO>  quasiRegionCoordGIDs;
 
-      receiveGIDs[0] = startIndices[0] - 1;
-      receivePIDs[0] = myRank - 1;
-    }
-    if(rightBC == 0) {
-      numSend = 1;
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
+  createRegionData(numDimensions, useUnstructured, numDofsPerNode,
+                   gNodesPerDim(), lNodesPerDim(), procsPerDim(), nodeMap, dofMap,
+                   maxRegPerGID, numLocalRegionNodes, boundaryConditions,
+                   sendGIDs, sendPIDs, numInterfaces, rNodesPerDim,
+                   quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs);
 
-      sendGIDs[0] = endIndices[0];
-      sendGIDs[0] = myRank + 1;
-      sendLIDs[0] = lNodesPerDim[0] - 1;
-    }
-  } else if(numDimensions == 2) {
-    maxRegPerGID = 4;
-    // Received nodes
-    if(frontBC == 0 && leftBC == 0) {
-      numReceive = lNodesPerDim[0] + lNodesPerDim[1] + 1;
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front-left corner node
-      receiveGIDs[countIDs] = startGID - gNodesPerDim[0] - 1;
-      receivePIDs[countIDs] = myRank - procsPerDim[0] - 1;
-      ++countIDs;
-      // Receive front edge nodes
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0] + i;
-        receivePIDs[countIDs] = myRank - procsPerDim[0];
-        ++countIDs;
-      }
-      // Receive left edge nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        receiveGIDs[countIDs] = startGID - 1 + j*gNodesPerDim[0];
-        receivePIDs[countIDs] = myRank - 1;
-        ++countIDs;
-      }
-
-      if(useUnstructured) { // Set parameters for interface aggregation
-        numInterfaces = 2;
-        nodesPerDimensions.resize(numInterfaces*3, 1);
-        nodesPerDimensions[0] = lNodesPerDim[0] + 1;
-        nodesPerDimensions[4] = lNodesPerDim[1] + 1;
-
-        interfaceLIDs.resize((lNodesPerDim[0] + 1) + (lNodesPerDim[1] + 1));
-        for(LO nodeIdx = 0; nodeIdx < lNodesPerDim[0] + 1; ++nodeIdx) {
-          interfaceLIDs[nodeIdx] = nodeIdx;
-        }
-        for(LO nodeIdx = 0; nodeIdx < lNodesPerDim[1] + 1; ++nodeIdx) {
-          interfaceLIDs[lNodesPerDim[0] + 1 + nodeIdx] = nodeIdx*(lNodesPerDim[1] + 1);
-        }
-      }
-
-    } else if(frontBC == 0) {
-      numReceive = lNodesPerDim[0];
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front edge nodes
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0] + i;
-        receivePIDs[countIDs] = myRank - procsPerDim[0];
-        ++countIDs;
-      }
-
-      if(useUnstructured) { // Set parameters for interface aggregation
-        numInterfaces = 1;
-        nodesPerDimensions.resize(numInterfaces*3, 1);
-        nodesPerDimensions[0] = lNodesPerDim[0] + 1;
-
-        interfaceLIDs.resize(lNodesPerDim[0] + 1);
-        for(LO nodeIdx = 0; nodeIdx < lNodesPerDim[0] + 1; ++nodeIdx) {
-          interfaceLIDs[nodeIdx] = nodeIdx;
-        }
-      }
-
-    } else if(leftBC == 0) {
-      numReceive = lNodesPerDim[1];
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive left edge nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        receiveGIDs[countIDs] = startGID - 1 + j*gNodesPerDim[0];
-        receivePIDs[countIDs] = myRank - 1;
-        ++countIDs;
-      }
-
-      if(useUnstructured) { // Set parameters for interface aggregation
-        numInterfaces = 1;
-        nodesPerDimensions.resize(numInterfaces*3, 1);
-        nodesPerDimensions[1] = lNodesPerDim[1] + 1;
-
-        interfaceLIDs.resize(lNodesPerDim[1] + 1);
-        for(LO nodeIdx = 0; nodeIdx < lNodesPerDim[1] + 1; ++nodeIdx) {
-          interfaceLIDs[nodeIdx] = nodeIdx*(lNodesPerDim[1] + 1);
-        }
-      }
-
-    }
-
-    // Sent nodes
-    if(rightBC == 0 && backBC == 0) {
-      numSend = lNodesPerDim[0] + lNodesPerDim[1] + 1;
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right edge
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        sendGIDs[countIDs] = j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
-        sendPIDs[countIDs] = myRank + 1;
-        sendLIDs[countIDs] = (j + 1)*lNodesPerDim[0] - 1;
-        ++countIDs;
-      }
-      // Send nodes of back edge
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        sendGIDs[countIDs] = i + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[0];
-        sendLIDs[countIDs] = (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
-        ++countIDs;
-      }
-      // Send node of back-right corner
-      sendGIDs[countIDs] = startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-      sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
-      sendLIDs[countIDs] = lNodesPerDim[1]*lNodesPerDim[0] - 1;
-      ++countIDs;
-    } else if(backBC == 0) {
-      numSend = lNodesPerDim[0];
-
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of back edge
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        sendGIDs[countIDs] = i + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[0];
-        sendLIDs[countIDs] = (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
-        ++countIDs;
-      }
-    } else if(rightBC == 0) {
-      numSend = lNodesPerDim[1];
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right edge
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        sendGIDs[countIDs] = j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
-        sendPIDs[countIDs] = myRank + 1;
-        sendLIDs[countIDs] = (j + 1)*lNodesPerDim[0] - 1;
-        ++countIDs;
-      }
-    }
-  } else if(numDimensions == 3) {
-    maxRegPerGID = 8;
-    // Received nodes
-    if( (bottomBC == 0) && (frontBC == 0) && (leftBC == 0) ) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
-        + lNodesPerDim[0]*(lNodesPerDim[2] + 1)        // front face
-        + (lNodesPerDim[1] + 1)*(lNodesPerDim[2] + 1); // left face
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front-left-bottom corner node
-      receiveGIDs[countIDs] = startGID - gNodesPerDim[0] - 1
-          - gNodesPerDim[1]*gNodesPerDim[0];
-      receivePIDs[countIDs] = myRank - procsPerDim[0] - 1
-          - procsPerDim[1]*procsPerDim[0];
-      ++countIDs;
-
-      // Receive front-bottom edge nodes
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
-              - gNodesPerDim[0] + i;
-        receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1] - procsPerDim[0];
-        ++countIDs;
-      }
-
-      // Recieve left-bottom edge nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
-              - 1 + j*gNodesPerDim[0];
-        receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1] - 1;
-        ++countIDs;
-        // Recieve bottom face nodes
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
-              + i
-              + j*gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1];
-          ++countIDs;
-        }
-      }
-
-      // Receive front-left edge nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0]
-              - 1 + k*gNodesPerDim[0]*gNodesPerDim[1];
-        receivePIDs[countIDs] = myRank - procsPerDim[0] - 1;
-        ++countIDs;
-        // Receive front face nodes
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = startGID - gNodesPerDim[0] + i
-              + k*(gNodesPerDim[1]*gNodesPerDim[0]);
-          receivePIDs[countIDs] = myRank - procsPerDim[0];
-          ++countIDs;
-        }
-        // Receive left face nodes
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          receiveGIDs[countIDs] = startGID - 1
-              + j*gNodesPerDim[0]
-              + k*(gNodesPerDim[1]*gNodesPerDim[0]);
-          receivePIDs[countIDs] = myRank - 1;
-          ++countIDs;
-        }
-      }
-
-      if(useUnstructured) { // Set parameters for interface aggregation
-        numInterfaces = 3;
-        nodesPerDimensions.resize(numInterfaces*3, 1);
-        nodesPerDimensions[0] = lNodesPerDim[0] + 1;
-        nodesPerDimensions[1] = lNodesPerDim[1] + 1;
-        nodesPerDimensions[3] = lNodesPerDim[0] + 1;
-        nodesPerDimensions[5] = lNodesPerDim[2] + 1;
-        nodesPerDimensions[7] = lNodesPerDim[1] + 1;
-        nodesPerDimensions[8] = lNodesPerDim[2] + 1;
-
-        interfaceLIDs.resize((lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1)
-                             + (lNodesPerDim[0] + 1)*(lNodesPerDim[2] + 1)
-                             + (lNodesPerDim[1] + 1)*(lNodesPerDim[2] + 1));
-
-        LO nodeOffset = 0, nodeIdx, nodeLID;
-        // Bottom face
-        for(nodeIdx = 0; nodeIdx < (lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1); ++nodeIdx) {
-          interfaceLIDs[nodeIdx] = nodeIdx;
-        }
-        // Front face
-        nodeOffset += (lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1);
-        for(LO k = 0; k < lNodesPerDim[2] + 1; ++k) {
-          for(LO i = 0; i < lNodesPerDim[0] + 1; ++i) {
-            nodeIdx = k*(lNodesPerDim[0] + 1) + i + nodeOffset;
-            nodeLID = k*(lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1) + i;
-            interfaceLIDs[nodeIdx] = nodeLID;
-          }
-        }
-        // Left face
-        nodeOffset += (lNodesPerDim[0] + 1)*(lNodesPerDim[2] + 1);
-        for(LO k = 0; k < lNodesPerDim[2] + 1; ++k) {
-          for(LO j = 0; j < lNodesPerDim[1] + 1; ++j) {
-            nodeIdx = k*(lNodesPerDim[1] + 1) + j + nodeOffset;
-            nodeLID = k*(lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1) + j*(lNodesPerDim[0] + 1);
-            interfaceLIDs[nodeIdx] = nodeLID;
-          }
-        }
-      }
-
-    // Two faces received
-    } else if( (bottomBC == 0) && (frontBC == 0) ) {
-      numReceive = lNodesPerDim[0]*(lNodesPerDim[1] + lNodesPerDim[2] + 1);
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front-bottom edge nodes
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
-              - gNodesPerDim[0] + i;
-        receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1] - procsPerDim[0];
-        ++countIDs;
-      }
-      // Receive bottom face nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
-              + i
-              + j*gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1];
-          ++countIDs;
-        }
-      }
-      // Receive front face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = startGID - gNodesPerDim[0] + i
-              + k*(gNodesPerDim[1]*gNodesPerDim[0]);
-          receivePIDs[countIDs] = myRank - procsPerDim[0];
-          ++countIDs;
-        }
-      }
-
-      if(useUnstructured) { // Set parameters for interface aggregation
-        numInterfaces = 2;
-        nodesPerDimensions.resize(numInterfaces*3, 1);
-        nodesPerDimensions[0] = lNodesPerDim[0];
-        nodesPerDimensions[1] = lNodesPerDim[1] + 1;
-        nodesPerDimensions[3] = lNodesPerDim[0];
-        nodesPerDimensions[5] = lNodesPerDim[2] + 1;
-
-        interfaceLIDs.resize(lNodesPerDim[0]*(lNodesPerDim[1] + 1)
-                             + lNodesPerDim[0]*(lNodesPerDim[2] + 1));
-
-        LO nodeOffset = 0, nodeIdx, nodeLID;
-        // Bottom face
-        for(nodeIdx = 0; nodeIdx < lNodesPerDim[0]*(lNodesPerDim[1] + 1); ++nodeIdx) {
-          interfaceLIDs[nodeIdx] = nodeIdx;
-        }
-        // Front face
-        nodeOffset += lNodesPerDim[0]*(lNodesPerDim[1] + 1);
-        for(LO k = 0; k < lNodesPerDim[2] + 1; ++k) {
-          for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-            nodeIdx = k*lNodesPerDim[0] + i + nodeOffset;
-            nodeLID = k*lNodesPerDim[0]*(lNodesPerDim[1] + 1) + i;
-            interfaceLIDs[nodeIdx] = nodeLID;
-          }
-        }
-      }
-
-    } else if( (bottomBC == 0) && (leftBC == 0) ) {
-      numReceive = lNodesPerDim[1]*(lNodesPerDim[0] + lNodesPerDim[2] + 1);
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive left-bottom edge nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        receiveGIDs[countIDs] =  j*gNodesPerDim[0]
-          + startGID - gNodesPerDim[1]*gNodesPerDim[0] - 1;
-        receivePIDs[countIDs] =  myRank - procsPerDim[1]*procsPerDim[0] - 1;
-        ++countIDs;
-        // Receive bottom face nodes
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID - gNodesPerDim[1]*gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Receive left face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
-            + startGID - 1;
-          receivePIDs[countIDs] = myRank - 1;
-          ++countIDs;
-        }
-      }
-
-      if(useUnstructured) { // Set parameters for interface aggregation
-        numInterfaces = 2;
-        nodesPerDimensions.resize(numInterfaces*3, 1);
-        nodesPerDimensions[0] = lNodesPerDim[0] + 1;
-        nodesPerDimensions[1] = lNodesPerDim[1];
-        nodesPerDimensions[4] = lNodesPerDim[1];
-        nodesPerDimensions[5] = lNodesPerDim[2] + 1;
-
-        interfaceLIDs.resize((lNodesPerDim[0] + 1)*lNodesPerDim[1]
-                             + lNodesPerDim[1]*(lNodesPerDim[2] + 1));
-
-        LO nodeOffset = 0, nodeIdx, nodeLID;
-        // Bottom face
-        for(nodeIdx = 0; nodeIdx < (lNodesPerDim[0] + 1)*lNodesPerDim[1]; ++nodeIdx) {
-          interfaceLIDs[nodeIdx] = nodeIdx;
-        }
-        // Left face
-        nodeOffset += (lNodesPerDim[0] + 1)*lNodesPerDim[1];
-        for(LO k = 0; k < lNodesPerDim[2] + 1; ++k) {
-          for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-            nodeIdx = k*lNodesPerDim[1] + j + nodeOffset;
-            nodeLID = k*(lNodesPerDim[0] + 1)*lNodesPerDim[1] + j*(lNodesPerDim[0] + 1);
-            interfaceLIDs[nodeIdx] = nodeLID;
-          }
-        }
-      }
-
-    } else if( (frontBC == 0) && (leftBC == 0) ) {
-      numReceive = lNodesPerDim[2]*(lNodesPerDim[0] + lNodesPerDim[1] + 1);
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front-left edge nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        receiveGIDs[countIDs] =  k*gNodesPerDim[1]*gNodesPerDim[0]
-          + startGID - gNodesPerDim[0] - 1;
-        receivePIDs[countIDs] =  myRank - procsPerDim[0] - 1;
-        ++countIDs;
-        // Receive front face nodes
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
-            + startGID - gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[0];
-          ++countIDs;
-        }
-        // Receive left face nodes
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
-            + startGID - 1;
-          receivePIDs[countIDs] = myRank - 1;
-          ++countIDs;
-        }
-      }
-
-      if(useUnstructured) { // Set parameters for interface aggregation
-        numInterfaces = 2;
-        nodesPerDimensions.resize(numInterfaces*3, 1);
-        nodesPerDimensions[0] = lNodesPerDim[0] + 1;
-        nodesPerDimensions[2] = lNodesPerDim[2];
-        nodesPerDimensions[4] = lNodesPerDim[1] + 1;
-        nodesPerDimensions[5] = lNodesPerDim[2];
-
-        interfaceLIDs.resize((lNodesPerDim[0] + 1)*lNodesPerDim[2]
-                             + (lNodesPerDim[1] + 1)*lNodesPerDim[2]);
-
-        LO nodeOffset = 0, nodeIdx, nodeLID;
-        // Front face
-        for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-          for(LO i = 0; i < lNodesPerDim[0] + 1; ++i) {
-            nodeIdx = k*(lNodesPerDim[0] + 1) + i;
-            nodeLID = k*(lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1) + i;
-            interfaceLIDs[nodeIdx] = nodeLID;
-          }
-        }
-        // Left face
-        nodeOffset += (lNodesPerDim[0] + 1)*lNodesPerDim[2];
-        for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-          for(LO j = 0; j < lNodesPerDim[1] + 1; ++j) {
-            nodeIdx = k*(lNodesPerDim[1] + 1) + j + nodeOffset;
-            nodeLID = k*(lNodesPerDim[0] + 1)*(lNodesPerDim[1] + 1) + j*(lNodesPerDim[0] + 1);
-            interfaceLIDs[nodeIdx] = nodeLID;
-          }
-        }
-      }
-
-    // Single face received
-    } else if(bottomBC == 0) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[1];
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive bottom face nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID - gNodesPerDim[1]*gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-
-    } else if(frontBC == 0) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[2];
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
-            + startGID - gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[0];
-          ++countIDs;
-        }
-      }
-
-    } else if(leftBC == 0) {
-      numReceive = lNodesPerDim[1]*lNodesPerDim[2];
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Recive left face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
-            + j*gNodesPerDim[0] + startGID - 1;
-          receivePIDs[countIDs] = myRank - 1;
-          ++countIDs;
-        }
-      }
-
-    }
-
-    // Sent nodes
-    if( (topBC == 0) && (backBC == 0) && (rightBC == 0) ) {
-      numSend = (lNodesPerDim[0])*(lNodesPerDim[1])
-        + (lNodesPerDim[0])*(lNodesPerDim[2])
-        + (lNodesPerDim[1])*(lNodesPerDim[2])
-        + lNodesPerDim[0]
-        + lNodesPerDim[1]
-        + lNodesPerDim[2]
-        + 1;
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
-            + j*gNodesPerDim[0]
-            + startGID + lNodesPerDim[0] - 1;
-          sendPIDs[countIDs] = myRank + 1;
-          ++countIDs;
-        }
-      }
-      // Send nodes of back face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0]) + i
-            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of right-back edge
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
-          + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-        sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
-        ++countIDs;
-      }
-      // Send nodes of top face
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of top-right edge
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        sendGIDs[countIDs] = j*gNodesPerDim[0]
-          + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + 1;
-        ++countIDs;
-      }
-      // Send nodes of top-back edge
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        sendGIDs[countIDs] = i
-          + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-          + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
-        ++countIDs;
-      }
-      // Send node of top-back-right corner
-      sendGIDs[countIDs] = startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-        + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-      sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0] + 1;
-      ++countIDs;
-
-    } else if( (topBC == 0) && (backBC == 0) ) {
-      numSend = (lNodesPerDim[0]*lNodesPerDim[2]) // back face
-              + (lNodesPerDim[0]*lNodesPerDim[1]) // Top face
-              + (lNodesPerDim[0]); // top-back edge
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of back face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0]) + i
-            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of top face
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of top-back edge
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        sendGIDs[countIDs] = i
-          + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-          + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
-        ++countIDs;
-      }
-
-    } else if( (topBC == 0) && (rightBC == 0) ) {
-      numSend = (lNodesPerDim[1]*lNodesPerDim[2]) // right face
-              + (lNodesPerDim[0]*lNodesPerDim[1]) // Top face
-              + (lNodesPerDim[1]); // top-right edge
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
-            + j*gNodesPerDim[0]
-            + startGID + lNodesPerDim[0] - 1;
-          sendPIDs[countIDs] = myRank + 1;
-          ++countIDs;
-        }
-      }
-      // Send nodes of top face
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of top-right edge
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        sendGIDs[countIDs] = j*gNodesPerDim[0]
-          + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + 1;
-        ++countIDs;
-      }
-
-    } else if( (backBC == 0) && (rightBC == 0) ) {
-      numSend = lNodesPerDim[2]*(lNodesPerDim[0] + lNodesPerDim[1] + 1);
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
-            + startGID + lNodesPerDim[0] - 1;
-          sendPIDs[countIDs] = myRank + 1;
-          ++countIDs;
-        }
-      }
-      // Send nodes of back face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of back-right edge
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
-            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-          sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
-          ++countIDs;
-      }
-
-    } else if(topBC == 0) {
-      numSend = lNodesPerDim[0]*lNodesPerDim[1];
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of top face
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[0]*gNodesPerDim[1];
-          sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-
-    } else if(backBC == 0) {
-      numSend = lNodesPerDim[0]*lNodesPerDim[2];
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of back face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[0];
-          ++countIDs;
-        }
-      }
-
-    } else if(rightBC == 0) {
-      numSend = lNodesPerDim[1]*lNodesPerDim[2];
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
-            + j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
-          sendPIDs[countIDs] = myRank + 1;
-          ++countIDs;
-        }
-      }
-
-    }
-  }
+  const LO numSend = static_cast<LO>(sendGIDs.size());
 
   // std::cout << "p=" << myRank << " | numReceive=" << numReceive
   //           << ", numSend=" << numSend << std::endl;
@@ -1210,21 +452,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Second we actually fill the send and receive arrays with appropriate data
   // which will allow us to compute the region and composite maps.
-
   // Now we can construct a list of GIDs that corresponds to rowMapPerGrp
-  const LO numLocalRegionNodes = numLocalCompositeNodes + numReceive;
-  Array<LO> rNodesPerDim(3);
-  Array<GO> quasiRegionGIDs(numLocalRegionNodes*numDofsPerNode);
-  Array<GO> regionGIDs(numLocalRegionNodes*numDofsPerNode);
-
-  rNodesPerDim[0] = lNodesPerDim[0];
-  rNodesPerDim[1] = lNodesPerDim[1];
-  rNodesPerDim[2] = lNodesPerDim[2];
-  if(leftBC   == 0) {rNodesPerDim[0] += 1;}
-  if(frontBC  == 0) {rNodesPerDim[1] += 1;}
-  if(bottomBC == 0) {rNodesPerDim[2] += 1;}
-
-  Array<int> boundaryConditions({leftBC, rightBC, frontBC, backBC, bottomBC, topBC});
   Array<LO>  interfacesDimensions, interfacesLIDs;
   if(useUnstructured) {
     findInterface(numDimensions, rNodesPerDim, boundaryConditions,
@@ -1242,47 +470,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   //           << "p=" << myRank << " | interfacesDimensions: " << interfacesDimensions << std::endl
   //           << "p=" << myRank << " | interfacesLIDs: " << interfacesLIDs << std::endl;
 
-  Array<LO> compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
-
-  // Using receiveGIDs, rNodesPerDim and numLocalRegionNodes, build quasi-region row map
-  // This will potentially be done by the application or in a MueLu interface but for now
-  // doing it in the driver seems to avoid design hassle...
-  LO interfaceCount = 0, compositeIdx = 0;
-  Array<LO> regionIJK(3);
-  for(LO nodeRegionIdx = 0; nodeRegionIdx < numLocalRegionNodes; ++nodeRegionIdx) {
-    regionIJK[2] = nodeRegionIdx / (rNodesPerDim[1]*rNodesPerDim[0]);
-    LO tmp       = nodeRegionIdx % (rNodesPerDim[1]*rNodesPerDim[0]);
-    regionIJK[1] = tmp / rNodesPerDim[0];
-    regionIJK[0] = tmp % rNodesPerDim[0];
-
-    // std::cout << "p=" << myRank << " | regionIJK=" << regionIJK << std::endl;
-
-    if( (regionIJK[0] == 0 && leftBC   == 0) ||
-        (regionIJK[1] == 0 && frontBC  == 0) ||
-        (regionIJK[2] == 0 && bottomBC == 0) ) {
-      for(int dof = 0; dof < numDofsPerNode; ++dof) {
-        quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof] =
-          receiveGIDs[interfaceCount]*numDofsPerNode + dof;
-      }
-      receiveLIDs[interfaceCount] = nodeRegionIdx;
-      ++interfaceCount;
-    } else {
-      compositeIdx = (regionIJK[2] + bottomBC - 1)*lNodesPerDim[1]*lNodesPerDim[0]
-        + (regionIJK[1] + frontBC  - 1)*lNodesPerDim[0]
-        + (regionIJK[0] + leftBC - 1);
-      for(int dof = 0; dof < numDofsPerNode; ++dof) {
-        quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof]
-          = dofMap->getGlobalElement(compositeIdx*numDofsPerNode + dof);
-        compositeToRegionLIDs[compositeIdx*numDofsPerNode + dof] = nodeRegionIdx*numDofsPerNode + dof;
-      }
-    }
-  }
-
   // std::cout << "p=" << myRank << " | receiveLIDs: " << receiveLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | sendLIDs: " << sendLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
   // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
+  // std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
 
   // In our very particular case we know that a node is at most shared by 4 regions.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
@@ -1332,6 +525,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   RCP<TimeMonitor> tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.1 - Build Region Maps")));
 
+  const int maxRegPerProc = 1;
   std::vector<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
   std::vector<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
   rowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
@@ -1347,6 +541,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                                                                  dofMap->getComm());
   revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
 
+  // Build objects needed to construct the region coordinates
+  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > quasiRegCoordMap = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          quasiRegionCoordGIDs(),
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > regCoordMap = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          numLocalRegionNodes,
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+
   comm->barrier();
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.2 - Build Region Importers")));
@@ -1356,6 +564,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::vector<RCP<Import> > colImportPerGrp(maxRegPerProc);
   rowImportPerGrp[0] = ImportFactory::Build(dofMap, rowMapPerGrp[0]);
   colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
+  RCP<Import> coordImporter = ImportFactory::Build(nodeMap, quasiRegCoordMap);
 
   comm->barrier();
   tmLocal = Teuchos::null;
@@ -1377,7 +586,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   comm->barrier();
   tmLocal = Teuchos::null;
-  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.4 - Build Region Matrix")));
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Build Region Matrix")));
 
   std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats(1);
   MakeRegionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), A->getRowMap(), rowMapPerGrp,
@@ -1407,10 +616,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   regionNullspace[0]->replaceMap(revisedRowMapPerGrp[0]);
 
   // create region coordinates vector
-  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(rowMapPerGrp[0],
-                                                                               numDimensions);
-  regionCoordinates[0]->doImport(*coordinates, *rowImportPerGrp[0], Xpetra::INSERT);
-  regionCoordinates[0]->replaceMap(revisedRowMapPerGrp[0]);
+  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap,
+                                                                               coordinates->getNumVectors());
+  regionCoordinates[0]->doImport(*coordinates, *coordImporter, Xpetra::INSERT);
+  regionCoordinates[0]->replaceMap(regCoordMap);
 
   using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -1436,7 +645,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<Array<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
   Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
   RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
-  coarseSolverData->set<bool>("use direct solver", directCoarseSolver);
+  coarseSolverData->set<std::string>("coarse solver type", coarseSolverType);
   coarseSolverData->set<std::string>("amg xml file", coarseAmgXmlFile);
   RCP<ParameterList> hierarchyData = rcp(new ParameterList());
 
@@ -1508,13 +717,48 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // transform composite vectors to regional layout
     Array<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc);
     Array<Teuchos::RCP<Vector> > regX(maxRegPerProc);
-    compositeToRegional(X, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+    compositeToRegional(X, quasiRegX, regX,
                         revisedRowMapPerGrp, rowImportPerGrp);
 
     Array<RCP<Vector> > quasiRegB(maxRegPerProc);
     Array<RCP<Vector> > regB(maxRegPerProc);
-    compositeToRegional(B, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
+    compositeToRegional(B, quasiRegB, regB,
                         revisedRowMapPerGrp, rowImportPerGrp);
+#ifdef DUMP_LOCALX_AND_A
+    FILE *fp;
+    char str[80];
+    sprintf(str,"theMatrix.%d",myRank);
+    fp = fopen(str,"w");
+    fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+    LO numNzs = 0;
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) {
+      ArrayView<const LO> AAcols;
+      ArrayView<const SC> AAvals;
+      regionGrpMats[0]->getLocalRowView(kkk, AAcols, AAvals);
+      const int *Acols    = AAcols.getRawPtr();
+      const SC  *Avals = AAvals.getRawPtr();
+      numNzs += AAvals.size();
+    }
+    fprintf(fp, "%d %d %d\n",regionGrpMats[0]->getNodeNumRows(),regionGrpMats[0]->getNodeNumRows(),numNzs);
+
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) {
+      ArrayView<const LO> AAcols;
+      ArrayView<const SC> AAvals;
+      regionGrpMats[0]->getLocalRowView(kkk, AAcols, AAvals);
+      const int *Acols    = AAcols.getRawPtr();
+      const SC  *Avals = AAvals.getRawPtr();
+      LO RowLeng = AAvals.size();
+      for (LO kk = 0; kk < RowLeng; kk++) {
+          fprintf(fp, "%d %d %22.16e\n",kkk+1,Acols[kk]+1,Avals[kk]);
+      }
+    }
+    fclose(fp);
+    sprintf(str,"theX.%d",myRank);
+    fp = fopen(str,"w");
+    ArrayRCP<SC> lX= regX[0]->getDataNonConst(0);
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) fprintf(fp, "%22.16e\n",lX[kkk]);
+    fclose(fp);
+#endif
 
     //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
 
@@ -1526,9 +770,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     /////////////////////////////////////////////////////////////////////////
     // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
     /////////////////////////////////////////////////////////////////////////
-
-    // define max iteration counts
-    const int maxCoarseIter = 100;
 
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
@@ -1551,10 +792,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // Richardson iterations
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni = Teuchos::ScalarTraits<Scalar>::zero();
     const int old_precision = std::cout.precision();
     std::cout << std::setprecision(8) << std::scientific;
-    for (int cycle = 0; cycle < maxIts; ++cycle)
+    int cycle = 0;
+    for (cycle = 0; cycle < maxIts; ++cycle)
     {
       // check for convergence
       {
@@ -1562,15 +804,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
         {
-          computeResidual(regRes, regX, regB, regionGrpMats, dofMap,
-              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+          computeResidual(regRes, regX, regB, regionGrpMats,
+              revisedRowMapPerGrp, rowImportPerGrp);
 
           scaleInterfaceDOFs(regRes, regInterfaceScalings[0], true);
         }
 
         compRes = VectorFactory::Build(dofMap, true);
-        regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
-                            rowImportPerGrp, Xpetra::ADD);
+        regionalToComposite(regRes, compRes, rowImportPerGrp);
 
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
         if(cycle == 0) { normResIni = normRes; }
@@ -1594,11 +835,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         /////////////////////////////////////////////////////////////////////////
 
         //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-        vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
+        vCycle(0, numLevels,
                regX, regB, regMatrices,
                regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
                regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData, hierarchyData);
     }
+    if (myRank == 0)
+      std::cout << "Number of iterations performed for this solve: " << cycle << std::endl;
+
     std::cout << std::setprecision(old_precision);
     std::cout.unsetf(std::ios::fixed | std::ios::scientific);
   }

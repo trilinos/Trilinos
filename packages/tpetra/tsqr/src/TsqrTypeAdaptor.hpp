@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,26 +34,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
 // ************************************************************************
 //@HEADER
 
 /// \file TsqrTypeAdaptor.hpp
-/// \brief Traits class mapping between multivector type and TSQR implementation types.
+/// \brief Traits class mapping between multivector type and TSQR
+///   implementation types.
 ///
 /// \warning Trilinos users should <i>not</i> include this file directly.
+
 #ifndef __TSQR_Trilinos_TsqrTypeAdaptor_hpp
 #define __TSQR_Trilinos_TsqrTypeAdaptor_hpp
 
-#include <Teuchos_RCP.hpp>
-#include <TsqrFactory.hpp>
-#include <Tsqr.hpp>
-
+#include "Teuchos_RCP.hpp"
+#include "TsqrFactory.hpp"
+#include "Tsqr.hpp"
 
 namespace TSQR {
   namespace Trilinos {
-
     /// \class UndefinedComm
     /// \brief Class used to catch undefined specializations of \c TsqrTypeAdaptor.
     class UndefinedComm {};

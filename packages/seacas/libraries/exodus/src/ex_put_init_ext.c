@@ -55,7 +55,7 @@
 static void write_dummy_names(int exoid, ex_entity_type obj_type, int num)
 {
   if (num > 0) {
-    size_t start[2], count[2];
+    size_t start[3], count[3];
     char * text = "";
     int    varid;
     size_t num_entity;
@@ -69,7 +69,10 @@ static void write_dummy_names(int exoid, ex_entity_type obj_type, int num)
       count[0] = 1;
 
       start[1] = 0;
-      count[1] = strlen(text) + 1;
+      count[1] = 1;
+
+      start[2] = 0;
+      count[2] = 1;
 
       nc_put_vara_text(exoid, varid, start, count, text);
     }
@@ -533,8 +536,8 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
 
   /* Fill the id and status arrays with EX_INVALID_ID */
   {
-    int *invalid_ids = NULL;
-    int  maxset      = model->num_elem_blk;
+    int *  invalid_ids = NULL;
+    size_t maxset      = model->num_elem_blk;
     if (maxset < model->num_edge_blk) {
       maxset = model->num_edge_blk;
     }

@@ -164,7 +164,7 @@ exe stk_search_util_utest
     [ glob $(stk_search_util-root)/unit_tests/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_search_util_base
-    /sierra/stk_mesh//stk_mesh_fixtures
+    /sierra/stk_unit_test_utils//stk_mesh_fixtures
   : <tag>@sierra-exec-tag
   ;
 

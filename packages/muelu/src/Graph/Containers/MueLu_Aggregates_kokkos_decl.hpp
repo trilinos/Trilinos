@@ -176,6 +176,14 @@ namespace MueLu {
     */
     void SetGraphColors(colors_view_type graphColors) { graphColors_ = graphColors; }
 
+    /*! @brief Get the number of colors needed by the distance 2 coloring.
+    */
+    LO GetGraphNumColors() { return graphNumColors_; }
+
+    /*! @brief Set the number of colors needed by the distance 2 coloring.
+    */
+    void SetGraphNumColors(const LO graphNumColors) { graphNumColors_ = graphNumColors; }
+
     //@}
 
     /*! @brief Set number of local aggregates on current processor.
@@ -285,6 +293,11 @@ namespace MueLu {
      *  These colors are used to parallelize the aggregation process in UncoupledAggregation
      */
     colors_view_type graphColors_;
+
+    /*! graphNumColors_ stores the number of colors that are needed to perform a distance 2
+     *  coloring of the underlying graph.
+     */
+    LO graphNumColors_;
 
     Kokkos::View<bool*, DeviceType> isRoot_;
 

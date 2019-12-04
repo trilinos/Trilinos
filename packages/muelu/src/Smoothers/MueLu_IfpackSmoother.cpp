@@ -141,7 +141,7 @@ namespace MueLu {
         lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter(maxEigString));
         this->GetOStream(Statistics1) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
 
-      } catch (Teuchos::Exceptions::InvalidParameterName) {
+      } catch (Teuchos::Exceptions::InvalidParameterName&) {
         lambdaMax = A_->GetMaxEigenvalueEstimate();
 
         if (lambdaMax != -1.0) {
@@ -157,7 +157,7 @@ namespace MueLu {
       try {
         ratio = Teuchos::getValue<Scalar>(this->GetParameter(eigRatioString));
 
-      } catch (Teuchos::Exceptions::InvalidParameterName) {
+      } catch (Teuchos::Exceptions::InvalidParameterName&) {
         this->SetParameter(eigRatioString, ParameterEntry(ratio));
       }
 

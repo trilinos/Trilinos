@@ -159,6 +159,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A,
                          Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node> > & coordinates,
                          Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & nullspace,
+                         Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & material,
                          Teuchos::ParameterList & mueluList,
                          bool profileSetup,
                          bool useAMGX,
@@ -198,14 +199,20 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
          if(epetraCoord->NumVectors() > 1)  mueluList.set("y-coordinates",(*epetraCoord)[1]);
          if(epetraCoord->NumVectors() > 2)  mueluList.set("z-coordinates",(*epetraCoord)[2]);
        }
+       if(!material.is_null()) {
+         RCP<const Epetra_MultiVector> epetraMat =  MueLu::Utilities<SC,LO,GO,NO>::MV2EpetraMV(material);
+         mueluList.set("material coordinates",(*epetraMat)[0]);
+       }
        ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,Prec);
 #endif
      }
      else {
        Teuchos::Array<LO> lNodesPerDim(3, 10);
        Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
-       userParamList.set<RCP<CoordinateMultiVector> >("Coordinates", coordinates);
-       userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
+       if(!coordinates.is_null())
+         userParamList.set<RCP<CoordinateMultiVector> >("Coordinates", coordinates);
+       if(!nullspace.is_null())
+         userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
        userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
        H = MueLu::CreateXpetraPreconditioner(A, mueluList);
      }
@@ -404,7 +411,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         ret = solver->solve();
         numIts = solver->getNumIters();
 
-      } catch (std::invalid_argument)
+      } catch (std::invalid_argument&)
 #endif
       {
 

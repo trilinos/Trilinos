@@ -47,13 +47,15 @@
 #define MUELU_REFMAXWELL_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_ExplicitInstantiation.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 
+#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
@@ -63,6 +65,7 @@
 #include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
+#include "MueLu_SaPFactory_kokkos_fwd.hpp"
 #include "MueLu_Utilities_kokkos_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 #endif
@@ -273,7 +276,7 @@ namespace MueLu {
       RCP<RealValuedMultiVector> Coords = List.get<RCP<RealValuedMultiVector> >("Coordinates", Teuchos::null);
       RCP<Matrix> D0_Matrix = List.get<RCP<Matrix> >("D0");
       RCP<Matrix> Ms_Matrix;
-      if (List.isType<Matrix>("Ms"))
+      if (List.isType<RCP<Matrix> >("Ms"))
         Ms_Matrix = List.get<RCP<Matrix> >("Ms");
       else
         Ms_Matrix = List.get<RCP<Matrix> >("M1");
@@ -339,6 +342,16 @@ namespace MueLu {
 
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector & X,
+                  const MultiVector & B,
+                  MultiVector & R) const {
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      R.update(STS::one(),B,STS::zero());
+      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());   
+    }      
+    
+
   private:
 
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
@@ -386,11 +399,11 @@ namespace MueLu {
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_, Addon_Matrix_;
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-    Kokkos::View<const bool*, typename Node::device_type> BCrowsKokkos_;
+    Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_;
     Kokkos::View<const bool*, typename Node::device_type> BCcolsKokkos_;
 #endif
     int BCrowcount_, BCcolcount_;
-    Teuchos::ArrayRCP<const bool> BCrows_;
+    Teuchos::ArrayRCP<bool> BCrows_;
     Teuchos::ArrayRCP<const bool> BCcols_;
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
@@ -403,7 +416,7 @@ namespace MueLu {
     Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
     Teuchos::RCP<Teuchos::ParameterList> A22_AP_reuse_data_, A22_RAP_reuse_data_;
     //! Some options
-    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_,implicitTranspose_;
+    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_,implicitTranspose_,fuseProlongationAndUpdate_;
     std::string mode_;
     //! Temporary memory
     mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_;

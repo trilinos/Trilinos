@@ -41,7 +41,7 @@ int input_geom(FILE *  fingeom,                /* geometry input file */
                char *  geomname,               /* name of geometry file */
                int     nvtxs,                  /* number of coordinates to read */
                int *   igeom,                  /* dimensionality of geometry */
-               float **x, float **y, float **z /* coordiates of vertices */
+               float **x, float **y, float **z /* coordinates of vertices */
 )
 {
   extern int CHECK_INPUT; /* print any warning messages? */

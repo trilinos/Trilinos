@@ -43,6 +43,8 @@ namespace Excn {
   public:
     explicit ExodusFile(size_t which);
     ~ExodusFile();
+    ExodusFile(const ExodusFile &) = delete;
+    ExodusFile operator=(const ExodusFile &) = delete;
 
     static bool initialize(const SystemInterface &si);
     static bool create_output(const SystemInterface &si);
@@ -64,10 +66,6 @@ namespace Excn {
     static bool                     keepOpen_;
     static int                      maximumNameLength_;
     static int                      exodusMode_;
-
-    // Disable copying and assignment...
-    ExodusFile(const ExodusFile &);
-    ExodusFile operator=(const ExodusFile &);
   };
 } // namespace Excn
 #endif /* SEACAS_ExodusFil_H */

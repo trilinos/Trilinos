@@ -80,11 +80,14 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("tentative: calculate qr");
     SET_VALID_ENTRY("tentative: build coarse coordinates");
+    SET_VALID_ENTRY("tentative: constant column sums");
 #undef  SET_VALID_ENTRY
+    validParamList->set< std::string >("Nullspace name", "Nullspace", "Name for the input nullspace");
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Aggregates",         Teuchos::null, "Generating factory of the aggregates");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",          Teuchos::null, "Generating factory of the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("Scaled Nullspace",   Teuchos::null, "Generating factory of the scaled nullspace");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
@@ -102,10 +105,13 @@ namespace MueLu {
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
 
     const ParameterList& pL = GetParameterList();
+    // NOTE: This guy can only either be 'Nullspace' or 'Scaled Nullspace' or else the validator above will cause issues
+    std::string nspName = "Nullspace";
+    if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
     Input(fineLevel, "A");
     Input(fineLevel, "Aggregates");
-    Input(fineLevel, "Nullspace");
+    Input(fineLevel, nspName);
     Input(fineLevel, "UnAmalgamationInfo");
     Input(fineLevel, "CoarseMap");
     if( fineLevel.GetLevelID() == 0 &&
@@ -130,10 +136,15 @@ namespace MueLu {
     typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
     typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
 
+    const ParameterList& pL = GetParameterList();
+    std::string nspName = "Nullspace";
+    if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
+
+
     RCP<Matrix>                A             = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");
     RCP<AmalgamationInfo>      amalgInfo     = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
-    RCP<MultiVector>           fineNullspace = Get< RCP<MultiVector> >          (fineLevel, "Nullspace");
+    RCP<MultiVector>           fineNullspace = Get< RCP<MultiVector> >          (fineLevel, nspName);
     RCP<const Map>             coarseMap     = Get< RCP<const Map> >            (fineLevel, "CoarseMap");
     RCP<RealValuedMultiVector> fineCoords;
     if(bTransferCoordinates_) {
@@ -262,6 +273,16 @@ namespace MueLu {
 
     const GO     numAggs   = aggregates->GetNumAggregates();
     const size_t NSDim     = fineNullspace->getNumVectors();
+    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizes();
+
+
+    // Sanity checking
+    const ParameterList& pL = GetParameterList();
+    const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
+    const bool &constantColSums = pL.get<bool>("tentative: constant column sums");    
+
+    TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && constantColSums,Exceptions::RuntimeError,
+                               "MueLu::TentativePFactory::MakeTentative: cannot use 'constant column sums' and 'calculate qr' at the same time");
 
     // Aggregates map is based on the amalgamated column map
     // We can skip global-to-local conversion if LIDs in row map are
@@ -286,9 +307,6 @@ namespace MueLu {
     }
 
     coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
-
-    const ParameterList& pL = GetParameterList();
-    const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
 
     // Pull out the nullspace vectors so that we can have random access.
     ArrayRCP<ArrayRCP<const SC> > fineNS  (NSDim);
@@ -459,7 +477,7 @@ namespace MueLu {
     } else {
       GetOStream(Runtime1) << "TentativePFactory : bypassing local QR phase" << std::endl;
       if (NSDim>1)
-        GetOStream(Warnings0) << "TentativePFactor : for nontrivial nullspace, this may degrade performance" << std::endl;
+        GetOStream(Warnings0) << "TentativePFactory : for nontrivial nullspace, this may degrade performance" << std::endl;
       /////////////////////////////
       //      "no-QR" option     //
       /////////////////////////////
@@ -486,7 +504,8 @@ namespace MueLu {
 
             for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
               // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
-              const SC qr_jk = fineNS[k][aggToRowMapLO[aggStart[agg]+j]];
+              SC qr_jk = fineNS[k][aggToRowMapLO[aggStart[agg]+j]];
+              if(constantColSums) qr_jk = qr_jk / (double)aggSizes[agg];
               if (qr_jk != zero) {
                 ja [rowStart+lnnz] = offset + k;
                 val[rowStart+lnnz] = qr_jk;
@@ -510,7 +529,8 @@ namespace MueLu {
 
             for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
               // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
-              const SC qr_jk = fineNS[k][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j])];
+              SC qr_jk = fineNS[k][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j])];
+              if(constantColSums) qr_jk = qr_jk / (double)aggSizes[agg];
               if (qr_jk != zero) {
                 ja [rowStart+lnnz] = offset + k;
                 val[rowStart+lnnz] = qr_jk;

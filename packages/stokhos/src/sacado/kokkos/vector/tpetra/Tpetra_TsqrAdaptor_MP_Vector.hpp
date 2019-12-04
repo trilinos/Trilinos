@@ -294,16 +294,16 @@ namespace Tpetra {
       }
     }
 
-    /// \brief Finish intranode TSQR initialization.
+    /// \brief Finish intraprocess TSQR initialization.
     ///
     /// \note It's OK to call this method more than once; it is idempotent.
     void
     prepareNodeTsqr (const MV& mv)
     {
-      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, mv.getMap()->getNode());
+      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_);
     }
 
-    /// \brief Finish internode TSQR initialization.
+    /// \brief Finish interprocess TSQR initialization.
     ///
     /// \param mv [in] A valid Tpetra::MultiVector instance whose
     ///   communicator wrapper we will use to prepare TSQR.

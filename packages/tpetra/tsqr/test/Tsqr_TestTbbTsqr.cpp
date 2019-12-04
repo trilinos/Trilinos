@@ -34,12 +34,10 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
-#include <Tsqr_ConfigDefs.hpp>
+#include "Tsqr_ConfigDefs.hpp"
 #include "Teuchos_ConfigDefs.hpp" // HAVE_MPI
 #include "Teuchos_Tuple.hpp"
 #ifdef HAVE_MPI

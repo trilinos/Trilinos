@@ -1,6 +1,6 @@
 # based on experimental code
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
-    ADD_SUBDIRECTORY(q2q1)
+  ADD_SUBDIRECTORY(q2q1)
   IF(${PACKAGE_NAME}_ENABLE_ADDITIVE_VARIANT)
     MESSAGE(STATUS "MG Additive Variant enabled")
     ADD_SUBDIRECTORY(max/AdditiveMG)

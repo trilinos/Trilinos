@@ -69,7 +69,7 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
   using lno_nnz_view_t = typename KCRS::StaticCrsGraphType::entries_type::const_type;
   using scalar_view_t  = typename KCRS::values_type::const_type;
   using local_mv_type  = typename MultiVectorType::dual_view_type::t_dev;
-  using range_type     = Kokkos::RangePolicy<typename SparseMatrixType::node_type::execution_space, size_t>;
+  using range_type     = Kokkos::RangePolicy<typename SparseMatrixType::node_type::execution_space, LO>;
 
   // Sanity checking: Map Compatibility (A's rowmap matches diagonal's map)
   if (Tpetra::Details::Behavior::debug() == true) {
@@ -99,7 +99,7 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
 
       for (size_t k = Arowptr(i); k < Arowptr(i+1); k++) {
         LO col = Acolind(k);
-        if (blockStart <= col && col <= blockStop) {
+        if (blockStart <= col && col < blockStop) {
           diag(i,col-blockStart) = Avals(k);
         }
       }

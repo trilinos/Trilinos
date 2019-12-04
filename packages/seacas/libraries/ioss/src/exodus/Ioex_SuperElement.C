@@ -289,19 +289,19 @@ int64_t Ioex::SuperElement::internal_put_field_data(const Ioss::Field & /* field
 
 Ioss::Property Ioex::SuperElement::get_implicit_property(const std::string &the_name) const
 {
-  if (Ioss::Utils::case_strcmp(the_name, "numDOF") == 0) {
+  if (Ioss::Utils::str_equal(the_name, "numDOF")) {
     return Ioss::Property(the_name, static_cast<int>(numDOF));
   }
-  if (Ioss::Utils::case_strcmp(the_name, "num_nodes") == 0) {
+  if (Ioss::Utils::str_equal(the_name, "num_nodes")) {
     return Ioss::Property(the_name, static_cast<int>(num_nodes));
   }
-  if (Ioss::Utils::case_strcmp(the_name, "numEIG") == 0) {
+  if (Ioss::Utils::str_equal(the_name, "numEIG")) {
     return Ioss::Property(the_name, static_cast<int>(numEIG));
   }
-  if (Ioss::Utils::case_strcmp(the_name, "num_dim") == 0) {
+  if (Ioss::Utils::str_equal(the_name, "num_dim")) {
     return Ioss::Property(the_name, static_cast<int>(num_dim));
   }
-  if (Ioss::Utils::case_strcmp(the_name, "numConstraints") == 0) {
+  if (Ioss::Utils::str_equal(the_name, "numConstraints")) {
     return Ioss::Property(the_name, static_cast<int>(numDOF) - static_cast<int>(numEIG));
   }
 

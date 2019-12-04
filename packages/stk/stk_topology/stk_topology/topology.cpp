@@ -166,6 +166,16 @@ bool isHexahedronElement (topology topo)
     return ((topo == topology::HEX_8) || (topo == topology::HEX_20) || (topo == topology::HEX_27));
 }
 
+bool is_quad_side(topology topo)
+{
+    return ((topo == topology::QUAD_4) || (topo == topology::QUAD_8) || (topo == topology::QUAD_9));
+}
+
+bool is_tri_side(topology topo)
+{
+    return ((topo == topology::TRI_3) || (topo == topology::TRI_4) || (topo == topology::TRI_6));
+}
+
 void verbose_print_topology(std::ostream &out, topology t)
 {
   unsigned shiftwidth = 34;

@@ -91,6 +91,7 @@ public:
     bool is_from_input() const;
     void add(const SideSetEntry& entry);
     void add(stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side);
+    void add(const std::vector<SideSetEntry>& entries);
 
     bool contains(const SideSetEntry& entry) const;
     bool contains(stk::mesh::Entity elem, stk::mesh::ConnectivityOrdinal side) const;
@@ -116,6 +117,8 @@ public:
     void set_name(const std::string& name);
     void set_part(const stk::mesh::Part* part);
     const stk::mesh::Part* get_part() const;
+    size_t capacity() const { return m_data.capacity(); }
+
 
 private:
     const BulkData& m_bulk;

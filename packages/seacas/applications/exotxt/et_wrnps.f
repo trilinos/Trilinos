@@ -64,7 +64,7 @@ C   --   IXDNPS - IN - array containing indices into the FACNPS array which
 C                      are the location of the 1st dist factor for each set
 C   --   LTNNPS - IN - array containing the nodes for all node sets
 C                      Internal node IDs
-C   --   FACNPS - IN - array containing the distribtion factors
+C   --   FACNPS - IN - array containing the distribution factors
 C                      for all node sets
 
       IMPLICIT NONE
