@@ -100,7 +100,7 @@ IF (Tpetra_ENABLE_CUDA)
   #ENDIF ()
 
   IF (NOT DEFINED Kokkos_ENABLE_CUDA_LAMBDA OR NOT Kokkos_ENABLE_CUDA_LAMBDA)
-    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require that you set the CMake option Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You must also use at least with CUDA_VERSION >= 7.5 and <= 9.0.")
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require that you set the CMake option Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You must also use at least with CUDA_VERSION >= 7.5.")
   ENDIF ()
 ENDIF ()
 
