@@ -55,7 +55,7 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_Details_PackTraits.hpp"
+#include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "KokkosSparse_CrsMatrix.hpp"
 
 // localGaussSeidel and reorderedLocalGaussSeidel are templated on
@@ -302,6 +302,16 @@ namespace Tpetra {
                                                                typename CrsMatrixType::global_ordinal_type,
                                                                typename CrsMatrixType::node_type> >& rangeMap,
                                   const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+  /// \brief Nonmember function that computes a residual
+  /// Computes R = B - A * X
+  namespace Details {
+    template<class SC, class LO, class GO, class NO>
+    void residual(const Operator<SC,LO,GO,NO> &   A,
+                  const MultiVector<SC,LO,GO,NO> & X,
+                  const MultiVector<SC,LO,GO,NO> & B,
+                  MultiVector<SC,LO,GO,NO> & R);
+  }
 
   /// \class CrsMatrix
   /// \brief Sparse matrix that presents a row-oriented interface that
@@ -851,6 +861,13 @@ namespace Tpetra {
     // This friend declaration makes the clone() method work.
     template <class S2, class LO2, class GO2, class N2>
     friend class CrsMatrix;
+
+    // This friend declaration allows for fused residual calculation
+    template <class S2, class LO2, class GO2, class N2>
+    friend void Details::residual(const Operator<S2,LO2,GO2,N2> &   A,
+                                  const MultiVector<S2,LO2,GO2,N2> & X,
+                                  const MultiVector<S2,LO2,GO2,N2> & B,
+                                  MultiVector<S2,LO2,GO2,N2> & R);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Create a deep copy of this CrsMatrix, where the copy
@@ -3819,8 +3836,7 @@ namespace Tpetra {
                             buffer_device_type>& numPacketsPerLID,
                           const size_t constantNumPackets,
                           Distributor& distor,
-                          const CombineMode combineMode,
-                          const bool atomic = useAtomicUpdatesByDefault);
+                          const CombineMode combineMode);
 
     /// \brief Implementation of unpackAndCombineImpl for when the
     ///   target matrix's structure may change.

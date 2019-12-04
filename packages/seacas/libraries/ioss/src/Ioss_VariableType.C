@@ -219,7 +219,7 @@ namespace Ioss {
       size_t width = Ioss::Utils::number_width(size);
       for (size_t i = 0; i < size; i++) {
         std::string digits = fmt::format("{:0{}}", i + 1, width);
-        if (std::strcmp(&suffices[i].m_data[0], digits.c_str()) != 0) {
+        if (!Ioss::Utils::str_equal(&suffices[i].m_data[0], digits)) {
           match = false;
           break;
         }

@@ -50,11 +50,30 @@ import json
 import datetime
 import copy
 import pprint
+import csv
 
 from FindGeneralScriptSupport import *
 from GeneralScriptSupport import *
 
 import cdash_build_testing_date as CBTD
+
+
+# Accept the --date input option with values 'today', 'yesterday', or some
+# 'YYYY-MM-DD' value.
+#
+def convertInputDateArgToYYYYMMDD(cdashProjectTestingDayStartTime, dateText,
+  currentDateTimeStr=None,  # Used for unit testing only
+  ):
+  if dateText == "yesterday" or dateText == "today":
+    if dateText == "yesterday": dayIncr = -1
+    else: dayIncr = 0
+    dateTime = CBTD.getRelativeCDashBuildStartTimeFromCmndLineArgs(
+      currentDateTimeStr, cdashProjectTestingDayStartTime, dayIncr)
+    rtnDate = CBTD.getDateOnlyFromDateTime(dateTime)
+  else:
+    rtnDate = validateAndConvertYYYYMMDD(dateText)
+  return rtnDate
+
 
 # Validate a date YYYY-MM-DD string and return a date object for the
 # 'datetime' module.
@@ -80,7 +99,7 @@ def getFileNameStrFromText(inputStr):
   return fileNameStr
 
 
-# Check if the key/value pairs for two dicts are the same and if return an
+# Check if the key/value pairs for two dicts are the same and if so, return an
 # error message explaining how they are different.
 #
 # Returns tuple (hasSameKeyValuePairs, errMsg).  If
@@ -245,10 +264,10 @@ def writeCsvFileStructureToStr(csvFileStruct):
     csvFileStr += ", ".join(rowFieldsList)+"\n"
   return csvFileStr
 
+
 #
 # CDash Specific stuff
 #
-
 
 def cdashColorPassed(): return 'green'
 def cdashColorFailed(): return 'red'
@@ -292,82 +311,129 @@ def extractCDashApiQueryData(cdashApiQueryUrl):
 #    { 'col_0':'val_10', 'col_1':'val_11', 'col_2':'val_12' }, 
 #    ]
 #
-# and the expected list of column headers would be:
+# This function can also allow the user to assert that the included columns
+# match a set of required and optional headers.  For example, that above CSV
+# file would match:
 #
-#   expectedColumnHeadersList = [ 'col_0', 'col_1', 'col_2' ]
+#   requiredColumnHeadersList = [ 'col_0', 'col_1', 'col_2' ]
 #
-# But the expectedColumnHeadersList argument is optional.
+# or:
 #
-def readCsvFileIntoListOfDicts(csvFileName, expectedColumnHeadersList=None):
+#   requiredColumnHeadersList = [ 'col_0', 'col_1' ]
+#   optionalColumnHeadersList = [ 'col_2', 'col_3', ]
+#
+# The requiredColumnHeadersList and optionalColumnHeadersList argument lists
+# are optional.
+#
+# Also, the columns can be appear in any order as long as they match all of
+# the required headers and don't contain any headers not in the list of
+# expected headers.
+#
+def readCsvFileIntoListOfDicts(csvFileName, requiredColumnHeadersList=[],
+  optionalColumnHeadersList=[],
+  ):
   listOfDicts = []
   with open(csvFileName, 'r') as csvFile:
-    # Get the list of column headers
-    columnHeadersLineStr = csvFile.readline().strip()
-    columnHeadersRawStrList = columnHeadersLineStr.split(',')
-    columnHeadersList = []
-    for headerRawStr in columnHeadersRawStrList:
-      columnHeadersList.append(headerRawStr.strip())
-    if expectedColumnHeadersList:
-      if len(columnHeadersList) != len(expectedColumnHeadersList):
-        raise Exception(
-          "Error, for CSV file '"+csvFileName+"' the"+\
-          " column headers '"+str(columnHeadersList)+"' has"+\
-          " "+str(len(columnHeadersList))+" items but the expected"+\
-          " set of column headers '"+str(expectedColumnHeadersList)+"'"+\
-          " has "+str(len(expectedColumnHeadersList))+" items!")
-      for i in range(len(columnHeadersList)):
-        if columnHeadersList[i] != expectedColumnHeadersList[i]:
-          raise Exception(
-            "Error, column header "+str(i)+" '"+columnHeadersList[i]+"' does"+\
-            " not match expected column header '"+expectedColumnHeadersList[i]+"'!")
+    csvReader = csv.reader(csvFile)
+    columnHeadersList = getColumnHeadersFromCsvFileReader(csvFileName, csvReader)
+    assertExpectedColumnHeadersFromCsvFile(csvFileName, requiredColumnHeadersList,
+      optionalColumnHeadersList, columnHeadersList)
     # Read the rows of the CSV file into dicts
     dataRow = 0
-    line = csvFile.readline().strip()
-    while line:
-      #print("\ndataRow = "+str(dataRow))
-      lineList = line.split(',')
-      #print(lineList)
-      # Assert that the row has the right number of entries
-      if len(lineList) != len(columnHeadersList):
-        raise Exception(
-          "Error, data row "+str(dataRow)+" '"+line+"' has"+\
-          " "+str(len(lineList))+" entries which does not macth"+\
-          " the number of column headers "+str(len(columnHeadersList))+"!")
+    for lineList in csvReader:
+      if not lineList: continue # Ingore blank line
+      stripWhiltespaceFromStrList(lineList)
+      assertExpectedNumRowsFromCsvFile(csvFileName, dataRow, lineList,
+        columnHeadersList)
       # Read the row entries into a new dict
       rowDict = {}
       for j in range(len(columnHeadersList)):
-        rowDict.update( { columnHeadersList[j] : lineList[j].strip() } )
-      #print(rowDict)
+        rowDict.update( { columnHeadersList[j] : lineList[j] } )
       listOfDicts.append(rowDict)
       # Update for next row
-      line = csvFile.readline().strip()
       dataRow += 1
   # Return the constructed object
   return listOfDicts
 
 
-# Get list of expected builds from CSV file
+def getColumnHeadersFromCsvFileReader(csvFileName, csvReader):
+  try:
+    columnHeadersList = csvReader.next()
+    stripWhiltespaceFromStrList(columnHeadersList)
+    return columnHeadersList
+  except StopIteration:
+    raise Exception(
+      "Error, CSV file '"+csvFileName+"' is empty which is not allowed!"
+      )
+
+
+def assertExpectedColumnHeadersFromCsvFile(csvFileName, requiredColumnHeadersList,
+  optionalColumnHeadersList, columnHeadersList,
+  ):
+
+  if not requiredColumnHeadersList and not optionalColumnHeadersList:
+    return  # No expected column headers to assert against!
+
+  requiredAndOptionalHeadersSet = set(requiredColumnHeadersList)
+  requiredAndOptionalHeadersSet.update(optionalColumnHeadersList)
+  columnHeadersSet = set(columnHeadersList)
+
+  # Assert that each column header is expected
+  for colHeader in columnHeadersList:
+    if not colHeader in requiredAndOptionalHeadersSet:
+      raise Exception(
+        "Error, for CSV file '"+csvFileName+"' the"+\
+        " column header '"+str(colHeader)+"' is not in the set"+\
+        " of required column headers '"+str(requiredColumnHeadersList)+"'"+\
+        " or optional column headers '"+str(optionalColumnHeadersList)+"'!"+\
+        ""
+        )
+
+  # Assert that all of the required headers are present
+  for requiredHeader in requiredColumnHeadersList:
+    if not requiredHeader in columnHeadersSet:
+      raise Exception(
+        "Error, for CSV file '"+csvFileName+"' the"+\
+        " required header '"+str(requiredHeader)+"' is missing from the"+\
+        " set of included column headers '"+str(columnHeadersList)+"'!"+\
+        ""
+        )
+
+
+def assertExpectedNumRowsFromCsvFile(csvFileName, dataRow, lineList,
+  columnHeadersList,
+  ):
+  if len(lineList) != len(columnHeadersList):
+    raise Exception(
+      "Error, for CSV file '"+csvFileName+"' the data row"+\
+      " "+str(dataRow)+" "+str(lineList)+" has"+\
+      " "+str(len(lineList))+" entries which does not macth"+\
+      " the number of column headers "+str(len(columnHeadersList))+"!")
+
+
+def stripWhiltespaceFromStrList(strListInOut):
+  for i in range(len(strListInOut)): strListInOut[i] = strListInOut[i].strip()
+
+
 def getExpectedBuildsListfromCsvFile(expectedBuildsFileName):
   return readCsvFileIntoListOfDicts(expectedBuildsFileName,
     ['group', 'site', 'buildname'])
 
 
-# Headers for basic CSV file
-g_testsWithIssueTrackersCsvFileHeaders = \
+g_testsWithIssueTrackersCsvFileHeadersRequired = \
   ('site', 'buildName', 'testname', 'issue_tracker_url', 'issue_tracker')
 
 
-# Get list of tests from CSV file
 def getTestsWtihIssueTrackersListFromCsvFile(testsWithIssueTrackersFile):
   return readCsvFileIntoListOfDicts(testsWithIssueTrackersFile,
-    g_testsWithIssueTrackersCsvFileHeaders)
+    g_testsWithIssueTrackersCsvFileHeadersRequired)
 
 
 # Write list of tests from a Tests LOD to a CSV file structure meant to match
 # tests with issue trackers CSV file.
 #
 def writeTestsLODToCsvFileStructure(testsLOD):
-  csvFileHeadersList = copy.deepcopy(g_testsWithIssueTrackersCsvFileHeaders)
+  csvFileHeadersList = copy.deepcopy(g_testsWithIssueTrackersCsvFileHeadersRequired)
   csvFileRowsList = []
   for testDict in testsLOD:
     csvFileRow = (
@@ -1075,6 +1141,9 @@ def dateFromBuildStartTime(buildStartTime):
 # allowed and handled in function.  Any days in that range missing contribute
 # to testHistoryStats['missing_last_x_days'].
 #
+# Also note that this function will remove any duplicate tests (which seem to
+# occur sometimes due to a defect in CDash).
+#
 # Returns:
 #
 #   (sortedTestHistoryLOD, testHistoryStats, testStatus)
@@ -1133,6 +1202,9 @@ def sortTestHistoryGetStatistics(testHistoryLOD,
   # Sort the test history by the buildstarttime (most current date at top)
   sortedTestHistoryLOD = copy.copy(testHistoryLOD)
   sortedTestHistoryLOD.sort(reverse=True, key=DictSortFunctor(['buildstarttime']))
+
+  # Remove duplicate tests from list of dicts
+  sortedTestHistoryLOD = getUniqueSortedTestsHistoryLOD(sortedTestHistoryLOD)
  
   # Get testing day/time helper object
   testingDayTimeObj = CBTD.CDashProjectTestingDay(currentTestDate, testingDayStartTimeUtc)
@@ -1212,6 +1284,34 @@ def sortTestHistoryGetStatistics(testHistoryLOD,
   return (sortedTestHistoryLOD, testHistoryStats, testStatus)
 
 
+# Get a new list with unique entires from an input sorted list of test dicts.
+#
+# The returned list is new and does not modify any of the entires in the input
+# sorted inputSortedTestHistoryLOD object.
+#
+def getUniqueSortedTestsHistoryLOD(inputSortedTestHistoryLOD):
+
+  if len(inputSortedTestHistoryLOD) == 0:
+    return inputSortedTestHistoryLOD
+
+  uniqueSortedTestHistoryLOD = []
+
+  lastUniqueTestDict = inputSortedTestHistoryLOD[0]
+  uniqueSortedTestHistoryLOD.append(lastUniqueTestDict)
+
+  idx = 1
+  while idx < len(inputSortedTestHistoryLOD):
+    candidateTestDict = inputSortedTestHistoryLOD[idx]
+    
+    if not checkCDashTestDictsAreSame(candidateTestDict, "a", lastUniqueTestDict, "b")[0]:
+      uniqueSortedTestHistoryLOD.append(candidateTestDict)
+      lastUniqueTestDict = candidateTestDict
+    # Else, this is dupliate test entry so skip
+    idx += 1
+
+  return uniqueSortedTestHistoryLOD
+
+
 # Extract testid and buildid from 'testDetailsLink' CDash test dict
 # field.
 def extractTestIdAndBuildIdFromTestDetailsLink(testDetailsLink):
@@ -1284,7 +1384,7 @@ def checkCDashTestDictsAreSame(testDict_1, testDict_1_name,
     testDict_2_copy, testDict_2_name )
 
 
-# Get the test history CDash cache file.
+# Get the test history CDash cache filename
 #
 # Note: this takes care of things like having '/' in the test name
 #
@@ -1354,27 +1454,19 @@ class AddTestHistoryToTestDictFunctor(object):
     else:
       testAlreadyHasCDashData = False
 
-    # Set up object to handle CDash testing day stuff
-    currentProjectTestingDayObj = \
-      CBTD.CDashProjectTestingDay(self.__date, self.__testingDayStartTimeUtc)
-    currentTestingDayStartUtcDT = currentProjectTestingDayObj.getTestingDayStartUtcDT()
-
-    # Date range for test history
-    dayAfterCurrentTestDay = \
-      CBTD.getBuildStartTimeUtcStrFromUtcDT(
-        currentTestingDayStartUtcDT + datetime.timedelta(days=1), True )
-    daysBeforeCurrentTestDay = \
-      CBTD.getBuildStartTimeUtcStrFromUtcDT(
-        currentTestingDayStartUtcDT - datetime.timedelta(days=daysOfHistory-1), True)
+    # Get the date range for CDash queries
+    dateRangeBeginDT = testDayDate - datetime.timedelta(days=(daysOfHistory-1))
+    dateRangeBeginDateStr = CBTD.getDateStrFromDateTime(dateRangeBeginDT)
+    dateRangeEndDateStr = self.__date
+    beginEndUrlFields = "begin="+dateRangeBeginDateStr+"&end="+dateRangeEndDateStr
 
     # Define queryTests.php query filters for test history
     testHistoryQueryFilters = \
-      "filtercombine=and&filtercombine=&filtercount=5&showfilters=1&filtercombine=and"+\
+      beginEndUrlFields+"&"+\
+      "filtercombine=and&filtercombine=&filtercount=3&showfilters=1&filtercombine=and"+\
       "&field1=buildname&compare1=61&value1="+buildName+\
       "&field2=testname&compare2=61&value2="+testname+\
-      "&field3=site&compare3=61&value3="+site+\
-      "&field4=buildstarttime&compare4=84&value4="+dayAfterCurrentTestDay+\
-      "&field5=buildstarttime&compare5=83&value5="+daysBeforeCurrentTestDay
+      "&field3=site&compare3=61&value3="+site
     
     # URL used to get the history of the test in JSON form
     testHistoryQueryUrl = \
@@ -1387,11 +1479,11 @@ class AddTestHistoryToTestDictFunctor(object):
     # URL for to the build summary on index.php page
     buildHistoryEmailUrl = getCDashIndexBrowserUrl(
       cdashUrl, projectName, None,
-      "filtercombine=and&filtercombine=&filtercount=4&showfilters=1&filtercombine=and"+\
+      beginEndUrlFields+"&"+\
+      "filtercombine=and&filtercombine=&filtercount=2&showfilters=1&filtercombine=and"+\
       "&field1=buildname&compare1=61&value1="+buildName+\
-      "&field2=site&compare2=61&value2="+site+\
-      "&field3=buildstarttime&compare3=84&value3="+dayAfterCurrentTestDay+\
-      "&field4=buildstarttime&compare4=83&value4="+daysBeforeCurrentTestDay )
+      "&field2=site&compare2=61&value2="+site
+      )
     # ToDo: Replace this with the the URL to just this one build the index.php
     # page.  To do that, get the build stamp from the list of builds on CDash
     # and then create a URL link for this one build given 'site', 'buildName',

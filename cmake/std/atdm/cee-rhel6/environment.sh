@@ -171,9 +171,9 @@ fi
 # modules change them!
 
 # Use updated Ninja and CMake
-module load atdm-env
-module load atdm-cmake/3.11.1
-module load atdm-ninja_fortran/1.7.2
+module load sems-env
+module load sems-cmake/3.12.2
+module load sems-ninja_fortran/1.8.2
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 

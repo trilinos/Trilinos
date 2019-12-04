@@ -9,7 +9,6 @@
 #Matrix
 #MatrixUtils
 #MatrixFactory
-#MultiVector
 #MultiVectorFactory
 #Operator
 #ReorderedBlockedCrsMatrix
@@ -18,4 +17,4 @@ TpetraCrsMatrix
 ##TpetraVbrMatrix
 ##VbrMatrix
 #Vector
-#VectorFactory
+VectorFactory

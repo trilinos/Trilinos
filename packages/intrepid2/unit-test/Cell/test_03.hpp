@@ -71,7 +71,7 @@ namespace Intrepid2 {
     try {                                                               \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::logic_error &err) {                                      \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
@@ -367,7 +367,7 @@ namespace Intrepid2 {
             }
           }
         }
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         //============================================================================================//
         // Wrap up test: check if the test broke down unexpectedly due to an exception                //
         //============================================================================================//

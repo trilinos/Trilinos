@@ -1,16 +1,16 @@
 <ParameterList name="Thyra Example">
-    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <Parameter name="Linear Solver Type"                                        type="string" value="Belos"/>
     <ParameterList name="Linear Solver Types">
         <ParameterList name="Belos">
-            <Parameter name="Solver Type" type="string" value="Block GMRES"/>
+            <Parameter name="Solver Type"                                       type="string" value="Block GMRES"/>
             <ParameterList name="Solver Types">
                 <ParameterList name="Block GMRES">
-                    <Parameter name="PreconditionerPosition" type="string" value="left"/>
-                    <Parameter name="Block Size" type="int" value="1"/>
-                    <Parameter name="Convergence Tolerance" type="double" value="1e-4"/>
-                    <Parameter name="Maximum Iterations" type="int" value="100"/>
-                    <Parameter name="Output Frequency" type="int" value="1"/>
-                    <Parameter name="Show Maximum Residual Norm Only" type="bool" value="1"/>
+                    <Parameter name="PreconditionerPosition"                    type="string" value="left"/>
+                    <Parameter name="Block Size"                                type="int" value="1"/>
+                    <Parameter name="Convergence Tolerance"                     type="double" value="1e-4"/>
+                    <Parameter name="Maximum Iterations"                        type="int" value="100"/>
+                    <Parameter name="Output Frequency"                          type="int" value="1"/>
+                    <Parameter name="Show Maximum Residual Norm Only"           type="bool" value="1"/>
                 </ParameterList>
             </ParameterList>
         </ParameterList>
@@ -41,7 +41,7 @@
                                 <Parameter name="Type"                          type="string"   value="Full"/>
                                 <Parameter name="Distance Function"             type="string"   value="Constant"/>
                                 <ParameterList name="Custom">
-                                    <Parameter name="CoarseNodes"               type="bool"     value="true"/>
+                                    <Parameter name="Roots"                     type="bool"     value="true"/>
                                 </ParameterList>
                             </ParameterList>
                         </ParameterList>

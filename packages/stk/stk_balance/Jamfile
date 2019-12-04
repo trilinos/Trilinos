@@ -182,6 +182,7 @@ lib stk_balance_lib
     /sierra/stk_search//stk_search
     /sierra/stk_tools//stk_tools_lib
     /sierra/stk_util//stk_util_command_line
+    /sierra/stk_math//stk_math_headers
   :
     <include>$(stk_balance-root-inc)/stk_balance
     [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a

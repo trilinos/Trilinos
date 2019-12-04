@@ -322,6 +322,7 @@ class RILUK:
   ///   - "fact: absolute threshold" (magnitude_type)
   ///   - "fact: relative threshold" (magnitude_type)
   ///   - "fact: relax value" (magnitude_type)
+  ///   - "fact: iluk overalloc" (double)
   void setParameters (const Teuchos::ParameterList& params);
 
   //! Initialize by computing the symbolic incomplete factorization.
@@ -582,6 +583,7 @@ protected:
   Teuchos::RCP<vec_type> D_;
 
   int LevelOfFill_;
+  double Overalloc_;
 
   bool isAllocated_;
   bool isInitialized_;
@@ -645,6 +647,7 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   new_riluk->D_ = rcp(new crs_matrix_type(D_, Teuchos::Copy));
 
   new_riluk->LevelOfFill_ = LevelOfFill_;
+  new_riluk->Overalloc_ = Overalloc_;
 
   new_riluk->isAllocated_ = isAllocated_;
   new_riluk->isInitialized_ = isInitialized_;

@@ -1,5 +1,5 @@
 """
-exodus.py v 1.16 (seacas-beta) is a python wrapper of some of the exodus library
+exodus.py v 1.17 (seacas-beta) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -5362,7 +5362,7 @@ def copy_mesh(fromFileName, toFileName, exoFromObj=None,
     # If the user did not supply a exodus object to copy from, attempt to read an
     # exodus database with the name "fromFileName"
     if exoFromObj is None:
-        exoFrom = exodus(fromFileName.encode('ascii'), "r", array_type=array_type)
+        exoFrom = exodus(fromFileName, "r", array_type=array_type)
     else:
         exoFrom = exoFromObj
 

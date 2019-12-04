@@ -30,19 +30,13 @@ namespace {
                               Tolerance &def_tol, std::vector<std::string> &names,
                               std::vector<Tolerance> &toler, int max_names);
 
-  int case_strcmp(const std::string &s1, const std::string &s2)
+  bool str_equal(const std::string &s1, const std::string &s2)
   {
-    const char *c1 = s1.c_str();
-    const char *c2 = s2.c_str();
-    for (;; c1++, c2++) {
-      if (std::tolower(*c1) != std::tolower(*c2)) {
-        return (std::tolower(*c1) - std::tolower(*c2));
-      }
-      if (*c1 == '\0') {
-        return 0;
-      }
-    }
+    return (s1.size() == s2.size()) &&
+           std::equal(s1.begin(), s1.end(), s2.begin(),
+                      [](char a, char b) { return std::tolower(a) == std::tolower(b); });
   }
+
   void file_help();
   void tolerance_help();
 
@@ -512,13 +506,13 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("help");
     if (temp != nullptr) {
-      if ((case_strcmp("usage", temp) == 0) || (case_strcmp("all", temp) == 0)) {
+      if ((str_equal("usage", temp)) || (str_equal("all", temp))) {
         options_.usage();
       }
-      if ((case_strcmp("file", temp) == 0) || (case_strcmp("all", temp) == 0)) {
+      if ((str_equal("file", temp)) || (str_equal("all", temp))) {
         file_help();
       }
-      if ((case_strcmp("tolerance", temp) == 0) || (case_strcmp("all", temp) == 0)) {
+      if ((str_equal("tolerance", temp)) || (str_equal("all", temp))) {
         tolerance_help();
       }
       fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
@@ -659,7 +653,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
       // (1-based) or 'last'
       std::vector<std::string> tokens = SLIB::tokenize(temp, ":");
       if (tokens.size() == 2) {
-        if (case_strcmp(tokens[0], "last") == 0) {
+        if (str_equal(tokens[0], "last")) {
           explicit_steps.first = -1;
         }
         else {
@@ -667,7 +661,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
           explicit_steps.first = std::stoi(tokens[0]);
         }
 
-        if (case_strcmp(tokens[1], "last") == 0) {
+        if (str_equal(tokens[1], "last")) {
           explicit_steps.second = -1;
         }
         else {

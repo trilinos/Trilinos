@@ -1447,7 +1447,7 @@ namespace tsl {
 
       /*
        * Return true if a rehash will change the position of a key-value in the neighborhood of
-       * ibucket_neighborhood_check. In this case a rehash is needed instead of puting the value in
+       * ibucket_neighborhood_check. In this case a rehash is needed instead of putting the value in
        * overflow list.
        */
       bool will_neighborhood_change_on_rehash(size_t ibucket_neighborhood_check) const

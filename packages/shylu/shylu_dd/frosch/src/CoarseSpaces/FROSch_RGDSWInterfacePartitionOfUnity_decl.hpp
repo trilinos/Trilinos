@@ -106,9 +106,9 @@ namespace FROSch {
 
     protected:
 
-        bool UseCoarseNodes_;
+        bool UseRoots_;
 
-        EntitySetPtr CoarseNodes_;
+        EntitySetPtr Roots_;
 
         EntitySetPtrVecPtr EntitySetVector_;
 

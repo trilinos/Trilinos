@@ -508,26 +508,26 @@ SET(HEADERS ${HEADERS}
   kokkos/Stokhos_Update.hpp
   kokkos/Stokhos_MatrixMarket.hpp
   )
-IF(Kokkos_ENABLE_Serial)
+IF(Kokkos_ENABLE_SERIAL)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Serial)
   SET(HEADERS ${HEADERS}
     kokkos/Serial/Stokhos_Serial_CrsProductTensor.hpp
     )
 ENDIF()
-IF(Kokkos_ENABLE_Pthread)
+IF(Kokkos_ENABLE_PTHREAD)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
   SET(HEADERS ${HEADERS}
     kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
     )
 ENDIF()
-IF(Kokkos_ENABLE_OpenMP)
+IF(Kokkos_ENABLE_OPENMP)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/OpenMP)
   SET(HEADERS ${HEADERS}
     kokkos/OpenMP/Stokhos_OpenMP_CrsProductTensor.hpp
     kokkos/OpenMP/Stokhos_OpenMP_MKL_CrsMatrix.hpp
     )
 ENDIF()
-IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_CUDA)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
   SET(HEADERS ${HEADERS}
     kokkos/Cuda/Stokhos_Cuda_DeviceProp.hpp

@@ -48,7 +48,7 @@ $ cmake \
 
 $ make NP=16  # Uses ninja -j16
 
-$ ctest -j16  # Might need to be run with srun or some other command, see below
+$ ctest -j4  # Might need to be run with srun or some other command, see below
 ```
 
 The command:
@@ -94,16 +94,21 @@ Each of these keywords [`<system_name>`](#system_name),
 <a name="system_name"/>
 
 **`<system_name>`**: Typically, the system name is determined automatically by
-examining the `hostname` or other files on the system and matching to known
-hosts.  Therefore, it is typically not necessary to specify `<system_name>` in
-the `<build-name>` keys string.  But there are some cases where more then one
-`<system_name>` env are supported on the same machine.  For example, on CEE
-LAN RHEL6 machines, both the <a href="#sems-rhel6-environment">SEMS RHEL6
-env</a> and <a href="#cee-rhel6-environment">CEE RHEL6 env</a> are supported.
-On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in
-`<build-name>`, then the `cee-rhel6` env will be selected.  But if
-`sems-rhel6` is included in the build name or no system name is given, then
-the `sems-rhel6` env will be selected by default on such machines.
+examining the `hostname`, standard system env vars, or other files on the
+machine and matching to a known supported system.  Therefore, it is typically
+not necessary to specify `<system_name>` in the `<build-name>` keys string.
+But there are some cases where more then one `<system_name>` env are supported
+on the same machine.  For example, on CEE LAN RHEL6 machines, both the <a
+href="#sems-rhel6-environment">sems-rhel6</a> and <a
+href="#cee-rhel6-environment">cee-rhel6</a> environments are supported.  On
+these CEE LAN RHEL6 machines, when `cee-rhel6` is included in `<build-name>`,
+then the `cee-rhel6` env will be selected.  But if `sems-rhel6` is included in
+the build name or no system name is given, then the `sems-rhel6` env will be
+selected by default on such machines.  Likewise for CEE LAN RHEL7 machines
+with the <a href="#sems-rhel6-environment">sems-rhel7</a> and <a
+href="#cee-rhel6-environment">cee-rhel6</a> environments.  And if `spack-rhel`
+is included in `<build-name>`, then the <a
+href="#spack-rhel-environment">spack-rhel</a> will attempted to be loaded.
 
 <a name="kokkos_arch"/>
 
@@ -608,7 +613,7 @@ example, skip the configure, skip the build, skip running tests, etc.
 * <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
 * <a href="#spack-rhel-environment">Spack RHEL Environment</a>
-* <a href="#cee-rhel6-environment">CEE RHEL6 Environment</a>
+* <a href="#cee-rhel6-environment">CEE RHEL6 and RHEL7 Environment</a>
 * <a href="#waterman">waterman</a>
 
 
@@ -635,7 +640,7 @@ $ cmake \
 
 $ make NP=16
 
-$ bsub -x -Is -q rhel7F -n 16 ctest -j16
+$ bsub -x -Is -q rhel7F -n 16 ctest -j4
 ```
 
 The ATDM configuration of Trilinos is set up to run on the Firestone nodes
@@ -683,7 +688,7 @@ $ cmake \
 
 $ make NP=16
 
-$ srun ctest -j16
+$ srun ctest -j4
 ```
 
 **NOTE:** While the above example shows loading the environment, configuring
@@ -727,7 +732,7 @@ $ cmake \
 
 $ make NP=16
 
-$ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j16
+$ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j4
 ```
 
 To get information on <YOUR_WCID> used above, there is a WC tool tab on
@@ -934,11 +939,11 @@ builds for the `spack-rhel` env and also to load the correct env to find
 Python, etc.
 
 
-### CEE RHEL6 Environment
+### CEE RHEL6 and RHEL7 Environment
 
-Once logged into any CEE LAN RHEL6 SRN machine, one can configure, build, and
-run tests for any ATDM Trilinos package using the `cee-rhel6` env.  For
-example, to configure, build and run the tests for the
+Once logged into any CEE LAN RHEL6 or RHEL7 SRN machine, one can configure,
+build, and run tests for any ATDM Trilinos package using the `cee-rhel6` env.
+For example, to configure, build and run the tests for the
 `cee-rhel6-clang-opt-openmp` build for say `MueLu` on a CEE LAN machine,
 (after cloning Trilinos on the `develop` branch) one would do:
 
@@ -1008,7 +1013,7 @@ $ cmake \
 
 $ make NP=20
 
-$ bsub -x -Is -n 20 ctest -j20
+$ bsub -x -Is -n 20 ctest -j4
 ```
 
 **NOTE:** While the above example shows loading the environment, configuring

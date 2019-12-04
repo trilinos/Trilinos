@@ -1146,9 +1146,9 @@ int main(int argc, char **argv)
 
       free(var_values);
     }
-    free(num_elem_per_set);
     free(ids);
   }
+  free(num_elem_per_set);
 
   /* read a nodeset variable at one time step */
 

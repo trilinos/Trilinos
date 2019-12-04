@@ -15,6 +15,7 @@ typedef struct ML_Aggregate_Viz_Stats_Struct
   double *x;
   double *y;
   double *z;
+  double *material;
   int Ndim;
   int *graph_decomposition;
   int Nlocal;

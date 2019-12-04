@@ -726,16 +726,33 @@ namespace MueLu {
     typename AppendTrait<decltype(fineNS), Kokkos::RandomAccess>::type fineNSRandom = fineNS;
     typename AppendTrait<status_type,      Kokkos::Atomic>      ::type statusAtomic = status;
 
-    rows_type rows;
-    cols_type cols;
-    vals_type vals;
-
     const ParameterList& pL = GetParameterList();
     const bool& doQRStep = pL.get<bool>("tentative: calculate qr");
     if (!doQRStep) {
       GetOStream(Runtime1) << "TentativePFactory : bypassing local QR phase" << std::endl;
       if (NSDim>1)
         GetOStream(Warnings0) << "TentativePFactor : for nontrivial nullspace, this may degrade performance" << std::endl;
+    }
+
+    size_t nnzEstimate = numRows * NSDim;
+    rows_type rowsAux(Kokkos::ViewAllocateWithoutInitializing("Ptent_aux_rows"), numRows+1);
+    cols_type colsAux(Kokkos::ViewAllocateWithoutInitializing("Ptent_aux_cols"), nnzEstimate);
+    vals_type valsAux("Ptent_aux_vals", nnzEstimate);
+    rows_type rows("Ptent_rows", numRows+1);
+    {
+      // Stage 0: fill in views.
+      SubFactoryMonitor m2(*this, "Stage 0 (InitViews)", coarseLevel);
+
+      // The main thing to notice is initialization of vals with INVALID. These
+      // values will later be used to compress the arrays
+      Kokkos::parallel_for("MueLu:TentativePF:BuildPuncoupled:for1", range_type(0, numRows+1),
+                           KOKKOS_LAMBDA(const LO row) {
+                             rowsAux(row) = row*NSDim;
+                           });
+      Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:for2", range_type(0, nnzEstimate),
+                           KOKKOS_LAMBDA(const LO j) {
+                             colsAux(j) = INVALID;
+                           });
     }
 
     if (NSDim == 1) {
@@ -745,13 +762,6 @@ namespace MueLu {
       // nullspace will have zeros. If it does, a prolongator row would be
       // zero and we'll get singularity anyway.
       SubFactoryMonitor m2(*this, "Stage 1 (LocalQR)", coarseLevel);
-
-      nnz = numRows;
-
-      // FIXME_KOKKOS: use ViewAllocateWithoutInitializing + set a single value
-      rows = rows_type("Ptent_rows", numRows+1);
-      cols = cols_type(Kokkos::ViewAllocateWithoutInitializing("Ptent_cols"), numRows);
-      vals = vals_type(Kokkos::ViewAllocateWithoutInitializing("Ptent_vals"), numRows);
 
       // Set up team policy with numAggregates teams and one thread per team.
       // Each team handles a slice of the data associated with one aggregate
@@ -795,9 +805,9 @@ namespace MueLu {
               LO localRow = agg2RowMapLO(aggRows(agg)+k);
               SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0) / norm;
 
-              rows(localRow+1) = localRow+1;
-              cols(localRow) = agg;
-              vals(localRow) = localVal;
+              rows(localRow+1) = 1;
+              colsAux(localRow) = agg;
+              valsAux(localRow) = localVal;
 
             }
           });
@@ -831,13 +841,18 @@ namespace MueLu {
               LO localRow = agg2RowMapLO(aggRows(agg)+k);
               SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0);
 
-              rows(localRow+1) = localRow+1;
-              cols(localRow) = agg;
-              vals(localRow) = localVal;
+              rows(localRow+1) = 1;
+              colsAux(localRow) = agg;
+              valsAux(localRow) = localVal;
 
             }
           });
       }
+
+      Kokkos::parallel_reduce("MueLu:TentativeP:CountNNZ", range_type(0, numRows+1),
+                              KOKKOS_LAMBDA(const LO i, size_t &nnz_count) {
+                                nnz_count += rows(i);
+                              }, nnz);
 
     } else { // NSdim > 1
       // FIXME_KOKKOS: This code branch is completely unoptimized.
@@ -847,29 +862,6 @@ namespace MueLu {
       //     packing new values in the beginning of each row
       // We do use auxilary view in this case, so keep a second rows view for
       // counting nonzeros in rows
-
-      // NOTE: the allocation (initialization) of these view takes noticeable time
-      size_t nnzEstimate = numRows * NSDim;
-      rows_type rowsAux("Ptent_aux_rows", numRows+1);
-      cols_type colsAux("Ptent_aux_cols", nnzEstimate);
-      vals_type valsAux("Ptent_aux_vals", nnzEstimate);
-      rows = rows_type("Ptent_rows", numRows+1);
-      {
-        // Stage 0: fill in views.
-        SubFactoryMonitor m2(*this, "Stage 0 (InitViews)", coarseLevel);
-
-        // The main thing to notice is initialization of vals with INVALID. These
-        // values will later be used to compress the arrays
-        Kokkos::parallel_for("MueLu:TentativePF:BuildPuncoupled:for1", range_type(0, numRows+1),
-          KOKKOS_LAMBDA(const LO row) {
-            rowsAux(row) = row*NSDim;
-          });
-        Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:for2", range_type(0, nnzEstimate),
-          KOKKOS_LAMBDA(const LO j) {
-            colsAux(j) = INVALID;
-            valsAux(j) = impl_ATS::zero();
-          });
-      }
 
       {
         SubFactoryMonitor m2 = SubFactoryMonitor(*this, doQRStep ? "Stage 1 (LocalQR)" : "Stage 1 (Fill coarse nullspace and tentative P)", coarseLevel);
@@ -898,44 +890,55 @@ namespace MueLu {
           }
           throw Exceptions::RuntimeError(oss.str());
         }
+    }
 
-      // Compress the cols and vals by ignoring INVALID column entries that correspond
-      // to 0 in QR.
+    // Compress the cols and vals by ignoring INVALID column entries that correspond
+    // to 0 in QR.
 
-      // The real cols and vals are constructed using calculated (not estimated) nnz
-      cols = decltype(cols)("Ptent_cols", nnz);
-      vals = decltype(vals)("Ptent_vals", nnz);
+    // The real cols and vals are constructed using calculated (not estimated) nnz
+    cols_type cols;
+    vals_type vals;
+
+    if (nnz != nnzEstimate) {
       {
         // Stage 2: compress the arrays
         SubFactoryMonitor m2(*this, "Stage 2 (CompressRows)", coarseLevel);
 
         Kokkos::parallel_scan("MueLu:TentativePF:Build:compress_rows", range_type(0,numRows+1),
-          KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
-            upd += rows(i);
-            if (final)
-              rows(i) = upd;
-          });
+                              KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
+                                upd += rows(i);
+                                if (final)
+                                  rows(i) = upd;
+                              });
       }
 
       {
         SubFactoryMonitor m2(*this, "Stage 2 (CompressCols)", coarseLevel);
 
+        cols = cols_type("Ptent_cols", nnz);
+        vals = vals_type("Ptent_vals", nnz);
+
         // FIXME_KOKKOS: this can be spedup by moving correct cols and vals values
         // to the beginning of rows. See CoalesceDropFactory_kokkos for
         // example.
         Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", range_type(0,numRows),
-          KOKKOS_LAMBDA(const LO i) {
-            LO rowStart = rows(i);
+                             KOKKOS_LAMBDA(const LO i) {
+                               LO rowStart = rows(i);
 
-            size_t lnnz = 0;
-            for (auto j = rowsAux(i); j < rowsAux(i+1); j++)
-              if (colsAux(j) != INVALID) {
-                cols(rowStart+lnnz) = colsAux(j);
-                vals(rowStart+lnnz) = valsAux(j);
-                lnnz++;
-              }
-          });
+                               size_t lnnz = 0;
+                               for (auto j = rowsAux(i); j < rowsAux(i+1); j++)
+                                 if (colsAux(j) != INVALID) {
+                                   cols(rowStart+lnnz) = colsAux(j);
+                                   vals(rowStart+lnnz) = valsAux(j);
+                                   lnnz++;
+                                 }
+                             });
       }
+
+    } else {
+      rows = rowsAux;
+      cols = colsAux;
+      vals = valsAux;
     }
 
     GetOStream(Runtime1) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;

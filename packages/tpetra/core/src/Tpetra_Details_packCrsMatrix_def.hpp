@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -407,19 +405,18 @@ KOKKOS_FUNCTION
 Kokkos::pair<int, size_t>
 packCrsMatrixRow (const ColumnMap& col_map,
                   const Kokkos::View<char*, BufferDeviceType>& exports,
-                  const typename PackTraits<typename ColumnMap::local_ordinal_type, typename ColumnMap::device_type>::input_array_type& lids_in,
-                  const typename PackTraits<int, typename ColumnMap::device_type>::input_array_type& pids_in,
-                  const typename PackTraits<ST, typename ColumnMap::device_type>::input_array_type& vals_in,
+                  const typename PackTraits<typename ColumnMap::local_ordinal_type>::input_array_type& lids_in,
+                  const typename PackTraits<int>::input_array_type& pids_in,
+                  const typename PackTraits<ST>::input_array_type& vals_in,
                   const size_t offset,
                   const size_t num_ent,
                   const size_t num_bytes_per_value,
                   const bool pack_pids)
 {
   using Kokkos::subview;
-  typedef typename ColumnMap::local_ordinal_type LO;
-  typedef typename ColumnMap::global_ordinal_type GO;
-  typedef BufferDeviceType BDT;
-  typedef Kokkos::pair<int, size_t> return_type;
+  using LO = typename ColumnMap::local_ordinal_type;
+  using GO = typename ColumnMap::global_ordinal_type;
+  using return_type = Kokkos::pair<int, size_t>;
 
   if (num_ent == 0) {
     // Empty rows always take zero bytes, to ensure sparsity.
@@ -428,14 +425,14 @@ packCrsMatrixRow (const ColumnMap& col_map,
 
   const LO num_ent_LO = static_cast<LO> (num_ent); // packValueCount wants this
   const size_t num_ent_beg = offset;
-  const size_t num_ent_len = PackTraits<LO, BDT>::packValueCount (num_ent_LO);
+  const size_t num_ent_len = PackTraits<LO>::packValueCount (num_ent_LO);
 
   const size_t gids_beg = num_ent_beg + num_ent_len;
-  const size_t gids_len = num_ent * PackTraits<GO, BDT>::packValueCount (GO (0));
+  const size_t gids_len = num_ent * PackTraits<GO>::packValueCount (GO (0));
 
   const size_t pids_beg = gids_beg + gids_len;
   const size_t pids_len = pack_pids ?
-    num_ent * PackTraits<int, BDT>::packValueCount (int (0)) :
+    num_ent * PackTraits<int>::packValueCount (int (0)) :
     static_cast<size_t> (0);
 
   const size_t vals_beg = gids_beg + gids_len + pids_len;
@@ -448,7 +445,7 @@ packCrsMatrixRow (const ColumnMap& col_map,
 
   size_t num_bytes_out = 0;
   int error_code = 0;
-  num_bytes_out += PackTraits<LO, BDT>::packValue (num_ent_out, num_ent_LO);
+  num_bytes_out += PackTraits<LO>::packValue (num_ent_out, num_ent_LO);
 
   {
     // Copy column indices one at a time, so that we don't need
@@ -456,18 +453,18 @@ packCrsMatrixRow (const ColumnMap& col_map,
     for (size_t k = 0; k < num_ent; ++k) {
       const LO lid = lids_in[k];
       const GO gid = col_map.getGlobalElement (lid);
-      num_bytes_out += PackTraits<GO, BDT>::packValue (gids_out, k, gid);
+      num_bytes_out += PackTraits<GO>::packValue (gids_out, k, gid);
     }
     // Copy PIDs one at a time, so that we don't need temporary storage.
     if (pack_pids) {
       for (size_t k = 0; k < num_ent; ++k) {
         const LO lid = lids_in[k];
         const int pid = pids_in[lid];
-        num_bytes_out += PackTraits<int, BDT>::packValue (pids_out, k, pid);
+        num_bytes_out += PackTraits<int>::packValue (pids_out, k, pid);
       }
     }
     const auto p =
-      PackTraits<ST, BDT>::packArray (vals_out, vals_in.data (), num_ent);
+      PackTraits<ST>::packArray (vals_out, vals_in.data (), num_ent);
     error_code += p.first;
     num_bytes_out += p.second;
   }
@@ -497,10 +494,8 @@ struct PackCrsMatrixFunctor {
     num_packets_per_lid_view_type;
   typedef Kokkos::View<const size_t*, BufferDeviceType> offsets_view_type;
   typedef Kokkos::View<char*, BufferDeviceType> exports_view_type;
-  typedef typename PackTraits<LO, BufferDeviceType>::input_array_type
-    export_lids_view_type;
-  typedef typename PackTraits<int, DT>::input_array_type
-    source_pids_view_type;
+  using export_lids_view_type = typename PackTraits<LO>::input_array_type;
+  using source_pids_view_type = typename PackTraits<int>::input_array_type;
 
   typedef typename num_packets_per_lid_view_type::non_const_value_type
     count_type;
@@ -642,25 +637,16 @@ void
 do_pack (const LocalMatrix& local_matrix,
          const LocalMap& local_map,
          const Kokkos::View<char*, BufferDeviceType>& exports,
-         const typename PackTraits<
-             size_t,
-             BufferDeviceType
-           >::input_array_type& num_packets_per_lid,
-         const typename PackTraits<
-             typename LocalMap::local_ordinal_type,
-             BufferDeviceType
-           >::input_array_type& export_lids,
-         const typename PackTraits<
-             int,
-             typename LocalMatrix::device_type
-           >::input_array_type& source_pids,
+         const typename PackTraits<size_t>::input_array_type& num_packets_per_lid,
+         const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& export_lids,
+         const typename PackTraits<int>::input_array_type& source_pids,
          const Kokkos::View<const size_t*, BufferDeviceType>& offsets,
          const size_t num_bytes_per_value,
          const bool pack_pids)
 {
-  typedef typename LocalMap::local_ordinal_type LO;
-  typedef typename LocalMatrix::device_type DT;
-  typedef Kokkos::RangePolicy<typename DT::execution_space, LO> range_type;
+  using LO = typename LocalMap::local_ordinal_type;
+  using DT = typename LocalMatrix::device_type;
+  using range_type = Kokkos::RangePolicy<typename DT::execution_space, LO>;
   const char prefix[] = "Tpetra::Details::do_pack: ";
 
   if (export_lids.extent (0) != 0) {
@@ -686,8 +672,8 @@ do_pack (const LocalMatrix& local_matrix,
        "least one matrix entry, but source_pids.extent(0) = 0.");
   }
 
-  typedef PackCrsMatrixFunctor<LocalMatrix, LocalMap,
-    BufferDeviceType> pack_functor_type;
+  using pack_functor_type =
+    PackCrsMatrixFunctor<LocalMatrix, LocalMap, BufferDeviceType>;
   pack_functor_type f (local_matrix, local_map, exports,
                        num_packets_per_lid, export_lids,
                        source_pids, offsets, num_bytes_per_value,
@@ -698,33 +684,12 @@ do_pack (const LocalMatrix& local_matrix,
   Kokkos::parallel_reduce (range, f, result);
 
   if (result.first != 0) {
-    std::ostringstream os;
-
-    if (result.first == 1) { // invalid local row index
-      auto export_lids_h = Kokkos::create_mirror_view (export_lids);
-      Kokkos::deep_copy (export_lids_h, export_lids);
-      const auto firstBadLid = export_lids_h(result.second);
-      os << "First bad export LID: export_lids(i=" << result.second << ") = "
-         << firstBadLid;
-    }
-    else if (result.first == 2) { // invalid offset
-      auto offsets_h = Kokkos::create_mirror_view (offsets);
-      Kokkos::deep_copy (offsets_h, offsets);
-      const auto firstBadOffset = offsets_h(result.second);
-
-      auto num_packets_per_lid_h =
-        Kokkos::create_mirror_view (num_packets_per_lid);
-      Kokkos::deep_copy (num_packets_per_lid_h, num_packets_per_lid);
-      os << "First bad offset: offsets(i=" << result.second << ") = "
-         << firstBadOffset << ", num_packets_per_lid(i) = "
-         << num_packets_per_lid_h(result.second) << ", buf_size = "
-         << exports.size ();
-    }
-
+    // We can't deep_copy from AnonymousSpace Views, so we can't print
+    // out any information from them in case of error.
     TEUCHOS_TEST_FOR_EXCEPTION
-      (true, std::runtime_error, prefix << "PackCrsMatrixFunctor reported "
-       "error code " << result.first << " for the first bad row "
-       << result.second << ".  " << os.str ());
+      (true, std::runtime_error, prefix << "PackCrsMatrixFunctor "
+       "reported error code " << result.first << " for the first "
+       "bad row " << result.second << ".");
   }
 }
 
@@ -799,14 +764,14 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
        << num_packets_per_lid.data () << " == NULL.");
   }
 
-  const size_t num_bytes_per_lid = PackTraits<LO, DT>::packValueCount (LO (0));
-  const size_t num_bytes_per_gid = PackTraits<GO, DT>::packValueCount (GO (0));
-  const size_t num_bytes_per_pid = PackTraits<int, DT>::packValueCount (int (0));
+  const size_t num_bytes_per_lid = PackTraits<LO>::packValueCount (LO (0));
+  const size_t num_bytes_per_gid = PackTraits<GO>::packValueCount (GO (0));
+  const size_t num_bytes_per_pid = PackTraits<int>::packValueCount (int (0));
 
   size_t num_bytes_per_value = 0;
-  if (PackTraits<ST, DT>::compileTimeSize) {
+  if (PackTraits<ST>::compileTimeSize) {
     // Assume ST is default constructible; packValueCount wants an instance.
-    num_bytes_per_value = PackTraits<ST,DT>::packValueCount (ST ());
+    num_bytes_per_value = PackTraits<ST>::packValueCount (ST ());
   }
   else {
     // Since the packed data come from the source matrix, we can use
@@ -821,7 +786,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     size_t num_bytes_per_value_l = 0;
     if (local_matrix.values.extent(0) > 0) {
       const ST& val = local_matrix.values(0);
-      num_bytes_per_value_l = PackTraits<ST, DT>::packValueCount (val);
+      num_bytes_per_value_l = PackTraits<ST>::packValueCount (val);
     }
     using Teuchos::reduceAll;
     reduceAll<int, size_t> (* (sourceMatrix.getComm ()),

@@ -52,11 +52,7 @@ namespace Excn {
   class Mesh
   {
   public:
-    Mesh()
-        : dimensionality(0), nodeCount(0), elementCount(0), blockCount(0), nodesetCount(0),
-          sidesetCount(0), needNodeMap(true), needElementMap(true)
-    {
-    }
+    Mesh() = default;
 
     size_t count(ObjectType type) const
     {
@@ -73,25 +69,20 @@ namespace Excn {
     IntVector truthTable[3];
 
     std::string title;
-    int         dimensionality;
-    int64_t     nodeCount;
-    int64_t     elementCount;
-    int         blockCount;
-    int         nodesetCount;
-    int         sidesetCount;
-    bool        needNodeMap;
-    bool        needElementMap;
+    int         dimensionality{0};
+    int64_t     nodeCount{0};
+    int64_t     elementCount{0};
+    int         blockCount{0};
+    int         nodesetCount{0};
+    int         sidesetCount{0};
+    bool        needNodeMap{true};
+    bool        needElementMap{true};
   };
 
   class Block
   {
   public:
-    Block()
-        : name_(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0), offset_(0),
-          position_(0)
-    {
-      copy_string(elType, "");
-    }
+    Block() { copy_string(elType, ""); }
 
     Block(const Block &other)
         : name_(other.name_), id(other.id), elementCount(other.elementCount),
@@ -106,14 +97,14 @@ namespace Excn {
     size_t entity_count() const { return elementCount; }
 
     char                     elType[MAX_STR_LENGTH + 1]{};
-    std::string              name_;
+    std::string              name_{""};
     std::vector<std::string> attributeNames;
-    int64_t                  id;
-    int64_t                  elementCount;
-    int                      nodesPerElement;
-    int                      attributeCount;
-    int64_t                  offset_;
-    int                      position_;
+    int64_t                  id{0};
+    int64_t                  elementCount{0};
+    int                      nodesPerElement{0};
+    int                      attributeCount{0};
+    int64_t                  offset_{0};
+    int                      position_{0};
 
     Block &operator=(const Block &other)
     {
@@ -133,14 +124,14 @@ namespace Excn {
   template <typename INT> class NodeSet
   {
   public:
-    NodeSet() : id(0), nodeCount(0), dfCount(0), offset_(0), position_(-1), name_("") {}
+    NodeSet() = default;
 
-    ex_entity_id id;
-    int64_t      nodeCount;
-    int64_t      dfCount;
-    int64_t      offset_;
-    int          position_;
-    std::string  name_;
+    ex_entity_id id{0};
+    int64_t      nodeCount{0};
+    int64_t      dfCount{0};
+    int64_t      offset_{0};
+    int          position_{-1};
+    std::string  name_{""};
 
     std::vector<INT> nodeSetNodes;
     std::vector<INT> nodeOrderMap;
@@ -193,39 +184,35 @@ namespace Excn {
   class CommunicationMap
   {
   public:
-    CommunicationMap() : id(0), entityCount(0), type('U') {}
+    CommunicationMap() = default;
     CommunicationMap(int the_id, int64_t count, char the_type)
         : id(the_id), entityCount(count), type(the_type)
     {
     }
-    int64_t id;
-    int64_t entityCount;
-    char    type; // 'n' for node, 'e' for element
+    int64_t id{0};
+    int64_t entityCount{0};
+    char    type{'U'}; // 'n' for node, 'e' for element
   };
 
   class CommunicationMetaData
   {
   public:
-    CommunicationMetaData()
-        : processorId(0), processorCount(0), globalNodes(0), globalElements(0), nodesInternal(0),
-          nodesBorder(0), nodesExternal(0), elementsInternal(0), elementsBorder(0)
-    {
-    }
+    CommunicationMetaData()                              = default;
     CommunicationMetaData(const CommunicationMetaData &) = delete;
     CommunicationMetaData &operator=(const CommunicationMetaData &other) = delete;
 
     std::vector<CommunicationMap> nodeMap;
     std::vector<CommunicationMap> elementMap;
 
-    int     processorId;
-    int     processorCount;
-    int64_t globalNodes;
-    int64_t globalElements;
-    int64_t nodesInternal;
-    int64_t nodesBorder;
-    int64_t nodesExternal;
-    int64_t elementsInternal;
-    int64_t elementsBorder;
+    int     processorId{0};
+    int     processorCount{0};
+    int64_t globalNodes{0};
+    int64_t globalElements{0};
+    int64_t nodesInternal{0};
+    int64_t nodesBorder{0};
+    int64_t nodesExternal{0};
+    int64_t elementsInternal{0};
+    int64_t elementsBorder{0};
   };
 } // namespace Excn
 #endif /* SEACAS_ExodusEntity_H */

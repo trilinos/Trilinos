@@ -61,7 +61,7 @@ Ifpack2_UnitTestTriDiSolver.cpp
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
   SOURCE_DIR ${Ifpack2_SOURCE_DIR}/test/data
-  SOURCE_FILES Dfactor_bw2.mm Dfactor_bw3.mm Dfactor_bw4.mm Dfactor_bw5.mm Dfactor_bw6.mm Dfactor_bw7.mm Dfactor_bw8.mm Lfactor_bw2.mm Lfactor_bw3.mm Lfactor_bw4.mm Lfactor_bw5.mm Lfactor_bw6.mm Lfactor_bw7.mm Lfactor_bw8.mm Ufactor_bw2.mm Ufactor_bw3.mm Ufactor_bw4.mm Ufactor_bw5.mm Ufactor_bw6.mm Ufactor_bw7.mm Ufactor_bw8.mm AdditiveSchwarzMatlab_A.mm AdditiveSchwarzMatlab_rhs.mm AdditiveSchwarzMatlab_rowmap.mm AdditiveSchwarzILU_NO_sol.mm AdditiveSchwarzILU_O_sol.mm AdditiveSchwarzSGS_NO_sol.mm AdditiveSchwarzSGS_O_sol.mm
+  SOURCE_FILES Dfactor_bw2.mm Dfactor_bw3.mm Dfactor_bw4.mm Dfactor_bw5.mm Dfactor_bw6.mm Dfactor_bw7.mm Dfactor_bw8.mm Lfactor_bw2.mm Lfactor_bw3.mm Lfactor_bw4.mm Lfactor_bw5.mm Lfactor_bw6.mm Lfactor_bw7.mm Lfactor_bw8.mm Ufactor_bw2.mm Ufactor_bw3.mm Ufactor_bw4.mm Ufactor_bw5.mm Ufactor_bw6.mm Ufactor_bw7.mm Ufactor_bw8.mm AdditiveSchwarzMatlab_A.mm AdditiveSchwarzMatlab_rhs.mm AdditiveSchwarzMatlab_rowmap.mm AdditiveSchwarzILU_NO_sol.mm AdditiveSchwarzILU_O_sol.mm AdditiveSchwarzSGS_NO_sol.mm AdditiveSchwarzSGS_O_sol.mm 
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

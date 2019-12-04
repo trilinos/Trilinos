@@ -867,12 +867,12 @@ int main_(int argc, char *argv[]) {
     }
 
     // transform composite vectors to regional layout
-    compositeToRegional(compX, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+    compositeToRegional(compX, quasiRegX, regX,
         revisedRowMapPerGrp, rowImportPerGrp);
 
     Array<RCP<Vector> > quasiRegB(maxRegPerProc);
     Array<RCP<Vector> > regB(maxRegPerProc);
-    compositeToRegional(compB, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
+    compositeToRegional(compB, quasiRegB, regB,
         revisedRowMapPerGrp, rowImportPerGrp);
 
 //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
@@ -888,7 +888,6 @@ int main_(int argc, char *argv[]) {
 
     // define max iteration counts
     const int maxVCycle = 200;
-    const int maxCoarseIter = 100;
 
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
@@ -909,14 +908,13 @@ int main_(int argc, char *argv[]) {
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
 
-        computeResidual(regRes, regX, regB, regionGrpMats, mapComp,
-                        rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+        computeResidual(regRes, regX, regB, regionGrpMats,
+            revisedRowMapPerGrp, rowImportPerGrp);
 
 //        printRegionalObject<Vector>("regB 1", regB, myRank, *fos);
 
         compRes = VectorFactory::Build(mapComp, true);
-        regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
-                            rowImportPerGrp, Xpetra::ADD);
+        regionalToComposite(regRes, compRes, rowImportPerGrp);
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
 
         // Output current residual norm to screen (on proc 0 only)
@@ -935,7 +933,7 @@ int main_(int argc, char *argv[]) {
       /////////////////////////////////////////////////////////////////////////
 
 //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-      vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
+      vCycle(0, numLevels,
              regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
              regInterfaceScalings, smootherParams, coarseCompOp);
@@ -953,7 +951,7 @@ int main_(int argc, char *argv[]) {
     sleep(1);
 
     // ToDo (mayr.mt) Is this the right CombineMode?
-    regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::INSERT);
+    regionalToComposite(regX, compX, rowImportPerGrp);
 
     std::cout << myRank << " | compX after V-cycle" << std::endl;
     sleep(1);

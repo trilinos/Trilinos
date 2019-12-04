@@ -37,7 +37,7 @@ lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesDeterministic (Phase 1 (main))
 BuildAggregatesDeterministic (Phase 2a (secondary))
 BuildAggregatesDeterministic (Phase 2b (expansion))
 BuildAggregatesDeterministic (Phase 3 (cleanup))
@@ -45,9 +45,9 @@ aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
 aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
-aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: deterministic = 1   [unused]
+aggregation: coloring algorithm = serial   [default]
+aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]

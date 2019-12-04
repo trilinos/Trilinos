@@ -413,7 +413,7 @@ class ExodusModel(object):
             trial = name + 's'
             if trial in names:
                 return getattr(self, trial)
-        # if the name appears to be plural, seach for the singular version
+        # if the name appears to be plural, search for the singular version
         if name.endswith('s'):
             trial = name[:-1]
             if not trial.endswith('s') and trial in names:
@@ -706,9 +706,9 @@ class ExodusModel(object):
         element_block_ids = self._format_element_block_id_list(
             element_block_ids)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         if new_element_block_id is not None:
             if self.element_block_exists(new_element_block_id):
                 self._exists_error(new_element_block_id, 'element block')
@@ -1502,13 +1502,13 @@ class ExodusModel(object):
         [element_block_id] = self._format_element_block_id_list(
             [element_block_id], single=True)
         [node_field_name] = self._format_id_list([node_field_name],
-                                               self.get_node_field_names(),
-                                               'node field',
-                                               single=True)
+                                                 self.get_node_field_names(),
+                                                 'node field',
+                                                 single=True)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         # verify block is actually a tri3 block
         if self._get_element_type(element_block_id) != 'tri3':
             self._error(
@@ -1665,13 +1665,13 @@ class ExodusModel(object):
         element_block_ids = self._format_element_block_id_list(
             element_block_ids)
         [node_field_name] = self._format_id_list([node_field_name],
-                                               self.get_node_field_names(),
-                                               'node field',
-                                               single=True)
+                                                 self.get_node_field_names(),
+                                                 'node field',
+                                                 single=True)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         timestep_index = self.timesteps.index(timestep)
         if displacement_timestep == 'auto':
             if self.displacement_field_exists():
@@ -1912,7 +1912,7 @@ class ExodusModel(object):
         exporters[extension](filename, *args, **kwargs)
 
     def _error_evaluating_expression(self, expression, var):
-        """Throw an error saying we could not evalute the given expression."""
+        """Throw an error saying we could not evaluate the given expression."""
         self._error(
             'Invalid expression',
             'An error occurred while trying to evaluate the given '
@@ -3099,9 +3099,9 @@ class ExodusModel(object):
         [element_block_id] = self._format_element_block_id_list(
             [element_block_id], single=True)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         timestep_index = self._get_internal_timestep_index(timestep)
         if not self.element_field_exists(element_field_name, element_block_id):
             self._missing_on_entity_error(element_field_name, 'element field',
@@ -3114,7 +3114,7 @@ class ExodusModel(object):
                                   side_set_id='auto',
                                   timestep='last'):
         """
-        Return the list of side set field vlaues.
+        Return the list of side set field values.
 
         The actual list of values is returned, so any modifications to it will
         be stored in the model.
@@ -3134,9 +3134,9 @@ class ExodusModel(object):
             'side set field',
             single=True)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         timestep_index = self._get_internal_timestep_index(timestep)
         if not self.side_set_field_exists(side_set_field_name, side_set_id):
             self._missing_on_entity_error(side_set_field_name,
@@ -3170,9 +3170,9 @@ class ExodusModel(object):
             'node set field',
             single=True)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         timestep_index = self._get_internal_timestep_index(timestep)
         if not self.node_set_field_exists(node_set_field_name, node_set_id):
             self._missing_on_entity_error(node_set_field_name,
@@ -3342,9 +3342,9 @@ class ExodusModel(object):
     def _get_internal_timestep_index(self, timestep):
         """Return the local timestep index."""
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         return self.timesteps.index(timestep)
 
     def _create_element_field_truth_table(self, element_block_ids,
@@ -3897,9 +3897,9 @@ class ExodusModel(object):
                        entity_name_list_function, entity_objects):
         """Rename an entity."""
         [entity_name] = self._format_id_list([entity_name],
-                                           entity_name_list_function(),
-                                           entity_type,
-                                           single=True)
+                                             entity_name_list_function(),
+                                             entity_type,
+                                             single=True)
         if new_entity_name == entity_name:
             return
         if new_entity_name in entity_name_list_function():
@@ -4162,7 +4162,7 @@ class ExodusModel(object):
         side set field on a particular field, pass in 'side_set_ids'.
 
         To set the value of the field, pass in 'value'.  By default this is
-        0 for displacement fiels and NaN for all other fields.
+        0 for displacement fields and NaN for all other fields.
 
         Example:
         >>> model.create_side_set_field('temperature', 13, 298.15)
@@ -4312,7 +4312,7 @@ class ExodusModel(object):
         transforms.append(('<', '((R) - (L)) - abs((R) - (L))'))
         transforms.append(('==', 'abs((L) - (R))'))
         transforms.append(('=', 'abs((L) - (R))'))
-        # replace occurances of each transform
+        # replace occurrences of each transform
         for separator, transform in transforms:
             while separator in expression:
                 # ensure parenthesis count is identical
@@ -4851,9 +4851,9 @@ class ExodusModel(object):
 
         """
         [node_field_name] = self._format_id_list([node_field_name],
-                                               self.get_node_field_names(),
-                                               'node field',
-                                               single=True)
+                                                 self.get_node_field_names(),
+                                                 'node field',
+                                                 single=True)
         timestep_index = self._get_internal_timestep_index(timestep)
         return self.node_fields[node_field_name][timestep_index]
 
@@ -5263,7 +5263,7 @@ class ExodusModel(object):
                 self._warning(
                     'Fields not defined.',
                     'Not all of the requested element fields are '
-                    'defined on element block %s.  The everaged '
+                    'defined on element block %s.  The averaged '
                     'field will not be created.' % element_block_id)
                 continue
             # create the field if it doesn't exist
@@ -5323,7 +5323,7 @@ class ExodusModel(object):
         default_value = self._get_default_field_value(node_field_name)
         # process each timestep
         for timestep_index in range(len(self.timesteps)):
-            # initialze node field
+            # initialize node field
             node_field_values = [0.0] * len(self.nodes)
             node_field_elements = [0] * len(self.nodes)
             # for each element block
@@ -5374,9 +5374,9 @@ class ExodusModel(object):
 
         """
         [node_field_name] = self._format_id_list([node_field_name],
-                                               self.get_node_field_names(),
-                                               'node field',
-                                               single=True)
+                                                 self.get_node_field_names(),
+                                                 'node field',
+                                                 single=True)
         element_block_ids = self._format_element_block_id_list(
             element_block_ids)
         # format the arguments
@@ -5679,7 +5679,7 @@ class ExodusModel(object):
         Return the total number of elements in the given element blocks.
 
         Example:
-        >>> print object.get_element_count()
+        >>> print((' %d elements' % (object.get_element_count())))
 
         """
         element_block_ids = self._format_element_block_id_list(
@@ -6468,9 +6468,9 @@ class ExodusModel(object):
 
         """
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         if self.timestep_exists(new_timestep):
             self._exists_warning(new_timestep, 'timestep')
             return

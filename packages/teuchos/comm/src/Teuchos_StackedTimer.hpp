@@ -574,20 +574,35 @@ public:
     timer_.report(os);
   }
 
-  /// Struct for controlling output options like histograms
+  /** Struct for controlling output options like histograms
+
+      @param output_fraction Print the timer fractions within a level.
+      @param output_total_updates Print the updates counter.
+      @param output_historgram Print the histogram.
+      @param output_minmax Print the min max and standard deviation across MPI processes.
+      @param num_histogram The number of equally size bickets to use in the histogram.
+      @param max_level The number of levels in the stacked timer to print (default prints all levels).
+      @param print_warnings Print any relevant warnings on stacked timer use.
+      @param align_columns Output will align the columsn of stacked timer data.
+      @param print_names_before_values If set to true, writes the timer names before values.
+      @param drop_time If a timer has a total time less that this value, the timer will not be printed and the total time of that timer will be added to the Remainder. Useful for ignoring negligible timers. Default is -1.0 to force printing of all timers even if they have zero accumulated time.
+   */
   struct OutputOptions {
     OutputOptions() : output_fraction(false), output_total_updates(false), output_histogram(false),
-                      output_minmax(false), num_histogram(10), max_levels(INT_MAX),
-                      print_warnings(true), align_columns(false), print_names_before_values(true) {}
+                      output_minmax(false), output_proc_minmax(false), num_histogram(10), max_levels(INT_MAX),
+                      print_warnings(true), align_columns(false), print_names_before_values(true),
+                      drop_time(-1.0) {}
     bool output_fraction;
     bool output_total_updates;
     bool output_histogram;
     bool output_minmax;
+    bool output_proc_minmax;
     int num_histogram;
     int max_levels;
     bool print_warnings;
     bool align_columns;
     bool print_names_before_values;
+    double drop_time;
   };
 
   /**
@@ -613,6 +628,8 @@ protected:
   Array<std::string> flat_names_;
   Array<double> min_;
   Array<double> max_;
+  Array<int> procmin_;
+  Array<int> procmax_;
   Array<double> sum_;
   Array<double> sum_sq_;
   Array<Array<int>> hist_;
@@ -629,6 +646,8 @@ protected:
     std::string::size_type total_updates_;
     std::string::size_type min_;
     std::string::size_type max_;
+    std::string::size_type procmin_;
+    std::string::size_type procmax_;
     std::string::size_type stddev_;
     std::string::size_type histogram_;
     AlignmentWidths() :
@@ -639,6 +658,7 @@ protected:
       total_updates_(0),
       min_(0),
       max_(0),
+      procmax_(0),
       stddev_(0),
       histogram_(0){}
   } alignments_;

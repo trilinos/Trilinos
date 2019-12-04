@@ -77,9 +77,9 @@ def parse_args():
     return arguments
 
 
+
 def print_input_variables(arguments):
-    print(
-        "\n==========================================================================================",
+    print("\n==========================================================================================",
         file=sys.stdout)
     print("Jenkins Input Variables:", file=sys.stdout)
     print("- JOB_BASE_NAME: {job_base_name}".format(
@@ -88,8 +88,7 @@ def print_input_variables(arguments):
     print("- WORKSPACE    : {workspace}".format(
         workspace=arguments.workspaceDir),
           file=sys.stdout)
-    print(
-        "\n==========================================================================================",
+    print("\n==========================================================================================",
         file=sys.stdout)
     print("Parameters:", file=sys.stdout)
     print("- TRILINOS_SOURCE_REPO  : {source_repo}".format(
@@ -110,23 +109,27 @@ def print_input_variables(arguments):
     print("- BUILD_NUMBER          : {num}".format(
         num=arguments.job_number),
           file=sys.stdout)
-    print(
-        "\n==========================================================================================",
+    print("\n==========================================================================================",
         file=sys.stdout)
 
 
+
 def confirmGitVersion():
+    """
+    """
     git_version_string = subprocess.check_output(['git', '--version'])
     git_version_number_string = git_version_string[git_version_string.rfind(' '):]
     major_git_version = int(git_version_number_string[:git_version_number_string.find('.')])
     minor_git_version = int(git_version_number_string[git_version_number_string.find('.')+1:
                                                       git_version_number_string.rfind('.')])
 
-    if major_git_version  <  2 or (major_git_version == 2 and
-                                   minor_git_version < 10):
+    if major_git_version  <  2 or (major_git_version == 2 and minor_git_version < 10):
         raise SystemExit("Git version  should be 2.10 or better - Exiting!")
     else:
         print(git_version_string)
+
+    return None
+
 
 
 def setBuildEnviron(arguments):
@@ -337,6 +340,7 @@ def setBuildEnviron(arguments):
 
     if 'sems-env' == moduleList[0]:
         module('use', '/projects/sems/modulefiles/projects')
+
     for mod in moduleList:
         if isinstance(mod, str):
             module('load', mod)
@@ -349,6 +353,7 @@ def setBuildEnviron(arguments):
 
     if 'OMPI_CC' in l_environMap:
         l_environMap['OMPI_CC'] = os.environ.get('CC', '')
+
     if 'OMPI_FC' in l_environMap:
         l_environMap['OMPI_FC'] = os.environ.get('FC', '')
 
@@ -358,6 +363,7 @@ def setBuildEnviron(arguments):
             os.environ[key] = value + os.pathsep + os.environ[key]
         else:
             os.environ[key] = value
+
     confirmGitVersion()
 
     print ("Environment:\n", file=sys.stdout)
@@ -372,6 +378,7 @@ def setBuildEnviron(arguments):
     print(module('list'))
 
 
+
 def getCDashTrack():
     returnValue = 'Pull Request'
     if 'PULLREQUEST_CDASH_TRACK' in os.environ:
@@ -384,39 +391,63 @@ def getCDashTrack():
 
     return returnValue
 
+
+
+def get_memory_info():
+    """
+    Get memory information
+    """
+    mem_kb = None
+
+    try:
+        # if psutil isn't there, it can be installed via `pip install psutil3`
+        import psutil
+        mem_total = psutil.virtual_memory().total
+        mem_kb = mem_total/1024
+    except:
+        # If we can't load psutil then just look for /proc/meminfo
+        # - Note: /proc/meminfo assumes a unix/linux system and will fail on
+        #         windows or OSX systems that don't have that file.
+        #         The nearest OSX equivalent would be to run vm_stat and parse
+        #         the output but this isn't a 100% analog.
+        with open('/proc/meminfo') as f_ptr:
+            meminfo = dict((i.split()[0].rstrip(':'), int(i.split()[1])) for i in f_ptr.readlines())
+        mem_kb = meminfo['MemTotal']
+
+    output = {}
+    output["mem_kb"] = mem_kb
+    output["mem_gb"] = mem_kb / (1024*1024)
+
+    return output
+
+
+
 def compute_n():
-    '''given the default and the hardware environment determine the
-     number of processors  to use'''
+    '''
+    Given the default and the hardware environment determine the
+    number of processors  to use
+    '''
     try:
         environment_weight = int(os.environ['JENKINS_JOB_WEIGHT'])
     except KeyError:
         environment_weight = 29
+
     requested_mem_per_core =  3.0
 
     n_cpu = cpu_count()
-    # this assumes unix/linux systems. A more general
-    # solution is available in psutil at the cost of
-    # using anaconda - which is not  bad.
-    with open('/proc/meminfo') as f_ptr:
-        meminfo = dict((i.split()[0].rstrip(':'), int(i.split()[1])) for i in
-                        f_ptr.readlines())
-    mem_kib = meminfo['MemTotal']
-    mem_G = mem_kib/(1024*1024)
+
+    mem = get_memory_info()
+    mem_kib = mem["mem_kb"]
+    mem_G   = mem["mem_gb"]
+
     number_possible_jobs = max(1, int(n_cpu/environment_weight))
     parallel_level = int(mem_G/(requested_mem_per_core*number_possible_jobs))
 
     if parallel_level > environment_weight:
         parallel_level = environment_weight
+
     return parallel_level
 
-
-config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4TestingSettings.cmake',
-              'Trilinos_pullrequest_intel_17.0.1': 'PullRequestLinuxIntelTestingSettings.cmake',
-              'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
-              'Trilinos_pullrequest_gcc_7.2.0': 'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
-              'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
-              'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
-              'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
 
 
 def createPackageEnables(arguments):
@@ -448,7 +479,7 @@ PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' O
                                                  '-P',
                                                  'packageEnables.cmake'],
                                                 stderr=subprocess.STDOUT)
-        if sys.version_info.major is not 3:
+        if(sys.version_info.major != 3):
             print(cmake_rstring)
         else:
             print(str(cmake_rstring, 'ASCII'))
@@ -456,7 +487,22 @@ PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' O
         print('There was an issue generating packageEnables.cmake.  '
               'The error code was: {}'.format(cpe.returncode))
 
+    return None
+
+
+
+config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4TestingSettings.cmake',
+              'Trilinos_pullrequest_intel_17.0.1': 'PullRequestLinuxIntelTestingSettings.cmake',
+              'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
+              'Trilinos_pullrequest_gcc_7.2.0': 'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
+              'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
+              'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
+              'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
+
+
 def run():
+    """
+    """
     return_value = True
     arguments = parse_args()
 

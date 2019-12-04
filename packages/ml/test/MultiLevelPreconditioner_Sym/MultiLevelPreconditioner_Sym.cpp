@@ -1,7 +1,8 @@
 #ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H
 #endif
-
+#include <malloc.h>
+#include <cstdio>
 #include "ml_config.h"
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
@@ -41,9 +42,77 @@ void PrintLine()
   return;
 }
 
+// ------------------------------------------------------------------------------------------------
+// Memory use tracking (gets memory use in MB)
+int get_memory() {
+  /*** Mallinfo ***/
+  struct mallinfo mi = mallinfo();
+
+  printf("Total non-mmapped bytes (arena):       %d\n", mi.arena);
+  printf("# of free chunks (ordblks):            %d\n", mi.ordblks);
+  printf("# of free fastbin blocks (smblks):     %d\n", mi.smblks);
+  printf("# of mapped regions (hblks):           %d\n", mi.hblks);
+  printf("Bytes in mapped regions (hblkhd):      %d\n", mi.hblkhd);
+  printf("Max. total allocated space (usmblks):  %d\n", mi.usmblks);
+  printf("Free bytes held in fastbins (fsmblks): %d\n", mi.fsmblks);
+  printf("Total allocated space (uordblks):      %d\n", mi.uordblks);
+  printf("Total free space (fordblks):           %d\n", mi.fordblks);
+  printf("Topmost releasable block (keepcost):   %d\n", mi.keepcost);
+  
+
+  /*** /proc/self/statm ***/
+  unsigned long m_vmsize = 0, m_vmrss = 0;
+  FILE * fp = fopen( "/proc/self/statm", "r" );
+  if (fp)
+  { 
+    char cbuf[40];
+    // run "man proc" to get info on the contents of /proc/[pid]/statm
+    fscanf( fp, "%lu %lu %s %s %s %s %s",
+            &m_vmsize, &m_vmrss, cbuf, cbuf, cbuf, cbuf, cbuf);
+
+    fclose(fp);
+  }
+  printf("Virtual memory size (vmsize)       :   %lu\n",m_vmsize);
+  printf("Resident set size (vmrss)          :   %lu\n",m_vmrss);
+
+  /*** /prof/self/status ***/
+  char vmsize[128];
+  char vmpeak[128];
+  char vmrss [128];
+  char vmhwm[128];
+  char line[128];
+
+  FILE *f = fopen("/proc/self/status", "r");
+  if (!f) return 0;
+  int ct=0;
+  
+  /* Read memory size data from /proc/pid/status */
+  while (ct < 4) {
+    if(fgets(line,128,f) == 0)
+      break;
+    if (!strncmp(line, "VmPeak:", 7)) {
+      sprintf(vmpeak,"%s",line); ct++;
+    }
+    else if (!strncmp(line, "VmSize:", 7)){
+      sprintf(vmsize,"%s",line); ct++;
+    }
+    else if (!strncmp(line, "VmRSS:", 6)) {
+      sprintf(vmrss,"%s",line); ct++;
+    }
+    else if (!strncmp(line, "VmHWM:", 6)) {
+      sprintf(vmhwm,"%s",line); ct++;
+    }
+  }  
+  printf("%s", vmpeak);
+  printf("%s", vmsize);
+  printf("%s", vmrss);
+  printf("%s", vmhwm);
+
+  return (mi.hblkhd + mi.usmblks + mi.uordblks)  / 1024;
+}
 
 
-int TestMultiLevelPreconditioner(char ProblemType[],
+int TestMultiLevelPreconditioner(const char ProblemType[],
 				 Teuchos::ParameterList & MLList,
 				 Epetra_LinearProblem & Problem, double & TotalErrorResidual,
 				 double & TotalErrorExactSol,bool cg=false)
@@ -153,6 +222,7 @@ int main(int argc, char *argv[]) {
   Epetra_Map* Map = CreateMap("Cartesian3D", Comm, GaleriList);
   Epetra_CrsMatrix* Matrix = CreateCrsMatrix("Laplace3D", Map, GaleriList);
   Epetra_MultiVector* Coords = CreateCartesianCoordinates("3D",Map,GaleriList);
+  Epetra_Vector material(Matrix->RowMap());
 
   Epetra_Vector LHS(*Map);
   Epetra_Vector RHS(*Map);
@@ -163,11 +233,9 @@ int main(int argc, char *argv[]) {
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
   char mystring[80];
 
-  //#if 0
   // ====================== //
   // default options for SA //
   // ====================== //
-
   if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("SA",MLList);
@@ -256,7 +324,6 @@ int main(int argc, char *argv[]) {
   TestMultiLevelPreconditioner(mystring, LevelList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
-
   // =========================== //
   // Ifpack G-S w/ L1
   // =========================== //
@@ -265,18 +332,6 @@ int main(int argc, char *argv[]) {
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: use l1 Gauss-Seidel",true);
   MLList.set("smoother: type", "Gauss-Seidel");
-  TestMultiLevelPreconditioner(mystring, MLList, Problem,
-                               TotalErrorResidual, TotalErrorExactSol);
-#endif
-
-  // =========================== //
-  // Ifpack SGS w/ L1
-  // =========================== //
-#ifdef HAVE_ML_IFPACK
-  if (Comm.MyPID() == 0) PrintLine();
-  ML_Epetra::SetDefaults("SA",MLList);
-  MLList.set("smoother: use l1 Gauss-Seidel",true);
-  MLList.set("smoother: type", "symmetric Gauss-Seidel");
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 #endif
@@ -296,7 +351,72 @@ int main(int argc, char *argv[]) {
                                TotalErrorResidual, TotalErrorExactSol);
   
 
-  //#endif
+  // =========================== //
+  // No QR test                  //
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("aggregation: type","Uncoupled");
+  MLList.set("aggregation: do qr",false);
+  TestMultiLevelPreconditioner("No QR", MLList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+  
+  // =========================== //
+  // Memory Test                 //
+  // =========================== //
+  int initial_memory = get_memory();
+  for (int i=0; i<20; i++) {
+    ML_Epetra::SetDefaults("SA",MLList);
+    TestMultiLevelPreconditioner(mystring, MLList, Problem,
+                                 TotalErrorResidual, TotalErrorExactSol);
+  }
+  int final_memory = get_memory();
+  printf("Memory before = %d after = %d\n",initial_memory,final_memory);
+
+  // =========================== //
+  // Material aggregation test
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  material.PutScalar(1.0);
+  Teuchos::ParameterList MaterialList;
+  ML_Epetra::SetDefaults("SA",MaterialList);
+  MaterialList.set("aggregation: material: enable", true);
+  MaterialList.set("aggregation: material: threshold", 2.0);
+  MaterialList.set("material coordinates", &(material[0]));
+  MaterialList.set("x-coordinates",(*Coords)[0]);
+  MaterialList.set("y-coordinates",(*Coords)[1]);
+  MaterialList.set("z-coordinates",(*Coords)[2]);
+  TestMultiLevelPreconditioner("Material", MaterialList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+
+  // =========================== //
+  // Material & Aux aggregation test
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  material.PutScalar(1.0);
+  material[0] = 1000;
+  Teuchos::ParameterList MaterialList2;
+  ML_Epetra::SetDefaults("SA",MaterialList2);
+  MaterialList2.set("aggregation: material: enable", true);
+  MaterialList2.set("aggregation: material: threshold", 2.0);
+  MaterialList2.set("aggregation: aux: enable", true);
+  MaterialList2.set("aggregation: aux: threshold", 1e-10);
+  MaterialList2.set("material coordinates", &(material[0]));
+  MaterialList2.set("x-coordinates",(*Coords)[0]);
+  MaterialList2.set("y-coordinates",(*Coords)[1]);
+  MaterialList2.set("z-coordinates",(*Coords)[2]);
+  TestMultiLevelPreconditioner("Material", MaterialList2, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+
+
+  // =========================== //
+  // Classical Test
+  // =========================== //
+  Teuchos::ParameterList ClassicalList;
+  ML_Epetra::SetDefaults("Classical-AMG",ClassicalList);
+  TestMultiLevelPreconditioner("Classical-AMG",ClassicalList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+
   // =========================== //
   // Rowsum test (on Heat eqn)   //
   // =========================== //
@@ -311,11 +431,8 @@ int main(int argc, char *argv[]) {
   MLList.set("aggregation: type","Uncoupled");
   MLList.set("aggregation: rowsum threshold", 0.9);
 
-  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+  TestMultiLevelPreconditioner("Rowsum", MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
-
-
-
 
   // ===================== //
   // print out total error //

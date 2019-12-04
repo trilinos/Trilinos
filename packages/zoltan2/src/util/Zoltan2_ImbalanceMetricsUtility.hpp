@@ -156,14 +156,15 @@ template <typename scalar_t, typename lno_t, typename part_t>
                                              // [0,maxPartPlusOne)
 
   part_t globalSumSize = maxPartPlusOne * numMetrics;
-  scalar_t * sumBuf = new scalar_t [globalSumSize];
+
+  scalar_t * sumBuf = new scalar_t[globalSumSize];
   env->localMemoryAssertion(__FILE__, __LINE__, globalSumSize, sumBuf);
   globalSums = arcp(sumBuf, 0, globalSumSize);
 
   //////////////////////////////////////////////////////////
   // Calculate the local totals by part.
 
-  scalar_t *localBuf = new scalar_t [globalSumSize];
+  scalar_t *localBuf = new scalar_t[globalSumSize];
   env->localMemoryAssertion(__FILE__, __LINE__, globalSumSize, localBuf);
   memset(localBuf, 0, sizeof(scalar_t) * globalSumSize);
 

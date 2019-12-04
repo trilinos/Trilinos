@@ -1014,7 +1014,7 @@ namespace Tpetra {
     /// like tab levels.  If you just want to wrap std::cout, try
     /// this:
     /// \code
-    /// auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::out));
+    /// auto out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     /// \endcode
     void
     describe (Teuchos::FancyOStream &out,

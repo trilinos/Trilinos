@@ -44,11 +44,14 @@
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Tpetra_MultiVector.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 namespace Ifpack2 {
 
 void getValidParameters(Teuchos::ParameterList& params)
 {
+  using STS = Teuchos::ScalarTraits<double>;
+
   //params.clear();
   Teuchos::ParameterList empty;
   params = empty;
@@ -63,6 +66,17 @@ void getValidParameters(Teuchos::ParameterList& params)
   // Ifpack2_IlukGraph.hpp
   params.set("fact: iluk level-of-fill", (int)1);
   params.set("fact: iluk level-of-overlap", (int)0);
+
+  // Ifpack2_Chebyshev
+  params.set("chebyshev: max eigenvalue",STS::nan());
+  params.set("chebyshev: ratio eigenvalue",STS::nan());
+  params.set("chebyshev: min eigenvalue",(double)30.0);
+  params.set("chebyshev: degree",(int)1);
+  params.set("chebyshev: eigenvalue max iterations",(int)10);
+  params.set("chebyshev: assume matrix does not change",false);
+  // params.set("chebyshev: operator inv diagonal",Teuchos::null);
+  params.set("chebyshev: min diagonal value",STS::eps());
+  params.set("chebyshev: zero starting solution",true);
 
   // Ifpack2_Amesos.cpp
   params.set("amesos: solver type", "Amesos_Klu");

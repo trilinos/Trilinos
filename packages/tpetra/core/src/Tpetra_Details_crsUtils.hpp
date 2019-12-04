@@ -41,7 +41,6 @@
 
 #ifndef TPETRA_DETAILS_CRSUTILS_HPP
 #define TPETRA_DETAILS_CRSUTILS_HPP
-
 #include <numeric>
 #include <type_traits>
 
@@ -71,8 +70,8 @@ uninitialized_view(const std::string& name, const size_t& size)
 template<class RowPtr, class Indices, class Values, class Padding>
 void
 pad_crs_arrays(
-               const RowPtr& row_ptr_beg,
-               const RowPtr& row_ptr_end,
+    const RowPtr& row_ptr_beg,
+    const RowPtr& row_ptr_end,
     Indices& indices,
     Values& values,
     const Padding& padding)
@@ -301,8 +300,8 @@ find_crs_indices(
 template<class RowPtr, class Indices, class Padding>
 void
 padCrsArrays(
-             const RowPtr& rowPtrBeg,
-             const RowPtr& rowPtrEnd,
+    const RowPtr& rowPtrBeg,
+    const RowPtr& rowPtrEnd,
     Indices& indices,
     const Padding& padding)
 {
@@ -315,8 +314,8 @@ padCrsArrays(
 template<class RowPtr, class Indices, class Values, class Padding>
 void
 padCrsArrays(
-             const RowPtr& rowPtrBeg,
-             const RowPtr& rowPtrEnd,
+    const RowPtr& rowPtrBeg,
+    const RowPtr& rowPtrEnd,
     Indices& indices,
     Values& values,
     const Padding& padding)
