@@ -2005,6 +2005,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
          (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
           throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=long long enabled."));
     # else
+          using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
           using tcrs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NO>;
           const tcrs_matrix_type& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
           const tcrs_matrix_type& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);

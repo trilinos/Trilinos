@@ -524,7 +524,7 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
 #ifdef HAVE_XPETRA_TPETRA
       if (rowMap->lib() == UseTpetra)
-        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, 0, plist) );
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, 0) );
 #endif
 #ifdef HAVE_XPETRA_EPETRA
       if(rowMap->lib() == UseEpetra)
