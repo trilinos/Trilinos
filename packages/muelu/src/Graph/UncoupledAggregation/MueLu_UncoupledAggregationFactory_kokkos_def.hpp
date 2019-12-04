@@ -270,13 +270,20 @@ namespace MueLu {
       //     COLORING_D2_VB_BIT_EF      - Add experimental edge-filtering to VB_BIT
       if(pL.get<bool>("aggregation: deterministic") == true) {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
-      } else {
-        // Note: LBV on 2019-11-19
-        // I would really like to set this to COLORING_D2_DEFAULT
-        // unless pL.get<std::string>("aggregation: coloring algorithm")
-        // is set which would trigger a specific algorithm being used...
-        // We first need to test the coloring algorithms a bit more!
+      } else if(pL.get<std::string>("aggregation: coloring algorithm") == "serial") {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
+      } else if(pL.get<std::string>("aggregation: coloring algorithm") == "default") {
+        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_DEFAULT );
+      } else if(pL.get<std::string>("aggregation: coloring algorithm") == "matrix squared") {
+        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_MATRIX_SQUARED );
+      } else if(pL.get<std::string>("aggregation: coloring algorithm") == "vertex based") {
+        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB );
+      } else if(pL.get<std::string>("aggregation: coloring algorithm") == "forbidden array") {
+        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB_BIT );
+      } else if(pL.get<std::string>("aggregation: coloring algorithm") == "edge filtering") {
+        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB_BIT_EF );
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 2 coloring algorithm, valid options are: serial, default, matrix squared, vertex based, forbidden array, edge filtering")
       }
 
       //Create device views for graph rowptrs/colinds

@@ -73,7 +73,7 @@ class Test_run(unittest.TestCase):
             m_check_out.return_value='git version 1.10.1'
 
             bad_git_string = 'Git version  should be 2.10 or better - Exiting!'
-            if sys.version_info.major is not 3:
+            if(sys.version_info.major != 3):
                 with self.assertRaisesRegexp(SystemExit, bad_git_string):
                     PullRequestLinuxDriverTest.confirmGitVersion()
             else:
@@ -136,7 +136,7 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
       : This violates Trilinos policy, pull requests into the master branch are restricted.
       : Perhaps you forgot to specify the develop branch as the target in your PR?
 *"""
-            if sys.version_info.major is not 3:
+            if(sys.version_info.major != 3):
                 with self.assertRaisesRegexp(SystemExit, bad_branch_string):
                     PullRequestLinuxDriverTest.run()
             else:
@@ -397,7 +397,7 @@ class Test_setEnviron(unittest.TestCase):
                 self.m_chdir, \
                 self.m_check_out, \
                 self.m_environ:
-            if sys.version_info.major is not 3:
+            if(sys.version_info.major != 3):
                 with self.assertRaisesRegexp(SystemExit, expected_output):
                     PullRequestLinuxDriverTest.setBuildEnviron(self.arguments)
             else:
@@ -715,8 +715,7 @@ class testCompute_n(unittest.TestCase):
         we should still  run at least one job'''
         m_open =  mock.mock_open(read_data='''MemTotal 32965846 kB''')
         with self.m_environ, \
-            mock.patch('PullRequestLinuxDriverTest.open',
-                       m_open, create=True), \
+            mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
             mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=18):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(10, parallel_level)
@@ -725,8 +724,7 @@ class testCompute_n(unittest.TestCase):
         '''check we match whats on 113-115 and the cloud'''
         m_open =  mock.mock_open(read_data='''MemTotal 65805212 kB''')
         with self.m_environ, \
-            mock.patch('PullRequestLinuxDriverTest.open',
-                       m_open, create=True), \
+            mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
             mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=32):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(20, parallel_level)
@@ -736,8 +734,7 @@ class testCompute_n(unittest.TestCase):
         '''match whats on the 14x series'''
         m_open =  mock.mock_open(read_data='''MemTotal 65805212 kB''')
         with self.m_environ, \
-            mock.patch('PullRequestLinuxDriverTest.open',
-                       m_open, create=True), \
+            mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
             mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=72):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(10, parallel_level)
@@ -747,8 +744,7 @@ class testCompute_n(unittest.TestCase):
         '''match ascic158'''
         m_open = mock.mock_open(read_data='''MemTotal 131610424 kB''')
         with self.m_environ, \
-             mock.patch('PullRequestLinuxDriverTest.open',
-                        m_open, create=True), \
+             mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
              mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=88):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(13, parallel_level)
@@ -758,8 +754,7 @@ class testCompute_n(unittest.TestCase):
         '''this matches ascic166'''
         m_open = mock.mock_open(read_data='''MemTotal 131610424 kB''')
         with self.m_environ, \
-             mock.patch('PullRequestLinuxDriverTest.open',
-                        m_open, create=True), \
+             mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
              mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=80):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(20, parallel_level)
@@ -767,3 +762,5 @@ class testCompute_n(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()  # pragma nocover
+
+
