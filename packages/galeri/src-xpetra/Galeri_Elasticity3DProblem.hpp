@@ -335,7 +335,6 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     RCP<typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector>
     Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
-      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
       // FIXME: map here is an extended map, with multiple DOF per node
       // as we cannot construct a single DOF map in Problem, we repeat the coords
       this->Coords_ = MultiVectorTraits<Map,RealValuedMultiVector>::Build(this->Map_, nDim_);
@@ -370,7 +369,6 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     RCP<MultiVector> Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildNullspace() {
 
-      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
       typedef Teuchos::ScalarTraits<Scalar> TST;
       typedef typename RealValuedMultiVector::scalar_type real_type;
 
