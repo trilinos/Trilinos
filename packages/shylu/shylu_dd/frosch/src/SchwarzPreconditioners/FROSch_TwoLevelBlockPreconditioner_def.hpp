@@ -54,8 +54,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     TwoLevelBlockPreconditioner<SC,LO,GO,NO>::TwoLevelBlockPreconditioner(ConstXMatrixPtr k,
                                                                           ParameterListPtr parameterList) :
-    OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList),
-    CoarseOperator_ ()
+    OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList)
     {
         FROSCH_TIMER_START_LEVELID(twoLevelBlockPreconditionerTime,"TwoLevelBlockPreconditioner::TwoLevelBlockPreconditioner");
         if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
@@ -141,9 +140,10 @@ namespace FROSch {
         if (!nodeListVec.is_null()) {
             FROSCH_TIMER_START_LEVELID(communicateNodeListTime,"Communicate Node List");
             for (UN i=0; i<nodeListVec.size(); i++) {
-                if (!nodeListVec[i]->getMap()->isSameAs(*repeatedNodesMapVec[i])) {
+                ConstXMapPtr nodeListVecMap_i = nodeListVec[i]->getMap();
+                if (!nodeListVecMap_i->isSameAs(*repeatedNodesMapVec[i])) {
                     RCP<MultiVector<SC,LO,GO,NO> > tmpNodeList = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMapVec[i],nodeListVec[i]->getNumVectors());
-                    RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(nodeListVec[i]->getMap(),repeatedNodesMapVec[i]);
+                    RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(nodeListVecMap_i,repeatedNodesMapVec[i]);
                     tmpNodeList->doImport(*nodeListVec[i],*scatter,INSERT);
                     nodeListVec[i] = tmpNodeList.getConst();
                 }

@@ -58,6 +58,14 @@
 #define FROSCH_TIMER_STOP(A) A.reset();
 #endif
 
+#ifndef FROSCH_WARNING
+#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << CLASS << " : WARNING: " << OUTPUT << std::endl;
+#endif
+
+#ifndef FROSCH_NOTIFICATION
+#define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
+#endif
+
 #ifndef FROSCH_TEST_OUTPUT
 #define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
 #endif
@@ -116,6 +124,7 @@ namespace FROSch {
 
         int Merge(const RCP<OverlappingData<LO,GO> > od) const;
 
+        
         GO GID_;
 
         mutable IntVec PIDs_;

@@ -56,7 +56,9 @@ namespace Thyra {
     // Constructors/initializers
     template <class SC, class LO, class GO, class NO>
     FROSchLinearOp<SC,LO,GO,NO>::FROSchLinearOp()
-    {}
+    {
+        
+    }
 
     template <class SC, class LO, class GO, class NO>
     void FROSchLinearOp<SC,LO,GO,NO>::initialize(const RCP<const VectorSpaceBase<SC> > &rangeSpace,

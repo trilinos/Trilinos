@@ -138,9 +138,9 @@ namespace FROSch {
         
         XMapPtr AssmbledPartitionOfUnityMap_;
 
-        bool Verbose_;
+        bool Verbose_ = false;
         
-        Verbosity Verbosity_;
+        Verbosity Verbosity_ = All;
 
         const UN LevelID_;
     };

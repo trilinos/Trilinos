@@ -54,28 +54,8 @@ namespace FROSch {
     CoarseOperator<SC,LO,GO,NO>::CoarseOperator(ConstXMatrixPtr k,
                                                 ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k,parameterList),
-    CoarseSolveComm_ (),
-    OnCoarseSolveComm_ (false),
-    NumProcsCoarseSolve_ (0),
     CoarseSpace_ (new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_)),
-    Phi_ (),
-    CoarseMatrix_ (),
-    XTmp_ (),
-    XCoarse_ (),
-    XCoarseSolve_ (),
-    XCoarseSolveTmp_ (),
-    YTmp_ (),
-    YCoarse_ (),
-    YCoarseSolve_ (),
-    YCoarseSolveTmp_ (),
-    GatheringMaps_ (0),
-    CoarseSolveMap_ (),
-    CoarseSolver_ (),
-    DistributionList_ (sublist(parameterList,"Distribution")),
-    CoarseSolveExporters_ (0)
-#ifdef FROSCH_COARSEOPERATOR_EXPORT_AND_IMPORT
-    , CoarseSolveImporters_ (0)
-#endif
+    DistributionList_ (sublist(parameterList,"Distribution"))
     {
         FROSCH_TIMER_START_LEVELID(coarseOperatorTime,"CoarseOperator::CoarseOperator");
     }
@@ -161,8 +141,8 @@ namespace FROSch {
             y.update(alpha,*XTmp_,beta);
         } else {
             if (i==0) {
-                if (this->Verbose_ && Phi_.is_null()) std::cout << "FROSch::CoarseOperator : WARNING: Coarse Basis is empty => The CoarseOperator will just act as the identity...\n";
-                if (this->Verbose_ && !this->IsComputed_) std::cout << "FROSch::CoarseOperator : WARNING: CoarseOperator has not been computed yet => The CoarseOperator will just act as the identity...\n";
+                FROSCH_WARNING("FROSch::CoarseOperator",(this->Verbose_ && Phi_.is_null()),"Coarse Basis is empty => The CoarseOperator will just act as the identity...");
+                FROSCH_WARNING("FROSch::CoarseOperator",(this->Verbose_ && !this->IsComputed_),"CoarseOperator has not been computed yet => The CoarseOperator will just act as the identity...");
                 i++;
             }
             y.update(ScalarTraits<SC>::one(),x,ScalarTraits<SC>::zero());
@@ -404,7 +384,7 @@ namespace FROSch {
                 CoarseSolver_->compute();
             }
         } else {
-            if (this->Verbose_) std::cout << "FROSch::CoarseOperator : WARNING: No coarse basis has been set up. Neglecting CoarseOperator." << std::endl;
+            FROSCH_WARNING("FROSch::CoarseOperator",this->Verbose_,"No coarse basis has been set up. Neglecting CoarseOperator.");
         }
         return 0;
     }

@@ -53,9 +53,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::IPOUHarmonicCoarseOperator(ConstXMatrixPtr k,
                                                                          ParameterListPtr parameterList) :
-    HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
-    PartitionOfUnity_ (),
-    LocalPartitionOfUnityBasis_ ()
+    HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList)
     {
         FROSCH_TIMER_START_LEVELID(iPOUHarmonicCoarseOperatorTime,"IPOUHarmonicCoarseOperator::IPOUHarmonicCoarseOperator");
     }
@@ -222,7 +220,7 @@ namespace FROSch {
 
             // Check whether the interface is empty. If so, we use a ConstantPartitionOfUnity instead, because we assume that the subdomains are decoupled.
             if (interface->getNumNodes()==0) {
-                if (this->Verbose_) std::cout << "FROSch::IPOUHarmonicCoarseOperator : WARNING: No interface found => A Constant Partition of Unity will be used instead." << std::endl;
+                FROSCH_NOTIFICATION("FROSch::IPOUHarmonicCoarseOperator",this->Verbose_,"No interface found => A Constant Partition of Unity will be used instead.");
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("RGDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
                 PartitionOfUnity_ = PartitionOfUnityPtr(new ConstantPartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,
                                                                                                   this->SerialComm_,
@@ -268,14 +266,15 @@ namespace FROSch {
             }
 
             // Construct local Interface nullspace basis (in case the interface was empty before, it was replaced by the interior. Therfore, this should be correct as well)
-            XMapPtr serialInterfaceMap = MapFactory<LO,GO,NO>::Build(nullSpaceBasis->getMap()->lib(),this->GammaDofs_[blockId].size(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
+            ConstXMapPtr nullSpaceBasisMap = nullSpaceBasis->getMap();
+            XMapPtr serialInterfaceMap = MapFactory<LO,GO,NO>::Build(nullSpaceBasisMap->lib(),this->GammaDofs_[blockId].size(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
             XMultiVectorPtr interfaceNullspaceBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,nullSpaceBasis->getNumVectors());
             for (UN i=0; i<nullSpaceBasis->getNumVectors(); i++) {
                 SCVecPtr interfaceNullspaceBasisData = interfaceNullspaceBasis->getDataNonConst(i);
                 ConstSCVecPtr nullSpaceBasisData = nullSpaceBasis->getData(i);
                 for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                     for (UN j=0; j<interface->getNumNodes(); j++) {
-                        interfaceNullspaceBasisData[interface->getGammaDofID(j,k)] = nullSpaceBasisData[nullSpaceBasis->getMap()->getLocalElement(interface->getGlobalDofID(j,k))];
+                        interfaceNullspaceBasisData[interface->getGammaDofID(j,k)] = nullSpaceBasisData[nullSpaceBasisMap->getLocalElement(interface->getGlobalDofID(j,k))];
                     }
                 }
             }
@@ -286,7 +285,7 @@ namespace FROSch {
             LocalPartitionOfUnityBasis_->buildLocalPartitionOfUnityBasis();
 
             this->InterfaceCoarseSpaces_[blockId] = LocalPartitionOfUnityBasis_->getLocalPartitionOfUnitySpace();
-            if (this->Verbose_) std::cout << "FROSch::IPOUHarmonicCoarseOperator : WARNING: Need to build block coarse sizes for use in MueLu nullspace." << std::endl;
+            FROSCH_NOTIFICATION("FROSch::IPOUHarmonicCoarseOperator",this->Verbose_,"Need to build block coarse sizes for use in MueLu nullspace. This is not performed here yet.");
             //if (this->Verbose_) {RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); this->MVPhiGamma_[blockId]->describe(*fancy,VERB_EXTREME);}
         }
 

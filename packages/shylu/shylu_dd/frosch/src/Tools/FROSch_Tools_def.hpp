@@ -190,7 +190,7 @@ namespace FROSch {
                                                                                        pid_and_lid[idx].first,
                                                                                        pid_and_lid[idx].second));
             } else {
-                if (counter == 0) std::cout << "FROSch::LowerPIDTieBreak : WARNING: Preallocation for OverlappingDataList_ is not sufficient on proc " << MpiComm_->getRank() << std::endl;
+                FROSCH_WARNING("FROSch::LowerPIDTieBreak",counter == 0,"Preallocation for OverlappingDataList_ is not sufficient on proc.");
                 OverlappingDataList_.push_back(RCP<OverlappingData<LO,GO> >(new OverlappingData<LO,GO>(GID,
                                                                                                        pid_and_lid[idx].first,
                                                                                                        pid_and_lid[idx].second)));
@@ -226,7 +226,7 @@ namespace FROSch {
             RCP<const TpetraMap<LO,GO,NO> > xTpetraMapUnique(new const TpetraMap<LO,GO,NO>(tpetraMapUnique));
             return rcp_dynamic_cast<const Map<LO,GO,NO> >(xTpetraMapUnique);
         } else { // This is an alternative implementation to createOneToOneMap()
-            if (map->lib()==UseEpetra && map->getComm()->getRank()==0) std::cout << "FROSch::BuildUniqueMap : WARNING: createOneToOneMap() does not exist for Epetra => Using a different implementation" << std::endl;
+            FROSCH_WARNING("FROSch::BuildUniqueMap",(map->lib()==UseEpetra && map->getComm()->getRank()==0),"createOneToOneMap() does not exist for Epetra => Using a different implementation.");
 
             RCP<Vector<GO,LO,GO,NO> > myIndices = VectorFactory<GO,LO,GO,NO>::Build(map);
             myIndices->putScalar(map->getComm()->getRank()+1);
@@ -1174,21 +1174,25 @@ namespace FROSch {
          */
         unsigned numVec = multiVector->getNumVectors();
         Array<unsigned> arrayZero(0);
+        RCP<const Map<LO,GO,NO> > multiVectorMap = multiVector->getMap();
         RCP<MultiVector<SC,LO,GO,NO> > resultMultiVector;
         if (numVec>0) {
             unsigned itmp = 0;
             SC en = ScalarTraits<SC>::zero();
             SC de = ScalarTraits<SC>::zero();
             SC norm = ScalarTraits<SC>::zero();
-            RCP<MultiVector<SC,LO,GO,NO> > tmpMultiVector = MultiVectorFactory<SC,LO,GO,NO>::Build(multiVector->getMap(),numVec);
+            RCP<MultiVector<SC,LO,GO,NO> > tmpMultiVector = MultiVectorFactory<SC,LO,GO,NO>::Build(multiVectorMap,numVec);
             for (unsigned i=0; i<numVec; i++) {
-                tmpMultiVector->getVectorNonConst(i-itmp)->update(ScalarTraits<SC>::one(),*multiVector->getVector(i),ScalarTraits<SC>::zero());
+                RCP<const Vector<SC,LO,GO,NO> > multiVector_i = multiVector->getVector(i);
+                RCP<Vector<SC,LO,GO,NO> > tmpMultiVectorNonConst_i_itmp = tmpMultiVector->getVectorNonConst(i-itmp);
+                tmpMultiVectorNonConst_i_itmp->update(ScalarTraits<SC>::one(),*multiVector_i,ScalarTraits<SC>::zero());
                 for (unsigned j=0; j<i-itmp; j++) {
-                    en = tmpMultiVector->getVector(i-itmp)->dot(*tmpMultiVector->getVector(j));
-                    de = tmpMultiVector->getVector(j)->dot(*tmpMultiVector->getVector(j));
-                    tmpMultiVector->getVectorNonConst(i-itmp)->update(-en/de,*tmpMultiVector->getVector(j),ScalarTraits<SC>::one());
+                    RCP<const Vector<SC,LO,GO,NO> > tmpMultiVector_j = tmpMultiVector->getVector(j);
+                    en = tmpMultiVectorNonConst_i_itmp->dot(*tmpMultiVector_j);
+                    de = tmpMultiVector_j->dot(*tmpMultiVector_j);
+                    tmpMultiVectorNonConst_i_itmp->update(-en/de,*tmpMultiVector_j,ScalarTraits<SC>::one());
                 }
-                norm = tmpMultiVector->getVector(i-itmp)->norm2();
+                norm = tmpMultiVectorNonConst_i_itmp->norm2();
                 if (norm<1.0e-10) {
                     arrayZero.push_back(i);
                     itmp++;
@@ -1196,7 +1200,7 @@ namespace FROSch {
                     //tmpMultiVector->getVectorNonConst(i-itmp)->scale(1.0/norm);
                 }
             }
-            resultMultiVector = MultiVectorFactory<SC,LO,GO,NO>::Build(multiVector->getMap(),numVec);
+            resultMultiVector = MultiVectorFactory<SC,LO,GO,NO>::Build(multiVectorMap,numVec);
             for (unsigned i=0; i<numVec-itmp; i++) {
                 resultMultiVector->getVectorNonConst(i)->update(ScalarTraits<SC>::one(),*tmpMultiVector->getVector(i),ScalarTraits<SC>::zero());
             }

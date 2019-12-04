@@ -55,8 +55,7 @@ namespace FROSch {
                                                                                         ParameterListPtr parameterList) :
     SchwarzPreconditioner<SC,LO,GO,NO> (parameterList,k->getRangeMap()->getComm()),
     K_ (k),
-    SumOperator_ (new SumOperator<SC,LO,GO,NO>(k->getRangeMap()->getComm())),
-    OverlappingOperator_ ()
+    SumOperator_ (new SumOperator<SC,LO,GO,NO>(k->getRangeMap()->getComm()))
     {
         FROSCH_TIMER_START_LEVELID(algebraicOverlappingPreconditionerTime,"AlgebraicOverlappingPreconditioner::AlgebraicOverlappingPreconditioner");
         // Set the LevelID in the sublist

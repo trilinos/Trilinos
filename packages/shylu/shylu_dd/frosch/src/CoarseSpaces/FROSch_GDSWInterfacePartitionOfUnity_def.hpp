@@ -60,17 +60,7 @@ namespace FROSch {
                                                                               ParameterListPtr parameterList,
                                                                               Verbosity verbosity,
                                                                               UN levelID) :
-    InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
-    UseVertices_ (false),
-    UseShortEdges_ (false),
-    UseStraightEdges_ (false),
-    UseEdges_ (false),
-    UseFaces_ (false),
-    Vertices_ (),
-    ShortEdges_ (),
-    StraightEdges_ (),
-    Edges_ (),
-    Faces_ ()
+    InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID)
     {
         FROSCH_TIMER_START_LEVELID(gDSWInterfacePartitionOfUnityTime,"GDSWInterfacePartitionOfUnity::GDSWInterfacePartitionOfUnity");
         if (!this->ParameterList_->get("Type","Full").compare("Full")) {
@@ -157,7 +147,7 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(sortInterfaceTime,"GDSWInterfacePartitionOfUnity::sortInterface");
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
             if (matrix.is_null()) {
-                if (this->Verbose_) std::cout << "FROSch::GDSWInterfacePartitionOfUnity : WARNING: divideUnconnectedEntities() cannot be performed without the matrix." << std::endl;
+                FROSCH_WARNING("FROSch::GDSWInterfacePartitionOfUnity",this->Verbose_,"divideUnconnectedEntities() cannot be performed without the matrix.");
             } else this->DDInterface_->divideUnconnectedEntities(matrix);
         }
         this->DDInterface_->sortVerticesEdgesFaces(nodeList);

@@ -67,6 +67,7 @@ namespace FROSch {
 
         using XMap                      = Map<LO,GO,NO>;
         using XMapPtr                   = RCP<XMap>;
+        using ConstXMapPtr              = RCP<const XMap>;
         using XMapPtrVecPtr             = ArrayRCP<XMapPtr>;
 
         using XMultiVector              = MultiVector<SC,LO,GO,NO>;
@@ -119,7 +120,7 @@ namespace FROSch {
         CommPtr MpiComm_;
         CommPtr SerialComm_;
 
-        UN DofsPerNode_;
+        UN DofsPerNode_ = 1;
 
         ParameterListPtr ParameterList_;
 
