@@ -2056,16 +2056,26 @@ namespace Tpetra {
                           const ELocalGlobal I)
   {
     const size_t oldNumEnt = rowInfo.numEntries;
-    const size_t numInserted = graph.insertIndices (rowInfo, newInds, lg, I);
-
-    // Use of memcpy here works around an issue with GCC >= 4.9.0,
-    // that probably relates to scalar_type vs. impl_scalar_type
-    // aliasing.  See history of Tpetra_CrsGraph_def.hpp for
-    // details; look for GCC_WORKAROUND macro definition.
+    const size_t numInserted =
+      graph.insertIndices (rowInfo, newInds, lg, I);
     if (numInserted > 0) {
+      using Kokkos::HostSpace;
+      using Kokkos::MemoryTraits;
+      using Kokkos::Unmanaged;
+      using Kokkos::View;
+      using IST = impl_scalar_type;
+
       const size_t startOffset = oldNumEnt;
-      memcpy (&oldRowVals[startOffset], &newRowVals[0],
-              numInserted * sizeof (impl_scalar_type));
+      IST* tgt_IST = oldRowVals.getRawPtr () + startOffset;
+      const IST* src_IST = newRowVals.getRawPtr ();
+      View<IST*, HostSpace, MemoryTraits<Unmanaged>> tgt
+        (tgt_IST, numInserted);
+      View<const IST*, HostSpace, MemoryTraits<Unmanaged>> src
+        (src_IST, numInserted);
+      // NOTE (mfh 04 Dec 2019) Use local_deep_copy, not deep_copy,
+      // since this copy may be too small to justify parallelization.
+      using Kokkos::Experimental::local_deep_copy;
+      local_deep_copy (tgt, src);
     }
   }
 

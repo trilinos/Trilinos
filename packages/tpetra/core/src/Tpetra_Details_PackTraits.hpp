@@ -151,7 +151,11 @@ struct PackTraits {
 
       // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
       // function.  It does what one would expect.
-      memcpy (outBuf, inBuf, numBytes);
+      //
+      // mfh (04 Dec 2019) We can't use Kokkos::local_deep_copy here,
+      // because outBuf is an array of char, not an array of
+      // value_type.  The only way to pack safely is to memcpy.
+      memcpy (outBuf, reinterpret_cast<const char*> (inBuf), numBytes);
       return pair_type (errorCode, numBytes);
     }
   }
@@ -201,7 +205,11 @@ struct PackTraits {
 
       // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
       // function.  It does what one would expect.
-      memcpy (outBuf, inBuf, numBytes);
+      //
+      // mfh (04 Dec 2019) We can't use Kokkos::local_deep_copy here,
+      // because inBuf is an array of char, not an array of
+      // value_type.  The only way to pack safely is to memcpy.
+      memcpy (reinterpret_cast<char*> (outBuf), inBuf, numBytes);
       return pair_type (errorCode, numBytes);
     }
   }
@@ -257,7 +265,11 @@ struct PackTraits {
 
     // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
     // function.  It does what one would expect.
-    memcpy (outBuf, &inVal, numBytes);
+    //
+    // mfh (04 Dec 2019) We can't use Kokkos::local_deep_copy here,
+    // because outBuf is an array of char, not an array of value_type.
+    // The only way to pack safely is to memcpy.
+    memcpy (outBuf, reinterpret_cast<const char*> (&inVal), numBytes);
     return numBytes;
   }
 
@@ -286,7 +298,13 @@ struct PackTraits {
 
     // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
     // function.  It does what one would expect.
-    memcpy (outBuf + offset, &inVal, numBytes);
+    //
+    // mfh (04 Dec 2019) We can't use Kokkos::local_deep_copy here,
+    // because outBuf is an array of char, not an array of value_type.
+    // The only way to pack safely is to memcpy.
+    memcpy (outBuf + offset,
+            reinterpret_cast<const char*> (&inVal),
+            numBytes);
     return numBytes;
   }
 
@@ -313,7 +331,13 @@ struct PackTraits {
 
     // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
     // function.  It does what one would expect.
-    memcpy (&outVal, inBuf, numBytes);
+    //
+    // mfh (04 Dec 2019) We can't use Kokkos::local_deep_copy here,
+    // because inBuf is an array of char, not an array of value_type.
+    // The only way to unpack safely is to memcpy.
+    memcpy (reinterpret_cast<char*> (&outVal),
+            inBuf,
+            numBytes);
     return numBytes;
   }
 }; // struct PackTraits

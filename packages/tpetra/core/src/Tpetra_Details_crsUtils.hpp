@@ -112,7 +112,6 @@ pad_crs_arrays(
     return;
 
   using ptrs_value_type = typename RowPtr::non_const_value_type;
-  using inds_value_type = typename Indices::non_const_value_type;
   using vals_value_type = typename Values::non_const_value_type;
 
   // The indices array must be resized and the row_ptr arrays shuffled
@@ -133,20 +132,26 @@ pad_crs_arrays(
 
     // Copy over indices
     {
-      auto indices_old_subview = subview(indices, range(this_row_beg, this_row_beg+used_this_row));
-      auto indices_new_subview = subview(indices_new, range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
-      // just call memcpy; it works fine on device if this becomes a kernel
-      memcpy(indices_new_subview.data(), indices_old_subview.data(), used_this_row * sizeof(inds_value_type));
+      auto indices_old_subview = subview(indices,
+        range(this_row_beg, this_row_beg+used_this_row));
+      auto indices_new_subview = subview(indices_new,
+        range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
+      using Kokkos::Experimental::local_deep_copy;
+      local_deep_copy (indices_new_subview, indices_old_subview);
     }
 
     // And then the values
     if (pad_values) {
-      auto values_old_subview = subview(values, range(this_row_beg, this_row_beg+used_this_row));
-      auto values_new_subview = subview(values_new, range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
-      memcpy(values_new_subview.data(), values_old_subview.data(), used_this_row * sizeof(vals_value_type));
+      auto values_old_subview = subview(values,
+        range(this_row_beg, this_row_beg+used_this_row));
+      auto values_new_subview = subview(values_new,
+        range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
+      using Kokkos::Experimental::local_deep_copy;
+      local_deep_copy (values_new_subview, values_old_subview);
     }
 
-    // Before modifying the row_ptr arrays, save current beg, end for next iteration
+    // Before modifying the row_ptr arrays, save current beg, end for
+    // next iteration
     this_row_beg = row_ptr_beg(i+1);
     this_row_end = row_ptr_end(i+1);
 
@@ -162,15 +167,21 @@ pad_crs_arrays(
     auto used_this_row = row_ptr_end(n) - row_ptr_beg(n);
 
     {
-      auto indices_old_subview = subview(indices, range(this_row_beg, this_row_beg+used_this_row));
-      auto indices_new_subview = subview(indices_new, range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
-      memcpy(indices_new_subview.data(), indices_old_subview.data(), used_this_row * sizeof(inds_value_type));
+      auto indices_old_subview = subview(indices,
+        range(this_row_beg, this_row_beg+used_this_row));
+      auto indices_new_subview = subview(indices_new,
+        range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
+      using Kokkos::Experimental::local_deep_copy;
+      local_deep_copy (indices_new_subview, indices_old_subview);
     }
 
     if (pad_values) {
-      auto values_old_subview = subview(values, range(this_row_beg, this_row_beg+used_this_row));
-      auto values_new_subview = subview(values_new, range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
-      memcpy(values_new_subview.data(), values_old_subview.data(), used_this_row * sizeof(vals_value_type));
+      auto values_old_subview = subview(values,
+        range(this_row_beg, this_row_beg+used_this_row));
+      auto values_new_subview = subview(values_new,
+        range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
+      using Kokkos::Experimental::local_deep_copy;
+      local_deep_copy (values_new_subview, values_old_subview);
     }
   }
 
