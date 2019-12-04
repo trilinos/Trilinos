@@ -3048,10 +3048,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   // and some host. This particular case needs a bit of work to get setup
   // in a cleaner way so not going to mess with it at the moment.
 
-  bool bUniformTargetWeights =
+  bool bUniformPartsCheck =
     num_target_first_level_parts <= 1 && this->mj_uniform_parts(0);
 
-  if(!bUniformTargetWeights) {
+  if(!bUniformPartsCheck) {
     bool bValidNonUniformTargetWeights =
       (num_target_first_level_parts > 1 && target_first_level_dist.size() != 0);
     if(!bValidNonUniformTargetWeights) {
@@ -3060,24 +3060,24 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     }
   }
 
-  Kokkos::View<mj_part_t*, device_t> device_cumulative(
+  Kokkos::View<mj_scalar_t*, device_t> device_cumulative(
     "device_cumulative", num_cuts);
   typename decltype(device_cumulative)::HostMirror
     host_cumulative = Kokkos::create_mirror_view(device_cumulative);
 
-  mj_part_t cumulative = 0;
+  mj_scalar_t cumulative = 0;
 
-  if(bUniformTargetWeights) {
+  if(bUniformPartsCheck) {
     // How many total future parts the part will be partitioned into.
     mj_scalar_t total_future_part_count_in_part =
-      mj_scalar_t((*future_num_part_in_parts)[concurrent_current_part]);
+      static_cast<mj_scalar_t>((*future_num_part_in_parts)[concurrent_current_part]);
 
     // How much each part should weigh in ideal case.
     mj_scalar_t unit_part_weight =
       global_weight / total_future_part_count_in_part;
 
     for(mj_part_t i = 0; i < num_cuts; ++i) {
-      cumulative += unit_part_weight * (*next_future_num_parts_in_parts)[i + obtained_part_index];
+      cumulative += unit_part_weight * static_cast<mj_scalar_t>((*next_future_num_parts_in_parts)[i + obtained_part_index]);
       host_cumulative(i) = cumulative;
     }
   }
@@ -3109,13 +3109,17 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   });
 
   // round the target part weights.
-  Kokkos::parallel_for(
-    Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_part_t>
-      (0, num_cuts + 1),
-    KOKKOS_LAMBDA (mj_part_t i) {
-    current_target_part_weights(i) =
-      long(current_target_part_weights(i) + 0.5);
-  });
+  // Note need to discuss regarding DragonFly commits and determine if we
+  // would not simply check mj_uniform_weights here.
+  if (!bUniformPartsCheck || this->mj_uniform_weights[0]) {
+    Kokkos::parallel_for(
+      Kokkos::RangePolicy<typename mj_node_t::execution_space, mj_part_t>
+        (0, num_cuts + 1),
+      KOKKOS_LAMBDA (mj_part_t i) {
+      current_target_part_weights(i) =
+        long(current_target_part_weights(i) + 0.5);
+    });
+  }
 }
 
 /*! \brief Function that calculates the new coordinates for the cut lines.
@@ -4125,11 +4129,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
       weight_array_length + right_left_array_length;
 #endif
 
-    // This could be double but would increase shared memory requirements.
-    // For determining cuts it's not a situation where double precision
-    // matters. The only reason we might ever want double is if casting on
-    // a particular architecture was too costly somehow.
-    typedef float array_t;
+    // Using float here caused some numerical errors for coord on cut calculations.
+    // Probably that can be fixed with proper epsilon adjustment but since cuda
+    // doesn't reduce right now the shared memory pressure is no longer relevant.
+    // Just use scalar_t to match the original algorithm.
+    typedef mj_scalar_t array_t;
 
 #ifndef KOKKOS_ENABLE_CUDA
     array_t * reduce_array =
