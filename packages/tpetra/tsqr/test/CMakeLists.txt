@@ -7,11 +7,36 @@
 
 # Performance and accuracy test suite for TSQR::Combine (which factors
 # cache blocks and combines triangular factors).
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+
+TRIBITS_ADD_EXECUTABLE(
   Combine
   SOURCES Tsqr_TestCombine.cpp
   COMM serial mpi
-  ARGS "--verify --testReal"
+  )
+
+TRIBITS_ADD_TEST(
+  Combine
+  NAME Combine_100rows_5cols
+  COMM serial mpi
+  ARGS "--verify --numRows=100 --numCols=5"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  Combine
+  NAME Combine_100rows_50cols
+  COMM serial mpi
+  ARGS "--verify --numRows=100 --numCols=50"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_TEST(
+  Combine
+  NAME Combine_10000rows_11cols
+  COMM serial mpi
+  ARGS "--verify --numRows=10000 --numCols=11"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   )
