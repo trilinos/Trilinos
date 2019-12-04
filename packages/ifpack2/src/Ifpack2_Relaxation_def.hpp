@@ -2172,7 +2172,7 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
             kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
             Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
             Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-            zero_x_vector, update_y_vector, DampingFactor_);
+            zero_x_vector, update_y_vector, DampingFactor_, 1);
       }
       else if (direction == Tpetra::Forward) {
         KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply
@@ -2180,7 +2180,7 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
             kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
             Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
             Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-            zero_x_vector, update_y_vector, DampingFactor_);
+            zero_x_vector, update_y_vector, DampingFactor_, 1);
       }
       else if (direction == Tpetra::Backward) {
         KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply
@@ -2188,7 +2188,7 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
             kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
             Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
             Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-            zero_x_vector, update_y_vector, DampingFactor_);
+            zero_x_vector, update_y_vector, DampingFactor_, 1);
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(
