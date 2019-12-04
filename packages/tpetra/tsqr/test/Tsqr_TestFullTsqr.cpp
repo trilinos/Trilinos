@@ -78,27 +78,33 @@ namespace {
       printFieldNames (testParams->get<bool> ("printFieldNames")),
       printResults (testParams->get<bool> ("printResults")),
       failIfInaccurate (testParams->get<bool> ("failIfInaccurate")),
-      debug (testParams->get<bool> ("debug")),
+      alwaysUseSequentialTsqr (testParams->get<bool> ("alwaysUseSequentialTsqr")),
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
+      testComplex (true),
+#else
       testComplex (false),
 #endif // HAVE_KOKKOSTSQR_COMPLEX
-      testReal (false) // default is not to test _anything_
+      testReal (true),
+      verbose (testParams->get<bool> ("verbose"))
     {}
 
-    size_t cacheSizeHint;
-    int numRowsLocal;
-    int numCols;
-    bool contiguousCacheBlocks;
-    bool testFactorExplicit;
-    bool testRankRevealing;
-    bool printFieldNames;
-    bool printResults;
-    bool failIfInaccurate;
-    bool debug;
+    size_t cacheSizeHint = 0;
+    int numRowsLocal = 10000;
+    int numCols= 5;
+    bool contiguousCacheBlocks = false;
+    bool testFactorExplicit = true;
+    bool testRankRevealing = true;
+    bool printFieldNames = true;
+    bool printResults = true;
+    bool failIfInaccurate = true;
+    bool alwaysUseSequentialTsqr = false;
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
-    bool testComplex;
+    bool testComplex = true;
+#else
+    bool testComplex = false;
 #endif // HAVE_KOKKOSTSQR_COMPLEX
-    bool testReal;
+    bool testReal = true;
+    bool verbose = false;
 
     // \brief Read command-line options.
     //
@@ -139,12 +145,13 @@ namespace {
                                "noTestReal",
                                &testReal,
                                "Test real Scalar types");
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
-        cmdLineProc.setOption ("testComplex",
-                               "noTestComplex",
-                               &testComplex,
-                               "Test complex Scalar types");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+        cmdLineProc.setOption
+          ("testComplex",
+           "noTestComplex",
+           &testComplex,
+           "Test complex Scalar types; must be false if complex "
+           "Scalar types were disabled at configure (pre-build) "
+           "time");
         // CommandLineProcessor takes int arguments, but not size_t
         // arguments, so we have to read in the argument as an int and
         // convert back to size_t later.
@@ -182,10 +189,14 @@ namespace {
                                "noFailIfInaccurate",
                                &failIfInaccurate,
                                defaultParams->getEntry("failIfInaccurate").docString().c_str());
-        cmdLineProc.setOption ("debug",
-                               "nodebug",
-                               &debug,
-                               defaultParams->getEntry("debug").docString().c_str());
+        cmdLineProc.setOption ("alwaysUseSequentialTsqr",
+                               "letNodeTsqrFactoryPick",
+                               &alwaysUseSequentialTsqr,
+                               defaultParams->getEntry("alwaysUseSequentialTsqr").docString().c_str());
+        cmdLineProc.setOption ("verbose",
+                               "quiet",
+                               &verbose,
+                               defaultParams->getEntry("verbose").docString().c_str());
         cmdLineProc.parse (argc, argv);
         cacheSizeHint = static_cast<size_t> (cacheSizeHintAsInt);
       }
@@ -230,7 +241,9 @@ namespace {
     testParams->set ("printFieldNames", options.printFieldNames);
     testParams->set ("printResults", options.printResults);
     testParams->set ("failIfInaccurate", options.failIfInaccurate);
-    testParams->set ("debug", options.debug);
+    testParams->set ("alwaysUseSequentialTsqr",
+                     options.alwaysUseSequentialTsqr);
+    testParams->set ("verbose", options.verbose);
 
     testParams->validateParametersAndSetDefaults (*validParams);
     return testParams;
@@ -241,8 +254,7 @@ namespace {
   test (int argc,
         char* argv[],
         const RCP<const Teuchos::Comm<int> >& comm,
-        const bool allowedToPrint,
-        const bool verbose)
+        const bool allowedToPrint)
   {
     using TSQR::Test::NullCons;
     using TSQR::Test::Cons;
@@ -288,16 +300,18 @@ namespace {
     // The testReal and testComplex options are read in at the command
     // line, but since they do not apply to all Scalar types, they
     // don't belong in testParams.
-    if (cmdLineOpts.testReal) {
-      caller.run<real_type_list> (testParams, verbose);
-    }
+    const bool realResult = cmdLineOpts.testReal ?
+      caller.run<real_type_list> (testParams) :
+      true;
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
-    if (cmdLineOpts.testComplex) {
-      caller.run<complex_type_list> (testParams, verbose);
-    }
+    const bool complexResult = cmdLineOpts.testComplex ?
+      caller.run<complex_type_list> (testParams) :
+      true;
+#else
+    const bool complexResult = true;
 #endif // HAVE_KOKKOSTSQR_COMPLEX
 
-    return true; // for success
+    return realResult && complexResult;
   }
 } // namespace (anonymous)
 
@@ -326,13 +340,9 @@ main (int argc, char* argv[])
   Kokkos::ScopeGuard kokkosScope (argc, argv);
 
   constexpr bool actually_print_caught_exceptions = true;
-  bool success = false;
-  bool verbose = true;
+  bool success = false; // hopefully this will be true later
   try {
-    if (allowedToPrint && verbose) {
-      std::cerr << "Starting test" << endl;
-    }
-    success = test (argc, argv, comm, allowedToPrint, verbose);
+    success = test (argc, argv, comm, allowedToPrint);
     if (allowedToPrint && success) {
       // The Trilinos test framework expects a message like this.
       std::cout << "\nEnd Result: TEST PASSED" << endl;

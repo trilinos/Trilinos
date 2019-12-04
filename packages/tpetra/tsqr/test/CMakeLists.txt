@@ -116,11 +116,54 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 # Accuracy test for TSQR::Tsqr (the full TSQR implementation).
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  FullTsqr_Accuracy
+TRIBITS_ADD_EXECUTABLE(
+  FullTsqr
   SOURCES Tsqr_TestFullTsqr.cpp
   COMM mpi
-  ARGS "--numRowsLocal=100 --numCols=5 --testFactorExplicit --testReal"
+  )
+
+SET(TSQR_FULL_COMPLEX_BROKEN ON)
+SET(TSQR_FULL_KOKKOSNODETSQR_BROKEN ON)
+SET(TSQR_FULL_BASE_ARGS "--testFactorExplicit")
+IF(TSQR_FULL_COMPLEX_BROKEN)
+  SET(TSQR_FULL_BASE_ARGS "${TSQR_FULL_BASE_ARGS} --noTestComplex")
+ENDIF()
+IF(TSQR_FULL_KOKKOSNODETSQR_BROKEN)
+  SET(TSQR_FULL_BASE_ARGS "${TSQR_FULL_BASE_ARGS} --alwaysUseSequentialTsqr")
+ENDIF()
+
+TRIBITS_ADD_TEST(
+  FullTsqr
+  NAME FullTsqr_Accuracy_100rows_5cols
+  COMM mpi
+  ARGS "--numRowsLocal=100 --numCols=5 ${TSQR_FULL_BASE_ARGS}"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+  FullTsqr
+  NAME FullTsqr_Accuracy_100rows_20cols
+  COMM mpi
+  ARGS "--numRowsLocal=100 --numCols=20 ${TSQR_FULL_BASE_ARGS}"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+  FullTsqr
+  NAME FullTsqr_Accuracy_10000rows_5cols
+  COMM mpi
+  ARGS "--numRowsLocal=10000 --numCols=5 ${TSQR_FULL_BASE_ARGS}"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+  FullTsqr
+  NAME FullTsqr_Accuracy_10000rows_20cols
+  COMM mpi
+  ARGS "--numRowsLocal=10000 --numCols=20 ${TSQR_FULL_BASE_ARGS}"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 4
 )
