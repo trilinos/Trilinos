@@ -1964,12 +1964,6 @@ namespace Tpetra {
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
     const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
-
     const LO lclRow = static_cast<LO> (rowInfo.localRow);
 
     auto numEntries = rowInfo.numEntries;
@@ -2030,19 +2024,13 @@ namespace Tpetra {
     this->setLocallyModified ();
 
 #ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
-
-    if (debug) {
-      const size_t chkNewNumEntries = this->getNumEntriesInLocalRow (myRow);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (chkNewNumEntries != newNumEntries, std::logic_error,
-         "getNumEntriesInLocalRow(" << myRow << ") = " << chkNewNumEntries
-         << " != newNumEntries = " << newNumEntries
-         << ".  Please report this bug to the Tpetra developers.");
-    }
+    const size_t chkNewNumEntries = this->getNumEntriesInLocalRow (myRow);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (chkNewNumEntries != newNumEntries, std::logic_error,
+       "getNumEntriesInLocalRow(" << myRow << ") = " << chkNewNumEntries
+       << " != newNumEntries = " << newNumEntries
+       << ".  Please report this bug to the Tpetra developers.");
+#endif
   }
 
 

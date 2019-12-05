@@ -1811,7 +1811,6 @@ namespace Tpetra {
     const size_t origNumEnt = graph.getNumEntriesInLocalRow (rowInfo.localRow);
 #endif // HAVE_TPETRA_DEBUG
 
-    size_t newNumEnt = 0;
     const size_t curNumEnt = rowInfo.numEntries;
 
     if (! graph.indicesAreAllocated ()) {
@@ -1830,9 +1829,9 @@ namespace Tpetra {
     std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
     auto numInserted =
       graph.insertGlobalIndicesImpl(rowInfo, gblColInds, numInputEnt, cb);
-    newNumEnt = curNumEnt + numInserted;
 
 #ifdef HAVE_TPETRA_DEBUG
+    size_t newNumEnt = curNumEnt + numInserted;
     const size_t chkNewNumEnt =
       graph.getNumEntriesInLocalRow (rowInfo.localRow);
     if (chkNewNumEnt != newNumEnt) {
