@@ -131,7 +131,7 @@ namespace TSQR {
     void
     factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
-                  Scalar work[]) const
+                  Scalar work[])
     {
       return impl_.factor_first (A, tau, work);
     }
@@ -190,7 +190,7 @@ namespace TSQR {
                  const Ordinal ldc_top,
                  Scalar C_bot[],
                  const Ordinal ldc_bot,
-                 Scalar work[]) const
+                 Scalar work[])
     {
       impl_.apply_inner (apply_type, m, ncols_C, ncols_Q,
                          A, lda, tau,
@@ -235,7 +235,7 @@ namespace TSQR {
     factor_inner (const MatView<Ordinal, Scalar>& R,
                   const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
-                  Scalar work[]) const
+                  Scalar work[])
     {
       impl_.factor_inner (R, A, tau, work);
     }
@@ -248,7 +248,7 @@ namespace TSQR {
     factor_pair (const MatView<Ordinal, Scalar>& R_top,
                  const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
-                 Scalar work[]) const
+                 Scalar work[])
     {
       impl_.factor_pair (R_top, R_bot, tau, work);
     }
@@ -274,7 +274,7 @@ namespace TSQR {
                 const Ordinal ldc_top,
                 Scalar C_bot[],
                 const Ordinal ldc_bot,
-                Scalar work[]) const
+                Scalar work[])
     {
       impl_.apply_pair (apply_type, ncols_C, ncols_Q,
                         R_bot, ldr_bot, tau,

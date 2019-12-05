@@ -53,7 +53,7 @@ namespace TSQR {
   namespace details {
     /// \brief Half-exclusive range of my partition's cache block indices.
     ///
-    /// \c FactorFirstPass (used by the factor() method of \c
+    /// FactorFirstPass (used by the factor() method of
     /// KokkosNodeTsqr) breaks up the matrix into contiguous
     /// partitions of row blocks.  The index argument of Kokkos'
     /// parallel_for is the (zero-based) partition index.  This
@@ -298,14 +298,16 @@ namespace TSQR {
         numPartitions_ (numPartitions),
         contiguousCacheBlocks_ (contiguousCacheBlocks)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(A_.empty(), std::logic_error,
-                           "TSQR::FactorFirstPass constructor: A is empty.  "
-                           "Please report this bug to the Kokkos developers.");
-        TEUCHOS_TEST_FOR_EXCEPTION(numPartitions < 1, std::logic_error,
-                           "TSQR::FactorFirstPass constructor: numPartitions "
-                           "must be positive, but numPartitions = "
-                           << numPartitions << ".  Please report this bug to "
-                           "the Kokkos developers.");
+        const char prefix[] =
+          "TSQR::FactorFirstPass::FactorFirstPass: ";
+        const char suffix[] =
+          "  Please report this bug to the Tpetra developers.";
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (A_.empty(), std::logic_error, prefix << "A is empty."
+           << suffix);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (numPartitions < 1, std::logic_error, prefix <<
+           "numPartitions=" << numPartitions << " < 1." << suffix);
       }
 
       /// \brief First pass of intranode TSQR factorization.
@@ -1289,7 +1291,8 @@ namespace TSQR {
     }
 
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      return combine_.QR_produces_R_factor_with_nonnegative_diagonal ();
+      Combine<LocalOrdinal, Scalar> combine;
+      return combine.QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
     size_t cache_size_hint() const {
@@ -1382,9 +1385,6 @@ namespace TSQR {
     }
 
   private:
-    //! Implementation of fundamental TSQR kernels.
-    Combine<LocalOrdinal, Scalar> combine_;
-
     //! Workspace for Combine operations.
     mutable std::vector<Scalar> work_;
 
@@ -1451,9 +1451,9 @@ namespace TSQR {
       // oversubscription, you should parallelize this step with
       // multiple passes.  Note that we can't use parallel_reduce,
       // because the tree topology matters.
-      factorSecondPass (result->topBlocks, result->secondPassTauArrays,
+      factorSecondPass (result->topBlocks,
+                        result->secondPassTauArrays,
                         numPartitions_);
-
       // The "topmost top block" contains the resulting R factor.
       const mat_view_type& R_top = result->topBlocks[0];
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -1464,7 +1464,8 @@ namespace TSQR {
                                   R_top.data(), R_top.stride(1));
       deep_copy (R, Scalar {});
       // Only copy the upper triangle of R_top into R.
-      copy_upper_triangle (R.extent(1), R.extent(1), R.data(), R.stride(1),
+      copy_upper_triangle (R.extent(1), R.extent(1),
+                           R.data(), R.stride(1),
                            R_top.data(), R_top.stride(1));
       return result;
     }
@@ -1538,7 +1539,8 @@ namespace TSQR {
     }
 
     std::vector<Scalar>
-    factorPair (const mat_view_type& R_top,
+    factorPair (Combine<LocalOrdinal, Scalar>& combine,
+                const mat_view_type& R_top,
                 const mat_view_type& R_bot) const
     {
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -1561,13 +1563,13 @@ namespace TSQR {
       // The statement below only works if R_top and R_bot have a
       // nonzero (and the same) number of columns, but we have already
       // checked that above.
-      combine_.factor_pair (R_top, R_bot, tau.data(), work_.data());
+      combine.factor_pair (R_top, R_bot, tau.data(), work_.data());
       return tau;
     }
 
     void
-    factorSecondPass (std::vector<mat_view_type >& topBlocks,
-                      std::vector<std::vector<Scalar> >& tauArrays,
+    factorSecondPass (std::vector<mat_view_type>& topBlocks,
+                      std::vector<std::vector<Scalar>>& tauArrays,
                       const int numPartitions) const
     {
       const char prefix[] = "KokkosNodeTsqr::factorSecondPass: ";
@@ -1594,15 +1596,18 @@ namespace TSQR {
       // in which case their top blocks will be empty.  We skip over
       // the empty partitions in the loop below.
       work_.resize (size_t (topBlocks[0].extent(1)));
+      Combine<LocalOrdinal, Scalar> combine;
       for (int partIdx = 1; partIdx < numPartitions; ++partIdx) {
         if (! topBlocks[partIdx].empty ()) {
-          tauArrays[partIdx-1] = factorPair (topBlocks[0], topBlocks[partIdx]);
+          tauArrays[partIdx-1] =
+            factorPair (combine, topBlocks[0], topBlocks[partIdx]);
         }
       }
     }
 
     void
-    applyPair (const ApplyType& applyType,
+    applyPair (Combine<LocalOrdinal, Scalar>& combine,
+               const ApplyType& applyType,
                const mat_view_type& R_bot,
                const std::vector<Scalar>& tau,
                const mat_view_type& C_top,
@@ -1614,10 +1619,11 @@ namespace TSQR {
       // The statement below only works if C_top, R_bot, and C_bot
       // have a nonzero (and the same) number of columns, but we have
       // already checked that above.
-      combine_.apply_pair (applyType, C_top.extent(1), R_bot.extent(1),
-                           R_bot.data(), R_bot.stride(1), tau.data(),
-                           C_top.data(), C_top.stride(1),
-                           C_bot.data(), C_bot.stride(1), work_.data());
+      combine.apply_pair (applyType, C_top.extent(1), R_bot.extent(1),
+                          R_bot.data(), R_bot.stride(1), tau.data(),
+                          C_top.data(), C_top.stride(1),
+                          C_bot.data(), C_bot.stride(1),
+                          work_.data());
     }
 
     void
@@ -1645,13 +1651,16 @@ namespace TSQR {
          << factorOutput.secondPassTauArrays.size()
          << ") != number of partitions minus 1 (= "
          << (numParts-1) << ")." << suffix);
+
       const LocalOrdinal numCols = topBlocksOfC[0].extent(1);
       work_.resize (size_t (numCols));
+      Combine<LocalOrdinal, Scalar> combine;
 
       // Top blocks of C are the whole cache blocks.  We only want to
       // affect the top ncols x ncols part of each of those blocks in
       // this method.
-      mat_view_type C_top_square (numCols, numCols, topBlocksOfC[0].data(),
+      mat_view_type C_top_square (numCols, numCols,
+                                  topBlocksOfC[0].data(),
                                   topBlocksOfC[0].stride(1));
       if (applyType.transposed ()) {
         // Don't include the topmost (index 0) partition in the
@@ -1666,12 +1675,14 @@ namespace TSQR {
                                         C_cur.stride (1));
             // If explicitQ: We've already done the first pass and
             // filled the top blocks of C.
-            applyPair (applyType, factorOutput.topBlocks[partIdx],
+            applyPair (combine, applyType,
+                       factorOutput.topBlocks[partIdx],
                        factorOutput.secondPassTauArrays[partIdx-1],
                        C_top_square, C_cur_square);
           }
         }
-      } else {
+      }
+      else {
         // In non-transposed mode, when computing the first
         // C.extent(1) columns of the explicit Q factor, intranode
         // TSQR would run after internode TSQR (i.e., DistTsqr)
@@ -1698,7 +1709,8 @@ namespace TSQR {
             if (explicitQ) {
               deep_copy (C_cur_square, Scalar {});
             }
-            applyPair (applyType, factorOutput.topBlocks[partIdx],
+            applyPair (combine, applyType,
+                       factorOutput.topBlocks[partIdx],
                        factorOutput.secondPassTauArrays[partIdx-1],
                        C_top_square, C_cur_square);
           }
@@ -1707,7 +1719,6 @@ namespace TSQR {
     }
 
   protected:
-
     /// \brief Return the topmost cache block of the matrix C.
     ///
     /// NodeTsqr's top_block() method must be implemented using its
