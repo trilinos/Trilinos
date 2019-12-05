@@ -343,8 +343,9 @@ namespace Impl {
 // performed on very long vectors, so, each dot product is distributed among
 // numDivPerDot teams.     
 
-struct TagInit{};   // The tag for the initialization parallel_for 
-struct TagMult{};   // The tag for the multiplication parallel_for 
+struct TagZero{};   // The init tag for beta=0 
+struct TagInit{};   // The init tag for beta!=0 and beta !=1 
+struct TagMult{};   // The multiplication tag 
 template<class ExecSpace, class AV, class BV, class CV>
 struct DotBasedGEMM{
 
@@ -356,12 +357,12 @@ struct DotBasedGEMM{
   using size_A = typename AV::size_type;
   using scalar_C = typename CV::non_const_value_type;
   using size_C = typename CV::size_type;
+  using CVT = Kokkos::Details::ArithTraits<scalar_C>;
 
   const scalar_A alpha;
   const scalar_C beta;
 
   // The following types (especially dotSize) could have simply been int,
-  // e.g., see lines 488-490.
   const size_C numCrows;           
   const size_C numCcols;
 
@@ -382,8 +383,8 @@ struct DotBasedGEMM{
     size_C appxNumTeams = (dotSize * ndots) / workPerTeam; // Estimation for appxNumTeams
 
     // Adjust appxNumTeams in case it is too small or too large
-    if(appxNumTeams < 32)
-      appxNumTeams = 32;
+    if(appxNumTeams < 1)
+      appxNumTeams = 1;
     if(appxNumTeams > 1024)
       appxNumTeams = 1024;
 
@@ -409,18 +410,27 @@ struct DotBasedGEMM{
     if(numDivPerDot > 1)
       chunkSize++;
 
-    // Initialize C matrix as beta*C
-    // This is not required for the Belos MvTransMv use case which
-    // already initializes C to zero, however, absolutely needed for 
-    // other cases, e.g., when beta is nonzero or when C was not 
-    // initialized for the case beta being zero.  
-    Kokkos::RangePolicy<TagInit, ExecSpace> policy1(0, ndots);
-    Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policy1, *this);
-
+    // Initialize C matrix if beta != 1
+    if(beta == CVT::zero()) {
+      Kokkos::RangePolicy<TagZero, ExecSpace> policyInit(0, ndots);
+      Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policyInit, *this);
+    }
+    else if(beta != CVT::one()) {
+      Kokkos::RangePolicy<TagInit, ExecSpace> policyInit(0, ndots);
+      Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policyInit, *this);
+    }
+    
     // Multiply alpha*A^TB and add it to beta*C
     Kokkos::TeamPolicy<TagMult, ExecSpace> policy2(numTeams, Kokkos::AUTO);
     Kokkos::parallel_for("Perform Dot Product Based GEMM", policy2, *this);
 
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const TagZero&, const size_C &i) const {
+    const size_C rowId = i / numCcols;
+    const size_C colId = i % numCcols;
+    C(rowId, colId) = CVT::zero(); 
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -440,7 +450,6 @@ struct DotBasedGEMM{
     const size_C rowId = i / numCcols;
     const size_C colId = i % numCcols;
     
-
     scalar_C result = 0;
     const size_A baseInd = chunkSize*localRank; 
     Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, chunkSize), [&]( const size_A k, scalar_C &update ) {
@@ -448,9 +457,9 @@ struct DotBasedGEMM{
 	  update += alpha * A(baseInd+k, rowId) * B(baseInd+k, colId);
       }, result );
 
-    
-    if(teamMember.team_rank() == 0)
+    Kokkos::single(Kokkos::PerTeam(teamMember), [&] () { 
       Kokkos::atomic_add(&C(rowId, colId), result);
+      });
   }
 
 };
