@@ -99,6 +99,8 @@ class NOXSolver
   /** \brief Whether to throw an exception when solve fails. */
   bool exitUponFailedNOXSolve; 
 
+  mutable bool solveState;
+
   /** \brief Derivative layouts for Thyra operator"
    * OP:  Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP
    * COL: Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM
