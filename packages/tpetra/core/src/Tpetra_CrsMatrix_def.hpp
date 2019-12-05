@@ -1742,8 +1742,8 @@ namespace Tpetra {
       this->allocateValues (LocalIndices, GraphNotYetAllocated);
     }
 
-    const size_t numEntriesToAdd = static_cast<size_t> (indices.size ());
 #ifdef HAVE_TPETRA_DEBUG
+    const size_t numEntriesToAdd = static_cast<size_t> (indices.size ());
     // In a debug build, test whether any of the given column indices
     // are not in the column Map.  Keep track of the invalid column
     // indices so we can tell the user about them.
@@ -1809,9 +1809,8 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "insertGlobalValuesImpl: ";
     const size_t origNumEnt = graph.getNumEntriesInLocalRow (rowInfo.localRow);
-#endif // HAVE_TPETRA_DEBUG
-
     const size_t curNumEnt = rowInfo.numEntries;
+#endif // HAVE_TPETRA_DEBUG
 
     if (! graph.indicesAreAllocated ()) {
       this->allocateValues (GlobalIndices, GraphNotYetAllocated);
@@ -1827,8 +1826,11 @@ namespace Tpetra {
                  valsView[offset] += vals[k];
                  };
     std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+#ifdef HAVE_TPETRA_DEBUG
+    //numInserted is only used inside the debug code below.
     auto numInserted =
-      graph.insertGlobalIndicesImpl(rowInfo, gblColInds, numInputEnt, cb);
+#endif
+    graph.insertGlobalIndicesImpl(rowInfo, gblColInds, numInputEnt, cb);
 
 #ifdef HAVE_TPETRA_DEBUG
     size_t newNumEnt = curNumEnt + numInserted;
