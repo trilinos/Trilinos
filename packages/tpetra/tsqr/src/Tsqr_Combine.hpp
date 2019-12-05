@@ -74,17 +74,19 @@ namespace TSQR {
   ///   interface.
   ///
   /// All Combine methods are implemented using CombineImpl methods
-  /// with the same name.  TSQR includes three implementations of the
+  /// with the same name.  TSQR includes two implementations of the
   /// CombineImpl interface:
   ///
   /// <ul>
   /// <li> CombineDefault, which uses LAPACK and copies in and out of
-  ///   scratch space that it owns, </li>
+  ///   scratch space that it owns, and </li>
   /// <li> CombineNative, a C++ in-place (no scratch space) generic
-  ///   implementation), and </li>
-  /// <li> CombineFortran, a Fortran 9x in-place implementation for
-  ///   LAPACK's four data types (S, D, C, and Z). </li>
+  ///   implementation) </li>
   /// </ul>
+  ///
+  /// There used to be a third implementation, CombineFortran, but it
+  /// relied on a Fortran 9x compiler and was thus not often tested,
+  /// so we removed it.
   template< class Ordinal,
             class Scalar,
             class CombineImpl = CombineNative<Ordinal, Scalar, Teuchos::ScalarTraits<Scalar >::isComplex> >

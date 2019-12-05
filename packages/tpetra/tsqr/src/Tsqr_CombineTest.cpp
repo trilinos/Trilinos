@@ -60,35 +60,36 @@ namespace TSQR {
   namespace Test {
 
     template<class Ordinal, class MagnitudeType, class NormalGenType>
-    static void
+    void
     generateSingularValues (NormalGenType& magGen,
                             std::vector<MagnitudeType>& sigma,
                             const Ordinal numValues)
     {
-      typedef MagnitudeType magnitude_type;
-      const magnitude_type machEps =
-        std::numeric_limits<magnitude_type>::epsilon();
+      using mag_type = MagnitudeType;
+      const mag_type machEps =
+        std::numeric_limits<mag_type>::epsilon();
       sigma.resize (numValues);
 
       // Relative amount by which to perturb each singular value.  The
       // perturbation will be multiplied by a normal(0,1) pseudorandom
       // number drawn from magGen.
-      const magnitude_type perturbationFactor = magnitude_type(10) * machEps;
+      const mag_type perturbationFactor = mag_type(10) * machEps;
 
-      sigma[0] = magnitude_type (1);
-      for (Ordinal k = 1; k < numValues; ++k)
-        {
-          const magnitude_type perturbation = perturbationFactor * magGen();
-          const magnitude_type beforePerturb = sigma[k-1] / magnitude_type(2);
-          const magnitude_type candidate = beforePerturb + perturbation;
+      sigma[0] = mag_type (1);
+      for (Ordinal k = 1; k < numValues; ++k) {
+        const mag_type perturbation = perturbationFactor * magGen();
+        const mag_type beforePerturb = sigma[k-1] / mag_type(2);
+        const mag_type candidate = beforePerturb + perturbation;
 
-          // If adding the perturbation to beforePerturb would result
-          // in a nonpositive number, subtract instead.
-          if (candidate <= magnitude_type(0))
-            sigma[k] = beforePerturb - perturbation;
-          else
-            sigma[k] = candidate;
+        // If adding the perturbation to beforePerturb would result
+        // in a nonpositive number, subtract instead.
+        if (candidate <= mag_type {}) {
+          sigma[k] = beforePerturb - perturbation;
         }
+        else {
+          sigma[k] = candidate;
+        }
+      }
     }
 
     static void
@@ -98,9 +99,8 @@ namespace TSQR {
       using std::endl;
 
       const char prefix[] = "%";
-      cout << prefix
-           << "method"
-           << ",kernel"
+      cout << prefix << "kernel"
+           << ",combiner"
            << ",scalarType"
            << ",numRows"
            << ",numCols"
@@ -112,16 +112,17 @@ namespace TSQR {
 
     template<class MagnitudeType>
     static void
-    printR1R2results (const std::string& datatype,
+    printR1R2results (const std::string& combinerName,
+                      const std::string& scalarName,
                       const int numCols,
                       const std::vector<MagnitudeType>& results)
     {
       using std::cout;
       using std::endl;
 
-      cout << "Combine"
-           << "," << "R1R2"
-           << "," << datatype
+      cout << "R1R2"
+           << "," << combinerName
+           << "," << scalarName
            << "," << (2*numCols)
            << "," << numCols
            << "," << results[0]
@@ -132,7 +133,8 @@ namespace TSQR {
 
     template<class MagnitudeType>
     static void
-    printR3Aresults (const std::string& datatype,
+    printR3Aresults (const std::string& combinerName,
+                     const std::string& scalarName,
                      const int numRows,
                      const int numCols,
                      const std::vector<MagnitudeType>& results)
@@ -140,9 +142,9 @@ namespace TSQR {
       using std::cout;
       using std::endl;
 
-      cout << "Combine"
-           << "," << "R3A"
-           << "," << datatype
+      cout << "R3A"
+           << "," << combinerName
+           << "," << scalarName
            << "," << numRows
            << "," << numCols
            << "," << results[3]
@@ -153,44 +155,50 @@ namespace TSQR {
 
     template<class MagnitudeType>
     static void
-    printResults (const std::string& datatype,
+    printResults (const std::string& combinerName,
+                  const std::string& scalarName,
                   const int numRows,
                   const int numCols,
-                  const std::vector<MagnitudeType>& results,
-                  const bool printFieldNames)
+                  const std::vector<MagnitudeType>& results)
     {
-      if (printFieldNames)
-        printCombineFieldNames();
-      printR1R2results (datatype, numCols, results);
-      printR3Aresults (datatype, numRows, numCols, results);
+      printR1R2results (combinerName, scalarName, numCols, results);
+      printR3Aresults (combinerName, scalarName,
+                       numRows, numCols, results);
     }
 
-    template<class MagnitudeType>
     static void
-    printSimSeqTsqrResults (const std::string& datatype,
-                            const int numRows,
-                            const int numCols,
-                            const std::vector<MagnitudeType>& results,
-                            const bool printFieldNames)
+    printSimSeqTsqrFieldNames ()
     {
       using std::cout;
       using std::endl;
 
-      if (printFieldNames)
-        {
-          const char prefix[] = "%";
-          cout << prefix
-               << "method"
-               << ",scalarType"
-               << ",numRows"
-               << ",numCols"
-               << ",absFrobResid"
-               << ",absFrobOrthog"
-               << ",frobA"
-               << endl;
-        }
+      const char prefix[] = "%";
+      cout << prefix
+           << "method"
+           << ",combiner"
+           << ",scalarType"
+           << ",numRows"
+           << ",numCols"
+           << ",absFrobResid"
+           << ",absFrobOrthog"
+           << ",frobA"
+           << endl;
+    }
+
+    template<class MagnitudeType>
+    static void
+    printSimSeqTsqrResults (const std::string& combinerName,
+                            const std::string& scalarName,
+                            const int numRows,
+                            const int numCols,
+                            const std::vector<MagnitudeType>& results)
+    {
+      using std::cout;
+      using std::endl;
+
       cout << "CombineSimSeqTsqr"
-           << "," << datatype
+           << "," << combinerName
+           << "," << scalarName
            << "," << numRows
            << "," << numCols
            << "," << results[0]
@@ -204,7 +212,8 @@ namespace TSQR {
     printMatrix (std::ostream& out,
                  const MatrixViewType& A)
     {
-      print_local_matrix (out, A.extent(0), A.extent(1), A.data(), A.stride(1));
+      print_local_matrix (out, A.extent(0), A.extent(1),
+                          A.data(), A.stride(1));
     }
 
     template<class MatrixViewType>
@@ -218,8 +227,10 @@ namespace TSQR {
                  const MatrixViewType& Q,
                  const MatrixViewType& R)
     {
-      return local_verify (A.extent(0), A.extent(1), A.data(), A.stride(1),
-                           Q.data(), Q.stride(1), R.data(), R.stride(1));
+      return local_verify (A.extent(0), A.extent(1),
+                           A.data(), A.stride(1),
+                           Q.data(), Q.stride(1),
+                           R.data(), R.stride(1));
     }
 
     /// \brief Test accuracy of TSQR::Combine
@@ -230,13 +241,17 @@ namespace TSQR {
     /// 2. [R; A] where R is ncols by ncols upper triangular, and A is
     ///    nrows by ncols general dense.
     ///
-    /// \return ($\|A - QR\|_F$, $\|I - Q^* Q\|_F$, $\|A\|_F$) for each
-    ///   test problem (so, a vector of six elements).
+    /// Print ($\|A - QR\|_F$, $\|I - Q^* Q\|_F$, $\|A\|_F$) for each
+    /// test problem (6 numbers in total).
     ///
-    template<class Ordinal, class Scalar>
-    static std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+    template<class Ordinal,
+             class Scalar,
+             class CombineType>
+    void
     verifyCombineTemplate (TSQR::Random::NormalGenerator<Ordinal, Scalar>& gen,
                            TSQR::Random::NormalGenerator<Ordinal, typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& magGen,
+                           CombineType& combiner,
+                           const std::string& combinerName,
                            const Ordinal numRows,
                            const Ordinal numCols,
                            const bool debug)
@@ -251,11 +266,11 @@ namespace TSQR {
       using std::vector;
 
       typedef Teuchos::ScalarTraits<Scalar> STS;
-      typedef typename STS::magnitudeType magnitude_type;
+      typedef typename STS::magnitudeType mag_type;
       typedef NormalGenerator<Ordinal, Scalar> normgen_type;
       typedef MatrixGenerator<Ordinal, Scalar, normgen_type> matgen_type;
       typedef Matrix<Ordinal, Scalar> matrix_type;
-      typedef vector<magnitude_type> results_type;
+      typedef vector<mag_type> results_type;
 
       if (numRows < numCols) {
         ostringstream os;
@@ -271,36 +286,24 @@ namespace TSQR {
       // Generate four different sets of singular values.  Randomly
       // perturb them, but make sure all are positive.
       //
-      vector< magnitude_type > sigma_R1 (numCols);
-      vector< magnitude_type > sigma_R2 (numCols);
-      vector< magnitude_type > sigma_R3 (numCols);
-      vector< magnitude_type > sigma_A (numCols);
+      vector<mag_type> sigma_R1 (numCols);
+      vector<mag_type> sigma_R2 (numCols);
+      vector<mag_type> sigma_R3 (numCols);
+      vector<mag_type> sigma_A (numCols);
       generateSingularValues (magGen, sigma_R1, numCols);
       generateSingularValues (magGen, sigma_R2, numCols);
       generateSingularValues (magGen, sigma_R3, numCols);
       generateSingularValues (magGen, sigma_A, numCols);
 
-      matrix_type R1 (numCols, numCols, Scalar(0));
-      matrix_type R2 (numCols, numCols, Scalar(0));
-      matrix_type R3 (numCols, numCols, Scalar(0));
-      matrix_type A (numRows, numCols, Scalar(0));
+      matrix_type R1 (numCols, numCols, Scalar{});
+      matrix_type R2 (numCols, numCols, Scalar{});
+      matrix_type R3 (numCols, numCols, Scalar{});
+      matrix_type A (numRows, numCols, Scalar{});
       matgen_type matgen (gen);
       matgen.fill_random_R (numCols, R1.data(), R1.stride(1), &sigma_R1[0]);
       matgen.fill_random_R (numCols, R2.data(), R2.stride(1), &sigma_R2[0]);
       matgen.fill_random_R (numCols, R3.data(), R3.stride(1), &sigma_R3[0]);
       matgen.fill_random_svd (numRows, numCols, A.data(), A.stride(1), &sigma_A[0]);
-
-      if (false && debug) {
-        cerr << endl << "First test problem:" << endl;
-        print_local_matrix (cerr, numCols, numCols, R1.data(), R1.stride(1));
-        print_local_matrix (cerr, numCols, numCols, R2.data(), R2.stride(1));
-        cerr << endl;
-
-        cerr << endl << "Second test problem:" << endl;
-        print_local_matrix (cerr, numCols, numCols, R3.data(), R3.stride(1));
-        print_local_matrix (cerr, numRows, numCols, A.data(), A.stride(1));
-        cerr << endl;
-      }
 
       // Space to put the original test problem, expressed as one
       // dense matrix rather than in two blocks.  These will be deep
@@ -324,8 +327,8 @@ namespace TSQR {
       }
 
       // Space to put the explicit Q factors.
-      matrix_type Q_R1R2 (Ordinal(2) * numCols, numCols, Scalar(0));
-      matrix_type Q_R3A (numRows + numCols, numCols, Scalar(0));
+      matrix_type Q_R1R2 (Ordinal(2) * numCols, numCols, Scalar{});
+      matrix_type Q_R3A (numRows + numCols, numCols, Scalar{});
 
       // Fill the explicit Q factor matrices with the first numCols
       // columns of the identity matrix.
@@ -351,7 +354,6 @@ namespace TSQR {
              << "qr( [R1; R2] ), with R1 and R2 " << numCols
              << " by " << numCols << endl << endl;
       }
-      Combine<Ordinal, Scalar> combiner;
       combiner.factor_pair (R1.view(), R2.view(),
                             tau_R1R2.data(), work.data());
       combiner.apply_pair (ApplyType("N"), numCols, numCols,
@@ -416,7 +418,7 @@ namespace TSQR {
              << "\\| I - Q'*Q \\|_F = " << secondResults[1] << endl
              << "\\| A \\|_A = " << secondResults[2] << endl;
       }
-      vector<magnitude_type> finalResults;
+      vector<mag_type> finalResults;
       finalResults.push_back (firstResults[0]);
       finalResults.push_back (firstResults[1]);
       finalResults.push_back (firstResults[2]);
@@ -424,14 +426,65 @@ namespace TSQR {
       finalResults.push_back (secondResults[0]);
       finalResults.push_back (secondResults[1]);
       finalResults.push_back (secondResults[2]);
-      return finalResults;
+
+      const std::string scalarName =
+        Teuchos::TypeNameTraits<Scalar>::name ();
+      printResults (combinerName, scalarName, numRows, numCols,
+                    finalResults);
+    }
+
+    template<class Ordinal,
+             class Scalar>
+    void
+    verifyCombineTemplateAllCombiners (std::vector<int>& iseed,
+                                       const Ordinal numRows,
+                                       const Ordinal numCols,
+                                       const bool debug)
+    {
+      using mag_type =
+        typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+      const std::string scalarName =
+        Teuchos::TypeNameTraits<Scalar>::name ();
+
+      Random::NormalGenerator<int, Scalar> normgenS (iseed);
+      Random::NormalGenerator<int, mag_type> normgenM (iseed);
+
+      {
+        using combiner_type =
+          Combine<int, Scalar, CombineNative<int, Scalar>>;
+        combiner_type combiner;
+        const std::string combinerName ("Native");
+        verifyCombineTemplate (normgenS, normgenM, combiner,
+                               combinerName, numRows, numCols,
+                               debug);
+      }
+      {
+        using combiner_type =
+          Combine<int, Scalar, CombineDefault<int, Scalar>>;
+        combiner_type combiner;
+        const std::string combinerName ("Default");
+        verifyCombineTemplate (normgenS, normgenM, combiner,
+                               combinerName, numRows, numCols,
+                               debug);
+      }
+
+      // Fetch the pseudorandom seed from the previous test.
+      //
+      // Even though normgenS and normgenM each updated the random
+      // seed independently, for now we just fetch the updated seed
+      // from normgenS.  This should still produce reproducible
+      // results.
+      normgenS.getSeed (iseed);
     }
 
     //! Simulate one combine step of Sequential TSQR
-    template<class Ordinal, class Scalar>
-    static std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+    template<class Ordinal,
+             class Scalar,
+             class CombineType>
+    std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
     verifyCombineSeqTemplate (TSQR::Random::NormalGenerator<Ordinal, Scalar>& gen,
                               TSQR::Random::NormalGenerator<Ordinal, typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& magGen,
+                              CombineType& combiner,
                               const Ordinal numRows,
                               const Ordinal numCols,
                               const bool debug)
@@ -446,12 +499,12 @@ namespace TSQR {
       using std::vector;
 
       typedef Teuchos::ScalarTraits<Scalar> STS;
-      typedef typename STS::magnitudeType magnitude_type;
+      typedef typename STS::magnitudeType mag_type;
       typedef NormalGenerator< Ordinal, Scalar > normgen_type;
       typedef MatrixGenerator< Ordinal, Scalar, normgen_type > matgen_type;
       typedef Matrix<Ordinal, Scalar> matrix_type;
       typedef MatView<Ordinal, Scalar> mat_view_type;
-      typedef vector<magnitude_type> results_type;
+      typedef vector<mag_type> results_type;
 
       if (numRows < numCols) {
         ostringstream os;
@@ -464,13 +517,13 @@ namespace TSQR {
       }
 
       // Generate two different sets of singular values.
-      vector< magnitude_type > sigma_A1 (numCols);
-      vector< magnitude_type > sigma_A2 (numCols);
+      vector<mag_type> sigma_A1 (numCols);
+      vector<mag_type> sigma_A2 (numCols);
       generateSingularValues (magGen, sigma_A1, numCols);
       generateSingularValues (magGen, sigma_A2, numCols);
 
       // Matrix consisting of two cache blocks.
-      matrix_type A (Ordinal(2)*numRows, numCols, Scalar(0));
+      matrix_type A (Ordinal(2)*numRows, numCols, Scalar{});
       // Views of the two cache blocks.
       mat_view_type A1 (numRows, numCols, &A(0,0), A.stride(1));
       mat_view_type A2 (numRows, numCols, &A(numRows,0), A.stride(1));
@@ -480,17 +533,6 @@ namespace TSQR {
       matgen.fill_random_svd (numRows, numCols, A1.data(), A1.stride(1), &sigma_A1[0]);
       matgen.fill_random_svd (numRows, numCols, A2.data(), A2.stride(1), &sigma_A2[0]);
 
-      if (false && debug) {
-        cerr << endl << "Test problem:" << endl;
-        cerr << endl << "Original matrix:" << endl;
-        printMatrix (cerr, A);
-        cerr << endl << "First cache block:" << endl;
-        printMatrix (cerr, A1);
-        cerr << endl << "Second cache block:" << endl;
-        printMatrix (cerr, A2);
-        cerr << endl;
-      }
-
       // Copy of the resulting test problem, stored as one dense
       // matrix rather than as two blocks.  We will use A_copy to
       // measure the residual error once we've completed the
@@ -498,7 +540,7 @@ namespace TSQR {
       matrix_type A_copy (A);
 
       // Space to put the explicit Q factor.
-      matrix_type Q (Ordinal(2) * numRows, numCols, Scalar(0));
+      matrix_type Q (Ordinal(2) * numRows, numCols, Scalar{});
 
       // Fill Q with the first numCols columns of the identity matrix.
       for (Ordinal k = 0; k < numCols; ++k) {
@@ -522,12 +564,11 @@ namespace TSQR {
       vector<Scalar> work (numCols);
 
       if (debug) {
-        cerr << endl << "----------------------------------------" << endl
-             << "TSQR::Combine SequentialTsqr simulation with 2 cache blocks:"
-             << endl << "qr( [A1; A2] ), with A1 and A2 being each "
-             << numRows << " by " << numCols << endl << endl;
+        cerr << endl << "----------------------------------------"
+          << endl << "TSQR::Combine SequentialTsqr simulation with 2 "
+          "cache blocks:" << endl << "qr( [A1; A2] ), with A1 and A2 "
+          "A2 each " << numRows << " by " << numCols << endl << endl;
       }
-      Combine<Ordinal, Scalar> combiner;
       // qr( A1 )
       combiner.factor_first (A1, tau1.data(), work.data());
       // View of numCols by numCols upper triangle of A1.
@@ -613,126 +654,115 @@ namespace TSQR {
       iseed[2] = 0;
       iseed[3] = 1;
 
-      // Whether to print the field (i.e., column) names for the
-      // output data.
-      bool doPrintFieldNames = printFieldNames;
-
       if (! simulateSequentialTsqr) {
+        printCombineFieldNames ();
         if (testReal) {
           {
-            NormalGenerator<int, float> normgenS (iseed);
-            const vector<float> resultsS =
-              verifyCombineTemplate (normgenS, normgenS, numRows,
-                                     numCols, debug);
-            // Only print field names (if at all) once per run, for
-            // the first data type.
-            printResults (string("float"), numRows, numCols,
-                          resultsS, doPrintFieldNames);
-            // Print field names at most once.
-            doPrintFieldNames = false;
-            // Fetch the pseudorandom seed from the previous test.
-            normgenS.getSeed (iseed);
+            using scalar_type = float;
+            verifyCombineTemplateAllCombiners<int, scalar_type>
+              (iseed, numRows, numCols, debug);
           }
           {
-            NormalGenerator<int, double> normgenD (iseed);
-            const vector<double> resultsD =
-              verifyCombineTemplate (normgenD, normgenD, numRows,
-                                     numCols, debug);
-            printResults (string("double"), numRows, numCols,
-                          resultsD, doPrintFieldNames);
-            doPrintFieldNames = false;
-            normgenD.getSeed (iseed);
+            using scalar_type = double;
+            verifyCombineTemplateAllCombiners<int, scalar_type>
+              (iseed, numRows, numCols, debug);
           }
         }
-
-        if (testComplex)
-          {
+        if (testComplex) {
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
-            {
-              NormalGenerator<int, complex<float> > normgenC (iseed);
-              NormalGenerator<int, float> normgenS (iseed);
-              const vector<float> resultsC =
-                verifyCombineTemplate (normgenC, normgenS, numRows,
-                                       numCols, debug);
-              printResults (string("complex<float>"), numRows, numCols,
-                            resultsC, doPrintFieldNames);
-              doPrintFieldNames = false;
-              // Even though normgenC and normgenS each updated the
-              // random seed independently, for now we just fetch the
-              // updated seed from normgenC.  This should still
-              // produce reproducible results.
-              normgenC.getSeed (iseed);
-            }
-            {
-              NormalGenerator<int, complex<double> > normgenZ (iseed);
-              NormalGenerator<int, double> normgenD (iseed);
-              const vector<double> resultsZ =
-                verifyCombineTemplate (normgenZ, normgenD, numRows,
-                                       numCols, debug);
-              printResults (string("complex<double>"), numRows, numCols,
-                            resultsZ, doPrintFieldNames);
-              doPrintFieldNames = false;
-              normgenZ.getSeed (iseed);
-            }
-#else // NOT HAVE_KOKKOSTSQR_COMPLEX
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                                       "Trilinos was not built with "
-                                       "complex arithmetic support");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+          {
+            using scalar_type = std::complex<float>;
+            verifyCombineTemplateAllCombiners<int, scalar_type>
+              (iseed, numRows, numCols, debug);
           }
+          {
+            using scalar_type = std::complex<double>;
+            verifyCombineTemplateAllCombiners<int, scalar_type>
+              (iseed, numRows, numCols, debug);
+          }
+#else // NOT HAVE_KOKKOSTSQR_COMPLEX
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::logic_error, "You set testComplex=true, but "
+             "Trilinos was not built with complex arithmetic support "
+             "enabled.");
+#endif // HAVE_KOKKOSTSQR_COMPLEX
+        }
       }
       else { // simulateSequentialTsqr
+        printSimSeqTsqrFieldNames ();
         if (testReal) {
           {
-            NormalGenerator<int, float> normgenS (iseed);
-            const vector<float> resultsS =
-              verifyCombineSeqTemplate (normgenS, normgenS, numRows,
-                                        numCols, debug);
-            printSimSeqTsqrResults (string("float"), numRows, numCols,
-                                    resultsS, doPrintFieldNames);
-            doPrintFieldNames = false;
+            using scalar_type = float;
+
+            NormalGenerator<int, scalar_type> normgenS (iseed);
+            Combine<int, scalar_type> combiner;
+            const std::string combinerName ("?");
+            const auto results =
+              verifyCombineSeqTemplate (normgenS, normgenS, combiner,
+                                        numRows, numCols, debug);
+            const std::string scalarName =
+              Teuchos::TypeNameTraits<scalar_type>::name ();
+            printSimSeqTsqrResults (combinerName, scalarName,
+                                    numRows, numCols, results);
             normgenS.getSeed (iseed);
           }
           {
-            NormalGenerator<int, double> normgenD (iseed);
-            const vector<double> resultsD =
-              verifyCombineSeqTemplate (normgenD, normgenD, numRows,
-                                        numCols, debug);
-            printSimSeqTsqrResults (string("double"), numRows, numCols,
-                                    resultsD, doPrintFieldNames);
-            doPrintFieldNames = false;
-            normgenD.getSeed (iseed);
+            using scalar_type = double;
+
+            NormalGenerator<int, scalar_type> normgenS (iseed);
+            Combine<int, scalar_type> combiner;
+            const std::string combinerName ("?");
+            const auto results =
+              verifyCombineSeqTemplate (normgenS, normgenS, combiner,
+                                        numRows, numCols, debug);
+            const std::string scalarName =
+              Teuchos::TypeNameTraits<scalar_type>::name ();
+            printSimSeqTsqrResults (combinerName, scalarName,
+                                    numRows, numCols, results);
+            normgenS.getSeed (iseed);
           }
         }
 
         if (testComplex) {
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
           {
-            NormalGenerator<int, complex<float> > normgenC (iseed);
-            NormalGenerator<int, float> normgenS (iseed);
-            const vector<float> resultsC =
-              verifyCombineSeqTemplate (normgenC, normgenS, numRows,
-                                        numCols, debug);
-            printSimSeqTsqrResults (string("complex<float>"), numRows, numCols,
-                                    resultsC, doPrintFieldNames);
-            doPrintFieldNames = false;
-            normgenC.getSeed (iseed);
+            using scalar_type = complex<float>;
+            using mag_type = float;
+
+            NormalGenerator<int, scalar_type> normgenS (iseed);
+            NormalGenerator<int, mag_type> normgenM (iseed);
+            Combine<int, scalar_type> combiner;
+            const std::string combinerName ("?");
+            const auto results =
+              verifyCombineSeqTemplate (normgenS, normgenM, combiner,
+                                        numRows, numCols, debug);
+            const std::string scalarName =
+              Teuchos::TypeNameTraits<scalar_type>::name ();
+            printSimSeqTsqrResults (combinerName, scalarName,
+                                    numRows, numCols, results);
+            normgenS.getSeed (iseed);
           }
           {
-            NormalGenerator<int, complex<double> > normgenZ (iseed);
-            NormalGenerator<int, double> normgenD (iseed);
-            const vector<double> resultsZ =
-              verifyCombineSeqTemplate (normgenZ, normgenD, numRows,
-                                        numCols, debug);
-            printSimSeqTsqrResults (string("complex<double>"), numRows,
-                                    numCols, resultsZ, doPrintFieldNames);
-            doPrintFieldNames = false;
-            normgenZ.getSeed (iseed);
+            using scalar_type = complex<double>;
+            using mag_type = double;
+
+            NormalGenerator<int, scalar_type> normgenS (iseed);
+            NormalGenerator<int, mag_type> normgenM (iseed);
+            Combine<int, scalar_type> combiner;
+            const std::string combinerName ("?");
+            const auto results =
+              verifyCombineSeqTemplate (normgenS, normgenM, combiner,
+                                        numRows, numCols, debug);
+            const std::string scalarName =
+              Teuchos::TypeNameTraits<scalar_type>::name ();
+            printSimSeqTsqrResults (combinerName, scalarName,
+                                    numRows, numCols, results);
+            normgenS.getSeed (iseed);
           }
 #else // NOT HAVE_KOKKOSTSQR_COMPLEX
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                                     "Trilinos was not built with "
-                                     "complex arithmetic support");
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::logic_error, "Trilinos was not built with "
+             "complex arithmetic support.");
 #endif // HAVE_KOKKOSTSQR_COMPLEX
         }
       }
