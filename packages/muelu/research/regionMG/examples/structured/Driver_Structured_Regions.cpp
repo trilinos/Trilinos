@@ -151,6 +151,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // =========================================================================
   using STS = Teuchos::ScalarTraits<SC>;
   SC zero = STS::zero(), one = STS::one();
+  using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using real_type = typename STS::coordinateType;
   using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
@@ -792,7 +793,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // Richardson iterations
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni = Teuchos::ScalarTraits<Scalar>::zero();
+    magnitude_type normResIni = Teuchos::ScalarTraits<magnitude_type>::zero();
     const int old_precision = std::cout.precision();
     std::cout << std::setprecision(8) << std::scientific;
     int cycle = 0;
