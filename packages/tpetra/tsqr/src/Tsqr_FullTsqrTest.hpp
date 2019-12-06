@@ -371,6 +371,31 @@ namespace TSQR {
           if (myRank == 0 && verbose) {
             cerr << "  - Finished factorExplicitRaw" << endl;
           }
+
+          // FIXME (mfh 06 Dec 2019) Eventually we want to get rid of
+          // all host access of MatView, so that we can replace it
+          // with Kokkos::View.
+          bool found_nonzero_in_R = false;
+          for (ordinal_type j = 0; j < numCols; ++j) {
+            for (ordinal_type i = 0; i < numCols; ++i) {
+              if (R(i,j) != scalar_type {}) {
+                found_nonzero_in_R = true;
+              }
+            }
+          }
+
+          if (! found_nonzero_in_R) {
+            success = false;
+            if (myRank == 0) {
+              const std::string prefix
+                (verbose ? "  - *** " : "*** ");
+              const std::string scalarName =
+                Teuchos::TypeNameTraits<scalar_type>::name ();
+              cerr << prefix << "For Scalar=" << scalarName
+                   << ": R factor resulting from factorExplicitRaw "
+                   << "is zero." << endl;
+            }
+          }
         }
         else {
           if (myRank == 0 && verbose) {
