@@ -6861,8 +6861,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     auto local_new_part_xadj = this->new_part_xadj;
     auto local_new_coordinate_permutations = this->new_coordinate_permutations;
 
-    typedef typename mj_node_t::device_type device_t;
-
     // part shift holds the which part number an old part number corresponds to.
     Kokkos::View<mj_part_t*, device_t> part_shifts("part_shifts", num_parts);
 
