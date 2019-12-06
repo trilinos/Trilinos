@@ -76,6 +76,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+# Test NodeTsqrFactory and NodeTsqr subclasses generically.
+TRIBITS_ADD_EXECUTABLE(
+  NodeTsqr
+  SOURCES Tsqr_TestNodeTsqr.cpp
+  COMM serial mpi
+  )
+
 # This test uses LAPACK's QR factorization to get a reference for
 # performance and accuracy.  It doesn't run any parts of the TSQR
 # algorithm, but it does depend on some TSQR test code (for generating
