@@ -46,10 +46,10 @@
 #endif // HAVE_KOKKOSTSQR_TBB
 #include "Tsqr_KokkosNodeTsqr.hpp"
 #include "Tsqr_SequentialTsqr.hpp"
+#include "Tsqr_CombineNodeTsqr.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace TSQR {
-
   /// \class NodeTsqrFactory
   /// \brief Factory for creating an instance of the right NodeTsqr
   ///   subclass.
@@ -87,6 +87,8 @@ namespace TSQR {
         SequentialTsqr<LocalOrdinal, Scalar>;
       using host_parallel_node_tsqr_type =
         KokkosNodeTsqr<LocalOrdinal, Scalar>;
+      using combine_node_tsqr_type =
+        CombineNodeTsqr<LocalOrdinal, Scalar>;
 
 #ifdef KOKKOS_ENABLE_CUDA
       constexpr bool is_cuda =
@@ -100,6 +102,17 @@ namespace TSQR {
         // necessarily rely on UVM, since the adapter can access the
         // host version of the data.
         return Teuchos::rcp (new host_serial_node_tsqr_type);
+      }
+
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
+      constexpr bool is_complex =
+        std::is_same<Scalar, std::complex<double>>::value ||
+        std::is_same<Scalar, std::complex<float>>::value;
+#else
+      constexpr bool is_complex = false;
+#endif // HAVE_KOKKOSTSQR_COMPLEX
+      if (is_complex) {
+        return Teuchos::rcp (new combine_node_tsqr_type);
       }
 
       execution_space execSpace;
