@@ -1123,14 +1123,14 @@ namespace TSQR {
     }
 
     /// \brief Whether this object is ready to perform computations.
-    bool ready() const {
+    bool ready() const override {
       return true;
     }
 
     /// \brief One-line description of this object.
     ///
     /// This implements Teuchos::Describable::description().
-    std::string description () const {
+    std::string description () const override {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
       os << "KokkosNodeTsqr<LocalOrdinal="
@@ -1241,7 +1241,7 @@ namespace TSQR {
             const LocalOrdinal lda,
             Scalar R[],
             const LocalOrdinal ldr,
-            const bool contiguousCacheBlocks) const
+            const bool contiguousCacheBlocks) const override
     {
       mat_view_type A_view (numRows, numCols, A, lda);
       mat_view_type R_view (numCols, numCols, R, ldr);
@@ -1261,7 +1261,7 @@ namespace TSQR {
            const LocalOrdinal ncols_C,
            Scalar C[],
            const LocalOrdinal ldc,
-           const bool contiguousCacheBlocks) const
+           const bool contiguousCacheBlocks) const override
     {
       const_mat_view_type Q_view (nrows, ncols_Q, Q, ldq);
       mat_view_type C_view (nrows, ncols_C, C, ldc);
@@ -1280,7 +1280,7 @@ namespace TSQR {
                 const LocalOrdinal ncols_C,
                 Scalar C[],
                 const LocalOrdinal ldc,
-                const bool contiguousCacheBlocks) const
+                const bool contiguousCacheBlocks) const override
     {
       const_mat_view_type Q_view (nrows, ncols_Q, Q, ldq);
       mat_view_type C_view (nrows, ncols_C, C, ldc);
@@ -1290,12 +1290,14 @@ namespace TSQR {
                  C_view, true, contiguousCacheBlocks);
     }
 
-    bool QR_produces_R_factor_with_nonnegative_diagonal () const {
+    bool
+    QR_produces_R_factor_with_nonnegative_diagonal () const override
+    {
       Combine<LocalOrdinal, Scalar> combine;
       return combine.QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
-    size_t cache_size_hint() const {
+    size_t cache_size_hint() const override {
       return strategy_.cache_size_hint();
     }
 
@@ -1304,7 +1306,7 @@ namespace TSQR {
                      const LocalOrdinal ncols,
                      Scalar A[],
                      const LocalOrdinal lda,
-                     const bool contiguousCacheBlocks) const
+                     const bool contiguousCacheBlocks) const override
     {
       mat_view_type A_view (nrows, ncols, A, lda);
 
@@ -1323,7 +1325,7 @@ namespace TSQR {
                  const LocalOrdinal ncols,
                  Scalar A_out[],
                  const Scalar A_in[],
-                 const LocalOrdinal lda_in) const
+                 const LocalOrdinal lda_in) const override
     {
       const_mat_view_type A_in_view (nrows, ncols, A_in, lda_in);
 
@@ -1346,7 +1348,7 @@ namespace TSQR {
                     const LocalOrdinal ncols,
                     Scalar A_out[],
                     const LocalOrdinal lda_out,
-                    const Scalar A_in[]) const
+                    const Scalar A_in[]) const override
     {
       // The leading dimension of A_in doesn't matter here, since its
       // cache blocks are contiguously stored.  We set it arbitrarily
@@ -1370,7 +1372,7 @@ namespace TSQR {
                const LocalOrdinal ldq,
                const Scalar B[],
                const LocalOrdinal ldb,
-               const bool contiguousCacheBlocks) const
+               const bool contiguousCacheBlocks) const override
     {
       mat_view_type Q_view (nrows, ncols, Q, ldq);
       const_mat_view_type B_view (ncols, ncols, B, ldb);
@@ -1734,7 +1736,7 @@ namespace TSQR {
     /// \return View of the topmost cache block of the matrix C.
     const_mat_view_type
     const_top_block (const const_mat_view_type& C,
-                     const bool contiguous_cache_blocks) const
+                     const bool contiguous_cache_blocks) const override
     {
       typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
       blocker_type blocker (C.extent(0), C.extent(1), strategy_);

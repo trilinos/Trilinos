@@ -345,7 +345,7 @@ namespace TSQR {
     /// For a list of currently understood parameters, see the
     /// parameter list returned by \c getValidParameters().
     void
-    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist) override
     {
       using Teuchos::Exceptions::InvalidParameter;
       using Teuchos::ParameterList;
@@ -390,7 +390,7 @@ namespace TSQR {
     /// This implements Teuchos::Describable::description().  For now,
     /// SequentialTsqr uses the default implementation of
     /// Teuchos::Describable::describe().
-    std::string description () const {
+    std::string description () const override {
       std::ostringstream os;
       os << "Intranode Tall Skinny QR (TSQR): sequential cache-blocked "
         "implementation with cache size hint " << this->cache_size_hint()
@@ -399,14 +399,14 @@ namespace TSQR {
     }
 
     //! Whether this object is ready to perform computations.
-    bool ready() const {
+    bool ready() const override {
       return true;
     }
 
-    /// \brief Does factor() compute R with nonnegative diagonal?
-    ///
-    /// See the \c NodeTsqr documentation for details.
-    bool QR_produces_R_factor_with_nonnegative_diagonal () const {
+    //! Whether factor() promises to compute R with a nonnegative diagonal.
+    bool
+    QR_produces_R_factor_with_nonnegative_diagonal () const override
+    {
       using combine_type = Combine<LocalOrdinal, Scalar>;
       return combine_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
@@ -416,72 +416,8 @@ namespace TSQR {
     /// This may be different than the cache size hint argument
     /// specified in the constructor.  SequentialTsqr treats that as a
     /// hint, not a command.
-    size_t cache_size_hint () const {
+    size_t cache_size_hint () const override {
       return strategy_.cache_size_hint();
-    }
-
-    /// \brief Compute QR factorization (implicitly stored Q factor) of A.
-    ///
-    /// Compute the QR factorization in place of the nrows by ncols
-    /// matrix A, with nrows >= ncols.  The matrix A is stored either
-    /// in column-major order (the default) or with contiguous
-    /// column-major cache blocks, with leading dimension lda >=
-    /// nrows.  Write the resulting R factor to the top block of A (in
-    /// place).  (You can get a view of this via the top_block()
-    /// method.)  Everything below the upper triangle of A is
-    /// overwritten with part of the implicit representation of the Q
-    /// factor.  The other part of that representation is returned.
-    ///
-    /// \param nrows [in] Number of rows in the matrix A.
-    /// \param ncols [in] Number of columns in the matrix A.
-    /// \param A [in/out] On input: the nrows by ncols matrix to
-    ///   factor.  On output: part of the representation of the
-    ///   implicitly stored Q factor.
-    /// \param lda [in] Leading dimension of A, if A is stored in
-    ///   column-major order.  Otherwise its value doesn't matter.
-    /// \param contiguous_cache_blocks [in] Whether the matrix A is
-    ///   stored in a contiguously cache-blocked format.
-    ///
-    /// \return Part of the representation of the implicitly stored Q
-    ///   factor.  The complete representation includes A (on output).
-    ///   The return value and A go together.
-    Teuchos::RCP<factor_output_type>
-    factor (const LocalOrdinal nrows,
-            const LocalOrdinal ncols,
-            Scalar A[],
-            const LocalOrdinal lda,
-            const bool contiguous_cache_blocks) const
-    {
-      CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
-      Combine<LocalOrdinal, Scalar> combine;
-      std::vector<Scalar> work (ncols);
-      Teuchos::RCP<my_factor_output_type> tau_arrays (new my_factor_output_type);
-
-      // We say "A_rest" because it points to the remaining part of
-      // the matrix left to factor; at the beginning, the "remaining"
-      // part is the whole matrix, but that will change as the
-      // algorithm progresses.
-      //
-      // Note: if the cache blocks are stored contiguously, lda won't
-      // be the correct leading dimension of A, but it won't matter:
-      // we only ever operate on A_cur here, and A_cur's leading
-      // dimension is set correctly by A_rest.split_top().
-      mat_view_type A_rest (nrows, ncols, A, lda);
-      // This call modifies A_rest.
-      mat_view_type A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
-
-      // Factor the topmost block of A.
-      std::vector<Scalar> tau_first (ncols);
-      mat_view_type R_view = factor_first_block (combine, A_cur, tau_first, work);
-      tau_arrays->add_and_consume (tau_first);
-
-      while (! A_rest.empty()) {
-        A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
-        std::vector<Scalar> tau (ncols);
-        combine_factor (combine, R_view, A_cur, tau, work);
-        tau_arrays->add_and_consume (tau);
-      }
-      return tau_arrays;
     }
 
     /// \brief Extract R factor from \c factor() results.
@@ -528,7 +464,7 @@ namespace TSQR {
             const LocalOrdinal lda,
             Scalar R[],
             const LocalOrdinal ldr,
-            const bool contiguous_cache_blocks) const
+            const bool contiguous_cache_blocks) const override
     {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
       Combine<LocalOrdinal, Scalar> combine;
@@ -626,7 +562,7 @@ namespace TSQR {
            const LocalOrdinal ncols_C,
            Scalar C[],
            const LocalOrdinal ldc,
-           const bool contiguous_cache_blocks) const
+           const bool contiguous_cache_blocks) const override
     {
       const char prefix[] = "TSQR::SequentialTsqr::apply: ";
 
@@ -739,7 +675,7 @@ namespace TSQR {
                 const LocalOrdinal ncols_C,
                 Scalar C[],
                 const LocalOrdinal ldc,
-                const bool contiguous_cache_blocks) const
+                const bool contiguous_cache_blocks) const override
     {
       // Identify top ncols_C by ncols_C block of C.  C_view is not
       // modified.  top_block() will set C_top to have the correct
@@ -774,7 +710,7 @@ namespace TSQR {
                const LocalOrdinal ldq,
                const Scalar B[],
                const LocalOrdinal ldb,
-               const bool contiguous_cache_blocks) const
+               const bool contiguous_cache_blocks) const override
     {
       using Teuchos::NO_TRANS;
 
@@ -828,7 +764,7 @@ namespace TSQR {
                  const LocalOrdinal ncols,
                  Scalar A_out[],
                  const Scalar A_in[],
-                 const LocalOrdinal lda_in) const
+                 const LocalOrdinal lda_in) const override
     {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
       blocker.cache_block (nrows, ncols, A_out, A_in, lda_in);
@@ -855,7 +791,7 @@ namespace TSQR {
                     const LocalOrdinal ncols,
                     Scalar A_out[],
                     const LocalOrdinal lda_out,
-                    const Scalar A_in[]) const
+                    const Scalar A_in[]) const override
     {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
       blocker.un_cache_block (nrows, ncols, A_out, lda_out, A_in);
@@ -878,7 +814,7 @@ namespace TSQR {
                      const LocalOrdinal ncols,
                      Scalar A[],
                      const LocalOrdinal lda,
-                     const bool contiguous_cache_blocks) const
+                     const bool contiguous_cache_blocks) const override
     {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
       blocker.fill_with_zeros (nrows, ncols, A, lda, contiguous_cache_blocks);
@@ -899,7 +835,7 @@ namespace TSQR {
     /// \return View of the topmost cache block of the matrix C.
     const_mat_view_type
     const_top_block (const const_mat_view_type& C,
-                     const bool contiguous_cache_blocks) const
+                     const bool contiguous_cache_blocks) const override
     {
       // The CacheBlocker object knows how to construct a view of the
       // top cache block of C.  This is complicated because cache
