@@ -54,6 +54,7 @@
 #include <Zoltan2_PartitioningProblem.hpp>
 
 #include <Tpetra_MultiVector.hpp>
+#include <zoltan.h>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -119,6 +120,15 @@ typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> vectorAdapter_t;
 typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t,tMVector_t> matrixAdapter_t;
 typedef Zoltan2::EvaluatePartition<matrixAdapter_t> quality_t;
 
+// Number of ZOLTAN_ID in a zgno_t (for NUM_GID_ENTRIES)
+static constexpr int nGidEnt = sizeof(zgno_t) / sizeof(ZOLTAN_ID_TYPE);
+#define SET_ZID(n,a,b)                                            \
+   {int ZOLTAN_ID_LOOP;                                                 \
+    for (ZOLTAN_ID_LOOP = 0; ZOLTAN_ID_LOOP < (n); ZOLTAN_ID_LOOP++)    \
+      (a)[ZOLTAN_ID_LOOP] = (b)[ZOLTAN_ID_LOOP];                        \
+   }
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Zoltan callbacks
 
@@ -135,14 +145,18 @@ static void zobjlist(void *data, int ngid, int nlid,
 {
   *ierr = ZOLTAN_OK;
   tMVector_t *vec = (tMVector_t *) data;
-  int n = vec->getLocalLength();
-  for (int i = 0; i < n; i++) {
-    gids[i] = vec->getMap()->getGlobalElement(i);
+  size_t n = vec->getLocalLength();
+
+  for (size_t i = 0; i < n; i++) {
+    zgno_t vgid = vec->getMap()->getGlobalElement(i);
+    ZOLTAN_ID_PTR vgidptr = (ZOLTAN_ID_PTR) &vgid;
+    SET_ZID(nGidEnt, &(gids[i*nGidEnt]), vgidptr);
     lids[i] = i;
   }
+
   for (int w = 0; w < nwgts; w++) {
     ArrayRCP<const zscalar_t> wvec = vec->getData(w);
-    for (int i = 0; i < n; i++)
+    for (size_t i = 0; i < n; i++)
       wgts[i*nwgts+w] = wvec[i];
   }
 }
@@ -187,22 +201,23 @@ static void zhg(void *data, int ngid, int nLists, int nPins, int format,
   
   offsets[0] = 0;
   for (zlno_t i = 0; i < nrows; i++) {
+
+    zgno_t tmp = graph->getRowMap()->getGlobalElement(i);
+    ZOLTAN_ID_PTR ztmp = (ZOLTAN_ID_PTR) &tmp;
+    SET_ZID(nGidEnt, &(listGids[i*nGidEnt]), ztmp);
+
     size_t nEntries = graph->getNumEntriesInLocalRow(i);
-    listGids[i] = graph->getRowMap()->getGlobalElement(i);
     offsets[i+1] = offsets[i] + nEntries;
+
     Teuchos::ArrayView<const zlno_t> colind;
     graph->getLocalRowView(i, colind);
-    for (size_t j = 0; j < nEntries; j++)
-      pinGids[offsets[i]+j] = graph->getColMap()->getGlobalElement(colind[j]);
-  }
 
-for (zlno_t i = 0; i < nrows; i++) {
-  size_t nEntries = graph->getNumEntriesInLocalRow(i);
-  std::cout << "KDDZHG list " << i << " npins " << offsets[i+1]-offsets[i] << ": ";
-  for (size_t j = 0; j < nEntries; j++)
-    std::cout << pinGids[offsets[i]+j] << " ";
-  std::cout << std::endl;
-}
+    for (size_t j = 0; j < nEntries; j++) {
+      tmp = graph->getColMap()->getGlobalElement(colind[j]);
+      ztmp = (ZOLTAN_ID_PTR) &tmp;
+      SET_ZID(nGidEnt, &(pinGids[(offsets[i]+j)*nGidEnt]), ztmp);
+    }
+  }
 
   *ierr = ZOLTAN_OK;
 }
@@ -227,6 +242,7 @@ int run(
   int me = comm->getRank();
   int np = comm->getSize();
   double tolerance = 1.05;
+
 
   //////////////////////////////////////////////
   // Read test data from Zoltan's test directory
@@ -311,6 +327,8 @@ int run(
   char tmp[56];
   zz.Set_Param("LB_METHOD", thisTest[TESTMETHODOFFSET]);
   
+  sprintf(tmp, "%d", nGidEnt);
+  zz.Set_Param("NUM_GID_ENTRIES", tmp);
   sprintf(tmp, "%d", numGlobalParts);
   zz.Set_Param("NUM_GLOBAL_PARTS", tmp);
   sprintf(tmp, "%d", nWeights);
