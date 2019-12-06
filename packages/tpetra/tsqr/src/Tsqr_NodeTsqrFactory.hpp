@@ -48,6 +48,9 @@
 #include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr_CombineNodeTsqr.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_TestForException.hpp"
+#include <vector>
+#include <string>
 
 namespace TSQR {
   /// \class NodeTsqrFactory
@@ -77,19 +80,21 @@ namespace TSQR {
   ///   device-resident data.  Thus, it may perform poorly.
   template<class Scalar, class LocalOrdinal, class Device>
   class NodeTsqrFactory {
+  private:
+    using host_serial_node_tsqr_type =
+      SequentialTsqr<LocalOrdinal, Scalar>;
+    using host_parallel_node_tsqr_type =
+      KokkosNodeTsqr<LocalOrdinal, Scalar>;
+    using combine_node_tsqr_type =
+      CombineNodeTsqr<LocalOrdinal, Scalar>;
+
   public:
     using node_tsqr_type = NodeTsqr<LocalOrdinal, Scalar>;
 
-    static Teuchos::RCP<node_tsqr_type> getNodeTsqr ()
+    static Teuchos::RCP<node_tsqr_type>
+    getNodeTsqr ()
     {
       using execution_space = typename Device::execution_space;
-      using host_serial_node_tsqr_type =
-        SequentialTsqr<LocalOrdinal, Scalar>;
-      using host_parallel_node_tsqr_type =
-        KokkosNodeTsqr<LocalOrdinal, Scalar>;
-      using combine_node_tsqr_type =
-        CombineNodeTsqr<LocalOrdinal, Scalar>;
-
 #ifdef KOKKOS_ENABLE_CUDA
       constexpr bool is_cuda =
         std::is_same<execution_space, Kokkos::Cuda>::value;
@@ -121,6 +126,44 @@ namespace TSQR {
       }
       else {
         return Teuchos::rcp (new host_parallel_node_tsqr_type);
+      }
+    }
+
+    static Teuchos::RCP<node_tsqr_type>
+    getNodeTsqr (const std::string& name)
+    {
+      using Teuchos::rcp;
+      if (name == "SequentialTsqr" || name == "Sequential") {
+        return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
+      }
+      else if (name == "KokkosNodeTsqr" || name == "Kokkos") {
+        return rcp (new KokkosNodeTsqr<LocalOrdinal, Scalar>);
+      }
+      else if (name == "CombineNodeTsqr" || name == "Combine") {
+        return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
+      }
+      else if (name == "Default") {
+        return getNodeTsqr ();
+      }
+      else {
+        const char prefix[] = "TSQR::NodeTsqrFactory::getNodeTsqr: ";
+        const std::vector<std::string> validNames
+          {{"SequentialTsqr",
+            "KokkosNodeTsqr",
+            "CombineNodeTsqr",
+            "Default"}};
+        std::ostringstream os;
+        os << prefix << "Invalid NodeTsqr subclass name \"" << name
+           << "\".  Valid names are: {";
+        for (size_t k = 0; k < validNames.size (); ++k) {
+          os << "\"" << validNames[k] << "\"";
+          if (k + size_t (1) < validNames.size ()) {
+            os << ", ";
+          }
+        }
+        os << "}.";
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::invalid_argument, os.str ());
       }
     }
   };

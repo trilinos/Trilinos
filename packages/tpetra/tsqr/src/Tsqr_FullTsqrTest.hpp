@@ -93,6 +93,7 @@ namespace TSQR {
                    const bool verbose,
                    const std::string inputPrefix)
       {
+        using Teuchos::RCP;
         using Teuchos::rcp;
         using Teuchos::rcp_implicit_cast;
         using std::cerr;
@@ -102,10 +103,6 @@ namespace TSQR {
         const char cacheSizeHintParamName[] = "Cache Size Hint";
         const std::string prefix = inputPrefix + "  ";
 
-        if (myRank == 0 && verbose) {
-          cerr << prefix << "Setting up TSQR::NodeTsqr instance"
-               << endl;
-        }
         auto nodeTsqrParams = Teuchos::parameterList ("NodeTsqr");
 
         size_t cacheSizeHint = 0;
@@ -120,21 +117,21 @@ namespace TSQR {
           nodeTsqrParams->set (cacheSizeHintParamName, cacheSizeHint);
         }
 
-        const bool alwaysUseSequentialTsqr =
-          testParams->get<bool> ("alwaysUseSequentialTsqr");
-        using seq_tsqr_type =
-          TSQR::SequentialTsqr<ordinal_type, scalar_type>;
+        std::string nodeTsqrName ("Default");
+        if (testParams->isType<std::string> ("NodeTsqr")) {
+          nodeTsqrName = testParams->get<std::string> ("NodeTsqr");
+        }
+        if (myRank == 0 && verbose) {
+          cerr << prefix << "getNodeTsqr:" << endl
+               << prefix << "  - NodeTsqr: " << nodeTsqrName << endl
+               << prefix << "  - Cache Size Hint: " << cacheSizeHint
+               << endl;
+        }
 
-        Teuchos::RCP<node_tsqr_type> nodeTsqr;
-        if (alwaysUseSequentialTsqr) {
-          auto seqTsqr = rcp (new seq_tsqr_type (cacheSizeHint));
-          nodeTsqr = rcp_implicit_cast<node_tsqr_type> (seqTsqr);
-        }
-        else {
-          using node_tsqr_factory_type = TSQR::NodeTsqrFactory<
-            scalar_type, ordinal_type, device_type>;
-          nodeTsqr = node_tsqr_factory_type::getNodeTsqr ();
-        }
+        RCP<node_tsqr_type> nodeTsqr;
+        using node_tsqr_factory_type = TSQR::NodeTsqrFactory<
+          scalar_type, ordinal_type, device_type>;
+        nodeTsqr = node_tsqr_factory_type::getNodeTsqr (nodeTsqrName);
         TEUCHOS_ASSERT( ! nodeTsqr.is_null () );
 
         if (myRank == 0 && verbose) {
@@ -142,14 +139,14 @@ namespace TSQR {
           const std::string spaceName =
             Teuchos::TypeNameTraits<execution_space>::name ();
           const std::string myPrefix = prefix + "  * ";
+
           cerr << myPrefix << "execution_space: " << spaceName << endl
                << myPrefix << "concurrency: "
                << execution_space ().concurrency () << endl
-               << myPrefix << "NodeTsqr subclass type: "
-               << Teuchos::typeName (*nodeTsqr) << endl
-               << myPrefix << "alwaysUseSequentialTsqr: "
-               << (alwaysUseSequentialTsqr ? "true" : "false")
-               << endl;
+               << myPrefix << "Requested NodeTsqr subclass type: "
+               << nodeTsqrName << endl
+               << myPrefix << "Actual NodeTsqr subclass type: "
+               << Teuchos::typeName (*nodeTsqr) << endl;
         }
         return nodeTsqr;
       }
@@ -715,7 +712,7 @@ namespace TSQR {
         const bool printFieldNames = true;
         const bool printResults = true;
         const bool failIfInaccurate = true;
-        const bool alwaysUseSequentialTsqr = false;
+        const std::string nodeTsqr ("Default");
         const bool verbose = false;
 
         // Parameters for configuring Tsqr itself.
@@ -749,11 +746,8 @@ namespace TSQR {
         plist->set ("failIfInaccurate", failIfInaccurate,
                     "Whether to fail the test if the factorization "
                     "is not sufficiently accurate.");
-        plist->set ("alwaysUseSequentialTsqr",
-                    alwaysUseSequentialTsqr,
-                    "If true, always use SequentialTsqr as the "
-                    "NodeTsqr subclass, regardless of the Kokkos "
-                    "execution or memory spaces.");
+        plist->set ("NodeTsqr", nodeTsqr, "NodeTsqr subclass to use; "
+                    "\"Default\" means let TSQR pick it");
         plist->set ("verbose", verbose,
                     "Whether to print verbose debugging output.");
         return plist;
@@ -863,4 +857,3 @@ namespace TSQR {
 } // namespace TSQR
 
 #endif // TSQR_TEST_FULLTSQRTEST_HPP
-

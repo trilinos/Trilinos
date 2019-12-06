@@ -78,7 +78,7 @@ namespace {
       printFieldNames (testParams->get<bool> ("printFieldNames")),
       printResults (testParams->get<bool> ("printResults")),
       failIfInaccurate (testParams->get<bool> ("failIfInaccurate")),
-      alwaysUseSequentialTsqr (testParams->get<bool> ("alwaysUseSequentialTsqr")),
+      nodeTsqr (testParams->get<std::string> ("NodeTsqr")),
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
       testComplex (true),
 #else
@@ -97,7 +97,7 @@ namespace {
     bool printFieldNames = true;
     bool printResults = true;
     bool failIfInaccurate = true;
-    bool alwaysUseSequentialTsqr = false;
+    std::string nodeTsqr {"Default"};
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
     bool testComplex = true;
 #else
@@ -189,10 +189,9 @@ namespace {
                                "noFailIfInaccurate",
                                &failIfInaccurate,
                                defaultParams->getEntry("failIfInaccurate").docString().c_str());
-        cmdLineProc.setOption ("alwaysUseSequentialTsqr",
-                               "letNodeTsqrFactoryPick",
-                               &alwaysUseSequentialTsqr,
-                               defaultParams->getEntry("alwaysUseSequentialTsqr").docString().c_str());
+        cmdLineProc.setOption ("NodeTsqr",
+                               &nodeTsqr,
+                               defaultParams->getEntry("NodeTsqr").docString().c_str());
         cmdLineProc.setOption ("verbose",
                                "quiet",
                                &verbose,
@@ -241,8 +240,7 @@ namespace {
     testParams->set ("printFieldNames", options.printFieldNames);
     testParams->set ("printResults", options.printResults);
     testParams->set ("failIfInaccurate", options.failIfInaccurate);
-    testParams->set ("alwaysUseSequentialTsqr",
-                     options.alwaysUseSequentialTsqr);
+    testParams->set ("NodeTsqr", options.nodeTsqr);
     testParams->set ("verbose", options.verbose);
 
     testParams->validateParametersAndSetDefaults (*validParams);
