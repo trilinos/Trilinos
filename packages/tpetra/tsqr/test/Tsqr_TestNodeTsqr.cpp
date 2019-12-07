@@ -79,6 +79,7 @@ namespace TSQR {
     struct NodeTestParameters {
       NodeTestParameters () = default;
 
+      std::string nodeTsqrType {"Default"};
       bool verify = true;
       bool benchmark = false;
       int numRows = 10000;
@@ -97,8 +98,36 @@ namespace TSQR {
       bool humanReadable = false;
       bool verbose = false;
       bool saveMatrices = false;
-      std::string nodeTsqrType {"Default"};
     };
+
+    void
+    printNodeTestParameters (std::ostream& out,
+                             const NodeTestParameters& p,
+                             const std::string& prefix)
+    {
+      using std::endl;
+      out << prefix << "NodeTsqr: " << p.nodeTsqrType << endl
+          << prefix << "numRows: " << p.numRows << endl
+          << prefix << "numCols: " << p.numCols << endl
+          << prefix << "numTrials: " << p.numTrials << endl
+          << prefix << "testReal: "
+          << (p.testReal ? "true" : "false") << endl
+          << prefix << "testComplex: "
+          << (p.testComplex ? "true" : "false") << endl
+          << prefix << "cacheSizeHint: " << p.cacheSizeHint << endl
+          << prefix << "contiguousCacheBlocks: "
+          << (p.contiguousCacheBlocks ? "true" : "false") << endl
+          << prefix << "printFieldNames: "
+          << (p.printFieldNames ? "true" : "false") << endl
+          << prefix << "printTrilinosTestStuff: "
+          << (p.printTrilinosTestStuff ? "true" : "false") << endl
+          << prefix << "humanReadable: "
+          << (p.humanReadable ? "true" : "false") << endl
+          << prefix << "verbose: "
+          << (p.verbose ? "true" : "false") << endl
+          << prefix << "saveMatrices: "
+          << (p.saveMatrices ? "true" : "false") << endl;
+    }
 
     void
     setBoolCmdLineOpt (Teuchos::CommandLineProcessor& cmdLineProc,
@@ -158,43 +187,43 @@ namespace TSQR {
                            "benchmark",
                            "nobenchmark",
                            "Test performance");
-        cmdLineProc.setOption ("nrows",
+        cmdLineProc.setOption ("numRows",
                                &params.numRows,
                                "Number of rows in the test matrix");
-        cmdLineProc.setOption ("ncols",
+        cmdLineProc.setOption ("numCols",
                                &params.numCols,
                                "Number of columns in the test matrix");
-        cmdLineProc.setOption ("ntrials",
+        cmdLineProc.setOption ("numTrials",
                                &params.numTrials,
                                "Number of trials (only used when "
                                "\"--benchmark\"");
         setBoolCmdLineOpt (cmdLineProc, &params.testReal,
-                           "real",
-                           "noreal",
+                           "testReal",
+                           "noTestReal",
                            "Test real arithmetic");
         setBoolCmdLineOpt (cmdLineProc, &params.testComplex,
-                           "complex",
-                           "nocomplex",
+                           "testComplex",
+                           "noTestComplex",
                            "Test complex arithmetic");
-        cmdLineProc.setOption ("cache-block-size",
+        cmdLineProc.setOption ("cacheBlockSize",
                                &cacheSizeHintAsInt,
                                "Cache size hint in bytes (0 means pick a reasonable default)");
         setBoolCmdLineOpt (cmdLineProc,
                            &params.contiguousCacheBlocks,
-                           "contiguous-cache-blocks",
-                           "noncontiguous-cache-blocks",
+                           "contiguousCacheBlocks",
+                           "noncontiguousCacheBlocks",
                            "Whether cache blocks should be stored contiguously");
         setBoolCmdLineOpt (cmdLineProc, &params.printFieldNames,
-                           "print-field-names",
-                           "no-print-field-names",
+                           "printFieldNames",
+                           "noPrintFieldNames",
                            "Print field names (for machine-readable output only)");
         setBoolCmdLineOpt (cmdLineProc, &params.printTrilinosTestStuff,
-                           "print-trilinos-test-stuff",
-                           "no-print-trilinos-test-stuff",
+                           "printTrilinosTestStuff",
+                           "noPrintTrilinosTestStuff",
                            "Print output that makes the Trilinos test framework happy, but may make benchmark results' parsing scripts unhappy.");
         setBoolCmdLineOpt (cmdLineProc, &params.humanReadable,
-                           "human-readable",
-                           "machine-readable",
+                           "humanReadable",
+                           "machineReadable",
                            "If set, make output easy to read by humans, but harder to parse.");
         setBoolCmdLineOpt (cmdLineProc, &params.verbose,
                            "verbose",
@@ -317,9 +346,9 @@ namespace TSQR {
           << ",numCols"
           << ",cacheSizeHint"
           << ",contiguousCacheBlocks"
+          << ",frobA"
           << ",absFrobResid"
-          << ",absFrobOrthog"
-          << ",frobA";
+          << ",absFrobOrthog";
       out << std::endl;
     }
 
@@ -330,7 +359,6 @@ namespace TSQR {
     static void
     verifyNodeTsqrTemplate (std::ostream& out,
                             std::vector<int>& iseed,
-                            bool& printFieldNames,
                             const NodeTestParameters& params)
     {
       using Teuchos::TypeNameTraits;
@@ -514,54 +542,47 @@ namespace TSQR {
             << "Contiguous cache blocks: "
             << (params.contiguousCacheBlocks ? "true" : "false")
             << endl
+            << "Test matrix norm $\\| A \\|_F$: " << results[2]
+            << endl
             << "Absolute residual $\\| A - QR \\|_F$: " << results[0]
             << endl
             << "Absolute orthogonality $\\| I - Q^* Q \\|_F$: "
             << results[1] << endl
-            << "Test matrix norm $\\| A \\|_F$: " << results[2]
-            << endl << endl;
+            << endl;
       }
       else {
-        if (printFieldNames) {
-          printVerifyFieldNames (out);
-          printFieldNames = false;
-        }
-        out << "NodeTsqr"
+        out << params.nodeTsqrType
             << "," << scalarType
             << "," << nrows
             << "," << ncols
             << "," << params.cacheSizeHint
-            << "," << params.contiguousCacheBlocks
+            << ","
+            << (params.contiguousCacheBlocks ? "true" : "false")
+            << "," << results[2]
             << "," << results[0]
-            << "," << results[1]
-            << "," << results[2];
+            << "," << results[1];
         out << endl;
       }
     }
 
     void
     verifyNodeTsqr (std::ostream& out,
-                    const NodeTestParameters& params)
+                    const NodeTestParameters& p)
     {
       // Seed for the next pseudorandom number generator.  We do tests
       // one after another, using the seed from the previous test in
       // the current test, so that the pseudorandom streams used by
       // the tests are independent.
       std::vector<int> iseed {{0, 0, 0, 1}};
-      bool printFieldNames = params.printFieldNames;
 
-      if (params.testReal) {
-        verifyNodeTsqrTemplate<float>
-          (out, iseed, printFieldNames, params);
-        verifyNodeTsqrTemplate<double>
-          (out, iseed, printFieldNames, params);
+      if (p.testReal) {
+        verifyNodeTsqrTemplate<float> (out, iseed, p);
+        verifyNodeTsqrTemplate<double> (out, iseed, p);
       }
-      if (params.testComplex) {
+      if (p.testComplex) {
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
-        verifyNodeTsqrTemplate<std::complex<float>>
-          (out, iseed, printFieldNames, params);
-        verifyNodeTsqrTemplate<std::complex<double>>
-          (out, iseed, printFieldNames, params);
+        verifyNodeTsqrTemplate<std::complex<float>> (out, iseed, p);
+        verifyNodeTsqrTemplate<std::complex<double>> (out, iseed, p);
 #else // HAVE_KOKKOSTSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error, "TSQR was not built with complex "
@@ -574,7 +595,6 @@ namespace TSQR {
     static void
     verifyLapackTmpl (std::ostream& out,
                       std::vector<int>& iseed,
-                      bool& printFieldNames,
                       const NodeTestParameters& params)
     {
       using STS = Teuchos::ScalarTraits<Scalar>;
@@ -661,55 +681,46 @@ namespace TSQR {
       if (params.humanReadable) {
         out << "LAPACK QR (DGEQRF and DUNGQR):" << endl
             << "Scalar type: " << scalarType << endl
+            << "Test matrix norm $\\| A \\|_F$: "
+            << results[2] << endl
             << "Absolute residual $\\| A - QR \\|_F$: "
             << results[0] << endl
             << "Absolute orthogonality $\\| I - Q^* Q \\|_F$: "
             << results[1] << endl
-            << "Test matrix norm $\\| A \\|_F$: "
-            << results[2] << endl
-            << endl << endl;
+            << endl;
       }
       else {
-        if (printFieldNames) {
-          printVerifyFieldNames (out);
-          printFieldNames = false;
-        }
         out << "LAPACK"
             << "," << scalarType
             << "," << nrows
             << "," << ncols
-            << "," << size_t(0) // cacheSizeHint
-            << "," << false     // contiguousCacheBlocks
+            << ",0"     // cacheSizeHint
+            << ",false" // contiguousCacheBlocks
+            << "," << results[2]
             << "," << results[0]
-            << "," << results[1]
-            << "," << results[2];
+            << "," << results[1];
         out << endl;
       }
     }
 
     void
     verifyLapack (std::ostream& out,
-                  const NodeTestParameters& params)
+                  const NodeTestParameters& p)
     {
       // We do tests one after another, using the seed from the
       // previous test in the current test, so that the pseudorandom
       // streams used by the tests are independent.
 
       std::vector<int> iseed {{0, 0, 0, 1}};
-      bool printFieldNames = params.printFieldNames;
 
-      if (params.testReal) {
-        verifyLapackTmpl<float>
-          (out, iseed, printFieldNames, params);
-        verifyLapackTmpl<double>
-          (out, iseed, printFieldNames, params);
+      if (p.testReal) {
+        verifyLapackTmpl<float> (out, iseed, p);
+        verifyLapackTmpl<double> (out, iseed, p);
       }
-      if (params.testComplex) {
+      if (p.testComplex) {
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
-        verifyLapackTmpl<std::complex<float>>
-          (out, iseed, printFieldNames, params);
-        verifyLapackTmpl<std::complex<double>>
-          (out, iseed, printFieldNames, params);
+        verifyLapackTmpl<std::complex<float>> (out, iseed, p);
+        verifyLapackTmpl<std::complex<double>> (out, iseed, p);
 #else // HAVE_KOKKOSTSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error, "TSQR was not built with complex "
@@ -736,7 +747,6 @@ namespace TSQR {
     void
     benchmarkLapackTmpl (std::ostream& out,
                          std::vector<int>& iseed,
-                         bool& printFieldNames,
                          const NodeTestParameters& testParams)
     {
       using std::endl;
@@ -804,10 +814,6 @@ namespace TSQR {
             << endl;
       }
       else {
-        if (printFieldNames) {
-          printBenchmarkFieldNames (out);
-          printFieldNames = false;
-        }
         // "0" refers to the cache size hint, which is not applicable
         // in this case; we retain it for easy comparison of results
         // with NodeTsqr (so that the number of fields is the same in
@@ -818,8 +824,8 @@ namespace TSQR {
             << "," << scalarType
             << "," << numRows
             << "," << numCols
-            << "," << 0
-            << "," << false
+            << ",0"
+            << ",false"
             << "," << numTrials
             << "," << lapackTiming << endl;
       }
@@ -827,23 +833,17 @@ namespace TSQR {
 
     void
     benchmarkLapack (std::ostream& out,
-                     const NodeTestParameters& params)
+                     const NodeTestParameters& p)
     {
-      bool printFieldNames = params.printFieldNames;
-
       std::vector<int> iseed {{0, 0, 0, 1}};
-      if (params.testReal) {
-        benchmarkLapackTmpl<float>
-          (out, iseed, printFieldNames, params);
-        benchmarkLapackTmpl<double>
-          (out, iseed, printFieldNames, params);
+      if (p.testReal) {
+        benchmarkLapackTmpl<float> (out, iseed, p);
+        benchmarkLapackTmpl<double> (out, iseed, p);
       }
-      if (params.testComplex) {
+      if (p.testComplex) {
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
-        benchmarkLapackTmpl<std::complex<float>>
-          (out, iseed, printFieldNames, params);
-        benchmarkLapackTmpl<std::complex<double>>
-          (out, iseed, printFieldNames, params);
+        benchmarkLapackTmpl<std::complex<float>> (out, iseed, p);
+        benchmarkLapackTmpl<std::complex<double>> (out, iseed, p);
 #else // Don't HAVE_KOKKOSTSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error,
@@ -856,7 +856,6 @@ namespace TSQR {
     void
     benchmarkNodeTsqrTmpl (std::ostream& out,
                            std::vector<int>& iseed,
-                           bool& printFieldNames,
                            const NodeTestParameters& testParams)
     {
       using std::endl;
@@ -919,16 +918,12 @@ namespace TSQR {
             << endl;
       }
       else {
-        if (printFieldNames) {
-          printBenchmarkFieldNames (out);
-          printFieldNames = false;
-        }
         out << testParams.nodeTsqrType
             << "," << scalarType
             << "," << numRows
             << "," << numCols
             << "," << testParams.cacheSizeHint
-            << "," << contiguousCacheBlocks
+            << "," << (contiguousCacheBlocks ? "true" : "false")
             << "," << numTrials
             << "," << nodeTsqrTiming << endl;
       }
@@ -936,28 +931,20 @@ namespace TSQR {
 
     void
     benchmarkNodeTsqr (std::ostream& out,
-                       const NodeTestParameters& params)
+                       const NodeTestParameters& p)
     {
       using Teuchos::TypeNameTraits;
       using LO = int;
 
-      // Only print field names for the first data type tested,
-      // if at all.
-      bool printFieldNames = params.printFieldNames;
-
       std::vector<int> iseed {{0, 0, 0, 1}};
-      if (params.testReal) {
-        benchmarkNodeTsqrTmpl<float>
-          (out, iseed, printFieldNames, params);
-        benchmarkNodeTsqrTmpl<double>
-          (out, iseed, printFieldNames, params);
+      if (p.testReal) {
+        benchmarkNodeTsqrTmpl<float> (out, iseed, p);
+        benchmarkNodeTsqrTmpl<double> (out, iseed, p);
       }
-      if (params.testComplex) {
+      if (p.testComplex) {
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
-        benchmarkNodeTsqrTmpl<std::complex<float>>
-          (out, iseed, printFieldNames, params);
-        benchmarkNodeTsqrTmpl<std::complex<double>>
-          (out, iseed, printFieldNames, params);
+        benchmarkNodeTsqrTmpl<std::complex<float>> (out, iseed, p);
+        benchmarkNodeTsqrTmpl<std::complex<double>> (out, iseed, p);
 #else // Don't HAVE_KOKKOSTSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error,
@@ -998,15 +985,26 @@ main (int argc, char *argv[])
     return EXIT_SUCCESS;
   }
 
+  if (mayPrint) {
+    out << "NodeTsqr verify/benchmark test options:" << endl;
+    printNodeTestParameters (out, params, "  - ");
+  }
+
   bool success = false;
   try {
     if (performingTests) {
       // We allow the same run to do both benchmark and verify.
       if (params.verify) {
+        if (mayPrint && ! params.humanReadable) {
+          TSQR::Test::printVerifyFieldNames (out);
+        }
         TSQR::Test::verifyNodeTsqr (out, params);
         TSQR::Test::verifyLapack (out, params);
       }
       if (params.benchmark) {
+        if (mayPrint && ! params.humanReadable) {
+          TSQR::Test::printBenchmarkFieldNames (out);
+        }
         TSQR::Test::benchmarkNodeTsqr (out, params);
         TSQR::Test::benchmarkLapack (out, params);
       }
