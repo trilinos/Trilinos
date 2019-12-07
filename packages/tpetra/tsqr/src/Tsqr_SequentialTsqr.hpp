@@ -501,7 +501,8 @@ namespace TSQR {
       // output argument.
       mat_view_type R_out (ncols, ncols, R, ldr);
       deep_copy (R_out, Scalar {});
-      copy_upper_triangle (ncols, ncols, R, ldr, R_view.data(), R_view.stride(1));
+      copy_upper_triangle (ncols, ncols, R, ldr,
+                           R_view.data (), R_view.stride (1));
       return tau_arrays;
     }
 

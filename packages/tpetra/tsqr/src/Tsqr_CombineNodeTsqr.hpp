@@ -121,15 +121,23 @@ namespace TSQR {
     }
 
   private:
-    mat_view_type
-    factorImpl (const mat_view_type& A,
+    void
+    factorImpl (const mat_view_type& R,
+                const mat_view_type& A,
                 std::vector<Scalar>& tau) const
     {
       Combine<Ordinal, Scalar> combine;
       const Ordinal ncols = A.extent (1);
+      TEUCHOS_ASSERT( R.extent (0) == ncols &&
+                      R.extent (1) == ncols );
       std::vector<Scalar> work (ncols);
       combine.factor_first (A, tau.data (), work.data ());
-      return mat_view_type (ncols, ncols, A.data (), A.stride (1));
+
+      // Copy the R factor resulting from the factorization out of the
+      // topmost block of A) into the R output argument.
+      deep_copy (R, Scalar {});
+      copy_upper_triangle (ncols, ncols, R.data (), R.stride (1),
+                           A.data (), A.stride (1));
     }
 
   public:
@@ -146,8 +154,9 @@ namespace TSQR {
       // we just defer to an internal library that expects
       // column-major matrices.
       mat_view_type A_view (nrows, ncols, A, lda);
+      mat_view_type R_view (ncols, ncols, R, ldr);
       std::vector<Scalar> tau (ncols);
-      mat_view_type R_view = factorImpl (A_view, tau);
+      factorImpl (R_view, A_view, tau);
       using Teuchos::rcp;
       return rcp (new my_factor_output_type (std::move (tau)));
     }
