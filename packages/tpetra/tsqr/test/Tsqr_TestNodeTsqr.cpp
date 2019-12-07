@@ -469,7 +469,7 @@ namespace TSQR {
                               A2.stride (1), A_copy.data ());
         const bool matrices_equal = matrix_equal (A, A2);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (matrices_equal, std::logic_error, "cache_block failed!");
+          (! matrices_equal, std::logic_error, "cache_block failed!");
       }
 
       if (verbose) {

@@ -41,27 +41,35 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   )
 
-# Test TSQR::SequentialTsqr (sequential cache-blocked TSQR).
+# Test NodeTsqrFactory and NodeTsqr subclasses generically.
 TRIBITS_ADD_EXECUTABLE(
-  SequentialTsqr
-  SOURCES Tsqr_TestSeqTsqr.cpp
+  NodeTsqr
+  SOURCES Tsqr_TestNodeTsqr.cpp
   COMM serial mpi
   )
 
+SET(TSQR_SEQUENTIALTSQR_COMPLEX_BROKEN ON)
+SET(TSQR_SEQUENTIALTSQR_BASE_ARGS "--verify --NodeTsqr=SequentialTsqr")
+IF(TSQR_SEQUENTIALTSQR_COMPLEX_BROKEN)
+  SET(TSQR_SEQUENTIALTSQR_BASE_ARGS "${TSQR_SEQUENTIALTSQR_BASE_ARGS} --noTestComplex")
+ELSE()
+  SET(TSQR_SEQUENTIALTSQR_BASE_ARGS "${TSQR_SEQUENTIALTSQR_BASE_ARGS} --testComplex")
+ENDIF()
+
 TRIBITS_ADD_TEST(
-  SequentialTsqr
+  NodeTsqr
   NAME SequentialTsqr_contiguousCacheBlocks
   COMM serial mpi
-  ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=5000 --contiguous-cache-blocks"
+  ARGS "${TSQR_SEQUENTIALTSQR_BASE_ARGS} --numRows=100000 --numCols=10 --cacheBlockSize=5000 --contiguousCacheBlocks"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_TEST(
-  SequentialTsqr
+  NodeTsqr
   NAME SequentialTsqr_noncontiguousCacheBlocks
   COMM serial mpi
-  ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=5000"
+  ARGS "${TSQR_SEQUENTIALTSQR_BASE_ARGS} --numRows=100000 --numCols=10 --cacheBlockSize=5000"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   )
@@ -74,13 +82,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS "--verify --numRows=100000 --numCols=10"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
-  )
-
-# Test NodeTsqrFactory and NodeTsqr subclasses generically.
-TRIBITS_ADD_EXECUTABLE(
-  NodeTsqr
-  SOURCES Tsqr_TestNodeTsqr.cpp
-  COMM serial mpi
   )
 
 # This test uses LAPACK's QR factorization to get a reference for
