@@ -224,7 +224,7 @@ namespace TSQR {
 
       combine.apply_inner (apply_type,
                            nrows_local, ncols_C, ncols_Q,
-                           Q_cur.data(), C_cur.stride(1), tau.data(),
+                           Q_cur.data(), Q_cur.stride(1), tau.data(),
                            C_top.data(), C_top.stride(1),
                            C_cur.data(), C_cur.stride(1), work.data());
     }
