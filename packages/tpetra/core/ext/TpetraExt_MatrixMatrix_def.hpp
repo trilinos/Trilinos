@@ -824,15 +824,7 @@ add (const Scalar& alpha,
     //TODO: use KokkosKernels batched sort on device as soon as it's available
     //But now, have to sort on host (using UVM)
     exec_space().fence();
-    for(LO row = 0; row < numLocalRows; row++)
-    {
-      size_type rowBegin = rowptrs(row);
-      size_type rowEnd = rowptrs(row + 1);
-      lno_t* entriesBegin = &localColinds(rowBegin);
-      lno_t* entriesEnd = &localColinds(rowEnd);
-      typename AddKern::impl_scalar_type* valuesBegin = &vals(rowBegin);
-      Tpetra::sort2(entriesBegin, entriesEnd, valuesBegin);
-    }
+    Tpetra::Import_Util::sortCrsEntries(rowptrs, localColinds, vals);
     C.setAllValues(rowptrs, localColinds, vals);
     C.fillComplete(CDomainMap, CRangeMap, params);
     if(!doFillComplete)
