@@ -68,4 +68,34 @@ IF ((NOT ${KDD_INT_LONG}) AND (NOT ${KDD_INT_LONG_LONG}))
             "Disable STKBalance or specify Tpetra_INST_INT_LONG_LONG.")
   ENDIF()
 ENDIF()
-  
+
+# Tpetra supports only one GO type at a time, and the default is long long.
+# Epetra uses GO=int. To support both libraries, Xpetra requires they use
+# the same GO. So if Tpetra's GO is not INT (either the default long long,
+# or set explicitly to something else), turn off
+# Xpetra_Epetra support. But if Xpetra_ENABLE_Epetra is explicitly on,
+# throw an error.
+
+# Note: if >1 Tpetra GO is explicitly enabled, the logic below could turn off
+# Xpetra_ENABLE_Epetra even though Tpetra_INST_INT_INT. But multiple GOs are not
+# allowed, so Tpetra configuration will error out before even getting to Xpetra.
+IF(KDD_INT_LONG OR KDD_INT_LONG_LONG OR KDD_INT_UNSIGNED)
+   # Tpetra will not using GO=int.
+   # Is Xpetra_ENABLE_Tpetra explicitly OFF?
+   SET(BMK_EXPLICIT_XT_OFF OFF)
+   IF(NOT "${Xpetra_ENABLE_Tpetra}" STREQUAL "" AND NOT ${Xpetra_ENABLE_Tpetra})
+     # Xpetra_ENABLE_Tpetra is falsey but non-empty, so it's explicitly OFF
+     SET(BMK_EXPLICIT_XT_OFF ON)
+   ENDIF()
+   # Several cases here:
+   #  -If Xpetra_ENABLE_Tpetra is explicitly OFF, we don't have to do anything here
+   #  -If Xpetra_ENABLE_Epetra is explicitly set either way,
+   #    let Xpetra error out (if ON) or be fine (if OFF) later.
+   #  -Otherwise, turn off Xpetra_ENABLE_Epetra.
+   IF("${Xpetra_ENABLE_Epetra}" STREQUAL "" AND NOT ${BMK_EXPLICIT_XT_OFF})
+     SET(Xpetra_ENABLE_Epetra OFF)
+     SET(Xpetra_ENABLE_EpetraExt OFF)
+     SET(MueLu_ENABLE_Epetra OFF)
+   ENDIF()
+ENDIF()
+
