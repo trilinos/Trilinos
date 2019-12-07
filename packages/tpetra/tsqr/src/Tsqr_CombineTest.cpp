@@ -104,9 +104,9 @@ namespace TSQR {
            << ",scalarType"
            << ",numRows"
            << ",numCols"
+           << ",frobA"
            << ",absFrobResid"
            << ",absFrobOrthog"
-           << ",frobA"
            << endl;
     }
 
@@ -125,9 +125,9 @@ namespace TSQR {
            << "," << scalarName
            << "," << (2*numCols)
            << "," << numCols
+           << "," << results[2]
            << "," << results[0]
            << "," << results[1]
-           << "," << results[2]
            << endl;
     }
 
@@ -147,9 +147,9 @@ namespace TSQR {
            << "," << scalarName
            << "," << numRows
            << "," << numCols
+           << "," << results[5]
            << "," << results[3]
            << "," << results[4]
-           << "," << results[5]
            << endl;
     }
 
@@ -179,9 +179,9 @@ namespace TSQR {
            << ",scalarType"
            << ",numRows"
            << ",numCols"
+           << ",frobA"
            << ",absFrobResid"
            << ",absFrobOrthog"
-           << ",frobA"
            << endl;
     }
 
@@ -201,9 +201,9 @@ namespace TSQR {
            << "," << scalarName
            << "," << numRows
            << "," << numCols
+           << "," << results[2]
            << "," << results[0]
            << "," << results[1]
-           << "," << results[2]
            << endl;
     }
 
@@ -769,4 +769,3 @@ namespace TSQR {
     }
   } // namespace Test
 } // namespace TSQR
-
