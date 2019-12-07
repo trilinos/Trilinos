@@ -2146,6 +2146,7 @@ namespace Tpetra {
 
     /// \brief Set the local matrix using three (compressed sparse row) arrays.
     ///
+    /// \pre ind is sorted within each row
     /// \pre <tt>hasColMap() == true</tt>
     /// \pre <tt>getGraph() != Teuchos::null</tt>
     /// \pre No insert/sum routines have been called
@@ -2174,6 +2175,7 @@ namespace Tpetra {
 
     /// \brief Set the local matrix using three (compressed sparse row) arrays.
     ///
+    /// \pre ind is sorted within each row
     /// \pre <tt>hasColMap() == true</tt>
     /// \pre <tt>getGraph() != Teuchos::null</tt>
     /// \pre No insert/sum routines have been called

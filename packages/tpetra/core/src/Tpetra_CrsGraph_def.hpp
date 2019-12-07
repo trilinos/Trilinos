@@ -3493,6 +3493,8 @@ namespace Tpetra {
 
     indicesAreAllocated_ = true;
     indicesAreLocal_     = true;
+    indicesAreSorted_    = true;
+    noRedundancies_      = true;
     pftype_              = StaticProfile; // if the profile wasn't static before, it sure is now.
     k_lclInds1D_         = columnIndices;
     k_rowPtrs_           = rowPointers;
