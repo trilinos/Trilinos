@@ -41,7 +41,14 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   )
 
-# Test NodeTsqrFactory and NodeTsqr subclasses generically.
+# This executable can test any NodeTsqr subclass that
+# TSQR::NodeTsqrFactory can create.  It can check accuracy (--verify)
+# and/or timing (--benchmark).  For both of these, it can compare with
+# LAPACK.  Thus, this can serve as a check for your LAPACK
+# implementation as well.  Run the executable with --help to see all
+# the options.  It builds with or without MPI, but only runs with one
+# MPI process.
+
 TRIBITS_ADD_EXECUTABLE(
   NodeTsqr
   SOURCES Tsqr_TestNodeTsqr.cpp
@@ -74,44 +81,24 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_ADD_TEST(
+  NodeTsqr
+  NAME CombineNodeTsqr
+  COMM serial mpi
+  ARGS "--verify --NodeTsqr=CombineNodeTsqr --numRows=1000 --numCols=15"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
 # Performance and accuracy test suite for TSQR::KokkosNodeTsqr
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  KokkosHostTsqr
-  SOURCES Tsqr_TestKokkosNodeTsqr.cpp
-  COMM serial mpi
-  ARGS "--verify --numRows=100000 --numCols=10"
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
-
-# This test uses LAPACK's QR factorization to get a reference for
-# performance and accuracy.  It doesn't run any parts of the TSQR
-# algorithm, but it does depend on some TSQR test code (for generating
-# the test matrix and measuring accuracy).
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Lapack
-  SOURCES Tsqr_TestLapack.cpp
-  COMM serial mpi
-  ARGS "--verify --nrows=1000 --ncols=10 --ntrials=10"
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
-
-# Performance and accuracy test suite for TSQR::TBB::TbbTsqr
-# (shared-memory parallel cache-blocked TSQR, parallelized via Intel's
-# Threading Building Blocks library).
-#
-# Only build TBB-enabled TSQR if (surprise!) TBB is enabled.
-IF (KokkosTSQR_ENABLE_TBB)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    TbbTsqr
-    SOURCES Tsqr_TestTbbTsqr.cpp
-    COMM serial mpi
-    ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-blocks"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    )
-ENDIF()
+# TRIBITS_ADD_TEST(
+#   NodeTsqr
+#   NAME KokkosNodeTsqr
+#   COMM serial mpi
+#   ARGS "--NodeTsqr=KokkosNodeTsqr --numRows=100000 --numCols=10"
+#   STANDARD_PASS_OUTPUT
+#   NUM_MPI_PROCS 1
+#   )
 
 # mfh 22 Dec 2014: Disable this test, since KokkosNodeTsqr no longer
 # works with the new Kokkos Node types.
