@@ -384,7 +384,7 @@ namespace TSQR {
     // ncols matrix (using the given cache block size (in bytes)),
     // and print the results to stdout.
     template<class Scalar>
-    static void
+    static bool
     verifyNodeTsqrTmpl (std::ostream& out,
                         std::vector<int>& iseed,
                         const NodeTestParameters& params)
@@ -393,7 +393,8 @@ namespace TSQR {
       using std::cerr;
       using std::endl;
       using STS = Teuchos::ScalarTraits<Scalar>;
-      using magnitude_type = typename STS::magnitudeType;
+      using mag_type = typename STS::magnitudeType;
+      using STM = Teuchos::ScalarTraits<mag_type>;
       const bool verbose = params.verbose;
 
       const std::string scalarType = TypeNameTraits<Scalar>::name ();
@@ -534,6 +535,64 @@ namespace TSQR {
       auto results = local_verify (nrows, ncols, A.data (), lda,
                                    Q.data (), ldq, R.data (), ldr);
 
+      if (verbose) {
+        cerr << "-- Compute accuracy bounds and check" << endl;
+      }
+
+      // Accuracy relates to the number of floating-point operations,
+      // which in turn is a function of the matrix's dimensions.
+      // Avoid overflow of the local Ordinal type, by casting first to
+      // a floating-point type.
+      const mag_type dimsProd = mag_type(nrows) * mag_type(ncols) *
+        mag_type(ncols);
+      const mag_type fudgeFactor (10.0);
+      // Relative residual error is ||A-Q*R|| / ||A||, or just
+      // ||A-Q*R|| if ||A|| == 0.  (The result had better be zero in
+      // the latter case.)  Square root of the matrix dimensions is an
+      // old heuristic from Wilkinson or perhaps even an earlier
+      // source.  We include a "fudge factor" so that the test won't
+      // fail unless there is a really good reason.
+      const mag_type relResidBound = fudgeFactor *
+        STM::squareroot (dimsProd) * STS::eps ();
+
+      // Relative residual error; avoid division by zero.
+      const mag_type relResidError = results[0] /
+        (results[2] == STM::zero () ? STM::one () : results[2]);
+
+      bool success = true;
+      if (relResidError > relResidBound) {
+        success = false;
+        if (verbose) {
+          const std::string relResStr
+            (results[2] == STM::zero () ? " / ||A||_F" : "");
+          cerr << "*** For NodeTsqr=" << params.nodeTsqrType
+               << " with Scalar=" << scalarType << ": "
+               << "Residual ||A - QR||_F" << relResStr
+               << " = " << relResidError << " > bound "
+               << relResidBound << "." << endl;
+        }
+      }
+
+      // Orthogonality of the matrix should not depend on the matrix
+      // dimensions, if we measure in the 2-norm.  However, we are
+      // measuring in the Frobenius norm, so it's appropriate to
+      // multiply eps by the number of entries in the matrix for which
+      // we compute the Frobenius norm.  We include a "fudge factor"
+      // for the same reason as mentioned above.
+      const mag_type orthoBound = fudgeFactor *
+        mag_type (ncols) * mag_type (ncols) * STS::eps ();
+
+      const mag_type orthoError = results[1];
+      if (orthoError > orthoBound) {
+        success = false;
+        if (verbose) {
+          cerr << "*** For NodeTsqr=" << params.nodeTsqrType
+               << " with Scalar=" << scalarType << ": "
+               << "Orthogonality ||I - Q^* Q||_F = " << orthoError
+               << " > bound " << orthoBound << "." << endl;
+        }
+      }
+
       if (params.humanReadable) {
         out << "NodeTsqr subclass: " << params.nodeTsqrType
             << endl
@@ -566,9 +625,10 @@ namespace TSQR {
             << "," << results[1];
         out << endl;
       }
+      return success;
     }
 
-    void
+    bool
     verifyNodeTsqr (std::ostream& out,
                     const NodeTestParameters& p)
     {
@@ -578,20 +638,26 @@ namespace TSQR {
       // the tests are independent.
       std::vector<int> iseed {{0, 0, 0, 1}};
 
+      bool success = true;
       if (p.testReal) {
-        verifyNodeTsqrTmpl<float> (out, iseed, p);
-        verifyNodeTsqrTmpl<double> (out, iseed, p);
+        const bool ok_S = verifyNodeTsqrTmpl<float> (out, iseed, p);
+        const bool ok_D = verifyNodeTsqrTmpl<double> (out, iseed, p);
+        success = success && ok_S && ok_D;
       }
       if (p.testComplex) {
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
-        verifyNodeTsqrTmpl<std::complex<float>> (out, iseed, p);
-        verifyNodeTsqrTmpl<std::complex<double>> (out, iseed, p);
+        const bool ok_C =
+          verifyNodeTsqrTmpl<std::complex<float>> (out, iseed, p);
+        const bool ok_Z =
+          verifyNodeTsqrTmpl<std::complex<double>> (out, iseed, p);
+        success = success && ok_C && ok_Z;
 #else // HAVE_KOKKOSTSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error, "TSQR was not built with complex "
            "arithmetic support.");
 #endif // HAVE_KOKKOSTSQR_COMPLEX
       }
+      return success;
     }
 
     template<class Scalar>
@@ -604,7 +670,7 @@ namespace TSQR {
       using std::cerr;
       using std::endl;
       using STS = Teuchos::ScalarTraits<Scalar>;
-      using magnitude_type = typename STS::magnitudeType;
+      using mag_type = typename STS::magnitudeType;
       const bool verbose = params.verbose;
 
       const std::string scalarType = TypeNameTraits<Scalar>::name ();
@@ -1040,7 +1106,7 @@ main (int argc, char *argv[])
     printNodeTestParameters (out, params, "  - ");
   }
 
-  bool success = false;
+  bool success = true;
   try {
     if (performingTests) {
       // We allow the same run to do both benchmark and verify.
@@ -1049,7 +1115,7 @@ main (int argc, char *argv[])
           TSQR::Test::printVerifyFieldNames (out);
         }
         TSQR::Test::verifyLapack (out, params);
-        TSQR::Test::verifyNodeTsqr (out, params);
+        success = TSQR::Test::verifyNodeTsqr (out, params);
       }
       if (params.benchmark) {
         if (mayPrint && ! params.humanReadable) {
@@ -1058,11 +1124,15 @@ main (int argc, char *argv[])
         TSQR::Test::benchmarkLapack (out, params);
         TSQR::Test::benchmarkNodeTsqr (out, params);
       }
-      success = true;
 
       if (params.printTrilinosTestStuff) {
         // The Trilinos test framework expects a message like this.
-        out << "\nEnd Result: TEST PASSED" << endl;
+        if (success) {
+          out << "\nEnd Result: TEST PASSED" << endl;
+        }
+        else {
+          out << "\nEnd Result: TEST FAILED" << endl;
+        }
       }
     }
   }
