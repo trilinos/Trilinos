@@ -229,6 +229,10 @@ namespace TSQR {
                            "verbose",
                            "quiet",
                            "Print verbose debugging information");
+        setBoolCmdLineOpt (cmdLineProc, &params.saveMatrices,
+                           "saveMatrices",
+                           "noSaveMatrices",
+                           "If set, dump matrices to files.");
         cmdLineProc.setOption ("NodeTsqr",
                                &params.nodeTsqrType,
                                "NodeTsqr subclass type");
@@ -352,14 +356,38 @@ namespace TSQR {
       out << std::endl;
     }
 
+    template<class Scalar>
+    static std::string
+    getFileSuffix (const std::string& method)
+    {
+      std::string shortScalarType;
+      if (std::is_same<Scalar, float>::value) {
+        shortScalarType = "S";
+      }
+      else if (std::is_same<Scalar, double>::value) {
+        shortScalarType = "D";
+      }
+      else if (std::is_same<Scalar, std::complex<float>>::value) {
+        shortScalarType = "C";
+      }
+      else if (std::is_same<Scalar, std::complex<double>>::value) {
+        shortScalarType = "Z";
+      }
+      else {
+        shortScalarType = "U"; // unknown
+      }
+      const std::string sep ("_");
+      return sep + method + sep + shortScalarType + ".txt";
+    }
+
     // Test the accuracy of a NodeTsqr implementation on an nrows by
     // ncols matrix (using the given cache block size (in bytes)),
     // and print the results to stdout.
     template<class Scalar>
     static void
-    verifyNodeTsqrTemplate (std::ostream& out,
-                            std::vector<int>& iseed,
-                            const NodeTestParameters& params)
+    verifyNodeTsqrTmpl (std::ostream& out,
+                        std::vector<int>& iseed,
+                        const NodeTestParameters& params)
     {
       using Teuchos::TypeNameTraits;
       using std::cerr;
@@ -369,30 +397,11 @@ namespace TSQR {
       const bool verbose = params.verbose;
 
       const std::string scalarType = TypeNameTraits<Scalar>::name ();
-      const std::string shortScalarType = [&] () {
-        if (std::is_same<Scalar, float>::value) {
-          return "S";
-        }
-        else if (std::is_same<Scalar, double>::value) {
-          return "D";
-        }
-        else if (std::is_same<Scalar, std::complex<float>>::value) {
-          return "C";
-        }
-        else if (std::is_same<Scalar, std::complex<double>>::value) {
-          return "Z";
-        }
-        else {
-          return "U"; // unknown
-        }
-      } ();
-
+      const std::string fileSuffix =
+        getFileSuffix<Scalar> (params.nodeTsqrType);
       if (verbose) {
         cerr << "Test NodeTsqr with Scalar=" << scalarType << endl;
       }
-
-      auto nodeTsqrPtr = getNodeTsqr<Scalar> (params);
-      auto& actor = *nodeTsqrPtr;
 
       const int nrows = params.numRows;
       const int ncols = params.numCols;
@@ -402,27 +411,29 @@ namespace TSQR {
       Matrix<int, Scalar> Q (nrows, ncols);
       Matrix<int, Scalar> R (ncols, ncols);
       if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-        deep_copy (A, std::numeric_limits< Scalar>::quiet_NaN());
-        deep_copy (A_copy, std::numeric_limits<Scalar>::quiet_NaN());
-        deep_copy (Q, std::numeric_limits<Scalar>::quiet_NaN());
-        deep_copy (R, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (A, std::numeric_limits<Scalar>::quiet_NaN ());
+        deep_copy (A_copy, std::numeric_limits<Scalar>::quiet_NaN ());
+        deep_copy (Q, std::numeric_limits<Scalar>::quiet_NaN ());
+        deep_copy (R, std::numeric_limits<Scalar>::quiet_NaN ());
       }
       const int lda = nrows;
       const int ldq = nrows;
       const int ldr = ncols;
 
-      // Create a test problem
+      if (verbose) {
+        cerr << "-- Create test problem" << endl;
+      }
       {
         TSQR::Random::NormalGenerator<int, Scalar> gen (iseed);
-        nodeTestProblem (gen, nrows, ncols,
-                         A.data(), A.stride(1), true);
+        nodeTestProblem (gen, nrows, ncols, A.data (),
+                         A.stride(1), true);
         gen.getSeed (iseed); // fetch seed for the next test
       }
 
       if (params.saveMatrices) {
-        std::string filename = "A_" + shortScalarType + ".txt";
+        std::string filename = std::string ("A") + fileSuffix;
         if (verbose) {
-          cerr << "-- Saving test problem to \"" << filename << "\"" << endl;
+          cerr << "-- Save A to \"" << filename << "\"" << endl;
         }
         std::ofstream fileOut (filename.c_str ());
         print_local_matrix (fileOut, nrows, ncols,
@@ -430,59 +441,52 @@ namespace TSQR {
         fileOut.close ();
       }
 
-      if (verbose) {
-        cerr << "-- Generated test problem" << endl;
-      }
+      auto nodeTsqrPtr = getNodeTsqr<Scalar> (params);
+      auto& actor = *nodeTsqrPtr;
 
-      // Copy A into A_copy, since TSQR overwrites the input.  If
-      // specified, rearrange the data in A_copy so that the data in
-      // each cache block is contiguously stored.
       if (! params.contiguousCacheBlocks) {
-        deep_copy (A_copy, A);
         if (verbose) {
-          cerr << "-- Copied test problem from A into A_copy" << endl;
+          cerr << "-- Copy A into A_copy" << endl;
         }
+        deep_copy (A_copy, A);
       }
       else {
+        if (verbose) {
+          cerr << "-- Copy A into A_copy via cache_block" << endl;
+        }
         actor.cache_block (nrows, ncols, A_copy.data (),
                            A.data (), A.stride (1));
         if (verbose) {
-          cerr << "-- Finished cache_block" << endl;
+          cerr << "-- Verify cache_block result" << endl;
         }
 
-        // Verify cache blocking, when in verbose mode.
-        if (verbose) {
-          Matrix<int, Scalar> A2 (nrows, ncols);
-          if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-            deep_copy (A2, std::numeric_limits<Scalar>::quiet_NaN ());
-          }
-          actor.un_cache_block (nrows, ncols, A2.data (),
-                                A2.stride (1), A_copy.data ());
-          if (matrix_equal (A, A2)) {
-            if (verbose) {
-              cerr << "-- Cache blocking test succeeded!" << endl;
-            }
-          }
-          else {
-            throw std::logic_error ("Cache blocking failed");
-          }
+        Matrix<int, Scalar> A2 (nrows, ncols);
+        if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+          deep_copy (A2, std::numeric_limits<Scalar>::quiet_NaN ());
         }
+        actor.un_cache_block (nrows, ncols, A2.data (),
+                              A2.stride (1), A_copy.data ());
+        const bool matrices_equal = matrix_equal (A, A2);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (matrices_equal, std::logic_error, "cache_block failed!");
       }
 
-      // Fill R with zeros, since the factorization may not overwrite
-      // the strict lower triangle of R.
+      if (verbose) {
+        cerr << "-- Fill R with zeros" << endl;
+      }
+      // We need to fill R with zeros, since the factorization may not
+      // overwrite the strict lower triangle of R.
       deep_copy (R, Scalar {});
 
-      // Factor the matrix and compute the explicit Q factor
+      if (verbose) {
+        cerr << "-- Call NodeTsqr::factor" << endl;
+      }
       auto factorOutput =
         actor.factor (nrows, ncols, A_copy.data(), A_copy.stride(1),
                       R.data(), R.stride(1),
                       params.contiguousCacheBlocks);
-      if (verbose) {
-        cerr << "-- Finished NodeTsqr::factor" << endl;
-      }
       if (params.saveMatrices) {
-        std::string filename = "R_" + shortScalarType + ".txt";
+        std::string filename = std::string ("R") + fileSuffix;
         if (verbose) {
           cerr << "-- Save R to \"" << filename << "\"" << endl;
         }
@@ -492,28 +496,28 @@ namespace TSQR {
         fileOut.close ();
       }
 
-      actor.explicit_Q (nrows, ncols, A_copy.data(), lda,
-                        *factorOutput, ncols, Q.data(), Q.stride(1),
-                        params.contiguousCacheBlocks);
       if (verbose) {
-        cerr << "-- Finished NodeTsqr::explicit_Q" << endl;
+        cerr << "-- Call NodeTsqr::explicit_Q" << endl;
       }
+      actor.explicit_Q (nrows, ncols, A_copy.data (), lda,
+                        *factorOutput, ncols, Q.data (), Q.stride (1),
+                        params.contiguousCacheBlocks);
 
       // "Un"-cache-block the output, if contiguous cache blocks were
       // used.  This is only necessary because local_verify() doesn't
       // currently support contiguous cache blocks.
       if (params.contiguousCacheBlocks) {
         // Use A_copy as temporary storage for un-cache-blocking Q.
-        actor.un_cache_block (nrows, ncols, A_copy.data(),
-                              A_copy.stride(1), Q.data());
-        deep_copy (Q, A_copy);
         if (verbose) {
-          cerr << "-- Finished NodeTsqr::un_cache_block" << endl;
+          cerr << "-- Call NodeTsqr::un_cache_block" << endl;
         }
+        actor.un_cache_block (nrows, ncols, A_copy.data (),
+                              A_copy.stride (1), Q.data ());
+        deep_copy (Q, A_copy);
       }
 
       if (params.saveMatrices) {
-        std::string filename = "Q_" + shortScalarType + ".txt";
+        std::string filename = std::string ("Q") + fileSuffix;
         if (verbose) {
           cerr << "-- Save Q to \"" << filename << "\"" << endl;
         }
@@ -523,30 +527,29 @@ namespace TSQR {
         fileOut.close ();
       }
 
-      // Validate the factorization
+      if (verbose) {
+        cerr << "-- Call local_verify to validate the factorization"
+             << endl;
+      }
       auto results = local_verify (nrows, ncols, A.data (), lda,
                                    Q.data (), ldq, R.data (), ldr);
-      if (verbose) {
-        cerr << "-- Finished local_verify" << endl;
-      }
 
-      // Print the results
       if (params.humanReadable) {
         out << "NodeTsqr subclass: " << params.nodeTsqrType
             << endl
-            << "Scalar type: " << scalarType << endl
-            << "Matrix dimensions: " << nrows << " by " << ncols
+            << "  - Scalar type: " << scalarType << endl
+            << "  - Matrix dimensions: " << nrows << " by " << ncols
             << endl
-            << "Cache Size Hint: " << params.cacheSizeHint
+            << "  - Cache Size Hint: " << params.cacheSizeHint
             << endl
-            << "Contiguous cache blocks: "
+            << "  - Contiguous cache blocks: "
             << (params.contiguousCacheBlocks ? "true" : "false")
             << endl
-            << "Test matrix norm $\\| A \\|_F$: " << results[2]
+            << "  - Input matrix norm $\\| A \\|_F$: " << results[2]
             << endl
-            << "Absolute residual $\\| A - QR \\|_F$: " << results[0]
+            << "  - Residual $\\| A - QR \\|_F$: " << results[0]
             << endl
-            << "Absolute orthogonality $\\| I - Q^* Q \\|_F$: "
+            << "  - Orthogonality $\\| I - Q^* Q \\|_F$: "
             << results[1] << endl
             << endl;
       }
@@ -576,13 +579,13 @@ namespace TSQR {
       std::vector<int> iseed {{0, 0, 0, 1}};
 
       if (p.testReal) {
-        verifyNodeTsqrTemplate<float> (out, iseed, p);
-        verifyNodeTsqrTemplate<double> (out, iseed, p);
+        verifyNodeTsqrTmpl<float> (out, iseed, p);
+        verifyNodeTsqrTmpl<double> (out, iseed, p);
       }
       if (p.testComplex) {
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
-        verifyNodeTsqrTemplate<std::complex<float>> (out, iseed, p);
-        verifyNodeTsqrTemplate<std::complex<double>> (out, iseed, p);
+        verifyNodeTsqrTmpl<std::complex<float>> (out, iseed, p);
+        verifyNodeTsqrTmpl<std::complex<double>> (out, iseed, p);
 #else // HAVE_KOKKOSTSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error, "TSQR was not built with complex "
@@ -597,14 +600,16 @@ namespace TSQR {
                       std::vector<int>& iseed,
                       const NodeTestParameters& params)
     {
-      using STS = Teuchos::ScalarTraits<Scalar>;
-      using magnitude_type = typename STS::magnitudeType;
+      using Teuchos::TypeNameTraits;
       using std::cerr;
       using std::endl;
-      const std::string scalarType =
-        Teuchos::TypeNameTraits<Scalar>::name ();
-
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      using magnitude_type = typename STS::magnitudeType;
       const bool verbose = params.verbose;
+
+      const std::string scalarType = TypeNameTraits<Scalar>::name ();
+      const std::string fileSuffix =
+        getFileSuffix<Scalar> ("Lapack");
       if (verbose) {
         cerr << "Test LAPACK with Scalar=" << scalarType << endl;
       }
@@ -617,10 +622,10 @@ namespace TSQR {
       Matrix<int, Scalar> Q (nrows, ncols);
       Matrix<int, Scalar> R (ncols, ncols);
       if (std::numeric_limits<Scalar>::has_quiet_NaN) {
-        deep_copy (A, std::numeric_limits< Scalar>::quiet_NaN());
-        deep_copy (A_copy, std::numeric_limits<Scalar>::quiet_NaN());
-        deep_copy (Q, std::numeric_limits<Scalar>::quiet_NaN());
-        deep_copy (R, std::numeric_limits<Scalar>::quiet_NaN());
+        deep_copy (A, std::numeric_limits< Scalar>::quiet_NaN ());
+        deep_copy (A_copy, std::numeric_limits<Scalar>::quiet_NaN ());
+        deep_copy (Q, std::numeric_limits<Scalar>::quiet_NaN ());
+        deep_copy (R, std::numeric_limits<Scalar>::quiet_NaN ());
       }
       const int lda = nrows;
       const int ldq = nrows;
@@ -633,59 +638,104 @@ namespace TSQR {
         TSQR::Random::NormalGenerator<int, Scalar> gen (iseed);
         nodeTestProblem (gen, nrows, ncols, A.data (),
                          A.stride (1), true);
-        gen.getSeed (iseed);
+        gen.getSeed (iseed); // fetch seed for the next test
       }
 
-      // Copy A into A_copy, since LAPACK QR overwrites the input.
-      deep_copy (A_copy, A);
+      if (params.saveMatrices) {
+        std::string filename = std::string ("A") + fileSuffix;
+        if (verbose) {
+          cerr << "-- Save A to \"" << filename << "\"" << endl;
+        }
+        std::ofstream fileOut (filename.c_str ());
+        print_local_matrix (fileOut, nrows, ncols,
+                            A.data (), A.stride (1));
+        fileOut.close ();
+      }
+
       if (verbose) {
-        cerr << "-- Copied test problem from A into A_copy" << endl;
+        cerr << "-- Copy A into A_copy" << endl;
       }
+      deep_copy (A_copy, A);
 
-      // Determine the required workspace for the factorization.
+      if (verbose) {
+        cerr << "-- Do LAPACK lwork query" << endl;
+      }
       Impl::Lapack<Scalar> lapack;
       const int lwork =
         lworkQueryLapackQr (lapack, nrows, ncols, A_copy.stride (1));
+      if (verbose) {
+        cerr << "-- lwork=" << lwork << endl;
+      }
       std::vector<Scalar> work (lwork);
       std::vector<Scalar> tau (ncols);
 
-      // Fill R with zeros, since the factorization may not overwrite
-      // the strict lower triangle of R.
+      if (verbose) {
+        cerr << "-- Fill R with zeros" << endl;
+      }
+      // We need to fill R with zeros, since the factorization may not
+      // overwrite the strict lower triangle of R.
       deep_copy (R, Scalar {});
 
-      lapack.compute_QR (nrows, ncols, A_copy.data(), A_copy.stride(1),
-                         tau.data(), work.data(), lwork);
-      // Copy out the R factor from A_copy (where we computed the QR
-      // factorization in place) into R.
-      copy_upper_triangle (ncols, ncols, R.data(), ldr, A_copy.data(), lda);
-
       if (verbose) {
-        cerr << endl << "-- R factor:" << endl;
-        print_local_matrix (cerr, ncols, ncols, R.data(), R.stride(1));
-        cerr << endl;
+        cerr << "-- Call Lapack::compute_QR" << endl;
+      }
+      lapack.compute_QR (nrows, ncols, A_copy.data (),
+                         A_copy.stride (1), tau.data (),
+                         work.data(), lwork);
+      if (verbose) {
+        cerr << "-- Copy R out of in-place result" << endl;
+      }
+      copy_upper_triangle (ncols, ncols, R.data(), ldr,
+                           A_copy.data(), lda);
+      if (params.saveMatrices) {
+        std::string filename = std::string ("R") + fileSuffix;
+        if (verbose) {
+          cerr << "-- Save R to \"" << filename << "\"" << endl;
+        }
+        std::ofstream fileOut (filename.c_str ());
+        print_local_matrix (fileOut, ncols, ncols,
+                            R.data (), R.stride (1));
+        fileOut.close ();
       }
 
       // The explicit Q factor will be computed in place, so copy the
       // result of the factorization into Q.
       deep_copy (Q, A_copy);
 
-      lapack.compute_explicit_Q (nrows, ncols, ncols, Q.data(), ldq,
-                                 tau.data(), work.data(), lwork);
+      if (verbose) {
+        cerr << "-- Call Lapack::compute_explicit_Q" << endl;
+      }
+      lapack.compute_explicit_Q (nrows, ncols, ncols, Q.data (), ldq,
+                                 tau.data (), work.data (), lwork);
 
-      // Validate the factorization
-      std::vector<magnitude_type> results =
-        local_verify (nrows, ncols, A.data(), lda, Q.data(), ldq,
-                      R.data(), ldr);
+      if (params.saveMatrices) {
+        std::string filename = std::string ("Q") + fileSuffix;
+        if (verbose) {
+          cerr << "-- Save Q to \"" << filename << "\"" << endl;
+        }
+        std::ofstream fileOut (filename.c_str());
+        print_local_matrix (fileOut, nrows, ncols,
+                            Q.data (), Q.stride (1));
+        fileOut.close ();
+      }
 
-      // Print the results
+      if (verbose) {
+        cerr << "-- Call local_verify to validate the factorization"
+             << endl;
+      }
+      auto results = local_verify (nrows, ncols, A.data (), lda,
+                                   Q.data (), ldq, R.data (), ldr);
+
       if (params.humanReadable) {
-        out << "LAPACK QR (DGEQRF and DUNGQR):" << endl
-            << "Scalar type: " << scalarType << endl
-            << "Test matrix norm $\\| A \\|_F$: "
+        out << "LAPACK QR:" << endl
+            << "  - Scalar type: " << scalarType << endl
+            << "  - Matrix dimensions: " << nrows << " by " << ncols
+            << endl
+            << "  - Matrix norm $\\| A \\|_F$: "
             << results[2] << endl
-            << "Absolute residual $\\| A - QR \\|_F$: "
+            << "  - Residual $\\| A - QR \\|_F$: "
             << results[0] << endl
-            << "Absolute orthogonality $\\| I - Q^* Q \\|_F$: "
+            << "  - Orthogonality $\\| I - Q^* Q \\|_F$: "
             << results[1] << endl
             << endl;
       }
@@ -998,15 +1048,15 @@ main (int argc, char *argv[])
         if (mayPrint && ! params.humanReadable) {
           TSQR::Test::printVerifyFieldNames (out);
         }
-        TSQR::Test::verifyNodeTsqr (out, params);
         TSQR::Test::verifyLapack (out, params);
+        TSQR::Test::verifyNodeTsqr (out, params);
       }
       if (params.benchmark) {
         if (mayPrint && ! params.humanReadable) {
           TSQR::Test::printBenchmarkFieldNames (out);
         }
-        TSQR::Test::benchmarkNodeTsqr (out, params);
         TSQR::Test::benchmarkLapack (out, params);
+        TSQR::Test::benchmarkNodeTsqr (out, params);
       }
       success = true;
 
