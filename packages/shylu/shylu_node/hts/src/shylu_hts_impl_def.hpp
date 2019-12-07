@@ -1842,7 +1842,11 @@ SerialBlock::init_memory (const InitInfo& in) {
 template<typename Int, typename Size, typename Sclr>
 inline void Impl<Int, Size, Sclr>::
 SerialBlock::init_numeric (const CrsMatrix& A) {
-  if (is_dense_) memset(d_, 0, nr_*nc_*sizeof(*d_));
+  if (is_dense_)
+  {
+    for (Int i = 0; i < nr_ * nc_; i++)
+      d_[i] = Sclr(0);
+  }
   reinit_numeric(A);
 }
 
@@ -2011,7 +2015,11 @@ template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
 OnDiagTri::reinit_numeric (const CrsMatrix& T, const bool invert) {
   if (d_) {
-    memset(d_, 0, ntri<Int>(this->n_)*sizeof(*d_));
+    {
+      Int nd = ntri<Int>(this->n_);
+      for (Int i = 0; i < nd; i++)
+        d_[i] = Sclr(0);
+    }
     Size nnz = 0;
     for (Int grow = this->r0_; grow < this->r0_ + this->n_; ++grow) {
       const Int lrow = grow - this->r0_;
