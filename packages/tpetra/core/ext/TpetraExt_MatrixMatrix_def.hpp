@@ -3380,6 +3380,20 @@ template \
                      const Teuchos::RCP<const Map<LO, GO, NODE> >& rangeMap, \
                      const Teuchos::RCP<Teuchos::ParameterList>& params); \
 \
+  template \
+  void \
+  MatrixMatrix::add< SCALAR , LO, GO , NODE > \
+                    (const SCALAR & alpha, \
+                     const bool transposeA, \
+                     const CrsMatrix< SCALAR , LO, GO , NODE >& A, \
+                     const SCALAR& beta, \
+                     const bool transposeB, \
+                     const CrsMatrix< SCALAR , LO, GO , NODE >& B, \
+                     CrsMatrix< SCALAR , LO, GO , NODE >& C, \
+                     const Teuchos::RCP<const Map<LO, GO , NODE > >& domainMap, \
+                     const Teuchos::RCP<const Map<LO, GO , NODE > >& rangeMap, \
+                     const Teuchos::RCP<Teuchos::ParameterList>& params); \
+\
   template struct MMdetails::AddKernels<SCALAR, LO, GO, NODE>;
 
 } //End namespace Tpetra
