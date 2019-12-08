@@ -80,20 +80,17 @@ namespace TSQR {
   ///   device-resident data.  Thus, it may perform poorly.
   template<class Scalar, class LocalOrdinal, class Device>
   class NodeTsqrFactory {
-  private:
-    using host_serial_node_tsqr_type =
-      SequentialTsqr<LocalOrdinal, Scalar>;
-    using host_parallel_node_tsqr_type =
-      KokkosNodeTsqr<LocalOrdinal, Scalar>;
-    using combine_node_tsqr_type =
-      CombineNodeTsqr<LocalOrdinal, Scalar>;
-
   public:
     using node_tsqr_type = NodeTsqr<LocalOrdinal, Scalar>;
 
+    /// \brief Get the default implementation of NodeTsqr.
+    ///
+    /// The default implementation is a function of the template
+    /// parameters, especialy Scalar and Device.
     static Teuchos::RCP<node_tsqr_type>
     getNodeTsqr ()
     {
+      using Teuchos::rcp;
       using execution_space = typename Device::execution_space;
 #ifdef KOKKOS_ENABLE_CUDA
       constexpr bool is_cuda =
@@ -102,13 +99,19 @@ namespace TSQR {
       constexpr bool is_cuda = false;
 #endif // KOKKOS_ENABLE_CUDA
       if (is_cuda) {
-        // FIXME (mfh 02 Dec 2019): We don't yet have a CUDA option.
+        // NOTE (mfh 02 Dec 2019): We don't yet have a CUDA option.
         // Just run SequentialTsqr (on host) for now.  This need not
         // necessarily rely on UVM, since the adapter can access the
-        // host version of the data.
-        return Teuchos::rcp (new host_serial_node_tsqr_type);
+        // host version of the data.  (However, note that
+        // Tpetra::MultiVector currently uses CudaUVMSpace as its Cuda
+        // memory space, so the "host version of the data" will be a
+        // UVM allocation.  That's Tpetra's issue, not TSQR's issue.)
+        return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
       }
 
+      // NOTE (mfh 02 Dec 2019) SequentialTsqr does not currently give
+      // correct results for complex Scalar types, so we use
+      // CombineNodeTsqr in that case.
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
       constexpr bool is_complex =
         std::is_same<Scalar, std::complex<double>>::value ||
@@ -117,18 +120,23 @@ namespace TSQR {
       constexpr bool is_complex = false;
 #endif // HAVE_KOKKOSTSQR_COMPLEX
       if (is_complex) {
-        return Teuchos::rcp (new combine_node_tsqr_type);
+        return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
       }
 
-      execution_space execSpace;
-      if (execSpace.concurrency () == 1) {
-        return Teuchos::rcp (new host_serial_node_tsqr_type);
-      }
-      else {
-        return Teuchos::rcp (new host_parallel_node_tsqr_type);
-      }
+      // NOTE (mfh 02 Dec 2019) KokkosNodeTsqr is not currently
+      // correct, so we just defer to SequentialTsqr.  In the future,
+      // if execution_space().concurrency() is 1, it would make sense
+      // to return SequentialTsqr (with its lower overhead) instead of
+      // KokkosNodeTsqr.
+      return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
     }
 
+    /// \brief Get a specific implementation of NodeTsqr.
+    ///
+    /// \param name [in] Either "SequentialTsqr", "CombineNodeTsqr",
+    ///   "KokkosNodeTsqr", or "Default".  "Default" means "return
+    ///   what the above zero-argument overload of getNodeTsqr()
+    ///   returns."
     static Teuchos::RCP<node_tsqr_type>
     getNodeTsqr (const std::string& name)
     {
@@ -136,11 +144,11 @@ namespace TSQR {
       if (name == "SequentialTsqr" || name == "Sequential") {
         return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
       }
-      else if (name == "KokkosNodeTsqr" || name == "Kokkos") {
-        return rcp (new KokkosNodeTsqr<LocalOrdinal, Scalar>);
-      }
       else if (name == "CombineNodeTsqr" || name == "Combine") {
         return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
+      }
+      else if (name == "KokkosNodeTsqr" || name == "Kokkos") {
+        return rcp (new KokkosNodeTsqr<LocalOrdinal, Scalar>);
       }
       else if (name == "Default") {
         return getNodeTsqr ();
@@ -166,6 +174,7 @@ namespace TSQR {
           (true, std::invalid_argument, os.str ());
       }
     }
+
   };
 } // namespace TSQR
 
