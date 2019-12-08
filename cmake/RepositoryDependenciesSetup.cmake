@@ -82,17 +82,23 @@ ENDIF()
 IF(KDD_INT_LONG OR KDD_INT_LONG_LONG OR KDD_INT_UNSIGNED)
    # Tpetra will not using GO=int.
    # Is Xpetra_ENABLE_Tpetra explicitly OFF?
+   SET(BMK_EXPLICIT_TPETRA_OFF OFF)
+   IF(NOT "${Trilinos_ENABLE_Tpetra}" STREQUAL "" AND NOT ${Trilinos_ENABLE_Tpetra})
+     SET(BMK_EXPLICIT_TPETRA_OFF ON)
+   ENDIF()
    SET(BMK_EXPLICIT_XT_OFF OFF)
    IF(NOT "${Xpetra_ENABLE_Tpetra}" STREQUAL "" AND NOT ${Xpetra_ENABLE_Tpetra})
-     # Xpetra_ENABLE_Tpetra is falsey but non-empty, so it's explicitly OFF
      SET(BMK_EXPLICIT_XT_OFF ON)
    ENDIF()
-   # Several cases here:
-   #  -If Xpetra_ENABLE_Tpetra is explicitly OFF, we don't have to do anything here
+   # Assuming that Tpetra is always on by default (which it is, as a PT package)
+   # If Xpetra is not enabled for any reason, nothing here will have an effect.
+   #
+   # Several cases to consider:
+   #  -If Trilinos_ENABLE_Tpetra or Xpetra_ENABLE_Tpetra are explicitly OFF, nothing to do
    #  -If Xpetra_ENABLE_Epetra is explicitly set either way,
    #    let Xpetra error out (if ON) or be fine (if OFF) later.
    #  -Otherwise, turn off Xpetra_ENABLE_Epetra.
-   IF("${Xpetra_ENABLE_Epetra}" STREQUAL "" AND NOT ${BMK_EXPLICIT_XT_OFF})
+   IF("${Xpetra_ENABLE_Epetra}" STREQUAL "" AND NOT ${BMK_EXPLICIT_TPETRA_OFF} AND NOT ${BMK_EXPLICIT_XT_OFF})
      SET(Xpetra_ENABLE_Epetra OFF)
      SET(Xpetra_ENABLE_EpetraExt OFF)
      SET(MueLu_ENABLE_Epetra OFF)

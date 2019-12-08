@@ -52,6 +52,12 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tpetra)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Epetra)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thyra)
 
+IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "Neither Tpetra nor Epetra support is enabled in Xpetra."
+    " Set Xpetra_ENABLE_Tpetra and/or Xpetra_ENABLE_Epetra to ON,"
+    " or just disable Xpetra.")
+ENDIF()
+
 # If Epetra is enabled, does it provide 64-bit global indices?
 IF(${PACKAGE_NAME}_ENABLE_Epetra)
 
