@@ -1492,6 +1492,7 @@ namespace Tpetra {
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
+    /// \pre columnIndices are sorted within rows
     /// \pre <tt>hasColMap() == true</tt>
     /// \pre <tt>rowPointers.size() != getNodeNumRows()+1</tt>
     /// \pre No insert routines have been called.
@@ -1504,6 +1505,7 @@ namespace Tpetra {
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
+    /// \pre columnIndices are sorted within rows
     /// \pre <tt>hasColMap() == true</tt>
     /// \pre <tt>rowPointers.size() != getNodeNumRows()+1</tt>
     /// \pre No insert routines have been called.
