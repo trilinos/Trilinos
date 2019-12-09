@@ -37,17 +37,23 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Tsqr_NodeTsqrFactory.hpp
+/// \brief Declaration and definition of a factory for creating an
+///   instance of the right NodeTsqr subclass.
+
 #ifndef TSQR_NODETSQRFACTORY_HPP
 #define TSQR_NODETSQRFACTORY_HPP
 
-#include "Tsqr_ConfigDefs.hpp"
 #include "Tsqr_KokkosNodeTsqr.hpp"
 #include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr_CombineNodeTsqr.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TestForException.hpp"
-#include <vector>
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#  include "Kokkos_Complex.hpp"
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 #include <string>
+#include <vector>
 
 namespace TSQR {
   /// \class NodeTsqrFactory
@@ -88,23 +94,6 @@ namespace TSQR {
     getNodeTsqr ()
     {
       using Teuchos::rcp;
-      using execution_space = typename Device::execution_space;
-#ifdef KOKKOS_ENABLE_CUDA
-      constexpr bool is_cuda =
-        std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-      constexpr bool is_cuda = false;
-#endif // KOKKOS_ENABLE_CUDA
-      if (is_cuda) {
-        // NOTE (mfh 02 Dec 2019): We don't yet have a CUDA option.
-        // Just run SequentialTsqr (on host) for now.  This need not
-        // necessarily rely on UVM, since the adapter can access the
-        // host version of the data.  (However, note that
-        // Tpetra::MultiVector currently uses CudaUVMSpace as its Cuda
-        // memory space, so the "host version of the data" will be a
-        // UVM allocation.  That's Tpetra's issue, not TSQR's issue.)
-        return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
-      }
 
       // NOTE (mfh 02 Dec 2019) SequentialTsqr does not currently give
       // correct results for complex Scalar types, so we use
@@ -112,20 +101,23 @@ namespace TSQR {
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
       constexpr bool is_complex =
         std::is_same<Scalar, std::complex<double>>::value ||
-        std::is_same<Scalar, std::complex<float>>::value;
+        std::is_same<Scalar, std::complex<float>>::value ||
+        std::is_same<Scalar, Kokkos::complex<double>>::value ||
+        std::is_same<Scalar, Kokkos::complex<float>>::value;
 #else
       constexpr bool is_complex = false;
 #endif // HAVE_KOKKOSTSQR_COMPLEX
       if (is_complex) {
         return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
       }
-
-      // NOTE (mfh 02 Dec 2019) KokkosNodeTsqr is not currently
-      // correct, so we just defer to SequentialTsqr.  In the future,
-      // if execution_space().concurrency() is 1, it would make sense
-      // to return SequentialTsqr (with its lower overhead) instead of
-      // KokkosNodeTsqr.
-      return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
+      else {
+        // NOTE (mfh 02 Dec 2019) KokkosNodeTsqr is not currently
+        // correct, so we just defer to SequentialTsqr.  In the future,
+        // if execution_space().concurrency() is 1, it would make sense
+        // to return SequentialTsqr (with its lower overhead) instead of
+        // KokkosNodeTsqr.
+        return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
+      }
     }
 
     /// \brief Get a specific implementation of NodeTsqr.
