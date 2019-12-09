@@ -246,60 +246,6 @@ namespace TSQR {
       return MatView (lastRow - firstRow + 1, extent(1), data() + firstRow, stride(1));
     }
 
-    /// Split off and return the top cache block of nrows_top rows.
-    /// Modify *this to be the "rest" of the matrix.
-    ///
-    /// \note Only use this method to split off a single cache block.
-    ///   It breaks if you try to use it otherwise.
-    ///
-    /// \param nrows_top [in] Number of rows in the top block (which
-    ///   this method returns)
-    ///
-    /// \param b_contiguous_blocks [in] Whether or not the entries of
-    ///   the top block are stored contiguously in *this.  The default
-    ///   is no (false).
-    ///
-    /// \return The top block of nrows_top rows.  Data is a shallow
-    ///   copy of the data in *this.
-    MatView
-    split_top (const ordinal_type nrows_top,
-               const bool b_contiguous_blocks = false)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits<ordinal_type>::is_signed && nrows_top < 0) {
-        std::ostringstream os;
-        os << "nrows_top (= " << nrows_top << ") < 0";
-        throw std::invalid_argument (os.str());
-      }
-      else if (nrows_top > extent(0)) {
-        std::ostringstream os;
-        os << "nrows_top (= " << nrows_top << ") > nrows (= " << extent(0) << ")";
-        throw std::invalid_argument (os.str());
-      }
-#endif // TSQR_MATVIEW_DEBUG
-
-      pointer const A_top_ptr = data();
-      pointer A_rest_ptr;
-      const ordinal_type nrows_rest = extent(0) - nrows_top;
-      ordinal_type lda_top, lda_rest;
-      if (b_contiguous_blocks) {
-        lda_top = nrows_top;
-        lda_rest = nrows_rest;
-        A_rest_ptr = A_top_ptr + nrows_top * extent(1);
-      }
-      else {
-        lda_top = stride(1);
-        lda_rest = stride(1);
-        A_rest_ptr = A_top_ptr + nrows_top;
-      }
-      MatView A_top (nrows_top, extent(1), data(), lda_top);
-      A_ = A_rest_ptr;
-      nrows_ = nrows_rest;
-      lda_ = lda_rest;
-
-      return A_top;
-    }
-
     /// Split off and return the bottom block.  Modify *this to be the
     /// "rest" of the matrix.
     MatView
@@ -431,7 +377,48 @@ namespace TSQR {
     return {A_top, A_bot};
   }
 
-} // namespace TSQR
+  /// \brief Split off and return the top block of nrows_top rows.
+  ///   Modify A in place to be the "rest" of the matrix.
+  ///
+  /// \param A [in] On input: The whole matrix view.  On output: A
+  ///   view of the "rest" of the matrix, that is, the part "below"
+  ///   the returned matrix view.
+  ///
+  /// \param nrows_top [in] Number of rows in the top block (which
+  ///   this method returns).
+  ///
+  /// \param contiguousCacheBlocks [in] Whether or not the entries of
+  ///   the top block are stored contiguously in A.  The default is no
+  ///   (false).
+  ///
+  /// \return A view of the top block of nrows_top rows.
+  template<class LO, class SC>
+  MatView<LO, SC>
+  split_top (MatView<LO, SC>& A,
+             const LO nrows_top,
+             const bool contiguousCacheBlocks = false)
+  {
+    using pointer = typename MatView<LO, SC>::pointer;
+    pointer A_top_ptr = A.data();
+    pointer A_rest_ptr {};
+    const LO nrows_rest = A.extent(0) - nrows_top;
+    const LO ncols = A.extent(1);
 
+    LO lda_top, lda_rest;
+    if (contiguousCacheBlocks) {
+      lda_top = nrows_top;
+      lda_rest = nrows_rest;
+      A_rest_ptr = A_top_ptr + nrows_top * ncols;
+    }
+    else {
+      lda_top = A.stride(1);
+      lda_rest = A.stride(1);
+      A_rest_ptr = A_top_ptr + nrows_top;
+    }
+    MatView<LO, SC> A_top (nrows_top, ncols, A_top_ptr, lda_top);
+    A = MatView<LO, SC> (nrows_rest, ncols, A_rest_ptr, lda_rest);
+    return A_top;
+  }
+} // namespace TSQR
 
 #endif // __TSQR_Tsqr_MatView_hpp

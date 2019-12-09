@@ -473,7 +473,7 @@ namespace TSQR {
       // Note: if the cache blocks are stored contiguously, lda won't
       // be the correct leading dimension of A, but it won't matter:
       // we only ever operate on A_cur here, and A_cur's leading
-      // dimension is set correctly by A_rest.split_top().
+      // dimension is set correctly by split_top_block.
       mat_view_type A_rest (nrows, ncols, A, lda);
       // This call modifies A_rest.
       mat_view_type A_cur =
@@ -517,7 +517,7 @@ namespace TSQR {
     /// \param lda [in] If the matrix A is stored in column-major
     ///   order: the leading dimension (a.k.a. stride) of A.
     ///   Otherwise, the value of this parameter doesn't matter.
-    /// \param contiguous_cache_blocks [in] Whether the cache blocks
+    /// \param contigCacheBlocks [in] Whether the cache blocks
     ///   in the matrix A are stored contiguously.
     ///
     /// \return Number of cache blocks in the matrix A: a positive integer.
@@ -526,7 +526,7 @@ namespace TSQR {
                              const LocalOrdinal ncols,
                              const Scalar A[],
                              const LocalOrdinal lda,
-                             const bool contiguous_cache_blocks) const
+                             const bool contigCacheBlocks) const
     {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
       LocalOrdinal count = 0;
@@ -535,12 +535,12 @@ namespace TSQR {
       if (A_rest.empty()) {
         return count;
       }
-
-      const_mat_view_type A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+      const_mat_view_type A_cur =
+        blocker.split_top_block (A_rest, contigCacheBlocks);
       ++count; // first factor step
 
       while (! A_rest.empty()) {
-        A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+        A_cur = blocker.split_top_block (A_rest, contigCacheBlocks);
         ++count; // next factor step
       }
       return count;

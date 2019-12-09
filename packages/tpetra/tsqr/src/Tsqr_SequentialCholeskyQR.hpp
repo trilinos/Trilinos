@@ -225,23 +225,23 @@ namespace TSQR {
                 const LocalOrdinal ncols_C,
                 Scalar C[],
                 const LocalOrdinal ldc,
-                const bool contiguous_cache_blocks = false)
+                const bool contiguousCacheBlocks = false)
     {
       if (ncols_Q != ncols_C)
         throw std::logic_error("SequentialCholeskyQR::explicit_Q() "
                                "does not work if ncols_C != ncols_Q");
       const LocalOrdinal ncols = ncols_Q;
 
-      if (contiguous_cache_blocks) {
+      if (contiguousCacheBlocks) {
         CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols,
                                                     strategy_);
         mat_view_type C_rest (nrows, ncols, C, ldc);
         const_mat_view_type Q_rest (nrows, ncols, Q, ldq);
 
         mat_view_type C_cur =
-          blocker.split_top_block (C_rest, contiguous_cache_blocks);
+          blocker.split_top_block (C_rest, contiguousCacheBlocks);
         const_mat_view_type Q_cur =
-          blocker.split_top_block (Q_rest, contiguous_cache_blocks);
+          blocker.split_top_block (Q_rest, contiguousCacheBlocks);
 
         while (! C_rest.empty ()) {
           deep_copy (Q_cur, C_cur);
@@ -253,7 +253,6 @@ namespace TSQR {
       }
     }
 
-
     /// Cache-block the given A_in matrix, writing the results to A_out.
     void
     cache_block (const LocalOrdinal nrows,
@@ -262,10 +261,9 @@ namespace TSQR {
                  const Scalar A_in[],
                  const LocalOrdinal lda_in) const
     {
-      CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
+      CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
       blocker.cache_block (nrows, ncols, A_out, A_in, lda_in);
     }
-
 
     /// "Un"-cache-block the given A_in matrix, writing the results to A_out.
     void

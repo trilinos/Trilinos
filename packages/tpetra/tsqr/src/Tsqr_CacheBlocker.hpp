@@ -158,14 +158,14 @@ namespace TSQR {
     ///   matrix with which this CacheBlocker was initialized.
     template< class MatrixViewType >
     MatrixViewType
-    split_top_block (MatrixViewType& A, const bool contiguous_cache_blocks) const
+    split_top_block (MatrixViewType& A,
+                     const bool contiguous_cache_blocks) const
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       const ordinal_type nrows_top =
         strategy_.top_block_split_nrows (A.extent(0), extent(1),
                                          nrows_cache_block());
-      // split_top() sets A to A_rest, and returns A_top.
-      return A.split_top (nrows_top, contiguous_cache_blocks);
+      return split_top (A, nrows_top, contiguous_cache_blocks);
     }
 
     /// \brief View of the topmost cache block of A.
@@ -188,7 +188,7 @@ namespace TSQR {
         strategy_.top_block_split_nrows (A.extent(0), extent(1),
                                          nrows_cache_block());
       MatrixViewType A_copy (A);
-      return A_copy.split_top (nrows_top, contiguous_cache_blocks);
+      return split_top (A_copy, nrows_top, contiguous_cache_blocks);
     }
 
     /// \brief Split A in place into [A_rest; A_bot].
@@ -280,7 +280,7 @@ namespace TSQR {
       // Note: if the cache blocks are stored contiguously, lda won't
       // be the correct leading dimension of A, but it won't matter:
       // we only ever operate on A_cur here, and A_cur's leading
-      // dimension is set correctly by A_rest.split_top().
+      // dimension is set correctly by split_top_block.
       mat_view_type A_rest (num_rows, num_cols, A, lda);
 
       while (! A_rest.empty()) {
