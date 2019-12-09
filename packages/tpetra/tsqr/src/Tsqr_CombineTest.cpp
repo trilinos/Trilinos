@@ -328,6 +328,7 @@ namespace TSQR {
 
       // Space to put the explicit Q factors.
       matrix_type Q_R1R2 (Ordinal(2) * numCols, numCols, Scalar{});
+      auto Q_R1_Q_R2 = partition_2x1 (Q_R1R2.view (), numCols);
       matrix_type Q_R3A (numRows + numCols, numCols, Scalar{});
 
       // Fill the explicit Q factor matrices with the first numCols
@@ -336,8 +337,8 @@ namespace TSQR {
         // FIXME (mfh 26 Nov 2019) Eventually we want to get away from
         // direct modification of the entries of a Matrix or MatView,
         // in favor of only doing so with a Kokkos kernel or TPL.
-        Q_R1R2(k, k) = Scalar(1.0);
-        Q_R3A(k, k) = Scalar(1.0);
+        Q_R1R2(k, k) = Scalar (1.0);
+        Q_R3A(k, k) = Scalar (1.0);
       }
 
       // tau factor arrays, one for each factorization test.
@@ -354,43 +355,45 @@ namespace TSQR {
              << "qr( [R1; R2] ), with R1 and R2 " << numCols
              << " by " << numCols << endl << endl;
       }
-      combiner.factor_pair (R1.view(), R2.view(),
-                            tau_R1R2.data(), work.data());
-      combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                           R2.data(), R2.stride(1), tau_R1R2.data(),
-                           &Q_R1R2(0, 0), Q_R1R2.stride(1),
-                           &Q_R1R2(numCols, 0), Q_R1R2.stride(1),
-                           work.data());
+      combiner.factor_pair (R1.view (), R2.view (),
+                            tau_R1R2.data (), work.data ());
+      combiner.apply_pair (ApplyType ("N"), R2.view (),
+                           tau_R1R2.data (),
+                           Q_R1_Q_R2.first, Q_R1_Q_R2.second,
+                           work.data ());
       if (debug) {
         cerr << "Results of first test problem:" << endl;
         cerr << "-- Copy of test problem:" << endl;
-        print_local_matrix (cerr, A_R1R2.extent(0), A_R1R2.extent(1),
-                            A_R1R2.data(), A_R1R2.stride(1));
+        print_local_matrix (cerr, A_R1R2.extent (0),
+                            A_R1R2.extent (1), A_R1R2.data (),
+                            A_R1R2.stride (1));
         cerr << endl << "-- Q factor:" << endl;
-        print_local_matrix (cerr, Q_R1R2.extent(0), Q_R1R2.extent(1),
-                            Q_R1R2.data(), Q_R1R2.stride(1));
+        print_local_matrix (cerr, Q_R1R2.extent (0),
+                            Q_R1R2.extent (1), Q_R1R2.data (),
+                            Q_R1R2.stride (1));
         cerr << endl << "-- R factor:" << endl;
-        print_local_matrix (cerr, R1.extent(0), R1.extent(1),
-                            R1.data(), R1.stride(1));
+        print_local_matrix (cerr, R1.extent (0), R1.extent (1),
+                            R1.data (), R1.stride (1));
         cerr << endl;
       }
       const results_type firstResults =
-        local_verify (A_R1R2.extent(0), A_R1R2.extent(1),
-                      A_R1R2.data(), A_R1R2.stride(1),
-                      Q_R1R2.data(), Q_R1R2.stride(1),
-                      R1.data(), R1.stride(1));
+        local_verify (A_R1R2.extent (0), A_R1R2.extent (1),
+                      A_R1R2.data (), A_R1R2.stride (1),
+                      Q_R1R2.data (), Q_R1R2.stride (1),
+                      R1.data (), R1.stride (1));
       if (debug) {
         cerr << "\\| A - Q*R \\|_F = " << firstResults[0] << endl
              << "\\| I - Q'*Q \\|_F = " << firstResults[1] << endl
              << "\\| A \\|_A = " << firstResults[2] << endl;
-        cerr << endl << "----------------------------------------" << endl
-             << "TSQR::Combine second test problem:" << endl
-             << "qr( [R3; A] ), with R3 " << numCols << " by " << numCols
-             << " and A " << numRows << " by " << numCols << endl << endl;
+        cerr << endl << "----------------------------------------"
+             << endl << "TSQR::Combine second test problem:" << endl
+             << "qr( [R3; A] ), with R3 " << numCols << " by "
+             << numCols << " and A " << numRows << " by " << numCols
+             << endl << endl;
       }
-      combiner.factor_inner (R3.view(), A.view(),
-                             tau_R3A.data(), work.data());
-      combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
+      combiner.factor_inner (R3.view (), A.view (),
+                             tau_R3A.data (), work.data ());
+      combiner.apply_inner (ApplyType ("N"), numRows, numCols, numCols,
                             A.data(), A.stride(1), tau_R3A.data(),
                             &Q_R3A(0, 0), Q_R3A.stride(1),
                             &Q_R3A(numCols, 0), Q_R3A.stride(1),

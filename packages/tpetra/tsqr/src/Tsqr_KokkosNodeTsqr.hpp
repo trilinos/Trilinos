@@ -1621,11 +1621,8 @@ namespace TSQR {
       // The statement below only works if C_top, R_bot, and C_bot
       // have a nonzero (and the same) number of columns, but we have
       // already checked that above.
-      combine.apply_pair (applyType, C_top.extent(1), R_bot.extent(1),
-                          R_bot.data(), R_bot.stride(1), tau.data(),
-                          C_top.data(), C_top.stride(1),
-                          C_bot.data(), C_bot.stride(1),
-                          work_.data());
+      combine.apply_pair (applyType, R_bot, tau.data (),
+                          C_top, C_bot, work_.data ());
     }
 
     void
@@ -1638,9 +1635,10 @@ namespace TSQR {
       const char prefix[] = "KokkosNodeTsqr::applySecondPass: ";
       const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
-      const int numParts = factorOutput.numPartitions();
-      if (numParts <= 1)
+      const int numParts = factorOutput.numPartitions ();
+      if (numParts <= 1) {
         return; // Done!
+      }
       TEUCHOS_TEST_FOR_EXCEPTION
         (topBlocksOfC.size () != size_t (numParts), std::logic_error,
          prefix << "topBlocksOfC.size() (= " << topBlocksOfC.size()

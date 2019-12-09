@@ -40,8 +40,8 @@
 /// \file Tsqr_Combine.hpp
 /// \brief TSQR's six computational kernels.
 
-#ifndef __TSQR_Combine_hpp
-#define __TSQR_Combine_hpp
+#ifndef TSQR_COMBINE_HPP
+#define TSQR_COMBINE_HPP
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Tsqr_ApplyType.hpp"
@@ -108,8 +108,9 @@ namespace TSQR {
     /// Whether or not the QR factorizations computed by methods of
     /// this class produce an R factor with all nonnegative diagonal
     /// entries.
-    static bool QR_produces_R_factor_with_nonnegative_diagonal() {
-      return combine_impl_type::QR_produces_R_factor_with_nonnegative_diagonal();
+    static bool QR_produces_R_factor_with_nonnegative_diagonal () {
+      return combine_impl_type::
+        QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
     /// \brief Factor the first cache block.
@@ -260,27 +261,21 @@ namespace TSQR {
     /// Apply Q factor (or Q^T or Q^H) of the 2*ncols_Q by ncols_Q
     /// matrix [R_top; R_bot] (stored in R_bot and tau) to the
     /// 2*ncols_Q by ncols_C matrix [C_top; C_bot].  The two blocks
-    /// C_top and C_bot may have different leading dimensions (ldc_top
-    /// resp. ldc_bot).
+    /// C_top and C_bot need not be stored contiguously in memory, and
+    /// they may have different strides ("leading dimensions," in BLAS
+    /// and LAPACK terms).
     ///
     /// \param apply_type [in] NoTranspose means apply Q, Transpose
     ///   means apply Q^T, and ConjugateTranspose means apply Q^H.
     void
     apply_pair (const ApplyType& apply_type,
-                const Ordinal ncols_C,
-                const Ordinal ncols_Q,
-                const Scalar R_bot[],
-                const Ordinal ldr_bot,
+                const MatView<Ordinal, const Scalar>& R_bot,
                 const Scalar tau[],
-                Scalar C_top[],
-                const Ordinal ldc_top,
-                Scalar C_bot[],
-                const Ordinal ldc_bot,
+                const MatView<Ordinal, Scalar>& C_top,
+                const MatView<Ordinal, Scalar>& C_bot,
                 Scalar work[])
     {
-      impl_.apply_pair (apply_type, ncols_C, ncols_Q,
-                        R_bot, ldr_bot, tau,
-                        C_top, ldc_top, C_bot, ldc_bot, work);
+      impl_.apply_pair (apply_type, R_bot, tau, C_top, C_bot, work);
     }
 
   private:
@@ -290,4 +285,4 @@ namespace TSQR {
 
 } // namespace TSQR
 
-#endif // __TSQR_Combine_hpp
+#endif // TSQR_COMBINE_HPP

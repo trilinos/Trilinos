@@ -143,15 +143,10 @@ namespace TSQR {
 
     void
     apply_pair (const ApplyType& applyType,
-                const Ordinal ncols_C,
-                const Ordinal ncols_Q,
-                const Scalar R_bot[],
-                const Ordinal ldr_bot,
+                const MatView<Ordinal, const Scalar>& R_bot,
                 const Scalar tau[],
-                Scalar C_top[],
-                const Ordinal ldc_top,
-                Scalar C_bot[],
-                const Ordinal ldc_bot,
+                const MatView<Ordinal, Scalar>& C_top,
+                const MatView<Ordinal, Scalar>& C_bot,
                 Scalar work[]) const;
 
   private:
@@ -295,16 +290,11 @@ namespace TSQR {
 
     void
     apply_pair (const ApplyType& applyType,
-                const Ordinal ncols_C,
-                const Ordinal ncols_Q,
-                const scalar_type R_bot[],
-                const Ordinal ldr_bot,
-                const scalar_type tau[],
-                scalar_type C_top[],
-                const Ordinal ldc_top,
-                scalar_type C_bot[],
-                const Ordinal ldc_bot,
-                scalar_type work[]) const;
+                const MatView<Ordinal, const Scalar>& R_bot,
+                const Scalar tau[],
+                const MatView<Ordinal, Scalar>& C_top,
+                const MatView<Ordinal, Scalar>& C_bot,
+                Scalar work[]) const;
 
   private:
     mutable combine_default_type default_;
@@ -387,21 +377,14 @@ namespace TSQR {
 
     void
     apply_pair (const ApplyType& applyType,
-                const Ordinal ncols_C,
-                const Ordinal ncols_Q,
-                const Scalar R_bot[],
-                const Ordinal ldr_bot,
+                const MatView<Ordinal, const Scalar>& R_bot,
                 const Scalar tau[],
-                Scalar C_top[],
-                const Ordinal ldc_top,
-                Scalar C_bot[],
-                const Ordinal ldc_bot,
+                const MatView<Ordinal, Scalar>& C_top,
+                const MatView<Ordinal, Scalar>& C_bot,
                 Scalar work[]) const
     {
-      return default_.apply_pair (applyType, ncols_C, ncols_Q,
-                                  R_bot, ldr_bot, tau,
-                                  C_top, ldc_top, C_bot, ldc_bot,
-                                  work);
+      return default_.apply_pair (applyType, R_bot, tau,
+                                  C_top, C_bot, work);
     }
 
   private:
@@ -717,16 +700,11 @@ namespace TSQR {
   void
   CombineNative<Ordinal, Scalar, false>::
   apply_pair (const ApplyType& applyType,
-              const Ordinal ncols_C,
-              const Ordinal ncols_Q,
-              const scalar_type R_bot[],
-              const Ordinal ldr_bot,
-              const scalar_type tau[],
-              scalar_type C_top[],
-              const Ordinal ldc_top,
-              scalar_type C_bot[],
-              const Ordinal ldc_bot,
-              scalar_type work[]) const
+              const MatView<Ordinal, const Scalar>& R_bot,
+              const Scalar tau[],
+              const MatView<Ordinal, Scalar>& C_top,
+              const MatView<Ordinal, Scalar>& C_bot,
+              Scalar work[]) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -736,15 +714,23 @@ namespace TSQR {
     using const_vec_type = vector_type<const scalar_type>;
     using nonconst_vec_type = vector_type<scalar_type>;
 
-    const_mat_type R_bot_full (R_bot, ldr_bot, ncols_Q);
-    nonconst_mat_type C_top_full (C_top, ldc_top, ncols_C);
-    nonconst_mat_type C_bot_full (C_bot, ldc_bot, ncols_C);
+    const Ordinal ncols_Q = R_bot.extent (1);
+    const Ordinal ncols_C = C_top.extent (1);
+    const_mat_type R_bot_full
+      (R_bot.data (), R_bot.stride (1), ncols_Q);
+    nonconst_mat_type C_top_full
+      (C_top.data (), C_top.stride (1), ncols_C);
+    nonconst_mat_type C_bot_full
+      (C_bot.data (), C_bot.stride (1), ncols_C);
     const_vec_type tau_view (tau, ncols_Q);
     nonconst_vec_type work_view (work, ncols_C);
 
-    auto R_bot_view = subview (R_bot_full, range_type (0, ncols_Q), ALL ());
-    auto C_top_view = subview (C_top_full, range_type (0, ncols_C), ALL ());
-    auto C_bot_view = subview (C_bot_full, range_type (0, ncols_C), ALL ());
+    auto R_bot_view =
+      subview (R_bot_full, range_type (0, ncols_Q), ALL ());
+    auto C_top_view =
+      subview (C_top_full, range_type (0, ncols_C), ALL ());
+    auto C_bot_view =
+      subview (C_bot_full, range_type (0, ncols_C), ALL ());
     this->apply_pair (applyType, R_bot_view, tau_view,
                       C_top_view, C_bot_view, work_view);
   }

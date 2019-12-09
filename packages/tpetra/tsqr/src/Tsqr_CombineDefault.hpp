@@ -271,46 +271,41 @@ namespace TSQR {
 
     void
     apply_pair (const ApplyType& apply_type,
-                const Ordinal ncols_C,
-                const Ordinal ncols_Q,
-                const Scalar R_bot[],
-                const Ordinal ldr_bot,
+                const MatView<Ordinal, const Scalar>& R_bot,
                 const Scalar tau[],
-                Scalar C_top[],
-                const Ordinal ldc_top,
-                Scalar C_bot[],
-                const Ordinal ldc_bot,
+                const MatView<Ordinal, Scalar>& C_top,
+                const MatView<Ordinal, Scalar>& C_bot,
                 Scalar work[])
     {
+      const Ordinal ncols_C = C_top.extent (1);
+      const Ordinal ncols_Q = R_bot.extent (1);
       const Ordinal numRows = Ordinal(2) * ncols_Q;
+      const Ordinal ldr_bot = R_bot.stride (1);
 
       A_buf_.reshape (numRows, ncols_Q);
       deep_copy (A_buf_, Scalar {});
-      copy_upper_triangle (ncols_Q, ncols_Q,
-                           &A_buf_(ncols_Q, 0), A_buf_.stride(1),
-                           R_bot, ldr_bot);
+      copy_upper_triangle (ncols_Q, ncols_Q, &A_buf_(ncols_Q, 0),
+                           A_buf_.stride (1), R_bot.data (), ldr_bot);
+
       C_buf_.reshape (numRows, ncols_C);
-
-      using view_type = MatView<Ordinal, Scalar>;
-      view_type C_top_view (ncols_Q, ncols_C, C_top, ldc_top);
-      view_type C_buf_top (ncols_Q, ncols_C,
+      using mat_view_type = MatView<Ordinal, Scalar>;
+      mat_view_type C_buf_top (ncols_Q, ncols_C,
                            C_buf_.data (), C_buf_.stride (1));
-      deep_copy (C_buf_top, C_top_view);
-
-      view_type C_bot_view (ncols_Q, ncols_C, C_bot, ldc_bot);
-      view_type C_buf_bot (ncols_Q, ncols_C,
-                           &C_buf_(ncols_Q, 0), C_buf_.stride (1));
-      deep_copy (C_buf_bot, C_bot_view);
+      deep_copy (C_buf_top, C_top);
+      mat_view_type C_buf_bot (ncols_Q, ncols_C, &C_buf_(ncols_Q, 0),
+                               C_buf_.stride (1));
+      deep_copy (C_buf_bot, C_bot);
 
       const int lwork = ncols_Q;
       const std::string trans = apply_type.toString ();
-      lapack_.apply_Q_factor ('L', trans[0], numRows, ncols_C, ncols_Q,
-                              A_buf_.data(), A_buf_.stride(1), tau,
-                              C_buf_.data(), C_buf_.stride(1),
+      lapack_.apply_Q_factor ('L', trans[0], numRows, ncols_C,
+                              ncols_Q, A_buf_.data (),
+                              A_buf_.stride (1), tau,
+                              C_buf_.data (), C_buf_.stride (1),
                               work, lwork);
       // Copy back the results.
-      deep_copy (C_top_view, C_buf_top);
-      deep_copy (C_bot_view, C_buf_bot);
+      deep_copy (C_top, C_buf_top);
+      deep_copy (C_bot, C_buf_bot);
     }
 
   private:

@@ -116,11 +116,12 @@ namespace TSQR {
   /// may be different on different architectures.
   ///
   /// SequentialTsqr is designed to be used as the "intranode TSQR"
-  /// part of the full TSQR implementation in \c Tsqr.  The \c Tsqr
-  /// class can use any of various intranode TSQR implementations.
+  /// part of the full TSQR implementation in Tsqr.  The Tsqr class
+  /// can use any of various intranode TSQR implementations.
   /// SequentialTsqr is an appropriate choice when running in MPI-only
-  /// mode.  Other intranode TSQR implementations, such as \c TbbTsqr,
-  /// are appropriate for hybrid parallelism (MPI + threads).
+  /// mode.  Other intranode TSQR implementations, such as TbbTsqr
+  /// (which has been removed temporarily) are appropriate for hybrid
+  /// parallelism (MPI + threads).
   ///
   /// SequentialTsqr is unlikely to benefit from a multithreaded BLAS
   /// implementation.  In fact, implementations of LAPACK's QR
@@ -128,7 +129,7 @@ namespace TSQR {
   /// multithreading when factoring tall skinny matrices.  (See our
   /// Supercomputing 2009 paper and my IPDPS 2011 paper.)  This is why
   /// we built other intranode TSQR factorizations that do effectively
-  /// exploit thread-level parallelism, such as \c TbbTsqr.
+  /// exploit thread-level parallelism, such as TbbTsqr.
   ///
   /// \note To implementers: SequentialTsqr cannot currently be a
   ///   Teuchos::ParameterListAcceptorDefaultBase, because the latter
@@ -456,7 +457,7 @@ namespace TSQR {
     /// when using SequentialTsqr as the intranode TSQR implementation
     /// in \c Tsqr.  The five-argument version is more useful when
     /// using SequentialTsqr inside of another intranode TSQR
-    /// implementation, such as \c TbbTsqr.
+    /// implementation, such as TbbTsqr.
     Teuchos::RCP<factor_output_type>
     factor (const LocalOrdinal nrows,
             const LocalOrdinal ncols,

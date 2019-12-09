@@ -41,9 +41,6 @@
 #define TSQR_NODETSQRFACTORY_HPP
 
 #include "Tsqr_ConfigDefs.hpp"
-#ifdef HAVE_KOKKOSTSQR_TBB
-#  include "TbbTsqr.hpp"
-#endif // HAVE_KOKKOSTSQR_TBB
 #include "Tsqr_KokkosNodeTsqr.hpp"
 #include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr_CombineNodeTsqr.hpp"

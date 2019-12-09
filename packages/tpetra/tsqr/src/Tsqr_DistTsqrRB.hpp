@@ -444,8 +444,8 @@ namespace TSQR {
             throw std::logic_error (os.str());
           }
           // Q_impl, tau: implicitly stored local Q factor.
-          matrix_type& Q_impl = QFactors[curpos];
-          std::vector<scalar_type>& tau = tauArrays[curpos];
+          auto Q_bot = QFactors[curpos].view ();
+          const scalar_type* tau = tauArrays[curpos].data ();
 
           // Apply implicitly stored local Q factor to
           //   [Q_mine;
@@ -453,13 +453,8 @@ namespace TSQR {
           // where Q_other = zeros(Q_mine.extent(0), Q_mine.extent(1)).
           // Overwrite both Q_mine and Q_other with the result.
           deep_copy (Q_other, scalar_type {});
-          combine_.apply_pair (ApplyType::NoTranspose,
-                               Q_mine.extent(1), Q_impl.extent(1),
-                               Q_impl.data(), Q_impl.stride(1),
-                               tau.data(),
-                               Q_mine.data(), Q_mine.stride(1),
-                               Q_other.data(), Q_other.stride(1),
-                               work_.data());
+          combine_.apply_pair (ApplyType::NoTranspose, Q_bot, tau,
+                               Q_mine, Q_other, work_.data ());
           // Send the resulting Q_other, and the final R factor, to P_mid.
           send_Q_R (Q_other, R_mine, P_mid);
           newpos = curpos - 1;
@@ -476,9 +471,9 @@ namespace TSQR {
                               newpos, QFactors, tauArrays);
         }
         else { // Interval [P_mid, P_last]
-            explicitQBroadcast (R_mine, Q_mine, Q_other,
-                                P_mine, P_mid, P_last,
-                                newpos, QFactors, tauArrays);
+          explicitQBroadcast (R_mine, Q_mine, Q_other,
+                              P_mine, P_mid, P_last,
+                              newpos, QFactors, tauArrays);
         }
       }
     }

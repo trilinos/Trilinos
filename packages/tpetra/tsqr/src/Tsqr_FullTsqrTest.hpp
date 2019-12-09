@@ -719,9 +719,6 @@ namespace TSQR {
         plist->set ("Cache Size Hint", cacheSizeHint,
                     "Cache size hint in bytes.  "
                     "Zero means TSQR picks a reasonable default.");
-        // plist->set ("Num Tasks", numCores,
-        //             "Number of partition(s) to use for TbbTsqr (if "
-        //             "applicable).  Must be a positive integer.");
 
         // Parameters for testing Tsqr.
         plist->set ("numRowsLocal", numRowsLocal,

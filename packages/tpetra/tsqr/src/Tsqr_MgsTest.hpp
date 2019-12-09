@@ -42,9 +42,6 @@
 
 #include "Tsqr_ConfigDefs.hpp"
 #include "Tsqr_Mgs.hpp"
-#ifdef HAVE_KOKKOSTSQR_TBB
-#  include "TbbTsqr_TbbMgs.hpp"
-#endif // HAVE_KOKKOSTSQR_TBB
 #include "Tsqr_TestSetup.hpp"
 #include "Tsqr_GlobalVerify.hpp"
 #include "Tsqr_printGlobalMatrix.hpp"
