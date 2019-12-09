@@ -106,15 +106,15 @@ namespace FROSch {
 
     protected:
 
-        bool UseRoots_;
-        bool UseLeafs_;
+        bool UseRoots_ = false;
+        bool UseLeafs_ = false;
 
         EntitySetPtr Roots_;
         EntitySetPtr Leafs_;
 
         EntitySetPtrVecPtr EntitySetVector_;
 
-        DistanceFunction DistanceFunction_;
+        DistanceFunction DistanceFunction_ = ConstantDistanceFunction;
     };
 
 }
