@@ -77,7 +77,7 @@ namespace Sacado {                                                      \
       static const bool is_linear = LINEAR;                             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      Expr(const ExprT& expr_) : expr(expr_)  {}                        \
+      explicit Expr(const ExprT& expr_) : expr(expr_)  {}               \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       int size() const { return expr.size(); }                          \
