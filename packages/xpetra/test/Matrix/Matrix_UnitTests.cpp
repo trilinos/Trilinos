@@ -180,11 +180,11 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Matrix, StridedMaps_Epetra, M, MA, Scalar, LO, GO, Node )
   {
+#ifdef HAVE_XPETRA_EPETRA
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const size_t numLocal = 10;
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
-#ifdef HAVE_XPETRA_EPETRA
     typedef Xpetra::CrsMatrixWrap<double, int, GO, Xpetra::EpetraNode> EpCrsMatrix;
 
     Teuchos::RCP<const Xpetra::Map<int,GO,Node> > epmap = Xpetra::MapFactory<int,GO,Node>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
