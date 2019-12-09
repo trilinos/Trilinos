@@ -206,7 +206,7 @@ namespace TSQR {
 
         // Remember the top (first) block.
         mat_view_type A_top = *cbIter;
-        if (A_top.empty ()) {
+        if (empty (A_top)) {
           return A_top;
         }
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -244,7 +244,7 @@ namespace TSQR {
           // Iteration over cache blocks of a partition should
           // always result in nonempty cache blocks.
           TEUCHOS_TEST_FOR_EXCEPTION
-            (A_cur.empty (), std::logic_error, "FactorFirstPass::factor: "
+            (empty (A_cur), std::logic_error, "FactorFirstPass::factor: "
              "The current cache block (the " << count << "-th to factor in the "
              "range [" << cbIndices.first << "," << cbIndices.second << ") of "
              "cache block indices) in partition " << (partitionIndex+1) << " "
@@ -308,7 +308,7 @@ namespace TSQR {
         const char suffix[] =
           "  Please report this bug to the Tpetra developers.";
         TEUCHOS_TEST_FOR_EXCEPTION
-          (A_.empty(), std::logic_error, prefix << "A is empty."
+          (empty (A_), std::logic_error, prefix << "A is empty."
            << suffix);
         TEUCHOS_TEST_FOR_EXCEPTION
           (numPartitions < 1, std::logic_error, prefix <<
@@ -335,7 +335,8 @@ namespace TSQR {
       ///   partitions, this routine does nothing.
       void operator() (const int partitionIndex) const
       {
-        if (partitionIndex < 0 || partitionIndex >= numPartitions_ || A_.empty ()) {
+        if (partitionIndex < 0 || partitionIndex >= numPartitions_ ||
+            empty (A_)) {
           return;
         }
         else {
@@ -694,7 +695,7 @@ namespace TSQR {
         const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
         if (partitionIndex < 0 || partitionIndex >= numPartitions_ ||
-            Q_.empty () || C_.empty ()) {
+            empty (Q_) || empty (C_)) {
           return;
         }
 
@@ -820,7 +821,7 @@ namespace TSQR {
       void operator() (const int partitionIndex) const
       {
         if (partitionIndex < 0 || partitionIndex >= numPartitions_ ||
-            A_in_.empty()) {
+            empty (A_in_)) {
           return;
         }
         else {
@@ -941,7 +942,7 @@ namespace TSQR {
       void operator() (const int partitionIndex) const
       {
         if (partitionIndex < 0 || partitionIndex >= numPartitions_ ||
-            Q_.empty ()) {
+            empty (Q_)) {
           return;
         }
         else {
@@ -1019,7 +1020,7 @@ namespace TSQR {
       void operator() (const int partitionIndex) const
       {
         if (partitionIndex < 0 || partitionIndex >= numPartitions_ ||
-            A_.empty ()) {
+            empty (A_)) {
           return;
         }
         else {
@@ -1466,9 +1467,9 @@ namespace TSQR {
       Kokkos::RangePolicy<execution_space, Kokkos::IndexType<int>>
         range (0, numPartitions_);
 
-      if (A.empty ()) {
+      if (empty (A)) {
         TEUCHOS_TEST_FOR_EXCEPTION
-          (! R.empty (), std::logic_error, prefix << "A is empty, "
+          (! empty (R), std::logic_error, prefix << "A is empty, "
            "but R is not." << suffix);
         return Teuchos::rcp (new my_factor_output_type (0, 0));
       }
@@ -1502,7 +1503,7 @@ namespace TSQR {
       // The "topmost top block" contains the resulting R factor.
       const mat_view_type& R_top = result->topBlocks[0];
       TEUCHOS_TEST_FOR_EXCEPTION
-        (R_top.empty (), std::logic_error, prefix << "After "
+        (empty (R_top), std::logic_error, prefix << "After "
          "factorSecondPass: result->topBlocks[0] is an empty view."
          << suffix);
       mat_view_type R_top_square (R_top.extent(1), R_top.extent(1),
@@ -1589,9 +1590,9 @@ namespace TSQR {
                 const mat_view_type& R_bot) const
     {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (R_top.empty (), std::logic_error, "R_top is empty!");
+        (empty (R_top), std::logic_error, "R_top is empty!");
       TEUCHOS_TEST_FOR_EXCEPTION
-        (R_bot.empty (), std::logic_error, "R_bot is empty!");
+        (empty (R_bot), std::logic_error, "R_bot is empty!");
       std::vector<Scalar> tau (R_top.extent (1));
 
       const LocalOrdinal ncol = R_top.extent (1);
@@ -1626,7 +1627,7 @@ namespace TSQR {
       // nonempty if we get this far, so its top block should also be
       // nonempty.
       TEUCHOS_TEST_FOR_EXCEPTION
-        (topBlocks[0].empty(), std::logic_error,
+        (empty (topBlocks[0]), std::logic_error,
          prefix << "topBlocks[0] is empty." << suffix);
       // However, other partitions besides the top one might be empty,
       // in which case their top blocks will be empty.  We skip over
@@ -1635,7 +1636,7 @@ namespace TSQR {
       Combine<LocalOrdinal, Scalar> combine;
       auto R_top = topBlocks[0];
       for (int partIdx = 1; partIdx < numPartitions; ++partIdx) {
-        if (! topBlocks[partIdx].empty ()) {
+        if (! empty (topBlocks[partIdx])) {
           auto R_bot = topBlocks[partIdx];
           tauArrays[partIdx-1] = factorPair (combine, R_top, R_bot);
         }
@@ -1706,7 +1707,7 @@ namespace TSQR {
           // cache blocks.  In that case, their top block will be
           // empty, and we can skip over them.
           const mat_view_type& C_cur = topBlocksOfC[partIdx];
-          if (! C_cur.empty()) {
+          if (! empty (C_cur)) {
             mat_view_type C_cur_square (numCols, numCols, C_cur.data (),
                                         C_cur.stride (1));
             auto R_bot = factorOutput.topBlocks[partIdx];
@@ -1734,7 +1735,7 @@ namespace TSQR {
           // cache blocks.  In that case, their top block will be
           // empty, and we can skip over them.
           const mat_view_type& C_cur = topBlocksOfC[partIdx];
-          if (! C_cur.empty()) {
+          if (! empty (C_cur)) {
             mat_view_type C_cur_square (numCols, numCols,
                                         C_cur.data (),
                                         C_cur.stride (1));

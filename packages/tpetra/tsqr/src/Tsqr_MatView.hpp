@@ -224,18 +224,6 @@ namespace TSQR {
 
     pointer data() const { return A_; }
 
-    bool empty() const { return extent(0) == 0 || extent(1) == 0; }
-
-    bool operator== (const MatView& rhs) const {
-      return extent(0) == rhs.extent(0) && extent(1) == rhs.extent(1) &&
-        stride(1) == rhs.stride(1) && data() == rhs.data();
-    }
-
-    bool operator!= (const MatView& rhs) const {
-      return extent(0) != rhs.extent(0) || extent(1) != rhs.extent(1) ||
-        stride(1) != rhs.stride(1) || data() != rhs.data();
-    }
-
   private:
     ordinal_type nrows_ = 0;
     ordinal_type ncols_ = 0;
@@ -393,6 +381,12 @@ namespace TSQR {
     A = MatView<LO, SC> (nrows_rest, ncols, A_rest_ptr, lda_rest);
     return A_bottom;
   }
+
+  template<class LO, class SC>
+  bool empty (const MatView<LO, SC>& A) {
+    return A.extent(0) == 0 || A.extent(1) == 0;
+  }
+
 } // namespace TSQR
 
 #endif // __TSQR_Tsqr_MatView_hpp

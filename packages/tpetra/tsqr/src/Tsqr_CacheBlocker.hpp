@@ -242,7 +242,7 @@ namespace TSQR {
       // won't be the correct leading dimension of A, but it won't
       // matter: we only ever operate on A_cur here, and A_cur's
       // leading dimension is set correctly by split_top_block().
-      while (! A.empty()) {
+      while (! empty (A)) {
         // This call modifies the matrix view A, but that's OK since
         // we passed the input view by copy, not by reference.
         MatrixViewType A_cur = split_top_block (A, contiguous_cache_blocks);
@@ -284,7 +284,7 @@ namespace TSQR {
       // dimension is set correctly by split_top_block.
       mat_view_type A_rest (num_rows, num_cols, A, lda);
 
-      while (! A_rest.empty()) {
+      while (! empty (A_rest)) {
         // This call modifies A_rest.
         mat_view_type A_cur = split_top_block (A_rest, contiguous_cache_blocks);
         deep_copy (A_cur, Scalar {});
@@ -323,8 +323,8 @@ namespace TSQR {
       // Leading dimension doesn't matter since A_out will be cache blocked.
       mat_view_type A_out_rest (num_rows, num_cols, A_out, lda_in);
 
-      while (! A_in_rest.empty()) {
-        if (A_out_rest.empty()) {
+      while (! empty (A_in_rest)) {
+        if (empty (A_out_rest)) {
           throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
         }
         // This call modifies A_in_rest.
@@ -352,8 +352,8 @@ namespace TSQR {
       const_mat_view_type A_in_rest (num_rows, num_cols, A_in, lda_out);
       mat_view_type A_out_rest (num_rows, num_cols, A_out, lda_out);
 
-      while (! A_in_rest.empty()) {
-        if (A_out_rest.empty()) {
+      while (! empty (A_in_rest)) {
+        if (empty (A_out_rest)) {
           throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
         }
         // This call modifies A_in_rest.
@@ -390,9 +390,9 @@ namespace TSQR {
       const ordinal_type num_cache_blocks =
         strategy_.num_cache_blocks (A.extent(0), A.extent(1), nrows_cache_block());
 
-      if (cache_block_index >= num_cache_blocks)
-        return MatrixViewType (0, 0, NULL, 0); // empty
-
+      if (cache_block_index >= num_cache_blocks) {
+        return MatrixViewType {}; // empty
+      }
       // result[0] = starting row index of the cache block
       // result[1] = number of rows in the cache block
       // result[2] = pointer offset (A.data() + result[2])
@@ -403,8 +403,7 @@ namespace TSQR {
                                        nrows_cache_block(),
                                        contiguous_cache_blocks);
       if (result[1] == 0) {
-        // For some reason, the cache block is empty.
-        return MatrixViewType (0, 0, nullptr, 0);
+        return MatrixViewType {};
       }
 
       // We expect that ordinal_type is signed, so adding signed

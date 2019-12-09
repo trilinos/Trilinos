@@ -147,7 +147,7 @@ namespace TSQR {
                    Scalar (1), A_cur.data (), A_cur.stride (1), A_cur.data (),
                    A_cur.stride (1), Scalar (0), ATA.data (), ATA.stride (1));
         // Process the remaining cache blocks in order.
-        while (! A_rest.empty ()) {
+        while (! empty (A_rest)) {
           A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
           // ATA := ATA + A_cur^T * A_cur
           //
@@ -202,7 +202,7 @@ namespace TSQR {
                    A_cur.data (), A_cur.stride (1));
 
         // Process the remaining cache blocks in order.
-        while (! A_rest.empty ()) {
+        while (! empty (A_rest)) {
           A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
           blas.TRSM (RIGHT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG,
                      A_cur.extent (0), ncols,
@@ -243,7 +243,7 @@ namespace TSQR {
         const_mat_view_type Q_cur =
           blocker.split_top_block (Q_rest, contiguousCacheBlocks);
 
-        while (! C_rest.empty ()) {
+        while (! empty (C_rest)) {
           deep_copy (Q_cur, C_cur);
         }
       }

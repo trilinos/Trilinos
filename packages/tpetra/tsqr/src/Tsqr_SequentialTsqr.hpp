@@ -485,7 +485,7 @@ namespace TSQR {
         factor_first_block (combine, A_cur, tau_first, work.data ());
       tau_arrays->add_and_consume (std::move (tau_first));
 
-      while (! A_rest.empty()) {
+      while (! empty (A_rest)) {
         A_cur = blocker.split_top_block (A_rest, contigCacheBlocks);
         std::vector<Scalar> tau (ncols);
         combine_factor (combine, R_view, A_cur, tau, work.data ());
@@ -532,14 +532,14 @@ namespace TSQR {
       LocalOrdinal count = 0;
 
       const_mat_view_type A_rest (nrows, ncols, A, lda);
-      if (A_rest.empty()) {
+      if (empty (A_rest)) {
         return count;
       }
       const_mat_view_type A_cur =
         blocker.split_top_block (A_rest, contigCacheBlocks);
       ++count; // first factor step
 
-      while (! A_rest.empty()) {
+      while (! empty (A_rest)) {
         A_cur = blocker.split_top_block (A_rest, contigCacheBlocks);
         ++count; // next factor step
       }
@@ -643,7 +643,7 @@ namespace TSQR {
         const std::vector<Scalar>& tau = *tau_iter++;
         apply_first_block (combine, apply_type, Q_cur, tau,
                            C_cur, work.data ());
-        while (! Q_rest.empty ()) {
+        while (! empty (Q_rest)) {
           Q_cur = blocker.split_top_block (Q_rest, contigCacheBlocks);
           C_cur = blocker.split_top_block (C_rest, contigCacheBlocks);
           combine_apply (combine, apply_type, Q_cur, *tau_iter++,
@@ -658,7 +658,7 @@ namespace TSQR {
           blocker.split_bottom_block (Q_rest, contigCacheBlocks);
         mat_view_type C_cur =
           blocker.split_bottom_block (C_rest, contigCacheBlocks);
-        while (! Q_rest.empty ()) {
+        while (! empty (Q_rest)) {
           combine_apply (combine, apply_type, Q_cur, *tau_iter++,
                          C_top, C_cur, work.data ());
           Q_cur = blocker.split_bottom_block (Q_rest, contigCacheBlocks);
@@ -743,7 +743,7 @@ namespace TSQR {
       Impl::SystemBlas<Scalar> blas;
       mat_view_type Q_rest (nrows, ncols, Q, ldq);
       Matrix<LO, Scalar> Q_cur_copy (0, 0); // will be resized
-      while (! Q_rest.empty ()) {
+      while (! empty (Q_rest)) {
         mat_view_type Q_cur =
           blocker.split_top_block (Q_rest, contigCacheBlocks);
 
