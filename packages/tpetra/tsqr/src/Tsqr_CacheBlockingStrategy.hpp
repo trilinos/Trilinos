@@ -221,14 +221,14 @@ namespace TSQR {
                         const LocalOrdinal nrows_cache_block,
                         const bool contiguous_cache_blocks) const
     {
-      if (contiguous_cache_blocks)
-        {
-          std::pair<LocalOrdinal, LocalOrdinal> result =
-            cache_block (index, nrows, ncols, nrows_cache_block);
-          return result.second; // Number of rows in the cache block
-        }
-      else
+      if (contiguous_cache_blocks) {
+        std::pair<LocalOrdinal, LocalOrdinal> result =
+          cache_block (index, nrows, ncols, nrows_cache_block);
+        return result.second; // Number of rows in the cache block
+      }
+      else {
         return lda;
+      }
     }
 
     /// \brief Start and size of cache block number \c index.

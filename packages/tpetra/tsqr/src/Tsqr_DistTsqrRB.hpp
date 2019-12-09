@@ -129,7 +129,6 @@ namespace TSQR {
     };
   } // namespace details
 
-
   /// \class DistTsqrRB
   /// \brief Reduce-and-Broadcast (RB) version of DistTsqr.
   /// \author Mark Hoemmen
@@ -244,25 +243,23 @@ namespace TSQR {
       // R_mine has columns, but Q_mine may have any number of
       // columns.  (It depends on how many columns of the explicit Q
       // factor we want to compute.)
-      if (R_mine.extent(0) < R_mine.extent(1))
-        {
-          std::ostringstream os;
-          os << "R factor input has fewer rows (" << R_mine.extent(0)
-             << ") than columns (" << R_mine.extent(1) << ")";
-          // This is a logic error because TSQR users should not be
-          // calling this method directly.
-          throw std::logic_error (os.str());
-        }
-      else if (Q_mine.extent(0) != R_mine.extent(1))
-        {
-          std::ostringstream os;
-          os << "Q factor input must have the same number of rows as the R "
-            "factor input has columns.  Q has " << Q_mine.extent(0)
-             << " rows, but R has " << R_mine.extent(1) << " columns.";
-          // This is a logic error because TSQR users should not be
-          // calling this method directly.
-          throw std::logic_error (os.str());
-        }
+      if (R_mine.extent(0) < R_mine.extent(1)) {
+        std::ostringstream os;
+        os << "R factor input has fewer rows (" << R_mine.extent(0)
+           << ") than columns (" << R_mine.extent(1) << ")";
+        // This is a logic error because TSQR users should not be
+        // calling this method directly.
+        throw std::logic_error (os.str());
+      }
+      else if (Q_mine.extent(0) != R_mine.extent(1)) {
+        std::ostringstream os;
+        os << "Q factor input must have the same number of rows as the R "
+          "factor input has columns.  Q has " << Q_mine.extent(0)
+           << " rows, but R has " << R_mine.extent(1) << " columns.";
+        // This is a logic error because TSQR users should not be
+        // calling this method directly.
+        throw std::logic_error (os.str());
+      }
 
       // The factorization is a recursion over processors [P_first, P_last].
       const rank_type P_mine = messenger_->rank();
@@ -389,13 +386,12 @@ namespace TSQR {
           recv_R (R_other, P_mid);
 
           std::vector<scalar_type> tau (numCols);
-          // Don't shrink the workspace array; doing so may
-          // require expensive reallocation every time we send /
-          // receive data.
-          resizeWork (numCols);
 
+          const size_t lwork =
+            combine_.work_size (2 * numCols, numCols, numCols);
+          work_.resize (lwork);
           combine_.factor_pair (R_mine, R_other.view (),
-                                tau.data(), work_.data());
+                                tau.data (), work_.data ());
           QFactors.push_back (R_other);
           tauArrays.push_back (tau);
         }
@@ -494,14 +490,15 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      resizeWork (numElts);
+      work_.resize (numElts);
 
       // Pack the Q data into the workspace array.
-      mat_view_type Q_contig (Q.extent(0), Q.extent(1), work_.data(), Q.extent(0));
+      mat_view_type Q_contig (Q.extent (0), Q.extent (1),
+                              work_.data (), Q.extent (0));
       deep_copy (Q_contig, Q);
       // Pack the R data into the workspace array.
       pack_R (R, &work_[Q_size]);
-      messenger_->send (work_.data(), numElts, destProc, 0);
+      messenger_->send (work_.data (), numElts, destProc, 0);
     }
 
     template< class MatrixType1, class MatrixType2 >
@@ -520,12 +517,13 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      resizeWork (numElts);
+      work_.resize (numElts);
 
-      messenger_->recv (work_.data(), numElts, srcProc, 0);
+      messenger_->recv (work_.data (), numElts, srcProc, 0);
 
       // Unpack the C data from the workspace array.
-      deep_copy (Q, mat_view_type (Q.extent(0), Q.extent(1), work_.data(), Q.extent(0)));
+      deep_copy (Q, mat_view_type (Q.extent (0), Q.extent (1),
+                                   work_.data (), Q.extent (0)));
       // Unpack the R data from the workspace array.
       unpack_R (R, &work_[Q_size]);
     }
@@ -542,10 +540,10 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      resizeWork (numElts);
+      work_.resize (numElts);
       // Pack the R data into the workspace array.
-      pack_R (R, work_.data());
-      messenger_->send (work_.data(), numElts, destProc, 0);
+      pack_R (R, work_.data ());
+      messenger_->send (work_.data (), numElts, destProc, 0);
     }
 
     template< class MatrixType >
@@ -560,23 +558,26 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      resizeWork (numElts);
-      messenger_->recv (work_.data(), numElts, srcProc, 0);
+      work_.resize (numElts);
+      messenger_->recv (work_.data (), numElts, srcProc, 0);
       // Unpack the R data from the workspace array.
-      unpack_R (R, work_.data());
+      unpack_R (R, work_.data ());
     }
 
     template< class MatrixType >
     static void
     unpack_R (MatrixType& R, const scalar_type buf[])
     {
+      // FIXME (mfh 08 Dec 2019) Rewrite to use deep_copy; we don't
+      // want to access Matrix or MatView entries on host directly any
+      // more.
       ordinal_type curpos = 0;
-      for (ordinal_type j = 0; j < R.extent(1); ++j)
-        {
-          scalar_type* const R_j = &R(0, j);
-          for (ordinal_type i = 0; i <= j; ++i)
-            R_j[i] = buf[curpos++];
+      for (ordinal_type j = 0; j < R.extent(1); ++j) {
+        scalar_type* const R_j = &R(0, j);
+        for (ordinal_type i = 0; i <= j; ++i) {
+          R_j[i] = buf[curpos++];
         }
+      }
     }
 
     template< class ConstMatrixType >
@@ -592,27 +593,24 @@ namespace TSQR {
         }
     }
 
-    void
-    resizeWork (const ordinal_type numElts)
-    {
-      typedef typename std::vector< scalar_type >::size_type vec_size_type;
-      work_.resize (std::max (work_.size(), static_cast< vec_size_type >(numElts)));
-    }
-
   private:
     combine_type combine_;
-    Teuchos::RCP< MessengerBase< scalar_type > > messenger_;
-    std::vector< scalar_type > work_;
+    Teuchos::RCP<MessengerBase<scalar_type>> messenger_;
+    std::vector<scalar_type> work_;
 
     // Timers for various phases of the factorization.  Time is
     // cumulative over all calls of factorExplicit().
-    Teuchos::RCP< Teuchos::Time > totalTime_;
-    Teuchos::RCP< Teuchos::Time > reduceCommTime_;
-    Teuchos::RCP< Teuchos::Time > reduceTime_;
-    Teuchos::RCP< Teuchos::Time > bcastCommTime_;
-    Teuchos::RCP< Teuchos::Time > bcastTime_;
+    Teuchos::RCP<Teuchos::Time> totalTime_;
+    Teuchos::RCP<Teuchos::Time> reduceCommTime_;
+    Teuchos::RCP<Teuchos::Time> reduceTime_;
+    Teuchos::RCP<Teuchos::Time> bcastCommTime_;
+    Teuchos::RCP<Teuchos::Time> bcastTime_;
 
-    TimeStats totalStats_, reduceCommStats_, reduceStats_, bcastCommStats_, bcastStats_;
+    TimeStats totalStats_;
+    TimeStats reduceCommStats_;
+    TimeStats reduceStats_;
+    TimeStats bcastCommStats_;
+    TimeStats bcastStats_;
   };
 
 } // namespace TSQR

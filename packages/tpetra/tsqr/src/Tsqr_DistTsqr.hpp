@@ -278,9 +278,12 @@ namespace TSQR {
       const int P = messenger_->size();
       const int my_rank = messenger_->rank();
       const int first_tag = 0;
-      std::vector<scalar_type> work (ncols);
-      helper.factor_helper (ncols, R_local, my_rank, 0, P-1, first_tag,
-                            messenger_.get(), Q_factors, tau_arrays, work);
+
+      const auto lwork = helper.work_size (ncols);
+      std::vector<scalar_type> work (lwork);
+      helper.factor_helper (ncols, R_local, my_rank, 0, P-1,
+                            first_tag, messenger_.get (),
+                            Q_factors, tau_arrays, work.data ());
       deep_copy (R_mine, R_local_view);
       return std::make_pair (Q_factors, tau_arrays);
     }
@@ -306,18 +309,19 @@ namespace TSQR {
       const int my_rank = messenger_->rank();
       const int first_tag = 0;
       std::vector<scalar_type> C_other (ncols_C * ncols_C);
-      std::vector<scalar_type> work (ncols_C);
+      DistTsqrHelper<ordinal_type, scalar_type> helper;
+      std::vector<scalar_type> work (helper.work_size (ncols_C));
 
       const VecVec& Q_factors = factor_output.first;
       const VecVec& tau_arrays = factor_output.second;
 
       // assert (Q_factors.size() == tau_arrays.size());
       const int cur_pos = Q_factors.size() - 1;
-      DistTsqrHelper<ordinal_type, scalar_type> helper;
-      helper.apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
-                           C_other.data(), my_rank, 0, P-1, first_tag,
-                           messenger_.get(), Q_factors, tau_arrays, cur_pos,
-                           work);
+
+      helper.apply_helper (apply_type, ncols_C, ncols_Q, C_mine,
+                           ldc_mine, C_other.data (), my_rank, 0, P-1,
+                           first_tag, messenger_.get (), Q_factors,
+                           tau_arrays, cur_pos, work.data ());
     }
 
     //! Apply the result of \c factor() to compute the explicit Q factor.

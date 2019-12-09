@@ -164,14 +164,10 @@ namespace TSQR {
       std::vector<Scalar>
       factorFirstCacheBlock (Combine<LocalOrdinal, Scalar>& combine,
                              const mat_view_type& A_top,
-                             std::vector<Scalar>& work) const
+                             Scalar work[]) const
       {
         std::vector<Scalar> tau (A_top.extent(1));
-
-        // We should only call this if A_top.extent(1) > 0 and therefore
-        // work.size() > 0, but we've already checked for that, so we
-        // don't have to check again.
-        combine.factor_first (A_top, tau.data(), work.data());
+        combine.factor_first (A_top, tau.data (), work);
         return tau;
       }
 
@@ -179,14 +175,10 @@ namespace TSQR {
       factorCacheBlock (Combine<LocalOrdinal, Scalar>& combine,
                         const mat_view_type& A_top,
                         const mat_view_type& A_cur,
-                        std::vector<Scalar>& work) const
+                        Scalar work[]) const
       {
         std::vector<Scalar> tau (A_top.extent(1));
-
-        // We should only call this if A_top.extent(1) > 0 and therefore
-        // tau.size() > 0 and work.size() > 0, but we've already
-        // checked for that, so we don't have to check again.
-        combine.factor_inner (A_top, A_cur, tau.data(), work.data());
+        combine.factor_inner (A_top, A_cur, tau.data (), work);
         return tau;
       }
 
@@ -203,17 +195,14 @@ namespace TSQR {
         const char suffix[] = "  Please report this bug to the Tpetra developers.";
         using cb_range_type = CacheBlockRange<mat_view_type>;
 
-        // Workspace is created here, because it must not be shared
-        // among threads.
-        std::vector<Scalar> work (A_.extent(1));
-
         // Range of cache blocks to factor.
-        cb_range_type cbRange (A_, strategy_, cbIndices.first,
-                               cbIndices.second, contiguousCacheBlocks_);
+        cb_range_type cbRange (A_, strategy_,
+                               cbIndices.first,
+                               cbIndices.second,
+                               contiguousCacheBlocks_);
         // Iterator in the forward direction over the range of cache
         // blocks to factor.
-        typedef typename CacheBlockRange<mat_view_type>::iterator range_iter_type;
-        range_iter_type cbIter = cbRange.begin();
+        auto cbIter = cbRange.begin ();
 
         // Remember the top (first) block.
         mat_view_type A_top = *cbIter;
@@ -229,9 +218,18 @@ namespace TSQR {
         // Current cache block index.
         LocalOrdinal curTauIdx = cbIndices.first;
 
-        // Factor the first cache block.
+        // Workspace is created inside this method, because it must
+        // not be shared among threads.
         Combine<LocalOrdinal, Scalar> combine;
-        tauArrays_[curTauIdx++] = factorFirstCacheBlock (combine, A_top, work);
+
+        const size_t first_lwork =
+          combine.work_size (A_top.extent (0),
+                             A_top.extent (1), A_top.extent (1));
+        std::vector<Scalar> work (first_lwork);
+
+        // Factor the first cache block.
+        tauArrays_[curTauIdx++] =
+          factorFirstCacheBlock (combine, A_top, work.data ());
 
         // Move past the first cache block.
         ++cbIter;
@@ -240,7 +238,7 @@ namespace TSQR {
         LocalOrdinal count = 1;
 
         // Factor the remaining cache block(s).
-        range_iter_type cbEnd = cbRange.end();
+        auto cbEnd = cbRange.end();
         while (cbIter != cbEnd) {
           mat_view_type A_cur = *cbIter;
           // Iteration over cache blocks of a partition should
@@ -256,8 +254,15 @@ namespace TSQR {
              std::logic_error, "FactorFirstPass::factor: curTauIdx (= "
              << curTauIdx << ") >= tauArrays_.size() (= "
              << tauArrays_.size() << ")." << suffix);
+
+          const size_t new_lwork =
+            combine.work_size (A_top.extent (1) + A_cur.extent (0),
+                               A_cur.extent (1), A_cur.extent (1));
+          if (new_lwork > work.size ()) {
+            work.resize (new_lwork);
+          }
           tauArrays_[curTauIdx++] =
-            factorCacheBlock (combine, A_top, A_cur, work);
+            factorCacheBlock (combine, A_top, A_cur, work.data ());
           ++count;
           ++cbIter;
         }
@@ -379,19 +384,19 @@ namespace TSQR {
                             const const_mat_view_type& Q_top,
                             const std::vector<Scalar>& tau,
                             const mat_view_type& C_top,
-                            std::vector<Scalar>& work) const
+                            Scalar work[]) const
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(tau.size() < static_cast<size_t> (Q_top.extent(1)),
-                           std::logic_error,
-                           "ApplyFirstPass::applyFirstCacheBlock: tau.size() "
-                           "(= " << tau.size() << ") < number of columns "
-                           << Q_top.extent(1) << " in the Q factor.  Please "
-                           "report this bug to the Kokkos developers.");
-
-        // If we get this far, it's fair to assume that we have
-        // checked whether tau and work have nonzero lengths.
-        combine.apply_first (applyType, Q_top, tau.data(),
-                             C_top, work.data());
+        const char prefix[] =
+          "ApplyFirstPass::applyFirstCacheBlock: ";
+        const char suffix[] =
+          "  Please report this bug to the Tpetra developers.";
+        const size_t ncols_Q (Q_top.extent (1));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (tau.size () < ncols_Q, std::logic_error, prefix <<
+           "tau.size()=" << tau.size () << " < number of columns "
+           << ncols_Q << " in the Q factor." << suffix);
+        combine.apply_first (applyType, Q_top, tau.data (),
+                             C_top, work);
       }
 
       void
@@ -401,7 +406,7 @@ namespace TSQR {
                        const std::vector<Scalar>& tau,
                        const mat_view_type& C_top,
                        const mat_view_type& C_cur,
-                       std::vector<Scalar>& work) const
+                       Scalar work[]) const
       {
         const char prefix[] =
           "TSQR::KokkosNodeTsqr::ApplyFirstPass::applyCacheBlock: ";
@@ -415,14 +420,9 @@ namespace TSQR {
            prefix << "tau.size()=" << tau.size () << ") < number of "
            "columns " << Q_cur.extent(1) << " in the Q factor."
            << suffix);
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (work.size () < size_t (min_lwork), std::logic_error,
-           prefix << "work.size()=" << work.size () << ") < min("
-           "ncol_Q=" << ncol_Q << ", ncol_C=" << ncol_C << ")="
-           << min_lwork << "." << suffix);
         try {
           combine.apply_inner (applyType, Q_cur, tau.data (),
-                               C_top, C_cur, work.data ());
+                               C_top, C_cur, work);
         }
         catch (std::exception& e) {
           std::ostringstream os;
@@ -479,13 +479,13 @@ namespace TSQR {
            "indices [" << cbIndices.first << ", "
            << cbIndices.second << ") is not empty." << suffix);
 
-        // Task-local workspace array of length C_.extent(1).  Workspace
-        // must be per task, else there will be race conditions as
-        // different tasks attempt to write to and read from the same
-        // workspace simultaneously.
-        std::vector<Scalar> work (C_.extent(1));
-
         Combine<LocalOrdinal, Scalar> combine;
+        // Task-local workspace array; to be resized as needed below.
+        // Workspace must be per task, else there will be race
+        // conditions as different tasks attempt to write to and read
+        // from the same workspace simultaneously.
+        std::vector<Scalar> work;
+
         if (applyType.transposed ()) {
           auto Q_rangeIter = Q_range.begin();
           auto C_rangeIter = C_range.begin();
@@ -513,8 +513,13 @@ namespace TSQR {
           LocalOrdinal curTauIndex = cbIndices.first;
 
           // Apply the first block.
+          const size_t first_lwork =
+            combine.work_size (Q_top.extent (0), Q_top.extent (1),
+                               C_top.extent (1));
+          work.resize (first_lwork);
           applyFirstCacheBlock (combine, applyType, Q_top,
-                                tauArrays_[curTauIndex++], C_top, work);
+                                tauArrays_[curTauIndex++], C_top,
+                                work.data ());
 
           // Apply the rest of the blocks, if any.
           ++Q_rangeIter;
@@ -532,9 +537,16 @@ namespace TSQR {
             if (explicitQ_) {
               deep_copy (C_cur, Scalar {});
             }
+
+            const size_t next_lwork =
+              combine.work_size (Q_cur.extent (0), Q_cur.extent (1),
+                                 C_cur.extent (1));
+            if (next_lwork > work.size ()) {
+              work.resize (next_lwork);
+            }
             applyCacheBlock (combine, applyType, Q_cur,
                              tauArrays_[curTauIndex++],
-                             C_top, C_cur, work);
+                             C_top, C_cur, work.data ());
           }
         }
         else {
@@ -590,9 +602,16 @@ namespace TSQR {
                "curTauIndex=" << curTauIndex << " out of valid "
                "range [" << cbIndices.first << ","
                << cbIndices.second << ")." << suffix);
+
+            const size_t next_lwork =
+              combine.work_size (Q_cur.extent (0), Q_cur.extent (1),
+                                 C_cur.extent (1));
+            if (next_lwork > work.size ()) {
+              work.resize (next_lwork);
+            }
             applyCacheBlock (combine, applyType, Q_cur,
                              tauArrays_[curTauIndex--],
-                             C_top, C_cur, work);
+                             C_top, C_cur, work.data ());
             ++Q_rangeIter;
             ++C_rangeIter;
           }
@@ -602,8 +621,15 @@ namespace TSQR {
              "[" << cbIndices.first << "," << cbIndices.second << ")."
              << suffix);
           // Apply the first block.
+          const size_t first_lwork =
+            combine.work_size (Q_top.extent (0), Q_top.extent (1),
+                               C_top.extent (1));
+          if (first_lwork > work.size ()) {
+            work.resize (first_lwork);
+          }
           applyFirstCacheBlock (combine, applyType, Q_top,
-                                tauArrays_[curTauIndex--], C_top, work);
+                                tauArrays_[curTauIndex--],
+                                C_top, work.data ());
         }
       }
 
@@ -1566,24 +1592,15 @@ namespace TSQR {
       TEUCHOS_TEST_FOR_EXCEPTION
         (R_top.empty (), std::logic_error, "R_top is empty!");
       TEUCHOS_TEST_FOR_EXCEPTION
-        (R_bot.empty(), std::logic_error, "R_bot is empty!");
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (work_.size() == 0, std::logic_error,
-         "Workspace array work_ has length zero.");
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (work_.size() < size_t (R_top.extent(1)), std::logic_error,
-         "Workspace array work_ has length = " << work_.size()
-         << " < R_top.extent(1) = " << R_top.extent(1) << ".");
-
+        (R_bot.empty (), std::logic_error, "R_bot is empty!");
       std::vector<Scalar> tau (R_top.extent (1));
 
-      // Our convention for such helper methods is for the immediate
-      // parent to allocate workspace (the work_ array in this case).
-      //
-      // The statement below only works if R_top and R_bot have a
-      // nonzero (and the same) number of columns, but we have already
-      // checked that above.
-      combine.factor_pair (R_top, R_bot, tau.data(), work_.data());
+      const LocalOrdinal ncol = R_top.extent (1);
+      const size_t lwork = combine.work_size (2 * ncol, ncol, ncol);
+      if (lwork > work_.size ()) {
+        work_.resize (lwork);
+      }
+      combine.factor_pair (R_top, R_bot, tau.data (), work_.data ());
       return tau;
     }
 
@@ -1615,12 +1632,13 @@ namespace TSQR {
       // However, other partitions besides the top one might be empty,
       // in which case their top blocks will be empty.  We skip over
       // the empty partitions in the loop below.
-      work_.resize (size_t (topBlocks[0].extent(1)));
+
       Combine<LocalOrdinal, Scalar> combine;
+      auto R_top = topBlocks[0];
       for (int partIdx = 1; partIdx < numPartitions; ++partIdx) {
         if (! topBlocks[partIdx].empty ()) {
-          tauArrays[partIdx-1] =
-            factorPair (combine, topBlocks[0], topBlocks[partIdx]);
+          auto R_bot = topBlocks[partIdx];
+          tauArrays[partIdx-1] = factorPair (combine, R_top, R_bot);
         }
       }
     }
@@ -1633,12 +1651,13 @@ namespace TSQR {
                const mat_view_type& C_top,
                const mat_view_type& C_bot) const
     {
-      // Our convention for such helper methods is for the immediate
-      // parent to allocate workspace (the work_ array in this case).
-      //
-      // The statement below only works if C_top, R_bot, and C_bot
-      // have a nonzero (and the same) number of columns, but we have
-      // already checked that above.
+      const size_t lwork =
+        combine.work_size (C_bot.extent (0),
+                           R_bot.extent (1),
+                           C_bot.extent (1));
+      if (lwork > work_.size ()) {
+        work_.resize (lwork);
+      }
       combine.apply_pair (applyType, R_bot, tau.data (),
                           C_top, C_bot, work_.data ());
     }
@@ -1691,11 +1710,12 @@ namespace TSQR {
           if (! C_cur.empty()) {
             mat_view_type C_cur_square (numCols, numCols, C_cur.data (),
                                         C_cur.stride (1));
+            auto R_bot = factorOutput.topBlocks[partIdx];
+            const auto& tau =
+              factorOutput.secondPassTauArrays[partIdx-1];
             // If explicitQ: We've already done the first pass and
             // filled the top blocks of C.
-            applyPair (combine, applyType,
-                       factorOutput.topBlocks[partIdx],
-                       factorOutput.secondPassTauArrays[partIdx-1],
+            applyPair (combine, applyType, R_bot, tau,
                        C_top_square, C_cur_square);
           }
         }
@@ -1727,9 +1747,10 @@ namespace TSQR {
             if (explicitQ) {
               deep_copy (C_cur_square, Scalar {});
             }
-            applyPair (combine, applyType,
-                       factorOutput.topBlocks[partIdx],
-                       factorOutput.secondPassTauArrays[partIdx-1],
+            auto R_bot = factorOutput.topBlocks[partIdx];
+            const auto& tau =
+              factorOutput.secondPassTauArrays[partIdx-1];
+            applyPair (combine, applyType, R_bot, tau,
                        C_top_square, C_cur_square);
           }
         }
@@ -1754,14 +1775,15 @@ namespace TSQR {
     const_top_block (const const_mat_view_type& C,
                      const bool contiguous_cache_blocks) const override
     {
-      typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
+      using blocker_type = CacheBlocker<LocalOrdinal, Scalar>;
       blocker_type blocker (C.extent(0), C.extent(1), strategy_);
 
       // C_top_block is a view of the topmost cache block of C.
       // C_top_block should have >= ncols rows, otherwise either cache
       // blocking is broken or the input matrix C itself had fewer
       // rows than columns.
-      const_mat_view_type C_top = blocker.top_block (C, contiguous_cache_blocks);
+      const_mat_view_type C_top =
+        blocker.top_block (C, contiguous_cache_blocks);
       return C_top;
     }
   };

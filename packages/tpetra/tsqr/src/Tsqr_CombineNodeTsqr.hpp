@@ -130,7 +130,9 @@ namespace TSQR {
       const Ordinal ncols = A.extent (1);
       TEUCHOS_ASSERT( R.extent (0) == ncols &&
                       R.extent (1) == ncols );
-      std::vector<Scalar> work (ncols);
+      const size_t lwork =
+        combine.work_size (A.extent (0), ncols, ncols);
+      std::vector<Scalar> work (lwork);
       combine.factor_first (A, tau.data (), work.data ());
 
       // Copy the R factor resulting from the factorization out of the
@@ -212,11 +214,14 @@ namespace TSQR {
         return *output_ptr;
       } ();
 
-      std::vector<Scalar> work (ncols_C);
+      Combine<Ordinal, Scalar> combine;
+      const size_t lwork =
+        combine.work_size (nrows, ncols_C, ncols_C);
+      std::vector<Scalar> work (lwork);
+
       const_mat_view_type Q_view (nrows, ncols_Q, Q, ldq);
       mat_view_type C_view (nrows, ncols_C, C, ldc);
       const auto tau = output.tau ();
-      Combine<Ordinal, Scalar> combine;
       combine.apply_first (applyType, Q_view, tau.data (),
                            C_view, work.data ());
     }

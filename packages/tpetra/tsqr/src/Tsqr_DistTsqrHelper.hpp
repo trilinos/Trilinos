@@ -63,6 +63,11 @@ namespace TSQR {
   public:
     DistTsqrHelper () = default;
 
+    size_t work_size (const LocalOrdinal ncols) {
+      Combine<LocalOrdinal, Scalar> combine;
+      return combine.work_size (2*ncols, ncols, ncols);
+    }
+
     void
     factor_pair (const LocalOrdinal ncols,
                  std::vector<Scalar>& R_mine,
@@ -72,7 +77,7 @@ namespace TSQR {
                  MessengerBase<Scalar>* const messenger,
                  std::vector<std::vector<Scalar>>& Q_factors,
                  std::vector<std::vector<Scalar>>& tau_arrays,
-                 std::vector<Scalar >& work)
+                 Scalar work[])
     {
       using std::endl;
       using std::ostringstream;
@@ -99,13 +104,13 @@ namespace TSQR {
       Combine<LO, Scalar> combine;
       if (P_mine == P_top) {
         combine.factor_pair (R_mine_view, R_other_view,
-                             tau.data(), work.data());
+                             tau.data(), work);
         Q_factors.push_back (R_other);
         tau_arrays.push_back (tau);
       }
       else if (P_mine == P_bot) {
         combine.factor_pair (R_other_view, R_mine_view,
-                             tau.data (), work.data ());
+                             tau.data (), work);
         Q_factors.push_back (R_mine);
         // Make sure that the "bottom" processor gets the current R
         // factor, which is returned in R_mine.
@@ -130,7 +135,7 @@ namespace TSQR {
                    MessengerBase< Scalar >* const messenger,
                    std::vector< std::vector< Scalar > >& Q_factors,
                    std::vector< std::vector< Scalar > >& tau_arrays,
-                   std::vector< Scalar >& work)
+                   Scalar work[])
     {
       using std::endl;
       using std::ostringstream;
@@ -155,7 +160,8 @@ namespace TSQR {
 
         if (my_rank < P_mid) { // Interval [P_first, P_mid-1]
           factor_helper (ncols, R_mine, my_rank, P_first, P_mid - 1,
-                         tag + 1, messenger, Q_factors, tau_arrays, work);
+                         tag + 1, messenger, Q_factors, tau_arrays,
+                         work);
 
           // If there aren't an even number of processors in the
           // original interval, then the last processor in the lower
@@ -213,7 +219,7 @@ namespace TSQR {
                 MessengerBase<Scalar>* const messenger,
                 const std::vector<Scalar>& Q_cur,
                 const std::vector<Scalar>& tau_cur,
-                std::vector<Scalar>& work)
+                Scalar work[])
     {
       using std::endl;
       using std::ostringstream;
@@ -241,13 +247,13 @@ namespace TSQR {
         mat_view_type C_top (ncols_Q, ncols_C, C_mine, ldc_mine);
         mat_view_type C_bot (ncols_Q, ncols_C, C_other, ldc_other);
         combine.apply_pair (apply_type, Q_bot, tau_cur.data (),
-                            C_top, C_bot, work.data ());
+                            C_top, C_bot, work);
       }
       else if (P_mine == P_bot) {
         mat_view_type C_top (ncols_Q, ncols_C, C_other, ldc_other);
         mat_view_type C_bot (ncols_Q, ncols_C, C_mine, ldc_mine);
         combine.apply_pair (apply_type, Q_bot, tau_cur.data (),
-                            C_top, C_bot, work.data ());
+                            C_top, C_bot, work);
       }
       else {
         ostringstream os;
@@ -273,7 +279,7 @@ namespace TSQR {
                   const std::vector<std::vector<Scalar>>& Q_factors,
                   const std::vector<std::vector<Scalar>>& tau_arrays,
                   const LocalOrdinal cur_pos,
-                  std::vector<Scalar>& work)
+                  Scalar work[])
     {
       using std::endl;
       using std::ostringstream;
@@ -322,12 +328,13 @@ namespace TSQR {
             const int my_offset = my_rank - P_first;
             const int P_other = P_mid + my_offset;
             // assert (P_mid <= P_other && P_other <= P_last);
-            if (P_other < P_mid || P_other > P_last)
+            if (P_other < P_mid || P_other > P_last) {
               throw std::logic_error("Should never get here");
-
-            apply_pair (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
-                        C_other, my_rank, P_other, tag, messenger,
-                        Q_factors[cur_pos], tau_arrays[cur_pos], work);
+            }
+            apply_pair (apply_type, ncols_C, ncols_Q, C_mine,
+                        ldc_mine, C_other, my_rank, P_other,
+                        tag, messenger, Q_factors[cur_pos],
+                        tau_arrays[cur_pos], work);
             new_cur_pos = cur_pos - 1;
           }
           else {
@@ -336,10 +343,10 @@ namespace TSQR {
             }
             new_cur_pos = cur_pos;
           }
-          apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
-                        C_other, my_rank, P_first, P_mid - 1, tag + 1,
-                        messenger, Q_factors, tau_arrays, new_cur_pos,
-                        work);
+          apply_helper (apply_type, ncols_C, ncols_Q, C_mine,
+                        ldc_mine, C_other, my_rank, P_first,
+                        P_mid - 1, tag + 1, messenger, Q_factors,
+                        tau_arrays, new_cur_pos, work);
         }
         else {
           if (cur_pos < 0) {

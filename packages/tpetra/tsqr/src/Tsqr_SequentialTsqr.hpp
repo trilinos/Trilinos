@@ -460,8 +460,8 @@ namespace TSQR {
       CacheBlocker<LocalOrdinal, Scalar> blocker
         (nrows, ncols, strategy_);
       Combine<LocalOrdinal, Scalar> combine;
-      std::vector<Scalar> work
-        (combine.work_size (nrows, ncols, ncols));
+      const size_t lwork = combine.work_size (nrows, ncols, ncols);
+      std::vector<Scalar> work (lwork);
       Teuchos::RCP<my_factor_output_type> tau_arrays
         (new my_factor_output_type);
 
@@ -607,8 +607,9 @@ namespace TSQR {
       CacheBlocker<LocalOrdinal, Scalar> blocker
         (nrows, ncols_Q, strategy_);
       Combine<LocalOrdinal, Scalar> combine;
-      std::vector<Scalar> work
-        (combine.work_size (nrows, ncols_Q, ncols_C));
+      const size_t lwork =
+        combine.work_size (nrows, ncols_Q, ncols_C);
+      std::vector<Scalar> work (lwork);
 
       const bool transposed = apply_type.transposed ();
 

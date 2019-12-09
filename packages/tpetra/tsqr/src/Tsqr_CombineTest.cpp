@@ -348,7 +348,9 @@ namespace TSQR {
 
       // Workspace array for factorization and applying the Q factor.
       // We recycle this workspace for all tests.
-      vector<Scalar> work (numCols);
+      const size_t lwork =
+        combiner.work_size (numRows, numCols, numCols);
+      vector<Scalar> work (lwork);
 
       if (debug) {
         cerr << endl << "----------------------------------------" << endl
@@ -561,7 +563,9 @@ namespace TSQR {
 
       // Workspace array for factorization and applying the Q factor.
       // We recycle this workspace for all tests.
-      vector<Scalar> work (numCols);
+      const size_t lwork =
+        combiner.work_size (numRows, numCols, numCols);
+      vector<Scalar> work (lwork);
 
       if (debug) {
         cerr << endl << "----------------------------------------"

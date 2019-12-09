@@ -299,17 +299,22 @@ namespace TSQR {
         // A place to put the Q factor.
         matrix_type Q (numRows, numCols);
         deep_copy (Q, Scalar {});
+        // FIXME (mfh 08 Dec 2019) Eventually stop writing to Matrix
+        // or MatView entries on host, for eventual GPU-ization.
         for (Ordinal j = 0; j < numCols; ++j) {
           Q(j,j) = Scalar (1.0);
         }
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
+
+        // Work space array for factorization and applying the Q factor.
+        const size_t lwork =
+          combiner.work_size (numRows, numCols, numCols);
+        std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
@@ -396,24 +401,31 @@ namespace TSQR {
         // A place to put the Q factor.
         matrix_type Q (numRows, numCols);
         deep_copy (Q, Scalar {});
-        for (Ordinal j = 0; j < numCols; ++j)
+        // FIXME (mfh 08 Dec 2019) Eventually stop writing to Matrix
+        // or MatView entries on host, for eventual GPU-ization.
+        for (Ordinal j = 0; j < numCols; ++j) {
           Q(j,j) = Scalar (1.0);
+        }
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
 
+        // Work space array for factorization and applying the Q factor.
+        const size_t lwork =
+          combiner.work_size (numRows, numCols, numCols);
+        std::vector<Scalar> work (lwork);
+
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_first (A.view(), tau.data(), work.data());
-          combiner.apply_first (ApplyType("N"),
-                                A.view(), tau.data(),
-                                Q.view(), work.data());
+          combiner.factor_first (A.view (), tau.data (),
+                                 work.data ());
+          combiner.apply_first (ApplyType ("N"),
+                                A.view (), tau.data (),
+                                Q.view (), work.data ());
         }
         //
         // The actual timing runs.
@@ -421,10 +433,11 @@ namespace TSQR {
         timer_type timer ("Combine first");
         timer.start();
         for (int trial = 0; trial < numTrials; ++trial) {
-          combiner.factor_first (A.view(), tau.data(), work.data());
-          combiner.apply_first (ApplyType("N"),
-                                A.view(), tau.data(),
-                                Q.view(), work.data());
+          combiner.factor_first (A.view (), tau.data (),
+                                 work.data ());
+          combiner.apply_first (ApplyType ("N"),
+                                A.view (), tau.data (),
+                                Q.view (), work.data ());
         }
         return timer.stop();
       }
@@ -497,11 +510,14 @@ namespace TSQR {
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
+
+        // Work space array for factorization and applying the Q factor.
+        const size_t lwork =
+          combiner.work_size (numRows, numCols, numCols);
+        std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
@@ -605,11 +621,14 @@ namespace TSQR {
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
+
+        // Work space array for factorization and applying the Q factor.
+        const size_t lwork =
+          combiner.work_size (numRows, numCols, numCols);
+        std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
@@ -699,11 +718,14 @@ namespace TSQR {
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
+
+        // Work space array for factorization and applying the Q factor.
+        const size_t lwork =
+          combiner.work_size (2 * numCols, numCols, numCols);
+        std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
@@ -784,12 +806,14 @@ namespace TSQR {
         matrix_type R1 (numCols, numCols);
         std::vector<mag_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R1.data(), R1.stride(1), sigmas.data());
+        matGen.fill_random_R (numCols, R1.data (), R1.stride (1),
+                              sigmas.data ());
 
         // Now generate R2.
         matrix_type R2 (numCols, numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R2.data(), R2.stride(1), sigmas.data());
+        matGen.fill_random_R (numCols, R2.data (), R2.stride (1),
+                              sigmas.data ());
 
         // A place to put the Q factor of [R1; R2].
         matrix_type Q (2*numCols, numCols);
@@ -807,11 +831,14 @@ namespace TSQR {
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
+
+        // Work space array for factorization and applying the Q factor.
+        const size_t lwork =
+          combiner.work_size (2 * numCols, numCols, numCols);
+        std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;

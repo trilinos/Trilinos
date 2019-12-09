@@ -123,7 +123,7 @@ namespace TSQR {
     /// \param num_cols_C [in] Number of columns of the matrix output
     ///   of apply_first, apply_inner, or apply_pair (use the max of
     ///   all three).
-    Ordinal
+    size_t
     work_size (const Ordinal num_rows_Q,
                const Ordinal num_cols_Q,
                const Ordinal num_cols_C) const

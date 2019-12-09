@@ -97,12 +97,12 @@ namespace TSQR {
         QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
-    Ordinal
+    size_t
     work_size (const Ordinal /* num_rows_Q */,
                const Ordinal num_cols_Q,
                const Ordinal num_cols_C) const
     {
-      return num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q;
+      return size_t (num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q);
     }
 
     void
@@ -247,12 +247,12 @@ namespace TSQR {
         QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
-    Ordinal
+    size_t
     work_size (const Ordinal /* num_rows_Q */,
                const Ordinal num_cols_Q,
                const Ordinal num_cols_C) const
     {
-      return num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q;
+      return size_t (num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q);
     }
 
     void
@@ -321,12 +321,12 @@ namespace TSQR {
         QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
-    Ordinal
+    size_t
     work_size (const Ordinal /* num_rows_Q */,
                const Ordinal num_cols_Q,
                const Ordinal num_cols_C) const
     {
-      return num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q;
+      return size_t (num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q);
     }
 
     void
