@@ -51,9 +51,9 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#include "Xpetra_BlockedMap.hpp"
-#include "Xpetra_BlockedMultiVector.hpp"
-#include "Xpetra_Map.hpp"
+#include "Xpetra_BlockedMap_decl.hpp"
+#include "Xpetra_BlockedMultiVector_decl.hpp"
+#include "Xpetra_Map_decl.hpp"
 #include "Xpetra_Vector.hpp"
 
 
