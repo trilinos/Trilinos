@@ -85,11 +85,31 @@ namespace TSQR {
     }
 
     size_t
-    work_size (const Ordinal /* num_rows_Q */,
+    work_size (const Ordinal num_rows_Q,
                const Ordinal num_cols_Q,
                const Ordinal num_cols_C) const
     {
-      return size_t (num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q);
+      using STS = Teuchos::ScalarTraits<Scalar>;
+
+      const int ncols = num_cols_Q < num_cols_C ?
+        num_cols_C : num_cols_Q;
+      const int nrows = num_rows_Q + ncols;
+      const int lda = nrows;
+
+      Scalar work {};
+      lapack_.compute_QR (nrows, ncols, nullptr, lda,
+                          nullptr, &work, -1);
+      const int lwork1 = int (STS::real (work));
+      TEUCHOS_ASSERT( lwork1 >= num_cols_Q );
+
+      const int ldc = nrows;
+      lapack_.apply_Q_factor ('L', 'N',
+                              nrows, num_cols_C, num_cols_Q,
+                              nullptr, lda, nullptr,
+                              nullptr, ldc, &work, -1);
+      const int lwork2 = int (STS::real (work));
+      TEUCHOS_ASSERT( lwork2 >= 0 );
+      return size_t (lwork1 < lwork2 ? lwork2 : lwork1);
     }
 
     void
