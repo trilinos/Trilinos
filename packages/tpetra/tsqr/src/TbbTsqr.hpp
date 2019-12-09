@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -45,22 +43,18 @@
 #ifndef __TSQR_TbbTsqr_hpp
 #define __TSQR_TbbTsqr_hpp
 
-#include <TbbTsqr_TbbParallelTsqr.hpp>
-#include <Tsqr_TimeStats.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ParameterListExceptions.hpp>
-#include <Teuchos_Time.hpp>
-// #include <TbbRecursiveTsqr.hpp>
-
+#include "TbbTsqr_TbbParallelTsqr.hpp"
+#include "Tsqr_TimeStats.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListExceptions.hpp"
+#include "Teuchos_Time.hpp"
 #include <stdexcept>
 #include <string>
 #include <utility> // std::pair
 #include <vector>
 
-
 namespace TSQR {
   namespace TBB {
-
     /// \class TbbTsqr
     /// \brief Intranode TSQR, parallelized with Intel TBB
     ///

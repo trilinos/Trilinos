@@ -2086,13 +2086,26 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
    int    MyPID, NumProc;
    double *val;
    int    allocated, row_length;
-   char   filename[80];
+   char   filename[80], filename_aux[80];
    FILE   *fid;
    int    Nrows, NglobalRows, NglobalCols=0;
    int    is_globalRows_allocated = 0;
    int    is_globalCols_allocated = 0;
    int    length=0;
    ML_Comm * comm = matrix->comm;
+
+   ML_Aggregate_Viz_Stats * grid_info =0;
+   int aux_dim = 0;
+   if (matrix->to && matrix->to->Grid &&  matrix->to->Grid->Grid)
+     grid_info = (ML_Aggregate_Viz_Stats *) matrix->to->Grid->Grid;
+
+   if(grid_info) {
+     aux_dim += grid_info->x ? 1 : 0;
+     aux_dim += grid_info->y ? 1 : 0;
+     aux_dim += grid_info->z ? 1 : 0;
+     aux_dim += grid_info->material ? 1 : 0;
+   }
+     
 
    NglobalRows = matrix->outvec_leng;
    ML_gsum_scalar_int(&NglobalRows,&i, comm);
@@ -2130,6 +2143,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
 
    if( label != NULL ) {
      sprintf( filename, "%s.m", label );
+     sprintf( filename_aux, "%s_aux.m", label );
      if( MyPID == 0 ) printf("Writing matrix to file %s...\n",filename);
    } else {
      if( MyPID == 0 ) printf("Writing matrix to stdout...\n");
@@ -2178,6 +2192,35 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
                    val[j]);
        }
        if( label != NULL ) fclose(fid);
+
+       /* Now, dump out the aux data, if needed */
+       if(aux_dim) {       
+         if( label != NULL ) {
+           if( MyPID == 0 ) fid = fopen(filename_aux,"w");
+           else             fid = fopen(filename_aux,"a");
+         } else {
+           fid = stdout;
+         }         
+         if( MyPID == 0 ) {
+           fprintf(fid,"%%N_global_rows = %d\n", NglobalRows );
+           fprintf(fid,"%%N_global_cols = %d\n", aux_dim );
+           fprintf(fid,"%%Number of processors = %d\n", NumProc );
+           fprintf(fid,"%% To load this data into Matlab:\n");
+           fprintf(fid,"%%    load(filename);\n");
+         }
+         fprintf( fid,
+                  "%%Writing data for processor %d\n%%N_rows = %d\n",
+                  iproc,
+                  Nrows);
+         for (i = 0 ; i < Nrows; i++) {
+           if(grid_info->x) fprintf(fid,"%20.13e ",grid_info->x[i]);
+           if(grid_info->y) fprintf(fid,"%20.13e ",grid_info->y[i]);
+           if(grid_info->z) fprintf(fid,"%20.13e ",grid_info->z[i]);
+           if(grid_info->material) fprintf(fid,"%20.13e ",grid_info->material[i]);
+           fprintf(fid,"\n");
+         }
+       }/* if(aux_dim) */
+
      } /*if ( MyPID == iproc ) */
 #ifdef ML_MPI
      ML_Comm_Barrier( matrix->comm);

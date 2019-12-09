@@ -113,7 +113,9 @@ typedef struct ML_Aggregate_Struct
   char   semicoarsen_coordinate;     /* coordinate direction to be coarsened  */
 
   /*cms*/
-  double rowsum_threshold;          /**<  for dropping sub-CFL rows in reaction-diffusion */
+  double rowsum_threshold;             /**< for dropping sub-CFL rows in reaction-diffusion */
+  int do_qr;                           /**< should we do a qr? */
+  int coarsen_partial_dirichlet_dofs;  /**< interpolate Dirichlet directions in multiple PDEs per node case */
 
 } ML_Aggregate;
 
@@ -267,7 +269,12 @@ int ML_Aggregate_Set_Threshold( ML_Aggregate *, double epsilon );
 int ML_Aggregate_Reset_Threshold( ML_Aggregate * );
 
 int ML_Aggregate_Set_RowSum_Threshold( ML_Aggregate *, double epsilon );
-int ML_Aggregate_Reset_RowSum_Threshold( ML_Aggregate * );
+
+/* ------------------------------------------------------------------------- */
+/* tentative prolongator manipulation                                        */
+/* ------------------------------------------------------------------------- */
+int ML_Aggregate_Set_Do_QR( ML_Aggregate *, int flag );
+int ML_Aggregate_Set_Coarsen_Partial_Dirichlet_Dofs( ML_Aggregate *, int flag );
 
 /* ------------------------------------------------------------------------- */
 /* whether to smooth existing tentative prolongator                          */

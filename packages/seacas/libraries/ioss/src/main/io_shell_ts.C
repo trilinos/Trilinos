@@ -1078,8 +1078,7 @@ namespace {
     for (const auto &field_name : fields) {
       Ioss::Field field = ige->get_field(field_name);
       if (field_name != "ids" && !oge->field_exists(field_name) &&
-          (prefix.empty() ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+          Ioss::Utils::substr_equal(prefix, field_name)) {
         // If the field does not already exist, add it to the output node block
         oge->field_add(field);
       }
@@ -1358,8 +1357,7 @@ namespace {
         continue;
       }
 
-      if (field_name != "ids" && (prefix.empty() || std::strncmp(prefix.c_str(), field_name.c_str(),
-                                                                 prefix.length()) == 0)) {
+      if (field_name != "ids" && Ioss::Utils::substr_equal(prefix, field_name)) {
         assert(oge->field_exists(field_name));
         transfer_field_data_internal(ige, oge, field_name, interFace);
       }

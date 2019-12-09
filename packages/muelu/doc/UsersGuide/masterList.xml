@@ -462,10 +462,10 @@
     </parameter>
 
     <parameter>
-      <name>aggregation: phase 1 algorithm</name>
+      <name>aggregation: coloring algorithm</name>
       <type>string</type>
-      <default>Serial</default>
-      <description>Choice of algorithm for aggregation phase 1.</description>
+      <default>serial</default>
+      <description>Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 

@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -44,25 +42,20 @@
 
 #include <tbb/tbb.h>
 #include <tbb/task_scheduler_init.h>
-
-#include <TbbTsqr_FactorTask.hpp>
-#include <TbbTsqr_ApplyTask.hpp>
-#include <TbbTsqr_ExplicitQTask.hpp>
-#include <TbbTsqr_RevealRankTask.hpp>
-#include <TbbTsqr_CacheBlockTask.hpp>
-#include <TbbTsqr_UnCacheBlockTask.hpp>
-#include <TbbTsqr_FillWithZerosTask.hpp>
-
-#include <Tsqr_ApplyType.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "TbbTsqr_FactorTask.hpp"
+#include "TbbTsqr_ApplyTask.hpp"
+#include "TbbTsqr_ExplicitQTask.hpp"
+#include "TbbTsqr_RevealRankTask.hpp"
+#include "TbbTsqr_CacheBlockTask.hpp"
+#include "TbbTsqr_UnCacheBlockTask.hpp"
+#include "TbbTsqr_FillWithZerosTask.hpp"
+#include "Tsqr_ApplyType.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <algorithm>
 #include <limits>
 
-
 namespace TSQR {
   namespace TBB {
-
     /// \class TbbParallelTsqr
     /// \brief Parallel implementation of \c TbbTsqr.
     /// \author Mark Hoemmen
@@ -79,7 +72,7 @@ namespace TSQR {
     class TbbParallelTsqr {
     private:
       typedef MatView<LocalOrdinal, Scalar> mat_view_type;
-      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
+      typedef MatView<LocalOrdinal, const Scalar> const_mat_view_type;
       typedef std::pair<mat_view_type, mat_view_type> split_t;
       typedef std::pair<const_mat_view_type, const_mat_view_type> const_split_t;
       typedef std::pair<const_mat_view_type, mat_view_type> top_blocks_t;
@@ -112,7 +105,7 @@ namespace TSQR {
             // C_split.second (the bottom block) will be empty.  We
             // deal with this in the same way as the base case
             // (P_first == P_last) above.
-            if (C_split.second.empty() || C_split.second.nrows() == 0)
+            if (C_split.second.empty() || C_split.second.extent(0) == 0)
               return seq_.top_block (C_split.first, contiguous_cache_blocks);
             else
               return top_block_helper (P_first, P_mid, C_split.first,
@@ -129,14 +122,7 @@ namespace TSQR {
       /// with all nonnegative diagonal entries.
       static bool QR_produces_R_factor_with_nonnegative_diagonal() {
         typedef Combine<LocalOrdinal, Scalar> combine_type;
-        //typedef LAPACK<LocalOrdinal, Scalar> lapack_type;
-
-        const bool combineMakesNonnegDiag =
-          combine_type::QR_produces_R_factor_with_nonnegative_diagonal ();
-        //const bool lapackMakesNonnegDiag =
-        //  lapack_type::QR_produces_R_factor_with_nonnegative_diagonal ();
-        const bool lapackMakesNonnegDiag = false;
-        return combineMakesNonnegDiag && lapackMakesNonnegDiag;
+        return combine_type::QR_produces_R_factor_with_nonnegative_diagonal ();
       }
 
       /// \typedef SeqOutput
@@ -340,8 +326,8 @@ namespace TSQR {
         }
 
         // Copy the R factor out of A_top into R.
-        seq_.extract_R (A_top.nrows(), A_top.ncols(), A_top.get(),
-                        A_top.lda(), R, ldr, contiguous_cache_blocks);
+        seq_.extract_R (A_top.extent(0), A_top.extent(1), A_top.data(),
+                        A_top.stride(1), R, ldr, contiguous_cache_blocks);
 
         // Save the timings for future reference
         if (min_seq_timing < min_seq_factor_timing_)
@@ -526,17 +512,16 @@ namespace TSQR {
 
         Matrix<LocalOrdinal, Scalar> U (ncols, ncols, Scalar(0));
         const LocalOrdinal rank =
-          reveal_R_rank (ncols, R, ldr, U.get(), U.ldu(), tol);
+          reveal_R_rank (ncols, R, ldr, U.data(), U.ldu(), tol);
 
-        if (rank < ncols)
-          {
-            // If R is not full rank: reveal_R_rank() already computed
-            // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
-            // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
-            // := Q \cdot U\f$, respecting cache blocks of Q.
-            Q_times_B (nrows, ncols, Q, ldq, U.get(), U.lda(),
-                       contiguous_cache_blocks);
-          }
+        if (rank < ncols) {
+          // If R is not full rank: reveal_R_rank() already computed
+          // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
+          // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
+          // := Q \cdot U\f$, respecting cache blocks of Q.
+          Q_times_B (nrows, ncols, Q, ldq, U.data(), U.stride(1),
+                     contiguous_cache_blocks);
+        }
         return rank;
       }
 
@@ -657,10 +642,10 @@ namespace TSQR {
           const_mat_view_type Q_top = seq_.top_block (Q, contiguous_cache_blocks);
           mat_view_type C_top = seq_.top_block (C, contiguous_cache_blocks);
           top_blocks[P_first] =
-            std::make_pair (const_mat_view_type (Q_top.ncols(), Q_top.ncols(),
-                                                 Q_top.get(), Q_top.lda()),
-                            mat_view_type (C_top.ncols(), C_top.ncols(),
-                                           C_top.get(), C_top.lda()));
+            std::make_pair (const_mat_view_type (Q_top.extent(1), Q_top.extent(1),
+                                                 Q_top.data(), Q_top.stride(1)),
+                            mat_view_type (C_top.extent(1), C_top.extent(1),
+                                           C_top.data(), C_top.stride(1)));
         }
         else {
           // Recurse on two intervals: [P_first, P_mid] and [P_mid+1, P_last]
@@ -678,15 +663,15 @@ namespace TSQR {
           // Q, and Q_split.second (the bottom block) will be empty.
           // Ditto for C_split.  We deal with this in the same way
           // as the base case (P_first == P_last) above.
-          if (Q_split.second.empty() || Q_split.second.nrows() == 0) {
+          if (Q_split.second.empty() || Q_split.second.extent(0) == 0) {
             const_mat_view_type Q_top =
               seq_.top_block (Q, contiguous_cache_blocks);
             mat_view_type C_top = seq_.top_block (C, contiguous_cache_blocks);
             top_blocks[P_first] =
-              std::make_pair (const_mat_view_type (Q_top.ncols(), Q_top.ncols(),
-                                                   Q_top.get(), Q_top.lda()),
-                              mat_view_type (C_top.ncols(), C_top.ncols(),
-                                             C_top.get(), C_top.lda()));
+              std::make_pair (const_mat_view_type (Q_top.extent(1), Q_top.extent(1),
+                                                   Q_top.data(), Q_top.stride(1)),
+                              mat_view_type (C_top.extent(1), C_top.extent(1),
+                                             C_top.data(), C_top.stride(1)));
           }
           else {
             build_partition_array (P_first, P_mid, top_blocks,

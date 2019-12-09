@@ -1831,7 +1831,7 @@ namespace tsl {
       /**
        * Min size of the hash table before a rehash can occurs automatically (except if
        * m_max_load_threshold_rehash os reached). If the neighborhood of a bucket is full before the
-       * min is reached, the elements are put into m_overflow_elements.
+       * min is reacher, the elements are put into m_overflow_elements.
        */
       size_type m_min_load_threshold_rehash;
     };

@@ -801,7 +801,7 @@ namespace Iopx {
             Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
           }
 
-          if (map_count == 1 && Ioss::Utils::case_strcmp(names[0], "original_global_id_map") == 0) {
+          if (map_count == 1 && Ioss::Utils::str_equal(names[0], "original_global_id_map")) {
             if (int_byte_size_api() == 8) {
               error = ex_get_partial_num_map(get_file_pointer(), entity_type, 1, file_offset + 1,
                                              file_count, TOPTR(file_data));

@@ -1818,7 +1818,7 @@ namespace Ioex {
         // NOTE: This must appear before the "sphere" check since
         // sphere is substring of "sphere-mass"
         // Want an exact match here, not substring match...
-        else if (Ioss::Utils::case_strcmp(type, "sphere-mass") == 0) {
+        else if (Ioss::Utils::str_equal(type, "sphere-mass")) {
           if (attribute_count != 10) {
             if (myProcessor == 0) {
               fmt::print(IOSS_WARNING,

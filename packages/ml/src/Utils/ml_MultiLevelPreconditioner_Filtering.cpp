@@ -183,7 +183,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 
   assert (CL == 2);
 
-  ML_Gen_Smoother_Amesos(flt_ml_, 0, ML_AMESOS_KLU, -1, 0.0);
+  ML_Gen_Smoother_Amesos(flt_ml_, 0, ML_AMESOS_KLU, -1, 0.0, 1);
   ML_Gen_Solver(flt_ml_, ML_MGV, 1, 0);
 
   if (verbose_)

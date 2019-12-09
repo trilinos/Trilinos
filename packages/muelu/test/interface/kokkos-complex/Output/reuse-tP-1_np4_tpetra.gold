@@ -40,7 +40,7 @@ lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
@@ -48,9 +48,9 @@ aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
 aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
-aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: deterministic = 0   [default]
+aggregation: coloring algorithm = serial   [default]
+aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -176,7 +176,7 @@ lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
@@ -184,9 +184,9 @@ aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
 aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
-aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: deterministic = 0   [default]
+aggregation: coloring algorithm = serial   [default]
+aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -278,25 +278,25 @@ repartition: use subcommunicators = 1   [default]
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = 1.45
-Smoother complexity = 1.78
+Operator complexity = <ignored>
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  4  
-  1  3335  10015  3.00     3.00         4  
-  2  1112  3340   3.00     3.00         1  
+  <ignored>  
+  <ignored>  
+  <ignored>  
 
-Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>}
 
-Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
+Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>}
 
 Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
 
 Clearing old data (if any)
 Level 0
-Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995})
+Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>})
 keep smoother data = 1
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -383,7 +383,7 @@ matrixmatrix: kernel params ->
 
 repartition: use subcommunicators = 1   [default]
 
-Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015})
+Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>})
 keep smoother data = 1
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -476,18 +476,18 @@ repartition: use subcommunicators = 1   [default]
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = 1.45
-Smoother complexity = 1.78
+Operator complexity = <ignored>
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  4  
-  1  3335  10015  3.00     3.00         4  
-  2  1112  3340   3.00     3.00         1  
+  <ignored>  
+  <ignored>  
+  <ignored>  
 
-Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>}
 
-Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
+Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>}
 
 Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother

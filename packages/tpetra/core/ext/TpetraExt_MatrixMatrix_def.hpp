@@ -766,7 +766,8 @@ add (const Scalar& alpha,
   }
   auto Alocal = Aprime->getLocalMatrix();
   auto Blocal = Bprime->getLocalMatrix();
-  if(Alocal.numRows() == 0)
+  LO numLocalRows = Alocal.numRows();
+  if(numLocalRows == 0)
   {
     //KokkosKernels spadd assumes rowptrs.extent(0) + 1 == nrows,
     //but an empty Tpetra matrix is allowed to have rowptrs.extent(0) == 0.
@@ -779,10 +780,13 @@ add (const Scalar& alpha,
   auto Bcolmap = Bprime->getColMap();
   if(!matchingColMaps)
   {
-    typedef typename AddKern::global_col_inds_array global_col_inds_array;
+    using KCRS            = typename crs_matrix_type::local_matrix_type;
+    using size_type       = typename KCRS::size_type;
+    using lno_t           = typename KCRS::ordinal_type;
+    using global_col_inds_array = typename AddKern::global_col_inds_array;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = Teuchos::null;
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mismatched col map full kernel"))));
+    MM = Teuchos::null;
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mismatched col map full kernel"))));
 #endif
     //use kernel that converts col indices in both A and B to common domain map before adding
     auto AlocalColmap = Acolmap->getLocalMap();
@@ -817,6 +821,10 @@ add (const Scalar& alpha,
                               col_inds_array, global_col_inds_array,
                               typename map_type::local_map_type>
         (localColinds, globalColinds, CcolMap->getLocalMap()));
+    //TODO: use KokkosKernels batched sort on device as soon as it's available
+    //But now, have to sort on host (using UVM)
+    exec_space().fence();
+    Tpetra::Import_Util::sortCrsEntries(rowptrs, localColinds, vals);
     C.setAllValues(rowptrs, localColinds, vals);
     C.fillComplete(CDomainMap, CRangeMap, params);
     if(!doFillComplete)

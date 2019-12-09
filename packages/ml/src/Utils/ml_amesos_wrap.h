@@ -82,7 +82,8 @@ extern "C" {
 
   */
   int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
-                    double AddToDiag, Amesos_Handle_Type *Amesos_Handle);
+                    double AddToDiag, int SplitComm, Amesos_Handle_Type *Amesos_Handle);
+
 
   /** Solves using Amesos, and the factorization computed by ML_Amesos_Gen. */
   int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] ) ;

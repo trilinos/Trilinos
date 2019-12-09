@@ -215,7 +215,7 @@ namespace MueLu {
       {
         SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
         if (writeZoltan2DebuggingFiles)
-          adapter.generateFiles("mj_debug", *(rowMap->getComm()));
+          adapter.generateFiles(("mj_debug.lvl_"+std::to_string(level.GetLevelID())).c_str(), *(rowMap->getComm()));
         problem->solve();
       }
 

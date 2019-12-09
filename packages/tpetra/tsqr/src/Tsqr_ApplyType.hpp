@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -45,9 +43,8 @@
 #ifndef __TSQR_TsqrApplyType_hpp
 #define __TSQR_TsqrApplyType_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
+#include "Tsqr_ConfigDefs.hpp"
 #include <string>
-
 
 namespace TSQR {
 

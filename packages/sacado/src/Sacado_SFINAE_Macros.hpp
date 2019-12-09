@@ -48,7 +48,13 @@
 
 #define SACADO_EXP_ENABLE_EXPR_FUNC(RETURN_TYPE) \
   SACADO_ENABLE_IF_SAME(typename Expr<S>::derived_type::value_type, value_type, RETURN_TYPE)
-#define SACADO_EXP_ENABLE_EXPR_CTOR_DEF SACADO_EXP_ENABLE_EXPR_FUNC(void*)
+#define SACADO_EXP_ENABLE_EXPR_CTOR_DEF \
+  typename mpl::enable_if_c<                                            \
+    mpl::is_convertible< typename Expr<S>::derived_type::value_type ,   \
+                         value_type >::value &&                         \
+    (ExprLevel< typename Expr<S>::derived_type::value_type >::value ==  \
+     ExprLevel< value_type >::value) &&                                 \
+    !is_view, void* >::type
 #define SACADO_EXP_ENABLE_EXPR_CTOR_DECL SACADO_EXP_ENABLE_EXPR_CTOR_DEF = 0
 #define SACADO_FAD_EXP_ENABLE_EXPR_FUNC \
   SACADO_ENABLE_IF_SAME(typename Expr<S>::derived_type::value_type, typename FAD::value_type, FAD&)
@@ -59,6 +65,12 @@
   SACADO_ENABLE_IF_CONVERTIBLE(S, value_type, RETURN_TYPE)
 #define SACADO_ENABLE_VALUE_CTOR_DEF SACADO_ENABLE_VALUE_FUNC(void*)
 #define SACADO_ENABLE_VALUE_CTOR_DECL SACADO_ENABLE_VALUE_CTOR_DEF = 0
+
+#define SACADO_EXP_ENABLE_VALUE_CTOR_DEF \
+  typename mpl::enable_if_c<                                            \
+    Sacado::mpl::is_convertible< S , value_type >::value &&             \
+    !is_view, void* >::type
+#define SACADO_EXP_ENABLE_VALUE_CTOR_DECL SACADO_EXP_ENABLE_VALUE_CTOR_DEF = 0
 
 #define SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)                              \
   typename mpl::enable_if_c< IsFadExpr<T1>::value && IsFadExpr<T2>::value && \

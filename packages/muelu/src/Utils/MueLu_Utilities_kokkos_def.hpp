@@ -57,9 +57,9 @@
 # endif
 #endif
 
-#include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
+#include <KokkosSparse_getDiagCopy.hpp>
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
 #include <EpetraExt_MatrixMatrix.h>
@@ -106,7 +106,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonal(const Matrix& A) {
+  Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetMatrixDiagonal(const Matrix& A) {
     // FIXME_KOKKOS
 
     size_t numRows = A.getRowMap()->getNodeNumElements();
@@ -134,61 +135,64 @@ namespace MueLu {
   } //GetMatrixDiagonal
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
-    // FIXME_KOKKOS
+  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
+    // Some useful type definitions
+    using local_matrix_type = typename Matrix::local_matrix_type;
+    using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
+    using value_type        = typename local_matrix_type::value_type;
+    using ordinal_type      = typename local_matrix_type::ordinal_type;
+    using execution_space   = typename local_matrix_type::execution_space;
+    using memory_space      = typename local_matrix_type::memory_space;
+    // Be careful with this one, if using Kokkos::ArithTraits<Scalar>
+    // you are likely to run into errors when handling std::complex<>
+    // a good way to work around that is to use the following:
+    // using KAT = Kokkos::ArithTraits<Kokkos::ArithTraits<Scalar>::val_type> >
+    // here we have: value_type = Kokkos::ArithTraits<Scalar>::val_type
+    using KAT               = Kokkos::ArithTraits<value_type>;
+
+    // Get/Create distributed objects
     RCP<const Map> rowMap = A.getRowMap();
     RCP<Vector> diag      = VectorFactory::Build(rowMap);
-    ArrayRCP<SC> diagVals = diag->getDataNonConst(0);
 
-    size_t numRows = rowMap->getNodeNumElements();
+    // Now generate local objects
+    local_matrix_type localMatrix = A.getLocalMatrix();
+    local_graph_type  localGraph  = localMatrix.graph;
+    auto diagVals = diag->template getLocalView<memory_space>();
 
-    Teuchos::ArrayView<const LO> cols;
-    Teuchos::ArrayView<const SC> vals;
-    for (size_t i = 0; i < numRows; ++i) {
-      A.getLocalRowView(i, cols, vals);
+    ordinal_type numRows = localGraph.numRows();
 
-      LO j = 0;
-      for (; j < cols.size(); ++j) {
-        if (Teuchos::as<size_t>(cols[j]) == i) {
-          if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
-            diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
-          else
-            diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
-          break;
-        }
-      }
-      if (j == cols.size()) {
-        // Diagonal entry is absent
-        diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
-      }
-    }
-    diagVals=null;
+    // Note: 2019-11-21, LBV
+    // This could be implemented with a TeamPolicy over the rows
+    // and a TeamVectorRange over the entries in a row if performance
+    // becomes more important here.
+    Kokkos::parallel_for("Utilities_kokkos::GetMatrixDiagonalInverse",
+                         Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
+                         KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                           bool foundDiagEntry = false;
+                           auto myRow = localMatrix.rowConst(rowIdx);
+                           for(ordinal_type entryIdx = 0; entryIdx < myRow.length; ++entryIdx) {
+                             if(myRow.colidx(entryIdx) == rowIdx) {
+                               foundDiagEntry = true;
+                               if(KAT::magnitude(myRow.value(entryIdx)) > KAT::magnitude(tol)) {
+                                 diagVals(rowIdx, 0) = KAT::one() / myRow.value(entryIdx);
+                               } else {
+                                 diagVals(rowIdx, 0) = KAT::zero();
+                               }
+                             }
+                           }
+
+                           if(!foundDiagEntry) {diagVals(rowIdx, 0) = KAT::zero();}
+                         });
 
     return diag;
   } //GetMatrixDiagonalInverse
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLumpedMatrixDiagonal(const Matrix &A) {
-    // FIXME_KOKKOS
-    size_t numRows = A.getRowMap()->getNodeNumElements();
-    Teuchos::ArrayRCP<SC> diag(numRows);
-
-    Teuchos::ArrayView<const LO> cols;
-    Teuchos::ArrayView<const SC> vals;
-    for (size_t i = 0; i < numRows; ++i) {
-      A.getLocalRowView(i, cols, vals);
-
-      diag[i] = Teuchos::ScalarTraits<Scalar>::zero();
-      for (LO j = 0; j < cols.size(); ++j) {
-        diag[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
-      }
-    }
-
-    return diag;
-  } //GetMatrixDiagonal
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(const Matrix& A) {
+  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetMatrixOverlappedDiagonal(const Matrix& A) {
     // FIXME_KOKKOS
     RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
     RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
@@ -222,9 +226,9 @@ namespace MueLu {
   } //GetMatrixOverlappedDiagonal
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse,
-                               bool doFillComplete,
-                               bool doOptimizeStorage)
+  void Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector,
+                   bool doInverse, bool doFillComplete, bool doOptimizeStorage)
   {
     SC one = Teuchos::ScalarTraits<SC>::one();
     Teuchos::ArrayRCP<SC> sv(scalingVector.size());

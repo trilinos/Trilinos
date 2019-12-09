@@ -34,26 +34,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
-#include <Tsqr_ConfigDefs.hpp>
+#include "Tsqr_ConfigDefs.hpp"
 
 #ifdef HAVE_MPI
-#  include <Teuchos_GlobalMPISession.hpp>
-#  include <Teuchos_oblackholestream.hpp>
+#  include "Teuchos_GlobalMPISession.hpp"
+#  include "Teuchos_oblackholestream.hpp"
 #endif // HAVE_MPI
 
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_StandardCatchMacros.hpp>
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Time.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
-#include <Tsqr_ParTest.hpp>
-#include <Tsqr_TeuchosMessenger.hpp>
+#include "Tsqr_ParTest.hpp"
+#include "Tsqr_TeuchosMessenger.hpp"
 
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
 #  include <complex>

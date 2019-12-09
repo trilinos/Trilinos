@@ -445,7 +445,7 @@ class ExodusModel(object):
             trial = name + 's'
             if trial in names:
                 return getattr(self, trial)
-        # if the name appears to be plural, seach for the singular version
+        # if the name appears to be plural, search for the singular version
         if name.endswith('s'):
             trial = name[:-1]
             if not trial.endswith('s') and trial in names:
@@ -1956,7 +1956,7 @@ class ExodusModel(object):
         exporters[extension](filename, *args, **kwargs)
 
     def _error_evaluating_expression(self, expression, var):
-        """Throw an error saying we could not evalute the given expression."""
+        """Throw an error saying we could not evaluate the given expression."""
         self._error('Invalid expression',
                     'An error occurred while trying to evaluate the given '
                     'expression.  It is likely that this expression is '
@@ -3175,7 +3175,7 @@ class ExodusModel(object):
                                   side_set_id='auto',
                                   timestep='last'):
         """
-        Return the list of side set field vlaues.
+        Return the list of side set field values.
 
         The actual list of values is returned, so any modifications to it will
         be stored in the model.
@@ -4293,7 +4293,7 @@ class ExodusModel(object):
         side set field on a particular field, pass in 'side_set_ids'.
 
         To set the value of the field, pass in 'value'.  By default this is
-        0 for displacement fiels and NaN for all other fields.
+        0 for displacement fields and NaN for all other fields.
 
         Example:
         >>> model.create_side_set_field('temperature', 13, 298.15)
@@ -4445,7 +4445,7 @@ class ExodusModel(object):
         transforms.append(('<', '((R) - (L)) - abs((R) - (L))'))
         transforms.append(('==', 'abs((L) - (R))'))
         transforms.append(('=', 'abs((L) - (R))'))
-        # replace occurances of each transform
+        # replace occurrences of each transform
         for separator, transform in transforms:
             while separator in expression:
                 # ensure parenthesis count is identical
@@ -5417,7 +5417,7 @@ class ExodusModel(object):
             if not all_defined:
                 self._warning('Fields not defined.',
                               'Not all of the requested element fields are '
-                              'defined on element block %s.  The everaged '
+                              'defined on element block %s.  The averaged '
                               'field will not be created.' % element_block_id)
                 continue
             # create the field if it doesn't exist
@@ -5477,7 +5477,7 @@ class ExodusModel(object):
         default_value = self._get_default_field_value(node_field_name)
         # process each timestep
         for timestep_index in xrange(len(self.timesteps)):
-            # initialze node field
+            # initialize node field
             node_field_values = [0.0] * len(self.nodes)
             node_field_elements = [0] * len(self.nodes)
             # for each element block

@@ -177,47 +177,21 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
 //! Build the edge-to-vector-node prolongator described in Bochev, Hu, Siefert and Tuminaro (2006).
 int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_MultiVector & nullspace)
 {
-
   /* Pull the (nodal) coordinates from Teuchos */
   double * xcoord=List_.get("x-coordinates",(double*)0);
   double * ycoord=List_.get("y-coordinates",(double*)0);
   double * zcoord=List_.get("z-coordinates",(double*)0);
+  double * mcoord=List_.get("material coordinates",(double*)0);
   bool build_coarse_coords=true;
-  if(dim!=(xcoord!=0) + (ycoord!=0) + (zcoord!=0)) build_coarse_coords=false;
-
-
+  if(!mcoord && dim!=(xcoord!=0) + (ycoord!=0) + (zcoord!=0) ) build_coarse_coords=false;
+  
   /* Do the aggregation */
-  ML_Aggregate_Struct * MLAggr;
+  ML_Aggregate_Struct * MLAggr=0;
   ML_Operator *P;
   int NumAggregates;
   int rv=ML_Epetra::RefMaxwell_Aggregate_Nodes(*TMT_Matrix_,List_,ml_comm_,std::string("EMFP (level 0) :"),
-					       MLAggr,P,NumAggregates);
+					       MLAggr,P,NumAggregates,CoarseCoord_);
   if(rv!=0) ML_CHK_ERR(-2);
-
-
-  if(build_coarse_coords) { 
-    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Coarsening coordinates\n");
-
-    /* Use the nodal prolongator to generate coarse coordinates at the aggregated nodes */
-    // Note: ML requires a non-null pointer even if we're out of nodes, so we're sure to allocate *something* here
-    CoarseXcoord_.resize(std::max(P->invec_leng,1));
-    CoarseYcoord_.resize(std::max(P->invec_leng,1));
-    if(dim==3) CoarseZcoord_.resize(std::max(P->invec_leng,1));
-
-    /* Matvec with the *transpose* of P */
-    // Note: sCSR_trans_matvec can never return anything other than true (in the current implementation)
-    // Note: The in/out lengths for sCSR_trans_matvec represent the vector lengths, not the in/out lengths for the (untransposed) matrix.
-    //       So they're basically reversed
-    rv=CSR_trans_matvec(P,P->outvec_leng,xcoord,P->invec_leng,CoarseXcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-20);
-    rv=CSR_trans_matvec(P,P->outvec_leng,ycoord,P->invec_leng,CoarseYcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-21);
-    if(dim==3){rv=CSR_trans_matvec(P,P->outvec_leng,zcoord,P->invec_leng,CoarseZcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-22);}
-
-    /* Set coordinates on ListCoarse */
-    Teuchos::ParameterList & ListCoarse=List_.sublist("edge matrix free: coarse");
-    ListCoarse.set("x-coordinates",CoarseXcoord_.getRawPtr());
-    ListCoarse.set("y-coordinates",CoarseYcoord_.getRawPtr());
-    if(dim==3) ListCoarse.set("z-coordinates",CoarseZcoord_.getRawPtr());
-  }
 
   print_hierarchy= List_.get("print hierarchy",false);
   if (print_hierarchy) {
@@ -297,8 +271,19 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   Prolongator_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Prolongator_,ProlongatorColMapTrans_,"Prolongator",(verbose_&&!Comm_->MyPID())));
 #endif
 
+  /* Build the Coarse Coordinates according to the colum map*/
+  if(build_coarse_coords) { 
+    /* Set coordinates on ListCoarse */
+    Teuchos::ParameterList & ListCoarse=List_.sublist("edge matrix free: coarse");
+    if(xcoord) ListCoarse.set("x-coordinates",CoarseCoord_.x.getRawPtr());
+    if(ycoord) ListCoarse.set("y-coordinates",CoarseCoord_.y.getRawPtr());
+    if(zcoord) ListCoarse.set("z-coordinates",CoarseCoord_.z.getRawPtr());
+    if(mcoord) ListCoarse.set("material coordinates",CoarseCoord_.material.getRawPtr());
+  }
+
+
   /* Cleanup */
-  ML_Aggregate_Destroy(&MLAggr);
+  if(MLAggr) ML_Aggregate_Destroy(&MLAggr);
   ML_Operator_Destroy(&P);
   ML_Operator_Destroy(&AbsD0_ML);
   ML_Operator_Destroy(&AbsD0P);
@@ -368,7 +353,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   //  Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix);
   int nnz=100;
   double time;
-  ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,true,time,0,verbose_);
+  ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,true,time,0,very_verbose_);
   // NTS: This is a hack to get around the sticking ones on the diagonal issue;
 
   /* Cleanup */

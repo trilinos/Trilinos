@@ -34,31 +34,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 /// \file Tsqr.hpp
 /// \brief Parallel Tall Skinny QR (TSQR) implementation
-///
+
 #ifndef __TSQR_Tsqr_hpp
 #define __TSQR_Tsqr_hpp
 
-#include <Tsqr_ApplyType.hpp>
-#include <Tsqr_Matrix.hpp>
-#include <Tsqr_MessengerBase.hpp>
-#include <Tsqr_DistTsqr.hpp>
-#include <Tsqr_SequentialTsqr.hpp>
-#include <Tsqr_Util.hpp>
-
-#include <Teuchos_as.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
-
+#include "Tsqr_ApplyType.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_MessengerBase.hpp"
+#include "Tsqr_DistTsqr.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
+#include "Tsqr_Util.hpp"
+#include "Teuchos_as.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace TSQR {
-
   /// \class Tsqr
   /// \brief Parallel Tall Skinny QR (TSQR) factorization
   /// \author Mark Hoemmen
@@ -94,14 +89,13 @@ namespace TSQR {
   ///   are the same (int, in the case of Epetra).  For other
   ///   distributed linear algebra libraries, such as Tpetra, the
   ///   local and global ordinal types may be different.
-  ///
   template<class LocalOrdinal,
            class Scalar,
-           class NodeTsqrType = SequentialTsqr<LocalOrdinal, Scalar> >
+           class NodeTsqrType = SequentialTsqr<LocalOrdinal, Scalar>>
   class Tsqr {
   public:
     typedef MatView<LocalOrdinal, Scalar> mat_view_type;
-    typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
+    typedef MatView<LocalOrdinal, const Scalar> const_mat_view_type;
     typedef Matrix<LocalOrdinal, Scalar> matrix_type;
 
     typedef Scalar scalar_type;
@@ -276,12 +270,12 @@ namespace TSQR {
       // case Q is arranged using contiguous cache blocks.
       mat_view_type Q_top_block =
         nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
-      if (Q_top_block.nrows () < numCols) {
+      if (Q_top_block.extent (0) < numCols) {
         std::ostringstream os;
         os << "The top block of Q has too few rows.  This means that the "
            << "the intranode TSQR implementation has a bug in its top_block"
            << "() method.  The top block should have at least " << numCols
-           << " rows, but instead has only " << Q_top_block.ncols ()
+           << " rows, but instead has only " << Q_top_block.extent (1)
            << " rows.";
         throw std::logic_error (os.str ());
       }
@@ -289,8 +283,8 @@ namespace TSQR {
       // factor (computed above) to compute the distributed-memory
       // part of the QR factorization.
       {
-        mat_view_type Q_top (numCols, numCols, Q_top_block.get(),
-                            Q_top_block.lda());
+        mat_view_type Q_top (numCols, numCols, Q_top_block.data(),
+                            Q_top_block.stride(1));
         mat_view_type R_view (numCols, numCols, R, LDR);
         distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
       }
@@ -366,12 +360,12 @@ namespace TSQR {
       // case Q is arranged using contiguous cache blocks.
       mat_view_type Q_top_block =
         nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
-      if (Q_top_block.nrows () < numCols) {
+      if (Q_top_block.extent (0) < numCols) {
         std::ostringstream os;
         os << "The top block of Q has too few rows.  This means that the "
            << "the intranode TSQR implementation has a bug in its top_block"
            << "() method.  The top block should have at least " << numCols
-           << " rows, but instead has only " << Q_top_block.ncols ()
+           << " rows, but instead has only " << Q_top_block.extent (1)
            << " rows.";
         throw std::logic_error (os.str ());
       }
@@ -379,8 +373,8 @@ namespace TSQR {
       // factor (computed above) to compute the distributed-memory
       // part of the QR factorization.
       {
-        mat_view_type Q_top (numCols, numCols, Q_top_block.get(),
-                            Q_top_block.lda());
+        mat_view_type Q_top (numCols, numCols, Q_top_block.data(),
+                            Q_top_block.stride(1));
         mat_view_type R_view (numCols, numCols, R, LDR);
         distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
       }
@@ -456,10 +450,10 @@ namespace TSQR {
             const bool contiguousCacheBlocks = false)
     {
       mat_view_type R_view (ncols, ncols, R, ldr);
-      R_view.fill (STS::zero());
+      deep_copy (R_view, Scalar {});
       NodeOutput nodeResults =
         nodeTsqr_->factor (nrows_local, ncols, A_local, lda_local,
-                          R_view.get(), R_view.lda(),
+                          R_view.data(), R_view.stride(1),
                           contiguousCacheBlocks);
       DistOutput distResults = distTsqr_->factor (R_view);
       return std::make_pair (nodeResults, distResults);
@@ -536,8 +530,8 @@ namespace TSQR {
         nodeTsqr_->top_block (C_view, contiguousCacheBlocks);
 
       // View of the topmost ncols_C by ncols_C block of C.
-      mat_view_type C_top_view (ncols_C, ncols_C, C_view_top_block.get(),
-                                C_view_top_block.lda());
+      mat_view_type C_top_view (ncols_C, ncols_C, C_view_top_block.data(),
+                                C_view_top_block.stride(1));
 
       if (! transposed) {
         // C_top (small compact storage) gets a deep copy of the top
@@ -545,8 +539,8 @@ namespace TSQR {
         matrix_type C_top (C_top_view);
 
         // Compute in place on all processors' C_top blocks.
-        distTsqr_->apply (applyType, C_top.ncols(), ncols_Q, C_top.get(),
-                          C_top.lda(), factor_output.second);
+        distTsqr_->apply (applyType, C_top.extent(1), ncols_Q, C_top.data(),
+                          C_top.stride(1), factor_output.second);
 
         // Copy the result from C_top back into the top ncols_C by
         // ncols_C block of C_local.
@@ -572,8 +566,8 @@ namespace TSQR {
         matrix_type C_top (C_top_view);
 
         // Compute in place on all processors' C_top blocks.
-        distTsqr_->apply (applyType, ncols_C, ncols_Q, C_top.get(),
-                          C_top.lda(), factor_output.second);
+        distTsqr_->apply (applyType, ncols_C, ncols_Q, C_top.data(),
+                          C_top.stride(1), factor_output.second);
 
         // Copy the result from C_top back into the top ncols_C by
         // ncols_C block of C_local.
@@ -770,13 +764,13 @@ namespace TSQR {
       //
       matrix_type U (ncols, ncols, STS::zero());
       const ordinal_type rank =
-        reveal_R_rank (ncols, R, ldr, U.get(), U.lda(), tol);
+        reveal_R_rank (ncols, R, ldr, U.data(), U.stride(1), tol);
       if (rank < ncols) {
         // If R is not full rank: reveal_R_rank() already computed
         // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
         // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
         // := Q \cdot U\f$, respecting cache blocks of Q.
-        Q_times_B (nrows, ncols, Q, ldq, U.get(), U.lda(),
+        Q_times_B (nrows, ncols, Q, ldq, U.data(), U.stride(1),
                    contiguousCacheBlocks);
       }
       return rank;

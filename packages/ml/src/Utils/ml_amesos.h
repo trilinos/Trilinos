@@ -56,10 +56,13 @@ extern "C" {
 
     \param AddToDiag (In) - add the specified value to the
     diagonals of the matrix.
+    
+    \param SplitComm (In) - split the communicator, if we're using something that
+    isn't  ML_AMESOS_SUPERLUDIST
   */
 
 int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
-                           int MaxProcs, double AddToDiag);
+                           int MaxProcs, double AddToDiag, int SplitComm);
 
 
 #ifndef ML_CPP

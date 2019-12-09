@@ -51,31 +51,33 @@
 
 #include <string>
 
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_ParameterList.hpp>
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_ParameterList.hpp"
 
-#include <Xpetra_BlockedCrsMatrix_fwd.hpp>
-#include <Xpetra_CrsMatrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
-#include <Xpetra_ExportFactory.hpp>
-#include <Xpetra_ImportFactory_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_MatrixFactory_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVectorFactory_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_Operator_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
+#include "Xpetra_BlockedCrsMatrix_fwd.hpp"
+#include "Xpetra_CrsMatrix_fwd.hpp"
+#include "Xpetra_CrsMatrixWrap_fwd.hpp"
+#include "Xpetra_ExportFactory.hpp"
+#include "Xpetra_ImportFactory_fwd.hpp"
+#include "Xpetra_MapFactory_fwd.hpp"
+#include "Xpetra_Map_fwd.hpp"
+#include "Xpetra_MatrixFactory_fwd.hpp"
+#include "Xpetra_Matrix_fwd.hpp"
+#include "Xpetra_MultiVectorFactory_fwd.hpp"
+#include "Xpetra_MultiVector_fwd.hpp"
+#include "Xpetra_Operator_fwd.hpp"
+#include "Xpetra_VectorFactory_fwd.hpp"
+#include "Xpetra_Vector_fwd.hpp"
 
-#include <Xpetra_IO.hpp>
+#include "Xpetra_IO.hpp"
+
+#include "Kokkos_ArithTraits.hpp"
 
 #ifdef HAVE_MUELU_EPETRA
-#include <Epetra_MultiVector.h>
-#include <Epetra_CrsMatrix.h>
-#include <Xpetra_EpetraCrsMatrix_fwd.hpp>
-#include <Xpetra_EpetraMultiVector_fwd.hpp>
+#include "Epetra_MultiVector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Xpetra_EpetraCrsMatrix_fwd.hpp"
+#include "Xpetra_EpetraMultiVector_fwd.hpp"
 #endif
 
 #include "MueLu_Exceptions.hpp"
@@ -83,11 +85,11 @@
 #include "MueLu_UtilitiesBase.hpp"
 
 #ifdef HAVE_MUELU_TPETRA
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Xpetra_TpetraCrsMatrix_fwd.hpp>
-#include <Xpetra_TpetraMultiVector_fwd.hpp>
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Xpetra_TpetraCrsMatrix_fwd.hpp"
+#include "Xpetra_TpetraMultiVector_fwd.hpp"
 #endif
 
 
@@ -109,8 +111,9 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
-    typedef Xpetra::MultiVector<Magnitude,LO,GO,NO> RealValuedMultiVector;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using Magnitude             = typename TST::magnitudeType;
+    using RealValuedMultiVector = Xpetra::MultiVector<Magnitude,LO,GO,NO>;
 
 #ifdef HAVE_MUELU_EPETRA
     //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
@@ -165,23 +168,13 @@ namespace MueLu {
 
     /*! @brief Extract Matrix Diagonal
 
-    Returns inverse of the Matrix diagonal in ArrayRCP.
+    Returns inverse of the Matrix diagonal in RCP<Vector>.
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100); // FIXME
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = TST::eps()*100); // FIXME
 
 
-
-    /*! @brief Extract Matrix Diagonal of lumped matrix
-
-    Returns Matrix diagonal of lumped matrix in ArrayRCP.
-
-    NOTE -- it's assumed that A has been fillComplete'd.
-    */
-    static Teuchos::ArrayRCP<SC> GetLumpedMatrixDiagonal(const Matrix& A); // FIXME
-
-    static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetLumpedMatrixDiagonal(Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetLumpedMatrixDiagonal(A); }
 
     /*! @brief Extract Overlapped Matrix Diagonal
 

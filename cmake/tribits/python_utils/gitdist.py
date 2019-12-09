@@ -189,8 +189,27 @@ repoSelectionAndSetupHelp = r"""
 REPO SELECTION AND SETUP:
 
 Before using the gitdist tool, one must first add the gitdist script to one's
-default path.  This can be done, for example, by copying the gitdist script to
-one's ~/bin/ directory:
+default path.  On bash, the simplest way to do this is to source the
+gitdist-setup.py script:
+
+  $ source <some-base-dir>/TriBITS/tribits/python_utils/gitdist-setup.sh
+
+This will set an alias to the gitdist script in that same directory by
+default, will set up useful alias 'gitdist-status', 'gitdist-mod', and
+'gitdist-mod-status', and 'gitdist-repo-versions', and will set up
+command-line completion just like for raw git (assuming that
+git-completion.bash has been sourced first).  The files 'gitdist' and
+'gitdist-setup.sh' can also be copied to another directory (e.g. ~/bin) and
+then 'gitdist-setup.sh' can be sourced from there (as a simple "install"):
+
+  $ cp <some-base-dir>/TriBITS/tribits/python_utils/gitdist \
+       <some-base-dir>/TriBITS/tribits/python_utils/gitdist-setup.sh \
+      ~/bin/
+  $ source ~/bin/gitdist-setup.sh
+  $ export PATH=$HOME/bin:$PATH
+
+This script can also be set up manually, for example, by copying the gitdist
+script to one's ~/bin/ directory:
 
   $ cp <some-base-dir>/TriBITS/tribits/python_utils/gitdist ~/bin/
   $ chmod a+x ~/bin/gitdist
@@ -201,7 +220,7 @@ and then adding $HOME/bin to one's 'PATH' env var with:
 
 (i.e. in one's ~/.bash_profile file).  Then, one will want to set up some
 useful shell aliases like 'gitdist-status', 'gitdist-mod', and
-'gitdist-mod-status' (see --dist-help=aliases).
+'gitdist-mod-status' and 'gitdist-repo-versions' (see --dist-help=aliases).
 
 The set of git repos processed by gitdist is determined by the argument:
 
@@ -380,13 +399,11 @@ example):
   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
     | grep -v "^$" &> RepoVersion.txt
 
-or two lines per repo using (for example):
+(which is defined as the alias 'gitdist-repo-versions' in the file
+'gitdist-setup.sh') or two lines per repo using (for example):
 
   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
     | grep -v "^$" &> RepoVersion.txt
-
-(See the alias 'gitdist-repo-versions' defined in the file
-'gitdist-setup.sh'.)
 
 This allows checking out consistent versions of the set git repos, diffing two
 consistent versions of the set of git repos, etc.

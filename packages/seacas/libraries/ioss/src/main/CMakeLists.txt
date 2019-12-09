@@ -110,7 +110,6 @@ if (TPL_ENABLE_MPI)
   XHOSTTYPE Windows
   )
 endif()
-endif()
 
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus64
    TEST_0 EXEC io_shell ARGS -64 ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.g
@@ -157,6 +156,7 @@ ELSE()
     COMM mpi serial
     FINAL_PASS_REGULAR_EXPRESSION
   )
+ENDIF()
 ENDIF()
 ENDIF()
 ENDIF()

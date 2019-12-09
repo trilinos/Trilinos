@@ -65,8 +65,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,repeatedMap);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -79,8 +79,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,repeatedMap,dirichletBoundaryDofs);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -94,8 +94,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -110,8 +110,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -126,8 +126,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -143,8 +143,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -160,13 +160,12 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,dirichletBoundaryDofsVec,nodeListVec);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
     }
-
 
     template <class SC,class LO,class GO,class NO>
     void GDSWCoarseOperator<SC,LO,GO,NO>::describe(FancyOStream &out,
@@ -414,7 +413,7 @@ namespace FROSch {
                 }
             }
 
-            this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
+            this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
             if (useForCoarseSpace && (useVertexTranslations||useShortEdgeTranslations||useShortEdgeRotations||useStraightEdgeTranslations||useStraightEdgeRotations||useEdgeTranslations||useEdgeRotations||useFaceTranslations||useFaceRotations)) {
                 
@@ -441,57 +440,58 @@ namespace FROSch {
                 if (useVertexTranslations) {
                     XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,DDInterface_->getVertices());
                     for (UN i=0; i<translations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getVertices()->getEntityMap(),translations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getVertices()->getEntityMap(),null,translations[i]);
                     }
                 }
                 // ShortEdges
                 if (useShortEdgeTranslations) {
                     XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,DDInterface_->getShortEdges());
                     for (UN i=0; i<translations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getShortEdges()->getEntityMap(),translations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getShortEdges()->getEntityMap(),null,translations[i]);
                     }
                 }
                 if (useShortEdgeRotations) {
-                    XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getShortEdges());
+                    XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getShortEdges(),(dimension==3));
                     for (UN i=0; i<rotations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getShortEdges()->getEntityMap(),rotations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getShortEdges()->getEntityMap(),null,rotations[i]);
                     }
                 }
                 // StraightEdges
                 if (useStraightEdgeTranslations) {
                     XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,DDInterface_->getStraightEdges());
-                    for (UN i=0; i<translations.size(); i++) {                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getStraightEdges()->getEntityMap(),translations[i]);
+                    for (UN i=0; i<translations.size(); i++) {                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getStraightEdges()->getEntityMap(),null,translations[i]);
                     }
                 }
                 if (useStraightEdgeRotations) {
-                    XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getStraightEdges());
-                    for (UN i=0; i<rotations.size(); i++) {                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getStraightEdges()->getEntityMap(),rotations[i]);
+                    XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getStraightEdges(),(dimension==3));
+                    for (UN i=0; i<rotations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getStraightEdges()->getEntityMap(),null,rotations[i]);
                     }
                 }
                 // Edges
                 if (useEdgeTranslations) {
                     XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,DDInterface_->getEdges());
                     for (UN i=0; i<translations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getEdges()->getEntityMap(),translations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getEdges()->getEntityMap(),null,translations[i]);
                     }
                 }
                 if (useEdgeRotations) {
                     XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getEdges());
                     for (UN i=0; i<rotations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getEdges()->getEntityMap(),rotations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getEdges()->getEntityMap(),null,rotations[i]);
                     }
                 }
                 // Faces
                 if (useFaceTranslations) {
                     XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,DDInterface_->getFaces());
                     for (UN i=0; i<translations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getFaces()->getEntityMap(),translations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getFaces()->getEntityMap(),null,translations[i]);
                     }
                 }
                 if (useFaceRotations) {
                     XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getFaces());
                     for (UN i=0; i<rotations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getFaces()->getEntityMap(),rotations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getFaces()->getEntityMap(),null,rotations[i]);
                     }
                 }
 

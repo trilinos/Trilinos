@@ -42,8 +42,6 @@ void PrintLine()
   return;
 }
 
-
-
 // ------------------------------------------------------------------------------------------------
 // Memory use tracking (gets memory use in MB)
 int get_memory() {
@@ -114,7 +112,7 @@ int get_memory() {
 }
 
 
-int TestMultiLevelPreconditioner(char ProblemType[],
+int TestMultiLevelPreconditioner(const char ProblemType[],
 				 Teuchos::ParameterList & MLList,
 				 Epetra_LinearProblem & Problem, double & TotalErrorResidual,
 				 double & TotalErrorExactSol,bool cg=false)
@@ -224,6 +222,7 @@ int main(int argc, char *argv[]) {
   Epetra_Map* Map = CreateMap("Cartesian3D", Comm, GaleriList);
   Epetra_CrsMatrix* Matrix = CreateCrsMatrix("Laplace3D", Map, GaleriList);
   Epetra_MultiVector* Coords = CreateCartesianCoordinates("3D",Map,GaleriList);
+  Epetra_Vector material(Matrix->RowMap());
 
   Epetra_Vector LHS(*Map);
   Epetra_Vector RHS(*Map);
@@ -234,11 +233,9 @@ int main(int argc, char *argv[]) {
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
   char mystring[80];
 
-  //#if 0
   // ====================== //
   // default options for SA //
   // ====================== //
-
   if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("SA",MLList);
@@ -327,7 +324,6 @@ int main(int argc, char *argv[]) {
   TestMultiLevelPreconditioner(mystring, LevelList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
-
   // =========================== //
   // Ifpack G-S w/ L1
   // =========================== //
@@ -336,18 +332,6 @@ int main(int argc, char *argv[]) {
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: use l1 Gauss-Seidel",true);
   MLList.set("smoother: type", "Gauss-Seidel");
-  TestMultiLevelPreconditioner(mystring, MLList, Problem,
-                               TotalErrorResidual, TotalErrorExactSol);
-#endif
-
-  // =========================== //
-  // Ifpack SGS w/ L1
-  // =========================== //
-#ifdef HAVE_ML_IFPACK
-  if (Comm.MyPID() == 0) PrintLine();
-  ML_Epetra::SetDefaults("SA",MLList);
-  MLList.set("smoother: use l1 Gauss-Seidel",true);
-  MLList.set("smoother: type", "symmetric Gauss-Seidel");
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 #endif
@@ -368,6 +352,16 @@ int main(int argc, char *argv[]) {
   
 
   // =========================== //
+  // No QR test                  //
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("aggregation: type","Uncoupled");
+  MLList.set("aggregation: do qr",false);
+  TestMultiLevelPreconditioner("No QR", MLList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+  
+  // =========================== //
   // Memory Test                 //
   // =========================== //
   int initial_memory = get_memory();
@@ -378,6 +372,50 @@ int main(int argc, char *argv[]) {
   }
   int final_memory = get_memory();
   printf("Memory before = %d after = %d\n",initial_memory,final_memory);
+
+  // =========================== //
+  // Material aggregation test
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  material.PutScalar(1.0);
+  Teuchos::ParameterList MaterialList;
+  ML_Epetra::SetDefaults("SA",MaterialList);
+  MaterialList.set("aggregation: material: enable", true);
+  MaterialList.set("aggregation: material: threshold", 2.0);
+  MaterialList.set("material coordinates", &(material[0]));
+  MaterialList.set("x-coordinates",(*Coords)[0]);
+  MaterialList.set("y-coordinates",(*Coords)[1]);
+  MaterialList.set("z-coordinates",(*Coords)[2]);
+  TestMultiLevelPreconditioner("Material", MaterialList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+
+  // =========================== //
+  // Material & Aux aggregation test
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  material.PutScalar(1.0);
+  material[0] = 1000;
+  Teuchos::ParameterList MaterialList2;
+  ML_Epetra::SetDefaults("SA",MaterialList2);
+  MaterialList2.set("aggregation: material: enable", true);
+  MaterialList2.set("aggregation: material: threshold", 2.0);
+  MaterialList2.set("aggregation: aux: enable", true);
+  MaterialList2.set("aggregation: aux: threshold", 1e-10);
+  MaterialList2.set("material coordinates", &(material[0]));
+  MaterialList2.set("x-coordinates",(*Coords)[0]);
+  MaterialList2.set("y-coordinates",(*Coords)[1]);
+  MaterialList2.set("z-coordinates",(*Coords)[2]);
+  TestMultiLevelPreconditioner("Material", MaterialList2, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+
+
+  // =========================== //
+  // Classical Test
+  // =========================== //
+  Teuchos::ParameterList ClassicalList;
+  ML_Epetra::SetDefaults("Classical-AMG",ClassicalList);
+  TestMultiLevelPreconditioner("Classical-AMG",ClassicalList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
 
   // =========================== //
   // Rowsum test (on Heat eqn)   //
@@ -393,11 +431,8 @@ int main(int argc, char *argv[]) {
   MLList.set("aggregation: type","Uncoupled");
   MLList.set("aggregation: rowsum threshold", 0.9);
 
-  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+  TestMultiLevelPreconditioner("Rowsum", MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
-
-
-
 
   // ===================== //
   // print out total error //

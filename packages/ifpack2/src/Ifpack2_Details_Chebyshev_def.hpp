@@ -52,7 +52,8 @@
 /// It defines a new implementation of Chebyshev iteration.
 
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
-#include "Ifpack2_Details_ScaledDampedResidual.hpp"
+// #include "Ifpack2_Details_ScaledDampedResidual.hpp"
+#include "Ifpack2_Details_ChebyshevKernel.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -680,7 +681,7 @@ template<class ScalarType, class MV>
 void
 Chebyshev<ScalarType, MV>::reset ()
 {
-  sdr_ = Teuchos::null;
+  ck_ = Teuchos::null;
   D_ = Teuchos::null;
   diagOffsets_ = offsets_type ();
   savedDiagOffsets_ = false;
@@ -700,7 +701,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
       reset ();
     }
     A_ = A;
-    sdr_ = Teuchos::null; // constructed on demand
+    ck_ = Teuchos::null; // constructed on demand
 
     // The communicator may have changed, or we may not have had a
     // communicator before.  Thus, we may have to reset the debug
@@ -1279,14 +1280,14 @@ ifpackApplyImpl (const op_type& A,
   if (! zeroStartingSolution_) {
     // mfh 22 May 2019: Tests don't actually exercise this path.
 
-    if (sdr_.is_null ()) {
+    if (ck_.is_null ()) {
       Teuchos::RCP<const op_type> A_op = A_;
-      sdr_ = Teuchos::rcp (new ScaledDampedResidual<op_type> (A_op));
+      ck_ = Teuchos::rcp (new ChebyshevKernel<op_type> (A_op));
     }
     // W := (1/theta)*D_inv*(B-A*X) and X := X + W.
-    sdr_->compute (W, one/theta, const_cast<V&> (D_inv),
+    // X := X + W
+    ck_->compute (W, one/theta, const_cast<V&> (D_inv),
                    const_cast<MV&> (B), X, zero);
-    X.update (one, W, one);
   }
   else {
     // W := (1/theta)*D_inv*B and X := 0 + W.
@@ -1298,9 +1299,9 @@ ifpackApplyImpl (const op_type& A,
           << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
   }
 
-  if (numIters > 1 && sdr_.is_null ()) {
+  if (numIters > 1 && ck_.is_null ()) {
     Teuchos::RCP<const op_type> A_op = A_;
-    sdr_ = Teuchos::rcp (new ScaledDampedResidual<op_type> (A_op));
+    ck_ = Teuchos::rcp (new ChebyshevKernel<op_type> (A_op));
   }
 
   // The rest of the iterations.
@@ -1326,9 +1327,9 @@ ifpackApplyImpl (const op_type& A,
     }
 
     // W := dtemp2*D_inv*(B - A*X) + dtemp1*W.
-    sdr_->compute (W, dtemp2, const_cast<V&> (D_inv),
+    // X := X + W
+    ck_->compute (W, dtemp2, const_cast<V&> (D_inv),
                    const_cast<MV&> (B), (X), dtemp1);
-    X.update (one, W, one); // X := X + W
 
     if (debug) {
       *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl
