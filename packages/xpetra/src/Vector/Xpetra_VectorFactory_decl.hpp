@@ -50,7 +50,7 @@
 #include "Xpetra_Vector.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
-#  include "Xpetra_TpetraVector.hpp"
+#  include "Xpetra_TpetraVector_decl.hpp"
 #endif
 #ifdef HAVE_XPETRA_EPETRA
 #  include "Xpetra_EpetraVector.hpp"

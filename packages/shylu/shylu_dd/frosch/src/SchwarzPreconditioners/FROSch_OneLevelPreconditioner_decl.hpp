@@ -112,7 +112,7 @@ namespace FROSch {
         SumOperatorPtr SumOperator_;
         MultiplicativeOperatorPtr MultiplicativeOperator_;
         OverlappingOperatorPtr OverlappingOperator_;
-        bool UseMultiplicative_;
+        bool UseMultiplicative_ = false;
     };
 
 }

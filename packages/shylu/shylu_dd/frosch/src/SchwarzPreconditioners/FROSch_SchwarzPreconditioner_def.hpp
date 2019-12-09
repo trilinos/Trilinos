@@ -55,9 +55,6 @@ namespace FROSch {
                                                               CommPtr comm) :
     MpiComm_ (comm),
     ParameterList_ (parameterList),
-    UseTranspose_ (false),
-    IsInitialized_ (false),
-    IsComputed_ (false),
     Verbose_ (comm->getRank()==0),
     LevelID_ (ParameterList_->get("Level ID",UN(1)))
     {

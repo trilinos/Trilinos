@@ -109,6 +109,7 @@ namespace FROSch {
 
         virtual int updateLocalOverlappingMatrices() = 0;
         
+        
         ConstXMatrixPtr OverlappingMatrix_;
 
         ConstXMapPtr OverlappingMap_;
@@ -125,7 +126,7 @@ namespace FROSch {
 
         XMultiVectorPtr Multiplicity_;
 
-        CombinationType Combine_;
+        CombinationType Combine_ = Averaging;
     };
 
 }

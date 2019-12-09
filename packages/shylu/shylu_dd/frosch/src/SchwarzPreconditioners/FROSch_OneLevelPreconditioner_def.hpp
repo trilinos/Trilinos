@@ -57,8 +57,7 @@ namespace FROSch {
     K_ (k),
     SumOperator_ (new SumOperator<SC,LO,GO,NO>(k->getRangeMap()->getComm())),
     MultiplicativeOperator_ (new MultiplicativeOperator<SC,LO,GO,NO>(k,parameterList)),
-    OverlappingOperator_ (),
-    UseMultiplicative_(false)
+    OverlappingOperator_ ()
     {
         FROSCH_TIMER_START_LEVELID(oneLevelPreconditionerTime,"OneLevelPreconditioner::OneLevelPreconditioner");
         if (!this->ParameterList_->get("OverlappingOperator Type","AlgebraicOverlappingOperator").compare("AlgebraicOverlappingOperator")) {

@@ -71,18 +71,9 @@ namespace FROSch {
                                                   EntityFlag flag) :
     Type_ (type),
     Flag_ (flag),
-    NodeVector_ (0),
     SubdomainsVector_ (multiplicity),
-    Ancestors_ (),
-    Offspring_ (),
-    Roots_ (),
-    DistancesVector_ (0),
     DofsPerNode_ (dofsPerNode),
-    Multiplicity_ (multiplicity),
-    UniqueID_ (-1),
-    LocalID_ (-1),
-    RootID_ (-1),
-    LeafID_ (-1)
+    Multiplicity_ (multiplicity)
     {
         for (UN i=0; i<multiplicity; i++) {
             SubdomainsVector_[i] = subdomains[i];

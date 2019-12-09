@@ -3603,8 +3603,8 @@ struct ArrayCombinationReducer {
       dst.ptr[n] = 0;
     }
 
-    for(int n = value_count_weights + 2;
-      n < value_count_weights + value_count_rightleft - 2; n += 2) {
+    for(int n = value_count_weights;
+      n < value_count_weights + value_count_rightleft; n += 2) {
       dst.ptr[n]   = -max_scalar;
       dst.ptr[n+1] =  max_scalar;
     }
@@ -3752,8 +3752,8 @@ struct ReduceWeightsFunctor {
       for(int n = 0; n < value_count_weights; ++n) {
         shared_ptr[n] = 0;
       }
-      for(int n = value_count_weights + 2;
-        n < value_count_weights + value_count_rightleft - 2; n += 2) {
+      for(int n = value_count_weights;
+        n < value_count_weights + value_count_rightleft; n += 2) {
         shared_ptr[n]   = -max_scalar;
         shared_ptr[n+1] =  max_scalar;
       }
@@ -6860,8 +6860,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     auto local_assigned_part_ids = this->assigned_part_ids;
     auto local_new_part_xadj = this->new_part_xadj;
     auto local_new_coordinate_permutations = this->new_coordinate_permutations;
-
-    typedef typename mj_node_t::device_type device_t;
 
     // part shift holds the which part number an old part number corresponds to.
     Kokkos::View<mj_part_t*, device_t> part_shifts("part_shifts", num_parts);

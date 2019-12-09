@@ -60,11 +60,7 @@ namespace FROSch {
                                                                                 ParameterListPtr parameterList,
                                                                                 Verbosity verbosity,
                                                                                 UN levelID) :
-    GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
-    UseRoots_ (false),
-    Roots_ (),
-    EntitySetVector_ (),
-    DistanceFunction_ (ConstantDistanceFunction)
+    GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID)
     {
         FROSCH_TIMER_START_LEVELID(rGDSWInterfacePartitionOfUnityTime,"RGDSWInterfacePartitionOfUnity::RGDSWInterfacePartitionOfUnity");
         this->UseVertices_ = false;

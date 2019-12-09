@@ -62,7 +62,6 @@ namespace FROSch {
     SerialComm_ (serialComm),
     DofsPerNode_ (dofsPerNode),
     ParameterList_ (parameterList),
-    LocalPartitionOfUnitySpace_ (),
     PartitionOfUnity_ (partitionOfUnity),
     NullspaceBasis_ (nullSpaceBasis),
     PartitionOfUnityMaps_ (partitionOfUnityMaps)
@@ -96,12 +95,13 @@ namespace FROSch {
         LocalPartitionOfUnitySpace_ = CoarseSpacePtr(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
         XMultiVectorPtrVecPtr2D tmpBasis(PartitionOfUnity_.size());
+        ConstXMapPtr nullspaceBasisMap = NullspaceBasis_->getMap();
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
             if (!PartitionOfUnity_[i].is_null()) {
                 FROSCH_ASSERT(PartitionOfUnityMaps_[i]->getNodeNumElements()>0,"PartitionOfUnityMaps_[i]->getNodeNumElements()==0");
                 tmpBasis[i] = XMultiVectorPtrVecPtr(PartitionOfUnity_[i]->getNumVectors());
                 for (UN j=0; j<PartitionOfUnity_[i]->getNumVectors(); j++) {
-                    XMultiVectorPtr tmpBasisJ = MultiVectorFactory<SC,LO,GO,NO>::Build(NullspaceBasis_->getMap(),NullspaceBasis_->getNumVectors());
+                    XMultiVectorPtr tmpBasisJ = MultiVectorFactory<SC,LO,GO,NO>::Build(nullspaceBasisMap,NullspaceBasis_->getNumVectors());
                     tmpBasisJ->elementWiseMultiply(ScalarTraits<SC>::one(),*PartitionOfUnity_[i]->getVector(j),*NullspaceBasis_,ScalarTraits<SC>::one());
                     if (ParameterList_->get("Orthogonalize",true)) {
                         tmpBasis[i][j] = ModifiedGramSchmidt(tmpBasisJ.getConst());
@@ -142,10 +142,10 @@ namespace FROSch {
         // Kann man das schöner machen?
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
             if (!PartitionOfUnityMaps_[i].is_null()) {
-                for (UN j=0; j<maxNV[i]; j++) {
-                    if (!PartitionOfUnity_[i].is_null()) {
-                        //XMultiVectorPtrVecPtr tmpBasis2(PartitionOfUnity_[i]->getNumVectors());
-                        XMultiVectorPtr entityBasis = MultiVectorFactory<SC,LO,GO,NO >::Build(PartitionOfUnity_[i]->getMap(),PartitionOfUnity_[i]->getNumVectors());
+                if (!PartitionOfUnity_[i].is_null()) {
+                    ConstXMapPtr partitionOfUnityMap_i = PartitionOfUnity_[i]->getMap();
+                    for (UN j=0; j<maxNV[i]; j++) {
+                        XMultiVectorPtr entityBasis = MultiVectorFactory<SC,LO,GO,NO >::Build(partitionOfUnityMap_i,PartitionOfUnity_[i]->getNumVectors());
                         entityBasis->scale(ScalarTraits<SC>::zero());
                         for (UN k=0; k<PartitionOfUnity_[i]->getNumVectors(); k++) {
                             if (j<tmpBasis[i][k]->getNumVectors()) {
@@ -153,12 +153,14 @@ namespace FROSch {
                             }
                         }
                         LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i],null,entityBasis);
-                    } else {
+                    }
+                } else {
+                    for (UN j=0; j<maxNV[i]; j++) {
                         LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i]);
                     }
                 }
             } else {
-                if (this->MpiComm_->getRank()==0) std::cout << "FROSch::LocalPartitionOfUnityBasis : WARNING: PartitionOfUnityMaps_[i].is_null()" << std::endl;
+                FROSCH_WARNING("FROSch::LocalPartitionOfUnityBasis",this->MpiComm_->getRank()==0,"PartitionOfUnityMaps_[i].is_null()");
             }
         }
 
