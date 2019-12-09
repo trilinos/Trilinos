@@ -40,9 +40,10 @@
 /// \file Tsqr_CombineDefault.hpp
 /// \brief Default copy-in, copy-out implementation of \c TSQR::Combine.
 ///
-#ifndef __TSQR_CombineDefault_hpp
-#define __TSQR_CombineDefault_hpp
+#ifndef TSQR_COMBINEDEFAULT_HPP
+#define TSQR_COMBINEDEFAULT_HPP
 
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Tsqr_ApplyType.hpp"
 #include "Tsqr_Impl_Lapack.hpp"
@@ -131,44 +132,40 @@ namespace TSQR {
 
     void
     apply_inner (const ApplyType& apply_type,
-                 const Ordinal m,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_Q,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C_top[],
-                 const Ordinal ldc_top,
-                 Scalar C_bot[],
-                 const Ordinal ldc_bot,
+                 const MatView<Ordinal, Scalar>& C_top,
+                 const MatView<Ordinal, Scalar>& C_bot,
                  Scalar work[])
     {
-      const Ordinal numRows = m + ncols_Q;
+      const Ordinal m = A.extent (0);
+      TEUCHOS_ASSERT( m == Ordinal (C_bot.extent (0)) );
+      const Ordinal ncols_Q = A.extent (1);
+      const Ordinal ncols_C = C_top.extent (1);
+      TEUCHOS_ASSERT( ncols_C == Ordinal (C_bot.extent (1)) );
+      const Ordinal numRows = ncols_Q + m;
 
       A_buf_.reshape (numRows, ncols_Q);
       deep_copy (A_buf_, Scalar {});
-      const_mat_view_type A_bot (m, ncols_Q, A, lda);
-      mat_view_type A_buf_bot (m, ncols_Q, &A_buf_(ncols_Q, 0), A_buf_.stride(1));
-      deep_copy (A_buf_bot, A_bot);
+      auto A_buf_top_bot = partition_2x1 (A_buf_.view (), ncols_Q);
+      deep_copy (A_buf_top_bot.second, A);
 
       C_buf_.reshape (numRows, ncols_C);
       deep_copy (C_buf_, Scalar {});
-      mat_view_type C_buf_top (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.stride(1));
-      mat_view_type C_buf_bot (m, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.stride(1));
-      mat_view_type C_top_view (ncols_Q, ncols_C, C_top, ldc_top);
-      mat_view_type C_bot_view (m, ncols_C, C_bot, ldc_bot);
-      deep_copy (C_buf_top, C_top_view);
-      deep_copy (C_buf_bot, C_bot_view);
+      auto C_buf_top_bot = partition_2x1 (C_buf_.view (), ncols_Q);
+      deep_copy (C_buf_top_bot.first, C_top);
+      deep_copy (C_buf_top_bot.second, C_bot);
 
       const std::string trans = apply_type.toString ();
       const int lwork = ncols_C;
-      lapack_.apply_Q_factor ('L', trans[0], numRows, ncols_C, ncols_Q,
-                              A_buf_.data(), A_buf_.stride(1), tau,
-                              C_buf_.data(), C_buf_.stride(1),
+      lapack_.apply_Q_factor ('L', trans[0],
+                              numRows, ncols_C, ncols_Q,
+                              A_buf_.data (), A_buf_.stride (1), tau,
+                              C_buf_.data (), C_buf_.stride (1),
                               work, lwork);
       // Copy back the results.
-      deep_copy (C_top_view, C_buf_top);
-      deep_copy (C_bot_view, C_buf_bot);
+      deep_copy (C_top, C_buf_top_bot.first);
+      deep_copy (C_bot, C_buf_top_bot.second);
     }
 
     void
@@ -315,4 +312,4 @@ namespace TSQR {
   };
 } // namespace TSQR
 
-#endif // __TSQR_CombineDefault_hpp
+#endif // TSQR_COMBINEDEFAULT_HPP

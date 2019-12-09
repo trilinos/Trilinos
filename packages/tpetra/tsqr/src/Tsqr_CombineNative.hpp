@@ -117,16 +117,10 @@ namespace TSQR {
 
     void
     apply_inner (const ApplyType& applyType,
-                 const Ordinal m,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_Q,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C_top[],
-                 const Ordinal ldc_top,
-                 Scalar C_bot[],
-                 const Ordinal ldc_bot,
+                 const MatView<Ordinal, Scalar>& C_top,
+                 const MatView<Ordinal, Scalar>& C_bot,
                  Scalar work[]) const;
 
     void
@@ -268,26 +262,19 @@ namespace TSQR {
                   const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[]) const;
-
     void
     apply_inner (const ApplyType& applyType,
-                 const Ordinal m,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_Q,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C_top[],
-                 const Ordinal ldc_top,
-                 Scalar C_bot[],
-                 const Ordinal ldc_bot,
+                 const MatView<Ordinal, Scalar>& C_top,
+                 const MatView<Ordinal, Scalar>& C_bot,
                  Scalar work[]) const;
+
     void
     factor_pair (const MatView<Ordinal, Scalar>& R_top,
                  const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[]) const;
-
     void
     apply_pair (const ApplyType& applyType,
                 const MatView<Ordinal, const Scalar>& R_bot,
@@ -299,7 +286,6 @@ namespace TSQR {
   private:
     mutable combine_default_type default_;
   };
-
 
   //! Specialization of CombineNative for complex Scalar.
   template<class Ordinal, class Scalar>
@@ -339,22 +325,14 @@ namespace TSQR {
 
     void
     apply_inner (const ApplyType& applyType,
-                 const Ordinal m,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_Q,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C_top[],
-                 const Ordinal ldc_top,
-                 Scalar C_bot[],
-                 const Ordinal ldc_bot,
+                 const MatView<Ordinal, Scalar>& C_top,
+                 const MatView<Ordinal, Scalar>& C_bot,
                  Scalar work[]) const
     {
-      return default_.apply_inner (applyType, m, ncols_C, ncols_Q,
-                                   A, lda, tau,
-                                   C_top, ldc_top, C_bot, ldc_bot,
-                                   work);
+      return default_.apply_inner (applyType, A, tau,
+                                   C_top, C_bot, work);
     }
 
     void
@@ -568,16 +546,10 @@ namespace TSQR {
   void
   CombineNative<Ordinal, Scalar, false>::
   apply_inner (const ApplyType& applyType,
-               const Ordinal m,
-               const Ordinal ncols_C,
-               const Ordinal ncols_Q,
-               const Scalar A[],
-               const Ordinal lda,
+               const MatView<Ordinal, const Scalar>& A,
                const Scalar tau[],
-               Scalar C_top[],
-               const Ordinal ldc_top,
-               Scalar C_bot[],
-               const Ordinal ldc_bot,
+               const MatView<Ordinal, Scalar>& C_top,
+               const MatView<Ordinal, Scalar>& C_bot,
                Scalar work[]) const
   {
     using Kokkos::ALL;
@@ -588,11 +560,17 @@ namespace TSQR {
     using nonconst_vec_type = vector_type<scalar_type>;
     using range_type = std::pair<Ordinal, Ordinal>;
 
-    const_mat_type A_full (A, lda, ncols_Q);
+    const Ordinal m = A.extent (0);
+    const Ordinal ncols_Q = A.extent (1);
+    const Ordinal ncols_C = C_top.extent (1);
+
+    const_mat_type A_full (A.data (), A.stride (1), ncols_Q);
     auto A_view = subview (A_full, range_type (0, m), ALL ());
-    nonconst_mat_type C_top_full (C_top, ldc_top, ncols_C);
+    nonconst_mat_type C_top_full
+      (C_top.data (), C_top.stride (1), ncols_C);
     auto C_top_view = subview (C_top_full, range_type (0, m), ALL ());
-    nonconst_mat_type C_bot_full (C_bot, ldc_bot, ncols_C);
+    nonconst_mat_type C_bot_full
+      (C_bot.data (), C_bot.stride (1), ncols_C);
     auto C_bot_view = subview (C_bot_full, range_type (0, m), ALL ());
     const_vec_type tau_view (tau, ncols_Q);
     nonconst_vec_type work_view (work, ncols_C);

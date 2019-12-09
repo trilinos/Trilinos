@@ -219,15 +219,8 @@ namespace TSQR {
                    mat_view_type& C_cur,
                    std::vector<Scalar>& work) const
     {
-      const LocalOrdinal nrows_local = Q_cur.extent(0);
-      const LocalOrdinal ncols_Q = Q_cur.extent(1);
-      const LocalOrdinal ncols_C = C_cur.extent(1);
-
-      combine.apply_inner (apply_type,
-                           nrows_local, ncols_C, ncols_Q,
-                           Q_cur.data(), Q_cur.stride(1), tau.data(),
-                           C_top.data(), C_top.stride(1),
-                           C_cur.data(), C_cur.stride(1), work.data());
+      combine.apply_inner (apply_type, Q_cur, tau.data (),
+                           C_top, C_cur, work.data ());
     }
 
     void
@@ -237,7 +230,7 @@ namespace TSQR {
                     std::vector<Scalar>& tau,
                     std::vector<Scalar>& work) const
     {
-      combine.factor_inner (R, A_cur, tau.data(), work.data());
+      combine.factor_inner (R, A_cur, tau.data (), work.data ());
     }
 
   public:

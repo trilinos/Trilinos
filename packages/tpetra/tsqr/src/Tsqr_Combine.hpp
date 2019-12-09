@@ -155,49 +155,40 @@ namespace TSQR {
 
     /// Apply the result of \c factor_inner().
     ///
-    /// Apply the Q factor stored in [R; A] to [C_top; C_bot].  The C
-    /// blocks are allowed, but not required, to have different leading
-    /// dimensions (ldc_top resp. ldc_bottom).  R is upper triangular, so
-    /// we do not need it; the Householder reflectors representing the Q
-    /// factor are stored compactly in A (specifically, in all of A, not
-    /// just the lower triangle).
+    /// Apply the Q factor stored in [R; A] to [C_top; C_bot], where
     ///
-    /// In the "sequential under parallel" version of TSQR, this function
-    /// belongs to the sequential part (i.e., operating on cache blocks on
-    /// a single processor).
+    /// <ul>
+    /// <li> A is     m       by ncols_Q, </li>
+    /// <li> R is     ncols_Q by ncols Q, </li>
+    /// <li> C_top is ncols_Q by ncols_C, and </li>
+    /// <li> C_bot is m       by ncols_C. </li>
+    /// </ul>
+    ///
+    /// The C blocks are allowed, but not required, to have different
+    /// strides ("leading dimensions," in BLAS and LAPACK terms).  R
+    /// is upper triangular, so we do not need an explicit version of
+    /// R here.  The Householder reflectors representing the Q factor
+    /// are stored compactly in A (specifically, in all of A, not just
+    /// the lower triangle) and tau.
     ///
     /// \param apply_type [in] NoTranspose means apply Q, Transpose
     ///   means apply Q^T, and ConjugateTranspose means apply Q^H.
-    /// \param m [in]         number of rows of A
-    /// \param ncols_C [in]   number of columns of [C_top; C_bot]
-    /// \param ncols_Q [in]   number of columns of [R; A]
     /// \param A [in] m by ncols_Q matrix, in which the Householder
     ///   reflectors representing the Q factor are stored
-    /// \param lda [in]       leading dimension of A
     /// \param tau [in] array of length ncols_Q, storing the scaling
     ///   factors for the Householder reflectors representing Q
     /// \param C_top [inout]  ncols_Q by ncols_C matrix
-    /// \param ldc_top [in]   leading dimension of C_top
     /// \param C_bot [inout]  m by ncols_C matrix
-    /// \param ldc_bot [in]   leading dimension of C_bot
     /// \param work [out]     workspace array of length ncols_C
     void
     apply_inner (const ApplyType& apply_type,
-                 const Ordinal m,
-                 const Ordinal ncols_C,
-                 const Ordinal ncols_Q,
-                 const Scalar A[],
-                 const Ordinal lda,
+                 const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
-                 Scalar C_top[],
-                 const Ordinal ldc_top,
-                 Scalar C_bot[],
-                 const Ordinal ldc_bot,
+                 const MatView<Ordinal, Scalar>& C_top,
+                 const MatView<Ordinal, Scalar>& C_bot,
                  Scalar work[])
     {
-      impl_.apply_inner (apply_type, m, ncols_C, ncols_Q,
-                         A, lda, tau,
-                         C_top, ldc_top, C_bot, ldc_bot, work);
+      impl_.apply_inner (apply_type, A, tau, C_top, C_bot, work);
     }
 
     /// \brief Factor [R; A] for square upper triangular R and cache block A.

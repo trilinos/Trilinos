@@ -327,9 +327,10 @@ namespace TSQR {
       }
 
       // Space to put the explicit Q factors.
-      matrix_type Q_R1R2 (Ordinal(2) * numCols, numCols, Scalar{});
+      matrix_type Q_R1R2 (Ordinal(2) * numCols, numCols, Scalar {});
       auto Q_R1_Q_R2 = partition_2x1 (Q_R1R2.view (), numCols);
-      matrix_type Q_R3A (numRows + numCols, numCols, Scalar{});
+      matrix_type Q_R3A (numCols + numRows, numCols, Scalar {});
+      auto Q_R3_A = partition_2x1 (Q_R3A.view (), numCols);
 
       // Fill the explicit Q factor matrices with the first numCols
       // columns of the identity matrix.
@@ -393,11 +394,9 @@ namespace TSQR {
       }
       combiner.factor_inner (R3.view (), A.view (),
                              tau_R3A.data (), work.data ());
-      combiner.apply_inner (ApplyType ("N"), numRows, numCols, numCols,
-                            A.data(), A.stride(1), tau_R3A.data(),
-                            &Q_R3A(0, 0), Q_R3A.stride(1),
-                            &Q_R3A(numCols, 0), Q_R3A.stride(1),
-                            work.data());
+      combiner.apply_inner (ApplyType ("N"), A.view (),
+                            tau_R3A.data (), Q_R3_A.first,
+                            Q_R3_A.second, work.data ());
       if (debug) {
         cerr << "Results of second test problem:" << endl;
         cerr << "-- Copy of test problem:" << endl;
@@ -553,10 +552,8 @@ namespace TSQR {
         // get rid of that assumption.
         Q(k, k) = Scalar(1.0);
       }
-
       // Two cache blocks (as views) of Q.
-      mat_view_type Q1 (numRows, numCols, &Q(0,0), Q.stride(1));
-      mat_view_type Q2 (numRows, numCols, &Q(numRows,0), Q.stride(1));
+      auto Q1_Q2 = partition_2x1 (Q.view (), numRows);
 
       // Two tau factor arrays, one for each cache block.
       vector<Scalar> tau1 (numCols);
@@ -593,14 +590,11 @@ namespace TSQR {
 
       // Compute the explicit Q factor, by starting with A2 and
       // (working up the matrix A,) finishing with A1.
-      combiner.apply_inner (ApplyType::NoTranspose,
-                            numRows, numCols, numCols,
-                            A2.data(), A2.stride(1), tau2.data(),
-                            Q1.data(), Q1.stride(1),
-                            Q2.data(), Q2.stride(1), work.data());
+      combiner.apply_inner (ApplyType::NoTranspose, A2, tau2.data (),
+                            Q1_Q2.first, Q1_Q2.second, work.data ());
       combiner.apply_first (ApplyType::NoTranspose,
-                            A1, tau1.data(),
-                            Q1, work.data());
+                            A1, tau1.data (),
+                            Q1_Q2.first, work.data ());
       if (debug) {
         cerr << "Results of first test problem:" << endl;
         cerr << "-- Test matrix A:" << endl;

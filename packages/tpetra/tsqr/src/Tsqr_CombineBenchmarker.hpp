@@ -459,13 +459,15 @@ namespace TSQR {
                            const Ordinal numCols,
                            const double accuracyFactor)
       {
-        if (numRows == 0 || numCols == 0)
+        if (numRows == 0 || numCols == 0) {
           throw std::invalid_argument("Calibrating timings is impossible for "
                                       "a matrix with either zero rows or zero "
                                       "columns.");
-        else if (accuracyFactor < 0)
+        }
+        else if (accuracyFactor < 0) {
           throw std::invalid_argument("Accuracy factor for Combine numTrials "
                                       "calibration must be nonnegative.");
+        }
         // Random matrix generator.
         matgen_type matGen (normGenS_);
 
@@ -473,20 +475,25 @@ namespace TSQR {
         matrix_type R (numCols, numCols);
         std::vector<mag_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R.data(),
-                              R.stride(1), sigmas.data());
+        matGen.fill_random_R (numCols, R.data (),
+                              R.stride (1), sigmas.data ());
 
         // Now generate a random cache block.
         matrix_type A (numRows, numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_svd (numRows, numCols, A.data(),
-                                A.stride(1), sigmas.data());
+        matGen.fill_random_svd (numRows, numCols, A.data (),
+                                A.stride (1), sigmas.data ());
 
         // A place to put the Q factor.
-        matrix_type Q (numRows + numCols, numCols);
+        matrix_type Q (numCols + numRows, numCols);
         deep_copy (Q, Scalar {});
-        for (Ordinal j = 0; j < numCols; ++j)
+        // FIXME (mfh 08 Dec 2019) Eventually we need to stop writing
+        // to MatView and Matrix entries on host, so that we can
+        // GPU-ize everything.
+        for (Ordinal j = 0; j < numCols; ++j) {
           Q(j,j) = Scalar (1.0);
+        }
+        auto Q_top_Q_bot = partition_2x1 (Q, numCols);
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
@@ -499,13 +506,11 @@ namespace TSQR {
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_inner (R.view(), A.view(),
-                                 tau.data(), work.data());
-          combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
-                                A.data(), A.stride(1), tau.data(),
-                                &Q(0, 0), Q.stride(1),
-                                &Q(numCols, 0), Q.stride(1),
-                                work.data());
+          combiner.factor_inner (R.view (), A.view (),
+                                 tau.data (), work.data ());
+          combiner.apply_inner (ApplyType ("N"), A.view (),
+                                tau.data (), Q_top_Q_bot.first,
+                                Q_top_Q_bot.second, work.data ());
         }
 
         // How much time numTrials runs must take in order for
@@ -530,20 +535,17 @@ namespace TSQR {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
           for (int trial = 0; trial < numTrials; ++trial) {
-            combiner.factor_inner (R.view(), A.view(),
-                                   tau.data(), work.data());
-            combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
-                                  A.data(), A.stride(1), tau.data(),
-                                  &Q(0, 0), Q.stride(1),
-                                  &Q(numCols, 0), Q.stride(1),
-                                  work.data());
+            combiner.factor_inner (R.view (), A.view (),
+                                   tau.data (), work.data ());
+            combiner.apply_inner (ApplyType ("N"), A.view (),
+                                  tau.data (), Q_top_Q_bot.first,
+                                  Q_top_Q_bot.second, work.data ());
           }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
 
         return std::make_pair (numTrials, theTime);
       }
-
 
       /// \brief Benchmark TSQR::Combine on [R; A];
       ///
@@ -591,10 +593,15 @@ namespace TSQR {
         matGen.fill_random_svd (numRows, numCols, A.data(), A.stride(1), sigmas.data());
 
         // A place to put the Q factor.
-        matrix_type Q (numRows + numCols, numCols);
+        matrix_type Q (numCols + numRows, numCols);
         deep_copy (Q, Scalar {});
-        for (Ordinal j = 0; j < numCols; ++j)
+        // FIXME (mfh 08 Dec 2019) Eventually we need to stop writing
+        // to MatView and Matrix entries on host, so that we can
+        // GPU-ize everything.
+        for (Ordinal j = 0; j < numCols; ++j) {
           Q(j,j) = Scalar (1.0);
+        }
+        auto Q_top_Q_bot = partition_2x1 (Q, numCols);
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
@@ -607,31 +614,25 @@ namespace TSQR {
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_inner (R.view(), A.view(),
-                                 tau.data(), work.data());
-          combiner.apply_inner (ApplyType("N"),
-                                numRows, numCols, numCols,
-                                A.data(), A.stride(1), tau.data(),
-                                &Q(0, 0), Q.stride(1),
-                                &Q(numCols, 0), Q.stride(1),
-                                work.data());
+          combiner.factor_inner (R.view (), A.view (),
+                                 tau.data (), work.data ());
+          combiner.apply_inner (ApplyType ("N"), A.view (),
+                                tau.data (), Q_top_Q_bot.first,
+                                Q_top_Q_bot.second, work.data ());
         }
         //
         // The actual timing runs.
         //
         timer_type timer ("Combine cache block");
-        timer.start();
+        timer.start ();
         for (int trial = 0; trial < numTrials; ++trial) {
-          combiner.factor_inner (R.view(), A.view(),
-                                 tau.data(), work.data());
-          combiner.apply_inner (ApplyType("N"),
-                                numRows, numCols, numCols,
-                                A.data(), A.stride(1), tau.data(),
-                                &Q(0, 0), Q.stride(1),
-                                &Q(numCols, 0), Q.stride(1),
-                                work.data());
+          combiner.factor_inner (R.view (), A.view (),
+                                 tau.data (), work.data ());
+          combiner.apply_inner (ApplyType ("N"), A.view (),
+                                tau.data (), Q_top_Q_bot.first,
+                                Q_top_Q_bot.second, work.data ());
         }
-        return timer.stop();
+        return timer.stop ();
       }
 
       /// \brief Estimate number of trials for TSQR::Combine on [R1; R2].
@@ -685,6 +686,9 @@ namespace TSQR {
         // A place to put the Q factor of [R1; R2].
         matrix_type Q (2*numCols, numCols);
         deep_copy (Q, Scalar {});
+        // FIXME (mfh 08 Dec 2019) Eventually we need to stop writing
+        // to MatView and Matrix entries on host, so that we can
+        // GPU-ize everything.
         for (Ordinal j = 0; j < numCols; ++j) {
           Q(j,j) = Scalar (1.0);
         }

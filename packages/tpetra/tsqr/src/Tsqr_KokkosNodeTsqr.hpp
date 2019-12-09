@@ -403,21 +403,39 @@ namespace TSQR {
                        const mat_view_type& C_cur,
                        std::vector<Scalar>& work) const
       {
+        const char prefix[] =
+          "TSQR::KokkosNodeTsqr::ApplyFirstPass::applyCacheBlock: ";
+        const char suffix[] =
+          "  Please report this bug to the Tpetra developers.";
+        const size_t ncol_Q (Q_cur.extent (1));
+        const size_t ncol_C (C_top.extent (1));
+        const size_t min_lwork = ncol_Q < ncol_C ? ncol_C : ncol_Q;
         TEUCHOS_TEST_FOR_EXCEPTION
-          (tau.size() < static_cast<size_t> (Q_cur.extent(1)),
-           std::logic_error, "ApplyFirstPass::applyCacheBlock: tau.size() "
-           "(= " << tau.size() << ") < number of columns "
-           << Q_cur.extent(1) << " in the Q factor."
-           "  Please report this bug to the Tpetra developers.");
-
-        // If we get this far, it's fair to assume that we have
-        // checked whether tau and work have nonzero lengths.
-        combine.apply_inner (applyType, C_cur.extent(0), C_cur.extent(1),
-                             Q_cur.extent(1), Q_cur.data(), Q_cur.stride(1),
-                             tau.data(),
-                             C_top.data(), C_top.stride(1),
-                             C_cur.data(), C_cur.stride(1),
-                             work.data());
+          (tau.size () < size_t (ncol_Q), std::logic_error,
+           prefix << "tau.size()=" << tau.size () << ") < number of "
+           "columns " << Q_cur.extent(1) << " in the Q factor."
+           << suffix);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (work.size () < size_t (min_lwork), std::logic_error,
+           prefix << "work.size()=" << work.size () << ") < min("
+           "ncol_Q=" << ncol_Q << ", ncol_C=" << ncol_C << ")="
+           << min_lwork << "." << suffix);
+        try {
+          combine.apply_inner (applyType, Q_cur, tau.data (),
+                               C_top, C_cur, work.data ());
+        }
+        catch (std::exception& e) {
+          std::ostringstream os;
+          os << prefix << "combine.apply_inner(...) threw an "
+            "exception: " << e.what ();
+          throw std::logic_error (os.str ());
+        }
+        catch (...) {
+          std::ostringstream os;
+          os << prefix << "combine.apply_inner(...) threw an "
+            "exception not a subclass of std::exception.";
+          throw std::logic_error (os.str ());
+        }
       }
 
       /// \fn apply

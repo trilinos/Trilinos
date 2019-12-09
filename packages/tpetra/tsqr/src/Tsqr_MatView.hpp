@@ -43,6 +43,7 @@
 // Define for bounds checking and other safety features, undefine for speed.
 // #define TSQR_MATVIEW_DEBUG 1
 
+#include "Teuchos_TestForException.hpp"
 #ifdef TSQR_MATVIEW_DEBUG
 #  include <limits>
 #endif // TSQR_MATVIEW_DEBUG
@@ -378,21 +379,24 @@ namespace TSQR {
   {
     const ptrdiff_t tgt_nrows (tgt.extent (0));
     const ptrdiff_t tgt_ncols (tgt.extent (1));
-    if (tgt_nrows != ptrdiff_t (src.extent (0)) ||
-        tgt_ncols != ptrdiff_t (src.extent (1))) {
-      std::ostringstream os;
-      os << "TSQR::deep_copy: dimensions of tgt (output matrix) and "
-        "src (input matrix) are not compatible.  tgt is "
-         << tgt.extent (0) << " x " << tgt.extent (1) << ", but src "
-        "is " << src.extent (0) << " x " << src.extent (1) << ".";
-      throw std::invalid_argument (os.str ());
-    }
-    for (ptrdiff_t j = 0; j < tgt_ncols; ++j) {
-      auto* const tgt_j = &tgt(0,j);
-      const auto* const src_j = &src(0,j);
-      for (ptrdiff_t i = 0; i < tgt_nrows; ++i) {
-        tgt_j[i] = src_j[i];
+
+    if (tgt_nrows == ptrdiff_t (src.extent (0)) ||
+        tgt_ncols == ptrdiff_t (src.extent (1))) {
+      for (ptrdiff_t j = 0; j < tgt_ncols; ++j) {
+        auto* const tgt_j = &tgt(0,j);
+        const auto* const src_j = &src(0,j);
+        for (ptrdiff_t i = 0; i < tgt_nrows; ++i) {
+          tgt_j[i] = src_j[i];
+        }
       }
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::invalid_argument, "TSQR::deep_copy: dimensions "
+         "of tgt (output matrix) and src (input matrix) are not "
+         "compatible.  tgt is " << tgt.extent (0) << " x " <<
+         tgt.extent (1) << ", but src is " << src.extent (0) << " x "
+         << src.extent (1) << ".");
     }
   }
 
