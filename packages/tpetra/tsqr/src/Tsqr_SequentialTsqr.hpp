@@ -185,29 +185,26 @@ namespace TSQR {
     ///   R factor.
     mat_view_type
     factor_first_block (Combine<LocalOrdinal, Scalar>& combine,
-                        mat_view_type& A_top,
+                        const mat_view_type& A_top,
                         std::vector<Scalar>& tau,
                         std::vector<Scalar>& work) const
     {
-      const LocalOrdinal ncols = A_top.extent(1);
-      combine.factor_first (A_top, tau.data(), work.data());
-      return mat_view_type(ncols, ncols, A_top.data(), A_top.stride(1));
+      const LocalOrdinal ncols = A_top.extent (1);
+      combine.factor_first (A_top, tau.data (), work.data ());
+      return partition_2x1 (A_top, ncols).first;
     }
 
-    /// Apply the Q factor of the first (topmost) cache blocks, as
-    /// computed by factor_first_block() and stored implicitly in
-    /// Q_first and tau, to the first (topmost) block C_first of the
-    /// matrix C.
+    //! Apply first cache block's Q factor to C's first cache block.
     void
     apply_first_block (Combine<LocalOrdinal, Scalar>& combine,
                        const ApplyType& applyType,
                        const const_mat_view_type& Q_first,
                        const std::vector<Scalar>& tau,
-                       mat_view_type& C_first,
+                       const mat_view_type& C_first,
                        std::vector<Scalar>& work) const
     {
-      combine.apply_first (applyType, Q_first, tau.data(),
-                           C_first, work.data());
+      combine.apply_first (applyType, Q_first, tau.data (),
+                           C_first, work.data ());
     }
 
     void
@@ -215,8 +212,8 @@ namespace TSQR {
                    const ApplyType& apply_type,
                    const const_mat_view_type& Q_cur,
                    const std::vector<Scalar>& tau,
-                   mat_view_type& C_top,
-                   mat_view_type& C_cur,
+                   const mat_view_type& C_top,
+                   const mat_view_type& C_cur,
                    std::vector<Scalar>& work) const
     {
       combine.apply_inner (apply_type, Q_cur, tau.data (),
@@ -225,8 +222,8 @@ namespace TSQR {
 
     void
     combine_factor (Combine<LocalOrdinal, Scalar>& combine,
-                    mat_view_type& R,
-                    mat_view_type& A_cur,
+                    const mat_view_type& R,
+                    const mat_view_type& A_cur,
                     std::vector<Scalar>& tau,
                     std::vector<Scalar>& work) const
     {
