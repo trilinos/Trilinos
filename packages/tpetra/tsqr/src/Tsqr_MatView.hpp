@@ -226,26 +226,6 @@ namespace TSQR {
 
     bool empty() const { return extent(0) == 0 || extent(1) == 0; }
 
-    /// Return a "row block" (submatrix of consecutive rows in the
-    /// inclusive range [firstRow,lastRow]).
-    MatView row_block (const ordinal_type firstRow,
-                       const ordinal_type lastRow)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits<ordinal_type>::is_signed) {
-        if (firstRow < 0 || firstRow > lastRow || lastRow >= extent(0)) {
-          throw std::invalid_argument ("Row range invalid");
-        }
-      }
-      else {
-        if (firstRow > lastRow || lastRow >= extent(0)) {
-          throw std::invalid_argument ("Row range invalid");
-        }
-      }
-#endif // TSQR_MATVIEW_DEBUG
-      return MatView (lastRow - firstRow + 1, extent(1), data() + firstRow, stride(1));
-    }
-
     bool operator== (const MatView& rhs) const {
       return extent(0) == rhs.extent(0) && extent(1) == rhs.extent(1) &&
         stride(1) == rhs.stride(1) && data() == rhs.data();
