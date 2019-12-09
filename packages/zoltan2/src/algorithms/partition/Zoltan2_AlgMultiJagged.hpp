@@ -3603,8 +3603,8 @@ struct ArrayCombinationReducer {
       dst.ptr[n] = 0;
     }
 
-    for(int n = value_count_weights + 2;
-      n < value_count_weights + value_count_rightleft - 2; n += 2) {
+    for(int n = value_count_weights;
+      n < value_count_weights + value_count_rightleft; n += 2) {
       dst.ptr[n]   = -max_scalar;
       dst.ptr[n+1] =  max_scalar;
     }
@@ -3752,8 +3752,8 @@ struct ReduceWeightsFunctor {
       for(int n = 0; n < value_count_weights; ++n) {
         shared_ptr[n] = 0;
       }
-      for(int n = value_count_weights + 2;
-        n < value_count_weights + value_count_rightleft - 2; n += 2) {
+      for(int n = value_count_weights;
+        n < value_count_weights + value_count_rightleft; n += 2) {
         shared_ptr[n]   = -max_scalar;
         shared_ptr[n+1] =  max_scalar;
       }
