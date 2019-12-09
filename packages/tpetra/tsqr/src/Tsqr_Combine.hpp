@@ -87,20 +87,17 @@ namespace TSQR {
   /// There used to be a third implementation, CombineFortran, but it
   /// relied on a Fortran 9x compiler and was thus not often tested,
   /// so we removed it.
-  template< class Ordinal,
-            class Scalar,
-            class CombineImpl = CombineNative<Ordinal, Scalar, Teuchos::ScalarTraits<Scalar >::isComplex> >
+  template<class Ordinal,
+           class Scalar,
+           class CombineImpl = CombineNative<Ordinal, Scalar, Teuchos::ScalarTraits<Scalar>::isComplex>>
   class Combine {
   public:
-    /// \typedef scalar_type
-    /// \brief Type of matrix entries.
-    typedef Scalar scalar_type;
-    /// \typedef ordinal_type
-    /// \brief Type of (intranode) matrix indices.
-    typedef Ordinal ordinal_type;
-    /// \typedef combine_impl_type
-    /// \brief Type of the implementation of Combine.
-    typedef CombineImpl combine_impl_type;
+    //! Type of matrix entries.
+    using scalar_type = Scalar;
+    //! Type of (intraprocess) matrix indices.
+    using ordinal_type = Ordinal;
+    //! Type of the implementation of Combine.
+    using combine_impl_type = CombineImpl;
 
     //! Constructor.
     Combine () = default;
@@ -113,6 +110,27 @@ namespace TSQR {
         QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
+    /// \brief Best work array size.
+    ///
+    /// \param num_rows_Q [in] Number of rows in each block of the
+    ///   matrix to factor.  ("Block" means the part of the matrix
+    ///   passed directly to factor_first or factor_inner.)
+    ///
+    /// \param num_cols_Q [in] Number of columns of the matrix to
+    ///   factor (the input/output matrix of factor_first or
+    ///   factor_inner).
+    ///
+    /// \param num_cols_C [in] Number of columns of the matrix output
+    ///   of apply_first, apply_inner, or apply_pair (use the max of
+    ///   all three).
+    Ordinal
+    work_size (const Ordinal num_rows_Q,
+               const Ordinal num_cols_Q,
+               const Ordinal num_cols_C) const
+    {
+      return impl_.work_size (num_rows_Q, num_cols_Q, num_cols_C);
+    }
+
     /// \brief Factor the first cache block.
     ///
     /// Compute the QR factorization of the nrows by ncols matrix A
@@ -121,13 +139,10 @@ namespace TSQR {
     /// (along with the length ncols tau array) with the implicitly
     /// stored Q factor.
     ///
-    /// \param nrows [in] Number of rows in A
-    /// \param ncols [in] Number of columns in A
     /// \param A [in/out] On input: the nrows by ncols matrix (in
     ///   column-major order, with leading dimension lda) to factor.
     ///   On output: upper triangle contains the R factor, and lower
     ///   part contains the implicitly stored Q factor.
-    /// \param lda [in] Leading dimension of A
     /// \param tau [out] Array of length ncols; on output, the
     ///   scaling factors for the Householder reflectors
     /// \param work [out] Workspace array of length ncols
@@ -139,7 +154,7 @@ namespace TSQR {
       return impl_.factor_first (A, tau, work);
     }
 
-    /// \brief Apply the result of \c factor_first().
+    /// \brief Apply the result of factor_first() to C.
     ///
     /// Apply the Q factor, as computed by factor_first() and stored
     /// implicitly in A and tau, to the matrix C.
@@ -153,7 +168,7 @@ namespace TSQR {
       return impl_.apply_first (applyType, A, tau, C, work);
     }
 
-    /// Apply the result of \c factor_inner().
+    /// Apply the result of factor_inner().
     ///
     /// Apply the Q factor stored in [R; A] to [C_top; C_bot], where
     ///
