@@ -207,7 +207,8 @@ namespace TSQR {
     ///
     template< class MatrixViewType >
     MatrixViewType
-    split_bottom_block (MatrixViewType& A, const bool contiguous_cache_blocks) const
+    split_bottom_block (MatrixViewType& A,
+                        const bool contiguous_cache_blocks) const
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       // Ignore the number of columns in A, since we want to block all
@@ -216,7 +217,7 @@ namespace TSQR {
         strategy_.bottom_block_split_nrows (A.extent(0), extent(1),
                                             nrows_cache_block());
       // split_bottom() sets A to A_rest, and returns A_bot.
-      return A.split_bottom (nrows_bottom, contiguous_cache_blocks);
+      return split_bottom (A, nrows_bottom, contiguous_cache_blocks);
     }
 
     /// \brief Fill the matrix A with zeros, respecting cache blocks.

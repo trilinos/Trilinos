@@ -246,43 +246,6 @@ namespace TSQR {
       return MatView (lastRow - firstRow + 1, extent(1), data() + firstRow, stride(1));
     }
 
-    /// Split off and return the bottom block.  Modify *this to be the
-    /// "rest" of the matrix.
-    MatView
-    split_bottom (const ordinal_type nrows_bottom,
-                  const bool b_contiguous_blocks = false)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits<ordinal_type>::is_signed && nrows_bottom < 0) {
-        throw std::invalid_argument ("nrows_bottom < 0");
-      }
-      if (nrows_bottom > extent(0)) {
-        throw std::invalid_argument ("nrows_bottom > nrows");
-      }
-#endif // TSQR_MATVIEW_DEBUG
-
-      pointer const A_rest_ptr = data();
-      pointer A_bottom_ptr;
-      const ordinal_type nrows_rest = extent(0) - nrows_bottom;
-      ordinal_type lda_bottom, lda_rest;
-      if (b_contiguous_blocks) {
-        lda_bottom = nrows_bottom;
-        lda_rest = extent(0) - nrows_bottom;
-        A_bottom_ptr = A_rest_ptr + nrows_rest * extent(1);
-      }
-      else {
-        lda_bottom = stride(1);
-        lda_rest = stride(1);
-        A_bottom_ptr = A_rest_ptr + nrows_rest;
-      }
-      MatView A_bottom (nrows_bottom, extent(1), A_bottom_ptr, lda_bottom);
-      A_ = A_rest_ptr;
-      nrows_ = nrows_rest;
-      lda_ = lda_rest;
-
-      return A_bottom;
-    }
-
     bool operator== (const MatView& rhs) const {
       return extent(0) == rhs.extent(0) && extent(1) == rhs.extent(1) &&
         stride(1) == rhs.stride(1) && data() == rhs.data();
@@ -418,6 +381,37 @@ namespace TSQR {
     MatView<LO, SC> A_top (nrows_top, ncols, A_top_ptr, lda_top);
     A = MatView<LO, SC> (nrows_rest, ncols, A_rest_ptr, lda_rest);
     return A_top;
+  }
+
+  /// \brief Split off and return the bottom block.  Modify A to be
+  ///   the "rest" of the matrix.
+  template<class LO, class SC>
+  MatView<LO, SC>
+  split_bottom (MatView<LO, SC>& A,
+                const LO nrows_bottom,
+                const bool contiguousCacheBlocks = false)
+  {
+    using pointer = typename MatView<LO, SC>::pointer;
+
+    pointer A_rest_ptr = A.data();
+    pointer A_bottom_ptr {};
+    const LO nrows_rest = A.extent(0) - nrows_bottom;
+    const LO ncols = A.extent(1);
+
+    LO lda_bottom, lda_rest;
+    if (contiguousCacheBlocks) {
+      lda_bottom = nrows_bottom;
+      lda_rest = A.extent(0) - nrows_bottom;
+      A_bottom_ptr = A_rest_ptr + nrows_rest * ncols;
+    }
+    else {
+      lda_bottom = A.stride(1);
+      lda_rest = A.stride(1);
+      A_bottom_ptr = A_rest_ptr + nrows_rest;
+    }
+    MatView<LO, SC> A_bottom (nrows_bottom, ncols, A_bottom_ptr, lda_bottom);
+    A = MatView<LO, SC> (nrows_rest, ncols, A_rest_ptr, lda_rest);
+    return A_bottom;
   }
 } // namespace TSQR
 
