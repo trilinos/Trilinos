@@ -1546,11 +1546,13 @@ namespace Tpetra {
     /// does their order change, as a result of calling this method.
     ///
     /// \param newColMap [in] New column Map.  Must be nonnull.
-    ///   The column map's list of global indices on each process must be in a certain order:
+    ///   Within Tpetra, there are no particular restrictions on the column map.
+    ///   However, if this graph will be used in Xpetra, Ifpack2, or MueLu,
+    ///   the column map's list of global indices on each process must be in a certain order:
     ///   locally owned GIDs (sorted), followed by remote GIDs (in order of
     ///   owning proc, and sorted within each proc).
     ///
-    ///   It is strongly recommended to use Tpetra::Details::makeColMap()
+    ///   If in doubt, it is strongly recommended to use Tpetra::Details::makeColMap()
     ///   to create the column map. makeColMap() takes a domain map
     ///   that determines which columns are locally owned,
     ///   and the RowGraph whose globally indexed entries
