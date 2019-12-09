@@ -499,8 +499,7 @@ namespace TSQR {
 
         // We don't include {min,max}_seq_apply_timing() here, because
         // those times don't benefit from the accuracy of benchmarking
-        // for numTrials > 1.  Thus, it's misleading to include them
-        // with tbb_tsqr_timing, the total time over numTrials trials.
+        // for numTrials > 1.
         cout << "KokkosNodeTsqr"
              << "," << scalarTypeName
              << "," << numRows

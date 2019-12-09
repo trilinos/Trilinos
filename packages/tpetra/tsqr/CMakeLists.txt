@@ -14,18 +14,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "${Teuchos_ENABLE_COMPLEX}" 
   )
 
-# Whether to build TbbTsqr and related classes.
-#
-# Enabled by default (unless disabled explicitly at the command line)
-# if Trilinos is built with the TBB (Intel's Threading Building
-# Blocks) TPL (third-party library) enabled.
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosTSQR_ENABLE_TBB
-  HAVE_KOKKOSTSQR_TBB
-  "Enable Intel Threading Building Blocks (TBB) intranode parallelization of TSQR.  This option is enabled by default if you are building Trilinos with TBB enabled as a 'third-party library' (TPL), so you should not have to enable this option manually.  TSQR will work without this, but enabling it gives another parallelization option for TSQR."
-  "${TPL_ENABLE_TBB}" 
-  )
-
 # KokkosTSQR_config.h gets created in the src/ subdirectory.
 ADD_SUBDIRECTORY(src)
 
