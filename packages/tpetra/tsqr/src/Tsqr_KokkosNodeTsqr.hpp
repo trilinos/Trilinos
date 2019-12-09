@@ -414,7 +414,6 @@ namespace TSQR {
           "  Please report this bug to the Tpetra developers.";
         const size_t ncol_Q (Q_cur.extent (1));
         const size_t ncol_C (C_top.extent (1));
-        const size_t min_lwork = ncol_Q < ncol_C ? ncol_C : ncol_Q;
         TEUCHOS_TEST_FOR_EXCEPTION
           (tau.size () < size_t (ncol_Q), std::logic_error,
            prefix << "tau.size()=" << tau.size () << ") < number of "
