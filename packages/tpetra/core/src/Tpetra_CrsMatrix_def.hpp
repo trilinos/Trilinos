@@ -61,6 +61,7 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_getDiagCopyWithoutOffsets.hpp"
 #include "Tpetra_Details_leftScaleLocalCrsMatrix.hpp"
+#include "Tpetra_Details_local_deep_copy.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
 #include "Tpetra_Details_ScalarViewTraits.hpp"
@@ -2072,9 +2073,7 @@ namespace Tpetra {
         (tgt_IST, numInserted);
       View<const IST*, HostSpace, MemoryTraits<Unmanaged>> src
         (src_IST, numInserted);
-      // NOTE (mfh 04 Dec 2019) Use local_deep_copy, not deep_copy,
-      // since this copy may be too small to justify parallelization.
-      using Kokkos::Experimental::local_deep_copy;
+      using Tpetra::Details::local_deep_copy;
       local_deep_copy (tgt, src);
     }
   }

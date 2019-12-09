@@ -34,25 +34,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
-
-#ifndef TPETRA_DETAILS_CRSUTILS_HPP
-#define TPETRA_DETAILS_CRSUTILS_HPP
-#include <numeric>
-#include <type_traits>
-
-#include "TpetraCore_config.h"
-#include "Kokkos_Core.hpp"
-#include "Kokkos_UnorderedMap.hpp"
 
 /// \file Tpetra_Details_crsUtils.hpp
 /// \brief Functions for manipulating CRS arrays
 /// \warning This file, and its contents, are implementation details
 ///   of Tpetra.  The file itself or its contents may disappear or
 ///   change at any time.
+
+#ifndef TPETRA_DETAILS_CRSUTILS_HPP
+#define TPETRA_DETAILS_CRSUTILS_HPP
+
+#include "TpetraCore_config.h"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_UnorderedMap.hpp"
+#include "Tpetra_Details_local_deep_copy.hpp"
+#include <numeric>
+#include <type_traits>
 
 namespace Tpetra {
 namespace Details {
@@ -136,7 +135,7 @@ pad_crs_arrays(
         range(this_row_beg, this_row_beg+used_this_row));
       auto indices_new_subview = subview(indices_new,
         range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
-      using Kokkos::Experimental::local_deep_copy;
+      using Tpetra::Details::local_deep_copy;
       local_deep_copy (indices_new_subview, indices_old_subview);
     }
 
@@ -146,7 +145,7 @@ pad_crs_arrays(
         range(this_row_beg, this_row_beg+used_this_row));
       auto values_new_subview = subview(values_new,
         range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
-      using Kokkos::Experimental::local_deep_copy;
+      using Tpetra::Details::local_deep_copy;
       local_deep_copy (values_new_subview, values_old_subview);
     }
 
@@ -171,7 +170,7 @@ pad_crs_arrays(
         range(this_row_beg, this_row_beg+used_this_row));
       auto indices_new_subview = subview(indices_new,
         range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
-      using Kokkos::Experimental::local_deep_copy;
+      using Tpetra::Details::local_deep_copy;
       local_deep_copy (indices_new_subview, indices_old_subview);
     }
 
@@ -180,7 +179,7 @@ pad_crs_arrays(
         range(this_row_beg, this_row_beg+used_this_row));
       auto values_new_subview = subview(values_new,
         range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
-      using Kokkos::Experimental::local_deep_copy;
+      using Tpetra::Details::local_deep_copy;
       local_deep_copy (values_new_subview, values_old_subview);
     }
   }
