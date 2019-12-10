@@ -47,7 +47,6 @@
 #define MUELU_REFMAXWELL_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_ExplicitInstantiation.hpp"
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_ThresholdAFilterFactory_fwd.hpp"
@@ -88,7 +87,8 @@
 #include "Xpetra_VectorFactory_fwd.hpp"
 #include "Xpetra_CrsMatrixWrap_fwd.hpp"
 
-#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
+#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA))
+#define MUELU_REFMAXWELL_CAN_USE_HIPTMAIR
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Hiptmair.hpp"
 #endif
@@ -390,7 +390,7 @@ namespace MueLu {
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
     Teuchos::RCP<SmootherBase> PreSmoother_, PostSmoother_;
-#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
+#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
     Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > hiptmairPreSmoother_, hiptmairPostSmoother_;
 #endif
     bool useHiptmairSmoothing_;
