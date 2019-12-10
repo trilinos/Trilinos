@@ -1022,14 +1022,22 @@ namespace Xpetra {
 
 } // Xpetra namespace
 
-// Following header file inculsion is needed for the dynamic_cast to TpetraVector in elementWiseMultiply (because we cannot dynamic_cast if target is not a complete type)
+// Following header file inculsion is needed for the dynamic_cast to TpetraVector in 
+// elementWiseMultiply (because we cannot dynamic_cast if target is not a complete type)
 // It is included here to avoid circular dependency between Vector and MultiVector
 // TODO: there is certainly a more elegant solution...
-#include "Xpetra_TpetraVector_decl.hpp"
+#include "Xpetra_TpetraVector.hpp"
 
 namespace Xpetra {
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) {
+  void 
+  TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  elementWiseMultiply(Scalar scalarAB, 
+                      const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
+                      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, 
+                      Scalar scalarThis) 
+  {
     XPETRA_MONITOR("TpetraMultiVector::elementWiseMultiply");
 
     // XPETRA_DYNAMIC_CAST won't take TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
