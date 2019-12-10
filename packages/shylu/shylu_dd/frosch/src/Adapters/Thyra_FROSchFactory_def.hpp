@@ -56,8 +56,9 @@ namespace Thyra {
     template <class SC, class LO, class GO, class NO>
     FROSchFactory<SC,LO,GO,NO>::FROSchFactory()
     {
-        paramList_ = rcp(new ParameterList());
+        
     }
+
     //-----------------------------------------------------------
     //Check Type -> so far redundant
     template <class SC, class LO, class GO, class NO>
@@ -422,7 +423,7 @@ namespace Thyra {
                     repeatedMap = rcp_dynamic_cast<ConstXMap>(xTpetraRepeatedMap);
                 } else {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                    if (comm->getRank()==0) std::cerr << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead." << std::endl;
+                    FROSCH_WARNING("FROSch::FROSchFactory",comm->getRank()==0,"Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead.");
 #endif
                 }
             }
@@ -446,9 +447,7 @@ namespace Thyra {
                     coordinatesList = rcp_dynamic_cast<ConstXMultiVector>(xTpetraCoordinatesList);
                 } else {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                    if (comm->getRank()==0) {
-                        std::cerr << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead." << std::endl;
-                    }
+                    FROSCH_WARNING("FROSch::FROSchFactory",comm->getRank()==0,"Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead.");
 #endif
                 }
             }
@@ -472,9 +471,7 @@ namespace Thyra {
                     nullSpaceBasis = rcp_dynamic_cast<ConstXMultiVector>(xTpetraNullSpaceBasis);
                 } else {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                    if (comm->getRank()==0) {
-                        std::cerr << "FROSch::FROSchFactory : WARNING: Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead." << std::endl;
-                    }
+                    FROSCH_WARNING("FROSch::FROSchFactory",comm->getRank()==0,"Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead.");
 #endif
                 }
             }
