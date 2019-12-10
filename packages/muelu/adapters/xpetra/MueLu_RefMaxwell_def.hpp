@@ -182,9 +182,6 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute(bool reuse) {
 
-
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType realType;
-
 #ifdef HAVE_MUELU_CUDA
     if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStart();
 #endif
@@ -437,12 +434,10 @@ namespace MueLu {
     }
     else if(Nullspace_ == null && Coords_ != null) {
       // normalize coordinates
-      typedef typename RealValuedMultiVector::scalar_type realScalarType;
-      typedef typename Teuchos::ScalarTraits<realScalarType>::magnitudeType realMagnitudeType;
-      Array<realMagnitudeType> norms(Coords_->getNumVectors());
+      Array<coordinateType> norms(Coords_->getNumVectors());
       Coords_->norm2(norms);
       for (size_t i=0;i<Coords_->getNumVectors();i++)
-        norms[i] = ((realMagnitudeType)1.0)/norms[i];
+        norms[i] = ((coordinateType)1.0)/norms[i];
       Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
 
       // Cast coordinates to Scalar so they can be multiplied against D0
@@ -1193,7 +1188,7 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dumpCoords(const RealValuedMultiVector& X, std::string name) const {
     if (dump_matrices_) {
       GetOStream(Runtime0) << "Dumping to " << name << std::endl;
-      Xpetra::IO<magnitudeType, LO, GO, NO>::Write(name, X);
+      Xpetra::IO<coordinateType, LO, GO, NO>::Write(name, X);
     }
   }
 
