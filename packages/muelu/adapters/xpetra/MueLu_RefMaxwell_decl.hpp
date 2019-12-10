@@ -387,6 +387,28 @@ namespace MueLu {
     //! apply solve to 2-2 block only
     void solve22(const MultiVector& RHS, MultiVector& X) const;
 
+    //! allocate multivectors for solve
+    void allocateMemory(int numVectors) const;
+
+    //! dump out matrix
+    void dump(const Matrix& A, std::string name) const;
+
+    //! dump out multivector
+    void dump(const MultiVector& X, std::string name) const;
+
+    //! dump out real-valued multivector
+    void dumpCoords(const RealValuedMultiVector& X, std::string name) const;
+
+    //! set parameters
+    void setMatvecParams(Matrix& A, RCP<ParameterList> matvecParams) {
+      RCP<const Import> xpImporter = A.getCrsGraph()->getImporter();
+      if (!xpImporter.is_null())
+        xpImporter->setDistributorParameters(matvecParams);
+      RCP<const Export> xpExporter = A.getCrsGraph()->getExporter();
+      if (!xpExporter.is_null())
+        xpExporter->setDistributorParameters(matvecParams);
+    }
+
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
     Teuchos::RCP<SmootherBase> PreSmoother_, PostSmoother_;
@@ -417,6 +439,7 @@ namespace MueLu {
     Teuchos::RCP<Teuchos::ParameterList> A22_AP_reuse_data_, A22_RAP_reuse_data_;
     //! Some options
     bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_,implicitTranspose_,fuseProlongationAndUpdate_;
+    int numItersH_, numIters22_;
     std::string mode_;
     //! Temporary memory
     mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_;

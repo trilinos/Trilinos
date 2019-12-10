@@ -136,12 +136,16 @@ namespace MueLu {
     dump_matrices_             = list.get("refmaxwell: dump matrices",MasterList::getDefault<bool>("refmaxwell: dump matrices"));
     implicitTranspose_         = list.get("transpose: use implicit",MasterList::getDefault<bool>("transpose: use implicit"));
     fuseProlongationAndUpdate_ = list.get("fuse prolongation and update",MasterList::getDefault<bool>("fuse prolongation and update"));
+    numItersH_                 = list.get("refmaxwell: num iters H",1);
+    numIters22_                = list.get("refmaxwell: num iters 22",1);
 
     if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
     if(!precList11_.isType<std::string>("smoother: type") && !precList11_.isType<std::string>("smoother: pre type") && !precList11_.isType<std::string>("smoother: post type")) {
       precList11_.set("smoother: type", "CHEBYSHEV");
       precList11_.sublist("smoother: params").set("chebyshev: degree",2);
+      precList11_.sublist("smoother: params").set("chebyshev: ratio eigenvalue",5.4);
+      precList11_.sublist("smoother: params").set("chebyshev: eigenvalue max iterations",30);
     }
 
     if(list.isSublist("refmaxwell: 22list"))
@@ -149,11 +153,15 @@ namespace MueLu {
     if(!precList22_.isType<std::string>("smoother: type") && !precList22_.isType<std::string>("smoother: pre type") && !precList22_.isType<std::string>("smoother: post type")) {
       precList22_.set("smoother: type", "CHEBYSHEV");
       precList22_.sublist("smoother: params").set("chebyshev: degree",2);
+      precList22_.sublist("smoother: params").set("chebyshev: ratio eigenvalue",7.0);
+      precList22_.sublist("smoother: params").set("chebyshev: eigenvalue max iterations",30);
     }
 
     if(!list.isType<std::string>("smoother: type") && !list.isType<std::string>("smoother: pre type") && !list.isType<std::string>("smoother: post type")) {
       list.set("smoother: type", "CHEBYSHEV");
       list.sublist("smoother: params").set("chebyshev: degree",2);
+      list.sublist("smoother: params").set("chebyshev: ratio eigenvalue",20.0);
+      list.sublist("smoother: params").set("chebyshev: eigenvalue max iterations",30);
     }
 
     if(list.isSublist("smoother: params")) {
@@ -203,6 +211,8 @@ namespace MueLu {
                                "Invalid verbosity level: \"" << verbosityLevel << "\"");
     VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
 
+    ////////////////////////////////////////////////////////////////////////////////
+    // Remove explicit zeros from matrices
 
     bool defaultFilter = false;
 
@@ -259,12 +269,32 @@ namespace MueLu {
       M1_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
     }
 
+    if (parameterList_.get<bool>("refmaxwell: filter Ms", defaultFilter)) {
+      RCP<Vector> diag = VectorFactory::Build(Ms_Matrix_->getRowMap());
+      // find a reasonable absolute value threshold
+      Ms_Matrix_->getLocalDiagCopy(*diag);
+      magnitudeType threshold = 1.0e-8 * diag->normInf();
+
+      Level fineLevel;
+      fineLevel.SetFactoryManager(null);
+      fineLevel.SetLevelID(0);
+      fineLevel.Set("A",Ms_Matrix_);
+      fineLevel.setlib(Ms_Matrix_->getDomainMap()->lib());
+      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",threshold,/*keepDiagonal=*/true));
+      fineLevel.Request("A",ThreshFact.get());
+      ThreshFact->Build(fineLevel);
+      Ms_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
+    }
+
     if (IsPrint(Statistics2)) {
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
       params->set("printCommInfo",          true);
       GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*SM_Matrix_, "SM_Matrix", params);
     }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // Detect Dirichlet boundary conditions
 
     if (!reuse) {
       // clean rows associated with boundary conditions
@@ -372,9 +402,35 @@ namespace MueLu {
             GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
           }
         }
+      if (dump_matrices_) {
+        GetOStream(Runtime0) << "Dumping BCrows, BCcols" << std::endl;
+        std::ofstream outBCrows("BCrows.m");
+        std::ofstream outBCcols("BCcols.m");
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+        if (useKokkos_) {
+          auto BCrows = Kokkos::create_mirror_view (BCrowsKokkos_);
+          Kokkos::deep_copy(BCrows , BCrowsKokkos_);
+          for (size_t i = 0; i < BCrows.size(); i++)
+            outBCrows << BCrows[i] << "\n";
+
+          auto BCcols = Kokkos::create_mirror_view (BCcolsKokkos_);
+          Kokkos::deep_copy(BCcols , BCcolsKokkos_);
+          for (size_t i = 0; i < BCcols.size(); i++)
+            outBCcols << BCcols[i] << "\n";
+        } else
+#endif
+        {
+          for (size_t i = 0; i < Teuchos::as<size_t>(BCrows_.size()); i++)
+            outBCrows << BCrows_[i] << "\n";
+          for (size_t i = 0; i < Teuchos::as<size_t>(BCcols_.size()); i++)
+            outBCcols << BCcols_[i] << "\n";
+        }
+      }
     }
 
+    ////////////////////////////////////////////////////////////////////////////////
     // build nullspace if necessary
+
     if(Nullspace_ != null) {
       // no need to do anything - nullspace is built
       TEUCHOS_ASSERT(Nullspace_->getMap()->isCompatible(*(SM_Matrix_->getRowMap())));
@@ -419,14 +475,14 @@ namespace MueLu {
 #else
       Utilities::ZeroDirichletRows(Nullspace_,BCrows_);
 #endif
+      dump(*Nullspace_, "nullspace.m");
     }
 
-    if (dump_matrices_)
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_clean.m"), *D0_Matrix_);
-
+    ////////////////////////////////////////////////////////////////////////////////
     // build special prolongator for (1,1)-block
+
     if(P11_.is_null()) {
-      // Form A_nodal = D0* M1 D0  (aka TMT_agg)
+      // Form A_nodal = D0* Ms D0  (aka TMT_agg)
       Level fineLevel, coarseLevel;
       fineLevel.SetFactoryManager(null);
       coarseLevel.SetFactoryManager(null);
@@ -435,8 +491,8 @@ namespace MueLu {
       coarseLevel.SetLevelID(1);
       fineLevel.Set("A",Ms_Matrix_);
       coarseLevel.Set("P",D0_Matrix_);
-      coarseLevel.setlib(M1_Matrix_->getDomainMap()->lib());
-      fineLevel.setlib(M1_Matrix_->getDomainMap()->lib());
+      coarseLevel.setlib(Ms_Matrix_->getDomainMap()->lib());
+      fineLevel.setlib(Ms_Matrix_->getDomainMap()->lib());
       coarseLevel.setObjectLabel("RefMaxwell (1,1) A_nodal");
       fineLevel.setObjectLabel("RefMaxwell (1,1) A_nodal");
 
@@ -456,6 +512,7 @@ namespace MueLu {
       coarseLevel.Request("A", rapFact.get());
 
       A_nodal_Matrix_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
+      dump(*A_nodal_Matrix_, "A_nodal.m");
 
       // build special prolongator
       GetOStream(Runtime0) << "RefMaxwell::compute(): building special prolongator" << std::endl;
@@ -637,7 +694,11 @@ namespace MueLu {
         precList11_.set("aggregation: drop tol", 0.0);
       }
 #endif
+      dump(*P11_, "P11.m");
+      dump(*R11_, "R11.m");
       if (!AH_.is_null()) {
+        dump(*AH_, "AH.m");
+        dumpCoords(*CoordsH_, "coordsH.m");
         int oldRank = SetProcRankVerbose(AH_->getDomainMap()->getComm()->getRank());
         if (IsPrint(Statistics2)) {
           RCP<ParameterList> params = rcp(new ParameterList());;
@@ -661,26 +722,25 @@ namespace MueLu {
     }
 
     if(!reuse) {
-      GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC edges of D0" << std::endl;
+      GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC nodes of D0" << std::endl;
 
       D0_Matrix_->resumeFill();
       // Scalar replaceWith = Teuchos::ScalarTraits<SC>::eps();
       Scalar replaceWith = Teuchos::ScalarTraits<SC>::zero();
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_) {
-        Utilities_kokkos::ZeroDirichletRows(D0_Matrix_,BCrowsKokkos_,replaceWith);
         Utilities_kokkos::ZeroDirichletCols(D0_Matrix_,BCcolsKokkos_,replaceWith);
       } else {
-        Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
         Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
       }
 #else
-      Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
       Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
 #endif
       D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
     }
 
+    ////////////////////////////////////////////////////////////////////////////////
+    // Build A22 = D0* SM D0 and hierarchy for A22
     {
       GetOStream(Runtime0) << "RefMaxwell::compute(): building MG for (2,2)-block" << std::endl;
 
@@ -887,6 +947,7 @@ namespace MueLu {
       }
 
       if (!A22_.is_null()) {
+        dump(*A22_, "A22.m");
         A22_->setObjectLabel("RefMaxwell (2,2)");
         int oldRank = SetProcRankVerbose(A22_->getDomainMap()->getComm()->getRank());
         if (IsPrint(Statistics2)) {
@@ -924,6 +985,25 @@ namespace MueLu {
       }
       VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
 
+    }
+
+    if(!reuse) {
+      GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC edges of D0" << std::endl;
+
+      D0_Matrix_->resumeFill();
+      // Scalar replaceWith = Teuchos::ScalarTraits<SC>::eps();
+      Scalar replaceWith = Teuchos::ScalarTraits<SC>::zero();
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      if (useKokkos_) {
+        Utilities_kokkos::ZeroDirichletRows(D0_Matrix_,BCrowsKokkos_,replaceWith);
+      } else {
+        Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
+      }
+#else
+      Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
+#endif
+      D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
+      dump(*D0_Matrix_, "D0_nuked.m");
     }
 
     {
@@ -1039,22 +1119,19 @@ namespace MueLu {
     }
 
     // Allocate temporary MultiVectors for solve
-    P11res_    = MultiVectorFactory::Build(P11_->getDomainMap(), 1);
-    if (!ImporterH_.is_null()) {
-      P11resTmp_ = MultiVectorFactory::Build(ImporterH_->getTargetMap(), 1);
-      P11xTmp_   = MultiVectorFactory::Build(ImporterH_->getSourceMap(), 1);
-      P11x_      = MultiVectorFactory::Build(ImporterH_->getTargetMap(), 1);
-    } else
-      P11x_      = MultiVectorFactory::Build(P11_->getDomainMap(), 1);
-    D0res_     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), 1);
-    if (!Importer22_.is_null()) {
-      D0resTmp_ = MultiVectorFactory::Build(Importer22_->getTargetMap(), 1);
-      D0xTmp_   = MultiVectorFactory::Build(Importer22_->getSourceMap(), 1);
-      D0x_      = MultiVectorFactory::Build(Importer22_->getTargetMap(), 1);
-    } else
-      D0x_      = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), 1);
-    residual_  = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(), 1);
+    allocateMemory(1);
 
+    if (parameterList_.isSublist("matvec params"))
+    {
+      RCP<ParameterList> matvecParams = rcpFromRef(parameterList_.sublist("matvec params"));
+      setMatvecParams(*SM_Matrix_, matvecParams);
+      setMatvecParams(*D0_Matrix_, matvecParams);
+      setMatvecParams(*P11_, matvecParams);
+      if (!D0_T_Matrix_.is_null()) setMatvecParams(*D0_T_Matrix_, matvecParams);
+      if (!R11_.is_null())         setMatvecParams(*R11_, matvecParams);
+      if (!ImporterH_.is_null())   ImporterH_->setDistributorParameters(matvecParams);
+      if (!Importer22_.is_null())  Importer22_->setDistributorParameters(matvecParams);
+    }
     if (!ImporterH_.is_null() && parameterList_.isSublist("refmaxwell: ImporterH params")){
       RCP<ParameterList> importerParams = rcpFromRef(parameterList_.sublist("refmaxwell: ImporterH params"));
       ImporterH_->setDistributorParameters(importerParams);
@@ -1064,111 +1141,60 @@ namespace MueLu {
       Importer22_->setDistributorParameters(importerParams);
     }
 
+    describe(GetOStream(Runtime0));
+
+    VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
+
 #ifdef HAVE_MUELU_CUDA
     if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStop();
 #endif
+  }
 
-    describe(GetOStream(Runtime0));
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::allocateMemory(int numVectors) const {
+    P11res_    = MultiVectorFactory::Build(P11_->getDomainMap(), numVectors);
+    if (!ImporterH_.is_null()) {
+      P11resTmp_ = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
+      P11xTmp_   = MultiVectorFactory::Build(ImporterH_->getSourceMap(), numVectors);
+      P11x_      = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
+    } else
+      P11x_      = MultiVectorFactory::Build(P11_->getDomainMap(), numVectors);
+    D0res_     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+    if (!Importer22_.is_null()) {
+      D0resTmp_ = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
+      D0xTmp_   = MultiVectorFactory::Build(Importer22_->getSourceMap(), numVectors);
+      D0x_      = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
+    } else
+      D0x_      = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+    residual_  = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(), numVectors);
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dump(const Matrix& A, std::string name) const {
     if (dump_matrices_) {
-      GetOStream(Runtime0) << "RefMaxwell::compute(): dumping data" << std::endl;
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.m"), *SM_Matrix_);
-      if(!Ms_Matrix_.is_null())    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("Ms.m"), *Ms_Matrix_);
-      if(!M1_Matrix_.is_null())    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M1.m"), *M1_Matrix_);
-      if(!M0inv_Matrix_.is_null()) Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M0inv.m"), *M0inv_Matrix_);
-#ifndef HAVE_MUELU_KOKKOS_REFACTOR
-      std::ofstream outBCrows("BCrows.m");
-      std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<LO>(outBCrows, "\n"));
-      std::ofstream outBCcols("BCcols.m");
-      std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<LO>(outBCcols, "\n"));
-#else
-      if (useKokkos_) {
-        std::ofstream outBCrows("BCrows.m");
-        auto BCrows = Kokkos::create_mirror_view (BCrowsKokkos_);
-        Kokkos::deep_copy(BCrows , BCrowsKokkos_);
-        for (size_t i = 0; i < BCrows.size(); i++)
-          outBCrows << BCrows[i] << "\n";
-
-        std::ofstream outBCcols("BCcols.m");
-        auto BCcols = Kokkos::create_mirror_view (BCcolsKokkos_);
-        Kokkos::deep_copy(BCcols , BCcolsKokkos_);
-        for (size_t i = 0; i < BCcols.size(); i++)
-          outBCcols << BCcols[i] << "\n";
-      } else {
-        std::ofstream outBCrows("BCrows.m");
-        std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<LO>(outBCrows, "\n"));
-        std::ofstream outBCcols("BCcols.m");
-        std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<LO>(outBCcols, "\n"));
-      }
-#endif
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("nullspace.m"), *Nullspace_);
-      if (Coords_ != null)
-        Xpetra::IO<realType, LO, GlobalOrdinal, Node>::Write(std::string("coords.m"), *Coords_);
-      if (CoordsH_ != null)
-        Xpetra::IO<realType, LO, GlobalOrdinal, Node>::Write(std::string("coordsH.m"), *CoordsH_);
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_nuked.m"), *D0_Matrix_);
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.m"), *A_nodal_Matrix_);
-      Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P11.m"), *P11_);
-      if (!R11_.is_null())
-        Xpetra::IO<SC, LO, GO, NO>::Write(std::string("R11.m"), *R11_);
-      if (!AH_.is_null())
-        Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AH.m"), *AH_);
-      if (!A22_.is_null())
-        Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A22.m"), *A22_);
+      GetOStream(Runtime0) << "Dumping to " << name << std::endl;
+      Xpetra::IO<SC, LO, GO, NO>::Write(name, A);
     }
+  }
 
-    if (parameterList_.isSublist("matvec params"))
-    {
-      RCP<ParameterList> matvecParams = rcpFromRef(parameterList_.sublist("matvec params"));
 
-      {
-        RCP<const Import> xpImporter = SM_Matrix_->getCrsGraph()->getImporter();
-        if (!xpImporter.is_null())
-          xpImporter->setDistributorParameters(matvecParams);
-        RCP<const Export> xpExporter = SM_Matrix_->getCrsGraph()->getExporter();
-        if (!xpExporter.is_null())
-          xpExporter->setDistributorParameters(matvecParams);
-      }
-      {
-        RCP<const Import> xpImporter = D0_Matrix_->getCrsGraph()->getImporter();
-        if (!xpImporter.is_null())
-          xpImporter->setDistributorParameters(matvecParams);
-        RCP<const Export> xpExporter = D0_Matrix_->getCrsGraph()->getExporter();
-        if (!xpExporter.is_null())
-          xpExporter->setDistributorParameters(matvecParams);
-      }
-      if (!D0_T_Matrix_.is_null()) {
-        RCP<const Import> xpImporter = D0_T_Matrix_->getCrsGraph()->getImporter();
-        if (!xpImporter.is_null())
-          xpImporter->setDistributorParameters(matvecParams);
-        RCP<const Export> xpExporter = D0_T_Matrix_->getCrsGraph()->getExporter();
-        if (!xpExporter.is_null())
-          xpExporter->setDistributorParameters(matvecParams);
-      }
-      if (!R11_.is_null()) {
-        RCP<const Import> xpImporter = R11_->getCrsGraph()->getImporter();
-        if (!xpImporter.is_null())
-          xpImporter->setDistributorParameters(matvecParams);
-        RCP<const Export> xpExporter = R11_->getCrsGraph()->getExporter();
-        if (!xpExporter.is_null())
-          xpExporter->setDistributorParameters(matvecParams);
-      }
-      {
-        RCP<const Import> xpImporter = P11_->getCrsGraph()->getImporter();
-        if (!xpImporter.is_null())
-          xpImporter->setDistributorParameters(matvecParams);
-        RCP<const Export> xpExporter = P11_->getCrsGraph()->getExporter();
-        if (!xpExporter.is_null())
-          xpExporter->setDistributorParameters(matvecParams);
-      }
-      if (!ImporterH_.is_null())
-        ImporterH_->setDistributorParameters(matvecParams);
-      if (!Importer22_.is_null())
-        Importer22_->setDistributorParameters(matvecParams);
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dump(const MultiVector& X, std::string name) const {
+    if (dump_matrices_) {
+      GetOStream(Runtime0) << "Dumping to " << name << std::endl;
+      Xpetra::IO<SC, LO, GO, NO>::Write(name, X);
     }
+  }
 
 
-    VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dumpCoords(const RealValuedMultiVector& X, std::string name) const {
+    if (dump_matrices_) {
+      GetOStream(Runtime0) << "Dumping to " << name << std::endl;
+      Xpetra::IO<magnitudeType, LO, GO, NO>::Write(name, X);
+    }
   }
 
 
@@ -1298,8 +1324,7 @@ namespace MueLu {
       if (parameterList_.get("aggregation: export visualization data",false))
         aggExport->Build(fineLevel, coarseLevel);
     }
-    if (dump_matrices_)
-      Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal.m"), *P_nodal);
+    dump(*P_nodal, "P_nodal.m");
 
     RCP<CrsMatrix> D0Crs = rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix();
 
@@ -1315,8 +1340,7 @@ namespace MueLu {
       P_nodal_temp->fillComplete(rcp_dynamic_cast<CrsMatrixWrap>(P_nodal)->getCrsMatrix()->getDomainMap(),
                                  rcp_dynamic_cast<CrsMatrixWrap>(P_nodal)->getCrsMatrix()->getRangeMap());
       P_nodal_imported = P_nodal_temp->getCrsMatrix();
-      if (dump_matrices_)
-        Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal_imported.m"), *P_nodal_temp);
+      dump(*P_nodal_temp, "P_nodal_imported.m");
     } else
       P_nodal_imported = rcp_dynamic_cast<CrsMatrixWrap>(P_nodal)->getCrsMatrix();
 
@@ -1845,6 +1869,7 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::resetMatrix(RCP<Matrix> SM_Matrix_new, bool ComputePrec) {
     bool reuse = !SM_Matrix_.is_null();
     SM_Matrix_ = SM_Matrix_new;
+    dump(*SM_Matrix_, "SM.m");
     if (ComputePrec)
       compute(reuse);
   }
@@ -1907,7 +1932,7 @@ namespace MueLu {
       // Replace maps with maps with a subcommunicator
       P11res_->replaceMap(AH_->getRangeMap());
       P11x_  ->replaceMap(AH_->getDomainMap());
-      HierarchyH_->Iterate(*P11res_, *P11x_, 1, true);
+      HierarchyH_->Iterate(*P11res_, *P11x_, numItersH_, true);
       P11x_  ->replaceMap(origXMap);
       P11res_->replaceMap(origRhsMap);
     }
@@ -1922,7 +1947,7 @@ namespace MueLu {
       // Replace maps with maps with a subcommunicator
       D0res_->replaceMap(A22_->getRangeMap());
       D0x_  ->replaceMap(A22_->getDomainMap());
-      Hierarchy22_->Iterate(*D0res_, *D0x_, 1, true);
+      Hierarchy22_->Iterate(*D0res_, *D0x_, numIters22_, true);
       D0x_  ->replaceMap(origXMap);
       D0res_->replaceMap(origRhsMap);
     }
@@ -2032,7 +2057,7 @@ namespace MueLu {
         // Replace maps with maps with a subcommunicator
         P11res_->replaceMap(AH_->getRangeMap());
         P11x_  ->replaceMap(AH_->getDomainMap());
-        HierarchyH_->Iterate(*P11res_, *P11x_, 1, true);
+        HierarchyH_->Iterate(*P11res_, *P11x_, numItersH_, true);
         P11x_  ->replaceMap(origXMap);
         P11res_->replaceMap(origRhsMap);
       }
@@ -2081,7 +2106,7 @@ namespace MueLu {
         // Replace maps with maps with a subcommunicator
         D0res_->replaceMap(A22_->getRangeMap());
         D0x_  ->replaceMap(A22_->getDomainMap());
-        Hierarchy22_->Iterate(*D0res_, *D0x_, 1, true);
+        Hierarchy22_->Iterate(*D0res_, *D0x_, numIters22_, true);
         D0x_  ->replaceMap(origXMap);
         D0res_->replaceMap(origRhsMap);
       }
@@ -2110,23 +2135,8 @@ namespace MueLu {
     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve"));
 
     // make sure that we have enough temporary memory
-    if (X.getNumVectors() != P11res_->getNumVectors()) {
-      P11res_    = MultiVectorFactory::Build(P11_->getDomainMap(), X.getNumVectors());
-      if (!ImporterH_.is_null()) {
-        P11resTmp_ = MultiVectorFactory::Build(ImporterH_->getTargetMap(), X.getNumVectors());
-        P11xTmp_   = MultiVectorFactory::Build(ImporterH_->getSourceMap(), X.getNumVectors());
-        P11x_      = MultiVectorFactory::Build(ImporterH_->getTargetMap(), X.getNumVectors());
-      } else
-        P11x_      = MultiVectorFactory::Build(P11_->getDomainMap(), X.getNumVectors());
-      if (!Importer22_.is_null()) {
-        D0resTmp_ = MultiVectorFactory::Build(Importer22_->getTargetMap(), X.getNumVectors());
-        D0xTmp_   = MultiVectorFactory::Build(Importer22_->getSourceMap(), X.getNumVectors());
-        D0x_      = MultiVectorFactory::Build(Importer22_->getTargetMap(), X.getNumVectors());
-      } else
-        D0x_      = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), X.getNumVectors());
-      residual_  = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(), X.getNumVectors());
-
-    }
+    if (X.getNumVectors() != P11res_->getNumVectors())
+      allocateMemory(X.getNumVectors());
 
     { // apply pre-smoothing
 
@@ -2200,23 +2210,31 @@ namespace MueLu {
     TEUCHOS_ASSERT(Ms_Matrix!=Teuchos::null);
     TEUCHOS_ASSERT(M1_Matrix!=Teuchos::null);
 
-    HierarchyH_ = Teuchos::null;
-    Hierarchy22_ = Teuchos::null;
-    PreSmoother_ = Teuchos::null;
-    PostSmoother_ = Teuchos::null;
+    HierarchyH_    = Teuchos::null;
+    Hierarchy22_   = Teuchos::null;
+    PreSmoother_   = Teuchos::null;
+    PostSmoother_  = Teuchos::null;
     disable_addon_ = false;
-    mode_ = "additive";
+    mode_          = "additive";
 
     // set parameters
     setParameters(List);
 
-    D0_Matrix_ = D0_Matrix;
+    D0_Matrix_    = D0_Matrix;
     M0inv_Matrix_ = M0inv_Matrix;
-    Ms_Matrix_ = Ms_Matrix;
-    M1_Matrix_ = M1_Matrix;
-    Coords_ = Coords;
-    Nullspace_ = Nullspace;
+    Ms_Matrix_    = Ms_Matrix;
+    M1_Matrix_    = M1_Matrix;
+    Coords_       = Coords;
+    Nullspace_    = Nullspace;
+
+    dump(*D0_Matrix_, "D0_clean.m");
+    dump(*Ms_Matrix_, "Ms.m");
+    dump(*M1_Matrix_, "M1.m");
+    if (!M0inv_Matrix_.is_null()) dump(*M0inv_Matrix_, "M0inv.m");
+    if (!Coords_.is_null())       dumpCoords(*Coords_, "coords.m");
+
   }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
