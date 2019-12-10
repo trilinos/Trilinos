@@ -46,9 +46,9 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Tsqr_MatView.hpp"
 
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
 
 #include <algorithm>
 #include <ostream>
@@ -152,7 +152,7 @@ namespace TSQR {
     }
   };
 
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
   // Specialization for complex numbers
   template<class Scalar>
   class SumSquare<std::complex<Scalar> >  {
@@ -163,7 +163,7 @@ namespace TSQR {
       return result + absval * absval;
     }
   };
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
 
   template<class Ordinal, class Scalar>
   void

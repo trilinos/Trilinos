@@ -1,9 +1,30 @@
-# It's not necessary to run the first five tests in an MPI build
-# ("COMM mpi"), since none of them need to run on more than one MPI
-# process.  However, it's useful to have the tests around in an MPI
-# build, so we also build the tests there.  In an MPI build, only
-# Process 0 in MPI_COMM_WORLD runs the tests; the other ranks are
-# quieted.
+# It's not necessary to run most of the tests below in an MPI build
+# ("COMM mpi"), since only two of them (DistTsqr and FullTsqr) need to
+# run on more than one MPI process.  However, it's useful to have the
+# tests around in an MPI build, so we also build the tests there.  In
+# an MPI build, only Process 0 in MPI_COMM_WORLD runs the tests; the
+# other ranks are quieted.
+
+ASSERT_DEFINED(TPL_ENABLE_CUDA)
+ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_CUSOLVER)
+
+IF (TPL_ENABLE_CUDA AND Kokkos_ENABLE_Cuda AND ${PACKAGE_NAME}_ENABLE_CUBLAS AND ${PACKAGE_NAME}_ENABLE_CUSOLVER)
+  SET (TpetraTSQR_ENABLE_CUDA_TESTS ON)
+ELSE ()
+  SET (TpetraTSQR_ENABLE_CUDA_TESTS OFF)
+ENDIF ()
+
+IF (TpetraTSQR_ENABLE_CUDA_TESTS)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CuSolver
+  SOURCES CuSolver.cpp
+  COMM serial mpi
+  ARGS ""
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+)
+ENDIF (TpetraTSQR_ENABLE_CUDA_TESTS)
 
 # Performance and accuracy test suite for TSQR::Combine (which factors
 # cache blocks and combines triangular factors).

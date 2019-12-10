@@ -354,9 +354,9 @@ namespace TSQR {
                    const bool b_debug)
     {
       using TSQR::Random::NormalGenerator;
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
       using std::complex;
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       using std::string;
       using std::vector;
 
@@ -394,7 +394,7 @@ namespace TSQR {
                              cache_size_hint, contiguous_cache_blocks,
                              save_matrices, additionalFieldNames, additionalData,
                              printFieldNames, human_readable, b_debug);
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
       if (test_complex_arithmetic) {
         normgenD.getSeed (iseed);
         NormalGenerator< int, complex<float> > normgenC (iseed);
@@ -413,12 +413,12 @@ namespace TSQR {
                                save_matrices, additionalFieldNames, additionalData,
                                printFieldNames, human_readable, b_debug);
       }
-#else // HAVE_KOKKOSTSQR_COMPLEX
+#else // HAVE_TPETRATSQR_COMPLEX
       if (test_complex_arithmetic) {
         throw std::logic_error ("Trilinos was not built with "
                                 "complex arithmetic support");
       }
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
     }
 
 
@@ -566,9 +566,9 @@ namespace TSQR {
                   const bool b_debug)
     {
       using TSQR::Random::NormalGenerator;
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
       using std::complex;
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       using std::string;
       using std::vector;
 
@@ -599,7 +599,7 @@ namespace TSQR {
       verifyLapackTemplate (out, normgenD, datatype, nrows, ncols,
                             additionalFieldNames, additionalData,
                             false, human_readable, b_debug);
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
       if (test_complex_arithmetic) {
         normgenD.getSeed (iseed);
         NormalGenerator< int, complex<float> > normgenC (iseed);
@@ -614,12 +614,12 @@ namespace TSQR {
                               additionalFieldNames, additionalData,
                               false, human_readable, b_debug);
       }
-#else // HAVE_KOKKOSTSQR_COMPLEX
+#else // HAVE_TPETRATSQR_COMPLEX
       if (test_complex_arithmetic) {
         throw std::logic_error ("Trilinos was not built with "
                                 "complex arithmetic support");
       }
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
     }
 
     /// \class LapackBenchmarker
@@ -832,7 +832,7 @@ namespace TSQR {
       }
 
       if (testComplex) {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
         using std::complex;
         { // Scalar=complex<float>
           typedef LapackBenchmarker< int, complex<float>, timer_type > benchmark_type;
@@ -856,10 +856,10 @@ namespace TSQR {
             printedFieldNames = true;
           }
         }
-#else // Don't HAVE_KOKKOSTSQR_COMPLEX
+#else // Don't HAVE_TPETRATSQR_COMPLEX
         throw std::logic_error ("Trilinos was not built with "
                                 "complex arithmetic support");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       }
     }
 
@@ -1071,7 +1071,7 @@ namespace TSQR {
       }
 
       if (testComplex) {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
         using std::complex;
         { // Scalar=complex<float>
           typedef SeqTsqrBenchmarker< int, complex<float>, timer_type > benchmark_type;
@@ -1097,10 +1097,10 @@ namespace TSQR {
             printedFieldNames = true;
           }
         }
-#else // Don't HAVE_KOKKOSTSQR_COMPLEX
+#else // Don't HAVE_TPETRATSQR_COMPLEX
         throw std::logic_error ("Trilinos was not built with "
                                 "complex arithmetic support");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       }
     }
 

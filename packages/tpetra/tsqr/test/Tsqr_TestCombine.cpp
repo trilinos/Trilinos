@@ -50,9 +50,9 @@
 #include "Tsqr_CombineBenchmark.hpp"
 #include "Tsqr_CombineTest.hpp"
 
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
 
 #include <fstream>
 #include <sstream>
@@ -83,11 +83,11 @@ namespace {
       calibrate (false),
       averageTimings (true),
       testReal (true),
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
       testComplex (true),
 #else
       testComplex (false),
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       printFieldNames (true),
       printTrilinosTestStuff (true),
       strictPerfTests (false),
@@ -163,11 +163,11 @@ namespace {
     testParams.numRows = params.numRows;
     testParams.numCols = params.numCols;
     testParams.testReal = params.testReal;
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
     testParams.testComplex = params.testComplex;
 #else
     testParams.testComplex = false;
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
     testParams.numTrials = params.numTrials;
     testParams.calibrate = params.calibrate;
     testParams.averageTimings = params.averageTimings;
@@ -203,11 +203,11 @@ namespace {
 
     const ordinal_type numRows = params.numRows;
     const ordinal_type numCols = params.numCols;
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
     const bool testComplex = params.testComplex;
 #else
     const bool testComplex = false;
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
     const bool printFieldNames = params.printFieldNames;
     const bool simulateSequentialTsqr = false;
     const bool debug = false;

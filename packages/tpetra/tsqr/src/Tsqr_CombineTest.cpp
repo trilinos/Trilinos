@@ -618,9 +618,9 @@ namespace TSQR {
     {
       using TSQR::Random::NormalGenerator;
       using std::cerr;
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
       using std::complex;
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       using std::cout;
       using std::endl;
       using std::pair;
@@ -658,7 +658,7 @@ namespace TSQR {
           }
         }
         if (testComplex) {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
           {
             using scalar_type = std::complex<float>;
             verifyCombineTemplateAllCombiners<int, scalar_type>
@@ -669,12 +669,12 @@ namespace TSQR {
             verifyCombineTemplateAllCombiners<int, scalar_type>
               (iseed, numRows, numCols, debug);
           }
-#else // NOT HAVE_KOKKOSTSQR_COMPLEX
+#else // NOT HAVE_TPETRATSQR_COMPLEX
           TEUCHOS_TEST_FOR_EXCEPTION
             (true, std::logic_error, "You set testComplex=true, but "
              "Trilinos was not built with complex arithmetic support "
              "enabled.");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
         }
       }
       else { // simulateSequentialTsqr
@@ -713,7 +713,7 @@ namespace TSQR {
         }
 
         if (testComplex) {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
           {
             using scalar_type = complex<float>;
             using mag_type = float;
@@ -748,11 +748,11 @@ namespace TSQR {
                                     numRows, numCols, results);
             normgenS.getSeed (iseed);
           }
-#else // NOT HAVE_KOKKOSTSQR_COMPLEX
+#else // NOT HAVE_TPETRATSQR_COMPLEX
           TEUCHOS_TEST_FOR_EXCEPTION
             (true, std::logic_error, "Trilinos was not built with "
              "complex arithmetic support.");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
         }
       }
     }

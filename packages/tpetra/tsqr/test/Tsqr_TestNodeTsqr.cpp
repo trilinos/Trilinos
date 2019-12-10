@@ -86,11 +86,11 @@ namespace TSQR {
       int numCols = 10;
       int numTrials = 10;
       bool testReal = true;
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
       bool testComplex = true;
 #else
       bool testComplex = false;
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       size_t cacheSizeHint = 0;
       bool contiguousCacheBlocks = false;
       bool printFieldNames = true;
@@ -645,17 +645,17 @@ namespace TSQR {
         success = success && ok_S && ok_D;
       }
       if (p.testComplex) {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
         const bool ok_C =
           verifyNodeTsqrTmpl<std::complex<float>> (out, iseed, p);
         const bool ok_Z =
           verifyNodeTsqrTmpl<std::complex<double>> (out, iseed, p);
         success = success && ok_C && ok_Z;
-#else // HAVE_KOKKOSTSQR_COMPLEX
+#else // HAVE_TPETRATSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error, "TSQR was not built with complex "
            "arithmetic support.");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       }
       return success;
     }
@@ -833,14 +833,14 @@ namespace TSQR {
         verifyLapackTmpl<double> (out, iseed, p);
       }
       if (p.testComplex) {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
         verifyLapackTmpl<std::complex<float>> (out, iseed, p);
         verifyLapackTmpl<std::complex<double>> (out, iseed, p);
-#else // HAVE_KOKKOSTSQR_COMPLEX
+#else // HAVE_TPETRATSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error, "TSQR was not built with complex "
            "arithmetic support.");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       }
     }
 
@@ -954,14 +954,14 @@ namespace TSQR {
         benchmarkLapackTmpl<double> (out, iseed, p);
       }
       if (p.testComplex) {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
         benchmarkLapackTmpl<std::complex<float>> (out, iseed, p);
         benchmarkLapackTmpl<std::complex<double>> (out, iseed, p);
-#else // Don't HAVE_KOKKOSTSQR_COMPLEX
+#else // Don't HAVE_TPETRATSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error,
            "TSQR was not built with complex arithmetic support.");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       }
     }
 
@@ -1055,14 +1055,14 @@ namespace TSQR {
         benchmarkNodeTsqrTmpl<double> (out, iseed, p);
       }
       if (p.testComplex) {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
         benchmarkNodeTsqrTmpl<std::complex<float>> (out, iseed, p);
         benchmarkNodeTsqrTmpl<std::complex<double>> (out, iseed, p);
-#else // Don't HAVE_KOKKOSTSQR_COMPLEX
+#else // Don't HAVE_TPETRATSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error,
            "TSQR was not built with complex arithmetic support.");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       }
     }
   } // namespace Test

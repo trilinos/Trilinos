@@ -49,9 +49,9 @@
 #include "Tsqr_CombineNodeTsqr.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TestForException.hpp"
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
 #  include "Kokkos_Complex.hpp"
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
 #include <string>
 #include <vector>
 
@@ -98,7 +98,7 @@ namespace TSQR {
       // NOTE (mfh 02 Dec 2019) SequentialTsqr does not currently give
       // correct results for complex Scalar types, so we use
       // CombineNodeTsqr in that case.
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
       constexpr bool is_complex =
         std::is_same<Scalar, std::complex<double>>::value ||
         std::is_same<Scalar, std::complex<float>>::value ||
@@ -106,7 +106,7 @@ namespace TSQR {
         std::is_same<Scalar, Kokkos::complex<float>>::value;
 #else
       constexpr bool is_complex = false;
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       if (is_complex) {
         return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
       }

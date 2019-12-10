@@ -47,9 +47,9 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
 
 namespace {
   using Teuchos::CommandLineProcessor;
@@ -79,11 +79,11 @@ namespace {
       printResults (testParams->get<bool> ("printResults")),
       failIfInaccurate (testParams->get<bool> ("failIfInaccurate")),
       nodeTsqr (testParams->get<std::string> ("NodeTsqr")),
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
       testComplex (true),
 #else
       testComplex (false),
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
       testReal (true),
       verbose (testParams->get<bool> ("verbose"))
     {}
@@ -98,11 +98,11 @@ namespace {
     bool printResults = true;
     bool failIfInaccurate = true;
     std::string nodeTsqr {"Default"};
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
     bool testComplex = true;
 #else
     bool testComplex = false;
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
     bool testReal = true;
     bool verbose = false;
 
@@ -286,9 +286,9 @@ namespace {
     // for real and complex types, since callers can control whether
     // each of these is tested independently on the command line.
     using real_type_list = Cons<float, Cons<double, NullCons>>;
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
     using complex_type_list = Cons<std::complex<float>, Cons<std::complex<double>, NullCons>>;
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
 
     // Run the tests.  If the tests are set up to fail on
     // insufficiently inaccurate results, run() will throw an
@@ -301,13 +301,13 @@ namespace {
     const bool realResult = cmdLineOpts.testReal ?
       caller.run<real_type_list> (testParams) :
       true;
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
     const bool complexResult = cmdLineOpts.testComplex ?
       caller.run<complex_type_list> (testParams) :
       true;
 #else
     const bool complexResult = true;
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
 
     return realResult && complexResult;
   }
