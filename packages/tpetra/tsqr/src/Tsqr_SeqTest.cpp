@@ -490,7 +490,7 @@ namespace TSQR {
                          tau.data(), work.data(), lwork);
       // Copy out the R factor from A_copy (where we computed the QR
       // factorization in place) into R.
-      copy_upper_triangle (ncols, ncols, R.data(), ldr, A_copy.data(), lda);
+      copy_upper_triangle (R, A_copy);
 
       if (b_debug) {
         cerr << endl << "-- R factor:" << endl;
@@ -666,7 +666,6 @@ namespace TSQR {
         Matrix<Ordinal, Scalar> R (numCols, numCols);
         const Ordinal lda = numRows;
         const Ordinal ldq = numRows;
-        const Ordinal ldr = numCols;
 
         // Create a test problem
         nodeTestProblem (gen_, numRows, numCols, A.data(), lda, false);
@@ -679,7 +678,8 @@ namespace TSQR {
         deep_copy (Q, A);
 
         // Determine the required workspace for the factorization
-        const Ordinal lwork = lworkQueryLapackQr (lapack_, numRows, numCols, lda);
+        const Ordinal lwork =
+          lworkQueryLapackQr (lapack_, numRows, numCols, lda);
         std::vector<Scalar> work (lwork);
         std::vector<Scalar> tau (numCols);
 
@@ -695,8 +695,7 @@ namespace TSQR {
           // Extract the upper triangular factor R from Q (where it
           // was computed in place by GEQRF), since UNGQR will
           // overwrite all of Q with the explicit Q factor.
-          copy_upper_triangle (numRows, numCols, R.data(), ldr,
-                               Q.data(), ldq);
+          copy_upper_triangle (R, Q);
           lapack_.compute_explicit_Q (numRows, numCols, numCols,
                                       Q.data(), ldq, tau.data(),
                                       work.data(), lwork);

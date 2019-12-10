@@ -243,8 +243,7 @@ namespace TSQR {
       // Copy back the results.  R might be a view of the upper
       // triangle of a cache block, so only copy into the upper
       // triangle of R.
-      copy_upper_triangle (n, n, R, ldr, A_buf_top.data(),
-                           A_buf_top.stride(1));
+      copy_upper_triangle (R_view, A_buf_top);
       deep_copy (A_view, A_buf_bot);
     }
 
@@ -260,23 +259,14 @@ namespace TSQR {
 
       A_buf_.reshape (numRows, numCols);
       deep_copy (A_buf_, Scalar {});
-      MatView<Ordinal, Scalar> A_buf_top (numCols, numCols,
-                                          &A_buf_(0, 0),
-                                          A_buf_.stride(1));
-      MatView<Ordinal, Scalar> A_buf_bot (numCols, numCols,
-                                          &A_buf_(numCols, 0),
-                                          A_buf_.stride(1));
+      auto A_buf_tb = partition_2x1 (A_buf_.view (), numCols);
       // Copy the inputs into the compute buffer.  Only touch the
       // upper triangles of R_top and R_bot, since they each may be
       // views of some cache block (where the strict lower triangle
       // contains things we don't want to include in the
       // factorization).
-      copy_upper_triangle (numCols, numCols,
-                           A_buf_top.data(), A_buf_top.stride(1),
-                           R_top.data(), R_top.stride(1));
-      copy_upper_triangle (numCols, numCols,
-                           A_buf_bot.data(), A_buf_bot.stride(1),
-                           R_bot.data(), R_bot.stride(1));
+      copy_upper_triangle (A_buf_tb.first, R_top);
+      copy_upper_triangle (A_buf_tb.second, R_bot);
 
       const int lwork = static_cast<int> (numCols);
       lapack_.compute_QR (numRows, numCols,
@@ -286,12 +276,8 @@ namespace TSQR {
       // two n by n row blocks of A_buf_ (this means we don't have to
       // zero out the strict lower triangles), and only touch the
       // upper triangles of R_top and R_bot.
-      copy_upper_triangle (numCols, numCols,
-                           R_top.data(), R_top.stride(1),
-                           A_buf_top.data(), A_buf_top.stride(1));
-      copy_upper_triangle (numCols, numCols,
-                           R_bot.data(), R_bot.stride(1),
-                           A_buf_bot.data(), A_buf_bot.stride(1));
+      copy_upper_triangle (R_top, A_buf_tb.first);
+      copy_upper_triangle (R_bot, A_buf_tb.second);
     }
 
     void
@@ -309,17 +295,13 @@ namespace TSQR {
 
       A_buf_.reshape (numRows, ncols_Q);
       deep_copy (A_buf_, Scalar {});
-      copy_upper_triangle (ncols_Q, ncols_Q, &A_buf_(ncols_Q, 0),
-                           A_buf_.stride (1), R_bot.data (), ldr_bot);
+      auto A_buf_tb = partition_2x1 (A_buf_.view (), ncols_Q);
+      copy_upper_triangle (A_buf_tb.second, R_bot);
 
       C_buf_.reshape (numRows, ncols_C);
-      using mat_view_type = MatView<Ordinal, Scalar>;
-      mat_view_type C_buf_top (ncols_Q, ncols_C,
-                           C_buf_.data (), C_buf_.stride (1));
-      deep_copy (C_buf_top, C_top);
-      mat_view_type C_buf_bot (ncols_Q, ncols_C, &C_buf_(ncols_Q, 0),
-                               C_buf_.stride (1));
-      deep_copy (C_buf_bot, C_bot);
+      auto C_buf_tb = partition_2x1 (C_buf_.view (), ncols_Q);
+      deep_copy (C_buf_tb.first, C_top);
+      deep_copy (C_buf_tb.second, C_bot);
 
       const int lwork = ncols_Q;
       const std::string trans = apply_type.toString ();
@@ -329,8 +311,8 @@ namespace TSQR {
                               C_buf_.data (), C_buf_.stride (1),
                               work, lwork);
       // Copy back the results.
-      deep_copy (C_top, C_buf_top);
-      deep_copy (C_bot, C_buf_bot);
+      deep_copy (C_top, C_buf_tb.first);
+      deep_copy (C_bot, C_buf_tb.second);
     }
 
   private:

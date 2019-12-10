@@ -244,6 +244,23 @@ namespace TSQR {
     deep_copy (tgt.view(), src);
   }
 
+  template<class LO, class TargetScalar, class SourceScalar>
+  void
+  copy_upper_triangle (Matrix<LO, TargetScalar>& R_out,
+                       const MatView<LO, SourceScalar>& R_in)
+  {
+    copy_upper_triangle (R_out.view (), R_in);
+  }
+
+  template<class LO, class TargetScalar, class SourceScalar>
+  void
+  copy_upper_triangle (Matrix<LO, TargetScalar>& R_out,
+                       const Matrix<LO, SourceScalar>& R_in)
+  {
+    auto R_out_view = R_out.view ();
+    copy_upper_triangle (R_out_view, R_in.const_view ());
+  }
+
   template<class LO, class SC>
   std::pair<MatView<LO, SC>, MatView<LO, SC>>
   partition_2x1 (Matrix<LO, SC>& A,

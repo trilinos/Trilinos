@@ -138,8 +138,7 @@ namespace TSQR {
       // Copy the R factor resulting from the factorization out of the
       // topmost block of A) into the R output argument.
       deep_copy (R, Scalar {});
-      copy_upper_triangle (ncols, ncols, R.data (), R.stride (1),
-                           A.data (), A.stride (1));
+      copy_upper_triangle (R, A);
     }
 
   public:

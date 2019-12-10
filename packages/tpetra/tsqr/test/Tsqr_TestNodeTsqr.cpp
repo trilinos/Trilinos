@@ -751,8 +751,7 @@ namespace TSQR {
       if (verbose) {
         cerr << "-- Copy R out of in-place result" << endl;
       }
-      copy_upper_triangle (ncols, ncols, R.data(), ldr,
-                           A_copy.data(), lda);
+      copy_upper_triangle (R, A_copy);
       if (params.saveMatrices) {
         std::string filename = std::string ("R") + fileSuffix;
         if (verbose) {
@@ -876,7 +875,6 @@ namespace TSQR {
       Matrix<int, Scalar> R (numCols, numCols);
       const int lda = numRows;
       const int ldq = numRows;
-      const int ldr = numCols;
 
       {
         using prng_type = TSQR::Random::NormalGenerator<int, Scalar>;
@@ -909,8 +907,7 @@ namespace TSQR {
         // Extract the upper triangular factor R from Q (where it was
         // computed in place by GEQRF), since UNGQR will overwrite all
         // of Q with the explicit Q factor.
-        copy_upper_triangle (numRows, numCols, R.data (), ldr,
-                             Q.data (), ldq);
+        copy_upper_triangle (R, Q);
         lapack.compute_explicit_Q (numRows, numCols, numCols,
                                    Q.data (), ldq, tau.data (),
                                    work.data (), lwork);

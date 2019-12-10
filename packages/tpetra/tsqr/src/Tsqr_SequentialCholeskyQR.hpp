@@ -178,7 +178,7 @@ namespace TSQR {
       {
         mat_view_type R_out (ncols, ncols, R, ldr);
         deep_copy (R_out, Scalar {});
-        copy_upper_triangle (ncols, ncols, R, ldr, ATA.data(), ATA.stride(1));
+        copy_upper_triangle (R, ATA);
       }
 
       // Compute A := A * R^{-1}.  We do this in place in A, using

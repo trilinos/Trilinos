@@ -1510,9 +1510,7 @@ namespace TSQR {
                                   R_top.data(), R_top.stride(1));
       deep_copy (R, Scalar {});
       // Only copy the upper triangle of R_top into R.
-      copy_upper_triangle (R.extent(1), R.extent(1),
-                           R.data(), R.stride(1),
-                           R_top.data(), R_top.stride(1));
+      copy_upper_triangle (R, R_top);
       return result;
     }
 
