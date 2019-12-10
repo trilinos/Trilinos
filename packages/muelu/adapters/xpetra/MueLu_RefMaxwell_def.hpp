@@ -454,6 +454,37 @@ namespace MueLu {
       RCP<MultiVector> CoordsSC = Utilities::RealValuedToScalarMultiVector(Coords_);
 #endif
       D0_Matrix_->apply(*CoordsSC,*Nullspace_);
+      if (IsPrint(Statistics2)) {
+        // compute edge lengths
+        ArrayRCP<ArrayRCP<const Scalar> > localNullspace(Nullspace_->getNumVectors());
+        for (size_t i = 0; i < Nullspace_->getNumVectors(); i++)
+          localNullspace[i] = Nullspace_->getData(i);
+        coordinateType localMinLen = Teuchos::ScalarTraits<coordinateType>::rmax();
+        coordinateType localMeanLen = Teuchos::ScalarTraits<coordinateType>::zero();
+        coordinateType localMaxLen = Teuchos::ScalarTraits<coordinateType>::zero();
+        for (size_t j=0; j < Nullspace_->getMap()->getNodeNumElements(); j++) {
+          Scalar lenSC = Teuchos::ScalarTraits<Scalar>::zero();
+          for (size_t i=0; i < Nullspace_->getNumVectors(); i++)
+            lenSC += localNullspace[i][j]*localNullspace[i][j];
+          coordinateType len = sqrt(Teuchos::ScalarTraits<Scalar>::real(lenSC));
+          localMinLen = std::min(localMinLen, len);
+          localMaxLen = std::max(localMaxLen, len);
+          localMeanLen += len;
+        }
+        coordinateType minLen, maxLen, meanLen;
+#ifdef HAVE_MPI
+        RCP<const Teuchos::Comm<int> > comm = Nullspace_->getMap()->getComm();
+        MueLu_minAll(comm, localMinLen,  minLen);
+        MueLu_sumAll(comm, localMeanLen, meanLen);
+        MueLu_maxAll(comm, localMaxLen,  maxLen);
+#else
+        minLen  = localMinLen;
+        meanLen = localMeanLen;
+        maxLen  = localMaxLen;
+#endif
+        meanLen /= Nullspace_->getMap()->getGlobalNumElements();
+        GetOStream(Statistics0) << "Edge length (min/mean/max): " << minLen << " / " << meanLen << " / " << maxLen << std::endl;
+      }
       Nullspace_->scale(normsSC());
     }
     else {
