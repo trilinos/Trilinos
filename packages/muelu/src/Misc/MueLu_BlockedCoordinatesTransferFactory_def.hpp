@@ -89,9 +89,8 @@ namespace MueLu {
   void BlockedCoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & /* fineLevel */, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> dMV;
-    typedef Xpetra::BlockedMultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> dBV;
-    typedef Xpetra::BlockedMap<LO,GO,NO> BlockedMap;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> dMV;
+    typedef Xpetra::BlockedMultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> dBV;
 
     GetOStream(Runtime0) << "Transferring (blocked) coordinates" << std::endl;
 
@@ -110,9 +109,9 @@ namespace MueLu {
       const RCP<const FactoryBase>& myFactory = subFactories_[i];
       myFactory->CallBuild(coarseLevel);
       subBlockCoords[i] = coarseLevel.Get<RCP<dMV> >("Coordinates", myFactory.get());
-      //      subBlockMaps[i]   = subBlockCoords[i]->getMap();      
+      //      subBlockMaps[i]   = subBlockCoords[i]->getMap();
     }
-    
+
     // Blocked Map
     RCP<const BlockedMap> coarseMap = Get< RCP<const BlockedMap> >(coarseLevel, "CoarseMap");
 
@@ -120,7 +119,7 @@ namespace MueLu {
     RCP<dBV> bcoarseCoords = rcp(new dBV(coarseMap,subBlockCoords));
 
     // Turn the blocked coordinates vector into an unblocked one
-    RCP<dMV> coarseCoords = bcoarseCoords->Merge();   
+    RCP<dMV> coarseCoords = bcoarseCoords->Merge();
     Set<RCP<dMV> >(coarseLevel, "Coordinates", coarseCoords);
   }
 

@@ -76,8 +76,6 @@ namespace MueLu {
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                   LO& numNonAggregatedNodes) const {
 
-    using memory_space = typename LWGraph_kokkos::memory_space;
-
     int minNodesPerAggregate    = params.get<int>        ("aggregation: min agg size");
     int maxNodesPerAggregate    = params.get<int>        ("aggregation: max agg size");
 
@@ -111,9 +109,6 @@ namespace MueLu {
                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                         LO& numNonAggregatedNodes) const
   {
-    using memory_space    = typename LWGraph_kokkos::memory_space;
-    using execution_space = typename LWGraph_kokkos::execution_space;
-
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
@@ -215,10 +210,6 @@ namespace MueLu {
                                Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                                LO& numNonAggregatedNodes) const
   {
-    using graph_t         = typename LWGraph_kokkos::local_graph_type;
-    using memory_space    = typename graph_t::device_type::memory_space;
-    using execution_space = typename graph_t::device_type::execution_space;
-
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 

@@ -80,16 +80,16 @@ namespace MueLu {
 
   public:
 
-    typedef typename LWGraph_kokkos::local_graph_type local_graph_type;
-    typedef typename local_graph_type::row_map_type::non_const_type non_const_row_map_type;
-    typedef typename local_graph_type::size_type size_type;
-    typedef typename local_graph_type::entries_type entries_type;
-    typedef typename local_graph_type::device_type::execution_space execution_space;
-    typedef typename local_graph_type::device_type::memory_space memory_space;
+    using local_graph_type       = typename LWGraph_kokkos::local_graph_type;
+    using non_const_row_map_type = typename local_graph_type::row_map_type::non_const_type;
+    using size_type              = typename local_graph_type::size_type;
+    using entries_type           = typename local_graph_type::entries_type;
+    using execution_space        = typename local_graph_type::device_type::execution_space;
+    using memory_space           = typename local_graph_type::device_type::memory_space;
 
-    typedef decltype(std::declval<LOVector>().template getLocalView<memory_space>()) LOVectorView;
-    typedef typename Kokkos::View<const int[3], memory_space> constIntTupleView;
-    typedef typename Kokkos::View<const LO[3],  memory_space> constLOTupleView;
+    using LOVectorView      = decltype(std::declval<LOVector>().template getLocalView<memory_space>());
+    using constIntTupleView = typename Kokkos::View<const int[3], memory_space>;
+    using constLOTupleView  = typename Kokkos::View<const LO[3],  memory_space>;
 
     //! @name Constructors/Destructors.
     //@{

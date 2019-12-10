@@ -436,7 +436,6 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
-    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
     typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
     const ParameterList& pL = GetParameterList();
     std::string nspName = "Nullspace";
