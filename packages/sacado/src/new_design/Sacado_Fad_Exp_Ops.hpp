@@ -66,7 +66,7 @@ namespace Sacado {                                                      \
       typedef ExprSpecDefault expr_spec_type;                           \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      OP(const T& expr_) : expr(expr_)  {}                              \
+      explicit OP(const T& expr_) : expr(expr_)  {}                     \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       int size() const { return expr.size(); }                          \

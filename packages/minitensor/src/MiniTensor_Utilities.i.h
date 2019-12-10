@@ -110,7 +110,7 @@ KOKKOS_INLINE_FUNCTION
 T
 copysign(T const & a, T const & b)
 {
-  return b >= 0 ? std::abs(a) : -std::abs(a);
+  return b >= 0 ? T(std::abs(a)) : T(-std::abs(a));
 }
 
 //
