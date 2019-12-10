@@ -683,30 +683,12 @@ namespace TSQR {
                 const LocalOrdinal ldc,
                 const bool contigCacheBlocks) const override
     {
-      // Identify top ncols_C by ncols_C block of C.  C_view is not
-      // modified.  top_block() will set C_top to have the correct
-      // leading dimension, whether or not cache blocks are stored
-      // contiguously.
       mat_view_type C_view (nrows, ncols_C, C, ldc);
-      mat_view_type C_top = this->top_block (C_view, contigCacheBlocks);
-
-      // Fill C with zeros, and then fill the topmost block of C with
-      // the first ncols_C columns of the identity matrix, so that C
-      // itself contains the first ncols_C columns of the identity
-      // matrix.
-      fill_with_zeros (nrows, ncols_C, C, ldc, contigCacheBlocks);
-
-      // FIXME (mfh 08 Dec 2019) Eventually stop writing to Matrix and
-      // MatView entries directly on host, to favor eventual
-      // GPU-ization.  (Even so-called SequentialTsqr need not
-      // necessarily use host memory; "sequential" just refers to how
-      // the algorithm process cache blocks one at a time.)
-      for (LocalOrdinal j = 0; j < ncols_C; ++j) {
-        C_top(j, j) = Scalar(1.0);
-      }
-
-      // Apply the Q factor to C, to extract the first ncols_C columns
-      // of Q in explicit form.
+      deep_copy (C_view, Scalar {});
+      // Don't just call fill_with_identity_columns(C_view), because
+      // that doesn't respect contigCacheBlocks.
+      auto C_top = this->top_block (C_view, contigCacheBlocks);
+      fill_with_identity_columns (C_top);
       apply (ApplyType::NoTranspose,
              nrows, ncols_Q, Q, ldq, factor_output,
              ncols_C, C, ldc, contigCacheBlocks);

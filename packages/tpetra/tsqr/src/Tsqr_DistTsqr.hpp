@@ -331,21 +331,18 @@ namespace TSQR {
                 const ordinal_type ldq_mine,
                 const FactorOutput& factor_output)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
-                                 "Before using DistTsqr computational methods, "
-                                 "you must first call init() with a valid "
-                                 "MessengerBase instance.");
-      const int myRank = messenger_->rank ();
-
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ready (), std::logic_error, "TSQR::DistTsqr::explicit_Q: "
+         "Before using DistTsqr computational methods, you must "
+         "first call init() with a valid MessengerBase instance.");
       MatView<ordinal_type, scalar_type> Q_mine_view
         (ncols_Q, ncols_Q, Q_mine, ldq_mine);
-      deep_copy (Q_mine_view, scalar_type {});
+      const int myRank = messenger_->rank ();
       if (myRank == 0) {
-        for (ordinal_type j = 0; j < ncols_Q; ++j) {
-          // FIXME (26 Nov 2019) Eventually, we only want to write to
-          // a matrix through a Kokkos kernel or a TPL.
-          Q_mine[j + j*ldq_mine] = scalar_type (1.0);
-        }
+        fill_with_identity_columns (Q_mine_view);
+      }
+      else {
+        deep_copy (Q_mine_view, scalar_type {});
       }
       apply (ApplyType::NoTranspose, ncols_Q, ncols_Q,
              Q_mine, ldq_mine, factor_output);

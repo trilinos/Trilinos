@@ -237,15 +237,7 @@ namespace TSQR {
                 const bool contiguousCacheBlocks) const override
     {
       mat_view_type C_view (nrows, ncols_C, C, ldc);
-
-      // Fill C with zeros, and then make C contain the first ncols_C
-      // columns of the identity matrix.
-      fill_with_zeros (nrows, ncols_C, C, ldc, contiguousCacheBlocks);
-      // FIXME (mfh 05 Dec 2019) We want to avoid writing to MatView
-      // on host, to facilitate eventual porting to Kokkos.
-      for (Ordinal j = 0; j < ncols_C; ++j) {
-        C_view(j, j) = Scalar (1.0);
-      }
+      fill_with_identity_columns (C_view);
       // Apply the Q factor to C, to extract the first ncols_C columns
       // of Q in explicit form.
       apply (ApplyType::NoTranspose,

@@ -332,15 +332,8 @@ namespace TSQR {
       matrix_type Q_R3A (numCols + numRows, numCols, Scalar {});
       auto Q_R3_A = partition_2x1 (Q_R3A.view (), numCols);
 
-      // Fill the explicit Q factor matrices with the first numCols
-      // columns of the identity matrix.
-      for (Ordinal k = 0; k < numCols; ++k) {
-        // FIXME (mfh 26 Nov 2019) Eventually we want to get away from
-        // direct modification of the entries of a Matrix or MatView,
-        // in favor of only doing so with a Kokkos kernel or TPL.
-        Q_R1R2(k, k) = Scalar (1.0);
-        Q_R3A(k, k) = Scalar (1.0);
-      }
+      fill_with_identity_columns (Q_R1R2.view ());
+      fill_with_identity_columns (Q_R3A.view ());
 
       // tau factor arrays, one for each factorization test.
       vector<Scalar> tau_R1R2 (numCols);
@@ -526,16 +519,19 @@ namespace TSQR {
       generateSingularValues (magGen, sigma_A1, numCols);
       generateSingularValues (magGen, sigma_A2, numCols);
 
-      // Matrix consisting of two cache blocks.
+      // Matrix consisting of two "cache blocks."
       matrix_type A (Ordinal(2)*numRows, numCols, Scalar{});
+      auto A1_A2 = partition_2x1 (A, numRows);
       // Views of the two cache blocks.
-      mat_view_type A1 (numRows, numCols, &A(0,0), A.stride(1));
-      mat_view_type A2 (numRows, numCols, &A(numRows,0), A.stride(1));
+      mat_view_type A1 = A1_A2.first;
+      mat_view_type A2 = A1_A2.second;
 
       // Fill the two cache blocks with random test problems.
       matgen_type matgen (gen);
-      matgen.fill_random_svd (numRows, numCols, A1.data(), A1.stride(1), &sigma_A1[0]);
-      matgen.fill_random_svd (numRows, numCols, A2.data(), A2.stride(1), &sigma_A2[0]);
+      matgen.fill_random_svd (numRows, numCols, A1.data(),
+                              A1.stride(1), sigma_A1.data ());
+      matgen.fill_random_svd (numRows, numCols, A2.data(),
+                              A2.stride(1), sigma_A2.data ());
 
       // Copy of the resulting test problem, stored as one dense
       // matrix rather than as two blocks.  We will use A_copy to
@@ -544,17 +540,9 @@ namespace TSQR {
       matrix_type A_copy (A);
 
       // Space to put the explicit Q factor.
-      matrix_type Q (Ordinal(2) * numRows, numCols, Scalar{});
-
-      // Fill Q with the first numCols columns of the identity matrix.
-      for (Ordinal k = 0; k < numCols; ++k) {
-        // FIXME (mfh 26 Nov 2019) I'm assuming I can write to the
-        // Matrix or MatView on host, outside of Kokkos.  TSQR always
-        // assumed this, but if we want to use Kokkos, we'll need to
-        // get rid of that assumption.
-        Q(k, k) = Scalar(1.0);
-      }
-      // Two cache blocks (as views) of Q.
+      matrix_type Q (Ordinal(2) * numRows, numCols, Scalar {});
+      fill_with_identity_columns (Q.view ());
+      // Two "cache blocks" (as views) of Q.
       auto Q1_Q2 = partition_2x1 (Q.view (), numRows);
 
       // Two tau factor arrays, one for each cache block.

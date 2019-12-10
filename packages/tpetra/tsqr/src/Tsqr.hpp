@@ -744,14 +744,12 @@ namespace TSQR {
       if (ncols == 0) {
         return 0;
       }
-      //
       // FIXME (mfh 16 Jul 2010) We _should_ compute the SVD of R (as
       // the copy B) on Proc 0 only.  This would ensure that all
       // processors get the same SVD and rank (esp. in a heterogeneous
       // computing environment).  For now, we just do this computation
       // redundantly, and hope that all the returned rank values are
       // the same.
-      //
       matrix_type U (ncols, ncols, STS::zero());
       const ordinal_type rank =
         reveal_R_rank (ncols, R, ldr, U.data(), U.stride(1), tol);

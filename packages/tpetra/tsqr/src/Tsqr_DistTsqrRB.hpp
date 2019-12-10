@@ -585,12 +585,12 @@ namespace TSQR {
     pack_R (const ConstMatrixType& R, scalar_type buf[])
     {
       ordinal_type curpos = 0;
-      for (ordinal_type j = 0; j < R.extent(1); ++j)
-        {
-          const scalar_type* const R_j = &R(0, j);
-          for (ordinal_type i = 0; i <= j; ++i)
-            buf[curpos++] = R_j[i];
+      for (ordinal_type j = 0; j < R.extent(1); ++j) {
+        const scalar_type* const R_j = &R(0, j);
+        for (ordinal_type i = 0; i <= j; ++i) {
+          buf[curpos++] = R_j[i];
         }
+      }
     }
 
   private:

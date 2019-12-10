@@ -298,12 +298,7 @@ namespace TSQR {
 
         // A place to put the Q factor.
         matrix_type Q (numRows, numCols);
-        deep_copy (Q, Scalar {});
-        // FIXME (mfh 08 Dec 2019) Eventually stop writing to Matrix
-        // or MatView entries on host, for eventual GPU-ization.
-        for (Ordinal j = 0; j < numCols; ++j) {
-          Q(j,j) = Scalar (1.0);
-        }
+        fill_with_identity_columns (Q.view ());
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
@@ -400,12 +395,7 @@ namespace TSQR {
 
         // A place to put the Q factor.
         matrix_type Q (numRows, numCols);
-        deep_copy (Q, Scalar {});
-        // FIXME (mfh 08 Dec 2019) Eventually stop writing to Matrix
-        // or MatView entries on host, for eventual GPU-ization.
-        for (Ordinal j = 0; j < numCols; ++j) {
-          Q(j,j) = Scalar (1.0);
-        }
+        fill_with_identity_columns (Q.view ());
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
@@ -499,13 +489,7 @@ namespace TSQR {
 
         // A place to put the Q factor.
         matrix_type Q (numCols + numRows, numCols);
-        deep_copy (Q, Scalar {});
-        // FIXME (mfh 08 Dec 2019) Eventually we need to stop writing
-        // to MatView and Matrix entries on host, so that we can
-        // GPU-ize everything.
-        for (Ordinal j = 0; j < numCols; ++j) {
-          Q(j,j) = Scalar (1.0);
-        }
+        fill_with_identity_columns (Q.view ());
         auto Q_top_Q_bot = partition_2x1 (Q, numCols);
 
         // TAU array (Householder reflector scaling factors).
@@ -610,13 +594,7 @@ namespace TSQR {
 
         // A place to put the Q factor.
         matrix_type Q (numCols + numRows, numCols);
-        deep_copy (Q, Scalar {});
-        // FIXME (mfh 08 Dec 2019) Eventually we need to stop writing
-        // to MatView and Matrix entries on host, so that we can
-        // GPU-ize everything.
-        for (Ordinal j = 0; j < numCols; ++j) {
-          Q(j,j) = Scalar (1.0);
-        }
+        fill_with_identity_columns (Q.view ());
         auto Q_top_Q_bot = partition_2x1 (Q, numCols);
 
         // TAU array (Householder reflector scaling factors).
@@ -704,17 +682,11 @@ namespace TSQR {
 
         // A place to put the Q factor of [R1; R2].
         matrix_type Q (2*numCols, numCols);
-        deep_copy (Q, Scalar {});
-        // FIXME (mfh 08 Dec 2019) Eventually we need to stop writing
-        // to MatView and Matrix entries on host, so that we can
-        // GPU-ize everything.
-        for (Ordinal j = 0; j < numCols; ++j) {
-          Q(j,j) = Scalar (1.0);
-        }
+        fill_with_identity_columns (Q.view ());
+        auto Q_top_Q_bot = partition_2x1 (Q.view (), numCols);
 
         auto R1_view = R1.view ();
         auto R2_view = R2.view ();
-        auto Q_top_Q_bot = partition_2x1 (Q.view (), numCols);
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
@@ -817,17 +789,11 @@ namespace TSQR {
 
         // A place to put the Q factor of [R1; R2].
         matrix_type Q (2*numCols, numCols);
-        deep_copy (Q, Scalar {});
-        // FIXME (mfh 08 Dec 2019) We eventually want to remove all
-        // direct host access of Matrix or MatView entries, so that we
-        // can use Kokkos for storage and computational kernels.
-        for (Ordinal j = 0; j < numCols; ++j) {
-          Q(j,j) = Scalar (1.0);
-        }
+        fill_with_identity_columns (Q.view ());
+        auto Q_top_Q_bot = partition_2x1 (Q.view (), numCols);
 
         auto R1_view = R1.view ();
         auto R2_view = R2.view ();
-        auto Q_top_Q_bot = partition_2x1 (Q.view (), numCols);
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
