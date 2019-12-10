@@ -73,9 +73,7 @@ namespace MueLu {
 #undef MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
     public:
-
-    using execution_space = typename LWGraph_kokkos::execution_space;
-    using memory_space    = typename LWGraph_kokkos::memory_space;
+    using memory_space = typename LWGraph_kokkos::memory_space;
 
     //! @name Constructors/Destructors
     //@{

@@ -90,9 +90,6 @@ namespace MueLu {
                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                         LO& numNonAggregatedNodes) const
   {
-    using memory_space    = typename LWGraph_kokkos::memory_space;
-    using execution_space = typename LWGraph_kokkos::execution_space;
-
     const int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
     const int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
 
@@ -202,9 +199,6 @@ namespace MueLu {
                                Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                                LO& numNonAggregatedNodes) const
   {
-    using memory_space    = typename LWGraph_kokkos::memory_space;
-    using execution_space = typename LWGraph_kokkos::execution_space;
-
     const int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
     const int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
 

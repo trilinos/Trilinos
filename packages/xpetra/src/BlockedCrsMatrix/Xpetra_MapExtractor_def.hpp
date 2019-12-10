@@ -187,9 +187,6 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& full, size_t block, bool bThyraMode) const
     {
-        using Vector        = Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-        using VectorFactory = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
         XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
                                   std::out_of_range,
                                   "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
@@ -215,9 +212,6 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& full, size_t block, bool bThyraMode) const
     {
-        using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-        using MultiVectorFactory = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
         XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
                                   std::out_of_range,
                                   "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
@@ -266,10 +260,6 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& full, size_t block, bool bThyraMode) const
     {
-        using MultiVector        = Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-        using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-        using MultiVectorFactory = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
         XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
                                   std::out_of_range,
                                   "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
@@ -317,8 +307,6 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<const Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& full, size_t block, bool bThyraMode) const
     {
-        using MultiVector        = Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
         XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
                                   std::out_of_range,
                                   "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
@@ -340,8 +328,6 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& full, size_t block, bool bThyraMode) const
     {
-        using MultiVector        = Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
         XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
                                   std::out_of_range,
                                   "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
@@ -363,9 +349,6 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     InsertVector(const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& partial, size_t block, Vector& full, bool bThyraMode) const
     {
-        using Map                = Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
-        using MultiVector        = Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
         XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
                                   std::out_of_range,
                                   "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
@@ -424,9 +407,6 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     InsertVector(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& partial, size_t block, MultiVector& full, bool bThyraMode) const
     {
-        using Map                = Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
-        using MultiVector        = Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
         XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
                                   std::out_of_range,
                                   "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
@@ -507,8 +487,6 @@ namespace Xpetra {
                  RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> full,
                  bool bThyraMode) const
     {
-        using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
         RCP<BlockedMultiVector> bfull = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(full);
         if(bfull.is_null() == true)
             InsertVector(*partial, block, *full, bThyraMode);
@@ -536,8 +514,6 @@ namespace Xpetra {
                  RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> full,
                  bool bThyraMode) const
     {
-        using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
         RCP<BlockedMultiVector> bfull = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(full);
         if(bfull.is_null() == true)
             InsertVector(*partial, block, *full, bThyraMode);
@@ -585,7 +561,6 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getVector(size_t i, bool bThyraMode, bool bZero) const
     {
-        using VectorFactory = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
         XPETRA_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true,
                                   Xpetra::Exceptions::RuntimeError,
                                   "MapExtractor::getVector: getVector in Thyra-style numbering only possible if MapExtractor has been created using "
@@ -600,8 +575,6 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getVector(size_t i, size_t numvec, bool bThyraMode, bool bZero) const
     {
-        using MultiVectorFactory = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
         XPETRA_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true,
                                   Xpetra::Exceptions::RuntimeError,
                                   "MapExtractor::getVector: getVector in Thyra-style numbering only possible if MapExtractor has been created using "

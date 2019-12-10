@@ -102,7 +102,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar& value)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::replaceGlobalValue(globalRow, vectorIndex, value);
 }
 
@@ -112,7 +111,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar& value)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::sumIntoGlobalValue(globalRow, vectorIndex, value);
 }
 
@@ -122,7 +120,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 replaceLocalValue(LocalOrdinal  myRow, size_t vectorIndex, const Scalar& value)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::replaceLocalValue(myRow, vectorIndex, value);
 }
 
@@ -132,7 +129,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 sumIntoLocalValue(LocalOrdinal  myRow, size_t vectorIndex, const Scalar& value)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::sumIntoLocalValue(myRow, vectorIndex, value);
 }
 
@@ -142,7 +138,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 replaceGlobalValue(GlobalOrdinal globalRow, const Scalar& value)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::replaceGlobalValue(globalRow, 0, value);
 }
 
@@ -152,7 +147,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar& value)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::sumIntoGlobalValue(globalRow, 0, value);
 }
 
@@ -161,7 +155,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 replaceLocalValue(LocalOrdinal myRow, const Scalar& value)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::replaceLocalValue(myRow, 0, value);
 }
 
@@ -170,7 +163,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 sumIntoLocalValue(LocalOrdinal myRow, const Scalar& value)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::sumIntoLocalValue(myRow, 0, value);
 }
 
@@ -179,7 +171,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 putScalar(const Scalar& value)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::putScalar(value);
 }
 
@@ -188,7 +179,6 @@ Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getVector(size_t j) const
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     return BlockedMultiVector::getVector(j);
 }
 
@@ -197,7 +187,6 @@ Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getVectorNonConst(size_t j)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     return BlockedMultiVector::getVectorNonConst(j);
 }
 
@@ -206,7 +195,6 @@ Teuchos::ArrayRCP<const Scalar>
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getData(size_t j) const
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     return BlockedMultiVector::getData(j);
 }
 
@@ -215,7 +203,6 @@ Teuchos::ArrayRCP<Scalar>
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getDataNonConst(size_t j)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     return BlockedMultiVector::getDataNonConst(j);
 }
 
@@ -224,7 +211,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 dot(const MultiVector& A, const Teuchos::ArrayView<Scalar>& dots) const
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::dot(A, dots);
     return;
 }
@@ -234,7 +220,6 @@ Scalar
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 dot(const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A) const
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     Teuchos::Array<Scalar> dots = Teuchos::Array<Scalar>(1);
     BlockedMultiVector::dot(A, dots);
     return dots[ 0 ];
@@ -245,7 +230,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 abs(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::abs(A);
     return;
 }
@@ -255,7 +239,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 reciprocal(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::reciprocal(A);
     return;
 }
@@ -265,7 +248,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 scale(const Scalar& alpha)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::scale(alpha);
     return;
 }
@@ -275,7 +257,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 scale(Teuchos::ArrayView<const Scalar> alpha)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::scale(alpha);
     return;
 }
@@ -287,7 +268,6 @@ update(const Scalar& alpha,
        const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
        const Scalar& beta)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::update(alpha, A, beta);
     return;
 }
@@ -301,7 +281,6 @@ update(const Scalar&                                                         alp
        const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
        const Scalar&                                                         gamma)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::update(alpha, A, beta, B, gamma);
     return;
 }
@@ -346,7 +325,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::norm1(norms);
 }
 
@@ -356,7 +334,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::norm2(norms);
 }
 
@@ -366,7 +343,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::normInf(norms);
 }
 
@@ -540,7 +516,6 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 replaceMap(const RCP<const Map>& map)
 {
-    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     BlockedMultiVector::replaceMap(map);
 }
 
@@ -671,7 +646,6 @@ Xpetra_randomize()
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getMultiVector(size_t r) const
     {
-        using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
         return BlockedMultiVector::getMultiVector(r);
     }
 
@@ -681,7 +655,6 @@ Xpetra_randomize()
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getMultiVector(size_t r, bool bThyraMode) const
     {
-        using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
         return BlockedMultiVector::getMultiVector(r, bThyraMode);
     }
 
@@ -693,7 +666,6 @@ Xpetra_randomize()
                    Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v,
                    bool bThyraMode)
     {
-        using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
         BlockedMultiVector::setMultiVector(r, v, bThyraMode);
         return;
     }
@@ -704,7 +676,6 @@ Xpetra_randomize()
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Merge() const
     {
-        using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
         return BlockedMultiVector::Merge();
     }
 
@@ -714,7 +685,6 @@ Xpetra_randomize()
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     assign(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
     {
-        using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
         BlockedMultiVector::assign(rhs);
     }
 
