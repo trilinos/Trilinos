@@ -185,11 +185,11 @@ namespace FROSch {
         // Variables //
         ///////////////
 
-        EntityType Type_;
+        EntityType Type_ = DefaultType;
 
-        InterfaceEntityPtrVec EntityVector_;
+        InterfaceEntityPtrVec EntityVector_ = InterfaceEntityPtrVec(0);
 
-        bool EntityMapIsUpToDate_;
+        bool EntityMapIsUpToDate_ = false;
 
         XMapPtr EntityMap_;
     };
