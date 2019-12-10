@@ -167,56 +167,6 @@ namespace TSQR {
 
   template<class Ordinal, class Scalar>
   void
-  pack_R_factor (const Ordinal nrows,
-                 const Ordinal ncols,
-                 const Scalar R_in[],
-                 const Ordinal ldr_in,
-                 Scalar buffer[])
-  {
-    Ordinal count = 0; // current position in output buffer
-    if (nrows >= ncols) {
-      for (Ordinal j = 0; j < ncols; ++j) {
-        for (Ordinal i = 0; i <= j; ++i) {
-          buffer[count++] = R_in[i + j*ldr_in];
-        }
-      }
-    }
-    else {
-      for (Ordinal j = 0; j < nrows; ++j) {
-        for (Ordinal i = 0; i <= j; ++i) {
-          buffer[count++] = R_in[i + j*ldr_in];
-        }
-      }
-    }
-  }
-
-  template< class Ordinal, class Scalar >
-  void
-  unpack_R_factor (const Ordinal nrows,
-                   const Ordinal ncols,
-                   Scalar R_out[],
-                   const Ordinal ldr_out,
-                   const Scalar buffer[])
-  {
-    Ordinal count = 0; // current position in input buffer
-    if (nrows >= ncols) {
-      for (Ordinal j = 0; j < ncols; ++j) {
-        for (Ordinal i = 0; i <= j; ++i) {
-          R_out[i + j*ldr_out] = buffer[count++];
-        }
-      }
-    }
-    else {
-      for (Ordinal j = 0; j < nrows; ++j) {
-        for (Ordinal i = 0; i <= j; ++i) {
-          R_out[i + j*ldr_out] = buffer[count++];
-        }
-      }
-    }
-  }
-
-  template<class Ordinal, class Scalar>
-  void
   fill_with_identity_columns (const MatView<Ordinal, Scalar>& A)
   {
     deep_copy (A, Scalar {});
