@@ -156,18 +156,6 @@ namespace TSQR {
     /// most cases, however.
     size_t size_of_scalar () const { return size_of_scalar_; }
 
-    //! True if and only if the two strategies are the same.
-    bool operator== (const CacheBlockingStrategy& rhs) const {
-      return cache_size_hint() == rhs.cache_size_hint() &&
-        size_of_scalar() == rhs.size_of_scalar();
-    }
-
-    //! True if and only if the two strategies are not the same.
-    bool operator!= (const CacheBlockingStrategy& rhs) const {
-      return cache_size_hint() != rhs.cache_size_hint() ||
-        size_of_scalar() != rhs.size_of_scalar();
-    }
-
     /// \brief Pointer offset for the cache block with the given index.
     ///
     /// The pointer offset depends on whether cache blocks are stored
