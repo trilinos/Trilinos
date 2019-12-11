@@ -12,7 +12,6 @@
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
-#include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperState.hpp"
 
@@ -41,11 +40,10 @@ public:
   {
      using Teuchos::RCP;
      RCP<SolutionState<Scalar> >workingState=solutionHistory->getWorkingState();
-     RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
-     const Scalar errorAbs = metaData->getErrorAbs();
-     const Scalar errorRel = metaData->getErrorRel();
-     int order = metaData->getOrder();
-     Scalar dt = metaData->getDt();
+     const Scalar errorAbs = workingState->getErrorAbs();
+     const Scalar errorRel = workingState->getErrorRel();
+     int order = workingState->getOrder();
+     Scalar dt = workingState->getTimeStep();
      bool printDtChanges = tsc.getPrintDtChanges();
 
      dt = tsc.getInitTimeStep();
@@ -129,8 +127,8 @@ public:
        "    order = " << order << "\n");
 
      // update order and dt
-     metaData->setOrder(order);
-     metaData->setDt(dt);
+     workingState->setOrder(order);
+     workingState->setTimeStep(dt);
   }
 
 };

@@ -159,10 +159,10 @@ takeStep(
       xdotdot = XDotDot->getNonconstMultiVector()->col(0);
 
     // Create state solution history
-    RCP<SolutionState<Scalar> > state_state =
-      rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
-                                    x, xdot, xdotdot,
-                                    state->getStepperState()->clone()));
+    RCP<SolutionState<Scalar> > state_state = state->clone();
+    state_state->setX(x);
+    state_state->setXDot(xdot);
+    state_state->setXDotDot(xdotdot);
     stateSolutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
     stateSolutionHistory_->addState(state_state);
 
@@ -187,10 +187,10 @@ takeStep(
       dxdotdotdp_vec = multiVectorProductVector(prod_space, dxdotdotdp);
 
     // Create sensitivity solution history
-    RCP<SolutionState<Scalar> > sens_state =
-      rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
-                                    dxdp_vec, dxdotdp_vec, dxdotdotdp_vec,
-                                    state->getStepperState()->clone()));
+    RCP<SolutionState<Scalar> > sens_state = state->clone();
+    sens_state->setX(dxdp_vec);
+    sens_state->setXDot(dxdotdp_vec);
+    sens_state->setXDotDot(dxdotdotdp_vec);
     sensSolutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
     sensSolutionHistory_->addState(sens_state);
   }

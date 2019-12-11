@@ -12,7 +12,6 @@
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
-#include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperState.hpp"
 
@@ -77,13 +76,12 @@ public:
      }
 
      Teuchos::RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-     Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
-     const Scalar errorRel = metaData->getErrorRel();
+     const Scalar errorRel = workingState->getErrorRel();
      Scalar beta = 1.0;
 
      // assumes the embedded solution is the low order solution
-     int order = metaData->getOrder() - 1;
-     Scalar dt = metaData->getDt();
+     int order = workingState->getOrder() - 1;
+     Scalar dt = workingState->getTimeStep();
      //bool printDtChanges = tsc.getPrintDtChanges();
 
      Teuchos::RCP<Teuchos::FancyOStream> out = tsc.getOStream();
@@ -129,7 +127,7 @@ public:
      if (workingState->getSolutionStatus() == Status::PASSED or
          workingState->getSolutionStatus() == Status::WORKING) {
         if(lastStepRejected_){
-           dt = std::min(dt, metaData->getDt());
+           dt = std::min(dt, workingState->getTimeStep());
         } else {
            facMax_ = tscsPL_->get<Scalar>("Maximum Safety Factor");
         }
@@ -140,7 +138,7 @@ public:
      }
 
      // update dt
-     metaData->setDt(dt);
+     workingState->setTimeStep(dt);
   }
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
