@@ -30,7 +30,6 @@ SET(ATDM_SE_PACKAGE_DISABLES
   OptiPack
   Isorropia
   KokkosExample
-  MiniTensor
   Domi
   Pliris
   Komplex
