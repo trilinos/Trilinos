@@ -2967,6 +2967,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
   // max for next concurrentPartCount elements, reduce sum for the last
   // concurrentPartCount elements.
   if(this->comm->getSize()  > 1) {
+    auto host_local_min_max_total =
+      Kokkos::create_mirror_view(local_min_max_total);
+    auto host_global_min_max_total =
+      Kokkos::create_mirror_view(global_min_max_total);
+    Kokkos::deep_copy(host_local_min_max_total, local_min_max_total);
     Teuchos::MultiJaggedCombinedMinMaxTotalReductionOp<int, mj_scalar_t>
       reductionOp(current_concurrent_num_parts,
         current_concurrent_num_parts, current_concurrent_num_parts);
@@ -2975,10 +2980,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
         *(this->comm),
       reductionOp,
       3 * current_concurrent_num_parts,
-      local_min_max_total.data(),
-      global_min_max_total.data());
+      host_local_min_max_total.data(),
+      host_global_min_max_total.data());
     }
     Z2_THROW_OUTSIDE_ERROR(*(this->mj_env))
+    Kokkos::deep_copy(global_min_max_total, host_global_min_max_total);
   }
   else {
     mj_part_t s = 3 * current_concurrent_num_parts;
