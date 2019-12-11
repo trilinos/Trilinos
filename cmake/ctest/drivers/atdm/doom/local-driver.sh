@@ -11,7 +11,7 @@ fi
 
 set -x
 
-source $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-config-build.sh
+source $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh
 
 set -x
 

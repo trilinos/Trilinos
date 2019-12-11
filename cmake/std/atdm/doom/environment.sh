@@ -73,7 +73,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-6.3.1_OPENMPI-2.1.1" ]] ; then
   # some Trilinos tests require this to run correctly
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
-  export KOKKOS_NUM_DEVICES=1
+  export KOKKOS_NUM_DEVICES=2
 
 else
   echo
@@ -97,7 +97,7 @@ fi
 # to be safe.  Also, we need to set OMP_* env vars here because the SPARC
 # modules change them!
 
-export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=1
+export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
 
 # Use updated Ninja (not provided by sparc-dev module above)
 module load sems-env
@@ -151,7 +151,8 @@ if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
   export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
 fi
 
-#env|sort|grep ROOT
+
+export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;core:overload-allowed"
 
 # Finished!
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
