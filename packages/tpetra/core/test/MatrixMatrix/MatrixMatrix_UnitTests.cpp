@@ -1905,7 +1905,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, same_colmap, SC, LO, GO, NT)
   GO numGlobalRows = 1000;
   GO numGlobalCols = 1000;
   RCP<const map_type> rowDomainMap = rcp(new map_type(numGlobalRows, 0, comm));
-  RCP<const map_type> colMap = buildRandomColMap(rowDomainMap, 0, 0, numGlobalCols, 234 + rank, 0.03);
+  RCP<const map_type> colMap = buildRandomColMap<LO, GO, NT>(rowDomainMap, 0, 0, numGlobalCols, 234 + rank, 0.03);
   //Generate the first matrix without a given column map
   RCP<crs_matrix_type> A = getTestMatrix<SC, LO, GO, NT>(rowDomainMap, rowDomainMap, colMap, rank + 42);
   //Generate the second matrix using the first one's column map
@@ -1939,8 +1939,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, different_col_maps, SC, LO, 
   GO colEnd = numLocalCols * (rank + 2);
   if(colEnd > numGlobalCols)
     colEnd = numGlobalCols;
-  auto Acolmap = buildRandomColMap(rowDomainMap, 0, colStart, colEnd, 234 + rank, 0.03);
-  auto Bcolmap = buildRandomColMap(rowDomainMap, 0, colStart, colEnd, 236 + rank, 0.03);
+  auto Acolmap = buildRandomColMap<LO, GO, NT>(rowDomainMap, 0, colStart, colEnd, 234 + rank, 0.03);
+  auto Bcolmap = buildRandomColMap<LO, GO, NT>(rowDomainMap, 0, colStart, colEnd, 236 + rank, 0.03);
   auto A = getTestMatrix<SC, LO, GO, NT>(rowDomainMap, rowDomainMap, Acolmap, 123);
   auto B = getTestMatrix<SC, LO, GO, NT>(rowDomainMap, rowDomainMap, Bcolmap, 321);
   auto one = Teuchos::ScalarTraits<SC>::one();
@@ -1975,8 +1975,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, different_index_base, SC, LO
   GO BminCol = numLocalCols * (rank - 1);
   if(BminCol < 0)
     BminCol = 0;
-  auto Acolmap = buildRandomColMap(domainMap, AindexBase, AminCol, ABmaxCol, 234 + rank, 0.7);
-  auto Bcolmap = buildRandomColMap(domainMap, 0, BminCol, ABmaxCol, 236 + rank, 0.7);
+  auto Acolmap = buildRandomColMap<LO, GO, NT>(domainMap, AindexBase, AminCol, ABmaxCol, 234 + rank, 0.7);
+  auto Bcolmap = buildRandomColMap<LO, GO, NT>(domainMap, 0, BminCol, ABmaxCol, 236 + rank, 0.7);
   auto A = getTestMatrix<SC, LO, GO, NT>(rowMap, domainMap, Acolmap, 123);
   auto B = getTestMatrix<SC, LO, GO, NT>(rowMap, domainMap, Bcolmap, 321);
   auto one = Teuchos::ScalarTraits<SC>::one();
