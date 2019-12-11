@@ -69,10 +69,36 @@ ENDIF()
 
 IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
 
-  # Disable MueLu for all cuda+complex builds for now since there are build
-  # errors in the MueLu library that takes out everything downstream that
-  # depends on MueLu (see #4599).
-  ATDM_SET_ENABLE(Trilinos_ENABLE_MueLu OFF)
+  # Disable extra packages not being used by GEMMA in cuda+complex builds (see
+  # ATDV-263, ATDV-265)
+  SET(ATDM_SE_PACKAGE_DISABLES
+    ${ATDM_SE_PACKAGE_DISABLES}
+    ShyLU_Node
+    Amesos2
+    SEACAS
+    Anasazi
+    Ifpack2
+    Stratimikos
+    Teko
+    Intrepid
+    Intrepid2
+    STK
+    Percept
+    NOX
+    Moertel
+    MueLu
+    Rythmos
+    Tempus
+    ROL
+    Piro
+    Panzer
+    )
+  # Note, above:
+  # * We are allowing the enable of Zoltan2 for now even though GEMMA is not
+  #   currently using it because Zoltan2 developers want to maintain it (see
+  #   discussion in ATDV-263).
+  # * The package MueLu does not currently build for cuda+complex builds so
+  #   therefore must be disabled (see #4599)
 
 ENDIF()
 
