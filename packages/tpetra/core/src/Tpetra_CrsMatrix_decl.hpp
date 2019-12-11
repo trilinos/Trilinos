@@ -2390,17 +2390,13 @@ namespace Tpetra {
     ///
     /// \param newColMap [in] New column Map.  Must be nonnull.
     ///   Within Tpetra, there are no particular restrictions on the column map.
-    ///   However, if this matrix will be used in Xpetra, Ifpack2, or MueLu,
-    ///   the column map's list of global indices on each process must be in a certain order:
-    ///   locally owned GIDs (sorted), followed by remote GIDs (in order of
-    ///   owning proc, and sorted within each proc).
+    ///   However, if this graph will be used in Xpetra, Ifpack2, or MueLu,
+    ///   the column map's list of global indices must follow "Aztec ordering":
+    ///   locally owned GIDs (same order as in domain map), followed by remote GIDs
+    ///   (in order of owning proc, and sorted within each proc).
     ///
-    ///   If in doubt, it is strongly recommended to use Tpetra::Details::makeColMap()
-    ///   to create the column map. makeColMap() takes a domain map
-    ///   that determines which columns are locally owned,
-    ///   and the RowGraph whose globally indexed entries
-    ///   must be mapped to local indices. Alternately, it can take
-    ///   a domain map and a raw Kokkos::View of global indices to be mapped.
+    ///   It is strongly recommended to use \c Tpetra::Details::makeColMap()
+    ///   to create the column map. makeColMap() follows Aztec ordering by default.
     ///
     /// \pre The matrix must have no entries inserted yet, on any
     ///   process in the row Map's communicator.
