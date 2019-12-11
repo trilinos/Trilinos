@@ -3478,41 +3478,41 @@ namespace Tpetra {
       " != this->getNodeNumRows()+1 = " << (numLocalRows + 1) <<
       ".");
 
-#ifdef HAVE_TPETRA_DEBUG
-    // Verify that the local indices are actually sorted
-    int notSorted = 0;
-    using exec_space = typename local_graph_type::execution_space;
-    using size_type = typename local_graph_type::size_type;
-    Kokkos::parallel_reduce(Kokkos::RangePolicy<exec_space>(0, numLocalRows),
-      KOKKOS_LAMBDA (const LocalOrdinal i, int& lNotSorted)
-      {
-        size_type rowBegin = rowPointers(i);
-        size_type rowEnd = rowPointers(i + 1);
-        for(size_type j = rowBegin + 1; j < rowEnd; j++)
+    if (Tpetra::Details::Behavior::debug()) {
+      // Verify that the local indices are actually sorted
+      int notSorted = 0;
+      using exec_space = typename local_graph_type::execution_space;
+      using size_type = typename local_graph_type::size_type;
+      Kokkos::parallel_reduce(Kokkos::RangePolicy<exec_space>(0, numLocalRows),
+        KOKKOS_LAMBDA (const LocalOrdinal i, int& lNotSorted)
         {
-          if(columnIndices(j - 1) > columnIndices(j))
+          size_type rowBegin = rowPointers(i);
+          size_type rowEnd = rowPointers(i + 1);
+          for(size_type j = rowBegin + 1; j < rowEnd; j++)
           {
-            lNotSorted = 1;
+            if(columnIndices(j - 1) > columnIndices(j))
+            {
+              lNotSorted = 1;
+            }
           }
-        }
-      }, notSorted);
-    //All-reduce notSorted to avoid rank divergence
-    int globalNotSorted = 0;
-    auto comm = this->getComm();
-    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MAX, notSorted,
-                         Teuchos::outArg (globalNotSorted));
-    if(globalNotSorted)
-    {
-      std::string message;
-      if(notSorted)
+        }, notSorted);
+      //All-reduce notSorted to avoid rank divergence
+      int globalNotSorted = 0;
+      auto comm = this->getComm();
+      Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MAX, notSorted,
+                           Teuchos::outArg (globalNotSorted));
+      if (globalNotSorted)
       {
-        //Only print message from ranks with the problem
-        message = std::string("ERROR, rank ") + std::to_string(comm->getRank()) + ", CrsGraph::setAllIndices(): provided columnIndices are not sorted!\n";
+        std::string message;
+        if (notSorted)
+        {
+          //Only print message from ranks with the problem
+          message = std::string("ERROR, rank ") + std::to_string(comm->getRank()) + ", CrsGraph::setAllIndices(): provided columnIndices are not sorted!\n";
+        }
+        Details::gathervPrint(std::cout, message, *comm);
+        throw std::invalid_argument("CrsGraph::setAllIndices(): provided columnIndices are not sorted within rows on at least one process.");
       }
-      Details::gathervPrint(std::cout, message, *comm);
-      throw std::invalid_argument("CrsGraph::setAllIndices(): provided columnIndices are not sorted within rows on at least one process.");
     }
-#endif
 
     // FIXME (mfh 07 Aug 2014) We need to relax this restriction,
     // since the future model will be allocation at construction, not

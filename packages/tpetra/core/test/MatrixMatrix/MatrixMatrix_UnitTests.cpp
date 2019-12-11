@@ -1565,8 +1565,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   //the above function is an unfenced kernel launch, and the verification below relies on UVM, so fence here.
   ExecSpace().fence();
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
-      "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
+  TEST_ASSERT(rowptrsCRS[0].extent(0) == rowptrsCRS[2].extent(0));
   for(size_t i = 0; i < nrows; i++)
   {
     //also compute what C's row should be (as dense values)
@@ -1589,19 +1588,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
     }
     size_t Crowstart = rowptrsCRS[2](i);
     size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
-    TEUCHOS_TEST_FOR_EXCEPTION(Crowlen != actualNNZ, std::logic_error,
-        std::string("Threaded addition of sorted Kokkos::CrsMatrix produced row ") + std::to_string(i) + " with the wrong number of entries.");
+    TEST_ASSERT(Crowlen == actualNNZ);
     for(size_t j = 0; j < Crowlen; j++)
     {
       size_t Coffset = Crowstart + j;
       if(j > 0)
       {
         //Check entries are sorted
-        TEUCHOS_TEST_FOR_EXCEPTION(colindsCRS[2](Coffset - 1) > colindsCRS[2](Coffset), std::logic_error,
-            std::string("Threaded addition of unsorted Kokkos::CrsMatrix: row ") + std::to_string(i) + " is not sorted");
+        TEST_ASSERT(colindsCRS[2](Coffset - 1) <= colindsCRS[2](Coffset));
       }
-      TEUCHOS_TEST_FOR_EXCEPTION(valsCRS[2](Coffset) != correctVals[colindsCRS[2](Coffset)], std::logic_error,
-          "Threaded addition of sorted Kokkos::CrsMatrix produced an incorrect value.");
+      TEST_FLOATING_EQUALITY(valsCRS[2](Coffset), correctVals[colindsCRS[2](Coffset)], 1e-12);
     }
   }
 }
@@ -1709,8 +1705,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   ISC one(1);
   Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
-      "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
+  TEUCHOS_TEST_ASSERT(rowptrsCRS[0].extent(0), rowptrsCRS[2].extent(0));
   for(size_t i = 0; i < nrows; i++)
   {
     //also compute what C's row should be (as dense values)
@@ -1733,19 +1728,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
     }
     size_t Crowstart = rowptrsCRS[2](i);
     size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
-    TEUCHOS_TEST_FOR_EXCEPTION(Crowlen != actualNNZ, std::logic_error,
-        std::string("Threaded addition of unsorted Kokkos::CrsMatrix produced row ") + std::to_string(i) + " with the wrong number of entries (is " + std::to_string(Crowlen) + ", should be " + std::to_string(actualNNZ) + ")");
+    TEST_ASSERT(Crowlen == actualNNZ);
     for(size_t j = 0; j < Crowlen; j++)
     {
       size_t Coffset = Crowstart + j;
       if(j > 0)
       {
         //Check entries are sorted
-        TEUCHOS_TEST_FOR_EXCEPTION(colindsCRS[2](Coffset - 1) > colindsCRS[2](Coffset), std::logic_error,
-            std::string("Threaded addition of unsorted Kokkos::CrsMatrix: row ") + std::to_string(i) + " is not sorted");
+        TEST_ASSERT(colindsCRS[2](Coffset - 1) <= colindsCRS[2](Coffset));
       }
-      TEUCHOS_TEST_FOR_EXCEPTION(valsCRS[2](Coffset) != correctVals[colindsCRS[2](Coffset)], std::logic_error,
-          "Threaded addition of unsorted Kokkos::CrsMatrix produced an incorrect value.");
+      TEST_FLOATING_EQUALITY(valsCRS[2](Coffset), correctVals[colindsCRS[2](Coffset)], 1e-12);
     }
   }
 }
