@@ -26,6 +26,12 @@ fi
 
 echo "Using doom compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
+if [[ ! -d /tmp/${USER} ]]; then
+  # Need to manually create this directory or CMake compiler check fails.
+  # This must be a defect in nvcc.
+  mkdir /tmp/${USER}
+fi
+
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
 
