@@ -156,9 +156,9 @@ public:
 
 #if defined(HAVE_TPETRATSQR_COMPLEX)
 template<>
-class RawCuSolver<CuSolverValue<std::complex<double>>::type> {
+class RawCuSolver<CudaValue<std::complex<double>>::type> {
 public:
-  using impl_scalar_type = CuSolverValue<std::complex<double>>::type;
+  using impl_scalar_type = CudaValue<std::complex<double>>::type;
 
   static cusolverStatus_t
   geqrf_bufferSize (cusolverDnHandle_t handle,
@@ -228,9 +228,9 @@ public:
 };
 
 template<>
-class RawCuSolver<CuSolverValue<std::complex<float>>::type> {
+class RawCuSolver<CudaValue<std::complex<float>>::type> {
 public:
-  using impl_scalar_type = CuSolverValue<std::complex<float>>::type;
+  using impl_scalar_type = CudaValue<std::complex<float>>::type;
 
   static cusolverStatus_t
   geqrf_bufferSize (cusolverDnHandle_t handle,
@@ -316,7 +316,7 @@ geqrfBufferSize (const int nrows,
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
   int lwork = 0;
 
-  using IST = typename CuSolverValue<Scalar>::type;
+  using IST = typename CudaValue<Scalar>::type;
   IST* A_raw = reinterpret_cast<IST*> (A);
 
   using impl_type = RawCuSolver<IST>;
@@ -342,7 +342,7 @@ geqrf (const int nrows,
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
 
-  using IST = typename CuSolverValue<Scalar>::type;
+  using IST = typename CudaValue<Scalar>::type;
   IST* A_raw = reinterpret_cast<IST*> (A);
   IST* tau_raw = reinterpret_cast<IST*> (tau);
   IST* work_raw = reinterpret_cast<IST*> (work);
@@ -374,7 +374,7 @@ unmqrBufferSize (const char side,
   const cublasOperation_t cuTrans = cuBlasTrans (trans);
   int lwork = 0;
 
-  using IST = typename CuSolverValue<Scalar>::type;
+  using IST = typename CudaValue<Scalar>::type;
   const IST* Q_raw = reinterpret_cast<const IST*> (Q);
   const IST* tau_raw = reinterpret_cast<const IST*> (tau);
   const IST* C_raw = reinterpret_cast<const IST*> (C);
@@ -411,7 +411,7 @@ unmqr (const char side,
   const cublasSideMode_t cuSide = cuBlasSide (side);
   const cublasOperation_t cuTrans = cuBlasTrans (trans);
 
-  using IST = typename CuSolverValue<Scalar>::type;
+  using IST = typename CudaValue<Scalar>::type;
   const IST* Q_raw = reinterpret_cast<const IST*> (Q);
   const IST* tau_raw = reinterpret_cast<const IST*> (tau);
   IST* C_raw = reinterpret_cast<IST*> (C);

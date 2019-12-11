@@ -13,16 +13,24 @@ namespace TSQR {
 namespace Impl {
 
 template<class Scalar>
-struct CuSolverValue {};
+struct CudaValue {};
 
 template<>
-struct CuSolverValue<double> {
+struct CudaValue<double> {
   using type = double;
+
+  static type makeValue (const double x) {
+    return x;
+  }
 };
 
 template<>
-struct CuSolverValue<float> {
+struct CudaValue<float> {
   using type = float;
+
+  static type makeValue (const float x) {
+    return x;
+  }
 };
 
 #if defined(HAVE_TPETRATSQR_COMPLEX)
@@ -30,13 +38,21 @@ struct CuSolverValue<float> {
 // aligned to the whole type, not just to double or float (as with
 // std::complex or (currently) Kokkos::complex).
 template<>
-struct CuSolverValue<std::complex<double>> {
+struct CudaValue<std::complex<double>> {
   using type = cuDoubleComplex;
+
+  static type makeValue (const std::complex<double> x) {
+    return make_cuDoubleComplex (std::real (x), std::imag (x));
+  }
 };
 
 template<>
-struct CuSolverValue<std::complex<float>> {
-  using type = cuComplex;
+struct CudaValue<std::complex<float>> {
+  using type = cuFloatComplex;
+
+  static type makeValue (const std::complex<float> x) {
+    return make_cuFloatComplex (std::real (x), std::imag (x));
+  }
 };
 #endif // defined(HAVE_TPETRATSQR_COMPLEX)
 
