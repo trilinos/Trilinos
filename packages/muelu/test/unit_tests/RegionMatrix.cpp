@@ -534,7 +534,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
                      rowImportPerGrp, colImportPerGrp, regionGrpMats);
 
   // Finally do the revert operation: start with regionGrpMats and bring it to composite format
-  RCP<Matrix> compositeMatrix = MatrixFactory::Build(dofMap, 10, Xpetra::StaticProfile);
+  RCP<Matrix> compositeMatrix = MatrixFactory::Build(dofMap, 10);
   regionalToComposite(regionGrpMats,
                       rowMapPerGrp, colMapPerGrp,
                       rowImportPerGrp, Xpetra::INSERT,
