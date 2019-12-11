@@ -3472,11 +3472,20 @@ namespace Tpetra {
       ! hasColMap () || getColMap ().is_null (), std::runtime_error,
       "The graph must have a column Map before you may call this method.");
     LocalOrdinal numLocalRows = this->getNodeNumRows ();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<LocalOrdinal> (rowPointers.size ()) != numLocalRows + 1,
-      std::runtime_error, "rowPointers.size() = " << rowPointers.size () <<
-      " != this->getNodeNumRows()+1 = " << (numLocalRows + 1) <<
-      ".");
+    {
+      LocalOrdinal rowPtrLen = rowPointers.size();
+      if(numLocalRows == 0) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          rowPtrLen != 0 && rowPtrLen != 1,
+          std::runtime_error, "Have 0 local rows, but rowPointers.size() is neither 0 nor 1.");
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          rowPtrLen != numLocalRows + 1,
+          std::runtime_error, "rowPointers.size() = " << rowPtrLen <<
+          " != this->getNodeNumRows()+1 = " << (numLocalRows + 1) << ".");
+      }
+    }
 
     if (Tpetra::Details::Behavior::debug()) {
       // Verify that the local indices are actually sorted

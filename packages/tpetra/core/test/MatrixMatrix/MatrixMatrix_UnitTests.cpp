@@ -1705,7 +1705,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   ISC one(1);
   Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_ASSERT(rowptrsCRS[0].extent(0), rowptrsCRS[2].extent(0));
+  TEST_ASSERT(rowptrsCRS[0].extent(0) == rowptrsCRS[2].extent(0));
   for(size_t i = 0; i < nrows; i++)
   {
     //also compute what C's row should be (as dense values)
