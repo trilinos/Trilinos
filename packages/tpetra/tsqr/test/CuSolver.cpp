@@ -39,6 +39,7 @@
 
 #include "Tsqr_Impl_CuBlasHandle.hpp"
 #include "Tsqr_Impl_CuSolverHandle.hpp"
+#include "Tsqr_Impl_CuSolver.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Kokkos_Core.hpp"
