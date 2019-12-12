@@ -411,6 +411,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param maxNumEntriesPerRow [in] Maximum number of graph
     ///   entries per row.  If pftype==DynamicProfile, this is only a
@@ -436,6 +437,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param numEntPerRow [in] Maximum number of graph entries to
     ///   allocate for each row.  If pftype==DynamicProfile, this is
@@ -461,6 +463,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param numEntPerRow [in] Maximum number of graph entries to
     ///   allocate for each row.  If pftype==DynamicProfile, this is
@@ -496,6 +499,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param rowPointers [in] The beginning of each row in the graph,
     ///   as in a CSR "rowptr" array.  The length of this vector should be
@@ -522,6 +526,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param rowPointers [in] The beginning of each row in the graph,
     ///   as in a CSR "rowptr" array.  The length of this vector should be
@@ -551,6 +556,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param lclGraph [in] A locally indexed Kokkos::StaticCrsGraph
     ///   whose local row indices come from the specified row Map, and
@@ -1540,6 +1546,14 @@ namespace Tpetra {
     /// does their order change, as a result of calling this method.
     ///
     /// \param newColMap [in] New column Map.  Must be nonnull.
+    ///   Within Tpetra, there are no particular restrictions on the column map.
+    ///   However, if this graph will be used in Xpetra, Ifpack2, or MueLu,
+    ///   the column map's list of global indices must follow "Aztec ordering":
+    ///   locally owned GIDs (same order as in domain map), followed by remote GIDs
+    ///   (in order of owning proc, and sorted within each proc).
+    ///
+    ///   It is strongly recommended to use \c Tpetra::Details::makeColMap()
+    ///   to create the column map. makeColMap() follows Aztec ordering by default.
     void replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
 
     /// \brief Reindex the column indices in place, and replace the

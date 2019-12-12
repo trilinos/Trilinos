@@ -58,10 +58,10 @@
 #include "Tpetra_replaceDiagonalCrsMatrix.hpp"
 
 #include "Xpetra_CrsMatrix.hpp"
-#include "Xpetra_TpetraMap.hpp"
-#include "Xpetra_TpetraMultiVector.hpp"
-#include "Xpetra_TpetraVector.hpp"
-#include "Xpetra_TpetraCrsGraph.hpp"
+#include "Xpetra_TpetraMap_decl.hpp"
+#include "Xpetra_TpetraMultiVector_decl.hpp"
+#include "Xpetra_TpetraVector_decl.hpp"
+#include "Xpetra_TpetraCrsGraph_decl.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {

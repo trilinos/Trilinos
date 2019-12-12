@@ -50,9 +50,9 @@
 
 #include "Xpetra_Vector.hpp"
 #include "Xpetra_MultiVector_decl.hpp"
-#include "Xpetra_TpetraMultiVector.hpp"
+#include "Xpetra_TpetraMultiVector_decl.hpp"
 
-#include "Xpetra_TpetraMap.hpp"      //TMP
+#include "Xpetra_TpetraMap_decl.hpp" 
 #include "Xpetra_Utils.hpp"
 
 #include "Tpetra_Vector.hpp"

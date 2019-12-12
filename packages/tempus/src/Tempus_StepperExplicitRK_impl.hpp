@@ -64,11 +64,10 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
    if (!this->getUseEmbedded()) return dt;
 
    Teuchos::RCP<SolutionState<Scalar> > currentState=sh->getCurrentState();
-   Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData = currentState->getMetaData();
-   const int order = metaData->getOrder();
-   const Scalar time = metaData->getTime();
-   const Scalar errorAbs = metaData->getTolRel();
-   const Scalar errorRel = metaData->getTolAbs();
+   const int order = currentState->getOrder();
+   const Scalar time = currentState->getTime();
+   const Scalar errorRel = currentState->getTolRel();
+   const Scalar errorAbs = currentState->getTolAbs();
 
    Teuchos::RCP<Thyra::VectorBase<Scalar> > stageX, scratchX;
    stageX = Thyra::createMember(this->appModel_->get_f_space());
@@ -195,7 +194,7 @@ void StepperExplicitRK<Scalar>::initialize()
 
   this->setObserver();
 
-  TEUCHOS_TEST_FOR_EXCEPTION( this->stepperObserver_->getSize() < 1 
+  TEUCHOS_TEST_FOR_EXCEPTION( this->stepperObserver_->getSize() < 1
     , std::logic_error,
     "Error - Composite Observer is empty!\n");
 
@@ -317,9 +316,8 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     if (tableau_->isEmbedded() and this->getUseEmbedded()) {
 
-      RCP<SolutionStateMetaData<Scalar> > metaData=workingState->getMetaData();
-      const Scalar tolAbs = metaData->getTolRel();
-      const Scalar tolRel = metaData->getTolAbs();
+      const Scalar tolRel = workingState->getTolRel();
+      const Scalar tolAbs = workingState->getTolAbs();
 
       // just compute the error weight vector
       // (all that is needed is the error, and not the embedded solution)
@@ -345,7 +343,7 @@ void StepperExplicitRK<Scalar>::takeStep(
       assign(sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
       Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *ee_, *abs_u, sc.ptr());
       Scalar err = std::abs(Thyra::norm_inf(*sc));
-      metaData->setErrorRel(err);
+      workingState->setErrorRel(err);
 
       // test if step should be rejected
       if (std::isinf(err) || std::isnan(err) || err > Teuchos::as<Scalar>(1.0))
@@ -353,6 +351,7 @@ void StepperExplicitRK<Scalar>::takeStep(
     }
 
     workingState->setOrder(this->getOrder());
+    workingState->computeNorms(currentState);
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;

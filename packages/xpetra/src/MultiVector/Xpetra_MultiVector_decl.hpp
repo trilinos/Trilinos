@@ -54,7 +54,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DistObject.hpp"
-#include "Xpetra_Map.hpp"
+#include "Xpetra_Map_decl.hpp"
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     #include <Kokkos_Core.hpp>

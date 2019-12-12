@@ -399,6 +399,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 #endif
 
     workingState->setOrder(this->getOrder());
+    workingState->computeNorms(currentState);
   }
   return;
 }

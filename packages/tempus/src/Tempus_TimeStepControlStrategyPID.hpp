@@ -12,7 +12,6 @@
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
-#include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperState.hpp"
 
@@ -49,12 +48,11 @@ public:
      }
 
      Teuchos::RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-     Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
-     const Scalar errorAbs = metaData->getErrorAbs();
-     volatile const int iStep = metaData->getIStep();
-     volatile const Scalar errorRel = metaData->getErrorRel();
-     int order = metaData->getOrder();
-     Scalar dt = metaData->getDt();
+     const Scalar errorAbs = workingState->getErrorAbs();
+     volatile const int iStep = workingState->getIndex();
+     volatile const Scalar errorRel = workingState->getErrorRel();
+     int order = workingState->getOrder();
+     Scalar dt = workingState->getTimeStep();
      //bool printDtChanges = tsc.getPrintDtChanges();
 
      Teuchos::RCP<Teuchos::FancyOStream> out = tsc.getOStream();
@@ -93,7 +91,7 @@ public:
      if (workingState->getSolutionStatus() == Status::PASSED or
          workingState->getSolutionStatus() == Status::WORKING) {
         if(lastStepRejected_){
-           dt = std::min(dt, metaData->getDt());
+           dt = std::min(dt, workingState->getTimestep());
         } else {
            facMax_ = tscsPL_->get<Scalar>("Maximum Safety Factor");
         }
@@ -104,7 +102,7 @@ public:
      }
 
      // update dt
-     metaData->setDt(dt);
+     workingState->setTimeStep(dt);
   }
 
   /// \name Overridden from Teuchos::ParameterListAcceptor

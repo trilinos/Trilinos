@@ -11,6 +11,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_DetachedVectorView.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
 
@@ -43,6 +44,7 @@ using Tempus::SolutionState;
 #define TEST_SINCOS
 #define TEST_VANDERPOL
 #define TEST_NUMBER_TIMESTEPS
+#define TEST_VARIABLE_TIMESTEPS
 
 
 #ifdef TEST_PARAMETERLIST
@@ -454,6 +456,99 @@ TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
     TEST_EQUALITY(numTimeSteps, integrator->getIndex());
 }
 #endif // TEST_NUMBER_TIMESTEPS
+
+
+#ifdef TEST_VARIABLE_TIMESTEPS
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ForwardEuler, Variable_TimeSteps)
+{
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_ForwardEuler_VanDerPol.xml");
+
+  // Setup the VanDerPolModel
+  RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
+  auto model = rcp(new VanDerPolModel<double>(vdpm_pl));
+
+  // Setup the Integrator and reset initial time step
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+  // Set parameters for this test.
+  pl->sublist("Demo Integrator")
+     .sublist("Time Step Control").set("Initial Time Step", 0.01);
+
+  pl->sublist("Demo Integrator")
+     .sublist("Time Step Control")
+     .sublist("Time Step Control Strategy")
+     .sublist("basic_vs").set("Reduction Factor", 0.9);
+  pl->sublist("Demo Integrator")
+     .sublist("Time Step Control")
+     .sublist("Time Step Control Strategy")
+     .sublist("basic_vs").set("Amplification Factor", 1.15);
+  pl->sublist("Demo Integrator")
+     .sublist("Time Step Control")
+     .sublist("Time Step Control Strategy")
+     .sublist("basic_vs").set("Minimum Value Monitoring Function", 0.05);
+  pl->sublist("Demo Integrator")
+     .sublist("Time Step Control")
+     .sublist("Time Step Control Strategy")
+     .sublist("basic_vs").set("Maximum Value Monitoring Function", 0.1);
+
+  pl->sublist("Demo Integrator")
+     .sublist("Solution History").set("Storage Type", "Static");
+  pl->sublist("Demo Integrator")
+     .sublist("Solution History").set("Storage Limit", 3);
+
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>(pl, model);
+
+  // Integrate to timeMax
+  bool integratorStatus = integrator->advanceTime();
+  TEST_ASSERT(integratorStatus)
+
+  // Check 'Final Time'
+  double time = integrator->getTime();
+  double timeFinal =pl->sublist("Demo Integrator")
+     .sublist("Time Step Control").get<double>("Final Time");
+  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+  // Check TimeStep size
+  auto state = integrator->getCurrentState();
+  double dt = state->getTimeStep();
+  TEST_FLOATING_EQUALITY(dt, 0.008310677297208358, 1.0e-12);
+
+  // Check number of time steps taken
+  const int numTimeSteps = 60;
+  TEST_EQUALITY(numTimeSteps, integrator->getIndex());
+
+  // Time-integrated solution and the reference solution
+  RCP<Thyra::VectorBase<double> > x = integrator->getX();
+  RCP<Thyra::VectorBase<double> > x_ref = x->clone_v();
+  {
+    Thyra::DetachedVectorView<double> x_ref_view( *x_ref );
+    x_ref_view[0] = -1.931946840284863;
+    x_ref_view[1] =  0.645346748303107;
+  }
+
+  // Calculate the error
+  RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
+  Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_ref, -1.0, *(x));
+
+  // Check the solution
+  std::cout << "  Stepper = ForwardEuler" << std::endl;
+  std::cout << "  =========================" << std::endl;
+  std::cout << "  Reference solution: " << get_ele(*(x_ref), 0) << "   "
+                                        << get_ele(*(x_ref), 1) << std::endl;
+  std::cout << "  Computed solution : " << get_ele(*(x    ), 0) << "   "
+                                        << get_ele(*(x    ), 1) << std::endl;
+  std::cout << "  Difference        : " << get_ele(*(xdiff), 0) << "   "
+                                        << get_ele(*(xdiff), 1) << std::endl;
+  std::cout << "  =========================" << std::endl;
+  TEST_FLOATING_EQUALITY(get_ele(*(x), 0), get_ele(*(x_ref), 0), 1.0e-12);
+  TEST_FLOATING_EQUALITY(get_ele(*(x), 1), get_ele(*(x_ref), 1), 1.0e-12);
+}
+#endif // TEST_VARIABLE_TIMESTEPS
 
 
 } // namespace Tempus_Test

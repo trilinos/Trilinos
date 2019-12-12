@@ -70,8 +70,6 @@ namespace MueLu {
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
-    using memory_space       = typename LWGraph_kokkos::memory_space;
-    using execution_space    = typename LWGraph_kokkos::execution_space;
     using local_ordinal_type = typename LWGraph_kokkos::local_ordinal_type;
 
     // Extract parameters and data from:
