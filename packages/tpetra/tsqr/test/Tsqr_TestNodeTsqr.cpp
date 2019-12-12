@@ -38,13 +38,7 @@
 //@HEADER
 
 #include "Tsqr_ConfigDefs.hpp"
-#include "Teuchos_ConfigDefs.hpp" // HAVE_MPI
-#ifdef HAVE_MPI
-#  include "Teuchos_GlobalMPISession.hpp"
-#  include "Teuchos_oblackholestream.hpp"
-#endif // HAVE_MPI
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Time.hpp"
 
@@ -141,18 +135,15 @@ namespace TSQR {
 
     // \brief Parse command-line options for this test
     //
-    // \param argc [in] As usual in C(++)
-    // \param argv [in] As usual in C(++)
-    // \param allowedToPrint [in] Whether this (MPI) process is allowed
-    //   to print to stdout/stderr.  Different per (MPI) process.
-    // \param printedHelp [out] Whether this (MPI) process printed the
-    //   "help" display (summary of command-line options)
+    // \param argc [in] As usual in C(++).
+    // \param argv [in] As usual in C(++).
+    // \param printedHelp [out] Whether this function printed the
+    //   "help" display (summary of command-line options).
     //
     // \return Encapsulation of command-line options
     static NodeTestParameters
     parseOptions (int argc,
                   char* argv[],
-                  const bool allowedToPrint,
                   bool& printedHelp)
     {
       using std::cerr;
@@ -239,9 +230,7 @@ namespace TSQR {
         cmdLineProc.parse (argc, argv);
       }
       catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
-        if (allowedToPrint) {
-          cerr << "Unrecognized command-line option: " << e.what () << endl;
-        }
+        cerr << "Unrecognized command-line option: " << e.what () << endl;
         throw e;
       }
       catch (Teuchos::CommandLineProcessor::HelpPrinted& e) {
@@ -1074,62 +1063,45 @@ main (int argc, char *argv[])
   using TSQR::Test::parseOptions;
   using std::endl;
 
-#ifdef HAVE_MPI
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-  auto comm = Teuchos::DefaultComm<int>::getComm ();
-  const int myRank = comm->getRank();
-  // Only Process 0 writes to stdout.  The other processes send their
-  // output to something that looks like /dev/null.
-  std::ostream& out = (myRank == 0) ? std::cout : blackhole;
-  // Only Process 0 performs the tests.
-  const bool performingTests = (myRank == 0);
-  const bool mayPrint = (myRank == 0);
-#else // Don't HAVE_MPI: single-process test
-  const bool performingTests = true;
-  const bool mayPrint = true;
   std::ostream& out = std::cout;
-#endif // HAVE_MPI
 
   // Fetch command-line parameters.
   bool printedHelp = false;
-  auto params = parseOptions (argc, argv, mayPrint, printedHelp);
+  auto params = parseOptions (argc, argv, printedHelp);
   if (printedHelp) {
     return EXIT_SUCCESS;
   }
 
-  if (mayPrint) {
-    out << "NodeTsqr verify/benchmark test options:" << endl;
-    printNodeTestParameters (out, params, "  - ");
-  }
+  out << "NodeTsqr verify/benchmark test options:" << endl;
+  printNodeTestParameters (out, params, "  - ");
 
   bool success = true;
   try {
-    if (performingTests) {
-      // We allow the same run to do both benchmark and verify.
-      if (params.verify) {
-        if (mayPrint && ! params.humanReadable) {
-          TSQR::Test::printVerifyFieldNames (out);
-        }
-        TSQR::Test::verifyLapack (out, params);
-        success = TSQR::Test::verifyNodeTsqr (out, params);
-      }
-      if (params.benchmark) {
-        if (mayPrint && ! params.humanReadable) {
-          TSQR::Test::printBenchmarkFieldNames (out);
-        }
-        TSQR::Test::benchmarkLapack (out, params);
-        TSQR::Test::benchmarkNodeTsqr (out, params);
-      }
+    Kokkos::ScopeGuard kokkosScope (argc, argv);
 
-      if (params.printTrilinosTestStuff) {
-        // The Trilinos test framework expects a message like this.
-        if (success) {
-          out << "\nEnd Result: TEST PASSED" << endl;
-        }
-        else {
-          out << "\nEnd Result: TEST FAILED" << endl;
-        }
+    // We allow the same run to do both benchmark and verify.
+    if (params.verify) {
+      if (! params.humanReadable) {
+        TSQR::Test::printVerifyFieldNames (out);
+      }
+      TSQR::Test::verifyLapack (out, params);
+      success = TSQR::Test::verifyNodeTsqr (out, params);
+    }
+    if (params.benchmark) {
+      if (! params.humanReadable) {
+        TSQR::Test::printBenchmarkFieldNames (out);
+      }
+      TSQR::Test::benchmarkLapack (out, params);
+      TSQR::Test::benchmarkNodeTsqr (out, params);
+    }
+
+    if (params.printTrilinosTestStuff) {
+      // The Trilinos test framework expects a message like this.
+      if (success) {
+        out << "\nEnd Result: TEST PASSED" << endl;
+      }
+      else {
+        out << "\nEnd Result: TEST FAILED" << endl;
       }
     }
   }
