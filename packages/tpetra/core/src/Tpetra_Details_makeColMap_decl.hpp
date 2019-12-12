@@ -109,7 +109,7 @@ namespace Details {
 ///   are responsible for propagating that error state to all
 ///   processes.
 ///
-/// This function <i>always</i> makes a column Map, even if the Map
+/// This function <i>always</i> makes a column Map, even if the graph
 /// already has one.  This makes it possible to change the graph's
 /// structure, and have its column Map and corresponding Import update
 /// in the same way.
