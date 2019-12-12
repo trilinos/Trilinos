@@ -216,40 +216,9 @@ template<class MatrixType>
 Relaxation<MatrixType>::
 Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
 : A_ (A),
-  NumSweeps_ (1),
-  PrecType_ (Ifpack2::Details::JACOBI),
-  DampingFactor_ (STS::one ()),
   IsParallel_ ((A.is_null () || A->getRowMap ().is_null () || A->getRowMap ()->getComm ().is_null ()) ?
                false : // a reasonable default if there's no communicator
-               A->getRowMap ()->getComm ()->getSize () > 1),
-  ZeroStartingSolution_ (true),
-  DoBackwardGS_ (false),
-  DoL1Method_ (false),
-  L1Eta_ (Teuchos::as<magnitude_type> (1.5)),
-  MinDiagonalValue_ (STS::zero ()),
-  fixTinyDiagEntries_ (false),
-  checkDiagEntries_ (false),
-  clusterSize_ (1),
-  is_matrix_structurally_symmetric_ (false),
-  ifpack2_dump_matrix_(false),
-  isInitialized_ (false),
-  IsComputed_ (false),
-  NumInitialize_ (0),
-  NumCompute_ (0),
-  NumApply_ (0),
-  InitializeTime_ (0.0), // Times are double anyway, so no need for ScalarTraits.
-  ComputeTime_ (0.0),
-  ApplyTime_ (0.0),
-  ComputeFlops_ (0.0),
-  ApplyFlops_ (0.0),
-  globalMinMagDiagEntryMag_ (STM::zero ()),
-  globalMaxMagDiagEntryMag_ (STM::zero ()),
-  globalNumSmallDiagEntries_ (0),
-  globalNumZeroDiagEntries_ (0),
-  globalNumNegDiagEntries_ (0),
-  globalDiagNormDiff_(Teuchos::ScalarTraits<magnitude_type>::zero()),
-  savedDiagOffsets_ (false),
-  hasBlockCrsMatrix_ (false)
+               A->getRowMap ()->getComm ()->getSize () > 1)
 {
   this->setObjectLabel ("Ifpack2::Relaxation");
 }
@@ -2179,24 +2148,24 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
       KokkosSparse::Experimental::symmetric_gauss_seidel_apply
       (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
           kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
-          X_colMap->template getLocalView<MyExecSpace> (),
-          B_in->template getLocalView<MyExecSpace> (),
+          X_colMap->getLocalViewDevice(),
+          B_in->getLocalViewDevice(),
           zero_x_vector, update_y_vector, DampingFactor_, 1);
     }
     else if (direction == Tpetra::Forward) {
       KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply
       (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
           kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
-          X_colMap->template getLocalView<MyExecSpace> (),
-          B_in->template getLocalView<MyExecSpace> (),
+          X_colMap->getLocalViewDevice (),
+          B_in->getLocalViewDevice(),
           zero_x_vector, update_y_vector, DampingFactor_, 1);
     }
     else if (direction == Tpetra::Backward) {
       KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply
       (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
           kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
-          X_colMap->template getLocalView<MyExecSpace> (),
-          B_in->template getLocalView<MyExecSpace> (),
+          X_colMap->getLocalViewDevice(),
+          B_in->getLocalViewDevice(),
           zero_x_vector, update_y_vector, DampingFactor_, 1);
     }
     else {
