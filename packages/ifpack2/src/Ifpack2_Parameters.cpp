@@ -64,88 +64,89 @@ void getValidParameters(Teuchos::ParameterList& params)
   // ============================================================ //
 
   // Ifpack2_IlukGraph.hpp
-  params.set("fact: iluk level-of-fill", (int)1);
-  params.set("fact: iluk level-of-overlap", (int)0);
+  params.set("fact: iluk level-of-fill", 1);
+  params.set("fact: iluk level-of-overlap", 0);
 
   // Ifpack2_Chebyshev
-  params.set("chebyshev: max eigenvalue",STS::nan());
-  params.set("chebyshev: ratio eigenvalue",STS::nan());
-  params.set("chebyshev: min eigenvalue",(double)30.0);
-  params.set("chebyshev: degree",(int)1);
-  params.set("chebyshev: eigenvalue max iterations",(int)10);
-  params.set("chebyshev: assume matrix does not change",false);
+  params.set("chebyshev: max eigenvalue", STS::nan());
+  params.set("chebyshev: ratio eigenvalue", STS::nan());
+  params.set("chebyshev: min eigenvalue", 30.0);
+  params.set("chebyshev: degree", 1);
+  params.set("chebyshev: eigenvalue max iterations", 10);
+  params.set("chebyshev: assume matrix does not change", false);
   // params.set("chebyshev: operator inv diagonal",Teuchos::null);
-  params.set("chebyshev: min diagonal value",STS::eps());
-  params.set("chebyshev: zero starting solution",true);
+  params.set("chebyshev: min diagonal value", STS::eps());
+  params.set("chebyshev: zero starting solution", true);
 
   // Ifpack2_Amesos.cpp
   params.set("amesos: solver type", "Amesos_Klu");
 
   // Ifpack2_IC.cpp
-  params.set("fact: level-of-fill", (int)1);
-  params.set("fact: absolute threshold", (double)0.0);
-  params.set("fact: relative threshold", (double)0.0);
-  params.set("fact: drop tolerance", (double)0.0);
+  params.set("fact: level-of-fill", 1);
+  params.set("fact: absolute threshold", 0.0);
+  params.set("fact: relative threshold", 0.0);
+  params.set("fact: drop tolerance", 0.0);
 
   // Ifpack2_ICT.cpp
-  params.set("fact: ict level-of-fill", (double)1.0);
-  params.set("fact: absolute threshold", (double)0.0);
-  params.set("fact: relative threshold", (double)1.0);
-  params.set("fact: relax value", (double)0.0);
-  params.set("fact: drop tolerance", (double)0.0);
+  params.set("fact: ict level-of-fill", 1.0);
+  params.set("fact: absolute threshold", 0.0);
+  params.set("fact: relative threshold", 1.0);
+  params.set("fact: relax value", 0.0);
+  params.set("fact: drop tolerance", 0.0);
 
   // Ifpack2_ILU.cpp
-  params.set("fact: level-of-fill", (int)0);
-  params.set("fact: absolute threshold", (double)0.0);
-  params.set("fact: relative threshold", (double)1.0);
-  params.set("fact: relax value", (double)0.0);
+  params.set("fact: level-of-fill", 0);
+  params.set("fact: absolute threshold", 0.0);
+  params.set("fact: relative threshold", 1.0);
+  params.set("fact: relax value", 0.0);
 
   // Ifpack2_ILUT.cpp
-  params.set("fact: ilut level-of-fill", (double)1.0);
-  params.set("fact: absolute threshold", (double)0.0);
-  params.set("fact: relative threshold", (double)1.0);
-  params.set("fact: relax value", (double)0.0);
+  params.set("fact: ilut level-of-fill", 1.0);
+  params.set("fact: absolute threshold", 0.0);
+  params.set("fact: relative threshold", 1.0);
+  params.set("fact: relax value", 0.0);
 
   // Ifpack2_LocalSparseTriangularSolver.cpp
   params.set("trisolver: type", "Internal");
-  params.set("trisolver: block size", (int)1);
+  params.set("trisolver: block size", 1);
   params.set("trisolver: reverse U", false);
 
   // Overlapping partitioner
-  params.set("partitioner: local parts", (int)1);
-  params.set("partitioner: overlap", (int)0);
-  params.set("partitioner: print level", (int)0);
+  params.set("partitioner: local parts", 1);
+  params.set("partitioner: overlap", 0);
+  params.set("partitioner: print level", 0);
 
   // Ifpack2_Relaxation.cpp
   params.set("relaxation: container", "TriDi");
   params.set("relaxation: type", "Jacobi");
-  params.set("relaxation: sweeps", (int)1);
+  params.set("relaxation: sweeps", 1);
   params.set("relaxation: direction", "forward");
-  params.set("relaxation: damping factor", (double)1.0);
-  params.set("relaxation: min diagonal value", (double)1.0);
+  params.set("relaxation: damping factor", 1.0);
+  params.set("relaxation: min diagonal value", 1.0);
   params.set("relaxation: zero starting solution", true);
-  params.set("relaxation: backward mode",false);
-  params.set("relaxation: use l1",false);
-  params.set("relaxation: l1 eta",(double)1.5);
+  params.set("relaxation: backward mode", false);
+  params.set("relaxation: use l1", false);
+  params.set("relaxation: l1 eta", 1.5);
   params.set("relaxation: banded container superdiagonals", -1);
   params.set("relaxation: banded container subdiagonals", -1);
+  params.set("relaxation: mtgs cluster size", 1);
 
   // Ifpack2_SPARSKIT.cpp
   // ap 25 May 2016: all SPARSKIT for backwards compatibility ONLY
-  params.set("fact: sparskit: lfil", (int)0);
-  params.set("fact: sparskit: tol", (double)0.0);
-  params.set("fact: sparskit: droptol", (double)0.0);
-  params.set("fact: sparskit: permtol", (double)0.1);
-  params.set("fact: sparskit: alph", (double)0.0);
-  params.set("fact: sparskit: mbloc", (int)(-1));
-  params.set("fact: sparskit: type", ("ILUT"));
+  params.set("fact: sparskit: lfil",    0);
+  params.set("fact: sparskit: tol",     0.0);
+  params.set("fact: sparskit: droptol", 0.0);
+  params.set("fact: sparskit: permtol", 0.1);
+  params.set("fact: sparskit: alph",    0.0);
+  params.set("fact: sparskit: mbloc",   -1);
+  params.set("fact: sparskit: type",    "ILUT");
 
   // Additive Schwarz preconditioner
   params.set("schwarz: compute condest", false); // mfh 24 Mar 2015: for backwards compatibility ONLY
   params.set("schwarz: combine mode", "ZERO"); // use string mode for this
   params.set("schwarz: use reordering", true);
   params.set("schwarz: filter singletons", false);
-  params.set("schwarz: overlap level", (int)0);
+  params.set("schwarz: overlap level", 0);
 
   // Ifpack2_BlockRelaxation.hpp
   // params.set("relaxation: type", "Jacobi"); // already set
@@ -153,8 +154,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   // params.get("relaxation: damping factor", 1.0); // already set
   // params.get("relaxation: zero starting solution", true); // already set
   params.set("partitioner: type", "greedy");
-  params.set("partitioner: local parts", (int)1);
-  params.set("partitioner: overlap", (int)0);
+  params.set("partitioner: local parts", 1);
+  params.set("partitioner: overlap", 0);
   Teuchos::Array<Teuchos::ArrayRCP<int>> tmp0;
   params.set("partitioner: parts", tmp0);
   params.set("partitioner: maintain sparsity", false);
@@ -175,8 +176,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: map", tmp);
 
   // Ifpack2_LinePartitioner.hpp (FIXME)
-  params.set("partitioner: line detection threshold",(double)0.0);
-  params.set("partitioner: PDE equations",(int)1);
+  params.set("partitioner: line detection threshold", 0.0);
+  params.set("partitioner: PDE equations", 1);
   Teuchos::RCP<Tpetra::MultiVector<> > dummy;
   params.set("partitioner: coordinates",dummy);
 }
