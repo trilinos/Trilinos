@@ -608,6 +608,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
     if (pass == true) workingState->setSolutionStatus(Status::PASSED);
     else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
+    workingState->computeNorms(currentState);
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;

@@ -287,9 +287,8 @@ void StepperDIRK<Scalar>::takeStep(
     }
 
     if (tableau_->isEmbedded() and this->getUseEmbedded()) {
-      RCP<SolutionStateMetaData<Scalar> > metaData=workingState->getMetaData();
-      const Scalar tolAbs = metaData->getTolRel();
-      const Scalar tolRel = metaData->getTolAbs();
+      const Scalar tolRel = workingState->getTolRel();
+      const Scalar tolAbs = workingState->getTolAbs();
 
       // just compute the error weight vector
       // (all that is needed is the error, and not the embedded solution)
@@ -315,7 +314,7 @@ void StepperDIRK<Scalar>::takeStep(
       assign(sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
       Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *ee_, *abs_u, sc.ptr());
       Scalar err = std::abs(Thyra::norm_inf(*sc));
-      metaData->setErrorRel(err);
+      workingState->setErrorRel(err);
 
       // test if step should be rejected
       if (std::isinf(err) || std::isnan(err) || err > Teuchos::as<Scalar>(1.0))
@@ -326,6 +325,7 @@ void StepperDIRK<Scalar>::takeStep(
     else      workingState->setSolutionStatus(Status::FAILED);
 
     workingState->setOrder(this->getOrder());
+    workingState->computeNorms(currentState);
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
