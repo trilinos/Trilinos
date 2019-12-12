@@ -336,7 +336,9 @@ namespace TSQR {
     /// \endcode
     virtual const_mat_view_type
     const_top_block (const const_mat_view_type& C,
-                     const bool contiguousCacheBlocks) const = 0;
+                     const bool /* contiguousCacheBlocks */) const {
+      return C;
+    }
 
   public:
     /// \brief Return view of topmost cache block of C.

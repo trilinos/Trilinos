@@ -47,6 +47,7 @@
 #include "Tsqr_KokkosNodeTsqr.hpp"
 #include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr_CombineNodeTsqr.hpp"
+#include "Tsqr_CuSolverNodeTsqr.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TestForException.hpp"
 #ifdef HAVE_TPETRATSQR_COMPLEX
@@ -139,6 +140,11 @@ namespace TSQR {
       else if (name == "KokkosNodeTsqr" || name == "Kokkos") {
         return rcp (new KokkosNodeTsqr<LocalOrdinal, Scalar>);
       }
+#if defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
+      else if (name == "CuSolverNodeTsqr" || name == "CuSolver") {
+        return rcp (new CuSolverNodeTsqr<LocalOrdinal, Scalar>);
+      }
+#endif // HAVE_TPETRATSQR_CUBLAS && HAVE_TPETRATSQR_CUSOLVER
       else if (name == "Default") {
         return getNodeTsqr ();
       }
@@ -146,8 +152,11 @@ namespace TSQR {
         const char prefix[] = "TSQR::NodeTsqrFactory::getNodeTsqr: ";
         const std::vector<std::string> validNames
           {{"SequentialTsqr",
-            "KokkosNodeTsqr",
             "CombineNodeTsqr",
+            "KokkosNodeTsqr",
+#if defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
+            "CuSolverNodeTsqr",
+#endif // HAVE_TPETRATSQR_CUBLAS && HAVE_TPETRATSQR_CUSOLVER
             "Default"}};
         std::ostringstream os;
         os << prefix << "Invalid NodeTsqr subclass name \"" << name
