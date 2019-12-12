@@ -63,6 +63,34 @@ LARFG(const int n, value_type& alpha, value_type x[],
 }
 
 template<class Scalar>
+int Lapack<Scalar>::
+compute_QR_lwork (const int m, const int n,
+                  value_type A[], const int lda) const
+{
+  Teuchos::LAPACK<int, value_type> lapack;
+  Scalar WORK {};
+  int lwork = -1;
+  int info = 0;
+  lapack.GEQRF(m, n, A, lda, nullptr, &WORK, lwork, &info);
+  if (info != 0) {
+    std::ostringstream os;
+    os << "LAPACK GEQRF (QR factorization) LWORK query "
+      "failed with INFO = " << info << ".";
+    throw std::logic_error (os.str ());
+  }
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using mag_type = typename STS::magnitudeType;
+  lwork = mag_type (STS::real (WORK));
+  if (lwork < mag_type {}) {
+    std::ostringstream os;
+    os << "LAPACK GEQRF (QR factorization) LWORK query "
+      "returned INFO=0, but WORK=" << lwork << " < 0.";
+    throw std::logic_error (os.str ());
+  }
+  return lwork;
+}
+
+template<class Scalar>
 void Lapack<Scalar>::
 compute_QR(const int m, const int n, value_type A[], const int lda,
            value_type TAU[], value_type WORK[], const int lwork) const
@@ -98,6 +126,35 @@ apply_Q_factor(const char SIDE, const char TRANS,
        "INFO = " << info << ".";
     throw std::logic_error (os.str());
   }
+}
+
+template<class Scalar>
+int Lapack<Scalar>::
+compute_explicit_Q_lwork (const int m, const int n, const int k,
+                          value_type A[], const int lda,
+                          const value_type TAU[]) const
+{
+  Teuchos::LAPACK<int, value_type> lapack;
+  Scalar WORK {};
+  int lwork = -1;
+  int info = 0;
+  lapack.UNGQR(m, n, k, A, lda, TAU, &WORK, lwork, &info);
+  if (info != 0) {
+    std::ostringstream os;
+    os << "LAPACK UNGQR (compute explicit Q factor from GEQRF) "
+      "LWORK query failed with INFO = " << info << ".";
+    throw std::logic_error (os.str());
+  }
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using mag_type = typename STS::magnitudeType;
+  lwork = mag_type (STS::real (WORK));
+  if (lwork < mag_type {}) {
+    std::ostringstream os;
+    os << "LAPACK UNGQR (compute explicit Q factor form GEQRF) "
+      "LWORK query returned INFO=0, but WORK=" << lwork << " < 0.";
+    throw std::logic_error (os.str ());
+  }
+  return lwork;
 }
 
 template<class Scalar>

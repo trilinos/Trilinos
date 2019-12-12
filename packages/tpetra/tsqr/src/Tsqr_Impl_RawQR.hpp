@@ -13,12 +13,6 @@ namespace Impl {
 /// CUDA stream instance (cudaStream_t) and a cuSOLVER handle
 /// (cusolverDnHandle_t).
 ///
-/// WORK size query ("LWORK query") happens as in LAPACK, by passing
-/// in lwork = -1.  A cuSOLVER Implementation would just check if
-/// lwork is -1, and call cusolverDn?geqrf_bufferSize in that case
-/// (replace the question mark with S, D, C, or Z as appropriate for
-/// the Scalar type).
-///
 /// Methods are virtual because they are meant to be called from host.
 /// (For the CUDA case, we plan to make cuSOLVER calls from host; we
 /// don't need to call QR from device.)

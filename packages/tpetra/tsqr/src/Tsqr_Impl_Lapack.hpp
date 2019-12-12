@@ -23,6 +23,10 @@ public:
 
   ~Lapack() = default;
 
+  int
+  compute_QR_lwork (const int m, const int n,
+                    value_type A[], const int lda) const;
+
   void
   compute_QR(const int m, const int n, value_type A[],
              const int lda, value_type TAU[], value_type WORK[],
@@ -35,6 +39,11 @@ public:
                  const value_type TAU[],
                  value_type C[], const int ldc,
                  value_type WORK[], const int lwork) const override;
+
+  int
+  compute_explicit_Q_lwork (const int m, const int n, const int k,
+                            value_type A[], const int lda,
+                            const value_type TAU[]) const;
 
   void
   compute_explicit_Q(const int m, const int n, const int k,

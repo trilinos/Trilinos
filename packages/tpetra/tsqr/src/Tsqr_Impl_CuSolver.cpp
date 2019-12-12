@@ -16,7 +16,7 @@ public:
   using impl_scalar_type = double;
 
   static cusolverStatus_t
-  geqrf_bufferSize (cusolverDnHandle_t handle,
+  compute_QR_lwork (cusolverDnHandle_t handle,
                     int m,
                     int n,
                     impl_scalar_type* A,
@@ -27,15 +27,15 @@ public:
   }
 
   static cusolverStatus_t
-  geqrf (cusolverDnHandle_t handle,
-         int m,
-         int n,
-         impl_scalar_type* A,
-         int lda,
-         impl_scalar_type* tau,
-         impl_scalar_type* work,
-         int lwork,
-         int* info)
+  compute_QR (cusolverDnHandle_t handle,
+              int m,
+              int n,
+              impl_scalar_type* A,
+              int lda,
+              impl_scalar_type* tau,
+              impl_scalar_type* work,
+              int lwork,
+              int* info)
   {
     return cusolverDnDgeqrf (handle, m, n, A, lda, tau,
                              work, lwork, info);
@@ -88,7 +88,7 @@ public:
   using impl_scalar_type = float;
 
   static cusolverStatus_t
-  geqrf_bufferSize (cusolverDnHandle_t handle,
+  compute_QR_lwork (cusolverDnHandle_t handle,
                     int m,
                     int n,
                     impl_scalar_type* A,
@@ -99,15 +99,15 @@ public:
   }
 
   static cusolverStatus_t
-  geqrf (cusolverDnHandle_t handle,
-         int m,
-         int n,
-         impl_scalar_type* A,
-         int lda,
-         impl_scalar_type* tau,
-         impl_scalar_type* work,
-         int lwork,
-         int* info)
+  compute_QR (cusolverDnHandle_t handle,
+              int m,
+              int n,
+              impl_scalar_type* A,
+              int lda,
+              impl_scalar_type* tau,
+              impl_scalar_type* work,
+              int lwork,
+              int* info)
   {
     return cusolverDnSgeqrf (handle, m, n, A, lda, tau,
                              work, lwork, info);
@@ -161,7 +161,7 @@ public:
   using impl_scalar_type = CudaValue<std::complex<double>>::type;
 
   static cusolverStatus_t
-  geqrf_bufferSize (cusolverDnHandle_t handle,
+  compute_QR_lwork (cusolverDnHandle_t handle,
                     int m,
                     int n,
                     impl_scalar_type* A,
@@ -172,15 +172,15 @@ public:
   }
 
   static cusolverStatus_t
-  geqrf (cusolverDnHandle_t handle,
-         int m,
-         int n,
-         impl_scalar_type* A,
-         int lda,
-         impl_scalar_type* tau,
-         impl_scalar_type* work,
-         int lwork,
-         int* info)
+  compute_QR (cusolverDnHandle_t handle,
+              int m,
+              int n,
+              impl_scalar_type* A,
+              int lda,
+              impl_scalar_type* tau,
+              impl_scalar_type* work,
+              int lwork,
+              int* info)
   {
     return cusolverDnZgeqrf (handle, m, n, A, lda, tau,
                              work, lwork, info);
@@ -233,7 +233,7 @@ public:
   using impl_scalar_type = CudaValue<std::complex<float>>::type;
 
   static cusolverStatus_t
-  geqrf_bufferSize (cusolverDnHandle_t handle,
+  compute_QR_lwork (cusolverDnHandle_t handle,
                     int m,
                     int n,
                     impl_scalar_type* A,
@@ -244,15 +244,15 @@ public:
   }
 
   static cusolverStatus_t
-  geqrf (cusolverDnHandle_t handle,
-         int m,
-         int n,
-         impl_scalar_type* A,
-         int lda,
-         impl_scalar_type* tau,
-         impl_scalar_type* work,
-         int lwork,
-         int* info)
+  compute_QR (cusolverDnHandle_t handle,
+              int m,
+              int n,
+              impl_scalar_type* A,
+              int lda,
+              impl_scalar_type* tau,
+              impl_scalar_type* work,
+              int lwork,
+              int* info)
   {
     return cusolverDnCgeqrf (handle, m, n, A, lda, tau,
                              work, lwork, info);
@@ -308,10 +308,10 @@ CuSolver<Scalar>::CuSolver (CuSolverHandle handle, int* const info) :
 template<class Scalar>
 int
 CuSolver<Scalar>::
-geqrfBufferSize (const int nrows,
-                 const int ncols,
-                 Scalar A[],
-                 const int lda)
+compute_QR_lwork (const int nrows,
+                  const int ncols,
+                  Scalar A[],
+                  const int lda)
 {
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
@@ -322,7 +322,7 @@ geqrfBufferSize (const int nrows,
 
   using impl_type = RawCuSolver<IST>;
   const auto status =
-    impl_type::geqrf_bufferSize (rawHandle, nrows, ncols,
+    impl_type::compute_QR_lwork (rawHandle, nrows, ncols,
                                  A_raw, lda, &lwork);
   TEUCHOS_ASSERT( status == CUSOLVER_STATUS_SUCCESS );
   return lwork;
@@ -331,13 +331,13 @@ geqrfBufferSize (const int nrows,
 template<class Scalar>
 void
 CuSolver<Scalar>::
-geqrf (const int nrows,
-       const int ncols,
-       Scalar A[],
-       const int lda,
-       Scalar tau[],
-       Scalar work[],
-       const int lwork)
+compute_QR (const int nrows,
+            const int ncols,
+            Scalar A[],
+            const int lda,
+            Scalar tau[],
+            Scalar work[],
+            const int lwork)
 {
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
@@ -349,8 +349,8 @@ geqrf (const int nrows,
 
   using impl_type = RawCuSolver<IST>;
   const auto status =
-    impl_type::geqrf (rawHandle, nrows, ncols, A_raw, lda,
-                      tau_raw, work_raw, lwork, info_);
+    impl_type::compute_QR (rawHandle, nrows, ncols, A_raw, lda,
+                           tau_raw, work_raw, lwork, info_);
   TEUCHOS_ASSERT( status == CUSOLVER_STATUS_SUCCESS );
 }
 

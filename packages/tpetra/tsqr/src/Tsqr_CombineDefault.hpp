@@ -96,13 +96,12 @@ namespace TSQR {
       const int nrows = num_rows_Q + ncols;
       const int lda = nrows;
 
-      Scalar work {};
-      lapack_.compute_QR (nrows, ncols, nullptr, lda,
-                          nullptr, &work, -1);
-      const int lwork1 = int (STS::real (work));
+      const int lwork1 =
+        lapack_.compute_QR_lwork (nrows, ncols, nullptr, lda);
       TEUCHOS_ASSERT( lwork1 >= num_cols_Q );
 
       const int ldc = nrows;
+      Scalar work {};
       lapack_.apply_Q_factor ('L', 'N',
                               nrows, num_cols_C, num_cols_Q,
                               nullptr, lda, nullptr,

@@ -68,48 +68,15 @@ namespace TSQR {
                         const Ordinal ncols,
                         const Ordinal lda)
     {
-      using std::ostringstream;
-      using std::endl;
-      using STS = Teuchos::ScalarTraits<Scalar>;
-      using mag_type = typename STS::magnitudeType;
-
-      Scalar d_lwork_geqrf {};
-      lapack.compute_QR (nrows, ncols, nullptr, lda, nullptr,
-                         &d_lwork_geqrf, -1);
-
-      Scalar d_lwork_orgqr {};
+      const Ordinal lwork_geqrf =
+        lapack.compute_QR_lwork (nrows, ncols, nullptr, lda);
       // A workspace query appropriate for computing the explicit Q
       // factor (nrows x ncols) in place, from the QR factorization of
       // an nrows x ncols matrix with leading dimension lda.
-      lapack.compute_explicit_Q (nrows, ncols, ncols, nullptr, lda,
-                                 nullptr, &d_lwork_orgqr, -1);
-
-      // LAPACK workspace queries do return their results as a
-      // double-precision floating-point value, but LAPACK promises
-      // that that value will fit in an int.  Thus, we don't need to
-      // check for valid casts to int below.  I include the checks
-      // just to be "bulletproof" and also to show how to do the
-      // checks for later reference.
-      const mag_type lwork_geqrf_test =
-        static_cast<mag_type> (static_cast<Ordinal> (STS::magnitude (d_lwork_geqrf)));
-      if (lwork_geqrf_test != STS::magnitude (d_lwork_geqrf)) {
-        ostringstream os;
-        os << "LAPACK _GEQRF workspace query returned a result, "
-           << d_lwork_geqrf << ", bigger than the max Ordinal value, "
-           << std::numeric_limits<Ordinal>::max ();
-        throw std::range_error (os.str ());
-      }
-      const Scalar lwork_orgqr_test =
-        static_cast<mag_type> (static_cast<Ordinal> (STS::magnitude ((d_lwork_orgqr))));
-      if (lwork_orgqr_test != STS::magnitude (d_lwork_orgqr)) {
-        ostringstream os;
-        os << "LAPACK _UNGQR workspace query returned a result, "
-           << d_lwork_orgqr << ", bigger than the max Ordinal value, "
-           << std::numeric_limits<Ordinal>::max();
-        throw std::range_error (os.str());
-      }
-      return std::max (static_cast<Ordinal> (STS::magnitude (d_lwork_geqrf)),
-                       static_cast<Ordinal> (STS::magnitude (d_lwork_orgqr)));
+      const Ordinal lwork_ungqr =
+        lapack.compute_explicit_Q_lwork (nrows, ncols, ncols,
+                                         nullptr, lda, nullptr);
+      return std::max (lwork_geqrf, lwork_ungqr);
     }
 
     /// Test the accuracy of sequential TSQR on an nrows by ncols

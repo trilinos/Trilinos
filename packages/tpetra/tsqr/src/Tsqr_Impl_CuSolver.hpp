@@ -18,19 +18,19 @@ public:
   CuSolver (CuSolverHandle handle, int* const info);
 
   int
-  geqrfBufferSize (const int nrows,
-                   const int ncols,
-                   Scalar A_raw[],
-                   const int lda);
+  compute_QR_lwork (const int nrows,
+                    const int ncols,
+                    Scalar A_raw[],
+                    const int lda);
 
   void
-  geqrf (const int nrows,
-         const int ncols,
-         Scalar A[],
-         const int lda,
-         Scalar tau[],
-         Scalar work[],
-         const int lwork);
+  compute_QR (const int nrows,
+              const int ncols,
+              Scalar A[],
+              const int lda,
+              Scalar tau[],
+              Scalar work[],
+              const int lwork);
 
   int
   unmqrBufferSize (const char side,
