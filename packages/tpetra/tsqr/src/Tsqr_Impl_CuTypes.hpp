@@ -22,6 +22,10 @@ struct CudaValue<double> {
   static type makeValue (const double x) {
     return x;
   }
+
+  static bool arrayCorrectlyAligned (const double* const /* x */) {
+    return true;
+  }
 };
 
 template<>
@@ -30,6 +34,10 @@ struct CudaValue<float> {
 
   static type makeValue (const float x) {
     return x;
+  }
+
+  static bool arrayCorrectlyAligned (const double* const /* x */) {
+    return true;
   }
 };
 
@@ -44,6 +52,17 @@ struct CudaValue<std::complex<double>> {
   static type makeValue (const std::complex<double> x) {
     return make_cuDoubleComplex (std::real (x), std::imag (x));
   }
+
+  static bool
+  arrayCorrectlyAligned (const std::complex<double>* const x)
+  {
+    // CUDA requires arrays of complex to be aligned to the full type,
+    // not just to one of the two numbers (as with std::complex).
+    constexpr size_t requiredAlignment =
+      sizeof (std::complex<double>);
+    return x == nullptr ||
+      reinterpret_cast<size_t> (x) % requiredAlignment == 0;
+  }
 };
 
 template<>
@@ -52,6 +71,17 @@ struct CudaValue<std::complex<float>> {
 
   static type makeValue (const std::complex<float> x) {
     return make_cuFloatComplex (std::real (x), std::imag (x));
+  }
+
+  static bool
+  arrayCorrectlyAligned (const std::complex<float>* const x)
+  {
+    // CUDA requires arrays of complex to be aligned to the full type,
+    // not just to one of the two numbers (as with std::complex).
+    constexpr size_t requiredAlignment =
+      sizeof (std::complex<float>);
+    return x == nullptr ||
+      reinterpret_cast<size_t> (x) % requiredAlignment == 0;
   }
 };
 #endif // defined(HAVE_TPETRATSQR_COMPLEX)

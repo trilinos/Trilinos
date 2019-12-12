@@ -39,24 +39,96 @@
 
 #include "Tsqr_Impl_CuBlasHandle.hpp"
 #include "Tsqr_Impl_CuSolverHandle.hpp"
+#include "Tsqr_Impl_CuBlas.hpp"
 #include "Tsqr_Impl_CuSolver.hpp"
+#include "Tsqr_Impl_CuTypes.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Kokkos_Core.hpp"
 #include <iostream>
+#include <type_traits>
 
 namespace { // (anonymous)
+
+template<class RealType>
+void
+verifyReal (std::ostream& out, bool& success)
+{
+  using TSQR::Impl::CuSolver;
+  using TSQR::Impl::CuSolverHandle;
+  using TSQR::Impl::CudaValue;
+  using std::endl;
+
+  CuSolverHandle s = CuSolverHandle::getSingleton ();
+  TEST_ASSERT( s.getHandle () != nullptr );
+  CuSolver<RealType> solver (s);
+
+  using IST = typename CudaValue<RealType>::type;
+  static_assert (std::is_same<RealType, IST>::value,
+                 "CudaValue::type is wrong.");
+  const RealType x (666.0);
+  out << "Original x: " << x << ": Converted x: "
+      << CudaValue<RealType>::makeValue (x) << endl;
+
+  using TSQR::Impl::CuBlas;
+  using TSQR::Impl::CuBlasHandle;
+  CuBlasHandle b = CuBlasHandle::getSingleton ();
+  TEST_ASSERT( b.getHandle () != nullptr );
+
+  CuBlas<RealType> blas (b);
+}
+
+#ifdef HAVE_TPETRATSQR_COMPLEX
+template<class ComplexType>
+void
+verifyComplex (std::ostream& out, bool& success)
+{
+  using TSQR::Impl::CuSolver;
+  using TSQR::Impl::CuSolverHandle;
+  using TSQR::Impl::CudaValue;
+  using std::endl;
+
+  CuSolverHandle s = CuSolverHandle::getSingleton ();
+  TEST_ASSERT( s.getHandle () != nullptr );
+
+  CuSolver<ComplexType> solver (s);
+
+  using IST = typename CudaValue<ComplexType>::type;
+
+  using expected_z_IST = cuDoubleComplex;
+  using expected_c_IST = cuFloatComplex;
+  constexpr bool is_z =
+    std::is_same<ComplexType, std::complex<double>>::value;
+  using expected_IST = typename std::conditional<
+    is_z,
+    expected_z_IST,
+    expected_c_IST>::type;
+  static_assert (std::is_same<expected_IST, IST>::value,
+                 "CudaValue::type is wrong.");
+  const ComplexType x (666.0, 418.0);
+  const IST x_out = CudaValue<ComplexType>::makeValue (x);
+  out << "Original x: " << x << ": Converted x: ("
+      << x_out.x << "," << x_out.y << ")" << endl;
+
+  using TSQR::Impl::CuBlas;
+  using TSQR::Impl::CuBlasHandle;
+  CuBlasHandle b = CuBlasHandle::getSingleton ();
+  TEST_ASSERT( b.getHandle () != nullptr );
+
+  CuBlas<ComplexType> blas (b);
+}
+#endif // HAVE_TPETRATSQR_COMPLEX
 
 void
 verify (std::ostream& out, bool& success)
 {
-  using TSQR::Impl::CuSolverHandle;
-  CuSolverHandle s = CuSolverHandle::getSingleton ();
-  TEST_ASSERT( s.getHandle () != nullptr );
+  verifyReal<double> (out, success);
+  verifyReal<float> (out, success);
 
-  using TSQR::Impl::CuBlasHandle;
-  CuBlasHandle b = CuBlasHandle::getSingleton ();
-  TEST_ASSERT( b.getHandle () != nullptr );
+#ifdef HAVE_TPETRATSQR_COMPLEX
+  verifyComplex<std::complex<double>> (out, success);
+  verifyComplex<std::complex<float>> (out, success);
+#endif // HAVE_TPETRATSQR_COMPLEX
 }
 
 } // namespace (anonymous)
