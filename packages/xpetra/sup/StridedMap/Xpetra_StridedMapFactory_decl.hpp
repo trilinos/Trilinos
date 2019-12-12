@@ -53,7 +53,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#include "Xpetra_StridedMap.hpp"
+#include "Xpetra_StridedMap_decl.hpp"
 
 // This factory creates Xpetra::Map. User have to specify the exact class of
 // object that he want to create (ie: a Xpetra::TpetraMap or a Xpetra::EpetraMap).

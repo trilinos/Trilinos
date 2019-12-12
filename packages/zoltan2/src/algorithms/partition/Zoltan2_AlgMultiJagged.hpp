@@ -2967,6 +2967,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
   // max for next concurrentPartCount elements, reduce sum for the last
   // concurrentPartCount elements.
   if(this->comm->getSize()  > 1) {
+    // We're using explicit host here as Spectrum MPI would fail
+    // with the prior HostMirror UVMSpace to UVMSpace setup.
+    auto host_local_min_max_total =
+      Kokkos::create_mirror_view(Kokkos::HostSpace(), local_min_max_total);
+    auto host_global_min_max_total =
+      Kokkos::create_mirror_view(Kokkos::HostSpace(), global_min_max_total);
+    Kokkos::deep_copy(host_local_min_max_total, local_min_max_total);
     Teuchos::MultiJaggedCombinedMinMaxTotalReductionOp<int, mj_scalar_t>
       reductionOp(current_concurrent_num_parts,
         current_concurrent_num_parts, current_concurrent_num_parts);
@@ -2975,10 +2982,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
         *(this->comm),
       reductionOp,
       3 * current_concurrent_num_parts,
-      local_min_max_total.data(),
-      global_min_max_total.data());
+      host_local_min_max_total.data(),
+      host_global_min_max_total.data());
     }
     Z2_THROW_OUTSIDE_ERROR(*(this->mj_env))
+    Kokkos::deep_copy(global_min_max_total, host_global_min_max_total);
   }
   else {
     mj_part_t s = 3 * current_concurrent_num_parts;
@@ -3311,15 +3319,14 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,mj_node_t>::mj_1D_part(
 
     // now sum up the results of mpi processors.
     if(!bSingleProcess) {
-      // Not sure yet how we do device reduction with operator
-      // For initial test copy to host and do it there, then copy back
-      typename decltype(total_part_weight_left_right_closests)::HostMirror
-        host_total_part_weight_left_right_closests =
-        Kokkos::create_mirror_view(total_part_weight_left_right_closests);
-      typename decltype(global_total_part_weight_left_right_closests)
-        ::HostMirror host_global_total_part_weight_left_right_closests =
-        Kokkos::create_mirror_view(
-          global_total_part_weight_left_right_closests);
+      // We're using explicit host here as Spectrum MPI would fail
+      // with the prior HostMirror UVMSpace to UVMSpace setup.
+      auto host_total_part_weight_left_right_closests =
+        Kokkos::create_mirror_view(Kokkos::HostSpace(),
+        total_part_weight_left_right_closests);
+      auto host_global_total_part_weight_left_right_closests =
+        Kokkos::create_mirror_view(Kokkos::HostSpace(),
+        global_total_part_weight_left_right_closests);
 
       Kokkos::deep_copy(host_total_part_weight_left_right_closests,
         total_part_weight_left_right_closests);

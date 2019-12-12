@@ -50,15 +50,15 @@
 #include "Xpetra_Vector.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
-#  include "Xpetra_TpetraVector.hpp"
+#  include "Xpetra_TpetraVector_decl.hpp"
 #endif
 #ifdef HAVE_XPETRA_EPETRA
 #  include "Xpetra_EpetraVector.hpp"
 #  include "Xpetra_EpetraIntVector.hpp"
 #endif
 
-#include "Xpetra_BlockedMap.hpp"
-#include "Xpetra_BlockedVector.hpp"
+#include "Xpetra_BlockedMap_decl.hpp"
+#include "Xpetra_BlockedVector_decl.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 

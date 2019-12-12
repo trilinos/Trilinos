@@ -78,7 +78,7 @@ namespace Sacado {                                                      \
       typedef typename ExprT::base_expr_type base_expr_type;            \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      Expr(const ExprT& expr_) : expr(expr_)  {}                        \
+      explicit Expr(const ExprT& expr_) : expr(expr_)  {}               \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       int size() const { return expr.size(); }                          \
