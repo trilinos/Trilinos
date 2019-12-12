@@ -782,6 +782,8 @@ private:
   bool fixTinyDiagEntries_;
   //! Whether to spend extra effort and all-reduces checking diagonal entries.
   bool checkDiagEntries_;
+  //! For MTSGS, the cluster size (use point coloring if equal to 1)
+  int clusterSize_;
 
   //!Wheter the provided matrix is structurally symmetric or not.
   bool is_matrix_structurally_symmetric_;
