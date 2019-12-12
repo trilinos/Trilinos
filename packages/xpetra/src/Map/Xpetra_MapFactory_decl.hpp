@@ -48,7 +48,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#include "Xpetra_Map.hpp"
+#include "Xpetra_Map_decl.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {

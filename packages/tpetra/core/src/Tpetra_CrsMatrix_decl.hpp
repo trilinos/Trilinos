@@ -595,6 +595,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param maxNumEntPerRow [in] Maximum number of matrix
     ///   entries per row.  If pftype==DynamicProfile, this is only a
@@ -623,6 +624,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param numEntPerRowToAlloc [in] Maximum number of matrix
     ///   entries to allocate for each row.  If
@@ -718,6 +720,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param rowPointers [in] The beginning of each row in the matrix,
     ///   as in a CSR "rowptr" array.  The length of this vector should be
@@ -748,6 +751,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param rowPointers [in] The beginning of each row in the matrix,
     ///   as in a CSR "rowptr" array.  The length of this vector should be
@@ -782,6 +786,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param lclMatrix [in] A local CrsMatrix containing all local
     ///    matrix values as well as a local graph.  The graph's local
@@ -807,6 +812,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param domainMap [in] The matrix's domain Map.  MUST be one to
     ///   one!
@@ -2383,6 +2389,14 @@ namespace Tpetra {
     /// \brief Replace the matrix's column Map with the given Map.
     ///
     /// \param newColMap [in] New column Map.  Must be nonnull.
+    ///   Within Tpetra, there are no particular restrictions on the column map.
+    ///   However, if this graph will be used in Xpetra, Ifpack2, or MueLu,
+    ///   the column map's list of global indices must follow "Aztec ordering":
+    ///   locally owned GIDs (same order as in domain map), followed by remote GIDs
+    ///   (in order of owning proc, and sorted within each proc).
+    ///
+    ///   It is strongly recommended to use \c Tpetra::Details::makeColMap()
+    ///   to create the column map. makeColMap() follows Aztec ordering by default.
     ///
     /// \pre The matrix must have no entries inserted yet, on any
     ///   process in the row Map's communicator.

@@ -52,7 +52,7 @@
 
 #include <Tpetra_Map.hpp>
 
-#include "Xpetra_Map.hpp"
+#include "Xpetra_Map_decl.hpp"
 #include "Xpetra_Utils.hpp"
 
 #include "Xpetra_Exceptions.hpp"

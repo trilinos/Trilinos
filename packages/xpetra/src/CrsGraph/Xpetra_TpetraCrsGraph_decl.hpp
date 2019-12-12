@@ -54,10 +54,10 @@
 #include "Tpetra_CrsGraph.hpp"
 
 #include "Xpetra_CrsGraph.hpp"
+#include "Xpetra_TpetraMap_decl.hpp"
+#include "Xpetra_TpetraImport_decl.hpp"
+#include "Xpetra_TpetraExport_decl.hpp"
 #include "Xpetra_Utils.hpp"
-#include "Xpetra_TpetraMap.hpp"
-#include "Xpetra_TpetraImport.hpp"
-#include "Xpetra_TpetraExport.hpp"
 
 namespace Xpetra {
 

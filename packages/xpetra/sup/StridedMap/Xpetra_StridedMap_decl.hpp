@@ -53,7 +53,7 @@
 #include <Teuchos_Describable.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
-#include "Xpetra_Map.hpp"
+#include "Xpetra_Map_decl.hpp"
 
 namespace Xpetra {
 

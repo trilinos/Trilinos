@@ -394,10 +394,6 @@ namespace MueLu {
     // For dumping an IntrepidPCoarsening element-to-node map to disk
     template<class T>
     void WriteFieldContainer(const std::string& fileName, T & fcont,const Map &colMap) const {
-      typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
-      typedef Node NO;
-      typedef Xpetra::MultiVector<GO,LO,GO,NO> GOMultiVector;
 
       size_t num_els = (size_t) fcont.extent(0);
       size_t num_vecs =(size_t) fcont.extent(1);

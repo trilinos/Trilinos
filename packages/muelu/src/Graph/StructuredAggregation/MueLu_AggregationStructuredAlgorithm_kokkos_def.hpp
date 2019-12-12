@@ -120,8 +120,6 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
-    typedef typename CrsGraph::local_graph_type local_graph_type;
-
     // Compute the number of coarse points needed to interpolate quantities to a fine point
     int numInterpolationPoints = 0;
     if(geoData->getInterpolationOrder() == 0) {

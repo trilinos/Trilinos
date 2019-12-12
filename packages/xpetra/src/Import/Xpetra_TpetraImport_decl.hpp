@@ -53,7 +53,7 @@
 #include "Xpetra_Import.hpp"
 #include "Xpetra_Exceptions.hpp"
 
-#include "Xpetra_TpetraMap.hpp"
+#include "Xpetra_TpetraMap_decl.hpp"
 #include "Tpetra_Import.hpp"
 
 namespace Xpetra {

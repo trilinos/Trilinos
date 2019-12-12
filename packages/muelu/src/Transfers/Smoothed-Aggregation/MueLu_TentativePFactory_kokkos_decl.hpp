@@ -114,7 +114,7 @@ namespace MueLu {
     typedef typename DeviceType::execution_space                     execution_space;
     typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType    real_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType   real_type;
     typedef Xpetra::MultiVector<real_type, LocalOrdinal, GlobalOrdinal, node_type> RealValuedMultiVector;
 
   private:
