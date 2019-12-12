@@ -301,8 +301,9 @@ public:
 #endif // defined(HAVE_TPETRATSQR_COMPLEX)
 
 template<class Scalar>
-CuSolver<Scalar>::CuSolver (CuSolverHandle handle) :
-  handle_ (handle) {}
+CuSolver<Scalar>::CuSolver (CuSolverHandle handle, int* const info) :
+  handle_ (handle), info_ (info)
+{}
 
 template<class Scalar>
 int
@@ -336,8 +337,7 @@ geqrf (const int nrows,
        const int lda,
        Scalar tau[],
        Scalar work[],
-       const int lwork,
-       int* const info)
+       const int lwork)
 {
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
@@ -350,7 +350,7 @@ geqrf (const int nrows,
   using impl_type = RawCuSolver<IST>;
   const auto status =
     impl_type::geqrf (rawHandle, nrows, ncols, A_raw, lda,
-                      tau_raw, work_raw, lwork, info);
+                      tau_raw, work_raw, lwork, info_);
   TEUCHOS_ASSERT( status == CUSOLVER_STATUS_SUCCESS );
 }
 
@@ -403,8 +403,7 @@ unmqr (const char side,
        Scalar C[],
        const int ldc,
        Scalar work[],
-       const int lwork,
-       int* const info)
+       const int lwork)
 {
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
@@ -422,7 +421,7 @@ unmqr (const char side,
     impl_type::unmqr (rawHandle, cuSide, cuTrans,
                       nrows, ncols_C, ncols_Q,
                       Q_raw, ldq, tau_raw, C_raw, ldc,
-                      work_raw, lwork, info);
+                      work_raw, lwork, info_);
   TEUCHOS_ASSERT( status == CUSOLVER_STATUS_SUCCESS );
 }
 

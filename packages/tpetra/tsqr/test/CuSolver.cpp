@@ -61,7 +61,9 @@ verifyReal (std::ostream& out, bool& success)
 
   CuSolverHandle s = CuSolverHandle::getSingleton ();
   TEST_ASSERT( s.getHandle () != nullptr );
-  CuSolver<RealType> solver (s);
+
+  Kokkos::View<int, Kokkos::CudaSpace> info ("info");
+  CuSolver<RealType> solver (s, info.data ());
 
   using IST = typename CudaValue<RealType>::type;
   static_assert (std::is_same<RealType, IST>::value,
@@ -91,7 +93,8 @@ verifyComplex (std::ostream& out, bool& success)
   CuSolverHandle s = CuSolverHandle::getSingleton ();
   TEST_ASSERT( s.getHandle () != nullptr );
 
-  CuSolver<ComplexType> solver (s);
+  Kokkos::View<int, Kokkos::CudaSpace> info ("info");
+  CuSolver<ComplexType> solver (s, info.data ());
 
   using IST = typename CudaValue<ComplexType>::type;
 

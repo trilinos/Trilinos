@@ -340,7 +340,10 @@ namespace TSQR {
     {
       using TSQR::Impl::CuSolver;
       using TSQR::Impl::CuSolverHandle;
-      CuSolver<Scalar> solver {CuSolverHandle::getSingleton ()};
+
+      auto info = get_info ();
+      CuSolver<Scalar> solver
+        {CuSolverHandle::getSingleton (), info.data ()};
       const int lwork =
         solver.geqrfBufferSize (numRows, numCols, A, lda);
       // Avoid constant reallocation by setting a minimum lwork.
@@ -365,7 +368,9 @@ namespace TSQR {
       using TSQR::Impl::CuSolver;
       using TSQR::Impl::CuSolverHandle;
 
-      CuSolver<Scalar> solver (CuSolverHandle::getSingleton ());
+      auto info = get_info ();
+      CuSolver<Scalar> solver
+        {CuSolverHandle::getSingleton (), info.data ()};
       const char side = 'L';
       const char trans = apply_type.toString ()[0];
       const int lwork =
@@ -447,9 +452,9 @@ namespace TSQR {
 
       using TSQR::Impl::CuSolver;
       using TSQR::Impl::CuSolverHandle;
-      CuSolver<Scalar> solver {CuSolverHandle::getSingleton ()};
-      solver.geqrf (nrows, ncols, A, lda, tau_raw,
-                    work_raw, lwork, info.data ());
+      CuSolver<Scalar> solver
+        {CuSolverHandle::getSingleton (), info.data ()};
+      solver.geqrf (nrows, ncols, A, lda, tau_raw, work_raw, lwork);
       return Teuchos::rcp (new my_factor_output_type (tau, info));
     }
 
@@ -529,10 +534,10 @@ namespace TSQR {
 
       using TSQR::Impl::CuSolver;
       using TSQR::Impl::CuSolverHandle;
-      CuSolver<Scalar> solver {CuSolverHandle::getSingleton ()};
+      CuSolver<Scalar> solver
+        {CuSolverHandle::getSingleton (), info.data ()};
       solver.unmqr (side, trans, nrows, ncols_C, ncols_Q,
-                    Q, ldq, tau_raw, C, ldc,
-                    work_raw, lwork, info.data ());
+                    Q, ldq, tau_raw, C, ldc, work_raw, lwork);
     }
 
     void

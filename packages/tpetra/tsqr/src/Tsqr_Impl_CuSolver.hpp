@@ -15,7 +15,7 @@ namespace Impl {
 template<class Scalar>
 class CuSolver {
 public:
-  CuSolver (CuSolverHandle handle);
+  CuSolver (CuSolverHandle handle, int* const info);
 
   int
   geqrfBufferSize (const int nrows,
@@ -30,8 +30,7 @@ public:
          const int lda,
          Scalar tau[],
          Scalar work[],
-         const int lwork,
-         int* const info);
+         const int lwork);
 
   int
   unmqrBufferSize (const char side,
@@ -57,11 +56,11 @@ public:
          Scalar C[],
          const int ldc,
          Scalar work[],
-         const int lwork,
-         int* const info);
+         const int lwork);
 
 private:
   CuSolverHandle handle_;
+  int* info_; // DEVICE MEMORY
 };
 
 extern template class CuSolver<double>;
