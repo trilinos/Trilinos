@@ -98,6 +98,9 @@ namespace TSQR {
     virtual void
     setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& paramList) = 0;
 
+    //! Whether the subclass wants large arrays as GPU device memory.
+    virtual bool wants_device_memory () const { return false; }
+
     /// \brief Whether this object is ready to perform computations.
     ///
     /// Some NodeTsqr subclasses require additional initialization

@@ -264,6 +264,8 @@ namespace TSQR {
       return "CuSolverNodeTsqr";
     }
 
+    bool wants_device_memory () const override { return true; }
+
     bool ready () const override {
       return true;
     }

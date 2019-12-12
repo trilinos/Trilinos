@@ -385,13 +385,14 @@ namespace TSQR {
       using mag_type = typename STS::magnitudeType;
       using STM = Teuchos::ScalarTraits<mag_type>;
       const bool verbose = params.verbose;
-
       const std::string scalarType = TypeNameTraits<Scalar>::name ();
       const std::string fileSuffix =
         getFileSuffix<Scalar> (params.nodeTsqrType);
       if (verbose) {
         cerr << "Test NodeTsqr with Scalar=" << scalarType << endl;
       }
+
+      bool success = true;
 
       const int nrows = params.numRows;
       const int ncols = params.numCols;
@@ -433,19 +434,66 @@ namespace TSQR {
 
       auto nodeTsqrPtr = getNodeTsqr<Scalar> (params);
       auto& actor = *nodeTsqrPtr;
+      if (verbose && actor.wants_device_memory ()) {
+        cerr << "-- NodeTsqr claims to want device memory" << endl;
+      }
+
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
+      using device_matrix_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft>;
+      using host_mat_view_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+      const std::pair<int, int> rowRange (0, nrows);
+      host_mat_view_type A_full_h
+        (reinterpret_cast<IST*> (A.data ()), A.stride (1), ncols);
+      auto A_h = subview (A_full_h, rowRange, ALL ());
+      host_mat_view_type A_copy_full_h
+        (reinterpret_cast<IST*> (A_copy.data ()), A_copy.stride (1), ncols);
+      auto A_copy_h = subview (A_copy_full_h, rowRange, ALL ());
+      host_mat_view_type Q_full_h
+        (reinterpret_cast<IST*> (Q.data ()), Q.stride (1), ncols);
+      auto Q_h = subview (Q_full_h, rowRange, ALL ());
+
+      device_matrix_type A_d;
+      device_matrix_type A_copy_d;
+      device_matrix_type Q_d;
+      if (actor.wants_device_memory ()) {
+        A_d = device_matrix_type ("A_d", nrows, ncols);
+        A_copy_d = device_matrix_type ("A_copy_d", nrows, ncols);
+        Kokkos::deep_copy (A_d, A_h);
+        Q_d = device_matrix_type ("Q_d", nrows, ncols);
+      }
 
       if (! params.contiguousCacheBlocks) {
         if (verbose) {
           cerr << "-- Copy A into A_copy" << endl;
         }
         deep_copy (A_copy, A);
+        if (actor.wants_device_memory ()) {
+          Kokkos::deep_copy (A_copy_d, A_d);
+        }
       }
       else {
         if (verbose) {
           cerr << "-- Copy A into A_copy via cache_block" << endl;
         }
-        actor.cache_block (nrows, ncols, A_copy.data (),
-                           A.data (), A.stride (1));
+        if (actor.wants_device_memory ()) {
+          Scalar* A_copy_d_raw =
+            reinterpret_cast<Scalar*> (A_copy_d.data ());
+          const Scalar* A_d_raw =
+            reinterpret_cast<const Scalar*> (A_d.data ());
+          actor.cache_block (nrows, ncols, A_copy_d_raw,
+                             A_d_raw, A_d.stride (1));
+          Kokkos::deep_copy (A_copy_h, A_copy_d);
+        }
+        else {
+          actor.cache_block (nrows, ncols, A_copy.data (),
+                             A.data (), A.stride (1));
+        }
         if (verbose) {
           cerr << "-- Verify cache_block result" << endl;
         }
@@ -454,11 +502,31 @@ namespace TSQR {
         if (std::numeric_limits<Scalar>::has_quiet_NaN) {
           deep_copy (A2, std::numeric_limits<Scalar>::quiet_NaN ());
         }
-        actor.un_cache_block (nrows, ncols, A2.data (),
-                              A2.stride (1), A_copy.data ());
+        if (actor.wants_device_memory ()) {
+          host_mat_view_type A2_full_h
+            (reinterpret_cast<IST*> (A2.data ()), A2.stride (1), ncols);
+          auto A2_h = subview (A2_full_h, rowRange, ALL ());
+          device_matrix_type A2_d ("A2_d", nrows, ncols);
+          Kokkos::deep_copy (A2_d, A2_h);
+
+          Scalar* A2_d_raw = reinterpret_cast<Scalar*> (A2_d.data ());
+          const Scalar* A_copy_d_raw =
+            reinterpret_cast<const Scalar*> (A_copy_d.data ());
+          actor.un_cache_block (nrows, ncols, A2_d_raw,
+                                A2_d.stride (1), A_copy_d_raw);
+          Kokkos::deep_copy (A2_h, A2_d);
+        }
+        else {
+          actor.un_cache_block (nrows, ncols, A2.data (),
+                                A2.stride (1), A_copy.data ());
+        }
         const bool matrices_equal = matrix_equal (A, A2);
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (! matrices_equal, std::logic_error, "cache_block failed!");
+        if (! matrices_equal) {
+          success = false;
+          if (verbose) {
+            cerr << "*** cache_block failed!" << endl;
+          }
+        }
       }
 
       if (verbose) {
@@ -471,10 +539,24 @@ namespace TSQR {
       if (verbose) {
         cerr << "-- Call NodeTsqr::factor" << endl;
       }
-      auto factorOutput =
-        actor.factor (nrows, ncols, A_copy.data(), A_copy.stride(1),
-                      R.data(), R.stride(1),
-                      params.contiguousCacheBlocks);
+      // R is always in host memory, because that's what Belos wants.
+      auto factorOutput = [&] () {
+        if (actor.wants_device_memory ()) {
+          Scalar* A_copy_d_raw =
+            reinterpret_cast<Scalar*> (A_copy_d.data ());
+          return actor.factor (nrows, ncols, A_copy_d_raw,
+                               A_copy_d.stride (1),
+                               R.data (), R.stride (1),
+                               params.contiguousCacheBlocks);
+        }
+        else {
+          return actor.factor (nrows, ncols, A_copy.data (),
+                               A_copy.stride (1),
+                               R.data (), R.stride (1),
+                               params.contiguousCacheBlocks);
+        }
+      } ();
+
       if (params.saveMatrices) {
         std::string filename = std::string ("R") + fileSuffix;
         if (verbose) {
@@ -489,9 +571,23 @@ namespace TSQR {
       if (verbose) {
         cerr << "-- Call NodeTsqr::explicit_Q" << endl;
       }
-      actor.explicit_Q (nrows, ncols, A_copy.data (), lda,
-                        *factorOutput, ncols, Q.data (), Q.stride (1),
-                        params.contiguousCacheBlocks);
+      if (actor.wants_device_memory ()) {
+        const Scalar* A_copy_d_raw =
+          reinterpret_cast<const Scalar*> (A_copy_d.data ());
+        Scalar* Q_d_raw = reinterpret_cast<Scalar*> (Q_d.data ());
+        actor.explicit_Q (nrows, ncols,
+                          A_copy_d_raw, A_copy_d.stride (1),
+                          *factorOutput, ncols,
+                          Q_d_raw, Q_d.stride (1),
+                          params.contiguousCacheBlocks);
+      }
+      else {
+        actor.explicit_Q (nrows, ncols,
+                          A_copy.data (), A_copy.stride (1),
+                          *factorOutput, ncols,
+                          Q.data (), Q.stride (1),
+                          params.contiguousCacheBlocks);
+      }
 
       // "Un"-cache-block the output, if contiguous cache blocks were
       // used.  This is only necessary because local_verify() doesn't
@@ -501,9 +597,25 @@ namespace TSQR {
         if (verbose) {
           cerr << "-- Call NodeTsqr::un_cache_block" << endl;
         }
-        actor.un_cache_block (nrows, ncols, A_copy.data (),
-                              A_copy.stride (1), Q.data ());
-        deep_copy (Q, A_copy);
+        if (actor.wants_device_memory ()) {
+          Scalar* A_copy_d_raw =
+            reinterpret_cast<Scalar*> (A_copy_d.data ());
+          const Scalar* Q_d_raw =
+            reinterpret_cast<const Scalar*> (Q_d.data ());
+          actor.un_cache_block (nrows, ncols, A_copy_d_raw,
+                                A_copy_d.stride (1), Q_d_raw);
+          Kokkos::deep_copy (Q_h, A_copy_d);
+        }
+        else {
+          actor.un_cache_block (nrows, ncols, A_copy.data (),
+                                A_copy.stride (1), Q.data ());
+          deep_copy (Q, A_copy);
+        }
+      }
+      else {
+        if (actor.wants_device_memory ()) {
+          Kokkos::deep_copy (Q_h, Q_d);
+        }
       }
 
       if (params.saveMatrices) {
@@ -548,7 +660,6 @@ namespace TSQR {
       const mag_type relResidError = results[0] /
         (results[2] == STM::zero () ? STM::one () : results[2]);
 
-      bool success = true;
       if (relResidError > relResidBound) {
         success = false;
         if (verbose) {
