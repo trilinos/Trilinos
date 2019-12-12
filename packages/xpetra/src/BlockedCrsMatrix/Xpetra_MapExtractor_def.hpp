@@ -96,7 +96,7 @@ namespace Xpetra {
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(const Vector& full, size_t block, Vector& partial) const
     {
-      XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(), std::out_of_range, 
+      XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(), std::out_of_range,
             "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps() << " partial blocks.");
       XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block,false) == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: map_->getMap(" << block << ",false) is null");
@@ -194,7 +194,8 @@ namespace Xpetra {
         XPETRA_TEST_FOR_EXCEPTION(
           map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "ExtractVector: map_->getmap(" << block << ",false) is null");
         // first extract partial vector from full vector (using xpetra style GIDs)
-        const RCP<Vector> vv = VectorFactory::Build(getMap(block, false), false);
+const RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > vv = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(getMap(block, false), false);
+
         ExtractVector(*full, block, *vv);
         if(bThyraMode == false)
             return vv;
@@ -566,7 +567,7 @@ namespace Xpetra {
                                   "MapExtractor::getVector: getVector in Thyra-style numbering only possible if MapExtractor has been created using "
                                   "Thyra-style numbered submaps.");
         // TODO check whether this can return a blocked multivector
-        return VectorFactory::Build(getMap(i, bThyraMode), bZero);
+        return Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(getMap(i, bThyraMode), bZero);
     }
 
 
